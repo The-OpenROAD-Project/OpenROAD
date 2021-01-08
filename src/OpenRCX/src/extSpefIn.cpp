@@ -2781,7 +2781,7 @@ uint extSpef::readBlock(uint                debug,
       cornerNet = dbNet::getNet(_cornerBlock, net->getId());
       if (!cornerNet->isSpef()) {
         unmatchedDbNet++;
-        if (unmatchedDbNet < 1000)
+        if (unmatchedDbNet < 20)
           logger_->warn(RCX, 54,
                   "Db net {} {} not read from spef file!",
                   net->getId(),
@@ -2795,7 +2795,7 @@ uint extSpef::readBlock(uint                debug,
       inst = *inst_itr;
       if (!inst->getUserFlag1()) {
         unmatchedDbInst++;
-        if (unmatchedDbInst < 1000)
+        if (unmatchedDbInst < 20)
           logger_->warn(RCX, 53,
                   "Db inst {} {} not read from spef file!",
                   inst->getId(),

@@ -301,7 +301,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     if (net->getId() == _debug_net_id) {
       debug("VIA_CAP",
             "C",
-            "getViaCapacitance: {} {}   {} {}  M{}  W {}  LEN {} n{}\n",
+            "getViaCapacitance: %d %d   %d %d  M%d  W %d  LEN %d n%d\n",
             x1,
             x2,
             y1,
@@ -331,7 +331,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
       if (net->getId() == _debug_net_id) {
         debug("VIA_CAP",
               "C",
-              "getViaCapacitance: M{}  W {}  LEN {} C=%g tC=%g  {} n{}\n",
+              "getViaCapacitance: M%d  W %d  LEN %d eC=%.3f tC=%.3f  %d n%d\n",
               jj,
               w,
               len,
@@ -420,7 +420,6 @@ void extMain::getShapeRC(dbNet*           net,
 
     } else if (_lef_res) {
       double res = getResistance(level, width, len, 0);
-      ;
       _tmpResTable[0] = res;
     } else {
       if (USE_DB_UNITS)
@@ -605,7 +604,7 @@ bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
     net = bterm->getNet();
     if (bterm->isSetMark()) {
       if (ttttcvbs)
-        logger_->info(RCX, 0,
+        logger_->info(RCX, 108,
                "Net {} multiple-ended at bterm {}",
                net->getId(),
                bterm->getId());
@@ -617,7 +616,7 @@ bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
     net = iterm->getNet();
     if (iterm->isSetMark()) {
       if (ttttcvbs)
-        logger_->info(RCX, 0,
+        logger_->info(RCX, 109,
                "Net {} multiple-ended at iterm {}",
                net->getId(),
                iterm->getId());
@@ -705,14 +704,14 @@ uint extMain::getCapNodeId(dbNet*   net,
           if (cap->getNet()->getId() == DEBUG_NET_ID)
             debug("RCSEG",
                   "C",
-                  "\tOLD BRANCH {}  capNode {}\n",
+                  "\tOLD BRANCH %d  capNode %d\n",
                   junction,
                   cap->getId());
         } else {
           if (cap->getNet()->getId() == DEBUG_NET_ID)
             debug("RCSEG",
                   "C",
-                  "\tOLD INTERNAL {}  capNode {}\n",
+                  "\tOLD INTERNAL %d  capNode %d\n",
                   junction,
                   cap->getId());
         }
@@ -737,13 +736,13 @@ uint extMain::getCapNodeId(dbNet*   net,
       if (branch)
         debug("RCSEG",
               "C",
-              "\tNEW BRANCH {}  capNode {}\n",
+              "\tNEW BRANCH %d  capNode %d\n",
               junction,
               cap->getId());
       else
         debug("RCSEG",
               "C",
-              "\tNEW INTERNAL {}  capNode {}\n",
+              "\tNEW INTERNAL %d  capNode %d\n",
               junction,
               cap->getId());
     }
@@ -762,7 +761,7 @@ uint extMain::resetMapNodes(dbNet* net)
   dbWire* wire = net->getWire();
   if (wire == NULL) {
     if (_reportNetNoWire)
-      logger_->info(RCX, 0, "Net {} has no wires.", net->getName().c_str());
+      logger_->info(RCX, 110, "Net {} has no wires.", net->getName().c_str());
     _netNoWireCnt++;
     return 0;
   }
@@ -817,7 +816,7 @@ dbRSeg* extMain::addRSeg(dbNet*             net,
               pshape.iterm->getId(),
               (char*) pshape.iterm->getInst()->getConstName(),
               (char*) pshape.iterm->getMTerm()->getConstName());
-    logger_->warn(RCX, 0,
+    logger_->warn(RCX, 111,
             "Net {} {} has a loop at x={} y={} {}.",
             net->getId(),
             (char*) net->getConstName(),
@@ -857,7 +856,7 @@ dbRSeg* extMain::addRSeg(dbNet*             net,
   if (net->getId() == _debug_net_id)
     debug("RCSEG",
           "R",
-          "\tshapeId= {}  rseg= {}  ({} {}) %g\n",
+          "\tshapeId= %d  rseg= %d  (%d %d) %g\n",
           pshape.junction_id,
           rsid,
           srcId,
@@ -915,22 +914,22 @@ void extMain::make1stRSeg(dbNet*      net,
   int ty = 0;
   if (path.bterm) {
     if (!path.bterm->getFirstPinLocation(tx, ty))
-      logger_->error(RCX, 0, "Can not locate bterm {}", path.bterm->getConstName());
+      logger_->error(RCX, 112, "Can't locate bterm {}", path.bterm->getConstName());
   } else if (path.iterm) {
     if (!path.iterm->getAvgXY(&tx, &ty))
-      logger_->error(RCX, 0,
-            "Can not locate iterm {}/{} ( {} )",
+      logger_->error(RCX, 113,
+            "Can't locate iterm {}/{} ( {} )",
             path.iterm->getInst()->getConstName(),
             path.iterm->getMTerm()->getConstName(),
             path.iterm->getInst()->getMaster()->getConstName());
   } else if (!skipStartWarning)
-    logger_->warn(RCX, 0,
+    logger_->warn(RCX, 114,
             "Net {} {} does not start from an iterm or a bterm.",
             net->getId(),
             net->getConstName());
   if (net->get1stRSegId())
-    logger_->error(RCX, 
-        0, "Net {} {} already has rseg!", net->getId(), net->getConstName());
+    logger_->error(RCX, 115,
+        "Net {} {} already has rseg!", net->getId(), net->getConstName());
   dbRSeg* rc = dbRSeg::create(net, tx, ty, 0, true);
   rc->setTargetNode(cnid);
 }
@@ -971,7 +970,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 #endif
   if (netId == _debug_net_id) {
     debug(
-        "RCSEG", "R", "makeNetRCsegs: BEGIN NET {} {}\n", netId, path.junction_id);
+        "RCSEG", "R", "makeNetRCsegs: BEGIN NET %d %d\n", netId, path.junction_id);
   }
 
   if (_mergeResBound != 0.0 || _mergeViaRes) {
@@ -1002,7 +1001,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
     if (netId == _debug_net_id)
       debug("RCSEG",
             "R",
-            "makeNetRCsegs:  path.junction_id {}",
+            "makeNetRCsegs:  path.junction_id %d\n",
             path.junction_id);
 
     if (!path.iterm && !path.bterm && !path.is_branch && path.is_short)
@@ -1046,9 +1045,9 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 
       if (netId == _debug_net_id) {
         if (s.isVia())
-          debug("RCSEG", "R", "makeNetRCsegs: %5d VIA", pshape.junction_id);
+          debug("RCSEG", "R", "makeNetRCsegs: %d VIA\n", pshape.junction_id);
         else
-          debug("RCSEG", "R", "makeNetRCsegs: %5d WIRE", pshape.junction_id);
+          debug("RCSEG", "R", "makeNetRCsegs: %d WIRE\n", pshape.junction_id);
       }
 
       getShapeRC(net, s, sprevPoint, pshape);
@@ -1254,7 +1253,7 @@ uint extMain::setupSearchDb(const char* bbox, uint debug, ZInterface* Interface)
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
   if (_reExtract) {
     if (_extNetSDB == NULL || _extNetSDB->getSearchPtr() == NULL) {
-      logger_->info(RCX, 0, "No existing extraction sdb. Can't reExtract.");
+      logger_->info(RCX, 116, "No existing extraction sdb. Can't reExtract.");
       return 0;
     }
     _extNetSDB->setExtControl(_block,
@@ -1613,7 +1612,7 @@ uint extMain::readCmpStats(const char* name,
   Ath__parser parser;
   FILE*       fp = fopen(name, "r");
   if (fp == NULL) {
-    logger_->warn(RCX, 0, "Cannot read file {}.", name);
+    logger_->warn(RCX, 27, "Cannot open file {}.", name);
     return 0;
   }
   bool simple_flavor = false;
@@ -1669,7 +1668,7 @@ uint extMain::readCmpStats(const char* name,
 
 uint extMain::readCmpFile(const char* name)
 {
-  logger_->info(RCX, 0, "Read CMP file {} ...", name);
+  logger_->info(RCX, 117, "Read CMP file {} ...", name);
 
   uint tileSize;
   int  X1 = MAXINT;
@@ -1728,8 +1727,8 @@ uint extMain::readCmpFile(const char* name)
         nominalThickness       = parser1.getDouble(2) * angstrom2nm;
         dbTechLayer* techLayer = _tech->findLayer(layerName);
         if (techLayer == NULL) {
-          logger_->error(RCX, 0,
-                "Cannot find the corresponding LEF layer for <{}>",
+          logger_->error(RCX, 118,
+                "Can't find the corresponding LEF layer for <{}>",
                 layerName);
         }
         level = techLayer->getRoutingLevel();
@@ -1772,7 +1771,7 @@ uint extMain::readCmpFile(const char* name)
       break;
     }
   }
-  logger_->info(RCX, 0,
+  logger_->info(RCX, 119,
          "Finished reading {} variability tiles of size {} nm die: ({} {}) ({} "
          "{}) {}",
          cnt,
@@ -1945,7 +1944,7 @@ void extMain::getExtractedCorners()
     }
     _block->getExtCornerName(pCornerCnt + ii, &cName[0]);
     if (jj == pCornerCnt)
-      logger_->warn(RCX, 0,
+      logger_->warn(RCX, 120,
               "No matching process corner for scaled corner {}, model {}",
               &cName[0],
               t->_model);
@@ -2063,7 +2062,7 @@ char* extMain::addRCCornerScaled(const char* name,
                                  float       gndFactor)
 {
   if (_processCornerTable == NULL) {
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 121,
            "The corresponding process corner has to be defined using the "
            "command <define_process_corner>");
     return NULL;
@@ -2077,7 +2076,7 @@ char* extMain::addRCCornerScaled(const char* name,
       break;
   }
   if (jj == _processCornerTable->getCnt()) {
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 121,
            "The corresponding process corner has to be defined using the "
            "command <define_process_corner>");
     return NULL;
@@ -2091,7 +2090,7 @@ char* extMain::addRCCornerScaled(const char* name,
 
     if ((name != NULL) && (strcmp(s->_name, name) == 0)) {
       // if (s->_model==model) {
-      logger_->info(RCX, 0,
+      logger_->info(RCX, 122,
              "A process corner for Extraction RC Model {} has already been "
              "defined, skipping definition",
              model);
@@ -2400,7 +2399,7 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
     if (dbunit > 1000)
       dbFactor = dbunit * 0.001;
 
-    logger_->info(RCX, 36, "dbFactor= {}  dbunit= {} ", dbFactor, dbunit);
+    logger_->info(RCX, 36, "Database dbFactor= {}  dbunit= {}", dbFactor, dbunit);
 
     extRCModel* m = new extRCModel("MINTYPMAX", logger_);
     _modelTable->add(m);
@@ -2438,7 +2437,7 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
       int n_0 = _currentModel->findVariationZero(0.0);
       if (_processCornerTable != NULL) {
         cleanCornerTables();
-        logger_->info(RCX, 0,
+        logger_->info(RCX, 124,
                "Deleted already defined corners, only one corner will "
                "automatically defined when option cmp_file is used");
       }
@@ -2578,11 +2577,11 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
   _use_signal_tables = use_signal_table;
 
   if (debug == 703) {
-    logger_->info(RCX, 0, "Initial Tiling {} ...", getBlock()->getName().c_str());
+    logger_->info(RCX, 123, "Initial Tiling {} ...", getBlock()->getName().c_str());
 
     Rect maxRect;
     _block->getDieArea(maxRect);
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 125,
            "Tiling for die area {}x{} = {} {}  {} {}",
            maxRect.dx(),
            maxRect.dy(),
@@ -2601,8 +2600,8 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
 
     _use_signal_tables = 3;
     uint wireCnt       = fillWindowsDB(rlog, maxRect, use_signal_table);
-    logger_->info(RCX, 0,
-           "block {} has {} ext Wires",
+    logger_->info(RCX, 126,
+           "Block {} has {} ext Wires",
            getBlock()->getName().c_str(),
            wireCnt);
     return wireCnt;
@@ -2685,8 +2684,8 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
   }
   if ((_prevControl->_ruleFileName == NULL)
       && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
-    logger_->warn(RCX, 0, "No RC model was read with command <load_model>");
-    logger_->warn(RCX, 0, "Will not perform extraction!");
+    logger_->warn(RCX, 127, "No RC model was read with command <load_model>, "
+      "will not perform extraction!");
     return 0;
   }
   if (!re_extract) {
@@ -2729,7 +2728,7 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
       if (!setCorners(rulesfile,
                       cmp_file)) {  // DKF:12/22 -- cmp_file for testing,
                                     // eventually: rulesFileName
-        logger_->info(RCX, 0, "skipping Extraction ...");
+        logger_->info(RCX, 128, "skipping Extraction ...");
         return 0;
       }
     }
@@ -2750,21 +2749,21 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
                         -1,
                         1)
            < 0) {
-    logger_->warn(RCX, 0, "Wrong combination of corner related options");
+    logger_->warn(RCX, 129, "Wrong combination of corner related options!");
     return 0;
   }
   _foreign = false;  // extract after read_spef
   // }
 
   if (ibox) {
-    logger_->info(RCX, 0, "ibox = {}", ibox);
+    logger_->info(RCX, 130, "Ibox = {}", ibox);
     Ath__parser* parser = new Ath__parser();
     parser->mkWords(ibox, NULL);
     _ibox = new Rect(atoi(parser->get(0)),
                      atoi(parser->get(1)),
                      atoi(parser->get(2)),
                      atoi(parser->get(3)));
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 131,
            "_ibox = {} {} {} {}",
            _ibox->xMin(),
            _ibox->yMin(),
@@ -2776,9 +2775,9 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
   if (eco) {
     _block->getWireUpdatedNets(inets, _ibox);
     if (inets.size() != 0)
-      logger_->info(RCX, 0, "eco extract %lu nets.", inets.size());
+      logger_->info(RCX, 132, "Eco extract {} nets.", inets.size());
     else {
-      logger_->info(RCX, 0, "no nets to eco extract.");
+      logger_->info(RCX, 133, "No nets to eco extract.");
       return 1;
     }
     removeExt(inets);
@@ -2993,8 +2992,8 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
             = _extNetSDB->couplingCaps(ccCapSdb, CCflag, Interface, NULL, NULL);
     } else {
       logger_->info(RCX, 42,
-             "Coupling threshhold is {:.4f} FF, coupling capacitance less than {:.4f} "
-             "FF will be grounded.",
+             "Coupling threshhold is {:.4f} fF, coupling capacitance less than {:.4f} "
+             "fF will be grounded.",
              _coupleThreshold,
              _coupleThreshold);
       if (_unifiedMeasureInit) {
@@ -3072,7 +3071,7 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
           _block->getDieArea(maxRect);
 
           if (initTiling) {
-            logger_->info(RCX, 0, "Initial Tiling {} ...", getBlock()->getName().c_str());
+            logger_->info(RCX, 123, "Initial Tiling {} ...", getBlock()->getName().c_str());
             _use_signal_tables = 3;
             createWindowsDB(
                 rlog, maxRect, ccBandTracks, ccFlag, use_signal_table);
@@ -3160,7 +3159,7 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
            numOfCapNode,
            numOfCCSeg);
   else
-    logger_->warn(RCX, 0, "Nothing is extracted out of {} nets!", numOfNet - 2);
+    logger_->warn(RCX, 107, "Nothing is extracted out of {} nets!", numOfNet - 2);
   if (_allNet) {
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
@@ -3294,7 +3293,7 @@ uint extMain::writeSPEF(uint        netId,
                         const char* corner_name)
 {
   if (_block == NULL) {
-    logger_->info(RCX, 0, "Can not write_spef. There's no block in db");
+    logger_->info(RCX, 134, "Can't execute write_spef command. There's no block in db!");
     return 0;
   }
   if (!_spef || _spef->getBlock() != _block) {
@@ -3330,8 +3329,8 @@ int extSpef::getWriteCorner(int corner, const char* names)
   }
 
   if ((corner >= 0) && (corner >= cCnt)) {
-    logger_->warn(RCX, 0,
-           "Corner {} out of range; There are {} corners in DB",
+    logger_->warn(RCX, 135,
+           "Corner {} is out of range; There are {} corners in DB!",
            corner,
            cCnt);
     return -10;
@@ -3352,8 +3351,8 @@ int extSpef::getWriteCorner(int corner, const char* names)
   for (int ii = 0; ii < parser.getWordCnt(); ii++) {
     cn = _block->getExtCornerIndex(parser.get(ii));
     if (cn < 0) {
-      logger_->info(RCX, 0,
-             "Can not find corner name {} in the parasitics DB",
+      logger_->info(RCX, 136,
+             "Can't find corner name {} in the parasitics DB!",
              parser.get(ii));
       continue;
     }
@@ -3388,7 +3387,7 @@ uint extMain::writeSPEF(char*       filename,
                         bool        parallel)
 {
   if (_block == NULL) {
-    logger_->info(RCX, 0, "Can not write_spef. There's no block in db");
+    logger_->info(RCX, 134, "Can't execute write_spef command. There's no block in db");
     return 0;
   }
   if (!_spef || _spef->getBlock() != _block) {
@@ -3413,7 +3412,7 @@ uint extMain::writeSPEF(char*       filename,
   int cntnet, cntrseg, cntcapn, cntcc;
   _block->getExtCount(cntnet, cntrseg, cntcapn, cntcc);
   if (cntrseg == 0 || cntcapn == 0) {
-    logger_->info(RCX, 0, "Can not write_spef. There's no extraction data.");
+    logger_->info(RCX, 134, "Can't execute write_spef command. There's no extraction data.");
     return 0;
   }
   if (_extRun == 0) {
@@ -3435,7 +3434,7 @@ uint extMain::writeSPEF(char*       filename,
 
   uint cnt = 0;
   if (openSpefFile(filename, 1) > 0)
-    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", filename);
+    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
   else {
     _spef->set_single_pi(single_pi);
     int n = _spef->getWriteCorner(corner, corner_name);

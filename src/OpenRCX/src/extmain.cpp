@@ -256,7 +256,7 @@ void extMain::writeIncrementalSpef(char*                filename,
     debug("EXT_SPEF", "I", "Writing Spef to File %s\n", filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", filename);
+      logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                               _excludeCells,
@@ -281,7 +281,7 @@ void extMain::writeIncrementalSpef(char*                filename,
   _block->replaceOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.1.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -302,7 +302,7 @@ void extMain::writeIncrementalSpef(char*                filename,
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", fname);
+    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -360,7 +360,7 @@ void extMain::writeSpef(char*                filename,
   }
   uint cnt;
   if (openSpefFile(filename, 1) > 0) {
-    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", filename);
+    logger_->info(RCX, 137, "Can't open file \"{}\" to write spef.", filename);
     return;
   } else
     cnt = _spef->writeBlock(coord /*nodeCoord*/,
@@ -826,13 +826,13 @@ bool extMain::checkLayerResistance()
 
     if (res <= 0.0) {
       logger_->warn(RCX, 
-          0, "Missing Resistance value for layer {}", layer->getConstName());
+          139, "Missing Resistance value for layer {}", layer->getConstName());
       cnt++;
     }
   }
   if (cnt > 0) {
-    logger_->warn(RCX, 0, "{} layers are missing resistance value; Check LEF file", cnt);
-    logger_->warn(RCX, 0, "Extraction cannot proceed! Exiting");
+    logger_->warn(RCX, 138, "{} layers are missing resistance value; Check LEF file. "
+            "Extraction cannot proceed! Exiting", cnt);
     return false;
   }
   return true;
@@ -1401,7 +1401,7 @@ void extMain::ccReportProgress()
     //		fprintf(stdout, "Have processed %d total segments, %d signal
     // segments, %d CC caps, and stored %d CC caps\n", _totSegCnt,
     //_totSignalSegCnt, _totCCcnt, _totBigCCcnt);
-    logger_->info(RCX, 0,
+    logger_->info(RCX, 140,
            "Have processed {} total segments, {} signal segments, {} CC "
            "caps, and stored {} CC caps",
            _totSegCnt,
@@ -1503,7 +1503,7 @@ void extMain::measureRC(int* options)
       int pbase = m._dir ? m._ur[1] : m._ur[0];
       //		  fprintf(stdout, "Context of layer %d, xy=%d len=%d
       // base=%d width=%d :\n", m._met, pxy, m._len, pbase, m._s_nm);
-      logger_->info(RCX, 0,
+      logger_->info(RCX, 141,
              "Context of layer {} xy={} len={} base={} width={}",
              m._met,
              pxy,
@@ -1514,20 +1514,14 @@ void extMain::measureRC(int* options)
       for (ii = 1; ii <= _ccContextDepth
                    && (int) ii + m._met < _currentModel->getLayerCnt();
            ii++) {
-        //		    fprintf(stdout, "  layer %d\n", ii+m._met);
-        logger_->info(RCX, 0, "  layer {}", ii + m._met);
+        logger_->info(RCX, 142, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
-          //		      fprintf(stdout, "    %d: %d\n", jj,
-          //_ccContextArray[ii+m._met]->get(jj));
-          logger_->info(RCX, 0, "    {}: {}", jj, _ccContextArray[ii + m._met]->get(jj));
+          logger_->info(RCX, 143, "    {}: {}", jj, _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
-        //		    fprintf(stdout, "  layer %d\n", m._met-ii);
-        logger_->info(RCX, 0, "  layer {}", m._met - ii);
+        logger_->info(RCX, 142, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
-          //		      fprintf(stdout, "    %d: %d\n", jj,
-          //_ccContextArray[m._met-ii]->get(jj));
-          logger_->info(RCX, 0, "    {}: {}", jj, _ccContextArray[m._met - ii]->get(jj));
+          logger_->info(RCX, 143, "    {}: {}", jj, _ccContextArray[m._met - ii]->get(jj));
       }
     }
     //		for (uint ii= 0; _ccContextArray!=NULL && m._met>1 &&

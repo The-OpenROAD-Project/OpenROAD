@@ -393,7 +393,7 @@ bool Ext::define_derived_corner(const std::string& name,
 {
   dbUpdate();
   if (process_corner_name.empty()) {
-    logger_->warn(RCX, 30, "the original process corner name is required");
+    logger_->warn(RCX, 30, "The original process corner name is required");
     return TCL_ERROR;
   }
 
@@ -432,7 +432,7 @@ bool Ext::read_qcap(const std::string& file_name,
 {
   dbUpdate();
   if (file_name.empty()) {
-    logger_->warn(RCX, 32, "file option is required");
+    logger_->warn(RCX, 32, "-file flag is required on the command!");
     return TCL_OK;
   }
 
@@ -516,7 +516,7 @@ bool Ext::extract(ExtractOptions opts)
       bool skipCutVias = true;
       block->initSearchBlock(_db->getTech(), true, true, _context, skipCutVias);
     } else {
-      logger_->error(RCX, 10, "There is no block to extract!\n");
+      logger_->error(RCX, 10, "There is no block to extract!");
       return TCL_ERROR;
     }
     _ext->setPowerExtOptions(skip_power_stubs,
@@ -699,7 +699,7 @@ bool Ext::extract(ExtractOptions opts)
 
     for (itr = children.begin(); itr != children.end(); ++itr) {
       odb::dbBlock* blk = *itr;
-      logger_->info(RCX, 14, "Assembly of block {}...", blk->getConstName());
+      logger_->info(RCX, 46, "Assembly of block {}...", blk->getConstName());
 
       extMain::assemblyExt(topBlock, blk, logger_);
     }
@@ -966,8 +966,7 @@ bool Ext::calibrate(const std::string& spef_file,
   dbUpdate();
   if (spef_file.empty()) 
     logger_->error(RCX, 20,
-                "please type in name of the spef file to calibrate, using "
-                "-spef_file");
+                "please type in name of the spef file to calibrate, using -spef_file");
   
   logger_->info(RCX, 21, "calibrate on spef file  {}", spef_file.c_str());
   Ath__parser parser;
@@ -1021,7 +1020,7 @@ bool Ext::set_block(const std::string& block_name,
     odb::dbChip*   chip = _db->getChip();
     odb::dbInst*   ii   = chip->getBlock()->findInst(inst_name.c_str());
     odb::dbMaster* m    = ii->getMaster();
-    logger_->info(RCX, 21,
+    logger_->info(RCX, 24,
                 "Inst={} ==> {} {} of Master {} {}",
                 inst_name.c_str(),
                 ii->getId(),
@@ -1066,7 +1065,7 @@ bool Ext::report_total_cap(const std::string& file,
           dbChip *chip= _db->getChip();
           dbBlock * child = chip->getBlock()->findChild(block_name);
   if (child==NULL) {
-  logger_->warn(RCX, 24, "Cannot find block with master name {}",
+  logger_->warn(RCX, 23, "Cannot find block with master name {}",
   block_name);
   return TCL_ERROR;
   }
@@ -1095,7 +1094,7 @@ bool Ext::dump(bool               open_tree_file,
                const std::string& file)
 {
   dbUpdate();
-  logger_->info(RCX, 25, "dumping {}", file.c_str());
+  logger_->info(RCX, 25, "Printing file {}", file.c_str());
 
   _ext->extDump((char*) file.c_str(),
                 open_tree_file,

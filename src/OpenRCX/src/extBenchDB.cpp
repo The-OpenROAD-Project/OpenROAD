@@ -206,7 +206,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
 
     double contextCoupling = getTotalCouplingCap(net, "cntxM", 0);
     if (contextCoupling > 0) {
-      //logger_->info(RCX, 62, "contextCoupling {} {}", contextCoupling, netName);
+      //logger_->info(RCX, 62, "ContextCoupling -- Value: {}, Net name: {}", contextCoupling, netName);
       totGnd += contextCoupling;
       totCC -= contextCoupling;
     }
