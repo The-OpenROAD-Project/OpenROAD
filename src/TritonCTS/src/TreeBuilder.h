@@ -52,19 +52,17 @@ class TreeBuilder
 {
  public:
   TreeBuilder(CtsOptions* options, Clock& clk)
-      : _options(options), _clock(clk), _logger(options->getLogger()) {};
+      : _options(options), _clock(clk) { }
 
   virtual void run() = 0;
   void setTechChar(TechChar& techChar) { _techChar = &techChar; }
   const Clock& getClock() const { return _clock; }
   Clock& getClock() { return _clock; }
-  ord::Logger *getLogger() { return _logger;}
 
  protected:
   CtsOptions* _options = nullptr;
   Clock _clock;
   TechChar* _techChar = nullptr;
-  ord::Logger* _logger = nullptr;
 };
 
 }  // namespace cts
