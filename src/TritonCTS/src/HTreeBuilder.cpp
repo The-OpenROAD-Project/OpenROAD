@@ -157,15 +157,13 @@ void HTreeBuilder::initSinkRegion()
       topLevelSinks, maxDiameter, _options->getSizeSinkClustering());
   if (topLevelSinks.size() <= 200 || !(_options->getSinkClustering())) {
     Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
-    _logger->info(CTS, 23, " Original sink region: [({}, {}), ({}, {})]",
-                  sinkRegionDbu.getMinX(), sinkRegionDbu.getMinY(), sinkRegionDbu.getMaxX(), sinkRegionDbu.getMaxY());
+    _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);
   } else {
     _sinkRegion = _clock.computeSinkRegionClustered(_topLevelSinksClustered);
   }
-  _logger->info(CTS, 24, " Normalized sink region: [({:.4f}, {:.4f}), ({:.4f}, {:.4f})]",
-                _sinkRegion.getMinX(), _sinkRegion.getMinY(), _sinkRegion.getMaxX(), _sinkRegion.getMaxY());
+  _logger->info(CTS, 24, " Normalized sink region: {}", _sinkRegion);
   _logger->info(CTS, 25, "    Width:  {:.4f}", _sinkRegion.getWidth());
   _logger->info(CTS, 26, "    Height: {:.4f}", _sinkRegion.getHeight());
 }
