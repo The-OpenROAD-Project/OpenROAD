@@ -1775,7 +1775,7 @@ class dbBPin : public dbObject
   /// Get the placement status of this block-terminal.
   ///
   dbPlacementStatus getPlacementStatus();
-
+  
   ///
   /// Set the placement status of this block-terminal.
   ///

@@ -40,7 +40,7 @@ namespace fr {
 namespace odb {
   class dbDatabase;
 }
-namespace ord{
+namespace ord {
   class Logger;
 }
 namespace triton_route {
@@ -64,7 +64,7 @@ namespace triton_route {
     void setDebugGCell(int x, int y);
     void setDebugIter(int iter);
 
-    static bool readParams(const std::string &fileName);
+    void readParams(const std::string &fileName);
 
   protected:
     std::unique_ptr<fr::frDesign> design_;

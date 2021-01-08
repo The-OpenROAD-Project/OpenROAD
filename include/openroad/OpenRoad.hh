@@ -68,7 +68,7 @@ class IOPlacer;
 }
 
 namespace cts {
-class TritonCTSKernel;
+class TritonCTS;
 }
 
 namespace grt {
@@ -91,7 +91,7 @@ namespace mpl {
 class TritonMacroPlace;
 }
 
-namespace replace {
+namespace gpl {
 class Replace;
 }
 
@@ -141,7 +141,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
-  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
@@ -149,7 +149,7 @@ public:
   mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
-  replace::Replace* getReplace() { return replace_; }
+  gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
@@ -220,12 +220,12 @@ private:
   fin::Finale *finale_;
   mpl::TritonMacroPlace *tritonMp_;
   grt::GlobalRouter *fastRoute_;
-  cts::TritonCTSKernel *tritonCts_;
+  cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
-  replace::Replace *replace_;
+  gpl::Replace *replace_;
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
 

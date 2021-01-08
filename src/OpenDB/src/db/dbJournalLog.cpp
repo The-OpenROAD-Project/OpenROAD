@@ -246,11 +246,7 @@ void dbJournalLog::pop(std::string& value)
 
   int i;
   for (i = 0; i < len; ++i)
-#ifndef _WIN32
     value.push_back(next());
-#else
-    value += next();
-#endif
 }
 
 dbIStream& operator>>(dbIStream& stream, dbJournalLog& log)

@@ -34,7 +34,7 @@
 #ifndef __REPLACE_COORDI__
 #define __REPLACE_COORDI__
 
-namespace replace {
+namespace gpl {
 
 class FloatPoint {
   public:
