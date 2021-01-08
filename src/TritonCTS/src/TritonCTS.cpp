@@ -164,7 +164,7 @@ void TritonCTS::checkCharacterization()
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {
-          _logger->error(CTS, 81, ("Buffer " + master + " is not in the loaded DB.").c_str());
+          _logger->error(CTS, 81, "Buffer {} is not in the loaded DB.", master);
         }
       }
     }
@@ -297,18 +297,17 @@ void TritonCTS::reportCtsMetrics()
     std::ofstream file(filename.c_str());
 
     if (!file.is_open()) {
-      _logger->report("Could not open output metric file.");
-      return;
+      _logger->error(CTS, 87, "Could not open output metric file.");
     }
 
     file << "[TritonCTS Metrics] Total number of Clock Roots: "
-         << _options->getNumClockRoots() << ".";
+         << _options->getNumClockRoots() << ".\n";
     file << "[TritonCTS Metrics] Total number of Buffers Inserted: "
-         << _options->getNumBuffersInserted() << ".";
+         << _options->getNumBuffersInserted() << ".\n";
     file << "[TritonCTS Metrics] Total number of Clock Subnets: "
-         << _options->getNumClockSubnets() << ".";
+         << _options->getNumClockSubnets() << ".\n";
     file << "[TritonCTS Metrics] Total number of Sinks: "
-         << _options->getNumSinks() << ".";
+         << _options->getNumSinks() << ".\n";
 
     file.close();
   } else {
