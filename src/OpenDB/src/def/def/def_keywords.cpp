@@ -251,14 +251,8 @@ defrData::print_lines(long long lines)
 const char * 
 defrData::lines2str(long long lines) 
 {
-
-#ifdef _WIN32
-    sprintf(lineBuffer, "%I64d", lines);
-#else
-    sprintf(lineBuffer, "%lld", lines);
-#endif 
-
-    return lineBuffer;
+   sprintf(lineBuffer, "%lld", lines);
+   return lineBuffer;
 }
 
 
