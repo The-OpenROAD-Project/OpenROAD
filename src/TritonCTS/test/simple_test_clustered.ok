@@ -16,15 +16,15 @@ Notice 0: Finished DEF file: ./results/clustered_test.def
  *****************************
  *  Import characterization  *
  *****************************
- Reading LUT file "lut.txt"
+[INFO CTS-0085]  Reading LUT file "lut.txt"
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
 2           8           1           52          1           24          
 [WARNING CTS-0044] 180 wires are pure wire and no slew degration.
 TritonCTS forced slew degradation on these wires.
-[WARNING CTS-0049]     Num wire segments: 4994
-[WARNING CTS-0050]     Num keys in characterization LUT: 1677
-[WARNING CTS-0051]     Actual min input cap: 8
- Reading solution list file "sol_list.txt"
+[INFO CTS-0049]     Num wire segments: 4994
+[INFO CTS-0050]     Num keys in characterization LUT: 1677
+[INFO CTS-0051]     Actual min input cap: 8
+[INFO CTS-0086]  Reading solution list file "sol_list.txt".
  **********************
  *  Find clock roots  *
  **********************
@@ -52,7 +52,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0020]  Wire segment unit: 20000  dbu (10 um)
 [INFO CTS-0021]  Distance between buffers: 5 units (100.0 um)
 [INFO CTS-0019]  Tot. number of sinks after clustering: 30
-[INFO CTS-0024]  Normalized sink region: [(0.7726, 0.7837), (9.5503, 8.8947)]
+[INFO CTS-0024]  Normalized sink region: [(0.77258, 0.78369), (9.55027, 8.89472)]
 [INFO CTS-0025]     Width:  8.7777
 [INFO CTS-0026]     Height: 8.1110
  Level 1
