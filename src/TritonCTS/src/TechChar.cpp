@@ -129,22 +129,22 @@ void TechChar::parseLut(const std::string& file)
   std::ifstream lutFile(file.c_str());
 
   if (!lutFile.is_open()) {
-    error("Could not find LUT file.\n");
+    getLogger()->error(ord::CTS, 101, "Could not find LUT file.");
   }
 
   // First line of the LUT is a header with normalization values
   if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance
         >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-    error("Problem reading the LUT file.\n");
+    getLogger()->error(ord::CTS, 102, "Problem reading the LUT file.");
   }
 
   if (_options->getWireSegmentUnit() == 0) {
     unsigned presetWireUnit = 0;
     if (!(lutFile >> presetWireUnit)) {
-      error("Problem reading the LUT file.\n");
+      getLogger()->error(ord::CTS, 102, "Problem reading the LUT file.");
     }
     if (presetWireUnit == 0) {
-      error("Problem reading the LUT file.\n");
+      getLogger()->error(ord::CTS, 102, "Problem reading the LUT file.");
     }
     _options->setWireSegmentUnit(presetWireUnit);
     setLenghthUnit(static_cast<unsigned>(presetWireUnit) / 2);
@@ -238,11 +238,10 @@ inline void TechChar::checkCharacterizationBounds() const
       || _minCapacitance > MAX_NORMALIZED_VAL
       || _maxCapacitance > MAX_NORMALIZED_VAL || _minSlew > MAX_NORMALIZED_VAL
       || _maxSlew > MAX_NORMALIZED_VAL) {
-    error(("Normalized values in the LUT should be in the range [1, "
-           + std::to_string(MAX_NORMALIZED_VAL) + "\n Check the table "
-           + "above to see the normalization ranges and check "
-           + "your characterization configuration.\n")
-              .c_str());
+    _options->getLogger()->error(ord::CTS, 105, "Normalized values in the LUT should be in the range [1, {}]\n"
+           "Check the table"
+           "above to see the normalization ranges and check "
+           "your characterization configuration.", std::to_string(MAX_NORMALIZED_VAL));
   }
 }
 

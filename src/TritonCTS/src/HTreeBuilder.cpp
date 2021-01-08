@@ -35,7 +35,6 @@
 
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
-#include "openroad/Error.hh"
 #include "clustering.h"
 
 #include <fstream>
@@ -44,8 +43,6 @@
 #include <map>
 
 namespace cts {
-
-using ord::error;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -93,7 +90,7 @@ void HTreeBuilder::preSinkClustering(
         xSum += point.first;
         ySum += point.second;
         if (_mapLocationToSink.find(mapPoint) == _mapLocationToSink.end()) {
-          error("Sink not found.\n");
+          getLogger()->error(ord::CTS, 1, "Sink not found.\n");
         }
         clusterClockInsts.push_back(_mapLocationToSink[mapPoint]);
         // clock inst needs to be added to the new subnet
@@ -231,7 +228,7 @@ void HTreeBuilder::run()
 
   _clock.setMaxLevel(_topologyForEachLevel.size());
 
-  if (_options->getPlotSolution()) {
+  if (_options->getPlotSolution() || getLogger()->debugCheck(ord::CTS, "HTree", 2)) {
     plotSolution();
   }
 
@@ -778,7 +775,7 @@ void HTreeBuilder::createClockSubNets()
             = leafTopology.getBranchSinksLocations(idx);
         for (const Point<double>& loc : sinkLocs) {
           if (_mapLocationToSink.find(loc) == _mapLocationToSink.end()) {
-            error("Sink not found.\n");
+            getLogger()->error(ord::CTS, 1, "Sink not found.\n");
           }
 
           subNet->addInst(*_mapLocationToSink[loc]);

@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -55,8 +55,6 @@
 
 namespace cts {
 
-using ord::error;
-
 void TritonCTS::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
@@ -66,7 +64,9 @@ void TritonCTS::init(ord::OpenRoad* openroad)
 void TritonCTS::makeComponents()
 {
   _db = _openroad->getDb();
+  logger_ = _openroad->getLogger();
   _options = new CtsOptions;
+  _options->setLogger(logger_);
   _techChar = new TechChar(_options);
   _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
@@ -163,7 +163,7 @@ void TritonCTS::checkCharacterization()
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {
-          error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
+          getLogger()->error(ord::CTS, 2, "Buffer  + {} + is not in the loaded DB.\n", master.c_str());
         }
       }
     }
@@ -199,7 +199,7 @@ void TritonCTS::populateTritonCts()
   populateTritonCTS();
 
   if (_builders->size() < 1) {
-    error("No valid clock nets in the design.\n");
+    getLogger()->error(ord::CTS, 3, "No valid clock nets in the design.");
   }
 }
 
@@ -231,6 +231,33 @@ void TritonCTS::runPostCtsOpt()
   }
 }
 
+void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks)
+{
+  if (sinks > 100000)
+    return;
+
+  odb::dbSet<odb::dbITerm> iterms = net->getITerms();
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      odb::dbInst *inst = iterm->getInst();
+      std::string name = inst->getName();
+      if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf_", 7)) {
+        odb::dbITerm* outputPin = inst->getFirstOutput();
+        if (outputPin)
+          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks);
+        else
+        {
+          std::cout << "  Hanging buffer " << name << std::endl;
+        }
+        if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
+          leafSinks++;
+      } else {
+        sinks++;
+      }
+    }
+  }
+}
+
 void TritonCTS::writeDataToDb()
 {
   std::cout << " ********************\n";
@@ -239,6 +266,14 @@ void TritonCTS::writeDataToDb()
 
   for (TreeBuilder* builder : *_builders) {
     writeClockNetsToDb(builder->getClock());
+    if (getLogger()->debugCheck(ord::CTS, "HTree", 2)) {
+      odb::dbNet* topClockNet = builder->getClock().getNetObj();
+      unsigned sinkCount = 0;
+      unsigned leafSinks = 0;
+      countSinksPostDbWrite(topClockNet, sinkCount, leafSinks);
+      std::cout << "  Sinks after db write = " << sinkCount
+                << " (Leaf Buffers = " << leafSinks << ")" << std::endl;
+    }
   }
 }
 
@@ -393,7 +428,7 @@ void TritonCTS::initAllClocks()
   }
 
   if (getNumClocks() == 0) {
-    error("No clock nets have been found.\n");
+    getLogger()->error(ord::CTS, 4, "No clock nets have been found.");
   }
 
   std::cout << " TritonCTS found " << getNumClocks() << " clock nets."

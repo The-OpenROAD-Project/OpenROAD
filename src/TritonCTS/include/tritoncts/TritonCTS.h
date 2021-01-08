@@ -39,6 +39,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 } // namespace ord
 
 namespace odb {
@@ -73,6 +74,7 @@ class TritonCTS
   void reportCtsMetrics();
   CtsOptions* getParms() { return _options; }
   TechChar* getCharacterization() { return _techChar; }
+  ord::Logger* getLogger() { return logger_;}
   void addBuilder(TreeBuilder* builder);
   void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
   int setClockNets(const char* names);
@@ -110,12 +112,14 @@ class TritonCTS
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
+  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 
   ord::OpenRoad* _openroad;
+  ord::Logger *logger_;
   CtsOptions* _options;
   TechChar* _techChar;
   StaEngine* _staEngine;

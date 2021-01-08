@@ -1,0 +1,26 @@
+CTS 0001 HTreeBuilder.cpp:96    Sink not found.
+CTS 0002 TritonCTS.cpp:166      Buffer  + master +  is not in the loaded DB.
+CTS 0003 TritonCTS.cpp:202      No valid clock nets in the design.
+CTS 0004 TritonCTS.cpp:396      No clock nets have been found.
+CTS 0101 TechChar.cpp:132       Could not find LUT file.
+CTS 0102 TechChar.cpp:138       Problem reading the LUT file.
+CTS 0103 TechChar.cpp:144       Problem reading the LUT file.
+CTS 0104 TechChar.cpp:147       Problem reading the LUT file.
+CTS 0105 TechChar.cpp:241       Normalized values in the LUT should be in the range [1, 
+CTS 0106 TechChar.cpp:278       Could not find sol_list file.
+CTS 0107 TechChar.cpp:297       Number of buffers does not match on solution.
+CTS 0108 TechChar.cpp:535       Network not found. Check your lef/def/verilog file.
+CTS 0109 TechChar.cpp:539       Database not found. Check your lef/def/verilog file.
+CTS 0110 TechChar.cpp:543       Chip not found. Check your lef/def/verilog file.
+CTS 0111 TechChar.cpp:547       Block not found. Check your lef/def/verilog file.
+CTS 0112 TechChar.cpp:552       Network not found. Check your lef/def/verilog file.
+CTS 0113 TechChar.cpp:574       Buffer not found. Check your -buf_list input.
+CTS 0114 TechChar.cpp:580       Buffer not found. Check your -buf_list input.
+CTS 0115 TechChar.cpp:651       No Liberty cell found for {}.
+CTS 0116 TechChar.cpp:660       Liberty Library does not have Max Slew or Max Cap values.
+CTS 0201 tritoncts.tcl:60       Missing argument -sqr_cap and/or -sqr_res
+CTS 0202 tritoncts.tcl:155      Missing argument -sol_list
+CTS 0203 tritoncts.tcl:164      Missing argument -lut_file
+CTS 0204 tritoncts.tcl:177      Missing argument -buf_list or -lut_file / -sol_list
+CTS 0205 tritoncts.tcl:190      Error when finding -clk_nets in DB!
+CTS 0206 tritoncts.tcl:212      Missing argument -root_buf

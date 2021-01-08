@@ -49,6 +49,7 @@ class PostCtsOpt
       : _clock(&clock), _options(options)
   {
     _bufDistRatio = _options->getBufDistRatio();
+    _logger = _options->getLogger();
   }
 
   void run();
@@ -65,6 +66,7 @@ class PostCtsOpt
 
   Clock* _clock;
   CtsOptions* _options;
+  ord::Logger* _logger;
   unsigned _numViolatingSinks = 0;
   unsigned _numInsertedBuffers = 0;
   double _avgSourceSinkDist = 0.0;

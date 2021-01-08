@@ -89,4 +89,5 @@ target_link_libraries(${BIN_NAME} INTERFACE
   ${TCL_LIB}
   lefin
   opendb
+  spdlog::spdlog
  )
