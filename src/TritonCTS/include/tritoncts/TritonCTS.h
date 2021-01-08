@@ -56,6 +56,8 @@ class dbSta;
 
 namespace cts {
 
+using ord::Logger;
+
 class Clock;
 class ClockInst;
 class CtsOptions;
@@ -74,7 +76,6 @@ class TritonCTS
   void reportCtsMetrics();
   CtsOptions* getParms() { return _options; }
   TechChar* getCharacterization() { return _techChar; }
-  ord::Logger* getLogger() { return logger_;}
   void addBuilder(TreeBuilder* builder);
   void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
   int setClockNets(const char* names);
@@ -119,7 +120,7 @@ class TritonCTS
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 
   ord::OpenRoad* _openroad;
-  ord::Logger *logger_;
+  Logger* _logger;
   CtsOptions* _options;
   TechChar* _techChar;
   StaEngine* _staEngine;

@@ -42,7 +42,13 @@
 #include <string>
 #include <vector>
 
+namespace ord {
+class Logger;
+} // namespace ord
+
 namespace cts {
+
+using ord::Logger;
 
 class Matching
 {
@@ -95,6 +101,7 @@ class SinkClustering
     return pos < std::numeric_limits<double>::epsilon();
   }
 
+  Logger *_logger;
   std::vector<Point<double>> _points;
   std::vector<std::pair<double, unsigned>> _thetaIndexVector;
   std::vector<Matching> _matchings;

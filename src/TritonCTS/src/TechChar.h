@@ -52,7 +52,13 @@
 #include <unordered_map>
 #include <vector>
 
+namespace ord {
+class Logger;
+} // namespace ord
+
 namespace cts {
+
+using ord::Logger;
 
 class WireSegment
 {
@@ -175,7 +181,7 @@ class TechChar
   };
 
  public:
-  TechChar(CtsOptions* options) : _options(options) {}
+  TechChar(CtsOptions* options, Logger* logger) : _options(options), _logger(logger) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
@@ -277,6 +283,7 @@ class TechChar
                                 unsigned* min,
                                 unsigned* max);
 
+  Logger* _logger;
   sta::dbSta* _openSta = nullptr;
   odb::dbDatabase* _db = nullptr;
   sta::dbSta* _openStaChar = nullptr;

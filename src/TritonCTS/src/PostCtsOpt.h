@@ -40,16 +40,21 @@
 
 #include <unordered_map>
 
+namespace ord {
+class Logger;
+} // namespace ord
+
 namespace cts {
+
+using ord::Logger;
 
 class PostCtsOpt
 {
  public:
-  PostCtsOpt(Clock& clock, CtsOptions* options)
-      : _clock(&clock), _options(options)
+  PostCtsOpt(Clock& clock, CtsOptions* options, Logger* logger)
+      : _clock(&clock), _options(options), _logger(logger)
   {
     _bufDistRatio = _options->getBufDistRatio();
-    _logger = _options->getLogger();
   }
 
   void run();
@@ -66,7 +71,7 @@ class PostCtsOpt
 
   Clock* _clock;
   CtsOptions* _options;
-  ord::Logger* _logger;
+  Logger* _logger;
   unsigned _numViolatingSinks = 0;
   unsigned _numInsertedBuffers = 0;
   double _avgSourceSinkDist = 0.0;
