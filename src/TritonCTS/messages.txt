@@ -88,3 +88,5 @@ CTS 0084 TechChar.cpp:59           Compiling LUT
 CTS 0085 TechChar.cpp:130          {}"
 CTS 0086 TechChar.cpp:271          .
 CTS 0087 TritonCTS.cpp:300         Could not open output metric file.
+CTS 0088 SinkClustering.cpp:159    Matching0 size: {}.
+CTS 0089 SinkClustering.cpp:160    Matching1 size: {}.

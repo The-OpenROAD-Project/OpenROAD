@@ -156,8 +156,8 @@ void SinkClustering::findBestMatching()
   Point<double>& p1 = _points[idx1];
   matchingCost1 += p0.computeDist(p1);
 
-  _logger->report("Matching0 size: {}", matching0.size());
-  _logger->report("Matching1 size: {}", matching1.size());
+  _logger->info(CTS, 88, "Matching0 size: {}.", matching0.size());
+  _logger->info(CTS, 89, "Matching1 size: {}.", matching1.size());
   if (matchingCost0 < matchingCost1) {
     _matchings = matching0;
   } else {
