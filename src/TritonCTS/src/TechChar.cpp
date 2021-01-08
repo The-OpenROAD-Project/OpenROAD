@@ -334,17 +334,16 @@ void TechChar::report() const
                   "   In cap  In slew Buf     Buf Locs");
 
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
-    _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}",
+    std::string buffLocs;
+    for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
+      buffLocs = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+    }
+
+    _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
                     idx, segment.getLength(),segment.getLoad(),
                     segment.getOutputSlew(), segment.getPower(), segment.getDelay(),
                     segment.getInputCap(), segment.getInputSlew(),
-                    segment.isBuffered());
-
-    for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      _logger->report("{:<6} ", segment.getBufferLocation(idx));
-    }
-
-    _logger->report("\n");
+                    segment.isBuffered(), buffLocs);
   });
 
   _logger->report("*************************************************************");
@@ -367,17 +366,15 @@ void TechChar::reportSegments(uint8_t length,
 
   forEachWireSegment(
       length, load, outputSlew, [&](unsigned idx, const WireSegment& segment) {
-        _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}",
+        std::string buffLocs;
+        for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
+          buffLocs = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+        }
+        _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
                     idx, segment.getLength(),segment.getLoad(),
                     segment.getOutputSlew(), segment.getPower(), segment.getDelay(),
                     segment.getInputCap(), segment.getInputSlew(),
-                    segment.isBuffered());        
-
-        for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-          _logger->report("{:<6} ", segment.getBufferLocation(idx));
-        }
-
-        _logger->report("\n");
+                    segment.isBuffered(), buffLocs);
       });
 }
 

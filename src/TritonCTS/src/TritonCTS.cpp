@@ -503,11 +503,12 @@ void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const
   _logger->info(CTS, 11, " Number of user-input clocks: {}.", numClocks);
 
   if (numClocks > 0) {
-    _logger->report(" (");
+    std::string rpt = " (";
     for (const std::string& name : clockNetNames) {
-      _logger->report(" \"{}\"", name);
+      rpt = rpt + " \"" + name + "\"";
     }
-    _logger->report(" )");
+    rpt = rpt + " )";
+    _logger->report("{}", rpt);
   }
 }
 
