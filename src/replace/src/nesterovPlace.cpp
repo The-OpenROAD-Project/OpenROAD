@@ -159,7 +159,7 @@ void NesterovPlace::init() {
   prevHpwl_ 
     = nb_->getHpwl();
 
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {:g}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {}", prevHpwl_);
 
   // FFT update
   nb_->updateDensityForceBin();
