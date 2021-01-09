@@ -13,8 +13,11 @@
 #include <vector>
 
 #include "dbLogger.h"
+#include "openroad/Logger.h"
 
 namespace rcx {
+
+using ord::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -36,7 +39,6 @@ using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::debug;
 using odb::ISdb;
-using odb::notice;
 using odb::Rect;
 using odb::ZPtr;
 
@@ -59,7 +61,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
 
-  extRCModel* model = new extRCModel(layerCnt, "TYPICAL");
+  extRCModel* model = new extRCModel(layerCnt, "TYPICAL", logger_);
   model->setDiagModel(1);
   // _modelTable->add(m);
   // extRCModel *model= _modelTable->get(0);
@@ -204,7 +206,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
 
     double contextCoupling = getTotalCouplingCap(net, "cntxM", 0);
     if (contextCoupling > 0) {
-      notice(0, "contextCoupling %g %s\n", contextCoupling, netName);
+      //logger_->info(RCX, 62, "ContextCoupling -- Value: {}, Net name: {}", contextCoupling, netName);
       totGnd += contextCoupling;
       totCC -= contextCoupling;
     }
@@ -519,7 +521,7 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   int x1 = bboxLL[0];
   int y1 = bboxLL[1];
 
-  // notice(0, "\n                                     %12d %12d", x1, y1);
+  // logger_->info(RCX, 0, "                                     %12d %12d", x1, y1);
   measure->clean2dBoxTable(measure->_met, false);
 
   double x_tmp[50];
@@ -899,7 +901,7 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
   int x1 = bboxLL[0];
   int y1 = bboxLL[1];
 
-  // notice(0, "\nM%d W=%d sp=%d s_nm=%d  minSpace=%d\n", measure->_met,
+  // logger_->info(RCX, 0, "M{} W={} sp={} s_nm={}  minSpace={}", measure->_met,
   // diag_width, diag_space, measure->_s_nm, measure->_minSpace);
   measure->clean2dBoxTable(measure->_met, false);
 
@@ -974,9 +976,9 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
       ur[!measure->_dir]= ll[!measure->_dir];
       ur[measure->_dir]= bboxUR[measure->_dir];
 
-//	notice(0, "\nbbox %s %d %d  %d %d\n", _wireDirName, bboxLL[0],
+//	logger_->info(RCX, 0, "bbox {} {} {}  {} {}", _wireDirName, bboxLL[0],
 bboxLL[1], bboxUR[0], bboxUR[1]);
-//	notice(0, "ll-ul %s %d %d  %d %d\n", _wireDirName, ll[0], ll[1], ur[0],
+//	logger_->info(RCX, 0, "ll-ul {} {} {}  {} {}", _wireDirName, ll[0], ll[1], ur[0],
 ur[1]);
 
       int xcnt=1;

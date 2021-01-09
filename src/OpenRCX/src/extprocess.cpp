@@ -31,12 +31,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "extprocess.h"
-//#include "logger.h"
 #include <dbLogger.h>
+
+#include "openroad/Logger.h"
 
 namespace rcx {
 
-extConductor::extConductor()
+using ord::RCX;
+
+extConductor::extConductor(Logger* logger)
 {
   strcpy(_name, "");
   _height          = 0;
@@ -59,6 +62,7 @@ extConductor::extConductor()
   _max_ca          = 0;
   _top_ext         = 0;
   _bot_ext         = 0;
+  logger_ = logger;
 }
 void extConductor::printConductor(FILE* fp, Ath__parser* parse)
 {
@@ -128,7 +132,7 @@ bool extConductor::readConductor(Ath__parser* parser)
   return false;
 }
 
-extDielectric::extDielectric()
+extDielectric::extDielectric(Logger* logger)
 {
   strcpy(_name, "");
   strcpy(_non_conformal_metal, "");
@@ -146,6 +150,7 @@ extDielectric::extDielectric()
   _slope            = 0;
   _met              = 0;
   _nextMet          = 0;
+  logger_ = logger;
 }
 void extDielectric::printDielectric(FILE* fp, Ath__parser* parse)
 {
@@ -259,8 +264,8 @@ void extMasterConductor::printDielBox(FILE*          fp,
        DIEL= %g;\n", diel->_name, height, width_name, thickness,
        diel->_epsilon);
     */
-    odb::notice(0,
-                "BOX NAME=%-15s; CX=0; CY=%6.3f; W=%s; H= %.3f; DIEL= %g;\n",
+    logger_->info(RCX, 0,
+                "BOX NAME=%-15s; CX=0; CY=%6.3f; W={}; H= %.3f; DIEL= {};",
                 diel->_name,
                 height,
                 width_name,
@@ -301,8 +306,8 @@ void extMasterConductor::printDielBox3D(FILE*          fp,
        LENGTH= %.3f; HEIGHT=%6.3f; DIEL= %g;\n", diel->_name, 0.5*length,
        width_name, thickness, length, diel->_epsilon);
     */
-    odb::notice(0,
-                "BLOCK NAME=%-15s; V1=0,0,%6.3f; WIDTH=%s; LENGTH= %.3f; "
+    logger_->info(RCX, 0,
+                "BLOCK NAME=%-15s; V1=0,0,%6.3f; WIDTH={}; LENGTH= %.3f; "
                 "HEIGHT=%6.3f; DIEL= %g;\n",
                 diel->_name,
                 0.5 * length,
@@ -702,10 +707,10 @@ bool extDielectric::readDielectric(Ath__parser* parser)
 }
 extMasterConductor::extMasterConductor(uint          condId,
                                        extConductor* cond,
-                                       double        prevHeight)
+                                       double        prevHeight, Logger* logger)
 {
   _condId = condId;
-
+  logger_ = logger;
   // X coordinates
 
   double min_width = cond->_min_width;
@@ -721,8 +726,8 @@ extMasterConductor::extMasterConductor(uint          condId,
       /*			fprintf(stdout, "Cannot determine Bottom Width
          for Conductor <%s>\n", cond->_name);
       */
-      odb::warning(
-          0, "Cannot determine Bottom Width for Conductor <%s>\n", cond->_name);
+      logger_->warn(RCX, 
+          0, "Cannot determine Bottom Width for Conductor <{}>", cond->_name);
       exit(0);
     }
     if (cond->_bot_ext == 0.0)
@@ -745,8 +750,8 @@ extMasterConductor::extMasterConductor(uint          condId,
       /*			fprintf(stdout, "Cannot determine Top Width for
          Conductor <%s>\n", cond->_name);
       */
-      odb::warning(
-          0, "Cannot determine Top Width for Conductor <%s>\n", cond->_name);
+      logger_->warn(RCX, 
+          0, "Cannot determine Top Width for Conductor <{}>", cond->_name);
       exit(0);
     }
     if (cond->_top_ext == 0.0)
@@ -776,8 +781,8 @@ extMasterConductor::extMasterConductor(uint          condId,
     /*		fprintf(stdout, "Cannot determine thickness for Conductor
        <%s>\n", cond->_name);
     */
-    odb::warning(
-        0, "Cannot determine thickness for Conductor <%s>\n", cond->_name);
+    logger_->warn(RCX, 
+        0, "Cannot determine thickness for Conductor <{}>", cond->_name);
     exit(0);
   }
   _hiLeft[2]  = height + thickness;
@@ -1103,9 +1108,10 @@ extMasterConductor::extMasterConductor(uint           dielId,
                                        double         xhi,
                                        double         dx2,
                                        double         h,
-                                       double         th)
+                                       double         th, Logger* logger)
 {
   _condId = dielId;
+  logger_ = logger;
 
   // X coordinates
   _loLeft[0]  = xlo;
@@ -1128,7 +1134,7 @@ extMasterConductor::extMasterConductor(uint           dielId,
     /*		fprintf(stdout, "Cannot determine thickness for Diel <%s>\n",
                             diel->_name);
     */
-    odb::warning(0, "Cannot determine thickness for Diel <%s>\n", diel->_name);
+    logger_->warn(RCX, 0, "Cannot determine thickness for Diel <{}>", diel->_name);
     //		exit(0);
   }
   _hiLeft[2]  = h + th;
@@ -1145,8 +1151,8 @@ FILE* extProcess::openFile(const char* filename, const char* permissions)
   if (fp == NULL) {
     //		fprintf(stdout, "cannot open file %s with permissions <%s>\n",
     //			filename, permissions);
-    odb::warning(0,
-                 "cannot open file %s with permissions <%s>\n",
+    logger_->warn(RCX, 0,
+                 "cannot open file {} with permissions <{}>",
                  filename,
                  permissions);
     exit(0);
@@ -1202,7 +1208,7 @@ void extProcess::createMasterLayers()
   double upperCondHeight = 0;
   for (uint ii = 1; ii < _condTable->getCnt(); ii++) {
     extConductor*       cond = _condTable->get(ii);
-    extMasterConductor* m = new extMasterConductor(ii, cond, upperCondHeight);
+    extMasterConductor* m = new extMasterConductor(ii, cond, upperCondHeight, logger_);
     _masterConductorTable->add(m);
     upperCondHeight = cond->_height + cond->_thickness;
   }
@@ -1221,7 +1227,7 @@ void extProcess::createMasterLayers()
 
     //		if (diel->_conformal) {
     extMasterConductor* m
-        = new extMasterConductor(jj, diel, 0, 0, 0, 0, h, diel->_thickness);
+        = new extMasterConductor(jj, diel, 0, 0, 0, 0, h, diel->_thickness, logger_);
     h += diel->_thickness;
 
     _masterDielectricTable->add(m);
@@ -1603,7 +1609,7 @@ extVarTable* extVariation::readVarTable(Ath__parser* parser,
   extVarTable* V = new extVarTable(20);  // TODO
   if (V->readWidthSpacing2D(parser, key1, key2, key3, endKey) < 1) {
     //		fprintf(stdout, "Cannot read VarTable section: <%s>", key3);
-    odb::warning(0, "Cannot read VarTable section: <%s>", key3);
+    logger_->warn(RCX, 0, "Cannot read VarTable section: <{}>", key3);
     delete V;
     return NULL;
   }
@@ -1652,6 +1658,7 @@ uint extProcess::readProcess(const char* name, char* filename)
       parser.getInt(1);
 
       extVariation* extVar = new extVariation();
+      extVar->setLogger(logger_);
 
       while (parser.parseNextLine() > 0) {
         if (strcmp("}", parser.get(0)) == 0)
@@ -1665,7 +1672,7 @@ uint extProcess::readProcess(const char* name, char* filename)
       }
       _varTable->add(extVar);
     } else if (strcmp("CONDUCTOR", parser.get(0)) == 0) {
-      extConductor* cond = new extConductor();
+      extConductor* cond = new extConductor(logger_);
       strcpy(cond->_name, parser.get(1));
 
       while (parser.parseNextLine() > 0) {
@@ -1676,7 +1683,7 @@ uint extProcess::readProcess(const char* name, char* filename)
       }
       _condTable->add(cond);
     } else if (strcmp("DIELECTRIC", parser.get(0)) == 0) {
-      extDielectric* diel = new extDielectric();
+      extDielectric* diel = new extDielectric(logger_);
       if (parser.getWordCnt() > 2)
         strcpy(diel->_name, parser.get(1));
 
@@ -1701,8 +1708,9 @@ uint extProcess::readProcess(const char* name, char* filename)
 
   return 0;
 }
-extProcess::extProcess(uint condCnt, uint dielCnt)
+extProcess::extProcess(uint condCnt, uint dielCnt, Logger* logger)
 {
+  logger_ = logger;
   _condTable = new Ath__array1D<extConductor*>(condCnt);
   _condTable->add(NULL);
   _maxMinFlag = false;

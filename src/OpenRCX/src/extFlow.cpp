@@ -31,15 +31,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "extRCap.h"
-//#include "wire.h"
 #include <wire.h>
 
 #include <map>
 #include <vector>
 
 #include "dbUtil.h"
-//#include "logger.h"
 #include <dbLogger.h>
+
+#include "openroad/Logger.h"
 
 //#define MAXINT 0x7FFFFFFF;
 
@@ -48,6 +48,8 @@
 //#define TEST_POWER_LEN 1
 
 namespace rcx {
+
+using ord::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -68,9 +70,7 @@ using odb::dbWirePathItr;
 using odb::dbWirePathShape;
 using odb::debug;
 using odb::gs;
-using odb::notice;
 using odb::Rect;
-using odb::warning;
 
 uint extMain::getBucketNum(int base, int max, uint step, int xy)
 {
@@ -322,7 +322,7 @@ Ath__array1D<uint>*** extMain::mkInstBins(uint  binSize,
 
     instTable[dd] = new Ath__array1D<uint>*[n];
     if (instTable[dd] == NULL) {
-      error(0, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>\n");
+      logger_->error(RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
     }
     for (uint jj = 0; jj < n; jj++) {
       instTable[dd][jj] = NULL;
@@ -361,7 +361,7 @@ extWireBin*** extMain::mkSignalBins(uint              binSize,
 
     sdbWireTable[dd] = new extWireBin*[n];
     if (sdbWireTable[dd] == NULL) {
-      error(0, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>\n");
+      logger_->error(RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
     }
     for (uint jj = 0; jj < n; jj++) {
       sdbWireTable[dd][jj] = NULL;
@@ -707,7 +707,7 @@ uint extMain::initSearchForNets(int*  X1,
   } else {
     _block->getDieArea(maxRect);
     if (!((maxRect.dx() > 0) && (maxRect.dy() > 0)))
-      error(1, "Die Area for the block has 0 size, or is undefined!\n\n");
+      logger_->error(RCX, 81, "Die Area for the block has 0 size, or is undefined!");
   }
 
   if (USE_DB_UNITS) {
@@ -715,8 +715,6 @@ uint extMain::initSearchForNets(int*  X1,
     GetDBcoords2(extRect);
   }
 
-  // notice(0, "Block= %s\n", _block->getConstName());
-  // maxRect.print("---------------- Search Grid BBox ---- ");
   std::vector<int> trackXY(32000);
   uint             n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
@@ -746,8 +744,8 @@ uint extMain::initSearchForNets(int*  X1,
     if (USE_DB_UNITS)
       pitchTable[n] = p;
     if (pitchTable[n] <= 0)
-      error(0,
-            "Layer %s, routing level %d, has pitch %d !!\n",
+      logger_->error(RCX, 82,
+            "Layer {}, routing level {}, has pitch {}!!",
             layer->getConstName(),
             n,
             pitchTable[n]);
@@ -994,9 +992,6 @@ uint extMain::addNetSBoxes2(dbNet* net,
                             0,
                             wtype);
           } else {
-            // notice(0, "M%d len= %d  %d %d  %d %d\n", level, len, r.xMin(),
-            // r.yMin(), r.xMax(), r.yMax());
-
             if (r.dx() < r.dy()) {  // vertical
               for (int y1 = r.yMin(); y1 < r.yMax();) {
                 int y2 = y1 + step;
@@ -1210,8 +1205,8 @@ uint extMain::addNetShapesOnSearch(dbNet*           net,
             if (net->getId() == _debug_net_id) {
               debug("Search",
                     "W",
-                    "onSearch: tr=%d L%d  DX=%d DY=%d %d %d  %d %d -- %.3f "
-                    "%.3f  %.3f %.3f net %d\n",
+                    "onSearch: tr=%g L%g  DX=%d DY=%d %d %d  %d %d -- %.3f "
+                    "%.3f  %.3f %.3f net %g\n",
                     trackNum,
                     level,
                     dx,
@@ -1658,14 +1653,14 @@ void extMain::reportTableNetCnt(uint*                 sdbBucketCnt,
                                 Ath__array1D<uint>*** sdbSignalTable)
 {
   for (uint dir = 0; dir < 2; dir++) {
-    notice(0, "DIR= %d -----------------------------------------------\n", dir);
+    logger_->info(RCX, 83, "DIR= {} -----------------------------------------------", dir);
 
     for (uint bucket = 0; bucket < sdbBucketCnt[dir]; bucket++) {
       if (sdbSignalTable[dir][bucket] == NULL)
         continue;
 
       uint netCnt = sdbSignalTable[dir][bucket]->getCnt();
-      notice(0, "\tbucket= %d -- %d nets\n", bucket, netCnt);
+      logger_->info(RCX, 84, "\tbucket= {} -- {} nets", bucket, netCnt);
     }
   }
 }
@@ -1957,8 +1952,8 @@ uint extMain::initPlanes(uint  dir,
     ur[dir]  = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      // notice(0, "GS: _slicenum=%d, _xres=%d, _yres=%d, _x0=%d, _y0=%d,
-      // _x1=%d, _y1=%d\n", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+      // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
+      // _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
 
       _geomSeq->configureSlice(
           ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
@@ -1967,8 +1962,8 @@ uint extMain::initPlanes(uint  dir,
         _geomSeq->configureSlice(
             ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
 
-        // notice(0, "HSE_GS: _slicenum=%d, _xres=%d, _yres=%d, _x0=%d, _y0=%d,
-        // _x1=%d, _y1=%d\n", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+        // logger_->info(RCX, 0, "HSE_GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
+        // _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
           _geomSeq->configureSlice(ii,
@@ -1980,8 +1975,8 @@ uint extMain::initPlanes(uint  dir,
                                    ur[0],
                                    skipMemAlloc);
 
-          // notice(0, "GS: _slicenum=%d, _xres=%d, _yres=%d, _x0=%d, _y0=%d,
-          // _x1=%d, _y1=%d\n", 	ii, pitchTable[ii], widthTable[ii],
+          // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
+          // _x1={}, _y1={}", 	ii, pitchTable[ii], widthTable[ii],
           // ll[1], ll[0], ur[1], ur[0]);
         } else {
           _geomSeq->configureSlice(ii,
@@ -1992,8 +1987,8 @@ uint extMain::initPlanes(uint  dir,
                                    ur[1],
                                    ur[0],
                                    skipMemAlloc);
-          // notice(0, "H_GS: _slicenum=%d, _xres=%d, _yres=%d, _x0=%d, _y0=%d,
-          // _x1=%d, _y1=%d\n", 	ii, widthTable[ii], pitchTable[ii],
+          // logger_->info(RCX, 0, "H_GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
+          // _x1={}, _y1={}", 	ii, widthTable[ii], pitchTable[ii],
           // ll[1], ll[0], ur[1], ur[0]);
         }
       }
@@ -2166,7 +2161,7 @@ uint extMain::fill_gs4(int              dir,
           if (fp!=NULL)
                   fclose(fp);
   #endif
-          // notice(0, "Extracting %d %d   %d %d ....\n", lo_gs[0], lo_gs[1],
+          // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1],
   hi_gs[0], hi_gs[1]);
   */
   return pcnt + scnt;
@@ -2284,7 +2279,7 @@ int extMain::fill_gs3(int                   dir,
   if (fp != NULL)
     fclose(fp);
 #endif
-  // notice(0, "Extracting %d %d   %d %d ....\n", lo_gs[0], lo_gs[1], hi_gs[0],
+  // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1], hi_gs[0],
   // hi_gs[1]);
   return lo_gs[dir];
 }
@@ -2395,8 +2390,8 @@ void extMain::resetGndCaps()
       uint n2 = rc->getSourceCapNode()->getShapeId();
 
       if (n != n1) {
-        notice(0,
-               "shapeIds %s: rc= %d tgt= %d src %d\n",
+        logger_->info(RCX, 85,
+               "shapeIds {}: rc= {} tgt= {} src {}",
                net->getConstName(),
                n,
                n1,
@@ -2417,11 +2412,11 @@ uint extMain::couplingFlow(bool        rlog,
     _use_signal_tables = 3;
     int DIR            = p->getValue();
 
-    extWindow* W = new extWindow(20);
+    extWindow* W = new extWindow(20, logger_);
     W->getExtProperties(_block);
 
     uint propCnt = mkNetPropertiesForRsegs(_block, DIR);
-    notice(0, "Created %d Net Properties\n", propCnt);
+    logger_->info(RCX, 86, "Created {} Net Properties", propCnt);
 
     _ignoreWarning_1st = true;
     rcGenBlock();
@@ -2435,7 +2430,7 @@ uint extMain::couplingFlow(bool        rlog,
     extractWindow(rlog, W, extRect, false, m, coupleAndCompute);
 
     uint rsegCnt = invalidateNonDirShapes(_block, (uint) DIR, true);
-    notice(0, "Extracted %d valid rsegs\n", rsegCnt);
+    logger_->info(RCX, 87, "Extracted {} valid rsegs", rsegCnt);
 
     return 0;
     // return tileFlow(rlog, extRect, trackStep, ccFlag, m, coupleAndCompute);
@@ -2516,7 +2511,7 @@ uint extMain::couplingFlow(bool        rlog,
   uint totWireCnt      = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
-  notice(0, "%d wires to be extracted\n", totWireCnt);
+  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
   if (single_gs) {
     initPlanes(layerCnt);
@@ -2551,8 +2546,8 @@ uint extMain::couplingFlow(bool        rlog,
   if ((_use_signal_tables == 1) || (_use_signal_tables == 2)) {
     use_signal_tables = true;
 
-    notice(0,
-           "\nSignal_table= %d ----------------------------- \n\n",
+    logger_->info(RCX, 88,
+           "Signal_table= {} ----------------------------- ",
            _use_signal_tables);
 
     for (uint ii = 0; ii < 2; ii++) {
@@ -2601,7 +2596,7 @@ uint extMain::couplingFlow(bool        rlog,
       enableRotatedFlag();
 
     // if (getRotatedFlag())
-    //   notice(0, "\n======> Fast Mode enabled for d= %d <======\n\n", dir);
+    //   logger_->info(RCX, 0, "======> Fast Mode enabled for d= {} <======", dir);
 
     lo_gs[!dir]  = ll[!dir];
     hi_gs[!dir]  = ur[!dir];
@@ -2714,9 +2709,7 @@ uint extMain::couplingFlow(bool        rlog,
                 processWireCnt,
                 dir,
                 minExtracted);
-#ifdef _WIN32
-        notice(0, "%s\n", buff);
-#endif
+        
         AthResourceLog(buff, 0);
       }
 
@@ -2743,11 +2736,9 @@ uint extMain::couplingFlow(bool        rlog,
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {
-        notice(0,
-               "%d%c completion -- %d wires have been extracted\n",
-               
+        logger_->info(RCX, 44,
+               "{:d}% completion -- {:d} wires have been extracted",
                (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
-               '%',
                totalWiresExtracted);
 
         _previous_percent_extracted = percent_extracted;
@@ -2796,8 +2787,9 @@ void extWindow::initWindowStep(Rect& extRect,
     _step_nm[0] = _ur[0] - _ll[0];
   }
 }
-extWindow::extWindow(extWindow* e, uint num)
+extWindow::extWindow(extWindow* e, uint num, Logger* logger)
 {
+  logger_ = logger;
   _num = num;
 
   init(20);
@@ -2849,7 +2841,7 @@ extWindow* extMain::initWindowSearch(Rect&       extRect,
                                      uint        modelLevelCnt,
                                      extMeasure* m)
 {
-  extWindow* W = new extWindow(20);
+  extWindow* W = new extWindow(20, logger_);
   W->_ccDist   = ccFlag;
 
   uint layerCnt = initSearchForNets(W->_sdbBase[0],
@@ -2876,7 +2868,7 @@ extWindow* extMain::initWindowSearch(Rect&       extRect,
 
   W->initWindowStep(extRect, trackStep, layerCnt, modelLevelCnt);
 
-  // notice(0, "%d wires to be extracted\n", W->_totWireCnt);
+  // logger_->info(RCX, 0, "{} wires to be extracted", W->_totWireCnt);
 
   return W;
 }
@@ -2929,18 +2921,18 @@ void extWindow::updateExtLimits(int** limitArray)
 }
 void extMain::printLimitArray(int** limitArray, uint layerCnt)
 {
-  notice(0, " ------------------------ Context Lower Limits\n");
+  logger_->info(RCX, 89, " ------------------------ Context Lower Limits");
   uint ii;
   for (ii = 1; ii < layerCnt; ii++)
-    notice(0, "L=%d %d    %d\n", ii, limitArray[ii][0], limitArray[ii][1]);
+    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
 
-  notice(0, "\n--------------------------- EXT Lower Limits\n");
+  logger_->info(RCX, 91, "--------------------------- EXT Lower Limits");
   for (ii = 1; ii < layerCnt; ii++)
-    notice(0, "L=%d %d    %d\n", ii, limitArray[ii][2], limitArray[ii][3]);
+    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
 
-  notice(0, "\n ------------------------ EXT Upper Limits\n");
-  for (ii = 1; ii < layerCnt; ii++)
-    notice(0, "L=%d %d    %d\n", ii, limitArray[ii][4], limitArray[ii][5]);
+  logger_->info(RCX, 92, " ------------------------ EXT Upper Limits");
+  for (ii = 1; ii < layerCnt;  ii++)
+    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][4], limitArray[ii][5]);
 }
 int extWindow::getIntProperty(dbBlock* block, const char* name)
 {
@@ -3110,8 +3102,9 @@ void extWindow::get_extractLimit(extWindow *e)
                 _extractLimit[ii]= e->_extractLimit[ii];
 }
 */
-extWindow::extWindow(uint maxLayerCnt)
+extWindow::extWindow(uint maxLayerCnt, Logger* logger)
 {
+  logger_ = logger;
   init(maxLayerCnt);
 }
 void extWindow::makeSdbBuckets(uint sdbBucketCnt[2],
@@ -3132,25 +3125,25 @@ void extWindow::printBoundaries(FILE* fp, bool flag)
     return;
 
   if (fp == NULL) {
-    notice(0, "\n%15s= %d\n", "_currentDir", _currentDir);
-    notice(0, "%15s= %d\n", "_hiXY", _hiXY);
-    notice(0, "%15s= %d\n", "_lo_gs", _lo_gs[_currentDir]);
-    notice(0, "%15s= %d\n", "_hi_gs", _hi_gs[_currentDir]);
-    notice(0, "%15s= %d\n", "_lo_sdb", _lo_sdb[_currentDir]);
-    notice(0, "%15s= %d\n", "_hi_sdb", _hi_sdb[_currentDir]);
-    notice(0, "%15s= %d\n", "_gs_limit", _gs_limit);
-    notice(0, "%15s= %d\n", "_minExtracted", _minExtracted);
-    notice(0, "%15s= %d\n\n", "_deallocLimit", _deallocLimit);
+    logger_->info(RCX, 0, "%15s= {}", "_currentDir", _currentDir);
+    logger_->info(RCX, 0, "%15s= {}", "_hiXY", _hiXY);
+    logger_->info(RCX, 0, "%15s= {}", "_lo_gs", _lo_gs[_currentDir]);
+    logger_->info(RCX, 0, "%15s= {}", "_hi_gs", _hi_gs[_currentDir]);
+    logger_->info(RCX, 0, "%15s= {}", "_lo_sdb", _lo_sdb[_currentDir]);
+    logger_->info(RCX, 0, "%15s= {}", "_hi_sdb", _hi_sdb[_currentDir]);
+    logger_->info(RCX, 0, "%15s= {}", "_gs_limit", _gs_limit);
+    logger_->info(RCX, 0, "%15s= {}", "_minExtracted", _minExtracted);
+    logger_->info(RCX, 0, "%15s= {}", "_deallocLimit", _deallocLimit);
   } else {
-    fprintf(fp, "\n%15s= %d\n", "_currentDir", _currentDir);
-    fprintf(fp, "%15s= %d\n", "_hiXY", _hiXY);
-    fprintf(fp, "%15s= %d\n", "_lo_gs", _lo_gs[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_hi_gs", _hi_gs[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_lo_sdb", _lo_sdb[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_hi_sdb", _hi_sdb[_currentDir]);
-    fprintf(fp, "%15s= %d\n", "_gs_limit", _gs_limit);
-    fprintf(fp, "%15s= %d\n", "_minExtracted", _minExtracted);
-    fprintf(fp, "%15s= %d\n\n", "_deallocLimit", _deallocLimit);
+    fprintf(fp, "\n%15s= {}\n", "_currentDir", _currentDir);
+    fprintf(fp, "%15s= {}\n", "_hiXY", _hiXY);
+    fprintf(fp, "%15s= {}\n", "_lo_gs", _lo_gs[_currentDir]);
+    fprintf(fp, "%15s= {}\n", "_hi_gs", _hi_gs[_currentDir]);
+    fprintf(fp, "%15s= {}\n", "_lo_sdb", _lo_sdb[_currentDir]);
+    fprintf(fp, "%15s= {}\n", "_hi_sdb", _hi_sdb[_currentDir]);
+    fprintf(fp, "%15s= {}\n", "_gs_limit", _gs_limit);
+    fprintf(fp, "%15s= {}\n", "_minExtracted", _minExtracted);
+    fprintf(fp, "%15s= {}\n\n", "_deallocLimit", _deallocLimit);
   }
 }
 
@@ -3176,7 +3169,7 @@ int extWindow::setExtBoundaries(uint dir)
     _gsRotatedFlag = true;
 
   if (_gsRotatedFlag)
-    notice(0, "\n======> Fast Mode enabled for d= %d <======\n\n", dir);
+    logger_->info(RCX, 93, "======> Fast Mode enabled for d= {} <======", dir);
 
   return _hiXY;
 }
@@ -3306,7 +3299,7 @@ void extWindow::reportProcessedWires(bool rlog)
             _currentDir,
             _minExtracted);
 #ifdef _WIN32
-    notice(0, "%s\n", buff);
+    logger_->info(RCX, 0, "{}", buff);
 #endif
     AthResourceLog(buff, 0);
   }
@@ -3329,11 +3322,9 @@ void extWindow::updateLoBounds(bool reportFlag)
       = (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt));
 
   if ((_totWireCnt > 0) && (_totalWiresExtracted > 0)) {
-    notice(0,
-           "%d%c completion -- %d wires have been extracted\n",
-           
+    logger_->info(RCX, 44,
+           "{:d}% completion -- {:d} wires have been extracted",
            (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
-           '%',
            _totalWiresExtracted);
 
     _prev_percent_extracted = percent_extracted;
@@ -3431,8 +3422,8 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
 
       dbRSeg* rseg1 = dbRSeg::getRSeg(blk, rsegId1);
       if (rseg1 == NULL) {
-        warning(0,
-                "GndCap: cannot find rseg for net [%d] %s and shapeId %d\n",
+        logger_->warn(RCX, 94,
+                "GndCap: cannot find rseg for net [{}] {} and shapeId {}",
                 net->getId(),
                 net->getConstName(),
                 shapeId);
@@ -3478,8 +3469,8 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
     }
     rsegTable.resetCnt();
   }
-  notice(0,
-         "DEleted %d Rsegs/CapNodes from total %d with %d remaing\n",
+  logger_->info(RCX, 95,
+         "Deleted {} Rsegs/CapNodes from total {} with {} remaing",
          dCnt,
          tot,
          cnt);
@@ -3604,8 +3595,8 @@ uint extMain::couplingWindowFlow(bool        rlog,
   if ((_use_signal_tables == 1) || (_use_signal_tables == 2)) {
     use_signal_tables = true;
 
-    notice(0,
-           "\nSignal_table= %d ----------------------------- \n\n",
+    logger_->info(RCX, 88,
+           "Signal_table= {} ----------------------------- ",
            _use_signal_tables);
 
     W->makeSdbBuckets(sdbBucketCnt, sdbBucketSize, sdbTable_ll, sdbTable_ur);
@@ -3678,7 +3669,7 @@ uint extMain::couplingWindowFlow(bool        rlog,
       stepNum++;
 
       W->updateExtLimits(limitArray);
-      windowTable[windowCnt] = new extWindow(W, windowCnt);
+      windowTable[windowCnt] = new extWindow(W, windowCnt, logger_);
       windowTable[windowCnt]->printBoundaries(boundFP, true);
       windowCnt++;
 
@@ -3779,8 +3770,8 @@ uint extMain::couplingWindowFlow(bool        rlog,
                                              &m->_create_net_util);
 
       uint signalWireCnt = createNetShapePropertires(extBlock);
-      notice(0,
-             "Block %s has %d signal wires\n",
+      logger_->info(RCX, 96,
+             "Block {} has {} signal wires",
              extBlock->getConstName(),
              processWireCnt);
 
@@ -4032,13 +4023,13 @@ dbRSeg* extMain::getMainRSeg2(dbNet* srcNet, int srcShapeId, dbNet* dstNet)
 
   return rseg2;
 }
-dbRSeg* extMain::getRseg(dbNet* net, uint shapeId)
+dbRSeg* extMain::getRseg(dbNet* net, uint shapeId, Logger* logger)
 {
   int rsegId2 = 0;
   net->getWire()->getProperty(shapeId, rsegId2);
   if (rsegId2 == 0) {
-    warning(0,
-            "zero rseg wire property %d on main net %d %s\n",
+    logger->warn(RCX, 0,
+            "zero rseg wire property {} on main net {} {}\n",
             shapeId,
             net->getId(),
             net->getConstName());
@@ -4047,8 +4038,8 @@ dbRSeg* extMain::getRseg(dbNet* net, uint shapeId)
   dbRSeg* rseg2 = dbRSeg::getRSeg(net->getBlock(), rsegId2);
 
   if (rseg2 == NULL) {
-    warning(0,
-            "GndCap: cannot find rseg for rsegId %d on net %d %s\n",
+    logger->warn(RCX, 0,
+            "GndCap: cannot find rseg for rsegId {} on net {} {}\n",
             rsegId2,
             net->getId(),
             net->getConstName());
@@ -4057,10 +4048,10 @@ dbRSeg* extMain::getRseg(dbNet* net, uint shapeId)
   return rseg2;
 }
 
-uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk)
+uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
 {
   if (mainBlock != NULL)
-    return assemblyExt__2(mainBlock, blk);
+    return assemblyExt__2(mainBlock, blk, logger);
   else {  // block based
     dbSet<dbCapNode> capNodes = blk->getCapNodes();
     uint             csize    = capNodes.size();
@@ -4072,9 +4063,9 @@ uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk)
       node->addToNet();
       gndCnt++;
     }
-    notice(0, "%d nodes on block %s\n", gndCnt, blk->getConstName());
+    logger->info(RCX, 0, "{} nodes on block {}\n", gndCnt, blk->getConstName());
     if (csize != gndCnt)
-      notice(0, "\tdifferent from %d cap nodes read\n", csize);
+      logger->info(RCX, 0, "\tdifferent from {} cap nodes read\n", csize);
 
     dbSet<dbRSeg> rsegs = blk->getRSegs();
     uint          rsize = rsegs.size();
@@ -4100,27 +4091,27 @@ uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk)
       dbSet<dbRSeg> rSet = net->getRSegs();
       rSet.reverse();
     }
-    notice(0, "%d rsegs on block %s\n", rCnt, blk->getConstName());
+    logger->info(RCX, 0, "{} rsegs on block {}\n", rCnt, blk->getConstName());
     if (rsize != rCnt)
-      notice(0, "\tdifferent from %d rsegs read\n", rsize);
+      logger->info(RCX, 0, "different from {} rsegs read\n", rsize);
     return rCnt;
   }
 }
-dbRSeg* extMain::getMainRseg(dbCapNode* node, dbBlock* blk, Ath__parser* parser)
+dbRSeg* extMain::getMainRseg(dbCapNode* node, dbBlock* blk, Ath__parser* parser, Logger* logger)
 {
   if (parser != NULL) {
     dbNet* mainNet = getDstNet(node->getNet(), blk, parser);
 
     if (mainNet == NULL) {
-      warning(0,
-              "CCap: cannot find main net for %s\n",
+      logger->warn(RCX, 0,
+              "CCap: cannot find main net for {}\n",
               node->getNet()->getConstName());
       return NULL;
     }
     dbRSeg* rseg = getMainRSeg3(node->getNet(), node->getShapeId(), mainNet);
     if (rseg == NULL) {
-      warning(0,
-              "CCap: cannot find rseg for net for %s\n",
+      logger->warn(RCX, 0,
+              "CCap: cannot find rseg for net for {}\n",
               node->getNet()->getConstName());
       return NULL;
     }
@@ -4129,12 +4120,12 @@ dbRSeg* extMain::getMainRseg(dbCapNode* node, dbBlock* blk, Ath__parser* parser)
     // uint netId= node->getNetId();
     uint rsegId = node->getShapeId();
     if (rsegId == 0) {
-      warning(0, "CCap: cannot find rseg for capNode %d\n", node->getId());
+      logger->warn(RCX, 0, "CCap: cannot find rseg for capNode {}\n", node->getId());
       return NULL;
     }
     dbRSeg* rseg = dbRSeg::getRSeg(blk, rsegId);
     if (rseg == NULL) {
-      warning(0, "CCap: cannot find rseg %d\n", rsegId);
+      logger->warn(RCX, 0, "CCap: cannot find rseg {}\n", rsegId);
       return NULL;
     }
     return rseg;
@@ -4153,7 +4144,7 @@ void extMain::updateRseg(dbRSeg* rseg1, dbRSeg* rseg2, uint cornerCnt)
     rseg2->setCapacitance(cap, ii);
   }
 }
-uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt)
+uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt, Logger* logger)
 {
   uint rcCnt = 0;
 
@@ -4168,7 +4159,7 @@ uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt)
     if (!rseg1->updatedCap())
       continue;
 
-    dbRSeg* rseg2 = getMainRseg(rseg1->getTargetCapNode(), mainBlock, parser);
+    dbRSeg* rseg2 = getMainRseg(rseg1->getTargetCapNode(), mainBlock, parser, logger);
 
     if (rseg2 == NULL)
       continue;
@@ -4184,7 +4175,7 @@ uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt)
 uint extMain::assemblyCCs(dbBlock* mainBlock,
                           dbBlock* blk,
                           uint     cornerCnt,
-                          uint&    missCCcnt)
+                          uint&    missCCcnt, Logger* logger)
 {
   uint ccCnt = 0;
 
@@ -4197,13 +4188,13 @@ uint extMain::assemblyCCs(dbBlock* mainBlock,
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     dbCCSeg* cc = *ccitr;
 
-    dbRSeg* srcRC = getMainRseg(cc->getSourceCapNode(), mainBlock, parser);
+    dbRSeg* srcRC = getMainRseg(cc->getSourceCapNode(), mainBlock, parser, logger);
 
     if (srcRC == NULL) {
       missCCcnt++;
       continue;
     }
-    dbRSeg* dstRC = getMainRseg(cc->getTargetCapNode(), mainBlock, parser);
+    dbRSeg* dstRC = getMainRseg(cc->getTargetCapNode(), mainBlock, parser, logger);
     if (dstRC == NULL) {
       missCCcnt++;
       continue;
@@ -4222,21 +4213,21 @@ uint extMain::assemblyCCs(dbBlock* mainBlock,
   return ccCnt;
 }
 
-uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
+uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
 {
   bool flag = true;
 
   uint cornerCnt = mainBlock->getCornerCount();
   if (flag) {
-    uint rcCnt     = assembly_RCs(mainBlock, blk, cornerCnt);
+    uint rcCnt     = assembly_RCs(mainBlock, blk, cornerCnt, logger);
     uint missCCcnt = 0;
-    uint ccCnt     = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt);
+    uint ccCnt     = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt, logger);
 
     int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
     mainBlock->getExtCount(numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg);
 
-    notice(0,
-           "Updated %d rsegs and added %d ccsegs of %s from %s\n",
+    logger->info(RCX, 0,
+           "Updated {} rsegs and added {} ccsegs of {} from {}",
            rcCnt,
            ccCnt,
            mainBlock->getConstName(),
@@ -4299,8 +4290,8 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
                               int rsegId2= 0;
                               dstNet->getWire()->getProperty(shapeId, rsegId2);
                               if (rsegId2==0) {
-                                      warning(0, "zero rseg wire property %d on
-         main net %d %s\n", shapeId, dstNet->getId(), dstNet->getConstName());
+                                      logger_->warn(RCX, 0, "zero rseg wire property {} on
+         main net {} {}", shapeId, dstNet->getId(), dstNet->getConstName());
                                       continue;
                               }
                               dbRSeg *rseg2= dbRSeg::getRSeg(dstNet->getBlock(),
@@ -4310,8 +4301,8 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
       dbRSeg* rseg2 = getMainRSeg3(net, shapeId, dstNet);
 
       if (rseg2 == NULL) {
-        warning(0,
-                "GndCap: cannot find rseg for rsegId %d on main net %d %s\n",
+        logger->warn(RCX, 0,
+                "GndCap: cannot find rseg for rsegId {} on main net {} {}\n",
                 rsegId1,
                 dstNet->getId(),
                 dstNet->getConstName());
@@ -4348,8 +4339,8 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
         if (cc->getSourceCapNode() != srcCapNode1) {
           dstCapNode1 = cc->getSourceCapNode();
           if (cc->getTargetCapNode() != srcCapNode1) {
-            warning(0,
-                    "Mismatch for CCap %d for net %d\n",
+            logger->warn(RCX, 0,
+                    "Mismatch for CCap {} for net {}\n",
                     cc->getId(),
                     dstNet->getId());
           }
@@ -4358,8 +4349,8 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
         dbNet* dstTgtNet
             = extMain::getDstNet(dstCapNode1->getNet(), mainBlock, &parser);
         if (dstTgtNet == NULL) {
-          warning(0,
-                  "CCap: cannot find main net for %s\n",
+          logger->warn(RCX, 0,
+                  "CCap: cannot find main net for {}\n",
                   dstCapNode1->getNet()->getConstName());
           continue;
         }
@@ -4387,13 +4378,13 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk)
       }
     }
   }
-  ccCnt = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt);
+  ccCnt = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt, logger);
 
   int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
   mainBlock->getExtCount(numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg);
 
-  notice(0,
-         "Updated %d nets, %d rsegs, and added %d (%d) ccsegs of %s from %s\n",
+  logger->info(RCX, 0,
+         "Updated {} nets, {} rsegs, and added {} ({}) ccsegs of {} from {}\n",
          cnt,
          gndCnt,
          ccCnt,
@@ -4504,8 +4495,8 @@ uint extMain::mkTileNets(uint             dir,
 
   if (powerNets) {
     uint pCnt = mkTilePowerNets(dir, lo_sdb, hi_sdb, createDbNet);
-    notice(0,
-           "created %d power wires for block %s\n",
+    logger_->info(RCX, 97,
+           "created {} power wires for block {}",
            pCnt,
            _block->getConstName());
   }
@@ -4592,8 +4583,8 @@ uint extMain::mkTileNets(uint             dir,
       */
     }
   }
-  notice(
-      0, "%d local out of %d tile wires out of %d total\n", local, cnt1, tot);
+  logger_->info(RCX, 
+      98, "{} local out of {} tile wires out of {} total", local, cnt1, tot);
 
   resetNetSpefFlag(_tiles->_tmpIdTable);
 
@@ -4713,8 +4704,8 @@ uint extMain::createWindowsDB(bool  rlog,
   if ((use_bin_tables == 1) || (use_bin_tables == 2)) {
     use_signal_tables = true;
 
-    notice(0,
-           "\nSignal_table= %d ----------------------------- \n\n",
+    logger_->info(RCX, 88,
+           "Signal_table= {} ----------------------------- ",
            _use_signal_tables);
 
     wpool = new AthPool<extWire>(false, 1024);
@@ -4746,7 +4737,7 @@ uint extMain::createWindowsDB(bool  rlog,
 
     uint stepNum = 0;
     int  hiXY    = W->setExtBoundaries(dir);
-    // notice(0, "Dir=%d hiXY= %d\n", dir, hiXY);
+    // logger_->info(RCX, 0, "Dir={} hiXY= {}", dir, hiXY);
     for (; hiXY <= W->_ur[dir]; hiXY += W->_step_nm[dir]) {
       hiXY = W->adjust_hiXY(hiXY);
 
@@ -4770,7 +4761,7 @@ uint extMain::createWindowsDB(bool  rlog,
 
       W->updateExtLimits(limitArray);
 
-      extWindow* W1            = new extWindow(W, windowCnt);
+      extWindow* W1            = new extWindow(W, windowCnt, logger_);
       windowTable[windowCnt++] = W1;
 
       W->updateLoBounds(false /*report*/);
@@ -4779,7 +4770,7 @@ uint extMain::createWindowsDB(bool  rlog,
 
       // dbBlock* extBlock= W->createExtBlock(m, _block, extRect);
       dbBlock* extBlock = W1->createExtBlock(NULL, _block, extRect);
-      // notice(0, "Created dbBlock %s \n", extBlock->getConstName());
+      // logger_->info(RCX, 0, "Created dbBlock {} ", extBlock->getConstName());
     }
   }
   return 1;
@@ -4788,16 +4779,16 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
 {
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
   if (p == NULL) {
-    warning(0,
-            "Block %s has no defined extraction boundaries\n",
+    logger_->warn(RCX, 99,
+            "Block {} has no defined extraction boundaries",
             _block->getConstName());
     return 0;
   }
   bool rcgenFlag = use_signal_tables > 1 ? true : false;
 
-  // notice(0, "D%d", p->getValue());
+  // logger_->info(RCX, 0, "D{}", p->getValue());
 
-  extWindow* W = new extWindow(20);
+  extWindow* W = new extWindow(20, logger_);
   W->getExtProperties(_block);
 
   dbBlock* extBlock = _block;
@@ -4856,8 +4847,8 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
                             powerNets,
                             &createNetUtil,
                             rcCnt);
-    notice(0,
-           "BBlock %s has %d signal wires and %d rcSegs were generated\n",
+    logger_->info(RCX, 100,
+           "BBlock {} has {} signal wires and {} rcSegs were generated",
            extBlock->getConstName(),
            extWireCnt,
            rcCnt);
@@ -4891,15 +4882,15 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
                             _cntxInstTable,
                             &createNetUtil);
     uint signalWireCnt = createNetShapePropertires(extBlock);
-    notice(0,
-           "Block %s has %d signal wires\n",
+    logger_->info(RCX, 96,
+           "Block {} has {} signal wires",
            extBlock->getConstName(),
            signalWireCnt);
   }
 
   if (rcgenFlag) {
     uint rcCnt = rcGenTile(extBlock);
-    notice(0, "%d rsegs for %s\n", rcCnt, extBlock->getConstName());
+    logger_->info(RCX, 101, "{} rsegs for {}", rcCnt, extBlock->getConstName());
   }
   return extWireCnt;
 }
@@ -4932,16 +4923,16 @@ uint extMain::rcGen(const char* netNames,
                     ZInterface* Interface)
 {
   if (debug != 77)
-    notice(0, "RC segment generation %s ...\n", getBlock()->getName().c_str());
+    logger_->info(RCX, 102, "RC segment generation {} ...", getBlock()->getName().c_str());
 
   if (!_lefRC && (getRCmodel(0) == NULL)) {
-    warning(0, "No RC model was read with command <load_model>\n");
-    warning(0, "Can not perform RC generation!\n");
+    logger_->warn(RCX, 103, "No RC model was read with command <load_model>");
+    logger_->warn(RCX, 104, "Can't perform RC generation!");
     return 0;
   }
   if (setMinTypMax(false, false, false, NULL, false, false, -1, -1, -1, 1)
       < 0) {
-    warning(0, "Wrong combination of corner related options\n");
+    logger_->warn(RCX, 105, "Wrong combination of corner related options");
     return 0;
   }
   _mergeViaRes   = mergeViaRes;
@@ -4963,7 +4954,7 @@ uint extMain::rcGen(const char* netNames,
   getResCapTable(true);
 
   if (debug == 77) {
-    notice(0, "Setup for RCgen done!\n");
+    logger_->info(RCX, 106, "Setup for RCgen done!");
     return 0;
   }
   dbSet<dbNet>           bnets = _block->getNets();
@@ -4973,7 +4964,7 @@ uint extMain::rcGen(const char* netNames,
 
     cnt += rcNetGen(net);
   }
-  notice(0, "Final %d rc segments\n", cnt);
+  logger_->info(RCX, 40, "Final {} rc segments", cnt);
   return cnt;
 }
 uint extMain::rcGenBlock(dbBlock* block)
@@ -4990,7 +4981,7 @@ uint extMain::rcGenBlock(dbBlock* block)
 
     cnt += rcNetGen(net);
   }
-  notice(0, "Final %d rc segments\n", cnt);
+  logger_->info(RCX, 40, "Final {} rc segments", cnt);
   return cnt;
 }
 void extMain::writeMapping(dbBlock* block)
@@ -4999,7 +4990,7 @@ void extMain::writeMapping(dbBlock* block)
     block = _block;
 
   char buf[1024];
-  sprintf(buf, "%s.netMap", block->getConstName());
+  sprintf(buf, "{}.netMap", block->getConstName());
   FILE* fp = fopen(buf, "w");
 
   uint cnt = 0;

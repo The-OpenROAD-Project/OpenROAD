@@ -65,8 +65,14 @@
 
 #include <map>
 
+namespace ord {
+class Logger;
+}
+
 namespace rcx {
 class extMeasure;
+
+using ord::Logger;
 
 class extMetBox  // assume cross-section on the z-direction
 {
@@ -169,7 +175,10 @@ class extDistRC
   double _fringe;
   double _diag;
   double _res;
-
+  
+ protected:
+  Logger *logger_;
+ 
  public:
   void   printDebug(const char*, const char*, uint, uint, extDistRC *rcUnit=NULL);
   void   printDebugRC_values(const char* msg);
@@ -208,6 +217,9 @@ class extDistRCTable
 
   void makeCapTableOver();
   void makeCapTableUnder();
+ 
+ protected:
+  Logger *logger_;
 
  public:
   extDistRCTable(uint distCnt);
@@ -291,16 +303,18 @@ class extDistWidthRCTable
 
   AthPool<extDistRC>* _rcPoolPtr;
   extDistRC*          _rc31;
+  Logger* logger_;
 
  public:
-  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
+  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width, Logger* logger);
   extDistWidthRCTable(bool                  over,
                       uint                  met,
                       uint                  layerCnt,
                       uint                  metCnt,
                       Ath__array1D<double>* widthTable,
                       AthPool<extDistRC>*   rcPool,
-                      double                dbFactor = 1.0);
+                      double                dbFactor = 1.0,
+                      Logger* logger = nullptr);
   extDistWidthRCTable(bool                  over,
                       uint                  met,
                       uint                  layerCnt,
@@ -309,13 +323,15 @@ class extDistWidthRCTable
                       int                   diagWidthCnt,
                       int                   diagDistCnt,
                       AthPool<extDistRC>*   rcPool,
-                      double                dbFactor = 1.0);
+                      double                dbFactor = 1.0,
+                      Logger* logger = nullptr);
   extDistWidthRCTable(bool                over,
                       uint                met,
                       uint                layerCnt,
                       uint                metCnt,
                       uint                maxWidthCnt,
-                      AthPool<extDistRC>* rcPool);
+                      AthPool<extDistRC>* rcPool,
+                      Logger* logger);
   void addRCw(uint n, uint w, extDistRC* rc);
   void createWidthMap();
   void makeWSmapping();
@@ -398,9 +414,10 @@ class extMetRCTable
 
   AthPool<extDistRC>* _rcPoolPtr;
   double              _rate;
+  Logger* logger_;
 
  public:
-  extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool);
+  extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
   ~extMetRCTable();
   void allocateInitialTables(uint layerCnt,
                              uint widthCnt,
@@ -510,6 +527,9 @@ class extRCModel
   uint** _overUnderPlaneLayerMap;
 
   extMain* _extMain;
+ 
+ protected:
+  Logger *logger_;
 
  public:
   extMetRCTable* getMetRCTable(uint ii) { return _modelTable[ii]; };
@@ -520,8 +540,8 @@ class extRCModel
   int  getDiagModel() { return _diagModel; };
   bool getVerticalDiagFlag() { return _verticalDiag; };
   void setDiagModel(uint i) { _diagModel = i; }
-  extRCModel(uint layerCnt, const char* name);
-  extRCModel(const char* name);
+  extRCModel(uint layerCnt, const char* name, Logger* logger);
+  extRCModel(const char* name, Logger* logger);
   extProcess* getProcess();
   uint        findBiggestDatarateIndex(double d);
   int         findVariationZero(double d);
@@ -815,6 +835,9 @@ class extNetStats
                     int*         val,
                     uint         units = 1);
   void   update_bbox(Ath__parser* parser, const char* bbox);
+  
+ protected:
+  Logger* logger_;
 };
 class extLenOU  // assume cross-section on the z-direction
 {
@@ -1324,6 +1347,9 @@ class extMeasure
 
   odb::dbCreateNetUtil _create_net_util;
   int _dbunit;
+ 
+ protected:
+  Logger *logger_;
 };
 class extWire
 {
@@ -1421,9 +1447,9 @@ class extWindow
   uint _currentDir;
   bool _gsRotatedFlag;
 
-  extWindow(uint maxLayerCnt);
+  extWindow(uint maxLayerCnt, Logger *logger);
   void init(uint maxLayerCnt);
-  extWindow(extWindow* e, uint num);
+  extWindow(extWindow* e, uint num, Logger *logger);
   ~extWindow();
 
   void          initWindowStep(odb::Rect& extRect,
@@ -1459,6 +1485,9 @@ class extWindow
                                      int*          A,
                                      const char*   name);
   int getIntArrayProperty(odb::dbBlock* block, uint ii, const char* name);
+ 
+ protected:
+  Logger *logger_;
 };
 
 class extMainOptions
@@ -1536,8 +1565,10 @@ class extCorner
 
 class extMain
 {
+ protected:
+  Logger *logger_;
+ 
  private:
-  // bool _ouReadReverse;
   bool                      _batchScaleExt;
   Ath__array1D<extCorner*>* _processCornerTable;
   Ath__array1D<extCorner*>* _scaledCornerTable;
@@ -1820,7 +1851,8 @@ class extMain
 
  public:
   bool _lef_res;
-	
+  
+  void setLogger(Logger* logger);
   double getTotalCouplingCap(odb::dbNet *net, const char *filterNet, uint corner);
 	
   uint calcMinMaxRC();// 620 DF: this is to be used for stats used in diff_spef
@@ -2400,7 +2432,7 @@ class extMain
   static void initExtractedCorners(odb::dbBlock* block);
 
   void        addDummyCorners(uint cornerCnt);
-  static void addDummyCorners(odb::dbBlock* block, uint cnt);
+  static void addDummyCorners(odb::dbBlock* block, uint cnt, Logger* logger);
   char*       addRCCorner(const char* name, int model, int userDefined = 1);
   char*       addRCCornerScaled(const char* name,
                                 uint        model,
@@ -2637,10 +2669,10 @@ class extMain
 
   uint getNetBbox(odb::dbNet* net, odb::Rect* maxRect[2]);
 
-  static odb::dbRSeg* getRseg(odb::dbNet* net, uint shapeId);
+  static odb::dbRSeg* getRseg(odb::dbNet* net, uint shapeId, Logger* logger);
 
-  static uint        assemblyExt(odb::dbBlock* mainBlock, odb::dbBlock* blk);
-  static uint        assemblyExt__2(odb::dbBlock* mainBlock, odb::dbBlock* blk);
+  static uint        assemblyExt(odb::dbBlock* mainBlock, odb::dbBlock* blk, Logger* logger);
+  static uint        assemblyExt__2(odb::dbBlock* mainBlock, odb::dbBlock* blk, Logger* logger);
   static odb::dbNet* getDstNet(odb::dbNet*   net,
                                odb::dbBlock* dstBlock,
                                Ath__parser*  parser);
@@ -2656,14 +2688,14 @@ class extMain
   static uint         assemblyCCs(odb::dbBlock* mainBlock,
                                   odb::dbBlock* blk,
                                   uint          cornerCnt,
-                                  uint&         missCCcnt);
+                                  uint&         missCCcnt, Logger* logger);
   static odb::dbRSeg* getMainRseg(odb::dbCapNode* node,
                                   odb::dbBlock*   blk,
-                                  Ath__parser*    parser);
+                                  Ath__parser*    parser, Logger* logger);
   static void updateRseg(odb::dbRSeg* rc1, odb::dbRSeg* rseg2, uint cornerCnt);
   static uint assembly_RCs(odb::dbBlock* mainBlock,
                            odb::dbBlock* blk,
-                           uint          cornerCnt);
+                           uint          cornerCnt, Logger* logger);
 
   // 021710D BEGIN
   uint addRCtoTop(odb::dbBlock* blk, bool write_spef);
@@ -2678,7 +2710,7 @@ class extMain
   // uint adjustCapNode(odb::dbNet *net, odb::dbITerm *from_child_iterm, uint
   // node_num);
   extSpef*    getSpef();
-  static uint printRSegs(odb::dbNet* net);
+  static uint printRSegs(odb::dbNet* net, Logger* logger);
   // 021710D END
 
   // 022110D BEGIN

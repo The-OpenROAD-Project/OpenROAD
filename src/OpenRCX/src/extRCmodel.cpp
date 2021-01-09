@@ -30,12 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//#include "wire.h"
 #include <wire.h>
 
 #include "extRCap.h"
 #include "extprocess.h"
-//#include "logger.h"
 #include <dbLogger.h>
 
 #ifdef _WIN32
@@ -45,8 +43,12 @@
 #include <map>
 #include <vector>
 
+#include "openroad/Logger.h"
+
 //#define SKIP_SOLVER
 namespace rcx {
+
+using ord::RCX;
 
 bool OUREVERSEORDER = false;
 
@@ -54,15 +56,16 @@ static int getMetIndexOverUnder(uint met,
                                 uint mUnder,
                                 uint mOver,
                                 uint layerCnt,
-                                uint maxCnt)
+                                uint maxCnt,
+                                Logger* logger)
 {
   int n = layerCnt - met - 1;
   n *= mUnder - 1;
   n += mOver - met - 1;
 
   if ((n < 0) || (n >= (int) maxCnt)) {
-    notice(0,
-           "getOverUnderIndex: out of range n= %d   m=%d u= %d o= %d\n",
+    logger->info(RCX, 0,
+           "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
            n,
            met,
            mUnder,
@@ -72,12 +75,12 @@ static int getMetIndexOverUnder(uint met,
 
   return n;
 }
-static uint getMaxMetIndexOverUnder(uint met, uint layerCnt)
+static uint getMaxMetIndexOverUnder(uint met, uint layerCnt, Logger* logger)
 {
   uint n = 0;
   for (uint u = met - 1; u > 0; u--) {
     for (uint o = met + 1; o < layerCnt; o++) {
-      uint metIndex = getMetIndexOverUnder(met, u, o, layerCnt, 10000);
+      uint metIndex = getMetIndexOverUnder(met, u, o, layerCnt, 10000, logger);
       if (n < metIndex)
         n = metIndex;
     }
@@ -135,8 +138,8 @@ double extDistRC::getRes()
 }
 void extDistRC::writeRC()
 {
-  notice(0,
-         "%g %g %g %g  %g\n",
+  logger_->info(RCX, 0,
+         "{} {} {} {}  {}",
          0.001 * _sep,
          _coupling,
          _fringe,
@@ -655,8 +658,10 @@ extDistWidthRCTable::extDistWidthRCTable(bool                over,
                                          uint                layerCnt,
                                          uint                metCnt,
                                          uint                maxWidthCnt,
-                                         AthPool<extDistRC>* rcPool)
+                                         AthPool<extDistRC>* rcPool,
+                                         Logger* logger)
 {
+  logger_ = logger;
   _ouReadReverse = OUREVERSEORDER;
   _over          = over;
   _layerCnt      = layerCnt;
@@ -741,8 +746,10 @@ void extDistWidthRCTable::makeWSmapping()
 extDistWidthRCTable::extDistWidthRCTable(bool dummy,
                                          uint met,
                                          uint layerCnt,
-                                         uint widthCnt)
+                                         uint widthCnt,
+                                         Logger* logger)
 {
+  logger_ = logger;
   _ouReadReverse = OUREVERSEORDER;
   _met           = met;
   _layerCnt      = layerCnt;
@@ -784,8 +791,10 @@ extDistWidthRCTable::extDistWidthRCTable(bool                  over,
                                          uint                  metCnt,
                                          Ath__array1D<double>* widthTable,
                                          AthPool<extDistRC>*   rcPool,
-                                         double                dbFactor)
+                                         double                dbFactor,
+                                         Logger* logger)
 {
+  logger_ = logger;
   _ouReadReverse = OUREVERSEORDER;
   _over          = over;
   _layerCnt      = layerCnt;
@@ -862,8 +871,10 @@ extDistWidthRCTable::extDistWidthRCTable(bool                  over,
                                          int                   diagWidthCnt,
                                          int                   diagDistCnt,
                                          AthPool<extDistRC>*   rcPool,
-                                         double                dbFactor)
+                                         double                dbFactor,
+                                         Logger* logger)
 {
+  logger_ = logger;
   _ouReadReverse = OUREVERSEORDER;
   _over          = over;
   _layerCnt      = layerCnt;
@@ -1002,6 +1013,7 @@ void extDistWidthRCTable::setDiagUnderTables(
 }
 extDistWidthRCTable::~extDistWidthRCTable()
 {
+  logger_ = nullptr;
   uint ii, jj, kk, ll;
   if (_rcDistTable) {
     for (jj = 0; jj < _metCnt; jj++) {
@@ -1270,7 +1282,7 @@ uint extDistWidthRCTable::readRulesOverUnder(Ath__parser* parser,
       int metIndex = 0;
       if (!ignore)
         metIndex
-            = getMetIndexOverUnder(_met, mUnder, mOver, _layerCnt, _metCnt);
+            = getMetIndexOverUnder(_met, mUnder, mOver, _layerCnt, _metCnt, logger_);
       int mcnt = 0;
       for (uint jj = 0; jj < widthCnt; jj++) {
         if (!ignore)
@@ -1281,8 +1293,8 @@ uint extDistWidthRCTable::readRulesOverUnder(Ath__parser* parser,
               parser, _rcPoolPtr, true, bin, ignore, dbFactor);
       }
       cnt += mcnt;
-      // notice(0,"OU metIndex=%d met=%d  mUnder=%d  mOver=%d layerCnt=%d
-      // _metCnt=%d widthCnt=%d cnt=%d \n", metIndex, _met, mUnder, mOver,
+      // logger_->info(RCX, 0,"OU metIndex={} met={}  mUnder={}  mOver={} layerCnt={}
+      // _metCnt={} widthCnt={} cnt={} ", metIndex, _met, mUnder, mOver,
       // _layerCnt, _metCnt, widthCnt, mcnt);
     }
   }
@@ -1379,7 +1391,7 @@ uint extDistWidthRCTable::writeRulesOverUnder(FILE* fp, bool bin)
       fprintf(fp, "\nMetal %d OVER %d UNDER %d\n", _met, mUnder, mOver);
 
       int metIndex
-          = getMetIndexOverUnder(_met, mUnder, mOver, _layerCnt, _metCnt);
+          = getMetIndexOverUnder(_met, mUnder, mOver, _layerCnt, _metCnt, logger_);
       assert(metIndex >= 0);
 
       for (uint jj = 0; jj < widthCnt; jj++) {
@@ -1390,8 +1402,10 @@ uint extDistWidthRCTable::writeRulesOverUnder(FILE* fp, bool bin)
   }
   return cnt;
 }
-extMetRCTable::extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool)
+extMetRCTable::extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool,
+                                         Logger* logger)
 {
+  logger_ = logger;
   _layerCnt = layerCnt;
 
   _capOver      = new extDistWidthRCTable*[layerCnt];
@@ -1429,7 +1443,7 @@ void extMetRCTable::allocOverTable(uint                  met,
                                    double                dbFactor)
 {
   _capOver[met] = new extDistWidthRCTable(
-      true, met, _layerCnt, met, wTable, _rcPoolPtr, dbFactor);
+      true, met, _layerCnt, met, wTable, _rcPoolPtr, dbFactor, logger_);
 }
 void extMetRCTable::allocDiagUnderTable(uint                  met,
                                         Ath__array1D<double>* wTable,
@@ -1445,7 +1459,7 @@ void extMetRCTable::allocDiagUnderTable(uint                  met,
                                                diagWidthCnt,
                                                diagDistCnt,
                                                _rcPoolPtr,
-                                               dbFactor);
+                                               dbFactor, logger_);
 }
 void extMetRCTable::setDiagUnderTables(uint                  met,
                                        uint                  overMet,
@@ -1461,14 +1475,14 @@ void extMetRCTable::allocDiagUnderTable(uint                  met,
                                         double                dbFactor)
 {
   _capDiagUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor);
+      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor, logger_);
 }
 void extMetRCTable::allocUnderTable(uint                  met,
                                     Ath__array1D<double>* wTable,
                                     double                dbFactor)
 {
   _capUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor);
+      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor, logger_);
 }
 void extMetRCTable::allocOverUnderTable(uint                  met,
                                         Ath__array1D<double>* wTable,
@@ -1477,10 +1491,10 @@ void extMetRCTable::allocOverUnderTable(uint                  met,
   if (met < 2)
     return;
 
-  // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, _layerCnt);
-  uint n             = getMaxMetIndexOverUnder(met, _layerCnt);
+  // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, _layerCnt, logger_);
+  uint n             = getMaxMetIndexOverUnder(met, _layerCnt, logger_);
   _capOverUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor);
+      false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor, logger_);
 }
 extRCTable::extRCTable(bool over, uint layerCnt)
 {
@@ -1785,7 +1799,7 @@ extDistRC* extMeasure::getOverUnderFringeRC(extMetRCTable* rcModel)
 {
   //	uint n= getOverUnderIndex();
   uint maxCnt = _currentModel->getMaxCnt(_met);
-  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
+  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt, logger_);
 
   if (rcModel == NULL || rcModel->_capOverUnder[_met] == NULL)
     return NULL;
@@ -1798,7 +1812,7 @@ extDistRC* extMeasure::getOverUnderRC(extMetRCTable* rcModel)
 {
   //	uint n= getOverUnderIndex();
   uint maxCnt = _currentModel->getMaxCnt(_met);
-  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt);
+  uint n = getMetIndexOverUnder(_met, _underMet, _overMet, _layerCnt, maxCnt, logger_);
 
   extDistRC* rc = NULL;
   if (_dist < 0)
@@ -1944,8 +1958,9 @@ uint extRCTable::addCapOver(uint met, uint metUnder, extDistRC* rc)
 {
   return _inTable[met][metUnder]->add(rc);
 }
-extRCModel::extRCModel(uint layerCnt, const char* name)
+extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
 {
+  logger_ = logger;
   _layerCnt = layerCnt;
   strcpy(_name, name);
   _capOver      = new extRCTable(true, layerCnt);
@@ -1978,8 +1993,9 @@ extRCModel::extRCModel(uint layerCnt, const char* name)
   _keepFile      = false;
   _metLevel      = 0;
 }
-extRCModel::extRCModel(const char* name)
+extRCModel::extRCModel(const char* name, Logger* logger)
 {
+  logger = logger;
   _layerCnt = 0;
   strcpy(_name, name);
   _capOver      = NULL;
@@ -2057,7 +2073,7 @@ void extRCModel::createModelTable(uint n, uint layerCnt)
   _dataRateTable = new Ath__array1D<double>(_modelCnt);
   _modelTable    = new extMetRCTable*[_modelCnt];
   for (uint jj = 0; jj < _modelCnt; jj++)
-    _modelTable[jj] = new extMetRCTable(_layerCnt, _rcPoolPtr);
+    _modelTable[jj] = new extMetRCTable(_layerCnt, _rcPoolPtr, logger_);
 }
 void extRCModel::setDataRateTable(uint met)
 {
@@ -2449,8 +2465,8 @@ FILE* extRCModel::openFile(const char* topDir,
 
   FILE* fp = fopen(filename, permissions);
   if (fp == NULL) {
-    notice(
-        0, "Cannot open file %s with permissions %s\n", filename, permissions);
+    logger_->info(RCX, 
+        0, "Cannot open file {} with permissions {}", filename, permissions);
     return NULL;
   }
   return fp;
@@ -2510,7 +2526,7 @@ uint extRCModel::getCapValues(uint        lastNode,
 
   if (lastNode != m->_wireCnt) {
     //		return 0;
-    notice(0, "Warning: reads only %d nodes from %s\n", lastNode, _wireDirName);
+    logger_->info(RCX, 0, "Warning: reads only {} nodes from {}", lastNode, _wireDirName);
   }
 
   fprintf(_capLogFP, "\n");
@@ -2561,7 +2577,7 @@ uint extRCModel::getCapValues3D(uint        lastNode,
 
   if (lastNode != m->_wireCnt) {
     //                return 0;
-    notice(0, "Warning: reads only %d nodes from %s\n", lastNode, _wireDirName);
+    logger_->info(RCX, 0, "Warning: reads only {} nodes from {}", lastNode, _wireDirName);
   }
 
   fprintf(_capLogFP, "\n");
@@ -2583,8 +2599,8 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
     double frCap        = m->_capMatrix[n][0] * m->_len;
     m->_capMatrix[n][0] = 0.0;
 
-    notice(
-        0, "FrCap for netId %d (nodeId= %d)  %e\n", m->_idTable[n], n, frCap);
+    logger_->info(RCX, 
+        0, "FrCap for netId {} (nodeId= {})  {}", m->_idTable[n], n, frCap);
 
     //		uint w= 0;
     double res = _extMain->getLefResistance(
@@ -2598,8 +2614,8 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
       double cc1          = m->_capMatrix[n][k] * m->_len;
       m->_capMatrix[n][k] = 0.0;
 
-      notice(0,
-             "\tccCap for netIds %d(%d), %d(%d) %e\n",
+      logger_->info(RCX, 0,
+             "\tccCap for netIds {}({}), {}({}) {}",
              m->_idTable[n],
              n,
              m->_idTable[k],
@@ -2615,8 +2631,8 @@ uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
     frCap += ccFr;
     rseg1->setCapacitance(frCap);
 
-    notice(0, "\tfrCap from CC for netId %d(%d) %e\n", m->_idTable[n], n, ccFr);
-    notice(0, "\ttotFrCap for netId %d(%d) %e\n", m->_idTable[n], n, frCap);
+    logger_->info(RCX, 0, "\tfrCap from CC for netId {}({}) {}", m->_idTable[n], n, ccFr);
+    logger_->info(RCX, 0, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n, frCap);
   }
   m->printStats(_capLogFP);
   fprintf(_capLogFP, "\n\nEND\n\n");
@@ -2637,14 +2653,14 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     double frCap        = m->_capMatrix[1][0];
     m->_capMatrix[1][0] = 0.0;
 
-    notice(
-        0, "FrCap for netId %d (nodeId= %d)  %e\n", m->_idTable[n], n, frCap);
+    logger_->info(RCX, 
+        0, "FrCap for netId {} (nodeId= {})  {}", m->_idTable[n], n, frCap);
 
     //                uint w= 0;
     dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
     rseg1->setCapacitance(frCap);
-    notice(0,
-           "\ttotFrCap for netId %d(%d) %e\n",
+    logger_->info(RCX, 0,
+           "\ttotFrCap for netId {}({}) {}",
            m->_idTable[n],
            n,
            m->_capMatrix[1][n]);
@@ -2659,8 +2675,8 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     double frCap        = m->_capMatrix[1][0];
     m->_capMatrix[1][0] = 0.0;
 
-    notice(
-        0, "FrCap for netId %d (nodeId= %d)  %e\n", m->_idTable[n], n, frCap);
+    logger_->info(RCX, 
+        0, "FrCap for netId {} (nodeId= {})  {}", m->_idTable[n], n, frCap);
 
     //                uint w= 0;
     //                double res= _extMain->getLefResistance(m->_met,
@@ -2671,8 +2687,8 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
 
     double cc1              = m->_capMatrix[1][n - 1];
     m->_capMatrix[1][n - 1] = 0.0;
-    notice(0,
-           "\tccCap for netIds %d(%d), %d(%d) %e\n",
+    logger_->info(RCX, 0,
+           "\tccCap for netIds {}({}), {}({}) {}",
            m->_idTable[n],
            n,
            m->_idTable[n - 1],
@@ -2682,8 +2698,8 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     m->_extMain->updateCCCap(rseg1, rseg2, cc1);
     double cc2              = m->_capMatrix[1][n + 1];
     m->_capMatrix[1][n + 1] = 0.0;
-    notice(0,
-           "\tccCap for netIds %d(%d), %d(%d) %e\n",
+    logger_->info(RCX, 0,
+           "\tccCap for netIds {}({}), {}({}) {}",
            m->_idTable[n],
            n,
            m->_idTable[n + 1],
@@ -2697,11 +2713,11 @@ uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m)
     frCap += ccFr;
     rseg1->setCapacitance(frCap);
 
-    notice(0, "\tfrCap from CC for netId %d(%d) %e\n", m->_idTable[n], n, ccFr);
-    //                notice(0, "\ttotFrCap for netId %d(%d) %e\n",
+    logger_->info(RCX, 0, "\tfrCap from CC for netId {}({}) {}", m->_idTable[n], n, ccFr);
+    //                logger_->info(RCX, 0, "\ttotFrCap for netId {}({}) {}",
     //                m->_idTable[n], n, frCap);
-    notice(0,
-           "\ttotFrCap for netId %d(%d) %e\n",
+    logger_->info(RCX, 0,
+           "\ttotFrCap for netId {}({}) {}",
            m->_idTable[n],
            n,
            m->_capMatrix[1][n]);
@@ -3776,14 +3792,14 @@ void extRCModel::runSolver(const char* solverOption)
 
   //	sprintf(cmd, "cd %s ; ca raphael %s %s ; cd ../../../../../../ ",
   //_wireDirName, solverOption, _wireFileName);
-  notice(0, "%s\n", cmd);
+  logger_->info(RCX, 0, "{}", cmd);
 #endif
 #ifdef _WIN32
   if (_diagModel == 2)
     sprintf(cmd, "cd %s ; dir ; cd ../../../../../../../../ ", _wireDirName);
   else
     sprintf(cmd, "cd %s ; dir ; cd ../../../../../../ ", _wireDirName);
-  notice(0, "%s\n", cmd);
+  logger_->info(RCX, 0, "{}", cmd);
 #endif
   system(cmd);
 }
@@ -3796,7 +3812,7 @@ void extRCModel::cleanFiles()
 uint extRCModel::getOverUnderIndex(extMeasure* m, uint maxCnt)
 {
   return getMetIndexOverUnder(
-      m->_met, m->_underMet, m->_overMet, _layerCnt, maxCnt);
+      m->_met, m->_underMet, m->_overMet, _layerCnt, maxCnt, logger_);
 }
 uint extRCModel::getUnderIndex(extMeasure* m)
 {
@@ -3820,7 +3836,7 @@ void extMetRCTable::addRCw(extMeasure* m)
                              m->_underMet,
                              m->_overMet,
                              _layerCnt,
-                             _capOverUnder[m->_met]->_metCnt);
+                             _capOverUnder[m->_met]->_metCnt, logger_);
     assert(n >= 0);
     table = _capOverUnder[m->_met];
   } else if (m->_over) {
@@ -3878,17 +3894,17 @@ void extMetRCTable::mkWidthAndSpaceMappings()
     if (_capOver[ii] != NULL)
       _capOver[ii]->makeWSmapping();
     else
-      notice(0, "Cannot find <OVER> rules for %d\n", ii);
+      logger_->info(RCX, 0, "Cannot find <OVER> rules for {}", ii);
 
     if (_capUnder[ii] != NULL)
       _capUnder[ii]->makeWSmapping();
     else
-      notice(0, "Cannot find <UNDER> rules for %d\n", ii);
+      logger_->info(RCX, 0, "Cannot find <UNDER> rules for {}", ii);
 
     if (_capOverUnder[ii] != NULL)
       _capOverUnder[ii]->makeWSmapping();
     else if ((ii > 1) && (ii < _layerCnt - 1))
-      notice(0, "Cannot find <OVERUNDER> rules for %d\n", ii);
+      logger_->info(RCX, 0, "Cannot find <OVERUNDER> rules for {}", ii);
   }
 }
 void extRCModel::writeRules(char* name, bool binary)
@@ -3920,8 +3936,8 @@ void extRCModel::writeRules(char* name, bool binary)
       else if ((m > 0) && (_modelTable[0]->_capOver[ii] != NULL))
         cnt += _modelTable[0]->_capOver[ii]->writeRulesOver(fp, binary);
       else if (m == 0) {
-        notice(0,
-               "Cannot write <OVER> rules for <DensityModel> %d and layer %d\n",
+        logger_->info(RCX, 0,
+               "Cannot write <OVER> rules for <DensityModel> {} and layer {}",
                m,
                ii);
       }
@@ -3931,7 +3947,7 @@ void extRCModel::writeRules(char* name, bool binary)
       else if ((m > 0) && (_modelTable[0]->_capUnder[ii] != NULL))
         cnt += _modelTable[0]->_capUnder[ii]->writeRulesUnder(fp, binary);
       else if (m == 0) {
-        notice(
+        logger_->info(RCX, 
             0,
             "Cannot write <UNDER> rules for <DensityModel> %d and layer %d\n",
             m,
@@ -3953,8 +3969,8 @@ void extRCModel::writeRules(char* name, bool binary)
           cnt += _modelTable[0]->_capDiagUnder[ii]->writeRulesDiagUnder2(
               fp, binary);
       } else if (m == 0) {
-        notice(0,
-               "Cannot write <DIAGUNDER> rules for <DensityModel> %d and layer "
+        logger_->info(RCX, 0,
+               "Cannot write <DIAGUNDER> rules for <DensityModel> {} and layer "
                "%d\n",
                m,
                ii);
@@ -3967,8 +3983,8 @@ void extRCModel::writeRules(char* name, bool binary)
         cnt += _modelTable[0]->_capOverUnder[ii]->writeRulesOverUnder(fp,
                                                                       binary);
       else if ((m == 0) && (ii > 1) && (ii < _layerCnt - 1)) {
-        notice(0,
-               "Cannot write <OVERUNDER> rules for <DensityModel> %d and layer "
+        logger_->info(RCX, 0,
+               "Cannot write <OVERUNDER> rules for <DensityModel> {} and layer "
                "%d\n",
                m,
                ii);
@@ -4008,22 +4024,22 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
 {
   for (uint met = 1; met < _layerCnt; met++) {
     if (over && under && (met > 1) && (met < _layerCnt - 1)) {
-      // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, layerCnt);
-      uint n             = getMaxMetIndexOverUnder(met, layerCnt);
+      // uint n= getMetIndexOverUnder(met, met-1, _layerCnt-1, layerCnt, logger_);
+      uint n             = getMaxMetIndexOverUnder(met, layerCnt, logger_);
       _capOverUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr);
+          false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr, logger_);
     }
     if (over) {
       _capOver[met] = new extDistWidthRCTable(
-          true, met, layerCnt, met, widthCnt, _rcPoolPtr);
+          true, met, layerCnt, met, widthCnt, _rcPoolPtr, logger_);
     }
     if (under) {
       _capUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
+          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr, logger_);
     }
     if (diag) {
       _capDiagUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
+          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr, logger_);
     }
   }
 }
@@ -4066,7 +4082,7 @@ uint extRCModel::readRules(Ath__parser* parser,
 
   extDistWidthRCTable* dummy = NULL;
   if (ignore)
-    dummy = new extDistWidthRCTable(true, met, _layerCnt, widthCnt);
+    dummy = new extDistWidthRCTable(true, met, _layerCnt, widthCnt, logger_);
 
   uint diagWidthCnt = 0;
   uint diagDistCnt  = 0;
@@ -4188,8 +4204,8 @@ bool extRCModel::readRules(char*  name,
       uint rulesFileModelCnt = parser.getInt(1);
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
-          notice(0,
-                 "There were %d extraction models defined but only %d exists "
+          logger_->info(RCX, 0,
+                 "There were {} extraction models defined but only {} exists "
                  "in the extraction rules file %s\n",
                  cornerCnt,
                  rulesFileModelCnt,
@@ -4209,8 +4225,8 @@ bool extRCModel::readRules(char*  name,
             break;
           }
           if (kk == rulesFileModelCnt) {
-            notice(0,
-                   "Cannot find model index %d in extRules file %s\n",
+            logger_->info(RCX, 0,
+                   "Cannot find model index {} in extRules file {}",
                    modelIndex,
                    name);
             return false;
@@ -4464,7 +4480,7 @@ bool extRCModel::measurePatternVar(extMeasure* m,
         return true;
 
       if (lineCnt <= 0) {
-        notice(0, "Not valid cap values from solver dir %s\n", _wireDirName);
+        logger_->info(RCX, 0, "Not valid cap values from solver dir {}", _wireDirName);
         return true;
       }
 
@@ -5152,8 +5168,8 @@ uint extRCModel::linesOver(uint wireCnt,
 
       uint cnt1 = measureWithVar(&measure);
 
-      notice(0,
-             "\nFinished %d measurements for pattern M%d_over_M%d\n\n",
+      logger_->info(RCX, 0,
+             "Finished {} measurements for pattern M{}_over_M{}",
              cnt1,
              met,
              underMet);
@@ -5162,7 +5178,7 @@ uint extRCModel::linesOver(uint wireCnt,
     }
   }
   if (metLevel < 0)
-    notice(0, "\nFinished %d measurements for pattern MET_OVER_MET\n", cnt);
+    logger_->info(RCX, 0, "Finished {} measurements for pattern MET_OVER_MET", cnt);
 
   closeCapLogFile();
   return cnt;
@@ -5208,8 +5224,8 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
         cnt1              = measureWithVar(&measure);
       }
 
-      notice(0,
-             "\nFinished %d measurements for pattern M%d_diagUnder_M%d\n\n",
+      logger_->info(RCX, 0,
+             "Finished {} measurements for pattern M{}_diagUnder_M{}",
              cnt1,
              met,
              overMet);
@@ -5218,8 +5234,8 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
     }
   }
   if (metLevel < 0)
-    notice(
-        0, "\nFinished %d measurements for pattern MET_DIAGUNDER_MET\n", cnt);
+    logger_->info(RCX, 
+        0, "Finished {} measurements for pattern MET_DIAGUNDER_MET", cnt);
 
   closeCapLogFile();
   return cnt;
@@ -5252,8 +5268,8 @@ uint extRCModel::linesUnder(uint wireCnt,
 
       uint cnt1 = measureWithVar(&measure);
 
-      notice(0,
-             "\nFinished %d measurements for pattern M%d_under_M%d\n\n",
+      logger_->info(RCX, 0,
+             "Finished {} measurements for pattern M{}_under_M{}",
              cnt1,
              met,
              overMet);
@@ -5262,7 +5278,7 @@ uint extRCModel::linesUnder(uint wireCnt,
     }
   }
   if (metLevel < 0)
-    notice(0, "\nFinished %d measurements for pattern MET_UNDER_MET\n", cnt);
+    logger_->info(RCX, 0, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   closeCapLogFile();
   return cnt;
@@ -5294,7 +5310,7 @@ uint extRCModel::linesOverUnder(uint wireCnt,
 
         uint cnt1 = measureWithVar(&measure);
 
-        notice(
+        logger_->info(RCX, 
             0,
             "\nFinished %d measurements for pattern M%d_over_M%d_under_M%d\n\n",
             cnt1,
@@ -5307,7 +5323,7 @@ uint extRCModel::linesOverUnder(uint wireCnt,
     }
   }
   if (metLevel < 0)
-    notice(0, "\nFinished %d measurements for pattern MET_UNDER_MET\n", cnt);
+    logger_->info(RCX, 0, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   closeCapLogFile();
   return cnt;
@@ -5417,19 +5433,19 @@ uint extMain::readProcess(const char* name, const char* filename)
           fprintf(stdout, "\n");
           for (uint u= ii-1; u>0; u--) {
                   for (uint o=  ii+1; o<mCnt; o++) {
-                          uint metIndex= getMetIndexOverUnder(ii, u, o, mCnt);
+                          uint metIndex= getMetIndexOverUnder(ii, u, o, mCnt, logger_);
 
                           fprintf(stdout, "%d  m= %d  %d  = %d\n", u,ii,o,
   metIndex);
                   }
           }
-          uint maxIndex= getMaxMetIndexOverUnder(ii, mCnt);
+          uint maxIndex= getMaxMetIndexOverUnder(ii, mCnt, logger_);
           fprintf(stdout, "\nm= %d  maxIndex= %d\n\n", ii, maxIndex);
   }
   return 1;
   */
 
-  extProcess* p = new extProcess(32, 32);
+  extProcess* p = new extProcess(32, 32, logger_);
 
   p->readProcess(name, (char*) filename);
   p->writeProcess("process.out");
@@ -5437,7 +5453,7 @@ uint extMain::readProcess(const char* name, const char* filename)
   // create rc model
 
   uint        layerCnt = p->getConductorCnt();
-  extRCModel* m        = new extRCModel(layerCnt, (char*) name);
+  extRCModel* m        = new extRCModel(layerCnt, (char*) name, logger_);
   _modelTable->add(m);
 
   m->setProcess(p);
@@ -5451,13 +5467,13 @@ uint extMain::readExtRules(const char* name,
                            int         typ,
                            int         max)
 {
-  //	extProcess *p= new extProcess(32, 32);
+  //	extProcess *p= new extProcess(32, 32, logger_);
 
   //	p->readProcess(name, (char *) filename);
 
   // create rc model
 
-  extRCModel* m = new extRCModel((char*) name);
+  extRCModel* m = new extRCModel((char*) name, logger_);
   _modelTable->add(m);
 
   uint   cornerTable[10];
@@ -5467,7 +5483,7 @@ uint extMain::readExtRules(const char* name,
   if (dbunit > 1000)
     dbFactor = dbunit * 0.001;
 
-  notice(0, "dbFactor= %g  dbunit= %d \n", dbFactor, dbunit);
+  logger_->info(RCX, 0, "dbFactor= {}  dbunit= {} ", dbFactor, dbunit);
 
   _minModelIndex = 0;
   _maxModelIndex = 0;
@@ -5518,6 +5534,12 @@ uint extMain::readExtRules(const char* name,
 
   return 0;
 }
+
+void extMain::setLogger(Logger* logger) {
+  if (!logger_)
+    logger_ = logger;
+}
+
 uint extRCModel::findBiggestDatarateIndex(double d)
 {
   return _dataRateTable->findNextBiggestIndex(d, 1);
@@ -5572,7 +5594,7 @@ extDistWidthRCTable* extRCModel::getWidthDistRCtable(uint   met,
                              mUnder,
                              mOver,
                              _layerCnt,
-                             _modelTable[rIndex]->_capOverUnder[met]->_metCnt);
+                             _modelTable[rIndex]->_capOverUnder[met]->_metCnt, logger_);
     assert(n >= 0);
     return _modelTable[rIndex]->_capOverUnder[met];
   } else if (mOver) {
