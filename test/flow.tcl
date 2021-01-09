@@ -52,7 +52,7 @@ set_wire_rc -clock  -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
-repair_design -max_wire_length $max_wire_length
+repair_design
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
