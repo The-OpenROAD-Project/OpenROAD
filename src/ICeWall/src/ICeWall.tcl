@@ -2408,7 +2408,7 @@ namespace eval ICeWall {
         $inst setPlacementStatus "FIRM"
         place_padcell_overlay $padcell
 
-        # add_physical_pin $padcell $inst
+        add_physical_pin $padcell $inst
 
         set bbox [$inst getBBox]
 
