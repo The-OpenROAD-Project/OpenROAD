@@ -31,7 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "extSpef.h"
-//#include "dbExtControl.h"
 #include <dbExtControl.h>
 #include <math.h>
 
@@ -39,8 +38,9 @@
 
 #include "extRCap.h"
 #include "parse.h"
-//#include "logger.h"
 #include <dbLogger.h>
+
+#include "openroad/Logger.h"
 
 //#ifdef _WIN32
 #define ATH__fprintf fprintf
@@ -49,6 +49,8 @@
 //#endif
 
 namespace rcx {
+
+using ord::RCX;
 
 uint extSpef::writeHierInstNameMap()
 {
@@ -184,8 +186,8 @@ uint extMain::markCCsegs(odb::dbBlock* blk, bool flag)
 
 uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
 {
-  odb::notice(0,
-              "\nMerging Parasitics for Block %s : %s Into parent %s\n",
+  logger_->info(RCX, 0,
+              "Merging Parasitics for Block {} : {} Into parent {}",
               blk->getConstName(),
               blk->getParentInst()->getConstName(),
               _block->getConstName());
@@ -232,8 +234,8 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
     odb::dbITerm* iterm     = bterm->getITerm();
     odb::dbNet*   parentNet = iterm->getNet();
     if (parentNet == NULL) {
-      odb::warning(0,
-                   "Null parent[%d] net : %s\n",
+      logger_->warn(RCX, 0,
+                   "Null parent[{}] net : {}",
                    net->getBTermCount(),
                    net->getConstName());
       continue;
@@ -253,8 +255,8 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
     odb::dbITerm* iterm     = bterm->getITerm();
     odb::dbNet*   parentNet = iterm->getNet();
     if (parentNet == NULL) {
-      odb::warning(0,
-                   "Null parent[%d] net : %s\n",
+      logger_->warn(RCX, 0,
+                   "Null parent[{}] net : {}",
                    net->getBTermCount(),
                    net->getConstName());
       continue;
@@ -276,8 +278,8 @@ uint extMain::addRCtoTop(odb::dbBlock* blk, bool write_spef)
       spefCnt += _spef->writeHierNet(net, resBound, dbg);
   }
   _spef->setBlock(_block);
-  odb::notice(0,
-              "%d internal %d IO nets %d gCaps %d rSegs %d ccCaps : %s\n\n",
+  logger_->info(RCX, 0,
+              "{} internal {} IO nets {} gCaps {} rSegs {} ccCaps : {}",
               spefCnt,
               flatCnt,
               gCnt,
@@ -415,9 +417,9 @@ uint extMain::createCapNodes(odb::dbNet* net,
   }
   return gCnt;
 }
-uint extMain::printRSegs(odb::dbNet* net)
+uint extMain::printRSegs(odb::dbNet* net, Logger* logger)
 {
-  odb::notice(0, "\t\t\tprintRSegs: %s\n", net->getConstName());
+  logger->info(RCX, 0, "\t\t\tprintRSegs: {}", net->getConstName());
   odb::dbSet<odb::dbRSeg> rsegs = net->getRSegs();
   uint                    rsize = rsegs.size();
 
@@ -426,8 +428,8 @@ uint extMain::printRSegs(odb::dbNet* net)
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     odb::dbRSeg* rseg = *rseg_itr;
 
-    odb::notice(0,
-                "\t\t\t\t\trsegId: %d -- %d %d\n",
+    logger->info(RCX, 0,
+                "\t\t\t\t\trsegId: {} -- {} {}",
                 rseg->getId(),
                 rseg->getSourceNode(),
                 rseg->getTargetNode());
@@ -669,7 +671,7 @@ bool extSpef::writeHierNet(odb::dbNet* net, double resBound, uint dbg)
   uint minNode;
   uint capNodeCnt = getMinCapNode(net, &minNode);
   if (capNodeCnt == 0) {
-    odb::warning(0, "No cap nodes net: %s\n", net->getConstName());
+    logger_->warn(RCX, 0, "No cap nodes net: {}", net->getConstName());
     return false;
   }
   odb::dbSet<odb::dbRSeg> rcSet = net->getRSegs();

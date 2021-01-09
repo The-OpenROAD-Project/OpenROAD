@@ -36,10 +36,6 @@
 #include "db.h"
 #include "dbSearch.h"
 
-//#include "dbWireCodec.h"
-//#include "dbShape.h"
-//#include "dbRtTree.h"
-
 #include <dbRtTree.h>
 #include <dbShape.h>
 #include <dbWireCodec.h>
@@ -48,10 +44,11 @@
 #include "extSpef.h"
 #include "exttree.h"
 
-//#include "logger.h"
-#include <dbLogger.h>
+#include "openroad/Logger.h"
 
 namespace rcx {
+
+using ord::RCX;
 
 void extMain::setPowerExtOptions(bool        skip_power_stubs,
                                  const char* exclude_cells,
@@ -79,8 +76,8 @@ bool extMain::markExcludedCells()
   for (uint ii = 0; ii < cnt; ii++) {
     odb::dbMaster* m = masters[ii];
     m->setSpecialPower(true);
-    odb::notice(
-        0, "Marked Master %s as special power cell\n", m->getConstName());
+    logger_->info(RCX, 
+        0, "Marked Master {} as special power cell", m->getConstName());
   }
 
   return true;
@@ -228,7 +225,7 @@ void extMain::writeResNode(char* nodeName, odb::dbCapNode* capNode, uint level)
         v          = odb::dbBox::getBox(_tech, -vid);
         char* name = getPowerSourceName(level, -vid);
         sprintf(nodeName, "%s ", name);
-        // odb::notice(0, "id=%d vianame=%s\n", vid, name);
+        // logger_->info(RCX, 0, "id={} vianame={}", vid, name);
       }
       if (level > 0)
         _via2JunctionMap->set(v->getId(), capNode->getId());
@@ -301,7 +298,7 @@ void extMain::createNode_xy(odb::dbCapNode* capNode,
   writeNegativeCoords(buf, netId, x, y, level);
 
   odb::dbStringProperty::create(capNode, "_inode", buf);
-  // odb::notice(0, " capNode %s\n", buf);
+  // logger_->info(RCX, 0, " capNode {}", buf);
   capNode->setNameFlag();
   if (iterm == NULL)
     return;
@@ -310,10 +307,10 @@ void extMain::createNode_xy(odb::dbCapNode* capNode,
   if (p != NULL) {
     odb::dbStringProperty::destroy(p);
     sprintf(buf, "%s %s", buf, p->getValue().c_str());
-    // odb::notice(0, "Destroy iterm Prop");
+    // logger_->info(RCX, 0, "Destroy iterm Prop");
   }
   odb::dbStringProperty::create(iterm, "_inode", buf);
-  // odb::notice(0, " iterm %s\n", buf);
+  // logger_->info(RCX, 0, " iterm {}", buf);
 }
 void extMain::writeInternalNode_xy(odb::dbCapNode* capNode, char* buff)
 {
@@ -357,7 +354,7 @@ void extMain::writeResNode(FILE* fp, odb::dbCapNode* capNode, uint level)
         char* name = getPowerSourceName(level, -vid);
         fprintf(fp, "%s ", name);
         // sprintf(nodeName, "%s", name);
-        // odb::notice(0, "id=%d vianame=%s\n", vid, name);
+        // logger_->info(RCX, 0, "id={} vianame={}", vid, name);
       }
       if (level > 0)
         _via2JunctionMap->set(v->getId(), capNode->getId());
@@ -566,7 +563,7 @@ float extMain::distributeCap(FILE* fp, odb::dbNet* net)
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     odb::dbRSeg* rc  = *rc_itr;
     float        cap = rc->getCapacitance(0);
-    // odb::notice(0, "R_%d_%d_s%d %g\n", net->getId(), rc->getId(),
+    // logger_->info(RCX, 0, "R_{}_{}_s{} {}", net->getId(), rc->getId(),
     // rc->getShapeId(), cap);
 
     odb::dbCapNode* src = rc->getSourceCapNode();
@@ -601,7 +598,7 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
   bool RCflag        = true;
 
   if (_dbgPowerFlow)
-    odb::notice(0, "setNodeCoords_xy Net= %s\n", net->getConstName());
+    logger_->info(RCX, 0, "setNodeCoords_xy Net= {}", net->getConstName());
   odb::dbWire* wire = net->getWire();
 
   if (!RCflag) {
@@ -612,8 +609,8 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
       int  vid;
       wire->getProperty(sid, vid);
       // if (_dbgPowerFlow)
-      odb::notice(0,
-                  "sID= %d RC%d  %d %d %d %d\n",
+      logger_->info(RCX, 0,
+                  "sID= {} RC{}  {} {} {} {}",
                   sid,
                   vid,
                   s.xMin(),
@@ -629,7 +626,7 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
       createNode_xy(tgt, s.xMax(), s.yMax(), level);
     }
     if (_dbgPowerFlow)
-      odb::notice(0, "End Net= %s\n", net->getConstName());
+      logger_->info(RCX, 0, "End Net= {}", net->getConstName());
     return 0;
   }
   odb::dbSet<odb::dbRSeg>           rSet = net->getRSegs();
@@ -640,7 +637,7 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
     if (rc->getShapeId() == 0) {
       odb::dbCapNode* src = rc->getSourceCapNode();
       odb::dbCapNode* tgt = rc->getTargetCapNode();
-      // odb::notice(0,"RC%d  \n", rc->getId());
+      // logger_->info(RCX, 0,"RC{}  ", rc->getId());
       continue;
     }
     int x = 0;
@@ -648,11 +645,11 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
     rc->getCoords(x, y);
     odb::dbShape s;
     wire->getShape(rc->getShapeId(), s);
-    // odb::notice(0,"RC%d  SID= %d %d %d %d %d  x=%d y=%d\n", rc->getId(),
+    // logger_->info(RCX, 0,"RC{}  SID= {} {} {} {} {}  x={} y={}", rc->getId(),
     // rc->getShapeId(), s.xMin(), s.yMin(), s.xMax(), s.yMax(), x, y);
 
     odb::dbCapNode* src = rc->getSourceCapNode();
-    // odb::notice(0, "\tSRC: ");
+    // logger_->info(RCX, 0, "\tSRC: ");
     if (!src->isName()) {
       // createNode_xy(src, x, y, level);
       createNode_xy(src, s.xMin(), s.yMin(), level);
@@ -682,7 +679,7 @@ endxy[2]);
         bool RCflag= true;
 
         if (_dbgPowerFlow)
-                odb::notice(0,"setNodeCoords_xy Net= %s\n",
+                logger_->info(RCX, 0,"setNodeCoords_xy Net= {}",
 net->getConstName()); odb::dbWire *wire= net->getWire();
 
         if (!RCflag)
@@ -694,7 +691,7 @@ net->getConstName()); odb::dbWire *wire= net->getWire();
                 int vid;
                 wire->getProperty(sid, vid);
                 if (_dbgPowerFlow)
-                odb::notice(0,"sID= %d RC%d  %d %d %d %d\n", sid, vid, s.xMin(),
+                logger_->info(RCX, 0,"sID= {} RC{}  {} {} {} {}", sid, vid, s.xMin(),
 s.yMin(), s.xMax(), s.yMax()); if (vid==0) continue; odb::dbRSeg* rc =
 odb::dbRSeg::getRSeg(net->getBlock(), vid); odb::dbCapNode *src=
 rc->getSourceCapNode(); odb::dbCapNode *tgt= rc->getTargetCapNode();
@@ -702,7 +699,7 @@ rc->getSourceCapNode(); odb::dbCapNode *tgt= rc->getTargetCapNode();
                 createNode_xy(tgt, s.xMax(), s.yMax());
         }
         if (_dbgPowerFlow)
-                odb::notice(0,"End Net= %s\n", net->getConstName());
+                logger_->info(RCX, 0,"End Net= {}", net->getConstName());
         return;
         }
         odb::dbSet<odb::dbRSeg> rSet= net->getRSegs();
@@ -733,7 +730,7 @@ rc->getSourceCapNode(); odb::dbCapNode *tgt= rc->getTargetCapNode();
 
                 odb::dbShape s;
                 wire->getShape( rc->getShapeId(), s );
-                odb::notice(0,"RC%d  SID= %d %d %d %d %d  x=%d y=%d\n",
+                logger_->info(RCX, 0,"RC{}  SID= {} {} {} {} {}  x={} y={}",
 rc->getId(), rc->getShapeId(), s.xMin(), s.yMin(), s.xMax(), s.yMax(), x, y);
 
                 if (dir>0)
@@ -864,7 +861,7 @@ void extMain::replaceItermCoords(odb::dbNet* net, uint dir, int xy[2])
 
       p->setValue(buff2);
 
-      // odb::notice(0, "found iterm I%d node = %s dir=%d xy= %d %d NEW %s\n",
+      // logger_->info(RCX, 0, "found iterm I{} node = {} dir={} xy= {} {} NEW {}",
       // capNode->getId(), buff, dir, xy[0], xy[1], buff2);
       // COMMENT --32613 -- transfered from findConnect
 
@@ -910,7 +907,7 @@ void extMain::findViaMainCoord(odb::dbNet* net, char* buff)
       if (p == NULL)
         continue;
       sprintf(buff, " %s ", p->getValue().c_str());
-      // odb::notice(0, "found via cap node = %s\n", buff);
+      // logger_->info(RCX, 0, "found via cap node = {}", buff);
       return;
     }
   }
@@ -1079,7 +1076,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
           || (iterm->getSigType() == odb::dbSigType::POWER)))
       continue;
     // if (iterm->getId()==180648)
-    // odb::notice(0, "-------
+    // logger_->info(RCX, 0, "-------
     // ----------------------------------------------------------- Found
     // 180648!\n");
     // 071212 if (targetNet==iterm->getNet())
@@ -1115,7 +1112,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
   if (foundIterm != NULL) {
     // no TIE lo/hi 3/26/2013  iterm2Vias_cells(inst, foundIterm);
 
-    // odb::notice(0, "findConnect I%d\n", foundIterm->getId());
+    // logger_->info(RCX, 0, "findConnect I{}", foundIterm->getId());
     return foundIterm;
   }
   return NULL;
@@ -1132,14 +1129,14 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
     break;
   }
   if (iterm == NULL) {
-    odb::warning(0,
-                 "Cannot conect to Inst: %s of %s for power net %s\n",
+    logger_->warn(RCX, 0,
+                 "Cannot conect to Inst: {} of {} for power net {}",
                  inst->getConstName(),
                  master->getConstName(),
                  net->getConstName());
     odb::dbBox* bb = inst->getBBox();
-    odb::warning(0,
-                 "   @ %d %d  %d %d\n",
+    logger_->warn(RCX, 0,
+                 "   @ {} {}  {} {}",
                  bb->xMin(),
                  bb->yMin(),
                  bb->getDX(),
@@ -1278,8 +1275,8 @@ foundIterm->getId());
         }
         if (iterm==NULL)
         {
-                odb::warning(0, "Cannot find an iterm for Inst: %s for power net
-%s\n", inst->getConstName(), net->getConstName());
+                logger_->warn(RCX, 0, "Cannot find an iterm for Inst: {} for power net
+{}", inst->getConstName(), net->getConstName());
         }
         else {
                 //fprintf(_blkInfo, "%s %s is_std [%s] I%d\n",
@@ -1400,8 +1397,8 @@ uint extMain::getITermConn2(uint                dir,
     odb::dbBox*  bb     = inst->getBBox();
     const char*  debug  = "";
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
                   inst->getConstName(),
                   net->getConstName(),
                   instCnt,
@@ -1409,14 +1406,14 @@ uint extMain::getITermConn2(uint                dir,
                   xy[1],
                   xy2[0],
                   xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst BBox= X {} {}  Y {} {}",
                   bb->xMin(),
                   bb->xMax(),
                   bb->yMin(),
                   bb->yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
+      logger_->info(RCX, 0,
+                  "instCount={} ----- --------- Prev X {}  Y {} ",
                   instCnt,
                   prevX,
                   prevY);
@@ -1424,8 +1421,8 @@ uint extMain::getITermConn2(uint                dir,
         odb::dbInst* ii     = instTable[kk];
         int          instId = inst->getId();
         odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     b->xMin(),
                     b->yMin(),
@@ -1489,20 +1486,20 @@ uint extMain::getITermConn2(uint                dir,
     if (sameJunctionPoint(ixy[0], ixy[1]))
     {
             if (_dbgPowerFlow)
-            odb::notice(0, "\t\tSameJubct[%d]: %d %d ITERM=%d\n", jj, ixy[0],
+            logger_->info(RCX, 0, "\t\tSameJubct[{}]: {} {} ITERM={}", jj, ixy[0],
     ixy[1], iterm->getId()); if (dir>0) ixy[!dir]= (bb->xMin()+bb->xMax())/2;
             else
                     ixy[!dir]= (bb->yMin()+bb->yMax())/2;
 
             if (ameJunctionPointameJunctionPoint(ixy[0], ixy[1]))
             if (_dbgPowerFlow)
-                    odb::notice(0, "\t\tFIXED! SameJubct[%d]: %d %d ITERM=%d\n",
+                    logger_->info(RCX, 0, "\t\tFIXED! SameJubct[{}]: {} {} ITERM={}",
     jj, ixy[0], ixy[1], iterm->getId());
     }
     */
     uint jid = encoder.addPoint(ixy[0], ixy[1]);
     encoder.addITerm(iterm);
-    // odb::notice(0, "\t\tITERM [%d]: %d %d   <%d> %s\n", jj, ixy[0], ixy[1],
+    // logger_->info(RCX, 0, "\t\tITERM [{}]: {} {}   <{}> {}", jj, ixy[0], ixy[1],
     // iterm->getId(), inst->getConstName()); encoder.newPathExt(jid, 0); uint
     // jid= encoder.addPoint(PP[0], PP[1], 0);
 
@@ -1522,7 +1519,7 @@ uint extMain::getITermConn2(uint                dir,
         || ((net->getSigType() == odb::dbSigType::GROUND)
             && !inst->getUserFlag2())) {
       odb::dbBox* bb = inst->getBBox();
-      // odb::notice(0, "jj%d I%d %s %d %d %d %d %s\n", jj, inst->getId(),
+      // logger_->info(RCX, 0, "jj{} I{} {} {} {} {} {} {}", jj, inst->getId(),
       // inst->getMaster()->getConstName(),
       // bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax(),
       // wire->getNet()->getConstName());
@@ -1560,7 +1557,7 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
 
   std::vector<odb::Rect> rectTable;
 
-  // odb::notice(0, "------------------------\n");
+  // logger_->info(RCX, 0, "------------------------");
   for (uint kk = 0; kk < instCnt; kk++) {
     odb::dbInst* inst = instTable[kk];
     odb::dbBox*  b    = inst->getBBox();
@@ -1568,13 +1565,13 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
     b->getBox(rb);
     rectTable.push_back(rb);
 
-    // odb::notice(0, "inst BBox= X %d %d  Y %d %d\n", rb.xMin(), rb.xMax(),
+    // logger_->info(RCX, 0, "inst BBox= X {} {}  Y {} {}", rb.xMin(), rb.xMax(),
     // rb.yMin(), rb.yMax());
 
 #ifdef DEBUG_INST_NAME
     if (strcmp(inst->getConstName(), DEBUG_INST_NAME) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
                   inst->getConstName(),
                   net->getConstName(),
                   instCnt,
@@ -1582,14 +1579,14 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
                   xy[1],
                   xy2[0],
                   xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst BBox= X {} {}  Y {} {}",
                   rb.xMin(),
                   rb.xMax(),
                   rb.yMin(),
                   rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
+      logger_->info(RCX, 0,
+                  "instCount={} ----- --------- Prev X {}  Y {} ",
                   instCnt,
                   prevX,
                   prevY);
@@ -1597,8 +1594,8 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
         odb::dbInst* ii     = instTable[kk];
         int          instId = inst->getId();
         odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     b->xMin(),
                     b->yMin(),
@@ -1608,7 +1605,7 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
     }
 #endif
   }
-  // odb::notice(0, "------------------------\n");
+  // logger_->info(RCX, 0, "------------------------");
   /*
           for (uint jj= 0; jj<instCnt; jj++)
           {
@@ -1655,8 +1652,8 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
 #ifdef DEBUG_INST_NAME
     debug = DEBUG_INST_NAME;
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
                   inst->getConstName(),
                   net->getConstName(),
                   instCnt,
@@ -1664,14 +1661,14 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
                   xy[1],
                   xy2[0],
                   xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst BBox= X {} {}  Y {} {}",
                   rb.xMin(),
                   rb.xMax(),
                   rb.yMin(),
                   rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
+      logger_->info(RCX, 0,
+                  "instCount={} ----- --------- Prev X {}  Y {} ",
                   instCnt,
                   prevX,
                   prevY);
@@ -1680,15 +1677,15 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
         odb::dbInst* ii     = instTable[kk];
         int          instId = inst->getId();
         odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     b->xMin(),
                     b->yMin(),
                     b->xMax(),
                     b->yMax());
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     rrb.xMin(),
                     rrb.yMin(),
@@ -1719,15 +1716,15 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
     else
       ixy[!dir] = rb.yMin();
 
-    // odb::notice(0, "I[%d] %10d %10d  %10d %10d\n",inst->getId(),rb.xMin(),
+    // logger_->info(RCX, 0, "I[{}] %10d %10d  %10d %10d",inst->getId(),rb.xMin(),
     // rb.yMin(), rb.xMax(), rb.yMax());
     srcCapNode
         = makePowerRes(srcCapNode, dir, ixy, level, WIDTH2, iterm->getId(), 1);
 
     if ((_dbgPowerFlow)
         || ((debug != NULL) && (strcmp(inst->getConstName(), debug) == 0)))
-      odb::notice(0,
-                  "\t\tITERM [%d]: %d %d   <%d> %s\n",
+      logger_->info(RCX, 0,
+                  "\t\tITERM [{}]: {} {}   <{}> {}",
                   jj,
                   ixy[0],
                   ixy[1],
@@ -1769,17 +1766,17 @@ uint extMain::getITermConn(uint                dir,
     /*
     if (strcmp(inst->getConstName(),"OPTHOLD_G_15519")==0)
     {
-    odb::notice(0, "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+    logger_->info(RCX, 0, "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
     inst->getConstName(), net->getConstName(), instCnt, xy[0], xy[1], xy2[0],
-    xy2[1]); odb::notice(0, "inst BBox= X %d %d  Y %d %d\n", rb.xMin(),
-    rb.xMax(), rb.yMin(), rb.yMax()); odb::notice(0, "instCount=%d -----
-    --------- Prev X %d  Y %d \n", instCnt, prevX, prevY); for (uint kk= 0;
+    xy2[1]); logger_->info(RCX, 0, "inst BBox= X {} {}  Y {} {}", rb.xMin(),
+    rb.xMax(), rb.yMin(), rb.yMax()); logger_->info(RCX, 0, "instCount={} -----
+    --------- Prev X {}  Y {} ", instCnt, prevX, prevY); for (uint kk= 0;
     kk<instCnt; kk++)
             {
                     odb::dbInst *ii= instTable[kk];
                     int instId= inst->getId();
                     odb::dbBox *b= ii->getBBox();
-                    odb::notice(0, "I[%d] %10d %10d  %10d %10d\n",kk,b->xMin(),
+                    logger_->info(RCX, 0, "I[{}] %10d %10d  %10d %10d",kk,b->xMin(),
     b->yMin(), b->xMax(), b->yMax());
             }
     }
@@ -1821,8 +1818,8 @@ uint extMain::getITermConn(uint                dir,
 
     const char* debug = " ";
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
                   inst->getConstName(),
                   net->getConstName(),
                   instCnt,
@@ -1830,14 +1827,14 @@ uint extMain::getITermConn(uint                dir,
                   xy[1],
                   xy2[0],
                   xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
+      logger_->info(RCX, 0,
+                  "inst BBox= X {} {}  Y {} {}",
                   rb.xMin(),
                   rb.xMax(),
                   rb.yMin(),
                   rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
+      logger_->info(RCX, 0,
+                  "instCount={} ----- --------- Prev X {}  Y {} ",
                   instCnt,
                   prevX,
                   prevY);
@@ -1846,15 +1843,15 @@ uint extMain::getITermConn(uint                dir,
         odb::dbInst* ii     = instTable[kk];
         int          instId = inst->getId();
         odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     b->xMin(),
                     b->yMin(),
                     b->xMax(),
                     b->yMax());
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
+        logger_->info(RCX, 0,
+                    "I[{}] %10d %10d  %10d %10d",
                     kk,
                     rrb.xMin(),
                     rrb.yMin(),
@@ -1930,8 +1927,8 @@ uint extMain::getITermConn(uint                dir,
 
     if ((_dbgPowerFlow)
         || ((debug != NULL) && (strcmp(inst->getConstName(), debug) == 0)))
-      odb::notice(0,
-                  "\t\tITERM [%d]: %d %d   <%d> %s\n",
+      logger_->info(RCX, 0,
+                  "\t\tITERM [{}]: {} {}   <{}> {}",
                   jj,
                   ixy[0],
                   ixy[1],
@@ -2060,8 +2057,8 @@ uint extMain::getITermPhysicalConn(uint                dir,
   if (_dbgPowerFlow)
   // if (true)
   {
-    odb::notice(0,
-                "getITermPhysicalConn dir=%d net=%s %d: %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
                 dir,
                 net->getConstName(),
                 instCnt,
@@ -2072,8 +2069,8 @@ uint extMain::getITermPhysicalConn(uint                dir,
     for (uint k = 0; k < rectTable.size(); k++) {
       odb::Rect*    rb    = rectTable[k];
       odb::dbITerm* iterm = itermTable[k];
-      odb::notice(0,
-                  "\tishape X %d %d  Y %d %d %s %s \n",
+      logger_->info(RCX, 0,
+                  "\tishape X {} {}  Y {} {} {} {} ",
                   rb->xMin(),
                   rb->xMax(),
                   rb->yMin(),
@@ -2118,7 +2115,7 @@ uint extMain::getITermPhysicalConn(uint                dir,
     // encoder.addITerm(iterm);
     _junct2iterm->set(jid, iterm);
 
-    // odb::notice(0, "\t\taddPoint: ITERM_JUNCTION %d : %d %d   <%d> %s %s\n",
+    // logger_->info(RCX, 0, "\t\taddPoint: ITERM_JUNCTION {} : {} {}   <{}> {} {}",
     // jid, ixy[0], ixy[1], iterm->getId(), iterm->getInst()->getConstName(),
     // iterm->getMTerm()->getConstName());
     xy[!dir] = ixy[!dir];
@@ -2164,8 +2161,8 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
   if (_dbgPowerFlow)
   // if (true)
   {
-    odb::notice(0,
-                "getITermPhysicalConn dir=%d net=%s %d: %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
                 dir,
                 net->getConstName(),
                 instCnt,
@@ -2176,8 +2173,8 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
     for (uint k = 0; k < rectTable.size(); k++) {
       odb::Rect*    rb    = rectTable[k];
       odb::dbITerm* iterm = itermTable[k];
-      odb::notice(0,
-                  "\tishape X %d %d  Y %d %d %s %s \n",
+      logger_->info(RCX, 0,
+                  "\tishape X {} {}  Y {} {} {} {} ",
                   rb->xMin(),
                   rb->xMax(),
                   rb->yMin(),
@@ -2215,7 +2212,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
         = makePowerRes(srcCapNode, dir, ixy, level, WIDTH2, iterm->getId(), 1);
     // TO DELETE _junct2iterm _junct2iterm->set(srcCapNode->getId(), iterm);
 
-    // odb::notice(0, "\t\taddPoint: ITERM_JUNCTION : %d %d   I%d %s %s\n",
+    // logger_->info(RCX, 0, "\t\taddPoint: ITERM_JUNCTION : {} {}   I{} {} {}",
     // ixy[0], ixy[1], iterm->getId(), iterm->getInst()->getConstName(),
     // iterm->getMTerm()->getConstName());
     xy[!dir] = ixy[!dir];
@@ -2277,7 +2274,7 @@ bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
                             odb::dbNet*               net,
                             odb::Rect*                w)
 {
-  // odb::notice(0, "skipSideMetal: level=%d -- %d %d %d %d \n", level,
+  // logger_->info(RCX, 0, "skipSideMetal: level={} -- {} {} {} {} ", level,
   // w->xMin(), w->yMin(), w->xMax(), w->yMax());
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
   int                 width     = w->minDXDY();
@@ -2327,9 +2324,9 @@ bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
     if (overlap)
       return false;
 
-    // odb::notice(0, "skipSideMetal: level=%d -- v0= %d %d %d %d \n", level,
-    // v0->xMin(), v0->yMin(), v0->xMax(), v0->yMax()); odb::notice(0,
-    // "skipSideMetal: level=%d -- v1= %d %d %d %d \n", level, v1->xMin(),
+    // logger_->info(RCX, 0, "skipSideMetal: level={} -- v0= {} {} {} {} ", level,
+    // v0->xMin(), v0->yMin(), v0->xMax(), v0->yMax()); logger_->info(RCX, 0,
+    // "skipSideMetal: level={} -- v1= {} {} {} {} ", level, v1->xMin(),
     // v1->yMin(), v1->xMax(), v1->yMax());
     return true;  // COMMENT 03/26/13 -- small wire with 2 vias
 
@@ -2398,7 +2395,7 @@ void extMain::writeViaResistorsRC(FILE* fp, uint ii, FILE* fp1)
 
     uint top;
     uint bot = blkSearch->getViaLevels(v, top);
-    // odb::notice(0, "R_M%dM%d_%d \n", bot, top, v->getId());
+    // logger_->info(RCX, 0, "R_M{}M{}_{} ", bot, top, v->getId());
     // 10312012
     float res = getPowerViaRes(v, 0.1);
     char  bufRes[128];
@@ -2412,16 +2409,16 @@ void extMain::writeViaResistorsRC(FILE* fp, uint ii, FILE* fp1)
 
     // if ((srcNode==NULL)&&(dstNode==NULL))
     if ((srcNode == NULL) || (dstNode == NULL)) {
-      // odb::notice(0, "src/dst is NULL R_M%dM%d_%d \n", bot, top, v->getId());
+      // logger_->info(RCX, 0, "src/dst is NULL R_M{}M{}_{} ", bot, top, v->getId());
       continue;
     }
     if (dstNode == NULL) {
-      // odb::notice(0, "dst is NULL R_M%dM%d_%d \n", bot, top, v->getId());
+      // logger_->info(RCX, 0, "dst is NULL R_M{}M{}_{} ", bot, top, v->getId());
       continue;
     }
 
     if (srcNode == NULL) {
-      odb::notice(0, "src is NULL R_M%dM%d_%d \n", bot, top, v->getId());
+      logger_->info(RCX, 0, "src is NULL R_M{}M{}_{} ", bot, top, v->getId());
       srcNode = new char[64];
       sprintf(srcNode, "%s_%d", dstNode, bot);
     }
@@ -2527,10 +2524,10 @@ uint extMain::addGroupVias(uint                      level,
     odb::dbTechVia* via = v->getTechVia();
     /*
                     if (via==NULL)
-                    odb::notice(0, "\tMVvia: TECH_VIA id=%d %d %d  %d %d\n",
+                    logger_->info(RCX, 0, "\tMVvia: TECH_VIA id={} {} {}  {} {}",
        v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax()); odb::dbVia
-       *via1= (odb::dbVia *) v->getBlockVia(); if (via1==NULL) odb::notice(0,
-       "\tMVvia: TECH_VIA id=%d %d %d  %d %d\n", v->getId(), v->xMin(),
+       *via1= (odb::dbVia *) v->getBlockVia(); if (via1==NULL) logger_->info(RCX, 0,
+       "\tMVvia: TECH_VIA id={} {} {}  {} {}", v->getId(), v->xMin(),
        v->yMin(), v->xMax(), v->yMax());
     */
     viaTable.push_back(v);
@@ -2549,7 +2546,7 @@ void extMain::createNode_xy_RC(char*           buf,
 
   odb::dbStringProperty::create(capNode, "_inode", buf);
   capNode->setNameFlag();
-  // odb::notice(0, " capNode[%d] %s\n", capNode->getId(), buf);
+  // logger_->info(RCX, 0, " capNode[{}] {}", capNode->getId(), buf);
 }
 odb::dbCapNode* extMain::getPowerCapNode(odb::dbNet* net, int xy, uint level)
 {
@@ -2596,11 +2593,11 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
     if (p != NULL) {
       odb::dbStringProperty::destroy(p);
       // sprintf(buf, "%s %s",  buf, p->getValue().c_str());
-      // odb::notice(0, "Destroy iterm Prop -- new= %s", buf);
+      // logger_->info(RCX, 0, "Destroy iterm Prop -- new= {}", buf);
     }
     odb::dbStringProperty::create(iterm, "_inode", strdup(CapNodeName));
 
-    // odb::notice(0, "iterm Prop = I%d  %s\n", objId, CapNodeName);
+    // logger_->info(RCX, 0, "iterm Prop = I{}  {}", objId, CapNodeName);
   }
   uint         pathDir = 0;
   odb::dbRSeg* rc
@@ -2609,7 +2606,7 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
   uint rid = rc->getId();
   // if (rid==79)
   //{
-  // odb::notice(0, "HERE rid=%d\n", rid);
+  // logger_->info(RCX, 0, "HERE rid={}", rid);
   //}
 
   rc->setSourceNode(srcCap->getId());
@@ -2627,8 +2624,8 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
 
   if (dbg) {
     if (xy[!dir] - _last_node_xy[!dir] <= 0) {
-      odb::notice(0,
-                  "R_%d level%d dir=%d   xy[%d]=%10d  _last_node_xy[%d]=%10d   "
+      logger_->info(RCX, 0,
+                  "R_{} level{} dir={}   xy[{}]=%10d  _last_node_xy[{}]=%10d   "
                   "  len= %10d width= %d calc_len= %d res=%g\n",
                   rid,
                   level,
@@ -2647,7 +2644,7 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
   double cap = _modelTable->get(0)->getTotCapOverSub(level) * len;
   rc->setCapacitance(cap);
 
-  // odb::notice(0, "\tRC_%d %12d %12d  %12d %12d\n", rc->getId(),
+  // logger_->info(RCX, 0, "\tRC_{} %12d %12d  %12d %12d", rc->getId(),
   // _last_node_xy[0], _last_node_xy[1], xy[0], xy[1]);
   _last_node_xy[0] = xy[0];
   _last_node_xy[1] = xy[1];
@@ -2715,7 +2712,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
   if (level >= 1)  // for first rcseg
   {
     _last_node_xy[!dir] -= width / 2;
-    // odb::notice(0, "FIRST %d %d : %d %d  %d %d\n", _last_node_xy[0],
+    // logger_->info(RCX, 0, "FIRST {} {} : {} {}  {} {}", _last_node_xy[0],
     // _last_node_xy[1], w->xMin(), w->yMin(), w->xMax(), w->yMax());
     srcCapNode = getPowerCapNode(net, xy[!dir] - width / 2, level);  // pseudo
     srcCapNode = makePowerRes(srcCapNode, dir, xy, level, width, 0, 0);
@@ -2726,7 +2723,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
 
   uint gridViaCnt = viaCnt;
   // if (level==6)
-  // odb::notice(0, "WIRE : %d %d  %d %d\n", w->xMin(), w->yMin(), w->xMax(),
+  // logger_->info(RCX, 0, "WIRE : {} {}  {} {}", w->xMin(), w->yMin(), w->xMax(),
   // w->yMax());
   uint powerSrcCnt = addPowerSources(viaTable, isVDDnet, level, w);
   uint gViaCnt     = addGroupVias(level + 1, w, viaTable);
@@ -2736,8 +2733,8 @@ uint extMain::viaAndInstConnRC(uint              dir,
   viaCnt   = viaTable.size();
   if (_dbgPowerFlow)
     // if (level==5)
-    odb::notice(0,
-                "viaAndInstConnRC[%d=%d+%d+%d]: %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "viaAndInstConnRC[{}={}+{}+{}]: {} {}  {} {}",
                 viaCnt,
                 gViaCnt,
                 gridViaCnt,
@@ -2757,7 +2754,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
     uint bot = blkSearch->getViaLevels(v, top);
 
     // if (level==2)
-    // odb::notice(0, " init via M%dM%d  id=%d: %d %d  %d %d\n", bot, top,
+    // logger_->info(RCX, 0, " init via M{}M{}  id={}: {} {}  {} {}", bot, top,
     // v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
     // NOT_TESTED : overla[ check should cover this one: if
     // (viaXY[!dir]<=LAST_VIA_MAX[!dir])
@@ -2773,13 +2770,13 @@ uint extMain::viaAndInstConnRC(uint              dir,
       continue;
 
     if (!((level == bot) || (level == top))) {
-      // odb::notice(0, "M%d via[%d]: %d %d  %d %d\n", level, v->getId(),
+      // logger_->info(RCX, 0, "M{} via[{}]: {} {}  {} {}", level, v->getId(),
       // v->xMin(), v->yMin(), v->xMax(), v->yMax());
       if ((bot == 0) && (top == 0)) {
-        // odb::notice(0, "M%d via[%d]: %d %d  %d %d\n", level, v->getId(),
+        // logger_->info(RCX, 0, "M{} via[{}]: {} {}  {} {}", level, v->getId(),
         // v->xMin(), v->yMin(), v->xMax(), v->yMax());
         sname = getPowerSourceName(isVDDnet, level, v->getId());
-        odb::notice(0, "    powerLocName= %s\n", sname);
+        logger_->info(RCX, 0, "    powerLocName= {}", sname);
 
         if (sname == NULL)
           continue;
@@ -2788,7 +2785,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
       }
     }
     // if (level==2)
-    // odb::notice(0, "    Found via M%dM%d  id=%d\n", bot, top, v->getId());
+    // logger_->info(RCX, 0, "    Found via M{}M{}  id={}", bot, top, v->getId());
     v->setVisited(true);
     processedViaTable.push_back(v);
     if (dir > 0)
@@ -2813,7 +2810,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
             // iterm!
     {
       // if (level==2)
-      // odb::notice(0, "     getITermPhysicalConnRC: %d %d  %d %d \n", xy[0],
+      // logger_->info(RCX, 0, "     getITermPhysicalConnRC: {} {}  {} {} ", xy[0],
       // xy[1], xy2[0], xy2[1]);
       bool macro = true;
 
@@ -2825,7 +2822,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
     LAST_VIA_MAX[0] = v->xMax();  //
     LAST_VIA_MAX[1] = v->yMax();  //
                                   // if (level==1)
-    // odb::notice(0, "MMM%d via[%7d] %d-%d: %10d %10d  %d %d\n\n", level,
+    // logger_->info(RCX, 0, "MMM{} via[%7d] {}-{}: %10d %10d  {} {}", level,
     // v->getId(), bot, top, v->xMin(), v->yMin(), v->xMax(), v->yMax());
     srcCapNode
         = makePowerRes(srcCapNode, dir, xy2, level, width, v->getId(), 0);
@@ -2836,8 +2833,8 @@ uint extMain::viaAndInstConnRC(uint              dir,
     // if (v->getId()==280675)
     {
       char* prop = getViaResNode(v, "_up_node");
-      odb::notice(0,
-                  "M%d via[%d]: %s  %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "M{} via[{}]: {}  {} {}  {} {}",
                   level,
                   v->getId(),
                   prop,
@@ -2925,7 +2922,7 @@ uint extMain::viaAndInstConn(uint                dir,
           {
                   odb::dbBox *v= viaTable[ii];
 
-                          odb::notice(0, "\tvia: id=%d %d %d  %d %d\n",
+                          logger_->info(RCX, 0, "\tvia: id={} {} {}  {} {}",
      v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
                   }
   */
@@ -2960,9 +2957,9 @@ uint extMain::viaAndInstConn(uint                dir,
 
   encoder.addPoint(w->xMin(), w->yMin(), 0, 0);
 
-  // odb::notice(0, "\t\tencoder BEGIN: %d %d \n", w->xMin(), w->yMin());
+  // logger_->info(RCX, 0, "\t\tencoder BEGIN: {} {} ", w->xMin(), w->yMin());
   // encoder.addPoint(xy1[0], xy1[1], 0, width);
-  // odb::notice(0, "\t\tencoder BEGIN: %d %d \n", xy1[0], xy1[1]);
+  // logger_->info(RCX, 0, "\t\tencoder BEGIN: {} {} ", xy1[0], xy1[1]);
   /*
           if (dir==0)
                   encoder.addPoint(w->xMin(), w->yMin(), 0, 0);
@@ -2972,8 +2969,8 @@ uint extMain::viaAndInstConn(uint                dir,
 
   if (_dbgPowerFlow)
     // if (level==7)
-    odb::notice(0,
-                "viaAndInstConn[%d]: %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "viaAndInstConn[{}]: {} {}  {} {}",
                 viaCnt,
                 w->xMin(),
                 w->yMin(),
@@ -2996,10 +2993,10 @@ uint extMain::viaAndInstConn(uint                dir,
     odb::Rect vr;
     v->getBox(vr);
     if (!w->overlaps(vr)) {
-      // odb::notice(0, "\n\tW: %d %d  %d %d\n", w->xMin(), w->yMin(),
+      // logger_->info(RCX, 0, "\tW: {} {}  {} {}", w->xMin(), w->yMin(),
       // w->xMax(), w->yMax());
       // if (level==7)
-      // odb::notice(0, "\toverlap via: id=%d %d %d  %d %d\n", v->getId(),
+      // logger_->info(RCX, 0, "\toverlap via: id={} {} {}  {} {}", v->getId(),
       // v->xMin(), v->yMin(), v->xMax(), v->yMax());
       continue;
     }
@@ -3011,7 +3008,7 @@ uint extMain::viaAndInstConn(uint                dir,
     {
                     if (v->getId()==283584)
                     {
-                    odb::notice(0, "\tvVISITED ia: id=%d %d %d  %d %d\n",
+                    logger_->info(RCX, 0, "\tvVISITED ia: id={} {} {}  {} {}",
     v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax()); continue;
                     }
     }
@@ -3022,7 +3019,7 @@ uint extMain::viaAndInstConn(uint                dir,
     uint top;
     uint bot = blkSearch->getViaLevels(v, top);
     if (!((level == bot) || (level == top))) {
-      // odb::notice(0, "\tV[%d][%d]: id=%d %d %d  %d %d\n", bot, top,
+      // logger_->info(RCX, 0, "\tV[{}][{}]: id={} {} {}  {} {}", bot, top,
       // v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
       if ((bot == 0) && (top == 0)) {
         sname = getPowerSourceName(isVDDnet, level, v->getId());
@@ -3032,7 +3029,7 @@ uint extMain::viaAndInstConn(uint                dir,
         continue;
       }
     }
-    // odb::notice(0, "\t\tvia: id=%d %d %d  %d %d\n", v->getId(), v->xMin(),
+    // logger_->info(RCX, 0, "\t\tvia: id={} {} {}  {} {}", v->getId(), v->xMin(),
     // v->yMin(), v->xMax(), v->yMax());
     if (dir > 0)
       xy2[!dir] = (v->xMin() + v->xMax()) / 2;
@@ -3057,20 +3054,20 @@ uint extMain::viaAndInstConn(uint                dir,
     jid = encoder.addPoint(xy2[0], xy2[1], v->getId());  // viapoint
     /*
                     if (sameJunctionPoint(xy2[0], xy2[1]))
-                            odb::notice(0, "\t\tSameJubct[%d]: %d %d VIA=%d\n",
+                            logger_->info(RCX, 0, "\t\tSameJubct[{}]: {} {} VIA={}",
        ii, xy2[0], xy2[1], v->getId());
     */
     if (_dbgPowerFlow)
     // if (level==7)
     {
-      odb::notice(0,
-                  "\t\tencoder.addPoint [%d]: %d %d VIA=%d\n",
+      logger_->info(RCX, 0,
+                  "\t\tencoder.addPoint [{}]: {} {} VIA={}",
                   ii,
                   xy2[0],
                   xy2[1],
                   v->getId());
-      odb::notice(0,
-                  "\t\tvia: id=%d %d %d  %d %d\n",
+      logger_->info(RCX, 0,
+                  "\t\tvia: id={} {} {}  {} {}",
                   v->getId(),
                   v->xMin(),
                   v->yMin(),
@@ -3118,7 +3115,7 @@ uint extMain::viaAndInstConn(uint                dir,
     lastXY2[dir] = lastXY[dir];
     //       jid= encoder.addPoint(lastXY2[0], lastXY2[1]); // viapoint
     jid = encoder.addPoint(lastXY2[0], lastXY2[1]);  // viapoint
-    // odb::notice(0, "\t\tencoder.addPoint : %d %d LAST\n", lastXY2[0],
+    // logger_->info(RCX, 0, "\t\tencoder.addPoint : {} {} LAST", lastXY2[0],
     // lastXY2[1]);
   }
 
@@ -3206,7 +3203,7 @@ void extMain::powerWireConnRC(odb::Rect*        w,
     xy[1] = parser.getInt(2);
   } else {
     ok2replace = false;
-    // odb::notice(0, "\n%s\n", buff);
+    // logger_->info(RCX, 0, "{}", buff);
   }
 
   if ((level > 1) || (!_skip_m1_caps)) {
@@ -3438,8 +3435,8 @@ bool extMain::matchLayerDir(odb::dbBox*         rail,
       return true;
   }
   if (debug)
-    odb::notice(0,
-                "\nR%d DIR=%d %12d %12d %12d %12d -- %d %d\n",
+    logger_->info(RCX, 0,
+                "R{} DIR={} %12d %12d %12d %12d -- {} {}",
                 level,
                 dir,
                 rail->xMin(),
@@ -3476,13 +3473,13 @@ uint extMain::addSboxesOnSearch(odb::dbNet* net)
       uint level = s->getTechLayer()->getRoutingLevel();
 
       // if (level==5)
-      // odb::notice(0, "l=%d AddBox %d %d %d %d\n", level, r.xMin(), r.yMin(),
+      // logger_->info(RCX, 0, "l={} AddBox {} {} {} {}", level, r.xMin(), r.yMin(),
       // r.xMax(), r.yMax());
 
       int trackNum = _search->addBox(
           r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, s->getId(), 0, wtype);
       // if (level==5)
-      // odb::notice(0, "track[%d] %d AddBox %d %d %d %d\n", level, trackNum,
+      // logger_->info(RCX, 0, "track[{}] {} AddBox {} {} {} {}", level, trackNum,
       // r.xMin(), r.yMin(), r.xMax(), r.yMax());
 
       if (false) {
@@ -3495,8 +3492,8 @@ uint extMain::addSboxesOnSearch(odb::dbNet* net)
 
           if (boxCnt > 0) {
             odb::Rect* v = getRect_SBox(table, 0, false, 0, wtype);
-            odb::notice(0,
-                        "track[%d] %d AddBox %d %d %d %d dir=%d\n",
+            logger_->info(RCX, 0,
+                        "track[{}] {} AddBox {} {} {} {} dir={}",
                         level,
                         trackNum,
                         v->xMin(),
@@ -3518,7 +3515,7 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
   uint w = s->getWidth(targetDir);
 
   if (dbg)
-    odb::notice(
+    logger_->info(RCX, 
         0,
         "\ntargetDir=%d  maxWidth=%d   D=%d W=%d L=%d-- %d %d   %d %d\n",
         targetDir,
@@ -3534,7 +3531,7 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
   if ((s->getDir() == -1) || (s->getDir() != targetDir))  // -1 == square
   {
     if (dbg)
-      odb::notice(
+      logger_->info(RCX, 
           0,
           "filterPowerGeoms: targetDiri<> %d maxDith=%d -- %d %d   %d %d\n",
           s->getDir(),
@@ -3551,7 +3548,7 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
 
   if (w < maxWidth) {
     if (dbg)
-      odb::notice(
+      logger_->info(RCX, 
           0,
           "filterPowerGeoms: smallWidth<> %d maxDith=%d -- %d %d   %d %d\n",
           w,
@@ -3762,7 +3759,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
       continue;
 
     if (dbg)
-      odb::notice(0, "OVERLAPS -------------- LEVEL= %d ----\n", level);
+      logger_->info(RCX, 0, "OVERLAPS -------------- LEVEL= {} ----", level);
     uint ocnt = overlapPowerWires(
         mergeTable[level], mergeTable[level - 1], overlapTable[level]);
     _overlapPowerWireCnt += overlapTable[level].size();
@@ -3845,7 +3842,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
       }
     }
     if (dbg)
-      odb::notice(0, "\n\nNEW VIAS -------------- LEVEL= %d ----\n", level);
+      logger_->info(RCX, 0, "NEW VIAS -------------- LEVEL= {} ----", level);
     for (uint kk = 0; kk < _multiViaBoxTable[level].size(); kk++) {
       // odb::Rect *w= _multiViaTable[level][kk];
       odb::dbBox* v = _multiViaBoxTable[level][kk];
@@ -3875,7 +3872,7 @@ void extMain::railConnOpt(odb::dbNet* pNet)
   initPowerSearch();
 
   _powerWireCnt += addSboxesOnSearch(pNet);
-  // odb::notice(0, "_powerWireCnt= %d\n", _powerWireCnt);
+  // logger_->info(RCX, 0, "_powerWireCnt= {}", _powerWireCnt);
   int                     layerCount = _tech->getRoutingLayerCount();
   std::vector<odb::Rect*> mergeTable[16];
   std::vector<odb::Rect*> mergeTableNOT[16];
@@ -3887,7 +3884,7 @@ void extMain::railConnOpt(odb::dbNet* pNet)
       dir = 1;
 
     if (dbg)
-      odb::notice(0, "--- MERGE ---- DIR=%d - LEVEL= %d ----\n", dir, level);
+      logger_->info(RCX, 0, "--- MERGE ---- DIR={} - LEVEL= {} ----", dir, level);
     uint powerWireCnt = mergePowerWires(dir, level, mergeTable[level]);
     _mergedPowerWireCnt += powerWireCnt;
     powerWireCnt = mergePowerWires(!dir, level, mergeTableNOT[level]);
@@ -3924,7 +3921,7 @@ void extMain::railConnOpt(odb::dbNet* pNet)
     }
   }
   if (_overlapPowerWireCnt > 0)
-    odb::notice(
+    logger_->info(RCX, 
         0,
         "After Net: %d %s -- %d power Wires, into %d merged wires, %d wire "
         "overlaps, %d multi-via objects ==> created %d compound Via Objects\n",
@@ -3965,8 +3962,8 @@ void extMain::railConnOpt(odb::dbNet* pNet)
       odb::Rect* r = mergeTable[level][kk];
       // HERE
       if (level == 0) {
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
+        logger_->info(RCX, 0,
+                    "powerWireConn: M{}  {} {} {} {} -- {} {}",
                     level,
                     r->xMin(),
                     r->yMin(),
@@ -3984,8 +3981,8 @@ void extMain::railConnOpt(odb::dbNet* pNet)
       odb::Rect* r = mergeTableNOT[level][kk];
       // HERE
       if (level == 0) {
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
+        logger_->info(RCX, 0,
+                    "powerWireConn: M{}  {} {} {} {} -- {} {}",
                     level,
                     r->xMin(),
                     r->yMin(),
@@ -4006,7 +4003,7 @@ void extMain::railConnOpt(odb::dbNet* pNet)
     {
       // odb::dbBox *v= _viaM1_VDDtable[kk];
       odb::dbBox* v = (*_viaM1Table)[kk];
-      // odb::notice( 0, "Stack %d %d %d %d %d\n", v->getId(),
+      // logger_->info(RCX,  0, "Stack {} {} {} {} {}", v->getId(),
       // v->xMin(), v->yMin(), v->xMax(), v->yMax() );
 
       v->setVisited(false);
@@ -4037,8 +4034,8 @@ void extMain::railConn(odb::dbNet* pNet)
   odb::Rect           BB;
   bb->getBox(BB);
 
-  odb::notice(0,
-              "BBOX: %d %d %d %d %d %d\n",
+  logger_->info(RCX, 0,
+              "BBOX: {} {} {} {} {} {}",
               bb->xMin(),
               bb->yMin(),
               bb->xMax(),
@@ -4061,8 +4058,8 @@ void extMain::railConn(odb::dbNet* pNet)
     odb::dbTechLayerDir layerDir   = routelayer->getDirection();
 
     uint maxLen = 0;
-    odb::notice(0,
-                "%d M%d power wires of net %s found:\n",
+    logger_->info(RCX, 0,
+                "{} M{} power wires of net {} found:",
                 n,
                 level,
                 pNet->getConstName());
@@ -4083,13 +4080,13 @@ void extMain::railConn(odb::dbNet* pNet)
     // uint m= mergeTable[level].size();
     uint m = boxTable.size();
     if (debug)
-      odb::notice(0, "\n\n%d power RAILS found:\n", m);
+      logger_->info(RCX, 0, "{} power RAILS found:", m);
     for (uint jj = 0; jj < m; jj++) {
       // odb::dbBox *rail= mergeTable[level][jj];
       odb::dbBox* rail = boxTable[jj];
       if (debug)
-        odb::notice(0,
-                    "\nR%d DIR=%d %12d %12d %12d %12d -- %d %d\n",
+        logger_->info(RCX, 0,
+                    "R{} DIR={} %12d %12d %12d %12d -- {} {}",
                     level,
                     dir,
                     rail->xMin(),
@@ -4144,8 +4141,8 @@ void extMain::railConn(odb::dbNet* pNet)
       for (uint kk = 0; kk < railMergeTable.size(); kk++) {
         odb::dbBox* w = railMergeTable[kk];
         if (debug) {
-          odb::notice(0,
-                      "\t%12d %12d %12d %12d -- %d %d\n",
+          logger_->info(RCX, 0,
+                      "\t%12d %12d %12d %12d -- {} {}",
                       w->xMin(),
                       w->yMin(),
                       w->xMax(),
@@ -4165,8 +4162,8 @@ void extMain::railConn(odb::dbNet* pNet)
           if (r.intersects(a)) {
             r.merge(a);  // TODO
             if (debug) {
-              odb::notice(0,
-                          "\t\tM %d %d %d %d \n",
+              logger_->info(RCX, 0,
+                          "\t\tM {} {} {} {} ",
                           v->xMin(),
                           v->yMin(),
                           v->xMax(),
@@ -4179,8 +4176,8 @@ void extMain::railConn(odb::dbNet* pNet)
           //}
         }
         if (debug)
-          odb::notice(0,
-                      "Merged: %d %d %d %d -- %d %d\n",
+          logger_->info(RCX, 0,
+                      "Merged: {} {} {} {} -- {} {}",
                       r.xMin(),
                       r.yMin(),
                       r.xMax(),
@@ -4228,8 +4225,8 @@ void extMain::railConn(odb::dbNet* pNet)
         if (layerDir == odb::dbTechLayerDir::HORIZONTAL) {
           if (r.dx() <= r.dy()) {
             if (debug)
-              odb::notice(0,
-                          "Skip: M%d  %d %d %d %d -- %d %d\n",
+              logger_->info(RCX, 0,
+                          "Skip: M{}  {} {} {} {} -- {} {}",
                           level,
                           r.xMin(),
                           r.yMin(),
@@ -4242,8 +4239,8 @@ void extMain::railConn(odb::dbNet* pNet)
         } else {
           if (r.dy() <= r.dx()) {
             if (debug)
-              odb::notice(0,
-                          "Skip: M%d  %d %d %d %d -- %d %d\n",
+              logger_->info(RCX, 0,
+                          "Skip: M{}  {} {} {} {} -- {} {}",
                           level,
                           r.xMin(),
                           r.yMin(),
@@ -4255,8 +4252,8 @@ void extMain::railConn(odb::dbNet* pNet)
           }
         }
         // if (debug)
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
+        logger_->info(RCX, 0,
+                    "powerWireConn: M{}  {} {} {} {} -- {} {}",
                     level,
                     r.xMin(),
                     r.yMin(),
@@ -4374,7 +4371,7 @@ FILE* extMain::openNanoFileNet(char*       netname,
   char buf[2048];
   sprintf(buf, "%s%s_%s.%s", hier_prefix, name, name2, suffix);
 
-  // odb::notice(0, "Opening file %s ...\n", buf);
+  // logger_->info(RCX, 0, "Opening file {} ...", buf);
 
   FILE* fp = fopen(buf, perms);
   if (fp == NULL) {
@@ -4721,7 +4718,7 @@ void extMain::addSubcktStatementDomain(const char* cirFile1,
           cirFile,
           cirFile);
 
-  // odb::notice(0, "Performing cmd: %s\n", cmd);
+  // logger_->info(RCX, 0, "Performing cmd: {}", cmd);
   system(cmd);
 
   // system("mv glob_VDD.cir glob_VDD.cir.TMP ; cat glob_VDD.subckt
@@ -4774,7 +4771,7 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
     ptype = "GROUND";
 
   /*
-          odb::notice(0, "iterm2Vias: %s %s -- %s %s\n",
+          logger_->info(RCX, 0, "iterm2Vias: {} {} -- {} {}",
                           inst->getConstName(),
      inst->getMaster()->getConstName(), ptype, net->getConstName());
   */
@@ -4815,7 +4812,7 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
       if (viaCnt == 0)
         continue;
 
-      // odb::notice(0, "%s/%s  %d  %d %d  %d %d\n", inst->getConstName(),
+      // logger_->info(RCX, 0, "{}/{}  {}  {} {}  {} {}", inst->getConstName(),
       // tr->getMTerm()->getConstName(), level,
       // s.xMin(),s.yMin(),s.xMax(),s.yMax());
       for (uint ii = 0; ii < viaCnt; ii++) {
@@ -4827,7 +4824,7 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
         // if (w->getUserFlag1())
         // continue;
 
-        // odb::notice(0, "\tFOUND%s/%s  %d  %d %d  %d %d\n",
+        // logger_->info(RCX, 0, "\tFOUND{}/{}  {}  {} {}  {} {}",
         // inst->getConstName(), tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
         uint top;
@@ -4845,13 +4842,13 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
           continue;
         if (w->yMax() < s.yMin())
           continue;
-        // odb::notice(0, "\tOVERL%s/%s  %d  %d %d  %d %d\n",
+        // logger_->info(RCX, 0, "\tOVERL{}/{}  {}  {} {}  {} {}",
         // inst->getConstName(), tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
 
         connShapeTable[top].push_back(w);
         connItermTable[top].push_back(tr);
-        // odb::notice(0, "%s/%s  %d  %d %d  %d %d\n\n", inst->getConstName(),
+        // logger_->info(RCX, 0, "{}/{}  {}  {} {}  {} {}", inst->getConstName(),
         // tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
       }
@@ -4904,8 +4901,8 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
         else
           _via_id_map[w->getId()] = NULL;
 
-        odb::notice(0,
-                    "\tTERM %s is Connected at %s\n",
+        logger_->info(RCX, 0,
+                    "\tTERM {} is Connected at {}",
                     tr->getMTerm()->getConstName(),
                     srcNode);
         tr->setMark(1);
@@ -5012,7 +5009,7 @@ srcNode); _viaUpTable->push_back(w);
                                 vcnt ++;
                         }
                 }
-                odb::notice(0,"\tTERM %s has %d via conns\n",
+                logger_->info(RCX, 0,"\tTERM {} has {} via conns",
 tr->getMTerm()->getConstName(),vcnt);
         }
         return 0;
@@ -5033,7 +5030,7 @@ uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
     ptype = "GROUND";
 
   /*
-          odb::notice(0, "iterm2Vias_cells: %s %s -- %s %s\n",
+          logger_->info(RCX, 0, "iterm2Vias_cells: {} {} -- {} {}",
                           inst->getConstName(),
      inst->getMaster()->getConstName(), ptype, net->getConstName());
   */
@@ -5113,7 +5110,7 @@ uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
       if (tr->isSetMark())
         break;
     }
-    // odb::notice(0,"\tTERM %s has %d via conns\n",
+    // logger_->info(RCX, 0,"\tTERM {} has {} via conns",
     // tr->getMTerm()->getConstName(),vcnt);
   }
   return 0;
@@ -5128,7 +5125,7 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
   odb::dbBox*         v         = botVia;
 
-  // odb::notice(0, "M1: Via_%d %d %d %d %d\n", botVia->getId(),
+  // logger_->info(RCX, 0, "M1: Via_{} {} {} {} {}", botVia->getId(),
   // botVia->xMin(), botVia->yMin(),  botVia->xMax(),  botVia->yMax());
 
   char srcNode[128];
@@ -5162,7 +5159,7 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     viaLevelTable[bot].push_back(w);
     // uint vid= w->getId();
 
-    // odb::notice(0, "ID=%d %d  %d %d    %d %d\n", vid,
+    // logger_->info(RCX, 0, "ID={} {}  {} {}    {} {}", vid,
     // w->isVisited(),w->xMin(),w->yMin(),w->xMax(),w->yMax());
   }
 
@@ -5215,8 +5212,8 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
                       char * botNode= getViaResNode(botVia, "_up_node");
                       if (botNode!=NULL)
                       sprintf(srcNode,"%s", botNode);
-                              odb::notice(0, "NOT CONNECTED M1: node=%s Via_%d
-         %d %d %d %d\n", srcNode, botVia->getId(), botVia->xMin(),
+                              logger_->info(RCX, 0, "NOT CONNECTED M1: node={} Via_{}
+         {} {} {} {}", srcNode, botVia->getId(), botVia->xMin(),
          botVia->yMin(),  botVia->xMax(),  botVia->yMax());
       */
       return 0;
@@ -5234,8 +5231,8 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     totRes += res;
   }
   if (topVia == NULL) {
-    odb::warning(0,
-                 "Via_%d %d %d has no overlaps from above!\n",
+    logger_->warn(RCX, 0,
+                 "Via_{} {} {} has no overlaps from above!",
                  botVia->getId(),
                  botVia->xMin(),
                  botVia->yMin());
@@ -5248,8 +5245,8 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
                     char * botNode= getViaResNode(botVia, "_up_node");
                     if (botNode!=NULL)
                     sprintf(srcNode,"%s", botNode);
-                            odb::notice(0, "NOT CONNECTED M1: node=%s Via_%d %d
-       %d %d %d\n", srcNode, botVia->getId(), botVia->xMin(), botVia->yMin(),
+                            logger_->info(RCX, 0, "NOT CONNECTED M1: node={} Via_{} {}
+       {} {} {}", srcNode, botVia->getId(), botVia->xMin(), botVia->yMin(),
        botVia->xMax(),  botVia->yMax());
     */
     return 0;
@@ -5271,8 +5268,8 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     if (topNode == NULL)
       topNode = getViaResNode(topVia, "_up_node");
     if (topNode == NULL) {
-      odb::notice(0,
-                  "NOT CONNECTED M1: Via_%d %d %d %d %d\n",
+      logger_->info(RCX, 0,
+                  "NOT CONNECTED M1: Via_{} {} {} {} {}",
                   botVia->getId(),
                   botVia->xMin(),
                   botVia->yMin(),
@@ -5323,7 +5320,7 @@ uint extMain::mergeStackedVias(FILE*                     fp,
     viaLevelTable[bot].push_back(w);
     // uint vid= w->getId();
 
-    // odb::notice(0, "ID=%d %d  %d %d    %d %d\n", vid,
+    // logger_->info(RCX, 0, "ID={} {}  {} {}    {} {}", vid,
     // w->isVisited(),w->xMin(),w->yMin(),w->xMax(),w->yMax());
   }
 
@@ -5391,8 +5388,8 @@ uint extMain::mergeStackedVias(FILE*                     fp,
     w->setVisited(false);
   }
   if (w == NULL) {
-    odb::warning(0,
-                 "Via_%d %d %d has no overlaps from above!\n",
+    logger_->warn(RCX, 0,
+                 "Via_{} {} {} has no overlaps from above!",
                  botVia->getId(),
                  botVia->xMin(),
                  botVia->yMin());
@@ -5454,7 +5451,7 @@ uint extMain::findHighLevelPinMacros(std::vector<odb::dbInst*>& instTable)
     odb::dbInst* inst = *i_itr;
     /*
                     odb::dbBox *bb= inst->getBBox();
-                    odb::notice(0, "I%d %s  %s  %d %d  %d %d\n", inst->getId(),
+                    logger_->info(RCX, 0, "I{} {}  {}  {} {}  {} {}", inst->getId(),
                             inst->getConstName(),
        inst->getMaster()->getConstName(), bb->xMin(), bb->yMin(), bb->xMax(),
        bb->yMax());
@@ -5526,8 +5523,8 @@ void extMain::setupDirNaming()
   sprintf(_node_inst_prefix, "");
   odb::dbInst* ii = _block->getParentInst();
   if (ii != NULL) {
-    odb::notice(0,
-                "Extract Hier Block %d name= %s of Inst %d %s\n",
+    logger_->info(RCX, 0,
+                "Extract Hier Block {} name= {} of Inst {} {}",
                 _block->getId(),
                 _block->getConstName(),
                 ii->getId(),
@@ -5547,21 +5544,21 @@ void extMain::setupDirNaming()
       sprintf(_node_blk_prefix, "B%d_", _block->getId());
       sprintf(_node_inst_prefix, "%s_", _block->getConstName());
 
-      odb::notice(0,
-                  "Extract Top Block %d name= %s \n",
+      logger_->info(RCX, 0,
+                  "Extract Top Block {} name= {} ",
                   _block->getId(),
                   _block->getConstName());
 
     } else {
-      odb::notice(0,
-                  "Extract Block %d name= %s\n",
+      logger_->info(RCX, 0,
+                  "Extract Block {} name= {}",
                   _block->getId(),
                   _block->getConstName());
     }
     _block->getDieArea(_extMaxRect);
   }
-  odb::notice(0,
-              "nodeBlockPrefix=%s nodeInstPrefix=%s\n\n",
+  logger_->info(RCX, 0,
+              "nodeBlockPrefix={} nodeInstPrefix={}",
               _node_blk_prefix,
               _node_inst_prefix);
 }
@@ -5586,8 +5583,8 @@ uint extMain::powerRCGen()
 
   setupDirNaming();
 
-  odb::notice(0,
-              "Extract Bounding Box %d %d %d %d\n",
+  logger_->info(RCX, 0,
+              "Extract Bounding Box {} {} {} {}",
               _extMaxRect.xMin(),
               _extMaxRect.yMin(),
               _extMaxRect.xMax(),
@@ -5606,7 +5603,7 @@ uint extMain::powerRCGen()
   //_via2JunctionMap= new Ath__array1D<int>(10000000);
 
   findHighLevelPinMacros(_powerMacroTable);
-  odb::notice(0, "Found %lu macro blocks\n", _powerMacroTable.size());
+  logger_->info(RCX, 0, "Found %lu macro blocks", _powerMacroTable.size());
 
   markExcludedCells();
 
@@ -5614,7 +5611,7 @@ uint extMain::powerRCGen()
   uint                     pNetCnt = getPowerNets(powerNetTable);
 
   // odb::dbBox *bb = _block->getBBox();
-  // odb::notice(0, "BBOX: %d %d %d %d \n",
+  // logger_->info(RCX, 0, "BBOX: {} {} {} {} ",
   // bb->xMin(),bb->yMin(),bb->xMax(),bb->yMax());
   char msg1[1024];
   sprintf(msg1, "\nExtracting %d nets ", pNetCnt);
@@ -5640,7 +5637,7 @@ uint extMain::powerRCGen()
     setupNanoFiles(net);
     _netUtil->setCurrentNet(net);
 
-    odb::notice(0, "\nExtracting net %s ... \n", net->getConstName());
+    logger_->info(RCX, 0, "Extracting net {} ... ", net->getConstName());
 
     // 103012 Release railConn(net);
 
@@ -5655,8 +5652,8 @@ uint extMain::powerRCGen()
 
     for (uint jj = 0; jj < _powerMacroTable.size(); jj++) {
       odb::dbInst* inst = _powerMacroTable[jj];
-      odb::notice(0,
-                  "\n--- Connectivity of macro %s with net %s ... \n",
+      logger_->info(RCX, 0,
+                  "--- Connectivity of macro {} with net {} ... ",
                   inst->getConstName(),
                   net->getConstName());
       iterm2Vias(inst, net);
@@ -5763,7 +5760,7 @@ void extMain::writeViaName(FILE*       fp,
       fprintf(fp, "%s%s", srcNode, post);
     /* 030313
                     else
-                            odb::notice(0, "NULL _up_node: v%d %d %d ",
+                            logger_->info(RCX, 0, "NULL _up_node: v{} {} {} ",
        v->getId(), v->xMin(), v->yMin());
     */
 
@@ -5953,24 +5950,24 @@ uint extMain::readPowerSupplyCoords(char* filename)
   parser.openFile(filename);
   while (parser.parseNextLine() > 0) {
     if (parser.getWordCnt() < 5) {
-      odb::warning(0, "Less than 5 tokens in line %d\n", parser.getLineNum());
+      logger_->warn(RCX, 0, "Less than 5 tokens in line {}", parser.getLineNum());
       parser.printWords(NULL);
       continue;
     }
     char*             layer_name = parser.get(3);
     odb::dbTechLayer* layer      = _tech->findLayer(layer_name);
     if (layer == NULL) {
-      odb::warning(
-          0, "Layer %s might be undefined in LEF at line: ", layer_name);
+      logger_->warn(RCX, 
+          0, "Layer {} might be undefined in LEF at line: ", layer_name);
       parser.printWords(NULL);
-      odb::warning(0, "the above line will be skipped!\n");
+      logger_->warn(RCX, 0, "the above line will be skipped!");
       continue;
     }
     if (layer->getRoutingLevel() >= _tech->getRoutingLayerCount()) {
-      odb::warning(
-          0, "Layer Name %s cannot be the top layer at line: ", layer_name);
+      logger_->warn(RCX, 
+          0, "Layer Name {} cannot be the top layer at line: ", layer_name);
       parser.printWords(NULL);
-      odb::warning(0, "the above line will be skipped!\n");
+      logger_->warn(RCX, 0, "the above line will be skipped!");
       continue;
     }
     parser.printWords(NULL);
@@ -6000,8 +5997,8 @@ uint extMain::readPowerSupplyCoords(char* filename)
 
     cnt++;
     char* sname = _supplyViaMap[power][level]->geti(v->getId());
-    odb::notice(0,
-                "%s %d %d %d %d -- viaId= %d viaBoxId=%d %d %d\n",
+    logger_->info(RCX, 0,
+                "{} {} {} {} {} -- viaId= {} viaBoxId={} {} {}",
                 sname,
                 x,
                 y,
@@ -6012,7 +6009,7 @@ uint extMain::readPowerSupplyCoords(char* filename)
                 bot->getId(),
                 top->getId());
   }
-  odb::notice(0, "Have read %d power/ground sources\n", cnt);
+  logger_->info(RCX, 0, "Have read {} power/ground sources", cnt);
   return cnt;
 }
 char* extMain::getPowerSourceName(bool power, uint level, uint vid)
@@ -6041,14 +6038,14 @@ uint extMain::addPowerSources(std::vector<odb::dbBox*>& viaTable,
     // v->setMarked(true);
     viaTable.push_back(v);
     cnt++;
-    odb::notice(0,
-                "    viaSource@ %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "    viaSource@ {} {}  {} {}",
                 v->xMin(),
                 v->yMin(),
                 v->xMax(),
                 v->yMax());
-    odb::notice(0,
-                "    connected with power wire at level %d :  %d %d  %d %d\n\n",
+    logger_->info(RCX, 0,
+                "    connected with power wire at level {} :  {} {}  {} {}",
                 level,
                 powerWire->xMin(),
                 powerWire->yMin(),
@@ -6056,8 +6053,8 @@ uint extMain::addPowerSources(std::vector<odb::dbBox*>& viaTable,
                 powerWire->yMax());
   }
   if (cnt > 0)
-    odb::notice(0,
-                "added %d [type=%d] power/ground sources on level %d\n",
+    logger_->info(RCX, 0,
+                "added {} [type={}] power/ground sources on level {}",
                 cnt,
                 power,
                 level);
