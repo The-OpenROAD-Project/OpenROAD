@@ -302,7 +302,7 @@ proc repair_timing { args } {
   } else {
     set resize_libs [get_libs *]
     if { $resize_libs == {} } {
-      ord::error RSZ 9 "No liberty libraries found."
+      ord::error RSZ 49 "No liberty libraries found."
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
