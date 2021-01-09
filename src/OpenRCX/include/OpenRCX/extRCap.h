@@ -65,7 +65,7 @@
 
 #include <map>
 
-namespace OpenRCX {
+namespace rcx {
 class extMeasure;
 
 class extMetBox  // assume cross-section on the z-direction
@@ -3082,6 +3082,6 @@ class extMain
 	void setMaxRC(uint ii, uint jj, extDistRC* rc);
 };
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 #endif

@@ -3,6 +3,7 @@ record_tests {
   make_parasitics2
   make_parasitics3
   make_parasitics4
+  make_parasitics5
   buffer_ports1
   buffer_ports3
   buffer_ports4
@@ -30,6 +31,7 @@ record_tests {
   repair_hold7
   repair_hold8
   repair_setup1
+  repair_setup2
   repair_slew1
   repair_slew2
   repair_slew3
@@ -48,6 +50,7 @@ record_tests {
   repair_wire3
   repair_wire4
   repair_wire5
+  repair_wire6
   gcd_resize
 }
 # injured reserve

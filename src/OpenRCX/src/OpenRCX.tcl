@@ -41,6 +41,7 @@ sta::define_cmd_args "extract_parasitics" {
     [-lef_res]
     [-cc_model track]
     [-context_depth depth]
+    [-no_merge_via_res]
 }
 
 proc extract_parasitics { args } {
@@ -81,6 +82,7 @@ proc extract_parasitics { args } {
   }
 
   set lef_res [info exists flags(-lef_res)]
+  set no_merge_via_res [info exists flags(-no_merge_via_res)]
 
   set cc_model 10
   if { [info exists keys(-cc_model)] } {
@@ -269,7 +271,7 @@ proc write_rules { args } {
   
   set filename "extRules" 
   if { [info exists keys(-file)] } {
-    set filename [lindex $args $keys(-file)]
+    set filename $keys(-file)
   }
 
   set dir "./" 
@@ -284,7 +286,7 @@ proc write_rules { args } {
 
   set pattern 0
   if { [info exists keys(-pattern)] } {
-    set name $keys(-pattern)
+    set pattern $keys(-pattern)
   }
   set solver [info exists flags(-read_from_solver)]
   set db [info exists flags(-db)]

@@ -36,7 +36,7 @@
 
 #include <vector>
 
-namespace replace {
+namespace gpl {
 
 class FFT {
   public:

@@ -44,7 +44,7 @@ class dbNet;
 class Rect;
 }  // namespace odb
 
-namespace partition {
+namespace par {
 
 enum GraphType : uint8_t
 {
@@ -64,7 +64,7 @@ class HypergraphDecomposition
                         short currentCluster);
   void toGraph(Hypergraph& hypergraph,
                Graph& graph,
-               std::string graphModelS,
+               GraphType graphModel,
                unsigned weightingOption,
                unsigned maxEdgeWeight,
                unsigned threshold);
@@ -81,7 +81,6 @@ class HypergraphDecomposition
 
   int _weightingOption;
   std::vector<std::map<int, float>> adjMatrix;
-  GraphType resolveModel(std::string graphModel);
   void addMapping(Hypergraph& hypergraph,
                   std::string instName,
                   const odb::Rect& rect);
@@ -93,4 +92,4 @@ class HypergraphDecomposition
   void createCompressedMatrix(Graph& graph);
 };
 
-}  // namespace partition
+}  // namespace par

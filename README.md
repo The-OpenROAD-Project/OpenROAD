@@ -286,6 +286,12 @@ no distance units are not specied in the liberty file microns are
 used.
 
 ```
+remove_buffers
+```
+
+Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
+
+```
 estimate_parasitics -placement
 ```
 
@@ -499,7 +505,7 @@ master, use the `-filter "ref_name == <name>" option to `get_cells`.
 The `set_power_net` command is used to set the power and ground
 special net names. The defaults are `VDD` and `VSS`.
 
-The `check_placement` command checks the placement legality. It returns `1` if the
+The `check_placement` command checks the placement legality. It returns `0` if the
 placement is legal.
 
 The `filler_placement` command fills gaps between detail placed instances

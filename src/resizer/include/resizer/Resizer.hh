@@ -361,6 +361,7 @@ protected:
                                Pin *load_pin,
                                double wire_length); // meters
   string makeUniqueNetName();
+  Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
@@ -397,6 +398,7 @@ protected:
   void makeHoldDelay(Vertex *drvr,
                      int buffer_count,
                      PinSeq &load_pins,
+                     bool loads_have_out_port,
                      LibertyCell *buffer_cell);
   Point findCenter(PinSeq &pins);
   Slack holdSlack(Slacks &slacks);
@@ -418,11 +420,20 @@ protected:
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
+  void estimateWireParasiticSteiner(const Net *net);
   void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
   void ensureWireParasitics();
+  void makePadParasitic(const Net *net);
+  bool isPadNet(const Net *net) const;
+  bool isPadPin(const Pin *pin) const;
+  bool isPad(const Instance *inst) const;
+  void net2Pins(const Net *net,
+                const Pin *&pin1,
+                const Pin *&pin2) const;
+
   void repairSetup(PathRef &path,
                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,

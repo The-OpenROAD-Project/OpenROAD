@@ -57,4 +57,5 @@ PRIVATE
 
 target_link_libraries(pdnsim
   Eigen3::Eigen
+  spdlog::spdlog
 )

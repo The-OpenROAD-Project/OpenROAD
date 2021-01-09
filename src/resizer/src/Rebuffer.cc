@@ -35,6 +35,8 @@
 
 #include "resizer/Resizer.hh"
 
+// Move logger macro out of the way.
+#undef debugPrint
 #include "sta/Debug.hh"
 #include "sta/Units.hh"
 #include "sta/Fuzzy.hh"
@@ -148,7 +150,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
     SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
-      debugPrint(debug_, "rebuffer", 2, "driver %s\n",
+      debugPrint(debug_, "rebuffer", 2, "driver %s",
                  sdc_network_->pathName(drvr_pin));
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
                                              drvr_pt, 1);
@@ -169,7 +171,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
           : RiseFall::fall();
         int rf_index = rf->index();
         debugPrint(debug_, "rebuffer", 3,
-                   "option %3d: %2d buffers req %s %s - %s = %s cap %s\n",
+                   "option %3d: %2d buffers req %s %s - %s = %s cap %s",
                    i,
                    p->bufferCount(),
                    rf->asString(),
@@ -187,7 +189,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
         i++;
       }
       if (best_option) {
-        debugPrint(debug_, "rebuffer", 3, "best option %d\n", best_index);
+        debugPrint(debug_, "rebuffer", 3, "best option %d", best_index);
         if (debug_->check("rebuffer", 4))
           best_option->printTree(this);
         int before = inserted_buffer_count_;
@@ -438,9 +440,8 @@ Resizer::rebufferTopDown(BufferedNet *choice,
   switch(choice->type()) {
   case BufferedNetType::buffer: {
     Instance *parent = db_network_->topInstance();
-    string net2_name = makeUniqueNetName();
     string buffer_name = makeUniqueInstName("rebuffer");
-    Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+    Net *net2 = makeUniqueNet();
     LibertyCell *buffer_cell = choice->bufferCell();
     Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                  buffer_name.c_str(),
@@ -450,12 +451,12 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     level_drvr_verticies_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    debugPrint(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s\n",
+    debugPrint(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s",
                level, "",
                sdc_network_->pathName(net),
                buffer_name.c_str(),
                buffer_cell->name(),
-               net2_name.c_str());
+               sdc_network_->pathName(net2));
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
@@ -464,11 +465,11 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     break;
   }
   case BufferedNetType::wire:
-    debugPrint(debug_, "rebuffer", 3, "%*swire\n", level, "");
+    debugPrint(debug_, "rebuffer", 3, "%*swire", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     break;
   case BufferedNetType::junction: {
-    debugPrint(debug_, "rebuffer", 3, "%*sjunction\n", level, "");
+    debugPrint(debug_, "rebuffer", 3, "%*sjunction", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     rebufferTopDown(choice->ref2(), net, level + 1);
     break;
@@ -479,7 +480,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     if (load_net != net) {
       Instance *load_inst = db_network_->instance(load_pin);
       Port *load_port = db_network_->port(load_pin);
-      debugPrint(debug_, "rebuffer", 3, "%*sconnect load %s to %s\n",
+      debugPrint(debug_, "rebuffer", 3, "%*sconnect load %s to %s",
                  level, "",
                  sdc_network_->pathName(load_pin),
                  sdc_network_->pathName(net));

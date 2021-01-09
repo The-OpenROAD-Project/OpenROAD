@@ -220,15 +220,19 @@ proc is_rails_layer {layer} {
   return [expr {[lsearch -exact [get_rails_layers] $layer] > -1}]
 }
 
+proc via_number {layer_rule1 layer_rule2} {
+  return [expr [[$layer_rule1 getLayer] getNumber] - [[$layer_rule2 getLayer] getNumber]]
+}
+
 proc init_via_tech {} {
   variable tech
   variable def_via_tech
   
   set def_via_tech {}
   foreach via_rule [$tech getViaGenerateRules] {
-    set lower [$via_rule getViaLayerRule 0]
-    set upper [$via_rule getViaLayerRule 1]
-    set cut   [$via_rule getViaLayerRule 2]
+    set levels [list [$via_rule getViaLayerRule 0] [$via_rule getViaLayerRule 1] [$via_rule getViaLayerRule 2]]
+    set levels [lsort -command via_number $levels]
+    lassign $levels lower cut upper
 
     dict set def_via_tech [$via_rule getName] [list \
       lower [list layer [[$lower getLayer] getName] enclosure [$lower getEnclosure]] \
@@ -236,6 +240,7 @@ proc init_via_tech {} {
       cut   [list layer [[$cut getLayer] getName] spacing [$cut getSpacing] size [list [[$cut getRect] dx] [[$cut getRect] dy]]] \
     ]
   }
+  # debug "def_via_tech: $def_via_tech"
 }
 
 proc set_prop_lines {obj prop_name} {
