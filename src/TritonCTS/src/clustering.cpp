@@ -354,7 +354,7 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   }
 
   debugPrint(_logger, CTS, "tritoncts", 1, 
-          "Graph have {} nodes and {} edges", countNodes(g), countArcs(g)); 
+          "Graph has {} nodes and {} edges", countNodes(g), countArcs(g)); 
 
   // formulate min-cost flow
   NetworkSimplex<ListDigraph, int, int> flow(g);
