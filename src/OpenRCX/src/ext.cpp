@@ -46,6 +46,8 @@ namespace rcx {
 
 using ord::RCX;
 
+using ord::RCX;
+
 extern "C" {
 extern int Openrcx_Init(Tcl_Interp* interp);
 }

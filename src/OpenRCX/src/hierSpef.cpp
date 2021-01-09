@@ -52,6 +52,8 @@ namespace rcx {
 
 using ord::RCX;
 
+using ord::RCX;
+
 uint extSpef::writeHierInstNameMap()
 {
   odb::dbSet<odb::dbInst>           insts = _block->getInsts();

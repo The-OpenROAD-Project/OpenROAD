@@ -50,6 +50,8 @@ namespace rcx {
 
 using ord::RCX;
 
+using ord::RCX;
+
 bool OUREVERSEORDER = false;
 
 static int getMetIndexOverUnder(uint met,

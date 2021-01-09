@@ -70,6 +70,7 @@ class Logger;
 }
 
 namespace rcx {
+
 class extMeasure;
 
 using ord::Logger;

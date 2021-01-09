@@ -19,6 +19,8 @@ namespace rcx {
 
 using ord::RCX;
 
+using ord::RCX;
+
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;

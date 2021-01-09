@@ -54,6 +54,8 @@ namespace rcx {
 
 using ord::RCX;
 
+using ord::RCX;
+
 class extMain;
 
 extSpef::extSpef(odb::dbTech*  tech,
