@@ -1660,6 +1660,12 @@ namespace eval ICeWall {
 
           set centre [get_padcell_centre $padcell bondpad]
           connect_to_bondpad_or_bump $inst $centre $padcell
+        } else {
+          if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
+            err 99 "No padcell instance found for $padcell"
+            continue
+          }
+          add_physical_pin $padcell [get_padcell_inst $padcell]
         }
       }
     }
@@ -2407,8 +2413,6 @@ namespace eval ICeWall {
         $inst setOrient [get_padcell_orient $padcell]
         $inst setPlacementStatus "FIRM"
         place_padcell_overlay $padcell
-
-        add_physical_pin $padcell $inst
 
         set bbox [$inst getBBox]
 
