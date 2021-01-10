@@ -41,7 +41,9 @@ namespace fr {
   class FlexGCWorker {
   public:
     // constructors
-    FlexGCWorker(frDesign* designIn, FlexDRWorker* drWorkerIn = nullptr);
+    FlexGCWorker(frDesign* designIn,
+                 Logger* logger,
+                 FlexDRWorker* drWorkerIn = nullptr);
     ~FlexGCWorker();
     // setters
     void setExtBox(const frBox &in);

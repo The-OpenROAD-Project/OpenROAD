@@ -58,7 +58,6 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/gc/FlexGC.cpp
   ${FLEXROUTE_HOME}/src/gc/FlexGC_init.cpp
   ${FLEXROUTE_HOME}/src/gc/FlexGC_main.cpp
-  ${FLEXROUTE_HOME}/src/utility.cpp
   ${FLEXROUTE_HOME}/src/db/drObj/drShape.cpp
   ${FLEXROUTE_HOME}/src/db/drObj/drVia.cpp
   ${FLEXROUTE_HOME}/src/db/infra/frBox.cpp

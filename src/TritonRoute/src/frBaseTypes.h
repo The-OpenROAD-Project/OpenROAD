@@ -34,11 +34,14 @@
 #include <map>
 #include <string>
 #include <utility>
+#include "openroad/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
 namespace fr {
+  using Logger = ord::Logger;
+  const ord::ToolId DRT = ord::DRT;
   using frLayerNum = int;
   using frCoord = int;
   using frUInt4 = unsigned int;

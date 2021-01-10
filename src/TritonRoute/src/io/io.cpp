@@ -40,7 +40,6 @@
 #include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
-#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -4932,9 +4931,7 @@ void io::Parser::readLefDef() {
   //tech->printAllConstraints();
   
   if (enableOutput) {
-    //design->printAllMacros();
     // printAllLayers();
-    //tech->printAllVias();
     //printLayerMaps();
   }
 
@@ -4963,10 +4960,7 @@ void io::Parser::readLefDef() {
   //cout <<flush;
 
   if (enableOutput) {
-    //tech->printAllVias();
-    //design->printAllComps();
     //printCompMaps();
-    //design->printAllTerms();
     //printTermMaps();
     //printAllNets();
     //printAllTrackGens();
