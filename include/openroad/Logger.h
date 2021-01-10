@@ -40,6 +40,7 @@
 #include <array>
 #include <map>
 #include <string_view>
+#include <cstdlib>
 
 #include "spdlog/spdlog.h"
 
@@ -143,6 +144,7 @@ class Logger
                   const Args&... args)
     {
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
+      exit(EXIT_FAILURE);
     }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
