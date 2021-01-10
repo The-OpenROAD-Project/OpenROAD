@@ -1415,10 +1415,8 @@ void
 Resizer::findTargetLoad(LibertyCell *cell,
                         TgtSlews &slews)
 {
+  float target_load = INF;
   LibertyCellTimingArcSetIterator arc_set_iter(cell);
-  float target_load_sum[RiseFall::index_count]{0.0};
-  int arc_count[RiseFall::index_count]{0};
-
   while (arc_set_iter.hasNext()) {
     TimingArcSet *arc_set = arc_set_iter.next();
     TimingRole *role = arc_set->role();
@@ -1433,16 +1431,16 @@ Resizer::findTargetLoad(LibertyCell *cell,
         float arc_target_load = findTargetLoad(cell, arc,
                                                slews[in_rf_index],
                                                slews[out_rf_index]);
-        target_load_sum[out_rf_index] += arc_target_load;
-        arc_count[out_rf_index]++;
+        debugPrint(debug_, "resizer", 4, "%s %s -> %s %s target_load = %.2e",
+                   cell->name(),
+                   arc->from()->name(),
+                   arc->to()->name(),
+                   arc->toTrans()->asString(),
+                   arc_target_load);
+        // Ignore arcs with out_slew(load_cap=0.0) > target_slew.
+        if (arc_target_load > 0.0)
+          target_load = min(target_load, arc_target_load);
       }
-    }
-  }
-  float target_load = INF;
-  for (int rf : RiseFall::rangeIndex()) {
-    if (arc_count[rf] > 0) {
-      float target = target_load_sum[rf] / arc_count[rf];
-      target_load = min(target_load, target);
     }
   }
   (*target_load_map_)[cell] = target_load;
@@ -1461,29 +1459,53 @@ Resizer::findTargetLoad(LibertyCell *cell,
 {
   GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
   if (model) {
-    float cap_init = 1.0e-12;  // 1pF
-    float cap_tol = 0.1e-15; // .1fF
-    float load_cap = cap_init;
-    float cap_step = cap_init;
-    Slew prev_slew = 0.0;
-    while (cap_step > cap_tol) {
-      ArcDelay arc_delay;
-      Slew arc_slew;
-      model->gateDelay(cell, pvt_, in_slew, load_cap, 0.0, false,
-                       arc_delay, arc_slew);
-      if (arc_slew > out_slew) {
-        load_cap -= cap_step;
-        cap_step /= 2.0;
+    // load_cap1 lower bound
+    // load_cap2 upper bound
+    double load_cap1 = 0.0;
+    double load_cap2 = 1.0e-12;  // 1pF
+    double tol = .01; // 1%
+    double diff1 = gateSlewDiff(cell, arc, model, in_slew, load_cap1, out_slew);
+    double diff2 = gateSlewDiff(cell, arc, model, in_slew, load_cap2, out_slew);
+    // binary search for diff = 0.
+    while (abs(load_cap1 - load_cap2) > max(load_cap1, load_cap2) * tol) {
+      if (diff2 < 0.0) {
+        load_cap1 = load_cap2;
+        diff1 = diff2;
+        load_cap2 *= 2;
+        diff2 = gateSlewDiff(cell, arc, model, in_slew, load_cap2, out_slew);
       }
-      load_cap += cap_step;
-      if (arc_slew == prev_slew)
-        // we are stuck
-        break;
-      prev_slew = arc_slew;
+      else {
+        double load_cap3 = (load_cap1 + load_cap2) / 2.0;
+        double diff3 = gateSlewDiff(cell, arc, model, in_slew, load_cap3, out_slew);
+        if (diff3 < 0.0) {
+          load_cap1 = load_cap3;
+          diff1 = diff3;
+        }
+        else {
+          load_cap2 = load_cap3;
+          diff2 = diff3;
+        }
+      }
     }
-    return load_cap;
+    return load_cap1;
   }
   return 0.0;
+}
+
+// objective function
+Slew
+Resizer::gateSlewDiff(LibertyCell *cell,
+                      TimingArc *arc,
+                      GateTimingModel *model,
+                      Slew in_slew,
+                      float load_cap,
+                      Slew out_slew)
+{
+  ArcDelay arc_delay;
+  Slew arc_slew;
+  model->gateDelay(cell, pvt_, in_slew, load_cap, 0.0, false,
+                   arc_delay, arc_slew);
+  return arc_slew - out_slew;
 }
 
 ////////////////////////////////////////////////////////////////
