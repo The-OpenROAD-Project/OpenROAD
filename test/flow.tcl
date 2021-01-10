@@ -83,7 +83,7 @@ configure_cts_characterization \
 clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
 
 # CTS leaves a long wire from the pad to the clock tree root.
-repair_clock_nets -max_wire_length $max_wire_length
+repair_clock_nets
 
 # CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
