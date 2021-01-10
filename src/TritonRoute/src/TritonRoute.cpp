@@ -120,7 +120,7 @@ void TritonRoute::init() {
   }
 
   io::Parser parser(getDesign(),logger_);
-  parser.readLefDef(db_);
+  parser.readLefDb(db_);
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {

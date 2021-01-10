@@ -416,8 +416,8 @@ int io::Parser::Callbacks::getDefVias(defrCallbackType_e type, defiVia* via, def
 }
 
 int io::Parser::Callbacks::getDefComponents(defrCallbackType_e type, defiComponent* comp, defiUserData data) {
-  bool enableOutput = true;
-  // bool enableOutput = false;
+  //bool enableOutput = true;
+  bool enableOutput = false;
   if ((type != defrComponentCbkType)) {
     cout <<"Type is not defrComponentCbkType!" <<endl;
     exit(1);
@@ -435,6 +435,7 @@ int io::Parser::Callbacks::getDefComponents(defrCallbackType_e type, defiCompone
     cout <<"- " <<comp->id() <<" " <<comp->name() <<" + STATUS ( " <<comp->placementX()
          <<" " <<comp->placementY() <<" ) " <<comp->placementOrient() <<endl;
   }
+
   
   frBlock* refBlock = parser->design->name2refBlock_.at(comp->name());
   auto uInst = make_unique<frInst>(comp->id(), refBlock);
@@ -973,110 +974,88 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
   }
 
   io::Parser* parser = (io::Parser*) data;
-
-  if(term->hasPort() && term->numPorts() > 1){
+  if (term->hasPort()) {
     cout <<"Error: multiple pin ports existing in DEF" <<endl;
     exit(1);
-  }
-
-  bool hasPort = term->hasPort();
-
-  LefDefParser::defiPinPort* port = (hasPort)? term->pinPort(0) : NULL;
-  int numLayer = (hasPort)? port->numLayer() : term->numLayer();
-  int numPolygon = (hasPort)? port->numPolygons() : term->numPolygons();
-
-  // term
-  auto uTermIn = make_unique<frTerm>(term->pinName());
-  auto termIn = uTermIn.get();
-  termIn->setId(parser->numTerms);
-  parser->numTerms++;
-  termIn->setType(termType);
-  termIn->setDirection(termDirection);
-  // term should add pin
-  // pin
-  auto pinIn  = make_unique<frPin>();
-  pinIn->setId(0);
-  for (int i = 0; i < numLayer; ++i) {
-
-    string layer = (hasPort)? port->layer(i) : term->layer(i);
-    if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-      if (VERBOSE > -1) {
-        cout <<"Error: unsupported layer: " <<layer <<endl;
+  } else {
+    // term
+    auto uTermIn = make_unique<frTerm>(term->pinName());
+    auto termIn = uTermIn.get();
+    termIn->setId(parser->numTerms);
+    parser->numTerms++;
+    termIn->setType(termType);
+    termIn->setDirection(termDirection);
+    // term should add pin
+    // pin
+    auto pinIn  = make_unique<frPin>();
+    pinIn->setId(0);
+    for (int i = 0; i < term->numLayer(); ++i) {
+      //cout <<"  layerName= " <<term->layer(i) <<endl;
+      string layer = term->layer(i);
+      if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
+        if (VERBOSE > -1) {
+          cout <<"Error: unsupported layer: " <<layer <<endl;
+        }
+        //continue;
+        exit(1);
       }
-      //continue;
-      exit(1);
-    }
 
-    frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
-    frCoord xl = 0;
-    frCoord yl = 0;
-    frCoord xh = 0;
-    frCoord yh = 0;
-
-    if(hasPort)
-      port->bounds(i, &xl, &yl, &xh, &yh);
-    else 
+      frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
+      frCoord xl = 0;
+      frCoord yl = 0;
+      frCoord xh = 0;
+      frCoord yh = 0;
       term->bounds(i, &xl, &yl, &xh, &yh);
-
-
-    // pinFig
-    unique_ptr<frRect> pinFig = make_unique<frRect>();
-    pinFig->setBBox(frBox(xl, yl, xh, yh));
-    pinFig->addToPin(pinIn.get());
-    pinFig->setLayerNum(layerNum);
-
-    if(hasPort)
-      pinFig->move(frTransform(port->placementX(), port->placementY(), frOrientEnum(port->orient())));
-    else 
+      // pinFig
+      unique_ptr<frRect> pinFig = make_unique<frRect>();
+      pinFig->setBBox(frBox(xl, yl, xh, yh));
+      pinFig->addToPin(pinIn.get());
+      pinFig->setLayerNum(layerNum);
       pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
-
-    frBox transformedBBox;
-    pinFig->getBBox(transformedBBox);
-    // pinFig completed
-    // pin
-    unique_ptr<frPinFig> uptr(std::move(pinFig));
-    pinIn->addPinFig(std::move(uptr));
-    // pin completed
-  }
-  // polygon
-  for (int i = 0; i < numPolygon; ++i) {
-    //cout <<"  polyName= " <<term->polygonName(i) <<endl;
-    string layer = (hasPort)? port->polygonName(i) : term->polygonName(i);
-    if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-      if (VERBOSE > -1) {
-        cout <<"Error: unsupported layer: " <<layer <<endl;
+      //cout <<"move" <<endl;
+      frBox transformedBBox;
+      pinFig->getBBox(transformedBBox);
+      // pinFig completed
+      // pin
+      unique_ptr<frPinFig> uptr(std::move(pinFig));
+      pinIn->addPinFig(std::move(uptr));
+      // pin completed
+    }
+    // polygon
+    for (int i = 0; i < term->numPolygons(); ++i) {
+      //cout <<"  polyName= " <<term->polygonName(i) <<endl;
+      string layer = term->polygonName(i);
+      if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
+        if (VERBOSE > -1) {
+          cout <<"Error: unsupported layer: " <<layer <<endl;
+        }
+        //continue;
+        exit(1);
       }
-      //continue;
-      exit(1);
-    }
 
-    frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
-    auto polyPoints = (hasPort)? port->getPolygon(i) : term->getPolygon(i);
-    frCollection<frPoint> tmpPoints;
-    for (int j = 0; j < polyPoints.numPoints; j++) {
-      tmpPoints.push_back(frPoint((polyPoints.x)[j], (polyPoints.y)[j]));
-    }
+      frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
+      auto polyPoints = term->getPolygon(i);
+      frCollection<frPoint> tmpPoints;
+      for (int j = 0; j < polyPoints.numPoints; j++) {
+        tmpPoints.push_back(frPoint((polyPoints.x)[j], (polyPoints.y)[j]));
+      }
 
-    // pinFig
-    unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
-    pinFig->setPoints(tmpPoints);
-    pinFig->addToPin(pinIn.get());
-    pinFig->setLayerNum(layerNum);
-
-    if(hasPort)
-      pinFig->move(frTransform(port->placementX(), port->placementY(), frOrientEnum(port->orient())));
-    else 
+      // pinFig
+      unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
+      pinFig->setPoints(tmpPoints);
+      pinFig->addToPin(pinIn.get());
+      pinFig->setLayerNum(layerNum);
       pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
-    // pinFig completed
-    // pin
-    unique_ptr<frPinFig> uptr(std::move(pinFig));
-    pinIn->addPinFig(std::move(uptr));
-    // pin completed
+      // pinFig completed
+      // pin
+      unique_ptr<frPinFig> uptr(std::move(pinFig));
+      pinIn->addPinFig(std::move(uptr));
+      // pin completed
+    }
+    termIn->addPin(std::move(pinIn));
+    //cout <<"  placeXY  = (" <<term->placementX() <<"," <<term->placementY() <<")" <<endl;
+    parser->tmpBlock->addTerm(std::move(uTermIn));
   }
-  termIn->addPin(std::move(pinIn));
-  //cout <<"  placeXY  = (" <<term->placementX() <<"," <<term->placementY() <<")" <<endl;
-  parser->tmpBlock->addTerm(std::move(uTermIn));
-  
 
   if (parser->tmpBlock->terms_.size() % 1000 == 0) {
     cout <<"defIn read " <<parser->tmpBlock->terms_.size() <<" pins" <<endl;
@@ -1135,7 +1114,7 @@ int io::Parser::Callbacks::getDefUnits(defrCallbackType_e type, double number, d
   return 0;
 }
 
-int invertdbdist(odb::dbBlock* block, int x)
+int defdist(odb::dbBlock* block, int x)
 {
   return x * block->getDefUnits() / block->getDbUnitsPerMicron(); 
 }
@@ -1162,7 +1141,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
   for(auto track : tracks)
   {
     if (tech->name2layer.find(track->getTechLayer()->getName()) == tech->name2layer.end())
-      logger->error(ord::DRT,0,"cannot find layer: {}",track->getTechLayer()->getName());
+      logger->error(ord::DRT,1,"cannot find layer: {}",track->getTechLayer()->getName());
     int xPatternSize = track->getNumGridPatternsX();
     int yPatternSize = track->getNumGridPatternsY();
     int startCoord,numTracks,step;
@@ -1197,9 +1176,9 @@ void io::Parser::setInsts(odb::dbBlock* block)
   for(auto inst : block->getInsts())
   {
     if (design->name2refBlock_.find(inst->getMaster()->getName()) == design->name2refBlock_.end())
-      logger->error(ord::DRT,0,"library cell {} not found",inst->getMaster()->getName());
+      logger->error(ord::DRT,2,"library cell {} not found",inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName()) != tmpBlock->name2inst_.end())
-      logger->error(ord::DRT,0,"same cell name: {}",inst->getName());
+      logger->error(ord::DRT,3,"same cell name: {}",inst->getName());
     frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), refBlock);
     auto tmpInst = uInst.get();
@@ -1214,8 +1193,8 @@ void io::Parser::setInsts(odb::dbBlock* block)
     inst->getOrigin(x, y);
     x += bbox.xMin();
     y += bbox.yMin();
-    x = invertdbdist(block,x);
-    y = invertdbdist(block,y);
+    x = defdist(block,x);
+    y = defdist(block,y);
     tmpInst->setOrigin(frPoint(x, y));
     int orient =(int)inst->getOrient().getValue();
     if(orient==5)
@@ -1290,34 +1269,34 @@ void io::Parser::setVias(odb::dbBlock* block)
       frLayerNum topLayerNum = 0;
 
       if (tech->name2layer.find(params.getCutLayer()->getName()) == tech->name2layer.end())
-        logger->error(ord::DRT,0,"cannot find cut layer {}",params.getCutLayer()->getName());
+        logger->error(ord::DRT,4,"cannot find cut layer {}",params.getCutLayer()->getName());
       else
         cutLayerNum = tech->name2layer.find(params.getCutLayer()->getName())->second->getLayerNum();
 
       if (tech->name2layer.find(params.getBottomLayer()->getName()) == tech->name2layer.end())
-        logger->error(ord::DRT,0,"cannot find bottom layer {}",params.getBottomLayer()->getName());
+        logger->error(ord::DRT,5,"cannot find bottom layer {}",params.getBottomLayer()->getName());
       else
         botLayerNum = tech->name2layer.find(params.getBottomLayer()->getName())->second->getLayerNum();
 
       if (tech->name2layer.find(params.getTopLayer()->getName()) == tech->name2layer.end())
-        logger->error(ord::DRT,0,"cannot find top layer {}",params.getTopLayer()->getName());
+        logger->error(ord::DRT,6,"cannot find top layer {}",params.getTopLayer()->getName());
       else
         topLayerNum = tech->name2layer.find(params.getTopLayer()->getName())->second->getLayerNum();
 
-      int xSize = invertdbdist(block,params.getXCutSize());
-      int ySize = invertdbdist(block,params.getYCutSize());
-      int xCutSpacing = invertdbdist(block,params.getXCutSpacing());
-      int yCutSpacing = invertdbdist(block,params.getYCutSpacing());
-      int xOffset = invertdbdist(block,params.getXOrigin());
-      int yOffset = invertdbdist(block,params.getYOrigin());
-      int xTopEnc = invertdbdist(block,params.getXTopEnclosure());
-      int yTopEnc = invertdbdist(block,params.getYTopEnclosure());
-      int xBotEnc = invertdbdist(block,params.getXBottomEnclosure());
-      int yBotEnc = invertdbdist(block,params.getYBottomEnclosure());
-      int xTopOffset = invertdbdist(block,params.getXTopOffset());
-      int yTopOffset = invertdbdist(block,params.getYTopOffset());
-      int xBotOffset = invertdbdist(block,params.getXBottomOffset());
-      int yBotOffset = invertdbdist(block,params.getYBottomOffset());
+      int xSize = defdist(block,params.getXCutSize());
+      int ySize = defdist(block,params.getYCutSize());
+      int xCutSpacing = defdist(block,params.getXCutSpacing());
+      int yCutSpacing = defdist(block,params.getYCutSpacing());
+      int xOffset = defdist(block,params.getXOrigin());
+      int yOffset = defdist(block,params.getYOrigin());
+      int xTopEnc = defdist(block,params.getXTopEnclosure());
+      int yTopEnc = defdist(block,params.getYTopEnclosure());
+      int xBotEnc = defdist(block,params.getXBottomEnclosure());
+      int yBotEnc = defdist(block,params.getYBottomEnclosure());
+      int xTopOffset = defdist(block,params.getXTopOffset());
+      int yTopOffset = defdist(block,params.getYTopOffset());
+      int xBotOffset = defdist(block,params.getXBottomOffset());
+      int yBotOffset = defdist(block,params.getYBottomOffset());
 
       frCoord currX = 0;
       frCoord currY = 0;
@@ -1377,15 +1356,15 @@ void io::Parser::setVias(odb::dbBlock* block)
         lNum2Int[layerNum].insert(box);
       }
       if ((int)lNum2Int.size() != 3)
-        logger->error(ord::DRT,0,"unsupported via: {}",via->getName());
+        logger->error(ord::DRT,7,"unsupported via: {}",via->getName());
       if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first)
-        logger->error(ord::DRT,0,"non-consecutive layers for via: {}",via->getName());
+        logger->error(ord::DRT,8,"non-consecutive layers for via: {}",via->getName());
       auto viaDef = make_unique<frViaDef>(via->getName());
       int cnt = 0;
       for (auto &[layerNum, boxes]: lNum2Int) {
         for (auto box: boxes) {
           unique_ptr<frRect> pinFig = make_unique<frRect>();
-          pinFig->setBBox(frBox(invertdbdist(block, box->xMin()), invertdbdist(block, box->yMin()), invertdbdist(block, box->xMax()), invertdbdist(block, box->yMax())));
+          pinFig->setBBox(frBox(defdist(block, box->xMin()), defdist(block, box->yMin()), defdist(block, box->xMax()), defdist(block, box->yMax())));
           pinFig->setLayerNum(layerNum);
           switch(cnt) {
             case 0 :
@@ -1406,9 +1385,90 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
+void io::Parser::getSBoxCoords(odb::dbSBox* box,frCoord& beginX,frCoord& beginY,frCoord& endX,frCoord& endY,frCoord& width)
+{
+  auto block = box->getDb()->getChip()->getBlock();
+  int  x1 = box->xMin();
+  int  y1 = box->yMin();
+  int  x2 = box->xMax();
+  int  y2 = box->yMax();
+  uint dx = box->getDX();
+  uint dy = box->getDY();
+  uint w;
+  switch (box->getDirection()) {
+    case odb::dbSBox::UNDEFINED: {
+      bool dx_even = ((dx & 1) == 0);
+      bool dy_even = ((dy & 1) == 0);
+      if (dx_even && dy_even) {
+        if (dy < dx) {
+          w       = dy;
+          uint dw = dy >> 1;
+          y1 += dw;
+          y2 -= dw;
+          assert(y1 == y2);
+        } else {
+          w       = dx;
+          uint dw = dx >> 1;
+          x1 += dw;
+          x2 -= dw;
+          assert(x1 == x2);
+        }
+      } else if (dx_even) {
+        w       = dx;
+        uint dw = dx >> 1;
+        x1 += dw;
+        x2 -= dw;
+        assert(x1 == x2);
+      } else if (dy_even) {
+        w       = dy;
+        uint dw = dy >> 1;
+        y1 += dw;
+        y2 -= dw;
+        assert(y1 == y2);
+      } else 
+        logger->error(ord::DRT,9,"odd dimension in both directions");
+      break;
+    }
+    case odb::dbSBox::HORIZONTAL: {
+      w       = dy;
+      uint dw = dy >> 1;
+      y1 += dw;
+      y2 -= dw;
+      assert(y1 == y2);
+      break;
+    }
+    case odb::dbSBox::VERTICAL: {
+      w       = dx;
+      uint dw = dx >> 1;
+      x1 += dw;
+      x2 -= dw;
+      assert(x1 == x2);
+      break;
+    }
+    case odb::dbSBox::OCTILINEAR: {
+      odb::Oct oct = box->getOct();
+      x1 = oct.getCenterLow().getX();
+      y1 = oct.getCenterLow().getY();
+      x2 = oct.getCenterHigh().getX();
+      y2 = oct.getCenterHigh().getY();
+      w = oct.getWidth();
+      break;
+    }
+    default:
+      logger->error(ord::DRT,10,"unknown direction");
+      break;
+  }
+  beginX = defdist(block,x1);
+  endX = defdist(block,x2);
+  beginY = defdist(block,y1);
+  endY = defdist(block,y2);
+  width = defdist(block,w);
+
+}
+
 void io::Parser::setNets(odb::dbBlock* block)
 {
-  /*
+  
   for(auto net: block->getNets())
   {
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
@@ -1418,7 +1478,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     for (auto term:net->getBTerms())
     {
       if (tmpBlock->name2term_.find(term->getName()) == tmpBlock->name2term_.end())
-        logger->error(ord::DRT,0,"term {} not found",term->getName());
+        logger->error(ord::DRT,11,"term {} not found",term->getName());
       auto frterm = tmpBlock->name2term_[term->getName()]; // frTerm*
       frterm->addToNet(netIn);
       netIn->addTerm(frterm);
@@ -1431,7 +1491,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     for (auto term:net->getITerms())
     {
       if (tmpBlock->name2inst_.find(term->getInst()->getName()) == tmpBlock->name2inst_.end())
-        logger->error(ord::DRT,0,"component {} not found",term->getInst()->getName());
+        logger->error(ord::DRT,12,"component {} not found",term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       bool flag =   false;
       for (auto &uInstTerm: inst->getInstTerms()) {
@@ -1450,7 +1510,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
       }
       if (!flag)
-        logger->error(ord::DRT,0,"component pin not found");
+        logger->error(ord::DRT,13,"component pin not found");
     }
     // initialize
     string layerName   = "";
@@ -1471,48 +1531,14 @@ void io::Parser::setNets(odb::dbBlock* block)
     frCoord top        = -1;
     frCoord width      = 0;
     odb::dbWireDecoder decoder;
-    decoder.begin(net->getWire());
-    odb::dbWireDecoder::OpCode pathId = decoder.next();
-    while(pathId !=odb::dbWireDecoder::END_DECODE)
+    
+    if(!net->isSpecial()&&net->getWire()!=nullptr)
     {
-      //for each path start
-      layerName     = "";
-      viaName       = "";
-      shape         = "";
-      hasBeginPoint = false;
-      hasEndPoint   = false;
-      beginX        = -1;
-      beginY        = -1;
-      beginExt      = -1;
-      endX          = -1;
-      endY          = -1;
-      endExt        = -1;
-      hasRect       = false;
-      left          = -1;
-      bottom        = -1;
-      right         = -1;
-      top           = -1;
-      width         = 0;
-      while(true)
+      decoder.begin(net->getWire());
+      odb::dbWireDecoder::OpCode pathId = decoder.next();
+      while(pathId !=odb::dbWireDecoder::END_DECODE)
       {
-        
-      }
-      switch (pathId)
-      {
-        case odb::dbWireDecoder::PATH:
-          break;
-        
-        default:
-          break;
-      }
-      //for each path end
-    }
-    for (int i = 0; i < (int)net->numWires(); i++) {
-      defiWire* tmpWire = net->wire(i);
-      for (int j = 0; j < (int)tmpWire->numPaths(); j++) {
-        defiPath* path     = tmpWire->path(j);
-        path->initTraverse();
-        // initialize
+        //for each path start
         layerName     = "";
         viaName       = "";
         shape         = "";
@@ -1530,117 +1556,80 @@ void io::Parser::setNets(odb::dbBlock* block)
         right         = -1;
         top           = -1;
         width         = 0;
-        //cout <<"path here" <<endl;
-        
-        int pathId;
-        while ((pathId = path->next()) != DEFIPATH_DONE) {
-          //cout << "  pathId = " << pathId << endl;
-          switch(pathId) {
-            case DEFIPATH_LAYER:
-              layerName = string(path->getLayer());
-              if (parser->tech->name2layer.find(layerName) == parser->tech->name2layer.end()) {
-                if (VERBOSE > -1) {
-                  cout <<"Error: unsupported layer: " <<layerName <<endl;
-                }
-                exit(1);
-              }
-              if (enableOutput) {
-                if (!j) {
-                  cout <<" " <<layerName;
-                } else {
-                  cout <<endl <<"    NEW " <<layerName;
-                }
-              }
+        bool endpath = false;
+        do{
+          switch (pathId)
+          {
+            case odb::dbWireDecoder::PATH:
+            case odb::dbWireDecoder::JUNCTION:
+            case odb::dbWireDecoder::SHORT:
+            case odb::dbWireDecoder::VWIRE:
+              layerName     = decoder.getLayer()->getName();
+              if (tech->name2layer.find(layerName) == tech->name2layer.end()) 
+                logger->error(ord::DRT,14,"unsupported layer {}",layerName);
               break;
-            case DEFIPATH_VIA:
-              viaName = string(path->getVia());
-              if (enableOutput) {
-                cout <<" " <<viaName;
-              }
-              break;
-            case DEFIPATH_WIDTH:
-              width = path->getWidth();
-              if (enableOutput) {
-                cout <<" " <<width;
-              }
-              break;
-            case DEFIPATH_POINT:
+            case odb::dbWireDecoder::POINT:
+
               if (!hasBeginPoint) {
-                path->getPoint(&beginX, &beginY);
-                if (enableOutput) {
-                  cout <<" ( " <<beginX <<" " <<beginY <<" )";
-                }
+                decoder.getPoint(beginX, beginY);
                 hasBeginPoint = true;
               } else {
-                path->getPoint(&endX, &endY);
-                if (enableOutput) {
-                  cout <<" ( " <<endX <<" " <<endY <<" )";
-                }
+                decoder.getPoint(endX, endY);
                 hasEndPoint = true;
               }
+              beginX = defdist(block,beginX);
+              beginY = defdist(block,beginY);
+              endX   = defdist(block,endX);
+              endY   = defdist(block,endY);
               break;
-            case DEFIPATH_FLUSHPOINT:
+            case odb::dbWireDecoder::POINT_EXT:
               if (!hasBeginPoint) {
-                path->getFlushPoint(&beginX, &beginY, &beginExt);
-                if (enableOutput) {
-                  cout <<" ( " <<beginX <<" " <<beginY <<" " <<beginExt <<" )";
-                }
+                decoder.getPoint(beginX, beginY, beginExt);
                 hasBeginPoint = true;
               } else {
-                path->getFlushPoint(&endX, &endY, &endExt);
-                if (enableOutput) {
-                  cout <<" ( " <<endX <<" " <<endY <<" " <<endExt <<" )";
-                }
+                decoder.getPoint(endX, endY, endExt);
                 hasEndPoint = true;
               }
+              beginX   = defdist(block,beginX);
+              beginY   = defdist(block,beginY);
+              beginExt = defdist(block,beginExt);
+              endX     = defdist(block,endX);
+              endY     = defdist(block,endY);
+              endExt   = defdist(block,endExt);
+
               break;
-            case DEFIPATH_SHAPE:
-              shape = path->getShape();
-              beginExt = 0;
-              endExt = 0;
-              if (enableOutput) {
-                cout <<" + SHAPE " <<shape;
-              }
+            case odb::dbWireDecoder::VIA:
+              viaName = string(decoder.getVia()->getName());
               break;
-            case DEFIPATH_RECT:
-              path->getViaRect(&left, &bottom, &right, &top);
-              if (enableOutput) {
-                cout <<" RECT ( " <<left <<" " <<bottom <<" " <<right <<" " <<top <<" )";
-              }
+            case odb::dbWireDecoder::TECH_VIA:
+              viaName = string(decoder.getTechVia()->getName());
+              break;
+            case odb::dbWireDecoder::RECT:
+              decoder.getRect(left,bottom,right,top);
+              left = defdist(block,left);
+              bottom = defdist(block,bottom);
+              right = defdist(block,right);
+              top = defdist(block,top);
               hasRect = true;
               break;
-            case DEFIPATH_VIRTUALPOINT:
-              if (!hasBeginPoint) {
-                path->getVirtualPoint(&beginX, &beginY);
-                if (enableOutput) {
-                  cout <<" ( " <<beginX <<" " <<beginY <<" )";
-                }
-                hasBeginPoint = true;
-              } else {
-                path->getVirtualPoint(&endX, &endY);
-                if (enableOutput) {
-                  cout <<" ( " <<endX <<" " <<endY <<" )";
-                }
-                hasEndPoint = true;
-              }
+            case odb::dbWireDecoder::ITERM:
+            case odb::dbWireDecoder::BTERM:
+            case odb::dbWireDecoder::RULE:
+            case odb::dbWireDecoder::END_DECODE:
               break;
-            default : cout <<" net " <<net->name() <<" unknown pathId " <<pathId <<endl; break;
+            default:
+              break;
           }
-        }
-
-
-        auto layerNum = parser->tech->name2layer[layerName]->getLayerNum();
-        // add rect
+          pathId = decoder.next();
+          if((int)pathId <=3 || pathId==odb::dbWireDecoder::END_DECODE)
+            endpath = true;
+        }while(!endpath);
+        auto layerNum = tech->name2layer[layerName]->getLayerNum();
         if (hasRect) {
           continue;
         }
-
-        // add wire, currently do not consider extension
         if (hasEndPoint) {
-          // route
           auto tmpP = make_unique<frPathSeg>();
-
-          // avoid begin > end case
           if (beginX > endX || beginY > endY) {
             tmpP->setPoints(frPoint(endX, endY), frPoint(beginX, beginY));
             swap(beginExt, endExt);
@@ -1650,7 +1639,7 @@ void io::Parser::setNets(odb::dbBlock* block)
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
 
-          width = (width) ? width : parser->tech->name2layer[layerName]->getWidth();
+          width = (width) ? width : tech->name2layer[layerName]->getWidth();
           auto defaultBeginExt = width / 2;
           auto defaultEndExt   = width / 2;
 
@@ -1681,13 +1670,9 @@ void io::Parser::setNets(odb::dbBlock* block)
           tmpP->setStyle(tmpSegStyle);
           netIn->addShape(std::move(tmpP));
         }
-
-        // add via
         if (viaName != "") {
-          if (parser->tech->name2via.find(viaName) == parser->tech->name2via.end()) {
-            if (VERBOSE > -1) {
-              cout <<"Error: unsupported via: " <<viaName <<endl;
-            }
+          if (tech->name2via.find(viaName) == tech->name2via.end()) {
+            logger->error(ord::DRT,15,"unsupported via in db");
           } else {
             frPoint p;
             if (hasEndPoint) {
@@ -1695,68 +1680,90 @@ void io::Parser::setNets(odb::dbBlock* block)
             } else {
               p.set(beginX, beginY);
             }
-            auto viaDef = parser->tech->name2via[viaName];
+            auto viaDef = tech->name2via[viaName];
             auto tmpP = make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
             tmpP->addToNet(netIn);
             netIn->addVia(std::move(tmpP));
           }
         }
-      } // end path
-    } // end wire
-  
-    frNetEnum netType = frNetEnum::frcNormalNet;
-    if (net->hasUse()) {
-      string str(net->use());
-      if (str == "SIGNAL") {
-        ;
-      } else if (str == "CLOCK") {
+        //for each path end
+      }
+    }    
+    if(net->isSpecial())
+    {
+      for(auto swire : net->getSWires())
+      {
+        for(auto box:swire->getWires())
+        {                    
+          if(!box->isVia())
+          {
+            getSBoxCoords(box,beginX,beginY,endX,endY,width);
+            auto layerNum = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
+            auto tmpP = make_unique<frPathSeg>();
+            tmpP->setPoints(frPoint(beginX, beginY), frPoint(endX, endY));
+            tmpP->addToNet(netIn);
+            tmpP->setLayerNum(layerNum);
+            width = (width) ? width : tech->name2layer[layerName]->getWidth();
+            auto defaultBeginExt = width / 2;
+            auto defaultEndExt   = width / 2;
+            frEndStyle tmpBeginStyle(frcExtendEndStyle);
+            frEndStyle tmpEndStyle(frcExtendEndStyle);
+            frSegStyle tmpSegStyle;
+            tmpSegStyle.setWidth(width);
+            tmpSegStyle.setBeginStyle(tmpBeginStyle, defaultBeginExt);
+            tmpSegStyle.setEndStyle(tmpEndStyle, defaultEndExt);
+            tmpP->setStyle(tmpSegStyle);
+            netIn->addShape(std::move(tmpP));
+          }else
+          {
+            if(box->getTechVia())
+              viaName = box->getTechVia()->getName();
+            else if(box->getBlockVia())
+              viaName = box->getBlockVia()->getName();
+            
+            if (tech->name2via.find(viaName) == tech->name2via.end())
+              logger->error(ord::DRT,16,"unsupported via in db");
+            else {
+              int x, y;
+              box->getViaXY(x, y);
+              frPoint p(defdist(block,x),defdist(block,y));
+              auto viaDef = tech->name2via[viaName];
+              auto tmpP = make_unique<frVia>(viaDef);
+              tmpP->setOrigin(p);
+              tmpP->addToNet(netIn);
+              netIn->addVia(std::move(tmpP));
+            }
+
+          }
+        }
+      }
+    }
+    frNetEnum netType;
+    switch (net->getSigType())
+    {
+      case odb::dbSigType::SIGNAL:
+        netType = frNetEnum::frcNormalNet;
+        break;
+      case odb::dbSigType::CLOCK:
         netType = frNetEnum::frcClockNet;
-      } else if (str == "POWER") {
+        break;
+      case odb::dbSigType::POWER:
         netType = frNetEnum::frcPowerNet;
-      } else if (str == "GROUND") {
+        break;
+      case odb::dbSigType::GROUND:
         netType = frNetEnum::frcGroundNet;
-      } else {
-        cout <<"Error: unsupported NET USE in def" <<endl;
-        exit(1);
-      }
-      if (enableOutput) {
-        cout <<" + USE " <<str <<endl;
-      }
+        break;
+      default:
+        logger->error(ord::DRT,17,"unsupported NET USE in def");
+        break;
     }
     netIn->setType(netType);
-
-    if (enableOutput) {
-      cout <<endl <<" ;" <<endl;
-    }
-
-    if (isSNet) {
-      parser->tmpBlock->addSNet(std::move(uNetIn)); 
-      if (parser->tmpBlock->snets_.size() < 100000) {
-        if (parser->tmpBlock->snets_.size() % 10000 == 0) {
-          cout <<"defIn read " <<parser->tmpBlock->snets_.size() <<" snets" <<endl;
-        }
-      } else {
-        if (parser->tmpBlock->snets_.size() % 10000 == 0) {
-          cout <<"defIn read " <<parser->tmpBlock->snets_.size() <<" snets" <<endl;
-        }
-      }
-    } else {
-      parser->tmpBlock->addNet(std::move(uNetIn)); 
-      if (parser->tmpBlock->nets_.size() < 100000) {
-        if (parser->tmpBlock->nets_.size() % 10000 == 0) {
-          cout <<"defIn read " <<parser->tmpBlock->nets_.size() <<" nets" <<endl;
-        }
-      } else {
-        if (parser->tmpBlock->nets_.size() % 100000 == 0) {
-          cout <<"defIn read " <<parser->tmpBlock->nets_.size() <<" nets" <<endl;
-        }
-      }
-    }
-
-    return 0;
+    if(net->isSpecial())
+      tmpBlock->addSNet(std::move(uNetIn)); 
+    else
+      tmpBlock->addNet(std::move(uNetIn));
   }
-  */
 }
 
 void io::Parser::setBTerms(odb::dbBlock* block)
@@ -1779,7 +1786,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         termType = frTermEnum::frcClockTerm;
         break;
       default:
-        logger->error(ord::DRT,0,"unsupported PIN USE in db");
+        logger->error(ord::DRT,18,"unsupported PIN USE in db");
         break;
     }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
@@ -1811,12 +1818,12 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for(auto box: pin->getBoxes())
       {
         if (tech->name2layer.find(box->getTechLayer()->getName()) == tech->name2layer.end())
-        logger->error(ord::DRT,0,"unsupported layer {}",box->getTechLayer()->getName());
+        logger->error(ord::DRT,19,"unsupported layer {}",box->getTechLayer()->getName());
         frLayerNum layerNum = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
-        frCoord xl = invertdbdist(block,box->xMin());
-        frCoord yl = invertdbdist(block,box->yMin());
-        frCoord xh = invertdbdist(block,box->xMax());
-        frCoord yh = invertdbdist(block,box->yMax());
+        frCoord xl = defdist(block,box->xMin());
+        frCoord yl = defdist(block,box->yMin());
+        frCoord xh = defdist(block,box->xMax());
+        frCoord yh = defdist(block,box->yMax());
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(frBox(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
@@ -1842,8 +1849,10 @@ void io::Parser::readDb(odb::dbDatabase* db) {
   setObstructions(block);
   setVias(block);
   setBTerms(block);
-  // tmpBlock->setId(0);
-  // design->setTopBlock(std::move(tmpBlock));
+  setNets(block);
+  tmpBlock->setId(0);
+  design->setTopBlock(std::move(tmpBlock));
+  addFakeNets();
 }
 
 void io::Parser::readDef() {
@@ -1858,18 +1867,18 @@ void io::Parser::readDef() {
   
   defrSetUserData((defiUserData)this);
 
-  // defrSetDesignCbk(Callbacks::getDefString);
+  defrSetDesignCbk(Callbacks::getDefString);
   defrSetDesignEndCbk(Callbacks::getDefVoid);
-  // defrSetDieAreaCbk(Callbacks::getDefDieArea);
-  // defrSetUnitsCbk(Callbacks::getDefUnits);
-  // defrSetTrackCbk(Callbacks::getDefTracks);
-  // defrSetComponentCbk(Callbacks::getDefComponents);
-  // defrSetPinCbk(Callbacks::getDefTerminals);
+  defrSetDieAreaCbk(Callbacks::getDefDieArea);
+  defrSetUnitsCbk(Callbacks::getDefUnits);
+  defrSetTrackCbk(Callbacks::getDefTracks);
+  defrSetComponentCbk(Callbacks::getDefComponents);
+  defrSetPinCbk(Callbacks::getDefTerminals);
   defrSetSNetCbk(Callbacks::getDefNets);
   defrSetNetCbk(Callbacks::getDefNets);
   defrSetAddPathToNet();
-  // defrSetViaCbk(Callbacks::getDefVias);
-  // defrSetBlockageCbk(Callbacks::getDefBlockages);
+  defrSetViaCbk(Callbacks::getDefVias);
+  defrSetBlockageCbk(Callbacks::getDefBlockages);
 
   if ((f = fopen(DEF_FILE.c_str(),"r")) == 0) {
     cout <<"Couldn't open def file" <<endl;
@@ -1888,7 +1897,6 @@ void io::Parser::readDef() {
   // add fake nets for floating PG
   addFakeNets();
 }
-
 void io::Parser::addFakeNets() {
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
@@ -5642,7 +5650,7 @@ void io::Parser::readLef() {
   lefrClear();
 }
 
-void io::Parser::readLefDef(odb::dbDatabase* db) {
+void io::Parser::readLefDb(odb::dbDatabase* db) {
   bool enableOutput = false;
   // bool enableOutput = true;
 
@@ -5675,7 +5683,7 @@ void io::Parser::readLefDef(odb::dbDatabase* db) {
   if (VERBOSE > 0) {
     cout <<endl <<"reading def ..." <<endl;
   }
-  readDb(db);
+  // readDb(db);
   readDef();
 
 
@@ -6187,7 +6195,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
       logger->error(ord::ToolId::DRT,
-                    1,
+                    20,
                     "techlayers for via {} not found in db tech",
                     via->getName());
     }
@@ -6298,7 +6306,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           default: {
             _wire_encoder.clear();
             logger->error(ord::ToolId::DRT,
-                          2,
+                          21,
                           "unknown connfig type while writing net {}",
                           net->getName());
           }
@@ -6312,12 +6320,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(ord::DRT, 3, "please load design first");
+    logger->error(ord::DRT, 22, "please load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(ord::DRT, 4, "please load design first");
+    logger->error(ord::DRT, 23, "please load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);

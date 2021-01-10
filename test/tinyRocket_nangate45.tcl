@@ -18,4 +18,4 @@ set max_drv_count 60
 set setup_slack_limit 2.5
 set hold_slack_limit 0.0
 
-source -echo "dr_db.tcl"
+source -echo "flow.tcl"

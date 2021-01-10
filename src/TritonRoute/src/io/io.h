@@ -38,6 +38,7 @@ namespace odb {
   class dbDatabase;
   class dbBlock;
   class dbTech;
+  class dbSBox;
 }
 namespace ord{
   class Logger;
@@ -55,8 +56,7 @@ namespace fr {
                                   tmpGuides(), tmpGRPins(), trackOffsetMap(), prefTrackPatterns(), numRefBlocks(0),
                                   numInsts(0), numTerms(0), numNets(0), numBlockages(0) {}
       // others
-      void readLefDef(odb::dbDatabase* db);
-      void readDb(odb::dbDatabase* db);
+      void readLefDb(odb::dbDatabase* db);
       void readGuide();
       void postProcess();
       void postProcessGuide();
@@ -72,8 +72,8 @@ namespace fr {
 
     protected:
       void readLef();
-      void readDef();
-      
+      void readDef();  
+      void readDb(odb::dbDatabase* db);
       void setDieArea(odb::dbBlock* block);
       void setTracks(odb::dbBlock* block);
       void setInsts(odb::dbBlock* block);
@@ -81,6 +81,7 @@ namespace fr {
       void setBTerms(odb::dbBlock* block);
       void setVias(odb::dbBlock* block);
       void setNets(odb::dbBlock* block);
+      void getSBoxCoords(odb::dbSBox* box,frCoord& beginX,frCoord& beginY,frCoord& endX,frCoord& endY,frCoord& width);
 
       frDesign*       design;
       frTechObject*   tech;
