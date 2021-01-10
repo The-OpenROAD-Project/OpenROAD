@@ -860,11 +860,9 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
       int cnt = 0;
 
       dbSet<dbBPin>::iterator itr;
-      
+
       for (itr = bpins.begin(); itr != bpins.end(); ++itr)
         writeBPin(*itr, cnt++);
-
-      fprintf(_out, " ;\n");
 
       return;
     }
@@ -915,72 +913,78 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
   dbNet*      net   = bterm->getNet();
   std::string bname = bterm->getName();
 
-  
-  if(cnt == 0 || _version <= defout::DEF_5_6){
-    if (_use_net_inst_ids) {
-      if (cnt == 0)
-        fprintf(_out, "    - %s + NET N%u", bname.c_str(), net->getId());
-      else
-        fprintf(
-            _out, "    - %s.extra%d + NET N%u", bname.c_str(), cnt, net->getId());
-    } else {
-      std::string nname = net->getName();
-      if (cnt == 0)
-        fprintf(_out, "    - %s + NET %s", bname.c_str(), nname.c_str());
-      else
-        fprintf(
-            _out, "    - %s.extra%d + NET %s", bname.c_str(), cnt, nname.c_str());
-    }
-
-    if (bterm->isSpecial())
-      fprintf(_out, " + SPECIAL");
-
-    fprintf(_out, " + DIRECTION %s", defIoType(bterm->getIoType()));
-
-    if (_version >= defout::DEF_5_6) {
-      dbBTerm* supply = bterm->getSupplyPin();
-
-      if (supply) {
-        std::string pname = supply->getName();
-        fprintf(_out, " + SUPPLYSENSITIVITY %s", pname.c_str());
-      }
-
-      dbBTerm* ground = bterm->getGroundPin();
-
-      if (ground) {
-        std::string pname = ground->getName();
-        fprintf(_out, " + GROUNDSENSITIVITY %s", pname.c_str());
-      }
-    }
-
-    fprintf(_out, " + USE %s", defSigType(bterm->getSigType()));
+  if (_use_net_inst_ids) {
+    if (cnt == 0)
+      fprintf(_out, "    - %s + NET N%u", bname.c_str(), net->getId());
+    else
+      fprintf(
+          _out, "    - %s.extra%d + NET N%u", bname.c_str(), cnt, net->getId());
+  } else {
+    std::string nname = net->getName();
+    if (cnt == 0)
+      fprintf(_out, "    - %s + NET %s", bname.c_str(), nname.c_str());
+    else
+      fprintf(
+          _out, "    - %s.extra%d + NET %s", bname.c_str(), cnt, nname.c_str());
   }
 
-  fprintf(_out, "\n      ");
+  if (bterm->isSpecial())
+    fprintf(_out, " + SPECIAL");
 
-  if (_version > defout::DEF_5_6)
-    fprintf(_out, "+ PORT");
+  fprintf(_out, " + DIRECTION %s", defIoType(bterm->getIoType()));
 
+  if (_version >= defout::DEF_5_6) {
+    dbBTerm* supply = bterm->getSupplyPin();
 
-  bool isFirst = 1;
-  int dw, dh, x , y ;
-  int xMin, yMin, xMax, yMax;
+    if (supply) {
+      std::string pname = supply->getName();
+      fprintf(_out, " + SUPPLYSENSITIVITY %s", pname.c_str());
+    }
+
+    dbBTerm* ground = bterm->getGroundPin();
+
+    if (ground) {
+      std::string pname = ground->getName();
+      fprintf(_out, " + GROUNDSENSITIVITY %s", pname.c_str());
+    }
+  }
+
+  fprintf(_out, " + USE %s", defSigType(bterm->getSigType()));
+
 
   for (dbBox* box : bpin->getBoxes())
   {
-      dw = defdist(int(box->getDX() / 2));
-      dh = defdist(int(box->getDY() / 2));
+      
+      int dw = defdist(int(box->getDX() / 2));
+      int dh = defdist(int(box->getDY() / 2));
+      int x  = defdist(box->xMin()) + dw;
+      int y  = defdist(box->yMin()) + dh;
 
-      if(isFirst){
-        isFirst = 0;  
-        x  = defdist(box->xMin()) + dw;
-        y  = defdist(box->yMin()) + dh;
+      dbPlacementStatus status = bpin->getPlacementStatus();
+
+      switch (status.getValue()) {
+        case dbPlacementStatus::NONE:
+        case dbPlacementStatus::UNPLACED:
+          break;
+
+        case dbPlacementStatus::SUGGESTED:
+        case dbPlacementStatus::PLACED: {
+          fprintf(_out, " + PLACED ( %d %d ) N", x, y);
+          break;
+        }
+
+        case dbPlacementStatus::LOCKED:
+        case dbPlacementStatus::FIRM: {
+          fprintf(_out, " + FIXED ( %d %d ) N", x, y);
+          break;
+        }
+
+        case dbPlacementStatus::COVER: {
+          fprintf(_out, " + COVER ( %d %d ) N", x, y);
+          break;
+        }
       }
 
-      xMin = defdist(box->xMin()) - x;
-      yMin = defdist(box->yMin()) - y;
-      xMax = defdist(box->xMax()) - x;
-      yMax = defdist(box->yMax()) - y;
       dbTechLayer* layer = box->getTechLayer();
       std::string  lname;
 
@@ -989,15 +993,14 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       else
         lname = layer->getName();
 
-      fprintf(_out, "\n       ");
       if (_version == defout::DEF_5_5)
         fprintf(_out,
                 " + LAYER %s ( %d %d ) ( %d %d )",
                 lname.c_str(),
-                xMin,
-                yMin,
-                xMax,
-                yMax);
+                -dw,
+                -dh,
+                dw,
+                dh);
       else {
         if (bpin->hasEffectiveWidth()) {
           int w = defdist(bpin->getEffectiveWidth());
@@ -1005,57 +1008,35 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
                   " + LAYER %s DESIGNRULEWIDTH %d ( %d %d ) ( %d %d )",
                   lname.c_str(),
                   w,
-                  xMin,
-                  yMin,
-                  xMax,
-                  yMax);
+                  -dw,
+                  -dh,
+                  dw,
+                  dh);
         } else if (bpin->hasMinSpacing()) {
           int s = defdist(bpin->getMinSpacing());
           fprintf(_out,
                   " + LAYER %s SPACING %d ( %d %d ) ( %d %d )",
                   lname.c_str(),
                   s,
-                  xMin,
-                  yMin,
-                  xMax,
-                  yMax);
+                  -dw,
+                  -dh,
+                  dw,
+                  dh);
         } else {
           fprintf(_out,
                   " + LAYER %s ( %d %d ) ( %d %d )",
                   lname.c_str(),
-                  xMin,
-                  yMin,
-                  xMax,
-                  yMax);
+                  -dw,
+                  -dh,
+                  dw,
+                  dh);
         } 
     }
+    
+    fprintf(_out, " ;\n");
   }
   
-  dbPlacementStatus status = bpin->getPlacementStatus();
 
-  switch (status.getValue()) {
-    case dbPlacementStatus::NONE:
-    case dbPlacementStatus::UNPLACED:
-      break;
-
-    case dbPlacementStatus::SUGGESTED:
-    case dbPlacementStatus::PLACED: {
-      fprintf(_out, "\n        + PLACED ( %d %d ) N", x, y);
-      break;
-    }
-
-    case dbPlacementStatus::LOCKED:
-    case dbPlacementStatus::FIRM: {
-      fprintf(_out, "\n        + FIXED ( %d %d ) N", x, y);
-      break;
-    }
-
-    case dbPlacementStatus::COVER: {
-      fprintf(_out, "\n        + COVER ( %d %d ) N", x, y);
-      break;
-    }
-  } 
-  
   
 }
 

@@ -31,14 +31,8 @@ COMPONENTS 1 ;
     - _277_ BUF_X4 + PLACED ( 34080 28000 ) FS ;
 END COMPONENTS
 PINS 2 ;
-    - input + NET input + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal6 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 -140 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal6 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 60 ) N ;
+    - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 NETS 2 ;
     - input ( PIN input ) ( _277_ A ) + USE SIGNAL ;

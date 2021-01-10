@@ -432,11 +432,11 @@ NesterovPlace::doNesterovPlace() {
     float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
-    // See, the ePlace-MS paper's Algorithm 1
+    // See, the papers' Algorithm 4 section
     //
     curA = (1.0 + sqrt(4.0 * prevA * prevA + 1.0)) * 0.5;
 
-    // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
+    // coeff is (a_k -1) / ( a_(k+1)) in paper.
     float coeff = (prevA - 1.0)/curA;
     
     debugPrint(log_, GPL, "replace", 3, "np:  PreviousA: {:g}", prevA);
@@ -520,9 +520,15 @@ NesterovPlace::doNesterovPlace() {
       npVars_.maxPhiCoef *= 0.99;
     }
 
+    // usually, maxBackTrack should be 1~3
+    // 10 is the case when
+    // all of cells are not moved at all.
     if( npVars_.maxBackTrack == numBackTrak ) {
-      log_->warn(GPL, 75, "Backtracking limit reached so a small step will be taken");
-    }
+      divergeMsg = "RePlAce divergence detected. \n";
+      divergeMsg += "        Please decrease init_density_penalty value";
+      divergeCode = 306;
+      isDiverged_ = true;
+    } 
 
     if( isDiverged_ ) {
       break;

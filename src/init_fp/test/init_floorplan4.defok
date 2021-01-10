@@ -586,30 +586,12 @@ COMPONENTS 5 ;
     - u2 AND2_X1 ;
 END COMPONENTS
 PINS 6 ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 219640 218400 ) N ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1272720 218400 ) N ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1799680 744520 ) N ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1799680 1797600 ) N ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 746600 1797600 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 219640 1271480 ) N ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 219640 218400 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1272720 218400 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1799680 744520 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1799680 1797600 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 746600 1797600 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 219640 1271480 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
 END PINS
 NETS 10 ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;

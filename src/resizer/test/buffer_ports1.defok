@@ -15,30 +15,12 @@ COMPONENTS 8 ;
     - output3 BUF_X1 + PLACED ( 1000 335 ) N ;
 END COMPONENTS
 PINS 6 ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 0 0 ) N ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 333 1000 ) N ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1000 334 ) N ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1000 999 ) N ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 332 1000 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 1000 335 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 333 1000 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 334 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 999 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 332 1000 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 1000 335 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
 END PINS
 SPECIALNETS 2 ;
     - VSS ( * VSS ) + USE GROUND ;

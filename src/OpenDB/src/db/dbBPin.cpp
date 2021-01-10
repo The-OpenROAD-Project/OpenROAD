@@ -138,7 +138,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
   stream << bpin._next_bpin;
   stream << bpin._min_spacing;
   stream << bpin._effective_width;
-  
   return stream;
 }
 

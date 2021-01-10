@@ -27,46 +27,16 @@ TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
 COMPONENTS 0 ;
 END COMPONENTS
 PINS 10 ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 140 ) N ;
-    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 420 ) N ;
-    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 700 ) N ;
-    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 980 ) N ;
-    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1260 ) N ;
-    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1540 ) N ;
-    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1820 ) N ;
-    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 2100 ) N ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 2380 ) N ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 2660 ) N ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 200190 140 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 420 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL + PLACED ( 200190 700 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL + PLACED ( 200190 980 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 1260 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 1540 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 1820 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 2100 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + PLACED ( 200190 2380 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200190 2660 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
 END PINS
 NETS 10 ;
     - clk ( PIN clk ) + USE SIGNAL ;

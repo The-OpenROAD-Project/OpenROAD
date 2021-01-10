@@ -43,14 +43,8 @@ COMPONENTS 10 ;
     - f1/_276_ NOR2_X2 + PLACED ( 34460 30800 ) N ;
 END COMPONENTS
 PINS 2 ;
-    - input + NET input + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal6 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 -140 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal6 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 60 ) N ;
+    - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 NETS 11 ;
     - input ( PIN input ) ( f0/_285_ A1 ) + USE SIGNAL ;

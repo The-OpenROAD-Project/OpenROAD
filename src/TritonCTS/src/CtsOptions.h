@@ -75,6 +75,8 @@ class CtsOptions
     _wireSegmentUnit = wireSegmentUnit;
   }
   unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
+  void setDbId(unsigned id) { _dbId = id; }
+  unsigned getDbId() const { return _dbId; }
   void setPlotSolution(bool plot) { _plotSolution = plot; }
   bool getPlotSolution() const { return _plotSolution; }
   void setAutoLut(bool enable) { _autoLutEnable = enable; }
@@ -198,6 +200,7 @@ class CtsOptions
   std::string _metricFile = "";
   DBU _dbUnits = -1;
   unsigned _wireSegmentUnit = 0;
+  unsigned _dbId = 0;
   bool _plotSolution = false;
   bool _onlyCharacterization = false;
   bool _simpleCts = false;
