@@ -276,7 +276,7 @@ namespace fr {
     frCoord getEdgeLength(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       frCoord sol = 0;
       correct(x, y, z, dir);
-      //if (isValid(x, y, z, dir)) {
+      if (isValid(x, y, z, dir)) {
         switch (dir) {
           case frDirEnum::E:
             sol = xCoords_[x+1] - xCoords_[x];
@@ -290,7 +290,7 @@ namespace fr {
           default:
             ;
         }
-      //}
+      }
       return sol;
     }
     bool isEdgeInBox(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, const frBox &box, bool initDR) const {
