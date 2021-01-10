@@ -72,7 +72,6 @@ namespace fr {
 
     protected:
       void readLef();
-      void readDef();  
       void readDb(odb::dbDatabase* db);
       void setDieArea(odb::dbBlock* block);
       void setTracks(odb::dbBlock* block);
