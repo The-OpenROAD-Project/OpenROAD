@@ -88,7 +88,7 @@ ord::info DRT 42 “Routed $net_count nets in [format %3.2f $elapsed_time].”
 
 Calls to the Tcl functions ord::warn and ord::error with a single message argument report with tool ID “UKN” and message ID 0000.
 
-Tools `#include openroad/Logger.h` that defines the logger API. The Logger instance is owned by the OpenRoad instance. Each tool should retrieve the logger instance in the tool init function called after the tool make function by the OpenRoad application.
+Tools `#include utility/Logger.h` that defines the logger API. The Logger instance is owned by the OpenRoad instance. Each tool should retrieve the logger instance in the tool init function called after the tool make function by the OpenRoad application.
 
 Every tool swig file must include src/Exception.i so that errors thrown by ord::error are caught at the Tcl command level. Use the following swig command before %inline.
 
@@ -152,7 +152,7 @@ The cmake file for the tool must also be updated to include spdlog in the link l
 ```
 target_link_libraries(<library_target>
   PUBLIC
-  spdlog::spdlog
+  utility
   )
 ```
 
