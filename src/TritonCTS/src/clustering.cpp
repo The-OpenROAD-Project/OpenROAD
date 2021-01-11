@@ -52,14 +52,18 @@
 #include <string>
 #include <vector>
 
+#include "openroad/Logger.h"
+
 #define CPLEX_CLUSTERING
 
 namespace CKMeans {
 using namespace lemon;
+using ord::CTS;
 
 clustering::clustering(const std::vector<std::pair<float, float>>& sinks,
                        float xBranch,
-                       float yBranch)
+                       float yBranch,
+                       Logger* logger)
 {
   for (long int i = 0; i < sinks.size(); ++i) {
     flops.push_back(flop(sinks[i].first, sinks[i].second, i));
@@ -70,6 +74,7 @@ clustering::clustering(const std::vector<std::pair<float, float>>& sinks,
   srand(56);
 
   branchingPoint = {xBranch, yBranch};
+  _logger = logger;
 }
 
 clustering::~clustering()
@@ -196,10 +201,6 @@ float clustering::Kmeans(unsigned N,
   // Kmeans optimization
   unsigned iter = 1;
   while (!stop) {
-    if (verbose > 1) {
-      std::cout << "match .." << std::endl;
-    }
-
     fixSegmentLengths(means);
 
     // flop to slot matching based on min-cost flow
@@ -222,8 +223,6 @@ float clustering::Kmeans(unsigned N,
       clusters[position].push_back(f);
     }
 
-    if (verbose > 1)
-      std::cout << "move .." << std::endl;
     float delta = 0;
 
     // use weighted center
@@ -354,9 +353,8 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     o_edges.push_back(e);
   }
 
-  if (verbose > 1)
-    std::cout << "Graph have " << countNodes(g) << " nodes and " << countArcs(g)
-         << " edges" << std::endl;
+  debugPrint(_logger, CTS, "tritoncts", 1, 
+          "Graph has {} nodes and {} edges", countNodes(g), countArcs(g)); 
 
   // formulate min-cost flow
   NetworkSimplex<ListDigraph, int, int> flow(g);
@@ -387,12 +385,13 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   node_map[s] = std::make_pair(-2, std::make_pair(-2, -2));
   node_map[t] = std::make_pair(-2, std::make_pair(-2, -2));
 
-  if (verbose > 1) {
-    for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
-      std::cout << g.id(g.source(it)) << "-" << g.id(g.target(it));
-      std::cout << " cost = " << f_cost[it];
-      std::cout << " cap = " << f_cap[it] << std::endl;
-    }
+  for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
+    debugPrint(_logger, CTS, "tritoncts", 2, 
+        "{}-{}", g.id(g.source(it)), g.id(g.target(it))); 
+    debugPrint(_logger, CTS, "tritoncts", 2, 
+        " cost = ", f_cost[it]); 
+    debugPrint(_logger, CTS, "tritoncts", 2, 
+        " cap = ", f_cap[it]); 
   }
 
   flow.costMap(f_cost);
@@ -405,19 +404,20 @@ void clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     if (f_sol[it] != 0) {
       if (node_map[g.source(it)].second.first == -1
           && node_map[g.target(it)].first == -1) {
-        if (verbose > 1) {
-          std::cout << "Flow from: flop_" << node_map[g.source(it)].first;
-          std::cout << " to cluster_" << node_map[g.target(it)].second.first;
-          std::cout << " slot_" << node_map[g.target(it)].second.second;
-          std::cout << " flow = " << f_sol[it] << std::endl;
-        }
+        debugPrint(_logger, CTS, "tritoncts", 3,"Flow from: flop_",
+                   node_map[g.source(it)].first);
+        debugPrint(_logger, CTS, "tritoncts", 3," to cluster_",
+                   node_map[g.target(it)].second.first);
+        debugPrint(_logger, CTS, "tritoncts", 3," slot_",
+                   node_map[g.target(it)].second.second);
+        debugPrint(_logger, CTS, "tritoncts", 3," flow = ",
+                   f_sol[it]);
+        
         flops[node_map[g.source(it)].first].match_idx[IDX]
             = node_map[g.target(it)].second;
       }
     }
   }
-  if (verbose > 1)
-    std::cout << std::endl;
 }
 
 void clustering::plotClusters(
@@ -444,7 +444,7 @@ void clustering::plotClusters(
 
   std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
   for (size_t i = 0; i < clusters.size(); i++) {
-    std::cout << "clusters " << i << "\n";
+    _logger->report("clusters ", i);
     for (size_t j = 0; j < clusters[i].size(); j++) {
       fout << "plt.scatter(" << clusters[i][j]->x << ", " << clusters[i][j]->y
            << ", color=\'" << colors[i % colors.size()] << "\')\n";

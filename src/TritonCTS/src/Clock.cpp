@@ -35,6 +35,8 @@
 
 #include "Clock.h"
 
+#include "openroad/Logger.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -44,23 +46,19 @@
 
 namespace cts {
 
-void Clock::report() const
+void Clock::report(ord::Logger* _logger) const
 {
-  std::cout << " ************************************\n";
-  std::cout << " *         Clock net report         *\n";
-  std::cout << " ************************************\n";
-  std::cout << " Net name: " << _netName << "\n";
-  std::cout << " Clock pin: " << _clockPin << " (" << _clockPinX << ", "
-            << _clockPinY << ")\n";
-  std::cout << " Number of sinks: " << _sinks.size() << "\n";
-  std::cout << " ***********************************\n\n";
+  _logger->report(" ************************************");
+  _logger->report(" *         Clock net report         *");
+  _logger->report(" ************************************");
+  _logger->report(" Net name: {}", _netName);
+  _logger->report(" Clock pin: {} ({}, {})", _clockPin, _clockPinX, _clockPinY);
+  _logger->report(" Number of sinks: ", _sinks.size());
+  _logger->report(" ***********************************");
 
-  std::cout << std::left << std::setw(45) << "Pin name"
-            << "Pos"
-            << "\n";
+  _logger->report("\tPin name \tPos");
   forEachSink([&](const ClockInst& sink) {
-    std::cout << std::left << std::setw(45) << sink.getName() << "("
-              << sink.getX() << ", " << sink.getY() << ")\n";
+    _logger->report("\t {} \t ({}, {})", sink.getName(), sink.getX(), sink.getY());
   });
 }
 

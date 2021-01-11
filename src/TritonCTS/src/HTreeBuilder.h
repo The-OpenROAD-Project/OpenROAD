@@ -42,7 +42,13 @@
 #include <cmath>
 #include <limits>
 
+namespace ord {
+class Logger;
+} // namespace ord
+
 namespace cts {
+
+using ord::Logger;
 
 class SegmentBuilder
 {
@@ -175,7 +181,7 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net) : TreeBuilder(options, net){};
+  HTreeBuilder(CtsOptions* options, Clock& net, Logger* logger) : TreeBuilder(options, net), _logger(logger){};
 
   void run();
 
@@ -269,6 +275,7 @@ class HTreeBuilder : public TreeBuilder
   }
 
  protected:
+  Logger* _logger;
   Box<double> _sinkRegion;
   std::vector<LevelTopology> _topologyForEachLevel;
   std::map<Point<double>, ClockInst*> _mapLocationToSink;
