@@ -644,7 +644,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
 
   for (const Net& net : *_nets) {
     if (net.getNumPins() > 1
-        && net.getNumPins() < std::numeric_limits<short>::max()) {
+        && net.getNumPins() < std::numeric_limits<int>::max()) {
       validNets++;
     }
   }
@@ -663,9 +663,9 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         maxDegree = pin_count;
       }
       // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a
-      // single net. It uses short to hold the pin indexes and bigger values
+      // single net. It uses int to hold the pin indexes and bigger values
       // violates the FR API
-      if (pin_count >= std::numeric_limits<short>::max()) {
+      if (pin_count >= std::numeric_limits<int>::max()) {
         _logger->warn(GRT, 10, "FastRoute cannot handle net {} due to large number of pins", net->getName());
         _logger->warn(GRT, 11, "Net {} has {} pins", net->getName(), net->getNumPins());
       } else {
