@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TechChar.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "db_sta/dbSta.hh"
 #include "sta/Graph.hh"
@@ -52,7 +52,7 @@
 
 namespace cts {
 
-using ord::CTS;
+using utl::CTS;
 
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
 {

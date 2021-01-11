@@ -39,8 +39,11 @@
 
 namespace ord {
 class OpenRoad;
-class Logger;
 } // namespace ord
+
+namespace utl {
+class Logger;
+}
 
 namespace odb {
 class dbDatabase;
@@ -56,7 +59,7 @@ class dbSta;
 
 namespace cts {
 
-using ord::Logger;
+using utl::Logger;
 
 class Clock;
 class ClockInst;

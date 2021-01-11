@@ -37,7 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "sta/Network.hh"
 #include "sta/Sdc.hh"
 
@@ -56,7 +56,7 @@ void StaEngine::init()
   _network = _openSta->network();
 }
 
-void StaEngine::findClockRoots(ord::Logger* _logger)
+void StaEngine::findClockRoots(utl::Logger* _logger)
 {
   _logger->report(" Looking for clock sources...");
 

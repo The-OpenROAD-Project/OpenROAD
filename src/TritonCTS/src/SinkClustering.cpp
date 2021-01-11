@@ -41,11 +41,11 @@
 #include <map>
 #include <string>
 #include <tuple>
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace cts {
 
-using ord::CTS;
+using utl::CTS;
 
 void SinkClustering::normalizePoints(float maxDiameter)
 {

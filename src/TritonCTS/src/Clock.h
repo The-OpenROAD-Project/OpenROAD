@@ -45,9 +45,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ord {
+namespace utl {
 class Logger;
-} // namespace ord
+} // namespace utl
 
 namespace cts {
 
@@ -205,7 +205,7 @@ class Clock
       std::vector<std::pair<float, float>> sinks);
   Box<double> computeNormalizedSinkRegion(double factor);
 
-  void report(ord::Logger* _logger) const;
+  void report(utl::Logger* _logger) const;
 
   void forEachSink(const std::function<void(const ClockInst&)>& func) const;
   void forEachSink(const std::function<void(ClockInst&)>& func);

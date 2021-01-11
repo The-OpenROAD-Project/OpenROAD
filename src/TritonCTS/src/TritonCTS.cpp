@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -55,7 +55,7 @@
 
 namespace cts {
 
-using ord::CTS;
+using utl::CTS;
 
 void TritonCTS::init(ord::OpenRoad* openroad)
 {
@@ -265,7 +265,7 @@ void TritonCTS::writeDataToDb()
 
   for (TreeBuilder* builder : *_builders) {
     writeClockNetsToDb(builder->getClock());
-    if (_logger->debugCheck(ord::CTS, "HTree", 2)) {
+    if (_logger->debugCheck(utl::CTS, "HTree", 2)) {
       odb::dbNet* topClockNet = builder->getClock().getNetObj();
       unsigned sinkCount = 0;
       unsigned leafSinks = 0;

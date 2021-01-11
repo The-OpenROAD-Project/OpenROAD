@@ -52,13 +52,13 @@
 #include <string>
 #include <vector>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #define CPLEX_CLUSTERING
 
 namespace CKMeans {
 using namespace lemon;
-using ord::CTS;
+using utl::CTS;
 
 clustering::clustering(const std::vector<std::pair<float, float>>& sinks,
                        float xBranch,

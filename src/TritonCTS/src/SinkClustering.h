@@ -42,13 +42,13 @@
 #include <string>
 #include <vector>
 
-namespace ord {
+namespace utl {
 class Logger;
-} // namespace ord
+} // namespace utl
 
 namespace cts {
 
-using ord::Logger;
+using utl::Logger;
 
 class Matching
 {

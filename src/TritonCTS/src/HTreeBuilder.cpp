@@ -35,7 +35,7 @@
 
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "clustering.h"
 
 #include <fstream>
@@ -45,7 +45,7 @@
 
 namespace cts {
 
-using ord::CTS;
+using utl::CTS;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -220,7 +220,7 @@ void HTreeBuilder::run()
 
   _clock.setMaxLevel(_topologyForEachLevel.size());
 
-  if (_options->getPlotSolution() || _logger->debugCheck(ord::CTS, "HTree", 2)) {
+  if (_options->getPlotSolution() || _logger->debugCheck(utl::CTS, "HTree", 2)) {
     plotSolution();
   }
 

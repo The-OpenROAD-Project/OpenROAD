@@ -35,7 +35,7 @@
 
 #include "Clock.h"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include <algorithm>
 #include <fstream>
@@ -46,7 +46,7 @@
 
 namespace cts {
 
-void Clock::report(ord::Logger* _logger) const
+void Clock::report(utl::Logger* _logger) const
 {
   _logger->report(" ************************************");
   _logger->report(" *         Clock net report         *");

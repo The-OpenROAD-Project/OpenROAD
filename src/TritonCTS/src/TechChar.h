@@ -52,13 +52,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace ord {
+namespace utl {
 class Logger;
-} // namespace ord
+} // namespace utl
 
 namespace cts {
 
-using ord::Logger;
+using utl::Logger;
 
 class WireSegment
 {
@@ -232,7 +232,7 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
-  ord::Logger* getLogger() { return _options->getLogger(); }
+  utl::Logger* getLogger() { return _options->getLogger(); }
 
  protected:
   void parseLut(const std::string& file);
