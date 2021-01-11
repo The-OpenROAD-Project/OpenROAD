@@ -299,27 +299,45 @@ Resizer::removeBuffers()
   for (dbInst *inst : block_->getInsts()) {
     LibertyCell *lib_cell = db_network_->libertyCell(inst);
     if (lib_cell && lib_cell->isBuffer()) {
-      LibertyPort *input_port, *output_port;
-      lib_cell->bufferPorts(input_port, output_port);
+      LibertyPort *in_port, *out_port;
+      lib_cell->bufferPorts(in_port, out_port);
       Instance *buffer = db_network_->dbToSta(inst);
-      Pin *input_pin = db_network_->findPin(buffer, input_port);
-      Pin *output_pin = db_network_->findPin(buffer, output_port);
-      Net *input_net = db_network_->net(input_pin);
-      Net *output_net = db_network_->net(output_pin);
-      if (!hasTopLevelPort(input_net)
-          && !hasTopLevelPort(output_net)) {
-        NetPinIterator *pin_iter = db_network_->pinIterator(output_net);
+      Pin *in_pin = db_network_->findPin(buffer, in_port);
+      Pin *out_pin = db_network_->findPin(buffer, out_port);
+      Net *in_net = db_network_->net(in_pin);
+      Net *out_net = db_network_->net(out_pin);
+      // Verilog uses nets as ports, so the surviving net has to be
+      // the one connected the port.
+      bool in_net_ports = hasTopLevelPort(in_net);
+      bool out_net_ports = hasTopLevelPort(out_net);
+      if (in_net_ports && out_net_ports)
+        logger_->warn(RSZ, 46,
+                      "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
+                      sdc_network_->pathName(in_net),
+                      sdc_network_->pathName(out_net));
+      else {
+        Net *survivor, *removed;
+        if (in_net_ports) {
+          survivor = in_net;
+          removed = out_net;
+        }
+        else {
+          // out_net_ports
+          survivor = out_net;
+          removed = in_net;
+        }
+        NetPinIterator *pin_iter = db_network_->pinIterator(removed);
         while (pin_iter->hasNext()) {
           Pin *pin = pin_iter->next();
-          if (pin != output_pin) {
-            Instance *pin_inst = db_network_->instance(pin);
+          Instance *pin_inst = db_network_->instance(pin);
+          if (pin_inst != buffer) {
             Port *pin_port = db_network_->port(pin);
             sta_->disconnectPin(pin);
-            sta_->connectPin(pin_inst, pin_port, input_net);
+            sta_->connectPin(pin_inst, pin_port, survivor);
           }
         }
         delete pin_iter;
-        sta_->deleteNet(output_net);
+        sta_->deleteNet(removed);
         sta_->deleteInstance(buffer);
         remove_count++;
       }
@@ -462,10 +480,9 @@ Resizer::bufferInput(Pin *top_pin,
   Net *input_net = db_network_->net(term);
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  string buffer_out_name = makeUniqueNetName();
   string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
-  Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+  Net *buffer_out = makeUniqueNet();
   Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                buffer_name.c_str(),
                                                parent);
@@ -531,10 +548,9 @@ Resizer::bufferOutput(Pin *top_pin,
   Net *output_net = network_->net(term);
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  string buffer_in_net_name = makeUniqueNetName();
   string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
-  Net *buffer_in = network->makeNet(buffer_in_net_name.c_str(), parent);
+  Net *buffer_in = makeUniqueNet();
   Instance *buffer = network->makeInstance(buffer_cell,
                                            buffer_name.c_str(),
                                            parent);
@@ -688,23 +704,23 @@ Resizer::repairNet(Net *net,
   }
 
   if (slew_violations > 0)
-    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
+    logger_->info(RSZ, 51, "Found {} slew violations.", slew_violations);
   if (fanout_violations > 0)
-    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
+    logger_->info(RSZ, 52, "Found {} fanout violations.", fanout_violations);
   if (cap_violations > 0)
-    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
+    logger_->info(RSZ, 53, "Found {} capacitance violations.", cap_violations);
   if (length_violations > 0)
-    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
+    logger_->info(RSZ, 54, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
+    logger_->info(RSZ, 55, "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repair_count);
     level_drvr_verticies_valid_ = false;
   }
   if (resize_count_ > 0)
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 56, "Resized {} instances.", resize_count_);
   if (resize_count_ > 0)
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 57, "Resized {} instances.", resize_count_);
 }
 
 void
@@ -1093,9 +1109,8 @@ Resizer::makeRepeater(const char *where,
                units_->distanceUnit()->asString(dbuToMeters(x), 1),
                units_->distanceUnit()->asString(dbuToMeters(y), 1));
 
-    string buffer_out_name = makeUniqueNetName();
     Instance *parent = db_network_->topInstance();
-    Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+    Net *buffer_out = makeUniqueNet();
     dbNet *buffer_out_db = db_network_->staToDb(buffer_out);
     dbNet *in_net_db = db_network_->staToDb(in_net);
     buffer_out_db->setSigType(in_net_db->getSigType());
@@ -1892,8 +1907,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             setLocation(tie, tie_loc);
 
             // Make tie output net.
-            string load_net_name = makeUniqueNetName();
-            Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
+            Net *load_net = makeUniqueNet();
 
             // Connect tie inst output.
             sta_->connectPin(tie, tie_port, load_net);
@@ -2192,10 +2206,8 @@ Resizer::splitLoads(PathRef *drvr_path,
   inserted_buffer_count_++;
   designAreaIncr(area(db_network_->cell(buffer_cell)));
 
-  string in_net_name = makeUniqueNetName();
-  Net *in_net = db_network_->makeNet(in_net_name.c_str(), parent);
-  string out_net_name = makeUniqueNetName();
-  Net *out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  Net *in_net = makeUniqueNet();
+  Net *out_net = makeUniqueNet();
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   Point drvr_loc = db_network_->location(drvr_pin);
@@ -2347,7 +2359,7 @@ Resizer::repairHold(VertexSet *ends,
       level_drvr_verticies_valid_ = false;
     }
     if (over_max_area)
-      logger_->error(RSZ, 26, "max utilization reached.");
+      logger_->error(RSZ, 50, "max utilization reached.");
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");
@@ -2401,7 +2413,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         && !isSpecial(net)) {
       // Only add delay to loads with hold violations.
       PinSeq load_pins;
-      Slack buffer_delay = INF;
+      Slack buffer_delay1 = INF;
+      bool loads_have_out_port = false;
       VertexOutEdgeIterator edge_iter(vertex, graph_);
       while (edge_iter.hasNext()) {
         Edge *edge = edge_iter.next();
@@ -2414,13 +2427,17 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
             ? -hold_slack
             : min(-hold_slack, setupSlack(slacks));
           if (delay > 0.0) {
-            buffer_delay = min(buffer_delay, delay);
-            load_pins.push_back(fanout->pin());
+            buffer_delay1 = min(buffer_delay1, delay);
+            Pin *fanout_pin = fanout->pin();
+            load_pins.push_back(fanout_pin);
+            if (network_->direction(fanout_pin)->isAnyOutput()
+                && network_->isTopLevelPort(fanout_pin))
+              loads_have_out_port = true;
           }
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = std::ceil(buffer_delay / buffer_delay);
+        int buffer_count = 1; //std::ceil(buffer_delay1 / buffer_delay);
         debugPrint(debug_, "repair_hold", 2,
                    " %s hold=%s inserted %d for %lu/%d loads",
                    vertex->name(sdc_network_),
@@ -2428,7 +2445,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
                    buffer_count,
                    load_pins.size(),
                    fanout(vertex));
-        makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
+        makeHoldDelay(vertex, buffer_count, load_pins,
+                      loads_have_out_port, buffer_cell);
         repair_count += buffer_count;
         if (overMaxArea())
           return repair_count;
@@ -2497,6 +2515,7 @@ void
 Resizer::makeHoldDelay(Vertex *drvr,
                        int buffer_count,
                        PinSeq &load_pins,
+                       bool loads_have_out_port,
                        LibertyCell *buffer_cell)
 {
   Pin *drvr_pin = drvr->pin();
@@ -2504,8 +2523,22 @@ Resizer::makeHoldDelay(Vertex *drvr,
   Net *drvr_net = network_->isTopLevelPort(drvr_pin)
     ? db_network_->net(db_network_->term(drvr_pin))
     : db_network_->net(drvr_pin);
-  Net *in_net = drvr_net;
-  Net *out_net = nullptr;
+  Net *in_net, *out_net;
+  if (loads_have_out_port) {
+    // Verilog uses nets as ports, so the net connected to an output port has
+    // to be preserved.
+    // Move the driver pin over to gensym'd net.
+    in_net = makeUniqueNet();
+    Port *drvr_port = network_->port(drvr_pin);
+    Instance *drvr_inst = network_->instance(drvr_pin);
+    sta_->disconnectPin(drvr_pin);
+    sta_->connectPin(drvr_inst, drvr_port, in_net);
+    out_net = drvr_net;
+  }
+  else {
+    in_net = drvr_net;
+    out_net = makeUniqueNet();
+  }
 
   // Spread buffers between driver and load center.
   Point drvr_loc = db_network_->location(drvr_pin);
@@ -2513,10 +2546,10 @@ Resizer::makeHoldDelay(Vertex *drvr,
   int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
   int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
 
-  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+  Net *buf_in_net = in_net;
+  // drvr_pin->in_net->hold_buffer1->net2->hold_buffer2->out_net...->load_pins
   for (int i = 0; i < buffer_count; i++) {
-    string out_net_name = makeUniqueNetName();
-    out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+    Net *buf_out_net = (i == buffer_count - 1) ? out_net : makeUniqueNet();
     // drvr_pin->drvr_net->hold_buffer->net2->load_pins
     string buffer_name = makeUniqueInstName("hold");
     Instance *buffer = db_network_->makeInstance(buffer_cell,
@@ -2527,12 +2560,12 @@ Resizer::makeHoldDelay(Vertex *drvr,
 
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    sta_->connectPin(buffer, input, in_net);
-    sta_->connectPin(buffer, output, out_net);
+    sta_->connectPin(buffer, input, buf_in_net);
+    sta_->connectPin(buffer, output, buf_out_net);
     Point buffer_loc(drvr_loc.x() + dx * i,
                      drvr_loc.y() + dy * i);
     setLocation(buffer, buffer_loc);
-    in_net = out_net;
+    buf_in_net = buf_out_net;
   }
 
   for (Pin *load_pin : load_pins) {
@@ -2808,6 +2841,14 @@ Resizer::makeUniqueNetName()
     stringPrint(node_name, "net%d", unique_net_index_++);
   while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
+}
+
+Net *
+Resizer::makeUniqueNet()
+{
+  string net_name = makeUniqueNetName();
+  Instance *parent = db_network_->topInstance();
+  return db_network_->makeNet(net_name.c_str(), parent);
 }
 
 string
@@ -3327,8 +3368,7 @@ Resizer::cloneClkInverter(Instance *inv)
         Point clone_loc = db_network_->location(load_pin);
         setLocation(clone, clone_loc);
 
-        string clone_out_net_name = makeUniqueNetName();
-        Net *clone_out_net = db_network_->makeNet(clone_out_net_name.c_str(), top_inst);
+        Net *clone_out_net = makeUniqueNet();
         dbNet *clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 

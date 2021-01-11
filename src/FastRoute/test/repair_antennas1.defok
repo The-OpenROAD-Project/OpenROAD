@@ -1381,60 +1381,222 @@ COMPONENTS 1273 ;
     - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 393600 299700 ) FS ;
 END COMPONENTS
 PINS 54 ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 409440 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 379620 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 299700 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL + PLACED ( 190560 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL + PLACED ( 298080 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL + PLACED ( 182880 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL + PLACED ( 207840 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL + PLACED ( 259680 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 323380 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL + PLACED ( 436320 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 302660 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL + PLACED ( 182880 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 382580 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL + PLACED ( 213600 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL + PLACED ( 355680 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL + PLACED ( 324960 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL + PLACED ( 359520 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL + PLACED ( 307680 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 157620 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 444740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL + PLACED ( 317280 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 352980 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL + PLACED ( 171360 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 323380 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL + PLACED ( 271200 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL + PLACED ( 217440 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL + PLACED ( 204000 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 409220 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL + PLACED ( 413280 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 518740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL + PLACED ( 334560 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 287860 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL + PLACED ( 411360 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 428640 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL + PLACED ( 319200 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - reset + NET reset + DIRECTION INPUT + USE SIGNAL + PLACED ( 298080 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 329300 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 261220 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 305760 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 296740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 173280 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 293780 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 215520 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 428640 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 332260 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 223200 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 244320 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 353760 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 370740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 365280 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 326880 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 219780 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + PLACED ( 296160 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 290400 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 409440 599777 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 379620 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 299700 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 190560 599777 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 298080 599777 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 182880 483 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 207840 483 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 259680 599777 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 323380 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 436320 599777 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 302660 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 182880 599777 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 382580 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 213600 599777 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 355680 599777 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 324960 483 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 359520 483 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 307680 483 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 157620 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 444740 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 317280 483 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 352980 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 171360 483 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 323380 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 271200 599777 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 217440 483 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 204000 599777 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 409220 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 413280 599777 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 518740 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 334560 483 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 287860 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 411360 483 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 428640 483 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 319200 483 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 298080 483 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 329300 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 261220 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 305760 483 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 296740 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 173280 483 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 293780 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 215520 483 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 428640 599777 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 332260 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 223200 599777 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 244320 599777 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 353760 599777 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 370740 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 365280 483 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 326880 483 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 219780 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 296160 483 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 290400 483 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VDD + USE POWER

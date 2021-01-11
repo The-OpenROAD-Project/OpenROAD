@@ -114,7 +114,7 @@ getResizer()
   return openroad->getResizer();
 }
 
-cts::TritonCTSKernel *
+cts::TritonCTS *
 getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();

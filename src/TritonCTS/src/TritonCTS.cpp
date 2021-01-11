@@ -33,50 +33,328 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "DbWrapper.h"
+#include "tritoncts/TritonCTS.h"
+#include "Clock.h"
+#include "CtsOptions.h"
 #include "HTreeBuilder.h"
-#include "TritonCTSKernel.h"
-#include "db_sta/dbSta.hh"
+#include "PostCtsOpt.h"
+#include "StaEngine.h"
+#include "TechChar.h"
+#include "TreeBuilder.h"
+
+#include "opendb/db.h"
+#include "opendb/dbShape.h"
 #include "openroad/Error.hh"
-#include "sta/Clock.hh"
-#include "sta/Sdc.hh"
-#include "sta/Set.hh"
+#include "db_sta/dbSta.hh"
 
-// DB includes
-#include "db.h"
-#include "dbShape.h"
-#include "dbTypes.h"
-
-#include <iostream>
-#include <sstream>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <unordered_set>
+#include <iterator>
 
 namespace cts {
 
 using ord::error;
 
-DbWrapper::DbWrapper(CtsOptions& options, TritonCTSKernel& kernel)
+void TritonCTS::init(ord::OpenRoad* openroad)
 {
-  _options = &options;
-  _kernel = &kernel;
+  _openroad = openroad;
+  makeComponents();
 }
 
-void DbWrapper::populateTritonCTS()
+void TritonCTS::makeComponents()
+{
+  _db = _openroad->getDb();
+  _options = new CtsOptions;
+  _techChar = new TechChar(_options);
+  _staEngine = new StaEngine(_options);
+  _builders = new std::vector<TreeBuilder*>;
+}
+
+void TritonCTS::deleteComponents()
+{
+  delete _options;
+  delete _techChar;
+  delete _staEngine;
+  delete _builders;
+}
+
+TritonCTS::~TritonCTS()
+{
+  deleteComponents();
+}
+
+void TritonCTS::runTritonCts()
+{
+  printHeader();
+  setupCharacterization();
+  findClockRoots();
+  populateTritonCts();
+  checkCharacterization();
+  if (_options->getOnlyCharacterization()) {
+    return;
+  }
+  buildClockTrees();
+  if (_options->runPostCtsOpt()) {
+    runPostCtsOpt();
+  }
+  writeDataToDb();
+  printFooter();
+}
+
+void TritonCTS::addBuilder(TreeBuilder* builder)
+{
+  _builders->push_back(builder);
+}
+
+void TritonCTS::printHeader() const
+{
+  std::cout << " *****************\n";
+  std::cout << " * TritonCTS 2.0 *\n";
+  std::cout << " *****************\n";
+}
+
+void TritonCTS::setupCharacterization()
+{
+  if (_options->runAutoLut()) {
+    // A new characteriztion is created.
+    createCharacterization();
+  } else {
+    // LUT files exists. Import the characterization results.
+    importCharacterization();
+  }
+  // Also resets metrics everytime the setup is done
+  _options->setNumSinks(0);
+  _options->setNumBuffersInserted(0);
+  _options->setNumClockRoots(0);
+  _options->setNumClockSubnets(0);
+}
+
+void TritonCTS::importCharacterization()
+{
+  std::cout << " *****************************\n";
+  std::cout << " *  Import characterization  *\n";
+  std::cout << " *****************************\n";
+
+  _techChar->parse(_options->getLutFile(), _options->getSolListFile());
+}
+
+void TritonCTS::createCharacterization()
+{
+  std::cout << " *****************************\n";
+  std::cout << " *  Create characterization  *\n";
+  std::cout << " *****************************\n";
+
+  _techChar->create();
+}
+
+void TritonCTS::checkCharacterization()
+{
+  std::cout << " ****************************\n";
+  std::cout << " *  Check characterization  *\n";
+  std::cout << " ****************************\n";
+
+  std::unordered_set<std::string> visitedMasters;
+  _techChar->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
+    for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
+      std::string master = wireSeg.getBufferMaster(buf);
+      if (visitedMasters.count(master) == 0) {
+        if (masterExists(master)) {
+          visitedMasters.insert(master);
+        } else {
+          error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
+        }
+      }
+    }
+  });
+
+  std::cout << "    The chacterization used " << visitedMasters.size()
+            << " buffer(s) types."
+            << " All of them are in the loaded DB.\n";
+}
+
+void TritonCTS::findClockRoots()
+{
+  std::cout << " **********************\n";
+  std::cout << " *  Find clock roots  *\n";
+  std::cout << " **********************\n";
+
+  if (_options->getClockNets() != "") {
+    std::cout << " Running TritonCTS with user-specified clock roots: ";
+    std::cout << _options->getClockNets() << "\n";
+    return;
+  }
+
+  std::cout << " User did not specify clock roots.\n";
+  _staEngine->init();
+}
+
+void TritonCTS::populateTritonCts()
+{
+  std::cout << " ************************\n";
+  std::cout << " *  Populate TritonCTS  *\n";
+  std::cout << " ************************\n";
+
+  populateTritonCTS();
+
+  if (_builders->size() < 1) {
+    error("No valid clock nets in the design.\n");
+  }
+}
+
+void TritonCTS::buildClockTrees()
+{
+  std::cout << " ***********************\n";
+  std::cout << " *  Build clock trees  *\n";
+  std::cout << " ***********************\n";
+
+  for (TreeBuilder* builder : *_builders) {
+    builder->setTechChar(*_techChar);
+    builder->run();
+  }
+}
+
+void TritonCTS::runPostCtsOpt()
+{
+  if (!_options->runPostCtsOpt()) {
+    return;
+  }
+
+  std::cout << " ****************\n";
+  std::cout << " * Post CTS opt *\n";
+  std::cout << " ****************\n";
+
+  for (TreeBuilder* builder : *_builders) {
+    PostCtsOpt opt(builder->getClock(), _options);
+    opt.run();
+  }
+}
+
+void TritonCTS::writeDataToDb()
+{
+  std::cout << " ********************\n";
+  std::cout << " * Write data to DB *\n";
+  std::cout << " ********************\n";
+
+  for (TreeBuilder* builder : *_builders) {
+    writeClockNetsToDb(builder->getClock());
+  }
+}
+
+void TritonCTS::forEachBuilder(
+    const std::function<void(const TreeBuilder*)> func) const
+{
+  for (const TreeBuilder* builder : *_builders) {
+    func(builder);
+  }
+}
+
+void TritonCTS::printFooter() const
+{
+  std::cout << " ... End of TritonCTS execution.\n";
+}
+
+void TritonCTS::reportCtsMetrics()
+{
+  std::string filename = _options->getMetricsFile();
+
+  if (filename != "") {
+    std::ofstream file(filename.c_str());
+
+    if (!file.is_open()) {
+      std::cout << "Could not open output metric file.\n";
+      return;
+    }
+
+    file << "[TritonCTS Metrics] Total number of Clock Roots: "
+         << _options->getNumClockRoots() << ".\n";
+    file << "[TritonCTS Metrics] Total number of Buffers Inserted: "
+         << _options->getNumBuffersInserted() << ".\n";
+    file << "[TritonCTS Metrics] Total number of Clock Subnets: "
+         << _options->getNumClockSubnets() << ".\n";
+    file << "[TritonCTS Metrics] Total number of Sinks: "
+         << _options->getNumSinks() << ".\n";
+
+    file.close();
+  } else {
+    std::cout << "[TritonCTS Metrics] Total number of Clock Roots: "
+              << _options->getNumClockRoots() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Buffers Inserted: "
+              << _options->getNumBuffersInserted() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Clock Subnets: "
+              << _options->getNumClockSubnets() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Sinks: "
+              << _options->getNumSinks() << ".\n";
+  }
+}
+
+int TritonCTS::setClockNets(const char* names)
+{
+  odb::dbDatabase* db = _openroad->getDb();
+  odb::dbChip* chip = db->getChip();
+  odb::dbBlock* block = chip->getBlock();
+
+  _options->setClockNets(names);
+  std::stringstream ss(names);
+  std::istream_iterator<std::string> begin(ss);
+  std::istream_iterator<std::string> end;
+  std::vector<std::string> nets(begin, end);
+
+  std::vector<odb::dbNet*> netObjects;
+
+  for (std::string name : nets) {
+    odb::dbNet* net = block->findNet(name.c_str());
+    bool netFound = false;
+    if (net != nullptr) {
+      // Since a set is unique, only the nets not found by dbSta are added.
+      netObjects.push_back(net);
+      netFound = true;
+    } else {
+      // User input was a pin, transform it into an iterm if possible
+      odb::dbITerm* iterm = block->findITerm(name.c_str());
+      if (iterm != nullptr) {
+        net = iterm->getNet();
+        if (net != nullptr) {
+          // Since a set is unique, only the nets not found by dbSta are added.
+          netObjects.push_back(net);
+          netFound = true;
+        }
+      }
+    }
+    if (!netFound) {
+      return 1;
+    }
+  }
+  _options->setClockNetsObjs(netObjects);
+  return 0;
+}
+
+void TritonCTS::setBufferList(const char* buffers)
+{
+  std::stringstream ss(buffers);
+  std::istream_iterator<std::string> begin(ss);
+  std::istream_iterator<std::string> end;
+  std::vector<std::string> bufferVector(begin, end);
+  _options->setBufferList(bufferVector);
+}
+
+// db functions
+
+void TritonCTS::populateTritonCTS()
 {
   initDB();
   initAllClocks();
 }
 
-void DbWrapper::initDB()
+void TritonCTS::initDB()
 {
-  ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
-  _openSta = openRoad->getSta();
-  _db = odb::dbDatabase::getDatabase(_options->getDbId());
-  _chip = _db->getChip();
-  _block = _chip->getBlock();
+  _openSta = _openroad->getSta();
+  _block = _db->getChip()->getBlock();
   _options->setDbUnits(_block->getDbUnitsPerMicron());
 }
 
-void DbWrapper::initAllClocks()
+void TritonCTS::initAllClocks()
 {
   std::cout << " Initializing clock nets\n";
 
@@ -123,7 +401,7 @@ void DbWrapper::initAllClocks()
   _options->setNumClockRoots(getNumClocks());
 }
 
-void DbWrapper::initClock(odb::dbNet* net)
+void TritonCTS::initClock(odb::dbNet* net)
 {
   std::string driver = "";
   odb::dbITerm* iterm = net->getFirstOutput();
@@ -137,7 +415,7 @@ void DbWrapper::initClock(odb::dbNet* net)
     odb::dbMTerm* mterm = iterm->getMTerm();
     std::string driver = std::string(inst->getConstName()) + "/"
                          + std::string(mterm->getConstName());
-    DBU xTmp, yTmp;
+    int xTmp, yTmp;
     computeITermPosition(iterm, xTmp, yTmp);
     xPin = xTmp;
     yPin = yTmp;
@@ -156,7 +434,7 @@ void DbWrapper::initClock(odb::dbNet* net)
       odb::dbMTerm* mterm = iterm->getMTerm();
       std::string name = std::string(inst->getConstName()) + "/"
                          + std::string(mterm->getConstName());
-      DBU x, y;
+      int x, y;
       computeITermPosition(iterm, x, y);
       clockNet.addSink(name, x, y, iterm);
     }
@@ -185,10 +463,10 @@ void DbWrapper::initClock(odb::dbNet* net)
 
   clockNet.setNetObj(net);
 
-  _kernel->addBuilder(new HTreeBuilder(*_options, clockNet));
+  addBuilder(new HTreeBuilder(_options, clockNet));
 }
 
-void DbWrapper::parseClockNames(std::vector<std::string>& clockNetNames) const
+void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const
 {
   std::stringstream allNames(_options->getClockNets());
 
@@ -209,7 +487,7 @@ void DbWrapper::parseClockNames(std::vector<std::string>& clockNetNames) const
   }
 }
 
-void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU& x, DBU& y) const
+void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 {
   odb::dbITermShapeItr itr;
 
@@ -230,7 +508,7 @@ void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU& x, DBU& y) const
   }
 };
 
-void DbWrapper::writeClockNetsToDb(Clock& clockNet)
+void TritonCTS::writeClockNetsToDb(Clock& clockNet)
 {
   std::cout << " Writing clock net \"" << clockNet.getName() << "\" to DB\n";
   odb::dbNet* topClockNet = clockNet.getNetObj();
@@ -366,7 +644,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet)
             << ".\n";
 }
 
-std::pair<int, int> DbWrapper::branchBufferCount(ClockInst* inst,
+std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
                                                  int bufCounter,
                                                  Clock& clockNet)
 {
@@ -402,7 +680,7 @@ std::pair<int, int> DbWrapper::branchBufferCount(ClockInst* inst,
   return results;
 }
 
-void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net)
+void TritonCTS::disconnectAllSinksFromNet(odb::dbNet* net)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   for (odb::dbITerm* iterm : iterms) {
@@ -412,7 +690,7 @@ void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net)
   }
 }
 
-void DbWrapper::disconnectAllPinsFromNet(odb::dbNet* net)
+void TritonCTS::disconnectAllPinsFromNet(odb::dbNet* net)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   for (odb::dbITerm* iterm : iterms) {
@@ -420,7 +698,7 @@ void DbWrapper::disconnectAllPinsFromNet(odb::dbNet* net)
   }
 }
 
-void DbWrapper::checkUpstreamConnections(odb::dbNet* net)
+void TritonCTS::checkUpstreamConnections(odb::dbNet* net)
 {
   while (net->getITermCount() <= 1) {
     // Net is incomplete, only 1 pin.
@@ -442,7 +720,7 @@ void DbWrapper::checkUpstreamConnections(odb::dbNet* net)
   }
 }
 
-void DbWrapper::createClockBuffers(Clock& clockNet)
+void TritonCTS::createClockBuffers(Clock& clockNet)
 {
   unsigned numBuffers = 0;
   clockNet.forEachClockBuffer([&](ClockInst& inst) {
@@ -460,7 +738,7 @@ void DbWrapper::createClockBuffers(Clock& clockNet)
   _options->setNumBuffersInserted(totalBuffers);
 }
 
-odb::dbITerm* DbWrapper::getFirstInput(odb::dbInst* inst) const
+odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
 {
   odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   for (odb::dbITerm* iterm : iterms) {
@@ -472,12 +750,12 @@ odb::dbITerm* DbWrapper::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-bool DbWrapper::masterExists(const std::string& master) const
+bool TritonCTS::masterExists(const std::string& master) const
 {
   return _db->findMaster(master.c_str());
 };
 
-void DbWrapper::removeNonClockNets()
+void TritonCTS::removeNonClockNets()
 {
   for (odb::dbNet* net : _block->getNets()) {
     if (net->getSigType() != odb::dbSigType::CLOCK) {

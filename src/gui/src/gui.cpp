@@ -307,8 +307,9 @@ bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
       bbox.set_yhi(instBBox->yMax());
       return true;
     }
+    default:
+      return false;
   }
-  return false;
 }
 
 void OpenDbDescriptor::highlight(void* object,
