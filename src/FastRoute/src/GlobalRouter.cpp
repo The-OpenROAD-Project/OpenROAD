@@ -65,7 +65,7 @@
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 void GlobalRouter::init(ord::OpenRoad* openroad)
 {

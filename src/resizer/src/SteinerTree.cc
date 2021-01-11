@@ -53,7 +53,7 @@ namespace rsz {
 using std::abs;
 using std::string;
 
-using ord::RSZ;
+using utl::RSZ;
 
 using odb::dbShape;
 using odb::dbPlacementStatus;

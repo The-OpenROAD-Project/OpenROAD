@@ -40,8 +40,8 @@
 #include <boost/geometry/geometries/box.hpp>
 
 namespace fr {
-  using Logger = ord::Logger;
-  const ord::ToolId DRT = ord::DRT;
+  using Logger = utl::Logger;
+  const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
   using frUInt4 = unsigned int;

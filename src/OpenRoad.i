@@ -215,7 +215,7 @@ using odb::dbTech;
   $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
-%typemap(in) ord::ToolId {
+%typemap(in) utl::ToolId {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
@@ -243,7 +243,7 @@ report(const char *msg)
 }
 
 void
-info(ord::ToolId tool,
+info(utl::ToolId tool,
      int id,
      const char *msg)
 {
@@ -252,7 +252,7 @@ info(ord::ToolId tool,
 }
 
 void
-ord_warn(ord::ToolId tool,
+ord_warn(utl::ToolId tool,
          int id,
          const char *msg)
 {
@@ -261,7 +261,7 @@ ord_warn(ord::ToolId tool,
 }
 
 void
-ord_error(ord::ToolId tool,
+ord_error(utl::ToolId tool,
           int id,
           const char *msg)
 {
@@ -270,7 +270,7 @@ ord_error(ord::ToolId tool,
 }
 
 void
-critical(ord::ToolId tool,
+critical(utl::ToolId tool,
          int id,
          const char *msg)
 {
@@ -355,9 +355,9 @@ set_debug_level(const char* tool_name,
   using namespace ord;
   auto* logger = getOpenRoad()->getLogger();
 
-  auto id = Logger::findToolId(tool_name);
-  if (id == UKN) {
-    logger->error(ORD, 15, "Unknown tool name {}", tool_name);
+  auto id = utl::Logger::findToolId(tool_name);
+  if (id == utl::UKN) {
+    logger->error(utl::ORD, 15, "Unknown tool name {}", tool_name);
   }
   logger->setDebugLevel(id, group, level);
 }

@@ -47,7 +47,7 @@
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 using std::abs;
 using std::min;

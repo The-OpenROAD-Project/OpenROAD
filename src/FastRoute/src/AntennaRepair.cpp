@@ -51,13 +51,13 @@
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
-                             ord::Logger *logger)
+                             utl::Logger *logger)
     : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db), _logger(logger)
 {
   _block = _db->getChip()->getBlock();

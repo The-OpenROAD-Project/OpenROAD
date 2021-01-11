@@ -52,7 +52,7 @@ using std::array;
 using std::string;
 
 using ord::OpenRoad;
-using ord::Logger;
+using utl::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;

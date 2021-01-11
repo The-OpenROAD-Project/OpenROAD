@@ -37,13 +37,13 @@
 #include "placerBase.h"
 #include "nesterovBase.h"
 #include "routeBase.h" 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include <iostream>
 
 namespace gpl {
 
 using namespace std;
-using ord::GPL;
+using utl::GPL;
 
 Replace::Replace()
   : db_(nullptr), 
@@ -157,7 +157,7 @@ void Replace::setSta(sta::dbSta* sta) {
 void Replace::setFastRoute(grt::GlobalRouter* fr) {
   fr_ = fr;
 }
-void Replace::setLogger(ord::Logger* logger) {
+void Replace::setLogger(utl::Logger* logger) {
   log_ = logger;
 }
 void Replace::doInitialPlace() {

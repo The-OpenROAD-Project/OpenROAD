@@ -309,7 +309,7 @@ private:
   ScriptWidget* widget_;
 };
 
-void ScriptWidget::setLogger(ord::Logger* logger)
+void ScriptWidget::setLogger(utl::Logger* logger)
 {
   logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }

@@ -87,7 +87,7 @@ using std::vector;
 using std::map;
 using std::pair;
 
-using ord::RSZ;
+using utl::RSZ;
 using ord::closestPtInRect;
 
 using odb::dbInst;

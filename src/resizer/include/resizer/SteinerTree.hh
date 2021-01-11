@@ -50,7 +50,7 @@
 
 namespace rsz {
 
-using ord::Logger;
+using utl::Logger;
 
 using odb::Point;
 

@@ -75,7 +75,7 @@ PDNSim::~PDNSim()
   //_net_voltage_map = nullptr;
 }
 
-void PDNSim::init(ord::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
+void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
 {
   _db     = db;
   _sta    = sta;
@@ -105,26 +105,26 @@ void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
 void PDNSim::import_vsrc_cfg(std::string vsrc)
 {
   _vsrc_loc = vsrc;
-  _logger->info(ord::PSM, 1, "Reading voltage source file: {}.", _vsrc_loc);
+  _logger->info(utl::PSM, 1, "Reading voltage source file: {}.", _vsrc_loc);
 }
 
 void PDNSim::import_out_file(std::string out_file)
 {
   _out_file = out_file;
   _logger->info(
-      ord::PSM, 2, "Output voltage file is specified as: {}.", _out_file);
+      utl::PSM, 2, "Output voltage file is specified as: {}.", _out_file);
 }
 
 void PDNSim::import_em_out_file(std::string em_out_file)
 {
   _em_out_file = em_out_file;
-  _logger->info(ord::PSM, 3, "Output current file specified {}.", _em_out_file);
+  _logger->info(utl::PSM, 3, "Output current file specified {}.", _em_out_file);
 }
 void PDNSim::import_enable_em(int enable_em)
 {
   _enable_em = enable_em;
   if (_enable_em == 1) {
-    _logger->info(ord::PSM, 4, "EM calculation is enabled.");
+    _logger->info(utl::PSM, 4, "EM calculation is enabled.");
   }
 }
 
@@ -132,7 +132,7 @@ void PDNSim::import_spice_out_file(std::string out_file)
 {
   _spice_out_file = out_file;
   _logger->info(
-      ord::PSM, 5, "Output spice file is specified as: {}.", _spice_out_file);
+      utl::PSM, 5, "Output spice file is specified as: {}.", _spice_out_file);
 }
 
 void PDNSim::write_pg_spice()
@@ -156,10 +156,10 @@ void PDNSim::write_pg_spice()
     int check_spice = irsolve_h->PrintSpice();
     if (check_spice) {
       _logger->info(
-          ord::PSM, 6, "Spice file is written at: {}.", _spice_out_file);
+          utl::PSM, 6, "Spice file is written at: {}.", _spice_out_file);
     } else {
       _logger->error(
-          ord::PSM, 7, "Falied to write out spice file: {}.", _spice_out_file);
+          utl::PSM, 7, "Falied to write out spice file: {}.", _spice_out_file);
     }
   }
 }
