@@ -1188,6 +1188,13 @@ Resizer::makeEquivCells(LibertyLibrarySeq *resize_libs)
   sta_->makeEquivCells(resize_libs, &map_libs);
 }
 
+static float
+targetLoadDist(float load_cap,
+               float target_load)
+{
+  return abs(load_cap - target_load);
+}
+
 bool
 Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 {
@@ -1213,25 +1220,21 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
         LibertyCell *best_cell = cell;
         float target_load = (*target_load_map_)[cell];
         float best_load = target_load;
-        float best_ratio = (target_load < load_cap)
-          ? target_load / load_cap
-          : load_cap / target_load;
+        float best_dist = targetLoadDist(load_cap, target_load);
         float best_delay = is_buf_inv ? bufferDelay(cell, load_cap) : 0.0;
-        debugPrint(debug_, "resizer", 2, "%s load cap %s ratio=%.2f delay=%s",
+        debugPrint(debug_, "resizer", 2, "%s load cap %s dist=%.2e delay=%s",
                    sdc_network_->pathName(drvr_pin),
                    units_->capacitanceUnit()->asString(load_cap),
-                   best_ratio,
+                   best_dist,
                    delayAsString(best_delay, sta_, 3));
         for (LibertyCell *target_cell : *equiv_cells) {
           if (!dontUse(target_cell)) {
             float target_load = (*target_load_map_)[target_cell];
             float delay = is_buf_inv ? bufferDelay(target_cell, load_cap) : 0.0;
-            float ratio = target_load / load_cap;
-            if (ratio > 1.0)
-              ratio = 1.0 / ratio;
-            debugPrint(debug_, "resizer", 2, " %s ratio=%.2f delay=%s",
+            float dist = targetLoadDist(load_cap, target_load);
+            debugPrint(debug_, "resizer", 2, " %s dist=%.2e delay=%s",
                        target_cell->name(),
-                       ratio,
+                       dist,
                        delayAsString(delay, sta_, 3));
             if (is_buf_inv
                 // Library may have "delay" buffers/inverters that are
@@ -1239,16 +1242,16 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                 // intrinsic delay. Accept worse target load matching if
                 // delay is reduced to avoid using them.
                 ? ((delay < best_delay
-                    && ratio > best_ratio * 0.9)
-                   || (ratio > best_ratio
+                    && dist < best_dist * 1.1)
+                   || (dist < best_dist
                        && delay < best_delay * 1.1))
-                : ratio > best_ratio
+                : dist < best_dist
                 // If the instance has multiple outputs (generally a register Q/QN)
                 // only allow upsizing after the first pin is visited.
                 && (!revisiting_inst
                     || target_load > best_load)) {
               best_cell = target_cell;
-              best_ratio = ratio;
+              best_dist = dist;
               best_load = target_load;
               best_delay = delay;
             }
@@ -1415,8 +1418,9 @@ void
 Resizer::findTargetLoad(LibertyCell *cell,
                         TgtSlews &slews)
 {
-  float target_load = INF;
   LibertyCellTimingArcSetIterator arc_set_iter(cell);
+  float target_load_sum = 0.0;
+  int arc_count = 0;
   while (arc_set_iter.hasNext()) {
     TimingArcSet *arc_set = arc_set_iter.next();
     TimingRole *role = arc_set->role();
@@ -1431,22 +1435,22 @@ Resizer::findTargetLoad(LibertyCell *cell,
         float arc_target_load = findTargetLoad(cell, arc,
                                                slews[in_rf_index],
                                                slews[out_rf_index]);
-        debugPrint(debug_, "resizer", 4, "%s %s -> %s %s target_load = %.2e",
+        debugPrint(debug_, "target_load", 3, "%s %s -> %s %s target_load = %.2e",
                    cell->name(),
                    arc->from()->name(),
                    arc->to()->name(),
                    arc->toTrans()->asString(),
                    arc_target_load);
-        // Ignore arcs with out_slew(load_cap=0.0) > target_slew.
-        if (arc_target_load > 0.0)
-          target_load = min(target_load, arc_target_load);
+        target_load_sum += arc_target_load;
+        arc_count++;
       }
     }
   }
-  (*target_load_map_)[cell] = target_load;
-  debugPrint(debug_, "resizer", 4, "%s target_load = %.2e",
+  float target_load = arc_count ? target_load_sum / arc_count : 0.0;
+  debugPrint(debug_, "target_load", 2, "%s target_load = %.2e",
              cell->name(),
              target_load);
+  (*target_load_map_)[cell] = target_load;
 }
 
 // Find the load capacitance that will cause the output slew
@@ -1465,6 +1469,9 @@ Resizer::findTargetLoad(LibertyCell *cell,
     double load_cap2 = 1.0e-12;  // 1pF
     double tol = .01; // 1%
     double diff1 = gateSlewDiff(cell, arc, model, in_slew, load_cap1, out_slew);
+    if (diff1 > 0.0)
+      // Zero load cap out_slew is higher than the target.
+      return 0.0;
     double diff2 = gateSlewDiff(cell, arc, model, in_slew, load_cap2, out_slew);
     // binary search for diff = 0.
     while (abs(load_cap1 - load_cap2) > max(load_cap1, load_cap2) * tol) {
@@ -1529,21 +1536,23 @@ Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
     int counts[RiseFall::index_count]{0};
     
     findBufferTargetSlews(lib, slews, counts);
-    for (int rf : RiseFall::rangeIndex()) {
-      tgt_slews_[rf] += slews[rf];
-      tgt_counts[rf] += counts[rf];
-      slews[rf] /= counts[rf];
-    }
-    debugPrint(debug_, "resizer", 2, "target_slews %s = %s/%s",
+    debugPrint(debug_, "target_load", 2, "target_slews %s = %s/%s",
                lib->name(),
                delayAsString(slews[RiseFall::riseIndex()], sta_, 3),
                delayAsString(slews[RiseFall::fallIndex()], sta_, 3));
+    for (int rf : RiseFall::rangeIndex()) {
+      if (counts[rf] > 0) {
+        tgt_slews_[rf] += slews[rf];
+        tgt_counts[rf] += counts[rf];
+        slews[rf] /= counts[rf];
+      }
+    }
   }
 
   for (int rf : RiseFall::rangeIndex())
     tgt_slews_[rf] /= tgt_counts[rf];
 
-  debugPrint(debug_, "resizer", 1, "target_slews = %s/%s",
+  debugPrint(debug_, "target_load", 1, "target_slews = %s/%s",
              delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
              delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 
