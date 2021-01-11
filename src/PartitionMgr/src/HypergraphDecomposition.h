@@ -64,7 +64,7 @@ class HypergraphDecomposition
                         short currentCluster);
   void toGraph(Hypergraph& hypergraph,
                Graph& graph,
-               GraphType graphModel,
+               std::string graphModelS,
                unsigned weightingOption,
                unsigned maxEdgeWeight,
                unsigned threshold);
@@ -81,6 +81,7 @@ class HypergraphDecomposition
 
   int _weightingOption;
   std::vector<std::map<int, float>> adjMatrix;
+  GraphType resolveModel(std::string graphModel);
   void addMapping(Hypergraph& hypergraph,
                   std::string instName,
                   const odb::Rect& rect);

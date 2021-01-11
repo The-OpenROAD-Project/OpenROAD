@@ -30,14 +30,14 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
 cmake_policy(SET CMP0074 NEW)
 endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
-# Allow AUTOUIC on generated source
-cmake_policy(SET CMP0071 NEW)
-endif()
-
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # option() behavior
 cmake_policy(SET CMP0077 NEW)
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
+# Let AUTOMOC and AUTOUIC process GENERATED files.
+cmake_policy(SET CMP0071 NEW)
 endif()
 
 project(OpenROAD VERSION 0.9.0

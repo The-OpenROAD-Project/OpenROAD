@@ -2711,10 +2711,6 @@ void GlobalRouter::makeBtermPins(Net* net,
             pinBoxes,
             (connectedToPad || connectedToMacro));
 
-    if (pin.getLayers().empty()) {
-      _logger->error(GRT, 78, "Pin {} does not have layer assignment", bterm->getConstName());
-    }
-
     if (connectedToPad) {
       odb::Point pinPosition = pin.getPosition();
       odb::dbTechLayer* techLayer = tech->findRoutingLayer(pin.getTopLayer());

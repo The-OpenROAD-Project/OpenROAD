@@ -68,7 +68,7 @@ class IOPlacer;
 }
 
 namespace cts {
-class TritonCTS;
+class TritonCTSKernel;
 }
 
 namespace grt {
@@ -141,7 +141,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
-  cts::TritonCTS *getTritonCts() { return tritonCts_; } 
+  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
@@ -220,7 +220,7 @@ private:
   fin::Finale *finale_;
   mpl::TritonMacroPlace *tritonMp_;
   grt::GlobalRouter *fastRoute_;
-  cts::TritonCTS *tritonCts_;
+  cts::TritonCTSKernel *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;

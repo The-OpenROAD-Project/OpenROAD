@@ -2079,7 +2079,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud) {
                          fprintf(fout, "DESIGNRULEWIDTH %d ",
                                  port->layerDesignRuleWidth(i));
                        port->bounds(i, &xl, &yl, &xh, &yh);
-                       fprintf(fout, "( %d %d ) ( %d %d ) ", xl, yl, xh, yh);
+                       fprintf(fout, "%d %d %d %d ", xl, yl, xh, yh);
                     }
                     for (i = 0; i < port->numPolygons(); i++) {
                        fprintf(fout, "\n     + POLYGON %s ",

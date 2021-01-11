@@ -175,7 +175,7 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net) : TreeBuilder(options, net){};
+  HTreeBuilder(CtsOptions& options, Clock& net) : TreeBuilder(options, net){};
 
   void run();
 

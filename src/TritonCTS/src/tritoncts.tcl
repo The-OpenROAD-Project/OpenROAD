@@ -49,12 +49,14 @@ sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
 proc configure_cts_characterization { args } {
   sta::parse_key_args "configure_cts_characterization" args \
     keys {-max_cap -max_slew -sqr_cap -sqr_res -slew_inter -cap_inter} flags {}
+
+  set cts [get_triton_cts]
   
   if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
     set sqr_cap $keys(-sqr_cap)
-    cts::set_cap_per_sqr $sqr_cap
+    $cts set_cap_per_sqr $sqr_cap
     set sqr_res $keys(-sqr_res)
-    cts::set_res_per_sqr $sqr_res
+    $cts set_res_per_sqr $sqr_res
   } else {
     #User may enter capacitance and resistance per square (um²) when creating a new characterization.
     #In case not provided, would be picked from clock layer set by set_wire_rc -clock -layer
@@ -63,22 +65,22 @@ proc configure_cts_characterization { args } {
 
   if { [info exists keys(-max_cap)] } {
     set max_cap_value $keys(-max_cap)
-    cts::set_max_char_cap $max_cap_value
+    $cts set_max_char_cap $max_cap_value
   } 
 
   if { [info exists keys(-max_slew)] } {
     set max_slew_value $keys(-max_slew)
-    cts::set_max_char_slew $max_slew_value
+    $cts set_max_char_slew $max_slew_value
   } 
 
   if { [info exists keys(-slew_inter)] } {
 	  set slew $keys(-slew_inter)
-    cts::set_slew_inter $slew 
+    $cts set_slew_inter $slew 
   } 
 
   if { [info exists keys(-cap_inter)] } {
 	  set cap $keys(-cap_inter)
-    cts::set_cap_inter $cap 
+    $cts set_cap_inter $cap 
   } 
 }
 
@@ -110,45 +112,47 @@ proc clock_tree_synthesis { args } {
           -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf}\
     flags {-characterization_only -post_cts_disable -sink_clustering_enable}
 
-  cts::set_only_characterization [info exists flags(-characterization_only)]
+  set cts [get_triton_cts]
 
-  cts::set_disable_post_cts [info exists flags(-post_cts_disable)]
+  $cts set_only_characterization [info exists flags(-characterization_only)]
 
-  cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
+  $cts set_disable_post_cts [info exists flags(-post_cts_disable)]
+
+  $cts set_sink_clustering [info exists flags(-sink_clustering_enable)]
 
   if { [info exists keys(-sink_clustering_size)] } {
     set size $keys(-sink_clustering_size)
-    cts::set_sink_clustering_size $size
+    $cts set_sink_clustering_size $size
   } 
 
   if { [info exists keys(-sink_clustering_max_diameter)] } {
     set distance $keys(-sink_clustering_max_diameter)
-    cts::set_clustering_diameter $distance
+    $cts set_clustering_diameter $distance
   } 
 
   if { [info exists keys(-num_static_layers)] } {
     set num $keys(-num_static_layers)
-    cts::set_num_static_layers $num
+    $cts set_num_static_layers $num
   } 
 
   if { [info exists keys(-distance_between_buffers)] } {
     set distance $keys(-distance_between_buffers)
-    cts::set_distance_between_buffers $distance
+    $cts set_distance_between_buffers $distance
   } 
 
   if { [info exists keys(-branching_point_buffers_distance)] } {
     set distance $keys(-branching_point_buffers_distance)
-    cts::set_branching_point_buffers_distance $distance
+    $cts set_branching_point_buffers_distance $distance
   } 
 
   if { [info exists keys(-clustering_exponent)] } {
     set exponent $keys(-clustering_exponent)
-    cts::set_clustering_exponent $exponent
+    $cts set_clustering_exponent $exponent
   } 
 
   if { [info exists keys(-clustering_unbalance_ratio)] } {
     set unbalance $keys(-clustering_unbalance_ratio)
-    cts::set_clustering_unbalance_ratio $unbalance
+    $cts set_clustering_unbalance_ratio $unbalance
   } 
 
   if { [info exists keys(-lut_file)] } {
@@ -156,8 +160,8 @@ proc clock_tree_synthesis { args } {
       ord::error "Missing argument -sol_list"
     }
 	  set lut $keys(-lut_file)
-    cts::set_lut_file $lut 
-    cts::set_auto_lut 0
+    $cts set_lut_file $lut 
+    $cts set_auto_lut 0
   } 
  
   if { [info exists keys(-sol_list)] } {
@@ -165,13 +169,13 @@ proc clock_tree_synthesis { args } {
       ord::error "Missing argument -lut_file"
     }
 	  set sol_list $keys(-sol_list)
-    cts::set_sol_list_file $sol_list
-    cts::set_auto_lut 0
+    $cts set_sol_list_file $sol_list
+    $cts set_auto_lut 0
   } 
 
   if { [info exists keys(-buf_list)] } {
     set buf_list $keys(-buf_list)
-    cts::set_buffer_list $buf_list
+    $cts set_buffer_list $buf_list
   } else {
     if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
       #User must either input a lut file or the buffer list.
@@ -181,12 +185,12 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-wire_unit)] } {
     set wire_unit $keys(-wire_unit)
-    cts::set_wire_segment_distance_unit $wire_unit
+    $cts set_wire_segment_distance_unit $wire_unit
   } 
 
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
-    set fail [cts::set_clock_nets $clk_nets]
+    set fail [$cts set_clock_nets $clk_nets]
     if {$fail} {
       ord::error "Error when finding -clk_nets in DB!"
     }
@@ -194,7 +198,7 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-tree_buf)] } {
 	  set buf $keys(-tree_buf)
-    cts::set_tree_buf $buf 
+    $cts set_tree_buf $buf 
   } 
 
   if { [info exists keys(-root_buf)] } {
@@ -202,12 +206,12 @@ proc clock_tree_synthesis { args } {
     if { [llength $root_buf] > 1} {
       set root_buf [lindex $root_buf 0]
     }
-    cts::set_root_buffer $root_buf
+    $cts set_root_buffer $root_buf
   } else {
     if { [info exists keys(-buf_list)] } {
       #If using -buf_list, the first buffer can become the root buffer.
       set root_buf [lindex $buf_list 0]
-      cts::set_root_buffer $root_buf
+      $cts set_root_buffer $root_buf
     } else {
       #User must enter at least one of -root_buf or -buf_list.
       ord::error "Missing argument -root_buf"
@@ -219,17 +223,17 @@ proc clock_tree_synthesis { args } {
     if { [llength $sink_buf] > 1} {
       set sink_buf [lindex $sink_buf 0]
     }
-    cts::set_sink_buffer $sink_buf
+    $cts set_sink_buffer $sink_buf
   } else {
-    cts::set_sink_buffer $root_buf
+    $cts set_sink_buffer $root_buf
   }
 
   if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {
     set out_path $keys(-out_path)
-    cts::set_out_path $out_path
+    $cts set_out_path $out_path
   }
 
-  cts::run_triton_cts
+  $cts run_triton_cts
 }
 
 sta::define_cmd_args "report_cts" {[-out_file file] \
@@ -239,10 +243,12 @@ proc report_cts { args } {
   sta::parse_key_args "report_cts" args \
     keys {-out_file} flags {}
 
+  set cts [get_triton_cts]
+
   if { [info exists keys(-out_file)] } {
 	  set outFile $keys(-out_file)
-    cts::set_metric_output $outFile 
+    $cts set_metric_output $outFile 
   } 
 
-  cts::report_cts_metrics
+  $cts report_cts_metrics
 }

@@ -33,12 +33,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "tritoncts/MakeTritoncts.h"
-#include "tritoncts/TritonCTS.h"
+#include "MakeTritoncts.h"
+#include "TritonCTSKernel.h"
 #include "db.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "CtsOptions.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -51,9 +50,9 @@ extern int Tritoncts_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-cts::TritonCTS* makeTritonCts()
+cts::TritonCTSKernel* makeTritonCts()
 {
-  return new cts::TritonCTS();
+  return new cts::TritonCTSKernel();
 }
 
 void initTritonCts(OpenRoad* openroad)
@@ -62,12 +61,15 @@ void initTritonCts(OpenRoad* openroad)
   // Define swig TCL commands.
   Tritoncts_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::tritoncts_tcl_inits);
-  openroad->getTritonCts()->init(openroad);
+
+  // Set DB index
+  unsigned dbId = openroad->getDb()->getId();
+  cts::TritonCTSKernel* cts = openroad->getTritonCts();
+  cts->getParms().setDbId(dbId);
 }
 
-void deleteTritonCts(cts::TritonCTS* tritoncts)
+void deleteTritonCts(cts::TritonCTSKernel* tritoncts)
 {
-	delete tritoncts;
 }
 
 }  // namespace ord

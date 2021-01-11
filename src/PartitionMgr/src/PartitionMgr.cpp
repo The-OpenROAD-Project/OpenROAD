@@ -187,7 +187,7 @@ void PartitionMgr::runChaco()
 
       partitioningMethod = 7;
       kWay = hypercubeDims;
-      oldTargetPartitions++;
+      oldTargetPartitions = oldTargetPartitions + 1;
 
       if (architecture) {
         hypercubeDims = (int) (std::log2(((double) (architectureDims))));
@@ -299,7 +299,7 @@ void PartitionMgr::runChaco()
           currentResults.clearAssignments();
         }
       }
-      firstRun++;
+      firstRun = firstRun + 1;
       if (firstRun % 100 == 0) {
         std::cout << "Partitioned graph for " << firstRun << " seeds.\n";
       }
@@ -435,7 +435,7 @@ void PartitionMgr::runGpMetis()
           currentResults.clearAssignments();
         }
       }
-      firstRun++;
+      firstRun = firstRun + 1;
       if (firstRun % 100 == 0) {
         std::cout << "Partitioned graph for " << firstRun << " seeds.\n";
       }
@@ -611,7 +611,7 @@ void PartitionMgr::runMlPart()
           currentResults.clearAssignments();
         }
       }
-      firstRun++;
+      firstRun = firstRun + 1;
       if (firstRun % 100 == 0) {
         std::cout << "Partitioned graph for " << firstRun << " seeds.\n";
       }
@@ -754,15 +754,19 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
           if (computedVertices.find(currentVertex)
               == computedVertices
                      .end()) {  // Update the partition size and area if needed.
-            setSize[currentPartition]++;
-            setArea[currentPartition] += _graph.getVertexWeight(currentVertex);
+            setSize[currentPartition] = setSize[currentPartition] + 1;
+            setArea[currentPartition] = setArea[currentPartition]
+                                        + _graph.getVertexWeight(currentVertex);
             computedVertices.insert(currentVertex);
           }
         }
       }
       if (netPartitions.size() > 1) {  // Net was cut.
-        cutCounter++;  // If the net was cut, a hyperedge cut happened.
-        terminalCounter += netPartitions.size();  // The number of different partitions
+        cutCounter
+            = cutCounter + 1;  // If the net was cut, a hyperedge cut happened.
+        terminalCounter
+            = terminalCounter
+              + netPartitions.size();  // The number of different partitions
                                        // present in the net is the number of
                                        // terminals. (Pathways to another set.)
         // Computations for hop weight:
@@ -804,24 +808,24 @@ void PartitionMgr::computePartitionResult(unsigned partitionId,
     // Computation for the standard deviation of set size.
     double currentSum = 0;
     for (unsigned long clusterSize : setSize) {
-      currentSum += clusterSize;
+      currentSum = currentSum + clusterSize;
     }
     double currentMean = currentSum / setSize.size();
     double sizeSD = 0;
     for (unsigned long clusterSize : setSize) {
-      sizeSD += std::pow(clusterSize - currentMean, 2);
+      sizeSD = sizeSD + std::pow(clusterSize - currentMean, 2);
     }
     sizeSD = std::sqrt(sizeSD / setSize.size());
 
     // Computation for the standard deviation of set area.
     currentSum = 0;
     for (unsigned long clusterArea : setArea) {
-      currentSum += clusterArea;
+      currentSum = currentSum + clusterArea;
     }
     currentMean = currentSum / setArea.size();
     double areaSD = 0;
     for (unsigned long clusterArea : setArea) {
-      areaSD += std::pow(clusterArea - currentMean, 2);
+      areaSD = areaSD + std::pow(clusterArea - currentMean, 2);
     }
     areaSD = std::sqrt(areaSD / setArea.size());
 
@@ -1357,7 +1361,7 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
     if (setSizes.find(currentPartition) == setSizes.end()) {
       setSizes[currentPartition] = 1;
     } else {
-      setSizes[currentPartition]++;
+      setSizes[currentPartition] = setSizes[currentPartition] + 1;
     }
     partitions.insert(currentPartition);
   }
@@ -1368,7 +1372,7 @@ void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
     unsigned long partSize = setSizes[partIdx];
     std::cout << "Partition " << partIdx << " has " << partSize
               << " vertices.\n";
-    totalVertices += partSize;
+    totalVertices = totalVertices + partSize;
   }
   std::cout << "\nThe total number of vertices is " << totalVertices
             << ".\n[REPORT NETLIST END]\n";

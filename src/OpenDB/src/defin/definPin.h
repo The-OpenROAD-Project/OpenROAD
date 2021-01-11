@@ -44,7 +44,6 @@ namespace odb {
 
 class dbBTerm;
 class dbTechLayer;
-class dbBPin;
 
 class definPin : public definBase
 {
@@ -99,8 +98,8 @@ class definPin : public definBase
   std::vector<Pin>         _ground_pins;
   std::vector<Pin>         _supply_pins;
 
-  void addRect(PinRect& r, dbBPin* pin);
-  void addPolygon(Polygon& p, dbBPin* pin);
+  void addRect(PinRect& r);
+  void addPolygon(Polygon& p);
 
  public:
   // Pin interface methods
@@ -121,8 +120,6 @@ class definPin : public definBase
   virtual void pinSupplyPin(const char* supplyPin);
   virtual void pinEnd();
   virtual void pinsEnd();
-  virtual void portBegin();
-  virtual void portEnd();
 
   definPin();
   virtual ~definPin();

@@ -19,14 +19,8 @@ COMPONENTS 10 ;
     - _276_ no02f01 + PLACED ( 32800 32000 ) FS ;
 END COMPONENTS
 PINS 2 ;
-    - input + NET input + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 -140 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( -140 -140 ) ( 140 140 )
-        + FIXED ( 0 60 ) N ;
+    - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal1 ( -140 -140 ) ( 140 140 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal1 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 SPECIALNETS 2 ;
     - vss + USE GROUND
