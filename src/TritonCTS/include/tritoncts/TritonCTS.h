@@ -39,6 +39,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 } // namespace ord
 
 namespace odb {
@@ -54,6 +55,8 @@ class dbSta;
 }  // namespace sta
 
 namespace cts {
+
+using ord::Logger;
 
 class Clock;
 class ClockInst;
@@ -110,12 +113,14 @@ class TritonCTS
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
+  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 
   ord::OpenRoad* _openroad;
+  Logger* _logger;
   CtsOptions* _options;
   TechChar* _techChar;
   StaEngine* _staEngine;

@@ -37,6 +37,7 @@
 
 #include "Util.h"
 #include "db.h"
+#include "openroad/Logger.h"
 
 #include <iostream>
 #include <sstream>
@@ -185,6 +186,8 @@ class CtsOptions
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
+  void setLogger(ord::Logger* l) { _logger = l;}
+  ord::Logger *getLogger() { return _logger;}
 
  private:
   std::string _blockName = "";
@@ -235,6 +238,7 @@ class CtsOptions
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
+  ord::Logger* _logger = nullptr;
 };
 
 }  // namespace cts
