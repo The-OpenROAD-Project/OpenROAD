@@ -159,7 +159,7 @@ void NesterovPlace::init() {
   prevHpwl_ 
     = nb_->getHpwl();
 
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {:g}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {}", prevHpwl_);
 
   // FFT update
   nb_->updateDensityForceBin();
@@ -730,8 +730,8 @@ NesterovPlace::updateNextIter() {
   updateWireLengthCoef(sumOverflow_);
   int64_t hpwl = nb_->getHpwl();
   
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {:g}", prevHpwl_);
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {:g}", hpwl);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {}", hpwl);
   
 
   float phiCoef = getPhiCoef( 
