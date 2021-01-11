@@ -41,7 +41,6 @@
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
 #include "openroad/Logger.h"
-#include "opendb/dbTransform.h"
 #include "opendb/dbWireCodec.h"
 
 using namespace std;
