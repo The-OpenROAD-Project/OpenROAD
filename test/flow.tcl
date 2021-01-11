@@ -52,7 +52,7 @@ set_wire_rc -clock  -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
-repair_design -max_wire_length $max_wire_length
+repair_design
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -83,7 +83,7 @@ configure_cts_characterization \
 clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
 
 # CTS leaves a long wire from the pad to the clock tree root.
-repair_clock_nets -max_wire_length $max_wire_length
+repair_clock_nets
 
 # CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
