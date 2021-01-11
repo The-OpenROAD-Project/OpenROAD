@@ -59,6 +59,7 @@
 #include "dbTech.h"
 #include "dbWire.h"
 #include "dbLogger.h"
+#include "openroad/Logger.h"
 
 namespace odb {
 
@@ -696,6 +697,13 @@ void dbDatabase::commitEco(dbBlock* block_)
     delete block->_journal_pending;
     block->_journal_pending = NULL;
   }
+}
+
+void dbDatabase::setLogger(ord::Logger* logger)
+{
+  _dbDatabase* _db = (_dbDatabase*) this;
+  _db->_logger = logger;
+  _db->_logger->info(ord::ODB,0,"Logger is connected");
 }
 
 dbDatabase* dbDatabase::create()

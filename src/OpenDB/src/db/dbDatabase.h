@@ -35,6 +35,10 @@
 #include "dbCore.h"
 #include "odb.h"
 
+namespace ord{
+  class Logger;
+}
+
 namespace odb {
 
 //
@@ -98,7 +102,8 @@ class _dbDatabase : public _dbObject
   dbPropertyItr*        _prop_itr;
   int                   _unique_id;
 
-  char* _file;
+  char*        _file;
+  ord::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);

@@ -191,6 +191,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   // Make components.
   logger_ = new Logger(log_filename);
+  db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();

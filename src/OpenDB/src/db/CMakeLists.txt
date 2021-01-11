@@ -115,6 +115,7 @@ target_include_directories(opendb
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/opendb>
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src/db
+        ${OPENROAD_HOME}/include
 )
 
 target_compile_features(opendb PRIVATE cxx_auto_type)
