@@ -29,10 +29,10 @@ DRT 0029 frRegionQuery.cpp:632       complete {} nets (guide)
 DRT 0030 frRegionQuery.cpp:636       complete {} nets (guide)
 DRT 0031 frRegionQuery.cpp:143     Unsupported region query add
 DRT 0032 frRegionQuery.cpp:750     {} grObj region query size = {}
-DRT 0033 frRegionQuery.cpp:760     {} shape region query size = 
-DRT 0034 frRegionQuery.cpp:780     {} drObj region query size = 
+DRT 0033 frRegionQuery.cpp:760     {} shape region query size = {}
+DRT 0034 frRegionQuery.cpp:780     {} drObj region query size = {}
 DRT 0035 frRegionQuery.cpp:646       complete {} (guide)
-DRT 0036 frRegionQuery.cpp:770     {} guide region query size = 
+DRT 0036 frRegionQuery.cpp:770     {} guide region query size = {}
 DRT 0037 FlexGC_init.cpp:73        init_design_helper shape does not have net.
 DRT 0038 FlexGC_init.cpp:80        init_design_helper shape does not have dr net.
 DRT 0039 FlexGC_init.cpp:83        init_design_helper unsupported type.
