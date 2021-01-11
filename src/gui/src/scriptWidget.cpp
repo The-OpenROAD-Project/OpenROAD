@@ -45,7 +45,7 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace gui {
 

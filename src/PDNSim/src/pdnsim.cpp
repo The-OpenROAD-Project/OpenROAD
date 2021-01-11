@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include "gmat.h"
 #include "node.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace psm {
 

@@ -47,7 +47,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -218,7 +218,7 @@ using odb::dbTech;
 %typemap(in) ord::ToolId {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = ord::Logger::findToolId(arg);
+  $1 = utl::Logger::findToolId(arg);
 }
 
 %inline %{

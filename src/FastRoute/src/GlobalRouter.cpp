@@ -57,7 +57,7 @@
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"

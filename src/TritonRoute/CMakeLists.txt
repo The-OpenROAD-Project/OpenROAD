@@ -161,6 +161,7 @@ target_link_libraries( TritonRouteLib
   OpenMP::OpenMP_CXX
   Boost::boost
   ZLIB::ZLIB
+  utility
 )
 
 ############################################################
@@ -187,6 +188,7 @@ add_executable(trTest
 target_include_directories( trTest
   PRIVATE
   ${FLEXROUTE_HOME}/src
+  ${OPENROAD_HOME}/include
 )
 
 target_link_libraries(trTest

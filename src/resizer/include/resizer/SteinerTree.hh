@@ -37,7 +37,7 @@
 
 #include <string>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"

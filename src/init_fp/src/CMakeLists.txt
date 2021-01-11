@@ -71,5 +71,5 @@ target_include_directories(init_fp
 
 target_link_libraries(init_fp
   PUBLIC
-  spdlog::spdlog
+  utility
   )

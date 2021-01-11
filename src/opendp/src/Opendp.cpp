@@ -47,7 +47,7 @@
 #include <map>
 #include <ostream>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
@@ -57,7 +57,7 @@ using std::ofstream;
 using std::round;
 using std::string;
 
-using ord::DPL;
+using utl::DPL;
 
 using odb::dbBox;
 using odb::dbBPin;

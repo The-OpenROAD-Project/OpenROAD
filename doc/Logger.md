@@ -181,4 +181,5 @@ target_link_libraries(<library_target>
 | TritonCTS | cts |
 | TritonMacroPlace | mpl |
 | TritonRoute | drt |
+| utility | utl |
                 

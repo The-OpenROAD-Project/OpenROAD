@@ -38,7 +38,7 @@
 #include <fstream>
 #include <string>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 // Move logger macro out of the way.
 #undef debugPrint
 

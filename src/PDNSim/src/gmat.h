@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_GMAT_
 #include "node.h"
 #include "opendb/db.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 //! Global variable which holds the G matrix.
 /*!
@@ -55,7 +55,7 @@ class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int t_num_layers, ord::Logger* logger)
+  GMat(int t_num_layers, utl::Logger* logger)
       : m_num_layers(t_num_layers), m_layer_maps(t_num_layers + 1, NodeMap())
   {  // as it start from 0 and everywhere we use layer
     m_logger = logger;
@@ -119,7 +119,7 @@ class GMat
 
  private:
   //! Pointer to the logger
-  ord::Logger* m_logger;
+  utl::Logger* m_logger;
   //! Number of nodes in G matrix
   NodeIdx m_n_nodes{0};
   //! Number of metal layers in PDN stack

@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gmat.h"
 #include "opendb/db.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace psm {
 
