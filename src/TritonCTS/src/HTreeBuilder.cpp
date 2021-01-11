@@ -679,18 +679,36 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
   std::vector<std::vector<unsigned>> clusters;
   clusteringEngine.getClusters(clusters);
+  unsigned movedSinks = 0;
   for (long int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
     for (long int elementIdx = 0; elementIdx < clusters[clusterIdx].size();
          ++elementIdx) {
       unsigned sinkIdx = clusters[clusterIdx][elementIdx];
       Point<double> sinkLoc(sinks[sinkIdx].first, sinks[sinkIdx].second);
+      double dist = clusterIdx == 0 ? branchPt1.computeDist(sinkLoc) : branchPt2.computeDist(sinkLoc);
+      double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc) : branchPt1.computeDist(sinkLoc);
+
       if (clusterIdx == 0) {
-        topology.addSinkToBranch(branchPtIdx1, sinkLoc);
+        if (dist<=distOther) {
+          topology.addSinkToBranch(branchPtIdx1, sinkLoc);
+        } else {
+          topology.addSinkToBranch(branchPtIdx2, sinkLoc);
+          movedSinks++;
+        }
       } else {
-        topology.addSinkToBranch(branchPtIdx2, sinkLoc);
+        if (dist<=distOther) {
+          topology.addSinkToBranch(branchPtIdx2, sinkLoc);
+        } else {
+          topology.addSinkToBranch(branchPtIdx1, sinkLoc);
+          movedSinks++;
+        }
       }
+
     }
   }
+
+  if (movedSinks>0)
+    std::cout << " Moved sinks to other cluster = " << movedSinks << std::endl;
 
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
