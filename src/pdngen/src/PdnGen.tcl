@@ -95,7 +95,7 @@ proc pdngen { args } {
   set config_file $args
 
   if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg options]} {
-    if {[regexp {\[PDNG\-[0-9]*\]} $error_msg]} {
+    if {[regexp {\[PDN\-[0-9]*\]} $error_msg]} {
       puts $error_msg
     } else {
       puts $options
@@ -143,10 +143,6 @@ variable twowidths_table {}
 variable twowidths_table_wrongdirection {}
 
 #This file contains procedures that are used for PDN generation
-proc set_message {level message} {
-  return "\[$level\] $message"
-}
-
 proc debug {message} {
   set state [info frame -1]
   set str ""
@@ -163,19 +159,19 @@ proc debug {message} {
 }
 
 proc information {id message} {
-  puts [set_message INFO [format "\[PDNG-%04d\] %s" $id $message]]
+  ord::info "PDN" $id $message
 }
 
 proc warning {id message} {
-  puts [set_message WARN [format "\[PDNG-%04d\] %s" $id $message]]
+  ord::warn "PDN" $id $message
 }
 
 proc err {id message} {
-  puts [set_message ERROR [format "\[PDNG-%04d\] %s" $id $message]]
+  ord::error "PDN" $id $message
 }
 
 proc critical {id message} {
-  error [set_message CRIT [format "\[PDNG-%04d\] %s" $id $message]]
+  ord::critical "PDN" $id $message
 }
 
 proc lmap {args} {
@@ -3419,14 +3415,16 @@ proc print_spacing_table {layer_name} {
     set table_size [$layer getTwoWidthsSpacingTableNumWidths]
     for {set i 0} {$i < $table_size} {incr i} {
       set width [$layer getTwoWidthsSpacingTableWidth $i]
-      puts -nonewline "WIDTH $width "
+      set report_width "WIDTH $width"
       if {[$layer getTwoWidthsSpacingTableHasPRL $i]} {
         set prl [$layer getTwoWidthsSpacingTablePRL $i] 
-        puts -nonewline "PRL $prl "
+        set report_prl " PRL $prl"
+      } else {
+        set report_prl ""
       }
-      puts -nonewline "[$layer getTwoWidthsSpacingTableEntry 0 $i] "
+      set report_spacing " [$layer getTwoWidthsSpacingTableEntry 0 $i] "
     }
-    puts ""
+    ord::report "${report_width}${report_prl}${report_spacing}"
   }
 }
 
@@ -3983,72 +3981,62 @@ proc report_layer_details {layer} {
 
 proc print_strategy {type specification} {
   if {[dict exists $specification name]} {
-    puts "Type: ${type}, [dict get $specification name]"
+    ord::report "Type: ${type}, [dict get $specification name]"
   } else {
-    puts "Type: $type"
+    ord::report "Type: $type"
   }
   if {[dict exists $specification core_ring]} {
-    puts "    Core Rings"
+    ord::report "    Core Rings"
     dict for {layer_name layer} [dict get $specification core_ring] {
-      puts -nonewline "      Layer: $layer_name"
+      set str "      Layer: $layer_name"
       if {[dict exists $layer width]} {
-        set str [report_layer_details $layer]
-        puts $str
+        set str "$str [report_layer_details $layer]"
+        ord::report $str
       } else {
-        puts ""
+        ord::report $str
         foreach template [dict keys $layer] {
-          puts -nonewline [format "          %-14s" $template]
-          set str [report_layer_details [dict get $layer $template]]
-          puts $str
+          ord::report -nonewline [format "          %-14s %s" $template [report_layer_details [dict get $layer $template]]]
         }
       }
     }
   }
   if {[dict exists $specification rails]} {
-    puts "    Stdcell Rails"
+    ord::report "    Stdcell Rails"
     dict for {layer_name layer} [dict get $specification rails] {
-      puts -nonewline "      Layer: $layer_name"
       if {[dict exists $layer width]} {
-        set str [report_layer_details $layer]
-        puts $str
+        ord::report "      Layer: $layer_name [report_layer_details $layer]"
       } else {
-        puts ""
+        ord::report "      Layer: $layer_name"
         foreach template [dict keys $layer] {
-          puts -nonewline [format "          %-14s" $template]
-          set str [report_layer_details [dict get $layer $template]]
-          puts $str
+          ord::report [format "          %-14s %s" $template [report_layer_details [dict get $layer $template]]]
         }
       }
     }
   }
   if {[dict exists $specification instance]} {
-    puts "    Instance: [dict get $specification instance]"
+    ord::report "    Instance: [dict get $specification instance]"
   }
   if {[dict exists $specification macro]} {
-    puts "    Macro: [dict get $specification macro]"
+    ord::report "    Macro: [dict get $specification macro]"
   }
   if {[dict exists $specification orient]} {
-    puts "    Macro orientation: [dict get $specification orient]"
+    ord::report "    Macro orientation: [dict get $specification orient]"
   }
   if {[dict exists $specification straps]} {
-    puts "    Straps"
+    ord::report "    Straps"
     dict for {layer_name layer} [dict get $specification straps] {
-      puts -nonewline "      Layer: $layer_name"
       if {[dict exists $layer width]} {
-        set str [report_layer_details $layer]
-        puts $str
+        ord::report "      Layer: $layer_name [report_layer_details $layer]"
       } else {
-        puts ""
+        ord::report "      Layer: $layer_name"
         foreach template [dict keys $layer] {
-          puts -nonewline [format "          %-14s" $template]
-          set str [report_layer_details [dict get $layer $template]]
-          puts $str
+          ord::report [format "          %-14s %s" $template [report_layer_details [dict get $layer $template]]]
         }
       }
     }
   }
   if {[dict exists $specification connect]} {
-    puts "    Connect: [dict get $specification connect]"
+    ord::report "    Connect: [dict get $specification connect]"
   }
 }
 
@@ -4182,8 +4170,8 @@ proc round_to_routing_grid {layer_name location} {
     } else {
       set pos [expr $pos - $size]
     }
-    # puts "[lindex $grid_points $pos] < $location < [lindex $grid_points [expr $pos + 1]]"
-    # expr (([lindex $grid_points $pos] < $location) && ($location < [lindex $grid_points [expr $pos + 1]]))
+    # debug "[lindex $grid_points $pos] < $location < [lindex $grid_points [expr $pos + 1]]"
+    # debug [expr (([lindex $grid_points $pos] < $location) && ($location < [lindex $grid_points [expr $pos + 1]]))]
   }
   
   return [lindex $grid_points $pos]
