@@ -757,7 +757,7 @@ void frRegionQuery::print() {
   for (int i = 0; i < (int)(layers.size()); i++) {
     frString layerName;
     layers.at(i)->getName(layerName);
-    impl_->logger->info(DRT, 33, "{} shape region query size = ", layerName,
+    impl_->logger->info(DRT, 33, "{} shape region query size = {}", layerName,
                         impl_->shapes.at(i).size());
   }
 }
@@ -767,7 +767,7 @@ void frRegionQuery::printGuide() {
   for (int i = 0; i < (int)(layers.size()); i++) {
     frString layerName;
     layers.at(i)->getName(layerName);
-    impl_->logger->info(DRT, 36, "{} guide region query size = ", layerName,
+    impl_->logger->info(DRT, 36, "{} guide region query size = {}", layerName,
                         impl_->guides.at(i).size());
   }
 }
@@ -777,7 +777,7 @@ void frRegionQuery::printDRObj() {
   for (int i = 0; i < (int)(layers.size()); i++) {
     frString layerName;
     layers.at(i)->getName(layerName);
-    impl_->logger->info(DRT, 34, "{} drObj region query size = ", layerName,
+    impl_->logger->info(DRT, 34, "{} drObj region query size = {}", layerName,
                         impl_->drObjs.at(i).size());
   }
 }
