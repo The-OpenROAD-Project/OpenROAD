@@ -4612,7 +4612,6 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
     cout <<endl <<"reading def ..." <<endl;
   }
   readDb(db);
-  // readDef();
 
 
 
