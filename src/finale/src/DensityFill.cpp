@@ -42,7 +42,7 @@
 
 namespace fin {
 
-using ord::FIN;
+using utl::FIN;
 
 namespace pt = boost::property_tree;
 
@@ -94,7 +94,7 @@ static double getValue(const char* key, pt::ptree& tree)
 
 ////////////////////////////////////////////////////////////////
 
-DensityFill::DensityFill(dbDatabase* db, ord::Logger* logger, bool debug)
+DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
   : db_(db), logger_(logger)
 {
   if (debug && Graphics::guiActive()) {

@@ -47,7 +47,7 @@
 
 #include "opendb/db.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -59,7 +59,7 @@ using std::string;
 using std::vector;
 using std::pair;
 
-using ord::Logger;
+using utl::Logger;
 
 using odb::dbBlock;
 using odb::dbDatabase;

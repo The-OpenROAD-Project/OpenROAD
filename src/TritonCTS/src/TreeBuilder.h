@@ -52,7 +52,7 @@ class TreeBuilder
 {
  public:
   TreeBuilder(CtsOptions* options, Clock& clk)
-      : _options(options), _clock(clk){};
+      : _options(options), _clock(clk) { }
 
   virtual void run() = 0;
   void setTechChar(TechChar& techChar) { _techChar = &techChar; }

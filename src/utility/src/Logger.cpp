@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include <mutex>
 
@@ -41,7 +41,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-namespace ord {
+namespace utl {
 
 Logger::Logger(const char* log_filename)
   : debug_on_(false)

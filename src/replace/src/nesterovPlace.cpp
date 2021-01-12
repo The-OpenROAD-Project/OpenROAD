@@ -36,7 +36,7 @@
 #include "nesterovPlace.h"
 #include "opendb/db.h"
 #include "routeBase.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include <iostream>
 using namespace std;
 
@@ -45,7 +45,7 @@ using namespace std;
 
 namespace gpl {
 
-using ord::GPL;
+using utl::GPL;
 
 static float
 getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
@@ -98,7 +98,7 @@ NesterovPlace::NesterovPlace(
     std::shared_ptr<PlacerBase> pb, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<RouteBase> rb,
-    ord::Logger* log) 
+    utl::Logger* log) 
 : NesterovPlace() {
   npVars_ = npVars;
   pb_ = pb;
@@ -159,7 +159,7 @@ void NesterovPlace::init() {
   prevHpwl_ 
     = nb_->getHpwl();
 
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {:g}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {}", prevHpwl_);
 
   // FFT update
   nb_->updateDensityForceBin();
@@ -730,8 +730,8 @@ NesterovPlace::updateNextIter() {
   updateWireLengthCoef(sumOverflow_);
   int64_t hpwl = nb_->getHpwl();
   
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {:g}", prevHpwl_);
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {:g}", hpwl);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {}", hpwl);
   
 
   float phiCoef = getPhiCoef( 

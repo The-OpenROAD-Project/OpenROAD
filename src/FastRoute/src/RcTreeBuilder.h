@@ -56,6 +56,9 @@ class Units;
 
 namespace ord {
 class OpenRoad;
+}
+
+namespace utl {
 class Logger;
 }
 
@@ -107,7 +110,7 @@ class RcTreeBuilder
 
   // Variables common to all nets.
   GlobalRouter* _grouter;
-  ord::Logger *_logger;
+  utl::Logger *_logger;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
   sta::Parasitics* _parasitics;
