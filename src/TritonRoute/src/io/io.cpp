@@ -40,7 +40,7 @@
 #include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "opendb/dbWireCodec.h"
 
 using namespace std;
