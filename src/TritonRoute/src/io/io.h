@@ -40,7 +40,7 @@ namespace odb {
   class dbTech;
   class dbSBox;
 }
-namespace ord{
+namespace utl{
   class Logger;
 }
 
@@ -52,7 +52,7 @@ namespace fr {
     class Parser {
     public:
       // constructors
-      Parser(frDesign* designIn, ord::Logger* loggerIn): design(designIn), tech(design->getTech()), logger(loggerIn), tmpBlock(nullptr), readLayerCnt(0),
+      Parser(frDesign* designIn, utl::Logger* loggerIn): design(designIn), tech(design->getTech()), logger(loggerIn), tmpBlock(nullptr), readLayerCnt(0),
                                   tmpGuides(), tmpGRPins(), trackOffsetMap(), prefTrackPatterns(), numRefBlocks(0),
                                   numInsts(0), numTerms(0), numNets(0), numBlockages(0) {}
       // others
@@ -88,7 +88,7 @@ namespace fr {
                         frCoord& width);
       frDesign*       design;
       frTechObject*   tech;
-      ord::Logger*    logger;
+      utl::Logger*    logger;
 
       std::unique_ptr<frBlock>        tmpBlock;
       // temporary variables
