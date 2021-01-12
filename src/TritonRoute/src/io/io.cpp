@@ -972,8 +972,13 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
 
   io::Parser* parser = (io::Parser*) data;
 
-  if(term->hasPort() && term->numPorts() > 1){
-    cout <<"Error: multiple pin ports existing in DEF" <<endl;
+  // We allow multi-pin ports on power/gnd as we don't
+  // route to them
+  if(term->hasPort() && term->numPorts() > 1
+     && termType != frTermEnum::frcPowerTerm
+     && termType != frTermEnum::frcGroundTerm){
+    cout <<"Error: multiple pin port " << term->pinName()
+         << " in DEF is not supported" <<endl;
     exit(1);
   }
 
