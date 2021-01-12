@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh './jenkins/build_centos7_gcc8.sh'
+        sh './jenkins/build.sh'
       }
     }
     stage('Clean-up') {
