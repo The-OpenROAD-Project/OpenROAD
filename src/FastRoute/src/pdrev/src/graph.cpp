@@ -3666,7 +3666,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    unsigned s = tmp.size();
+    size_t s = tmp.size();
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
@@ -3688,7 +3688,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    unsigned s = tmp.size();
+    size_t s = tmp.size();
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
