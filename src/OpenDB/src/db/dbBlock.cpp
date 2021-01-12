@@ -103,10 +103,10 @@
 #include "dbWire.h"
 #include "defout.h"
 #include "lefout.h"
-#include "dbLogger.h"
 #include "parse.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbGroupGroundNetItr.h"
+#include "openroad/Logger.h"
 
 namespace odb {
 
@@ -2384,11 +2384,10 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
     sprintf(name, "%d", net->getId());
     dbNet* xnet = dbNet::create(extBlk, name, true);
     if (xnet == NULL) {
-      error(0, "Cannot duplicate net %s\n", net->getConstName());
+      getLogger()->error(odb::ODB,0,"Cannot duplicate net {}",net->getConstName());
     }
     if (xnet->getId() != net->getId())
-      warning(0,
-              "id mismatch (%d,%d) for net %s\n",
+      getLogger()->warn(odb::ODB,0,"id mismatch ({},{}) for net {}",
               xnet->getId(),
               net->getId(),
               net->getConstName());
@@ -2896,10 +2895,9 @@ void dbBlock::restoreOldCornerParasitics(dbBlock*             pblock,
                  capnd->getId(),
                  ccSeg->getId(),
                  otherCapnode->getId());
-          error(0,
-                "   the other capNode is from net %d %s\n",
+          getLogger()->error(odb::ODB,0,"   the other capNode is from net {} {}",
                 otherNet->getId(),
-                (char*) otherNet->getConstName());
+                otherNet->getConstName());
         }
       }
     }
@@ -3049,8 +3047,7 @@ void dbBlock::keepOldCornerParasitics(dbBlock*             pblock,
         if (onet->isMark_1ed() || !coupled_rc)
           ccSeg->unLink_cc_seg(other);
         else
-          error(0,
-                "ccseg %d has other capn %d not from changed or halo nets",
+          getLogger()->error(odb::ODB,0,"ccseg {} has other capn {} not from changed or halo nets",
                 ccSeg->getId(),
                 other->getId());
       }
@@ -3293,11 +3290,11 @@ void dbBlock::saveLef(char* filename)
   lefout writer;
   dbLib* lib = getChip()->getDb()->findLib("lib");
   if (lib == NULL) {
-    warning(0, "Library lib does not exist\n");
+    getLogger()->warn(odb::ODB,0,"Library lib does not exist");
     return;
   }
   if (!writer.writeTechAndLib(lib, filename)) {
-    warning(0, "Failed to write lef file %s", filename);
+    getLogger()->warn(odb::ODB,0,"Failed to write lef file {}",filename);
   }
 }
 
@@ -3343,7 +3340,7 @@ void dbBlock::writeDb(char* filename, int allNode)
   int   io_bufsize = 65536;
   char* buffer     = (char*) malloc(io_bufsize);
   if (buffer == NULL) {
-    warning(0, "Memory allocation failed for io buffer");
+    getLogger()->warn(odb::ODB,0,"Memory allocation failed for io buffer");
     fclose(file);
     return;
   }
