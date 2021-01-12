@@ -61,15 +61,111 @@ using utl::DPL;
 
 static bool
 cellAreaLess(const Cell *cell1, const Cell *cell2);
+static Point
+closestPtOutsideRect(Rect rect,
+                     int x,
+                     int y);
 
 void
 Opendp::detailedPlacement()
 {
   initGrid();
+  moveCellsOffMacros();
+#if 0
   if (!groups_.empty()) {
     placeGroups();
   }
   place();
+#endif
+}
+
+// Move std cells off of macros.
+// This is preferable to using a the diamond search because the max_displacement
+// would have to know the macro size and no search is necessary.
+// Note that this does not need to consider padding because its only job is to
+// get the overlapping cells close to the edge of the block so that the normal
+// diamond search can do it's job.
+void
+Opendp::moveCellsOffMacros()
+{
+  // Paint the grid with blocks.
+  paintBlocksInGrid(grid_);
+  for (Cell &cell : cells_) {
+    if (isStdCell(&cell)) {
+      int x = cell.x_;
+      int y = cell.y_;
+      int grid_x = gridX(x);
+      int grid_y = gridY(y);
+      Pixel &pixel = grid_[grid_y][grid_x];
+      const Cell *block = pixel.cell;
+      if (block != nullptr) {
+        Rect block_bbox;
+        block->db_inst_->getBBox()->getBox(block_bbox);
+        Point closest_pt = closestPtOutsideRect(block_bbox, x, y);
+        printf("%s overlaps block %s (%d %d)\n",
+               cell.name(),
+               block->name(),
+               closest_pt.getX()/2000, closest_pt.getY()/2000);
+      }
+    }
+  }
+  initGrid(grid_);
+}
+
+static Point
+closestPtOutsideRect(Rect rect,
+                     int x,
+                     int y)
+{
+  int closest_x, closest_y;
+  if (x >= rect.xMin()
+      && x <= rect.xMax()
+      && y >= rect.yMin()
+      && y <= rect.yMax()) {
+    int x_dist_min = x - rect.xMin();
+    int x_dist_max = rect.xMax() - x;
+    int y_dist_min = y - rect.yMin();
+    int y_dist_max = rect.yMax() - y;
+    if (x_dist_min < x_dist_max
+        && x_dist_min < y_dist_min
+        && x_dist_min < y_dist_max)
+      return Point(rect.xMin(), y);
+    else if (x_dist_max <= x_dist_min
+             && x_dist_max <= y_dist_min
+             && x_dist_max <= y_dist_max)
+      return Point(rect.xMax(), y);
+    else if (y_dist_min <= x_dist_min
+             && y_dist_min <= x_dist_max
+             && y_dist_min <= y_dist_max)
+      return Point(x, rect.yMin());
+    else if (y_dist_max <= x_dist_min
+             && y_dist_max <= x_dist_max
+             && y_dist_max <= y_dist_min)
+      return Point(x, rect.yMax());
+  }
+  return Point(x, y);
+}
+
+void
+Opendp::paintBlocksInGrid(Grid *grid)
+{
+  for (Cell *block : blocks_) {
+    int x_ll = gridX(block);
+    int x_ur = gridEndX(block);
+    int y_ll = gridY(block);
+    int y_ur = gridEndY(block);
+    x_ll = max(0, x_ll);
+    y_ll = max(0, y_ll);
+    x_ur = min(x_ur, row_site_count_);
+    y_ur = min(y_ur, row_count_);
+
+    for (int j = y_ll; j < y_ur; j++) {
+      for (int k = x_ll; k < x_ur; k++) {
+        Pixel &pixel = grid[j][k];
+        pixel.cell = block;
+      }
+    }
+  }
 }
 
 void

@@ -249,6 +249,8 @@ private:
   bool swap_cell(Cell *cell1, Cell *cell2);
   bool refine_move(Cell *cell);
 
+  void moveCellsOffMacros();
+  void paintBlocksInGrid(Grid *grid);
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -301,6 +303,7 @@ private:
   bool havePadding() const;
 
   Grid *makeGrid();
+  void initGrid(Grid *grid);
   void deleteGrid(Grid *grid);
   // Cell initial location wrt core origin.
   int gridX(int x) const;
@@ -370,6 +373,8 @@ private:
   MasterPaddingMap master_padding_map_;
 
   vector<Cell> cells_;
+  // Subset of cells_ that are type BLOCK.
+  vector<Cell*> blocks_;
   vector<Group> groups_;
 
   map<const dbMaster *, Macro> db_master_map_;

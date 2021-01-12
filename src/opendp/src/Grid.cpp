@@ -68,9 +68,16 @@ Grid *
 Opendp::makeGrid()
 {
   Grid *grid = new Pixel *[row_count_];
-  for (int i = 0; i < row_count_; i++) {
+  for (int i = 0; i < row_count_; i++)
     grid[i] = new Pixel[row_site_count_];
+  initGrid(grid);
+  return grid;
+}
 
+void
+Opendp::initGrid(Grid *grid)
+{
+  for (int i = 0; i < row_count_; i++) {
     for (int j = 0; j < row_site_count_; j++) {
       Pixel &pixel = grid[i][j];
       pixel.grid_y_ = i;
@@ -82,7 +89,6 @@ Opendp::makeGrid()
     }
   }
 
-  
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
     int orig_x, orig_y;
@@ -100,8 +106,6 @@ Opendp::makeGrid()
       }
     }
   }
-
-  return grid;
 }
 
 void
