@@ -13,7 +13,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        sh './test/run-ispd.tcl'
+        sh './src/TritonRoute/test/run-ispd.tcl'
       }
     }
   }
