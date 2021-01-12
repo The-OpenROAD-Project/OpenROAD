@@ -1,0 +1,26 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        sh './jenkins/build_centos7_gcc8.sh'
+      }
+    }
+    stage('Clean-up') {
+      steps {
+        sh 'rm -rf /home/jenkins/ispd/runs/*'
+      }
+    }
+    stage('Test') {
+      steps {
+        sh './test/run-ispd.tcl'
+      }
+    }
+  }
+  post {
+    always {
+      sh 'mv /home/jenkins/ispd/runs/*.tar.gz .'
+      archiveArtifacts '*.tar.gz'
+    }
+  }
+}
