@@ -81,5 +81,8 @@ pipeline {
             )
       }
     }
+    always {
+      archiveArtifacts '**/results/*'
+    }
   }
 }

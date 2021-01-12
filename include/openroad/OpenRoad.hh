@@ -68,7 +68,7 @@ class IOPlacer;
 }
 
 namespace cts {
-class TritonCTSKernel;
+class TritonCTS;
 }
 
 namespace grt {
@@ -116,12 +116,14 @@ namespace par {
 class PartitionMgr;
 }
 
+namespace utl {
+class Logger;
+}
 
 namespace ord {
 
 using std::string;
 
-class Logger;
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -136,12 +138,12 @@ public:
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  Logger *getLogger() { return logger_; }
+  utl::Logger *getLogger() { return logger_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   rsz::Resizer *getResizer() { return resizer_; }
-  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  cts::TritonCTS *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
@@ -210,7 +212,7 @@ private:
   OpenRoad();
 
   Tcl_Interp *tcl_interp_;
-  Logger *logger_;
+  utl::Logger *logger_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
@@ -220,7 +222,7 @@ private:
   fin::Finale *finale_;
   mpl::TritonMacroPlace *tritonMp_;
   grt::GlobalRouter *fastRoute_;
-  cts::TritonCTSKernel *tritonCts_;
+  cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;
   rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;

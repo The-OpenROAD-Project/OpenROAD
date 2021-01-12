@@ -176,7 +176,7 @@ namespace fr {
     class Writer {
     public:
       // constructors
-      Writer(frDesign* designIn, ord::Logger* loggerIn): tech(designIn->getTech()), design(designIn), logger(loggerIn) {}
+      Writer(frDesign* designIn, Logger* loggerIn): tech(designIn->getTech()), design(designIn), logger(loggerIn) {}
       // getters
       frTechObject* getTech() const {
         return tech;
@@ -193,7 +193,7 @@ namespace fr {
     protected:
       frTechObject*                                  tech;
       frDesign*                                      design;
-      ord::Logger*                                   logger;
+      Logger*                                        logger;
       
       void fillViaDefs();
       void fillConnFigs(bool isTA);

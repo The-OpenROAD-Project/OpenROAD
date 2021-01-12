@@ -48,7 +48,7 @@
 #include "Netlist.h"
 #include "Slots.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -56,7 +56,7 @@ namespace ppl {
 
 using odb::Point;
 using odb::Rect;
-using ord::Logger;
+using utl::Logger;
 
 class HungarianMatching
 {

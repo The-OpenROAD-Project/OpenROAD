@@ -57,7 +57,7 @@
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
@@ -65,7 +65,7 @@
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 void GlobalRouter::init(ord::OpenRoad* openroad)
 {
@@ -2710,6 +2710,10 @@ void GlobalRouter::makeBtermPins(Net* net,
             PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
+
+    if (pin.getLayers().empty()) {
+      _logger->error(GRT, 78, "Pin {} does not have layer assignment", bterm->getConstName());
+    }
 
     if (connectedToPad) {
       odb::Point pinPosition = pin.getPosition();

@@ -43,7 +43,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace dpl {
@@ -57,7 +57,7 @@ using std::string;
 using std::vector;
 
 using ord::closestPtInRect;
-using ord::DPL;
+using utl::DPL;
 
 static bool
 cellAreaLess(const Cell *cell1, const Cell *cell2);

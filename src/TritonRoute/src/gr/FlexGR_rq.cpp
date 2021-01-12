@@ -32,7 +32,7 @@ using namespace std;
 using namespace fr;
 
 frDesign* FlexGRWorkerRegionQuery::getDesign() const {
-  return grWorker->getDesign();
+  return grWorker_->getDesign();
 }
 
 void FlexGRWorkerRegionQuery::add(grConnFig* connFig) {
@@ -42,7 +42,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig) {
     auto obj = static_cast<grShape*>(connFig);
     obj->getBBox(frb);
     boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-    shapes.at(obj->getLayerNum()).insert(make_pair(boostb, obj));
+    shapes_.at(obj->getLayerNum()).insert(make_pair(boostb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
     frTransform xform;
@@ -55,7 +55,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getLayer1Num()).insert(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getLayer1Num()).insert(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query add" <<endl;
       }
@@ -66,7 +66,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getLayer2Num()).insert(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getLayer2Num()).insert(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query add" <<endl;
       }
@@ -77,7 +77,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getCutLayerNum()).insert(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getCutLayerNum()).insert(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query add" <<endl;
       }
@@ -147,7 +147,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig) {
     auto obj = static_cast<grShape*>(connFig);
     obj->getBBox(frb);
     boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-    shapes.at(obj->getLayerNum()).remove(make_pair(boostb, obj));
+    shapes_.at(obj->getLayerNum()).remove(make_pair(boostb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
     frTransform xform;
@@ -160,7 +160,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getLayer1Num()).remove(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getLayer1Num()).remove(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query remove" <<endl;
       }
@@ -171,7 +171,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getLayer2Num()).remove(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getLayer2Num()).remove(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query remove" <<endl;
       }
@@ -182,7 +182,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig) {
         shape->getBBox(frb);
         frb.transform(xform);
         boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
-        shapes.at(via->getViaDef()->getCutLayerNum()).remove(make_pair(boostb, via));
+        shapes_.at(via->getViaDef()->getCutLayerNum()).remove(make_pair(boostb, via));
       } else {
         cout <<"Error: unsupported region query remove" <<endl;
       }
@@ -195,19 +195,19 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig) {
 void FlexGRWorkerRegionQuery::query(const frBox &box, frLayerNum layerNum, vector<grConnFig*> &result) {
   vector<rq_box_value_t<grConnFig*>> temp;
   box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
-  shapes.at(layerNum).query(bgi::intersects(boostb), back_inserter(temp));
+  shapes_.at(layerNum).query(bgi::intersects(boostb), back_inserter(temp));
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto &kv) {return kv.second;});
 }
 
 void FlexGRWorkerRegionQuery::query(const frBox &box, frLayerNum layerNum, vector<rq_box_value_t<grConnFig*>> &result) {
   box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
-  shapes.at(layerNum).query(bgi::intersects(boostb), back_inserter(result));
+  shapes_.at(layerNum).query(bgi::intersects(boostb), back_inserter(result));
 }
 
 void FlexGRWorkerRegionQuery::init(bool includeExt) {
   int numLayers = getDesign()->getTech()->getLayers().size();
-  shapes.clear();
-  shapes.resize(numLayers);
+  shapes_.clear();
+  shapes_.resize(numLayers);
   vector<vector<rq_box_value_t<grConnFig*>>> allShapes(numLayers);
   for (auto &net: getGRWorker()->getNets()) {
     for (auto &connFig: net->getRouteConnFigs()) {
@@ -220,7 +220,7 @@ void FlexGRWorkerRegionQuery::init(bool includeExt) {
     }
   }
   for (auto i = 0; i < numLayers; i++) {
-    shapes.at(i) = boost::move(bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16> >(allShapes.at(i)));
+    shapes_.at(i) = boost::move(bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16> >(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
     //if (VERBOSE > 0) {

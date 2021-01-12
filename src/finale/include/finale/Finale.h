@@ -35,13 +35,13 @@
 
 #include "opendb/db.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace fin {
 
-using ord::Logger;
+using utl::Logger;
 
 ////////////////////////////////////////////////////////////////
 

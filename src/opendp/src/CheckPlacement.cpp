@@ -38,7 +38,7 @@
 #include <limits>
 
 #include "opendp/Opendp.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace dpl {
 
@@ -48,7 +48,7 @@ using std::vector;
 
 using odb::dbPlacementStatus;
 
-using ord::DPL;
+using utl::DPL;
 
 bool
 Opendp::checkPlacement(bool verbose)

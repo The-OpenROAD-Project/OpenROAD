@@ -37,7 +37,7 @@
 
 #include "db_sta/dbNetwork.hh"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -47,7 +47,7 @@
 
 namespace sta {
 
-using ord::ORD;
+using utl::ORD;
 
 using odb::dbDatabase;
 using odb::dbChip;

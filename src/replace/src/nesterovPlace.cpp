@@ -36,7 +36,7 @@
 #include "nesterovPlace.h"
 #include "opendb/db.h"
 #include "routeBase.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include <iostream>
 using namespace std;
 
@@ -45,7 +45,7 @@ using namespace std;
 
 namespace gpl {
 
-using ord::GPL;
+using utl::GPL;
 
 static float
 getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
@@ -98,7 +98,7 @@ NesterovPlace::NesterovPlace(
     std::shared_ptr<PlacerBase> pb, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<RouteBase> rb,
-    ord::Logger* log) 
+    utl::Logger* log) 
 : NesterovPlace() {
   npVars_ = npVars;
   pb_ = pb;
@@ -159,7 +159,7 @@ void NesterovPlace::init() {
   prevHpwl_ 
     = nb_->getHpwl();
 
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {:g}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {}", prevHpwl_);
 
   // FFT update
   nb_->updateDensityForceBin();
@@ -432,11 +432,11 @@ NesterovPlace::doNesterovPlace() {
     float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
-    // See, the papers' Algorithm 4 section
+    // See, the ePlace-MS paper's Algorithm 1
     //
     curA = (1.0 + sqrt(4.0 * prevA * prevA + 1.0)) * 0.5;
 
-    // coeff is (a_k -1) / ( a_(k+1)) in paper.
+    // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
     float coeff = (prevA - 1.0)/curA;
     
     debugPrint(log_, GPL, "replace", 3, "np:  PreviousA: {:g}", prevA);
@@ -520,15 +520,9 @@ NesterovPlace::doNesterovPlace() {
       npVars_.maxPhiCoef *= 0.99;
     }
 
-    // usually, maxBackTrack should be 1~3
-    // 10 is the case when
-    // all of cells are not moved at all.
     if( npVars_.maxBackTrack == numBackTrak ) {
-      divergeMsg = "RePlAce divergence detected. \n";
-      divergeMsg += "        Please decrease init_density_penalty value";
-      divergeCode = 306;
-      isDiverged_ = true;
-    } 
+      log_->warn(GPL, 75, "Backtracking limit reached so a small step will be taken");
+    }
 
     if( isDiverged_ ) {
       break;
@@ -736,8 +730,8 @@ NesterovPlace::updateNextIter() {
   updateWireLengthCoef(sumOverflow_);
   int64_t hpwl = nb_->getHpwl();
   
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {:g}", prevHpwl_);
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {:g}", hpwl);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {}", hpwl);
   
 
   float phiCoef = getPhiCoef( 
