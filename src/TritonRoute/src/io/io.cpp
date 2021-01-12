@@ -4903,7 +4903,7 @@ void io::Parser::readLef() {
   FILE* f;
   int res;
 
-  lefrInitSession(1);
+  lefrInitSession(0);
 
   lefrSetUserData ((lefiUserData)this);
 
