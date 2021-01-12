@@ -931,7 +931,7 @@ void FastRouteCore::writeCongestionReport2D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    _logger->error(GRT, 116, "Congestion report file could not be open");
+    _logger->error(GRT, 116, "Congestion report file could not be opened");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -975,7 +975,7 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    _logger->error(GRT, 117, "Congestion report file could not be open");
+    _logger->error(GRT, 117, "Congestion report file could not be opened");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -1361,7 +1361,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
-    _logger->error(GRT, 118, "Design congestion too high");
+    _logger->error(GRT, 118, "Routing congestion too high");
   }
 
   if (allowOverflow && totalOverflow > 0) {
