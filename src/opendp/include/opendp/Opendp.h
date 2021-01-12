@@ -202,6 +202,8 @@ public:
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
+  // For testing
+  void placeCellsOffBlocks();
 
 private:
   void importDb();
@@ -249,8 +251,9 @@ private:
   bool swap_cell(Cell *cell1, Cell *cell2);
   bool refine_move(Cell *cell);
 
-  void moveCellsOffMacros();
-  void paintBlocksInGrid(Grid *grid);
+  void moveCellsOffBlocks();
+  void moveCellOffBlock(Cell &cell,
+                         const Cell *block);
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -303,8 +306,10 @@ private:
   bool havePadding() const;
 
   Grid *makeGrid();
-  void initGrid(Grid *grid);
+  void initGridPixels(Grid *grid);
   void deleteGrid(Grid *grid);
+  Pixel *gridPixel(int x,
+                   int y);
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
@@ -373,8 +378,6 @@ private:
   MasterPaddingMap master_padding_map_;
 
   vector<Cell> cells_;
-  // Subset of cells_ that are type BLOCK.
-  vector<Cell*> blocks_;
   vector<Group> groups_;
 
   map<const dbMaster *, Macro> db_master_map_;
@@ -409,6 +412,7 @@ private:
   int64_t fixed_padded_area_;
   double design_util_;
   double design_padded_util_;
+  int cells_moved_off_blocks_count_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters

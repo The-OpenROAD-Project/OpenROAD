@@ -61,22 +61,16 @@ using utl::DPL;
 
 static bool
 cellAreaLess(const Cell *cell1, const Cell *cell2);
-static Point
-closestPtOutsideRect(Rect rect,
-                     int x,
-                     int y);
 
 void
 Opendp::detailedPlacement()
 {
   initGrid();
-  moveCellsOffMacros();
-#if 0
+  moveCellsOffBlocks();
   if (!groups_.empty()) {
     placeGroups();
   }
   place();
-#endif
 }
 
 // Move std cells off of macros.
@@ -86,84 +80,75 @@ Opendp::detailedPlacement()
 // get the overlapping cells close to the edge of the block so that the normal
 // diamond search can do it's job.
 void
-Opendp::moveCellsOffMacros()
+Opendp::moveCellsOffBlocks()
 {
-  // Paint the grid with blocks.
-  paintBlocksInGrid(grid_);
+  cells_moved_off_blocks_count_ = 0;
   for (Cell &cell : cells_) {
     if (isStdCell(&cell)) {
-      int x = cell.x_;
-      int y = cell.y_;
-      int grid_x = gridX(x);
-      int grid_y = gridY(y);
-      Pixel &pixel = grid_[grid_y][grid_x];
-      const Cell *block = pixel.cell;
-      if (block != nullptr) {
-        Rect block_bbox;
-        block->db_inst_->getBBox()->getBox(block_bbox);
-        Point closest_pt = closestPtOutsideRect(block_bbox, x, y);
-        printf("%s overlaps block %s (%d %d)\n",
-               cell.name(),
-               block->name(),
-               closest_pt.getX()/2000, closest_pt.getY()/2000);
+      int grid_x = gridX(&cell);
+      int grid_y = gridY(&cell);
+      Pixel *pixel = gridPixel(grid_x, grid_y);
+      if (pixel) {
+        const Cell *block = pixel->cell;
+        if (block != nullptr
+            && isBlock(block)) {
+          moveCellOffBlock(cell, block);
+        }
       }
     }
   }
-  initGrid(grid_);
-}
-
-static Point
-closestPtOutsideRect(Rect rect,
-                     int x,
-                     int y)
-{
-  int closest_x, closest_y;
-  if (x >= rect.xMin()
-      && x <= rect.xMax()
-      && y >= rect.yMin()
-      && y <= rect.yMax()) {
-    int x_dist_min = x - rect.xMin();
-    int x_dist_max = rect.xMax() - x;
-    int y_dist_min = y - rect.yMin();
-    int y_dist_max = rect.yMax() - y;
-    if (x_dist_min < x_dist_max
-        && x_dist_min < y_dist_min
-        && x_dist_min < y_dist_max)
-      return Point(rect.xMin(), y);
-    else if (x_dist_max <= x_dist_min
-             && x_dist_max <= y_dist_min
-             && x_dist_max <= y_dist_max)
-      return Point(rect.xMax(), y);
-    else if (y_dist_min <= x_dist_min
-             && y_dist_min <= x_dist_max
-             && y_dist_min <= y_dist_max)
-      return Point(x, rect.yMin());
-    else if (y_dist_max <= x_dist_min
-             && y_dist_max <= x_dist_max
-             && y_dist_max <= y_dist_min)
-      return Point(x, rect.yMax());
-  }
-  return Point(x, y);
 }
 
 void
-Opendp::paintBlocksInGrid(Grid *grid)
+Opendp::moveCellOffBlock(Cell &cell,
+                         const Cell *block)
 {
-  for (Cell *block : blocks_) {
-    int x_ll = gridX(block);
-    int x_ur = gridEndX(block);
-    int y_ll = gridY(block);
-    int y_ur = gridEndY(block);
-    x_ll = max(0, x_ll);
-    y_ll = max(0, y_ll);
-    x_ur = min(x_ur, row_site_count_);
-    y_ur = min(y_ur, row_count_);
-
-    for (int j = y_ll; j < y_ur; j++) {
-      for (int k = x_ll; k < x_ur; k++) {
-        Pixel &pixel = grid[j][k];
-        pixel.cell = block;
-      }
+  int x = cell.x_;
+  int y = cell.y_;
+  Rect block_bbox(block->x_, block->y_,
+                  block->x_ + block->width_, block->y_ + block->height_);
+  if (x >= block_bbox.xMin()
+      && x <= block_bbox.xMax()
+      && y >= block_bbox.yMin()
+      && y <= block_bbox.yMax()) {
+    bool move = false;
+    int moved_x, moved_y;
+    int x_dist_min = x - block_bbox.xMin();
+    int x_dist_max = block_bbox.xMax() - x;
+    int y_dist_min = y - block_bbox.yMin();
+    int y_dist_max = block_bbox.yMax() - y;
+    if (x_dist_min < x_dist_max
+        && x_dist_min < y_dist_min
+        && x_dist_min < y_dist_max) {
+      moved_x = block_bbox.xMin() - cell.width_;
+      moved_y = y;
+      move = true;
+    }
+    else if (x_dist_max <= x_dist_min
+             && x_dist_max <= y_dist_min
+             && x_dist_max <= y_dist_max) {
+      moved_x = block_bbox.xMax();
+      moved_y = y;
+      move = true;
+    }
+    else if (y_dist_min <= x_dist_min
+             && y_dist_min <= x_dist_max
+             && y_dist_min <= y_dist_max) {
+      moved_x = x;
+      moved_y = block_bbox.yMin() - cell.height_;
+      move = true;
+    }
+    else if (y_dist_max <= x_dist_min
+             && y_dist_max <= x_dist_max
+             && y_dist_max <= y_dist_min) {
+      moved_x = x;
+      moved_y = block_bbox.yMax();
+      move = true;
+    }
+    if (move) {
+      cells_moved_off_blocks_count_++;
+      cell.x_ = moved_x;
+      cell.y_ = moved_y;
     }
   }
 }

@@ -194,9 +194,6 @@ Opendp::makeCells()
       cell.db_inst_ = db_inst;
       db_inst_map_[db_inst] = &cell;
 
-      if (isBlock(&cell))
-        blocks_.push_back(&cell);
-
       int width = master->getWidth();
       int height = master->getHeight();
       if (swapWidthHeight(db_inst->getOrient())) {
