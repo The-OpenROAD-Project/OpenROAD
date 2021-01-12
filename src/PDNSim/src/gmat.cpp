@@ -73,10 +73,10 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/)
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
       } else {
-        m_logger->error(ord::PSM, 46, "Node location lookup error for y.");
+        m_logger->error(utl::PSM, 46, "Node location lookup error for y.");
       }
     } else {
-      m_logger->error(ord::PSM, 47, "Node location lookup error for x.");
+      m_logger->error(utl::PSM, 47, "Node location lookup error for x.");
     }
   } else {
     NodeMap::iterator        x_itr = layer_map.lower_bound(t_x);
@@ -189,7 +189,7 @@ Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox)
 //! Function to print the G matrix
 void GMat::Print()
 {
-  m_logger->info(ord::PSM, 48, "Printing GMat obj, with {} nodes.", m_n_nodes);
+  m_logger->info(utl::PSM, 48, "Printing GMat obj, with {} nodes.", m_n_nodes);
   for (NodeIdx i = 0; i < m_n_nodes; i++) {
     Node* node_ptr = m_G_mat_nodes[i];
     if (node_ptr != nullptr) {
@@ -227,7 +227,7 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond)
 void GMat::InitializeGmatDok(int t_numC4)
 {
   if (m_n_nodes <= 0) {
-    m_logger->error(ord::PSM, 49, "No nodes in object initialization stopped.");
+    m_logger->error(utl::PSM, 49, "No nodes in object initialization stopped.");
   } else {
     m_G_mat_dok.num_cols = m_n_nodes + t_numC4;
     m_G_mat_dok.num_rows = m_n_nodes + t_numC4;
@@ -282,7 +282,7 @@ void GMat::GenerateStripeConductance(int                        t_l,
 {
   NodeMap& layer_map = m_layer_maps[t_l];
   if (t_x_min > t_x_max || t_y_min > t_y_max)
-    m_logger->warn(ord::PSM,
+    m_logger->warn(utl::PSM,
                    50,
                    "Creating stripe condunctance with invalid inputs. Min and "
                    "max values for X or Y are interchanged.");
@@ -496,7 +496,7 @@ bool GMat::GenerateACSCMatrix()
 double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    m_logger->error(ord::PSM,
+    m_logger->error(utl::PSM,
                     51,
                     "Index out of bound for getting G matrix conductance. \n",
                     "Ensure object is initialized to the correct size first.");
@@ -523,7 +523,7 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    m_logger->error(ord::PSM,
+    m_logger->error(utl::PSM,
                     52,
                     "Index out of bound for getting G matrix conductance. \n",
                     "Ensure object is initialized to the correct size first.");

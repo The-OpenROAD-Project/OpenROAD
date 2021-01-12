@@ -4595,9 +4595,7 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
   //tech->printAllConstraints();
   
   if (enableOutput) {
-    //design->printAllMacros();
     // printAllLayers();
-    //tech->printAllVias();
     //printLayerMaps();
   }
 
@@ -4625,10 +4623,7 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
   //cout <<flush;
 
   if (enableOutput) {
-    //tech->printAllVias();
-    //design->printAllComps();
     //printCompMaps();
-    //design->printAllTerms();
     //printTermMaps();
     //printAllNets();
     //printAllTrackGens();

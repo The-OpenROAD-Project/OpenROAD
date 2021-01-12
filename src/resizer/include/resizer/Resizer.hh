@@ -52,7 +52,7 @@ using std::array;
 using std::string;
 
 using ord::OpenRoad;
-using ord::Logger;
+using utl::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -361,6 +361,7 @@ protected:
                                Pin *load_pin,
                                double wire_length); // meters
   string makeUniqueNetName();
+  Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
@@ -397,6 +398,7 @@ protected:
   void makeHoldDelay(Vertex *drvr,
                      int buffer_count,
                      PinSeq &load_pins,
+                     bool loads_have_out_port,
                      LibertyCell *buffer_cell);
   Point findCenter(PinSeq &pins);
   Slack holdSlack(Slacks &slacks);

@@ -43,8 +43,9 @@
 #include <cstdlib>
 
 #include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
 
-namespace ord {
+namespace utl {
 
 #define FOREACH_TOOL(X) \
     X(ANT) \
@@ -213,4 +214,4 @@ class Logger
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-}  // namespace ord
+}  // namespace utl

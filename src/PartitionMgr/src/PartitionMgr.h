@@ -69,9 +69,14 @@ class PartOptions
   std::string getTool() const { return _tool; }
   void setGraphModel(const std::string& graphModel)
   {
-    _graphModel = graphModel;
+    if (graphModel == "clique") {
+      _graphModel = CLIQUE;
+    } else if (graphModel == "star") {
+      _graphModel = STAR;
+    } else
+      _graphModel = HYBRID;
   }
-  std::string getGraphModel() const { return _graphModel; }
+  GraphType getGraphModel() const { return _graphModel; }
   void setCliqueThreshold(unsigned threshold) { _cliqueThreshold = threshold; }
   unsigned getCliqueThreshold() const { return _cliqueThreshold; }
   void setWeightModel(unsigned model) { _weightModel = model; }
@@ -125,7 +130,7 @@ class PartOptions
   bool _termProp = false;
   double _cutHopRatio = 1.0;
   std::string _tool = "chaco";
-  std::string _graphModel = "star";
+  GraphType _graphModel = STAR;
   std::string _evaluationFunction = "hyperedges";
   unsigned _cliqueThreshold = 50;
   unsigned _weightModel = 1;

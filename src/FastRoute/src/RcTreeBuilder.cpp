@@ -37,7 +37,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
@@ -47,7 +47,7 @@
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 using std::abs;
 using std::min;

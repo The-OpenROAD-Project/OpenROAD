@@ -36,7 +36,12 @@ namespace fr {
   class FlexRP {
   public:
     // constructor
-    FlexRP(frDesign *designIn, frTechObject* techIn): design_(designIn), tech_(techIn) {}
+    FlexRP(frDesign *designIn, frTechObject* techIn, Logger* logger):
+      design_(designIn),
+      tech_(techIn),
+      logger_(logger)
+    {
+    }
     
     frDesign* getDesign() const {
       return design_;
@@ -44,9 +49,10 @@ namespace fr {
 
     void main();
   protected:
-    frDesign* design_;
+    frDesign*     design_;
     frTechObject* tech_;
-
+    Logger*       logger_;
+    
     // init
     void init();
 

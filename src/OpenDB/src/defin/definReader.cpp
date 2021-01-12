@@ -819,10 +819,6 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
     UNSUPPORTED("Antenna data on pin is unsupported");
   }
 
-  if (pin->numPorts() > 1) {
-    // TritonRoute doesn't support these either
-    UNSUPPORTED("pin with multiple ports is not supported");
-  }
 
   if (pin->numPolygons() > 0) {
     // The db does support polygons but the callback code seems incorrect to me
@@ -852,41 +848,94 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
     pinR->pinGroundPin(pin->groundSensitivity());
   }
 
-  for (int i = 0; i < pin->numLayer(); ++i) {
-    if (pin->layerMask(i) != 0) {
-      UNSUPPORTED("MASK on pin's layer is unsupported");
+  // Add all ports associated with the pin above
+  if(pin->hasPort()){
+    // 5.7 .. Multiple ports each with multiple boxes/shapes
+    for(int i = 0;i < pin->numPorts(); ++i){
+      
+      defiPinPort* port = pin->pinPort(i);
+      pinR->portBegin();
+
+      // Configure placement for port
+      if (port->hasPlacement()) {
+        defPlacement type = DEF_PLACEMENT_UNPLACED;
+        if (port->isPlaced()) {
+          type = DEF_PLACEMENT_PLACED;
+        } else if (port->isCover()) {
+          type = DEF_PLACEMENT_COVER;
+        } else if (port->isFixed()) {
+          type = DEF_PLACEMENT_FIXED;
+        } else {
+          assert(0);
+        }
+        dbOrientType orient = reader->translate_orientation(port->orient());
+        pinR->pinPlacement(type, port->placementX(), port->placementY(), orient);
+      }
+
+      // For a given port, add all boxes/shapes belonging to that port
+      for(int i = 0; i < port->numLayer(); ++i){
+        if (port->layerMask(i) != 0) {
+          UNSUPPORTED("MASK on pin's layer is unsupported");
+        }
+
+        int xl, yl, xh, yh;
+        port->bounds(i, &xl, &yl, &xh, &yh);
+        pinR->pinRect(port->layer(i), xl, yl, xh, yh);
+
+        if (port->hasLayerSpacing(i)) {
+          pinR->pinMinSpacing(port->layerSpacing(i));
+        }
+
+        if (port->hasLayerDesignRuleWidth(i)) {
+          pinR->pinEffectiveWidth(port->layerDesignRuleWidth(i));
+        }
+      }
+
+      pinR->portEnd();
     }
 
-    int xl;
-    int yl;
-    int xh;
-    int yh;
-    pin->bounds(i, &xl, &yl, &xh, &yh);
-    pinR->pinRect(pin->layer(i), xl, yl, xh, yh);
+  }else{
+    // 5.6 .. All boxes implicity belong to one port 
+    pinR->portBegin();
 
-    if (pin->hasLayerSpacing(i)) {
-      pinR->pinMinSpacing(pin->layerSpacing(i));
+    // Configure placement for pin
+    if (pin->hasPlacement()) {
+      defPlacement type = DEF_PLACEMENT_UNPLACED;
+      if (pin->isPlaced()) {
+        type = DEF_PLACEMENT_PLACED;
+      } else if (pin->isCover()) {
+        type = DEF_PLACEMENT_COVER;
+      } else if (pin->isFixed()) {
+        type = DEF_PLACEMENT_FIXED;
+      } else {
+        assert(0);
+      }
+      dbOrientType orient = reader->translate_orientation(pin->orient());
+      pinR->pinPlacement(type, pin->placementX(), pin->placementY(), orient);
     }
 
-    if (pin->hasLayerDesignRuleWidth(i)) {
-      pinR->pinEffectiveWidth(pin->layerDesignRuleWidth(i));
+    // Add boxes/shapes for the pin with single port
+    for (int i = 0; i < pin->numLayer(); ++i) {
+      if (pin->layerMask(i) != 0) {
+        UNSUPPORTED("MASK on pin's layer is unsupported");
+      }
+
+      int xl, yl, xh, yh;
+      pin->bounds(i, &xl, &yl, &xh, &yh);
+      pinR->pinRect(pin->layer(i), xl, yl, xh, yh);
+
+      if (pin->hasLayerSpacing(i)) {
+        pinR->pinMinSpacing(pin->layerSpacing(i));
+      }
+
+      if (pin->hasLayerDesignRuleWidth(i)) {
+        pinR->pinEffectiveWidth(pin->layerDesignRuleWidth(i));
+      }
     }
+    pinR->portEnd();
   }
 
-  if (pin->hasPlacement()) {
-    defPlacement type = DEF_PLACEMENT_UNPLACED;
-    if (pin->isPlaced()) {
-      type = DEF_PLACEMENT_PLACED;
-    } else if (pin->isCover()) {
-      type = DEF_PLACEMENT_COVER;
-    } else if (pin->isFixed()) {
-      type = DEF_PLACEMENT_FIXED;
-    } else {
-      assert(0);
-    }
-    dbOrientType orient = reader->translate_orientation(pin->orient());
-    pinR->pinPlacement(type, pin->placementX(), pin->placementY(), orient);
-  }
+
 
   pinR->pinEnd();
 

@@ -42,14 +42,14 @@
 #include <cmath>
 #include <limits>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace dpl {
 
 using std::max;
 using std::min;
 
-using ord::DPL;
+using utl::DPL;
 
 void
 Opendp::initGrid()

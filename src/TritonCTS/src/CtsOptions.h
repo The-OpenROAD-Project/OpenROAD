@@ -37,6 +37,7 @@
 
 #include "Util.h"
 #include "db.h"
+#include "utility/Logger.h"
 
 #include <iostream>
 #include <sstream>
@@ -75,8 +76,6 @@ class CtsOptions
     _wireSegmentUnit = wireSegmentUnit;
   }
   unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
-  void setDbId(unsigned id) { _dbId = id; }
-  unsigned getDbId() const { return _dbId; }
   void setPlotSolution(bool plot) { _plotSolution = plot; }
   bool getPlotSolution() const { return _plotSolution; }
   void setAutoLut(bool enable) { _autoLutEnable = enable; }
@@ -187,6 +186,8 @@ class CtsOptions
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
+  void setLogger(utl::Logger* l) { _logger = l;}
+  utl::Logger *getLogger() { return _logger;}
 
  private:
   std::string _blockName = "";
@@ -200,7 +201,6 @@ class CtsOptions
   std::string _metricFile = "";
   DBU _dbUnits = -1;
   unsigned _wireSegmentUnit = 0;
-  unsigned _dbId = 0;
   bool _plotSolution = false;
   bool _onlyCharacterization = false;
   bool _simpleCts = false;
@@ -238,6 +238,7 @@ class CtsOptions
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
+  utl::Logger* _logger = nullptr;
 };
 
 }  // namespace cts
