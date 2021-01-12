@@ -9,7 +9,6 @@ Notice 0: Design: ispd18_sample
 Notice 0:     Created 22 components and 146 component-terminals.
 Notice 0:     Created 11 nets and 22 connections.
 Notice 0: Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-ERROR: Attempt to call configuration function 'lefrSetRelaxMode' in LEF parser before lefrInit() call in session-based mode.
 USEMINSPACING OBS ON
 Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
