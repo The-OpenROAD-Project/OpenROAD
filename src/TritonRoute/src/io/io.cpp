@@ -96,13 +96,13 @@ void io::Parser::setTracks(odb::dbBlock* block)
                     track->getTechLayer()->getName());
     int xPatternSize = track->getNumGridPatternsX();
     int yPatternSize = track->getNumGridPatternsY();
-    int startCoord, numTracks, step;
     for (int i = 0; i < xPatternSize; i++) {
       unique_ptr<frTrackPattern> tmpTrackPattern
           = make_unique<frTrackPattern>();
       tmpTrackPattern->setLayerNum(
           tech->name2layer.at(track->getTechLayer()->getName())->getLayerNum());
       tmpTrackPattern->setHorizontal(true);
+      int startCoord, numTracks, step;
       track->getGridPatternX(i, startCoord, numTracks, step);
       tmpTrackPattern->setStartCoord(startCoord);
       tmpTrackPattern->setNumTracks(numTracks);
@@ -116,6 +116,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
       tmpTrackPattern->setLayerNum(
           tech->name2layer.at(track->getTechLayer()->getName())->getLayerNum());
       tmpTrackPattern->setHorizontal(false);
+      int startCoord, numTracks, step;
       track->getGridPatternY(i, startCoord, numTracks, step);
       tmpTrackPattern->setStartCoord(startCoord);
       tmpTrackPattern->setNumTracks(numTracks);
@@ -467,24 +468,16 @@ void io::Parser::setNets(odb::dbBlock* block)
         logger->error(
             ord::DRT, 12, "component {} not found", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
-      bool flag = false;
-      for (auto& uInstTerm : inst->getInstTerms()) {
-        auto instTerm = uInstTerm.get();
-        auto name = instTerm->getTerm()->getName();
-        if (name == frString(term->getMTerm()->getName())) {
-          flag = true;
-          instTerm->addToNet(netIn);
-          netIn->addInstTerm(instTerm);
-          // graph enablement
-          auto instTermNode = make_unique<frNode>();
-          instTermNode->setPin(instTerm);
-          instTermNode->setType(frNodeTypeEnum::frcPin);
-          netIn->addNode(instTermNode);
-          break;
-        }
-      }
-      if (!flag)
-        logger->error(ord::DRT, 13, "component pin not found");
+      auto instTerm = inst->getTerm(term->getMTerm()->getName());
+      if(instTerm==nullptr)
+        logger->error(ord::DRT, 13, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
+      instTerm->addToNet(netIn);
+      netIn->addInstTerm(instTerm);
+      // graph enablement
+      auto instTermNode = make_unique<frNode>();
+      instTermNode->setPin(instTerm);
+      instTermNode->setType(frNodeTypeEnum::frcPin);
+      netIn->addNode(instTermNode);
     }
     // initialize
     string layerName = "";

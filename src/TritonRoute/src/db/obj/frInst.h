@@ -52,6 +52,14 @@ namespace fr {
     const std::vector<std::unique_ptr<frInstTerm> >& getInstTerms() const {
       return instTerms_;
     }
+    frInstTerm* getTerm(const std::string &in) const {
+      auto it = name2term_.find(in);
+      if (it == name2term_.end()) {
+        return nullptr;
+      } else {
+        return it->second;
+      }
+    }
     const std::vector<std::unique_ptr<frInstBlockage> >& getInstBlockages() const {
       return instBlockages_;
     }
@@ -60,6 +68,7 @@ namespace fr {
     }
     // setters
     void addInstTerm(std::unique_ptr<frInstTerm> in) {
+      name2term_[in->getTerm()->getName()] = in.get();
       instTerms_.push_back(std::move(in));
     }
     void addInstBlockage(std::unique_ptr<frInstBlockage> in) {
@@ -165,6 +174,7 @@ namespace fr {
     frBlock*                                       refBlock_;
     std::vector<std::unique_ptr<frInstTerm> >      instTerms_;
     std::vector<std::unique_ptr<frInstBlockage> >  instBlockages_;
+    std::map<std::string, frInstTerm*>                 name2term_;
     frTransform                                    xform_;
     int                                            pinAccessIdx_;
   };
