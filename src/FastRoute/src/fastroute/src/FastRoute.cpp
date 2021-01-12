@@ -1072,11 +1072,11 @@ NetRouteMap FastRouteCore::run()
   VIA = 2;
   // viacost = VIA;
   viacost = 0;
-  gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ);
+  gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ, _logger);
   if (verbose > 1)
     _logger->info(GRT, 97, "First L Route");
   routeLAll(TRUE);
-  gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ);
+  gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ, _logger);
   getOverflow2D(&maxOverflow);
   if (verbose > 1)
     _logger->info(GRT, 98, "Second L Route");

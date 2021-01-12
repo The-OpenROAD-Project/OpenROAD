@@ -34,6 +34,7 @@
 #include "pdrev/pdrev.h"
 
 #include "graph.h"
+#include "utility/Logger.h"
 
 namespace PD {
 
@@ -58,7 +59,8 @@ void PdRev::addNet(int numPins,
                                 seed,
                                 dist,
                                 x,
-                                y));
+                                y,
+                                _logger));
 }
 
 void PdRev::config()
