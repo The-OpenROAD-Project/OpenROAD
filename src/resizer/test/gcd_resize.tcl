@@ -13,7 +13,7 @@ set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 
 buffer_ports
 
-repair_design -max_wire_length 800
+repair_design
 
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
