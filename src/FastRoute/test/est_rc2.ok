@@ -34,9 +34,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 44
-[INFO] Final number of vias : 44
-[INFO] Final usage 3D       : 176
+[INFO GRT-0110] Final usage          : 44
+[INFO GRT-0111] Final number of vias : 44
+[INFO GRT-0112] Final usage 3D       : 176
 [INFO GRT-0018] Total wirelength: 161 um
 Net clk
  Pin capacitance: r 3.402 f 3.004

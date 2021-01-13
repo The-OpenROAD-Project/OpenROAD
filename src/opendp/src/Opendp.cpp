@@ -47,7 +47,7 @@
 #include <map>
 #include <ostream>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
@@ -57,7 +57,7 @@ using std::ofstream;
 using std::round;
 using std::string;
 
-using ord::DPL;
+using utl::DPL;
 
 using odb::dbBox;
 using odb::dbBPin;
@@ -195,11 +195,26 @@ Opendp::detailedPlacement(int max_displacment)
   reportDesignStats();
   int64_t hpwl_before = hpwl();
   detailedPlacement();
+  if (cells_moved_off_blocks_count_)
+    logger_->info(DPL, 24, "moved {} cells off of blocks.",
+                  cells_moved_off_blocks_count_);
   int64_t avg_displacement, sum_displacement, max_displacement;
   displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
   updateDbInstLocations();
   reportLegalizationStats(hpwl_before, avg_displacement,
                           sum_displacement, max_displacement);
+}
+
+// For testing moveCellsOffBlocks.
+void
+Opendp::placeCellsOffBlocks()
+{
+  importDb();
+  initGrid();
+  moveCellsOffBlocks();
+  updateDbInstLocations();
+  logger_->info(DPL, 25, "moved {} cells off of blocks.",
+                cells_moved_off_blocks_count_);
 }
 
 void

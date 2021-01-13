@@ -38,12 +38,12 @@
 #include <random>
 #include <algorithm>
 #include "opendb/db.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ppl {
 
-using ord::PPL;
+using utl::PPL;
 
 void IOPlacer::init(ord::OpenRoad* openroad)
 {

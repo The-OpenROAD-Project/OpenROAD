@@ -40,10 +40,12 @@
 #include <array>
 #include <map>
 #include <string_view>
+#include <cstdlib>
 
 #include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
 
-namespace ord {
+namespace utl {
 
 #define FOREACH_TOOL(X) \
     X(ANT) \
@@ -143,6 +145,7 @@ class Logger
                   const Args&... args)
     {
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
+      exit(EXIT_FAILURE);
     }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
@@ -211,4 +214,4 @@ class Logger
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-}  // namespace ord
+}  // namespace utl
