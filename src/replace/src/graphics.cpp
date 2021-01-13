@@ -4,21 +4,38 @@
 
 #include "graphics.h"
 #include "nesterovBase.h"
+#include "nesterovPlace.h"
 #include "placerBase.h"
+#include "utility/Logger.h"
 
 namespace gpl {
 
-Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
+Graphics::Graphics(utl::Logger* logger,
+                   std::shared_ptr<PlacerBase> pb,
                    InitialPlace* ip)
-    : pb_(pb), nb_(), ip_(ip), selected_(nullptr), draw_bins_(false)
+    : pb_(pb),
+      nb_(),
+      np_(nullptr),
+      ip_(ip),
+      selected_(nullptr),
+      draw_bins_(false),
+      logger_(logger)
 {
   gui::Gui::get()->register_renderer(this);
 }
 
-Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
+Graphics::Graphics(utl::Logger* logger,
+                   NesterovPlace* np,
+                   std::shared_ptr<PlacerBase> pb,
                    std::shared_ptr<NesterovBase> nb,
                    bool draw_bins)
-    : pb_(pb), nb_(nb), ip_(nullptr), selected_(nullptr), draw_bins_(draw_bins)
+    : pb_(pb),
+      nb_(nb),
+      np_(np),
+      ip_(nullptr),
+      selected_(nullptr),
+      draw_bins_(draw_bins),
+      logger_(logger)
 {
   gui::Gui::get()->register_renderer(this);
 }
@@ -39,7 +56,7 @@ void Graphics::drawInitial(gui::Painter& painter)
   drawBounds(painter);
 
   painter.setPen(gui::Painter::white, /* cosmetic */ true);
-  for(auto& inst: pb_->placeInsts()) {
+  for (auto& inst : pb_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
@@ -50,7 +67,6 @@ void Graphics::drawInitial(gui::Painter& painter)
     painter.setBrush(color);
     painter.drawRect({lx, ly, ux, uy});
   }
-
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)
@@ -151,10 +167,49 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
+void Graphics::reportSelected()
+{
+  if (!selected_) {
+    return;
+  }
+  auto instance = selected_->instance();
+  logger_->report("Inst: {}", instance->dbInst()->getName());
+
+  if (np_) {
+    auto wlCoeffX = np_->getWireLengthCoefX();
+    auto wlCoeffY = np_->getWireLengthCoefY();
+
+    logger_->report("  Wire Length Gradient");
+    for (auto& gPin : selected_->gPins()) {
+      FloatPoint wlGrad
+          = nb_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+      logger_->report("          ({:+.2e}, {:+.2e}) pin {}",
+                      wlGrad.x,
+                      wlGrad.y,
+                      gPin->pin()->name());
+    }
+
+    FloatPoint wlGrad
+        = nb_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+    logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
+
+    auto densityGrad = nb_->getDensityGradient(selected_);
+    float densityPenalty = np_->getDensityPenalty();
+    logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
+                    densityPenalty * densityGrad.x,
+                    densityPenalty * densityGrad.y,
+                    densityPenalty);
+    logger_->report("  overall ({: .2e}, {: .2e})",
+                    wlGrad.x + densityPenalty * densityGrad.x,
+                    wlGrad.y + densityPenalty * densityGrad.y);
+  }
+}
+
 void Graphics::cellPlot(bool pause)
 {
   gui::Gui::get()->redraw();
   if (pause) {
+    reportSelected();
     gui::Gui::get()->pause();
   }
 }
@@ -182,6 +237,7 @@ gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
 
     selected_ = cell;
     if (cell->isInstance()) {
+      reportSelected();
       return gui::Selected(cell->instance()->dbInst());
     }
   }
