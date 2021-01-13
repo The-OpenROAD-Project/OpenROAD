@@ -413,7 +413,6 @@ void Graph::PrintInfo()
     for (unsigned j = 0; j < ManhDist[i].size(); ++j) {
       dist = dist + std::to_string(ManhDist[i][j]) + " ";
     }
-    dist = dist + "\n";
   }
 
   debugPrint(_logger, GRT, "fastroute", 3, "{}", dist);
@@ -2299,8 +2298,7 @@ void Graph::print_tree_v2(ofstream& ofs)
   for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     unsigned child = j;
     unsigned par = nodes[j].parent;
-    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " " << par
-        << "\n";
+    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " " << par;
   }
 }
 
@@ -2377,7 +2375,6 @@ bool Graph::run_PD_brute_force(float alp)
     rpt = rpt + "Heaps min_dist: ";
     for (unsigned ar = 0; ar < heap_elt.size(); ar++)
       rpt = rpt + std::to_string(nodes[heap_elt[ar]].min_dist) + " ";
-    rpt = rpt + "\n";
 
     debugPrint(_logger, GRT, "fastroute", 3, "{}", rpt);
 
