@@ -35,66 +35,18 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "TreeBuilder.h"
-
-#include <string>
-#include <vector>
-
-namespace odb {
-class dbDatabase;
-class dbChip;
-class dbBlock;
-class dbInst;
-class dbNet;
-class dbITerm;
-}  // namespace odb
-
 namespace cts {
+class TritonCTS;
+}
 
-class TritonCTSKernel;
+namespace ord {
 
-class DbWrapper
-{
- public:
-  DbWrapper(CtsOptions& options, TritonCTSKernel& kernel);
+class OpenRoad;
 
-  bool masterExists(const std::string& master) const;
+cts::TritonCTS* makeTritonCts();
 
-  void populateTritonCTS();
-  void writeClockNetsToDb(Clock& clockNet);
+void initTritonCts(OpenRoad* openroad);
 
-  void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
-  void clearNumClocks() { _numberOfClocks = 0; }
-  unsigned getNumClocks() const { return _numberOfClocks; }
+void deleteTritonCts(cts::TritonCTS* tritoncts);
 
- private:
-  sta::dbSta* _openSta = nullptr;
-  odb::dbDatabase* _db = nullptr;
-  odb::dbChip* _chip = nullptr;
-  odb::dbBlock* _block = nullptr;
-  CtsOptions* _options = nullptr;
-  TritonCTSKernel* _kernel = nullptr;
-  unsigned _numberOfClocks = 0;
-  unsigned _numClkNets = 0;
-  unsigned _numFixedNets = 0;
-
-  void parseClockNames(std::vector<std::string>& clockNetNames) const;
-
-  void initDB();
-  void initAllClocks();
-  void initClock(odb::dbNet* net);
-
-  void disconnectAllSinksFromNet(odb::dbNet* net);
-  void disconnectAllPinsFromNet(odb::dbNet* net);
-  void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clk);
-  void removeNonClockNets();
-  void computeITermPosition(odb::dbITerm* term, DBU& x, DBU& y) const;
-  std::pair<int, int> branchBufferCount(ClockInst* inst,
-                                        int bufCounter,
-                                        Clock& clockNet);
-  odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
-};
-
-}  // namespace cts
+}  // namespace ord

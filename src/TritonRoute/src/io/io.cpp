@@ -40,7 +40,6 @@
 #include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
-#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -972,88 +971,115 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
   }
 
   io::Parser* parser = (io::Parser*) data;
-  if (term->hasPort()) {
-    cout <<"Error: multiple pin ports existing in DEF" <<endl;
+
+  // We allow multi-pin ports on power/gnd as we don't
+  // route to them
+  if(term->hasPort() && term->numPorts() > 1
+     && termType != frTermEnum::frcPowerTerm
+     && termType != frTermEnum::frcGroundTerm){
+    cout <<"Error: multiple pin port " << term->pinName()
+         << " in DEF is not supported" <<endl;
     exit(1);
-  } else {
-    // term
-    auto uTermIn = make_unique<frTerm>(term->pinName());
-    auto termIn = uTermIn.get();
-    termIn->setId(parser->numTerms);
-    parser->numTerms++;
-    termIn->setType(termType);
-    termIn->setDirection(termDirection);
-    // term should add pin
-    // pin
-    auto pinIn  = make_unique<frPin>();
-    pinIn->setId(0);
-    for (int i = 0; i < term->numLayer(); ++i) {
-      //cout <<"  layerName= " <<term->layer(i) <<endl;
-      string layer = term->layer(i);
-      if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-        if (VERBOSE > -1) {
-          cout <<"Error: unsupported layer: " <<layer <<endl;
-        }
-        //continue;
-        exit(1);
-      }
-
-      frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
-      frCoord xl = 0;
-      frCoord yl = 0;
-      frCoord xh = 0;
-      frCoord yh = 0;
-      term->bounds(i, &xl, &yl, &xh, &yh);
-      // pinFig
-      unique_ptr<frRect> pinFig = make_unique<frRect>();
-      pinFig->setBBox(frBox(xl, yl, xh, yh));
-      pinFig->addToPin(pinIn.get());
-      pinFig->setLayerNum(layerNum);
-      pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
-      //cout <<"move" <<endl;
-      frBox transformedBBox;
-      pinFig->getBBox(transformedBBox);
-      // pinFig completed
-      // pin
-      unique_ptr<frPinFig> uptr(std::move(pinFig));
-      pinIn->addPinFig(std::move(uptr));
-      // pin completed
-    }
-    // polygon
-    for (int i = 0; i < term->numPolygons(); ++i) {
-      //cout <<"  polyName= " <<term->polygonName(i) <<endl;
-      string layer = term->polygonName(i);
-      if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-        if (VERBOSE > -1) {
-          cout <<"Error: unsupported layer: " <<layer <<endl;
-        }
-        //continue;
-        exit(1);
-      }
-
-      frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
-      auto polyPoints = term->getPolygon(i);
-      frCollection<frPoint> tmpPoints;
-      for (int j = 0; j < polyPoints.numPoints; j++) {
-        tmpPoints.push_back(frPoint((polyPoints.x)[j], (polyPoints.y)[j]));
-      }
-
-      // pinFig
-      unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
-      pinFig->setPoints(tmpPoints);
-      pinFig->addToPin(pinIn.get());
-      pinFig->setLayerNum(layerNum);
-      pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
-      // pinFig completed
-      // pin
-      unique_ptr<frPinFig> uptr(std::move(pinFig));
-      pinIn->addPinFig(std::move(uptr));
-      // pin completed
-    }
-    termIn->addPin(std::move(pinIn));
-    //cout <<"  placeXY  = (" <<term->placementX() <<"," <<term->placementY() <<")" <<endl;
-    parser->tmpBlock->addTerm(std::move(uTermIn));
   }
+
+  bool hasPort = term->hasPort();
+
+  LefDefParser::defiPinPort* port = (hasPort)? term->pinPort(0) : NULL;
+  int numLayer = (hasPort)? port->numLayer() : term->numLayer();
+  int numPolygon = (hasPort)? port->numPolygons() : term->numPolygons();
+
+  // term
+  auto uTermIn = make_unique<frTerm>(term->pinName());
+  auto termIn = uTermIn.get();
+  termIn->setId(parser->numTerms);
+  parser->numTerms++;
+  termIn->setType(termType);
+  termIn->setDirection(termDirection);
+  // term should add pin
+  // pin
+  auto pinIn  = make_unique<frPin>();
+  pinIn->setId(0);
+  for (int i = 0; i < numLayer; ++i) {
+
+    string layer = (hasPort)? port->layer(i) : term->layer(i);
+    if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
+      if (VERBOSE > -1) {
+        cout <<"Error: unsupported layer: " <<layer <<endl;
+      }
+      //continue;
+      exit(1);
+    }
+
+    frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
+    frCoord xl = 0;
+    frCoord yl = 0;
+    frCoord xh = 0;
+    frCoord yh = 0;
+
+    if(hasPort)
+      port->bounds(i, &xl, &yl, &xh, &yh);
+    else 
+      term->bounds(i, &xl, &yl, &xh, &yh);
+
+
+    // pinFig
+    unique_ptr<frRect> pinFig = make_unique<frRect>();
+    pinFig->setBBox(frBox(xl, yl, xh, yh));
+    pinFig->addToPin(pinIn.get());
+    pinFig->setLayerNum(layerNum);
+
+    if(hasPort)
+      pinFig->move(frTransform(port->placementX(), port->placementY(), frOrientEnum(port->orient())));
+    else 
+      pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
+
+    frBox transformedBBox;
+    pinFig->getBBox(transformedBBox);
+    // pinFig completed
+    // pin
+    unique_ptr<frPinFig> uptr(std::move(pinFig));
+    pinIn->addPinFig(std::move(uptr));
+    // pin completed
+  }
+  // polygon
+  for (int i = 0; i < numPolygon; ++i) {
+    //cout <<"  polyName= " <<term->polygonName(i) <<endl;
+    string layer = (hasPort)? port->polygonName(i) : term->polygonName(i);
+    if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
+      if (VERBOSE > -1) {
+        cout <<"Error: unsupported layer: " <<layer <<endl;
+      }
+      //continue;
+      exit(1);
+    }
+
+    frLayerNum layerNum = parser->tech->name2layer[layer]->getLayerNum();
+    auto polyPoints = (hasPort)? port->getPolygon(i) : term->getPolygon(i);
+    frCollection<frPoint> tmpPoints;
+    for (int j = 0; j < polyPoints.numPoints; j++) {
+      tmpPoints.push_back(frPoint((polyPoints.x)[j], (polyPoints.y)[j]));
+    }
+
+    // pinFig
+    unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
+    pinFig->setPoints(tmpPoints);
+    pinFig->addToPin(pinIn.get());
+    pinFig->setLayerNum(layerNum);
+
+    if(hasPort)
+      pinFig->move(frTransform(port->placementX(), port->placementY(), frOrientEnum(port->orient())));
+    else 
+      pinFig->move(frTransform(term->placementX(), term->placementY(), frOrientEnum(term->orient())));
+    // pinFig completed
+    // pin
+    unique_ptr<frPinFig> uptr(std::move(pinFig));
+    pinIn->addPinFig(std::move(uptr));
+    // pin completed
+  }
+  termIn->addPin(std::move(pinIn));
+  //cout <<"  placeXY  = (" <<term->placementX() <<"," <<term->placementY() <<")" <<endl;
+  parser->tmpBlock->addTerm(std::move(uTermIn));
+  
 
   if (parser->tmpBlock->terms_.size() % 1000 == 0) {
     cout <<"defIn read " <<parser->tmpBlock->terms_.size() <<" pins" <<endl;
@@ -4877,7 +4903,7 @@ void io::Parser::readLef() {
   FILE* f;
   int res;
 
-  lefrInitSession(1);
+  lefrInitSession(0);
 
   lefrSetUserData ((lefiUserData)this);
 
@@ -4932,9 +4958,7 @@ void io::Parser::readLefDef() {
   //tech->printAllConstraints();
   
   if (enableOutput) {
-    //design->printAllMacros();
     // printAllLayers();
-    //tech->printAllVias();
     //printLayerMaps();
   }
 
@@ -4963,10 +4987,7 @@ void io::Parser::readLefDef() {
   //cout <<flush;
 
   if (enableOutput) {
-    //tech->printAllVias();
-    //design->printAllComps();
     //printCompMaps();
-    //design->printAllTerms();
     //printTermMaps();
     //printAllNets();
     //printAllTrackGens();
@@ -5452,7 +5473,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
-      logger->error(ord::ToolId::DRT,
+      logger->error(DRT,
                     1,
                     "techlayers for via {} not found in db tech",
                     via->getName());
@@ -5563,7 +5584,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           }
           default: {
             _wire_encoder.clear();
-            logger->error(ord::ToolId::DRT,
+            logger->error(DRT,
                           2,
                           "unknown connfig type while writing net {}",
                           net->getName());
@@ -5578,12 +5599,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(ord::DRT, 3, "please load design first");
+    logger->error(DRT, 3, "please load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(ord::DRT, 4, "please load design first");
+    logger->error(DRT, 4, "please load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);

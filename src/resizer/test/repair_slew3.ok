@@ -20,4 +20,3 @@ u2/Z                                    0.03    0.06   -0.03 (VIOLATED)
 
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.

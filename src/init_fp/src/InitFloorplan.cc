@@ -47,7 +47,7 @@
 #include "sta/PortDirection.hh"
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace ifp {
 
@@ -60,8 +60,8 @@ using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
 
-using ord::Logger;
-using ord::IFP;
+using utl::Logger;
+using utl::IFP;
 
 using odb::dbDatabase;
 using odb::dbChip;

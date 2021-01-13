@@ -37,7 +37,7 @@
 
 #include <stdarg.h>
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace ord {
 
@@ -50,7 +50,7 @@ error(const char *fmt, ...)
   vasprintf(&msg, fmt, args);
   va_end(args);
   // Do NOT copy this temporary use of the openroad singleton for compatibility.
-  OpenRoad::openRoad()->getLogger()->error(UKN, 0, msg);
+  OpenRoad::openRoad()->getLogger()->error(utl::UKN, 0, msg);
 }
 
 void
@@ -62,7 +62,7 @@ warn(const char *fmt, ...)
   vasprintf(&msg, fmt, args);
   va_end(args);
   // Do NOT copy this temporary use of the openroad singleton for compatibility.
-  OpenRoad::openRoad()->getLogger()->warn(UKN, 0, msg);
+  OpenRoad::openRoad()->getLogger()->warn(utl::UKN, 0, msg);
 }
 
 } // namespace

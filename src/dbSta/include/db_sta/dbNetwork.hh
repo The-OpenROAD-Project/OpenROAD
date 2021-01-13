@@ -39,13 +39,13 @@
 #include "sta/GraphClass.hh"
 #include "opendb/db.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace sta {
 
-using ord::Logger;
+using utl::Logger;
 
 using odb::dbDatabase;
 using odb::dbObject;

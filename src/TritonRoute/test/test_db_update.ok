@@ -9,7 +9,6 @@ Notice 0: Design: ispd18_sample
 Notice 0:     Created 22 components and 146 component-terminals.
 Notice 0:     Created 11 nets and 22 connections.
 Notice 0: Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-ERROR: Attempt to call configuration function 'lefrSetRelaxMode' in LEF parser before lefrInit() call in session-based mode.
 USEMINSPACING OBS ON
 Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
@@ -53,48 +52,46 @@ List of default vias:
 Writing reference output def (results/ispd18_sample.output.def.ref)...
 
 init region query ...
-
-FR_MASTERSLICE shape region query size = 0
-FR_VIA shape region query size = 0
-Metal1 shape region query size = 344
-Via1 shape region query size = 0
-Metal2 shape region query size = 0
-Via2 shape region query size = 0
-Metal3 shape region query size = 0
-Via3 shape region query size = 0
-Metal4 shape region query size = 0
-Via4 shape region query size = 0
-Metal5 shape region query size = 0
-Via5 shape region query size = 0
-Metal6 shape region query size = 0
-Via6 shape region query size = 0
-Metal7 shape region query size = 0
-Via7 shape region query size = 0
-Metal8 shape region query size = 0
-Via8 shape region query size = 0
-Metal9 shape region query size = 0
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0
+[INFO DRT-0033] FR_VIA shape region query size = 0
+[INFO DRT-0033] Metal1 shape region query size = 344
+[INFO DRT-0033] Via1 shape region query size = 0
+[INFO DRT-0033] Metal2 shape region query size = 0
+[INFO DRT-0033] Via2 shape region query size = 0
+[INFO DRT-0033] Metal3 shape region query size = 0
+[INFO DRT-0033] Via3 shape region query size = 0
+[INFO DRT-0033] Metal4 shape region query size = 0
+[INFO DRT-0033] Via4 shape region query size = 0
+[INFO DRT-0033] Metal5 shape region query size = 0
+[INFO DRT-0033] Via5 shape region query size = 0
+[INFO DRT-0033] Metal6 shape region query size = 0
+[INFO DRT-0033] Via6 shape region query size = 0
+[INFO DRT-0033] Metal7 shape region query size = 0
+[INFO DRT-0033] Via7 shape region query size = 0
+[INFO DRT-0033] Metal8 shape region query size = 0
+[INFO DRT-0033] Via8 shape region query size = 0
+[INFO DRT-0033] Metal9 shape region query size = 0
 
 init guide query ...
-
-FR_MASTERSLICE guide region query size = 0
-FR_VIA guide region query size = 0
-Metal1 guide region query size = 22
-Via1 guide region query size = 0
-Metal2 guide region query size = 22
-Via2 guide region query size = 0
-Metal3 guide region query size = 10
-Via3 guide region query size = 0
-Metal4 guide region query size = 0
-Via4 guide region query size = 0
-Metal5 guide region query size = 0
-Via5 guide region query size = 0
-Metal6 guide region query size = 0
-Via6 guide region query size = 0
-Metal7 guide region query size = 0
-Via7 guide region query size = 0
-Metal8 guide region query size = 0
-Via8 guide region query size = 0
-Metal9 guide region query size = 0
+[INFO DRT-0036] FR_MASTERSLICE guide region query size = 0
+[INFO DRT-0036] FR_VIA guide region query size = 0
+[INFO DRT-0036] Metal1 guide region query size = 22
+[INFO DRT-0036] Via1 guide region query size = 0
+[INFO DRT-0036] Metal2 guide region query size = 22
+[INFO DRT-0036] Via2 guide region query size = 0
+[INFO DRT-0036] Metal3 guide region query size = 10
+[INFO DRT-0036] Via3 guide region query size = 0
+[INFO DRT-0036] Metal4 guide region query size = 0
+[INFO DRT-0036] Via4 guide region query size = 0
+[INFO DRT-0036] Metal5 guide region query size = 0
+[INFO DRT-0036] Via5 guide region query size = 0
+[INFO DRT-0036] Metal6 guide region query size = 0
+[INFO DRT-0036] Via6 guide region query size = 0
+[INFO DRT-0036] Metal7 guide region query size = 0
+[INFO DRT-0036] Via7 guide region query size = 0
+[INFO DRT-0036] Metal8 guide region query size = 0
+[INFO DRT-0036] Via8 guide region query size = 0
+[INFO DRT-0036] Metal9 guide region query size = 0
 
 init gr pin query ...
 initVia2ViaMinLen_minSpc Metal1 (d2d, d2u, u2d, u2u) = (0, 0, 0, 380)
