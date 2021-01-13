@@ -78,6 +78,14 @@ set design_list_ispd19 " \
     ispd19_test1 \
     "
 
+foreach design $design_list_ispd18 {
+    genFiles $run_dir 18 $design
+}
+
+foreach design $design_list_ispd19 {
+    genFiles $run_dir 19 $design
+}
+
 cd $run_dir
 
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
