@@ -94,7 +94,7 @@ cd $run_dir
 
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
 
-eval exec parallel -j $parallel_jobs ./{}/run.sh ::: $design_list >@stdout
+eval exec -ignorestderr parallel -j $parallel_jobs ./{}/run.sh ::: $design_list >@stdout
 
 foreach design $design_list {
     exec tar czvf "${design}.tar.gz" "${design}"
