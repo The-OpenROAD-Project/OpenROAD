@@ -45,7 +45,7 @@ namespace odb {
 class dbDatabase;
 }
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -68,7 +68,7 @@ class ScriptWidget : public QDockWidget
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
-  void setLogger(ord::Logger* logger);
+  void setLogger(utl::Logger* logger);
 
  signals:
   // Commands might have effects that others need to know

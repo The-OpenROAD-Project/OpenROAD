@@ -46,7 +46,7 @@ namespace grt {
   class GlobalRouter;
 }
 
-namespace ord {
+namespace utl {
   class Logger;
 }
 
@@ -72,7 +72,7 @@ class Replace
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
     void setFastRoute(grt::GlobalRouter* fr);
-    void setLogger(ord::Logger* log);
+    void setLogger(utl::Logger* log);
 
     void doInitialPlace();
     void doNesterovPlace();
@@ -130,7 +130,7 @@ class Replace
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
     grt::GlobalRouter* fr_;
-    ord::Logger* log_;
+    utl::Logger* log_;
 
     std::shared_ptr<PlacerBase> pb_;
     std::shared_ptr<NesterovBase> nb_;
