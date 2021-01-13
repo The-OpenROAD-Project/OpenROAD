@@ -643,8 +643,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   int maxDegree = std::numeric_limits<int>::min();
 
   for (const Net& net : *_nets) {
-    if (net.getNumPins() > 1
-        && net.getNumPins() < std::numeric_limits<int>::max()) {
+    if (net.getNumPins() > 1) {
       validNets++;
     }
   }
