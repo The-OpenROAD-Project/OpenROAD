@@ -35,9 +35,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 46
-[INFO] Final number of vias : 44
-[INFO] Final usage 3D       : 178
+[INFO GRT-0110] Final usage          : 46
+[INFO GRT-0111] Final number of vias : 44
+[INFO GRT-0112] Final usage 3D       : 178
 [INFO GRT-0018] Total wirelength: 165 um
 [INFO GRT-0014] Num routed nets: 10
 No differences found.
