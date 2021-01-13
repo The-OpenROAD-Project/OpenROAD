@@ -1,15 +1,20 @@
+Warning: sky130/sky130_tt.lib line 19, default_operating_condition typ not found.
 Notice 0: Reading LEF file:  sky130/sky130_tech.lef
 Notice 0:     Created 11 technology layers
 Notice 0:     Created 25 technology vias
 Notice 0: Finished LEF file:  sky130/sky130_tech.lef
 Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
+Notice 0: Warning: WARNING (LEFPARS-2007): NAMESCASESENSITIVE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file sky130/sky130_std_cell.lef at line 18.
+
 Notice 0:     Created 390 library cells
 Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
 Notice 0: 
 Reading DEF file: resize4.def
 Notice 0: Design: reg1
 Notice 0:     Created 1 pins.
-Notice 0:     Created 3 components and 16 component-terminals.
+Notice 0:     Created 3 components and 22 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 3 nets and 6 connections.
 Notice 0: Finished DEF file: resize4.def
