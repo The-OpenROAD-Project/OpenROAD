@@ -949,8 +949,7 @@ int Graph::IdentLoc(int pIdx, int cIdx)
     } else if (pN.x < cN.x) {
       return 7;  // right of pN
     } else {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Error!! - pN == cN");
+      _logger->error(GRT, 119, "pN == cN ({})", pN);
       return 10;
     }
   }
@@ -2726,9 +2725,8 @@ void Graph::constructSteiner()
       } else {
         if (nodes[idx].parent != pN.idx && idx != pN.parent
             && nodes[idx].parent != pN.parent) {
-            debugPrint(_logger, GRT, "fastroute", 3,
-                       "Error!!\ncNode: {}\npNode: {}",
-                       nodes[idx], nodes[pN.idx]);
+          _logger->warn(GRT, 120, "cNode ({}) != pNode ({})",
+                        nodes[idx], nodes[pN.idx]);
 
           for (unsigned k = 0; k < newSP.size(); k++) {
             if (newSP[k] == idx) {
