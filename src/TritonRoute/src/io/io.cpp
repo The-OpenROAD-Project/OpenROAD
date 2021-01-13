@@ -91,7 +91,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
     if (tech->name2layer.find(track->getTechLayer()->getName())
         == tech->name2layer.end())
       logger->error(utl::DRT,
-                    1,
+                    94,
                     "cannot find layer: {}",
                     track->getTechLayer()->getName());
     int xPatternSize = track->getNumGridPatternsX();
@@ -127,18 +127,41 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
+frOrientEnum getFrOrient(odb::dbOrientType orient)
+{
+  switch (orient)
+  {
+  case odb::dbOrientType::R0:
+    return frOrientEnum::frcR0;  
+  case odb::dbOrientType::R90:
+    return frOrientEnum::frcR90;  
+  case odb::dbOrientType::R180:
+    return frOrientEnum::frcR180;  
+  case odb::dbOrientType::R270:
+    return frOrientEnum::frcR270;  
+  case odb::dbOrientType::MY:
+    return frOrientEnum::frcMY;  
+  case odb::dbOrientType::MYR90:
+    return frOrientEnum::frcMXR90;  
+  case odb::dbOrientType::MX:
+    return frOrientEnum::frcMX;  
+  case odb::dbOrientType::MXR90:
+    return frOrientEnum::frcMXR90;  
+  }
+}
+
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
     if (design->name2refBlock_.find(inst->getMaster()->getName())
         == design->name2refBlock_.end())
       logger->error(utl::DRT,
-                    2,
+                    95,
                     "library cell {} not found",
                     inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
-      logger->error(utl::DRT, 3, "same cell name: {}", inst->getName());
+      logger->error(utl::DRT, 96, "same cell name: {}", inst->getName());
     frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), refBlock);
     auto tmpInst = uInst.get();
@@ -150,12 +173,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     x = defdist(block, x);
     y = defdist(block, y);
     tmpInst->setOrigin(frPoint(x, y));
-    int orient = (int) inst->getOrient().getValue();
-    if (orient == 5)
-      orient = 7;
-    else if (orient == 7)
-      orient = 5;
-    tmpInst->setOrient(frOrientEnum(orient));
+    tmpInst->setOrient(getFrOrient(inst->getOrient().getValue()));
     for (auto& uTerm : tmpInst->getRefBlock()->getTerms()) {
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
@@ -221,7 +239,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (tech->name2layer.find(params.getCutLayer()->getName())
           == tech->name2layer.end())
         logger->error(utl::DRT,
-                      4,
+                      97,
                       "cannot find cut layer {}",
                       params.getCutLayer()->getName());
       else
@@ -231,7 +249,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (tech->name2layer.find(params.getBottomLayer()->getName())
           == tech->name2layer.end())
         logger->error(utl::DRT,
-                      5,
+                      98,
                       "cannot find bottom layer {}",
                       params.getBottomLayer()->getName());
       else
@@ -241,7 +259,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (tech->name2layer.find(params.getTopLayer()->getName())
           == tech->name2layer.end())
         logger->error(utl::DRT,
-                      6,
+                      99,
                       "cannot find top layer {}",
                       params.getTopLayer()->getName());
       else
@@ -324,10 +342,10 @@ void io::Parser::setVias(odb::dbBlock* block)
         lNum2Int[layerNum].insert(box);
       }
       if ((int) lNum2Int.size() != 3)
-        logger->error(utl::DRT, 7, "unsupported via: {}", via->getName());
+        logger->error(utl::DRT, 100, "unsupported via: {}", via->getName());
       if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first)
         logger->error(
-            utl::DRT, 8, "non-consecutive layers for via: {}", via->getName());
+            utl::DRT, 101, "non-consecutive layers for via: {}", via->getName());
       auto viaDef = make_unique<frViaDef>(via->getName());
       int cnt = 0;
       for (auto& [layerNum, boxes] : lNum2Int) {
@@ -403,7 +421,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
         y2 -= dw;
         assert(y1 == y2);
       } else
-        logger->error(utl::DRT, 9, "odd dimension in both directions");
+        logger->error(utl::DRT, 102, "odd dimension in both directions");
       break;
     }
     case odb::dbSBox::HORIZONTAL: {
@@ -432,7 +450,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       break;
     }
     default:
-      logger->error(utl::DRT, 10, "unknown direction");
+      logger->error(utl::DRT, 103, "unknown direction");
       break;
   }
   beginX = defdist(block, x1);
@@ -452,7 +470,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     for (auto term : net->getBTerms()) {
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
-        logger->error(utl::DRT, 11, "term {} not found", term->getName());
+        logger->error(utl::DRT, 104, "term {} not found", term->getName());
       auto frterm = tmpBlock->name2term_[term->getName()];  // frTerm*
       frterm->addToNet(netIn);
       netIn->addTerm(frterm);
@@ -466,11 +484,11 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
-            utl::DRT, 12, "component {} not found", term->getInst()->getName());
+            utl::DRT, 105, "component {} not found", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       auto instTerm = inst->getTerm(term->getMTerm()->getName());
       if(instTerm==nullptr)
-        logger->error(utl::DRT, 13, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
+        logger->error(utl::DRT, 106, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
       instTerm->addToNet(netIn);
       netIn->addInstTerm(instTerm);
       // graph enablement
@@ -530,7 +548,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             case odb::dbWireDecoder::VWIRE:
               layerName = decoder.getLayer()->getName();
               if (tech->name2layer.find(layerName) == tech->name2layer.end())
-                logger->error(utl::DRT, 14, "unsupported layer {}", layerName);
+                logger->error(utl::DRT, 107, "unsupported layer {}", layerName);
               break;
             case odb::dbWireDecoder::POINT:
 
@@ -640,7 +658,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
         if (viaName != "") {
           if (tech->name2via.find(viaName) == tech->name2via.end()) {
-            logger->error(utl::DRT, 15, "unsupported via in db");
+            logger->error(utl::DRT, 108, "unsupported via in db");
           } else {
             frPoint p;
             if (hasEndPoint) {
@@ -687,7 +705,7 @@ void io::Parser::setNets(odb::dbBlock* block)
               viaName = box->getBlockVia()->getName();
 
             if (tech->name2via.find(viaName) == tech->name2via.end())
-              logger->error(utl::DRT, 16, "unsupported via in db");
+              logger->error(utl::DRT, 109, "unsupported via in db");
             else {
               int x, y;
               box->getViaXY(x, y);
@@ -717,7 +735,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         netType = frNetEnum::frcGroundNet;
         break;
       default:
-        logger->error(utl::DRT, 17, "unsupported NET USE in def");
+        logger->error(utl::DRT, 110, "unsupported NET USE in def");
         break;
     }
     netIn->setType(netType);
@@ -746,7 +764,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         termType = frTermEnum::frcClockTerm;
         break;
       default:
-        logger->error(utl::DRT, 18, "unsupported PIN USE in db");
+        logger->error(utl::DRT, 111, "unsupported PIN USE in db");
         break;
     }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
@@ -777,7 +795,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
           logger->error(utl::DRT,
-                        19,
+                        112,
                         "unsupported layer {}",
                         box->getTechLayer()->getName());
         frLayerNum layerNum
@@ -5110,7 +5128,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
       logger->error(utl::DRT,
-                    20,
+                    113,
                     "techlayers for via {} not found in db tech",
                     via->getName());
     }
@@ -5221,7 +5239,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           default: {
             _wire_encoder.clear();
             logger->error(utl::DRT,
-                          21,
+                          114,
                           "unknown connfig type while writing net {}",
                           net->getName());
           }
@@ -5235,12 +5253,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(utl::DRT, 22, "please load design first");
+    logger->error(utl::DRT, 3, "please load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(utl::DRT, 23, "please load design first");
+    logger->error(utl::DRT, 4, "please load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);

@@ -89,3 +89,24 @@ DRT 0090 FlexPA_prep.cpp:2172      valid access pattern not found.
 DRT 0091 FlexPA_prep.cpp:2235      pin does not have valid ap.
 DRT 0092 FlexRP_prep.cpp:754       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
 DRT 0093 FlexRP_prep.cpp:766       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
+DRT 0094 io.cpp:93                 cannot find layer: {}
+DRT 0095 io.cpp:158                library cell {} not found
+DRT 0096 io.cpp:164                same cell name: {}
+DRT 0097 io.cpp:241                cannot find cut layer {}
+DRT 0098 io.cpp:251                cannot find bottom layer {}
+DRT 0099 io.cpp:261                cannot find top layer {}
+DRT 0100 io.cpp:345                unsupported via: {}
+DRT 0101 io.cpp:347                non-consecutive layers for via: {}
+DRT 0102 io.cpp:424                odd dimension in both directions
+DRT 0103 io.cpp:453                unknown direction
+DRT 0104 io.cpp:473                term {} not found
+DRT 0105 io.cpp:486                component {} not found
+DRT 0106 io.cpp:491                component pin {}/{} not found
+DRT 0107 io.cpp:551                unsupported layer {}
+DRT 0108 io.cpp:661                unsupported via in db
+DRT 0109 io.cpp:708                unsupported via in db
+DRT 0110 io.cpp:738                unsupported NET USE in def
+DRT 0111 io.cpp:767                unsupported PIN USE in db
+DRT 0112 io.cpp:797                unsupported layer {}
+DRT 0113 io.cpp:5130               techlayers for via {} not found in db tech
+DRT 0114 io.cpp:5241               unknown connfig type while writing net {}
