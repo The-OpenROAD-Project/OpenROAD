@@ -48,13 +48,13 @@
 
 #include <map>
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace rcx {
 
-using ord::Logger;
+using utl::Logger;
 
 class extRcTripplet
 {

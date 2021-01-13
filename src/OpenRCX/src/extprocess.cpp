@@ -33,11 +33,11 @@
 #include "extprocess.h"
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 extConductor::extConductor(Logger* logger)
 {

@@ -44,11 +44,11 @@
 #include "extSpef.h"
 #include "exttree.h"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 void extMain::setPowerExtOptions(bool        skip_power_stubs,
                                  const char* exclude_cells,

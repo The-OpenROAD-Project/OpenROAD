@@ -35,7 +35,7 @@
 
 #include "dbUtil.h"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
@@ -46,7 +46,7 @@
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;

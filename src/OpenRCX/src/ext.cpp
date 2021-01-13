@@ -33,7 +33,7 @@
 #include "ext.h"
 #include <errno.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "sta/StaMain.hh"
 
@@ -44,7 +44,8 @@ extern const char* openrcx_tcl_inits[];
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
+using utl::Logger;
 
 extern "C" {
 extern int Openrcx_Init(Tcl_Interp* interp);
@@ -73,19 +74,19 @@ void Ext::dbUpdate()
     _initWithChip = true;
     _ext->setDB(_db);
   }
-  _ext->setLogger(logger_);
 }
 
-void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
+void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 {
   _db = db;
+  logger_ = logger;
 
   // Define swig TCL commands.
   Openrcx_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::openrcx_tcl_inits);
 }
 
-void Ext::setLogger(ord::Logger* logger) {
+void Ext::setLogger(Logger* logger) {
   if (!logger_)
     logger_ = logger;
 }

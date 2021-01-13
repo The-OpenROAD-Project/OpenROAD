@@ -41,11 +41,11 @@
 #include "exttree.h"
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 #ifdef EXT_SI
 void initExtSi(dbNet* victim, bool is_min, bool is_rise, tmg_db* tm);

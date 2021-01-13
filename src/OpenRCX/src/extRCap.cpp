@@ -44,11 +44,11 @@
 #include "darr.h"
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 static int read_total_cap_file(const char* file,
                                double*     ctotV,

@@ -43,12 +43,12 @@
 #include <map>
 #include <vector>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 //#define SKIP_SOLVER
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 bool OUREVERSEORDER = false;
 

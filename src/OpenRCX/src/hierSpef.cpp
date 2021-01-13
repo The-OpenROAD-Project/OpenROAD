@@ -40,7 +40,7 @@
 #include "parse.h"
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 //#ifdef _WIN32
 #define ATH__fprintf fprintf
@@ -50,7 +50,7 @@
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 uint extSpef::writeHierInstNameMap()
 {

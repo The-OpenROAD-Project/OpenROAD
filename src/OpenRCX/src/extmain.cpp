@@ -35,11 +35,11 @@
 #include "exttree.h"
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;

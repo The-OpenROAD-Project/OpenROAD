@@ -38,12 +38,13 @@
 #include "extRCap.h"
 #include "exttree.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace rcx {
 
+using utl::Logger;
 using odb::debug;
 class Ext
 
@@ -55,8 +56,8 @@ class Ext
   Ext();
   ~Ext();
 
-  void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db);
-  void setLogger(ord::Logger *logger);
+  void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger);
+  void setLogger(Logger *logger);
 
   bool load_model(const std::string& name,
                   bool               lef_rc,
@@ -357,7 +358,7 @@ class Ext
   odb::dbDatabase* _db;
   extMain*         _ext;
   extRcTree*       _tree;
-  ord::Logger *logger_;
+  Logger* logger_;
   bool             _initWithChip;
 };  // namespace rcx
 

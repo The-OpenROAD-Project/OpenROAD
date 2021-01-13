@@ -38,11 +38,11 @@
 
 #include "extRCap.h"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 static odb::dbTechLayer* m1;
 static odb::dbTechLayer* m2;

@@ -107,4 +107,5 @@ target_include_directories(OpenRCX
 target_link_libraries(OpenRCX
                       opendb
                       openrcx-swig
+                      utility
 )

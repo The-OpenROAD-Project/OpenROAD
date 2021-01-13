@@ -38,7 +38,7 @@
 #include <vector>
 #include <dbLogger.h>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #define MAXINT 0x7FFFFFFF;
 //#define HI_ACC_10312011
@@ -51,7 +51,7 @@ namespace rcx {
 FILE* fp;
 #endif
 
-using ord::RCX;
+using utl::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;

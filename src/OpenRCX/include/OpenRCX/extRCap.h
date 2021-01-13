@@ -65,14 +65,15 @@
 
 #include <map>
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace rcx {
+
 class extMeasure;
 
-using ord::Logger;
+using utl::Logger;
 
 class extMetBox  // assume cross-section on the z-direction
 {

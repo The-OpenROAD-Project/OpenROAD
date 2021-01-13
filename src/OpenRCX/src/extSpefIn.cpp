@@ -38,11 +38,11 @@
 
 #include "parse.h"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-using ord::RCX;
+using utl::RCX;
 
 dbInst* extSpef::getDbInst(uint id)
 {

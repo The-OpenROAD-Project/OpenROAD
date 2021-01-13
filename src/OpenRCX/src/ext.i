@@ -57,9 +57,7 @@ void
 define_process_corner(int ext_model_index, const char* file)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   
-  ext->setLogger(logger);
   ext->define_process_corner(ext_model_index, file);
 }
 
@@ -76,7 +74,6 @@ extract(const char* ext_model_file,
         bool no_merge_via_res)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::ExtractOptions opts;
 
   opts.ext_model_file = ext_model_file;
@@ -90,7 +87,6 @@ extract(const char* ext_model_file,
   opts.debug_net = debug_net_id;
   opts.no_merge_via_res = no_merge_via_res;
   
-  ext->setLogger(logger);
   ext->extract(opts);
 }
 
@@ -100,13 +96,11 @@ write_spef(const char* file,
            int net_id)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::SpefOptions opts;
   opts.file = file;
   opts.nets = nets;
   opts.net_id = net_id;
   
-  ext->setLogger(logger);
   ext->write_spef(opts);
 }
 
@@ -116,7 +110,6 @@ adjust_rc(double res_factor,
           double gndc_factor)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   ext->adjust_rc(res_factor, cc_factor, gndc_factor);
 }
 
@@ -128,7 +121,6 @@ diff_spef(const char* file,
           bool r_cc_cap)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::DiffOptions opts;
   opts.file = file;
   opts.r_res = r_res;
@@ -136,7 +128,6 @@ diff_spef(const char* file,
   opts.r_cc_cap = r_cc_cap;
   opts.r_conn = r_conn;
   
-  ext->setLogger(logger);
   ext->diff_spef(opts);
 }
 
@@ -153,7 +144,6 @@ bench_wires(bool db_only,
           const char* s_list)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::BenchWiresOptions opts;
   
   opts.w_list = w_list;
@@ -167,7 +157,6 @@ bench_wires(bool db_only,
   opts.met_cnt = met_cnt;
   opts.db_only = db_only;
 
-  ext->setLogger(logger);
   ext->bench_wires(opts);
 }
 
@@ -175,9 +164,7 @@ void
 bench_verilog(const char* file)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   
-  ext->setLogger(logger);
   ext->bench_verilog(file);
 }
 
@@ -190,10 +177,8 @@ write_rules(const char* file,
             bool read_from_solver)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::BenchWiresOptions opts;
   
-  ext->setLogger(logger);
   ext->write_rules(name, dir, file, pattern, read_from_db,
                    read_from_solver);
 }
@@ -202,11 +187,9 @@ void
 read_spef(const char* file)
 {
   Ext* ext = getOpenRCX();
-  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   Ext::ReadSpefOpts opts;
   opts.file = file;
   
-  ext->setLogger(logger);
   ext->read_spef(opts);
 }
 
