@@ -57,7 +57,6 @@ void
 define_process_corner(int ext_model_index, const char* file)
 {
   Ext* ext = getOpenRCX();
-  
   ext->define_process_corner(ext_model_index, file);
 }
 
@@ -164,7 +163,6 @@ void
 bench_verilog(const char* file)
 {
   Ext* ext = getOpenRCX();
-  
   ext->bench_verilog(file);
 }
 

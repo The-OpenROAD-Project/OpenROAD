@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "dbLogger.h"
+
 #include "utility/Logger.h"
 
 namespace rcx {

@@ -34,7 +34,6 @@
 #include <errno.h>
 
 #include "utility/Logger.h"
-
 #include "sta/StaMain.hh"
 
 namespace sta {
@@ -74,6 +73,7 @@ void Ext::dbUpdate()
     _initWithChip = true;
     _ext->setDB(_db);
   }
+  _ext->setLogger(logger_);
 }
 
 void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
