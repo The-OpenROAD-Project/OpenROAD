@@ -2413,7 +2413,8 @@ bool Graph::run_PD_brute_force(float alp)
     }
   }
 
-  print_tree();
+  if (_logger->debugCheck(GRT, "fastroute", 3))
+    print_tree();
 
   pd_wl = calc_tree_wl_pd();
   pd_pl = calc_tree_pl();
@@ -2467,7 +2468,8 @@ void Graph::PDBU_new_NN()
 
     debugPrint(_logger, GRT, "fastroute", 3,
                "Tree before PDBU iteration {}", count - 1);
-    print_tree();
+    if (_logger->debugCheck(GRT, "fastroute", 3))
+      print_tree();
     debugPrint(_logger, GRT, "fastroute", 3,
                "\nInitial tree cost = {}", initial_tree_cost);
 
@@ -2637,7 +2639,8 @@ void Graph::PDBU_new_NN()
     debugPrint(_logger, GRT, "fastroute", 3,
                "Final tree cost = {} \ntree_cost_difference = {}\n Tree after PDBU",
                final_tree_cost, tree_cost_difference);
-    print_tree();
+    if (_logger->debugCheck(GRT, "fastroute", 3))
+      print_tree();
     // End of the while loop
   }
 
@@ -2821,7 +2824,8 @@ bool Graph::doSteiner_HoVW()
              "Tree detour cost before Steiner = {}", calc_tree_det_cost());
   debugPrint(_logger, GRT, "fastroute", 3,
              "{} {}", calc_tree_wl_pd(), calc_tree_det_cost());
-  print_tree();
+  if (_logger->debugCheck(GRT, "fastroute", 3))
+    print_tree();
 
   vector<Node> set_of_nodes;
   for (int k = tree_struct.size() - 3; k >= 0;
