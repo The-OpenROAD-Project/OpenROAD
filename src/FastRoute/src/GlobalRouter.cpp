@@ -662,31 +662,24 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
       if (pin_count > maxDegree) {
         maxDegree = pin_count;
       }
-      // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a
-      // single net. It uses int to hold the pin indexes and bigger values
-      // violates the FR API
-      if (pin_count >= std::numeric_limits<int>::max()) {
-        _logger->warn(GRT, 10, "FastRoute cannot handle net {} due to large number of pins", net->getName());
-        _logger->warn(GRT, 11, "Net {} has {} pins", net->getName(), net->getNumPins());
-      } else {
-        std::vector<RoutePt> pinsOnGrid;
-        findPins(net, pinsOnGrid);
 
-        if (pinsOnGrid.size() > 1) {
-          float netAlpha = _alpha;
-          if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
-            netAlpha = _netsAlpha[net->getName()];
-          }
-          bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
+      std::vector<RoutePt> pinsOnGrid;
+      findPins(net, pinsOnGrid);
 
-          int netID = _fastRoute->addNet(net->getDbNet(),
-                                         pinsOnGrid.size(),
-                                         pinsOnGrid.size(),
-                                         netAlpha,
-                                         isClock);
-          for (RoutePt& pinPos : pinsOnGrid) {
-            _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
-          }
+      if (pinsOnGrid.size() > 1) {
+        float netAlpha = _alpha;
+        if (_netsAlpha.find(net->getName()) != _netsAlpha.end()) {
+          netAlpha = _netsAlpha[net->getName()];
+        }
+        bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
+
+        int netID = _fastRoute->addNet(net->getDbNet(),
+                                       pinsOnGrid.size(),
+                                       pinsOnGrid.size(),
+                                       netAlpha,
+                                       isClock);
+        for (RoutePt& pinPos : pinsOnGrid) {
+          _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
         }
       }
     }
