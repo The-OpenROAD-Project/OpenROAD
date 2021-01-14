@@ -41,7 +41,7 @@ namespace fin {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->register_renderer(this);
+  gui::Gui::get()->registerRenderer(this);
 }
 
 void Graphics::drawPolygon90Set(const Polygon90Set& set)

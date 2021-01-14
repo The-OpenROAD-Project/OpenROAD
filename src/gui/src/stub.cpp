@@ -84,7 +84,7 @@ OpenDbDescriptor* OpenDbDescriptor::get()
 }
 
 // using namespace odb;
-int start_gui(int argc, char* argv[])
+int startGui(int argc, char* argv[])
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

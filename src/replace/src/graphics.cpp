@@ -21,7 +21,7 @@ Graphics::Graphics(utl::Logger* logger,
       draw_bins_(false),
       logger_(logger)
 {
-  gui::Gui::get()->register_renderer(this);
+  gui::Gui::get()->registerRenderer(this);
 }
 
 Graphics::Graphics(utl::Logger* logger,
@@ -37,7 +37,7 @@ Graphics::Graphics(utl::Logger* logger,
       draw_bins_(draw_bins),
       logger_(logger)
 {
-  gui::Gui::get()->register_renderer(this);
+  gui::Gui::get()->registerRenderer(this);
 }
 
 void Graphics::drawBounds(gui::Painter& painter)
