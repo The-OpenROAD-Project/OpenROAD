@@ -249,7 +249,7 @@ protected:
   void ensureDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
-  void ensureLevelDrvrVerticies();
+  void ensureLevelDrvrVertices();
   void bufferInput(Pin *top_pin,
                    LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
@@ -507,8 +507,8 @@ protected:
   bool have_estimated_parasitics_;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   CellTargetLoadMap *target_load_map_;
-  VertexSeq level_drvr_verticies_;
-  bool level_drvr_verticies_valid_;
+  VertexSeq level_drvr_vertices_;
+  bool level_drvr_vertices_valid_;
   TgtSlews tgt_slews_;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;

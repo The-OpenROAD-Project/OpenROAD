@@ -448,7 +448,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
                                                  parent);
     inserted_buffer_count_++;
     design_area_ += area(db_network_->cell(buffer_cell));
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
     debugPrint(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s",

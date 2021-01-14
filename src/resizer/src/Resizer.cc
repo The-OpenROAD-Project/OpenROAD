@@ -168,7 +168,7 @@ Resizer::Resizer() :
   parasitics_ap_(nullptr),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
-  level_drvr_verticies_valid_(false),
+  level_drvr_vertices_valid_(false),
   tgt_slews_{0.0, 0.0},
   unique_net_index_(1),
   unique_inst_index_(1),
@@ -281,7 +281,7 @@ Resizer::init()
   graph_ = sta_->graph();
   ensureBlock();
   ensureDesignArea();
-  ensureLevelDrvrVerticies();
+  ensureLevelDrvrVertices();
   sta_->ensureClkNetwork();
   ensureCorner();
 }
@@ -345,7 +345,7 @@ Resizer::removeBuffers()
       }
     }
   }
-  level_drvr_verticies_valid_ = false;
+  level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
@@ -402,18 +402,18 @@ Resizer::initCorner(Corner *corner)
 }
 
 void
-Resizer::ensureLevelDrvrVerticies()
+Resizer::ensureLevelDrvrVertices()
 {
-  if (!level_drvr_verticies_valid_) {
-    level_drvr_verticies_.clear();
+  if (!level_drvr_vertices_valid_) {
+    level_drvr_vertices_.clear();
     VertexIterator vertex_iter(graph_);
     while (vertex_iter.hasNext()) {
       Vertex *vertex = vertex_iter.next();
       if (vertex->isDriver(network_))
-        level_drvr_verticies_.push_back(vertex);
+        level_drvr_vertices_.push_back(vertex);
     }
-    sort(level_drvr_verticies_, VertexLevelLess(network_));
-    level_drvr_verticies_valid_ = true;
+    sort(level_drvr_vertices_, VertexLevelLess(network_));
+    level_drvr_vertices_valid_ = true;
   }
 }
 
@@ -471,7 +471,7 @@ Resizer::bufferInputs()
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
 }
    
@@ -538,7 +538,7 @@ Resizer::bufferOutputs()
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
 }
 
@@ -599,8 +599,8 @@ Resizer::repairDesign(double max_wire_length) // zero for none (meters)
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
   Level dcalc_valid_level = 0;
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *drvr = level_drvr_verticies_[i];
+  for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    Vertex *drvr = level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
     if (net
@@ -627,7 +627,7 @@ Resizer::repairDesign(double max_wire_length) // zero for none (meters)
     logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repair_count);
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
   if (resize_count_ > 0)
     logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
@@ -672,7 +672,7 @@ Resizer::repairClkNets(double max_wire_length) // meters
     logger_->info(RSZ, 48, "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repair_count);
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
 }
 
@@ -718,7 +718,7 @@ Resizer::repairNet(Net *net,
     logger_->info(RSZ, 55, "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repair_count);
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
   if (resize_count_ > 0)
     logger_->info(RSZ, 56, "Resized {} instances.", resize_count_);
@@ -1160,8 +1160,8 @@ Resizer::resizeToTargetSlew()
   resize_count_ = 0;
   resized_multi_output_insts_.clear();
   // Resize in reverse level order.
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *drvr = level_drvr_verticies_[i];
+  for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    Vertex *drvr = level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
     Instance *inst = network_->instance(drvr_pin);
@@ -1971,7 +1971,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
     logger_->info(RSZ, 42, "Inserted {} tie {} instances.",
                   tie_count,
                   tie_cell->name());
-    level_drvr_verticies_valid_ = false;
+    level_drvr_vertices_valid_ = false;
   }
 }
 
@@ -2390,7 +2390,7 @@ Resizer::repairHold(VertexSet *ends,
     }
     if (inserted_buffer_count_ > 0) {
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
-      level_drvr_verticies_valid_ = false;
+      level_drvr_vertices_valid_ = false;
     }
     if (over_max_area)
       logger_->error(RSZ, 50, "max utilization reached.");
