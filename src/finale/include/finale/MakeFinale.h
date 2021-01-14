@@ -42,11 +42,8 @@ namespace ord {
 
 class OpenRoad;
 
-fin::Finale *
-makeFinale();
-void
-initFinale(OpenRoad *openroad);
-void
-deleteFinale(fin::Finale *finale);
+fin::Finale* makeFinale();
+void initFinale(OpenRoad* openroad);
+void deleteFinale(fin::Finale* finale);
 
 }  // namespace ord

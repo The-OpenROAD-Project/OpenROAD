@@ -106,7 +106,7 @@ NesterovPlace::NesterovPlace(
   rb_ = rb;
   log_ = log;
   if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
+    graphics_ = make_unique<Graphics>(log_, this, pb, nb, npVars_.debug_draw_bins);
   }
   init();
 }
@@ -826,6 +826,5 @@ getSecondNorm(const vector<FloatPoint>& a) {
   }
   return sqrt( norm / (2.0*a.size()) ); 
 }
-
 
 }
