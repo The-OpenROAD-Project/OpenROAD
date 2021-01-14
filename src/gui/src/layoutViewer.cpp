@@ -112,11 +112,11 @@ class GuiPainter : public Painter
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
     QColor color = options_->color(layer);
-    Qt::BrushStyle brushPattern = options_->pattern(layer);
+    Qt::BrushStyle brush_pattern = options_->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
-    painter_->setBrush(QBrush(color, brushPattern));
+    painter_->setBrush(QBrush(color, brush_pattern));
   }
 
   void setBrush(const Color& color) override
@@ -271,7 +271,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       }
     }
 
-    auto shapes = search_.search_shapes(
+    auto shapes = search_.searchShapes(
         layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
     // Just return the first one
@@ -292,7 +292,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
   // Look for an instance since no shape was found
   auto insts
-      = search_.search_insts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+      = search_.searchInsts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
   // Just return the first one
 
@@ -331,8 +331,8 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(event->pos());
-  qreal toMicrons = block->getDbUnitsPerMicron();
-  emit location(pt_dbu.x() / toMicrons, pt_dbu.y() / toMicrons);
+  qreal to_microns = block->getDbUnitsPerMicron();
+  emit location(pt_dbu.x() / to_microns, pt_dbu.y() / to_microns);
 
   if (rubber_band_showing_) {
     updateRubberBandRegion();
@@ -491,10 +491,10 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
-  if ((!isHorizontal && options_->arePrefTracksVisible())
-      || (isHorizontal && options_->areNonPrefTracksVisible())) {
+  if ((!is_horizontal && options_->arePrefTracksVisible())
+      || (is_horizontal && options_->areNonPrefTracksVisible())) {
     grid->getGridX(grids);
     for (int x : grids) {
       if (x < bounds.xMin()) {
@@ -507,8 +507,8 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     }
   }
 
-  if ((isHorizontal && options_->arePrefTracksVisible())
-      || (!isHorizontal && options_->areNonPrefTracksVisible())) {
+  if ((is_horizontal && options_->arePrefTracksVisible())
+      || (!is_horizontal && options_->areNonPrefTracksVisible())) {
     grid->getGridY(grids);
     for (int y : grids) {
       if (y < bounds.yMin()) {
@@ -602,7 +602,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   Rect bbox = getBounds(block);
   painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
 
-  auto inst_range = search_.search_insts(
+  auto inst_range = search_.searchInsts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
 
   // Cache the search results as we will iterate over the instances
@@ -674,15 +674,15 @@ void LayoutViewer::drawBlock(QPainter* painter,
       // Only draw the pins/obs if they are big enough to be useful
       painter->setPen(Qt::NoPen);
       QColor color = getColor(layer);
-      Qt::BrushStyle brushPattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brushPattern));
+      Qt::BrushStyle brush_pattern = getPattern(layer);
+      painter->setBrush(QBrush(color, brush_pattern));
 
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
 
-      painter->setBrush(QBrush(color, brushPattern));
+      painter->setBrush(QBrush(color, brush_pattern));
       for (auto& box : boxes->mterms) {
         painter->drawRect(box);
       }
@@ -711,10 +711,10 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     // Now draw the shapes
     QColor color = getColor(layer);
-    Qt::BrushStyle brushPattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brushPattern));
+    Qt::BrushStyle brush_pattern = getPattern(layer);
+    painter->setBrush(QBrush(color, brush_pattern));
     painter->setPen(QPen(color, 0));
-    auto iter = search_.search_shapes(layer,
+    auto iter = search_.searchShapes(layer,
                                       bounds.xMin(),
                                       bounds.yMin(),
                                       bounds.xMax(),
@@ -744,10 +744,10 @@ void LayoutViewer::drawBlock(QPainter* painter,
     // Now draw the fills
     if (options_->areFillsVisible()) {
       QColor color = getColor(layer).lighter(50);
-      Qt::BrushStyle brushPattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brushPattern));
+      Qt::BrushStyle brush_pattern = getPattern(layer);
+      painter->setBrush(QBrush(color, brush_pattern));
       painter->setPen(QPen(color, 0));
-      auto iter = search_.search_fills(layer,
+      auto iter = search_.searchFills(layer,
                                        bounds.xMin(),
                                        bounds.yMin(),
                                        bounds.xMax(),

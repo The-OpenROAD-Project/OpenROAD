@@ -104,7 +104,7 @@ class ScriptWidget : public QDockWidget
   // Logger sink
   template<typename Mutex> class GuiSink;
 
-  static Tcl_ChannelType stdoutChannelType;
+  static Tcl_ChannelType stdout_channel_type_;
 };
 
 }  // namespace gui

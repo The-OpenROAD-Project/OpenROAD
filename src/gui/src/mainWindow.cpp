@@ -165,8 +165,8 @@ odb::dbBlock* MainWindow::getBlock()
     return nullptr;
   }
 
-  auto topBlock = chip->getBlock();
-  return topBlock;
+  auto top_block = chip->getBlock();
+  return top_block;
 }
 
 void MainWindow::createActions()
@@ -305,15 +305,15 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty())
     return;
-  odb::Rect itemsBBox;
-  itemsBBox.mergeInit();
+  odb::Rect items_bbox;
+  items_bbox.mergeInit();
   for (auto& item : items) {
-    odb::Rect itemBBox;
-    if (item->getBBox(itemBBox))
-      itemsBBox.merge(itemBBox);
+    odb::Rect item_bbox;
+    if (item->getBBox(item_bbox))
+      items_bbox.merge(item_bbox);
   }
 
-  zoomTo(itemsBBox);
+  zoomTo(items_bbox);
 }
 
 void MainWindow::status(const std::string& message)

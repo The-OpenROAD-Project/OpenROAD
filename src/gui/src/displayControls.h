@@ -98,16 +98,16 @@ class DisplayColorDialog : public QDialog
   QColor color_;
   Qt::BrushStyle pattern_;
 
-  QGroupBox* patternGroupBox_;
-  QGridLayout* gridLayout_;
-  QVBoxLayout* mainLayout_;
+  QGroupBox* pattern_group_box_;
+  QGridLayout* grid_layout_;
+  QVBoxLayout* main_layout_;
 
-  std::vector<PatternButton*> patternButtons_;
-  QColorDialog* colorDialog_;
+  std::vector<PatternButton*> pattern_buttons_;
+  QColorDialog* color_dialog_;
 
   void buildUI();
 
-  static inline std::vector<std::vector<Qt::BrushStyle>> brushPatterns{
+  static inline std::vector<std::vector<Qt::BrushStyle>> brush_patterns_ {
       {Qt::NoBrush, Qt::SolidPattern},
       {Qt::HorPattern, Qt::VerPattern},
       {Qt::CrossPattern, Qt::DiagCrossPattern},
@@ -175,7 +175,7 @@ class DisplayControls : public QDockWidget, public Options
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
                           const QColor& color = Qt::transparent,
-                          odb::dbTechLayer* techLayer = nullptr);
+                          odb::dbTechLayer* tech_layer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
 

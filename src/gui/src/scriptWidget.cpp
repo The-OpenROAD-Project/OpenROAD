@@ -81,29 +81,29 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   setWidget(container);
 }
 
-int channelClose(ClientData instanceData, Tcl_Interp* interp)
+int channelClose(ClientData instance_data, Tcl_Interp* interp)
 {
   // This channel should never be closed
   return EINVAL;
 }
 
-int ScriptWidget::channelOutput(ClientData instanceData,
+int ScriptWidget::channelOutput(ClientData instance_data,
                                 const char* buf,
-                                int toWrite,
-                                int* errorCodePtr)
+                                int to_write,
+                                int* error_code)
 {
   // Buffer up the output
-  ScriptWidget* widget = (ScriptWidget*) instanceData;
-  widget->outputBuffer_.append(QString::fromLatin1(buf, toWrite).trimmed());
-  return toWrite;
+  ScriptWidget* widget = (ScriptWidget*) instance_data;
+  widget->outputBuffer_.append(QString::fromLatin1(buf, to_write).trimmed());
+  return to_write;
 }
 
-void channelWatch(ClientData instanceData, int mask)
+void channelWatch(ClientData instance_data, int mask)
 {
   // watch is not supported inside OpenROAD GUI
 }
 
-Tcl_ChannelType ScriptWidget::stdoutChannelType = {
+Tcl_ChannelType ScriptWidget::stdout_channel_type_ = {
     // Tcl stupidly defines this a non-cost char*
     ((char*) "stdout_channel"),  /* typeName */
     TCL_CHANNEL_VERSION_2,       /* version */
@@ -128,13 +128,13 @@ void ScriptWidget::setupTcl()
 {
   interp_ = Tcl_CreateInterp();
 
-  Tcl_Channel stdoutChannel = Tcl_CreateChannel(
-      &stdoutChannelType, "stdout", (ClientData) this, TCL_WRITABLE);
-  if (stdoutChannel) {
-    Tcl_SetChannelOption(nullptr, stdoutChannel, "-translation", "lf");
-    Tcl_SetChannelOption(nullptr, stdoutChannel, "-buffering", "none");
-    Tcl_RegisterChannel(interp_, stdoutChannel);  // per man page: some tcl bug
-    Tcl_SetStdChannel(stdoutChannel, TCL_STDOUT);
+  Tcl_Channel stdout_channel = Tcl_CreateChannel(
+      &stdout_channel_type_, "stdout", (ClientData) this, TCL_WRITABLE);
+  if (stdout_channel) {
+    Tcl_SetChannelOption(nullptr, stdout_channel, "-translation", "lf");
+    Tcl_SetChannelOption(nullptr, stdout_channel, "-buffering", "none");
+    Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
+    Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
   }
 
   pauser_->setText("Running");
