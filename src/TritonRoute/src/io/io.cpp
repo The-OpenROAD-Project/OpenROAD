@@ -697,12 +697,26 @@ void io::Parser::setNets(odb::dbBlock* block)
             width = (width) ? width : tech->name2layer[layerName]->getWidth();
             auto defaultBeginExt = width / 2;
             auto defaultEndExt = width / 2;
-            frEndStyle tmpBeginStyle(frcExtendEndStyle);
-            frEndStyle tmpEndStyle(frcExtendEndStyle);
+
+            frEndStyleEnum tmpBeginEnum;
+            if (box->getWireShapeType()==odb::dbWireShapeType::NONE) {
+              tmpBeginEnum = frcExtendEndStyle;
+            } else {
+              tmpBeginEnum = frcTruncateEndStyle;
+            }
+            frEndStyle tmpBeginStyle(tmpBeginEnum);
+            frEndStyleEnum tmpEndEnum;
+            if (box->getWireShapeType()==odb::dbWireShapeType::NONE) {
+              tmpEndEnum = frcExtendEndStyle;
+            } else {
+              tmpEndEnum = frcTruncateEndStyle;
+            }
+            frEndStyle tmpEndStyle(tmpEndEnum);
+
             frSegStyle tmpSegStyle;
             tmpSegStyle.setWidth(width);
-            tmpSegStyle.setBeginStyle(tmpBeginStyle, defaultBeginExt);
-            tmpSegStyle.setEndStyle(tmpEndStyle, defaultEndExt);
+            tmpSegStyle.setBeginStyle(tmpBeginStyle, tmpBeginEnum == frcExtendEndStyle ? defaultEndExt : 0);
+            tmpSegStyle.setEndStyle(tmpEndStyle, tmpEndEnum == frcExtendEndStyle ? defaultEndExt : 0);
             tmpP->setStyle(tmpSegStyle);
             netIn->addShape(std::move(tmpP));
           } else {
