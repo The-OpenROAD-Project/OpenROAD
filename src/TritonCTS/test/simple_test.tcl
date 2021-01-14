@@ -4,7 +4,8 @@ read_def "16sinks.def"
 
 create_clock -period 5 clk
 
-clock_tree_synthesis -lut_file "lut.txt" \
-                     -sol_list "sol_list.txt" \
-                     -root_buf CLKBUF_X3 \
+set_wire_rc -clock -layer metal3
+
+clock_tree_synthesis -root_buf CLKBUF_X3 \
+                     -buf_list CLKBUF_X3 \
                      -wire_unit 20 

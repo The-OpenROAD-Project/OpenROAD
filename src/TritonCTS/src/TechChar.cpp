@@ -128,95 +128,6 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
                 _actualMinInputCap);
 }
 
-void TechChar::parseLut(const std::string& file)
-{
-  _logger->info(CTS, 85, " Reading LUT file \"{}\"", file);
-  std::ifstream lutFile(file.c_str());
-
-  if (!lutFile.is_open()) {
-    _logger->error(CTS, 61, "Could not find LUT file.");
-  }
-
-  // First line of the LUT is a header with normalization values
-  if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance
-        >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-    _logger->error(CTS, 62, "Problem reading the LUT file.");
-  }
-
-  if (_options->getWireSegmentUnit() == 0) {
-    unsigned presetWireUnit = 0;
-    if (!(lutFile >> presetWireUnit)) {
-      _logger->error(CTS, 63, "Problem reading the LUT file.");
-    }
-    if (presetWireUnit == 0) {
-      _logger->error(CTS, 64, "Problem reading the LUT file.");
-    }
-    _options->setWireSegmentUnit(presetWireUnit);
-    setLenghthUnit(static_cast<unsigned>(presetWireUnit) / 2);
-  }
-
-  initLengthUnits();
-
-  _minSegmentLength = toInternalLengthUnit(_minSegmentLength);
-  _maxSegmentLength = toInternalLengthUnit(_maxSegmentLength);
-
-  reportCharacterizationBounds();
-  checkCharacterizationBounds();
-
-  std::string line;
-  std::getline(lutFile, line);  // Ignore first line
-  unsigned noSlewDegradationCount = 0;
-  _actualMinInputCap = std::numeric_limits<unsigned>::max();
-  while (std::getline(lutFile, line)) {
-    unsigned idx, delay;
-    double power;
-    unsigned length, load, outputSlew, inputCap, inputSlew;
-    bool isPureWire;
-
-    std::stringstream ss(line);
-    ss >> idx >> length >> load >> outputSlew >> power >> delay >> inputCap
-        >> inputSlew >> isPureWire;
-
-    length = toInternalLengthUnit(length);
-
-    _actualMinInputCap = std::min(inputCap, _actualMinInputCap);
-
-    if (isPureWire && outputSlew <= inputSlew) {
-      ++noSlewDegradationCount;
-      ++outputSlew;
-    }
-
-    WireSegment& segment = createWireSegment(
-        length, load, outputSlew, power, delay, inputCap, inputSlew);
-
-    if (!(isPureWire)) {
-      double bufferLocation;
-      while (ss >> bufferLocation) {
-        segment.addBuffer(bufferLocation);
-      }
-    }
-  }
-
-  if (noSlewDegradationCount > 0) {
-    _logger->warn(CTS, 44, "{} wires are pure wire and no slew degration.\n"
-                  "TritonCTS forced slew degradation on these wires.",
-                  noSlewDegradationCount);
-  }
-
-  _logger->info(CTS, 49, "    Num wire segments: {}",
-                _wireSegments.size());
-  _logger->info(CTS, 50, "    Num keys in characterization LUT: {}",
-                _keyToWireSegments.size());
-  _logger->info(CTS, 51, "    Actual min input cap: {}",
-                _actualMinInputCap);
-}
-
-void TechChar::parse(const std::string& lutFile, const std::string solListFile)
-{
-  parseLut(lutFile);
-  parseSolList(solListFile);
-}
-
 void TechChar::initLengthUnits()
 {
   _charLengthUnit = _options->getWireSegmentUnit();
@@ -267,38 +178,6 @@ inline WireSegment& TechChar::createWireSegment(uint8_t length,
   _keyToWireSegments[key].push_back(segmentIdx);
 
   return _wireSegments.back();
-}
-
-void TechChar::parseSolList(const std::string& file)
-{
-  _logger->info(CTS, 86, " Reading solution list file \"{}\".", file);
-  std::ifstream solFile(file.c_str());
-
-  if (!solFile.is_open()) {
-    _logger->error(CTS, 66, "Could not find sol_list file.");
-  }
-
-  unsigned solIdx = 0;
-  std::string line;
-
-  while (getline(solFile, line)) {
-    std::stringstream ss(line);
-    std::string token;
-    unsigned numBuffers = 0;
-    while (getline(ss, token, ',')) {
-      if (std::any_of(std::begin(token), std::end(token), ::isalpha)) {
-        _wireSegments[solIdx].addBufferMaster(token);
-        ++numBuffers;
-      }
-    }
-
-    // Sanity check
-    if (_wireSegments[solIdx].getNumBuffers() != numBuffers) {
-      _logger->error(CTS, 67, "Number of buffers does not match on solution.\n"
-                     "{} {}.", solIdx, numBuffers);
-    }
-    ++solIdx;
-  }
 }
 
 void TechChar::forEachWireSegment(

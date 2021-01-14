@@ -53,13 +53,7 @@ class CtsOptions
 
   void setBlockName(const std::string& blockName) { _blockName = blockName; }
   std::string getBlockName() const { return _blockName; }
-  void setLutFile(const std::string& lutFile) { _lutFile = lutFile; }
-  std::string getLutFile() const { return _lutFile; }
-  void setSolListFile(const std::string& solListFile)
-  {
-    _solListFile = solListFile;
-  }
-  std::string getSolListFile() const { return _solListFile; }
+
   void setClockNets(const std::string& clockNets) { _clockNets = clockNets; }
   std::string getClockNets() const { return _clockNets; }
   void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
@@ -78,10 +72,6 @@ class CtsOptions
   unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
   void setPlotSolution(bool plot) { _plotSolution = plot; }
   bool getPlotSolution() const { return _plotSolution; }
-  void setAutoLut(bool enable) { _autoLutEnable = enable; }
-  bool runAutoLut() const { return _autoLutEnable; }
-  void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; }
-  bool getOnlyCharacterization() const { return _onlyCharacterization; }
   void setSimpleCts(bool enable) { _simpleCts = enable; }
   bool getSimpleCts() const { return _simpleCts; }
   void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
@@ -191,8 +181,6 @@ class CtsOptions
 
  private:
   std::string _blockName = "";
-  std::string _lutFile = "";
-  std::string _solListFile = "";
   std::string _outputPath = "";
   std::string _clockNets = "";
   std::string _rootBuffer = "";
@@ -202,10 +190,8 @@ class CtsOptions
   DBU _dbUnits = -1;
   unsigned _wireSegmentUnit = 0;
   bool _plotSolution = false;
-  bool _onlyCharacterization = false;
   bool _simpleCts = false;
   bool _sinkClusteringEnable = false;
-  bool _autoLutEnable = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
   double _vertexBufDistance = 240;
