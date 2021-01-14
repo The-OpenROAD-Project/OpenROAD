@@ -774,7 +774,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         logger->error(utl::DRT, 111, "unsupported PIN USE in db");
         break;
     }
-<<<<<<< HEAD
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
     switch (term->getIoType().getValue()) {
       case odb::dbIoType::INPUT:
@@ -789,51 +788,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       case odb::dbIoType::FEEDTHRU:
         termDirection = frTermDirectionEnum::FEEDTHRU;
         break;
-=======
-  }
-  if (termDirection == frTermDirectionEnum::UNKNOWN) {
-    cout << "Warning: DEF " << term->pinName() << " has no direction\n";
-  }
-
-  io::Parser* parser = (io::Parser*) data;
-
-  // We allow multi-pin ports on power/gnd as we don't
-  // route to them
-  if(term->hasPort() && term->numPorts() > 1
-     && termType != frTermEnum::frcPowerTerm
-     && termType != frTermEnum::frcGroundTerm){
-    cout <<"Error: multiple pin port " << term->pinName()
-         << " in DEF is not supported" <<endl;
-    exit(1);
-  }
-
-  bool hasPort = term->hasPort();
-
-  LefDefParser::defiPinPort* port = (hasPort)? term->pinPort(0) : NULL;
-  int numLayer = (hasPort)? port->numLayer() : term->numLayer();
-  int numPolygon = (hasPort)? port->numPolygons() : term->numPolygons();
-
-  // term
-  auto uTermIn = make_unique<frTerm>(term->pinName());
-  auto termIn = uTermIn.get();
-  termIn->setId(parser->numTerms);
-  parser->numTerms++;
-  termIn->setType(termType);
-  termIn->setDirection(termDirection);
-  // term should add pin
-  // pin
-  auto pinIn  = make_unique<frPin>();
-  pinIn->setId(0);
-  for (int i = 0; i < numLayer; ++i) {
-
-    string layer = (hasPort)? port->layer(i) : term->layer(i);
-    if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-      if (VERBOSE > -1) {
-        cout <<"Error: unsupported layer: " <<layer <<endl;
-      }
-      //continue;
-      exit(1);
->>>>>>> origin/openroad
     }
     auto uTermIn = make_unique<frTerm>(term->getName());
     auto termIn = uTermIn.get();
