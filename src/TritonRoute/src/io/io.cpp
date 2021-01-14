@@ -40,6 +40,7 @@
 #include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
+#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -972,13 +973,8 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
 
   io::Parser* parser = (io::Parser*) data;
 
-  // We allow multi-pin ports on power/gnd as we don't
-  // route to them
-  if(term->hasPort() && term->numPorts() > 1
-     && termType != frTermEnum::frcPowerTerm
-     && termType != frTermEnum::frcGroundTerm){
-    cout <<"Error: multiple pin port " << term->pinName()
-         << " in DEF is not supported" <<endl;
+  if(term->hasPort() && term->numPorts() > 1){
+    cout <<"Error: multiple pin ports existing in DEF" <<endl;
     exit(1);
   }
 
@@ -4903,7 +4899,7 @@ void io::Parser::readLef() {
   FILE* f;
   int res;
 
-  lefrInitSession(0);
+  lefrInitSession(1);
 
   lefrSetUserData ((lefiUserData)this);
 
@@ -4958,7 +4954,9 @@ void io::Parser::readLefDef() {
   //tech->printAllConstraints();
   
   if (enableOutput) {
+    //design->printAllMacros();
     // printAllLayers();
+    //tech->printAllVias();
     //printLayerMaps();
   }
 
@@ -4987,7 +4985,10 @@ void io::Parser::readLefDef() {
   //cout <<flush;
 
   if (enableOutput) {
+    //tech->printAllVias();
+    //design->printAllComps();
     //printCompMaps();
+    //design->printAllTerms();
     //printTermMaps();
     //printAllNets();
     //printAllTrackGens();
@@ -5473,7 +5474,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
-      logger->error(DRT,
+      logger->error(ord::ToolId::DRT,
                     1,
                     "techlayers for via {} not found in db tech",
                     via->getName());
@@ -5584,7 +5585,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           }
           default: {
             _wire_encoder.clear();
-            logger->error(DRT,
+            logger->error(ord::ToolId::DRT,
                           2,
                           "unknown connfig type while writing net {}",
                           net->getName());
@@ -5599,12 +5600,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(DRT, 3, "please load design first");
+    logger->error(ord::DRT, 3, "please load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(DRT, 4, "please load design first");
+    logger->error(ord::DRT, 4, "please load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);

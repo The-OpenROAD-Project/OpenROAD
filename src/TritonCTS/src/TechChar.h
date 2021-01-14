@@ -52,13 +52,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace utl {
-class Logger;
-} // namespace utl
-
 namespace cts {
-
-using utl::Logger;
 
 class WireSegment
 {
@@ -181,7 +175,7 @@ class TechChar
   };
 
  public:
-  TechChar(CtsOptions* options, Logger* logger) : _options(options), _logger(logger) {}
+  TechChar(CtsOptions* options) : _options(options) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
@@ -232,8 +226,6 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
-  utl::Logger* getLogger() { return _options->getLogger(); }
-
  protected:
   void parseLut(const std::string& file);
   void parseSolList(const std::string& file);
@@ -283,7 +275,6 @@ class TechChar
                                 unsigned* min,
                                 unsigned* max);
 
-  Logger* _logger;
   sta::dbSta* _openSta = nullptr;
   odb::dbDatabase* _db = nullptr;
   sta::dbSta* _openStaChar = nullptr;

@@ -46,7 +46,7 @@ namespace odb {
 class dbDatabase;
 }
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -76,7 +76,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   virtual void postReadDb(odb::dbDatabase* db) override;
 
   // Capture logger messages into the script widget output
-  void setLogger(utl::Logger* logger);
+  void setLogger(ord::Logger* logger);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets

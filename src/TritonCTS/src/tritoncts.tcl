@@ -57,7 +57,7 @@ proc configure_cts_characterization { args } {
     cts::set_res_per_sqr $sqr_res
   } else {
     #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-    ord::error CTS 52 "Missing argument -sqr_cap and/or -sqr_res"
+    ord::error "Missing argument -sqr_cap and/or -sqr_res"
   }
 
   if { [info exists keys(-max_cap)] } {
@@ -152,7 +152,7 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-lut_file)] } {
     if { ![info exists keys(-sol_list)] } {
-      ord::error CTS 53 "Missing argument -sol_list"
+      ord::error "Missing argument -sol_list"
     }
 	  set lut $keys(-lut_file)
     cts::set_lut_file $lut 
@@ -161,7 +161,7 @@ proc clock_tree_synthesis { args } {
  
   if { [info exists keys(-sol_list)] } {
     if { ![info exists keys(-lut_file)] } {
-      ord::error CTS 54 "Missing argument -lut_file"
+      ord::error "Missing argument -lut_file"
     }
 	  set sol_list $keys(-sol_list)
     cts::set_sol_list_file $sol_list
@@ -174,7 +174,7 @@ proc clock_tree_synthesis { args } {
   } else {
     if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
       #User must either input a lut file or the buffer list.
-      ord::error CTS 55 "Missing argument -buf_list or -lut_file / -sol_list"
+      ord::error "Missing argument -buf_list or -lut_file / -sol_list"
     }
   }
 
@@ -187,7 +187,7 @@ proc clock_tree_synthesis { args } {
     set clk_nets $keys(-clk_nets)
     set fail [cts::set_clock_nets $clk_nets]
     if {$fail} {
-      ord::error CTS 56 "Error when finding -clk_nets in DB!"
+      ord::error "Error when finding -clk_nets in DB!"
     }
   }
 
@@ -209,7 +209,7 @@ proc clock_tree_synthesis { args } {
       cts::set_root_buffer $root_buf
     } else {
       #User must enter at least one of -root_buf or -buf_list.
-      ord::error CTS 57 "Missing argument -root_buf"
+      ord::error "Missing argument -root_buf"
     }
   }
 

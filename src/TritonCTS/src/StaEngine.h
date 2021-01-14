@@ -54,7 +54,7 @@ class StaEngine
   StaEngine(CtsOptions* options) : _options(options){};
 
   void init();
-  void findClockRoots(utl::Logger* _logger);
+  void findClockRoots();
 
  private:
   sta::dbSta* _openSta = nullptr;

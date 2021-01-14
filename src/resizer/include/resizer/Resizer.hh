@@ -52,7 +52,7 @@ using std::array;
 using std::string;
 
 using ord::OpenRoad;
-using utl::Logger;
+using ord::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -98,7 +98,6 @@ using sta::Pvt;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
-using sta::GateTimingModel;
 
 class BufferedNet;
 
@@ -265,12 +264,6 @@ protected:
                        TimingArc *arc,
                        Slew in_slew,
                        Slew out_slew);
-  Slew gateSlewDiff(LibertyCell *cell,
-                    TimingArc *arc,
-                    GateTimingModel *model,
-                    Slew in_slew,
-                    float load_cap,
-                    Slew out_slew);
   void findBufferTargetSlews(LibertyLibrarySeq *resize_libs);
   void findBufferTargetSlews(LibertyLibrary *library,
                              // Return values.

@@ -1377,8 +1377,8 @@ COMPONENTS 1273 ;
     - clkbuf_2_1_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 242880 333000 ) N ;
     - clkbuf_2_2_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 407040 266400 ) N ;
     - clkbuf_2_3_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 404160 333000 ) N ;
-    - ANTENNA_0 sky130_fd_sc_hs__diode_2 + PLACED ( 325440 299700 ) FS ;
-    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 391680 299700 ) FS ;
+    - ANTENNA_0 sky130_fd_sc_hs__diode_2 + PLACED ( 327360 299700 ) FS ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 393600 299700 ) FS ;
 END COMPONENTS
 PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL

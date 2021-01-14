@@ -92,7 +92,6 @@ class Fixture
   void initRegionQuery();
 
   // Public data members are accessible from inside the test function
-  std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<fr::frDesign> design;
 };
 

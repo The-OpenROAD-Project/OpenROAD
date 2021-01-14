@@ -41,16 +41,80 @@
 #include <map>
 #include <queue>
 #include <string>
-#include "utility/Logger.h"
 
 namespace PD {
 
+using std::cout;
+using std::endl;
 using std::map;
 using std::max;
 using std::min;
+using std::ostream;
 using std::queue;
 using std::swap;
-using utl::GRT;
+
+ostream& operator<<(ostream& os, Node& n)
+{
+  cout << n.idx << "(" << n.x << ", " << n.y << ") "
+       << " parent: " << n.parent << " children: ";
+  for (unsigned i = 0; i < n.children.size(); ++i) {
+    cout << n.children[i] << " ";
+  }
+  cout << " N: ";
+  for (unsigned i = 0; i < n.N.size(); ++i) {
+    cout << n.N[i] << " ";
+  }
+  cout << " S: ";
+  for (unsigned i = 0; i < n.S.size(); ++i) {
+    cout << n.S[i] << " ";
+  }
+  cout << " E: ";
+  for (unsigned i = 0; i < n.E.size(); ++i) {
+    cout << n.E[i] << " ";
+  }
+  cout << " W: ";
+  for (unsigned i = 0; i < n.W.size(); ++i) {
+    cout << n.W[i] << " ";
+  }
+  cout << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
+  return os;
+}
+
+ostream& operator<<(ostream& os, Edge& n)
+{
+  cout << n.idx << "(" << n.head << ", " << n.tail
+       << ") edgeShape: " << n.best_shape;
+  cout << "  Steiner: ";
+  for (unsigned i = 0; i < n.STNodes.size(); ++i) {
+    cout << " (" << n.STNodes[i].x << " " << n.STNodes[i].y << ") Child: ";
+    for (unsigned j = 0; j < n.STNodes[i].sp_chil.size(); ++j) {
+      cout << n.STNodes[i].sp_chil[j] << " ";
+    }
+    cout << "/";
+  }
+  if (n.best_shape == 0) {
+    for (unsigned i = 0; i < n.lower_sps_to_be_added_x.size(); ++i) {
+      cout << " (" << n.lower_sps_to_be_added_x[i].x << " "
+           << n.lower_sps_to_be_added_x[i].y << ") Child: ";
+      for (unsigned j = 0; j < n.lower_sps_to_be_added_x[i].sp_chil.size();
+           ++j) {
+        cout << n.lower_sps_to_be_added_x[i].sp_chil[j] << " ";
+      }
+      cout << "/";
+    }
+  } else {
+    for (unsigned i = 0; i < n.upper_sps_to_be_added_x.size(); ++i) {
+      cout << " (" << n.upper_sps_to_be_added_x[i].x << " "
+           << n.upper_sps_to_be_added_x[i].y << ") Child: ";
+      for (unsigned j = 0; j < n.upper_sps_to_be_added_x[i].sp_chil.size();
+           ++j) {
+        cout << n.upper_sps_to_be_added_x[i].sp_chil[j] << " ";
+      }
+      cout << "/";
+    }
+  }
+  return os;
+}
 
 Graph::Graph(unsigned _num_terminals,
              unsigned _verbose,
@@ -64,8 +128,7 @@ Graph::Graph(unsigned _num_terminals,
              unsigned _seed,
              unsigned _distance,
              vector<unsigned>& x,
-             vector<unsigned>& y,
-             Logger* logger)
+             vector<unsigned>& y)
 {
   verbose = _verbose;
   num_terminals = x.size();
@@ -80,7 +143,6 @@ Graph::Graph(unsigned _num_terminals,
   alpha2 = _alpha2;
   beta = _beta;
   distance = _distance;
-  _logger = logger;
 
   M = (1 + beta * (1 - alpha2))
       / pow((num_terminals - 1), (beta * (1 - alpha2)));
@@ -118,10 +180,11 @@ Graph::Graph(unsigned _num_terminals,
   orig_num_terminals = nodes.size();
   aux.resize(num_terminals);
 
-  
-  debugPrint(_logger, GRT, "fastroute", 3, "-- Node locations --");
-  for (unsigned i = 0; i < nodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3, "   {}", nodes[i]);
+  if (verbose > 2) {
+    cout << "-- Node locations --" << endl;
+    for (unsigned i = 0; i < nodes.size(); ++i) {
+      cout << "  " << nodes[i] << endl;
+    }
   }
 }
 
@@ -387,44 +450,35 @@ void Graph::UpdateMaxPLToChild(int cIdx)
 
 void Graph::PrintInfo()
 {
-  std::string dagRpt = "  Dag:";
+  cout << "  Dag:";
   for (unsigned i = 0; i < dag.size(); ++i) {
-    dagRpt = dagRpt + " " + std::to_string(i);
+    cout << " " << i;
   }
-  
-  debugPrint(_logger, GRT, "fastroute", 3, "{}", dagRpt);
-
-  std::string nnRpt = "  NN:\n";
+  cout << endl;
+  cout << "  NN:" << endl;
   for (unsigned i = 0; i < nn.size(); ++i) {
-    nnRpt = nnRpt + "     " + std::to_string(i) + " -- ";
+    cout << "     " << i << " -- ";
     for (unsigned j = 0; j < nn[i].size(); ++j) {
-      nnRpt = nnRpt + std::to_string(nn[i][j]) + " ";
+      cout << nn[i][j] << " ";
     }
-    nnRpt = nnRpt + "\n";
+    cout << endl;
   }
-
-  debugPrint(_logger, GRT, "fastroute", 3, "{}", nnRpt);
-
-  debugPrint(_logger, GRT, "fastroute", 3, "  maxPL: {}", maxPL);
-
-  std::string dist = "  Manhattan distance:\n";
+  cout << "  maxPL: " << maxPL << endl;
+  cout << "  Manhattan distance:" << endl;
   for (unsigned i = 0; i < ManhDist.size(); ++i) {
-    dist = dist +  "    ";
+    cout << "    ";
     for (unsigned j = 0; j < ManhDist[i].size(); ++j) {
-      dist = dist + std::to_string(ManhDist[i][j]) + " ";
+      cout << ManhDist[i][j] << " ";
     }
+    cout << endl;
   }
-
-  debugPrint(_logger, GRT, "fastroute", 3, "{}", dist);
-
-  debugPrint(_logger, GRT, "fastroute", 3, "  Node Info: ");
+  cout << "  Node Info: " << endl;
   for (unsigned i = 0; i < dag.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3, "    {}", nodes[dag[i]]);
+    cout << "    " << nodes[dag[i]] << endl;
   }
-
-  debugPrint(_logger, GRT, "fastroute", 3, "  Edge Info: ");
+  cout << "  Edge Info: " << endl;
   for (unsigned i = 0; i < dag.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3, "    {}", edges[dag[i]]);
+    cout << "    " << edges[dag[i]] << endl;
   }
 }
 
@@ -449,19 +503,22 @@ bool Graph::IsOnEdge(Node& tNode, int idx)
   int maxY = max(cNode.y, pNode.y);
   int minY = min(cNode.y, pNode.y);
 
-  debugPrint(_logger, GRT, "fastroute", 3, "cNode: {}", cNode);
-  debugPrint(_logger, GRT, "fastroute", 3, "pNode: {}", pNode);
-
+  if (verbose > 3) {
+    cout << "cNode: " << cNode << endl;
+    cout << "pNode: " << pNode << endl;
+  }
   if (edges[idx].best_shape == 0) {
     if (((pNode.x == tNode.x && (tNode.y <= maxY && tNode.y >= minY))
          || ((cNode.y == tNode.y) && (tNode.x <= maxX && tNode.x >= minX)))) {
-      debugPrint(_logger, GRT, "fastroute", 3, "True");
+      if (verbose > 3)
+        cout << "True" << endl;
       return true;
     }
   } else {
     if (((cNode.x == tNode.x && (tNode.y <= maxY && tNode.y >= minY))
          || ((pNode.y == tNode.y) && (tNode.x <= maxX && tNode.x >= minX)))) {
-      debugPrint(_logger, GRT, "fastroute", 3, "True");
+      if (verbose > 3)
+        cout << "True" << endl;
       return true;
     }
   }
@@ -473,7 +530,8 @@ void Graph::GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes)
 {
   int pIdx = nodes[cIdx].parent;
   Node corner1 = GetCornerNode(cIdx);
-  debugPrint(_logger, GRT, "fastroute", 3, "{} corner 1: {}", cIdx, corner1);
+  if (verbose > 3)
+    cout << cIdx << " corner1: " << corner1 << endl;
   if (IsOnEdge(corner1, nIdx)
       && (corner1.x != nodes[cIdx].x || corner1.y != nodes[cIdx].y)
       && (corner1.x != nodes[pIdx].x || corner1.y != nodes[pIdx].y)) {
@@ -483,7 +541,8 @@ void Graph::GetSteiner(int cIdx, int nIdx, vector<Node>& STNodes)
     STNodes.push_back(corner1);
   }
   Node corner2 = GetCornerNode(nIdx);
-  debugPrint(_logger, GRT, "fastroute", 3, "{} corner2: {}", nIdx, corner2);
+  if (verbose > 3)
+    cout << nIdx << " corner2: " << corner2 << endl;
   if (IsOnEdge(corner2, cIdx)
       && (corner1.x != corner2.x || corner1.y != corner2.y)
       && (corner2.x != nodes[cIdx].x || corner2.y != nodes[cIdx].y)
@@ -549,15 +608,17 @@ void Graph::DupRemoval(vector<Node>& STNodes)
 
 void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "cur fSTNode size: {}", fSTNodes.size());
-
+  if (verbose > 3) {
+    cout << "cur fSTNode size: " << fSTNodes.size() << endl;
+  }
   int cIdx = dag[idx];
   vector<Node> STNodes;
   for (unsigned i = idx + 1; i < dag.size(); ++i) {
     int nIdx = dag[i];
-    debugPrint(_logger, GRT, "fastroute", 3,
-              "dag.size: {} i = {} nIdx: {}", dag.size(), i, nIdx)
+    if (verbose > 3) {
+      cout << "dag.size: " << dag.size() << " i = " << i << " nIdx: " << nIdx
+           << endl;
+    }
     if (IsParent(nodes[cIdx].parent, nIdx)) {
       GetSteiner(cIdx, nIdx, STNodes);
     }
@@ -567,28 +628,28 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
     STNodes.push_back(fSTNodes[i]);
   }
 
-  for (unsigned i = 0; i < STNodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Before dupRemoval STNodes: {}", STNodes[i]);
-    
-    std::string childRpt = " Child: ";
-    for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
-      childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
+  if (verbose > 3) {
+    for (unsigned i = 0; i < STNodes.size(); ++i) {
+      cout << "Before dupRemoval STNodes: " << STNodes[i] << endl;
+      cout << " Child: ";
+      for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
+        cout << STNodes[i].sp_chil[j] << " ";
+      }
+      cout << endl;
     }
-    debugPrint(_logger, GRT, "fastroute", 3, "{}", childRpt);
   }
-
   // post-processing
   DupRemoval(STNodes);
 
-  for (unsigned i = 0; i < STNodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "After dupRemoval STNodes: {}", STNodes[i]);
-    std::string childRpt = " Child: ";
-    for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
-      childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
+  if (verbose > 3) {
+    for (unsigned i = 0; i < STNodes.size(); ++i) {
+      cout << "After dupRemoval STNodes: " << STNodes[i] << endl;
+      cout << " Child: ";
+      for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
+        cout << STNodes[i].sp_chil[j] << " ";
+      }
+      cout << endl;
     }
-    debugPrint(_logger, GRT, "fastroute", 3, "{}", childRpt);
   }
 
   fSTNodes.clear();
@@ -711,8 +772,8 @@ void Graph::UpdateSteinerNodes()
     Edge& e = edges[cIdx];
     e.STNodes.clear();
     if (cIdx != 0) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "cIdx = {}", cIdx);
+      if (verbose > 3)
+        cout << "cIdx = " << cIdx << endl;
       GetSteinerNodes(i, fSTNodes);
     }
   }
@@ -863,8 +924,9 @@ void Graph::RemoveUnneceSTNodes()
 
   map<int, int> idxMap;
   for (unsigned i = 0; i < nodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "idxMap {} {}", i, nodes[i].idx);
+    if (verbose > 3) {
+      cout << "idxMap " << i << " " << nodes[i].idx << endl;
+    }
     idxMap[nodes[i].idx] = i;
   }
   for (unsigned i = 0; i < nodes.size(); ++i) {
@@ -873,8 +935,9 @@ void Graph::RemoveUnneceSTNodes()
       removeChild(nodes[i], toBeRemoved[j]);
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "before cN: {}", cN);
+    if (verbose > 3) {
+      cout << "before cN: " << cN << endl;
+    }
     sort(cN.children.begin(), cN.children.end());
     for (unsigned j = 0; j < cN.children.size(); ++j) {
       if (cN.children[j] != idxMap[cN.children[j]])
@@ -885,8 +948,9 @@ void Graph::RemoveUnneceSTNodes()
     edges[i].tail = i;
     edges[i].head = idxMap[edges[i].head];
     edges[i].idx = i;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "after cN: {}", cN);
+    if (verbose > 3) {
+      cout << "after cN: " << cN << endl;
+    }
   }
 }
 
@@ -948,7 +1012,8 @@ int Graph::IdentLoc(int pIdx, int cIdx)
     } else if (pN.x < cN.x) {
       return 7;  // right of pN
     } else {
-      _logger->error(GRT, 119, "pN == cN ({})", pN);
+      if (verbose > 3)
+        cout << "Error!! - pN == cN" << endl;
       return 10;
     }
   }
@@ -1172,6 +1237,7 @@ int Graph::DeltaN(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.N;
+  // cout << "N nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1179,6 +1245,7 @@ int Graph::DeltaN(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].y;
       int delta = abs(rN.y - ref);
+      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1203,6 +1270,7 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.S;
+  // cout << "S nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1210,6 +1278,7 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].y;
       int delta = abs(rN.y - ref);
+      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1234,6 +1303,7 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.W;
+  // cout << "W nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1242,6 +1312,7 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].x;
       int delta = abs(rN.x - ref);
+      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1266,6 +1337,7 @@ int Graph::DeltaE(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.E;
+  // cout << "E nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1273,6 +1345,7 @@ int Graph::DeltaE(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].x;
       int delta = abs(rN.x - ref);
+      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1332,9 +1405,9 @@ bool Graph::IsSameDir(int cIdx, int nIdx)
 
 void Graph::AddNode(int cIdx, int pIdx, int eShape)
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "loc: {} eShape: {}", IdentLoc(pIdx, cIdx), eShape);
-
+  if (verbose > 3) {
+    cout << "loc: " << IdentLoc(pIdx, cIdx) << " eShape: " << eShape << endl;
+  }
   if (!eShape) {
     switch (IdentLoc(pIdx, cIdx)) {
       case 0:
@@ -1459,13 +1532,11 @@ int Graph::ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape)
 {
   int WL = 0;
   int delta = 0;
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "loc: {}", IdentLoc(pIdx, cIdx));
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "pNode: {}", nodes[pIdx]);
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "cNode: {}", nodes[cIdx]);
-
+  if (verbose > 3) {
+    cout << "loc: " << IdentLoc(pIdx, cIdx) << endl;
+    cout << "pNode: " << nodes[pIdx] << endl;
+    cout << "cNode: " << nodes[cIdx] << endl;
+  }
   switch (IdentLoc(pIdx, cIdx)) {
     case 0:
       WL += !eShape ? DeltaS(pIdx, cIdx, isRemove)
@@ -1516,14 +1587,15 @@ int Graph::ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape)
 
 void Graph::refineSteiner2()
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Pre-refineSteiner() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Pre-refineSteiner() graph status: " << endl;
+    PrintInfo();
+  }
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cN: {}", cN);
+    if (verbose > 3)
+      cout << "cN: " << cN << endl;
     if (cN.idx == 0)
       continue;
 
@@ -1549,8 +1621,8 @@ void Graph::refineSteiner2()
       }
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cGain: {}", cGain);
+    if (verbose > 3)
+      cout << "cGain: " << cGain << endl;
     int newParent = cN.parent;
 
     vector<int> neighbors = nn[cN.idx];
@@ -1570,9 +1642,10 @@ void Graph::refineSteiner2()
     AddNode(cN.idx, newParent, edgeShape);
     edges[cN.idx].best_shape = edgeShape;
   }
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-refineSteiner() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Post-refineSteiner() graph status: " << endl;
+    PrintInfo();
+  }
 
   RemoveUnneceSTNodes();
 
@@ -1586,26 +1659,28 @@ void Graph::refineSteiner2()
 
   UpdateAllEdgesNSEW();
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Remove unnecessary Steiner nodes -- done");
-  PrintInfo();
-
+  if (verbose > 3) {
+    cout << "Remove unnecessary Steiner nodes -- done" << endl;
+    PrintInfo();
+  }
   UpdateSteinerNodes();
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-updateSteinerNodes() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Post-updateSteinerNodes() graph status: " << endl;
+    PrintInfo();
+  }
 }
 
 void Graph::refineSteiner()
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Pre-refineSteiner() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Pre-refineSteiner() graph status: " << endl;
+    PrintInfo();
+  }
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cN: {}", cN);
+    if (verbose > 3)
+      cout << "cN: " << cN << endl;
     if (cN.idx == 0)
       continue;
 
@@ -1631,8 +1706,8 @@ void Graph::refineSteiner()
       }
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cGain: {}", cGain);
+    if (verbose > 3)
+      cout << "cGain: " << cGain << endl;
     int newParent = cN.parent;
 
     vector<int> neighbors = nn[cN.idx];
@@ -1643,10 +1718,11 @@ void Graph::refineSteiner()
 
       int newPLToChildForParentCandi = 0;
       int newMaxPLCandi = 0;
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "nNode: {}", nNode);
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "IsSubTree: {}", IsSubTree(cN.idx, nNode.idx));
+      // cout << neighbors[j] << " " << newPL << endl;
+      if (verbose > 3) {
+        cout << "nNode: " << nNode << endl;
+        cout << "IsSubTree: " << IsSubTree(cN.idx, nNode.idx) << endl;
+      }
       // is this neighbor node in sub-tree rooted by Node cN
 
       if (IsSubTree(cN.idx, nNode.idx) == false) {
@@ -1662,16 +1738,18 @@ void Graph::refineSteiner()
           }
           newPLToChildForParentCandi
               = max(nNode.maxPLToChild, newMaxPLCandi - nNode.src_to_sink_dist);
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "Computed gain: {} {}", cGain, bestWLGain);
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "newMaxPLCandi: {} {}",
-                     newMaxPLCandi, maxPL * PLmargin);
+          if (verbose > 3) {
+            cout << "Computed gain: " << cGain << " " << bestWLGain << endl;
+            cout << "newMaxPLCandi: " << newMaxPLCandi << " "
+                 << maxPL * PLmargin << endl;
+          }
           if (cGain < bestWLGain && newMaxPLCandi < maxPL * PLmargin) {
-            debugPrint(_logger, GRT, "fastroute", 3,
-                       "new best pain: {} edgeShape: {} newParent: {} "
-                       "newMaxPL: {} newPLToChild: {}",
-                       cGain, i, nNode.idx, newMaxPLCandi, newPLToChildForParentCandi);
+            if (verbose > 3) {
+              cout << "new best gain: " << cGain << " edgeShape: " << i
+                   << " newParent: " << nNode.idx
+                   << " newMaxPL: " << newMaxPLCandi
+                   << " newPLToChild: " << newPLToChildForParentCandi << endl;
+            }
             bestWLGain = cGain;
             edgeShape = i;
             newParent = nNode.idx;
@@ -1695,9 +1773,10 @@ void Graph::refineSteiner()
     AddNode(cN.idx, newParent, edgeShape);
     edges[cN.idx].best_shape = edgeShape;
   }
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-refineSteiner() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Post-refineSteiner() graph status: " << endl;
+    PrintInfo();
+  }
 
   RemoveUnneceSTNodes();
 
@@ -1711,14 +1790,15 @@ void Graph::refineSteiner()
 
   UpdateAllEdgesNSEW();
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Remove unnecessary Steiner nodes -- done");
-  PrintInfo();
-
+  if (verbose > 3) {
+    cout << "Remove unnecessary Steiner nodes -- done" << endl;
+    PrintInfo();
+  }
   UpdateSteinerNodes();
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-updateSteinerNodes() graph status: ");
-  PrintInfo();
+  if (verbose > 3) {
+    cout << "Post-updateSteinerNodes() graph status: " << endl;
+    PrintInfo();
+  }
 }
 
 /***************************************************************************/
@@ -1772,6 +1852,10 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   for (unsigned i = 0; i < num_terms; ++i) {
     sorted[i] = tmp[i].idx;
   }
+  cout << "Sorted: ";
+  for (unsigned abc = 0; abc < sorted.size(); abc++)
+    cout << sorted[abc] << " ";
+  cout << endl;
 
   unsigned idx = 0;
   for (unsigned abc = 0; abc < sorted.size(); abc++)
@@ -1786,6 +1870,7 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   // Note: nNode.y <= cNode.y
   for (unsigned i = 0; i < idx; ++i) {
     Node& nNode = nodes[sorted[i]];
+    // cout << "1 " << nNode << endl;
     if (urlx[nNode.idx] == cNode.x) {
       nn[nNode.idx].push_back(cNode.idx);
       urux[nNode.idx] = cNode.x;
@@ -1805,6 +1890,7 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   // Note: nNode.y <= cNode.y
   for (int i = idx - 1; i >= 0; --i) {
     Node& nNode = nodes[sorted[i]];
+    // cout << "2 " << nNode << endl;
     if (lrlx[cNode.idx] == nNode.x) {
       nn[cNode.idx].push_back(nNode.idx);
       lrux[cNode.idx] = nNode.x;
@@ -1821,14 +1907,13 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   }
 
   // print neighbors
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Print neighbors");
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "{}th node {}", node_idx, nodes[node_idx]);
+  if (verbose > 2) {
+    cout << "Print neighbors" << endl;
+    cout << node_idx << "th node " << nodes[node_idx] << endl;
     for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 " {} {}", nn[node_idx][j], nodes[nn[node_idx][j]]);
+      cout << " " << nn[node_idx][j] << " " << nodes[nn[node_idx][j]] << endl;
     }
+  }
 
   tmp.clear();
   sorted.clear();
@@ -1872,8 +1957,8 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
 
   // collect neighbor
   for (unsigned idx = 0; idx < num_terms; ++idx) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "sorted idx: {}", sorted[idx]);
+    if (verbose > 2)
+      cout << "sorted idx: " << sorted[idx] << endl;
     Node& cNode = nodes[sorted[idx]];
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
@@ -1884,33 +1969,33 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
         urux[nNode.idx] = cNode.x;
         ullx[nNode.idx] = cNode.x;
       } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "right for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx], nNode.idx);
+        if (verbose > 2)
+          cout << "right for nNode cNode idx: " << sorted[idx]
+               << " nNode idx: " << nNode.idx << endl;
         ;
         // right
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added to nNode right: {}", sorted[idx]);
+        if (verbose > 2)
+          cout << "added to nNode right: " << sorted[idx] << endl;
       } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "left for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx], nNode.idx);
+        if (verbose > 2)
+          cout << "left for nNode cNode idx: " << sorted[idx]
+               << " nNode idx: " << nNode.idx << endl;
         ;
         if (idx == num_terms - 1) {
           // left
           nn[nNode.idx].push_back(cNode.idx);
           ullx[nNode.idx] = cNode.x;
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "added to nNode left: {}", sorted[idx]);
+          if (verbose > 2)
+            cout << "added to nNode left: " << sorted[idx] << endl;
         } else {
           if (nodes[sorted[idx + 1]].y != cNode.y
               || nodes[sorted[idx + 1]].x > nNode.x) {
             nn[nNode.idx].push_back(cNode.idx);
             ullx[nNode.idx] = cNode.x;
-            debugPrint(_logger, GRT, "fastroute", 3,
-                       "added to nNode left: {}", sorted[idx]);
+            if (verbose > 2)
+              cout << "added to nNode left: " << sorted[idx] << endl;
           }
         }
       }
@@ -1937,18 +2022,18 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
         lllx[cNode.idx] = nNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode center: {}", nNode.idx);
+        if (verbose > 2)
+          cout << "added cNode center: " << nNode.idx << endl;
       } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
         // right
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode right: {}", nNode.idx);
+        if (verbose > 2)
+          cout << "added cNode right: " << nNode.idx << endl;
       } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
         // left
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode left: {}", nNode.idx);
+        if (verbose > 2)
+          cout << "added cNode left: " << nNode.idx << endl;
         nn[cNode.idx].push_back(nNode.idx);
         lllx[cNode.idx] = nNode.x;
         if (cNode.y == nNode.y) {
@@ -1967,14 +2052,13 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
     }
   }
   // print neighbors
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Print neighbors");
-  for (unsigned i = 0; i < num_terms; ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "{}th node {}", i, nodes[i]);
-    for (unsigned j = 0; j < nn[i].size(); ++j) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "    {} {}", nn[i][j], nodes[nn[i][j]]);
+  if (verbose > 2) {
+    cout << "Print neighbors" << endl;
+    for (unsigned i = 0; i < num_terms; ++i) {
+      cout << i << "th node " << nodes[i] << endl;
+      for (unsigned j = 0; j < nn[i].size(); ++j) {
+        cout << "    " << nn[i][j] << " " << nodes[nn[i][j]] << endl;
+      }
     }
   }
 
@@ -2135,13 +2219,13 @@ void Graph::NESW_NearestNeighbors(int left, int right, unsigned oct)
     NESW_NearestNeighbors(mid, right, oct);
     NESW_Combine(left, mid, right, oct);
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "{} {} {} {}", oct, left, mid, right);
-    std::string numTermRpt;
-    for (unsigned i = 0; i < num_terminals; ++i) {
-      numTermRpt = numTermRpt + "  " + std::to_string(nn[i][oct]);
+    if (verbose > 2) {
+      cout << oct << " " << left << " " << mid << " " << right << endl;
+      for (unsigned i = 0; i < num_terminals; ++i) {
+        cout << "  " << nn[i][oct];
+      }
+      cout << endl;
     }
-    debugPrint(_logger, GRT, "fastroute", 3, "{}", numTermRpt);
   }
 }
 
@@ -2157,16 +2241,18 @@ void Graph::heap_insert(int p, unsigned key)
     heap_size = 1;
     heap_elt[1] = p;
     heap_idx[p] = 1;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "    heap_elt[1]= {}  heap_idx[p]= {}",
-               heap_elt[1], heap_idx[p]);
+    if (verbose > 3) {
+      cout << "    heap_elt[1]= " << heap_elt[1]
+           << "  heap_idx[p]= " << heap_idx[p] << endl;
+    }
   } else {
     k = ++heap_size;
     j = k >> 1; /* k/2 */
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "    k= {} j= {}  heap_elt[j]= {}  heap_key[q]= {}",
-               k, j, heap_elt[j], heap_key[heap_elt[j]]);
+    if (verbose > 3) {
+      cout << "    k= " << k << " j= " << j << "  heap_elt[j]= " << heap_elt[j]
+           << "  heap_key[q]= " << heap_key[heap_elt[j]] << endl;
+    }
 
     q = heap_elt[j];
     while ((j > 0) && (heap_key[q] > key)) {
@@ -2176,9 +2262,11 @@ void Graph::heap_insert(int p, unsigned key)
       j = k >> 1; /* k/2 */
       q = heap_elt[j];
 
-      debugPrint(_logger, GRT, "fastroute", 3,
-               "    k= {} j= {}  heap_elt[j]= {}  heap_key[q]= {}",
-               k, j, heap_elt[j], heap_key[heap_elt[j]]);
+      if (verbose > 3) {
+        cout << "    k= " << k << " j= " << j
+             << "  heap_elt[j]= " << heap_elt[j]
+             << "  heap_key[q]= " << heap_key[heap_elt[j]] << endl;
+      }
     }
 
     /* store p in the position of the hole */
@@ -2194,6 +2282,7 @@ unsigned Graph::heap_delete_min()
   unsigned j;     /* child of the hole    */
   unsigned l_key; /* key of last point    */
 
+  // cout << "heap size = " << heap_size << endl;
   if (heap_size == 0) /* heap is empty */
     return (-1);
 
@@ -2216,13 +2305,15 @@ unsigned Graph::heap_delete_min()
     k = j;
     j = k << 1;
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "    k= {} j= {}  heap_size= {}", k, j, heap_size);
+    if (verbose > 3) {
+      cout << "    k= " << k << " j= " << j << "  heap_size= " << heap_size
+           << endl;
+    }
   }
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "    k= {} last= {}  min= {}", k, last, min);
-
+  if (verbose > 3) {
+    cout << "    k= " << k << " last= " << last << "  min= " << min << endl;
+  }
   heap_elt[k] = last;
   heap_idx[last] = k;
 
@@ -2285,10 +2376,10 @@ void Graph::print_tree()
   for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     unsigned child = j;
     unsigned par = nodes[j].parent;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Node {}\t({} , {})\tparent[{}]= {} Level= {}",
-               child, nodes[child].x, nodes[child].y, child,
-               par, nodes[child].level);
+    cout << "Node " << child << "\t(" << nodes[child].x << " , "
+         << nodes[child].y << ")"
+         << "\tparent[" << child << "]= " << par
+         << " Level=" << nodes[child].level << endl;
   }
 }
 
@@ -2298,7 +2389,8 @@ void Graph::print_tree_v2(ofstream& ofs)
   for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     unsigned child = j;
     unsigned par = nodes[j].parent;
-    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " " << par;
+    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " " << par
+        << endl;
   }
 }
 
@@ -2321,8 +2413,9 @@ unsigned Graph::calc_tree_pl()
     unsigned child = j;
     unsigned par = nodes[j].parent;
     while (par != child) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Child = {} ; SV Par = {}", child, par);
+      if (verbose > 2) {
+        cout << "Child = " << child << " ; SV Par = " << par << endl;
+      }
       nodes[child].cost_edgeToP = dist(nodes[par], nodes[child]);
       pl += nodes[child].cost_edgeToP;
       child = par;
@@ -2358,26 +2451,25 @@ bool Graph::run_PD_brute_force(float alp)
   for (unsigned k = 0; k < num_terminals;
        k++) /* n points to be extracted from heap */ {
     int i = heap_delete_min();
-  
-    std::string rpt = "\n##############k=" + std::to_string(k) + " i=" + std::to_string(i) + "\n";
-    rpt = rpt + "Heap_idx array: ";
-    for (unsigned ar = 0; ar < heap_idx.size(); ar++)
-      rpt = rpt + std::to_string(heap_idx[ar]) + " ";
-    rpt = rpt + "\n";
-    rpt = rpt + "Heap_key array: ";
-    for (unsigned ar = 0; ar < heap_key.size(); ar++)
-      rpt = rpt + std::to_string(heap_key[ar]) + " ";
-    rpt = rpt + "\n";
-    rpt = rpt + "Heap_elt array: ";
-    for (unsigned ar = 0; ar < heap_elt.size(); ar++)
-      rpt = rpt + std::to_string(heap_elt[ar]) + " ";
-    rpt = rpt + "\n";
-    rpt = rpt + "Heaps min_dist: ";
-    for (unsigned ar = 0; ar < heap_elt.size(); ar++)
-      rpt = rpt + std::to_string(nodes[heap_elt[ar]].min_dist) + " ";
-
-    debugPrint(_logger, GRT, "fastroute", 3, "{}", rpt);
-
+    if (verbose > 2) {
+      cout << "\n##############k=" << k << " i=" << i << endl;
+      cout << "Heap_idx array: ";
+      for (unsigned ar = 0; ar < heap_idx.size(); ar++)
+        cout << heap_idx[ar] << " ";
+      cout << endl;
+      cout << "Heap_key array: ";
+      for (unsigned ar = 0; ar < heap_key.size(); ar++)
+        cout << heap_key[ar] << " ";
+      cout << endl;
+      cout << "Heap_elt array: ";
+      for (unsigned ar = 0; ar < heap_elt.size(); ar++)
+        cout << heap_elt[ar] << " ";
+      cout << endl;
+      cout << "Heaps min_dist: ";
+      for (unsigned ar = 0; ar < heap_elt.size(); ar++)
+        cout << nodes[heap_elt[ar]].min_dist << " ";
+      cout << endl;
+    }
     if (i >= 0) {
       // pt[i] entered the tree, update heap keys for its neighbors
       // BruteForcefor(unsigned oct = 0;  oct < num_terminals;  oct++ )
@@ -2388,19 +2480,19 @@ bool Graph::run_PD_brute_force(float alp)
         int nn1 = nn[i][oct];
         // BruteForceint nn1 = nodes[oct].idx;
         if (nn1 >= 0) {
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "NN={} i={} min_dist of node i={}",
-                     nn1, i, nodes[i].min_dist);
+          if (verbose > 2)
+            cout << "NN=" << nn1 << " i=" << i
+                 << " min_dist of node i=" << nodes[i].min_dist;
           unsigned edge_len = dist(nodes[i], nodes[nn1]);
           float d = alp * (float) nodes[i].path_length;
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "intermediate d = alp *(float) nodes[i].path_length = "
-                     "{}*{} = {}", alp, nodes[i].path_length, d);
+          if (verbose > 2)
+            cout << "intermediate d = alp *(float) nodes[i].path_length = "
+                 << alp << "*" << nodes[i].path_length << " = " << d << endl;
           if (nn1 != root_idx)
             d += edge_len;
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     " d={} heap_idx[nn1]={} heap_key[nn1]={}",
-                     d, heap_idx[nn1], heap_key[nn1]);
+          if (verbose > 2)
+            cout << " d=" << d << " heap_idx[nn1]=" << heap_idx[nn1]
+                 << " heap_key[nn1]=" << heap_key[nn1] << endl;
           if ((heap_idx[nn1] > 0) && (d <= heap_key[nn1]))  // FIXME : Tie-break
           {
             heap_decrease_key(nn1, d);
@@ -2413,9 +2505,9 @@ bool Graph::run_PD_brute_force(float alp)
     }
   }
 
-  if (_logger->debugCheck(GRT, "fastroute", 3))
+  if (verbose > 1) {
     print_tree();
-
+  }
   pd_wl = calc_tree_wl_pd();
   pd_pl = calc_tree_pl();
 
@@ -2432,11 +2524,11 @@ void Graph::PDBU_new_NN()
     unsigned child = j;
     unsigned par = nodes[j].parent;
     update_edgecosts_to_parent(child, par);
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "  Detour cost of edge to parent = {}",
-               nodes[child].detcost_edgePToNode);
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "  Nearest neighbors of node are {}", j);
+    if (verbose > 2) {
+      cout << "  Detour cost of edge to parent = "
+           << nodes[child].detcost_edgePToNode << endl;
+      cout << "  Nearest neighbors of node " << j << " are: " << endl;
+    }
     nodes[j].nn_edge_detcost.resize(nn[j].size());
 
     // Calculating detour cost of all edges to nearest neighbours
@@ -2456,22 +2548,22 @@ void Graph::PDBU_new_NN()
   unsigned count = 1;
 
   while ((tree_cost_difference > 0) || (tree_cost_difference < -1)) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "\n################# PDBU Swap Iteration {}"
-               " #####################\n", count);
-
+    if (verbose > 2) {
+      cout << "\n################# PDBU Swap Iteration " << count
+           << " #####################\n"
+           << endl;
+    }
     count++;
 
     if (count >= num_terminals) {
       break;
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Tree before PDBU iteration {}", count - 1);
-    if (_logger->debugCheck(GRT, "fastroute", 3))
+    if (verbose > 2) {
+      cout << "Tree before PDBU iteration " << count - 1 << endl;
       print_tree();
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "\nInitial tree cost = {}", initial_tree_cost);
+      cout << "\nInitial tree cost = " << initial_tree_cost << endl;
+    }
 
     // Generating the swap space
     for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
@@ -2500,18 +2592,16 @@ void Graph::PDBU_new_NN()
         tmp_children = nodes[j].swap_space[iter];
         iter++;
       }
-
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "\nj = {}  Swap space: ", j);
-      std::string swapSpcRpt;
-      for (unsigned p = 0; p < nodes[j].swap_space.size(); p++) {
-        for (unsigned q = 0; q < nodes[j].swap_space[p].size(); q++) {
-          swapSpcRpt = swapSpcRpt + std::to_string(nodes[j].swap_space[p][q]) + " ";
+      if (verbose > 2) {
+        cout << "\nj = " << j << "  Swap space: " << endl;
+        for (unsigned p = 0; p < nodes[j].swap_space.size(); p++) {
+          for (unsigned q = 0; q < nodes[j].swap_space[p].size(); q++) {
+            cout << nodes[j].swap_space[p][q] << " ";
+          }
+          cout << endl;
         }
-        debugPrint(_logger, GRT, "fastroute", 3, "{}", swapSpcRpt);
+        cout << "\nSwap space size = " << nodes[j].swap_space.size() << endl;
       }
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "\nSwap space size = {}", nodes[j].swap_space.size());
     }
 
     float overall_min_cost = 10000;
@@ -2569,11 +2659,12 @@ void Graph::PDBU_new_NN()
               if (nn_node == j)
                 is_found_in_swap_space = true;
             }
-            
-            debugPrint(_logger, GRT, "fastroute", 3,
-                      "j={} iter={} Node getting new edge={} NN_node={} Is found in swap space? {}",
-                      j, iter, node_e_new, nn_node, is_found_in_swap_space);
-            
+            if (verbose > 2) {
+              cout << "j=" << j << " iter=" << iter
+                   << " Node getting new edge=" << node_e_new
+                   << " NN_node=" << nn_node << " Is found in swap space?"
+                   << is_found_in_swap_space << endl;
+            }
             if ((nn_node) > -1 && (nn_node != j) && !is_found_in_swap_space) {
               int child = node_e_new, par = nodes[node_e_new].parent;
               float sum_q_terms = nodes[node_e_new].nn_edge_detcost[oct];
@@ -2603,9 +2694,10 @@ void Graph::PDBU_new_NN()
               swap_cost
                   = alpha2 * M * (cumul_det_cost_term + last_det_cost_term)
                     + (1 - alpha2) * (float) last_len_term;
-              debugPrint(_logger, GRT, "fastroute", 3,
-                         "j={} iter={} cost={}",
-                         j, iter, swap_cost);
+              if (verbose > 2) {
+                cout << " j=" << j << " iter=" << iter << " cost=" << swap_cost
+                     << endl;
+              }
             }
             if (swap_cost < overall_min_cost) {
               overall_min_cost = swap_cost;
@@ -2621,13 +2713,12 @@ void Graph::PDBU_new_NN()
     }
 
     if (overall_min_cost < -0.05) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Overall min = {}  for node {}  New parent (Nearest neighbour) is {}",
-                 overall_min_cost, overall_min_node, nn[overall_min_node][overall_min_nn_idx]);
-
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Swapping with a distance of {}", overall_swap_dist);
-
+      if (verbose > 2) {
+        cout << "Overall min = " << overall_min_cost << "  for node "
+             << overall_min_node << "  New parent (Nearest neighbour) is "
+             << nn[overall_min_node][overall_min_nn_idx] << endl;
+        cout << "Swapping with a distance of " << overall_swap_dist << endl;
+      }
       swap_and_update_tree(
           overall_min_node, overall_min_nn_idx, distance, overall_initial_i);
     }
@@ -2636,11 +2727,12 @@ void Graph::PDBU_new_NN()
     tree_cost_difference = final_tree_cost - initial_tree_cost;
 
     initial_tree_cost = final_tree_cost;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Final tree cost = {} \ntree_cost_difference = {}\n Tree after PDBU",
-               final_tree_cost, tree_cost_difference);
-    if (_logger->debugCheck(GRT, "fastroute", 3))
+    if (verbose > 1) {
+      cout << "Final tree cost = " << final_tree_cost
+           << "\ntree_cost_difference = " << tree_cost_difference << endl
+           << "Tree after PDBU" << endl;
       print_tree();
+    }
     // End of the while loop
   }
 
@@ -2676,9 +2768,10 @@ void Graph::constructSteiner()
     int cIdx = dag[i];
     Node child = nodes[cIdx];
     Node pN = nodes[child.parent];
-    debugPrint(_logger, GRT, "fastroute", 3,
-      "parent {}\nchild: {}", pN, child);
-
+    if (verbose > 2) {
+      cout << "parent: " << pN << endl;
+      cout << "child: " << child << endl;
+    }
     Edge e = edges[cIdx];
 
     vector<int> toBeRemoved;
@@ -2687,8 +2780,10 @@ void Graph::constructSteiner()
       if (!IsOnEdge(cN, cIdx)) {
         continue;
       }
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Before cN: {}\nBefore pN: {}", cN, pN);
+      if (verbose > 2) {
+        cout << "Before cN: " << cN << endl;
+        cout << "Before pN: " << pN << endl;
+      }
       int idx = IsAdded(cN);
       // check whether cN exists in the current nodes
       if (idx == 0) {
@@ -2718,16 +2813,19 @@ void Graph::constructSteiner()
             removeChild(nodes[pIdx], cN.sp_chil[k]);
         }
         addChild(nodes[pIdx], nodes.size() - 1);
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "After cN: {}\nAfter pN: {}",
-                   nodes[nodes.size() - 1], nodes[pIdx]);
+        if (verbose > 2) {
+          cout << "After cN: " << nodes[nodes.size() - 1] << endl;
+          cout << "After pN: " << nodes[pIdx] << endl;
+        }
         pN = nodes[nodes.size() - 1];
       } else {
         if (nodes[idx].parent != pN.idx && idx != pN.parent
             && nodes[idx].parent != pN.parent) {
-          _logger->warn(GRT, 120, "cNode ({}) != pNode ({})",
-                        nodes[idx], nodes[pN.idx]);
-
+          if (verbose > 2) {
+            cout << "Error!! " << endl;
+            cout << "cNode: " << nodes[idx] << endl;
+            cout << "pNode: " << nodes[pN.idx] << endl;
+          }
           for (unsigned k = 0; k < newSP.size(); k++) {
             if (newSP[k] == idx) {
               removeChild(nodes[idx], pN.idx);
@@ -2740,7 +2838,8 @@ void Graph::constructSteiner()
                      && nodes[pN.idx].x < nodes[nodes[idx].parent].x)
                     || (nodes[idx].x > nodes[nodes[idx].parent].x
                         && nodes[pN.idx].x > nodes[nodes[idx].parent].x)) {
-                  debugPrint(_logger, GRT, "fastroute", 3, "same direction!!");
+                  if (verbose > 2)
+                    cout << "same direction!!" << endl;
 
                   removeChild(nodes[idx], pN.idx);
                   removeChild(nodes[nodes[idx].parent], idx);
@@ -2760,8 +2859,8 @@ void Graph::constructSteiner()
                     removeChild(nodes[pN.idx], nodes[idx].children[l]);
                   }
                   addChild(nodes[pN.idx], idx);
-                  debugPrint(_logger, GRT, "fastroute", 3,
-                             "newSP: {}", nodes[idx]);
+                  if (verbose > 2)
+                    cout << "newSP: " << nodes[idx] << endl;
                 }
               } else if (dir1 == dir3) {
                 removeChild(nodes[idx], pN.idx);
@@ -2773,8 +2872,10 @@ void Graph::constructSteiner()
             }
           }
         }
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "After cN: {}\nAfter pN: {}", nodes[idx], nodes[pN.idx]);
+        if (verbose > 2) {
+          cout << "After cN: " << nodes[idx] << endl;
+          cout << "After pN: " << nodes[pN.idx] << endl;
+        }
         pN = nodes[idx];
       }
       if (j == e.STNodes.size() - 1) {
@@ -2818,14 +2919,13 @@ bool Graph::doSteiner_HoVW()
     update_node_detcost_Kt(j);
   // End tree preparation
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Wirelength before Steiner = {}", calc_tree_wl_pd());
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Tree detour cost before Steiner = {}", calc_tree_det_cost());
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "{} {}", calc_tree_wl_pd(), calc_tree_det_cost());
-  if (_logger->debugCheck(GRT, "fastroute", 3))
+  if (verbose > 3) {
+    cout << "Wirelength before Steiner = " << calc_tree_wl_pd() << endl;
+    cout << "Tree detour cost before Steiner = " << calc_tree_det_cost()
+         << endl;
+    cout << calc_tree_wl_pd() << " " << calc_tree_det_cost() << " ";
     print_tree();
+  }
 
   vector<Node> set_of_nodes;
   for (int k = tree_struct.size() - 3; k >= 0;
@@ -2879,6 +2979,33 @@ bool Graph::doSteiner_HoVW()
     }
   }
 
+  if (verbose > 1) {
+    for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
+      cout << "Edge " << edges[j] << "\tLower ov=" << edges[j].lower_ov
+           << "\tUpper ov=" << edges[j].upper_ov
+           << "\tBest_ov=" << edges[j].best_ov
+           << "\tBest shape=" << edges[j].best_shape << endl;
+
+      if (nodes[j].children.size() > 0) {
+        for (unsigned i = 0; i < edges[j].lower_best_config.size(); i = i + 2)
+          cout << "\t[Lower]Child=Node" << edges[j].lower_best_config[i]
+               << " its best shape=" << edges[j].lower_best_config[i + 1]
+               << " ; ";
+        cout << endl;
+        for (unsigned i = 0; i < edges[j].upper_best_config.size(); i = i + 2)
+          cout << "\t[Upper]Child=Node" << edges[j].upper_best_config[i]
+               << " its best shape=" << edges[j].upper_best_config[i + 1]
+               << " ; ";
+        cout << endl;
+      }
+    }
+
+    unsigned wl_val = calc_tree_wl_pd(), ov_val = edges[0].best_ov;
+    cout << "WL subtracting overlap=" << wl_val - ov_val
+         << "  : WL before St=" << wl_val << " Overlap=" << ov_val << endl;
+    cout << "Starting refineSteiner" << endl;
+  }
+
   FreeManhDist();
   UpdateManhDist();
 
@@ -2900,6 +3027,7 @@ bool Graph::fix_max_dc()
 
   UpdateAllEdgesNSEW();
 
+  // cout << "Starting refineSteiner" << endl;
   refineSteiner2();
   constructSteiner();
   // print_tree_v2();
@@ -2913,9 +3041,21 @@ bool Graph::fix_max_dc()
   buildNearestNeighborsForSPT(nodes.size());
   UpdateAllEdgesNSEW();
 
+  // cout << "Starting refineSteiner" << endl;
   refineSteiner();
 
+  if (verbose > 1) {
+    cout << "Finished refineSteiner" << endl;
+    cout << "Starting Steiner tree construction" << endl;
+  }
+
   constructSteiner();
+
+  if (verbose > 2) {
+    cout << "Finished Steiner tree construction" << endl;
+    PrintInfo();
+    cout << "Start second refineStiner" << endl;
+  }
 
   FreeManhDist();
   UpdateManhDist();
@@ -2927,7 +3067,46 @@ bool Graph::fix_max_dc()
 
   UpdateAllEdgesNSEW();
 
+  // cout << "Starting refineSteiner" << endl;
   refineSteiner();
+
+  if (verbose > 2) {
+    cout << "Finished second refineSteiner" << endl;
+    cout << "Starting Steiner tree construction" << endl;
+  }
+
+  constructSteiner();
+  if (verbose > 2) {
+    cout << "Finished Steiner tree construction" << endl;
+    PrintInfo();
+    cout << "Remove unnecessary Steiner nodes" << endl;
+  }
+
+  RemoveUnneceSTNodes();
+
+  FreeManhDist();
+  UpdateManhDist();
+
+  // DAG traversal
+  BuildDAG();
+
+  buildNearestNeighborsForSPT(nodes.size());
+
+  UpdateAllEdgesNSEW();
+
+  if (verbose > 2) {
+    cout << "Post-Steiner node removal" << endl;
+    PrintInfo();
+    cout << "Start third refineSteiner" << endl;
+  }
+
+  // cout << "Starting refineSteiner" << endl;
+  refineSteiner();
+
+  if (verbose > 2) {
+    cout << "Finished third refineSteiner" << endl;
+    cout << "Starting Steiner tree construction" << endl;
+  }
 
   constructSteiner();
 
@@ -2944,23 +3123,11 @@ bool Graph::fix_max_dc()
   UpdateAllEdgesNSEW();
 
   refineSteiner();
-
   constructSteiner();
-
-  RemoveUnneceSTNodes();
-
-  FreeManhDist();
-  UpdateManhDist();
-
-  // DAG traversal
-  BuildDAG();
-
-  buildNearestNeighborsForSPT(nodes.size());
-
-  UpdateAllEdgesNSEW();
-
-  refineSteiner();
-  constructSteiner();
+  if (verbose > 2) {
+    cout << "Post-Steiner construction" << endl;
+    PrintInfo();
+  }
 
   st_wl = calc_tree_wl_pd();
   st_pl = calc_tree_pl();
@@ -2969,6 +3136,12 @@ bool Graph::fix_max_dc()
   vector<float> st_mds_dc(2);
   find_max_dc_node(st_mds_dc);
   unsigned use_nn = 0;
+  if (verbose > 2) {
+    cout << "tree struct 1d array: ";
+    for (unsigned k = 0; k < tree_struct_1darr.size(); k++)
+      cout << tree_struct_1darr[k] << " ";
+    cout << "Size = " << tree_struct_1darr.size() << endl;
+  }
 
   float init_wl = st_wl;
   for (int k = 1; k < tree_struct_1darr.size(); k++) {
@@ -2999,6 +3172,8 @@ bool Graph::fix_max_dc()
         } else {
           nn2 = tree_struct_1darr[ag];
         }
+        if (verbose > 2)
+          cout << "NN=" << nn2 << endl;
         if (nn2 != cpar) {
           new_edge_len = dist(nodes[cnode], nodes[nn2]);
           diff_in_wl = new_edge_len - edge_len_to_par;
@@ -3007,11 +3182,26 @@ bool Graph::fix_max_dc()
             if (use_nn == 1) {
               new_dc
                   = nodes[cnode].nn_edge_detcost[ag] + nodes[nn2].det_cost_node;
+              if (verbose > 2) {
+                cout << "NN " << nn2
+                     << "\t its node DC=" << nodes[nn2].det_cost_node
+                     << "\tDC of edge to nn = "
+                     << nodes[cnode].nn_edge_detcost[ag]
+                     << "\tNew DC of cnode=" << new_dc
+                     << "\tNew edge length = " << new_edge_len << endl;
+              }
             } else {
               det_cost_new_edge = nodes[nn2].min_dist
                                   + dist(nodes[nn2], nodes[cnode])
                                   - nodes[cnode].min_dist;
               new_dc = det_cost_new_edge + nodes[nn2].det_cost_node;
+              if (verbose > 2) {
+                cout << "NN " << nn2
+                     << "\t its node DC=" << nodes[nn2].det_cost_node
+                     << "\tDC of edge to nn = " << det_cost_new_edge
+                     << "\tNew DC of cnode=" << new_dc
+                     << "\tNew edge length = " << new_edge_len << endl;
+              }
             }
             if (new_dc < cnode_dc) {
               if (new_dc < min_dc) {
@@ -3665,7 +3855,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    size_t s = tmp.size();
+    unsigned s = tmp.size();  // cout << "Size of tmp = " << s << endl;
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
@@ -3673,6 +3863,8 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
     for (unsigned j = 0; j < s; j++)
       ov1 += tmp_ov[j];
 
+    if (verbose > 3)
+      cout << "\tov1 = " << ov1 << endl;
     tmp_ov.clear();
     tmp.clear();
   }
@@ -3687,7 +3879,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    size_t s = tmp.size();
+    unsigned s = tmp.size();  // cout << "Size of tmp = " << s << endl;
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
@@ -3727,6 +3919,10 @@ void Graph::update_node_detcost_Kt(unsigned j)
     count++;
     if (count > 1000)
       break;
+  }
+  if (verbose > 3) {
+    cout << "  parent[" << j << "]= " << nodes[j].parent;
+    cout << "  Detour cost of node = " << nodes[j].det_cost_node << endl;
   }
 }
 
@@ -3781,6 +3977,11 @@ void Graph::update_detourcosts_to_NNs(unsigned j)
       det_cost_nn_edge = nodes[nn_node].min_dist
                          + dist(nodes[nn_node], nodes[child])
                          - nodes[child].min_dist;
+      if (verbose > 3) {
+        cout << "Node " << nn_node << " (" << nodes[nn_node].x << " , "
+             << nodes[nn_node].y << ") with detcost = " << det_cost_nn_edge
+             << endl;
+      }
     } else {
       det_cost_nn_edge = 10000;
     }
@@ -3805,6 +4006,10 @@ void Graph::swap_and_update_tree(unsigned min_node,
   nodes[min_node].parent = nn[min_node][nn_idx];
 
   update_edgecosts_to_parent(min_node, nodes[min_node].parent);
+  if (verbose > 3) {
+    cout << " Child " << min_node << " New parent " << nodes[min_node].parent
+         << endl;
+  }
 
   for (unsigned j = 0; j < num_terminals; ++j)
     nodes[j].K_t = 1;  // Resetting the K_t value for each node
@@ -3838,6 +4043,10 @@ void Graph::BuildDAG()
   while (!myqueue.empty()) {
     int cIdx = myqueue.front();
     if (isVisited[cIdx]) {
+      if (verbose > 3) {
+        cout << "ERROR node " << cIdx << " is already visited" << endl
+             << nodes[cIdx] << endl;
+      }
       int cParent = nodes[cIdx].parent;
       for (unsigned i = 0; i < nodes.size(); ++i) {
         if (i != cParent) {
@@ -3847,6 +4056,11 @@ void Graph::BuildDAG()
       addChild(nodes[cParent], cIdx);
       myqueue.pop();
       continue;
+      for (unsigned j = 0; j < nodes.size(); ++j) {
+        cout << nodes[j] << endl;
+      }
+
+      exit(1);
     }
     isVisited[cIdx] = true;
     dag.push_back(cIdx);

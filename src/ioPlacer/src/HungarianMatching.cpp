@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HungarianMatching.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace ppl {
 
@@ -96,7 +96,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
         continue;
       }
       if (_hungarianMatrix[row][col] == hungarian_fail) {
-        _logger->warn(utl::PPL, 33, "I/O pin {} cannot be placed in the specified region. Not enough space",
+        _logger->warn(ord::PPL, 33, "I/O pin {} cannot be placed in the specified region. Not enough space",
              ioPin.getName().c_str());
       }
       ioPin.setPos(_slots[slotIndex].pos);

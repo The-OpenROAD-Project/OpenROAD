@@ -84,7 +84,7 @@ target_include_directories(opendp
 
 target_link_libraries(opendp
   PUBLIC
-  utility
+  spdlog::spdlog
   )
 
 ################################################################

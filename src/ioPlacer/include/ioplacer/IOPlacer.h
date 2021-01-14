@@ -44,9 +44,6 @@
 
 namespace ord {
 class OpenRoad;
-}
-
-namespace utl {
 class Logger;
 }
 
@@ -61,7 +58,7 @@ namespace ppl {
 using odb::Point;
 using odb::Rect;
 
-using utl::Logger;
+using ord::Logger;
 
 enum class RandomMode
 {

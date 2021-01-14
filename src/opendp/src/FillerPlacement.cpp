@@ -35,7 +35,7 @@
 #include "opendp/Opendp.h"
 
 #include <algorithm>
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace dpl {
 
@@ -43,7 +43,7 @@ using std::max;
 using std::min;
 using std::to_string;
 
-using utl::DPL;
+using ord::DPL;
 
 using odb::dbLib;
 using odb::dbMaster;

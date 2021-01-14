@@ -37,7 +37,6 @@
 
 #include "db_sta/dbSta.hh"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
 #include "sta/Network.hh"
 #include "sta/Sdc.hh"
 
@@ -56,9 +55,9 @@ void StaEngine::init()
   _network = _openSta->network();
 }
 
-void StaEngine::findClockRoots(utl::Logger* _logger)
+void StaEngine::findClockRoots()
 {
-  _logger->report(" Looking for clock sources...");
+  std::cout << " Looking for clock sources...\n";
 
   std::string clockNames = "";
   for (sta::Clock* clk : _sdc->clks()) {
@@ -67,7 +66,7 @@ void StaEngine::findClockRoots(utl::Logger* _logger)
     }
   }
 
-  _logger->report("    Clock names: {}", clockNames);
+  std::cout << "    Clock names: " << clockNames << "\n";
   _options->setClockNets(clockNames);
 }
 

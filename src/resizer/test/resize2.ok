@@ -54,13 +54,13 @@ Path Type: max
             0.000    0.000    0.000   clock clk (rise edge)
                      0.000    0.000   clock network delay (ideal)
             0.000    0.000    0.000 ^ r2/CK (DFF_X2)
-  21.421    0.028    0.131    0.131 ^ r2/Q (DFF_X2)
-            0.028    0.000    0.131 ^ u1/A (CLKBUF_X3)
-  21.726    0.020    0.053    0.184 ^ u1/Z (CLKBUF_X3)
-            0.020    0.000    0.184 ^ u2/A2 (AND2_X2)
-  21.140    0.028    0.056    0.240 ^ u2/ZN (AND2_X2)
-            0.028    0.000    0.240 ^ r3/D (DFF_X1)
-                              0.240   data arrival time
+  23.402    0.030    0.133    0.133 ^ r2/Q (DFF_X2)
+            0.030    0.000    0.133 ^ u1/A (BUF_X4)
+  21.726    0.016    0.035    0.169 ^ u1/Z (BUF_X4)
+            0.016    0.000    0.169 ^ u2/A2 (AND2_X2)
+  21.140    0.028    0.055    0.223 ^ u2/ZN (AND2_X2)
+            0.028    0.000    0.223 ^ r3/D (DFF_X1)
+                              0.223   data arrival time
 
             0.000    1.000    1.000   clock clk (rise edge)
                      0.000    1.000   clock network delay (ideal)
@@ -70,8 +70,8 @@ Path Type: max
                               0.963   data required time
 ---------------------------------------------------------------------------
                               0.963   data required time
-                             -0.240   data arrival time
+                             -0.223   data arrival time
 ---------------------------------------------------------------------------
-                              0.723   slack (MET)
+                              0.740   slack (MET)
 
 

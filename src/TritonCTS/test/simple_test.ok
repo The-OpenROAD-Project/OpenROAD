@@ -16,28 +16,28 @@ Notice 0: Finished DEF file: 16sinks.def
  *****************************
  *  Import characterization  *
  *****************************
-[INFO CTS-0085]  Reading LUT file "lut.txt"
-Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           52          1           24          
-[WARNING CTS-0044] 180 wires are pure wire and no slew degration.
-TritonCTS forced slew degradation on these wires.
-[INFO CTS-0049]     Num wire segments: 4994
-[INFO CTS-0050]     Num keys in characterization LUT: 1677
-[INFO CTS-0051]     Actual min input cap: 8
-[INFO CTS-0086]  Reading solution list file "sol_list.txt".
+ Reading LUT file "lut.txt"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+    Actual min input cap: 8
+ Reading solution list file "sol_list.txt"
  **********************
  *  Find clock roots  *
  **********************
-[INFO CTS-0002]  User did not specify clock roots.
+ User did not specify clock roots.
  ************************
  *  Populate TritonCTS  *
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-[INFO CTS-0007]  Net "clk" found
-[INFO CTS-0009]  Initializing clock net for : "clk"
-[INFO CTS-0010]  Clock net "clk" has 16 sinks
-[INFO CTS-0008]  TritonCTS found 1 clock nets.
+ Net "clk" found
+ Initializing clock net for : "clk"
+ Clock net "clk" has 16 sinks
+ TritonCTS found 1 clock nets.
  ****************************
  *  Check characterization  *
  ****************************
@@ -45,38 +45,38 @@ TritonCTS forced slew degradation on these wires.
  ***********************
  *  Build clock trees  *
  ***********************
-[INFO CTS-0027]  Generating H-Tree topology for net clk
-[INFO CTS-0028]     Tot. number of sinks: 16
-[INFO CTS-0030]     Number of static layers: 0
-[INFO CTS-0020]  Wire segment unit: 20000  dbu (10 um)
-[INFO CTS-0023]  Original sink region: [(3730, 1730), (22730, 20730)]
-[INFO CTS-0024]  Normalized sink region: [(0.1865, 0.0865), (1.1365, 1.0365)]
-[INFO CTS-0025]     Width:  0.9500
-[INFO CTS-0026]     Height: 0.9500
-[WARNING CTS-0045] Creating fake entries in the LUT.
+ Generating H-Tree topology for net clk...
+    Tot. number of sinks: 16
+    Number of static layers: 0
+ Wire segment unit: 20000 dbu (10 um)
+ Original sink region: [(3730, 1730), (22730, 20730)]
+ Normalized sink region: [(0.1865, 0.0865), (1.1365, 1.0365)]
+    Width:  0.95
+    Height: 0.95
+ [WARNING] Creating fake entries in the LUT.
  Level 1
     Direction: Horizontal
     # sinks per sub-region: 8
-    Sub-region size: 0.4750 X 0.9500
-[INFO CTS-0034]     Segment length (rounded): 1
-    Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: true
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is (15)
+    Sub-region size: 0.475 X 0.95
+    Segment length (rounded): 1
+    Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Stop criterion found. Max number of sinks is (15)
  Building clock sub nets...
-[INFO CTS-0035]  Number of sinks covered: 16
-[INFO CTS-0033]  Clock topology of net "clk" done.
+ Number of sinks covered: 16
+ Clock topology of net "clk" done.
  ****************
  * Post CTS opt *
  ****************
-[INFO CTS-0036]  Avg. source sink dist: 12375.44 dbu.
-[INFO CTS-0037]  Num outlier sinks: 0
+ Avg. source sink dist: 12375.4 dbu.
+ Num outlier sinks: 0
  ********************
  * Write data to DB *
  ********************
  Writing clock net "clk" to DB
-[INFO CTS-0018]     Created 3 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0015]     Created 3 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 7:1, 9:1.
-[INFO CTS-0017]     Max level of the clock tree: 1.
+    Created 3 clock buffers.
+    Minimum number of buffers in the clock path: 2.
+    Maximum number of buffers in the clock path: 2.
+    Created 3 clock nets.
+    Fanout distribution for the current clock = 7:1, 9:1.
+    Max level of the clock tree: 1.
  ... End of TritonCTS execution.

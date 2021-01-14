@@ -47,11 +47,10 @@
 #include "opendb/db.h"
 
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace ord {
 
-using utl::ORD;
 using odb::dbDatabase;
 using odb::dbChip;
 using odb::dbBlock;
@@ -87,8 +86,8 @@ using sta::NetConnectedPinIterator;
 using sta::PinPathNameLess;
 using sta::LibertyCell;
 
-using utl::Logger;
-using utl::STA;
+using ord::Logger;
+using ord::STA;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.

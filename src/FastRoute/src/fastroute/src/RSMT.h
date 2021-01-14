@@ -35,14 +35,7 @@
 
 #include "DataType.h"
 
-namespace utl {
-class Logger;
-} // namespace utl
-
 namespace grt {
-
-using utl::Logger;
-
 extern int** V_table;
 extern int** H_table;
 
@@ -51,8 +44,7 @@ extern void gen_brk_RSMT(Bool congestionDriven,
                          Bool reRoute,
                          Bool genTree,
                          Bool newType,
-                         Bool noADJ,
-                         Logger* logger);
+                         Bool noADJ);
 extern void fluteNormal(int netID,
                         int d,
                         DTYPE x[],

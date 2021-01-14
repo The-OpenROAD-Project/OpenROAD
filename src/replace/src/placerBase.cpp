@@ -33,7 +33,7 @@
 
 #include "placerBase.h"
 #include "nesterovBase.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include <opendb/db.h>
 #include <iostream>
@@ -42,7 +42,7 @@ namespace gpl {
 
 using namespace odb;
 using namespace std;
-using utl::GPL;
+using ord::GPL;
 
 static int 
 fastModulo(const int input, const int ceil);
@@ -52,7 +52,7 @@ getMinMaxIdx(int ll, int uu, int coreLL,
     int siteSize, int minIdx, int maxIdx);
 
 static
-utl::Logger* slog_;
+ord::Logger* slog_;
 
 
 static bool
@@ -681,7 +681,7 @@ PlacerBase::PlacerBase()
 
 PlacerBase::PlacerBase(odb::dbDatabase* db,
     PlacerBaseVars pbVars,
-    utl::Logger* log)
+    ord::Logger* log)
   : PlacerBase() {
   db_ = db;
   log_ = log;

@@ -57,7 +57,7 @@
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h" 
+#include "openroad/Logger.h" 
 #include "gui/gui.h"
 
 using std::string;
@@ -227,7 +227,7 @@ showUsage(const char *prog,
 static void
 showSplash()
 {
-  utl::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
+  ord::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
   string sha = OPENROAD_GIT_SHA1;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,

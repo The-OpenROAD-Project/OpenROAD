@@ -34,6 +34,8 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
+project (PDRev)
+
 set(LIB_NAME "pdrev")
 
 set(SRC_FILES
@@ -41,14 +43,8 @@ set(SRC_FILES
   src/pdrev.cpp
 )
 
+add_definitions(-DLIBRARY_MODE)
 add_LIBRARY(${LIB_NAME} STATIC ${SRC_FILES})
 
-target_include_directories(${LIB_NAME} 
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include)
-
-target_link_libraries(${LIB_NAME}
-  utility
-  )
+target_include_directories(${LIB_NAME} PUBLIC
+                           ${CMAKE_CURRENT_SOURCE_DIR}/include)

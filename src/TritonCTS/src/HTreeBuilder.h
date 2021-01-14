@@ -42,13 +42,7 @@
 #include <cmath>
 #include <limits>
 
-namespace utl {
-class Logger;
-} // namespace utl
-
 namespace cts {
-
-using utl::Logger;
 
 class SegmentBuilder
 {
@@ -181,7 +175,7 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net, Logger* logger) : TreeBuilder(options, net), _logger(logger){};
+  HTreeBuilder(CtsOptions* options, Clock& net) : TreeBuilder(options, net){};
 
   void run();
 
@@ -275,7 +269,6 @@ class HTreeBuilder : public TreeBuilder
   }
 
  protected:
-  Logger* _logger;
   Box<double> _sinkRegion;
   std::vector<LevelTopology> _topologyForEachLevel;
   std::map<Point<double>, ClockInst*> _mapLocationToSink;

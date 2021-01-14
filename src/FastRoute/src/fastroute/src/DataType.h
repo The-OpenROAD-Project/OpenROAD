@@ -82,12 +82,12 @@ typedef struct
 typedef struct
 {
   odb::dbNet* db_net;
-  int numPins;  // number of pins in the net
-  int deg;  // net degree (number of MazePoints connecting by the net, pins in
+  short numPins;  // number of pins in the net
+  short deg;  // net degree (number of MazePoints connecting by the net, pins in
               // same MazePoints count only 1)
-  std::vector<int> pinX;  // array of X coordinates of pins
-  std::vector<int> pinY;  // array of Y coordinates of pins
-  std::vector<int> pinL;  // array of L coordinates of pins
+  std::vector<short> pinX;  // array of X coordinates of pins
+  std::vector<short> pinY;  // array of Y coordinates of pins
+  std::vector<short> pinL;  // array of L coordinates of pins
   float alpha;              // alpha for pdrev when routing clock nets
   bool isClock;             // flag that indicates if net is a clock net
 } FrNet;                    // A Net is a set of connected MazePoints
@@ -121,8 +121,8 @@ typedef struct
   short heights[6];
 
   short x, y;     // position in the grid graph
-  int nbr[3];   // three neighbors
-  int edge[3];  // three adjacent edges
+  short nbr[3];   // three neighbors
+  short edge[3];  // three adjacent edges
   int hID;
   int lID;
   int eID[6];

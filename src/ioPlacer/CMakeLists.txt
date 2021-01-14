@@ -85,8 +85,8 @@ target_include_directories(ioPlacer
 
 target_link_libraries(ioPlacer
   PUBLIC
-  Munkres
-  utility
-  )
+	Munkres
+  spdlog::spdlog
+	)
                       
                       

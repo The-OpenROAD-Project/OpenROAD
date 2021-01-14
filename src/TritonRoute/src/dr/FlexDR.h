@@ -51,7 +51,7 @@ namespace fr {
   class FlexDR {
   public:
     // constructors
-    FlexDR(frDesign* designIn, Logger* loggerIn);
+    FlexDR(frDesign* designIn,ord::Logger* loggerIn);
     ~FlexDR();
     // getters
     frTechObject* getTech() const {
@@ -80,7 +80,7 @@ namespace fr {
     void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
     frDesign*          design_;
-    Logger*            logger_;
+    ord::Logger*         logger_;
     std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin_;
 
     std::vector<std::pair<frCoord, frCoord> >  halfViaEncArea_; // std::pair<layer1area, layer2area>
@@ -272,8 +272,8 @@ namespace fr {
   class FlexDRWorker {
   public:
     // constructors
-    FlexDRWorker(FlexDR* drIn, Logger* logger): 
-      design_(drIn->getDesign()), logger_(logger), dr_(drIn), graphics_(nullptr), routeBox_(), extBox_(), drcBox_(), drIter_(0), mazeEndIter_(1),
+    FlexDRWorker(FlexDR* drIn): 
+                 design_(drIn->getDesign()), dr_(drIn), graphics_(nullptr), routeBox_(), extBox_(), drcBox_(), drIter_(0), mazeEndIter_(1),
                  TEST_(false), DRCTEST_(false), QUICKDRCTEST_(false), enableDRC_(true), 
                  followGuide_(false), needRecheck_(false), skipRouting_(false), ripupMode_(1), fixMode_(0), workerDRCCost_(DRCCOST),
                  workerMarkerCost_(MARKERCOST), workerMarkerBloatWidth_(0), 
@@ -509,7 +509,6 @@ namespace fr {
     } RouteQueueEntry;
 
     frDesign* design_;
-    Logger*   logger_;
     FlexDR*   dr_;
     FlexDRGraphics*  graphics_; // owned by FlexDR
     frDebugSettings* debugSettings_;

@@ -34,14 +34,11 @@
 #include <map>
 #include <string>
 #include <utility>
-#include "utility/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
 namespace fr {
-  using Logger = utl::Logger;
-  const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
   using frUInt4 = unsigned int;

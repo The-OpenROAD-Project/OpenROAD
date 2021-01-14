@@ -1783,7 +1783,7 @@ void FlexDRWorker::mazeNetEnd(drNet* net) {
 void FlexDRWorker::route_drc() {
   using namespace std::chrono;
   // new gcWorker
-  FlexGCWorker gcWorker(getDesign(), logger_, this);
+  FlexGCWorker gcWorker(getDesign(), this);
   gcWorker.setExtBox(getExtBox());
   gcWorker.setDrcBox(getDrcBox());
   gcWorker.setEnableSurgicalFix(true);
@@ -2037,7 +2037,7 @@ void FlexDRWorker::route_queue() {
   }
 
   // init GC
-  FlexGCWorker gcWorker(getDesign(), logger_, this);
+  FlexGCWorker gcWorker(getDesign(), this);
   gcWorker.setExtBox(getExtBox());
   gcWorker.setDrcBox(getDrcBox());
   gcWorker.init();
@@ -2289,7 +2289,7 @@ void FlexDRWorker::route() {
     //                                 <<time_span2.count() <<" "
     //                                 <<endl;
     //cout <<ss.str() <<flush;
-    FlexGCWorker gcWorker(getDesign(), logger_, this);
+    FlexGCWorker gcWorker(getDesign(), this);
     gcWorker.setExtBox(getExtBox());
     gcWorker.setDrcBox(getDrcBox());
     high_resolution_clock::time_point t0x = high_resolution_clock::now();

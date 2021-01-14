@@ -45,7 +45,7 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace gui {
 
@@ -309,7 +309,7 @@ private:
   ScriptWidget* widget_;
 };
 
-void ScriptWidget::setLogger(utl::Logger* logger)
+void ScriptWidget::setLogger(ord::Logger* logger)
 {
   logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }

@@ -48,7 +48,7 @@ class dbBTerm;
 class dbNet;
 }
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -675,7 +675,7 @@ public:
   ~BinGrid();
 
   void setPlacerBase(const std::shared_ptr<PlacerBase> pb);
-  void setLogger(utl::Logger* log);
+  void setLogger(ord::Logger* log);
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setBinCntX(int binCntX);
@@ -717,7 +717,7 @@ private:
   std::vector<Bin> binStor_;
   std::vector<Bin*> bins_;
   std::shared_ptr<PlacerBase> pb_;
-  utl::Logger* log_;
+  ord::Logger* log_;
   int lx_;
   int ly_;
   int ux_;
@@ -756,7 +756,7 @@ public:
   NesterovBase();
   NesterovBase(NesterovBaseVars nbVars,
       std::shared_ptr<PlacerBase> pb,
-      utl::Logger* log);
+      ord::Logger* log);
   ~NesterovBase();
 
   const std::vector<GCell*> & gCells() const { return gCells_; }
@@ -888,7 +888,7 @@ public:
 private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
-  utl::Logger* log_;
+  ord::Logger* log_;
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;

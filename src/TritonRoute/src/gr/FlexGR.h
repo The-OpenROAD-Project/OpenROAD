@@ -44,23 +44,23 @@ namespace fr {
   class FlexGR {
   public:
     // constructors
-    FlexGR(frDesign* designIn): design_(designIn), cmap_(nullptr), cmap2D_(nullptr) {}
+    FlexGR(frDesign* designIn): design(designIn), cmap(nullptr), cmap2D(nullptr) {}
 
     // getters
     frTechObject* getTech() const {
-      return design_->getTech();
+      return design->getTech();
     }
     frDesign* getDesign() const {
-      return design_;
+      return design;
     }
     frRegionQuery* getRegionQuery() const {
-      return design_->getRegionQuery();
+      return design->getRegionQuery();
     }
     FlexGRCMap* getCMap(bool is2DCMap) const {
       if (is2DCMap) {
-        return cmap2D_.get();
+        return cmap2D.get();
       } else {
-        return cmap_.get();
+        return cmap.get();
       }
     }
 
@@ -68,17 +68,17 @@ namespace fr {
     void main();
 
   protected:
-    frDesign *design_;
-    std::unique_ptr<FlexGRCMap> cmap_;
-    std::unique_ptr<FlexGRCMap> cmap2D_;
-    std::map<frNet*, std::map<std::pair<int, int>, std::vector<frNode*> >, frBlockObjectComp> net2GCellIdx2Nodes_;
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2GCellNodes_;
-    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2SteinerNodes_;
-    std::map<frNet*, std::map<frNode*, std::vector<frNode*>, frBlockObjectComp>, frBlockObjectComp> net2GCellNode2RPinNodes_;
-    std::vector<frCoord> trackPitches_;
-    std::vector<frCoord> line2ViaPitches_;
-    std::vector<frCoord> layerPitches_;
-    std::vector<frCoord> zHeights_;
+    frDesign *design;
+    std::unique_ptr<FlexGRCMap> cmap;
+    std::unique_ptr<FlexGRCMap> cmap2D;
+    std::map<frNet*, std::map<std::pair<int, int>, std::vector<frNode*> >, frBlockObjectComp> net2GCellIdx2Nodes;
+    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2GCellNodes;
+    std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2SteinerNodes;
+    std::map<frNet*, std::map<frNode*, std::vector<frNode*>, frBlockObjectComp>, frBlockObjectComp> net2GCellNode2RPinNodes;
+    std::vector<frCoord> trackPitches;
+    std::vector<frCoord> line2ViaPitches;
+    std::vector<frCoord> layerPitches;
+    std::vector<frCoord> zHeights;
 
     // others
     void init();
@@ -98,10 +98,10 @@ namespace fr {
     void end();
 
     void setCMap(std::unique_ptr<FlexGRCMap> &in) {
-      cmap_ = std::move(in);
+      cmap = std::move(in);
     }
     void setCMap2D(std::unique_ptr<FlexGRCMap> &in) {
-      cmap2D_ = std::move(in);
+      cmap2D = std::move(in);
     }
 
     // initGR
@@ -183,10 +183,10 @@ namespace fr {
   class FlexGRWorker;
   class FlexGRWorkerRegionQuery {
   public:
-    FlexGRWorkerRegionQuery(FlexGRWorker* in): grWorker_(in) {}
+    FlexGRWorkerRegionQuery(FlexGRWorker* in): grWorker(in) {}
     frDesign* getDesign() const;
     FlexGRWorker* getGRWorker() const {
-        return grWorker_;
+        return grWorker;
     }
     void add(grConnFig* connFig);
     void add(grConnFig* connFig, std::vector<std::vector<rq_box_value_t<grConnFig*>>> &allShapes);
@@ -195,141 +195,141 @@ namespace fr {
     void query(const frBox &box, frLayerNum layerNum, std::vector<rq_box_value_t<grConnFig*>> &result);
     void init(bool includeExt = false);
     void cleanup() {
-      shapes_.clear();
-      shapes_.shrink_to_fit();
+      shapes.clear();
+      shapes.shrink_to_fit();
     }
     void report() {
-      for (int i = 0; i < (int)shapes_.size(); i++) {
-        std::cout << " layerIdx = " << i << ", numObj = " << shapes_[i].size() << "\n";
+      for (int i = 0; i < (int)shapes.size(); i++) {
+        std::cout << " layerIdx = " << i << ", numObj = " << shapes[i].size() << "\n";
       }
     }
     
   protected:
-    FlexGRWorker* grWorker_;
-    std::vector<bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16>>> shapes_; // only for routeConnFigs in gr worker
+    FlexGRWorker* grWorker;
+    std::vector<bgi::rtree<rq_box_value_t<grConnFig*>, bgi::quadratic<16>>> shapes; // only for routeConnFigs in gr worker
   };
 
   class FlexGRWorker {
   public:
     // constructors
     FlexGRWorker(FlexGR* grIn):
-                 design_(grIn->getDesign()), gr_(grIn), routeGCellIdxLL_(), routeGCellIdxUR_(),
-                 extBox_(), routeBox_(), grIter_(0), mazeEndIter_(1), workerCongCost_(0), workerHistCost_(0), 
-                 congThresh_(1.0), is2DRouting_(false), ripupMode_(0),
-                 nets_(), owner2nets_(), /*owner2extBoundPtNodes(), owner2routeBoundPtNodes(), owner2pinGCellNodes(),*/
-                 gridGraph_(grIn->getDesign(), this), rq_(this) {}
+                 design(grIn->getDesign()), gr(grIn), routeGCellIdxLL(), routeGCellIdxUR(),
+                 extBox(), routeBox(), grIter(0), mazeEndIter(1), workerCongCost(0), workerHistCost(0), 
+                 congThresh(1.0), is2DRouting(false), ripupMode(0),
+                 nets(), owner2nets(), /*owner2extBoundPtNodes(), owner2routeBoundPtNodes(), owner2pinGCellNodes(),*/
+                 gridGraph(grIn->getDesign(), this), rq(this) {}
     // setters
     void setRouteGCellIdxLL(const frPoint &in) {
-      routeGCellIdxLL_ = in;
+      routeGCellIdxLL = in;
     }
     void setRouteGCellIdxUR(const frPoint &in) {
-      routeGCellIdxUR_ = in;
+      routeGCellIdxUR = in;
     }
     void setExtBox(const frBox &in) {
-      extBox_.set(in);
+      extBox.set(in);
     }
     void setRouteBox(const frBox &in) {
-      routeBox_.set(in);
+      routeBox.set(in);
     }
     void setGRIter(int in) {
-      grIter_ = in;
+      grIter = in;
     }
     void setMazeEndIter(int in) {
-      mazeEndIter_ = in;
+      mazeEndIter = in;
     }
     void setCongCost(int in) {
-      workerCongCost_ = in;
+      workerCongCost = in;
     }
     void setHistCost(int in) {
-      workerHistCost_ = in;
+      workerHistCost = in;
     }
     void setCongThresh(double in) {
-      congThresh_ = in;
+      congThresh = in;
     }
     void set2D(bool in) {
-      is2DRouting_ = in;
+      is2DRouting = in;
     }
     void setRipupMode(int in) {
-      ripupMode_ = in;
+      ripupMode = in;
     }
 
     // getters
     frTechObject* getTech() const {
-      return design_->getTech();
+      return design->getTech();
     }
     frDesign* getDesign() const {
-      return design_;
+      return design;
     }
     FlexGR* getGR() const {
-      return gr_;
+      return gr;
     }
     const frPoint& getRouteGCellIdxLL() const {
-      return routeGCellIdxLL_;
+      return routeGCellIdxLL;
     }
     frPoint& getRouteGCellIdxLL() {
-      return routeGCellIdxLL_;
+      return routeGCellIdxLL;
     }
     const frPoint& getRouteGCellIdxUR() const {
-      return routeGCellIdxUR_;
+      return routeGCellIdxUR;
     }
     frPoint& getRouteGCellIdxUR() {
-      return routeGCellIdxUR_;
+      return routeGCellIdxUR;
     }
     void getExtBox(frBox &in) const {
-      in.set(extBox_);
+      in.set(extBox);
     }
     const frBox& getExtBox() const {
-      return extBox_;
+      return extBox;
     }
     frBox& getExtBox() {
-      return extBox_;
+      return extBox;
     }
     void getRouteBox(frBox &in) const {
-      in.set(routeBox_);
+      in.set(routeBox);
     }
     const frBox& getRouteBox() const {
-      return routeBox_;
+      return routeBox;
     }
     frBox& getRouteBox() {
-      return routeBox_;
+      return routeBox;
     }
     int getGRIter() const {
-      return grIter_;
+      return grIter;
     }
     int getMazeEndIter() const {
-      return mazeEndIter_;
+      return mazeEndIter;
     }
     double getCongThresh() const {
-      return congThresh_;
+      return congThresh;
     }
     bool is2D() const {
-      return is2DRouting_;
+      return is2DRouting;
     }
     frRegionQuery* getRegionQuery() const {
-      return design_->getRegionQuery();
+      return design->getRegionQuery();
     }
     FlexGRCMap* getCMap() const {
-      return gr_->getCMap(is2DRouting_);
+      return gr->getCMap(is2DRouting);
     }
     const std::vector<std::unique_ptr<grNet> >& getNets() const {
-      return nets_;
+      return nets;
     }
     std::vector<std::unique_ptr<grNet> >& getNets() {
-      return nets_;
+      return nets;
     }
     const std::vector<grNet*>* getGRNets(frNet* net) const {
-      auto it = owner2nets_.find(net);
-      if (it != owner2nets_.end()) {
+      auto it = owner2nets.find(net);
+      if (it != owner2nets.end()) {
         return &(it->second);
       } else {
         return nullptr;
       }
     }
     const FlexGRWorkerRegionQuery& getWorkerRegionQuery() const {
-      return rq_;
+      return rq;
     }
     FlexGRWorkerRegionQuery& getWorkerRegionQuery() {
-      return rq_;
+      return rq;
     }
 
     // others
@@ -340,29 +340,29 @@ namespace fr {
 
 
   protected:
-    frDesign*  design_;
-    FlexGR*    gr_;
-    frPoint    routeGCellIdxLL_;
-    frPoint    routeGCellIdxUR_;
-    frBox      extBox_;
-    frBox      routeBox_;
-    int        grIter_;
-    int        mazeEndIter_;
-    int        workerCongCost_;
-    int        workerHistCost_;
-    double     congThresh_;
-    bool       is2DRouting_;
-    int        ripupMode_;
+    frDesign*  design;
+    FlexGR*    gr;
+    frPoint    routeGCellIdxLL;
+    frPoint    routeGCellIdxUR;
+    frBox      extBox;
+    frBox      routeBox;
+    int        grIter;
+    int        mazeEndIter;
+    int        workerCongCost;
+    int        workerHistCost;
+    double     congThresh;
+    bool       is2DRouting;
+    int        ripupMode;
 
     // local storage
-    std::vector<std::unique_ptr<grNet> >   nets_;
-    std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;
+    std::vector<std::unique_ptr<grNet> >   nets;
+    std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets;
     // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<grNode*> > > owner2extBoundPtNodes;
     // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<grNode*> > > owner2routeBoundPtNodes;
     // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<frNode*> > > owner2pinNodes;
 
-    FlexGRGridGraph                        gridGraph_;
-    FlexGRWorkerRegionQuery                rq_;
+    FlexGRGridGraph                        gridGraph;
+    FlexGRWorkerRegionQuery                rq;
 
     // initBoundary
     void initBoundary_splitPathSeg(grPathSeg* pathSeg);

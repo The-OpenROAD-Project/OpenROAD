@@ -35,13 +35,9 @@
 
 #include "PostCtsOpt.h"
 
-#include "utility/Logger.h"
-
 #include <iostream>
 
 namespace cts {
-
-using utl::CTS;
 
 void PostCtsOpt::run()
 {
@@ -60,7 +56,7 @@ void PostCtsOpt::initSourceSinkDists()
   });
 
   _avgSourceSinkDist /= _clock->getNumSinks();
-  _logger->info(CTS, 36, " Avg. source sink dist: {:.2f} dbu.", _avgSourceSinkDist);
+  std::cout << " Avg. source sink dist: " << _avgSourceSinkDist << " dbu.\n";
 }
 
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
@@ -87,7 +83,7 @@ void PostCtsOpt::fixSourceSinkDists()
     fixNetSourceSinkDists(subNet);
   });
 
-  _logger->info(CTS, 37, " Num outlier sinks: {}", _numViolatingSinks);
+  std::cout << " Num outlier sinks: " << _numViolatingSinks << "\n";
 }
 
 void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
@@ -100,9 +96,6 @@ void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
     if (dist > 5 * _avgSourceSinkDist) {
       createSubClockNet(subNet, driver, sink);
       ++_numViolatingSinks;
-      if (_logger->debugCheck(utl::CTS, "HTree", 3)) {
-        std::cout << "Fixing Sink off by dist " << dist << " , Name = " << sinkName << std::endl;
-      }
     }
   });
 }

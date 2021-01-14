@@ -35,7 +35,7 @@
 
 #pragma once
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -77,6 +77,6 @@ void
 dbLinkDesign(const char *top_cell_name,
 	     dbVerilogNetwork *verilog_network,
 	     dbDatabase *db,
-             utl::Logger *logger);
+             Logger *logger);
 
 } // namespace

@@ -43,7 +43,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace dpl {
@@ -57,7 +57,7 @@ using std::string;
 using std::vector;
 
 using ord::closestPtInRect;
-using utl::DPL;
+using ord::DPL;
 
 static bool
 cellAreaLess(const Cell *cell1, const Cell *cell2);
@@ -66,91 +66,10 @@ void
 Opendp::detailedPlacement()
 {
   initGrid();
-  moveCellsOffBlocks();
   if (!groups_.empty()) {
     placeGroups();
   }
   place();
-}
-
-// Move std cells off of macros.
-// This is preferable to using a the diamond search because the max_displacement
-// would have to know the macro size and no search is necessary.
-// Note that this does not need to consider padding because its only job is to
-// get the overlapping cells close to the edge of the block so that the normal
-// diamond search can do it's job.
-void
-Opendp::moveCellsOffBlocks()
-{
-  cells_moved_off_blocks_count_ = 0;
-  for (Cell &cell : cells_) {
-    if (isStdCell(&cell)) {
-      int grid_x = gridX(&cell);
-      int grid_y = gridY(&cell);
-      Pixel *pixel = gridPixel(grid_x, grid_y);
-      if (pixel) {
-        const Cell *block = pixel->cell;
-        if (block != nullptr
-            && isBlock(block)) {
-          moveCellOffBlock(cell, block);
-        }
-      }
-    }
-  }
-}
-
-void
-Opendp::moveCellOffBlock(Cell &cell,
-                         const Cell *block)
-{
-  int x = cell.x_;
-  int y = cell.y_;
-  Rect block_bbox(block->x_, block->y_,
-                  block->x_ + block->width_, block->y_ + block->height_);
-  if (x >= block_bbox.xMin()
-      && x <= block_bbox.xMax()
-      && y >= block_bbox.yMin()
-      && y <= block_bbox.yMax()) {
-    bool move = false;
-    int moved_x, moved_y;
-    int x_dist_min = x - block_bbox.xMin();
-    int x_dist_max = block_bbox.xMax() - x;
-    int y_dist_min = y - block_bbox.yMin();
-    int y_dist_max = block_bbox.yMax() - y;
-    if (x_dist_min < x_dist_max
-        && x_dist_min < y_dist_min
-        && x_dist_min < y_dist_max) {
-      moved_x = block_bbox.xMin() - cell.width_;
-      moved_y = y;
-      move = true;
-    }
-    else if (x_dist_max <= x_dist_min
-             && x_dist_max <= y_dist_min
-             && x_dist_max <= y_dist_max) {
-      moved_x = block_bbox.xMax();
-      moved_y = y;
-      move = true;
-    }
-    else if (y_dist_min <= x_dist_min
-             && y_dist_min <= x_dist_max
-             && y_dist_min <= y_dist_max) {
-      moved_x = x;
-      moved_y = block_bbox.yMin() - cell.height_;
-      move = true;
-    }
-    else if (y_dist_max <= x_dist_min
-             && y_dist_max <= x_dist_max
-             && y_dist_max <= y_dist_min) {
-      moved_x = x;
-      moved_y = block_bbox.yMax();
-      move = true;
-    }
-    if (move) {
-      cells_moved_off_blocks_count_++;
-      cell.x_ = moved_x;
-      cell.y_ = moved_y;
-    }
-  }
 }
 
 void

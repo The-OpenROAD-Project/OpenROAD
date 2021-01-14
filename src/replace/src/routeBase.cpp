@@ -36,7 +36,7 @@
 
 #include "opendb/db.h"
 #include "fastroute/GlobalRouter.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include <string>
 #include <iostream>
@@ -50,7 +50,7 @@ using std::make_pair;
 using std::sort;
 using grt::GlobalRouter;
 
-using utl::GPL;
+using ord::GPL;
 
 namespace gpl {
 
@@ -377,7 +377,7 @@ TileGrid::reset() {
 }
 
 void
-TileGrid::setLogger(utl::Logger* log) {
+TileGrid::setLogger(ord::Logger* log) {
   log_ = log;
 }
 
@@ -582,7 +582,7 @@ RouteBase::RouteBase(
     odb::dbDatabase* db, 
     grt::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
-    utl::Logger* log)
+    ord::Logger* log)
   : RouteBase() {
   rbVars_ = rbVars;
   db_ = db;

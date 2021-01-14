@@ -36,8 +36,8 @@ using namespace fr;
 
 void FlexGRGridGraph::init() {
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
-  xgp_ = &(gCellPatterns.at(0));
-  ygp_ = &(gCellPatterns.at(1));
+  xgp = &(gCellPatterns.at(0));
+  ygp = &(gCellPatterns.at(1));
 
   initCoords();
   initGrids();
@@ -52,16 +52,16 @@ void FlexGRGridGraph::initCoords() {
   for (int xIdx = gcellIdxLL.x(); xIdx <= gcellIdxUR.x(); xIdx++) {
     frBox gcellBox;
     getDesign()->getTopBlock()->getGCellBox(frPoint(xIdx, 0), gcellBox);
-    xCoords_.push_back((gcellBox.left() + gcellBox.right()) / 2);
+    xCoords.push_back((gcellBox.left() + gcellBox.right()) / 2);
   }
   // yCoords
   for (int yIdx = gcellIdxLL.y(); yIdx <= gcellIdxUR.y(); yIdx++) {
     frBox gcellBox;
     getDesign()->getTopBlock()->getGCellBox(frPoint(0, yIdx), gcellBox);
-    yCoords_.push_back((gcellBox.bottom() + gcellBox.top()) / 2);
+    yCoords.push_back((gcellBox.bottom() + gcellBox.top()) / 2);
   }
   // z
-  if (!is2DRouting_) {
+  if (!is2DRouting) {
     for (auto &layer: getTech()->getLayers()) {
       if (layer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
@@ -77,33 +77,33 @@ void FlexGRGridGraph::initCoords() {
 
   frCoord zHeight = 0;
   for (auto &[k, v]: zMap) {
-    zCoords_.push_back(k);
+    zCoords.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
-    zHeights_.push_back(zHeight);
-    zDirs_.push_back((v == frcHorzPrefRoutingDir));
+    zHeights.push_back(zHeight);
+    zDirs.push_back((v == frcHorzPrefRoutingDir));
   }
 }
 
 void FlexGRGridGraph::initGrids() {
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
-  bits_.clear();
-  bits_.resize(xDim*yDim*zDim, 0);
-  prevDirs_.clear();
-  srcs_.clear();
-  dsts_.clear();
-  prevDirs_.resize(xDim*yDim*zDim*3, 0);
-  srcs_.resize(xDim*yDim*zDim, 0);
-  dsts_.resize(xDim*yDim*zDim, 0);
+  bits.clear();
+  bits.resize(xDim*yDim*zDim, 0);
+  prevDirs.clear();
+  srcs.clear();
+  dsts.clear();
+  prevDirs.resize(xDim*yDim*zDim*3, 0);
+  srcs.resize(xDim*yDim*zDim, 0);
+  dsts.resize(xDim*yDim*zDim, 0);
 }
 
 void FlexGRGridGraph::initEdges() {
   bool enableOutput = false;
 
-  for (frMIdx zIdx = 0; zIdx < (int)zCoords_.size(); zIdx++) {
-    auto dir = is2DRouting_ ? frcNonePrefRoutingDir : (zDirs_[zIdx] ? frcHorzPrefRoutingDir : frcVertPrefRoutingDir);
-    for (frMIdx xIdx = 0; xIdx < (int)xCoords_.size(); xIdx++) {
-      for (frMIdx yIdx = 0; yIdx < (int)yCoords_.size(); yIdx++) {
+  for (frMIdx zIdx = 0; zIdx < (int)zCoords.size(); zIdx++) {
+    auto dir = is2DRouting ? frcNonePrefRoutingDir : (zDirs[zIdx] ? frcHorzPrefRoutingDir : frcVertPrefRoutingDir);
+    for (frMIdx xIdx = 0; xIdx < (int)xCoords.size(); xIdx++) {
+      for (frMIdx yIdx = 0; yIdx < (int)yCoords.size(); yIdx++) {
         // horz
         if (enableOutput) {
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
@@ -111,7 +111,7 @@ void FlexGRGridGraph::initEdges() {
           }
         }
         if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir) &&
-            ((xIdx + 1) != (int)xCoords_.size())) {
+            ((xIdx + 1) != (int)xCoords.size())) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
           if (enableOutput) {
             if (!flag) {
@@ -126,7 +126,7 @@ void FlexGRGridGraph::initEdges() {
           }
         }
         if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir) &&
-            ((yIdx + 1) != (int)yCoords_.size())) {
+            ((yIdx + 1) != (int)yCoords.size())) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
           if (enableOutput) {
             if (!flag) {
@@ -140,7 +140,7 @@ void FlexGRGridGraph::initEdges() {
             cout <<"Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", U) already set" <<endl;
           }
         }
-        if ((zIdx + 1) != (int)zCoords_.size()) {
+        if ((zIdx + 1) != (int)zCoords.size()) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
           if (enableOutput) {
             if (!flag) {
@@ -160,13 +160,13 @@ void FlexGRGridGraph::resetStatus() {
 }
 
 void FlexGRGridGraph::resetSrc() {
-  srcs_.assign(srcs_.size(), 0);
+  srcs.assign(srcs.size(), 0);
 }
 
 void FlexGRGridGraph::resetDst() {
-  dsts_.assign(dsts_.size(), 0);
+  dsts.assign(dsts.size(), 0);
 }
 
 void FlexGRGridGraph::resetPrevNodeDir() {
-  prevDirs_.assign(prevDirs_.size(), 0);
+  prevDirs.assign(prevDirs.size(), 0);
 }

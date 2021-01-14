@@ -40,14 +40,14 @@
 #include "plot.h"
 #include "graphics.h"
 
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace gpl {
 using namespace std;
 
 using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
-using utl::GPL;
+using ord::GPL;
 
 typedef Eigen::Triplet< float > T;
 
@@ -71,7 +71,7 @@ InitialPlace::InitialPlace()
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars, 
     std::shared_ptr<PlacerBase> pb,
-    utl::Logger* log)
+    ord::Logger* log)
 : ipVars_(ipVars), pb_(pb), log_(log)
 {
 }

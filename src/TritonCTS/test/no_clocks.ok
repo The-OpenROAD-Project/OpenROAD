@@ -15,23 +15,24 @@ Notice 0: Finished DEF file: no_clock.def
  *****************************
  *  Import characterization  *
  *****************************
-[INFO CTS-0085]  Reading LUT file "lut.txt"
-Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           52          1           24          
-[WARNING CTS-0044] 180 wires are pure wire and no slew degration.
-TritonCTS forced slew degradation on these wires.
-[INFO CTS-0049]     Num wire segments: 4994
-[INFO CTS-0050]     Num keys in characterization LUT: 1677
-[INFO CTS-0051]     Actual min input cap: 8
-[INFO CTS-0086]  Reading solution list file "sol_list.txt".
+ Reading LUT file "lut.txt"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+    Actual min input cap: 8
+ Reading solution list file "sol_list.txt"
  **********************
  *  Find clock roots  *
  **********************
-[INFO CTS-0002]  User did not specify clock roots.
+ User did not specify clock roots.
  ************************
  *  Populate TritonCTS  *
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-[ERROR CTS-0083] No clock nets have been found.
-CTS-0083
+[ERROR UKN-0000] No clock nets have been found.
+
+UKN-0000
