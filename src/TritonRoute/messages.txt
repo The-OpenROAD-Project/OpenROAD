@@ -110,5 +110,3 @@ DRT 0111 io.cpp:788                unsupported PIN USE in db
 DRT 0112 io.cpp:818                unsupported layer {}
 DRT 0113 io.cpp:5151               techlayers for via {} not found in db tech
 DRT 0114 io.cpp:5262               unknown connfig type while writing net {}
-DRT 0003 io.cpp:5277               please load design first
-DRT 0004 io.cpp:5282               please load design first
