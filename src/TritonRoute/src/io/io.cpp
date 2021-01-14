@@ -148,6 +148,7 @@ frOrientEnum getFrOrient(odb::dbOrientType orient)
   case odb::dbOrientType::MXR90:
     return frOrientEnum::frcMXR90;  
   }
+  return frOrientEnum::frcR0;
 }
 
 void io::Parser::setInsts(odb::dbBlock* block)
@@ -486,9 +487,15 @@ void io::Parser::setNets(odb::dbBlock* block)
         logger->error(
             utl::DRT, 105, "component {} not found", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
-      auto instTerm = inst->getTerm(term->getMTerm()->getName());
-      if(instTerm==nullptr)
+      // gettin inst term
+      auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
+      if(frterm == nullptr)
         logger->error(utl::DRT, 106, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
+      int idx = frterm->getOrderId();
+      auto &instTerms = inst->getInstTerms();
+      auto instTerm = instTerms[idx].get();
+      assert(instTerm->getTerm()->getName() == term->getMTerm()->getName());
+      
       instTerm->addToNet(netIn);
       netIn->addInstTerm(instTerm);
       // graph enablement
