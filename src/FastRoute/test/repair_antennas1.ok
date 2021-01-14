@@ -48,12 +48,12 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 2677
-[INFO] Final number of vias : 1768
-[INFO] Final usage 3D       : 7981
+[INFO GRT-0110] Final usage          : 2677
+[INFO GRT-0111] Final number of vias : 1768
+[INFO GRT-0112] Final usage 3D       : 7981
 [INFO GRT-0018] Total wirelength: 27547 um
 Repairing antennas...
-[WARNING GRT-0025] No OR_DEFAULT vias defined
+[WARNING GRT-0043] No OR_DEFAULT vias defined
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -124,9 +124,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 175
-[INFO] Final number of vias : 101
-[INFO] Final usage 3D       : 478
+[INFO GRT-0110] Final usage          : 175
+[INFO GRT-0111] Final number of vias : 101
+[INFO GRT-0112] Final usage 3D       : 478
 [INFO GRT-0014] Num routed nets: 322
 No differences found.
 No differences found.

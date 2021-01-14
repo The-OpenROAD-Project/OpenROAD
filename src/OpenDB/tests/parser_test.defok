@@ -121,7 +121,10 @@ COMPONENTS 12 ;
     - _g2_ NOR2X1 ;
 END COMPONENTS
 PINS 13 ;
-    - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL + FIXED ( 55 60 ) N + LAYER metal1 ( -5 -10 ) ( 5 10 ) ;
+    - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( -5 -10 ) ( 5 10 )
+        + FIXED ( 55 60 ) N ;
     - inp1 + NET inp1 + DIRECTION INPUT + USE SIGNAL ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
     - out[8] + NET out[8] + SPECIAL + DIRECTION INPUT + USE SIGNAL ;

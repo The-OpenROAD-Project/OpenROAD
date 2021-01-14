@@ -55,8 +55,11 @@ void
 Opendp::initGrid()
 {
   // Make pixel grid
-  grid_ = makeGrid();
-  // fixed cell marking
+  if (grid_ == nullptr)
+    grid_ = makeGrid();
+  else
+    initGridPixels(grid_);
+  // Paint fixed cells.
   fixed_cell_assign();
   // group mapping & x_axis dummycell insertion
   group_pixel_assign2();
@@ -68,9 +71,16 @@ Grid *
 Opendp::makeGrid()
 {
   Grid *grid = new Pixel *[row_count_];
-  for (int i = 0; i < row_count_; i++) {
+  for (int i = 0; i < row_count_; i++)
     grid[i] = new Pixel[row_site_count_];
+  initGridPixels(grid);
+  return grid;
+}
 
+void
+Opendp::initGridPixels(Grid *grid)
+{
+  for (int i = 0; i < row_count_; i++) {
     for (int j = 0; j < row_site_count_; j++) {
       Pixel &pixel = grid[i][j];
       pixel.grid_y_ = i;
@@ -82,7 +92,6 @@ Opendp::makeGrid()
     }
   }
 
-  
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
     int orig_x, orig_y;
@@ -100,8 +109,6 @@ Opendp::makeGrid()
       }
     }
   }
-
-  return grid;
 }
 
 void
@@ -113,6 +120,17 @@ Opendp::deleteGrid(Grid *grid)
     }
     delete [] grid;
   }
+}
+
+Pixel *
+Opendp::gridPixel(int x,
+                  int y)
+{
+  if (x >= 0 && x < row_site_count_
+      && y >= 0 && y < row_count_)
+    return &grid_[y][x];
+  else
+    return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
