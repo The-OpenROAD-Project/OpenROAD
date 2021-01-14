@@ -34,45 +34,48 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HungarianMatching.h"
+
 #include "utility/Logger.h"
 
 namespace ppl {
 
-HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots, Logger *logger)
-    : _netlist(section.net), _slots(slots)
+HungarianMatching::HungarianMatching(Section& section,
+                                     SlotVector& slots,
+                                     Logger* logger)
+    : netlist_(section.net), slots_(slots)
 {
-  _numIOPins = _netlist.numIOPins();
-  _beginSlot = section.beginSlot;
-  _endSlot = section.endSlot;
-  _numSlots = _endSlot - _beginSlot;
-  _nonBlockedSlots = section.numSlots;
-  _edge = section.edge;
-  _logger = logger;
+  num_io_pins_ = netlist_.numIOPins();
+  begin_slot_ = section.begin_slot;
+  end_slot_ = section.end_slot;
+  num_slots_ = end_slot_ - begin_slot_;
+  non_blocked_slots_ = section.num_slots;
+  edge_ = section.edge;
+  logger_ = logger;
 }
 
 void HungarianMatching::findAssignment(std::vector<Constraint>& constraints)
 {
   createMatrix(constraints);
-  _hungarianSolver.Solve(_hungarianMatrix, _assignment);
+  hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
 void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
 {
-  _hungarianMatrix.resize(_nonBlockedSlots);
-  int slotIndex = 0;
-  for (int i = _beginSlot; i < _endSlot; ++i) {
+  hungarian_matrix_.resize(non_blocked_slots_);
+  int slot_index = 0;
+  for (int i = begin_slot_; i < end_slot_; ++i) {
     int pinIndex = 0;
-    Point newPos = _slots[i].pos;
-    if (_slots[i].blocked) {
+    Point newPos = slots_[i].pos;
+    if (slots_[i].blocked) {
       continue;
     }
-    _hungarianMatrix[slotIndex].resize(_numIOPins);
-    _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
-      int hpwl = _netlist.computeIONetHPWL(idx, newPos, _edge, constraints);
-      _hungarianMatrix[slotIndex][pinIndex] = hpwl;
+    hungarian_matrix_[slot_index].resize(num_io_pins_);
+    netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+      int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
+      hungarian_matrix_[slot_index][pinIndex] = hpwl;
       pinIndex++;
     });
-    slotIndex++;
+    slot_index++;
   }
 }
 
@@ -81,31 +84,34 @@ inline bool samePos(Point& a, Point& b)
   return (a.x() == b.x() && a.y() == b.y());
 }
 
-void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
+void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
 {
-  size_t rows = _nonBlockedSlots;
+  size_t rows = non_blocked_slots_;
   size_t col = 0;
-  int slotIndex = 0;
-  _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
-    slotIndex = _beginSlot;
+  int slot_index = 0;
+  netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+    slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
-      while (_slots[slotIndex].blocked && slotIndex < _slots.size())
-        slotIndex++;
-      if (_assignment[row] != col) {
-        slotIndex++;
+      while (slots_[slot_index].blocked && slot_index < slots_.size())
+        slot_index++;
+      if (assignment_[row] != col) {
+        slot_index++;
         continue;
       }
-      if (_hungarianMatrix[row][col] == hungarian_fail) {
-        _logger->warn(utl::PPL, 33, "I/O pin {} cannot be placed in the specified region. Not enough space",
-             ioPin.getName().c_str());
+      if (hungarian_matrix_[row][col] == hungarian_fail) {
+        logger_->warn(utl::PPL,
+                      33,
+                      "I/O pin {} cannot be placed in the specified region. "
+                      "Not enough space",
+                      io_pin.getName().c_str());
       }
-      ioPin.setPos(_slots[slotIndex].pos);
-      ioPin.setLayer(_slots[slotIndex].layer);
-      assigment.push_back(ioPin);
-      Point sPos = _slots[slotIndex].pos;
-      for (int i = 0; i < _slots.size(); i++) {
-        if (samePos(_slots[i].pos, sPos)) {
-          _slots[i].used = true;
+      io_pin.setPos(slots_[slot_index].pos);
+      io_pin.setLayer(slots_[slot_index].layer);
+      assigment.push_back(io_pin);
+      Point s_pos = slots_[slot_index].pos;
+      for (int i = 0; i < slots_.size(); i++) {
+        if (samePos(slots_[i].pos, s_pos)) {
+          slots_[i].used = true;
           break;
         }
       }
