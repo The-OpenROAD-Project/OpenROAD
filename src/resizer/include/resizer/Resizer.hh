@@ -52,7 +52,7 @@ using std::array;
 using std::string;
 
 using ord::OpenRoad;
-using ord::Logger;
+using utl::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -98,6 +98,7 @@ using sta::Pvt;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
+using sta::GateTimingModel;
 
 class BufferedNet;
 
@@ -264,6 +265,12 @@ protected:
                        TimingArc *arc,
                        Slew in_slew,
                        Slew out_slew);
+  Slew gateSlewDiff(LibertyCell *cell,
+                    TimingArc *arc,
+                    GateTimingModel *model,
+                    Slew in_slew,
+                    float load_cap,
+                    Slew out_slew);
   void findBufferTargetSlews(LibertyLibrarySeq *resize_libs);
   void findBufferTargetSlews(LibertyLibrary *library,
                              // Return values.
@@ -361,6 +368,7 @@ protected:
                                Pin *load_pin,
                                double wire_length); // meters
   string makeUniqueNetName();
+  Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
@@ -397,6 +405,7 @@ protected:
   void makeHoldDelay(Vertex *drvr,
                      int buffer_count,
                      PinSeq &load_pins,
+                     bool loads_have_out_port,
                      LibertyCell *buffer_cell);
   Point findCenter(PinSeq &pins);
   Slack holdSlack(Slacks &slacks);

@@ -42,7 +42,7 @@
 
 namespace fin {
 
-using ord::FIN;
+using utl::FIN;
 
 namespace pt = boost::property_tree;
 
@@ -94,7 +94,7 @@ static double getValue(const char* key, pt::ptree& tree)
 
 ////////////////////////////////////////////////////////////////
 
-DensityFill::DensityFill(dbDatabase* db, ord::Logger* logger, bool debug)
+DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
   : db_(db), logger_(logger)
 {
   if (debug && Graphics::guiActive()) {
@@ -470,7 +470,7 @@ void DensityFill::fill_layer(dbBlock* block,
   prune(fill_area, layer, cfg.non_opc, graphics_.get());
 
   fill_area.get(polygons);
-  printf("  Filling %ld areas with non-OPC fill...\n", polygons.size());
+  logger_->info(FIN, 9, "Filling {} areas with non-OPC fill.", polygons.size());
 
   Polygon90Set non_opc_fill_area;
   for (auto& polygon : polygons) {
@@ -528,7 +528,7 @@ void DensityFill::fill(const char* cfg_filename, const odb::Rect& fill_area)
   for (dbTechLayer* layer : tech->getLayers()) {
     auto it = layers_.find(layer);
     if (it == layers_.end()) {
-      printf("skip layer %s\n", layer->getConstName());
+      logger_->warn(FIN, 10, "skipping layer {}.", layer->getConstName());
       continue;
     }
     fill_layer(block, layer, fill_area);

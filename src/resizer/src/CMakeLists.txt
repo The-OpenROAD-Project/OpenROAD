@@ -73,5 +73,5 @@ target_include_directories(resizer
 
 target_link_libraries(resizer
   PUBLIC
-  spdlog::spdlog
+  utility
   )

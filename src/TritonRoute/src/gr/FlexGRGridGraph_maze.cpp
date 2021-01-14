@@ -57,7 +57,7 @@ bool FlexGRGridGraph::search(vector<FlexMazeIdx> &connComps, grNode* nextPinNode
                   max(dstMazeIdx2.y(), mi.y()),
                   max(dstMazeIdx2.z(), mi.z()));
 
-  wavefront = FlexGRWavefront();
+  wavefront_ = FlexGRWavefront();
 
   frPoint currPt;
   // push connected components to wavefront
@@ -72,15 +72,15 @@ bool FlexGRGridGraph::search(vector<FlexMazeIdx> &connComps, grNode* nextPinNode
     getPoint(idx.x(), idx.y(), currPt);
     frCoord currDist = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
     FlexGRWavefrontGrid currGrid(idx.x(), idx.y(), idx.z(), currDist, 0, getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
-    wavefront.push(currGrid);
+    wavefront_.push(currGrid);
     if (enableOutput) {
       cout <<"src add to wavefront (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;
     }
   }
 
-  while (!wavefront.empty()) {
-    auto currGrid = wavefront.top();
-    wavefront.pop();
+  while (!wavefront_.empty()) {
+    auto currGrid = wavefront_.top();
+    wavefront_.pop();
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
     }
@@ -355,14 +355,14 @@ void FlexGRGridGraph::expand(FlexGRWavefrontGrid &currGrid, const frDirEnum &dir
     if (getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == frDirEnum::UNKNOWN ||
         getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
-      wavefront.push(nextWavefrontGrid);
+      wavefront_.push(nextWavefrontGrid);
       if (enableOutput) {
         std::cout << "    commit (" << tailIdx.x() << ", " << tailIdx.y() << ", " << tailIdx.z() << ") prev accessing dir = " << (int)tailDir << "\n";
       }
     }
   } else {  
     // add to wavefront
-    wavefront.push(nextWavefrontGrid);
+    wavefront_.push(nextWavefrontGrid);
   }
   return;
 }
@@ -430,11 +430,11 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid &currGrid, con
 
   bool histCost   = hasHistoryCost(tmpX, tmpY, tmpZ);
 
-  overflowCost = (rawDemand >= rawSupply * grWorker->getCongThresh());
+  overflowCost = (rawDemand >= rawSupply * grWorker_->getCongThresh());
 
   nextPathCost += getEdgeLength(gridX, gridY, gridZ, dir)
-                  + (congCost   ? getCongCost(rawDemand, rawSupply * grWorker->getCongThresh()) * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (histCost   ? 4 * getCongCost(rawDemand, rawSupply * grWorker->getCongThresh()) * getHistoryCost(gridX, gridY, gridZ) *  getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                  + (congCost   ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                  + (histCost   ? 4 * getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getHistoryCost(gridX, gridY, gridZ) *  getEdgeLength(gridX, gridY, gridZ, dir) : 0)
                   + (blockCost  ? BLOCKCOST                         * getEdgeLength(gridX, gridY, gridZ, dir) * 100  : 0)
                   + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
   // discourage using layer below VIA_ACCESS_LAYERNUM

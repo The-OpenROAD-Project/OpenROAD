@@ -42,6 +42,7 @@ if (Qt5_FOUND)
     opendb
     Qt5::Core
     Qt5::Widgets
+    utility
   )
 else()
   message(STATUS "GUI is not enabled")

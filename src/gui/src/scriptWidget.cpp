@@ -45,7 +45,7 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace gui {
 
@@ -57,6 +57,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
+  output_->setFont(QFont("Monospace"));
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
@@ -309,7 +310,7 @@ private:
   ScriptWidget* widget_;
 };
 
-void ScriptWidget::setLogger(ord::Logger* logger)
+void ScriptWidget::setLogger(utl::Logger* logger)
 {
   logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }

@@ -110,7 +110,7 @@ void Node::SetGLoc(NodeIdx t_loc)
 }
 
 //! Function to print node details
-void Node::Print(ord::Logger* logger)
+void Node::Print(utl::Logger* logger)
 {
   logger->report("Node: {}", m_node_loc);
   logger->report(

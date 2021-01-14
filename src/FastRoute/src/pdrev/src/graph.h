@@ -40,10 +40,15 @@
 #include "edge.h"
 #include "node.h"
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace PD {
 
 using std::ofstream;
 using std::vector;
+using utl::Logger;
 
 class Graph
 {
@@ -122,7 +127,8 @@ class Graph
         unsigned seed,
         unsigned distance,
         vector<unsigned>& x,
-        vector<unsigned>& y);
+        vector<unsigned>& y,
+        Logger* logger);
   ~Graph();
   bool buildNearestNeighborsForSPT(unsigned num_terminals);
   bool buildNearestNeighbors_single_node(unsigned num_terminals, unsigned idx);
@@ -219,6 +225,9 @@ class Graph
                            std::pair<double, double> C,
                            std::pair<double, double> D,
                            std::pair<double, double>& out);
+
+ private:
+  Logger* _logger;
 };
 
 }  // namespace PD
