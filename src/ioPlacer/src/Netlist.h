@@ -58,6 +58,7 @@ enum class Orientation
   east,
   west
 };
+
 enum class Direction
 {
   input,
@@ -69,10 +70,6 @@ enum class Direction
 
 class InstancePin
 {
- protected:
-  std::string name_;
-  odb::Point pos_;
-
  public:
   InstancePin(const std::string& name, const odb::Point& pos)
       : name_(name), pos_(pos)
@@ -82,19 +79,14 @@ class InstancePin
   odb::Point getPos() const { return pos_; }
   int getX() const { return pos_.getX(); }
   int getY() const { return pos_.getY(); }
+
+ protected:
+  std::string name_;
+  odb::Point pos_;
 };
 
 class IOPin : public InstancePin
 {
- private:
-  Orientation orientation_;
-  Direction direction_;
-  odb::Point lower_bound_;
-  odb::Point upper_bound_;
-  std::string net_name_;
-  std::string location_type_;
-  int layer_;
-
  public:
   IOPin(const std::string& name,
         const odb::Point& pos,
@@ -135,21 +127,19 @@ class IOPin : public InstancePin
   std::string getNetName() const { return net_name_; }
   std::string getLocationType() const { return location_type_; };
   int getLayer() const { return layer_; }
+
+ private:
+  Orientation orientation_;
+  Direction direction_;
+  odb::Point lower_bound_;
+  odb::Point upper_bound_;
+  std::string net_name_;
+  std::string location_type_;
+  int layer_;
 };
 
 class Netlist
 {
- private:
-  std::vector<InstancePin> inst_pins_;
-  std::vector<int> net_pointer_;
-  std::vector<IOPin> io_pins_;
-
-  bool checkSlotForPin(IOPin& pin,
-                       Edge edge,
-                       odb::Point& point,
-                       std::vector<Constraint> restrictions);
-  bool checkInterval(Constraint constraint, Edge edge, int pos);
-
  public:
   Netlist();
 
@@ -167,6 +157,17 @@ class Netlist
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
   void clear();
+
+ private:
+  std::vector<InstancePin> inst_pins_;
+  std::vector<int> net_pointer_;
+  std::vector<IOPin> io_pins_;
+
+  bool checkSlotForPin(IOPin& pin,
+                       Edge edge,
+                       odb::Point& point,
+                       std::vector<Constraint> restrictions);
+  bool checkInterval(Constraint constraint, Edge edge, int pos);
 };
 
 }  // namespace ppl
