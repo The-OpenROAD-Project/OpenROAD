@@ -195,9 +195,9 @@ dbBlock* LayoutViewer::getBlock()
   return block;
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
+void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 {
-  pixelsPerDBU_ = pixelsPerDBU;
+  pixelsPerDBU_ = pixels_per_dbu;
   dbBlock* block = getBlock();
   if (!block) {
     return;
