@@ -696,8 +696,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             tmpP->addToNet(netIn);
             tmpP->setLayerNum(layerNum);
             width = (width) ? width : tech->name2layer[layerName]->getWidth();
-            auto defaultBeginExt = width / 2;
-            auto defaultEndExt = width / 2;
+            auto defaultExt = width / 2;
 
             frEndStyleEnum tmpBeginEnum;
             if (box->getWireShapeType()==odb::dbWireShapeType::NONE) {
