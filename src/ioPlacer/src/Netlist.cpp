@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Netlist.h"
+
 #include "Slots.h"
 #include "ioplacer/IOPlacer.h"
 
@@ -67,8 +68,7 @@ void Netlist::forEachIOPin(
   }
 }
 
-void Netlist::forEachSinkOfIO(int idx,
-                              std::function<void(InstancePin&)> func)
+void Netlist::forEachSinkOfIO(int idx, std::function<void(InstancePin&)> func)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
@@ -149,7 +149,9 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
   return (x + y);
 }
 
-int Netlist::computeIONetHPWL(int idx, Point slot_pos, Edge edge, 
+int Netlist::computeIONetHPWL(int idx,
+                              Point slot_pos,
+                              Edge edge,
                               std::vector<Constraint>& constraints)
 {
   int hpwl;
@@ -173,35 +175,38 @@ int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
   for (int idx = net_start; idx < net_end; ++idx) {
     Point pin_pos = inst_pins_[idx].getPos();
     total_distance += std::abs(pin_pos.x() - slot_pos.x())
-                     + std::abs(pin_pos.y() - slot_pos.y());
+                      + std::abs(pin_pos.y() - slot_pos.y());
   }
 
   return total_distance;
 }
 
-bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
-                        std::vector<Constraint> constraints)
+bool Netlist::checkSlotForPin(IOPin& pin,
+                              Edge edge,
+                              odb::Point& point,
+                              std::vector<Constraint> constraints)
 {
   bool valid_slot = true;
 
   for (Constraint constraint : constraints) {
-    int pos = (edge == Edge::top || edge == Edge::bottom) ?
-               point.x() :  point.y();
+    int pos
+        = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
 
     if (pin.getDirection() == constraint.direction) {
       valid_slot = checkInterval(constraint, edge, pos);
     } else if (pin.getName() == constraint.name) {
-      valid_slot = checkInterval(constraint, edge, pos); 
+      valid_slot = checkInterval(constraint, edge, pos);
     }
   }
 
   return valid_slot;
 }
 
-bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
-  return (constraint.interval.getEdge() == edge &&
-          pos >= constraint.interval.getBegin() &&
-          pos <= constraint.interval.getEnd());
+bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos)
+{
+  return (constraint.interval.getEdge() == edge
+          && pos >= constraint.interval.getBegin()
+          && pos <= constraint.interval.getEnd());
 }
 
 void Netlist::clear()

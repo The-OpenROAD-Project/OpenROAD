@@ -35,8 +35,8 @@
 
 #include "ioplacer/MakeIoplacer.h"
 
-#include "ioplacer/IOPlacer.h"
 #include "Parameters.h"
+#include "ioplacer/IOPlacer.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 

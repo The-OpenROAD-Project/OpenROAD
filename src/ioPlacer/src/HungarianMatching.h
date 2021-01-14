@@ -43,9 +43,9 @@
 #include <utility>
 
 #include "Hungarian.h"
-#include "ioplacer/IOPlacer.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "ioplacer/IOPlacer.h"
 
 namespace utl {
 class Logger;
@@ -72,12 +72,12 @@ class HungarianMatching
   int non_blocked_slots_;
   Edge edge_;
   const int hungarian_fail = std::numeric_limits<int>::max();
-  Logger *logger_;
+  Logger* logger_;
 
   void createMatrix(std::vector<Constraint>& constraints);
 
  public:
-  HungarianMatching(Section&, SlotVector&, Logger *logger);
+  HungarianMatching(Section&, SlotVector&, Logger* logger);
   virtual ~HungarianMatching() = default;
   void findAssignment(std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&);

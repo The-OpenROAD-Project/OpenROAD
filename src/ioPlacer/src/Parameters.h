@@ -77,7 +77,10 @@ class Parameters
     horizontal_length_extend_ = length;
   }
   float getHorizontalLengthExtend() const { return horizontal_length_extend_; }
-  void setVerticalLengthExtend(float length) { vertical_length_extend_ = length; }
+  void setVerticalLengthExtend(float length)
+  {
+    vertical_length_extend_ = length;
+  }
   float getVerticalLengthExtend() const { return vertical_length_extend_; }
   void setHorizontalLength(float length) { horizontal_length_ = length; }
   float getHorizontalLength() const { return horizontal_length_; }

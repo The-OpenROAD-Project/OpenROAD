@@ -53,7 +53,7 @@ namespace odb {
 class dbDatabase;
 class dbTech;
 class dbBlock;
-}
+}  // namespace odb
 
 namespace ppl {
 
@@ -86,9 +86,7 @@ struct Interval
   int begin;
   int end;
   Interval() = default;
-  Interval(Edge edg, int b, int e) :
-    edge(edg), begin(b), end(e)
-  {}
+  Interval(Edge edg, int b, int e) : edge(edg), begin(b), end(e) {}
   Edge getEdge() { return edge; }
   int getBegin() { return begin; }
   int getEnd() { return end; }
@@ -99,9 +97,10 @@ struct Constraint
   std::string name;
   Direction direction;
   Interval interval;
-  Constraint(std::string name, Direction dir, Interval interv) :
-    name(name), direction(dir), interval(interv)
-  {}
+  Constraint(std::string name, Direction dir, Interval interv)
+      : name(name), direction(dir), interval(interv)
+  {
+  }
 };
 
 class IOPlacer
@@ -116,10 +115,11 @@ class IOPlacer
   Parameters* getParameters() { return parms_; }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addDirectionConstraint(Direction direction, Edge edge, 
-                               int begin, int end);
-  void addNameConstraint(std::string name, Edge edge, 
-                               int begin, int end);
+  void addDirectionConstraint(Direction direction,
+                              Edge edge,
+                              int begin,
+                              int end);
+  void addNameConstraint(std::string name, Edge edge, int begin, int end);
   void addHorLayer(int layer) { hor_layers_.insert(layer); }
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
@@ -144,7 +144,8 @@ class IOPlacer
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx);
+  void initNetlistAndCore(std::set<int> hor_layer_idx,
+                          std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
@@ -160,14 +161,15 @@ class IOPlacer
   bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx);
+  void populateIOPlacer(std::set<int> hor_layer_idx,
+                        std::set<int> ver_layer_idx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();
 
   ord::OpenRoad* openroad_;
-  Logger *logger_;
+  Logger* logger_;
   Parameters* parms_;
   Netlist netlist_io_pins_;
   SlotVector slots_;

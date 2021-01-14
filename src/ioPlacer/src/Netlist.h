@@ -120,8 +120,14 @@ class IOPin : public InstancePin
   void setY(const int y) { pos_.setY(y); }
   void setPos(const odb::Point pos) { pos_ = pos; }
   void setPos(const int x, const int y) { pos_ = odb::Point(x, y); }
-  void setLowerBound(const int x, const int y) { lower_bound_ = odb::Point(x, y); };
-  void setUpperBound(const int x, const int y) { upper_bound_ = odb::Point(x, y); };
+  void setLowerBound(const int x, const int y)
+  {
+    lower_bound_ = odb::Point(x, y);
+  };
+  void setUpperBound(const int x, const int y)
+  {
+    upper_bound_ = odb::Point(x, y);
+  };
   void setLayer(const int layer) { layer_ = layer; }
   Direction getDirection() const { return direction_; }
   odb::Point getLowerBound() const { return lower_bound_; };
@@ -138,7 +144,9 @@ class Netlist
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
 
-  bool checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
+  bool checkSlotForPin(IOPin& pin,
+                       Edge edge,
+                       odb::Point& point,
                        std::vector<Constraint> restrictions);
   bool checkInterval(Constraint constraint, Edge edge, int pos);
 

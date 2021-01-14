@@ -34,11 +34,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HungarianMatching.h"
+
 #include "utility/Logger.h"
 
 namespace ppl {
 
-HungarianMatching::HungarianMatching(Section& section, SlotVector& slots, Logger *logger)
+HungarianMatching::HungarianMatching(Section& section,
+                                     SlotVector& slots,
+                                     Logger* logger)
     : netlist_(section.net), slots_(slots)
 {
   num_io_pins_ = netlist_.numIOPins();
@@ -96,8 +99,11 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
         continue;
       }
       if (hungarian_matrix_[row][col] == hungarian_fail) {
-        logger_->warn(utl::PPL, 33, "I/O pin {} cannot be placed in the specified region. Not enough space",
-             io_pin.getName().c_str());
+        logger_->warn(utl::PPL,
+                      33,
+                      "I/O pin {} cannot be placed in the specified region. "
+                      "Not enough space",
+                      io_pin.getName().c_str());
       }
       io_pin.setPos(slots_[slot_index].pos);
       io_pin.setLayer(slots_[slot_index].layer);

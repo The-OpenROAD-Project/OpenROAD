@@ -35,11 +35,12 @@
 
 #include "ioplacer/IOPlacer.h"
 
-#include <random>
 #include <algorithm>
+#include <random>
+
 #include "opendb/db.h"
-#include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
+#include "utility/Logger.h"
 
 namespace ppl {
 
@@ -85,7 +86,8 @@ IOPlacer::~IOPlacer()
   deleteComponents();
 }
 
-void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx)
+void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx,
+                                  std::set<int> ver_layer_idx)
 {
   populateIOPlacer(hor_layer_idx, ver_layer_idx);
 }
@@ -129,7 +131,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
   const double seed = parms_->getRandSeed();
 
   SlotVector valid_slots;
-  for (Slot &slot : slots_) {
+  for (Slot& slot : slots_) {
     if (!slot.blocked) {
       valid_slots.push_back(slot);
     }
@@ -244,9 +246,8 @@ void IOPlacer::initIOLists()
 bool IOPlacer::checkBlocked(Edge edge, int pos)
 {
   for (Interval blocked_interval : excluded_intervals_) {
-    if (blocked_interval.getEdge() == edge &&
-        pos >= blocked_interval.getBegin() &&
-        pos <= blocked_interval.getEnd()) {
+    if (blocked_interval.getEdge() == edge && pos >= blocked_interval.getBegin()
+        && pos <= blocked_interval.getEnd()) {
       return true;
     }
   }
@@ -274,32 +275,34 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
 
-    int min_dst_pins = vertical ? core_.getMinDstPinsX()[i] * parms_->getMinDistance()
-                              : core_.getMinDstPinsY()[i] * parms_->getMinDistance();
-    int init_tracks = vertical ? core_.getInitTracksX()[i]
-                              : core_.getInitTracksY()[i];
-    int num_tracks = vertical ? core_.getNumTracksX()[i]
-                             : core_.getNumTracksY()[i];
+    int min_dst_pins
+        = vertical ? core_.getMinDstPinsX()[i] * parms_->getMinDistance()
+                   : core_.getMinDstPinsY()[i] * parms_->getMinDistance();
+    int init_tracks
+        = vertical ? core_.getInitTracksX()[i] : core_.getInitTracksY()[i];
+    int num_tracks
+        = vertical ? core_.getNumTracksX()[i] : core_.getNumTracksY()[i];
 
-    float thickness_multiplier = vertical ? parms_->getVerticalThicknessMultiplier()
-                                         : parms_->getHorizontalThicknessMultiplier();
+    float thickness_multiplier
+        = vertical ? parms_->getVerticalThicknessMultiplier()
+                   : parms_->getHorizontalThicknessMultiplier();
 
     int half_width = vertical ? int(ceil(core_.getMinWidthX()[i] / 2.0))
-                             : int(ceil(core_.getMinWidthY()[i] / 2.0));
+                              : int(ceil(core_.getMinWidthY()[i] / 2.0));
 
     half_width *= thickness_multiplier;
 
-    int num_tracks_offset
-      = std::ceil(offset / (std::max(core_.getMinDstPinsX()[i] * parms_->getMinDistance(),
-                                     core_.getMinDstPinsY()[i] * parms_->getMinDistance())));
+    int num_tracks_offset = std::ceil(
+        offset
+        / (std::max(core_.getMinDstPinsX()[i] * parms_->getMinDistance(),
+                    core_.getMinDstPinsY()[i] * parms_->getMinDistance())));
 
     start_idx
-        = std::max(0.0,
-                   ceil((min + half_width - init_tracks) / min_dst_pins))
+        = std::max(0.0, ceil((min + half_width - init_tracks) / min_dst_pins))
           + num_tracks_offset;
     end_idx
         = std::min((num_tracks - 1),
-                   (int)floor((max - half_width - init_tracks) / min_dst_pins))
+                   (int) floor((max - half_width - init_tracks) / min_dst_pins))
           - num_tracks_offset;
     if (vertical) {
       curr_x = init_tracks + start_idx * min_dst_pins;
@@ -327,7 +330,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     for (Point pos : slots) {
       curr_x = pos.getX();
       curr_y = pos.getY();
-      bool blocked = vertical ? checkBlocked(edge, curr_x) : checkBlocked(edge, curr_y);
+      bool blocked
+          = vertical ? checkBlocked(edge, curr_x) : checkBlocked(edge, curr_y);
       slots_.push_back({blocked, false, Point(curr_x, curr_y), layer});
     }
     i++;
@@ -393,10 +397,13 @@ void IOPlacer::createSections()
   int begin_slot = 0;
   int end_slot = 0;
 
-  int slots_per_edge = num_slots/slots_per_section_;
+  int slots_per_edge = num_slots / slots_per_section_;
   if (slots_per_edge < 4) {
     slots_per_section_ = num_slots / 4;
-    logger_->warn(PPL, 34, "Redefining the number of slots per section to have at least one section per edge");
+    logger_->warn(PPL,
+                  34,
+                  "Redefining the number of slots per section to have at least "
+                  "one section per edge");
   }
 
   while (end_slot < num_slots) {
@@ -457,10 +464,12 @@ bool IOPlacer::assignPinsSections()
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> inst_pins_vector;
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = net.computeIONetHPWL(idx, sections[i].pos, sections[i].edge, constraints_);
+      dst[i] = net.computeIONetHPWL(
+          idx, sections[i].pos, sections[i].edge, constraints_);
     }
-    net.forEachSinkOfIO(
-        idx, [&](InstancePin& inst_pin) { inst_pins_vector.push_back(inst_pin); });
+    net.forEachSinkOfIO(idx, [&](InstancePin& inst_pin) {
+      inst_pins_vector.push_back(inst_pin);
+    });
     for (auto i : sortIndexes(dst)) {
       if (sections[i].cur_slots < sections[i].max_slots) {
         sections[i].net.addIONet(io_pin, inst_pins_vector);
@@ -491,7 +500,8 @@ void IOPlacer::printConfig()
 {
   logger_->info(PPL, 1, " * Num of slots          {}", slots_.size());
   logger_->info(PPL, 2, " * Num of I/O            {}", netlist_.numIOPins());
-  logger_->info(PPL, 3, " * Num of I/O w/sink     {}", netlist_io_pins_.numIOPins());
+  logger_->info(
+      PPL, 3, " * Num of I/O w/sink     {}", netlist_io_pins_.numIOPins());
   logger_->info(PPL, 4, " * Num of I/O w/o sink   {}", zero_sink_ios_.size());
   logger_->info(PPL, 5, " * Slots Per Section     {}", slots_per_section_);
   logger_->info(PPL, 6, " * Slots Increase Factor {}", slots_increase_factor_);
@@ -514,16 +524,22 @@ void IOPlacer::setupSections()
     usage_per_section_ *= (1 + usage_increase_factor_);
     slots_per_section_ *= (1 + slots_increase_factor_);
     if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
-      logger_->warn(PPL, 36, "Number of sections is {}"
-           " while the maximum recommended value is {}"
-           " this may negatively affect performance",
-           sections_.size(), MAX_SECTIONS_RECOMMENDED);
+      logger_->warn(PPL,
+                    36,
+                    "Number of sections is {}"
+                    " while the maximum recommended value is {}"
+                    " this may negatively affect performance",
+                    sections_.size(),
+                    MAX_SECTIONS_RECOMMENDED);
     }
     if (slots_per_section_ > MAX_SLOTS_RECOMMENDED) {
-      logger_->warn(PPL, 37, "Number of slots per sections is {}"
-           " while the maximum recommended value is {}"
-           " this may negatively affect performance",
-           slots_per_section_, MAX_SLOTS_RECOMMENDED);
+      logger_->warn(PPL,
+                    37,
+                    "Number of slots per sections is {}"
+                    " while the maximum recommended value is {}"
+                    " this may negatively affect performance",
+                    slots_per_section_,
+                    MAX_SLOTS_RECOMMENDED);
     }
   } while (!all_assigned);
 }
@@ -594,9 +610,11 @@ void IOPlacer::updatePinArea(IOPin& pin)
   if (pin.getOrientation() == Orientation::north
       || pin.getOrientation() == Orientation::south) {
     float thickness_multiplier = parms_->getVerticalThicknessMultiplier();
-    int half_width = int(ceil(core_.getMinWidthX()[index] / 2.0)) * thickness_multiplier;
-    int height = int(std::max(2.0 * half_width,
-                              ceil(core_.getMinAreaX()[index] / (2.0 * half_width))));
+    int half_width
+        = int(ceil(core_.getMinWidthX()[index] / 2.0)) * thickness_multiplier;
+    int height
+        = int(std::max(2.0 * half_width,
+                       ceil(core_.getMinAreaX()[index] / (2.0 * half_width))));
 
     int ext = 0;
     if (parms_->getVerticalLength() != -1) {
@@ -619,9 +637,11 @@ void IOPlacer::updatePinArea(IOPin& pin)
   if (pin.getOrientation() == Orientation::west
       || pin.getOrientation() == Orientation::east) {
     float thickness_multiplier = parms_->getHorizontalThicknessMultiplier();
-    int half_width = int(ceil(core_.getMinWidthY()[index] / 2.0)) * thickness_multiplier;
-    int height = int(std::max(2.0 * half_width,
-                              ceil(core_.getMinAreaY()[index] / (2.0 * half_width))));
+    int half_width
+        = int(ceil(core_.getMinWidthY()[index] / 2.0)) * thickness_multiplier;
+    int height
+        = int(std::max(2.0 * half_width,
+                       ceil(core_.getMinAreaY()[index] / (2.0 * half_width))));
 
     int ext = 0;
     if (parms_->getHorizontalLengthExtend() != -1) {
@@ -660,27 +680,33 @@ int IOPlacer::returnIONetsHPWL()
 
 void IOPlacer::excludeInterval(Edge edge, int begin, int end)
 {
-  Interval excluded_interv
-      = Interval(edge, begin, end);
+  Interval excluded_interv = Interval(edge, begin, end);
 
   excluded_intervals_.push_back(excluded_interv);
 }
 
-void IOPlacer::addDirectionConstraint(Direction direction, Edge edge,
-                                       int begin, int end) {
+void IOPlacer::addDirectionConstraint(Direction direction,
+                                      Edge edge,
+                                      int begin,
+                                      int end)
+{
   Interval interval(edge, begin, end);
   Constraint constraint("INVALID", direction, interval);
   constraints_.push_back(constraint);
 }
 
-void IOPlacer::addNameConstraint(std::string name, Edge edge,
-                                       int begin, int end) {
+void IOPlacer::addNameConstraint(std::string name,
+                                 Edge edge,
+                                 int begin,
+                                 int end)
+{
   Interval interval(edge, begin, end);
   Constraint constraint(name, Direction::invalid, interval);
   constraints_.push_back(constraint);
 }
 
-Edge IOPlacer::getEdge(std::string edge) {
+Edge IOPlacer::getEdge(std::string edge)
+{
   if (edge == "top") {
     return Edge::top;
   } else if (edge == "bottom") {
@@ -694,7 +720,8 @@ Edge IOPlacer::getEdge(std::string edge) {
   return Edge::invalid;
 }
 
-Direction IOPlacer::getDirection(std::string direction) {
+Direction IOPlacer::getDirection(std::string direction)
+{
   if (direction == "input") {
     return Direction::input;
   } else if (direction == "output") {
@@ -765,7 +792,11 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (assignment_.size() != (int) netlist_.numIOPins()) {
-    logger_->error(PPL, 41, "Assigned {} pins out of {} IO pins", assignment_.size(), netlist_.numIOPins());
+    logger_->error(PPL,
+                   41,
+                   "Assigned {} pins out of {} IO pins",
+                   assignment_.size(),
+                   netlist_.numIOPins());
   }
 
   if (report_hpwl_) {
@@ -782,7 +813,8 @@ void IOPlacer::run(bool random_mode)
 }
 
 // db functions
-void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx)
+void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
+                                std::set<int> ver_layer_idx)
 {
   tech_ = db_->getTech();
   block_ = db_->getChip()->getBlock();
@@ -790,7 +822,8 @@ void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx, std::set<int> ver_l
   initCore(hor_layer_idx, ver_layer_idx);
 }
 
-void IOPlacer::initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs)
+void IOPlacer::initCore(std::set<int> hor_layer_idxs,
+                        std::set<int> ver_layer_idxs)
 {
   int database_unit = tech_->getLefUnits();
 
@@ -817,7 +850,8 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_id
 
     odb::dbTechLayer* hor_layer = tech_->findRoutingLayer(hor_layer_idx);
     odb::dbTrackGrid* hor_track_grid = block_->findTrackGrid(hor_layer);
-    hor_track_grid->getGridPatternY(0, init_track_y, num_track_y, min_spacing_y);
+    hor_track_grid->getGridPatternY(
+        0, init_track_y, num_track_y, min_spacing_y);
 
     min_area_y = hor_layer->getArea() * database_unit * database_unit;
     min_width_y = hor_layer->getWidth();
@@ -836,9 +870,10 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_id
     int min_width_x = 0;
     int num_track_x = 0;
 
-    odb::dbTechLayer* ver_layer = tech_->findRoutingLayer(ver_layer_idx); 
+    odb::dbTechLayer* ver_layer = tech_->findRoutingLayer(ver_layer_idx);
     odb::dbTrackGrid* ver_track_grid = block_->findTrackGrid(ver_layer);
-    ver_track_grid->getGridPatternX(0, init_track_x, num_track_x, min_spacing_x);
+    ver_track_grid->getGridPatternX(
+        0, init_track_x, num_track_x, min_spacing_x);
 
     min_area_x = ver_layer->getArea() * database_unit * database_unit;
     min_width_x = ver_layer->getWidth();
@@ -851,17 +886,17 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_id
   }
 
   core_ = Core(boundary,
-                min_spacings_x,
-                min_spacings_y,
-                init_tracks_x,
-                init_tracks_y,
-                num_tracks_x,
-                num_tracks_y,
-                min_areas_x,
-                min_areas_y,
-                min_widths_x,
-                min_widths_y,
-                database_unit);
+               min_spacings_x,
+               min_spacings_y,
+               init_tracks_x,
+               init_tracks_y,
+               num_tracks_x,
+               num_tracks_y,
+               min_areas_x,
+               min_areas_y,
+               min_widths_x,
+               min_widths_y,
+               database_unit);
 }
 
 void IOPlacer::initNetlist()
@@ -874,8 +909,7 @@ void IOPlacer::initNetlist()
     odb::dbBTerm* cur_b_term = *bt_iter;
     odb::dbNet* net = cur_b_term->getNet();
     if (!net) {
-      logger_->warn(PPL, 38, "Pin {} without net!",
-           cur_b_term->getConstName());
+      logger_->warn(PPL, 38, "Pin {} without net!", cur_b_term->getConstName());
     }
 
     Direction dir = Direction::inout;
@@ -896,12 +930,12 @@ void IOPlacer::initNetlist()
 
     Point bounds(0, 0);
     IOPin io_pin(cur_b_term->getConstName(),
-                Point(x_pos, y_pos),
-                dir,
-                bounds,
-                bounds,
-                net->getConstName(),
-                "FIXED");
+                 Point(x_pos, y_pos),
+                 dir,
+                 bounds,
+                 bounds,
+                 net->getConstName(),
+                 "FIXED");
 
     std::vector<InstancePin> inst_pins;
     odb::dbSet<odb::dbITerm> iterms = net->getITerms();
@@ -949,9 +983,9 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
     int y_min = lower_bound.y();
     int x_max = upper_bound.x();
     int y_max = upper_bound.y();
-    
-    int origin_x = x_max - int((x_max - x_min)/2);
-    int origin_y = y_max - int((y_max - y_min)/2);
+
+    int origin_x = x_max - int((x_max - x_min) / 2);
+    int origin_y = y_max - int((y_max - y_min) / 2);
     odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }

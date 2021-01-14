@@ -38,9 +38,9 @@
 #define MAX_SLOTS_RECOMMENDED 600
 #define MAX_SECTIONS_RECOMMENDED 600
 
+#include <algorithm>
 #include <numeric>
 #include <vector>
-#include <algorithm>
 
 #include "Netlist.h"
 
