@@ -9,7 +9,7 @@ Notice 0:
 Reading DEF file: clock_route.def
 Notice 0: Design: gcd
 Notice 0:     Created 1 pins.
-Notice 0:     Created 43 components and 209 component-terminals.
+Notice 0:     Created 43 components and 295 component-terminals.
 Notice 0:     Created 8 nets and 49 connections.
 Notice 0: Finished DEF file: clock_route.def
 Min routing layer: 4
@@ -24,7 +24,7 @@ Grid origin: (0, 0)
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 3
 [INFO GRT-0018] Processing 3609 obstacles on layer 1
-[INFO GRT-0019] Processing 86 obstacles on layer 2
+[INFO GRT-0019] Processing 172 obstacles on layer 2
 [INFO GRT-0021] Reducing resources of layer 2 by 80%
 [INFO GRT-0022] Reducing resources of layer 3 by 70%
 [INFO GRT-0023] Reducing resources of layer 4 by 50%
@@ -58,7 +58,7 @@ Grid origin: (0, 0)
 [INFO GRT-0001] Minimum degree: 9
 [INFO GRT-0002] Maximum degree: 11
 [INFO GRT-0018] Processing 3609 obstacles on layer 1
-[INFO GRT-0019] Processing 86 obstacles on layer 2
+[INFO GRT-0019] Processing 172 obstacles on layer 2
 [INFO GRT-0021] Reducing resources of layer 2 by 80%
 [INFO GRT-0022] Reducing resources of layer 3 by 70%
 [INFO GRT-0023] Reducing resources of layer 4 by 50%
