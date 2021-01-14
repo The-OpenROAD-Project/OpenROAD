@@ -46,17 +46,11 @@ namespace ppl {
 
 using utl::PPL;
 
-void IOPlacer::init(ord::OpenRoad* openroad)
+void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
 {
-  openroad_ = openroad;
-  logger_ = openroad->getLogger();
-  makeComponents();
-}
-
-void IOPlacer::makeComponents()
-{
-  parms_ = new Parameters;
-  db_ = openroad_->getDb();
+  db_ = db;
+  logger_ = logger;
+  parms_ = std::make_unique<Parameters>();
 }
 
 void IOPlacer::clear()
@@ -71,19 +65,6 @@ void IOPlacer::clear()
   excluded_intervals_.clear();
   constraints_.clear();
   netlist_.clear();
-}
-
-void IOPlacer::deleteComponents()
-{
-  delete parms_;
-  delete db_;
-  delete tech_;
-  delete block_;
-}
-
-IOPlacer::~IOPlacer()
-{
-  deleteComponents();
 }
 
 void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx,

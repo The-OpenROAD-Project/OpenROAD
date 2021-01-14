@@ -44,20 +44,6 @@ using odb::Rect;
 
 class Core
 {
- private:
-  Rect boundary_;
-  std::vector<int> min_dst_pins_x_;
-  std::vector<int> min_dst_pins_y_;
-  std::vector<int> init_tracks_x_;
-  std::vector<int> init_tracks_y_;
-  std::vector<int> num_tracks_x_;
-  std::vector<int> num_tracks_y_;
-  std::vector<int> min_area_x_;
-  std::vector<int> min_area_y_;
-  std::vector<int> min_width_x_;
-  std::vector<int> min_width_y_;
-  int database_unit_;
-
  public:
   Core() = default;
   Core(const Rect& boundary,
@@ -99,8 +85,21 @@ class Core
   std::vector<int> getMinWidthX() const { return min_width_x_; }
   std::vector<int> getMinWidthY() const { return min_width_y_; }
   int getDatabaseUnit() const { return database_unit_; }
+  int getPerimeter() const;
 
-  int getPerimeter();
+ private:
+  Rect boundary_;
+  std::vector<int> min_dst_pins_x_;
+  std::vector<int> min_dst_pins_y_;
+  std::vector<int> init_tracks_x_;
+  std::vector<int> init_tracks_y_;
+  std::vector<int> num_tracks_x_;
+  std::vector<int> num_tracks_y_;
+  std::vector<int> min_area_x_;
+  std::vector<int> min_area_y_;
+  std::vector<int> min_width_x_;
+  std::vector<int> min_width_y_;
+  int database_unit_;
 };
 
 }  // namespace ppl

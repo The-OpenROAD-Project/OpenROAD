@@ -39,7 +39,7 @@
 
 namespace ppl {
 
-int Core::getPerimeter()
+int Core::getPerimeter() const
 {
   int x = boundary_.xMax() - boundary_.xMin();
   int y = boundary_.yMax() - boundary_.yMin();

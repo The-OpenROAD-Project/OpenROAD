@@ -41,6 +41,72 @@ namespace ppl {
 
 class Parameters
 {
+ public:
+  Parameters() = default;
+  void setReportHPWL(bool report) { report_hpwl_ = report; }
+  bool getReportHPWL() const { return report_hpwl_; }
+
+  void setNumSlots(int num_slots) { num_slots_ = num_slots; }
+  int getNumSlots() const { return num_slots_; }
+
+  void setSlotsFactor(float factor) { slots_factor_ = factor; }
+  float getSlotsFactor() const { return slots_factor_; }
+
+  void setUsage(float usage) { usage_ = usage; }
+  float getUsage() const { return usage_; }
+
+  void setUsageFactor(float factor) { usage_factor_ = factor; }
+  float getUsageFactor() const { return usage_factor_; }
+
+  void setForceSpread(bool force_spread) { force_spread_ = force_spread; }
+  bool getForceSpread() const { return force_spread_; }
+
+  void setHorizontalLengthExtend(float length)
+  {
+    horizontal_length_extend_ = length;
+  }
+  float getHorizontalLengthExtend() const { return horizontal_length_extend_; }
+
+  void setVerticalLengthExtend(float length)
+  {
+    vertical_length_extend_ = length;
+  }
+  float getVerticalLengthExtend() const { return vertical_length_extend_; }
+
+  void setHorizontalLength(float length) { horizontal_length_ = length; }
+  float getHorizontalLength() const { return horizontal_length_; }
+
+  void setVerticalLength(float length) { vertical_length_ = length; }
+  float getVerticalLength() const { return vertical_length_; }
+
+  void setRandSeed(double seed) { rand_seed_ = seed; }
+  double getRandSeed() const { return rand_seed_; }
+
+  void setHorizontalThicknessMultiplier(float length)
+  {
+    horizontal_thickness_multiplier_ = length;
+  }
+
+  float getHorizontalThicknessMultiplier() const
+  {
+    return horizontal_thickness_multiplier_;
+  }
+
+  void setVerticalThicknessMultiplier(float length)
+  {
+    vertical_thickness_multiplier_ = length;
+  }
+  float getVerticalThicknessMultiplier() const
+  {
+    return vertical_thickness_multiplier_;
+  }
+
+  void setBoundariesOffset(int offset) { boundaries_offset_ = offset; }
+  int getBoundariesOffset() const { return boundaries_offset_; }
+
+  void setMinDistance(int min_dist) { min_dist_ = min_dist; }
+  int getMinDistance() const { return min_dist_; }
+
  private:
   bool report_hpwl_ = false;
   bool force_spread_ = true;
@@ -57,57 +123,6 @@ class Parameters
   double rand_seed_ = 42.0;
   int boundaries_offset_;
   int min_dist_;
-
- public:
-  Parameters() = default;
-  void setReportHPWL(bool report) { report_hpwl_ = report; }
-  bool getReportHPWL() const { return report_hpwl_; }
-  void setNumSlots(int num_slots) { num_slots_ = num_slots; }
-  int getNumSlots() const { return num_slots_; }
-  void setSlotsFactor(float factor) { slots_factor_ = factor; }
-  float getSlotsFactor() const { return slots_factor_; }
-  void setUsage(float usage) { usage_ = usage; }
-  float getUsage() const { return usage_; }
-  void setUsageFactor(float factor) { usage_factor_ = factor; }
-  float getUsageFactor() const { return usage_factor_; }
-  void setForceSpread(bool force_spread) { force_spread_ = force_spread; }
-  bool getForceSpread() const { return force_spread_; }
-  void setHorizontalLengthExtend(float length)
-  {
-    horizontal_length_extend_ = length;
-  }
-  float getHorizontalLengthExtend() const { return horizontal_length_extend_; }
-  void setVerticalLengthExtend(float length)
-  {
-    vertical_length_extend_ = length;
-  }
-  float getVerticalLengthExtend() const { return vertical_length_extend_; }
-  void setHorizontalLength(float length) { horizontal_length_ = length; }
-  float getHorizontalLength() const { return horizontal_length_; }
-  void setVerticalLength(float length) { vertical_length_ = length; }
-  float getVerticalLength() const { return vertical_length_; }
-  void setRandSeed(double seed) { rand_seed_ = seed; }
-  double getRandSeed() const { return rand_seed_; }
-  void setHorizontalThicknessMultiplier(float length)
-  {
-    horizontal_thickness_multiplier_ = length;
-  }
-  float getHorizontalThicknessMultiplier() const
-  {
-    return horizontal_thickness_multiplier_;
-  }
-  void setVerticalThicknessMultiplier(float length)
-  {
-    vertical_thickness_multiplier_ = length;
-  }
-  float getVerticalThicknessMultiplier() const
-  {
-    return vertical_thickness_multiplier_;
-  }
-  void setBoundariesOffset(int offset) { boundaries_offset_ = offset; }
-  int getBoundariesOffset() const { return boundaries_offset_; }
-  void setMinDistance(int min_dist) { min_dist_ = min_dist; }
-  int getMinDistance() const { return min_dist_; }
 };
 
 }  // namespace ppl

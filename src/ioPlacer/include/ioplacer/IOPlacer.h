@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
@@ -106,13 +108,11 @@ struct Constraint
 class IOPlacer
 {
  public:
-  IOPlacer() = default;
-  ~IOPlacer();
-  void init(ord::OpenRoad* openroad);
+  void init(odb::dbDatabase* db, Logger* logger);
   void clear();
   void run(bool random_mode);
   void printConfig();
-  Parameters* getParameters() { return parms_; }
+  Parameters* getParameters() { return parms_.get(); }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
@@ -125,7 +125,7 @@ class IOPlacer
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
 
- protected:
+ private:
   Netlist netlist_;
   Core core_;
   std::vector<IOPin> assignment_;
@@ -141,9 +141,23 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
 
- private:
-  void makeComponents();
-  void deleteComponents();
+  Logger* logger_;
+  std::unique_ptr<Parameters> parms_;
+  Netlist netlist_io_pins_;
+  SlotVector slots_;
+  SectionVector sections_;
+  std::vector<IOPin> zero_sink_ios_;
+  RandomMode random_mode_ = RandomMode::full;
+  bool cells_placed_ = true;
+  std::set<int> hor_layers_;
+  std::set<int> ver_layers_;
+
+  // db variables
+  odb::dbDatabase* db_;
+  odb::dbTech* tech_;
+  odb::dbBlock* block_;
+  bool verbose_ = false;
+
   void initNetlistAndCore(std::set<int> hor_layer_idx,
                           std::set<int> ver_layer_idx);
   void initIOLists();
@@ -167,23 +181,6 @@ class IOPlacer
   void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();
-
-  ord::OpenRoad* openroad_;
-  Logger* logger_;
-  Parameters* parms_;
-  Netlist netlist_io_pins_;
-  SlotVector slots_;
-  SectionVector sections_;
-  std::vector<IOPin> zero_sink_ios_;
-  RandomMode random_mode_ = RandomMode::full;
-  bool cells_placed_ = true;
-  std::set<int> hor_layers_;
-  std::set<int> ver_layers_;
-  // db variables
-  odb::dbDatabase* db_;
-  odb::dbTech* tech_;
-  odb::dbBlock* block_;
-  bool verbose_ = false;
 };
 
 }  // namespace ppl

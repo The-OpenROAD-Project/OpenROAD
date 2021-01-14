@@ -33,10 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ioplacer/MakeIoplacer.h"
-
 #include "Parameters.h"
 #include "ioplacer/IOPlacer.h"
+#include "ioplacer/MakeIoplacer.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -68,7 +67,7 @@ void initIoplacer(OpenRoad* openroad)
   Ioplacer_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ioplacer_tcl_inits);
 
-  openroad->getIOPlacer()->init(openroad);
+  openroad->getIOPlacer()->init(openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord

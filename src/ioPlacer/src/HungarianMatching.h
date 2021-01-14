@@ -59,6 +59,12 @@ using utl::Logger;
 
 class HungarianMatching
 {
+ public:
+  HungarianMatching(Section&, SlotVector&, Logger* logger);
+  virtual ~HungarianMatching() = default;
+  void findAssignment(std::vector<Constraint>& constraints);
+  void getFinalAssignment(std::vector<IOPin>&) const;
+
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
@@ -75,12 +81,6 @@ class HungarianMatching
   Logger* logger_;
 
   void createMatrix(std::vector<Constraint>& constraints);
-
- public:
-  HungarianMatching(Section&, SlotVector&, Logger* logger);
-  virtual ~HungarianMatching() = default;
-  void findAssignment(std::vector<Constraint>& constraints);
-  void getFinalAssignment(std::vector<IOPin>&);
 };
 
 }  // namespace ppl

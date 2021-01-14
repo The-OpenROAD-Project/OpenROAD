@@ -84,7 +84,7 @@ inline bool samePos(Point& a, Point& b)
   return (a.x() == b.x() && a.y() == b.y());
 }
 
-void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
+void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
 {
   size_t rows = non_blocked_slots_;
   size_t col = 0;
