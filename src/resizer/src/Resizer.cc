@@ -2722,7 +2722,7 @@ Resizer::findLongWires(VertexSeq &drvrs)
     }
   }
   sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
-                         const DrvrDist &drvr_dist2) {
+                          const DrvrDist &drvr_dist2) {
                     return drvr_dist1.second > drvr_dist2.second;
                   });
   drvrs.reserve(drvr_dists.size());
