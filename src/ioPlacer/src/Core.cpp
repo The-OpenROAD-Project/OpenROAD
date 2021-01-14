@@ -40,8 +40,8 @@ namespace ppl {
 
 int Core::getPerimeter()
 {
-  int x = _boundary.xMax() - _boundary.xMin();
-  int y = _boundary.yMax() - _boundary.yMin();
+  int x = boundary_.xMax() - boundary_.xMin();
+  int y = boundary_.yMax() - boundary_.yMin();
 
   return (x + y) * 2;
 }

@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __SLOTS_H
-#define __SLOTS_H
+#pragma once
 
 #define MAX_SLOTS_RECOMMENDED 600
 #define MAX_SECTIONS_RECOMMENDED 600
@@ -48,33 +47,33 @@
 namespace ppl {
 enum class Edge;
 
-struct _Slot_t
+struct Slot
 {
   bool blocked;
   bool used;
   odb::Point pos;
   int layer;
-} typedef Slot_t;
+};
 
-typedef std::vector<Slot_t> slotVector_t;
+using SlotVector = std::vector<Slot>;
 
-typedef struct _Section_t
+struct Section
 {
   odb::Point pos;
   Netlist net;
   int cost;
-  int beginSlot;
-  int endSlot;
-  float maxSlots;
-  int curSlots;
-  int numSlots;
+  int begin_slot;
+  int end_slot;
+  float max_slots;
+  int cur_slots;
+  int num_slots;
   Edge edge;
-} Section_t;
+};
 
-typedef std::vector<Section_t> sectionVector_t;
+using SectionVector = std::vector<Section>;
 
 template <typename T>
-std::vector<size_t> sort_indexes(const std::vector<T>& v)
+std::vector<size_t> sortIndexes(const std::vector<T>& v)
 {
   // initialize original index locations
   std::vector<size_t> idx(v.size());
@@ -87,4 +86,3 @@ std::vector<size_t> sort_indexes(const std::vector<T>& v)
 }
 
 }  // namespace ppl
-#endif /* __SLOTS_H */

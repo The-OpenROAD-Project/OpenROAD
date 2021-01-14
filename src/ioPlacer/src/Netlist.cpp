@@ -41,39 +41,39 @@ namespace ppl {
 
 Netlist::Netlist()
 {
-  _netPointer.push_back(0);
+  net_pointer_.push_back(0);
 }
 
-void Netlist::addIONet(const IOPin& ioPin,
-                       const std::vector<InstancePin>& instPins)
+void Netlist::addIONet(const IOPin& io_pin,
+                       const std::vector<InstancePin>& inst_pins)
 {
-  _ioPins.push_back(ioPin);
-  _instPins.insert(_instPins.end(), instPins.begin(), instPins.end());
-  _netPointer.push_back(_instPins.size());
+  io_pins_.push_back(io_pin);
+  inst_pins_.insert(inst_pins_.end(), inst_pins.begin(), inst_pins.end());
+  net_pointer_.push_back(inst_pins_.size());
 }
 
 void Netlist::forEachIOPin(std::function<void(int idx, IOPin&)> func)
 {
-  for (int idx = 0; idx < _ioPins.size(); ++idx) {
-    func(idx, _ioPins[idx]);
+  for (int idx = 0; idx < io_pins_.size(); ++idx) {
+    func(idx, io_pins_[idx]);
   }
 }
 
 void Netlist::forEachIOPin(
     std::function<void(int idx, const IOPin&)> func) const
 {
-  for (int idx = 0; idx < _ioPins.size(); ++idx) {
-    func(idx, _ioPins[idx]);
+  for (int idx = 0; idx < io_pins_.size(); ++idx) {
+    func(idx, io_pins_[idx]);
   }
 }
 
 void Netlist::forEachSinkOfIO(int idx,
                               std::function<void(InstancePin&)> func)
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
-  for (int idx = netStart; idx < netEnd; ++idx) {
-    func(_instPins[idx]);
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
+  for (int idx = net_start; idx < net_end; ++idx) {
+    func(inst_pins_[idx]);
   }
 }
 
@@ -81,81 +81,81 @@ void Netlist::forEachSinkOfIO(
     int idx,
     std::function<void(const InstancePin&)> func) const
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
-  for (int idx = netStart; idx < netEnd; ++idx) {
-    func(_instPins[idx]);
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
+  for (int idx = net_start; idx < net_end; ++idx) {
+    func(inst_pins_[idx]);
   }
 }
 
 int Netlist::numSinksOfIO(int idx)
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
-  return netEnd - netStart;
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
+  return net_end - net_start;
 }
 
 int Netlist::numIOPins()
 {
-  return _ioPins.size();
+  return io_pins_.size();
 }
 
-Rect Netlist::getBB(int idx, Point slotPos)
+Rect Netlist::getBB(int idx, Point slot_pos)
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
 
-  int minX = slotPos.x();
-  int minY = slotPos.y();
-  int maxX = slotPos.x();
-  int maxY = slotPos.y();
+  int min_x = slot_pos.x();
+  int min_y = slot_pos.y();
+  int max_x = slot_pos.x();
+  int max_y = slot_pos.y();
 
-  for (int idx = netStart; idx < netEnd; ++idx) {
-    Point pos = _instPins[idx].getPos();
-    minX = std::min(minX, pos.x());
-    maxX = std::max(maxX, pos.x());
-    minY = std::min(minY, pos.y());
-    maxY = std::max(maxY, pos.y());
+  for (int idx = net_start; idx < net_end; ++idx) {
+    Point pos = inst_pins_[idx].getPos();
+    min_x = std::min(min_x, pos.x());
+    max_x = std::max(max_x, pos.x());
+    min_y = std::min(min_y, pos.y());
+    max_y = std::max(max_y, pos.y());
   }
 
-  Point upperBounds = Point(maxX, maxY);
-  Point lowerBounds = Point(minX, minY);
+  Point upper_bounds = Point(max_x, max_y);
+  Point lower_bounds = Point(min_x, min_y);
 
-  Rect netBBox(lowerBounds, upperBounds);
-  return netBBox;
+  Rect net_b_box(lower_bounds, upper_bounds);
+  return net_b_box;
 }
 
-int Netlist::computeIONetHPWL(int idx, Point slotPos)
+int Netlist::computeIONetHPWL(int idx, Point slot_pos)
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
 
-  int minX = slotPos.x();
-  int minY = slotPos.y();
-  int maxX = slotPos.x();
-  int maxY = slotPos.y();
+  int min_x = slot_pos.x();
+  int min_y = slot_pos.y();
+  int max_x = slot_pos.x();
+  int max_y = slot_pos.y();
 
-  for (int idx = netStart; idx < netEnd; ++idx) {
-    Point pos = _instPins[idx].getPos();
-    minX = std::min(minX, pos.x());
-    maxX = std::max(maxX, pos.x());
-    minY = std::min(minY, pos.y());
-    maxY = std::max(maxY, pos.y());
+  for (int idx = net_start; idx < net_end; ++idx) {
+    Point pos = inst_pins_[idx].getPos();
+    min_x = std::min(min_x, pos.x());
+    max_x = std::max(max_x, pos.x());
+    min_y = std::min(min_y, pos.y());
+    max_y = std::max(max_y, pos.y());
   }
 
-  int x = maxX - minX;
-  int y = maxY - minY;
+  int x = max_x - min_x;
+  int y = max_y - min_y;
 
   return (x + y);
 }
 
-int Netlist::computeIONetHPWL(int idx, Point slotPos, Edge edge, 
+int Netlist::computeIONetHPWL(int idx, Point slot_pos, Edge edge, 
                               std::vector<Constraint>& constraints)
 {
   int hpwl;
 
-  if (checkSlotForPin(_ioPins[idx], edge, slotPos, constraints)) {
-    hpwl = computeIONetHPWL(idx, slotPos);
+  if (checkSlotForPin(io_pins_[idx], edge, slot_pos, constraints)) {
+    hpwl = computeIONetHPWL(idx, slot_pos);
   } else {
     hpwl = std::numeric_limits<int>::max();
   }
@@ -163,39 +163,39 @@ int Netlist::computeIONetHPWL(int idx, Point slotPos, Edge edge,
   return hpwl;
 }
 
-int Netlist::computeDstIOtoPins(int idx, Point slotPos)
+int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
 {
-  int netStart = _netPointer[idx];
-  int netEnd = _netPointer[idx + 1];
+  int net_start = net_pointer_[idx];
+  int net_end = net_pointer_[idx + 1];
 
-  int totalDistance = 0;
+  int total_distance = 0;
 
-  for (int idx = netStart; idx < netEnd; ++idx) {
-    Point pinPos = _instPins[idx].getPos();
-    totalDistance += std::abs(pinPos.x() - slotPos.x())
-                     + std::abs(pinPos.y() - slotPos.y());
+  for (int idx = net_start; idx < net_end; ++idx) {
+    Point pin_pos = inst_pins_[idx].getPos();
+    total_distance += std::abs(pin_pos.x() - slot_pos.x())
+                     + std::abs(pin_pos.y() - slot_pos.y());
   }
 
-  return totalDistance;
+  return total_distance;
 }
 
 bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
                         std::vector<Constraint> constraints)
 {
-  bool validSlot = true;
+  bool valid_slot = true;
 
   for (Constraint constraint : constraints) {
-    int pos = (edge == Edge::Top || edge == Edge::Bottom) ?
+    int pos = (edge == Edge::top || edge == Edge::bottom) ?
                point.x() :  point.y();
 
     if (pin.getDirection() == constraint.direction) {
-      validSlot = checkInterval(constraint, edge, pos);
+      valid_slot = checkInterval(constraint, edge, pos);
     } else if (pin.getName() == constraint.name) {
-      validSlot = checkInterval(constraint, edge, pos); 
+      valid_slot = checkInterval(constraint, edge, pos); 
     }
   }
 
-  return validSlot;
+  return valid_slot;
 }
 
 bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
@@ -206,9 +206,9 @@ bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
 
 void Netlist::clear()
 {
-  _instPins.clear();
-  _netPointer.clear();
-  _ioPins.clear();
+  inst_pins_.clear();
+  net_pointer_.clear();
+  io_pins_.clear();
 }
 
 }  // namespace ppl

@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NETLIST_H_
-#define __NETLIST_H_
+#pragma once
 
 #include <functional>
 #include <iostream>
@@ -54,90 +53,90 @@ enum class Edge;
 
 enum class Orientation
 {
-  North,
-  South,
-  East,
-  West
+  north,
+  south,
+  east,
+  west
 };
 enum class Direction
 {
-  Input,
-  Output,
-  Inout,
-  Feedthru,
-  Invalid
+  input,
+  output,
+  inout,
+  feedthru,
+  invalid
 };
 
 class InstancePin
 {
  protected:
-  std::string _name;
-  odb::Point _pos;
+  std::string name_;
+  odb::Point pos_;
 
  public:
   InstancePin(const std::string& name, const odb::Point& pos)
-      : _name(name), _pos(pos)
+      : name_(name), pos_(pos)
   {
   }
-  std::string getName() const { return _name; }
-  odb::Point getPos() const { return _pos; }
-  int getX() const { return _pos.getX(); }
-  int getY() const { return _pos.getY(); }
+  std::string getName() const { return name_; }
+  odb::Point getPos() const { return pos_; }
+  int getX() const { return pos_.getX(); }
+  int getY() const { return pos_.getY(); }
 };
 
 class IOPin : public InstancePin
 {
  private:
-  Orientation _orientation;
-  Direction _direction;
-  odb::Point _lowerBound;
-  odb::Point _upperBound;
-  std::string _netName;
-  std::string _locationType;
-  int _layer;
+  Orientation orientation_;
+  Direction direction_;
+  odb::Point lower_bound_;
+  odb::Point upper_bound_;
+  std::string net_name_;
+  std::string location_type_;
+  int layer_;
 
  public:
   IOPin(const std::string& name,
         const odb::Point& pos,
         Direction dir,
-        odb::Point lowerBound,
-        odb::Point upperBound,
-        std::string netName,
-        std::string locationType)
+        odb::Point lower_bound,
+        odb::Point upper_bound,
+        std::string net_name,
+        std::string location_type)
       : InstancePin(name, pos),
-        _orientation(Orientation::North),
-        _direction(dir),
-        _lowerBound(lowerBound),
-        _upperBound(upperBound),
-        _netName(netName),
-        _locationType(locationType)
+        orientation_(Orientation::north),
+        direction_(dir),
+        lower_bound_(lower_bound),
+        upper_bound_(upper_bound),
+        net_name_(net_name),
+        location_type_(location_type)
   {
   }
 
-  void setOrientation(const Orientation o) { _orientation = o; }
-  Orientation getOrientation() const { return _orientation; }
-  odb::Point getPosition() const { return _pos; }
-  void setX(const int x) { _pos.setX(x); }
-  void setY(const int y) { _pos.setY(y); }
-  void setPos(const odb::Point pos) { _pos = pos; }
-  void setPos(const int x, const int y) { _pos = odb::Point(x, y); }
-  void setLowerBound(const int x, const int y) { _lowerBound = odb::Point(x, y); };
-  void setUpperBound(const int x, const int y) { _upperBound = odb::Point(x, y); };
-  void setLayer(const int layer) { _layer = layer; }
-  Direction getDirection() const { return _direction; }
-  odb::Point getLowerBound() const { return _lowerBound; };
-  odb::Point getUpperBound() const { return _upperBound; };
-  std::string getNetName() const { return _netName; }
-  std::string getLocationType() const { return _locationType; };
-  int getLayer() const { return _layer; }
+  void setOrientation(const Orientation o) { orientation_ = o; }
+  Orientation getOrientation() const { return orientation_; }
+  odb::Point getPosition() const { return pos_; }
+  void setX(const int x) { pos_.setX(x); }
+  void setY(const int y) { pos_.setY(y); }
+  void setPos(const odb::Point pos) { pos_ = pos; }
+  void setPos(const int x, const int y) { pos_ = odb::Point(x, y); }
+  void setLowerBound(const int x, const int y) { lower_bound_ = odb::Point(x, y); };
+  void setUpperBound(const int x, const int y) { upper_bound_ = odb::Point(x, y); };
+  void setLayer(const int layer) { layer_ = layer; }
+  Direction getDirection() const { return direction_; }
+  odb::Point getLowerBound() const { return lower_bound_; };
+  odb::Point getUpperBound() const { return upper_bound_; };
+  std::string getNetName() const { return net_name_; }
+  std::string getLocationType() const { return location_type_; };
+  int getLayer() const { return layer_; }
 };
 
 class Netlist
 {
  private:
-  std::vector<InstancePin> _instPins;
-  std::vector<int> _netPointer;
-  std::vector<IOPin> _ioPins;
+  std::vector<InstancePin> inst_pins_;
+  std::vector<int> net_pointer_;
+  std::vector<IOPin> io_pins_;
 
   bool checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
                        std::vector<Constraint> restrictions);
@@ -163,4 +162,3 @@ class Netlist
 };
 
 }  // namespace ppl
-#endif /* __NETLIST_H_ */

@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __CORE_H_
-#define __CORE_H_
+#pragma once
 
 #include "opendb/geom.h"
 
@@ -46,64 +45,62 @@ using odb::Rect;
 class Core
 {
  private:
-  Rect _boundary;
-  std::vector<int> _minDstPinsX;
-  std::vector<int> _minDstPinsY;
-  std::vector<int> _initTracksX;
-  std::vector<int> _initTracksY;
-  std::vector<int> _numTracksX;
-  std::vector<int> _numTracksY;
-  std::vector<int> _minAreaX;
-  std::vector<int> _minAreaY;
-  std::vector<int> _minWidthX;
-  std::vector<int> _minWidthY;
-  int _databaseUnit;
+  Rect boundary_;
+  std::vector<int> min_dst_pins_x_;
+  std::vector<int> min_dst_pins_y_;
+  std::vector<int> init_tracks_x_;
+  std::vector<int> init_tracks_y_;
+  std::vector<int> num_tracks_x_;
+  std::vector<int> num_tracks_y_;
+  std::vector<int> min_area_x_;
+  std::vector<int> min_area_y_;
+  std::vector<int> min_width_x_;
+  std::vector<int> min_width_y_;
+  int database_unit_;
 
  public:
   Core() = default;
   Core(const Rect& boundary,
-       const std::vector<int>& minDstPinsX,
-       const std::vector<int>& minDstPinsY,
-       const std::vector<int>& initTracksX,
-       const std::vector<int>& initTracksY,
-       const std::vector<int>& numTracksX,
-       const std::vector<int>& numTracksY,
-       const std::vector<int>& minAreaX,
-       const std::vector<int>& minAreaY,
-       const std::vector<int>& minWidthX,
-       const std::vector<int>& minWidthY,
-       const int& databaseUnit)
-      : _boundary(boundary),
-        _minDstPinsX(minDstPinsX),
-        _minDstPinsY(minDstPinsY),
-        _initTracksX(initTracksX),
-        _initTracksY(initTracksY),
-        _numTracksX(numTracksX),
-        _numTracksY(numTracksY),
-        _minAreaX(minAreaX),
-        _minAreaY(minAreaY),
-        _minWidthX(minWidthX),
-        _minWidthY(minWidthY),
-        _databaseUnit(databaseUnit)
+       const std::vector<int>& min_dst_pins_x,
+       const std::vector<int>& min_dst_pins_y,
+       const std::vector<int>& init_tracks_x,
+       const std::vector<int>& init_tracks_y,
+       const std::vector<int>& num_tracks_x,
+       const std::vector<int>& num_tracks_y,
+       const std::vector<int>& min_area_x,
+       const std::vector<int>& min_area_y,
+       const std::vector<int>& min_width_x,
+       const std::vector<int>& min_width_y,
+       const int& database_unit)
+      : boundary_(boundary),
+        min_dst_pins_x_(min_dst_pins_x),
+        min_dst_pins_y_(min_dst_pins_y),
+        init_tracks_x_(init_tracks_x),
+        init_tracks_y_(init_tracks_y),
+        num_tracks_x_(num_tracks_x),
+        num_tracks_y_(num_tracks_y),
+        min_area_x_(min_area_x),
+        min_area_y_(min_area_y),
+        min_width_x_(min_width_x),
+        min_width_y_(min_width_y),
+        database_unit_(database_unit)
   {
   }
 
-  Rect getBoundary() const { return _boundary; }
-  std::vector<int> getMinDstPinsX() const { return _minDstPinsX; }
-  std::vector<int> getMinDstPinsY() const { return _minDstPinsY; }
-  std::vector<int> getInitTracksX() const { return _initTracksX; }
-  std::vector<int> getInitTracksY() const { return _initTracksY; }
-  std::vector<int> getNumTracksX() const { return _numTracksX; }
-  std::vector<int> getNumTracksY() const { return _numTracksY; }
-  std::vector<int> getMinAreaX() const { return _minAreaX; }
-  std::vector<int> getMinAreaY() const { return _minAreaY; }
-  std::vector<int> getMinWidthX() const { return _minWidthX; }
-  std::vector<int> getMinWidthY() const { return _minWidthY; }
-  int getDatabaseUnit() const { return _databaseUnit; }
+  Rect getBoundary() const { return boundary_; }
+  std::vector<int> getMinDstPinsX() const { return min_dst_pins_x_; }
+  std::vector<int> getMinDstPinsY() const { return min_dst_pins_y_; }
+  std::vector<int> getInitTracksX() const { return init_tracks_x_; }
+  std::vector<int> getInitTracksY() const { return init_tracks_y_; }
+  std::vector<int> getNumTracksX() const { return num_tracks_x_; }
+  std::vector<int> getNumTracksY() const { return num_tracks_y_; }
+  std::vector<int> getMinAreaX() const { return min_area_x_; }
+  std::vector<int> getMinAreaY() const { return min_area_y_; }
+  std::vector<int> getMinWidthX() const { return min_width_x_; }
+  std::vector<int> getMinWidthY() const { return min_width_y_; }
+  int getDatabaseUnit() const { return database_unit_; }
 
   int getPerimeter();
 };
 
 }  // namespace ppl
-
-#endif /* __CORE_H_ */

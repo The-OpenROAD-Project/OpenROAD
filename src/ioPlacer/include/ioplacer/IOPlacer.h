@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __IOPLACEMENTKERNEL_H_
-#define __IOPLACEMENTKERNEL_H_
+#pragma once
 
 #include "Core.h"
 #include "HungarianMatching.h"
@@ -65,20 +64,20 @@ using utl::Logger;
 
 enum class RandomMode
 {
-  None,
-  Full,
-  Even,
-  Group,
-  Invalid
+  none,
+  full,
+  even,
+  group,
+  invalid
 };
 
 enum class Edge
 {
-  Top,
-  Bottom,
-  Left,
-  Right,
-  Invalid
+  top,
+  bottom,
+  left,
+  right,
+  invalid
 };
 
 struct Interval
@@ -112,40 +111,40 @@ class IOPlacer
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
   void clear();
-  void run(bool randomMode);
+  void run(bool random_mode);
   void printConfig();
-  Parameters* getParameters() { return _parms; }
+  Parameters* getParameters() { return parms_; }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction, Edge edge, 
                                int begin, int end);
   void addNameConstraint(std::string name, Edge edge, 
                                int begin, int end);
-  void addHorLayer(int layer) { _horLayers.insert(layer); }
-  void addVerLayer(int layer) { _verLayers.insert(layer); }
+  void addHorLayer(int layer) { hor_layers_.insert(layer); }
+  void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
 
  protected:
-  Netlist _netlist;
-  Core _core;
-  std::vector<IOPin> _assignment;
-  bool _reportHPWL;
+  Netlist netlist_;
+  Core core_;
+  std::vector<IOPin> assignment_;
+  bool report_hpwl_;
 
-  int _slotsPerSection;
-  float _slotsIncreaseFactor;
+  int slots_per_section_;
+  float slots_increase_factor_;
 
-  float _usagePerSection;
-  float _usageIncreaseFactor;
+  float usage_per_section_;
+  float usage_increase_factor_;
 
-  bool _forcePinSpread;
-  std::vector<Interval> _excludedIntervals;
-  std::vector<Constraint> _constraints;
+  bool force_pin_spread_;
+  std::vector<Interval> excluded_intervals_;
+  std::vector<Constraint> constraints_;
 
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
+  void initNetlistAndCore(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
@@ -161,29 +160,28 @@ class IOPlacer
   bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
+  void populateIOPlacer(std::set<int> hor_layer_idx, std::set<int> ver_layer_idx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-  void initCore(std::set<int> horLayerIdxs, std::set<int> verLayerIdxs);
+  void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
   void initNetlist();
   void initTracks();
 
-  ord::OpenRoad* _openroad;
-  Logger *_logger;
-  Parameters* _parms;
-  Netlist _netlistIOPins;
-  slotVector_t _slots;
-  sectionVector_t _sections;
-  std::vector<IOPin> _zeroSinkIOs;
-  RandomMode _randomMode = RandomMode::Full;
-  bool _cellsPlaced = true;
-  std::set<int> _horLayers;
-  std::set<int> _verLayers;
+  ord::OpenRoad* openroad_;
+  Logger *logger_;
+  Parameters* parms_;
+  Netlist netlist_io_pins_;
+  SlotVector slots_;
+  SectionVector sections_;
+  std::vector<IOPin> zero_sink_ios_;
+  RandomMode random_mode_ = RandomMode::full;
+  bool cells_placed_ = true;
+  std::set<int> hor_layers_;
+  std::set<int> ver_layers_;
   // db variables
-  odb::dbDatabase* _db;
-  odb::dbTech* _tech;
-  odb::dbBlock* _block;
-  bool _verbose = false;
+  odb::dbDatabase* db_;
+  odb::dbTech* tech_;
+  odb::dbBlock* block_;
+  bool verbose_ = false;
 };
 
 }  // namespace ppl
-#endif /* __IOPLACEMENTKERNEL_H_ */

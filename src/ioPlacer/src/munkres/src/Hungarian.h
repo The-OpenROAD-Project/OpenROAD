@@ -9,8 +9,7 @@
 // by Cong Ma, 2016
 // 
 
-#ifndef HUNGARIAN_H
-#define HUNGARIAN_H
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -23,18 +22,15 @@ class HungarianAlgorithm
 public:
 	HungarianAlgorithm();
 	~HungarianAlgorithm();
-	int Solve(vector <vector<int> >& DistMatrix, vector<int>& Assignment);
+	int solve(vector <vector<int> >& dist_matrix, vector<int>& assignment);
 
 private:
-	void assignmentoptimal(int *assignment, int *cost, int *distMatrix, int nOfRows, int nOfColumns);
-	void buildassignmentvector(int *assignment, bool *starMatrix, int nOfRows, int nOfColumns);
-	void computeassignmentcost(int *assignment, int *cost, int *distMatrix, int nOfRows);
-	void step2a(int *assignment, int *distMatrix, bool *starMatrix, bool *newStarMatrix, bool *primeMatrix, bool *coveredColumns, bool *coveredRows, int nOfRows, int nOfColumns, int minDim);
-	void step2b(int *assignment, int *distMatrix, bool *starMatrix, bool *newStarMatrix, bool *primeMatrix, bool *coveredColumns, bool *coveredRows, int nOfRows, int nOfColumns, int minDim);
-	void step3(int *assignment, int *distMatrix, bool *starMatrix, bool *newStarMatrix, bool *primeMatrix, bool *coveredColumns, bool *coveredRows, int nOfRows, int nOfColumns, int minDim);
-	void step4(int *assignment, int *distMatrix, bool *starMatrix, bool *newStarMatrix, bool *primeMatrix, bool *coveredColumns, bool *coveredRows, int nOfRows, int nOfColumns, int minDim, int row, int col);
-	void step5(int *assignment, int *distMatrix, bool *starMatrix, bool *newStarMatrix, bool *primeMatrix, bool *coveredColumns, bool *coveredRows, int nOfRows, int nOfColumns, int minDim);
+	void assignmentoptimal(int *assignment, int *cost, int *dist_matrix, int n_of_rows, int n_of_columns);
+	void buildassignmentvector(int *assignment, bool *star_matrix, int n_of_rows, int n_of_columns);
+	void computeassignmentcost(int *assignment, int *cost, int *dist_matrix, int n_of_rows);
+	void step2a(int *assignment, int *dist_matrix, bool *star_matrix, bool *new_star_matrix, bool *prime_matrix, bool *covered_columns, bool *covered_rows, int n_of_rows, int n_of_columns, int min_dim);
+	void step2b(int *assignment, int *dist_matrix, bool *star_matrix, bool *new_star_matrix, bool *prime_matrix, bool *covered_columns, bool *covered_rows, int n_of_rows, int n_of_columns, int min_dim);
+	void step3(int *assignment, int *dist_matrix, bool *star_matrix, bool *new_star_matrix, bool *prime_matrix, bool *covered_columns, bool *covered_rows, int n_of_rows, int n_of_columns, int min_dim);
+	void step4(int *assignment, int *dist_matrix, bool *star_matrix, bool *new_star_matrix, bool *prime_matrix, bool *covered_columns, bool *covered_rows, int n_of_rows, int n_of_columns, int min_dim, int row, int col);
+	void step5(int *assignment, int *dist_matrix, bool *star_matrix, bool *new_star_matrix, bool *prime_matrix, bool *covered_columns, bool *covered_rows, int n_of_rows, int n_of_columns, int min_dim);
 };
-
-
-#endif
