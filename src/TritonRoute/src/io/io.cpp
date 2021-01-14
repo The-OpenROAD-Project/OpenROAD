@@ -715,8 +715,8 @@ void io::Parser::setNets(odb::dbBlock* block)
 
             frSegStyle tmpSegStyle;
             tmpSegStyle.setWidth(width);
-            tmpSegStyle.setBeginStyle(tmpBeginStyle, tmpBeginEnum == frcExtendEndStyle ? defaultEndExt : 0);
-            tmpSegStyle.setEndStyle(tmpEndStyle, tmpEndEnum == frcExtendEndStyle ? defaultEndExt : 0);
+            tmpSegStyle.setBeginStyle(tmpBeginStyle, tmpBeginEnum == frcExtendEndStyle ? defaultExt : 0);
+            tmpSegStyle.setEndStyle(tmpEndStyle, tmpEndEnum == frcExtendEndStyle ? defaultExt : 0);
             tmpP->setStyle(tmpSegStyle);
             netIn->addShape(std::move(tmpP));
           } else {
