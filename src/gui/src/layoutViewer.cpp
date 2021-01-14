@@ -162,7 +162,7 @@ LayoutViewer::LayoutViewer(Options* options,
       selected_(selected),
       highlighted_(highlighted),
       scroller_(nullptr),
-      pixelsPerDBU_(1.0),
+      pixels_per_dbu_(1.0),
       min_depth_(0),
       max_depth_(99),
       search_init_(false),
@@ -195,9 +195,9 @@ dbBlock* LayoutViewer::getBlock()
   return block;
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
+void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 {
-  pixelsPerDBU_ = pixelsPerDBU;
+  pixels_per_dbu_ = pixels_per_dbu;
   dbBlock* block = getBlock();
   if (!block) {
     return;
@@ -205,7 +205,7 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 
   Rect bbox = getBounds(block);
 
-  QSize size(ceil(bbox.xMax() * pixelsPerDBU), ceil(bbox.yMax() * pixelsPerDBU));
+  QSize size(ceil(bbox.xMax() * pixels_per_dbu), ceil(bbox.yMax() * pixels_per_dbu));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -213,22 +213,22 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 
 void LayoutViewer::zoomIn()
 {
-  setPixelsPerDBU(pixelsPerDBU_ * 1.2);
+  setPixelsPerDBU(pixels_per_dbu_ * 1.2);
 }
 
 void LayoutViewer::zoomOut()
 {
-  setPixelsPerDBU(pixelsPerDBU_ / 1.2);
+  setPixelsPerDBU(pixels_per_dbu_ / 1.2);
 }
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU = std::min(viewport.width() / (double) rect_dbu.dx(),
+  qreal pixels_per_dbu = std::min(viewport.width() / (double) rect_dbu.dx(),
                                 viewport.height() / (double) rect_dbu.dy());
-  setPixelsPerDBU(pixelsPerDBU);
+  setPixelsPerDBU(pixels_per_dbu);
 
-  QRectF screen_rect = DBUToScreen(rect_dbu);
+  QRectF screen_rect = dbuToScreen(rect_dbu);
 
   // Center the region
   int w = (scroller_->width() - screen_rect.width()) / 2;
@@ -241,7 +241,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 void LayoutViewer::updateRubberBandRegion()
 {
   QRect rect = rubber_band_.normalized();
-  int unit = ceil(2 / pixelsPerDBU_);
+  int unit = ceil(2 / pixels_per_dbu_);
   update(rect.left(), rect.top() - unit / 2, rect.width(), unit);
   update(rect.left() - unit / 2, rect.top(), unit, rect.height());
   update(rect.left(), rect.bottom() - unit / 2, rect.width(), unit);
@@ -373,7 +373,7 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   dbBlock* block = getBlock();
   if (block) {
     Rect bbox = getBounds(block);
-    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.xMax(),
+    pixels_per_dbu_ = std::min(event->size().width() / (double) bbox.xMax(),
                              event->size().height() / (double) bbox.yMax());
   }
 }
@@ -589,7 +589,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              dbBlock* block,
                              int depth)
 {
-  int pixel = 1 / pixelsPerDBU_;  // 1 pixel in DBU
+  int pixel = 1 / pixels_per_dbu_;  // 1 pixel in DBU
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
 
@@ -698,7 +698,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
         font_scale = std::min(font_scale, 5000.0);
         QFont f = painter->font();
-        f.setPointSizeF(f.pointSize() * pixelsPerDBU_);
+        f.setPointSizeF(f.pointSize() * pixels_per_dbu_);
         painter->setFont(f);
 
         painter->scale(1, -1);
@@ -782,16 +782,16 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
 {
-  return Point(point.x() / pixelsPerDBU_,
-               (height() - point.y()) / pixelsPerDBU_);
+  return Point(point.x() / pixels_per_dbu_,
+               (height() - point.y()) / pixels_per_dbu_);
 }
 
 Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 {
-  int dbu_left = (int) floor(screen_rect.left() / pixelsPerDBU_);
-  int dbu_right = (int) ceil(screen_rect.right() / pixelsPerDBU_);
-  int dbu_top = (int) floor(screen_rect.top() / pixelsPerDBU_);
-  int dbu_bottom = (int) ceil(screen_rect.bottom() / pixelsPerDBU_);
+  int dbu_left = (int) floor(screen_rect.left() / pixels_per_dbu_);
+  int dbu_right = (int) ceil(screen_rect.right() / pixels_per_dbu_);
+  int dbu_top = (int) floor(screen_rect.top() / pixels_per_dbu_);
+  int dbu_bottom = (int) ceil(screen_rect.bottom() / pixels_per_dbu_);
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
@@ -802,16 +802,16 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
   return Rect(dbu_left, dbu_bottom, dbu_right, dbu_top);
 }
 
-QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
+QRectF LayoutViewer::dbuToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
   int dbu_height = getBounds(block).yMax();
 
   // Flip the y-coordinate (see file level comments)
-  qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
-  qreal screen_right = dbu_rect.xMax() * pixelsPerDBU_;
-  qreal screen_top = (dbu_height - dbu_rect.yMax()) * pixelsPerDBU_;
-  qreal screen_bottom = (dbu_height - dbu_rect.yMin()) * pixelsPerDBU_;
+  qreal screen_left = dbu_rect.xMin() * pixels_per_dbu_;
+  qreal screen_right = dbu_rect.xMax() * pixels_per_dbu_;
+  qreal screen_top = (dbu_height - dbu_rect.yMax()) * pixels_per_dbu_;
+  qreal screen_bottom = (dbu_height - dbu_rect.yMin()) * pixels_per_dbu_;
 
   return QRectF(QPointF(screen_left, screen_top),
                 QPointF(screen_right, screen_bottom));
@@ -840,7 +840,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   // Coordinate system setup (see file level comments)
   painter.save();
   painter.translate(0, height());
-  painter.scale(pixelsPerDBU_, -pixelsPerDBU_);
+  painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   Rect dbu_bounds = screenToDBU(event->rect());
   drawBlock(&painter, dbu_bounds, block, 0);
@@ -863,9 +863,9 @@ void LayoutViewer::fit()
   Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.xMax(),
+  qreal pixels_per_dbu = std::min(viewport.width() / (double) bbox.xMax(),
                                 viewport.height() / (double) bbox.yMax());
-  setPixelsPerDBU(pixelsPerDBU);
+  setPixelsPerDBU(pixels_per_dbu);
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)
@@ -905,7 +905,7 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
 
 void LayoutScroll::zoomIn()
 {
-  qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
+  qreal old_pixels_per_dbu = viewer_->getPixelsPerDBU();
 
   int scrollbar_x = horizontalScrollBar()->value();
   int scrollbar_y = verticalScrollBar()->value();
@@ -913,8 +913,8 @@ void LayoutScroll::zoomIn()
 
   viewer_->zoomIn();
 
-  qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
-  QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;
+  qreal new_pixels_per_dbu = viewer_->getPixelsPerDBU();
+  QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * pos_in_widget;
 
   horizontalScrollBar()->setValue(scrollbar_x + delta.x());
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
@@ -922,7 +922,7 @@ void LayoutScroll::zoomIn()
 
 void LayoutScroll::zoomOut()
 {
-  qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
+  qreal old_pixels_per_dbu = viewer_->getPixelsPerDBU();
 
   int scrollbar_x = horizontalScrollBar()->value();
   int scrollbar_y = verticalScrollBar()->value();
@@ -930,8 +930,8 @@ void LayoutScroll::zoomOut()
 
   viewer_->zoomOut();
 
-  qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
-  QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;
+  qreal new_pixels_per_dbu = viewer_->getPixelsPerDBU();
+  QPointF delta = (new_pixels_per_dbu / old_pixels_per_dbu - 1) * pos_in_widget;
 
   horizontalScrollBar()->setValue(scrollbar_x + delta.x());
   verticalScrollBar()->setValue(scrollbar_y + delta.y());

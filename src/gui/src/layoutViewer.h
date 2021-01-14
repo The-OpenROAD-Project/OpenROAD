@@ -77,7 +77,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
-  qreal getPixelsPerDBU() { return pixelsPerDBU_; }
+  qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
   // From QWidget
@@ -115,7 +115,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void setPixelsPerDBU(qreal pixelsPerDBU);
+  void setPixelsPerDBU(qreal pixels_per_dbu);
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
@@ -138,14 +138,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::Rect screenToDBU(const QRect& rect);
   odb::Point screenToDBU(const QPoint& point);
-  QRectF DBUToScreen(const odb::Rect& dbu_rect);
+  QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
   const SelectionSet& highlighted_;
   LayoutScroll* scroller_;
-  qreal pixelsPerDBU_;
+  qreal pixels_per_dbu_;
   int min_depth_;
   int max_depth_;
   Search search_;
