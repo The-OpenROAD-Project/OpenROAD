@@ -50,7 +50,7 @@ class Finale
  public:
   Finale();
 
-  void init(odb::dbDatabase* db, Logger *logger);
+  void init(odb::dbDatabase* db, Logger* logger);
 
   void densityFill(const char* rules_filename, const odb::Rect& fill_area);
 

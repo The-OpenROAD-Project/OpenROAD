@@ -71,11 +71,11 @@ struct DensityFillLayerConfig
 };
 
 // Make a boost polygon representing a rectangle
-static Polygon90 makeRect(int xLo, int yLo, int xHi, int yHi)
+static Polygon90 makeRect(int x_lo, int y_lo, int x_hi, int y_hi)
 {
   using Pt = Polygon90::point_type;
   std::array<Pt, 4> pts
-      = {Pt(xLo, yLo), Pt(xHi, yLo), Pt(xHi, yHi), Pt(xLo, yHi)};
+      = {Pt(x_lo, y_lo), Pt(x_hi, y_lo), Pt(x_hi, y_hi), Pt(x_lo, y_hi)};
 
   Polygon90 poly;
   poly.set(pts.begin(), pts.end());
@@ -95,7 +95,7 @@ static double getValue(const char* key, pt::ptree& tree)
 ////////////////////////////////////////////////////////////////
 
 DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
-  : db_(db), logger_(logger)
+    : db_(db), logger_(logger)
 {
   if (debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>();
@@ -113,8 +113,7 @@ DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
 // similar rules.  This method expands such groupings into per layer
 // values.  It also translates from microns to DBU and layer names
 // to dbTechLayer*.
-void DensityFill::read_and_expand_layers(dbTech* tech,
-                                         pt::ptree& tree)
+void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
 {
   int dbu = tech->getDbUnitsPerMicron();
 
@@ -179,8 +178,10 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
       for (auto& [name, layer_name] : layer.get_child("names")) {
         auto tech_layer = tech->findLayer(layer_name.data().c_str());
         if (!tech_layer) {
-          logger_->error(FIN, 1, "Layer {} in names was not found.",
-                     layer.get_child("name").data());
+          logger_->error(FIN,
+                         1,
+                         "Layer {} in names was not found.",
+                         layer.get_child("name").data());
         }
         layers_[tech_layer] = cfg;
       }
@@ -188,8 +189,8 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
       // No expansion, just a single layer
       auto tech_layer = tech->findLayer(layer.get_child("name").data().c_str());
       if (!tech_layer) {
-        logger_->error(FIN, 2, "Layer {} not found.",
-                       layer.get_child("name").data());
+        logger_->error(
+            FIN, 2, "Layer {} not found.", layer.get_child("name").data());
       }
       layers_[tech_layer] = cfg;
     }
@@ -201,14 +202,14 @@ void DensityFill::loadConfig(const char* cfg_filename, dbTech* tech)
   // Read the json config file using Boost's property_tree
   pt::ptree tree;
   pt::json_parser::read_json(cfg_filename, tree);
-  read_and_expand_layers(tech, tree);
+  readAndExpandLayers(tech, tree);
 }
 
 // Insert into polygon_set any part of given shape on the given layer (shape may
 // be a via)
-static void insert_shape(const dbShape& shape,
-                         Polygon90Set& polygon_set,
-                         dbTechLayer* layer)
+static void insertShape(const dbShape& shape,
+                        Polygon90Set& polygon_set,
+                        dbTechLayer* layer)
 {
   auto type = shape.getType();
   switch (type) {
@@ -257,7 +258,7 @@ static void insert_shape(const dbShape& shape,
 
 // Build a polygon set out of all the non-fill shape on the given layer
 // including wires, special wires, and instances' pins & OBS
-static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
+static Polygon90Set orNonFills(dbBlock* block, dbTechLayer* layer)
 {
   Polygon90Set non_fill;  // The result
   dbShape shape;          // Shared temp
@@ -270,7 +271,7 @@ static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
       continue;
     }
     for (shapes.begin(wire); shapes.next(shape);) {
-      insert_shape(shape, non_fill, layer);
+      insertShape(shape, non_fill, layer);
     }
   }
 
@@ -286,7 +287,7 @@ static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
           shape.setVia(via, rect);
           dbShape::getViaBoxes(shape, via_shapes);
           for (auto& via_shape : via_shapes) {
-            insert_shape(via_shape, non_fill, layer);
+            insertShape(via_shape, non_fill, layer);
           }
         } else if (sbox->getTechLayer() == layer) {
           non_fill.insert(
@@ -300,7 +301,7 @@ static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
   dbInstShapeItr insts(/* expand_vias */ false);
   for (auto inst : block->getInsts()) {
     for (insts.begin(inst, dbInstShapeItr::ALL); insts.next(shape);) {
-      insert_shape(shape, non_fill, layer);
+      insertShape(shape, non_fill, layer);
     }
   }
 
@@ -310,10 +311,10 @@ static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
 static std::pair<int, int> getSpacing(dbTechLayer* layer,
                                       const DensityFillShapesConfig& cfg)
 {
-  bool isHoriz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  bool is_horiz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   int space_x = cfg.space_to_fill;
   int space_y = space_x;
-  if (isHoriz) {
+  if (is_horiz) {
     space_x = std::max(space_x, cfg.space_line_end);
   } else {
     space_y = std::max(space_y, cfg.space_line_end);
@@ -346,14 +347,14 @@ static void prune(Polygon90Set& fill_area,
 // Fill a polygon (area) on the given layer using the given configuration.
 // Num_masks is used to color the generated fills.
 // filled_area, if given, is an OR of the generated fills without bloating
-static void fill_polygon(const Polygon90& area,
-                         dbTechLayer* layer,
-                         dbBlock* block,
-                         const DensityFillShapesConfig& cfg,
-                         int num_masks,
-                         bool needs_opc,
-                         Graphics* graphics,
-                         Polygon90Set* filled_area = nullptr)
+static void fillPolygon(const Polygon90& area,
+                        dbTechLayer* layer,
+                        dbBlock* block,
+                        const DensityFillShapesConfig& cfg,
+                        int num_masks,
+                        bool needs_opc,
+                        Graphics* graphics,
+                        Polygon90Set* filled_area = nullptr)
 {
   // Convert the area polygon to a polygon set as we will remove areas
   // filled by one fill shape from consideration by future shapes,
@@ -362,7 +363,7 @@ static void fill_polygon(const Polygon90& area,
   Polygon90Set fill_area;
   fill_area += area;
 
-  bool isHoriz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  bool is_horiz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   auto [space_x, space_y] = getSpacing(layer, cfg);
 
   auto iter = cfg.shapes.begin();
@@ -370,7 +371,7 @@ static void fill_polygon(const Polygon90& area,
     auto [w, h] = *iter;
     bool last_shape = ++iter == cfg.shapes.end();
     // Ensure the longer direction is in the preferred direction
-    if ((isHoriz && w < h) || (!isHoriz && h < w)) {
+    if ((is_horiz && w < h) || (!is_horiz && h < w)) {
       std::swap(w, h);
     }
 
@@ -425,13 +426,13 @@ static void fill_polygon(const Polygon90& area,
       int cnt = 0;
       for (auto& f : polygons) {
         int mask = cnt++ % num_mask + 1;
-        auto xLo = xl(f);
-        auto yLo = yl(f);
-        auto xHi = xh(f);
-        auto yHi = yh(f);
-        dbFill::create(block, needs_opc, mask, layer, xLo, yLo, xHi, yHi);
+        auto x_lo = xl(f);
+        auto y_lo = yl(f);
+        auto x_hi = xh(f);
+        auto y_hi = yh(f);
+        dbFill::create(block, needs_opc, mask, layer, x_lo, y_lo, x_hi, y_hi);
         if (filled_area) {
-          *filled_area += makeRect(xLo, yLo, xHi, yHi);
+          *filled_area += makeRect(x_lo, y_lo, x_hi, y_hi);
         }
       }
     }
@@ -441,13 +442,13 @@ static void fill_polygon(const Polygon90& area,
 }
 
 // Fill the given layer
-void DensityFill::fill_layer(dbBlock* block,
-                             dbTechLayer* layer,
-                             const odb::Rect& fill_bounds_rect)
+void DensityFill::fillLayer(dbBlock* block,
+                            dbTechLayer* layer,
+                            const odb::Rect& fill_bounds_rect)
 {
   logger_->info(FIN, 3, "Filling layer {}", layer->getConstName());
 
-  Polygon90Set non_fill = or_non_fills(block, layer);
+  Polygon90Set non_fill = orNonFills(block, layer);
 
   auto fill_bounds = makeRect(fill_bounds_rect.xMin(),
                               fill_bounds_rect.yMin(),
@@ -474,14 +475,14 @@ void DensityFill::fill_layer(dbBlock* block,
 
   Polygon90Set non_opc_fill_area;
   for (auto& polygon : polygons) {
-    fill_polygon(polygon,
-                 layer,
-                 block,
-                 cfg.non_opc,
-                 cfg.num_masks,
-                 false,
-                 graphics_.get(),
-                 &non_opc_fill_area);
+    fillPolygon(polygon,
+                layer,
+                block,
+                cfg.non_opc,
+                cfg.num_masks,
+                false,
+                graphics_.get(),
+                &non_opc_fill_area);
   }
   logger_->info(FIN, 4, "Total fills: {}", block->getFills().size());
 
@@ -504,7 +505,7 @@ void DensityFill::fill_layer(dbBlock* block,
   opc_fill_area.get(polygons);
   logger_->info(FIN, 5, "Filling {} areas with OPC fill.", polygons.size());
   for (auto& polygon : polygons) {
-    fill_polygon(
+    fillPolygon(
         polygon, layer, block, cfg.opc, cfg.num_masks, true, graphics_.get());
   }
 
@@ -531,7 +532,7 @@ void DensityFill::fill(const char* cfg_filename, const odb::Rect& fill_area)
       logger_->warn(FIN, 10, "skipping layer {}.", layer->getConstName());
       continue;
     }
-    fill_layer(block, layer, fill_area);
+    fillLayer(block, layer, fill_area);
   }
 }
 
