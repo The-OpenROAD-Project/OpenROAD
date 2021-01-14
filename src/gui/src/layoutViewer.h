@@ -77,7 +77,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
-  qreal getPixelsPerDBU() { return pixelsPerDBU_; }
+  qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
   // From QWidget
