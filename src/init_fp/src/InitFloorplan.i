@@ -81,7 +81,7 @@ init_floorplan_core(double die_lx,
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
 		     site_name, tracks_file,
@@ -100,7 +100,7 @@ init_floorplan_util(double util,
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::initFloorplan(util, aspect_ratio,
                      core_space_bottom, core_space_top,
                      core_space_left, core_space_right,
@@ -113,7 +113,7 @@ auto_place_pins_cmd(const char *pin_layer)
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  utl::Logger *logger = ord::getOpenRoad()->getLogger();
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::autoPlacePins(pin_layer, db, logger);
 }
 

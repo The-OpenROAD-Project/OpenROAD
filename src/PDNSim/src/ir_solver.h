@@ -35,7 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gmat.h"
 #include "opendb/db.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 namespace psm {
 
@@ -54,7 +54,7 @@ class IRSolver
    */
   IRSolver(odb::dbDatabase*             t_db,
            sta::dbSta*                  t_sta,
-           utl::Logger*                 t_logger,
+           ord::Logger*                 t_logger,
            std::string                  vsrc_loc,
            std::string                  power_net,
            std::string                  out_file,
@@ -121,7 +121,7 @@ class IRSolver
   //! Pointer to STA
   sta::dbSta* m_sta;
   //! Pointer to Logger
-  utl::Logger* m_logger;
+  ord::Logger* m_logger;
   //! Voltage source file
   std::string m_vsrc_file;
   std::string m_power_net;

@@ -55,7 +55,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include "gui/gui.h"
 
@@ -101,8 +101,8 @@ namespace sta {
 
 using std::min;
 
-using utl::Logger;
-using utl::STA;
+using ord::Logger;
+using ord::STA;
 
 class dbStaReport : public sta::ReportTcl
 {

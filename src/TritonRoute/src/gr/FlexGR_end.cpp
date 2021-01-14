@@ -38,10 +38,10 @@ void FlexGRWorker::end() {
   if (enableOutput) {
     stringstream ss;
     ss <<endl <<"end GR worker (BOX) "
-                <<"( " <<extBox_.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<extBox_.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
-                <<extBox_.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<extBox_.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
+                <<"( " <<extBox.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
+                <<extBox.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
+                <<extBox.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
+                <<extBox.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
   // if (enableOutput) {
@@ -74,13 +74,13 @@ void FlexGRWorker::end() {
 }
 
 void FlexGRWorker::endGetModNets(set<frNet*, frBlockObjectComp> &modNets) {
-  for (auto &net: nets_) {
+  for (auto &net: nets) {
     if (net->isModified()) {
       modNets.insert(net->getFrNet());
     }
   }
   // change modified flag to true if another subnet get routed
-  for (auto &net: nets_) {
+  for (auto &net: nets) {
     if (!net->isModified() && modNets.find(net->getFrNet()) != modNets.end()) {
       net->setModified(true);
     }
@@ -137,7 +137,7 @@ void FlexGRWorker::endRemoveNets_via(grVia* via) {
 
 void FlexGRWorker::endRemoveNets_nodes(const set<frNet*, frBlockObjectComp> &modNets) {
   for (auto fnet: modNets) {
-    for (auto net: owner2nets_[fnet]) {
+    for (auto net: owner2nets[fnet]) {
       endRemoveNets_nodes_net(net, fnet);
     }
   }
@@ -340,7 +340,7 @@ void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet) {
 
 void FlexGRWorker::endAddNets(set<frNet*, frBlockObjectComp> &modNets) {
   for (auto fnet: modNets) {
-    for (auto net: owner2nets_[fnet]) {
+    for (auto net: owner2nets[fnet]) {
       endAddNets_stitchRouteBound(net);
       endAddNets_addNet(net, fnet);
     }
@@ -471,7 +471,7 @@ void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet) {
         via->setParent(parentFrNode);
         via->addToNet(fnet);
         via->setOrigin(childLoc);
-        via->setViaDef(design_->getTech()->getLayer((childLNum + parentLNum) / 2)->getDefaultViaDef());
+        via->setViaDef(design->getTech()->getLayer((childLNum + parentLNum) / 2)->getDefaultViaDef());
 
         // update region query
         getRegionQuery()->addGRObj(via);
@@ -492,7 +492,7 @@ void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet) {
 }
 
 void FlexGRWorker::endStitchBoundary() {
-  for (auto &net: nets_) {
+  for (auto &net: nets) {
     endStitchBoundary_net(net.get());
   }
 }
@@ -604,18 +604,18 @@ void FlexGRWorker::endWriteBackCMap() {
       for (int yIdx = 0; yIdx <= (idxURY - idxLLY); yIdx++) {
         int cmapYIdx = yIdx + idxLLY;
         // copy history cost
-        cmap->setHistoryCost(cmapXIdx, cmapYIdx, zIdx, gridGraph_.getHistoryCost(xIdx, yIdx, zIdx));
+        cmap->setHistoryCost(cmapXIdx, cmapYIdx, zIdx, gridGraph.getHistoryCost(xIdx, yIdx, zIdx));
         // gridGraph.setHistoryCost(xIdx, yIdx, zIdx, cmap->getHistoryCost(cmapXIdx, cmapYIdx, zIdx));
 
         // debug
-        if (gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E) != cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E) ||
-            gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N) != cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)) {
+        if (gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E) != cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E) ||
+            gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N) != cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)) {
           hasChange = true;
         }
 
         // copy raw demand
-        cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E, gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E));
-        cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N, gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N));
+        cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E, gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E));
+        cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N, gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N));
         // gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
         // gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
 
@@ -634,8 +634,8 @@ void FlexGRWorker::endWriteBackCMap() {
 }
 
 void FlexGRWorker::cleanup() {
-  nets_.clear();
-  nets_.shrink_to_fit();
-  owner2nets_.clear();
-  rq_.cleanup();
+  nets.clear();
+  nets.shrink_to_fit();
+  owner2nets.clear();
+  rq.cleanup();
 }

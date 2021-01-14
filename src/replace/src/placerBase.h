@@ -55,7 +55,7 @@ class Rect;
 
 }
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -285,7 +285,7 @@ public:
   // temp padLeft/Right before OpenDB supporting...
   PlacerBase(odb::dbDatabase* db, 
       PlacerBaseVars pbVars, 
-      utl::Logger* log);
+      ord::Logger* log);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -330,7 +330,7 @@ public:
 
 private:
   odb::dbDatabase* db_;
-  utl::Logger* log_;
+  ord::Logger* log_;
 
   PlacerBaseVars pbVars_;
 

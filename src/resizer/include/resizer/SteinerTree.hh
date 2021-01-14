@@ -37,7 +37,7 @@
 
 #include <string>
 
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
@@ -50,7 +50,7 @@
 
 namespace rsz {
 
-using utl::Logger;
+using ord::Logger;
 
 using odb::Point;
 

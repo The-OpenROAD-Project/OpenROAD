@@ -48,26 +48,26 @@ namespace fr {
   public:
     // constructors
     FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn):
-      design_(designIn), grWorker_(workerIn), xgp_(nullptr), ygp_(nullptr), bits_(), 
-      prevDirs_(), srcs_(), dsts_(),
-      xCoords_(), yCoords_(), zCoords_(), zHeights_(), zDirs_(),
-      ggCongCost_(0), ggHistCost_(0),
-      wavefront_(), is2DRouting_(false) {}
+      design(designIn), grWorker(workerIn), xgp(nullptr), ygp(nullptr), bits(), 
+      prevDirs(), srcs(), dsts(),
+      xCoords(), yCoords(), zCoords(), zHeights(), zDirs(),
+      ggCongCost(0), ggHistCost(0),
+      wavefront(), is2DRouting(false) {}
     // getters
     frTechObject* getTech() const {
-      return design_->getTech();
+      return design->getTech();
     }
 
     frDesign* getDesign() const {
-      return design_;
+      return design;
     }
 
     FlexGRWorker* getGRWorker() const {
-      return grWorker_;
+      return grWorker;
     }
 
     bool is2D() {
-      return is2DRouting_;
+      return is2DRouting;
     }
 
     frCoord getEdgeLength(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
@@ -76,13 +76,13 @@ namespace fr {
       // if (isValid(x, y, z, dir)) {
         switch (dir) {
           case frDirEnum::E:
-            sol = xCoords_[x+1] - xCoords_[x];
+            sol = xCoords[x+1] - xCoords[x];
             break;
           case frDirEnum::N:
-            sol = yCoords_[y+1] - yCoords_[y];
+            sol = yCoords[y+1] - yCoords[y];
             break;
           case frDirEnum::U:
-            sol = zHeights_[z+1] - zHeights_[z];
+            sol = zHeights[z+1] - zHeights[z];
             break;
           default:
             ;
@@ -92,18 +92,18 @@ namespace fr {
     }
 
     void getDim(frMIdx &xDim, frMIdx &yDim, frMIdx &zDim) const {
-      xDim = xCoords_.size();
-      yDim = yCoords_.size();
-      zDim = zCoords_.size();
+      xDim = xCoords.size();
+      yDim = yCoords.size();
+      zDim = zCoords.size();
     }
 
     frPoint& getPoint(frMIdx x, frMIdx y, frPoint &in) const {
-      in.set(xCoords_[x], yCoords_[y]);
+      in.set(xCoords[x], yCoords[y]);
       return in;
     }
 
     frLayerNum getLayerNum(frMIdx z) const {
-      return zCoords_[z];
+      return zCoords[z];
     }
 
     // bool isEdgeInBox(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, const frBox &box) {
@@ -280,19 +280,19 @@ namespace fr {
     // unsafe access, no check
     frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const {
       auto baseIdx = 3 * getIdx(x, y, z);
-      return (frDirEnum)(((unsigned short)(prevDirs_[baseIdx]    ) << 2) + 
-                         ((unsigned short)(prevDirs_[baseIdx + 1]) << 1) + 
-                         ((unsigned short)(prevDirs_[baseIdx + 2]) << 0));
+      return (frDirEnum)(((unsigned short)(prevDirs[baseIdx]    ) << 2) + 
+                         ((unsigned short)(prevDirs[baseIdx + 1]) << 1) + 
+                         ((unsigned short)(prevDirs[baseIdx + 2]) << 0));
     }
 
     // unsafe access, no check
     bool isSrc(frMIdx x, frMIdx y, frMIdx z) const {
-      return srcs_[getIdx(x, y, z)];
+      return srcs[getIdx(x, y, z)];
     }
 
     // unsafe access, no check
     bool isDst(frMIdx x, frMIdx y, frMIdx z) const {
-      return dsts_[getIdx(x, y, z)];
+      return dsts[getIdx(x, y, z)];
     }
 
     // setters
@@ -534,38 +534,38 @@ namespace fr {
     // unsafe access, no idx check
     void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       auto baseIdx = 3 * getIdx(x, y, z);
-      prevDirs_[baseIdx]     = ((unsigned short)dir >> 2) & 1;
-      prevDirs_[baseIdx + 1] = ((unsigned short)dir >> 1) & 1;
-      prevDirs_[baseIdx + 2] = ((unsigned short)dir     ) & 1;
+      prevDirs[baseIdx]     = ((unsigned short)dir >> 2) & 1;
+      prevDirs[baseIdx + 1] = ((unsigned short)dir >> 1) & 1;
+      prevDirs[baseIdx + 2] = ((unsigned short)dir     ) & 1;
     }
     // unsafe access, no idx check
     void setSrc(frMIdx x, frMIdx y, frMIdx z) {
-      srcs_[getIdx(x, y, z)] = 1;
+      srcs[getIdx(x, y, z)] = 1;
     }
     void setSrc(const FlexMazeIdx &mi) {
-      srcs_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+      srcs[getIdx(mi.x(), mi.y(), mi.z())] = 1;
     }
     // unsafe access, no idx check
     void setDst(frMIdx x, frMIdx y, frMIdx z) {
-      dsts_[getIdx(x, y, z)] = 1;
+      dsts[getIdx(x, y, z)] = 1;
     }
     void setDst(const FlexMazeIdx &mi) {
-      dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+      dsts[getIdx(mi.x(), mi.y(), mi.z())] = 1;
     }
     void resetDst(frMIdx x, frMIdx y, frMIdx z) {
-      dsts_[getIdx(x, y, z)] = 0;
+      dsts[getIdx(x, y, z)] = 0;
     }
     void resetDst(const FlexMazeIdx &mi) {
-      dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 0;
+      dsts[getIdx(mi.x(), mi.y(), mi.z())] = 0;
     }
 
 
     void setCost(frUInt4 ggCongCostIn, frUInt4 ggHistCostIn) {
-      ggCongCost_ = ggCongCostIn;
-      ggHistCost_ = ggHistCostIn;
+      ggCongCost = ggCongCostIn;
+      ggHistCost = ggHistCostIn;
     }
     void set2D(bool in) {
-      is2DRouting_ = in;
+      is2DRouting = in;
     }
     
     // functions
@@ -579,30 +579,30 @@ namespace fr {
                 FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt);
 
     void cleanup() {
-      bits_.clear();
-      bits_.shrink_to_fit();
-      prevDirs_.clear();
-      prevDirs_.shrink_to_fit();
-      srcs_.clear();
-      srcs_.shrink_to_fit();
-      dsts_.clear();
-      dsts_.shrink_to_fit();
-      xCoords_.clear();
-      xCoords_.shrink_to_fit();
-      yCoords_.clear();
-      yCoords_.shrink_to_fit();
-      zCoords_.clear();
-      zCoords_.shrink_to_fit();
-      zHeights_.clear();
-      zHeights_.shrink_to_fit();
-      zDirs_.clear();
-      zDirs_.shrink_to_fit();
+      bits.clear();
+      bits.shrink_to_fit();
+      prevDirs.clear();
+      prevDirs.shrink_to_fit();
+      srcs.clear();
+      srcs.shrink_to_fit();
+      dsts.clear();
+      dsts.shrink_to_fit();
+      xCoords.clear();
+      xCoords.shrink_to_fit();
+      yCoords.clear();
+      yCoords.shrink_to_fit();
+      zCoords.clear();
+      zCoords.shrink_to_fit();
+      zHeights.clear();
+      zHeights.shrink_to_fit();
+      zDirs.clear();
+      zDirs.shrink_to_fit();
     }
   protected:
-    frDesign*     design_;
-    FlexGRWorker* grWorker_;
-    frGCellPattern *xgp_;
-    frGCellPattern *ygp_;
+    frDesign*     design;
+    FlexGRWorker* grWorker;
+    frGCellPattern *xgp;
+    frGCellPattern *ygp;
 
     // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
     // [3] blockE;   [4] blockN;   [5] blockU
@@ -610,64 +610,64 @@ namespace fr {
     // [15-8]  history cost
     // [31-24] supply H; [23-16] supply V // last bit is fractional
     // [63-48] demand H; [47-32] demand V // last bit is fractional
-    std::vector<unsigned long long>   bits_;
-    std::vector<bool>                 prevDirs_;
-    std::vector<bool>                 srcs_;
-    std::vector<bool>                 dsts_;
-    std::vector<frCoord>              xCoords_;
-    std::vector<frCoord>              yCoords_;
-    std::vector<frLayerNum>           zCoords_;
-    std::vector<frCoord>              zHeights_;
-    std::vector<bool>                 zDirs_; // is horz dir
-    unsigned                          ggCongCost_;
-    unsigned                          ggHistCost_;
+    std::vector<unsigned long long>   bits;
+    std::vector<bool>                 prevDirs;
+    std::vector<bool>                 srcs;
+    std::vector<bool>                 dsts;
+    std::vector<frCoord>              xCoords;
+    std::vector<frCoord>              yCoords;
+    std::vector<frLayerNum>           zCoords;
+    std::vector<frCoord>              zHeights;
+    std::vector<bool>                 zDirs; // is horz dir
+    unsigned                          ggCongCost;
+    unsigned                          ggHistCost;
 
-    FlexGRWavefront                   wavefront_;
+    FlexGRWavefront                   wavefront;
 
     // flags
-    bool                              is2DRouting_;
+    bool                              is2DRouting;
 
     // internal getters
     bool getBit(frMIdx idx, frMIdx pos) const {
-      return (bits_[idx] >> pos ) & 1;
+      return (bits[idx] >> pos ) & 1;
     }
     unsigned getBits(frMIdx idx, frMIdx pos, unsigned length) const {
-      auto tmp = bits_[idx] & (((1ull << length) - 1) << pos); // mask
+      auto tmp = bits[idx] & (((1ull << length) - 1) << pos); // mask
       return tmp >> pos;
     }
     frMIdx getMazeXIdx(frCoord in) const {
-      auto it = std::lower_bound(xCoords_.begin(), xCoords_.end(), in);
-      return it - xCoords_.begin();
+      auto it = std::lower_bound(xCoords.begin(), xCoords.end(), in);
+      return it - xCoords.begin();
     }
     frMIdx getMazeYIdx(frCoord in) const {
-      auto it = std::lower_bound(yCoords_.begin(), yCoords_.end(), in);
-      return it - yCoords_.begin();
+      auto it = std::lower_bound(yCoords.begin(), yCoords.end(), in);
+      return it - yCoords.begin();
     }
     frMIdx getMazeZIdx(frLayerNum in) const {
-      auto it = std::lower_bound(zCoords_.begin(), zCoords_.end(), in);
-      return it - zCoords_.begin();
+      auto it = std::lower_bound(zCoords.begin(), zCoords.end(), in);
+      return it - zCoords.begin();
     }
     FlexMazeIdx& getMazeIdx(const frPoint &p, frLayerNum layerNum, FlexMazeIdx &mIdx) const {
       mIdx.set(getMazeXIdx(p.x()), getMazeYIdx(p.y()), getMazeZIdx(layerNum));
       return mIdx;
     }
     frCoord getZHeight(frMIdx in) const {
-      return zHeights_[in];
+      return zHeights[in];
     }
     bool getZDir(frMIdx in) const {
-      return zDirs_[in];
+      return zDirs[in];
     }
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {
-      return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords_.size() + zIdx * xCoords_.size() * yCoords_.size()): 
-                               (yIdx + xIdx * yCoords_.size() + zIdx * xCoords_.size() * yCoords_.size());
+      return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords.size() + zIdx * xCoords.size() * yCoords.size()): 
+                               (yIdx + xIdx * yCoords.size() + zIdx * xCoords.size() * yCoords.size());
     }
 
     // internal setters
     void setBit(frMIdx idx, frMIdx pos) {
-      bits_[idx] |= 1 << pos;
+      bits[idx] |= 1 << pos;
     }
     void resetBit(frMIdx idx, frMIdx pos) {
-      bits_[idx] &= ~(1 << pos);
+      bits[idx] &= ~(1 << pos);
     }
     void addToBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val) {
       auto tmp = getBits(idx, pos, length) + val;
@@ -680,8 +680,8 @@ namespace fr {
       setBits(idx, pos, length, tmp);
     }
     void setBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val) {
-      bits_[idx] &= ~(((1ull << length) - 1) << pos); // clear related bits to 0
-      bits_[idx] |= ((unsigned long long)val & ((1ull << length) - 1)) << pos; // only get last length bits of val
+      bits[idx] &= ~(((1ull << length) - 1) << pos); // clear related bits to 0
+      bits[idx] |= ((unsigned long long)val & ((1ull << length) - 1)) << pos; // only get last length bits of val
     }
 
     // internal utility
@@ -751,7 +751,7 @@ namespace fr {
     void getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir);
     bool isValid(frMIdx x, frMIdx y, frMIdx z) const {
       if (x < 0 || y < 0 || z < 0 ||
-          x >= (frMIdx)xCoords_.size() || y >= (frMIdx)yCoords_.size() || z >= (frMIdx)zCoords_.size()) {
+          x >= (frMIdx)xCoords.size() || y >= (frMIdx)yCoords.size() || z >= (frMIdx)zCoords.size()) {
         return false;
       } else {
         return true;

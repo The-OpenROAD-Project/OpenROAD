@@ -83,15 +83,14 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(map<frBlock*, tuple<frLay
             }
             maxLayerNum = std::max(maxLayerNum, lNum);
           } else {
-            logger_->error(DRT, 65, "instAnalysis unsupported pinFig.");
+            cout <<"Error: instAnalysis unsupported pinFig" <<endl;
           }
         }
       }
     }
     if (minLayerNum < getDesign()->getTech()->getBottomLayerNum() ||
         maxLayerNum > getDesign()->getTech()->getTopLayerNum()) {
-      logger_->warn(DRT, 66, "instAnalysis skips {} due to no pin shapes",
-                   refBlock->getName());
+      cout <<"Warning: instAnalysis skips " <<refBlock->getName() <<" due to no pin shapes" <<endl;
       continue;
     }
     maxLayerNum = std::min(maxLayerNum + 2, numLayers);
@@ -255,7 +254,7 @@ void FlexPA::initPinAccess() {
           unique2paidx_[inst] = pin->getNumPinAccess();
         } else {
           if (unique2paidx_[inst] != pin->getNumPinAccess()) {
-            logger_->error(DRT, 69, "initPinAccess error.");
+            cout <<"Error: initPinAccess error" <<endl;
             exit(1);
           }
         }

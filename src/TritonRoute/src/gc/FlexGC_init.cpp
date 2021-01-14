@@ -70,17 +70,20 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj) {
     if (shape->hasNet()) {
       owner = shape->getNet();
     } else {
-      logger_->error(DRT, 37, "init_design_helper shape does not have net.");
+      cout <<"Error: init_design_helper shape does not have net" <<endl;
+      exit(1);
     }
   } else if (obj->typeId() == drcPathSeg || obj->typeId() == drcVia || obj->typeId() == drcPatchWire) {
     auto shape = static_cast<drShape*>(obj);
     if (shape->hasNet()) {
       owner = shape->getNet()->getFrNet();
     } else {
-      logger_->error(DRT, 38, "init_design_helper shape does not have dr net.");
+      cout <<"Error: init_design_helper shape does not have dr net" <<endl;
+      exit(1);
     }
   } else {
-    logger_->error(DRT, 39, "init_design_helper unsupported type.");
+    cout <<"Error: init_design_helper unsupported type" <<endl;
+    exit(1);
   }
 
   if (isFloatingVSS) {
@@ -127,7 +130,8 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj) {
         return true;
       }
     } else {
-      logger_->error(DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+      cout <<"Error: FlexGCWorker::initDesign_skipObj type not supported" <<endl;
+      exit(1);
     }
   } else {
     return false;
@@ -853,7 +857,8 @@ void FlexGCWorker::Impl::updateGCWorker() {
         }
       }
     } else {
-      logger_->error(DRT, 53, "updateGCWorker cannot find frNet in DRWorker.");
+      cout <<"Error: updateGCWorker cannot find frNet in DRWorker" <<endl;
+      exit(1);
     }  
   }
 

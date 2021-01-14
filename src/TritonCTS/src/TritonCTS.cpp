@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
-#include "utility/Logger.h"
+#include "openroad/Error.hh"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -55,12 +55,11 @@
 
 namespace cts {
 
-using utl::CTS;
+using ord::error;
 
 void TritonCTS::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
-  _logger = openroad->getLogger();
   makeComponents();
 }
 
@@ -68,7 +67,7 @@ void TritonCTS::makeComponents()
 {
   _db = _openroad->getDb();
   _options = new CtsOptions;
-  _techChar = new TechChar(_options, _logger);
+  _techChar = new TechChar(_options);
   _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
 }
@@ -111,9 +110,9 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
 
 void TritonCTS::printHeader() const
 {
-  _logger->report(" *****************");
-  _logger->report(" * TritonCTS 2.0 *");
-  _logger->report(" *****************");
+  std::cout << " *****************\n";
+  std::cout << " * TritonCTS 2.0 *\n";
+  std::cout << " *****************\n";
 }
 
 void TritonCTS::setupCharacterization()
@@ -134,27 +133,27 @@ void TritonCTS::setupCharacterization()
 
 void TritonCTS::importCharacterization()
 {
-  _logger->report(" *****************************");
-  _logger->report(" *  Import characterization  *");
-  _logger->report(" *****************************");
+  std::cout << " *****************************\n";
+  std::cout << " *  Import characterization  *\n";
+  std::cout << " *****************************\n";
 
   _techChar->parse(_options->getLutFile(), _options->getSolListFile());
 }
 
 void TritonCTS::createCharacterization()
 {
-  _logger->report(" *****************************");
-  _logger->report(" *  Create characterization  *");
-  _logger->report(" *****************************");
+  std::cout << " *****************************\n";
+  std::cout << " *  Create characterization  *\n";
+  std::cout << " *****************************\n";
 
   _techChar->create();
 }
 
 void TritonCTS::checkCharacterization()
 {
-  _logger->report(" ****************************");
-  _logger->report(" *  Check characterization  *");
-  _logger->report(" ****************************");
+  std::cout << " ****************************\n";
+  std::cout << " *  Check characterization  *\n";
+  std::cout << " ****************************\n";
 
   std::unordered_set<std::string> visitedMasters;
   _techChar->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
@@ -164,49 +163,51 @@ void TritonCTS::checkCharacterization()
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {
-          _logger->error(CTS, 81, "Buffer {} is not in the loaded DB.", master);
+          error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
         }
       }
     }
   });
 
-  _logger->report( "    The chacterization used {} buffer(s) types."
-                   " All of them are in the loaded DB.", visitedMasters.size());
+  std::cout << "    The chacterization used " << visitedMasters.size()
+            << " buffer(s) types."
+            << " All of them are in the loaded DB.\n";
 }
 
 void TritonCTS::findClockRoots()
 {
-  _logger->report(" **********************");
-  _logger->report(" *  Find clock roots  *");
-  _logger->report(" **********************");
+  std::cout << " **********************\n";
+  std::cout << " *  Find clock roots  *\n";
+  std::cout << " **********************\n";
 
   if (_options->getClockNets() != "") {
-    _logger->info(CTS, 1, " Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
+    std::cout << " Running TritonCTS with user-specified clock roots: ";
+    std::cout << _options->getClockNets() << "\n";
     return;
   }
 
-  _logger->info(CTS, 2, " User did not specify clock roots.");
+  std::cout << " User did not specify clock roots.\n";
   _staEngine->init();
 }
 
 void TritonCTS::populateTritonCts()
 {
-  _logger->report(" ************************");
-  _logger->report(" *  Populate TritonCTS  *");
-  _logger->report(" ************************");
+  std::cout << " ************************\n";
+  std::cout << " *  Populate TritonCTS  *\n";
+  std::cout << " ************************\n";
 
   populateTritonCTS();
 
   if (_builders->size() < 1) {
-    _logger->error(CTS, 82, "No valid clock nets in the design.");
+    error("No valid clock nets in the design.\n");
   }
 }
 
 void TritonCTS::buildClockTrees()
 {
-  _logger->report(" ***********************");
-  _logger->report(" *  Build clock trees  *");
-  _logger->report(" ***********************");
+  std::cout << " ***********************\n";
+  std::cout << " *  Build clock trees  *\n";
+  std::cout << " ***********************\n";
 
   for (TreeBuilder* builder : *_builders) {
     builder->setTechChar(*_techChar);
@@ -220,59 +221,24 @@ void TritonCTS::runPostCtsOpt()
     return;
   }
 
-  _logger->report(" ****************");
-  _logger->report(" * Post CTS opt *");
-  _logger->report(" ****************");
+  std::cout << " ****************\n";
+  std::cout << " * Post CTS opt *\n";
+  std::cout << " ****************\n";
 
   for (TreeBuilder* builder : *_builders) {
-    PostCtsOpt opt(builder->getClock(), _options, _logger);
+    PostCtsOpt opt(builder->getClock(), _options);
     opt.run();
-  }
-}
-
-void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks)
-{
-  if (sinks > 100000)
-    return;
-
-  odb::dbSet<odb::dbITerm> iterms = net->getITerms();
-  for (odb::dbITerm* iterm : iterms) {
-    if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      odb::dbInst *inst = iterm->getInst();
-      std::string name = inst->getName();
-      if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf_", 7)) {
-        odb::dbITerm* outputPin = inst->getFirstOutput();
-        if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks);
-        else
-        {
-          std::cout << "  Hanging buffer " << name << std::endl;
-        }
-        if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
-          leafSinks++;
-      } else {
-        sinks++;
-      }
-    }
   }
 }
 
 void TritonCTS::writeDataToDb()
 {
-  _logger->report(" ********************");
-  _logger->report(" * Write data to DB *");
-  _logger->report(" ********************");
+  std::cout << " ********************\n";
+  std::cout << " * Write data to DB *\n";
+  std::cout << " ********************\n";
 
   for (TreeBuilder* builder : *_builders) {
     writeClockNetsToDb(builder->getClock());
-    if (_logger->debugCheck(utl::CTS, "HTree", 2)) {
-      odb::dbNet* topClockNet = builder->getClock().getNetObj();
-      unsigned sinkCount = 0;
-      unsigned leafSinks = 0;
-      countSinksPostDbWrite(topClockNet, sinkCount, leafSinks);
-      std::cout << "  Sinks after db write = " << sinkCount
-                << " (Leaf Buffers = " << leafSinks << ")" << std::endl;
-    }
   }
 }
 
@@ -286,7 +252,7 @@ void TritonCTS::forEachBuilder(
 
 void TritonCTS::printFooter() const
 {
-  _logger->report(" ... End of TritonCTS execution.");
+  std::cout << " ... End of TritonCTS execution.\n";
 }
 
 void TritonCTS::reportCtsMetrics()
@@ -297,7 +263,8 @@ void TritonCTS::reportCtsMetrics()
     std::ofstream file(filename.c_str());
 
     if (!file.is_open()) {
-      _logger->error(CTS, 87, "Could not open output metric file.");
+      std::cout << "Could not open output metric file.\n";
+      return;
     }
 
     file << "[TritonCTS Metrics] Total number of Clock Roots: "
@@ -311,10 +278,14 @@ void TritonCTS::reportCtsMetrics()
 
     file.close();
   } else {
-    _logger->info(CTS, 3, "[TritonCTS Metrics] Total number of Clock Roots: {}.", _options->getNumClockRoots());
-    _logger->info(CTS, 4, "[TritonCTS Metrics] Total number of Buffers Inserted: {}.", _options->getNumBuffersInserted());
-    _logger->info(CTS, 5, "[TritonCTS Metrics] Total number of Clock Subnets: {}.", _options->getNumClockSubnets());
-    _logger->info(CTS, 6, "[TritonCTS Metrics] Total number of Sinks: {}.", _options->getNumSinks());
+    std::cout << "[TritonCTS Metrics] Total number of Clock Roots: "
+              << _options->getNumClockRoots() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Buffers Inserted: "
+              << _options->getNumBuffersInserted() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Clock Subnets: "
+              << _options->getNumClockSubnets() << ".\n";
+    std::cout << "[TritonCTS Metrics] Total number of Sinks: "
+              << _options->getNumSinks() << ".\n";
   }
 }
 
@@ -385,11 +356,11 @@ void TritonCTS::initDB()
 
 void TritonCTS::initAllClocks()
 {
-  _logger->report(" Initializing clock nets");
+  std::cout << " Initializing clock nets\n";
 
   clearNumClocks();
 
-  _logger->report(" Looking for clock nets in the design");
+  std::cout << " Looking for clock nets in the design\n";
 
   // Uses dbSta to find all clock nets in the design.
 
@@ -411,20 +382,22 @@ void TritonCTS::initAllClocks()
   // Iterate over all the nets found by the user-input and dbSta
   for (odb::dbNet* net : clockNets) {
     if (net != nullptr) {
-      _logger->info(CTS, 7, " Net \"{}\" found", net->getName());
+      std::cout << " Net \"" << net->getName() << "\" found\n";
       // Initializes the net in TritonCTS. If the number of sinks is less than
       // 2, the net is discarded.
       initClock(net);
     } else {
-      _logger->warn(CTS, 40, "A net was not found in the design. Skipping...");
+      std::cout
+          << " [WARNING] A net was not found in the design. Skipping...\n";
     }
   }
 
   if (getNumClocks() == 0) {
-    _logger->error(CTS, 83, "No clock nets have been found.");
+    error("No clock nets have been found.\n");
   }
 
-  _logger->info(CTS, 8, " TritonCTS found {} clock nets.", getNumClocks());
+  std::cout << " TritonCTS found " << getNumClocks() << " clock nets."
+            << std::endl;
   _options->setNumClockRoots(getNumClocks());
 }
 
@@ -449,7 +422,8 @@ void TritonCTS::initClock(odb::dbNet* net)
   }
 
   // Initialize clock net
-  _logger->info(CTS, 9, " Initializing clock net for : \"{}\"", net->getConstName());
+  std::cout << " Initializing clock net for : \"" << net->getConstName() << "\""
+            << std::endl;
 
   Clock clockNet(net->getConstName(), driver, xPin, yPin);
 
@@ -467,18 +441,20 @@ void TritonCTS::initClock(odb::dbNet* net)
   }
 
   if (clockNet.getNumSinks() < 2) {
-    _logger->warn(CTS, 41, "Net \"{}\" has {} sinks. Skipping...",
-                  clockNet.getName(), clockNet.getNumSinks());
+    std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""
+              << " has " << clockNet.getNumSinks() << " sinks. Skipping...\n";
     return;
   } else {
     if (clockNet.getNumSinks() == 0) {
-      _logger->warn(CTS, 42, "Net \"{}\" has 0 sinks. Disconnected net or"
-                    " unplaced sink instances. Skipping...", clockNet.getName());
+      std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""
+                << " has 0 sinks. Disconnected net or unplaced sink instances. "
+                   "Skipping...\n";
       return;
     }
   }
 
-  _logger->info(CTS, 10, " Clock net \"{}\" has {} sinks", net->getConstName(), clockNet.getNumSinks());
+  std::cout << " Clock net \"" << net->getConstName() << "\" has "
+            << clockNet.getNumSinks() << " sinks" << std::endl;
 
   long int totalSinks = _options->getNumSinks() + clockNet.getNumSinks();
   _options->setNumSinks(totalSinks);
@@ -487,7 +463,7 @@ void TritonCTS::initClock(odb::dbNet* net)
 
   clockNet.setNetObj(net);
 
-  addBuilder(new HTreeBuilder(_options, clockNet, _logger));
+  addBuilder(new HTreeBuilder(_options, clockNet));
 }
 
 void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const
@@ -500,15 +476,14 @@ void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const
   }
 
   unsigned numClocks = clockNetNames.size();
-  _logger->info(CTS, 11, " Number of user-input clocks: {}.", numClocks);
+  std::cout << " Number of user-input clocks: " << numClocks << ".\n";
 
   if (numClocks > 0) {
-    std::string rpt = " (";
+    std::cout << " (";
     for (const std::string& name : clockNetNames) {
-      rpt = rpt + " \"" + name + "\"";
+      std::cout << " \"" << name << "\"";
     }
-    rpt = rpt + " )";
-    _logger->report("{}", rpt);
+    std::cout << " )\n";
   }
 }
 
@@ -535,7 +510,7 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 
 void TritonCTS::writeClockNetsToDb(Clock& clockNet)
 {
-  _logger->report(" Writing clock net \"{}\" to DB", clockNet.getName());
+  std::cout << " Writing clock net \"" << clockNet.getName() << "\" to DB\n";
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
   disconnectAllSinksFromNet(topClockNet);
@@ -559,6 +534,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     bool outputPinFound = true;
     bool inputPinFound = true;
     bool leafLevelNet = subNet.isLeafLevel();
+    // std::cout << "    SubNet: " << subNet.getName() << "\n";
     if (("clknet_0_" + clockNet.getName()) == subNet.getName()) {
       rootSubNet = &subNet;
     }
@@ -566,6 +542,8 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
         = odb::dbNet::create(_block, subNet.getName().c_str());
     ++_numClkNets;
     clkSubNet->setSigType(odb::dbSigType::CLOCK);
+
+    // std::cout << "      Driver: " << subNet.getDriver()->getName() << "\n";
 
     odb::dbInst* driver = subNet.getDriver()->getDbInst();
     odb::dbITerm* driverInputPin = getFirstInput(driver);
@@ -581,6 +559,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     }
 
     subNet.forEachSink([&](ClockInst* inst) {
+      // std::cout << "      " << inst->getName() << "\n";
       odb::dbITerm* inputPin = nullptr;
       if (inst->isClockBuffer()) {
         odb::dbInst* sink = inst->getDbInst();
@@ -647,19 +626,22 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     }
   });
 
-  _logger->info(CTS, 12, "    Minimum number of buffers in the clock path: {}.", minPath);
-  _logger->info(CTS, 13, "    Maximum number of buffers in the clock path: {}.", maxPath);
+  std::cout << "    Minimum number of buffers in the clock path: " << minPath
+            << ".\n";
+  std::cout << "    Maximum number of buffers in the clock path: " << maxPath
+            << ".\n";
 
   if (_numFixedNets > 0) {
-    _logger->info(CTS, 14, "    {} clock nets were removed/fixed.", _numFixedNets);
+    std::cout << "    " << _numFixedNets << " clock nets were removed/fixed.\n";
   }
 
-  _logger->info(CTS, 15, "    Created {} clock nets.", _numClkNets);
+  std::cout << "    Created " << _numClkNets << " clock nets.\n";
   long int totalNets = _options->getNumClockSubnets() + _numClkNets;
   _options->setNumClockSubnets(totalNets);
 
-  _logger->info(CTS, 16, "{}", fanoutDistString);
-  _logger->info(CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
+  std::cout << fanoutDistString << std::endl;
+  std::cout << "    Max level of the clock tree: " << clockNet.getMaxLevel()
+            << ".\n";
 }
 
 std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
@@ -751,7 +733,7 @@ void TritonCTS::createClockBuffers(Clock& clockNet)
     newInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     ++numBuffers;
   });
-  _logger->info(CTS, 18, "    Created {} clock buffers.", numBuffers);
+  std::cout << "    Created " << numBuffers << " clock buffers.\n";
   long int totalBuffers = _options->getNumBuffersInserted() + numBuffers;
   _options->setNumBuffersInserted(totalBuffers);
 }

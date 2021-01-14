@@ -32,20 +32,15 @@
 using namespace std;
 using namespace fr;
 
-FlexGCWorker::FlexGCWorker(frDesign* designIn,
-                           Logger* logger,
-                           FlexDRWorker* drWorkerIn)
-  : impl_(std::make_unique<Impl>(designIn, logger, drWorkerIn, this))
+FlexGCWorker::FlexGCWorker(frDesign* designIn, FlexDRWorker* drWorkerIn)
+  : impl_(std::make_unique<Impl>(designIn, drWorkerIn, this))
 {
 }
 
 FlexGCWorker::~FlexGCWorker() = default;
 
-FlexGCWorker::Impl::Impl(frDesign* designIn,
-                         Logger* logger,
-                         FlexDRWorker* drWorkerIn,
-                         FlexGCWorker* gcWorkerIn)
-  : design_(designIn), logger_(logger), drWorker_(drWorkerIn),
+FlexGCWorker::Impl::Impl(frDesign* designIn, FlexDRWorker* drWorkerIn, FlexGCWorker* gcWorkerIn)
+  : design_(designIn), drWorker_(drWorkerIn),
     extBox_(), drcBox_(), owner2nets_(), nets_(), markers_(), mapMarkers_(), pwires_(), rq_(gcWorkerIn), printMarker_(false), modifiedDRNets_(),
     targetNet_(nullptr), minLayerNum_(std::numeric_limits<frLayerNum>::min()), maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
     targetObj_(nullptr), ignoreDB_(false), ignoreMinArea_(false), surgicalFixEnabled_(false)

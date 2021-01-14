@@ -36,7 +36,7 @@
 #include "nesterovPlace.h"
 #include "opendb/db.h"
 #include "routeBase.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 #include <iostream>
 using namespace std;
 
@@ -45,7 +45,7 @@ using namespace std;
 
 namespace gpl {
 
-using utl::GPL;
+using ord::GPL;
 
 static float
 getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
@@ -98,7 +98,7 @@ NesterovPlace::NesterovPlace(
     std::shared_ptr<PlacerBase> pb, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<RouteBase> rb,
-    utl::Logger* log) 
+    ord::Logger* log) 
 : NesterovPlace() {
   npVars_ = npVars;
   pb_ = pb;

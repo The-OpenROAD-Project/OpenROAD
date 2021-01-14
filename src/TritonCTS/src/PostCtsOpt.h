@@ -40,19 +40,13 @@
 
 #include <unordered_map>
 
-namespace utl {
-class Logger;
-} // namespace utl
-
 namespace cts {
-
-using utl::Logger;
 
 class PostCtsOpt
 {
  public:
-  PostCtsOpt(Clock& clock, CtsOptions* options, Logger* logger)
-      : _clock(&clock), _options(options), _logger(logger)
+  PostCtsOpt(Clock& clock, CtsOptions* options)
+      : _clock(&clock), _options(options)
   {
     _bufDistRatio = _options->getBufDistRatio();
   }
@@ -71,7 +65,6 @@ class PostCtsOpt
 
   Clock* _clock;
   CtsOptions* _options;
-  Logger* _logger;
   unsigned _numViolatingSinks = 0;
   unsigned _numInsertedBuffers = 0;
   double _avgSourceSinkDist = 0.0;

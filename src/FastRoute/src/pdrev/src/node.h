@@ -34,12 +34,10 @@
 #pragma once
 
 #include <vector>
-#include <ostream>
 
 namespace PD {
 
 using std::vector;
-using std::ostream;
 
 class Node
 {
@@ -115,33 +113,6 @@ class Node
     S.clear();
     E.clear();
     W.clear();
-  }
-
-  friend ostream& operator<<(ostream& os, const Node& n)
-  {
-    os << n.idx << "(" << n.x << ", " << n.y << ") "
-         << " parent: " << n.parent << " children: ";
-    for (unsigned i = 0; i < n.children.size(); ++i) {
-      os << n.children[i] << " ";
-    }
-    os << " N: ";
-    for (unsigned i = 0; i < n.N.size(); ++i) {
-      os << n.N[i] << " ";
-    }
-    os << " S: ";
-    for (unsigned i = 0; i < n.S.size(); ++i) {
-      os << n.S[i] << " ";
-    }
-    os << " E: ";
-    for (unsigned i = 0; i < n.E.size(); ++i) {
-      os << n.E[i] << " ";
-    }
-    os << " W: ";
-    for (unsigned i = 0; i < n.W.size(); ++i) {
-      os << n.W[i] << " ";
-    }
-    os << "PL: " << n.src_to_sink_dist << " MaxPLToChild: " << n.maxPLToChild;
-    return os;
   }
 };
 

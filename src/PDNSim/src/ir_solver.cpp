@@ -119,7 +119,7 @@ vector<double> IRSolver::GetJ()
 void IRSolver::SolveIR()
 {
   if (!m_connection) {
-    m_logger->warn(utl::PSM,
+    m_logger->warn(ord::PSM,
                    8,
                    "Powergrid is not connected to all instances, therefore the "
                    "IR Solver may not be accurate. LVS may also fail.");
@@ -145,19 +145,19 @@ void IRSolver::SolveIR()
   Map<VectorXd>                  b(J.data(), J.size());
   VectorXd                       x;
   SparseLU<SparseMatrix<double>> solver;
-  m_logger->info(utl::PSM, 9, "Factorizing the G matrix.");
+  m_logger->info(ord::PSM, 9, "Factorizing the G matrix.");
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
-    m_logger->error(utl::PSM, 10, "LU factorization of the GMatrix failed.");
+    m_logger->error(ord::PSM, 10, "LU factorization of the GMatrix failed.");
   }
-  m_logger->info(utl::PSM, 11, "Solving system of equations GV=J.");
+  m_logger->info(ord::PSM, 11, "Solving system of equations GV=J.");
   x = solver.solve(b);
   if (solver.info() != Success) {
     // solving failed
-    m_logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
+    m_logger->error(ord::PSM, 12, "Solving V = inv(G)*J failed.");
   } else {
-    m_logger->info(utl::PSM, 13, "Solving system of equations GV=J complete.");
+    m_logger->info(ord::PSM, 13, "Solving system of equations GV=J complete.");
   }
   ofstream ir_report;
   ir_report.open(m_out_file);
@@ -276,7 +276,7 @@ void IRSolver::SolveIR()
 bool IRSolver::AddC4Bump()
 {
   if (m_C4Bumps.size() == 0) {
-    m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
+    m_logger->error(ord::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
@@ -292,7 +292,7 @@ void IRSolver::ReadC4Data()
 {
   int unit_micron = (m_db->getTech())->getDbUnitsPerMicron();
   if (m_vsrc_file != "") {
-    m_logger->info(utl::PSM,
+    m_logger->info(ord::PSM,
                    15,
                    "Reading location of VDD and VSS sources from {}.",
                    m_vsrc_file);
@@ -320,7 +320,7 @@ void IRSolver::ReadC4Data()
     }
     file.close();
   } else {
-    m_logger->warn(utl::PSM,
+    m_logger->warn(ord::PSM,
                    16,
                    "Voltage pad location (vsrc) file not specified, defaulting "
                    "pad location to checkerboard pattern on core area.");
@@ -339,7 +339,7 @@ void IRSolver::ReadC4Data()
     if (m_bump_pitch_x == 0) {
       m_bump_pitch_x = m_bump_pitch_default;
       m_logger->warn(
-          utl::PSM,
+          ord::PSM,
           17,
           "X direction bump pitch is not specified, defaulting to {}um.",
           m_bump_pitch_default);
@@ -347,7 +347,7 @@ void IRSolver::ReadC4Data()
     if (m_bump_pitch_y == 0) {
       m_bump_pitch_y = m_bump_pitch_default;
       m_logger->warn(
-          utl::PSM,
+          ord::PSM,
           18,
           "Y direction bump pitch is not specified, defaulting to {}um.",
           m_bump_pitch_default);
@@ -356,14 +356,14 @@ void IRSolver::ReadC4Data()
         && m_net_voltage_map.count(m_power_net) > 0) {
       supply_voltage_src = m_net_voltage_map.at(m_power_net);
     } else {
-      m_logger->warn(utl::PSM,
+      m_logger->warn(ord::PSM,
                      19,
                      "Voltage on net {} is not explicitly set.",
                      m_power_net);
       pair<double, double> supply_voltages = GetSupplyVoltage();
       dbNet*               power_net       = block->findNet(m_power_net.data());
       if (power_net == NULL) {
-        m_logger->error(utl::PSM,
+        m_logger->error(ord::PSM,
                         20,
                         "Cannot find net {} in the design. Please provide a "
                         "valid VDD/VSS net.",
@@ -372,13 +372,13 @@ void IRSolver::ReadC4Data()
       m_power_net_type = power_net->getSigType();
       if (m_power_net_type == dbSigType::GROUND) {
         supply_voltage_src = supply_voltages.second;
-        m_logger->warn(utl::PSM,
+        m_logger->warn(ord::PSM,
                        21,
                        "Using voltage {:4.3f}V for ground network.",
                        supply_voltage_src);
       } else {
         supply_voltage_src = supply_voltages.first;
-        m_logger->warn(utl::PSM,
+        m_logger->warn(ord::PSM,
                        22,
                        "Using voltage {:4.3f}V for VDD network.",
                        supply_voltage_src);
@@ -417,7 +417,7 @@ bool IRSolver::CreateJ()
     dbInst* inst = block->findInst(it->first.c_str());
     if (inst == NULL) {
       m_logger->warn(
-          utl::PSM, 23, "Instance {} not found within database.", it->first);
+          ord::PSM, 23, "Instance {} not found within database.", it->first);
       continue;
     }
     int x, y;
@@ -428,7 +428,7 @@ bool IRSolver::CreateJ()
     NodeLoc node_loc = node_J->GetLoc();
     if (abs(node_loc.first - x) > m_node_density
         || abs(node_loc.second - y) > m_node_density) {
-      m_logger->warn(utl::PSM,
+      m_logger->warn(ord::PSM,
                      24,
                      "Instance {} curent node at ({}, {}) at layer {} have "
                      "been moved from ({}, {}).",
@@ -451,14 +451,14 @@ bool IRSolver::CreateJ()
       m_J[i] = -1 * (node_J->GetCurrent());
     }
   }
-  m_logger->info(utl::PSM, 25, "Created J vector.");
+  m_logger->info(ord::PSM, 25, "Created J vector.");
   return true;
 }
 
 //! Function to create a G matrix using the nodes
 bool IRSolver::CreateGmat(bool connection_only)
 {
-  m_logger->info(utl::PSM, 26, "Creating G matrix.");
+  m_logger->info(ord::PSM, 26, "Creating G matrix.");
   vector<Node*> node_vector;
   dbTech*       tech = m_db->getTech();
   // dbSet<dbTechLayer>           layers = tech->getLayers();
@@ -472,7 +472,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   dbSet<dbNet> nets      = block->getNets();
   dbNet*       power_net = block->findNet(m_power_net.data());
   if (power_net == NULL) {
-    m_logger->error(utl::PSM,
+    m_logger->error(ord::PSM,
                     27,
                     " Cannot find net {} in the design. Please provide a valid "
                     "VDD/VSS net.",
@@ -481,7 +481,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   m_power_net_type = power_net->getSigType();
   vector<dbNet*> power_nets;
   int            num_wires = 0;
-  m_logger->info(utl::PSM,
+  m_logger->info(ord::PSM,
                  28,
                  "Extracting power stripes on net {}.",
                  power_net->getName());
@@ -510,7 +510,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   //}
   if (power_nets.size() == 0) {
     m_logger->error(
-        utl::PSM,
+        ord::PSM,
         29,
         "No power stipes found in design. Power grid checker will not run.");
   }
@@ -703,7 +703,7 @@ bool IRSolver::CreateGmat(bool connection_only)
       double  old_loc1 = ((double) x) / ((double) unit_micron);
       double  old_loc2 = ((double) y) / ((double) unit_micron);
       double  old_size = ((double) size) / ((double) unit_micron);
-      m_logger->warn(utl::PSM,
+      m_logger->warn(ord::PSM,
                      30,
                      "Vsrc location at ({:4.3f}um, {:4.3f}um) and size "
                      "={:4.3f}um, is not located on a power stripe. Moving to "
@@ -730,7 +730,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   // All new nodes must be inserted by this point
   // initialize G Matrix
 
-  m_logger->info(utl::PSM,
+  m_logger->info(ord::PSM,
                  31,
                  "Number of nodes on net {} = {}.",
                  m_power_net,
@@ -795,7 +795,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           NodeLoc node_loc      = node_bot->GetLoc();
           if (abs(node_loc.first - x) > m_node_density
               || abs(node_loc.second - y) > m_node_density) {
-            m_logger->warn(utl::PSM,
+            m_logger->warn(ord::PSM,
                            32,
                            "Node at ({}, {}) and layer {} moved from ({}, {}).",
                            node_loc.first,
@@ -812,7 +812,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           node_loc       = node_top->GetLoc();
           if (abs(node_loc.first - x) > m_node_density
               || abs(node_loc.second - y) > m_node_density) {
-            m_logger->warn(utl::PSM,
+            m_logger->warn(ord::PSM,
                            33,
                            "Node at ({}, {}) and layer {} moved from ({}, {}).",
                            node_loc.first,
@@ -824,7 +824,7 @@ bool IRSolver::CreateGmat(bool connection_only)
 
           if (node_bot == nullptr || node_top == nullptr) {
             m_logger->error(
-                utl::PSM,
+                ord::PSM,
                 34,
                 "Unxpected condition. Null pointer received for node.");
           } else {
@@ -941,19 +941,19 @@ bool IRSolver::CreateGmat(bool connection_only)
     }
   }
   if (err_flag_via == 0 && !connection_only) {
-    m_logger->error(utl::PSM,
+    m_logger->error(ord::PSM,
                     35,
                     "Atleast one via resistance not found in DB. Check the LEF "
                     "or set it with a odb::setResistance command.");
   }
   if (err_flag_layer == 0 && !connection_only) {
     m_logger->error(
-        utl::PSM,
+        ord::PSM,
         36,
         "Atleast one layer per unit resistance not found in DB. Check the LEF "
         "or set it with a odb::setResistance command.");
   }
-  m_logger->info(utl::PSM, 37, "G matrix created sucessfully.");
+  m_logger->info(ord::PSM, 37, "G matrix created sucessfully.");
   return true;
 }
 
@@ -1020,7 +1020,7 @@ bool IRSolver::CheckConnectivity()
       //  node error messages"<<endl;
       //} else if( uncon_err_flag ==0) {
       unconnected_node = true;
-      m_logger->warn(utl::PSM,
+      m_logger->warn(ord::PSM,
                      38,
                      "Unconnected PDN node on net {} at location ({:4.3f}um, "
                      "{:4.3f}um), layer: {}.",
@@ -1039,7 +1039,7 @@ bool IRSolver::CheckConnectivity()
         vector<dbInst*>::iterator inst_it;
         for (inst_it = insts.begin(); inst_it != insts.end(); inst_it++) {
           uncon_inst_cnt++;
-          m_logger->warn(utl::PSM,
+          m_logger->warn(ord::PSM,
                          39,
                          "Unconnected Instance {} at location ({:4.3f}um, "
                          "{:4.3f}um) layer: {}.",
@@ -1053,7 +1053,7 @@ bool IRSolver::CheckConnectivity()
     }
   }
   if (unconnected_node == false) {
-    m_logger->info(utl::PSM,
+    m_logger->info(ord::PSM,
                    40,
                    "Connection between all PDN nodes established in net {}.",
                    m_power_net);
@@ -1079,7 +1079,7 @@ vector<pair<string, double>> IRSolver::GetPower()
 {
   PowerInst power_inst;
 
-  m_logger->info(utl::PSM, 44, "Executing STA for power calculation.");
+  m_logger->info(ord::PSM, 44, "Executing STA for power calculation.");
   return power_inst.executePowerPerInst(m_sta);
 }
 
@@ -1103,7 +1103,7 @@ int IRSolver::PrintSpice()
   pdnsim_spice_file.open(m_spice_out_file);
   if (!pdnsim_spice_file.is_open()) {
     m_logger->error(
-        utl::PSM,
+        ord::PSM,
         41,
         "Spice file {} did not open. Please check if it is a valid path.",
         m_spice_out_file);

@@ -35,6 +35,8 @@
 
 project(TritonCTS)
 
+set(BIN_NAME "TritonCTS")
+
 find_package(LEMON REQUIRED)
 
 set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tritoncts_wrap.cpp)
@@ -67,7 +69,7 @@ set(SRC_FILES
   clustering.cpp
 )
 
-add_library(TritonCTS ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
+add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
 target_include_directories(TritonCTS
   PUBLIC
@@ -83,7 +85,8 @@ target_include_directories(TritonCTS
   ${LEMON_INCLUDE_DIRS}
  )
 
-target_link_libraries(TritonCTS 
-  PUBLIC
-  utility
+target_link_libraries(${BIN_NAME} INTERFACE
+  ${TCL_LIB}
+  lefin
+  opendb
  )

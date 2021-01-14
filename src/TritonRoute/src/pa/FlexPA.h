@@ -42,7 +42,7 @@ namespace fr {
   class FlexPA {
   public:
     // constructor
-    FlexPA(frDesign* in, Logger* logger): design_(in), logger_(logger), stdCellPinGenApCnt_(0), stdCellPinValidPlanarApCnt_(0), stdCellPinValidViaApCnt_(0), stdCellPinNoApCnt_(0),
+    FlexPA(frDesign* in): design_(in), stdCellPinGenApCnt_(0), stdCellPinValidPlanarApCnt_(0), stdCellPinValidViaApCnt_(0), stdCellPinNoApCnt_(0),
                           macroCellPinGenApCnt_(0), macroCellPinValidPlanarApCnt_(0), macroCellPinValidViaApCnt_(0), macroCellPinNoApCnt_(0), maxAccessPatternSize_(0) {}
     // getters
     frDesign* getDesign() const {
@@ -52,7 +52,6 @@ namespace fr {
     int main();
   protected:
     frDesign* design_;
-    Logger*   logger_;
 
     int stdCellPinGenApCnt_;
     int stdCellPinValidPlanarApCnt_;

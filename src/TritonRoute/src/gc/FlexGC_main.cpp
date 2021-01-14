@@ -113,7 +113,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum) 
         maxSpcVal = static_cast<frSpacingTablePrlConstraint*>(con)->findMax();
         break;
       default:
-        logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
+        std::cout << "Warning: Unsupported metSpc rule\n";
     }
   }
   return maxSpcVal;
@@ -172,7 +172,8 @@ box_t FlexGCWorker::Impl::checkMetalCornerSpacing_getQueryBox(gcCorner* corner, 
       ury += maxSpcValY;
       break;
     default:
-      logger_->error(DRT, 42, "UNKNOWN corner dir");
+      cout << "prevEdge dir = " << int(corner->getPrevEdge()->getDir()) << ", nextEdge dir = " << int(corner->getNextEdge()->getDir()) << endl;
+      cout << "Error: UNKNOWN corner dir\n";
   }
 
   bg::set<bg::min_corner, 0>(queryBox, llx);
@@ -245,7 +246,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gc
         }
         break;
       default:
-        logger_->warn(DRT, 43, "Unsupported metSpc rule.");
+        std::cout << "Warning: Unsupported metSpc rule\n";
     }
   }
   return reqSpcVal;
@@ -2736,7 +2737,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(gcRect* rect1, gcRect* rect2,
   } else if (con->hasAdjacentCuts()) {
     checkLef58CutSpacing_spc_adjCut(rect1, rect2, markerRect, con);
   } else {
-    logger_->warn(DRT, 44, "Unsupported LEF58_SPACING rule for cut layer, skipped.");
+    cout << "Warning: Unsupported LEF58_SPACING rule for cut layer, skipped...\n";
   }
 }
 
@@ -2883,35 +2884,35 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(gcRect* rect1,
   }
 
   if (con->hasExactAligned()) {
-    logger_->warn(DRT, 45, " unsupported branch EXACTALIGNED in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch EXACTALIGNED in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->isExceptSamePGNet()) {
-    logger_->warn(DRT, 46, " unsupported branch EXCEPTSAMEPGNET in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch EXCEPTSAMEPGNET in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->hasExceptAllWithin()) {
-    logger_->warn(DRT, 47, " unsupported branch EXCEPTALLWITHIN in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch EXCEPTALLWITHIN in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->isToAll()) {
-    logger_->warn(DRT, 48, " unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->isNoPrl()) {
-    logger_->warn(DRT, 49, " unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->hasEnclosure()) {
-    logger_->warn(DRT, 50, " unsupported branch ENCLOSURE in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch ENCLOSURE in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->isSideParallelOverlap()) {
-    logger_->warn(DRT, 51, " unsupported branch SIDEPARALLELOVERLAP in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch SIDEPARALLELOVERLAP in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
   if (con->isSameMask()) {
-    logger_->warn(DRT, 52, " unsupported branch SAMEMASK in checkLef58CutSpacing_spc_adjCut.");
+    cout << "Warning: unsupported branch SAMEMASK in checkLef58CutSpacing_spc_adjCut\n";
     return;
   }
 
@@ -3036,34 +3037,34 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(gcRect* rect1,
 
   // skip unsupported rule branch
   if (con->isStack()) {
-    logger_->warn(DRT, 54, "unsupported branch STACK in checkLef58CutSpacing_spc_layer.");
+    cout << "Warning: unsupported branch STACK in checkLef58CutSpacing_spc_layer\n";
     return;
   } else if (con->hasOrthogonalSpacing()) {
-    logger_->warn(DRT, 55, "unsupported branch ORTHOGONALSPACING in checkLef58CutSpacing_spc_layer.");
+    cout << "Warning: unsupported branch ORTHOGONALSPACING in checkLef58CutSpacing_spc_layer\n";
     return;
   } else if (con->hasCutClass()) {
       ;
     if (con->isShortEdgeOnly()) {
-      logger_->warn(DRT, 56, "unsupported branch SHORTEDGEONLY in checkLef58CutSpacing_spc_layer.");
+      cout << "Warning: unsupported branch SHORTEDGEONLY in checkLef58CutSpacing_spc_layer\n";
       return;
     } else if (con->isConcaveCorner()) {
       if (con->hasWidth()) {
-        logger_->warn(DRT, 57, "unsupported branch WIDTH in checkLef58CutSpacing_spc_layer.");
+        cout << "Warning: unsupported branch WIDTH in checkLef58CutSpacing_spc_layer\n";
       } else if (con->hasParallel()) {
-        logger_->warn(DRT, 58, "unsupported branch PARALLEL in checkLef58CutSpacing_spc_layer.");
+        cout << "Warning: unsupported branch PARALLEL in checkLef58CutSpacing_spc_layer\n";
       } else if (con->hasEdgeLength()) {
-        logger_->warn(DRT, 59, "unsupported branch EDGELENGTH in checkLef58CutSpacing_spc_layer.");
+        cout << "Warning: unsupported branch EDGELENGTH in checkLef58CutSpacing_spc_layer\n";
       }
     } else if (con->hasExtension()) {
-      logger_->warn(DRT, 60, "unsupported branch EXTENSION in checkLef58CutSpacing_spc_layer.");
+      cout << "Warning: unsupported branch EXTENSION in checkLef58CutSpacing_spc_layer\n";
     } else if (con->hasNonEolConvexCorner()) {
       ;
     } else if (con->hasAboveWidth()) {
-      logger_->warn(DRT, 61, "unsupported branch ABOVEWIDTH in checkLef58CutSpacing_spc_layer.");
+      cout << "Warning: unsupported branch ABOVEWIDTH in checkLef58CutSpacing_spc_layer\n";
     } else if (con->isMaskOverlap()) {
-      logger_->warn(DRT, 62, "unsupported branch MASKOVERLAP in checkLef58CutSpacing_spc_layer.");
+      cout << "Warning: unsupported branch MASKOVERLAP in checkLef58CutSpacing_spc_layer\n";
     } else if (con->isWrongDirection()) {
-      logger_->warn(DRT, 63, "unsupported branch WRONGDIRECTION in checkLef58CutSpacing_spc_layer.");
+      cout << "Warning: unsupported branch WRONGDIRECTION in checkLef58CutSpacing_spc_layer\n";
     }
   }
 
@@ -3687,7 +3688,7 @@ void FlexGCWorker::Impl::patchMetalShape_helper() {
     patch->addToNet(net);
 
     if (!net) {
-      logger_->warn(DRT, 64, "attempting to add patch with no drNet.");
+      cout << "Warning: attempting to add patch with no drNet\n";
     }
 
     pwires_.push_back(std::move(patch));

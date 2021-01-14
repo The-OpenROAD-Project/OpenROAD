@@ -116,14 +116,12 @@ namespace par {
 class PartitionMgr;
 }
 
-namespace utl {
-class Logger;
-}
 
 namespace ord {
 
 using std::string;
 
+class Logger;
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -138,7 +136,7 @@ public:
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  utl::Logger *getLogger() { return logger_; }
+  Logger *getLogger() { return logger_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -212,7 +210,7 @@ private:
   OpenRoad();
 
   Tcl_Interp *tcl_interp_;
-  utl::Logger *logger_;
+  Logger *logger_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;

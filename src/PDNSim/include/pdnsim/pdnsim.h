@@ -43,7 +43,7 @@ class dbDatabase;
 namespace sta {
 class dbSta;
 }
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -55,7 +55,7 @@ class PDNSim
   PDNSim();
   ~PDNSim();
 
-  void init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta);
+  void init(ord::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta);
   void reset();
 
   void import_vsrc_cfg(std::string vsrc);
@@ -75,7 +75,7 @@ class PDNSim
  private:
   odb::dbDatabase*             _db;
   sta::dbSta*                  _sta;
-  utl::Logger*                 _logger;
+  ord::Logger*                 _logger;
   std::string                  _vsrc_loc;
   std::string                  _out_file;
   std::string                  _em_out_file;

@@ -35,13 +35,13 @@ set(PARTITIONMGR_HOME ${PROJECT_SOURCE_DIR}/src/PartitionMgr)
 set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antenna_checker)
 set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 set(TRITONROUTE_HOME ${PROJECT_SOURCE_DIR}/src/TritonRoute)
-set(UTILITY_HOME ${PROJECT_SOURCE_DIR}/src/utility)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
   Error.cc
+  Logger.cpp
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -173,7 +173,7 @@ swig_add_library(openroad_swig
 # build/src/CMakeFiles/openroad_swig.dir/OpenRoadTCL_wrap.cxx
 swig_link_libraries(openroad_swig
   PUBLIC
-  utility
+  spdlog::spdlog
   openroad
   # OpenDB public includes incorrectly point to include/opendb so this fails.
   #opendb
@@ -244,7 +244,6 @@ add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
-add_subdirectory(utility)
 
 ################################################################
 
@@ -319,7 +318,7 @@ target_link_libraries(openroad
   antennachecker
   zutil
   PartitionMgr
-  utility
+  spdlog::spdlog
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

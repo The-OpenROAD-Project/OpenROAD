@@ -38,7 +38,7 @@
 using namespace std;
 using namespace fr;
 
-FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn)
+FlexDR::FlexDR(frDesign* designIn,ord::Logger* loggerIn)
   : design_(designIn), logger_(loggerIn)
 {
 }
@@ -1328,7 +1328,7 @@ void FlexDR::initDR(int size, bool enableDRC) {
   int numQuickMarkers = 0;
   if (TEST) {
     //FlexDRWorker worker(getDesign());
-    FlexDRWorker worker(this, logger_);
+    FlexDRWorker worker(this);
     //frBox routeBox;
     //routeBox.set(0*2000, 0*2000, 1*2000, 1*2000);
     //frCoord xl = 21 * 2000;
@@ -1381,7 +1381,7 @@ void FlexDR::initDR(int size, bool enableDRC) {
     // sequential init
     for (int i = 0; i < (int)xgp.getCount(); i += size) {
       for (int j = 0; j < (int)ygp.getCount(); j += size) {
-        auto worker = make_unique<FlexDRWorker>(this, logger_);
+        auto worker = make_unique<FlexDRWorker>(this);
         frBox routeBox1;
         getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
         frBox routeBox2;
@@ -1546,7 +1546,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
   if (TEST) {
     cout <<"search and repair test mode" <<endl <<flush;
     //FlexDRWorker worker(getDesign());
-    FlexDRWorker worker(this, logger_);
+    FlexDRWorker worker(this);
     frBox routeBox;
     //frCoord xl = 148.5 * 2000;
     //frCoord yl = 570 * 2000;
@@ -1600,7 +1600,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     int xIdx = 0, yIdx = 0;
     for (int i = offset; i < (int)xgp.getCount(); i += clipSize) {
       for (int j = offset; j < (int)ygp.getCount(); j += clipSize) {
-        auto worker = make_unique<FlexDRWorker>(this, logger_);
+        auto worker = make_unique<FlexDRWorker>(this);
         frBox routeBox1;
         getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
         frBox routeBox2;
@@ -1637,7 +1637,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
 
         int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
         if (workers[batchIdx].empty() || (int)workers[batchIdx].back().size() >= BATCHSIZE) {
-          workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
+          workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker> >());
         }
         workers[batchIdx].back().push_back(std::move(worker));
 

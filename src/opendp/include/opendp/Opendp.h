@@ -47,7 +47,7 @@
 
 #include "opendb/db.h"
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -59,7 +59,7 @@ using std::string;
 using std::vector;
 using std::pair;
 
-using utl::Logger;
+using ord::Logger;
 
 using odb::dbBlock;
 using odb::dbDatabase;
@@ -202,8 +202,6 @@ public:
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
-  // For testing
-  void placeCellsOffBlocks();
 
 private:
   void importDb();
@@ -251,9 +249,6 @@ private:
   bool swap_cell(Cell *cell1, Cell *cell2);
   bool refine_move(Cell *cell);
 
-  void moveCellsOffBlocks();
-  void moveCellOffBlock(Cell &cell,
-                         const Cell *block);
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -306,10 +301,7 @@ private:
   bool havePadding() const;
 
   Grid *makeGrid();
-  void initGridPixels(Grid *grid);
   void deleteGrid(Grid *grid);
-  Pixel *gridPixel(int x,
-                   int y);
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
@@ -412,7 +404,6 @@ private:
   int64_t fixed_padded_area_;
   double design_util_;
   double design_padded_util_;
-  int cells_moved_off_blocks_count_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters

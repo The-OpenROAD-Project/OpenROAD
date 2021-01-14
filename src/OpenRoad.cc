@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -190,7 +190,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = new utl::Logger(log_filename);
+  logger_ = new Logger(log_filename);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();

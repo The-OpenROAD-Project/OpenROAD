@@ -34,7 +34,6 @@
 #include "pdrev/pdrev.h"
 
 #include "graph.h"
-#include "utility/Logger.h"
 
 namespace PD {
 
@@ -59,45 +58,82 @@ void PdRev::addNet(int numPins,
                                 seed,
                                 dist,
                                 x,
-                                y,
-                                _logger));
+                                y));
 }
 
 void PdRev::config()
 {
   num_nets = my_graphs.size();
+  //     measure.start_clock();
+  //        cout << "\nGenerating nearest neighbor graph..." << endl;
   for (unsigned i = 0; i < num_nets; ++i) {
     // Guibas-Stolfi algorithm for computing nearest NE (north-east) neighbors
     if (i == net_num || !runOneNet) {
       my_graphs[i]->buildNearestNeighborsForSPT(my_graphs[i]->num_terminals);
     }
   }
+
+  //      cout << "\nFinished generating nearest neighbor graph..." << endl;
+  //      measure.stop_clock("Graph generation");
 }
 
 void PdRev::runPDII()
 {
   config();
+  //    measure.start_clock();
+  //    cout << "\nRunning PD-II... alpha = "
+  //            << alpha2 << endl;
   for (unsigned i = 0; i < num_nets; ++i) {
     if (i == net_num || !runOneNet) {
       my_graphs[i]->PDBU_new_NN();
     }
   }
+  /*  for (unsigned i = 0; i < num_nets; ++i) {
+            cout << "  Net " << i
+                    << " WL = " << my_graphs[i]->pdbu_wl
+                    << " PL = " << my_graphs[i]->pdbu_pl
+                    << " DC = " << my_graphs[i]->pdbu_dc
+                    << endl;
+    }
+    cout << "Finished running PD-II..." << endl;
+    measure.stop_clock("PD-II"); */
   runDAS();
 }
 
 void PdRev::runDAS()
 {
+  // measure.start_clock();
+  // cout << "\nRunning Steiner algorithm..." << endl;
   for (unsigned i = 0; i < num_nets; ++i) {
     if (i == net_num || !runOneNet) {
       my_graphs[i]->doSteiner_HoVW();
     }
   }
- 
+  /* for (unsigned i = 0; i < num_nets; ++i) {
+           cout << "  Net " << i
+                   << " WL = " << my_graphs[i]->st_wl
+                   << " PL = " << my_graphs[i]->st_pl
+                   << " DC = " << my_graphs[i]->st_dc
+                   << endl;
+   }
+   cout << "Finished Steiner algorithm..." << endl;
+   measure.stop_clock("HVW Steinerization");
+
+   cout << "\nRunning DAS algorithm..." << endl; */
   for (unsigned i = 0; i < num_nets; ++i) {
     if (i == net_num || !runOneNet) {
       my_graphs[i]->fix_max_dc();
     }
   }
+  /*for (unsigned i = 0; i < num_nets; ++i) {
+          cout << "  Net " << i
+                  << " WL = " << my_graphs[i]->daf_wl
+                  << " PL = " << my_graphs[i]->daf_pl
+                  << " DC = " << my_graphs[i]->daf_dc
+                  << endl;
+  }
+  cout << "Finished DAS algorithm..." << endl;
+  measure.stop_clock("DAS"); */
 }
 
 void PdRev::replaceNode(int graph, int originalNode)

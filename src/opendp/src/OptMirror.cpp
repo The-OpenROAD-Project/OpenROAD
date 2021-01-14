@@ -37,13 +37,13 @@
 #include <unordered_set>
 #include <cstdlib>
 
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 
 #include "opendb/dbTypes.h"
 
 namespace dpl {
 
-using utl::DPL;
+using ord::DPL;
 
 using std::sort;
 using std::unordered_set;

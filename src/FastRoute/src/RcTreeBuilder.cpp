@@ -37,7 +37,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
@@ -47,7 +47,7 @@
 
 namespace grt {
 
-using utl::GRT;
+using ord::GRT;
 
 using std::abs;
 using std::min;
@@ -129,7 +129,7 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
     } else if (route.initLayer == route.finalLayer)
       layerRC(wire_length_dbu, route.initLayer, res, cap);
     else
-      _logger->warn(GRT, 25, "non wire or via route found on net {}", net->getConstName());
+      _logger->warn(GRT, 8, "non wire or via route found on net {}", net->getConstName());
 
     if (_debug) {
       sta::Units* units = _sta->units();
@@ -176,7 +176,7 @@ void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
     _parasitics->incrCap(grid_node, cap / 2.0, _analysisPoint);
   } else {
     std::string pin_name = pin.getName();
-    _logger->warn(GRT, 26, "missing route to pin {}", pin_name.c_str());
+    _logger->warn(GRT, 9, "missing route to pin {}", pin_name.c_str());
   }
 }
 

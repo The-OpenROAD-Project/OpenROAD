@@ -38,7 +38,7 @@
 #include "opendb/db.h"
 #include <memory>
 
-namespace utl {
+namespace ord {
 class Logger;
 }
 
@@ -68,7 +68,7 @@ class InitialPlace {
     InitialPlace();
     InitialPlace(InitialPlaceVars ipVars, 
         std::shared_ptr<PlacerBase> pb,
-        utl::Logger* logger);
+        ord::Logger* logger);
     ~InitialPlace();
 
     void doBicgstabPlace();
@@ -76,7 +76,7 @@ class InitialPlace {
   private:
     InitialPlaceVars ipVars_;
     std::shared_ptr<PlacerBase> pb_;
-    utl::Logger* log_;
+    ord::Logger* log_;
 
     // Solve two SparseMatrix equations here;
     //

@@ -9,7 +9,7 @@ Notice 0:
 Reading DEF file: repair_hold4.def
 Notice 0: Design: top
 Notice 0:     Created 1 pins.
-Notice 0:     Created 15 components and 98 component-terminals.
+Notice 0:     Created 15 components and 68 component-terminals.
 Notice 0:     Created 13 nets and 30 connections.
 Notice 0: Finished DEF file: repair_hold4.def
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -22,30 +22,30 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.069    0.330 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.330 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
-            0.330   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.069    0.324 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.324 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
+            0.324   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.025    0.473   library hold time
-            0.473   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.025    0.467   library hold time
+            0.467   data required time
 -----------------------------------------------------------
-            0.473   data required time
-           -0.330   data arrival time
+            0.467   data required time
+           -0.324   data arrival time
 -----------------------------------------------------------
            -0.143   slack (VIOLATED)
 
@@ -60,31 +60,31 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.069    0.330 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.068    0.398 ^ u2/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.398 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
-            0.398   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.069    0.324 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.068    0.393 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.393 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
+            0.393   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r3/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.025    0.473   library hold time
-            0.473   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r3/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.025    0.467   library hold time
+            0.467   data required time
 -----------------------------------------------------------
-            0.473   data required time
-           -0.398   data arrival time
+            0.467   data required time
+           -0.393   data arrival time
 -----------------------------------------------------------
            -0.075   slack (VIOLATED)
 
@@ -99,33 +99,33 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.069    0.330 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.068    0.398 ^ u2/X (sky130_fd_sc_hs__buf_2)
-   0.062    0.460 ^ u3/X (sky130_fd_sc_hs__buf_2)
-   0.057    0.517 ^ u4/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.517 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
-            0.517   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.069    0.324 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.068    0.393 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.062    0.455 ^ u3/X (sky130_fd_sc_hs__buf_2)
+   0.057    0.512 ^ u4/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.512 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
+            0.512   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r4/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.027    0.475   library hold time
-            0.475   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r4/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.027    0.470   library hold time
+            0.470   data required time
 -----------------------------------------------------------
-            0.475   data required time
-           -0.517   data arrival time
+            0.470   data required time
+           -0.512   data arrival time
 -----------------------------------------------------------
             0.042   slack (MET)
 
@@ -142,31 +142,31 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.060    0.320 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.284    0.604 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
-   0.000    0.604 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
-            0.604   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.060    0.315 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.284    0.599 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
+   0.000    0.599 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
+            0.599   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.021    0.469   library hold time
-            0.469   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.021    0.464   library hold time
+            0.464   data required time
 -----------------------------------------------------------
-            0.469   data required time
-           -0.604   data arrival time
+            0.464   data required time
+           -0.599   data arrival time
 -----------------------------------------------------------
             0.135   slack (MET)
 
@@ -181,32 +181,32 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.060    0.320 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.284    0.604 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
-   0.073    0.677 ^ u2/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.677 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
-            0.677   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.060    0.315 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.284    0.599 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
+   0.073    0.672 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.672 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
+            0.672   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r3/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.025    0.473   library hold time
-            0.473   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r3/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.025    0.467   library hold time
+            0.467   data required time
 -----------------------------------------------------------
-            0.473   data required time
-           -0.677   data arrival time
+            0.467   data required time
+           -0.672   data arrival time
 -----------------------------------------------------------
             0.204   slack (MET)
 
@@ -221,34 +221,34 @@ Path Type: min
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.067 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.193    0.260 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.060    0.320 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.284    0.604 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
-   0.073    0.677 ^ u2/X (sky130_fd_sc_hs__buf_2)
-   0.062    0.739 ^ u3/X (sky130_fd_sc_hs__buf_2)
-   0.057    0.796 ^ u4/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.796 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
-            0.796   data arrival time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.060    0.315 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.284    0.599 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
+   0.073    0.672 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.062    0.734 ^ u3/X (sky130_fd_sc_hs__buf_2)
+   0.057    0.791 ^ u4/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.791 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
+            0.791   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
-   0.067    0.067 ^ i1/X (sky130_fd_sc_hs__buf_2)
-   0.063    0.130 ^ i2/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.190 ^ i3/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.249 ^ i4/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.309 ^ i5/X (sky130_fd_sc_hs__buf_2)
-   0.059    0.368 ^ i6/X (sky130_fd_sc_hs__buf_2)
-   0.080    0.448 ^ i7/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.448 ^ r4/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.000    0.448   clock reconvergence pessimism
-   0.027    0.475   library hold time
-            0.475   data required time
+   0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
+   0.063    0.125 ^ i2/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.184 ^ i3/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.244 ^ i4/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.303 ^ i5/X (sky130_fd_sc_hs__buf_2)
+   0.059    0.363 ^ i6/X (sky130_fd_sc_hs__buf_2)
+   0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.442 ^ r4/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.000    0.442   clock reconvergence pessimism
+   0.027    0.470   library hold time
+            0.470   data required time
 -----------------------------------------------------------
-            0.475   data required time
-           -0.796   data arrival time
+            0.470   data required time
+           -0.791   data arrival time
 -----------------------------------------------------------
             0.321   slack (MET)
 

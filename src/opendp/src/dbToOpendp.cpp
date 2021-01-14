@@ -36,7 +36,7 @@
 #include <cfloat>
 #include <limits>
 #include "opendp/Opendp.h"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace dpl {
@@ -49,7 +49,7 @@ using std::ofstream;
 using std::string;
 using std::vector;
 
-using utl::DPL;
+using ord::DPL;
 
 using odb::dbBox;
 using odb::dbMaster;

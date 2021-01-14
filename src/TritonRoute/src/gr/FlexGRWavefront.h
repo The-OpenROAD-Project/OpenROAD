@@ -40,28 +40,28 @@
 namespace fr {
   class FlexGRWavefrontGrid {
   public:
-    FlexGRWavefrontGrid(): xIdx_(-1), yIdx_(-1), zIdx_(-1), pathCost_(0), cost_(0),
-                         dist_(0), backTraceBuffer_() {}
+    FlexGRWavefrontGrid(): xIdx(-1), yIdx(-1), zIdx(-1), pathCost(0), cost(0),
+                         dist(0), backTraceBuffer() {}
     FlexGRWavefrontGrid(int xIn, int yIn, int zIn, 
                       frCoord distIn, frCost pathCostIn, frCost costIn): 
-                      xIdx_(xIn), yIdx_(yIn), zIdx_(zIn), pathCost_(pathCostIn), cost_(costIn), 
-                      dist_(distIn), backTraceBuffer_() {}
+                      xIdx(xIn), yIdx(yIn), zIdx(zIn), pathCost(pathCostIn), cost(costIn), 
+                      dist(distIn), backTraceBuffer() {}
     FlexGRWavefrontGrid(int xIn, int yIn, int zIn, 
                       frCoord distIn, frCost pathCostIn, frCost costIn,
                       std::bitset<WAVEFRONTBITSIZE> backTraceBufferIn): 
-                      xIdx_(xIn), yIdx_(yIn), zIdx_(zIn), pathCost_(pathCostIn), cost_(costIn), 
-                      dist_(distIn), backTraceBuffer_(backTraceBufferIn) {}
+                      xIdx(xIn), yIdx(yIn), zIdx(zIn), pathCost(pathCostIn), cost(costIn), 
+                      dist(distIn), backTraceBuffer(backTraceBufferIn) {}
     bool operator<(const FlexGRWavefrontGrid &b) const {
-      if (this->cost_ != b.cost_) {
-        return this->cost_ > b.cost_; // prefer smaller cost
+      if (this->cost != b.cost) {
+        return this->cost > b.cost; // prefer smaller cost
       } else {
-        if (this->dist_ != b.dist_) {
-          return this->dist_ > b.dist_; // prefer routing close to pin gravity center (centerPt)
+        if (this->dist != b.dist) {
+          return this->dist > b.dist; // prefer routing close to pin gravity center (centerPt)
         } else {
-          if (this->zIdx_ != b.zIdx_) {
-            return this->zIdx_ < b.zIdx_; // prefer upper layer
+          if (this->zIdx != b.zIdx) {
+            return this->zIdx < b.zIdx; // prefer upper layer
           } else {
-            return this->pathCost_ < b.pathCost_; //prefer larger pathcost, DFS-style
+            return this->pathCost < b.pathCost; //prefer larger pathcost, DFS-style
             //return this->pathCost < b.pathCost; //prefer smaller pathcost, BFS-style, test1 shows better results
           }
         }
@@ -69,72 +69,72 @@ namespace fr {
     }
     // getters
     frMIdx x() const {
-      return xIdx_;
+      return xIdx;
     }
     frMIdx y() const {
-      return yIdx_;
+      return yIdx;
     }
     frMIdx z() const {
-      return zIdx_;
+      return zIdx;
     }
     frCost getPathCost() const {
-      return pathCost_;
+      return pathCost;
     }
     frCost getCost() const {
-      return cost_;
+      return cost;
     }
     std::bitset<WAVEFRONTBITSIZE> getBackTraceBuffer() const {
-      return backTraceBuffer_;
+      return backTraceBuffer;
     }
 
     // setters
     frDirEnum getLastDir() const {
-      auto currDirVal = backTraceBuffer_.to_ulong() & 0b111u;
+      auto currDirVal = backTraceBuffer.to_ulong() & 0b111u;
       return static_cast<frDirEnum>(currDirVal);
     }
     
     bool isBufferFull() const {
       std::bitset<WAVEFRONTBITSIZE> mask = WAVEFRONTBUFFERHIGHMASK;
-      return (mask & backTraceBuffer_).any();
+      return (mask & backTraceBuffer).any();
     }
 
     frDirEnum shiftAddBuffer(const frDirEnum &dir) {
-      auto retBS = static_cast<frDirEnum>((backTraceBuffer_ >> (WAVEFRONTBITSIZE - DIRBITSIZE)).to_ulong());
-      backTraceBuffer_ <<= DIRBITSIZE;
+      auto retBS = static_cast<frDirEnum>((backTraceBuffer >> (WAVEFRONTBITSIZE - DIRBITSIZE)).to_ulong());
+      backTraceBuffer <<= DIRBITSIZE;
       std::bitset<WAVEFRONTBITSIZE> newBS = (unsigned)dir;
-      backTraceBuffer_ |= newBS;
+      backTraceBuffer |= newBS;
       return retBS;
     }
   protected:
-    frMIdx xIdx_, yIdx_, zIdx_;
-    frCost pathCost_; // path cost
-    frCost cost_; // path + est cost
-    frCoord dist_; // to maze center
-    std::bitset<GRWAVEFRONTBITSIZE> backTraceBuffer_;
+    frMIdx xIdx, yIdx, zIdx;
+    frCost pathCost; // path cost
+    frCost cost; // path + est cost
+    frCoord dist; // to maze center
+    std::bitset<GRWAVEFRONTBITSIZE> backTraceBuffer;
   };
 
   class FlexGRWavefront {
   public:
     bool empty() const {
-      return wavefrontPQ_.empty();
+      return wavefrontPQ.empty();
     }
     const FlexGRWavefrontGrid& top() const {
-      return wavefrontPQ_.top();
+      return wavefrontPQ.top();
     }
     void pop() {
-      wavefrontPQ_.pop();
+      wavefrontPQ.pop();
     }
     void push(const FlexGRWavefrontGrid &in) {
-      wavefrontPQ_.push(in);
+      wavefrontPQ.push(in);
     }
     unsigned int size() const {
-      return wavefrontPQ_.size();
+      return wavefrontPQ.size();
     }
     void cleanup() {
-      wavefrontPQ_ = std::priority_queue<FlexGRWavefrontGrid>();
+      wavefrontPQ = std::priority_queue<FlexGRWavefrontGrid>();
     }
   protected:
-    std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ_;
+    std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ;
   };
 }
 

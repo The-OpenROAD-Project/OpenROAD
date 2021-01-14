@@ -46,7 +46,6 @@
 #include "pdrev/pdrev.h"
 #include "route.h"
 #include "utility.h"
-#include "utility/Logger.h"
 
 namespace grt {
 
@@ -809,8 +808,7 @@ void gen_brk_RSMT(Bool congestionDriven,
                   Bool reRoute,
                   Bool genTree,
                   Bool newType,
-                  Bool noADJ,
-                  Logger* logger)
+                  Bool noADJ)
 {
   int i, j, d, n, n1, n2;
   int x1, y1, x2, y2;
@@ -880,7 +878,7 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
     if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout
         && nets[i]->isClock) {
-      PD::PdRev* pd = new PD::PdRev(logger);
+      PD::PdRev* pd;
       std::vector<unsigned> vecX(x, x + d);
       std::vector<unsigned> vecY(y, y + d);
       pd->setAlphaPDII(nets[i]->alpha);

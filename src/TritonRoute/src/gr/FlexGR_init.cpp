@@ -42,35 +42,35 @@ void FlexGR::init() {
 
 void FlexGR::initLayerPitch() {
   int numRoutingLayer = 0;
-  for (unsigned lNum = 0; lNum < design_->getTech()->getLayers().size(); lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+  for (unsigned lNum = 0; lNum < design->getTech()->getLayers().size(); lNum++) {
+    if (design->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
     numRoutingLayer++;
   }
 
   // init pitches
-  trackPitches_.resize(numRoutingLayer, -1);
-  line2ViaPitches_.resize(numRoutingLayer, -1);
-  layerPitches_.resize(numRoutingLayer, -1);
-  zHeights_.resize(numRoutingLayer, 0);
+  trackPitches.resize(numRoutingLayer, -1);
+  line2ViaPitches.resize(numRoutingLayer, -1);
+  layerPitches.resize(numRoutingLayer, -1);
+  zHeights.resize(numRoutingLayer, 0);
 
 
   // compute pitches
-  for (int lNum = 0; lNum < (int)design_->getTech()->getLayers().size(); lNum++) {
-    if (design_->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+  for (int lNum = 0; lNum < (int)design->getTech()->getLayers().size(); lNum++) {
+    if (design->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
     // zIdx  always equal to lNum / 2 - 1
     int zIdx = lNum / 2 - 1;
-    auto layer = design_->getTech()->getLayer(lNum);
+    auto layer = design->getTech()->getLayer(lNum);
     bool isLayerHorz = (layer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
     // get track pitch
-    for (auto &tp: design_->getTopBlock()->getTrackPatterns(lNum)) {
+    for (auto &tp: design->getTopBlock()->getTrackPatterns(lNum)) {
       if ((isLayerHorz && !tp->isHorizontal()) ||
           (!isLayerHorz && tp->isHorizontal())) {
-        if (trackPitches_[zIdx] == -1 || (int) tp->getTrackSpacing() < trackPitches_[zIdx]) {
-          trackPitches_[zIdx] = tp->getTrackSpacing();
+        if (trackPitches[zIdx] == -1 || (int) tp->getTrackSpacing() < trackPitches[zIdx]) {
+          trackPitches[zIdx] = tp->getTrackSpacing();
         }
       }
     }
@@ -117,10 +117,10 @@ void FlexGR::initLayerPitch() {
       }
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOvlpDist;
-        // cout << layer->getName() << " line-2-via (down) pitch = " << minReqDist / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
+        // cout << layer->getName() << " line-2-via (down) pitch = " << minReqDist / (double)(design->getTopBlock()->getDBUPerUU()) << endl;
         line2ViaPitchDown = minReqDist;
-        if (line2ViaPitches_[zIdx] == -1 || minReqDist > line2ViaPitches_[zIdx]) {
-          line2ViaPitches_[zIdx] = minReqDist;
+        if (line2ViaPitches[zIdx] == -1 || minReqDist > line2ViaPitches[zIdx]) {
+          line2ViaPitches[zIdx] = minReqDist;
         }
         if (minLine2ViaPitch == -1 || minReqDist < minLine2ViaPitch) {
           minLine2ViaPitch = minReqDist;
@@ -156,10 +156,10 @@ void FlexGR::initLayerPitch() {
       }
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOvlpDist;
-        // cout << layer->getName() << " line-2-via (up) pitch = " << minReqDist / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
+        // cout << layer->getName() << " line-2-via (up) pitch = " << minReqDist / (double)(design->getTopBlock()->getDBUPerUU()) << endl;
         line2ViaPitchUp = minReqDist;
-        if (line2ViaPitches_[zIdx] == -1 || minReqDist > line2ViaPitches_[zIdx]) {
-          line2ViaPitches_[zIdx] = minReqDist;
+        if (line2ViaPitches[zIdx] == -1 || minReqDist > line2ViaPitches[zIdx]) {
+          line2ViaPitches[zIdx] = minReqDist;
         }
         if (minLine2ViaPitch == -1 || minReqDist < minLine2ViaPitch) {
           minLine2ViaPitch = minReqDist;
@@ -168,10 +168,10 @@ void FlexGR::initLayerPitch() {
     }
 
     
-    if (minLine2ViaPitch > trackPitches_[zIdx]) {
-      layerPitches_[zIdx] = max(line2ViaPitchDown, line2ViaPitchUp);
+    if (minLine2ViaPitch > trackPitches[zIdx]) {
+      layerPitches[zIdx] = max(line2ViaPitchDown, line2ViaPitchUp);
     } else {
-      layerPitches_[zIdx] = trackPitches_[zIdx];
+      layerPitches[zIdx] = trackPitches[zIdx];
     }
 
     // output
@@ -181,37 +181,37 @@ void FlexGR::initLayerPitch() {
     } else {
       cout << " V ";
     }
-    cout << "Track-Pitch = " << fixed << setprecision(5) << trackPitches_[zIdx] / (double)(design_->getTopBlock()->getDBUPerUU()) 
-         << "  line-2-Via Pitch = " << fixed << setprecision(5) << minLine2ViaPitch / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
-    if (trackPitches_[zIdx] < minLine2ViaPitch) {
+    cout << "Track-Pitch = " << fixed << setprecision(5) << trackPitches[zIdx] / (double)(design->getTopBlock()->getDBUPerUU()) 
+         << "  line-2-Via Pitch = " << fixed << setprecision(5) << minLine2ViaPitch / (double)(design->getTopBlock()->getDBUPerUU()) << endl;
+    if (trackPitches[zIdx] < minLine2ViaPitch) {
       cout << "Warning: Track pitch is too small compared with line-2-via pitch\n";
     }
-    // cout << "  layer pitch = " << fixed << setprecision(5) << layerPitches[zIdx] / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
-    // layerPitches[zIdx] = max(trackPitches_[zIdx], line2ViaPitches[zIdx]);
+    // cout << "  layer pitch = " << fixed << setprecision(5) << layerPitches[zIdx] / (double)(design->getTopBlock()->getDBUPerUU()) << endl;
+    // layerPitches[zIdx] = max(trackPitches[zIdx], line2ViaPitches[zIdx]);
 
     if (zIdx == 0) {
-      zHeights_[zIdx] = layerPitches_[zIdx];
+      zHeights[zIdx] = layerPitches[zIdx];
     } else {
-      zHeights_[zIdx] = zHeights_[zIdx - 1] + layerPitches_[zIdx];
+      zHeights[zIdx] = zHeights[zIdx - 1] + layerPitches[zIdx];
     }
 
   }
 }
 
 void FlexGR::initGCell() {
-  auto &gcellPatterns = design_->getTopBlock()->getGCellPatterns();
+  auto &gcellPatterns = design->getTopBlock()->getGCellPatterns();
   if (gcellPatterns.empty()) {
-    auto layer = design_->getTech()->getLayer(2);
+    auto layer = design->getTech()->getLayer(2);
     auto pitch = layer->getPitch();
     cout << endl << "Generating GCell with size = 15 tracks, using layer " << layer->getName()
-         << " pitch  = " << pitch / (double)(design_->getTopBlock()->getDBUPerUU()) << "\n";
+         << " pitch  = " << pitch / (double)(design->getTopBlock()->getDBUPerUU()) << "\n";
     frBox dieBox;
-    design_->getTopBlock()->getBoundaryBBox(dieBox);
+    design->getTopBlock()->getBoundaryBBox(dieBox);
 
     frGCellPattern xgp, ygp;
     // set xgp
     xgp.setHorizontal(false);
-    frCoord startCoordX = dieBox.left() - design_->getTech()->getManufacturingGrid();
+    frCoord startCoordX = dieBox.left() - design->getTech()->getManufacturingGrid();
     // frCoord startCoordX = dieBox.left();
     xgp.setStartCoord(startCoordX);
     frCoord GCELLGRIDX = pitch * 15;
@@ -219,25 +219,25 @@ void FlexGR::initGCell() {
     xgp.setCount((dieBox.right() - startCoordX) / GCELLGRIDX);
     // set ygp
     ygp.setHorizontal(true);
-    frCoord startCoordY = dieBox.bottom() - design_->getTech()->getManufacturingGrid();
+    frCoord startCoordY = dieBox.bottom() - design->getTech()->getManufacturingGrid();
     // frCoord startCoordY = dieBox.bottom();
     ygp.setStartCoord(startCoordY);
     frCoord GCELLGRIDY = pitch * 15;
     ygp.setSpacing(GCELLGRIDY);
     ygp.setCount((dieBox.top() - startCoordY) / GCELLGRIDY);
 
-    design_->getTopBlock()->setGCellPatterns({xgp, ygp});
+    design->getTopBlock()->setGCellPatterns({xgp, ygp});
   }
 }
 
 void FlexGR::initCMap() {
   cout << endl << "initializing congestion map...\n";
-  auto cmap = make_unique<FlexGRCMap>(design_);
-  cmap->setLayerTrackPitches(trackPitches_);
-  cmap->setLayerLine2ViaPitches(line2ViaPitches_);
-  cmap->setLayerPitches(layerPitches_);
+  auto cmap = make_unique<FlexGRCMap>(design);
+  cmap->setLayerTrackPitches(trackPitches);
+  cmap->setLayerLine2ViaPitches(line2ViaPitches);
+  cmap->setLayerPitches(layerPitches);
   cmap->init();
-  auto cmap2D = make_unique<FlexGRCMap>(design_);
+  auto cmap2D = make_unique<FlexGRCMap>(design);
   cmap2D->initFrom3D(cmap.get());
   // cmap->print2D(true);
   // cmap->print();
@@ -252,15 +252,15 @@ void FlexGRWorker::initBoundary() {
   if (enableOutput) {
     stringstream ss;
     ss <<endl <<"start initBoundary GR worker (BOX) "
-                <<"( " <<extBox_.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<extBox_.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
-                <<extBox_.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<extBox_.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
+                <<"( " <<extBox.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
+                <<extBox.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
+                <<extBox.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
+                <<extBox.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
 
   vector<grBlockObject*> result;
-  getRegionQuery()->queryGRObj(extBox_, result);
+  getRegionQuery()->queryGRObj(extBox, result);
   for (auto rptr: result) {
     if (rptr->typeId() == grcPathSeg) {
       auto cptr = static_cast<grPathSeg*>(rptr);
@@ -279,7 +279,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg) {
   frPoint bp, ep;
   pathSeg->getPoints(bp, ep);
   // skip if both endpoints are inside extBox (i.e., no intersection)
-  if (extBox_.contains(bp) && extBox_.contains(ep)) {
+  if (extBox.contains(bp) && extBox.contains(ep)) {
     return;
   }
   frPoint breakPt1, breakPt2;
@@ -348,22 +348,22 @@ void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const frPoint &bp, cons
   if (bp.x() == ep.x()) {
     // V
     // break point at bottom
-    if (bp.y() < extBox_.bottom()) {
-      breakPt1.set(bp.x(), extBox_.bottom());
+    if (bp.y() < extBox.bottom()) {
+      breakPt1.set(bp.x(), extBox.bottom());
       hasBreakPt1 = true;
     }
-    if (ep.y() > extBox_.top()) {
-      breakPt2.set(ep.x(), extBox_.top());
+    if (ep.y() > extBox.top()) {
+      breakPt2.set(ep.x(), extBox.top());
       hasBreakPt2 = true;
     }
   } else if (bp.y() == ep.y()) {
     // H
-    if (bp.x() < extBox_.left()) {
-      breakPt1.set(extBox_.left(), bp.y());
+    if (bp.x() < extBox.left()) {
+      breakPt1.set(extBox.left(), bp.y());
       hasBreakPt1 = true;
     }
-    if (ep.x() > extBox_.right()) {
-      breakPt2.set(extBox_.right(), ep.y());
+    if (ep.x() > extBox.right()) {
+      breakPt2.set(extBox.right(), ep.y());
       hasBreakPt2 = true;
     }
   } else {
@@ -481,7 +481,7 @@ void FlexGRWorker::initNets() {
 void FlexGRWorker::initNets_roots(set<frNet*, frBlockObjectComp> &nets,
                                   map<frNet*, vector<frNode*>, frBlockObjectComp> &netRoots) {
   vector<grBlockObject*> result;
-  getRegionQuery()->queryGRObj(routeBox_, result);
+  getRegionQuery()->queryGRObj(routeBox, result);
 
   for (auto rptr: result) {
     if (rptr->typeId() == grcPathSeg) {
@@ -517,8 +517,8 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(grPathSeg* pathSeg,
   auto parentLoc = parent->getLoc();
 
   // boundary pin root
-  if (parentLoc.x() == extBox_.left() || parentLoc.x() == extBox_.right() || 
-      parentLoc.y() == extBox_.bottom() || parentLoc.y() == extBox_.top()) {
+  if (parentLoc.x() == extBox.left() || parentLoc.x() == extBox.right() || 
+      parentLoc.y() == extBox.bottom() || parentLoc.y() == extBox.top()) {
     netRoots[net].push_back(parent);
     if (enableOutput) {
       if (net->getName() == string("pin1")) {
@@ -698,7 +698,7 @@ void FlexGRWorker::initNet(frNet* net, const vector<frNode*> &netRoots) {
     initNet_initPinGCellNodes(gNet);
     initNet_updateCMap(gNet, true);
     initNet_initObjs(gNet);
-    gNet->setId(nets_.size());
+    gNet->setId(nets.size());
     initNet_addNet(uGRNet);
   }
 
@@ -1007,14 +1007,14 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot) {
 
 frPoint FlexGRWorker::getBoundaryPinGCellNodeLoc(const frPoint &boundaryPinLoc) {
   frPoint gcellNodeLoc;
-  if (boundaryPinLoc.x() == extBox_.left()) {
-    gcellNodeLoc.set(routeBox_.left(), boundaryPinLoc.y());
-  } else if (boundaryPinLoc.x() == extBox_.right()) {
-    gcellNodeLoc.set(routeBox_.right(), boundaryPinLoc.y());
-  } else if (boundaryPinLoc.y() == extBox_.bottom()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.bottom());
-  } else if (boundaryPinLoc.y() == extBox_.top()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.top());
+  if (boundaryPinLoc.x() == extBox.left()) {
+    gcellNodeLoc.set(routeBox.left(), boundaryPinLoc.y());
+  } else if (boundaryPinLoc.x() == extBox.right()) {
+    gcellNodeLoc.set(routeBox.right(), boundaryPinLoc.y());
+  } else if (boundaryPinLoc.y() == extBox.bottom()) {
+    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox.bottom());
+  } else if (boundaryPinLoc.y() == extBox.top()) {
+    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox.top());
   } else {
     cout << "Error: non-boundary pin loc in FlexGRWorker::getBoundaryPinGCellNodeLoc\n";
   }
@@ -1028,7 +1028,7 @@ void FlexGRWorker::initNet_initRoot(grNet* net) {
   // sanity check
   if (rootNode->getType() == frNodeTypeEnum::frcBoundaryPin) {
     frPoint rootLoc = rootNode->getLoc();
-    if (extBox_.contains(rootLoc) && routeBox_.contains(rootLoc)) {
+    if (extBox.contains(rootLoc) && routeBox.contains(rootLoc)) {
       cout << "Error: root should be on an outgoing edge\n";
     }
   } else if (rootNode->getType() == frNodeTypeEnum::frcPin) {
@@ -1077,29 +1077,29 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd) {
           bp = nodeLoc;
           ep = parentLoc;
         }
-        gridGraph_.getMazeIdx(bp, lNum, bi);
-        gridGraph_.getMazeIdx(ep, lNum, ei);
+        gridGraph.getMazeIdx(bp, lNum, bi);
+        gridGraph.getMazeIdx(ep, lNum, ei);
 
         if (bi.x() == ei.x()) {
           // vertical pathSeg
           for (auto yIdx = bi.y(); yIdx < ei.y(); yIdx++) {
             if (isAdd) {
-              gridGraph_.addRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::N);
-              gridGraph_.addRawDemand(bi.x(), yIdx + 1, bi.z(), frDirEnum::N);
+              gridGraph.addRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::N);
+              gridGraph.addRawDemand(bi.x(), yIdx + 1, bi.z(), frDirEnum::N);
             } else {
-              gridGraph_.subRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::N);
-              gridGraph_.subRawDemand(bi.x(), yIdx + 1, bi.z(), frDirEnum::N);
+              gridGraph.subRawDemand(bi.x(), yIdx, bi.z(), frDirEnum::N);
+              gridGraph.subRawDemand(bi.x(), yIdx + 1, bi.z(), frDirEnum::N);
             }
           }
         } else if (bi.y() == ei.y()) {
           // horizontal pathSeg
           for (auto xIdx = bi.x(); xIdx < ei.x(); xIdx++) {
             if (isAdd) {
-              gridGraph_.addRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::E);
-              gridGraph_.addRawDemand(xIdx + 1, bi.y(), bi.z(), frDirEnum::E);
+              gridGraph.addRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::E);
+              gridGraph.addRawDemand(xIdx + 1, bi.y(), bi.z(), frDirEnum::E);
             } else {
-              gridGraph_.subRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::E);
-              gridGraph_.subRawDemand(xIdx + 1, bi.y(), bi.z(), frDirEnum::E);
+              gridGraph.subRawDemand(xIdx, bi.y(), bi.z(), frDirEnum::E);
+              gridGraph.subRawDemand(xIdx + 1, bi.y(), bi.z(), frDirEnum::E);
             }
           }
         } else {
@@ -1144,7 +1144,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net) {
     frPoint gcellNodeLoc = gcellNode->getLoc();
     frLayerNum gcellNodeLNum = gcellNode->getLayerNum();
     FlexMazeIdx gcellNodeMIdx;
-    gridGraph_.getMazeIdx(gcellNodeLoc, gcellNodeLNum, gcellNodeMIdx);
+    gridGraph.getMazeIdx(gcellNodeLoc, gcellNodeLNum, gcellNodeMIdx);
 
     if (midx2PinGCellNode.find(gcellNodeMIdx) == midx2PinGCellNode.end()) {
       midx2PinGCellNode[gcellNodeMIdx] = gcellNode;
@@ -1274,7 +1274,7 @@ void FlexGRWorker::initNet_initObjs(grNet* net) {
       uVia->setParent(parent);
       uVia->addToNet(net);
       uVia->setOrigin(loc);
-      uVia->setViaDef(design_->getTech()->getLayer((beginLayerNum + endLayerNum) / 2)->getDefaultViaDef());
+      uVia->setViaDef(design->getTech()->getLayer((beginLayerNum + endLayerNum) / 2)->getDefaultViaDef());
 
       unique_ptr<grConnFig> uGRConnFig(std::move(uVia));
       if (isExt) {
@@ -1287,8 +1287,8 @@ void FlexGRWorker::initNet_initObjs(grNet* net) {
 }
 
 void FlexGRWorker::initNet_addNet(unique_ptr<grNet> &in) {
-  owner2nets_[in->getFrNet()].push_back(in.get());
-  nets_.push_back(std::move(in));
+  owner2nets[in->getFrNet()].push_back(in.get());
+  nets.push_back(std::move(in));
 }
 
 void FlexGRWorker::initNets_regionQuery() {
@@ -1351,7 +1351,7 @@ void FlexGRWorker::initNets_regionQuery() {
 
 void FlexGRWorker::initNets_printNets() {
   cout << endl << "printing grNets\n";
-  for (auto &net: nets_) {
+  for (auto &net: nets) {
     initNets_printNet(net.get());
   }
 }
@@ -1431,9 +1431,9 @@ void FlexGRWorker::initNets_printFNet(frNode* root) {
 }
 
 void FlexGRWorker::initGridGraph() {
-  gridGraph_.setCost(workerCongCost_, workerHistCost_);
-  gridGraph_.set2D(is2DRouting_);
-  gridGraph_.init();
+  gridGraph.setCost(workerCongCost, workerHistCost);
+  gridGraph.set2D(is2DRouting);
+  gridGraph.init();
 
   initGridGraph_fromCMap();
 }
@@ -1466,30 +1466,30 @@ void FlexGRWorker::initGridGraph_fromCMap() {
         int cmapYIdx = yIdx + idxLLY;
         // copy block
         if (cmap->hasBlock(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E)) {
-          gridGraph_.setBlock(xIdx, yIdx, zIdx, frDirEnum::E);
+          gridGraph.setBlock(xIdx, yIdx, zIdx, frDirEnum::E);
         } else {
-          gridGraph_.resetBlock(xIdx, yIdx, zIdx, frDirEnum::E);
+          gridGraph.resetBlock(xIdx, yIdx, zIdx, frDirEnum::E);
         }
         if (cmap->hasBlock(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)) {
-          gridGraph_.setBlock(xIdx, yIdx, zIdx, frDirEnum::N);
+          gridGraph.setBlock(xIdx, yIdx, zIdx, frDirEnum::N);
         } else {
-          gridGraph_.resetBlock(xIdx, yIdx, zIdx, frDirEnum::N);
+          gridGraph.resetBlock(xIdx, yIdx, zIdx, frDirEnum::N);
         }
         if (cmap->hasBlock(cmapXIdx, cmapYIdx, zIdx, frDirEnum::U)) {
-          gridGraph_.setBlock(xIdx, yIdx, zIdx, frDirEnum::U);
+          gridGraph.setBlock(xIdx, yIdx, zIdx, frDirEnum::U);
         } else {
-          gridGraph_.resetBlock(xIdx, yIdx, zIdx, frDirEnum::U);
+          gridGraph.resetBlock(xIdx, yIdx, zIdx, frDirEnum::U);
         }
         // copy history cost
-        gridGraph_.setHistoryCost(xIdx, yIdx, zIdx, cmap->getHistoryCost(cmapXIdx, cmapYIdx, zIdx));
+        gridGraph.setHistoryCost(xIdx, yIdx, zIdx, cmap->getHistoryCost(cmapXIdx, cmapYIdx, zIdx));
 
         // copy raw demand
-        gridGraph_.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
-        gridGraph_.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
+        gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
+        gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
 
         // copy supply (raw supply is only used when comparing to raw demand and supply is always integer)
-        gridGraph_.setSupply(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
-        gridGraph_.setSupply(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
+        gridGraph.setSupply(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
+        gridGraph.setSupply(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
 
         if (enableOutput) {
           cout << "GG (cmapXIdx, cmapYIdx) (rawDemandH / rawSupplyH) (rawDemandV / rawSupplyV) = (" << cmapXIdx << ", " << cmapYIdx << ") (" 
@@ -1497,8 +1497,8 @@ void FlexGRWorker::initGridGraph_fromCMap() {
                << ") (" << cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N) << " / " << cmap->getRawSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)
                << ")\n";
           cout << "           (xIdx, yIdx) (rawDemandH / rawSupplyH) (rawDemandV / rawSupplyV) = (" << xIdx << ", " << yIdx << ") (" 
-               << gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E) << " / " << gridGraph_.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::E)
-               << ") (" << gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N) << " / " << gridGraph_.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::N)
+               << gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E) << " / " << gridGraph.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::E)
+               << ") (" << gridGraph.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N) << " / " << gridGraph.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::N)
                << ")\n\n";
         }
       }

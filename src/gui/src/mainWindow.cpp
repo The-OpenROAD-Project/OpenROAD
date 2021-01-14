@@ -362,7 +362,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   emit designLoaded(block);
 }
 
-void MainWindow::setLogger(utl::Logger* logger)
+void MainWindow::setLogger(ord::Logger* logger)
 {
   script_->setLogger(logger);
 }

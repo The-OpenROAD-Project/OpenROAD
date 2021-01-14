@@ -86,7 +86,7 @@ public:
       std::shared_ptr<PlacerBase> pb,
       std::shared_ptr<NesterovBase> nb,
       std::shared_ptr<RouteBase> rb,
-      utl::Logger* log);
+      ord::Logger* log);
   ~NesterovPlace();
 
   void doNesterovPlace();
@@ -114,7 +114,7 @@ public:
 private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
-  utl::Logger* log_;
+  ord::Logger* log_;
   std::shared_ptr<RouteBase> rb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;

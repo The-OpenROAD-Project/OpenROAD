@@ -46,9 +46,6 @@ class Gui;
 
 namespace ord {
 class OpenRoad;
-}
-
-namespace utl {
 class Logger;
 }
 
@@ -61,7 +58,7 @@ class dbStaCbk;
 class PathRenderer;
 
 using ord::OpenRoad;
-using utl::Logger;
+using ord::Logger;
 
 using odb::dbDatabase;
 using odb::dbLib;

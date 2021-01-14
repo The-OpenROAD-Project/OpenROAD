@@ -9,7 +9,7 @@ Notice 0:
 Reading DEF file: resize4.def
 Notice 0: Design: reg1
 Notice 0:     Created 1 pins.
-Notice 0:     Created 3 components and 22 component-terminals.
+Notice 0:     Created 3 components and 16 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 3 nets and 6 connections.
 Notice 0: Finished DEF file: resize4.def
@@ -52,22 +52,22 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.024    0.190    0.190 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.024    0.000    0.190 v u1/A (sky130_fd_sc_hs__buf_1)
-   0.065    0.105    0.295 v u1/X (sky130_fd_sc_hs__buf_1)
-   0.065    0.000    0.295 v r2/D (sky130_fd_sc_hs__dfxbp_1)
-                     0.295   data arrival time
+   0.024    0.189    0.189 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.024    0.000    0.189 v u1/A (sky130_fd_sc_hs__clkbuf_2)
+   0.059    0.108    0.297 v u1/X (sky130_fd_sc_hs__clkbuf_2)
+   0.059    0.000    0.297 v r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.297   data arrival time
 
    0.000    1.000    1.000   clock clk (rise edge)
             0.000    1.000   clock network delay (ideal)
             0.000    1.000   clock reconvergence pessimism
                      1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-           -0.128    0.872   library setup time
-                     0.872   data required time
+           -0.125    0.875   library setup time
+                     0.875   data required time
 -------------------------------------------------------------------
-                     0.872   data required time
-                    -0.295   data arrival time
+                     0.875   data required time
+                    -0.297   data arrival time
 -------------------------------------------------------------------
-                     0.577   slack (MET)
+                     0.578   slack (MET)
 
 

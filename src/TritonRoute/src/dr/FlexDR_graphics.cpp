@@ -4,6 +4,7 @@
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
+#include "openroad/OpenRoad.hh"
 
 namespace fr {
 

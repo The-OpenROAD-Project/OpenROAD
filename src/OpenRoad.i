@@ -47,7 +47,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
-#include "utility/Logger.h"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -215,10 +215,10 @@ using odb::dbTech;
   $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
-%typemap(in) utl::ToolId {
+%typemap(in) ord::ToolId {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = utl::Logger::findToolId(arg);
+  $1 = ord::Logger::findToolId(arg);
 }
 
 %inline %{
@@ -243,7 +243,7 @@ report(const char *msg)
 }
 
 void
-info(utl::ToolId tool,
+info(ord::ToolId tool,
      int id,
      const char *msg)
 {
@@ -252,7 +252,7 @@ info(utl::ToolId tool,
 }
 
 void
-ord_warn(utl::ToolId tool,
+ord_warn(ord::ToolId tool,
          int id,
          const char *msg)
 {
@@ -261,7 +261,7 @@ ord_warn(utl::ToolId tool,
 }
 
 void
-ord_error(utl::ToolId tool,
+ord_error(ord::ToolId tool,
           int id,
           const char *msg)
 {
@@ -270,7 +270,7 @@ ord_error(utl::ToolId tool,
 }
 
 void
-critical(utl::ToolId tool,
+critical(ord::ToolId tool,
          int id,
          const char *msg)
 {
@@ -355,9 +355,9 @@ set_debug_level(const char* tool_name,
   using namespace ord;
   auto* logger = getOpenRoad()->getLogger();
 
-  auto id = utl::Logger::findToolId(tool_name);
-  if (id == utl::UKN) {
-    logger->error(utl::ORD, 15, "Unknown tool name {}", tool_name);
+  auto id = Logger::findToolId(tool_name);
+  if (id == UKN) {
+    logger->error(ORD, 15, "Unknown tool name {}", tool_name);
   }
   logger->setDebugLevel(id, group, level);
 }
