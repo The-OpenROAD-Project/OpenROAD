@@ -52,7 +52,8 @@ class Search
 {
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
-  using Polygon = bg::model::polygon<Point,false>;//counterclockwise(clockwise=false)
+  using Polygon
+      = bg::model::polygon<Point, false>;  // counterclockwise(clockwise=false)
   template <typename T>
   using Value = std::tuple<Box, Polygon, T>;
 
@@ -95,23 +96,27 @@ class Search
   // Find all shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
   ShapeRange searchShapes(odb::dbTechLayer* layer,
-                           int x_lo,
-                           int y_lo,
-                           int x_hi,
-                           int y_hi,
-                           int min_size = 0);
+                          int x_lo,
+                          int y_lo,
+                          int x_hi,
+                          int y_hi,
+                          int min_size = 0);
 
   // Find all fills in the given bounds on the given layer which
   // are at least min_size in either dimension.
   FillRange searchFills(odb::dbTechLayer* layer,
-                         int x_lo,
-                         int y_lo,
-                         int x_hi,
-                         int y_hi,
-                         int min_size = 0);
+                        int x_lo,
+                        int y_lo,
+                        int x_hi,
+                        int y_hi,
+                        int min_size = 0);
 
   // Find all instances in the given bounds with height of at least min_height
-  InstRange searchInsts(int x_lo, int y_lo, int x_hi, int y_hi, int min_height = 0);
+  InstRange searchInsts(int x_lo,
+                        int y_lo,
+                        int x_hi,
+                        int y_hi,
+                        int min_height = 0);
 
   void clear();
 

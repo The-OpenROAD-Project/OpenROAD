@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "search.h"
+
 #include <tuple>
 #include <utility>
 
 #include "dbShape.h"
-#include "search.h"
 
 namespace gui {
 
@@ -67,7 +68,7 @@ void Search::init(odb::dbBlock* block)
           continue;
         }
         Box bbox(Point(box->xMin(), box->yMin()),
-                   Point(box->xMax(), box->yMax()));
+                 Point(box->xMax(), box->yMax()));
         Polygon poly;
         bg::convert(bbox, poly);
         odb::dbTechLayer* layer = box->getTechLayer();
@@ -79,8 +80,7 @@ void Search::init(odb::dbBlock* block)
   for (odb::dbFill* fill : block->getFills()) {
     odb::Rect rect;
     fill->getRect(rect);
-    Box box(Point(rect.xMin(), rect.yMin()),
-              Point(rect.xMax(), rect.yMax()));
+    Box box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
     Polygon poly;
     bg::convert(box, poly);
     fills_[fill->getTechLayer()].insert(std::make_tuple(box, poly, fill));
@@ -121,7 +121,7 @@ void Search::addSNet(odb::dbNet* net)
         box->getViaBoxes(shapes);
         for (auto& shape : shapes) {
           Box bbox(Point(shape.xMin(), shape.yMin()),
-                     Point(shape.xMax(), shape.yMax()));
+                   Point(shape.xMax(), shape.yMax()));
           Polygon poly;
           bg::convert(bbox, poly);
           shapes_[shape.getTechLayer()].insert(
@@ -129,7 +129,7 @@ void Search::addSNet(odb::dbNet* net)
         }
       } else {
         Box bbox(Point(box->xMin(), box->yMin()),
-                   Point(box->xMax(), box->yMax()));
+                 Point(box->xMax(), box->yMax()));
         Polygon poly;
         auto points = box->getGeomShape()->getPoints();
         for (auto point : points)
@@ -233,8 +233,9 @@ Search::ShapeRange Search::searchShapes(odb::dbTechLayer* layer,
   Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
   if (min_size > 0) {
     return ShapeRange(
-        rtree.qbegin(bgi::intersects(query)
-                     && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
+        rtree.qbegin(
+            bgi::intersects(query)
+            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
         rtree.qend());
   }
 
@@ -256,10 +257,11 @@ Search::FillRange Search::searchFills(odb::dbTechLayer* layer,
   auto& rtree = it->second;
   Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
   if (min_size > 0) {
-    return FillRange(rtree.qbegin(bgi::intersects(query)
-                                  && bgi::satisfies(
-                                      MinSizePredicate<odb::dbFill*>(min_size))),
-                     rtree.qend());
+    return FillRange(
+        rtree.qbegin(
+            bgi::intersects(query)
+            && bgi::satisfies(MinSizePredicate<odb::dbFill*>(min_size))),
+        rtree.qend());
   }
 
   return FillRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());

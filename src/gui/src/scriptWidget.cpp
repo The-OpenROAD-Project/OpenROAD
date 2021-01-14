@@ -31,11 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "scriptWidget.h"
-#include "spdlog/sinks/base_sink.h"
-#include "spdlog/formatter.h"
 
-#include <unistd.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <QCoreApplication>
 #include <QHBoxLayout>
@@ -45,6 +43,8 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
+#include "spdlog/formatter.h"
+#include "spdlog/sinks/base_sink.h"
 #include "utility/Logger.h"
 
 namespace gui {
@@ -277,23 +277,21 @@ void ScriptWidget::pauserClicked()
 
 // This class is an spdlog sink that writes the messages into the output
 // area.
-template<typename Mutex>
+template <typename Mutex>
 class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 {
-public:
-  GuiSink(ScriptWidget* widget)
-    : widget_(widget)
-  {
-  }
+ public:
+  GuiSink(ScriptWidget* widget) : widget_(widget) {}
 
-protected:
+ protected:
   void sink_it_(const spdlog::details::log_msg& msg) override
   {
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
     this->formatter_->format(msg, formatted);
     // -1 is to drop the final '\n' character
-    auto str = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
+    auto str
+        = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
     widget_->outputBuffer_.append(str);
 
     // Make it appear now
@@ -302,11 +300,9 @@ protected:
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   }
 
-  void flush_() override
-  {
-  }
+  void flush_() override {}
 
-private:
+ private:
   ScriptWidget* widget_;
 };
 

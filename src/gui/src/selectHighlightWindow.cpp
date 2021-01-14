@@ -158,11 +158,14 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selection_set,
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
   QAction* remove_all_sel_items = select_context_menu_->addAction("Clear All");
-  QAction* highlight_sel_item_act = select_context_menu_->addAction("Highlight");
+  QAction* highlight_sel_item_act
+      = select_context_menu_->addAction("Highlight");
   select_context_menu_->addSeparator();
-  QAction* show_sel_item_act = select_context_menu_->addAction("Zoom In Layout");
+  QAction* show_sel_item_act
+      = select_context_menu_->addAction("Zoom In Layout");
 
-  connect(remove_sel_item_act, SIGNAL(triggered()), this, SLOT(deselectItems()));
+  connect(
+      remove_sel_item_act, SIGNAL(triggered()), this, SLOT(deselectItems()));
   connect(remove_all_sel_items, &QAction::triggered, this, [this]() {
     emit clearAllSelections();
   });
@@ -170,13 +173,18 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selection_set,
           SIGNAL(triggered()),
           this,
           SLOT(highlightSelectedItems()));
-  connect(
-      show_sel_item_act, SIGNAL(triggered()), this, SLOT(zoomInSelectedItems()));
+  connect(show_sel_item_act,
+          SIGNAL(triggered()),
+          this,
+          SLOT(zoomInSelectedItems()));
 
-  QAction* remove_hlt_item_act = highlight_context_menu_->addAction("De-Highlight");
-  QAction* remove_all_hlt_items = highlight_context_menu_->addAction("Clear All");
+  QAction* remove_hlt_item_act
+      = highlight_context_menu_->addAction("De-Highlight");
+  QAction* remove_all_hlt_items
+      = highlight_context_menu_->addAction("Clear All");
   highlight_context_menu_->addSeparator();
-  QAction* show_hlt_item_act = highlight_context_menu_->addAction("Zoom In Layout");
+  QAction* show_hlt_item_act
+      = highlight_context_menu_->addAction("Zoom In Layout");
 
   connect(
       remove_hlt_item_act, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
@@ -213,7 +221,8 @@ void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
 
 void SelectHighlightWindow::showHighlightCustomMenu(QPoint pos)
 {
-  highlight_context_menu_->popup(ui_->hltTableView->viewport()->mapToGlobal(pos));
+  highlight_context_menu_->popup(
+      ui_->hltTableView->viewport()->mapToGlobal(pos));
 }
 
 void SelectHighlightWindow::deselectItems()

@@ -289,7 +289,8 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
         cut_color_item->setIcon(QIcon(swatch));
       }
       if (chosen_color != color_val
-          || layer_pattern_[tech_layer] != display_dialog.getSelectedPattern()) {
+          || layer_pattern_[tech_layer]
+                 != display_dialog.getSelectedPattern()) {
         layer_color_[tech_layer] = chosen_color;
         layer_pattern_[tech_layer] = display_dialog.getSelectedPattern();
         view_->repaint();
@@ -348,7 +349,8 @@ QStandardItem* DisplayControls::makeItem(
   color_item->setEditable(false);
   color_item->setCheckable(false);
   if (tech_layer != nullptr) {
-    QVariant tech_layer_data(QVariant::fromValue(static_cast<void*>(tech_layer)));
+    QVariant tech_layer_data(
+        QVariant::fromValue(static_cast<void*>(tech_layer)));
     color_item->setData(tech_layer_data, Qt::UserRole);
   }
 

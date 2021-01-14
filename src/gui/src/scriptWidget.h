@@ -102,7 +102,8 @@ class ScriptWidget : public QDockWidget
   bool paused_;
 
   // Logger sink
-  template<typename Mutex> class GuiSink;
+  template <typename Mutex>
+  class GuiSink;
 
   static Tcl_ChannelType stdout_channel_type_;
 };

@@ -107,7 +107,7 @@ class DisplayColorDialog : public QDialog
 
   void buildUI();
 
-  static inline std::vector<std::vector<Qt::BrushStyle>> brush_patterns_ {
+  static inline std::vector<std::vector<Qt::BrushStyle>> brush_patterns_{
       {Qt::NoBrush, Qt::SolidPattern},
       {Qt::HorPattern, Qt::VerPattern},
       {Qt::CrossPattern, Qt::DiagCrossPattern},

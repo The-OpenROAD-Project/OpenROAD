@@ -263,8 +263,8 @@ std::string OpenDbDescriptor::getLocation(void* object) const
         std::stringstream ss;
         ss << "[(" << wire_bbox.xMin() / to_microns << ","
            << wire_bbox.yMin() / to_microns << "), ("
-           << wire_bbox.xMax() / to_microns << "," << wire_bbox.yMax() / to_microns
-           << ")]";
+           << wire_bbox.xMax() / to_microns << ","
+           << wire_bbox.yMax() / to_microns << ")]";
         return ss.str();
       }
       return std::string("NA");
@@ -277,8 +277,9 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       std::stringstream ss;
       ss << "[(" << inst_bbox->xMin() / to_microns << ","
          << inst_bbox->yMin() / to_microns << "), ("
-         << inst_bbox->xMax() / to_microns << "," << inst_bbox->yMax() / to_microns
-         << ")], " << inst_orient << ": " << placement_status;
+         << inst_bbox->xMax() / to_microns << ","
+         << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "
+         << placement_status;
       return ss.str();
     } break;
     default:
