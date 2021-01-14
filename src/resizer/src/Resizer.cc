@@ -1338,6 +1338,103 @@ Resizer::hasMultipleOutputs(const Instance *inst)
   return false;
 }
 
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::resizeSlackPreamble()
+{
+  removeBuffers();
+  LibertyLibrarySeq resize_libs = allLibraries();
+  resizePreamble(&resize_libs);
+  // Save max_wire_length for multiple repairDesign calls.
+  max_wire_length_ = findMaxWireLength();
+  net_slack_map_.clear();
+}
+
+LibertyLibrarySeq
+Resizer::allLibraries()
+{
+  LibertyLibrarySeq libs;
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
+    libs.push_back(lib);
+  }
+  delete lib_iter;
+  return libs;
+}
+
+void
+Resizer::findResizeSlacks()
+{
+  estimateWireParasitics();
+  repairDesign(max_wire_length_);
+  findResizeSlacks1();
+  removeBuffers();
+}
+  
+void
+Resizer::findResizeSlacks1()
+{
+  // Use driver pin slacks rather than Sta::netSlack to save visiting
+  // the net pins and min'ing the slack.
+  NetSeq nets;
+  for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    Vertex *drvr = level_drvr_vertices_[i];
+    Pin *drvr_pin = drvr->pin();
+    Net *net = network_->isTopLevelPort(drvr_pin)
+      ? network_->net(network_->term(drvr_pin))
+      : network_->net(drvr_pin);
+    if (net
+        && !sta_->isClock(drvr_pin)
+        // Hands off special nets.
+        && !isSpecial(net)) {
+      net_slack_map_[net] = sta_->vertexSlack(drvr, MinMax::max());
+      nets.push_back(net);
+    }
+  }
+
+  // Find the nets with the worst slack.
+  double worst_percent = .1;
+  //  sort(nets.begin(), nets.end(). [&](const Net *net1,
+  sort(nets, [this](const Net *net1,
+                 const Net *net2)
+             { return resizeNetSlack(net1) < resizeNetSlack(net2); });
+  worst_slack_nets_.clear();
+  for (int i = 0; i < nets.size() * worst_percent; i++)
+    worst_slack_nets_.push_back(nets[i]);
+}
+
+NetSeq &
+Resizer::resizeWorstSlackNets()
+{
+  return worst_slack_nets_;
+}
+
+vector<dbNet*>
+Resizer::resizeWorstSlackDbNets()
+{
+  vector<dbNet*> nets;
+  for (Net* net : worst_slack_nets_)
+    nets.push_back(db_network_->staToDb(net));
+  return nets;
+}
+
+Slack
+Resizer::resizeNetSlack(const Net *net)
+{
+  return net_slack_map_[net];
+}
+
+Slack
+Resizer::resizeNetSlack(const dbNet *db_net)
+{
+  const Net *net = db_network_->dbToSta(db_net);
+  return net_slack_map_[net];
+}
+
+////////////////////////////////////////////////////////////////
+
 double
 Resizer::area(Cell *cell)
 {

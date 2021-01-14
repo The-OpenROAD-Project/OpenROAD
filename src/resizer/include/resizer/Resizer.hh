@@ -50,6 +50,7 @@ namespace rsz {
 
 using std::array;
 using std::string;
+using std::vector;
 
 using ord::OpenRoad;
 using utl::Logger;
@@ -242,6 +243,23 @@ public:
   // Rebuffer net (for testing).
   // resizerPreamble() required.
   void rebuffer(Net *net);
+
+  // Slack API for timing driven placement.
+  // Each pass (findResizeSlacks)
+  //  estiimate parasitics
+  //  repair design
+  //  save slacks
+  //  remove inserted buffers
+  // Preamble must be called before the first findResizeSlacks.
+  void resizeSlackPreamble();
+  void findResizeSlacks();
+  // Return 10% of nets with worst slack.
+  NetSeq &resizeWorstSlackNets();
+  // Return net slack.
+  Slack resizeNetSlack(const Net *neet);
+  // db flavor
+  vector<dbNet*> resizeWorstSlackDbNets();
+  Slack resizeNetSlack(const dbNet *db_net);
 
 protected:
   void init();
@@ -475,6 +493,8 @@ protected:
                                      BufferedNet *ref,
                                      BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
+  LibertyLibrarySeq allLibraries();
+  void findResizeSlacks1();
 
   int rebuffer_net_count_;
   BufferedNetSeq rebuffer_options_;
@@ -516,6 +536,10 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  // Slack map variables.
+  float max_wire_length_;
+  Map<const Net*, Slack> net_slack_map_;
+  NetSeq worst_slack_nets_;
 };
 
 } // namespace
