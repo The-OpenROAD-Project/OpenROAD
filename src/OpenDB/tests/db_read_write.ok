@@ -1,0 +1,14 @@
+Notice 0: Reading LEF file:  data/gscl45nm.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 14 technology vias
+Notice 0:     Created 33 library cells
+Notice 0: Finished LEF file:  data/gscl45nm.lef
+Notice 0: 
+Reading DEF file: data/design.def
+Notice 0: Design: counter
+Notice 0:     Created 12 pins.
+Notice 0:     Created 12 components and 60 component-terminals.
+Notice 0:     Created 24 nets and 45 connections.
+Notice 0: Finished DEF file: data/design.def
+No differences found.
+pass

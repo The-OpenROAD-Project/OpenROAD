@@ -125,7 +125,7 @@ proc place_pins { args } {
   foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
       if { ![$inst isPlaced] } {
-        ord::warn 15 "Macro [$inst getName] is not placed"
+        ord::warn PPL 15 "Macro [$inst getName] is not placed"
           continue
       }
       lappend blockages $inst

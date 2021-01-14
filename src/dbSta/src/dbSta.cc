@@ -573,7 +573,7 @@ dbSta::highlight(PathRef *path)
   if (gui_) {
     if (path_renderer_ == nullptr) {
       path_renderer_ = new PathRenderer(this);
-      gui_->register_renderer(path_renderer_);
+      gui_->registerRenderer(path_renderer_);
     }
     path_renderer_->highlight(path);
   }
