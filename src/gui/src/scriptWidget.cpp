@@ -57,6 +57,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
+  output_->setFont(QFont("Monospace"));
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);

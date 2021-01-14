@@ -1,17 +1,18 @@
-PPL 0001 IOPlacer.cpp:507           * Num of slots          {}
-PPL 0002 IOPlacer.cpp:508           * Num of I/O            {}
-PPL 0003 IOPlacer.cpp:509           * Num of I/O w/sink     {}
-PPL 0004 IOPlacer.cpp:510           * Num of I/O w/o sink   {}
-PPL 0005 IOPlacer.cpp:511           * Slots Per Section     {}
-PPL 0006 IOPlacer.cpp:512           * Slots Increase Factor {}
-PPL 0007 IOPlacer.cpp:513           * Usage Per Section     {}
-PPL 0008 IOPlacer.cpp:514           * Usage Increase Factor {}
-PPL 0009 IOPlacer.cpp:515           * Force Pin Spread      {}
-PPL 0010 IOPlacer.cpp:524          Tentative {} to setup sections
-PPL 0011 IOPlacer.cpp:791          ***HPWL before ioPlacer: {}
-PPL 0012 IOPlacer.cpp:792          ***HPWL after  ioPlacer: {}
-PPL 0013 IOPlacer.cpp:793          ***HPWL delta  ioPlacer: {}
+PPL 0001 IOPlacer.cpp:492           * Num of slots          {}
+PPL 0002 IOPlacer.cpp:493           * Num of I/O            {}
+PPL 0003 IOPlacer.cpp:494           * Num of I/O w/sink     {}
+PPL 0004 IOPlacer.cpp:495           * Num of I/O w/o sink   {}
+PPL 0005 IOPlacer.cpp:496           * Slots Per Section     {}
+PPL 0006 IOPlacer.cpp:497           * Slots Increase Factor {}
+PPL 0007 IOPlacer.cpp:498           * Usage Per Section     {}
+PPL 0008 IOPlacer.cpp:499           * Usage Increase Factor {}
+PPL 0009 IOPlacer.cpp:500           * Force Pin Spread      {}
+PPL 0010 IOPlacer.cpp:509          Tentative {} to setup sections
+PPL 0011 IOPlacer.cpp:776          ***HPWL before ioPlacer: {}
+PPL 0012 IOPlacer.cpp:777          ***HPWL after  ioPlacer: {}
+PPL 0013 IOPlacer.cpp:778          ***HPWL delta  ioPlacer: {}
 PPL 0014 ioPlacer.tcl:101          io_placer command is deprecated. Use place_pins instead
+PPL 0015 ioPlacer.tcl:128          Macro [$inst getName] is not placed
 PPL 0016 ioPlacer.tcl:72           set_io_pin_constraint: only one constraint allowed
 PPL 0017 ioPlacer.tcl:146          -hor_layers is mandatory
 PPL 0018 ioPlacer.tcl:152          -ver_layers is mandatory
@@ -27,11 +28,12 @@ PPL 0027 ioPlacer.tcl:258          $cmd: $edge is an invalid edge. use top, bott
 PPL 0028 ioPlacer.tcl:271          $cmd: Invalid pin direction
 PPL 0029 ioPlacer.tcl:299          $cmd: Invalid edge
 PPL 0030 ioPlacer.tcl:307          $cmd: Invalid edge
-PPL 0034 IOPlacer.cpp:414          Redefining the number of slots per section to have at least one section per edge
-PPL 0035 IOPlacer.cpp:431          section usage exeeded max
-PPL 0036 IOPlacer.cpp:532          Number of sections is {}
-PPL 0037 IOPlacer.cpp:538          Number of slots per sections is {}
-PPL 0038 IOPlacer.cpp:892          Pin {} without net!
-PPL 0039 IOPlacer.cpp:239          Random mode not found
-PPL 0040 IOPlacer.cpp:444          Negative number of slots
-PPL 0041 IOPlacer.cpp:783          Assigned {} pins out of {} IO pins
+PPL 0033 HungarianMatching.cpp:99  I/O pin {} cannot be placed in the specified region. Not enough space
+PPL 0034 IOPlacer.cpp:399          Redefining the number of slots per section to have at least one section per edge
+PPL 0035 IOPlacer.cpp:416          section usage exeeded max
+PPL 0036 IOPlacer.cpp:517          Number of sections is {}
+PPL 0037 IOPlacer.cpp:523          Number of slots per sections is {}
+PPL 0038 IOPlacer.cpp:877          Pin {} without net!
+PPL 0039 IOPlacer.cpp:224          Random mode not found
+PPL 0040 IOPlacer.cpp:429          Negative number of slots
+PPL 0041 IOPlacer.cpp:768          Assigned {} pins out of {} IO pins
