@@ -95,7 +95,7 @@ static double getValue(const char* key, pt::ptree& tree)
 ////////////////////////////////////////////////////////////////
 
 DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
-  : db_(db), logger_(logger)
+    : db_(db), logger_(logger)
 {
   if (debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>();
@@ -113,8 +113,7 @@ DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
 // similar rules.  This method expands such groupings into per layer
 // values.  It also translates from microns to DBU and layer names
 // to dbTechLayer*.
-void DensityFill::readAndExpandLayers(dbTech* tech,
-                                      pt::ptree& tree)
+void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
 {
   int dbu = tech->getDbUnitsPerMicron();
 
@@ -179,8 +178,10 @@ void DensityFill::readAndExpandLayers(dbTech* tech,
       for (auto& [name, layer_name] : layer.get_child("names")) {
         auto tech_layer = tech->findLayer(layer_name.data().c_str());
         if (!tech_layer) {
-          logger_->error(FIN, 1, "Layer {} in names was not found.",
-                     layer.get_child("name").data());
+          logger_->error(FIN,
+                         1,
+                         "Layer {} in names was not found.",
+                         layer.get_child("name").data());
         }
         layers_[tech_layer] = cfg;
       }
@@ -188,8 +189,8 @@ void DensityFill::readAndExpandLayers(dbTech* tech,
       // No expansion, just a single layer
       auto tech_layer = tech->findLayer(layer.get_child("name").data().c_str());
       if (!tech_layer) {
-        logger_->error(FIN, 2, "Layer {} not found.",
-                       layer.get_child("name").data());
+        logger_->error(
+            FIN, 2, "Layer {} not found.", layer.get_child("name").data());
       }
       layers_[tech_layer] = cfg;
     }
@@ -475,13 +476,13 @@ void DensityFill::fillLayer(dbBlock* block,
   Polygon90Set non_opc_fill_area;
   for (auto& polygon : polygons) {
     fillPolygon(polygon,
-                 layer,
-                 block,
-                 cfg.non_opc,
-                 cfg.num_masks,
-                 false,
-                 graphics_.get(),
-                 &non_opc_fill_area);
+                layer,
+                block,
+                cfg.non_opc,
+                cfg.num_masks,
+                false,
+                graphics_.get(),
+                &non_opc_fill_area);
   }
   logger_->info(FIN, 4, "Total fills: {}", block->getFills().size());
 
