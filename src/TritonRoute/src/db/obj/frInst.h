@@ -162,7 +162,7 @@ namespace fr {
 
   protected:
     frString                                       name_;
-    frBlock*                                       refBlock_;
+    fr::frBlock*                                       refBlock_;
     std::vector<std::unique_ptr<frInstTerm> >      instTerms_;
     std::vector<std::unique_ptr<frInstBlockage> >  instBlockages_;
     frTransform                                    xform_;
