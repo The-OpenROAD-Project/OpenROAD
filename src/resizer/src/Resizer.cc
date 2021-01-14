@@ -317,14 +317,16 @@ Resizer::removeBuffers()
                       sdc_network_->pathName(out_net));
       else {
         Net *survivor, *removed;
-        if (in_net_ports) {
-          survivor = in_net;
-          removed = out_net;
-        }
-        else {
-          // out_net_ports
+        if (out_net_ports) {
           survivor = out_net;
           removed = in_net;
+        }
+        else {
+          // default or out_net_ports
+          // Default to in_net surviving so drivers (cached in dbNetwork)
+          // do not change.
+          survivor = in_net;
+          removed = out_net;
         }
         NetPinIterator *pin_iter = db_network_->pinIterator(removed);
         while (pin_iter->hasNext()) {
@@ -343,6 +345,7 @@ Resizer::removeBuffers()
       }
     }
   }
+  level_drvr_verticies_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
