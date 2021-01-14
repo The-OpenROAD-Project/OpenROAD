@@ -73,11 +73,12 @@ void io::Parser::setDieArea(odb::dbBlock* block)
   vector<frBoundary> bounds;
   frBoundary bound;
   vector<frPoint> points;
-  auto box = block->getBBox();
-  points.push_back(frPoint(box->xMin(), box->yMin()));
-  points.push_back(frPoint(box->xMax(), box->yMax()));
-  points.push_back(frPoint(box->xMax(), box->yMin()));
-  points.push_back(frPoint(box->xMin(), box->yMax()));
+  odb::Rect box;
+  block->getDieArea(box);
+  points.push_back(frPoint(defdist(block,box.xMin()), defdist(block,box.yMin())));
+  points.push_back(frPoint(defdist(block,box.xMax()), defdist(block,box.yMax())));
+  points.push_back(frPoint(defdist(block,box.xMax()), defdist(block,box.yMin())));
+  points.push_back(frPoint(defdist(block,box.xMin()), defdist(block,box.yMax())));
   bound.setPoints(points);
   bounds.push_back(bound);
   tmpBlock->setDBUPerUU(block->getDbUnitsPerMicron());
