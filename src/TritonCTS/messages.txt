@@ -57,8 +57,8 @@ CTS 0056 tritoncts.tcl:190         Error when finding -clk_nets in DB!
 CTS 0057 tritoncts.tcl:212         Missing argument -root_buf
 CTS 0058 SinkClustering.cpp:121    Invalid parameters in {}
 CTS 0065 TechChar.cpp:240          Normalized values in the LUT should be in the range [1, {}
+CTS 0066 TechChar.cpp:563          Could not get maxSlew/maxCap values from buffer {}. Using library values
 CTS 0067 TechChar.cpp:294          Number of buffers does not match on solution.
-
 CTS 0068 TechChar.cpp:495          Network not found. Check your lef/def/verilog file.
 CTS 0069 TechChar.cpp:499          Database not found. Check your lef/def/verilog file.
 CTS 0070 TechChar.cpp:503          Chip not found. Check your lef/def/verilog file.

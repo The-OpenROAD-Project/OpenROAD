@@ -230,7 +230,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
           countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks);
         else
         {
-          std::cout << "  Hanging buffer " << name << std::endl;
+          _logger->report("  Hanging buffer {}", name);
         }
         if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
           leafSinks++;
@@ -254,8 +254,7 @@ void TritonCTS::writeDataToDb()
       unsigned sinkCount = 0;
       unsigned leafSinks = 0;
       countSinksPostDbWrite(topClockNet, sinkCount, leafSinks);
-      std::cout << "  Sinks after db write = " << sinkCount
-                << " (Leaf Buffers = " << leafSinks << ")" << std::endl;
+      _logger->report("  Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
     }
   }
 }

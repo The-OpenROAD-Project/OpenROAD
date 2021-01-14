@@ -559,9 +559,9 @@ void TechChar::initCharacterization()
     bool maxSlewExist = false;
     bool maxCapExist = false;
     getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
-    if(!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
-      std::cout << "    [WARNING] Could not get maxSlew/maxCap values from buffer " << bufMasterName << std::endl;
-      std::cout << "              Using library values" << std::endl;
+    if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
+      _logger->warn(CTS, 66,
+             "Could not get maxSlew/maxCap values from buffer {}. Using library values", bufMasterName);
       staLib->defaultMaxSlew(maxSlew, maxSlewExist);
       staLib->defaultMaxCapacitance(maxCap, maxCapExist);
     }
