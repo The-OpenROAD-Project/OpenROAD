@@ -80,12 +80,12 @@ class InstancePin
   int getX() const { return pos_.getX(); }
   int getY() const { return pos_.getY(); }
 
- protected:
+ private:
   std::string name_;
   odb::Point pos_;
 };
 
-class IOPin : public InstancePin
+class IOPin
 {
  public:
   IOPin(const std::string& name,
@@ -95,7 +95,8 @@ class IOPin : public InstancePin
         odb::Point upper_bound,
         std::string net_name,
         std::string location_type)
-      : InstancePin(name, pos),
+      : name_(name),
+        pos_(pos),
         orientation_(Orientation::north),
         direction_(dir),
         lower_bound_(lower_bound),
@@ -121,6 +122,10 @@ class IOPin : public InstancePin
     upper_bound_ = odb::Point(x, y);
   };
   void setLayer(const int layer) { layer_ = layer; }
+  std::string getName() const { return name_; }
+  odb::Point getPos() const { return pos_; }
+  int getX() const { return pos_.getX(); }
+  int getY() const { return pos_.getY(); }
   Direction getDirection() const { return direction_; }
   odb::Point getLowerBound() const { return lower_bound_; };
   odb::Point getUpperBound() const { return upper_bound_; };
@@ -129,6 +134,8 @@ class IOPin : public InstancePin
   int getLayer() const { return layer_; }
 
  private:
+  std::string name_;
+  odb::Point pos_;
   Orientation orientation_;
   Direction direction_;
   odb::Point lower_bound_;
