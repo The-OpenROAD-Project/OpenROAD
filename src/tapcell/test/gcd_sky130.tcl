@@ -5,7 +5,7 @@ read_def gcd_sky130.def
 
 set def_file [make_result_file gcd_sky130.def]
 
-tapcell -endcap_cpp "2" -distance 14 -tapcell_master "sky130_fd_sc_hs__tap_1" -endcap_master "sky130_fd_sc_hs__decap_4"
+tapcell -endcap_cpp "2" -distance 15 -tapcell_master "sky130_fd_sc_hs__tap_1" -endcap_master "sky130_fd_sc_hs__decap_4"
 
 write_def $def_file
 

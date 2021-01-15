@@ -9,7 +9,7 @@ Notice 0:
 Reading DEF file: repair_antennas2.def
 Notice 0: Design: gcd
 Notice 0:     Created 54 pins.
-Notice 0:     Created 7887 components and 18244 component-terminals.
+Notice 0:     Created 7887 components and 32384 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 262 nets and 836 connections.
 Notice 0: Finished DEF file: repair_antennas2.def
@@ -24,13 +24,13 @@ Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
 [INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 119213
+[INFO GRT-0005] #DB Obstacles: 119549
 [INFO GRT-0006] #DB Macros: 0
 [INFO GRT-0017] Found 0 clock nets
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 29
-[INFO GRT-0018] Processing 24420 obstacles on layer 1
-[INFO GRT-0019] Processing 15859 obstacles on layer 2
+[INFO GRT-0018] Processing 24756 obstacles on layer 1
+[INFO GRT-0019] Processing 29999 obstacles on layer 2
 [INFO GRT-0022] Processing 10 obstacles on layer 5
 [INFO GRT-0022] Reducing resources of layer 3 by 15%
 [INFO GRT-0023] Reducing resources of layer 4 by 15%
@@ -93,11 +93,11 @@ row height                3.3 u
 
 Placement Analysis
 --------------------------------
-total displacement        6.2 u
+total displacement       12.0 u
 average displacement      0.0 u
 max displacement          3.3 u
-original HPWL         16281.4 u
-legalized HPWL        16285.3 u
+original HPWL         16287.2 u
+legalized HPWL        16302.8 u
 delta HPWL                  0 %
 
 [INFO GRT-0015] 13 diodes inserted
@@ -112,12 +112,12 @@ Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
 [INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 14285
-[INFO GRT-0006] #DB Macros: 13
+[INFO GRT-0005] #DB Obstacles: 14621
+[INFO GRT-0006] #DB Macros: 0
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
-[INFO GRT-0018] Processing 11107 obstacles on layer 1
-[INFO GRT-0019] Processing 2533 obstacles on layer 2
+[INFO GRT-0018] Processing 11443 obstacles on layer 1
+[INFO GRT-0019] Processing 3347 obstacles on layer 2
 [INFO GRT-0022] Processing 10 obstacles on layer 5
 [INFO GRT-0022] Reducing resources of layer 3 by 15%
 [INFO GRT-0023] Reducing resources of layer 4 by 15%
@@ -127,7 +127,7 @@ Layer 6 pitch: 3.33
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 525
+[Overflow Report] Total Usage   : 516
 [Overflow Report] Total Capacity: 62410
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -136,10 +136,10 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO GRT-0110] Final usage          : 525
-[INFO GRT-0111] Final number of vias : 187
-[INFO GRT-0112] Final usage 3D       : 1086
-[INFO DPL-0001] Placed 6681 filler instances.
+[INFO GRT-0110] Final usage          : 516
+[INFO GRT-0111] Final number of vias : 161
+[INFO GRT-0112] Final usage 3D       : 999
+[INFO DPL-0001] Placed 6678 filler instances.
 [INFO GRT-0014] Num routed nets: 262
 No differences found.
 No differences found.
