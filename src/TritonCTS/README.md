@@ -77,6 +77,7 @@ read_def "mydef.def"
 read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
 
+set_wire_rc -clock -layer metal5
 report_checks
 
 clock_tree_synthesis -root_buf "BUF_X4" \
