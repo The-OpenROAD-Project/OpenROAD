@@ -11,8 +11,8 @@ Notice 0:     Created 13 components and 59 component-terminals.
 Notice 0:     Created 16 nets and 30 connections.
 Notice 0: Finished DEF file: repair_hold1.def
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 35 hold buffers.
-Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+[INFO RSZ-0032] Inserted 39 hold buffers.
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: min
@@ -23,20 +23,21 @@ Path Type: min
    0.00    0.00   clock source latency
    0.00    0.00 ^ clk (in)
    0.02    0.02 ^ i1/Z (BUF_X1)
-   0.00    0.02 ^ r1/CK (DFF_X1)
-   0.08    0.10 v r1/Q (DFF_X1)
-   0.03    0.13 v hold13/Z (CLKBUF_X3)
-   0.03    0.15 v hold2/Z (CLKBUF_X3)
-   0.03    0.18 v hold26/Z (CLKBUF_X3)
-   0.03    0.20 v hold12/Z (CLKBUF_X3)
-   0.03    0.23 v hold25/Z (CLKBUF_X3)
-   0.03    0.25 v hold35/Z (CLKBUF_X3)
-   0.03    0.28 v u2/ZN (AND2_X1)
-   0.03    0.31 v hold15/Z (CLKBUF_X3)
-   0.03    0.33 v hold3/Z (CLKBUF_X3)
-   0.03    0.36 v hold14/Z (CLKBUF_X3)
-   0.00    0.36 v r3/D (DFF_X1)
-           0.36   data arrival time
+   0.02    0.04 ^ i2/Z (BUF_X1)
+   0.02    0.06 ^ i3/Z (BUF_X1)
+   0.02    0.08 ^ i4/Z (BUF_X1)
+   0.00    0.08 ^ r2/CK (DFF_X1)
+   0.09    0.17 ^ r2/Q (DFF_X1)
+   0.02    0.19 ^ u1/Z (BUF_X1)
+   0.02    0.21 ^ hold39/Z (CLKBUF_X3)
+   0.03    0.24 ^ u2/ZN (AND2_X1)
+   0.03    0.27 ^ hold19/Z (CLKBUF_X3)
+   0.03    0.29 ^ hold20/Z (CLKBUF_X3)
+   0.03    0.32 ^ hold21/Z (CLKBUF_X3)
+   0.03    0.34 ^ hold22/Z (CLKBUF_X3)
+   0.02    0.37 ^ hold23/Z (CLKBUF_X3)
+   0.00    0.37 ^ r3/D (DFF_X1)
+           0.37   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
@@ -51,12 +52,12 @@ Path Type: min
    0.02    0.15 ^ i8/Z (BUF_X1)
    0.00    0.15 ^ r3/CK (DFF_X1)
    0.00    0.15   clock reconvergence pessimism
-   0.00    0.16   library hold time
+   0.01    0.16   library hold time
            0.16   data required time
 ---------------------------------------------------------
            0.16   data required time
-          -0.36   data arrival time
+          -0.37   data arrival time
 ---------------------------------------------------------
-           0.20   slack (MET)
+           0.21   slack (MET)
 
 

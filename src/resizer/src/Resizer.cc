@@ -2568,7 +2568,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = 1; //std::ceil(buffer_delay1 / buffer_delay);
+        int buffer_count = std::ceil(buffer_delay1 / buffer_delay);
         debugPrint(debug_, "repair_hold", 2,
                    " %s hold=%s inserted %d for %lu/%d loads",
                    vertex->name(sdc_network_),

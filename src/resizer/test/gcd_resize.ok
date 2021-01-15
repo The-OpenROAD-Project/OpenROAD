@@ -17,9 +17,9 @@ worst slack 1.36
 [INFO RSZ-0058] using max wire length 851u.
 [INFO RSZ-0039] Resized 40 instances.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 100 hold buffers.
-Startpoint: _892_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
+[INFO RSZ-0032] Inserted 102 hold buffers.
+Startpoint: _890_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _890_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: min
 
@@ -27,27 +27,24 @@ Path Type: min
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _892_/CK (DFF_X1)
-   0.06    0.06 ^ _892_/QN (DFF_X1)
-   0.02    0.08 ^ _800_/Z (BUF_X1)
-   0.02    0.10 ^ hold63/Z (BUF_X1)
-   0.01    0.12 v _641_/ZN (OAI21_X1)
-   0.03    0.14 ^ _648_/ZN (OAI21_X1)
-   0.01    0.16 v _649_/ZN (OAI21_X1)
-   0.02    0.18 v _802_/Z (BUF_X1)
-   0.02    0.20 v hold136/Z (BUF_X1)
-   0.00    0.20 v _876_/D (DFF_X1)
-           0.20   data arrival time
+   0.00    0.00 ^ _890_/CK (DFF_X1)
+   0.08    0.08 ^ _890_/Q (DFF_X1)
+   0.04    0.13 ^ _740_/Z (BUF_X1)
+   0.04    0.17 ^ _708_/Z (MUX2_X1)
+   0.02    0.19 ^ _834_/Z (BUF_X1)
+   0.02    0.21 ^ hold151/Z (BUF_X1)
+   0.00    0.21 ^ _890_/D (DFF_X1)
+           0.21   data arrival time
 
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00   clock reconvergence pessimism
-           0.00 ^ _876_/CK (DFF_X1)
+           0.00 ^ _890_/CK (DFF_X1)
    0.00    0.00   library hold time
            0.00   data required time
 ---------------------------------------------------------
            0.00   data required time
-          -0.20   data arrival time
+          -0.21   data arrival time
 ---------------------------------------------------------
            0.20   slack (MET)
 
@@ -77,10 +74,10 @@ Path Type: max
    0.04    0.54 v _681_/ZN (XNOR2_X1)
    0.03    0.57 v _682_/ZN (AND2_X1)
    0.03    0.60 ^ _685_/ZN (OAI21_X1)
-   0.02    0.61 v _686_/ZN (OAI21_X1)
-   0.03    0.64 v hold67/Z (BUF_X1)
-   0.02    0.66 v _814_/Z (BUF_X1)
-   0.02    0.69 v hold66/Z (BUF_X1)
+   0.02    0.62 v _686_/ZN (OAI21_X1)
+   0.03    0.64 v _814_/Z (BUF_X1)
+   0.02    0.66 v hold71/Z (BUF_X1)
+   0.02    0.69 v hold72/Z (BUF_X1)
    0.00    0.69 v _880_/D (DFF_X1)
            0.69   data arrival time
 
@@ -128,4 +125,4 @@ _851_/Z manhtn 69.5 steiner 69.5 0.00
 _725_/Z manhtn 67.2 steiner 67.2 0.00
 _849_/Z manhtn 64.8 steiner 64.8 0.00
 _860_/Z manhtn 64.5 steiner 64.5 0.00
-Design area 816 u^2 13% utilization.
+Design area 817 u^2 13% utilization.
