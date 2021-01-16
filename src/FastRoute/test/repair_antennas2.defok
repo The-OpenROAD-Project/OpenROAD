@@ -105,7 +105,7 @@ VIAS 3 ;
     - via2_1920x980 + VIARULE M2M3_PR + CUTSIZE 400 400  + LAYERS met2 via2 met3  + CUTSPACING 400 400  + ENCLOSURE 80 290 360 130  + ROWCOL 1 2  ;
     - via3_1920x980 + VIARULE M3M4_PR + CUTSIZE 400 400  + LAYERS met3 via3 met4  + CUTSPACING 400 400  + ENCLOSURE 360 120 360 290  + ROWCOL 1 2  ;
 END VIAS
-COMPONENTS 7905 ;
+COMPONENTS 7902 ;
     - _177_ sky130_fd_sc_hs__inv_2 + PLACED ( 418560 199800 ) N ;
     - _178_ sky130_fd_sc_hs__nand2b_1 + PLACED ( 209280 213120 ) N ;
     - _179_ sky130_fd_sc_hs__xnor2_1 + PLACED ( 220800 273060 ) FS ;
@@ -123,7 +123,7 @@ COMPONENTS 7905 ;
     - _191_ sky130_fd_sc_hs__xor2_1 + PLACED ( 291840 399600 ) N ;
     - _192_ sky130_fd_sc_hs__inv_1 + PLACED ( 251520 399600 ) N ;
     - _193_ sky130_fd_sc_hs__inv_1 + PLACED ( 459840 306360 ) N ;
-    - _194_ sky130_fd_sc_hs__inv_1 + PLACED ( 421440 372960 ) N ;
+    - _194_ sky130_fd_sc_hs__inv_1 + PLACED ( 417600 372960 ) N ;
     - _195_ sky130_fd_sc_hs__and2b_2 + PLACED ( 242880 346320 ) N ;
     - _196_ sky130_fd_sc_hs__maj3_1 + PLACED ( 432960 359640 ) N ;
     - _197_ sky130_fd_sc_hs__maj3_1 + PLACED ( 432000 319680 ) N ;
@@ -261,7 +261,7 @@ COMPONENTS 7905 ;
     - _329_ sky130_fd_sc_hs__a222o_1 + PLACED ( 230400 406260 ) FS ;
     - PHY_0 sky130_fd_sc_hs__decap_4 + FIXED ( 19200 19980 ) FS ;
     - _331_ sky130_fd_sc_hs__mux2i_1 + PLACED ( 290880 379620 ) FS ;
-    - _332_ sky130_fd_sc_hs__nand2_1 + PLACED ( 282240 379620 ) FS ;
+    - _332_ sky130_fd_sc_hs__nand2_1 + PLACED ( 278400 379620 ) FS ;
     - _333_ sky130_fd_sc_hs__o21ai_1 + PLACED ( 292800 372960 ) N ;
     - _334_ sky130_fd_sc_hs__mux2i_1 + PLACED ( 374400 412920 ) N ;
     - _335_ sky130_fd_sc_hs__nand2_1 + PLACED ( 370560 392940 ) FS ;
@@ -295,7 +295,7 @@ COMPONENTS 7905 ;
     - _363_ sky130_fd_sc_hs__nand3_1 + PLACED ( 336000 339660 ) FS ;
     - _364_ sky130_fd_sc_hs__nor4_1 + PLACED ( 318720 239760 ) N ;
     - _365_ sky130_fd_sc_hs__a21oi_1 + PLACED ( 326400 166500 ) FS ;
-    - _366_ sky130_fd_sc_hs__a32o_1 + PLACED ( 312960 166500 ) FS ;
+    - _366_ sky130_fd_sc_hs__a32o_1 + PLACED ( 309120 166500 ) FS ;
     - _367_ sky130_fd_sc_hs__nand2_1 + PLACED ( 314880 159840 ) N ;
     - _368_ sky130_fd_sc_hs__nand2_1 + PLACED ( 336000 173160 ) N ;
     - _369_ sky130_fd_sc_hs__o22ai_1 + PLACED ( 315840 186480 ) N ;
@@ -1317,6 +1317,9 @@ COMPONENTS 7905 ;
     - clkbuf_2_1_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 250560 326340 ) FS ;
     - clkbuf_2_2_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 388800 259740 ) FS ;
     - clkbuf_2_3_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 391680 326340 ) FS ;
+    - FILLER_83_489 sky130_fd_sc_hs__fill_8 + PLACED ( 488640 572760 ) N ;
+    - FILLER_83_481 sky130_fd_sc_hs__fill_8 + PLACED ( 480960 572760 ) N ;
+    - FILLER_83_479 sky130_fd_sc_hs__fill_1 + PLACED ( 479040 572760 ) N ;
     - FILLER_83_475 sky130_fd_sc_hs__fill_4 + PLACED ( 475200 572760 ) N ;
     - FILLER_83_467 sky130_fd_sc_hs__fill_8 + PLACED ( 467520 572760 ) N ;
     - FILLER_83_459 sky130_fd_sc_hs__fill_8 + PLACED ( 459840 572760 ) N ;
@@ -3558,9 +3561,10 @@ COMPONENTS 7905 ;
     - FILLER_55_385 sky130_fd_sc_hs__fill_8 + PLACED ( 388800 386280 ) N ;
     - FILLER_55_380 sky130_fd_sc_hs__fill_4 + PLACED ( 384000 386280 ) N ;
     - FILLER_55_372 sky130_fd_sc_hs__fill_8 + PLACED ( 376320 386280 ) N ;
-    - FILLER_55_360 sky130_fd_sc_hs__fill_2 + PLACED ( 364800 386280 ) N ;
-    - FILLER_55_357 sky130_fd_sc_hs__fill_1 + PLACED ( 361920 386280 ) N ;
-    - FILLER_55_349 sky130_fd_sc_hs__fill_8 + PLACED ( 354240 386280 ) N ;
+    - FILLER_55_358 sky130_fd_sc_hs__fill_4 + PLACED ( 362880 386280 ) N ;
+    - FILLER_55_355 sky130_fd_sc_hs__fill_1 + PLACED ( 360000 386280 ) N ;
+    - FILLER_55_353 sky130_fd_sc_hs__fill_2 + PLACED ( 358080 386280 ) N ;
+    - FILLER_55_349 sky130_fd_sc_hs__fill_4 + PLACED ( 354240 386280 ) N ;
     - FILLER_55_341 sky130_fd_sc_hs__fill_8 + PLACED ( 346560 386280 ) N ;
     - FILLER_55_333 sky130_fd_sc_hs__fill_8 + PLACED ( 338880 386280 ) N ;
     - FILLER_55_326 sky130_fd_sc_hs__fill_4 + PLACED ( 332160 386280 ) N ;
@@ -3645,10 +3649,9 @@ COMPONENTS 7905 ;
     - FILLER_54_304 sky130_fd_sc_hs__fill_8 + PLACED ( 311040 379620 ) FS ;
     - FILLER_54_296 sky130_fd_sc_hs__fill_8 + PLACED ( 303360 379620 ) FS ;
     - FILLER_54_291 sky130_fd_sc_hs__fill_4 + PLACED ( 298560 379620 ) FS ;
-    - FILLER_54_281 sky130_fd_sc_hs__fill_2 + PLACED ( 288960 379620 ) FS ;
-    - FILLER_54_277 sky130_fd_sc_hs__fill_2 + PLACED ( 285120 379620 ) FS ;
-    - FILLER_54_273 sky130_fd_sc_hs__fill_1 + PLACED ( 281280 379620 ) FS ;
-    - FILLER_54_269 sky130_fd_sc_hs__fill_4 + PLACED ( 277440 379620 ) FS ;
+    - FILLER_54_279 sky130_fd_sc_hs__fill_4 + PLACED ( 287040 379620 ) FS ;
+    - FILLER_54_273 sky130_fd_sc_hs__fill_4 + PLACED ( 281280 379620 ) FS ;
+    - FILLER_54_269 sky130_fd_sc_hs__fill_1 + PLACED ( 277440 379620 ) FS ;
     - FILLER_54_261 sky130_fd_sc_hs__fill_8 + PLACED ( 269760 379620 ) FS ;
     - FILLER_54_253 sky130_fd_sc_hs__fill_8 + PLACED ( 262080 379620 ) FS ;
     - FILLER_54_245 sky130_fd_sc_hs__fill_8 + PLACED ( 254400 379620 ) FS ;
@@ -3709,10 +3712,9 @@ COMPONENTS 7905 ;
     - FILLER_53_444 sky130_fd_sc_hs__fill_4 + PLACED ( 445440 372960 ) N ;
     - FILLER_53_442 sky130_fd_sc_hs__fill_1 + PLACED ( 443520 372960 ) N ;
     - FILLER_53_438 sky130_fd_sc_hs__fill_4 + PLACED ( 439680 372960 ) N ;
-    - FILLER_53_426 sky130_fd_sc_hs__fill_2 + PLACED ( 428160 372960 ) N ;
-    - FILLER_53_422 sky130_fd_sc_hs__fill_2 + PLACED ( 424320 372960 ) N ;
-    - FILLER_53_418 sky130_fd_sc_hs__fill_1 + PLACED ( 420480 372960 ) N ;
-    - FILLER_53_414 sky130_fd_sc_hs__fill_4 + PLACED ( 416640 372960 ) N ;
+    - FILLER_53_424 sky130_fd_sc_hs__fill_4 + PLACED ( 426240 372960 ) N ;
+    - FILLER_53_418 sky130_fd_sc_hs__fill_4 + PLACED ( 420480 372960 ) N ;
+    - FILLER_53_414 sky130_fd_sc_hs__fill_1 + PLACED ( 416640 372960 ) N ;
     - FILLER_53_406 sky130_fd_sc_hs__fill_8 + PLACED ( 408960 372960 ) N ;
     - FILLER_53_385 sky130_fd_sc_hs__fill_4 + PLACED ( 388800 372960 ) N ;
     - FILLER_53_382 sky130_fd_sc_hs__fill_2 + PLACED ( 385920 372960 ) N ;
@@ -4362,9 +4364,10 @@ COMPONENTS 7905 ;
     - FILLER_45_366 sky130_fd_sc_hs__fill_4 + PLACED ( 370560 319680 ) N ;
     - FILLER_45_361 sky130_fd_sc_hs__fill_1 + PLACED ( 365760 319680 ) N ;
     - FILLER_45_357 sky130_fd_sc_hs__fill_4 + PLACED ( 361920 319680 ) N ;
-    - FILLER_45_346 sky130_fd_sc_hs__fill_2 + PLACED ( 351360 319680 ) N ;
-    - FILLER_45_343 sky130_fd_sc_hs__fill_1 + PLACED ( 348480 319680 ) N ;
-    - FILLER_45_335 sky130_fd_sc_hs__fill_8 + PLACED ( 340800 319680 ) N ;
+    - FILLER_45_344 sky130_fd_sc_hs__fill_4 + PLACED ( 349440 319680 ) N ;
+    - FILLER_45_341 sky130_fd_sc_hs__fill_1 + PLACED ( 346560 319680 ) N ;
+    - FILLER_45_339 sky130_fd_sc_hs__fill_2 + PLACED ( 344640 319680 ) N ;
+    - FILLER_45_335 sky130_fd_sc_hs__fill_4 + PLACED ( 340800 319680 ) N ;
     - FILLER_45_326 sky130_fd_sc_hs__fill_4 + PLACED ( 332160 319680 ) N ;
     - FILLER_45_317 sky130_fd_sc_hs__fill_8 + PLACED ( 323520 319680 ) N ;
     - FILLER_45_311 sky130_fd_sc_hs__fill_1 + PLACED ( 317760 319680 ) N ;
@@ -4446,9 +4449,8 @@ COMPONENTS 7905 ;
     - FILLER_44_293 sky130_fd_sc_hs__fill_2 + PLACED ( 300480 313020 ) FS ;
     - FILLER_44_289 sky130_fd_sc_hs__fill_4 + PLACED ( 296640 313020 ) FS ;
     - FILLER_44_281 sky130_fd_sc_hs__fill_8 + PLACED ( 288960 313020 ) FS ;
-    - FILLER_44_270 sky130_fd_sc_hs__fill_2 + PLACED ( 278400 313020 ) FS ;
-    - FILLER_44_267 sky130_fd_sc_hs__fill_1 + PLACED ( 275520 313020 ) FS ;
-    - FILLER_44_265 sky130_fd_sc_hs__fill_2 + PLACED ( 273600 313020 ) FS ;
+    - FILLER_44_268 sky130_fd_sc_hs__fill_4 + PLACED ( 276480 313020 ) FS ;
+    - FILLER_44_265 sky130_fd_sc_hs__fill_1 + PLACED ( 273600 313020 ) FS ;
     - FILLER_44_261 sky130_fd_sc_hs__fill_4 + PLACED ( 269760 313020 ) FS ;
     - FILLER_44_253 sky130_fd_sc_hs__fill_8 + PLACED ( 262080 313020 ) FS ;
     - FILLER_44_245 sky130_fd_sc_hs__fill_8 + PLACED ( 254400 313020 ) FS ;
@@ -4666,9 +4668,8 @@ COMPONENTS 7905 ;
     - FILLER_41_452 sky130_fd_sc_hs__fill_8 + PLACED ( 453120 293040 ) N ;
     - FILLER_41_444 sky130_fd_sc_hs__fill_8 + PLACED ( 445440 293040 ) N ;
     - FILLER_41_439 sky130_fd_sc_hs__fill_4 + PLACED ( 440640 293040 ) N ;
-    - FILLER_41_427 sky130_fd_sc_hs__fill_2 + PLACED ( 429120 293040 ) N ;
-    - FILLER_41_424 sky130_fd_sc_hs__fill_1 + PLACED ( 426240 293040 ) N ;
-    - FILLER_41_422 sky130_fd_sc_hs__fill_2 + PLACED ( 424320 293040 ) N ;
+    - FILLER_41_425 sky130_fd_sc_hs__fill_4 + PLACED ( 427200 293040 ) N ;
+    - FILLER_41_422 sky130_fd_sc_hs__fill_1 + PLACED ( 424320 293040 ) N ;
     - FILLER_41_418 sky130_fd_sc_hs__fill_4 + PLACED ( 420480 293040 ) N ;
     - FILLER_41_410 sky130_fd_sc_hs__fill_8 + PLACED ( 412800 293040 ) N ;
     - FILLER_41_402 sky130_fd_sc_hs__fill_8 + PLACED ( 405120 293040 ) N ;
@@ -4685,9 +4686,9 @@ COMPONENTS 7905 ;
     - FILLER_41_324 sky130_fd_sc_hs__fill_1 + PLACED ( 330240 293040 ) N ;
     - FILLER_41_320 sky130_fd_sc_hs__fill_4 + PLACED ( 326400 293040 ) N ;
     - FILLER_41_312 sky130_fd_sc_hs__fill_8 + PLACED ( 318720 293040 ) N ;
-    - FILLER_41_306 sky130_fd_sc_hs__fill_2 + PLACED ( 312960 293040 ) N ;
-    - FILLER_41_303 sky130_fd_sc_hs__fill_1 + PLACED ( 310080 293040 ) N ;
-    - FILLER_41_299 sky130_fd_sc_hs__fill_4 + PLACED ( 306240 293040 ) N ;
+    - FILLER_41_304 sky130_fd_sc_hs__fill_4 + PLACED ( 311040 293040 ) N ;
+    - FILLER_41_301 sky130_fd_sc_hs__fill_1 + PLACED ( 308160 293040 ) N ;
+    - FILLER_41_299 sky130_fd_sc_hs__fill_2 + PLACED ( 306240 293040 ) N ;
     - FILLER_41_291 sky130_fd_sc_hs__fill_8 + PLACED ( 298560 293040 ) N ;
     - FILLER_41_283 sky130_fd_sc_hs__fill_8 + PLACED ( 290880 293040 ) N ;
     - FILLER_41_275 sky130_fd_sc_hs__fill_8 + PLACED ( 283200 293040 ) N ;
@@ -4842,9 +4843,8 @@ COMPONENTS 7905 ;
     - FILLER_39_322 sky130_fd_sc_hs__fill_2 + PLACED ( 328320 279720 ) N ;
     - FILLER_39_314 sky130_fd_sc_hs__fill_8 + PLACED ( 320640 279720 ) N ;
     - FILLER_39_306 sky130_fd_sc_hs__fill_8 + PLACED ( 312960 279720 ) N ;
-    - FILLER_39_296 sky130_fd_sc_hs__fill_2 + PLACED ( 303360 279720 ) N ;
-    - FILLER_39_293 sky130_fd_sc_hs__fill_1 + PLACED ( 300480 279720 ) N ;
-    - FILLER_39_291 sky130_fd_sc_hs__fill_2 + PLACED ( 298560 279720 ) N ;
+    - FILLER_39_294 sky130_fd_sc_hs__fill_4 + PLACED ( 301440 279720 ) N ;
+    - FILLER_39_291 sky130_fd_sc_hs__fill_1 + PLACED ( 298560 279720 ) N ;
     - FILLER_39_283 sky130_fd_sc_hs__fill_8 + PLACED ( 290880 279720 ) N ;
     - FILLER_39_275 sky130_fd_sc_hs__fill_8 + PLACED ( 283200 279720 ) N ;
     - FILLER_39_267 sky130_fd_sc_hs__fill_8 + PLACED ( 275520 279720 ) N ;
@@ -4854,8 +4854,7 @@ COMPONENTS 7905 ;
     - FILLER_39_244 sky130_fd_sc_hs__fill_8 + PLACED ( 253440 279720 ) N ;
     - FILLER_39_236 sky130_fd_sc_hs__fill_8 + PLACED ( 245760 279720 ) N ;
     - FILLER_39_228 sky130_fd_sc_hs__fill_8 + PLACED ( 238080 279720 ) N ;
-    - FILLER_39_216 sky130_fd_sc_hs__fill_2 + PLACED ( 226560 279720 ) N ;
-    - FILLER_39_212 sky130_fd_sc_hs__fill_2 + PLACED ( 222720 279720 ) N ;
+    - FILLER_39_214 sky130_fd_sc_hs__fill_4 + PLACED ( 224640 279720 ) N ;
     - FILLER_39_208 sky130_fd_sc_hs__fill_4 + PLACED ( 218880 279720 ) N ;
     - FILLER_39_205 sky130_fd_sc_hs__fill_2 + PLACED ( 216000 279720 ) N ;
     - FILLER_39_197 sky130_fd_sc_hs__fill_8 + PLACED ( 208320 279720 ) N ;
@@ -4926,8 +4925,7 @@ COMPONENTS 7905 ;
     - FILLER_38_296 sky130_fd_sc_hs__fill_4 + PLACED ( 303360 273060 ) FS ;
     - FILLER_38_287 sky130_fd_sc_hs__fill_8 + PLACED ( 294720 273060 ) FS ;
     - FILLER_38_280 sky130_fd_sc_hs__fill_4 + PLACED ( 288000 273060 ) FS ;
-    - FILLER_38_269 sky130_fd_sc_hs__fill_2 + PLACED ( 277440 273060 ) FS ;
-    - FILLER_38_265 sky130_fd_sc_hs__fill_2 + PLACED ( 273600 273060 ) FS ;
+    - FILLER_38_267 sky130_fd_sc_hs__fill_4 + PLACED ( 275520 273060 ) FS ;
     - FILLER_38_261 sky130_fd_sc_hs__fill_4 + PLACED ( 269760 273060 ) FS ;
     - FILLER_38_253 sky130_fd_sc_hs__fill_8 + PLACED ( 262080 273060 ) FS ;
     - FILLER_38_245 sky130_fd_sc_hs__fill_8 + PLACED ( 254400 273060 ) FS ;
@@ -5329,12 +5327,13 @@ COMPONENTS 7905 ;
     - FILLER_33_275 sky130_fd_sc_hs__fill_1 + PLACED ( 283200 239760 ) N ;
     - FILLER_33_267 sky130_fd_sc_hs__fill_8 + PLACED ( 275520 239760 ) N ;
     - FILLER_33_265 sky130_fd_sc_hs__fill_1 + PLACED ( 273600 239760 ) N ;
-    - FILLER_33_257 sky130_fd_sc_hs__fill_8 + PLACED ( 265920 239760 ) N ;
-    - FILLER_33_249 sky130_fd_sc_hs__fill_8 + PLACED ( 258240 239760 ) N ;
-    - FILLER_33_241 sky130_fd_sc_hs__fill_8 + PLACED ( 250560 239760 ) N ;
-    - FILLER_33_233 sky130_fd_sc_hs__fill_8 + PLACED ( 242880 239760 ) N ;
-    - FILLER_33_225 sky130_fd_sc_hs__fill_8 + PLACED ( 235200 239760 ) N ;
-    - FILLER_33_221 sky130_fd_sc_hs__fill_2 + PLACED ( 231360 239760 ) N ;
+    - FILLER_33_263 sky130_fd_sc_hs__fill_2 + PLACED ( 271680 239760 ) N ;
+    - FILLER_33_259 sky130_fd_sc_hs__fill_4 + PLACED ( 267840 239760 ) N ;
+    - FILLER_33_251 sky130_fd_sc_hs__fill_8 + PLACED ( 260160 239760 ) N ;
+    - FILLER_33_243 sky130_fd_sc_hs__fill_8 + PLACED ( 252480 239760 ) N ;
+    - FILLER_33_235 sky130_fd_sc_hs__fill_8 + PLACED ( 244800 239760 ) N ;
+    - FILLER_33_227 sky130_fd_sc_hs__fill_8 + PLACED ( 237120 239760 ) N ;
+    - FILLER_33_221 sky130_fd_sc_hs__fill_4 + PLACED ( 231360 239760 ) N ;
     - FILLER_33_208 sky130_fd_sc_hs__fill_4 + PLACED ( 218880 239760 ) N ;
     - FILLER_33_203 sky130_fd_sc_hs__fill_4 + PLACED ( 214080 239760 ) N ;
     - FILLER_33_193 sky130_fd_sc_hs__fill_1 + PLACED ( 204480 239760 ) N ;
@@ -5863,8 +5862,9 @@ COMPONENTS 7905 ;
     - FILLER_26_412 sky130_fd_sc_hs__fill_1 + PLACED ( 414720 193140 ) FS ;
     - FILLER_26_410 sky130_fd_sc_hs__fill_2 + PLACED ( 412800 193140 ) FS ;
     - FILLER_26_402 sky130_fd_sc_hs__fill_8 + PLACED ( 405120 193140 ) FS ;
-    - FILLER_26_390 sky130_fd_sc_hs__fill_2 + PLACED ( 393600 193140 ) FS ;
-    - FILLER_26_380 sky130_fd_sc_hs__fill_8 + PLACED ( 384000 193140 ) FS ;
+    - FILLER_26_388 sky130_fd_sc_hs__fill_4 + PLACED ( 391680 193140 ) FS ;
+    - FILLER_26_384 sky130_fd_sc_hs__fill_2 + PLACED ( 387840 193140 ) FS ;
+    - FILLER_26_380 sky130_fd_sc_hs__fill_4 + PLACED ( 384000 193140 ) FS ;
     - FILLER_26_372 sky130_fd_sc_hs__fill_8 + PLACED ( 376320 193140 ) FS ;
     - FILLER_26_365 sky130_fd_sc_hs__fill_4 + PLACED ( 369600 193140 ) FS ;
     - FILLER_26_359 sky130_fd_sc_hs__fill_2 + PLACED ( 363840 193140 ) FS ;
@@ -6179,10 +6179,10 @@ COMPONENTS 7905 ;
     - FILLER_22_340 sky130_fd_sc_hs__fill_8 + PLACED ( 345600 166500 ) FS ;
     - FILLER_22_332 sky130_fd_sc_hs__fill_8 + PLACED ( 337920 166500 ) FS ;
     - FILLER_22_324 sky130_fd_sc_hs__fill_8 + PLACED ( 330240 166500 ) FS ;
-    - FILLER_22_318 sky130_fd_sc_hs__fill_2 + PLACED ( 324480 166500 ) FS ;
-    - FILLER_22_314 sky130_fd_sc_hs__fill_2 + PLACED ( 320640 166500 ) FS ;
-    - FILLER_22_304 sky130_fd_sc_hs__fill_2 + PLACED ( 311040 166500 ) FS ;
-    - FILLER_22_296 sky130_fd_sc_hs__fill_8 + PLACED ( 303360 166500 ) FS ;
+    - FILLER_22_316 sky130_fd_sc_hs__fill_4 + PLACED ( 322560 166500 ) FS ;
+    - FILLER_22_310 sky130_fd_sc_hs__fill_4 + PLACED ( 316800 166500 ) FS ;
+    - FILLER_22_300 sky130_fd_sc_hs__fill_2 + PLACED ( 307200 166500 ) FS ;
+    - FILLER_22_296 sky130_fd_sc_hs__fill_4 + PLACED ( 303360 166500 ) FS ;
     - FILLER_22_293 sky130_fd_sc_hs__fill_2 + PLACED ( 300480 166500 ) FS ;
     - FILLER_22_285 sky130_fd_sc_hs__fill_8 + PLACED ( 292800 166500 ) FS ;
     - FILLER_22_277 sky130_fd_sc_hs__fill_8 + PLACED ( 285120 166500 ) FS ;
@@ -7980,22 +7980,19 @@ COMPONENTS 7905 ;
     - FILLER_0_20 sky130_fd_sc_hs__fill_8 + PLACED ( 38400 19980 ) FS ;
     - FILLER_0_12 sky130_fd_sc_hs__fill_8 + PLACED ( 30720 19980 ) FS ;
     - FILLER_0_4 sky130_fd_sc_hs__fill_8 + PLACED ( 23040 19980 ) FS ;
-    - ANTENNA_12 sky130_fd_sc_hs__diode_2 + PLACED ( 322560 166500 ) FS ;
-    - ANTENNA_11 sky130_fd_sc_hs__diode_2 + PLACED ( 391680 193140 ) FS ;
-    - ANTENNA_10 sky130_fd_sc_hs__diode_2 + PLACED ( 287040 379620 ) FS ;
-    - ANTENNA_9 sky130_fd_sc_hs__diode_2 + PLACED ( 427200 293040 ) N ;
-    - ANTENNA_8 sky130_fd_sc_hs__diode_2 + PLACED ( 275520 273060 ) FS ;
-    - ANTENNA_7 sky130_fd_sc_hs__diode_2 + PLACED ( 349440 319680 ) N ;
-    - ANTENNA_6 sky130_fd_sc_hs__diode_2 + PLACED ( 276480 313020 ) FS ;
-    - ANTENNA_5 sky130_fd_sc_hs__diode_2 + PLACED ( 426240 372960 ) N ;
-    - ANTENNA_4 sky130_fd_sc_hs__diode_2 + PLACED ( 233280 239760 ) N ;
-    - ANTENNA_3 sky130_fd_sc_hs__diode_2 + PLACED ( 224640 279720 ) N ;
-    - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 301440 279720 ) N ;
-    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 362880 386280 ) N ;
-    - ANTENNA_0 sky130_fd_sc_hs__diode_2 + PLACED ( 311040 293040 ) N ;
-    - FILLER_83_479 sky130_fd_sc_hs__fill_1 + PLACED ( 479040 572760 ) N ;
-    - FILLER_83_481 sky130_fd_sc_hs__fill_8 + PLACED ( 480960 572760 ) N ;
-    - FILLER_83_489 sky130_fd_sc_hs__fill_8 + PLACED ( 488640 572760 ) N ;
+    - ANTENNA_12 sky130_fd_sc_hs__diode_2 + PLACED ( 320640 166500 ) FS ;
+    - ANTENNA_11 sky130_fd_sc_hs__diode_2 + PLACED ( 389760 193140 ) FS ;
+    - ANTENNA_10 sky130_fd_sc_hs__diode_2 + PLACED ( 285120 379620 ) FS ;
+    - ANTENNA_9 sky130_fd_sc_hs__diode_2 + PLACED ( 425280 293040 ) N ;
+    - ANTENNA_8 sky130_fd_sc_hs__diode_2 + PLACED ( 273600 273060 ) FS ;
+    - ANTENNA_7 sky130_fd_sc_hs__diode_2 + PLACED ( 347520 319680 ) N ;
+    - ANTENNA_6 sky130_fd_sc_hs__diode_2 + PLACED ( 274560 313020 ) FS ;
+    - ANTENNA_5 sky130_fd_sc_hs__diode_2 + PLACED ( 424320 372960 ) N ;
+    - ANTENNA_4 sky130_fd_sc_hs__diode_2 + PLACED ( 235200 239760 ) N ;
+    - ANTENNA_3 sky130_fd_sc_hs__diode_2 + PLACED ( 222720 279720 ) N ;
+    - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 299520 279720 ) N ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 360960 386280 ) N ;
+    - ANTENNA_0 sky130_fd_sc_hs__diode_2 + PLACED ( 309120 293040 ) N ;
     - FILLER_83_497 sky130_fd_sc_hs__fill_8 + PLACED ( 496320 572760 ) N ;
     - FILLER_83_505 sky130_fd_sc_hs__fill_4 + PLACED ( 504000 572760 ) N ;
     - FILLER_83_509 sky130_fd_sc_hs__fill_1 + PLACED ( 507840 572760 ) N ;
@@ -8013,60 +8010,222 @@ COMPONENTS 7905 ;
     - FILLER_83_579 sky130_fd_sc_hs__fill_1 + PLACED ( 575040 572760 ) N ;
 END COMPONENTS
 PINS 54 ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 284900 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL + PLACED ( 129120 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL + PLACED ( 56160 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 503940 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL + PLACED ( 344160 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL + PLACED ( 328800 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL + PLACED ( 399840 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL + PLACED ( 271200 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 338180 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL + PLACED ( 593760 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 314500 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL + PLACED ( 21600 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL + PLACED ( 436320 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL + PLACED ( 92640 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL + PLACED ( 378720 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL + PLACED ( 77280 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 39220 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 394420 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 148740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 480260 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL + PLACED ( 578400 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL + PLACED ( 163680 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 62900 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL + PLACED ( 543840 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL + PLACED ( 307680 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL + PLACED ( 184800 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL + PLACED ( 236640 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL + PLACED ( 507360 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL + PLACED ( 559200 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 560180 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL + PLACED ( 255840 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 370740 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL + PLACED ( 800 119140 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 536500 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL + PLACED ( 599120 95460 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - reset + NET reset + DIRECTION INPUT + USE SIGNAL + PLACED ( 148320 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 113760 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 470880 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 363360 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 292320 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 221280 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 450660 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 40800 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 415200 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 261220 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 228660 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 200160 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 451680 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 426980 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 599120 204980 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
-    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 6240 483 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 486240 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + PLACED ( 522720 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 800 172420 ) N + LAYER met3 ( -800 -300 ) ( 800 300 ) ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 284900 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 129120 599777 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 56160 599777 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 503940 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 344160 599777 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 328800 483 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 399840 483 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 271200 599777 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 338180 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 593760 599777 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 314500 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 21600 599777 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 436320 483 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 92640 599777 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 378720 599777 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 77280 483 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 39220 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 394420 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 148740 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 480260 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 578400 483 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 163680 599777 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 62900 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 543840 483 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 307680 599777 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 184800 483 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 236640 599777 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 507360 483 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 559200 599777 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 560180 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 255840 483 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 370740 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 119140 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 536500 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 95460 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 148320 483 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 113760 483 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 470880 483 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 363360 483 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 292320 483 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 221280 483 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 450660 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 40800 483 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 415200 599777 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 261220 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 228660 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 200160 599777 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 451680 599777 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 426980 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 599120 204980 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 6240 483 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 486240 599777 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -140 -483 ) ( 140 483 )
+        + PLACED ( 522720 599777 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -800 -300 ) ( 800 300 )
+        + PLACED ( 800 172420 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VSS + USE GROUND

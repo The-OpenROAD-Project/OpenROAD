@@ -1,3 +1,4 @@
+IFP 0001 InitFloorplan.cc:364      Added {} rows of {} sites.
 IFP 0002 InitFloorplan.cc:552      pin layer {} not found.
 IFP 0003 InitFloorplan.cc:410      unknown track direction
 IFP 0004 InitFloorplan.cc:438      track file line {} direction must be X or Y'.
@@ -6,3 +7,12 @@ IFP 0007 InitFloorplan.cc:497      layer {} has zero pitch.
 IFP 0008 InitFloorplan.cc:513      layer {} has zero pitch.
 IFP 0009 InitFloorplan.cc:330      SITE {} not found.
 IFP 0010 InitFloorplan.cc:457      Tracks file not readable.
+IFP 0011 InitFloorplan.tcl:56      use -site to add placement rows.
+IFP 0012 InitFloorplan.tcl:69      -utilization must be from 0% to 100%
+IFP 0013 InitFloorplan.tcl:87      -core_space is either a list of 4 margins or one value for all margins.
+IFP 0014 InitFloorplan.tcl:99      -aspect_ratio must be from 0.0 to 1.0
+IFP 0015 InitFloorplan.tcl:113     -die_area is a list of 4 coordinates.
+IFP 0016 InitFloorplan.tcl:125     -core_area is a list of 4 coordinates.
+IFP 0017 InitFloorplan.tcl:141     no -core_area specified.
+IFP 0019 InitFloorplan.tcl:144     no -utilization or -die_area specified.
+IFP 0020 InitFloorplan.tcl:154     layer $pin_layer not found.

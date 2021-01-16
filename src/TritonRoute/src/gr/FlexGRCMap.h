@@ -42,27 +42,27 @@ namespace fr {
   class FlexGRCMap {
   public:
     // constructors
-    FlexGRCMap (frDesign *designIn): design(designIn), bits() {
-      auto &gCellPatterns = design->getTopBlock()->getGCellPatterns();
-      xgp = &(gCellPatterns.at(0));
-      ygp = &(gCellPatterns.at(1));
+    FlexGRCMap (frDesign *designIn): design_(designIn), bits_() {
+      auto &gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+      xgp_ = &(gCellPatterns.at(0));
+      ygp_ = &(gCellPatterns.at(1));
     }
-    FlexGRCMap (FlexGRCMap* in): design(in->design), xgp(in->xgp), ygp(in->ygp),
-                                 numLayers(in->numLayers), bits(in->bits), 
-                                 zMap(in->zMap), layerTrackPitches(in->layerTrackPitches),
-                                 layerLine2ViaPitches(in->layerLine2ViaPitches),
-                                 layerPitches(in->layerPitches) {}
+    FlexGRCMap (FlexGRCMap* in): design_(in->design_), xgp_(in->xgp_), ygp_(in->ygp_),
+                                 numLayers_(in->numLayers_), bits_(in->bits_), 
+                                 zMap_(in->zMap_), layerTrackPitches_(in->layerTrackPitches_),
+                                 layerLine2ViaPitches_(in->layerLine2ViaPitches_),
+                                 layerPitches_(in->layerPitches_) {}
     // getters
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
 
     frLayerNum getNumLayers() {
-      return numLayers;
+      return numLayers_;
     }
 
     std::map<frLayerNum, frPrefRoutingDirEnum> getZMap() {
-      return zMap;
+      return zMap_;
     }
 
     unsigned getSupply(unsigned x, unsigned y, unsigned z, frDirEnum dir, bool isRaw = false) const {
@@ -97,7 +97,7 @@ namespace fr {
 
     unsigned getSupply2D(unsigned x, unsigned y, frDirEnum dir, bool isRaw = false) const {
       unsigned supply = 0;
-      for (unsigned z = 0; z < zMap.size(); z++) {
+      for (unsigned z = 0; z < zMap_.size(); z++) {
         correct(x, y, z, dir);
         if (isValid(x, y, z)) {
           auto idx = getIdx(x, y, z);
@@ -159,7 +159,7 @@ namespace fr {
 
     unsigned getDemand2D(unsigned x, unsigned y, frDirEnum dir, bool isRaw = false) const {
       unsigned demand = 0;
-      for (unsigned z = 0; z < zMap.size(); z++) {
+      for (unsigned z = 0; z < zMap_.size(); z++) {
         correct(x, y, z, dir);
         if (isValid(x, y, z)) {
           auto idx = getIdx(x, y, z);
@@ -440,13 +440,13 @@ namespace fr {
     }
 
     void setLayerTrackPitches(const std::vector<frCoord> &in) {
-      layerTrackPitches = in;
+      layerTrackPitches_ = in;
     }
     void setLayerLine2ViaPitches(const std::vector<frCoord> &in) {
-      layerLine2ViaPitches = in;
+      layerLine2ViaPitches_ = in;
     }
     void setLayerPitches(const std::vector<frCoord> &in) {
-      layerPitches = in;
+      layerPitches_ = in;
     }
 
     // other functions
@@ -458,44 +458,44 @@ namespace fr {
     void printLayers();
 
     void cleanup() {
-      bits.clear();
-      bits.shrink_to_fit();
+      bits_.clear();
+      bits_.shrink_to_fit();
     }
   protected:
-    frDesign* design;
-    const frGCellPattern *xgp;
-    const frGCellPattern *ygp;
-    frLayerNum numLayers;
+    frDesign* design_;
+    const frGCellPattern *xgp_;
+    const frGCellPattern *ygp_;
+    frLayerNum numLayers_;
 
     // E == horizontal, N == vertical
     // [63-48] demand E; [47-32] demand N // last bit is fractional
     // [31-24] supply E; [23-16] supply N
     // [15-8] cong history
     // [3] block E [2] block N [1] overflow E; [0] overflow N
-    std::vector<unsigned long long> bits;
-    std::map<frLayerNum, frPrefRoutingDirEnum> zMap;
-    std::vector<frCoord> layerTrackPitches;
-    std::vector<frCoord> layerLine2ViaPitches;
-    std::vector<frCoord> layerPitches;
+    std::vector<unsigned long long> bits_;
+    std::map<frLayerNum, frPrefRoutingDirEnum> zMap_;
+    std::vector<frCoord> layerTrackPitches_;
+    std::vector<frCoord> layerLine2ViaPitches_;
+    std::vector<frCoord> layerPitches_;
 
     // internal getters
     bool getBit(unsigned idx, unsigned pos) const {
-      return (bits[idx] >> pos) & 1;
+      return (bits_[idx] >> pos) & 1;
     }
     unsigned getBits(unsigned idx, unsigned pos, unsigned length) const {
-      auto tmp = bits[idx] & (((1ull << length) - 1) << pos);
+      auto tmp = bits_[idx] & (((1ull << length) - 1) << pos);
       return tmp >> pos;
     }
     unsigned getIdx(unsigned xIdx, unsigned yIdx, unsigned zIdx) const {
-      return (xIdx + yIdx * xgp->getCount() + zIdx * xgp->getCount() * ygp->getCount());
+      return (xIdx + yIdx * xgp_->getCount() + zIdx * xgp_->getCount() * ygp_->getCount());
     }
 
     // internal setters
     void setBit(unsigned idx, unsigned pos) {
-      bits[idx] |= 1 << pos;
+      bits_[idx] |= 1 << pos;
     }
     void resetBit(unsigned idx, unsigned pos) {
-      bits[idx] &= ~(1 << pos);
+      bits_[idx] &= ~(1 << pos);
     }
     void addToBits(unsigned idx, unsigned pos, unsigned length, unsigned val) {
       auto tmp = getBits(idx, pos, length) + val;
@@ -508,8 +508,8 @@ namespace fr {
       setBits(idx, pos, length, tmp);
     }
     void setBits(unsigned idx, unsigned pos, unsigned length, unsigned val) {
-      bits[idx] &= ~(((1ull << length) - 1) << pos); // clear related bits to 0
-      bits[idx] |= ((unsigned long long)val & ((1ull << length) - 1)) << pos; // only get last length bits of val
+      bits_[idx] &= ~(((1ull << length) - 1) << pos); // clear related bits to 0
+      bits_[idx] |= ((unsigned long long)val & ((1ull << length) - 1)) << pos; // only get last length bits of val
     }
 
     // internal utility
@@ -567,7 +567,7 @@ namespace fr {
 
     bool isValid(unsigned x, unsigned y, unsigned z) const {
       if (x < 0 || y < 0 || z < 0 ||
-          x >= xgp->getCount() || y >= ygp->getCount() || z >= design->getTech()->getLayers().size()) {
+          x >= xgp_->getCount() || y >= ygp_->getCount() || z >= design_->getTech()->getLayers().size()) {
         return false;
       } else {
         return true;

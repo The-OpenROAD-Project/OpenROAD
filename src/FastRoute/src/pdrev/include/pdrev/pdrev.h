@@ -33,7 +33,13 @@
 
 #include <vector>
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace PD {
+
+using utl::Logger;
 
 class Graph;
 
@@ -55,7 +61,7 @@ typedef struct
 class PdRev
 {
  public:
-  PdRev() = default;
+  PdRev(Logger* logger) : _logger(logger) {};
   void setAlphaPDII(float alpha);
   void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
   void runPDII();
@@ -83,6 +89,7 @@ class PdRev
   bool runOneNet = false;
   unsigned net_num = 0;
   std::vector<Graph*> my_graphs;
+  Logger* _logger;
 };
 
 }  // namespace PD

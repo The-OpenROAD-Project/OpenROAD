@@ -45,6 +45,10 @@
 #include <unordered_map>
 #include <vector>
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace cts {
 
 enum InstType : uint8_t
@@ -201,7 +205,7 @@ class Clock
       std::vector<std::pair<float, float>> sinks);
   Box<double> computeNormalizedSinkRegion(double factor);
 
-  void report() const;
+  void report(utl::Logger* _logger) const;
 
   void forEachSink(const std::function<void(const ClockInst&)>& func) const;
   void forEachSink(const std::function<void(ClockInst&)>& func);

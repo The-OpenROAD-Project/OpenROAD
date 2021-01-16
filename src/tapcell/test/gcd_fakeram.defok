@@ -103,88 +103,271 @@ COMPONENTS 80 ;
     - PHY_57 FILLCELL_X1 + FIXED ( 59280 81200 ) FN ;
     - PHY_58 FILLCELL_X1 + FIXED ( 0 8400 ) N ;
     - PHY_59 FILLCELL_X1 + FIXED ( 59280 8400 ) FN ;
-    - PHY_60 FILLCELL_X1 + FIXED ( 40280 0 ) FS ;
-    - PHY_61 FILLCELL_X1 + FIXED ( 80560 0 ) FS ;
-    - PHY_62 FILLCELL_X1 + FIXED ( 80180 2800 ) N ;
-    - PHY_63 FILLCELL_X1 + FIXED ( 40280 5600 ) FS ;
-    - PHY_64 FILLCELL_X1 + FIXED ( 80560 5600 ) FS ;
-    - PHY_65 FILLCELL_X1 + FIXED ( 40280 11200 ) FS ;
-    - PHY_66 FILLCELL_X1 + FIXED ( 40280 16800 ) FS ;
-    - PHY_67 FILLCELL_X1 + FIXED ( 40280 22400 ) FS ;
-    - PHY_68 FILLCELL_X1 + FIXED ( 40280 28000 ) FS ;
-    - PHY_69 FILLCELL_X1 + FIXED ( 40280 33600 ) FS ;
-    - PHY_70 FILLCELL_X1 + FIXED ( 40280 39200 ) FS ;
-    - PHY_71 FILLCELL_X1 + FIXED ( 40280 44800 ) FS ;
-    - PHY_72 FILLCELL_X1 + FIXED ( 40280 50400 ) FS ;
-    - PHY_73 FILLCELL_X1 + FIXED ( 40280 56000 ) FS ;
-    - PHY_74 FILLCELL_X1 + FIXED ( 40280 61600 ) FS ;
-    - PHY_75 FILLCELL_X1 + FIXED ( 40280 67200 ) FS ;
-    - PHY_76 FILLCELL_X1 + FIXED ( 40280 72800 ) FS ;
-    - PHY_77 FILLCELL_X1 + FIXED ( 40280 78400 ) FS ;
-    - PHY_78 FILLCELL_X1 + FIXED ( 40280 81200 ) N ;
+    - PHY_60 FILLCELL_X1 + FIXED ( 39900 0 ) FS ;
+    - PHY_61 FILLCELL_X1 + FIXED ( 79800 0 ) FS ;
+    - PHY_62 FILLCELL_X1 + FIXED ( 79800 2800 ) N ;
+    - PHY_63 FILLCELL_X1 + FIXED ( 39900 5600 ) FS ;
+    - PHY_64 FILLCELL_X1 + FIXED ( 79800 5600 ) FS ;
+    - PHY_65 FILLCELL_X1 + FIXED ( 39900 11200 ) FS ;
+    - PHY_66 FILLCELL_X1 + FIXED ( 39900 16800 ) FS ;
+    - PHY_67 FILLCELL_X1 + FIXED ( 39900 22400 ) FS ;
+    - PHY_68 FILLCELL_X1 + FIXED ( 39900 28000 ) FS ;
+    - PHY_69 FILLCELL_X1 + FIXED ( 39900 33600 ) FS ;
+    - PHY_70 FILLCELL_X1 + FIXED ( 39900 39200 ) FS ;
+    - PHY_71 FILLCELL_X1 + FIXED ( 39900 44800 ) FS ;
+    - PHY_72 FILLCELL_X1 + FIXED ( 39900 50400 ) FS ;
+    - PHY_73 FILLCELL_X1 + FIXED ( 39900 56000 ) FS ;
+    - PHY_74 FILLCELL_X1 + FIXED ( 39900 61600 ) FS ;
+    - PHY_75 FILLCELL_X1 + FIXED ( 39900 67200 ) FS ;
+    - PHY_76 FILLCELL_X1 + FIXED ( 39900 72800 ) FS ;
+    - PHY_77 FILLCELL_X1 + FIXED ( 39900 78400 ) FS ;
+    - PHY_78 FILLCELL_X1 + FIXED ( 39900 81200 ) N ;
 END COMPONENTS
 PINS 61 ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 37810 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL + PLACED ( 41230 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL + PLACED ( 43130 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL + PLACED ( 38190 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL + PLACED ( 42750 140 ) N + LAYER metal4 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 24220 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 41020 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 48580 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 54180 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 43260 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 35420 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 63420 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL + PLACED ( 72390 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL + PLACED ( 46550 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL + PLACED ( 22610 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL + PLACED ( 140 54460 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL + PLACED ( 35910 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 37380 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL + PLACED ( 38270 140 ) N + LAYER metal4 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL + PLACED ( 30210 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL + PLACED ( 35530 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL + PLACED ( 11590 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 26180 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 42980 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 63420 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 52220 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 20860 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL + PLACED ( 88090 60060 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL + PLACED ( 79990 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL + PLACED ( 39330 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL + PLACED ( 24510 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL + PLACED ( 30210 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 46620 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 140 48860 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 71820 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - reset + NET reset + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 74060 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 34020 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 34010 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 30970 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 26790 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 18060 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 35980 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 400 53900 ) N + LAYER metal7 ( -400 -400 ) ( 400 400 ) ;
-    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 60340 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 88020 35980 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 88090 29260 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 88020 69580 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 75810 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 46110 83860 ) N + LAYER metal4 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 27930 83930 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 58380 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 49980 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + PLACED ( 70 75460 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 70 76300 ) N + LAYER metal3 ( -70 -70 ) ( 70 70 ) ;
-    - mem_out[6] + NET mem_out[6] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 47690 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - mem_out[5] + NET mem_out[5] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 47790 140 ) N + LAYER metal4 ( -140 -140 ) ( 140 140 ) ;
-    - mem_out[4] + NET mem_out[4] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 47790 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - mem_out[3] + NET mem_out[3] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 48450 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
-    - mem_out[2] + NET mem_out[2] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 47230 400 ) N + LAYER metal8 ( -400 -400 ) ( 400 400 ) ;
-    - mem_out[1] + NET mem_out[1] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 47230 800 ) N + LAYER metal10 ( -800 -800 ) ( 800 800 ) ;
-    - mem_out[0] + NET mem_out[0] + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 46930 70 ) N + LAYER metal2 ( -70 -70 ) ( 70 70 ) ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 37810 83930 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 41230 70 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 43130 70 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 38190 70 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 42750 140 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 24220 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 41020 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 48580 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54180 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 43260 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 35420 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 63420 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 72390 83930 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 46550 83930 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 22610 83930 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 54460 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 35910 83930 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 37380 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 38270 140 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30210 70 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 35530 70 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 11590 70 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 26180 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 42980 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63420 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 52220 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 20860 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 60060 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 79990 83930 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 39330 83930 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 24510 83930 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30210 83930 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 46620 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 48860 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 71820 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74060 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 34020 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 34010 70 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 30970 70 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 26790 70 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 18060 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 35980 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal7 ( -400 -400 ) ( 400 400 )
+        + PLACED ( 400 53900 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60340 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 88020 35980 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 88090 29260 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 88020 69580 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 75810 83930 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 46110 83860 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 27930 83930 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58380 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 49980 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 75460 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76300 ) N ;
+    - mem_out[6] + NET mem_out[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 47690 70 ) N ;
+    - mem_out[5] + NET mem_out[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 47790 140 ) N ;
+    - mem_out[4] + NET mem_out[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 47790 140 ) N ;
+    - mem_out[3] + NET mem_out[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 48450 70 ) N ;
+    - mem_out[2] + NET mem_out[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal8 ( -400 -400 ) ( 400 400 )
+        + PLACED ( 47230 400 ) N ;
+    - mem_out[1] + NET mem_out[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal10 ( -800 -800 ) ( 800 800 )
+        + PLACED ( 47230 800 ) N ;
+    - mem_out[0] + NET mem_out[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 46930 70 ) N ;
 END PINS
 NETS 61 ;
     - clk ( PIN clk ) + USE SIGNAL ;

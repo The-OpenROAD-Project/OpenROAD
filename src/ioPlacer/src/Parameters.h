@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __PARAMETERS_H_
-#define __PARAMETERS_H_
+#pragma once
 
 #include <string>
 
@@ -42,71 +41,88 @@ namespace ppl {
 
 class Parameters
 {
- private:
-  bool _reportHPWL = false;
-  bool _forceSpread = true;
-  int _numSlots = -1;
-  float _slotsFactor = -1;
-  float _usage = -1;
-  float _usageFactor = -1;
-  float _horizontalThicknessMultiplier = 1;
-  float _verticalThicknessMultiplier = 1;
-  float _horizontalLengthExtend = -1;
-  float _verticalLengthExtend = -1;
-  float _horizontalLength = -1;
-  float _verticalLength = -1;
-  double _randSeed = 42.0;
-  int _boundariesOffset;
-  int _minDist;
-
  public:
   Parameters() = default;
-  void setReportHPWL(bool report) { _reportHPWL = report; }
-  bool getReportHPWL() const { return _reportHPWL; }
-  void setNumSlots(int numSlots) { _numSlots = numSlots; }
-  int getNumSlots() const { return _numSlots; }
-  void setSlotsFactor(float factor) { _slotsFactor = factor; }
-  float getSlotsFactor() const { return _slotsFactor; }
-  void setUsage(float usage) { _usage = usage; }
-  float getUsage() const { return _usage; }
-  void setUsageFactor(float factor) { _usageFactor = factor; }
-  float getUsageFactor() const { return _usageFactor; }
-  void setForceSpread(bool forceSpread) { _forceSpread = forceSpread; }
-  bool getForceSpread() const { return _forceSpread; }
+  void setReportHPWL(bool report) { report_hpwl_ = report; }
+  bool getReportHPWL() const { return report_hpwl_; }
+
+  void setNumSlots(int num_slots) { num_slots_ = num_slots; }
+  int getNumSlots() const { return num_slots_; }
+
+  void setSlotsFactor(float factor) { slots_factor_ = factor; }
+  float getSlotsFactor() const { return slots_factor_; }
+
+  void setUsage(float usage) { usage_ = usage; }
+  float getUsage() const { return usage_; }
+
+  void setUsageFactor(float factor) { usage_factor_ = factor; }
+  float getUsageFactor() const { return usage_factor_; }
+
+  void setForceSpread(bool force_spread) { force_spread_ = force_spread; }
+  bool getForceSpread() const { return force_spread_; }
+
   void setHorizontalLengthExtend(float length)
   {
-    _horizontalLengthExtend = length;
+    horizontal_length_extend_ = length;
   }
-  float getHorizontalLengthExtend() const { return _horizontalLengthExtend; }
-  void setVerticalLengthExtend(float length) { _verticalLengthExtend = length; }
-  float getVerticalLengthExtend() const { return _verticalLengthExtend; }
-  void setHorizontalLength(float length) { _horizontalLength = length; }
-  float getHorizontalLength() const { return _horizontalLength; }
-  void setVerticalLength(float length) { _verticalLength = length; }
-  float getVerticalLength() const { return _verticalLength; }
-  void setRandSeed(double seed) { _randSeed = seed; }
-  double getRandSeed() const { return _randSeed; }
+  float getHorizontalLengthExtend() const { return horizontal_length_extend_; }
+
+  void setVerticalLengthExtend(float length)
+  {
+    vertical_length_extend_ = length;
+  }
+  float getVerticalLengthExtend() const { return vertical_length_extend_; }
+
+  void setHorizontalLength(float length) { horizontal_length_ = length; }
+  float getHorizontalLength() const { return horizontal_length_; }
+
+  void setVerticalLength(float length) { vertical_length_ = length; }
+  float getVerticalLength() const { return vertical_length_; }
+
+  void setRandSeed(double seed) { rand_seed_ = seed; }
+  double getRandSeed() const { return rand_seed_; }
+
   void setHorizontalThicknessMultiplier(float length)
   {
-    _horizontalThicknessMultiplier = length;
+    horizontal_thickness_multiplier_ = length;
   }
+
   float getHorizontalThicknessMultiplier() const
   {
-    return _horizontalThicknessMultiplier;
+    return horizontal_thickness_multiplier_;
   }
+
   void setVerticalThicknessMultiplier(float length)
   {
-    _verticalThicknessMultiplier = length;
+    vertical_thickness_multiplier_ = length;
   }
   float getVerticalThicknessMultiplier() const
   {
-    return _verticalThicknessMultiplier;
+    return vertical_thickness_multiplier_;
   }
-  void setBoundariesOffset(int offset) { _boundariesOffset = offset; }
-  int getBoundariesOffset() const { return _boundariesOffset; }
-  void setMinDistance(int minDist) { _minDist = minDist; }
-  int getMinDistance() const { return _minDist; }
+
+  void setBoundariesOffset(int offset) { boundaries_offset_ = offset; }
+  int getBoundariesOffset() const { return boundaries_offset_; }
+
+  void setMinDistance(int min_dist) { min_dist_ = min_dist; }
+  int getMinDistance() const { return min_dist_; }
+
+ private:
+  bool report_hpwl_ = false;
+  bool force_spread_ = true;
+  int num_slots_ = -1;
+  float slots_factor_ = -1;
+  float usage_ = -1;
+  float usage_factor_ = -1;
+  float horizontal_thickness_multiplier_ = 1;
+  float vertical_thickness_multiplier_ = 1;
+  float horizontal_length_extend_ = -1;
+  float vertical_length_extend_ = -1;
+  float horizontal_length_ = -1;
+  float vertical_length_ = -1;
+  double rand_seed_ = 42.0;
+  int boundaries_offset_;
+  int min_dist_;
 };
 
 }  // namespace ppl
-#endif /* __PARAMETERS_H_ */
