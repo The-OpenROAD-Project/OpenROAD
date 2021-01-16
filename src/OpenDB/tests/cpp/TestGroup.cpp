@@ -212,7 +212,6 @@ BOOST_AUTO_TEST_CASE(test_group_net_iterators)
   group->addGroundNet(n3);
 
   nets = group->getGroundNets();
-  net_itr;
   BOOST_TEST(nets.reversible());
   for(int j = 0; j<2 ; j++)
   {
