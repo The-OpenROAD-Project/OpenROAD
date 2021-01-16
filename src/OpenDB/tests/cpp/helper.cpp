@@ -91,3 +91,8 @@ dbDatabase* create2LevetDbWithBTerms()
   IN1->setIoType(dbIoType::OUTPUT);
   return db;
 }
+#define TEST_ENUM_EQUAL(L, R) \
+  BOOST_TEST(static_cast<int>(L) == static_cast<int>(R))
+
+#define TEST_OBJECT_EQUAL(L, R) \
+  BOOST_TEST((bool) (L == R))
