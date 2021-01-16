@@ -34,6 +34,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "tritoncts/TritonCTS.h"
+
+#include <unistd.h>
+
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iterator>
+#include <thread>
+#include <unordered_set>
+
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
@@ -41,17 +52,10 @@
 #include "StaEngine.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
-
+#include "db_sta/dbSta.hh"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "openroad/Error.hh"
-#include "db_sta/dbSta.hh"
-
-#include <chrono>
-#include <ctime>
-#include <fstream>
-#include <unordered_set>
-#include <iterator>
 
 namespace cts {
 
@@ -87,6 +91,15 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
+  static bool debuggerAttched = false;
+  const char* attachDebugger = std::getenv("OPENROAD_DEBUG");
+  if (!debuggerAttched && attachDebugger != nullptr) {
+    pid_t procId = getpid();
+    std::string debugCmd = "ddd attach " + std::to_string(procId) + " &";
+    (void) std::system(debugCmd.c_str());
+    std::this_thread::sleep_for(std::chrono::microseconds(5000000));
+    debuggerAttched = true;
+  }
   printHeader();
   setupCharacterization();
   findClockRoots();

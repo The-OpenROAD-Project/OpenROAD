@@ -49,11 +49,11 @@
 #include "ui_selectedWidget.h"
 
 namespace gui {
-class SelectHighlightModel : public QAbstractTableModel
+class SelectionModel : public QAbstractTableModel
 {
   Q_OBJECT
  public:
-  SelectHighlightModel(const SelectionSet& objs);
+  SelectionModel(const SelectionSet& objs);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -74,13 +74,38 @@ class SelectHighlightModel : public QAbstractTableModel
   std::vector<const Selected*> tableData_;
 };
 
+class HighlightModel : public QAbstractTableModel
+{
+  Q_OBJECT
+ public:
+  HighlightModel(const HighlightSet& objs);
+
+  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
+  int columnCount(const QModelIndex& parent
+                  = QModelIndex()) const Q_DECL_OVERRIDE;
+
+  QVariant data(const QModelIndex& index,
+                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant headerData(int section,
+                      Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+  const Selected* getItemAt(int idx) const { return tableData_[idx].second; }
+
+  void populateModel();
+
+ private:
+  const HighlightSet& objs_;
+  std::vector<std::pair<int, const Selected*>> tableData_;
+};
+
 class SelectHighlightWindow : public QDockWidget
 {
   Q_OBJECT
 
  public:
   explicit SelectHighlightWindow(const SelectionSet& selSet,
-                                 const SelectionSet& hltSet,
+                                 const HighlightSet& hltSet,
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
 
@@ -107,8 +132,8 @@ class SelectHighlightWindow : public QDockWidget
 
  private:
   Ui::SelectHighlightWidget* ui;
-  SelectHighlightModel selectionModel_;
-  SelectHighlightModel highlightModel_;
+  SelectionModel selectionModel_;
+  HighlightModel highlightModel_;
 
   QMenu* selectContextMenu_;
   QMenu* highlightContextMenu_;

@@ -34,6 +34,7 @@
 
 #include <tcl.h>
 
+#include <array>
 #include <initializer_list>
 #include <set>
 #include <string>
@@ -61,7 +62,8 @@ class Descriptor
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   virtual void highlight(void* object,
                          Painter& painter,
-                         bool selectFlag = true) const = 0;
+                         bool selectFlag = true,
+                         int highlightGroup = 0) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -75,7 +77,8 @@ class OpenDbDescriptor : public Descriptor
 
   void highlight(void* object,
                  Painter& painter,
-                 bool selectFlag) const override;
+                 bool selectFlag,
+                 int highlightGroup) const override;
 
   static OpenDbDescriptor* get();
 
@@ -111,9 +114,29 @@ class Selected
     return descriptor_->getBBox(object_, bbox);
   }
 
-  void highlight(Painter& painter, bool selectFlag = true) const
+  bool isInst() const
   {
-    return descriptor_->highlight(object_, painter, selectFlag);
+    odb::dbObject* db_obj = static_cast<odb::dbObject*>(object_);
+    return db_obj->getObjectType() == odb::dbInstObj;
+  }
+
+  bool isNet() const
+  {
+    odb::dbObject* db_obj = static_cast<odb::dbObject*>(object_);
+    return db_obj->getObjectType() == odb::dbNetObj;
+  }
+
+  odb::dbObject* getDbObject() const
+  {
+    odb::dbObject* db_obj = static_cast<odb::dbObject*>(object_);
+    return db_obj;
+  }
+
+  void highlight(Painter& painter,
+                 bool selectFlag = true,
+                 int highlightGroup = 0) const
+  {
+    return descriptor_->highlight(object_, painter, selectFlag, highlightGroup);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -131,6 +154,8 @@ class Selected
 
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
+using HighlightSet = std::array<SelectionSet, 7>;  // Only 7 Descrete Highlight
+                                                   // Color is supported for now
 
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
@@ -171,9 +196,18 @@ class Painter
   static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
+  static inline const std::array<Painter::Color, 7> highlightColors{
+      Painter::green,
+      Painter::yellow,
+      Painter::cyan,
+      Painter::magenta,
+      Painter::red,
+      Painter::dark_green,
+      Painter::dark_magenta};
+
   // The color to highlight in
   static inline const Color highlight = yellow;
-  static inline const Color persistHighlight = cyan;
+  static inline const Color persistHighlight = yellow;  // cyan;
 
   virtual ~Painter() = default;
 
@@ -254,7 +288,8 @@ class Gui
   void addSelectedNets(const char* pattern,
                        bool matchCase = true,
                        bool matchRegEx = false,
-                       bool addToHighlightSet = false);
+                       bool addToHighlightSet = false,
+                       unsigned highlightGroup = 0);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
@@ -263,7 +298,19 @@ class Gui
   void addSelectedInsts(const char* pattern,
                         bool matchCase = true,
                         bool matchRegEx = true,
-                        bool addToHighlightSet = false);
+                        bool addToHighlightSet = false,
+                        unsigned highlightGroup = 0);
+  // check if any object(inst/net) is present in sect/highlight set
+  bool anyObjectInSet(bool selectionSet, bool instType) const;
+
+  void selectHighlightConnectedInsts(bool selectFlag, int highlightGroup = 0);
+  void selectHighlightConnectedNets(bool selectFlag,
+                                    bool output,
+                                    bool input,
+                                    int highlightGroup = 0);
+
+  void clearSelections();
+  void clearHighlights(int highlightGroup = 0);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);

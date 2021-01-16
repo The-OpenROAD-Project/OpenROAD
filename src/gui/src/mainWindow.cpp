@@ -32,6 +32,7 @@
 
 #include "mainWindow.h"
 
+#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
@@ -48,7 +49,7 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_, selected_, highlighted_)),
+      viewer_(new LayoutViewer(controls_, selected_, highlighted_, this)),
       selectionBrowser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
@@ -254,26 +255,42 @@ void MainWindow::setSelected(const Selected& selection)
   addSelected(selection);
 }
 
-void MainWindow::addHighlighted(const SelectionSet& highlights)
+void MainWindow::addHighlighted(const SelectionSet& highlights,
+                                unsigned highlightGroup)
 {
-  highlighted_.insert(highlights.begin(), highlights.end());
+  if (highlightGroup >= 7)
+    return;
+  highlighted_[highlightGroup].insert(highlights.begin(), highlights.end());
   emit highlightChanged();
 }
 
-void MainWindow::updateHighlightedSet(const QList<const Selected*>& items)
+void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
+                                      unsigned highlightGroup)
 {
+  if (highlightGroup >= 7)
+    return;
   for (auto item : items) {
-    highlighted_.insert(*item);
+    highlighted_[highlightGroup].insert(*item);
   }
   emit highlightChanged();
 }
 
-void MainWindow::clearHighlighted()
+void MainWindow::clearHighlighted(int highlightGroup)
 {
   if (highlighted_.empty())
     return;
-  highlighted_.clear();
-  emit highlightChanged();
+  int numItemsCleared = 0;
+  if (highlightGroup < 0) {
+    for (auto& highlightedSet : highlighted_) {
+      numItemsCleared += highlightedSet.size();
+      highlightedSet.clear();
+    }
+  } else if (highlightGroup < 7) {
+    numItemsCleared += highlighted_[highlightGroup].size();
+    highlighted_[highlightGroup].clear();
+  }
+  if (numItemsCleared > 0)
+    emit highlightChanged();
 }
 
 void MainWindow::removeFromSelected(const QList<const Selected*>& items)
@@ -286,13 +303,22 @@ void MainWindow::removeFromSelected(const QList<const Selected*>& items)
   emit selectionChanged();
 }
 
-void MainWindow::removeFromHighlighted(const QList<const Selected*>& items)
+void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
+                                       int highlightGroup)
 {
   if (items.empty())
     return;
-  for (auto& item : items) {
-    highlighted_.erase(*item);
+  if (highlightGroup < 0) {
+    for (auto& item : items) {
+      for (auto& highlightedSet : highlighted_)
+        highlightedSet.erase(*item);
+    }
+  } else if (highlightGroup < 7) {
+    for (auto& item : items) {
+      highlighted_[highlightGroup].erase(*item);
+    }
   }
+
   emit highlightChanged();
 }
 
@@ -307,12 +333,16 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
     return;
   odb::Rect itemsBBox;
   itemsBBox.mergeInit();
+  int mergeCnt = 0;
   for (auto& item : items) {
     odb::Rect itemBBox;
-    if (item->getBBox(itemBBox))
+    if (item->getBBox(itemBBox)) {
+      mergeCnt++;
       itemsBBox.merge(itemBBox);
+    }
   }
-
+  if (mergeCnt == 0)
+    return;
   zoomTo(itemsBBox);
 }
 
@@ -326,6 +356,91 @@ void MainWindow::showFindDialog()
   if (getBlock() == nullptr)
     return;
   findDialog_->exec();
+}
+
+bool MainWindow::anyObjectInSet(bool selectionSet, bool instType)
+{
+  if (selectionSet == true) {
+    for (auto& selObj : selected_) {
+      auto instObjType = selObj.isInst();
+      if (selObj.isInst() && instType == true)
+        return true;
+      if (selObj.isNet() && instType == false)
+        return true;
+    }
+    return false;
+  } else {
+    for (auto& highlightSet : highlighted_) {
+      for (auto& selObj : highlightSet) {
+        if (selObj.isInst() && instType == true)
+          return true;
+        if (selObj.isNet() && instType == false)
+          return true;
+      }
+    }
+  }
+  return false;
+}
+
+void MainWindow::selectHighlightConnectedInsts(bool selectFlag,
+                                               int highlightGroup)
+{
+  SelectionSet connInsts;
+  for (auto& selObj : selected_) {
+    if (selObj.isNet()) {
+      odb::dbObject* dbObj = selObj.getDbObject();
+      odb::dbNet* netObj = static_cast<odb::dbNet*>(dbObj);
+      auto instTerms = netObj->getITerms();
+      auto itr = instTerms.begin();
+      auto itrE = instTerms.end();
+      for (; itr != itrE; ++itr) {
+        auto iTerm = *itr;
+        connInsts.insert(Selected(iTerm));
+      }
+    }
+  }
+  if (connInsts.empty())
+    return;
+  if (selectFlag)
+    addSelected(connInsts);
+  else
+    addHighlighted(connInsts, highlightGroup);
+}
+
+void MainWindow::selectHighlightConnectedNets(bool selectFlag,
+                                              bool output,
+                                              bool input,
+                                              int highlightGroup)
+{
+  SelectionSet connNets;
+  for (auto selObj : selected_) {
+    if (selObj.isInst()) {
+      odb::dbObject* dbObj = selObj.getDbObject();
+      odb::dbInst* instObj = static_cast<odb::dbInst*>(dbObj);
+      auto instTerms = instObj->getITerms();
+      auto itr = instTerms.begin();
+      auto itrE = instTerms.end();
+      for (; itr != itrE; ++itr) {
+        auto iTerm = *itr;
+        if (iTerm->getNet() == nullptr
+            || iTerm->getNet()->getSigType() != SIGNAL)
+          continue;
+        auto iTermDir = iTerm->getIoType().getValue();
+        if ((iTermDir == INPUT && input == true)
+            || (iTermDir == OUTPUT && output) || iTermDir == INOUT)
+          connNets.insert(Selected(iTerm->getNet()));
+      }
+    }
+  }
+  if (connNets.empty())
+    return;
+  if (selectFlag)
+    addSelected(connNets);
+  else {
+    qDebug() << "Adding " << connNets.size()
+             << " Nets To Highlight Group : " << highlightGroup;
+    addHighlighted(connNets, highlightGroup);
+  }
 }
 
 void MainWindow::saveSettings()

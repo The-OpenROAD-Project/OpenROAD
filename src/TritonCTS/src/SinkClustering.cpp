@@ -34,13 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
+
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <tuple>
+
+static bool USE_RECURSIVE_KMEAN = std::getenv("USE_RECURSIVE_KMEAN") != NULL;
 
 namespace cts {
 
@@ -163,19 +168,83 @@ void SinkClustering::findBestMatching()
 void SinkClustering::run()
 {
   normalizePoints();
+  if (USE_RECURSIVE_KMEAN) {
+    std::ofstream file("nodeInfo.csv");
+    std::stringstream ss;
+    file << "NodeLocX,NodeLocY\n";
+    for (auto& pt : _points)
+      file << pt.getX() << "," << pt.getY() << "\n";
+    file.close();
+    ss << "/home/kaushal/recurseKMeans.py -i nodeInfo.csv -o clusterId.txt -s "
+          "30 -d "
+       << _maxInternalDiameter;
+    std::cout << "EXECUTING COMMAND : " << ss.str() << std::endl;
+    std::system(ss.str().c_str());
+    int nodeId, nodeCluster;
+    int prevNodeCluster = -1;
+    std::ifstream ifs("clusterId.txt");
+    _kMeanClusterSolution.clear();
+    std::vector<unsigned> curSoln;
+    while (ifs >> nodeId >> nodeCluster) {
+      if (nodeCluster != prevNodeCluster) {
+        if (curSoln.empty() == false)
+          _kMeanClusterSolution.push_back(curSoln);
+        curSoln.clear();
+      }
+      curSoln.push_back(nodeId);
+      prevNodeCluster = nodeCluster;
+    }
+    ifs.close();
+    return;
+  }
   computeAllThetas();
   sortPoints();
   findBestMatching();
-  // writePlotFile();
+  writePlotFile();
 }
 
 void SinkClustering::run(unsigned groupSize, float maxDiameter)
 {
   normalizePoints(maxDiameter);
+  if (USE_RECURSIVE_KMEAN) {
+    std::ofstream file("nodeInfo.csv");
+    std::stringstream ss;
+    file << "NodeLocX,NodeLocY\n";
+    for (auto& pt : _points)
+      file << pt.getX() << "," << pt.getY() << "\n";
+    file.close();
+    ss << "/home/kaushal/recurseKMeans.py -i nodeInfo.csv -o clusterId.txt -s "
+       << groupSize << " -d " << _maxInternalDiameter;
+    std::cout << "EXECUTING COMMAND : " << ss.str() << std::endl;
+    std::system(ss.str().c_str());
+    int nodeId, nodeCluster;
+    int prevNodeCluster = -1;
+    std::ifstream ifs("clusterId.txt");
+    _kMeanClusterSolution.clear();
+    std::vector<unsigned> curSoln;
+    while (ifs >> nodeId >> nodeCluster) {
+      if (nodeCluster != prevNodeCluster) {
+        if (curSoln.empty() == false)
+          _kMeanClusterSolution.push_back(curSoln);
+        curSoln.clear();
+      }
+      curSoln.push_back(nodeId);
+      prevNodeCluster = nodeCluster;
+    }
+    ifs.close();
+    return;
+  }
   computeAllThetas();
   sortPoints();
   findBestMatching(groupSize);
-  // writePlotFile(groupSize);
+  writePlotFile(groupSize);
+}
+
+std::vector<std::vector<unsigned>> SinkClustering::sinkClusteringSolution()
+{
+  if (USE_RECURSIVE_KMEAN == false)
+    return _bestSolution;
+  return _kMeanClusterSolution;
 }
 
 void SinkClustering::writePlotFile()
@@ -348,6 +417,8 @@ void SinkClustering::findBestMatching(unsigned groupSize)
 void SinkClustering::writePlotFile(unsigned groupSize)
 {
   std::ofstream file("plot_clustering.py");
+  std::ofstream cFile("clusterInfo.csv");
+  cFile << "NodeLocX,NodeLocY,NodeCluster,MaxDiameter\n";
   file << "import numpy as np\n";
   file << "import matplotlib.pyplot as plt\n";
   file << "import matplotlib.path as mpath\n";
@@ -373,12 +444,15 @@ void SinkClustering::writePlotFile(unsigned groupSize)
       Point<double>& point = _points[idx];
       file << "plt.scatter(" << point.getX() << ", " << point.getY() << ", c=\""
            << colors[color] << "\")\n";
+      cFile << point.getX() << "," << point.getY() << "," << clusterCounter
+            << "," << _maxInternalDiameter << "\n";
     }
     clusterCounter++;
   }
 
   file << "plt.show()\n";
   file.close();
+  cFile.close();
 }
 
 }  // namespace cts

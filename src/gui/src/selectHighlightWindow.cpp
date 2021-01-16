@@ -44,12 +44,11 @@
 
 namespace gui {
 
-SelectHighlightModel::SelectHighlightModel(const SelectionSet& objs)
-    : objs_(objs)
+SelectionModel::SelectionModel(const SelectionSet& objs) : objs_(objs)
 {
 }
 
-void SelectHighlightModel::populateModel()
+void SelectionModel::populateModel()
 {
   beginResetModel();
   int objIdx = 0;
@@ -61,19 +60,19 @@ void SelectHighlightModel::populateModel()
   endResetModel();
 }
 
-int SelectHighlightModel::rowCount(const QModelIndex& parent) const
+int SelectionModel::rowCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return objs_.size();
 }
 
-int SelectHighlightModel::columnCount(const QModelIndex& parent) const
+int SelectionModel::columnCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return 3;
 }
 
-QVariant SelectHighlightModel::data(const QModelIndex& index, int role) const
+QVariant SelectionModel::data(const QModelIndex& index, int role) const
 {
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
@@ -100,9 +99,9 @@ QVariant SelectHighlightModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-QVariant SelectHighlightModel::headerData(int section,
-                                          Qt::Orientation orientation,
-                                          int role) const
+QVariant SelectionModel::headerData(int section,
+                                    Qt::Orientation orientation,
+                                    int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     if (section == 0) {
@@ -116,8 +115,88 @@ QVariant SelectHighlightModel::headerData(int section,
   return QVariant();
 }
 
+HighlightModel::HighlightModel(const HighlightSet& objs) : objs_(objs)
+{
+}
+
+void HighlightModel::populateModel()
+{
+  beginResetModel();
+  int objIdx = 0;
+  tableData_.clear();
+  tableData_.reserve(objs_.size());
+  int highlightGroup = 0;
+  for (auto& highlightObjs : objs_) {
+    for (auto& obj : highlightObjs) {
+      tableData_.push_back(std::make_pair(highlightGroup, &obj));
+    }
+    ++highlightGroup;
+  }
+  endResetModel();
+}
+
+int HighlightModel::rowCount(const QModelIndex& parent) const
+{
+  Q_UNUSED(parent);
+  return tableData_.size();
+  // return objs_.size();
+}
+
+int HighlightModel::columnCount(const QModelIndex& parent) const
+{
+  Q_UNUSED(parent);
+  return 4;
+}
+
+QVariant HighlightModel::data(const QModelIndex& index, int role) const
+{
+  if (!index.isValid() || role != Qt::DisplayRole) {
+    return QVariant();
+  }
+  int rowIndex = index.row();
+  if (rowIndex > tableData_.size())
+    return QVariant();
+  std::string objName = tableData_[rowIndex].second->getName();
+  std::string objType("");
+  if (objName.rfind("Net: ", 0) == 0) {
+    objName = objName.substr(5);
+    objType = "Net";
+  } else if (objName.rfind("Inst: ", 0) == 0) {
+    objName = objName.substr(6);
+    objType = "Instance";
+  }
+  if (index.column() == 0) {
+    return QString::fromStdString(objName);
+  } else if (index.column() == 1) {
+    return QString::fromStdString(objType);
+  } else if (index.column() == 2) {
+    return QString::fromStdString(tableData_[rowIndex].second->getLocation());
+  } else if (index.column() == 3) {
+    return QString::number(tableData_[rowIndex].first);
+  }
+  return QVariant();
+}
+
+QVariant HighlightModel::headerData(int section,
+                                    Qt::Orientation orientation,
+                                    int role) const
+{
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    if (section == 0) {
+      return QString("Object");
+    } else if (section == 1) {
+      return QString("Type");
+    } else if (section == 2) {
+      return QString("Loc");
+    } else if (section == 3) {
+      return QString("Highlight Group");
+    }
+  }
+  return QVariant();
+}
+
 SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
-                                             const SelectionSet& hltSet,
+                                             const HighlightSet& hltSet,
                                              QWidget* parent)
     : QDockWidget(parent),
       ui(new Ui::SelectHighlightWidget),

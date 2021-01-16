@@ -35,12 +35,12 @@
 
 #pragma once
 
-#include "Util.h"
-
 #include <limits>
 #include <map>
 #include <string>
 #include <vector>
+
+#include "Util.h"
 
 namespace cts {
 
@@ -69,10 +69,10 @@ class SinkClustering
 
   const std::vector<Matching>& allMatchings() const { return _matchings; }
 
-  std::vector<std::vector<unsigned>> sinkClusteringSolution()
-  {
-    return _bestSolution;
-  }
+  std::vector<std::vector<unsigned>> sinkClusteringSolution();
+  //{
+  //  return _bestSolution;
+  //}
 
  private:
   void normalizePoints(float maxDiameter = 10);
@@ -100,6 +100,7 @@ class SinkClustering
   std::vector<Matching> _matchings;
   std::map<unsigned, std::vector<Point<double>>> _sinkClusters;
   std::vector<std::vector<unsigned>> _bestSolution;
+  std::vector<std::vector<unsigned>> _kMeanClusterSolution;
   float _maxInternalDiameter = 10;
 };
 
