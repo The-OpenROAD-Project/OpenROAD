@@ -38,7 +38,7 @@
 #include <memory>
 #include <vector>
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -110,6 +110,10 @@ public:
   float getPhiCoef(float scaledDiffHpwl) const;
 
   void updateDb();
+
+  float getWireLengthCoefX() const { return wireLengthCoefX_; }
+  float getWireLengthCoefY() const { return wireLengthCoefY_; }
+  float getDensityPenalty() const { return densityPenalty_; }
 
 private:
   std::shared_ptr<PlacerBase> pb_;

@@ -101,7 +101,7 @@ main(int argc,
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
-    return gui::start_gui(cmd_argc, cmd_argv);
+    return gui::startGui(cmd_argc, cmd_argv);
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.

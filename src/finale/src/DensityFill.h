@@ -64,11 +64,11 @@ class DensityFill
 
  private:
   void loadConfig(const char* cfg_filename, odb::dbTech* tech);
-  void read_and_expand_layers(odb::dbTech* tech,
-                              boost::property_tree::ptree& tree);
-  void fill_layer(odb::dbBlock* block,
-                  odb::dbTechLayer* layer,
-                  const odb::Rect& fill_bounds);
+  void readAndExpandLayers(odb::dbTech* tech,
+                           boost::property_tree::ptree& tree);
+  void fillLayer(odb::dbBlock* block,
+                 odb::dbTechLayer* layer,
+                 const odb::Rect& fill_bounds);
 
   odb::dbDatabase* db_;
   std::map<odb::dbTechLayer*, DensityFillLayerConfig> layers_;

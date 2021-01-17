@@ -40,7 +40,6 @@ class OpenRoad;
 // There is no make/delete GUI as it is created at startup and can't
 // be deleted.
 
-void
-initGui(OpenRoad *openroad);
+void initGui(OpenRoad* openroad);
 
-} // namespace
+}  // namespace ord

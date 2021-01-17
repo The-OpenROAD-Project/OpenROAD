@@ -38,8 +38,9 @@ namespace odb {
   class dbDatabase;
   class dbBlock;
   class dbTech;
+  class dbSBox;
 }
-namespace ord{
+namespace utl{
   class Logger;
 }
 
@@ -51,11 +52,11 @@ namespace fr {
     class Parser {
     public:
       // constructors
-      Parser(frDesign* designIn): design(designIn), tech(design->getTech()), tmpBlock(nullptr), readLayerCnt(0),
+      Parser(frDesign* designIn, utl::Logger* loggerIn): design(designIn), tech(design->getTech()), logger(loggerIn), tmpBlock(nullptr), readLayerCnt(0),
                                   tmpGuides(), tmpGRPins(), trackOffsetMap(), prefTrackPatterns(), numRefBlocks(0),
                                   numInsts(0), numTerms(0), numNets(0), numBlockages(0) {}
       // others
-      void readLefDef();
+      void readLefDb(odb::dbDatabase* db);
       void readGuide();
       void postProcess();
       void postProcessGuide();
@@ -71,10 +72,23 @@ namespace fr {
 
     protected:
       void readLef();
-      void readDef();
-
+      void readDb(odb::dbDatabase* db);
+      void setDieArea(odb::dbBlock* block);
+      void setTracks(odb::dbBlock* block);
+      void setInsts(odb::dbBlock* block);
+      void setObstructions(odb::dbBlock* block);
+      void setBTerms(odb::dbBlock* block);
+      void setVias(odb::dbBlock* block);
+      void setNets(odb::dbBlock* block);
+      void getSBoxCoords(odb::dbSBox* box,
+                        frCoord& beginX,
+                        frCoord& beginY,
+                        frCoord& endX,
+                        frCoord& endY,
+                        frCoord& width);
       frDesign*       design;
       frTechObject*   tech;
+      utl::Logger*    logger;
 
       std::unique_ptr<frBlock>        tmpBlock;
       // temporary variables
