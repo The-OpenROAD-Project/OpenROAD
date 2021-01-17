@@ -53,6 +53,11 @@ TritonMacroPlace::setSta(sta::dbSta* sta) {
   mckt_->setSta(sta);
 }
 
+void
+TritonMacroPlace::setLogger(utl::Logger* log) {
+  mckt_->setLogger(log);
+}
+
 void 
 TritonMacroPlace::setGlobalConfig(const char* globalConfig) {
   mckt_->setGlobalConfig(globalConfig);

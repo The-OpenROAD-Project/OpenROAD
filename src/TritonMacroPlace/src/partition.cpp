@@ -35,12 +35,13 @@
 #include "Parquet.h"
 #include "mixedpackingfromdb.h"
 #include "btreeanneal.h"
-#include "logger.h"
 
 #include <iostream>
 #include <climits>
 #include <cfloat>
 #include <fstream>
+
+#include "utility/Logger.h"
 
 namespace mpl {
 
@@ -51,19 +52,25 @@ using std::vector;
 using std::pair;
 using std::unordered_map;
 
-Partition::Partition() 
+using utl::MPL;
+
+Partition::Partition(utl::Logger* log) 
   : partClass(PartClass::None), 
   lx(FLT_MAX), ly(FLT_MAX), 
   width(FLT_MAX), height(FLT_MAX), 
-  netTable(0), tableCnt(0) {}
+  netTable(0), tableCnt(0),
+  log_(log) {}
+
 
 Partition::Partition(
     PartClass _partClass, 
     double _lx, double _ly, 
-    double _width, double _height ) :
+    double _width, double _height,
+    utl::Logger* log) :
   partClass(_partClass), lx(_lx), ly(_ly), 
   width(_width), height(_height), 
-  netTable(0), tableCnt(0) {}
+  netTable(0), tableCnt(0),
+  log_(log) {}
     
 Partition::~Partition(){ 
   if( netTable) { 
@@ -71,6 +78,7 @@ Partition::~Partition(){
     netTable=0; 
     tableCnt=0;
   } 
+  log_ = nullptr;
 }
 
 Partition::Partition(const Partition& prev)   
@@ -79,7 +87,8 @@ Partition::Partition(const Partition& prev)
   width(prev.width), height(prev.height),
   macroStor(prev.macroStor), 
   tableCnt(prev.tableCnt), 
-  macroMap(prev.macroMap) {
+  macroMap(prev.macroMap),
+  log_(prev.log_) {
     if( prev.netTable ) {
       netTable = new double[tableCnt];
       for(int i=0; i<tableCnt; i++) {
@@ -100,6 +109,7 @@ Partition& Partition::operator= (const Partition& prev) {
   macroStor = prev.macroStor;
   tableCnt = prev.tableCnt;
   macroMap = prev.macroMap; 
+  log_ = prev.log_;
 
   if( prev.netTable ) {
     netTable = new double[tableCnt];
@@ -114,12 +124,11 @@ Partition& Partition::operator= (const Partition& prev) {
 }
 
 void Partition::Dump() {    
-  cout << "partClass: " << partClass << endl;
-  cout << lx << " " << ly << " " << width << " " << height << endl;
+  log_->report("partClass: {}", partClass);
+  log_->report("{} {} {} {}", lx, ly, width, height);
   for(auto& curMacro : macroStor) {
     curMacro.Dump();
   }
-  cout << endl;
 }
 
 
@@ -159,8 +168,7 @@ void Partition::PrintParquetFormat(string origName){
 void Partition::WriteBlkFile( string blkName ) {
   std::ofstream blkFile(blkName);
   if( !blkFile.good() ) {
-    cout << "** ERROR: Cannot Open BlkFile to write : " << blkName << endl;
-    exit(1);
+    log_->error(MPL, 50, "Cannot Open BlkFile to write : {}", blkName);
   }
 
   std::stringstream feed;
@@ -229,8 +237,7 @@ string Partition::GetName(int macroIdx ) {
 void Partition::WriteNetFile( vector< pair<int, int> >& netStor, string netName ) {
   std::ofstream netFile(netName);
   if( !netFile.good() ) {
-    cout << "** ERROR: Cannot Open NetFile to write : " << netName << endl;
-    exit(1);
+    log_->error(MPL, 51, "Cannot Open NetFile to write : {}", netName);
   }
 
   std::stringstream feed;
@@ -261,8 +268,7 @@ void Partition::WriteNetFile( vector< pair<int, int> >& netStor, string netName 
 void Partition::WriteWtsFile( vector< int >& costStor, string wtsName ) {
   std::ofstream wtsFile(wtsName);
   if( !wtsFile.good() ) {
-    cout << "** ERROR: Cannot Open WtsFile to write : " << wtsName << endl;
-    exit(1);
+    log_->error(MPL, 52, "Cannot Open WtsFile to write : {}", wtsName);
   }
 
   std::stringstream feed;
@@ -288,8 +294,7 @@ void Partition::WriteWtsFile( vector< int >& costStor, string wtsName ) {
 void Partition::WritePlFile( string plName ) {
   std::ofstream plFile(plName);
   if( !plFile.good() ) {
-    cout << "** ERROR: Cannot Open NetFile to write : " << plName << endl;
-    exit(1);
+    log_->error(MPL, 53, "Cannot Open PlFIle to write : {}", plName);
   }
 
   std::stringstream feed;
@@ -567,14 +572,14 @@ void Partition::UpdateMacroCoordi(MacroCircuit& mckt) {
 }
 
 // Call ParquetFP
-bool Partition::DoAnneal(std::shared_ptr<Logger> log) {
+bool Partition::DoAnneal() {
   
   // No macro, no need to execute
   if( macroStor.size() == 0 ) {
     return true;
   }
   
-  log->procBegin("Parquet");
+  log_->report("Begin Parquet");
   
   
   // Preprocessing in macroPlacer side
@@ -704,9 +709,9 @@ bool Partition::DoAnneal(std::shared_ptr<Logger> log) {
   // Failed annealing
   if( sol.totalWidth() > width ||
       sol.totalHeight() > height ) {
-    log->infoString("Parquet BBOX exceed the given area");
-    log->infoFloatSignificantPair("ParquetSolLayout", sol.totalWidth(), sol.totalHeight());
-    log->infoFloatSignificantPair("TargetLayout", width, height);
+    log_->info(MPL, 10, "Parquet BBOX exceed the given area");
+    log_->info(MPL, 11, "ParquetSolLayout {:g} {:g}", sol.totalWidth(), sol.totalHeight());
+    log_->info(MPL, 12, "TargetLayout {:g} {:g}", width, height);
     return false;
   }
   delete annealer;
@@ -755,7 +760,7 @@ bool Partition::DoAnneal(std::shared_ptr<Logger> log) {
 //      true, 
 //      0, 0, width, height);
 
-  log->procEnd("Parquet");
+  log_->report("End Parquet");
   return true;
 
 }

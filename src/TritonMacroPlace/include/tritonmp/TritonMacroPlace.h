@@ -43,6 +43,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace utl {
+class Logger;
+}
+
 namespace mpl {
 
 class MacroCircuit;
@@ -55,6 +59,7 @@ public:
 
   void setDb(odb::dbDatabase* db);
   void setSta(sta::dbSta* sta);
+  void setLogger(utl::Logger* log);
   void setGlobalConfig(const char* globalConfig);
   void setLocalConfig(const char* localConfig);
 

@@ -61,6 +61,7 @@ initTritonMp(OpenRoad *openroad)
   sta::evalTclInit(tcl_interp, sta::tritonmp_tcl_inits);
   openroad->getTritonMp()->setDb(openroad->getDb());
   openroad->getTritonMp()->setSta(openroad->getSta());
+  openroad->getTritonMp()->setLogger(openroad->getLogger());
 }
 
 void

@@ -54,6 +54,10 @@ namespace odb {
 class dbDatabase;
 }
 
+namespace utl {
+class Logger;
+}
+
 namespace mpl {
 
 class Layout;
@@ -62,7 +66,9 @@ class Logger;
 class MacroCircuit {
   public:
     MacroCircuit();
-    MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta);
+    MacroCircuit(odb::dbDatabase* db, 
+        sta::dbSta* sta,
+        utl::Logger* log);
 
     std::vector<mpl::Vertex> vertexStor;
     std::vector<mpl::Edge> edgeStor;
@@ -116,6 +122,7 @@ class MacroCircuit {
     // changing.....
     void setDb(odb::dbDatabase* db);
     void setSta(sta::dbSta* sta);
+    void setLogger(utl::Logger* log);
 
     void setGlobalConfig(const char* globalConfig);
     void setLocalConfig(const char* localConfig);
@@ -131,8 +138,7 @@ class MacroCircuit {
   private:
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
-
-    std::shared_ptr<Logger> log_;
+    utl::Logger* log_;
 
     std::string globalConfig_;
     std::string localConfig_;

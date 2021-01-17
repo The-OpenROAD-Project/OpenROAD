@@ -34,7 +34,7 @@
 #include "circuit.h"
 #include "partition.h" 
 #include "opendb/db.h"
-#include "logger.h"
+#include "utility/Logger.h"
 #include <unordered_set>
 #include <memory>
 
@@ -45,8 +45,7 @@ using std::vector;
 using std::pair;
 using std::unordered_map;
 using std::unordered_set;
-using std::cout;
-using std::endl;
+using utl::MPL;
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
@@ -56,13 +55,14 @@ static vector<pair<Partition, Partition>> GetPart(
     const double siteSizeY,
     Partition& partition, 
     bool isHorizontal,
-    std::shared_ptr<Logger> log);
+    utl::Logger* log);
 
 static void UpdateMacroPartMap( 
     MacroCircuit& mckt,
     mpl::Partition& part, 
     unordered_map<mpl::PartClass, vector<int>, 
-    PartClassHash, PartClassEqual> &macroPartMap );
+    PartClassHash, PartClassEqual> &macroPartMap,
+    utl::Logger* log);
 
 
 static void 
@@ -94,15 +94,15 @@ MacroCircuit::PlaceMacros(int& solCount) {
   bool isHorizontal = true;
 
   Partition topLayout(PartClass::ALL, 
-      layout.lx(), layout.ly(), layout.ux()-layout.lx(), layout.uy()-layout.ly());
+      layout.lx(), layout.ly(), layout.ux()-layout.lx(), layout.uy()-layout.ly(), log_);
   topLayout.macroStor = macroStor;
 
-  log_->procBegin("One Level Partition");
+  log_->report("Begin One Level Partition");
 
   TwoPartitions oneLevelPart 
     = GetPart(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal, log_);
   
-  log_->procEnd("One Level Partition");
+  log_->report ("End One Level Partition");
   TwoPartitions eastStor, westStor;
 
   vector< vector<Partition> > allSets;
@@ -111,7 +111,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
 
   unordered_map< PartClass, vector<int>, 
     PartClassHash, PartClassEqual> globalMacroPartMap;
-  UpdateMacroPartMap( *this, topLayout, globalMacroPartMap );
+  UpdateMacroPartMap( *this, topLayout, globalMacroPartMap, log_ );
 
   if( isTiming_ ) {
     topLayout.FillNetlistTable( *this, globalMacroPartMap );
@@ -128,19 +128,19 @@ MacroCircuit::PlaceMacros(int& solCount) {
 
   for(auto& curSet : oneLevelPart ) {
     if( isHorizontal ) {
-      log_->procBegin("Horizontal Partition");
+      log_->report("Begin Horizontal Partition");
       Layout eastInfo(layout, curSet.first);
       Layout westInfo(layout, curSet.second);
 
-      log_->procBegin("East Partition");
+      log_->report("Begin East Partition");
       TwoPartitions eastStor 
         = GetPart(eastInfo, siteSizeX_, siteSizeY_, curSet.first, !isHorizontal, log_);
-      log_->procEnd("East Partition");
+      log_->report("End East Partition");
 
-      log_->procBegin("West Partition");
+      log_->report("Begin West Partition");
       TwoPartitions westStor 
         = GetPart(westInfo, siteSizeX_, siteSizeY_, curSet.second, !isHorizontal, log_);
-      log_->procEnd("West Partition");
+      log_->report("End West Partition");
 
      
       // Zero case handling when eastStor = 0 
@@ -157,7 +157,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
           unordered_map< PartClass, vector<int>, 
             PartClassHash, PartClassEqual> macroPartMap;
           for(auto& curSet: oneSet) {
-            UpdateMacroPartMap( *this, curSet, macroPartMap );
+            UpdateMacroPartMap( *this, curSet, macroPartMap, log_ );
           }
           
           if( isTiming_ ) { 
@@ -183,7 +183,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
           unordered_map< PartClass, vector<int>, 
             PartClassHash, PartClassEqual> macroPartMap;
           for(auto& curSet: oneSet) {
-            UpdateMacroPartMap( *this, curSet, macroPartMap );
+            UpdateMacroPartMap( *this, curSet, macroPartMap, log_ );
           }
           
           if( isTiming_ ) { 
@@ -213,7 +213,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
             unordered_map< PartClass, vector<int>, 
               PartClassHash, PartClassEqual> macroPartMap;
             for(auto& curSet: oneSet) {
-              UpdateMacroPartMap( *this, curSet, macroPartMap );
+              UpdateMacroPartMap( *this, curSet, macroPartMap, log_ );
             }
 
             if( isTiming_ ) { 
@@ -226,15 +226,15 @@ MacroCircuit::PlaceMacros(int& solCount) {
           }
         }
       } 
-      log_->procEnd("Horizontal Partition");
+      log_->report ("End Horizontal Partition");
     }
     else {
-      log_->procBegin("Vertical Partition");
+      log_->report ("Begin Vertical Partition");
       // TODO
-      log_->procEnd("Vertical Partition");
+      log_->report ("End Vertical Partition");
     }
   }
-  log_->infoInt( "NumExtractedSets", allSets.size() -1);
+  log_->info(MPL, 40, "NumExtractedSets: {}", allSets.size() -1);
 
   solCount = 0;
   int bestSetIdx = 0;
@@ -249,7 +249,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
     bool isFailed = false;
     for(auto& curPart : curSet) {
       // Annealing based on ParquetFP Engine
-      if( !curPart.DoAnneal(log_) ) {
+      if( !curPart.DoAnneal() ) {
         isFailed = true;
         break;
       }
@@ -266,8 +266,8 @@ MacroCircuit::PlaceMacros(int& solCount) {
     }
 
     double curWwl = GetWeightedWL();
-    log_->infoInt("SetId", &curSet - &allSets[0]);
-    log_->infoFloat("WeightedWL", curWwl);
+    log_->info(MPL, 41, "SetId: {}", &curSet - &allSets[0]);
+    log_->info(MPL, 42, "WeightedWL: {:g}", curWwl);
 
     if( curWwl > bestWwl ) {
       bestWwl = curWwl;
@@ -276,7 +276,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
     solCount++;
   }
   
-  log_->infoInt( "NumFinalSols", solCount);
+  log_->info(MPL, 43, "NumFinalSols: {}", solCount);
 
   // bestset DEF writing
   std::vector<mpl::Partition> bestSet = allSets[bestSetIdx];
@@ -336,7 +336,8 @@ static void UpdateMacroPartMap(
     MacroCircuit& mckt,
     mpl::Partition& part, 
     unordered_map<mpl::PartClass, vector<int>, 
-    PartClassHash, PartClassEqual>& macroPartMap ) {
+    PartClassHash, PartClassEqual>& macroPartMap,
+    utl::Logger* log) {
 
 
   auto mpPtr = macroPartMap.find( part.partClass );
@@ -346,18 +347,16 @@ static void UpdateMacroPartMap(
     for(auto& curMacro: part.macroStor) {
       auto miPtr = mckt.macroInstMap.find( curMacro.staInstPtr );
       if( miPtr == mckt.macroInstMap.end() ) {
-        cout << "ERROR: macro " << curMacro.name 
-          << " not exists in macroInstMap: " << curMacro.staInstPtr << endl;
-        exit(1);
+        log->error(MPL, 44, "macro {} not exists in macroInstMap", 
+            curMacro.name);
       }
       curMacroStor.push_back( miPtr->second) ;
     }
     macroPartMap[ part.partClass ] = curMacroStor; 
   }
   else {
-    cout << "ERROR: Partition- " << part.partClass 
-      << " already updated (UpdateMacroPartMap)" << endl; 
-    exit(1);
+    log->error(MPL, 45, "Partition- {} already updated (UpdateMacroPartMap)", 
+        part.partClass);
   }
 }
 
@@ -380,9 +379,9 @@ static vector<pair<Partition, Partition>> GetPart(
     const double siteSizeY,
     Partition& partition, 
     bool isHorizontal,
-    std::shared_ptr<Logger> log) {
-  log->procBegin("Partition");
-  log->infoInt("NumMacros", partition.macroStor.size());
+    utl::Logger* log) {
+  log->report("Begin Partition");
+  log->info(MPL, 60, "NumMacros {}", partition.macroStor.size());
 
   // Return vector
   vector<pair<Partition, Partition>> ret;
@@ -437,7 +436,7 @@ static vector<pair<Partition, Partition>> GetPart(
           layout.ly() + (layout.uy() - layout.ly())/hardLimit * i );
     }
   }
-  log->infoInt("NumCutLines", cutLineStor.size());
+  log->info(MPL, 61, "NumCutLines {}", cutLineStor.size());
   
   // Macro checker array
   // 0 for uninitialize
@@ -447,10 +446,10 @@ static vector<pair<Partition, Partition>> GetPart(
   int* chkArr = new int[partition.macroStor.size()];
   
   for(auto& cutLine : cutLineStor ) {
-    log->infoInt("CutLine", cutLine);
+    log->info(MPL, 62, "CutLine {}", cutLine);
     CutRoundUp(layout, siteSizeX, siteSizeY, cutLine, isHorizontal);
     
-    log->infoInt("RoundUpCutLine", cutLine);
+    log->info(MPL, 63, "RoundUpCutLine {}", cutLine);
 
    
     // chkArr initialize 
@@ -529,13 +528,13 @@ static vector<pair<Partition, Partition>> GetPart(
       partition.lx, 
       partition.ly, 
       (isHorizontal)? cutLine - partition.lx : partition.width, 
-      (isHorizontal)? partition.height : cutLine - partition.ly); 
+      (isHorizontal)? partition.height : cutLine - partition.ly, log); 
 
     Partition upperPart( uClass, 
       (isHorizontal)? cutLine : partition.lx, 
       (isHorizontal)? partition.ly : cutLine,
       (isHorizontal)? partition.lx + partition.width - cutLine : partition.width, 
-      (isHorizontal)? partition.height : partition.ly + partition.height - cutLine);
+      (isHorizontal)? partition.height : partition.ly + partition.height - cutLine, log);
 
     //
     // Fill in child partitons' macroStor
@@ -608,7 +607,7 @@ static vector<pair<Partition, Partition>> GetPart(
     
     // impossible partitioning
     if( upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      log->infoString("Meets impossible partition, continue");
+      log->info(MPL, 64, "Impossible partiton found. Continue");
       continue;
     }
 
@@ -616,7 +615,7 @@ static vector<pair<Partition, Partition>> GetPart(
     ret.push_back( curPart );
   }
   delete[] chkArr;
-  log->procEnd("Partition");
+  log->report("End Partition");
   
   return ret; 
 }
