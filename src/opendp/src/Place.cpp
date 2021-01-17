@@ -459,7 +459,7 @@ Opendp::rectDist(const Cell *cell,
   *x = 0;
   *y = 0;
   int init_x, init_y;
-  initialLocation(cell, false, &init_x, &init_y);
+  prePlaceLocation(cell, false, &init_x, &init_y);
 
   if (init_x > (rect->xMin() + rect->xMax()) / 2) {
     *x = rect->xMax();
@@ -482,7 +482,7 @@ Opendp::rectDist(const Cell *cell, const Rect *rect) const
   int x, y;
   rectDist(cell, rect, &x, &y);
   int init_x, init_y;
-  initialLocation(cell, false, &init_x, &init_y);
+  prePlaceLocation(cell, false, &init_x, &init_y);
   return abs(init_x - x) + abs(init_y - y);
 }
 
