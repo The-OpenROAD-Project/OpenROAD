@@ -309,6 +309,9 @@ class Gui
                                     bool input,
                                     int highlightGroup = 0);
 
+  void addInstToHighlightSet(const char* name, unsigned highlightGroup = 0);
+  void addNetToHighlightSet(const char* name, unsigned highlightGroup = 0);
+
   void clearSelections();
   void clearHighlights(int highlightGroup = 0);
 

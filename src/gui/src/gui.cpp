@@ -238,6 +238,38 @@ void Gui::selectHighlightConnectedNets(bool selectFlag,
       selectFlag, output, input, highlightGroup);
 }
 
+void Gui::addInstToHighlightSet(const char* name, unsigned highlightGroup)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto inst = block->findInst(name);
+  if (!inst) {
+    return;
+  }
+  SelectionSet selInstSet;
+  selInstSet.insert(Selected(inst, OpenDbDescriptor::get()));
+  mainWindow->addHighlighted(selInstSet, highlightGroup);
+}
+
+void Gui::addNetToHighlightSet(const char* name, unsigned highlightGroup)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto net = block->findNet(name);
+  if (!net) {
+    return;
+  }
+  SelectionSet selNetSet;
+  selNetSet.insert(Selected(net, OpenDbDescriptor::get()));
+  mainWindow->addHighlighted(selNetSet, highlightGroup);
+}
+
 void Gui::clearSelections()
 {
   mainWindow->setSelected(Selected());
@@ -245,6 +277,7 @@ void Gui::clearSelections()
 
 void Gui::clearHighlights(int highlightGroup)
 {
+  mainWindow->clearHighlighted(highlightGroup);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)

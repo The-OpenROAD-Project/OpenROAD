@@ -35,6 +35,7 @@
 #include <QAbstractTableModel>
 #include <QAction>
 #include <QDockWidget>
+#include <QItemDelegate>
 #include <QMainWindow>
 #include <QMenu>
 #include <QModelIndex>
@@ -91,12 +92,37 @@ class HighlightModel : public QAbstractTableModel
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
   const Selected* getItemAt(int idx) const { return tableData_[idx].second; }
-
   void populateModel();
+
+  bool setData(const QModelIndex& index, const QVariant& value, int role);
 
  private:
   const HighlightSet& objs_;
   std::vector<std::pair<int, const Selected*>> tableData_;
+};
+
+class HighlightGroupDelegate : public QItemDelegate
+{
+  Q_OBJECT
+ public:
+  HighlightGroupDelegate(QObject* parent = 0);
+
+  QWidget* createEditor(QWidget* parent,
+                        const QStyleOptionViewItem& option,
+                        const QModelIndex& index) const;
+  void setEditorData(QWidget* editor, const QModelIndex& index) const;
+  void setModelData(QWidget* editor,
+                    QAbstractItemModel* model,
+                    const QModelIndex& index) const;
+  void updateEditorGeometry(QWidget* editor,
+                            const QStyleOptionViewItem& option,
+                            const QModelIndex& index) const;
+  void paint(QPainter* painter,
+             const QStyleOptionViewItem& option,
+             const QModelIndex& index) const;
+
+ private:
+  std::vector<std::string> Items;
 };
 
 class SelectHighlightWindow : public QDockWidget

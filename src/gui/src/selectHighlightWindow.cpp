@@ -32,6 +32,8 @@
 
 #include "selectHighlightWindow.h"
 
+#include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
@@ -195,6 +197,76 @@ QVariant HighlightModel::headerData(int section,
   return QVariant();
 }
 
+bool HighlightModel::setData(const QModelIndex& index,
+                             const QVariant& value,
+                             int role)
+{
+  int rowIndex = index.row();
+  return true;
+}
+
+HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
+    : QItemDelegate(parent)
+{
+  Items.push_back("Group 0");
+  Items.push_back("Group 1");
+  Items.push_back("Group 2");
+  Items.push_back("Group 3");
+  Items.push_back("Group 4");
+  Items.push_back("Group 5");
+  Items.push_back("Group 6");
+}
+
+QWidget* HighlightGroupDelegate::createEditor(
+    QWidget* parent,
+    const QStyleOptionViewItem& /* option */,
+    const QModelIndex& /* index */) const
+{
+  QComboBox* editor = new QComboBox(parent);
+  for (unsigned int i = 0; i < Items.size(); ++i) {
+    editor->addItem(Items[i].c_str());
+  }
+  editor->setFrame(false);
+  return editor;
+}
+
+void HighlightGroupDelegate::setEditorData(QWidget* editor,
+                                           const QModelIndex& index) const
+{
+  QComboBox* comboBox = static_cast<QComboBox*>(editor);
+  int value = 0;
+  comboBox->setCurrentIndex(value);
+}
+
+void HighlightGroupDelegate::setModelData(QWidget* editor,
+                                          QAbstractItemModel* model,
+                                          const QModelIndex& index) const
+{
+  QComboBox* comboBox = static_cast<QComboBox*>(editor);
+  model->setData(index, comboBox->currentIndex(), Qt::EditRole);
+}
+
+void HighlightGroupDelegate::updateEditorGeometry(
+    QWidget* editor,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& /* index */) const
+{
+  editor->setGeometry(option.rect);
+}
+
+void HighlightGroupDelegate::paint(QPainter* painter,
+                                   const QStyleOptionViewItem& option,
+                                   const QModelIndex& index) const
+{
+  QStyleOptionViewItemV4 myOption = option;
+  QString text = Items[index.row()].c_str();
+
+  myOption.text = text;
+
+  QApplication::style()->drawControl(
+      QStyle::CE_ItemViewItem, &myOption, painter);
+}
+
 SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
                                              const HighlightSet& hltSet,
                                              QWidget* parent)
@@ -215,6 +287,10 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
 
   ui->selTableView->setModel(selFilterProxy);
   ui->hltTableView->setModel(hltFilterProxy);
+
+  HighlightGroupDelegate* delegate = new HighlightGroupDelegate(this);
+  // tableView.setItemDelegate(&delegate);
+  ui->hltTableView->setItemDelegateForColumn(3, delegate);
 
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
