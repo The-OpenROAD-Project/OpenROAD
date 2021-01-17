@@ -45,7 +45,6 @@
 
 namespace mpl {
 
-using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
@@ -334,9 +333,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
   
   auto mpPtr = macroPartMap.find( partClass );
   if( mpPtr == macroPartMap.end()) {
-    cout << "ERROR: Partition: " << partClass 
-      << " not exists MacroCell (macroPartMap)" << endl;
-    exit(1);
+    log_->error(MPL, 54, "Partition: {} not exists MacroCell (macroPartMap)", partClass);
   }
 
   // Just Copy to the netlistTable.
@@ -361,8 +358,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
       if ( i < macroStor.size() ) {
         auto mPtr = mckt.macroNameMap.find( macroStor[i].name );
         if( mPtr == mckt.macroNameMap.end()) {
-          cout << "ERROR on macroNameMap: " << endl;
-          exit(1);
+          log_->error(MPL, 55, "Cannot find macros {} in macroNameMap", macroStor[i].name);
         }
         int globalIdx1 = mPtr->second;
 
@@ -370,8 +366,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
         if( j < macroStor.size() ) {
           auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
           if( mPtr == mckt.macroNameMap.end()) {
-            cout << "ERROR on macroNameMap: " << endl;
-            exit(1);
+            log_->error(MPL, 56, "Cannot find macros {} in macroNameMap", macroStor[j].name);
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j ] = mckt.macroWeight[globalIdx1][globalIdx2];
@@ -476,8 +471,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
         if( j < macroStor.size() ) {
           auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
           if( mPtr == mckt.macroNameMap.end()) {
-            cout << "ERROR on macroNameMap: " << endl;
-            exit(1);
+            log_->error(MPL, 57, "Cannot find macros {} in macroNameMap", macroStor[j].name);
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -489,8 +483,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
         if( j < macroStor.size() ) {
           auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
           if( mPtr == mckt.macroNameMap.end()) {
-            cout << "ERROR on macroNameMap: " << endl;
-            exit(1);
+            log_->error(MPL, 58, "Cannot find macros {} in macroNameMap", macroStor[j].name);
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -502,8 +495,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
         if( j < macroStor.size() ) {
           auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
           if( mPtr == mckt.macroNameMap.end()) {
-            cout << "ERROR on macroNameMap: " << endl;
-            exit(1);
+            log_->error(MPL, 59, "Cannot find macros {} in macroNameMap", macroStor[j].name);
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -515,8 +507,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
         if( j < macroStor.size() ) {
           auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
           if( mPtr == mckt.macroNameMap.end()) {
-            cout << "ERROR on macroNameMap: " << endl;
-            exit(1);
+            log_->error(MPL, 60, "Cannot find macros {} in macroNameMap", macroStor[j].name);
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -628,8 +619,6 @@ bool Partition::DoAnneal() {
   
     double padMacroWidth = curMacro.w + 2*(curMacro.haloX + curMacro.channelX);
     double padMacroHeight = curMacro.h + 2*(curMacro.haloY + curMacro.channelY);
-//    cout << curMacro.w << " -> " << padMacroWidth << endl;
-//    exit(1);
 
     Node tmpMacro ( std::string(curMacro.name.c_str()) , padMacroWidth * padMacroHeight, 
         padMacroWidth/padMacroHeight, padMacroWidth/padMacroHeight,
