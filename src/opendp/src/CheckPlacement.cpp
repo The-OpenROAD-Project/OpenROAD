@@ -78,7 +78,7 @@ Opendp::checkPlacement(bool verbose)
     if (!isPlaced(&cell))
       placed_failures.push_back(&cell);
     // Overlap check
-    if (checkOverlap(cell, grid) != nullptr)
+    if (checkOverlap(cell, grid))
       overlap_failures.push_back(&cell);
   }
 
@@ -219,7 +219,7 @@ Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
     for (int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
       const Cell *pixel_cell = pixel.cell;
-      if (pixel_cell != nullptr) {
+      if (pixel_cell) {
         if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;
         }

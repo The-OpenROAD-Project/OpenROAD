@@ -173,7 +173,7 @@ Opendp::gridCellsInBoundary(const Rect *rect) const
   for (int i = y_start; i < y_end; i++) {
     for (int j = x_start; j < x_end; j++) {
       Cell *cell = const_cast<Cell *>(grid_[i][j].cell);
-      if (cell != nullptr && !isFixed(cell)) {
+      if (cell && !isFixed(cell)) {
         cells.insert(cell);
       }
     }

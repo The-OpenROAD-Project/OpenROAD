@@ -122,7 +122,7 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
     }
   }
 
-  if (power != nullptr && gnd != nullptr) {
+  if (power && gnd) {
     int master_height = master->getHeight();
     bool is_multi_row = master_height != row_height_
                         && master_height % row_height_ == 0;
@@ -250,7 +250,7 @@ Opendp::makeGroups()
   groups_.reserve(block_->getRegions().size());
   for (auto db_region : db_regions) {
     dbRegion *parent = db_region->getParent();
-    if (parent != nullptr) {
+    if (parent) {
       groups_.emplace_back(Group());
       struct Group &group = groups_.back();
       string group_name = db_region->getName();

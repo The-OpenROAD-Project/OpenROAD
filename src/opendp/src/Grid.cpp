@@ -114,7 +114,7 @@ Opendp::initGridPixels(Grid *grid)
 void
 Opendp::deleteGrid(Grid *grid)
 {
-  if (grid != nullptr) {
+  if (grid) {
     for (int i = 0; i < row_count_; i++) {
       delete [] grid[i];
     }
@@ -323,7 +323,7 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
   for (int i = grid_y; i < grid_y + y_step; i++) {
     for (int j = grid_x; j < grid_x + x_step; j++) {
       Pixel &pixel = grid_[i][j];
-      if (pixel.cell != nullptr) {
+      if (pixel.cell) {
         logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
       }
       else {
