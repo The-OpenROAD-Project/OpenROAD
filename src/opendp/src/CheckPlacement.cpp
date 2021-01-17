@@ -243,15 +243,13 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
   bool padded = havePadding() && isOverlapPadded(cell1, cell2);
   int x_ll1, x_ur1, y_ll1, y_ur1;
   int x_ll2, x_ur2, y_ll2, y_ur2;
+  initialLocation(cell1, padded, &x_ll1, &y_ll1);
+  initialLocation(cell2, padded, &x_ll2, &y_ll2);
   if (padded) {
-    initialPaddedLocation(cell1, &x_ll1, &y_ll1);
-    initialPaddedLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + paddedWidth(cell1);
     x_ur2 = x_ll2 + paddedWidth(cell2);
   }
   else {
-    initialLocation(cell1, &x_ll1, &y_ll1);
-    initialLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + cell1->width_;
     x_ur2 = x_ll2 + cell2->width_;
   }

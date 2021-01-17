@@ -195,26 +195,11 @@ Opendp::detailedPlacement(int max_displacment)
   reportDesignStats();
   int64_t hpwl_before = hpwl();
   detailedPlacement();
-  if (cells_moved_off_blocks_count_)
-    logger_->info(DPL, 24, "moved {} cells off of blocks.",
-                  cells_moved_off_blocks_count_);
   int64_t avg_displacement, sum_displacement, max_displacement;
   displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
   updateDbInstLocations();
   reportLegalizationStats(hpwl_before, avg_displacement,
                           sum_displacement, max_displacement);
-}
-
-// For testing moveCellsOffBlocks.
-void
-Opendp::placeCellsOffBlocks()
-{
-  importDb();
-  initGrid();
-  moveCellsOffBlocks();
-  updateDbInstLocations();
-  logger_->info(DPL, 25, "moved {} cells off of blocks.",
-                cells_moved_off_blocks_count_);
 }
 
 void
@@ -438,40 +423,24 @@ Opendp::rowOrient(int row) const
 
 void
 Opendp::initialLocation(const Cell *cell,
-                        // Return values.
-                        int *x,
-                        int *y) const
-{
-  initialLocation(cell->db_inst_, x, y);
-}
-
-void
-Opendp::initialLocation(const dbInst *inst,
+                        bool padded,
                         // Return values.
                         int *x,
                         int *y) const
 {
   int loc_x, loc_y;
-  inst->getLocation(loc_x, loc_y);
+  cell->db_inst_->getLocation(loc_x, loc_y);
   *x = loc_x - core_.xMin();
+  if (padded)
+    *x -= padLeft(cell) * site_width_;
   *y = loc_y - core_.yMin();
-}
-
-void
-Opendp::initialPaddedLocation(const Cell *cell,
-                              // Return values.
-                              int *x,
-                              int *y) const
-{
-  initialLocation(cell, x, y);
-  *x -= padLeft(cell) * site_width_;
 }
 
 int
 Opendp::disp(const Cell *cell) const
 {
   int init_x, init_y;
-  initialLocation(cell, &init_x, &init_y);
+  initialLocation(cell, false, &init_x, &init_y);
   return abs(init_x - cell->x_) + abs(init_y - cell->y_);
 }
 

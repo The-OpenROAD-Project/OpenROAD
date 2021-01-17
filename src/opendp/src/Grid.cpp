@@ -124,7 +124,7 @@ Opendp::deleteGrid(Grid *grid)
 
 Pixel *
 Opendp::gridPixel(int x,
-                  int y)
+                  int y) const
 {
   if (x >= 0 && x < row_site_count_
       && y >= 0 && y < row_count_)
@@ -227,6 +227,19 @@ Opendp::group_pixel_assign2()
       }
     }
   }
+}
+
+/* static */
+bool
+Opendp::check_inside(const Rect &cell, const Rect &box)
+{
+  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax() && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
+}
+
+bool
+Opendp::check_overlap(const Rect &cell, const Rect &box)
+{
+  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin() && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
 }
 
 void

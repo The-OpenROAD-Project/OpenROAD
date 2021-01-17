@@ -203,7 +203,7 @@ Opendp::makeCells()
       cell.height_ = height;
 
       int init_x, init_y;
-      initialLocation(&cell, &init_x, &init_y);
+      initialLocation(&cell, false, &init_x, &init_y);
       // Shift by core lower left.
       cell.x_ = init_x;
       cell.y_ = init_y;
