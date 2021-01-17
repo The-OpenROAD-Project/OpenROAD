@@ -49,7 +49,7 @@
 
 #define ADS_MAX_CORNER 10
 
-namespace ord{
+namespace utl{
   class Logger;
 }
 
@@ -410,9 +410,9 @@ class dbDatabase : public dbObject
   static void commitEco(dbBlock* block);
 
   ///
-  /// links to ord::Logger
+  /// links to utl::Logger
   ///
-  void setLogger(ord::Logger* logger);
+  void setLogger(utl::Logger* logger);
 
   ///
   /// Initializes the database to nothing.
