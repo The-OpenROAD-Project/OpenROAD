@@ -35,6 +35,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -346,14 +347,15 @@ void OpenDbDescriptor::highlight(void* object,
                                  bool selectFlag,
                                  int highlightGroup) const
 {
+  auto highlightColor = Painter::persistHighlight;
   if (selectFlag == true) {
     painter.setPen(Painter::highlight, true);
     painter.setBrush(Painter::transparent);
   } else {
     if (highlightGroup >= 0 && highlightGroup < 7) {
-      auto highlightColor = Painter::highlightColors[highlightGroup];
+      highlightColor = Painter::highlightColors[highlightGroup];
       highlightColor.a = 100;
-      painter.setPen(highlightColor);
+      painter.setPen(highlightColor, true);
       painter.setBrush(highlightColor);
     } else
       painter.setPen(Painter::persistHighlight);
@@ -395,9 +397,13 @@ void OpenDbDescriptor::highlight(void* object,
           else
             driverLocs.insert(rectCenter);
         }
+        if (driverLocs.empty() || sinkLocs.empty())
+          return;
+        highlightColor.a = 255;
+        painter.setPen(highlightColor, true);
+        painter.setBrush(highlightColor);
         for (auto& driver : driverLocs) {
           for (auto& sink : sinkLocs) {
-            qDebug() << "Drawing Line...";
             painter.drawLine(driver, sink);
           }
         }

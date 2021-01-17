@@ -45,7 +45,8 @@
 #include <string>
 #include <tuple>
 
-static bool USE_RECURSIVE_KMEAN = std::getenv("USE_RECURSIVE_KMEAN") != NULL;
+static const char* USE_EXTERNAL_SINK_CLUSTER
+    = std::getenv("USE_EXTERNAL_SINK_CLUSTER");
 
 namespace cts {
 
@@ -168,34 +169,37 @@ void SinkClustering::findBestMatching()
 void SinkClustering::run()
 {
   normalizePoints();
-  if (USE_RECURSIVE_KMEAN) {
+  if (USE_EXTERNAL_SINK_CLUSTER != nullptr) {
     std::ofstream file("nodeInfo.csv");
     std::stringstream ss;
     file << "NodeLocX,NodeLocY\n";
     for (auto& pt : _points)
       file << pt.getX() << "," << pt.getY() << "\n";
     file.close();
-    ss << "/home/kaushal/recurseKMeans.py -i nodeInfo.csv -o clusterId.txt -s "
+    ss << USE_EXTERNAL_SINK_CLUSTER
+       << " -i nodeInfo.csv -o clusterId.txt -s "
           "30 -d "
        << _maxInternalDiameter;
     std::cout << "EXECUTING COMMAND : " << ss.str() << std::endl;
-    std::system(ss.str().c_str());
-    int nodeId, nodeCluster;
-    int prevNodeCluster = -1;
-    std::ifstream ifs("clusterId.txt");
-    _kMeanClusterSolution.clear();
-    std::vector<unsigned> curSoln;
-    while (ifs >> nodeId >> nodeCluster) {
-      if (nodeCluster != prevNodeCluster) {
-        if (curSoln.empty() == false)
-          _kMeanClusterSolution.push_back(curSoln);
-        curSoln.clear();
+    int retVal = std::system(ss.str().c_str());
+    if (retVal == 0) {
+      int nodeId, nodeCluster;
+      int prevNodeCluster = -1;
+      std::ifstream ifs("clusterId.txt");
+      _kMeanClusterSolution.clear();
+      std::vector<unsigned> curSoln;
+      while (ifs >> nodeId >> nodeCluster) {
+        if (nodeCluster != prevNodeCluster) {
+          if (curSoln.empty() == false)
+            _kMeanClusterSolution.push_back(curSoln);
+          curSoln.clear();
+        }
+        curSoln.push_back(nodeId);
+        prevNodeCluster = nodeCluster;
       }
-      curSoln.push_back(nodeId);
-      prevNodeCluster = nodeCluster;
+      ifs.close();
+      return;
     }
-    ifs.close();
-    return;
   }
   computeAllThetas();
   sortPoints();
@@ -206,33 +210,35 @@ void SinkClustering::run()
 void SinkClustering::run(unsigned groupSize, float maxDiameter)
 {
   normalizePoints(maxDiameter);
-  if (USE_RECURSIVE_KMEAN) {
+  if (USE_EXTERNAL_SINK_CLUSTER != nullptr) {
     std::ofstream file("nodeInfo.csv");
     std::stringstream ss;
     file << "NodeLocX,NodeLocY\n";
     for (auto& pt : _points)
       file << pt.getX() << "," << pt.getY() << "\n";
     file.close();
-    ss << "/home/kaushal/recurseKMeans.py -i nodeInfo.csv -o clusterId.txt -s "
+    ss << USE_EXTERNAL_SINK_CLUSTER << " -i nodeInfo.csv -o clusterId.txt -s "
        << groupSize << " -d " << _maxInternalDiameter;
     std::cout << "EXECUTING COMMAND : " << ss.str() << std::endl;
-    std::system(ss.str().c_str());
-    int nodeId, nodeCluster;
-    int prevNodeCluster = -1;
-    std::ifstream ifs("clusterId.txt");
-    _kMeanClusterSolution.clear();
-    std::vector<unsigned> curSoln;
-    while (ifs >> nodeId >> nodeCluster) {
-      if (nodeCluster != prevNodeCluster) {
-        if (curSoln.empty() == false)
-          _kMeanClusterSolution.push_back(curSoln);
-        curSoln.clear();
+    int retVal = std::system(ss.str().c_str());
+    if (retVal == 0) {
+      int nodeId, nodeCluster;
+      int prevNodeCluster = -1;
+      std::ifstream ifs("clusterId.txt");
+      _kMeanClusterSolution.clear();
+      std::vector<unsigned> curSoln;
+      while (ifs >> nodeId >> nodeCluster) {
+        if (nodeCluster != prevNodeCluster) {
+          if (curSoln.empty() == false)
+            _kMeanClusterSolution.push_back(curSoln);
+          curSoln.clear();
+        }
+        curSoln.push_back(nodeId);
+        prevNodeCluster = nodeCluster;
       }
-      curSoln.push_back(nodeId);
-      prevNodeCluster = nodeCluster;
+      ifs.close();
+      return;
     }
-    ifs.close();
-    return;
   }
   computeAllThetas();
   sortPoints();
@@ -242,7 +248,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter)
 
 std::vector<std::vector<unsigned>> SinkClustering::sinkClusteringSolution()
 {
-  if (USE_RECURSIVE_KMEAN == false)
+  if (USE_EXTERNAL_SINK_CLUSTER == nullptr || _kMeanClusterSolution.empty())
     return _bestSolution;
   return _kMeanClusterSolution;
 }

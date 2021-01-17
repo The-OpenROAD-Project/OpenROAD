@@ -1012,7 +1012,7 @@ void LayoutViewer::addMenuAndActions()
   connect(menuActions_[HIGHLIGHT_ALL_NETS_ACT],
           &QAction::triggered,
           this,
-          [this]() { this->selectHighlightConnectedNets(true, true, true); });
+          [this]() { this->selectHighlightConnectedNets(false, true, true); });
 
   connect(menuActions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
     this->zoomIn();

@@ -436,11 +436,8 @@ void MainWindow::selectHighlightConnectedNets(bool selectFlag,
     return;
   if (selectFlag)
     addSelected(connNets);
-  else {
-    qDebug() << "Adding " << connNets.size()
-             << " Nets To Highlight Group : " << highlightGroup;
+  else
     addHighlighted(connNets, highlightGroup);
-  }
 }
 
 void MainWindow::saveSettings()
