@@ -119,10 +119,7 @@ class MacroCircuit {
 
     void StubPlacer(double snapGrid);
 
-    // changing.....
-    void setDb(odb::dbDatabase* db);
-    void setSta(sta::dbSta* sta);
-    void setLogger(utl::Logger* log);
+    void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
     void setGlobalConfig(const char* globalConfig);
     void setLocalConfig(const char* localConfig);

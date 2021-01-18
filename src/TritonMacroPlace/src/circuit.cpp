@@ -150,17 +150,9 @@ MacroCircuit::reset() {
 }
 
 void 
-MacroCircuit::setDb(odb::dbDatabase* db) {
+MacroCircuit::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log) {
   db_ = db; 
-}
-
-void
-MacroCircuit::setSta(sta::dbSta* sta) {
-  sta_ = sta; 
-}
-
-void
-MacroCircuit::setLogger(utl::Logger* log) {
+  sta_ = sta;
   log_ = log;
 }
 

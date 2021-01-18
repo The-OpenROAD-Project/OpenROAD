@@ -45,17 +45,8 @@ TritonMacroPlace::TritonMacroPlace()
 TritonMacroPlace::~TritonMacroPlace() {}
 
 void 
-TritonMacroPlace::setDb(odb::dbDatabase* db) {
-  mckt_->setDb(db);
-}
-void 
-TritonMacroPlace::setSta(sta::dbSta* sta) {
-  mckt_->setSta(sta);
-}
-
-void
-TritonMacroPlace::setLogger(utl::Logger* log) {
-  mckt_->setLogger(log);
+TritonMacroPlace::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log) {
+  mckt_->init(db, sta, log);
 }
 
 void 
