@@ -4,12 +4,15 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def check_buffers.def
 
+# Modified from check_buffers.tcl
 create_clock -period 5 clk
+
 set_wire_rc -clock -layer metal5
+
+configure_cts_characterization
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
-                     -wire_unit 20 \
                      -post_cts_disable \
                      -sink_clustering_enable \
                      -distance_between_buffers 100 \
