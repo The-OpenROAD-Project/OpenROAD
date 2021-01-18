@@ -80,8 +80,7 @@ configure_cts_characterization \
   -max_slew $cts_max_slew \
   -max_cap $cts_max_cap
 
-#clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
-clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clustering_enable -sink_clustering_size 30 -sink_clustering_max_diameter 100 
+clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
 
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets -max_wire_length $max_wire_length
@@ -96,7 +95,6 @@ detailed_placement
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-report_clock_skew
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
