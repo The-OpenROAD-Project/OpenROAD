@@ -10,6 +10,7 @@ Notice 0:     Created 4 pins.
 Notice 0:     Created 13 components and 59 component-terminals.
 Notice 0:     Created 16 nets and 30 connections.
 Notice 0: Finished DEF file: repair_hold1.def
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 35 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
