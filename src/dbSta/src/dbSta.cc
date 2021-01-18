@@ -35,6 +35,10 @@
 
 // dbSta, OpenSTA on OpenDB
 
+// Network edit function flow
+// tcl edit cmd -> dbNetwork -> db -> dbStaCbk -> Sta
+// Edits from tcl, Sta api and db edits are all supported.
+
 #include "db_sta/dbSta.hh"
 
 #include <algorithm>            // min
