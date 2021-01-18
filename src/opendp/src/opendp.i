@@ -168,13 +168,6 @@ optimize_mirroring_cmd()
   opendp->optimizeMirroring();
 }
 
-void
-place_cells_off_blocks()
-{
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->placeCellsOffBlocks();
-}
-
 } // namespace
 
 %} // inline
