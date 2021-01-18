@@ -143,6 +143,7 @@ using sta::fuzzyLess;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::stringPrint;
+using sta::Unit;
 
 using odb::dbMasterType;
 
@@ -2412,11 +2413,18 @@ Resizer::repairHold(float slack_margin,
                     bool allow_setup_violations)
 {
   init();
+  LibertyCell *buffer_cell = findHoldBuffer();
+  float buffer_delay = bufferDelay(buffer_cell);
+  Unit *time_unit = units_->timeUnit();
+  logger_->info(RSZ, 59, "Using {} with {}{}{} delay for hold repairs.",
+                buffer_cell->name(),
+                time_unit->asString(buffer_delay),
+                time_unit->scaleAbreviation(),
+                time_unit->suffix());
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
-  LibertyCell *buffer_cell = findHoldBuffer();
-  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations);
+ repairHold(ends, buffer_cell, slack_margin, allow_setup_violations);
 }
 
 // For testing/debug.
@@ -2568,7 +2576,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = 1; //std::ceil(buffer_delay1 / buffer_delay);
+        int buffer_count = std::ceil(buffer_delay1 / buffer_delay);
         debugPrint(debug_, "repair_hold", 2,
                    " %s hold=%s inserted %d for %lu/%d loads",
                    vertex->name(sdc_network_),

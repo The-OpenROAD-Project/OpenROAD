@@ -202,8 +202,6 @@ public:
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
   void reportGrid();
-  // For testing
-  void placeCellsOffBlocks();
 
 private:
   void importDb();
@@ -251,9 +249,11 @@ private:
   bool swap_cell(Cell *cell1, Cell *cell2);
   bool refine_move(Cell *cell);
 
-  void moveCellsOffBlocks();
-  void moveCellOffBlock(Cell &cell,
-                         const Cell *block);
+  void prePlaceLocation(const Cell *cell,
+                        bool padded,
+                        // Return values.
+                        int *x,
+                        int *y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -309,7 +309,7 @@ private:
   void initGridPixels(Grid *grid);
   void deleteGrid(Grid *grid);
   Pixel *gridPixel(int x,
-                   int y);
+                   int y) const;
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
@@ -327,18 +327,11 @@ private:
   int gridEndX(const Cell *cell) const;
   int gridEndY(const Cell *cell) const;
   void setGridPaddedLoc(Cell *cell, int x, int y) const;
-  void initialLocation(const dbInst *inst,
-                       // Return values.
-                       int *x,
-                       int *y) const;
   void initialLocation(const Cell *cell,
+                       bool padded,
                        // Return values.
                        int *x,
                        int *y) const;
-  void initialPaddedLocation(const Cell *cell,
-                             // Return values.
-                             int *x,
-                             int *y) const;
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;
@@ -412,7 +405,6 @@ private:
   int64_t fixed_padded_area_;
   double design_util_;
   double design_padded_util_;
-  int cells_moved_off_blocks_count_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters
