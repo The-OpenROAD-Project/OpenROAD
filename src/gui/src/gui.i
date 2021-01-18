@@ -43,8 +43,6 @@
 %}
 
 %inline %{
-#include <string>
-#include <iostream>
 void
 selection_add_net(const char* name)
 {

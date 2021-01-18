@@ -35,7 +35,6 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>

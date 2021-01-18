@@ -32,7 +32,6 @@
 
 #include "mainWindow.h"
 
-#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
