@@ -73,13 +73,6 @@ report_check_types -max_slew -max_capacitance -max_fanout -violators
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
 
-# Use set_wire_rc -clock resitance/capacitance values.
-configure_cts_characterization \
-  -sqr_cap [expr [rsz::wire_clk_capacitance] * 1e12 * 1e-6] \
-  -sqr_res [expr [rsz::wire_clk_resistance] * 1e-6] \
-  -max_slew $cts_max_slew \
-  -max_cap $cts_max_cap
-
 clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
 
 # CTS leaves a long wire from the pad to the clock tree root.
