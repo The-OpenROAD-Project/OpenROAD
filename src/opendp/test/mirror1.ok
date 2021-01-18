@@ -12,27 +12,27 @@ Notice 0:     Created 364 nets and 1068 connections.
 Notice 0: Finished DEF file: gcd_replace.def
 [WARNING DPL-0011] Could not find power special net.
 Design Stats
---------------------------------
-total instances           549
-multi row instances         0
-fixed instances           255
-nets                      364
-design area           14266.9 u^2
-fixed area               67.8 u^2
-movable area            569.8 u^2
-utilization                 4 %
-utilization padded          5 %
-rows                       85
-row height                1.4 u
+-----------------------------------
+total instances             549
+multi row instances           0
+fixed instances             255
+nets                        364
+design area             14266.9 u^2
+fixed area                 67.8 u^2
+movable area              569.8 u^2
+utilization                   4 %
+utilization padded            5 %
+rows                         85
+row height                  1.4 u
 
 Placement Analysis
---------------------------------
-total displacement     1311.7 u
-average displacement      2.4 u
-max displacement         16.3 u
-original HPWL          6950.8 u
-legalized HPWL         8793.8 u
-delta HPWL                 27 %
+---------------------------------
+total displacement       1311.7 u
+average displacement        2.4 u
+max displacement           16.3 u
+original HPWL            6950.8 u
+legalized HPWL           8793.8 u
+delta HPWL                   27 %
 
 [INFO DPL-0020] Mirrored 152 instances
 [INFO DPL-0021] HPWL before            8793.8 u

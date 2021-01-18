@@ -9,7 +9,7 @@ estimate_parasitics -placement
 
 report_worst_slack
 
-set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
+set_dont_use {AOI211_X1 OAI211_X1}
 
 buffer_ports
 

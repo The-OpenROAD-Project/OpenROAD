@@ -48,19 +48,9 @@ void FlexPA::init() {
 
 void FlexPA::prep() {
   ProfileTask profile("PA:prep");
-  using namespace std::chrono;
-  high_resolution_clock::time_point t0 = high_resolution_clock::now();
   prepPoint();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
   revertAccessPoints();
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
   prepPattern();
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
-
-  duration<double> time_span1 = duration_cast<duration<double>>(t1 - t0);
-  duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-  // cout << "Expt1 runtime (pin-level access point gen): " << time_span1.count() << endl;
-  // cout << "Expt2 runtime (design-level access pattern gen): " << time_span2.count() << endl;
 }
 
 int FlexPA::main() {
