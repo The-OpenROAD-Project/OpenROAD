@@ -52,3 +52,4 @@ RSZ 0055 Resizer.cc:715            Inserted {} buffers in {} nets.
 RSZ 0056 Resizer.cc:721            Resized {} instances.
 RSZ 0057 Resizer.cc:723            Resized {} instances.
 RSZ 0058 Resizer.tcl:435           using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]u.
+RSZ 0059 "Using {} for hold delays."
