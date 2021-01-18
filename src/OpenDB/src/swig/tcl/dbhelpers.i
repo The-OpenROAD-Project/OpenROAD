@@ -14,6 +14,12 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
+#include "cdl.h"
+
+int 
+dump_netlist(odb::dbBlock* block, const char* path, int includeFillers){
+  return (cdl::dumpNetLists(block, path, includeFillers) == 1); 
+}
 
 odb::dbLib*
 read_lef(odb::dbDatabase* db, const char* path)
@@ -99,6 +105,9 @@ read_lef(odb::dbDatabase* db, const char* path);
 
 odb::dbChip*
 read_def(odb::dbDatabase* db, std::string path);
+
+int 
+dump_netlist(odb::dbBlock* block, const char* path, int includeFillers);
 
 int
 write_def(odb::dbBlock* block, const char* path,

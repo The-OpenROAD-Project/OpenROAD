@@ -45,7 +45,7 @@ namespace odb {
 class cdl
 {
   public:
-    static void dumpNetLists(dbBlock* block, const char* fileName, bool includeFillers=0);
+    static int dumpNetLists(dbBlock* block, const char* fileName, bool includeFillers=0);
 };
 
 }  // namespace odb
