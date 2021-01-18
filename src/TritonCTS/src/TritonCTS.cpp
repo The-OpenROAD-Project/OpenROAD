@@ -34,14 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "tritoncts/TritonCTS.h"
-
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iterator>
-#include <unordered_set>
-
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
@@ -49,10 +41,17 @@
 #include "StaEngine.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
-#include "db_sta/dbSta.hh"
+
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "openroad/Error.hh"
+#include "db_sta/dbSta.hh"
+
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <unordered_set>
+#include <iterator>
 
 namespace cts {
 
