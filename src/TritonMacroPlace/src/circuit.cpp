@@ -245,9 +245,7 @@ void MacroCircuit::init() {
     FillMacroConnection();
   }
   else {
-    string msg = "Missing Liberty Detected.\n";
-    msg += "       TritonMP will place macros without timing information";
-    log_->warn(MPL, 2, msg); 
+    log_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without timing information");
 
     UpdateVertexToMacroStor();
   }
@@ -287,10 +285,7 @@ void MacroCircuit::FillMacroStor() {
     dbPlacementStatus dps = inst->getPlacementStatus();
     if( dps == dbPlacementStatus::NONE ||
         dps == dbPlacementStatus::UNPLACED ) {
-      string msg = "  Macro ({}) is Unplaced.\n";
-      msg += "        Please use TD-MS-RePlAce to get a initial solution\n";
-      msg += "        before executing TritonMacroPlace";
-      log_->error(MPL, 3, msg, inst->getConstName());
+      log_->error(MPL, 3, "Macro ({}) is Unplaced. Please use TD-MS-RePlAce to get a initial solution before executing TritonMP", inst->getConstName());
     }
     
     double curHaloX =0, curHaloY = 0, curChannelX = 0, curChannelY = 0;

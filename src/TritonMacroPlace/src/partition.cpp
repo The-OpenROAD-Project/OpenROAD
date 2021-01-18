@@ -698,9 +698,9 @@ bool Partition::DoAnneal() {
   // Failed annealing
   if( sol.totalWidth() > width ||
       sol.totalHeight() > height ) {
-    log_->info(MPL, 10, "Parquet BBOX exceed the given area");
-    log_->info(MPL, 11, "ParquetSolLayout {:g} {:g}", sol.totalWidth(), sol.totalHeight());
-    log_->info(MPL, 12, "TargetLayout {:g} {:g}", width, height);
+    log_->info(MPL, 61, "Parquet BBOX exceed the given area");
+    log_->info(MPL, 62, "ParquetSolLayout {:g} {:g}", sol.totalWidth(), sol.totalHeight());
+    log_->info(MPL, 63, "TargetLayout {:g} {:g}", width, height);
     return false;
   }
   delete annealer;

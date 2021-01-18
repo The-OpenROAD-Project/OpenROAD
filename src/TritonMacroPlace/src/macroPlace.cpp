@@ -234,7 +234,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
       log_->report ("End Vertical Partition");
     }
   }
-  log_->info(MPL, 40, "NumExtractedSets: {}", allSets.size() -1);
+  log_->info(MPL, 70, "NumExtractedSets: {}", allSets.size() -1);
 
   solCount = 0;
   int bestSetIdx = 0;
@@ -266,8 +266,8 @@ MacroCircuit::PlaceMacros(int& solCount) {
     }
 
     double curWwl = GetWeightedWL();
-    log_->info(MPL, 41, "SetId: {}", &curSet - &allSets[0]);
-    log_->info(MPL, 42, "WeightedWL: {:g}", curWwl);
+    log_->info(MPL, 71, "SetId: {}", &curSet - &allSets[0]);
+    log_->info(MPL, 72, "WeightedWL: {:g}", curWwl);
 
     if( curWwl > bestWwl ) {
       bestWwl = curWwl;
@@ -276,7 +276,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
     solCount++;
   }
   
-  log_->info(MPL, 43, "NumFinalSols: {}", solCount);
+  log_->info(MPL, 73, "NumFinalSols: {}", solCount);
 
   // bestset DEF writing
   std::vector<mpl::Partition> bestSet = allSets[bestSetIdx];
@@ -347,7 +347,7 @@ static void UpdateMacroPartMap(
     for(auto& curMacro: part.macroStor) {
       auto miPtr = mckt.macroInstMap.find( curMacro.staInstPtr );
       if( miPtr == mckt.macroInstMap.end() ) {
-        log->error(MPL, 44, "macro {} not exists in macroInstMap", 
+        log->error(MPL, 74, "macro {} not exists in macroInstMap", 
             curMacro.name);
       }
       curMacroStor.push_back( miPtr->second) ;
@@ -355,7 +355,7 @@ static void UpdateMacroPartMap(
     macroPartMap[ part.partClass ] = curMacroStor; 
   }
   else {
-    log->error(MPL, 45, "Partition- {} already updated (UpdateMacroPartMap)", 
+    log->error(MPL, 75, "Partition- {} already updated (UpdateMacroPartMap)", 
         part.partClass);
   }
 }
@@ -381,7 +381,7 @@ static vector<pair<Partition, Partition>> GetPart(
     bool isHorizontal,
     utl::Logger* log) {
   log->report("Begin Partition");
-  log->info(MPL, 60, "NumMacros {}", partition.macroStor.size());
+  log->info(MPL, 76, "NumMacros {}", partition.macroStor.size());
 
   // Return vector
   vector<pair<Partition, Partition>> ret;
@@ -436,7 +436,7 @@ static vector<pair<Partition, Partition>> GetPart(
           layout.ly() + (layout.uy() - layout.ly())/hardLimit * i );
     }
   }
-  log->info(MPL, 61, "NumCutLines {}", cutLineStor.size());
+  log->info(MPL, 77, "NumCutLines {}", cutLineStor.size());
   
   // Macro checker array
   // 0 for uninitialize
@@ -446,10 +446,10 @@ static vector<pair<Partition, Partition>> GetPart(
   int* chkArr = new int[partition.macroStor.size()];
   
   for(auto& cutLine : cutLineStor ) {
-    log->info(MPL, 62, "CutLine {}", cutLine);
+    log->info(MPL, 78, "CutLine {}", cutLine);
     CutRoundUp(layout, siteSizeX, siteSizeY, cutLine, isHorizontal);
     
-    log->info(MPL, 63, "RoundUpCutLine {}", cutLine);
+    log->info(MPL, 79, "RoundUpCutLine {}", cutLine);
 
    
     // chkArr initialize 
@@ -607,7 +607,7 @@ static vector<pair<Partition, Partition>> GetPart(
     
     // impossible partitioning
     if( upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      log->info(MPL, 64, "Impossible partiton found. Continue");
+      log->info(MPL, 80, "Impossible partiton found. Continue");
       continue;
     }
 
