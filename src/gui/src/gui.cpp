@@ -136,9 +136,9 @@ void Gui::addSelectedNets(const char* pattern,
 
   QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet nets;
-  if (match_regex == true) {
+  if (matchRegEx == true) {
     QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
 
     for (auto* net : block->getNets()) {
@@ -146,7 +146,7 @@ void Gui::addSelectedNets(const char* pattern,
         nets.emplace(net, OpenDbDescriptor::get());
       }
     }
-  } else if (match_case == false) {
+  } else if (matchCase == false) {
     for (auto* net : block->getNets()) {
       if (boost::iequals(pattern, net->getConstName()))
         nets.emplace(net, OpenDbDescriptor::get());
@@ -159,9 +159,9 @@ void Gui::addSelectedNets(const char* pattern,
     }
   }
 
-  mainWindow->addSelected(nets);
+  main_window->addSelected(nets);
   if (addToHighlightSet == true)
-    mainWindow->addHighlighted(nets, highlightGroup);
+    main_window->addHighlighted(nets, highlightGroup);
 }  // namespace gui
 
 void Gui::addSelectedInst(const char* name)
@@ -191,16 +191,16 @@ void Gui::addSelectedInsts(const char* pattern,
   }
 
   SelectionSet insts;
-  if (match_regex) {
+  if (matchRegEx) {
     QRegExp re(pattern,
-               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
     for (auto* inst : block->getInsts()) {
       if (re.exactMatch(inst->getConstName())) {
         insts.emplace(inst, OpenDbDescriptor::get());
       }
     }
-  } else if (match_case == false) {
+  } else if (matchCase == false) {
     for (auto* inst : block->getInsts()) {
       if (boost::iequals(inst->getConstName(), pattern))
         insts.emplace(inst, OpenDbDescriptor::get());
@@ -214,32 +214,32 @@ void Gui::addSelectedInsts(const char* pattern,
     }
   }
 
-  mainWindow->addSelected(insts);
+  main_window->addSelected(insts);
   if (addToHighlightSet == true)
-    mainWindow->addHighlighted(insts, highlightGroup);
+    main_window->addHighlighted(insts, highlightGroup);
 }
 
 bool Gui::anyObjectInSet(bool selectionSet, bool instType) const
 {
-  return mainWindow->anyObjectInSet(selectionSet, instType);
+  return main_window->anyObjectInSet(selectionSet, instType);
 }
 
 void Gui::selectHighlightConnectedInsts(bool selectFlag, int highlightGroup)
 {
-  return mainWindow->selectHighlightConnectedInsts(selectFlag, highlightGroup);
+  return main_window->selectHighlightConnectedInsts(selectFlag, highlightGroup);
 }
 void Gui::selectHighlightConnectedNets(bool selectFlag,
                                        bool output,
                                        bool input,
                                        int highlightGroup)
 {
-  return mainWindow->selectHighlightConnectedNets(
+  return main_window->selectHighlightConnectedNets(
       selectFlag, output, input, highlightGroup);
 }
 
 void Gui::addInstToHighlightSet(const char* name, unsigned highlightGroup)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
@@ -250,12 +250,12 @@ void Gui::addInstToHighlightSet(const char* name, unsigned highlightGroup)
   }
   SelectionSet selInstSet;
   selInstSet.insert(Selected(inst, OpenDbDescriptor::get()));
-  mainWindow->addHighlighted(selInstSet, highlightGroup);
+  main_window->addHighlighted(selInstSet, highlightGroup);
 }
 
 void Gui::addNetToHighlightSet(const char* name, unsigned highlightGroup)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
@@ -266,17 +266,17 @@ void Gui::addNetToHighlightSet(const char* name, unsigned highlightGroup)
   }
   SelectionSet selNetSet;
   selNetSet.insert(Selected(net, OpenDbDescriptor::get()));
-  mainWindow->addHighlighted(selNetSet, highlightGroup);
+  main_window->addHighlighted(selNetSet, highlightGroup);
 }
 
 void Gui::clearSelections()
 {
-  mainWindow->setSelected(Selected());
+  main_window->setSelected(Selected());
 }
 
 void Gui::clearHighlights(int highlightGroup)
 {
-  mainWindow->clearHighlighted(highlightGroup);
+  main_window->clearHighlighted(highlightGroup);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -324,10 +324,10 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       odb::Rect wireBBox;
       if (wire && wire->getBBox(wireBBox)) {
         std::stringstream ss;
-        ss << "[(" << wire_bbox.xMin() / to_microns << ","
-           << wire_bbox.yMin() / to_microns << "), ("
-           << wire_bbox.xMax() / to_microns << ","
-           << wire_bbox.yMax() / to_microns << ")]";
+        ss << "[(" << wireBBox.xMin() / to_microns << ","
+           << wireBBox.yMin() / to_microns << "), ("
+           << wireBBox.xMax() / to_microns << ","
+           << wireBBox.yMax() / to_microns << ")]";
         return ss.str();
       }
       return std::string("NA");

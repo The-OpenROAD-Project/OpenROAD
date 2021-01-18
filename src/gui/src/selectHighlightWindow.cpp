@@ -270,22 +270,22 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
                                              const HighlightSet& hltSet,
                                              QWidget* parent)
     : QDockWidget(parent),
-      ui_(new Ui::SelectHighlightWidget),
-      selection_model_(selection_set),
-      highlight_model_(highlight_set),
+      ui(new Ui::SelectHighlightWidget),
+      selectionModel_(selSet),
+      highlightModel_(hltSet),
       select_context_menu_(new QMenu(this)),
       highlight_context_menu_(new QMenu(this))
 {
-  ui_->setupUi(this);
+  ui->setupUi(this);
 
   QSortFilterProxyModel* sel_filter_proxy = new QSortFilterProxyModel(this);
-  sel_filter_proxy->setSourceModel(&selection_model_);
+  sel_filter_proxy->setSourceModel(&selectionModel_);
 
   QSortFilterProxyModel* hlt_filter_proxy = new QSortFilterProxyModel(this);
-  hlt_filter_proxy->setSourceModel(&highlight_model_);
+  hlt_filter_proxy->setSourceModel(&highlightModel_);
 
-  ui_->selTableView->setModel(sel_filter_proxy);
-  ui_->hltTableView->setModel(hlt_filter_proxy);
+  ui->selTableView->setModel(sel_filter_proxy);
+  ui->hltTableView->setModel(hlt_filter_proxy);
 
   HighlightGroupDelegate* delegate = new HighlightGroupDelegate(this);
   // tableView.setItemDelegate(&delegate);
@@ -294,21 +294,21 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
   });
-  connect(ui_->findEditInHlt, &QLineEdit::returnPressed, this, [this]() {
-    this->ui_->hltTableView->keyboardSearch(ui_->findEditInSel->text());
+  connect(ui->findEditInHlt, &QLineEdit::returnPressed, this, [this]() {
+    this->ui->hltTableView->keyboardSearch(ui->findEditInSel->text());
   });
 
-  connect(ui_->selTableView,
+  connect(ui->selTableView,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showSelectCustomMenu(QPoint)));
-  connect(ui_->hltTableView,
+  connect(ui->hltTableView,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showHighlightCustomMenu(QPoint)));
-  ui_->selTableView->horizontalHeader()->setSectionResizeMode(
+  ui->selTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
-  ui_->hltTableView->horizontalHeader()->setSectionResizeMode(
+  ui->hltTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
@@ -351,8 +351,8 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
           this,
           SLOT(zoomInHighlightedItems()));
 
-  ui_->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui_->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
 SelectHighlightWindow::~SelectHighlightWindow()
@@ -361,70 +361,70 @@ SelectHighlightWindow::~SelectHighlightWindow()
 
 void SelectHighlightWindow::updateSelectionModel()
 {
-  selection_model_.populateModel();
+  selectionModel_.populateModel();
 }
 
 void SelectHighlightWindow::updateHighlightModel()
 {
-  highlight_model_.populateModel();
+  highlightModel_.populateModel();
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
 {
-  select_context_menu_->popup(ui_->selTableView->viewport()->mapToGlobal(pos));
+  select_context_menu_->popup(ui->selTableView->viewport()->mapToGlobal(pos));
 }
 
 void SelectHighlightWindow::showHighlightCustomMenu(QPoint pos)
 {
   highlight_context_menu_->popup(
-      ui_->hltTableView->viewport()->mapToGlobal(pos));
+      ui->hltTableView->viewport()->mapToGlobal(pos));
 }
 
 void SelectHighlightWindow::deselectItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
-    desel_items << selection_model_.getItemAt(sel_item.row());
+    desel_items << selectionModel_.getItemAt(sel_item.row());
   }
   emit clearSelectedItems(desel_items);
 }
 void SelectHighlightWindow::highlightSelectedItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
-    sel_items << selection_model_.getItemAt(sel_item.row());
+    sel_items << selectionModel_.getItemAt(sel_item.row());
   }
   emit highlightSelectedItemsSig(sel_items);
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
-    desel_items << selection_model_.getItemAt(sel_item.row());
+    desel_items << selectionModel_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(desel_items);
 }
 
 void SelectHighlightWindow::dehighlightItems()
 {
-  auto sel_indices = ui_->hltTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
-    dehlt_items << highlight_model_.getItemAt(sel_item.row());
+    dehlt_items << highlightModel_.getItemAt(sel_item.row());
   }
   emit clearHighlightedItems(dehlt_items);
 }
 
 void SelectHighlightWindow::zoomInHighlightedItems()
 {
-  auto sel_indices = ui_->hltTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
-    dehlt_items << highlight_model_.getItemAt(sel_item.row());
+    dehlt_items << highlightModel_.getItemAt(sel_item.row());
   }
   emit zoomInToItems(dehlt_items);
 }

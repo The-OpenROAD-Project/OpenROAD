@@ -207,8 +207,8 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 
   Rect bbox = getBounds(block);
 
-  QSize size(ceil(bbox.xMax() * pixelsPerDBU),
-             ceil(bbox.yMax() * pixelsPerDBU));
+  QSize size(ceil(bbox.xMax() * pixels_per_dbu),
+             ceil(bbox.yMax() * pixels_per_dbu));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
