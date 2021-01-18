@@ -36,21 +36,21 @@ using namespace fr;
 
 void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
   // fake zMap
-  zMap[0] = frcNonePrefRoutingDir;
+  zMap_[0] = frcNonePrefRoutingDir;
   // numLayers = 1;
 
   // resize cmap
-  unsigned size = xgp->getCount() * ygp->getCount();
+  unsigned size = xgp_->getCount() * ygp_->getCount();
   // cout << "size = " << size << endl << flush;
-  bits.resize(size, 0);
+  bits_.resize(size, 0);
 
   // init supply / demand (from 3D cmap)
   unsigned zIdx = 0;
   for (auto &[layerIdx, dir]: cmap3D->getZMap()) {
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+      for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         // non-transition via layer
-        for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+        for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
           // supply
           if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::E)) {
             auto supply2D = getSupply(xIdx, yIdx, 0, frDirEnum::E);
@@ -69,8 +69,8 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-        for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+        for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
           // supply
           if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::N)) {
             auto supply2D = getSupply(xIdx, yIdx, 0, frDirEnum::N);
@@ -118,8 +118,8 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
   //   }
   // }
 
-  for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-    for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+  for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+    for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
       zIdx = 0;
 
       // block
@@ -136,59 +136,59 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
 void FlexGRCMap::init() {
   // get cmap layer size
   unsigned layerSize = 0;
-  for (unsigned layerIdx = 0; layerIdx < design->getTech()->getLayers().size(); layerIdx++) {
-    auto layer = design->getTech()->getLayer(layerIdx);
+  for (unsigned layerIdx = 0; layerIdx < design_->getTech()->getLayers().size(); layerIdx++) {
+    auto layer = design_->getTech()->getLayer(layerIdx);
     if (layer->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
     layerSize++;
-    zMap[layerIdx] = layer->getDir();
+    zMap_[layerIdx] = layer->getDir();
   }
   // resize cmap
-  unsigned size = xgp->getCount() * ygp->getCount() * layerSize;
-  numLayers = layerSize;
-  bits.resize(size, 0);
+  unsigned size = xgp_->getCount() * ygp_->getCount() * layerSize;
+  numLayers_ = layerSize;
+  bits_.resize(size, 0);
 
   // init supply (only for pref routing direction)
   unsigned cmapLayerIdx = 0;
-  for (auto &[layerIdx, dir]: zMap) {
+  for (auto &[layerIdx, dir]: zMap_) {
     // // ignore top-most routing layer
     // if (cmapLayerIdx == zMap.size() - 1) {
     //   continue;
     // }
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+      for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         frBox startGCellBox;
-        design->getTopBlock()->getGCellBox(frPoint(0, yIdx), startGCellBox);
+        design_->getTopBlock()->getGCellBox(frPoint(0, yIdx), startGCellBox);
         frCoord low = startGCellBox.bottom();
         frCoord high = startGCellBox.top();
         // non-transition via layer
-        if (layerTrackPitches[cmapLayerIdx] == layerPitches[cmapLayerIdx]) {
-          unsigned numTrack = getNumTracks(design->getTopBlock()->getTrackPatterns(layerIdx), true, low, high);
-          for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+        if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
+          unsigned numTrack = getNumTracks(design_->getTopBlock()->getTrackPatterns(layerIdx), true, low, high);
+          for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
             setSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numTrack);
           }
         } else {
-          unsigned numTrack = getNumTracks(design->getTopBlock()->getTrackPatterns(layerIdx), true, low, high, layerPitches[cmapLayerIdx]);
-          for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+          unsigned numTrack = getNumTracks(design_->getTopBlock()->getTrackPatterns(layerIdx), true, low, high, layerPitches_[cmapLayerIdx]);
+          for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
             setSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numTrack);
           }
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         frBox startGCellBox;
-        design->getTopBlock()->getGCellBox(frPoint(xIdx, 0), startGCellBox);
+        design_->getTopBlock()->getGCellBox(frPoint(xIdx, 0), startGCellBox);
         frCoord low = startGCellBox.left();
         frCoord high = startGCellBox.right();
-        if (layerTrackPitches[cmapLayerIdx] == layerPitches[cmapLayerIdx]) {
-          unsigned numTrack = getNumTracks(design->getTopBlock()->getTrackPatterns(layerIdx), false, low, high);
-          for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+        if (layerTrackPitches_[cmapLayerIdx] == layerPitches_[cmapLayerIdx]) {
+          unsigned numTrack = getNumTracks(design_->getTopBlock()->getTrackPatterns(layerIdx), false, low, high);
+          for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
             setSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, numTrack);
           }
         } else {
-          unsigned numTrack = getNumTracks(design->getTopBlock()->getTrackPatterns(layerIdx), false, low, high, layerPitches[cmapLayerIdx]);
-          for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+          unsigned numTrack = getNumTracks(design_->getTopBlock()->getTrackPatterns(layerIdx), false, low, high, layerPitches_[cmapLayerIdx]);
+          for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
             setSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, numTrack);
           }
         }
@@ -204,25 +204,25 @@ void FlexGRCMap::init() {
   frBox currGCellBox;
   set<frCoord> trackLocs;
   vector<rq_box_value_t<frBlockObject*>> queryResult;
-  auto regionQuery = design->getRegionQuery();
+  auto regionQuery = design_->getRegionQuery();
   unsigned numBlkTracks = 0;
   // layerIdx == tech layer num
-  for (auto &[layerIdx, dir]: zMap) {
-    frCoord width = design->getTech()->getLayer(layerIdx)->getWidth();
+  for (auto &[layerIdx, dir]: zMap_) {
+    frCoord width = design_->getTech()->getLayer(layerIdx)->getWidth();
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+      for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         trackLocs.clear();
         frBox startGCellBox;
-        design->getTopBlock()->getGCellBox(frPoint(0, yIdx), startGCellBox);
+        design_->getTopBlock()->getGCellBox(frPoint(0, yIdx), startGCellBox);
         frCoord low = startGCellBox.bottom();
         frCoord high = startGCellBox.top();
-        getTrackLocs(design->getTopBlock()->getTrackPatterns(layerIdx), true, low, high, trackLocs);
+        getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx), true, low, high, trackLocs);
         
-        for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+        for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, 1);
           // add blocked track demand
-          design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
+          design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks = getNumBlkTracks(true, layerIdx, trackLocs, queryResult, width);
@@ -235,19 +235,19 @@ void FlexGRCMap::init() {
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
         trackLocs.clear();
         frBox startGCellBox;
-        design->getTopBlock()->getGCellBox(frPoint(xIdx, 0), startGCellBox);
+        design_->getTopBlock()->getGCellBox(frPoint(xIdx, 0), startGCellBox);
         frCoord low = startGCellBox.left();
         frCoord high = startGCellBox.right();
-        getTrackLocs(design->getTopBlock()->getTrackPatterns(layerIdx), false, low, high, trackLocs);
+        getTrackLocs(design_->getTopBlock()->getTrackPatterns(layerIdx), false, low, high, trackLocs);
 
-        for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+        for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
           // add initial demand
           // addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, 1);
           // add blocked track demand
-          design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
+          design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
           queryResult.clear();
           regionQuery->query(currGCellBox, layerIdx, queryResult);
           numBlkTracks = getNumBlkTracks(false, layerIdx, trackLocs, queryResult, width);
@@ -266,11 +266,11 @@ void FlexGRCMap::init() {
   cmapLayerIdx = 0;
   vector<rq_box_value_t<frRPin*>> rpinQueryResult;
   // layerIdx == tech layer num
-  for (auto &[layerIdx, dir]: zMap) {
+  for (auto &[layerIdx, dir]: zMap_) {
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-          design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
+      for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
+        for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+          design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
           
@@ -284,9 +284,9 @@ void FlexGRCMap::init() {
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-        for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-          design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+        for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
+          design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), currGCellBox);
           rpinQueryResult.clear();
           regionQuery->queryRPin(currGCellBox, layerIdx, rpinQueryResult);
 
@@ -305,18 +305,18 @@ void FlexGRCMap::init() {
 
   // update blocked track
   cmapLayerIdx = 0;
-  for (auto &[layerIdx, dir]: zMap) {
+  for (auto &[layerIdx, dir]: zMap_) {
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+      for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
+        for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
           if (getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E) >= getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
             setBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, true);
           }
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-        for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+        for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
           if (getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N) >= getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
             setBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, true);
           }
@@ -518,7 +518,7 @@ unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern> > &tps
 void FlexGRCMap::printLayers() {
   cout << "start printing layers in CMap\n";
 
-  for (auto &[layerNum, dir]: zMap) {
+  for (auto &[layerNum, dir]: zMap_) {
     cout << "  layerNum = " << layerNum << " dir = ";
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
       cout << "H";
@@ -546,15 +546,15 @@ void FlexGRCMap::print(bool isAll) {
   }
 
   // cout << "     Area              Density  demand/supply tracks\n";
-  for (auto &[layerNum, dir]: zMap) {
+  for (auto &[layerNum, dir]: zMap_) {
     if (congMap.is_open()) {
-      congMap << "----------------------" << design->getTech()->getLayer(layerNum)->getName() << "----------------------\n";
+      congMap << "----------------------" << design_->getTech()->getLayer(layerNum)->getName() << "----------------------\n";
     } else {
-      cout << "----------------------" << design->getTech()->getLayer(layerNum)->getName() << "----------------------\n";
+      cout << "----------------------" << design_->getTech()->getLayer(layerNum)->getName() << "----------------------\n";
     }
-    for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-      for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-        design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), gcellBox);
+    for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
+      for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
+        design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), gcellBox);
         unsigned demandV = getDemand(xIdx, yIdx, layerIdx, frDirEnum::N);
         unsigned demandH = getDemand(xIdx, yIdx, layerIdx, frDirEnum::E);
         unsigned supplyV = getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
@@ -600,21 +600,21 @@ void FlexGRCMap::print2D(bool isAll) {
     cout << "#     Area              demand/supply tracks\n";
   }
 
-  for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
+  for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
+    for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
       unsigned demandH = 0;
       unsigned demandV = 0;
       unsigned supplyH = 0;
       unsigned supplyV = 0;
       
-      for (unsigned layerIdx = 0; layerIdx < zMap.size(); ++layerIdx) {
+      for (unsigned layerIdx = 0; layerIdx < zMap_.size(); ++layerIdx) {
         demandH += getDemand(xIdx, yIdx, layerIdx, frDirEnum::E);
         demandV += getDemand(xIdx, yIdx, layerIdx, frDirEnum::N);
         supplyH += getSupply(xIdx, yIdx, layerIdx, frDirEnum::E);
         supplyV += getSupply(xIdx, yIdx, layerIdx, frDirEnum::N);
       }
 
-      design->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), gcellBox);
+      design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx), gcellBox);
       if (isAll || (demandV > supplyV) || (demandH > supplyH)) {
         if (congMap.is_open()) {
           congMap << "(" << gcellBox.left() << ", " << gcellBox.bottom() << ") (" 

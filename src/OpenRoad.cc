@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -66,7 +66,7 @@
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
 #include "fastroute/MakeFastRoute.h"
-#include "TritonCTS/src/MakeTritoncts.h"
+#include "tritoncts/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
@@ -190,7 +190,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = new Logger(log_filename);
+  logger_ = new utl::Logger(log_filename);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();

@@ -15,6 +15,8 @@ record_tests {
   resize4
   resize5
   resize6
+  resize_slack1
+  resize_slack2
   remove_buffers1
   repair_clk_nets1
   repair_clk_inverters1
@@ -50,6 +52,7 @@ record_tests {
   repair_wire3
   repair_wire4
   repair_wire5
+  repair_wire6
   gcd_resize
 }
 # injured reserve

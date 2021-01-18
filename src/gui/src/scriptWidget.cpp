@@ -31,11 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "scriptWidget.h"
-#include "spdlog/sinks/base_sink.h"
-#include "spdlog/formatter.h"
 
-#include <unistd.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <QCoreApplication>
 #include <QHBoxLayout>
@@ -45,7 +43,9 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h"
+#include "spdlog/formatter.h"
+#include "spdlog/sinks/base_sink.h"
+#include "utility/Logger.h"
 
 namespace gui {
 
@@ -57,6 +57,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
+  output_->setFont(QFont("Monospace"));
 
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
@@ -80,29 +81,29 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   setWidget(container);
 }
 
-int channelClose(ClientData instanceData, Tcl_Interp* interp)
+int channelClose(ClientData instance_data, Tcl_Interp* interp)
 {
   // This channel should never be closed
   return EINVAL;
 }
 
-int ScriptWidget::channelOutput(ClientData instanceData,
+int ScriptWidget::channelOutput(ClientData instance_data,
                                 const char* buf,
-                                int toWrite,
-                                int* errorCodePtr)
+                                int to_write,
+                                int* error_code)
 {
   // Buffer up the output
-  ScriptWidget* widget = (ScriptWidget*) instanceData;
-  widget->outputBuffer_.append(QString::fromLatin1(buf, toWrite).trimmed());
-  return toWrite;
+  ScriptWidget* widget = (ScriptWidget*) instance_data;
+  widget->outputBuffer_.append(QString::fromLatin1(buf, to_write).trimmed());
+  return to_write;
 }
 
-void channelWatch(ClientData instanceData, int mask)
+void channelWatch(ClientData instance_data, int mask)
 {
   // watch is not supported inside OpenROAD GUI
 }
 
-Tcl_ChannelType ScriptWidget::stdoutChannelType = {
+Tcl_ChannelType ScriptWidget::stdout_channel_type_ = {
     // Tcl stupidly defines this a non-cost char*
     ((char*) "stdout_channel"),  /* typeName */
     TCL_CHANNEL_VERSION_2,       /* version */
@@ -127,13 +128,13 @@ void ScriptWidget::setupTcl()
 {
   interp_ = Tcl_CreateInterp();
 
-  Tcl_Channel stdoutChannel = Tcl_CreateChannel(
-      &stdoutChannelType, "stdout", (ClientData) this, TCL_WRITABLE);
-  if (stdoutChannel) {
-    Tcl_SetChannelOption(nullptr, stdoutChannel, "-translation", "lf");
-    Tcl_SetChannelOption(nullptr, stdoutChannel, "-buffering", "none");
-    Tcl_RegisterChannel(interp_, stdoutChannel);  // per man page: some tcl bug
-    Tcl_SetStdChannel(stdoutChannel, TCL_STDOUT);
+  Tcl_Channel stdout_channel = Tcl_CreateChannel(
+      &stdout_channel_type_, "stdout", (ClientData) this, TCL_WRITABLE);
+  if (stdout_channel) {
+    Tcl_SetChannelOption(nullptr, stdout_channel, "-translation", "lf");
+    Tcl_SetChannelOption(nullptr, stdout_channel, "-buffering", "none");
+    Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
+    Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
   }
 
   pauser_->setText("Running");
@@ -276,23 +277,21 @@ void ScriptWidget::pauserClicked()
 
 // This class is an spdlog sink that writes the messages into the output
 // area.
-template<typename Mutex>
+template <typename Mutex>
 class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 {
-public:
-  GuiSink(ScriptWidget* widget)
-    : widget_(widget)
-  {
-  }
+ public:
+  GuiSink(ScriptWidget* widget) : widget_(widget) {}
 
-protected:
+ protected:
   void sink_it_(const spdlog::details::log_msg& msg) override
   {
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
     this->formatter_->format(msg, formatted);
     // -1 is to drop the final '\n' character
-    auto str = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
+    auto str
+        = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
     widget_->outputBuffer_.append(str);
 
     // Make it appear now
@@ -301,15 +300,13 @@ protected:
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   }
 
-  void flush_() override
-  {
-  }
+  void flush_() override {}
 
-private:
+ private:
   ScriptWidget* widget_;
 };
 
-void ScriptWidget::setLogger(ord::Logger* logger)
+void ScriptWidget::setLogger(utl::Logger* logger)
 {
   logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }

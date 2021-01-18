@@ -286,6 +286,12 @@ no distance units are not specied in the liberty file microns are
 used.
 
 ```
+remove_buffers
+```
+
+Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
+
+```
 estimate_parasitics -placement
 ```
 

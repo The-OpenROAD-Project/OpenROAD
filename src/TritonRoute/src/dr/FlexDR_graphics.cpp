@@ -4,7 +4,6 @@
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
-#include "openroad/OpenRoad.hh"
 
 namespace fr {
 
@@ -32,7 +31,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     }
   }
 
-  gui_->register_renderer(this);
+  gui_->registerRenderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)

@@ -62,7 +62,10 @@ namespace fr {
     friend class FlexGCWorker;
   public:
     // constructors
-    Impl(frDesign* designIn, FlexDRWorker* drWorkerIn, FlexGCWorker* gcWorkerIn);
+    Impl(frDesign* designIn,
+         Logger* logger,
+         FlexDRWorker* drWorkerIn,
+         FlexGCWorker* gcWorkerIn);
     gcNet* addNet(frBlockObject* owner = nullptr) {
       auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
       auto net = uNet.get();
@@ -103,6 +106,7 @@ namespace fr {
     
   protected:
     frDesign*                            design_;
+    Logger*                              logger_;
     FlexDRWorker*                        drWorker_;
 
     frBox                                extBox_;

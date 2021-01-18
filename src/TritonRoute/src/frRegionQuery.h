@@ -38,7 +38,7 @@ namespace fr {
     template<typename T>
     using Objects = std::vector<rq_box_value_t<T*>>;
 
-    frRegionQuery(frDesign* designIn);
+    frRegionQuery(frDesign* designIn, Logger* logger);
     ~frRegionQuery();
     // getters
     frDesign* getDesign() const;
