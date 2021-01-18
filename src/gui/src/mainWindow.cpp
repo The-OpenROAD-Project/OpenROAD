@@ -88,9 +88,9 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(setLocation(qreal, qreal)));
   connect(viewer_,
-          SIGNAL(selected(const Selected&)),
+          SIGNAL(selected(const Selected&, bool)),
           this,
-          SLOT(setSelected(const Selected&)));
+          SLOT(setSelected(const Selected&, bool)));
   connect(viewer_,
           SIGNAL(addSelected(const Selected&)),
           this,
@@ -110,7 +110,7 @@ MainWindow::MainWindow(QWidget* parent)
   connect(selectionBrowser_,
           &SelectHighlightWindow::clearAllSelections,
           this,
-          [this]() { this->setSelected(Selected()); });
+          [this]() { this->setSelected(Selected(), false); });
   connect(selectionBrowser_,
           &SelectHighlightWindow::clearAllHighlights,
           this,
@@ -249,10 +249,12 @@ void MainWindow::addSelected(const SelectionSet& selections)
   selectionBrowser_->show();
 }
 
-void MainWindow::setSelected(const Selected& selection)
+void MainWindow::setSelected(const Selected& selection, bool showConnectivity)
 {
   selected_.clear();
   addSelected(selection);
+  if (showConnectivity)
+    selectHighlightConnectedNets(true, true, true, false);
 }
 
 void MainWindow::addHighlighted(const SelectionSet& highlights,

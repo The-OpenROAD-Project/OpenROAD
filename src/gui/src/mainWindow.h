@@ -113,7 +113,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void addSelected(const SelectionSet& selections);
 
   // Displays the selection in the status bar
-  void setSelected(const Selected& selection);
+  void setSelected(const Selected& selection, bool showConnectivity = false);
 
   // Add the selections to highlight set
   void addHighlighted(const SelectionSet& selection,

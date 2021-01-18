@@ -312,8 +312,10 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
       Point pt_dbu = screenToDBU(event->pos());
       if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
         emit addSelected(selectAtPoint(pt_dbu));
+      } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
+        emit selected(selectAtPoint(pt_dbu), true);
       } else {
-        emit selected(selectAtPoint(pt_dbu));
+        emit selected(selectAtPoint(pt_dbu), false);
       }
     }
   } else if (event->button() == Qt::RightButton) {
