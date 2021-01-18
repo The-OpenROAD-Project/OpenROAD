@@ -66,13 +66,13 @@ class SelectionModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  const Selected* getItemAt(int idx) const { return tableData_[idx]; }
+  const Selected* getItemAt(int idx) const { return table_data_[idx]; }
 
   void populateModel();
 
  private:
   const SelectionSet& objs_;
-  std::vector<const Selected*> tableData_;
+  std::vector<const Selected*> table_data_;
 };
 
 class HighlightModel : public QAbstractTableModel
@@ -130,6 +130,7 @@ class SelectHighlightWindow : public QDockWidget
   Q_OBJECT
 
  public:
+
   explicit SelectHighlightWindow(const SelectionSet& selSet,
                                  const HighlightSet& hltSet,
                                  QWidget* parent = nullptr);
@@ -161,8 +162,8 @@ class SelectHighlightWindow : public QDockWidget
   SelectionModel selectionModel_;
   HighlightModel highlightModel_;
 
-  QMenu* selectContextMenu_;
-  QMenu* highlightContextMenu_;
+  QMenu* select_context_menu_;
+  QMenu* highlight_context_menu_;
 };
 
 }  // namespace gui

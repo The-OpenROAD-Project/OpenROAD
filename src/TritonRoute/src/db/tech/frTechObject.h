@@ -184,8 +184,6 @@ namespace fr {
       }
     }     
 
-    // others
-    void printAllVias();
     friend class io::Parser;
   protected:
     frUInt4                                          dbUnit;

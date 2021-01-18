@@ -14,5 +14,5 @@ Notice 0: Finished DEF file: gcd_placed.def
 Design area 700 u^2 11% utilization.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 100 hold buffers.
-[ERROR RSZ-0026] max utilization reached.
+[ERROR RSZ-0050] max utilization reached.
 Design area 833 u^2 13% utilization.

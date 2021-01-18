@@ -44,7 +44,7 @@ Finale::Finale() : db_(nullptr), debug_(false)
 {
 }
 
-void Finale::init(odb::dbDatabase* db, Logger *logger)
+void Finale::init(odb::dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;

@@ -90,7 +90,7 @@ target_include_directories(FastRoute
 
 target_link_libraries(FastRoute
   PUBLIC
-  spdlog::spdlog
+  utility
   PRIVATE
   FastRoute4.1
   pdrev

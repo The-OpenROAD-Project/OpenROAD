@@ -42,12 +42,16 @@
 
 #include "fastroute/GRoute.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace grt {
 
 class FastRouteCore
 {
  public:
-  FastRouteCore();
+  FastRouteCore(utl::Logger* logger);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -113,6 +117,7 @@ class FastRouteCore
   void setAllowOverflow(bool allow);
 
  private:
+  utl::Logger *_logger;
   NetRouteMap getRoutes();
   int maxNetDegree;
 };

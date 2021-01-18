@@ -37,7 +37,13 @@
 #include <string>
 #include <vector>
 
+namespace utl {
+class Logger;
+} // namespace utl
+
 namespace CKMeans {
+
+using utl::Logger;
 
 class flop
 {
@@ -55,6 +61,7 @@ class flop
 
 class clustering
 {
+  Logger* _logger;
   std::vector<flop> flops;
   std::vector<std::vector<flop*>> clusters;
 
@@ -67,7 +74,7 @@ class clustering
   std::pair<float, float> branchingPoint;
 
  public:
-  clustering(const std::vector<std::pair<float, float>>&, float, float);
+  clustering(const std::vector<std::pair<float, float>>&, float, float, Logger*);
   ~clustering();
   float Kmeans(unsigned,
                unsigned,

@@ -57,7 +57,7 @@ class Descriptor
   virtual std::string getLocation(void* object) const = 0;
   virtual bool getBBox(void* object, odb::Rect& bbox) const = 0;
 
-  // If the selectFlag is false, the drawing will happen in highlight mode.
+  // If the select_flag is false, the drawing will happen in highlight mode.
   // Highlight shapes are persistent which will not get removed from
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   virtual void highlight(void* object,
@@ -278,8 +278,8 @@ class Gui
  public:
   // Registered renderers must remain valid until they are
   // unregistered.
-  void register_renderer(Renderer* renderer);
-  void unregister_renderer(Renderer* renderer);
+  void registerRenderer(Renderer* renderer);
+  void unregisterRenderer(Renderer* renderer);
 
   // Add a net to the selection set
   void addSelectedNet(const char* name);
@@ -341,6 +341,6 @@ class Gui
 };
 
 // The main entry point
-int start_gui(int argc, char* argv[]);
+int startGui(int argc, char* argv[]);
 
 }  // namespace gui

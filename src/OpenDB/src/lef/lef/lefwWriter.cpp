@@ -1122,7 +1122,7 @@ lefwLayerCutSpacingAdjacent(int     viaCuts,    // either 2, 3 or 4, optional
         return LEFW_BAD_ORDER; // has to be after 
     // lefwLayerCutSpacing is called
     if (lefwWriteEncrypt) {
-        if (viaCuts < 2 && viaCuts > 4)
+        if (viaCuts < 2 || viaCuts > 4)
             return LEFW_BAD_DATA;
         encPrint(lefwFile, (char*) "\n     ADJACENTCUTS %d WITHIN %.11g",
                  viaCuts, distance);
@@ -1130,7 +1130,7 @@ lefwLayerCutSpacingAdjacent(int     viaCuts,    // either 2, 3 or 4, optional
             encPrint(lefwFile, (char*) " EXCEPTSAMEPGNET");
 
     } else {
-        if (viaCuts < 2 && viaCuts > 4)
+        if (viaCuts < 2 || viaCuts > 4)
             return LEFW_BAD_DATA;
         fprintf(lefwFile, "\n     ADJACENTCUTS %d WITHIN %.11g", viaCuts,
                 distance);

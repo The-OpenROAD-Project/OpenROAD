@@ -50,9 +50,10 @@ namespace rsz {
 
 using std::array;
 using std::string;
+using std::vector;
 
 using ord::OpenRoad;
-using ord::Logger;
+using utl::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -98,6 +99,7 @@ using sta::Pvt;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
+using sta::GateTimingModel;
 
 class BufferedNet;
 
@@ -242,13 +244,30 @@ public:
   // resizerPreamble() required.
   void rebuffer(Net *net);
 
+  // Slack API for timing driven placement.
+  // Each pass (findResizeSlacks)
+  //  estiimate parasitics
+  //  repair design
+  //  save slacks
+  //  remove inserted buffers
+  // Preamble must be called before the first findResizeSlacks.
+  void resizeSlackPreamble();
+  void findResizeSlacks();
+  // Return 10% of nets with worst slack.
+  NetSeq &resizeWorstSlackNets();
+  // Return net slack.
+  Slack resizeNetSlack(const Net *neet);
+  // db flavor
+  vector<dbNet*> resizeWorstSlackDbNets();
+  Slack resizeNetSlack(const dbNet *db_net);
+
 protected:
   void init();
   void ensureBlock();
   void ensureDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
-  void ensureLevelDrvrVerticies();
+  void ensureLevelDrvrVertices();
   void bufferInput(Pin *top_pin,
                    LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
@@ -264,6 +283,12 @@ protected:
                        TimingArc *arc,
                        Slew in_slew,
                        Slew out_slew);
+  Slew gateSlewDiff(LibertyCell *cell,
+                    TimingArc *arc,
+                    GateTimingModel *model,
+                    Slew in_slew,
+                    float load_cap,
+                    Slew out_slew);
   void findBufferTargetSlews(LibertyLibrarySeq *resize_libs);
   void findBufferTargetSlews(LibertyLibrary *library,
                              // Return values.
@@ -361,6 +386,7 @@ protected:
                                Pin *load_pin,
                                double wire_length); // meters
   string makeUniqueNetName();
+  Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
                             bool underscore);
@@ -397,6 +423,7 @@ protected:
   void makeHoldDelay(Vertex *drvr,
                      int buffer_count,
                      PinSeq &load_pins,
+                     bool loads_have_out_port,
                      LibertyCell *buffer_cell);
   Point findCenter(PinSeq &pins);
   Slack holdSlack(Slacks &slacks);
@@ -466,6 +493,8 @@ protected:
                                      BufferedNet *ref,
                                      BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
+  LibertyLibrarySeq allLibraries();
+  void findResizeSlacks1();
 
   int rebuffer_net_count_;
   BufferedNetSeq rebuffer_options_;
@@ -498,8 +527,8 @@ protected:
   bool have_estimated_parasitics_;
   UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   CellTargetLoadMap *target_load_map_;
-  VertexSeq level_drvr_verticies_;
-  bool level_drvr_verticies_valid_;
+  VertexSeq level_drvr_vertices_;
+  bool level_drvr_vertices_valid_;
   TgtSlews tgt_slews_;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
@@ -507,6 +536,10 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  // Slack map variables.
+  float max_wire_length_;
+  Map<const Net*, Slack> net_slack_map_;
+  NetSeq worst_slack_nets_;
 };
 
 } // namespace

@@ -64,13 +64,13 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 }
 
 // This provides the link for Gui::redraw to the widget
-static gui::MainWindow* mainWindow;
+static gui::MainWindow* main_window;
 
 Gui* Gui::singleton_ = nullptr;
 
 Gui* Gui::get()
 {
-  if (mainWindow == nullptr) {
+  if (main_window == nullptr) {
     return nullptr;  // batch mode
   }
 
@@ -81,13 +81,13 @@ Gui* Gui::get()
   return singleton_;
 }
 
-void Gui::register_renderer(Renderer* renderer)
+void Gui::registerRenderer(Renderer* renderer)
 {
   renderers_.insert(renderer);
   redraw();
 }
 
-void Gui::unregister_renderer(Renderer* renderer)
+void Gui::unregisterRenderer(Renderer* renderer)
 {
   renderers_.erase(renderer);
   redraw();
@@ -95,22 +95,22 @@ void Gui::unregister_renderer(Renderer* renderer)
 
 void Gui::redraw()
 {
-  mainWindow->redraw();
+  main_window->redraw();
 }
 
 void Gui::status(const std::string& message)
 {
-  mainWindow->status(message);
+  main_window->status(message);
 }
 
 void Gui::pause()
 {
-  mainWindow->pause();
+  main_window->pause();
 }
 
 void Gui::addSelectedNet(const char* name)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
@@ -120,7 +120,7 @@ void Gui::addSelectedNet(const char* name)
     return;
   }
 
-  mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
+  main_window->addSelected(Selected(net, OpenDbDescriptor::get()));
 }
 
 void Gui::addSelectedNets(const char* pattern,
@@ -129,16 +129,16 @@ void Gui::addSelectedNets(const char* pattern,
                           bool addToHighlightSet,
                           unsigned highlightGroup)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
 
   QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet nets;
-  if (matchRegEx == true) {
+  if (match_regex == true) {
     QRegExp re(pattern,
-               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
 
     for (auto* net : block->getNets()) {
@@ -146,7 +146,7 @@ void Gui::addSelectedNets(const char* pattern,
         nets.emplace(net, OpenDbDescriptor::get());
       }
     }
-  } else if (matchCase == false) {
+  } else if (match_case == false) {
     for (auto* net : block->getNets()) {
       if (boost::iequals(pattern, net->getConstName()))
         nets.emplace(net, OpenDbDescriptor::get());
@@ -166,7 +166,7 @@ void Gui::addSelectedNets(const char* pattern,
 
 void Gui::addSelectedInst(const char* name)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
@@ -176,7 +176,7 @@ void Gui::addSelectedInst(const char* name)
     return;
   }
 
-  mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
+  main_window->addSelected(Selected(inst, OpenDbDescriptor::get()));
 }
 
 void Gui::addSelectedInsts(const char* pattern,
@@ -185,22 +185,22 @@ void Gui::addSelectedInsts(const char* pattern,
                            bool addToHighlightSet,
                            unsigned highlightGroup)
 {
-  auto block = getBlock(mainWindow->getDb());
+  auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
   }
 
   SelectionSet insts;
-  if (matchRegEx) {
+  if (match_regex) {
     QRegExp re(pattern,
-               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
     for (auto* inst : block->getInsts()) {
       if (re.exactMatch(inst->getConstName())) {
         insts.emplace(inst, OpenDbDescriptor::get());
       }
     }
-  } else if (matchCase == false) {
+  } else if (match_case == false) {
     for (auto* inst : block->getInsts()) {
       if (boost::iequals(inst->getConstName(), pattern))
         insts.emplace(inst, OpenDbDescriptor::get());
@@ -281,12 +281,12 @@ void Gui::clearHighlights(int highlightGroup)
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
-  mainWindow->zoomTo(rect_dbu);
+  main_window->zoomTo(rect_dbu);
 }
 
 Renderer::~Renderer()
 {
-  gui::Gui::get()->unregister_renderer(this);
+  gui::Gui::get()->unregisterRenderer(this);
 }
 
 OpenDbDescriptor* OpenDbDescriptor::singleton_ = nullptr;
@@ -315,8 +315,8 @@ std::string OpenDbDescriptor::getName(void* object) const
 std::string OpenDbDescriptor::getLocation(void* object) const
 {
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
-  auto block = getBlock(mainWindow->getDb());
-  auto toMicrons = block->getDbUnitsPerMicron();
+  auto block = getBlock(main_window->getDb());
+  auto to_microns = block->getDbUnitsPerMicron();
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
@@ -324,24 +324,25 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       odb::Rect wireBBox;
       if (wire && wire->getBBox(wireBBox)) {
         std::stringstream ss;
-        ss << "[(" << wireBBox.xMin() / toMicrons << ","
-           << wireBBox.yMin() / toMicrons << "), ("
-           << wireBBox.xMax() / toMicrons << "," << wireBBox.yMax() / toMicrons
-           << ")]";
+        ss << "[(" << wire_bbox.xMin() / to_microns << ","
+           << wire_bbox.yMin() / to_microns << "), ("
+           << wire_bbox.xMax() / to_microns << ","
+           << wire_bbox.yMax() / to_microns << ")]";
         return ss.str();
       }
       return std::string("NA");
     } break;
     case odb::dbInstObj: {
-      auto instObj = static_cast<odb::dbInst*>(db_obj);
-      auto instBBox = instObj->getBBox();
-      auto placementStatus = instObj->getPlacementStatus().getString();
-      auto instOrient = instObj->getOrient().getString();
+      auto inst_obj = static_cast<odb::dbInst*>(db_obj);
+      auto inst_bbox = inst_obj->getBBox();
+      auto placement_status = inst_obj->getPlacementStatus().getString();
+      auto inst_orient = inst_obj->getOrient().getString();
       std::stringstream ss;
-      ss << "[(" << instBBox->xMin() / toMicrons << ","
-         << instBBox->yMin() / toMicrons << "), ("
-         << instBBox->xMax() / toMicrons << "," << instBBox->yMax() / toMicrons
-         << ")], " << instOrient << ": " << placementStatus;
+      ss << "[(" << inst_bbox->xMin() / to_microns << ","
+         << inst_bbox->yMin() / to_microns << "), ("
+         << inst_bbox->xMax() / to_microns << ","
+         << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "
+         << placement_status;
       return ss.str();
     } break;
     default:
@@ -362,16 +363,17 @@ bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
       return false;
     }
     case odb::dbInstObj: {
-      auto instObj = static_cast<odb::dbInst*>(db_obj);
-      auto instBBox = instObj->getBBox();
-      bbox.set_xlo(instBBox->xMin());
-      bbox.set_ylo(instBBox->yMin());
-      bbox.set_xhi(instBBox->xMax());
-      bbox.set_yhi(instBBox->yMax());
+      auto inst_obj = static_cast<odb::dbInst*>(db_obj);
+      auto inst_bbox = inst_obj->getBBox();
+      bbox.set_xlo(inst_bbox->xMin());
+      bbox.set_ylo(inst_bbox->yMin());
+      bbox.set_xhi(inst_bbox->xMax());
+      bbox.set_yhi(inst_bbox->yMax());
       return true;
     }
+    default:
+      return false;
   }
-  return false;
 }
 
 void OpenDbDescriptor::highlight(void* object,
@@ -471,7 +473,7 @@ void OpenDbDescriptor::highlight(void* object,
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
-int start_gui(int argc, char* argv[])
+int startGui(int argc, char* argv[])
 {
   QApplication app(argc, argv);
 
@@ -481,7 +483,7 @@ int start_gui(int argc, char* argv[])
   QApplication::setFont(font);
 
   gui::MainWindow win;
-  mainWindow = &win;
+  main_window = &win;
   auto* open_road = ord::OpenRoad::openRoad();
   win.setDb(open_road->getDb());
   open_road->addObserver(&win);
@@ -508,8 +510,8 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
-  if (gui::mainWindow) {
-    gui::mainWindow->setLogger(openroad->getLogger());
+  if (gui::main_window) {
+    gui::main_window->setLogger(openroad->getLogger());
   }
 }
 

@@ -39,12 +39,10 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "openroad/Error.hh"
-#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
 using namespace triton_route;
-using ord::DRT;
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -56,8 +54,7 @@ extern int Triton_route_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
-  : design_(std::make_unique<frDesign>()),
-    debug_(std::make_unique<frDebugSettings>()),
+  : debug_(std::make_unique<frDebugSettings>()),
     num_drvs_(-1)
 {
 }
@@ -100,14 +97,15 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, ord::Logger* logger)
+void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
+  design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
-}
+  }
 
 void TritonRoute::init() {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
@@ -119,15 +117,15 @@ void TritonRoute::init() {
     ENABLE_VIA_GEN = false;
   }
 
-  io::Parser parser(getDesign());
-  parser.readLefDef();
+  io::Parser parser(getDesign(),logger_);
+  parser.readLefDb(db_);
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
     ENABLE_VIA_GEN = false;
   }
   parser.postProcess();
-  FlexPA pa(getDesign());
+  FlexPA pa(getDesign(), logger_);
   pa.main();
   if (GUIDE_FILE != string("")) {
     parser.postProcessGuide();
@@ -137,7 +135,7 @@ void TritonRoute::init() {
 }
 
 void TritonRoute::prep() {
-  FlexRP rp(getDesign(), getDesign()->getTech());
+  FlexRP rp(getDesign(), getDesign()->getTech(), logger_);
   rp.main();
 }
 
@@ -170,7 +168,7 @@ int TritonRoute::main() {
   init();
   if (GUIDE_FILE == string("")) {
     gr();
-    io::Parser parser(getDesign());
+    io::Parser parser(getDesign(),logger_);
     GUIDE_FILE = OUTGUIDE_FILE;
     ENABLE_VIA_GEN = true;
     parser.readGuide();

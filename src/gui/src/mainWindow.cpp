@@ -165,8 +165,8 @@ odb::dbBlock* MainWindow::getBlock()
     return nullptr;
   }
 
-  auto topBlock = chip->getBlock();
-  return topBlock;
+  auto top_block = chip->getBlock();
+  return top_block;
 }
 
 void MainWindow::createActions()
@@ -475,7 +475,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   emit designLoaded(block);
 }
 
-void MainWindow::setLogger(ord::Logger* logger)
+void MainWindow::setLogger(utl::Logger* logger)
 {
   script_->setLogger(logger);
 }
