@@ -187,7 +187,7 @@ void AthMemCounterp(int /* unused: signo */)
 int AthResourceLog(const char* title, int ss)
 {
   static struct tms ctp;
-  static long       wtp = 0;
+  static time_t     wtp = 0;
   static double     mmp = 0.0;
 
   // mallinfo does not work on 64 bit.
@@ -222,7 +222,7 @@ int AthResourceLog(const char* title, int ss)
   }
 
   struct tms ctn;
-  long       wtn, wtd;
+  time_t       wtn, wtd;
   time(&wtn);
   times(&ctn);
   int ticks = sysconf(_SC_CLK_TCK);
