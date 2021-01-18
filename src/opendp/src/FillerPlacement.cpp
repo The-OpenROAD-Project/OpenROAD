@@ -73,7 +73,7 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
   for (const string &master_name : *filler_master_names) {
     for (dbLib *lib : db_->getLibs()) {
       dbMaster *master = lib->findMaster(master_name.c_str());
-      if (master != nullptr) {
+      if (master) {
         filler_masters_.push_back(master);
         break;
       }
