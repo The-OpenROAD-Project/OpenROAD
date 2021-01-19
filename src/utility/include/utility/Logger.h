@@ -125,10 +125,11 @@ class Logger
     }
 
   template <typename... Args>
+    __attribute__((noreturn))
     inline void error(ToolId tool,
                       int id,
                       const std::string& message,
-                      const Args&... args) __attribute((noreturn))
+                      const Args&... args) 
     {
       log(tool, spdlog::level::err, id, message, args...);
       char tool_id[32];
@@ -139,10 +140,11 @@ class Logger
     }
 
   template <typename... Args>
+    __attribute__((noreturn))
     void critical(ToolId tool,
                   int id,
                   const std::string& message,
-                  const Args&... args) __attribute((noreturn))
+                  const Args&... args) 
     {
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
       exit(EXIT_FAILURE);
