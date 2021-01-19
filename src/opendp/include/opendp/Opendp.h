@@ -171,7 +171,6 @@ public:
   // legalize/report
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
-  void reportDesignStats() const;
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
@@ -389,16 +388,7 @@ private:
   // Design stats.
   int fixed_inst_count_;
   int multi_row_inst_count_;
-  // total placeable area (excluding row blockages) dbu^2
-  int64_t design_area_;
-  // total movable cell area dbu^2
-  int64_t movable_area_;
-  int64_t movable_padded_area_;
-  // Total fixed cell area dbu^2
-  int64_t fixed_area_;
-  int64_t fixed_padded_area_;
   double design_util_;
-  double design_padded_util_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters

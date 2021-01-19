@@ -222,23 +222,18 @@ void
 Opendp::findDesignStats()
 {
   fixed_inst_count_ = 0;
-  fixed_area_ = 0;
-  fixed_padded_area_ = 0;
-  movable_area_ = 0;
-  movable_padded_area_ = 0;
+  int64_t fixed_area = 0;
+  int64_t movable_area = 0;
   max_cell_height_ = 0;
 
   for (Cell &cell : cells_) {
     int64_t cell_area = cell.area();
-    int64_t cell_padded_area = paddedArea(&cell);
     if (isFixed(&cell)) {
-      fixed_area_ += cell_area;
-      fixed_padded_area_ += cell_padded_area;
+      fixed_area += cell_area;
       fixed_inst_count_++;
     }
     else {
-      movable_area_ += cell_area;
-      movable_padded_area_ += cell_padded_area;
+      movable_area += cell_area;
       int cell_height = gridNearestHeight(&cell);
       if (cell_height > max_cell_height_) {
         max_cell_height_ = cell_height;
@@ -246,43 +241,10 @@ Opendp::findDesignStats()
     }
   }
 
-  design_area_ = row_count_ * static_cast<int64_t>(row_site_count_)
+  int64_t design_area = row_count_ * static_cast<int64_t>(row_site_count_)
     * site_width_ * row_height_;
 
-  design_util_ = static_cast<double>(movable_area_) / (design_area_ - fixed_area_);
-
-  design_padded_util_ = static_cast<double>(movable_padded_area_)
-    / (design_area_ - fixed_padded_area_);
-
-  if (design_util_ > 1.0)
-    logger_->error(DPL, 14, "utilization exceeds 100%.");
-}
-
-void
-Opendp::reportDesignStats() const
-{
-  logger_->report("Design Stats");
-  logger_->report("-----------------------------------");
-  logger_->report("total instances      {:10}", block_->getInsts().size());
-  logger_->report("multi row instances  {:10}", multi_row_inst_count_);
-  logger_->report("fixed instances      {:10}", fixed_inst_count_);
-  logger_->report("nets                 {:10}", block_->getNets().size());
-  logger_->report("design area          {:10.1f} u^2", dbuAreaToMicrons(design_area_));
-  logger_->report("fixed area           {:10.1f} u^2", dbuAreaToMicrons(fixed_area_));
-  logger_->report("movable area         {:10.1f} u^2", dbuAreaToMicrons(movable_area_));
-  int util = round(design_util_ * 100);
-  logger_->report("utilization          {:10} %", util);
-  int padded_util = round(design_padded_util_ * 100);
-  logger_->report("utilization padded   {:10} %", padded_util);
-  logger_->report("rows                 {:10}", row_count_);
-  logger_->report("row height           {:10.1f} u", dbuToMicrons(row_height_));
-  if (max_cell_height_ > 1) {
-    logger_->report("max height           {:10} rows", max_cell_height_);
-  }
-  if (groups_.size() > 0) {
-    logger_->report("group count          {:10}", groups_.size());
-  }
-  logger_->report("");
+  design_util_ = static_cast<double>(movable_area) / (design_area - fixed_area);
 }
 
 void

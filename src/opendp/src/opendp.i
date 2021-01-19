@@ -121,13 +121,6 @@ detailed_placement_cmd(int max_displacment)
 }
 
 void
-report_design_stats()
-{
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->reportDesignStats();
-}
-
-void
 report_legalization_stats()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
