@@ -1,6 +1,6 @@
-/* Authors: Lutong Wang and Bangqi Xu */
+/* Author: Matt Liberty */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2020, The Regents of the University of California
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,61 +26,55 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TRITONROUTE_H_
-#define _TRITONROUTE_H_
+#pragma once
 
 #include <memory>
-#include <tcl.h>
+#include <vector>
 
-namespace fr {
-  class frDesign;
-  struct frDebugSettings;
-}
+#include "gui/gui.h"
+#include "frBaseTypes.h"
 
 namespace odb {
   class dbDatabase;
 }
-namespace utl {
-  class Logger;
-}
-namespace triton_route {
-  class TritonRoute {
-  public:
-    TritonRoute();
-    ~TritonRoute();
-    void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
 
-    fr::frDesign* getDesign() const {
-      return design_.get();
-    }
+namespace fr {
 
-    int main();
+class frDesign;
+class frPin;
+class frInstTerm;
+class frBlock;
+class frAccessPoint;
 
-    int getNumDRVs() const;
+// This class draws debugging graphics on the layout
+class FlexPAGraphics : public gui::Renderer
+{
+ public:
+  // Debug pin acess
+  FlexPAGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
 
-    void setDebugDR(bool on = true);
-    void setDebugMaze(bool on = true);
-    void setDebugPA(bool on = true);
-    void setDebugNetName(const char* name); // for DR
-    void setDebugPinName(const char* name); // for PA
-    void setDebugGCell(int x, int y);
-    void setDebugIter(int iter);
+  void startPin(frPin* pin, frInstTerm* inst_term);
 
-    void readParams(const std::string &fileName);
+  void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps);
 
-  protected:
-    std::unique_ptr<fr::frDesign> design_;
-    std::unique_ptr<fr::frDebugSettings> debug_;
-    odb::dbDatabase *db_;
-    utl::Logger *logger_;
-    int num_drvs_;
-    
-    void init();
-    void prep();
-    void gr();
-    void ta();
-    void dr();
-    void endFR();
-  };
-}
-#endif
+  // Show a message in the status bar
+  void status(const std::string& message);
+
+  // From Renderer API
+  virtual void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+
+  // Is the GUI being displayed (true) or are we in batch mode (false)
+  static bool guiActive();
+
+ private:
+  frDebugSettings* settings_;
+  gui::Gui*        gui_;
+  frPin*           pin_;
+  frInstTerm*      inst_term_;
+  frBlock*         top_block_;
+  std::vector<frAccessPoint> aps_;
+  // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
+  std::vector<frLayerNum> layer_map_;
+};
+
+}  // namespace fr

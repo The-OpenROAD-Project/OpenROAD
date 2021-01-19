@@ -61,14 +61,18 @@ void detailed_route_cmd(const char* param_file)
 
 void
 set_detailed_route_debug_cmd(const char* net_name,
+                             const char* pin_name,
                              bool dr,
+                             bool pa,
                              bool maze,
                              int gcell_x, int gcell_y,
                              int iter)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
+  router->setDebugPinName(pin_name);
   router->setDebugDR(dr);
+  router->setDebugPA(pa);
   router->setDebugMaze(maze);
   if (gcell_x >= 0) {
     router->setDebugGCell(gcell_x, gcell_y);

@@ -33,26 +33,34 @@
 #include <boost/polygon/polygon.hpp>
 namespace gtl = boost::polygon;
 
+namespace odb {
+  class dbDatabase;
+}
+
 namespace fr {
   // not default via, upperWidth, lowerWidth, not align upper, upperArea, lowerArea, not align lower
   typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool> viaRawPriorityTuple;
   class FlexPinAccessPattern;
   class FlexDPNode;
+  class FlexPAGraphics;
 
   class FlexPA {
   public:
     // constructor
-    FlexPA(frDesign* in, Logger* logger): design_(in), logger_(logger), stdCellPinGenApCnt_(0), stdCellPinValidPlanarApCnt_(0), stdCellPinValidViaApCnt_(0), stdCellPinNoApCnt_(0),
-                          macroCellPinGenApCnt_(0), macroCellPinValidPlanarApCnt_(0), macroCellPinValidViaApCnt_(0), macroCellPinNoApCnt_(0), maxAccessPatternSize_(0) {}
+    FlexPA(frDesign* in, Logger* logger);
+    ~FlexPA();
     // getters
     frDesign* getDesign() const {
       return design_;
     }
     // setters
     int main();
+    void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
     frDesign* design_;
     Logger*   logger_;
+    std::unique_ptr<FlexPAGraphics>    graphics_;
+    std::string                        debugPinName_;
 
     int stdCellPinGenApCnt_;
     int stdCellPinValidPlanarApCnt_;

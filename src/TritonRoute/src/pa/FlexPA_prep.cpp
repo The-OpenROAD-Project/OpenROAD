@@ -31,6 +31,7 @@
 #include <chrono>
 #include "frProfileTask.h"
 #include "FlexPA.h"
+#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 #include <omp.h>
@@ -955,6 +956,9 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
       aps.push_back(std::move(ap));
     }
   }
+  if (graphics_) {
+    graphics_->setAPs(tmpAps);
+  }
   if (isStdCellPin && (int)aps.size() >= MINNUMACCESSPOINT_STDCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
@@ -1005,7 +1009,11 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING));
-  
+
+  if (graphics_) {
+    graphics_->startPin(pin, instTerm);
+  }
+
   vector<gtl::polygon_90_set_data<frCoord> > pinShapes;
   if (isMacroCellPin) {
     prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
