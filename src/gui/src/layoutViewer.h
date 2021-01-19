@@ -34,6 +34,8 @@
 
 #include <QFrame>
 #include <QMainWindow>
+#include <QMap>
+#include <QMenu>
 #include <QOpenGLWidget>
 #include <QScrollArea>
 #include <QShortcut>
@@ -71,9 +73,29 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Q_OBJECT
 
  public:
+  enum CONTEXT_MENU_ACTIONS
+  {
+    SELECT_CONNECTED_INST_ACT,
+    SELECT_OUTPUT_NETS_ACT,
+    SELECT_INPUT_NETS_ACT,
+    SELECT_ALL_NETS_ACT,
+
+    HIGHLIGHT_CONNECTED_INST_ACT,
+    HIGHLIGHT_OUTPUT_NETS_ACT,
+    HIGHLIGHT_INPUT_NETS_ACT,
+    HIGHLIGHT_ALL_NETS_ACT,
+
+    VIEW_ZOOMIN_ACT,
+    VIEW_ZOOMOUT_ACT,
+    VIEW_ZOOMFIT_ACT,
+
+    CLEAR_SELECTIONS_ACT,
+    CLEAR_HIGHLIGHTS_ACT,
+    CLEAR_ALL_ACT
+  };
   LayoutViewer(Options* options,
                const SelectionSet& selected,
-               const SelectionSet& highlighted,
+               const HighlightSet& highlighted,
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
@@ -93,7 +115,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
  signals:
   void location(qreal x, qreal y);
-  void selected(const Selected& selected);
+  void selected(const Selected& selected, bool showConnectivity = false);
   void addSelected(const Selected& selected);
 
  public slots:
@@ -102,6 +124,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
+
+  void selectHighlightConnectedInst(bool selectFlag);
+  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+  void clearSelectHighlight(bool selectFlag);
+
+  void updateContextMenuItems();
+  void showLayoutCustomMenu(QPoint pos);
 
  private:
   struct Boxes
@@ -140,10 +169,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::Point screenToDBU(const QPoint& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
+  void addMenuAndActions();
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
-  const SelectionSet& highlighted_;
+  const HighlightSet& highlighted_;
   LayoutScroll* scroller_;
   qreal pixels_per_dbu_;
   int min_depth_;
@@ -153,6 +184,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
+
+  QMenu* layoutContextMenu_;
+  QMap<CONTEXT_MENU_ACTIONS, QAction*> menuActions_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

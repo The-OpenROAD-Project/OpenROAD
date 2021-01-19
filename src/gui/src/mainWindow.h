@@ -113,22 +113,25 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void addSelected(const SelectionSet& selections);
 
   // Displays the selection in the status bar
-  void setSelected(const Selected& selection);
+  void setSelected(const Selected& selection, bool showConnectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection);
+  void addHighlighted(const SelectionSet& selection,
+                      unsigned highlightGroup = 0);
 
   // Add the selections(List) to highlight set
-  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight);
+  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight,
+                            unsigned highlightGroup = 0);
 
   // Higlight set will be cleared with this explicit call
-  void clearHighlighted();
+  void clearHighlighted(int highlightGroup = -1 /* -1 : clear all Groups */);
 
   // Remove items from the Selected Set
   void removeFromSelected(const QList<const Selected*>& items);
 
   // Remove items from the Highlighted Set
-  void removeFromHighlighted(const QList<const Selected*>& items);
+  void removeFromHighlighted(const QList<const Selected*>& items,
+                             int highlightGroup = -1 /* Search and remove...*/);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -142,6 +145,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
+  bool anyObjectInSet(bool selectionSet, bool instType);
+  void selectHighlightConnectedInsts(bool selectFlag, int highlightGroup = 0);
+  void selectHighlightConnectedNets(bool selectFlag,
+                                    bool output,
+                                    bool input,
+                                    int highlightGroup = 0);
+
  private:
   void createMenus();
   void createActions();
@@ -152,7 +162,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   odb::dbDatabase* db_;
   SelectionSet selected_;
-  SelectionSet highlighted_;
+  HighlightSet highlighted_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
