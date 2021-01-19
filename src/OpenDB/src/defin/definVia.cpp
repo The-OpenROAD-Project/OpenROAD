@@ -37,6 +37,7 @@
 #include "db.h"
 #include "dbShape.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definVia::definVia()
@@ -62,7 +63,7 @@ void definVia::viaBegin(const char* name)
   _cur_via = dbVia::create(_block, name);
 
   if (_cur_via == NULL) {
-    notice(0, "error: duplicate via (%s)\n", name);
+    _logger->warn(utl::ODB, 0,  "error: duplicate via ({})", name);
     ++_errors;
   }
 }
@@ -75,8 +76,7 @@ void definVia::viaRule(const char* rule)
   dbTechViaGenerateRule* viarule = _tech->findViaGenerateRule(rule);
 
   if (viarule == NULL) {
-    notice(
-        0, "error: cannot file VIA GENERATE rule in technology (%s).\n", rule);
+    _logger->warn(utl::ODB, 0,  "error: cannot file VIA GENERATE rule in technology ({}).", rule);
     ++_errors;
     return;
   }
@@ -109,7 +109,7 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* bot = _tech->findLayer(botName);
 
   if (bot == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", botName);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", botName);
     ++_errors;
     return false;
   }
@@ -117,7 +117,7 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* cut = _tech->findLayer(cutName);
 
   if (cut == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", cutName);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", cutName);
     ++_errors;
     return false;
   }
@@ -125,7 +125,7 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* top = _tech->findLayer(topName);
 
   if (top == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", topName);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", topName);
     ++_errors;
     return false;
   }
@@ -221,7 +221,7 @@ void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }

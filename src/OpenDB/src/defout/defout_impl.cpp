@@ -41,6 +41,7 @@
 #include "dbWireCodec.h"
 #include "defout_impl.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 static const char* defOrient(dbOrientType orient)
@@ -134,7 +135,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   _out = fopen(def_file, "w");
 
   if (_out == NULL) {
-    notice(0, "Cannot open DEF file (%s) for writing\n", def_file);
+    block->getLogger()->warn(utl::ODB, 0,  "Cannot open DEF file ({}) for writing", def_file);
     return false;
   }
 
@@ -904,9 +905,8 @@ void defout_impl::writeBTerm(dbBTerm* bterm)
 
     fprintf(_out, " ;\n");
   } else
-    notice(0,
-           "warning: pin %s skipped because it has no net",
-           bterm->getConstName());
+    bterm->getLogger()->warn(utl::ODB, 0, 
+"warning: pin {} skipped because it has no net",bterm->getConstName());
 }
 
 void defout_impl::writeBPin(dbBPin* bpin, int cnt)
@@ -1581,7 +1581,7 @@ void defout_impl::writeSWire(dbSWire* wire)
         std::string n = s->getName();
         fprintf(_out, "\n      + SHIELD %s", n.c_str());
       } else {
-        notice(0, "warning: missing shield net");
+        wire->getLogger()->warn(utl::ODB, 0,  "warning: missing shield net");
         fprintf(_out, "\n      + ROUTED");
       }
       break;

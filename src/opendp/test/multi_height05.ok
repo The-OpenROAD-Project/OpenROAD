@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  sky130/sky130_tech.lef
-Notice 0:     Created 11 technology layers
-Notice 0:     Created 25 technology vias
-Notice 0: Finished LEF file:  sky130/sky130_tech.lef
-Notice 0: Reading LEF file:  multi_height05.lef
-Notice 0:     Created 3 library cells
-Notice 0: Finished LEF file:  multi_height05.lef
-Notice 0: 
-Reading DEF file: multi_height05.def
-Notice 0: Design: multi_height_multi_port_rails
-Notice 0:     Created 3 components and 6 component-terminals.
-Notice 0: Finished DEF file: multi_height05.def
+[INFO ODB-0000] Reading LEF file: sky130/sky130_tech.lef
+[INFO ODB-0000]     Created 11 technology layers
+[INFO ODB-0000]     Created 25 technology vias
+[INFO ODB-0000] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0000] Reading LEF file: multi_height05.lef
+[INFO ODB-0000]     Created 3 library cells
+[INFO ODB-0000] Finished LEF file:  multi_height05.lef
+[INFO ODB-0000] Reading DEF file: multi_height05.def
+[INFO ODB-0000] Design: multi_height_multi_port_rails
+[INFO ODB-0000]     Created 3 components and 6 component-terminals.
+[INFO ODB-0000] Finished DEF file: multi_height05.def
 [WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------

@@ -35,7 +35,7 @@
 #include "dbCore.h"
 #include "odb.h"
 
-namespace ord{
+namespace utl{
   class Logger;
 }
 
@@ -103,7 +103,7 @@ class _dbDatabase : public _dbObject
   int                   _unique_id;
 
   char*        _file;
-  ord::Logger* _logger;
+  utl::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);

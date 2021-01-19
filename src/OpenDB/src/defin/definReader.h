@@ -36,6 +36,11 @@
 #include "definBase.h"
 #include "defrReader.hpp"
 
+namespace utl
+{
+  class Logger;
+}
+
 namespace odb {
 
 class definBlockage;
@@ -74,6 +79,7 @@ class definReader : public definBase
   bool                    _update;
   bool                    _continue_on_errors;
   const char*             _block_name;
+  utl::Logger*            _logger;
 
   void init();
   void setLibs(std::vector<dbLib*>& lib_names);

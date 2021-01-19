@@ -51,6 +51,7 @@
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaLayerRule.h"
 #include "dbTechViaRule.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -964,31 +965,24 @@ void dbTech::checkLayer(bool typeChk,
     if (type.getValue() == dbTechLayerType::CUT)
       continue;
     if (typeChk && type.getValue() != dbTechLayerType::ROUTING) {
+      //TODO: remove this line
       warning(0, "Layer %s is not a routing layer!\n", layer->getConstName());
+      getLogger()->warn(utl::ODB, 0,  "Layer {} is not a routing layer!", layer->getConstName());
       continue;
     }
     level = layer->getRoutingLevel();
     pitch = layer->getPitch();
     if (pitchChk && pitch <= 0)
-      error(0,
-            "Layer %s, routing level %d, has %d pitch !!\n",
-            layer->getConstName(),
-            level,
-            pitch);
+      getLogger()->error(utl::ODB, 0, 
+"Layer {}, routing level {}, has {} pitch !!",layer->getConstName(),level,pitch);
     width = layer->getWidth();
     if (widthChk && width == 0)
-      error(0,
-            "Layer %s, routing level %d, has %d width !!\n",
-            layer->getConstName(),
-            level,
-            width);
+      getLogger()->error(utl::ODB, 0, 
+"Layer {}, routing level {}, has {} width !!",layer->getConstName(),level,width);
     spacing = layer->getSpacing();
     if (spacingChk && spacing <= 0)
-      error(0,
-            "Layer %s, routing level %d, has %d spacing !!\n",
-            layer->getConstName(),
-            level,
-            spacing);
+      getLogger()->error(utl::ODB, 0, 
+"Layer {}, routing level {}, has {} spacing !!",layer->getConstName(),level,spacing);
   }
 
   return;

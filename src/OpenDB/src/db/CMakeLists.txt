@@ -115,13 +115,11 @@ target_include_directories(opendb
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/opendb>
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src/db
-        ${OPENROAD_HOME}/include
 )
 
 target_compile_features(opendb PRIVATE cxx_auto_type)
 target_compile_options(opendb PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 set_property(TARGET opendb PROPERTY POSITION_INDEPENDENT_CODE ON)
-find_package(spdlog)
 target_link_libraries(opendb
     PUBLIC
         zutil 
@@ -133,7 +131,7 @@ target_link_libraries(opendb
         lefout
         zutil
         lefin
-        spdlog::spdlog
+        utility
     PRIVATE
         tcl
 )

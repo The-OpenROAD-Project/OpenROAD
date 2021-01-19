@@ -52,7 +52,7 @@
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbLogger.h"
+#include "utility/Logger.h"
 
 
 namespace odb {
@@ -311,7 +311,7 @@ void dbITerm::setSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: Iterm %d, setSpecial\n", getId());
+    debugPrint(getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, setSpecial", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
@@ -330,7 +330,7 @@ void dbITerm::clearSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: Iterm %d, clearSpecial\n", getId());
+    debugPrint(getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, clearSpecial\n", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
@@ -349,7 +349,7 @@ void dbITerm::setSpef(uint v)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: Iterm %d, setSpef\n", getId());
+    debugPrint(getLogger(),utl::ODB, "DB_ECO", 1,"ECO: Iterm {}, setSpef", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
@@ -392,7 +392,7 @@ void dbITerm::setConnected()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: Iterm %d, setConnected\n", getId());
+    debugPrint(getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, setConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
@@ -411,7 +411,7 @@ void dbITerm::clearConnected()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: Iterm %d, clearConnected\n", getId());
+    debugPrint(getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, clearConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
@@ -444,9 +444,8 @@ void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
     disconnect(iterm_);
 
   if (block->_journal) {
-    debug("DB_ECO",
-          "A",
-          "ECO: connect Iterm %d to net %d\n",
+    debugPrint(iterm->getLogger(),utl::ODB, "DB_ECO", 1,
+          "ECO: connect Iterm {} to net {}",
           iterm_->getId(),
           net_->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
@@ -486,7 +485,7 @@ void dbITerm::disconnect(dbITerm* iterm_)
   for(auto callback:block->_callbacks)
     callback->inDbITermPreDisconnect(iterm_);
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: disconnect Iterm %d\n", iterm_->getId());
+    debugPrint(iterm->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: disconnect Iterm {}", iterm_->getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(iterm_->getId());
@@ -609,8 +608,8 @@ bool dbITerm::getAvgXY(int* x, int* y)
     }
   }
   if (!nn) {
-    warning(0,
-            "Can not find physical location of iterm %s/%s\n",
+    getLogger()->warn(utl::ODB, 0,
+            "Can not find physical location of iterm {}/{}",
             getInst()->getConstName(),
             getMTerm()->getConstName());
     return false;
@@ -624,8 +623,8 @@ bool dbITerm::getAvgXY(int* x, int* y)
 void dbITerm::print(FILE* fp, const char* trail)
 {
   if (fp == NULL) {
-    notice(0,
-           "%d %s %s %s%s",
+    getLogger()->info(utl::ODB, 0,
+           "{} {} {} {}{}",
            getId(),
            getMTerm()->getConstName(),
            getMTerm()->getMaster()->getConstName(),

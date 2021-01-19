@@ -1,7 +1,7 @@
 source "helpers.tcl"
 
 
-set db [odb::dbDatabase_create]
+set db [ord::get_db]
 set lib [odb::read_lef $db "data/gscl45nm.lef"]
 set tech [$lib getTech]
 set vias [$tech getVias]

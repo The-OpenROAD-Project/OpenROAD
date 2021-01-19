@@ -1,16 +1,15 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: gcd_placed.def
-Notice 0: Design: gcd
-Notice 0:     Created 54 pins.
-Notice 0:     Created 571 components and 2554 component-terminals.
-Notice 0:     Created 5 special nets and 1142 connections.
-Notice 0:     Created 528 nets and 1412 connections.
-Notice 0: Finished DEF file: gcd_placed.def
+[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 27 technology vias
+[INFO ODB-0000]     Created 134 library cells
+[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0000] Reading DEF file: gcd_placed.def
+[INFO ODB-0000] Design: gcd
+[INFO ODB-0000]     Created 54 pins.
+[INFO ODB-0000]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0000]     Created 5 special nets and 1142 connections.
+[INFO ODB-0000]     Created 528 nets and 1412 connections.
+[INFO ODB-0000] Finished DEF file: gcd_placed.def
 [INFO RSZ-0026] Removed 151 buffers.
 [INFO RSZ-0039] Resized 44 instances.
 [INFO RSZ-0026] Removed 0 buffers.

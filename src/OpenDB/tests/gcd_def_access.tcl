@@ -2,7 +2,7 @@ source "helpers.tcl"
 
 # Open database, load lef and design
 
-set db [odb::dbDatabase_create]
+set db [ord::get_db]
 set lib [odb::read_lef $db "data/Nangate45/NangateOpenCellLibrary.mod.lef"]
 odb::read_def $db "data/gcd/floorplan.def"
 set chip [$db getChip]

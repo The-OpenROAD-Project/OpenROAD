@@ -1,17 +1,16 @@
-Notice 0: Reading LEF file:  sky130/sky130_tech.lef
-Notice 0:     Created 11 technology layers
-Notice 0:     Created 25 technology vias
-Notice 0: Finished LEF file:  sky130/sky130_tech.lef
-Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
-Notice 0:     Created 390 library cells
-Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
-Notice 0: 
-Reading DEF file: clock_route.def
-Notice 0: Design: gcd
-Notice 0:     Created 1 pins.
-Notice 0:     Created 43 components and 295 component-terminals.
-Notice 0:     Created 8 nets and 49 connections.
-Notice 0: Finished DEF file: clock_route.def
+[INFO ODB-0000] Reading LEF file: sky130/sky130_tech.lef
+[INFO ODB-0000]     Created 11 technology layers
+[INFO ODB-0000]     Created 25 technology vias
+[INFO ODB-0000] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0000] Reading LEF file: sky130/sky130_std_cell.lef
+[INFO ODB-0000]     Created 390 library cells
+[INFO ODB-0000] Finished LEF file:  sky130/sky130_std_cell.lef
+[INFO ODB-0000] Reading DEF file: clock_route.def
+[INFO ODB-0000] Design: gcd
+[INFO ODB-0000]     Created 1 pins.
+[INFO ODB-0000]     Created 43 components and 295 component-terminals.
+[INFO ODB-0000]     Created 8 nets and 49 connections.
+[INFO ODB-0000] Finished DEF file: clock_route.def
 Min routing layer: 4
 Max routing layer: 6
 Global adjustment: 0.5

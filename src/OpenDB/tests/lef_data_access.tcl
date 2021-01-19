@@ -1,7 +1,7 @@
 source "helpers.tcl"
 
 # Open database and load LEF
-set db [odb::dbDatabase_create]
+set db [ord::get_db]
 odb::read_lef $db "data/gscl45nm.lef"
 set tech [$db getTech]
 # Basic LEF checks"

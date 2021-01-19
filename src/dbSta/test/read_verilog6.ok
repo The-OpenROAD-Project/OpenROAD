@@ -1,10 +1,10 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: Reading LEF file:  read_verilog6.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  read_verilog6.lef
+[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 27 technology vias
+[INFO ODB-0000]     Created 134 library cells
+[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0000] Reading LEF file: read_verilog6.lef
+[INFO ODB-0000]     Created 1 library cells
+[INFO ODB-0000] Finished LEF file:  read_verilog6.lef
 Warning: read_verilog6.v line 11, module AND2_X10 not found.  Creating black box for u2.
 [WARNING ORD-1000] LEF master BUF_X10 has no liberty cell.

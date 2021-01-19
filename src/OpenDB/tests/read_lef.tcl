@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-set db [odb::dbDatabase_create]
+set db [ord::get_db]
 set lib [odb::read_lef $db "data/gscl45nm.lef"]
 if {$lib == "NULL"} {
     puts "FAIL: Failed to read LEF file"

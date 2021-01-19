@@ -1,14 +1,13 @@
-Notice 0: Reading LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
-Notice 0:     Created 18 technology layers
-Notice 0:     Created 22 technology vias
-Notice 0:     Created 16 library cells
-Notice 0: Finished LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
-Notice 0: 
-Reading DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-Notice 0: Design: ispd18_sample
-Notice 0:     Created 22 components and 146 component-terminals.
-Notice 0:     Created 11 nets and 22 connections.
-Notice 0: Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
+[INFO ODB-0000] Reading LEF file: testcase/ispd18_sample/ispd18_sample.input.lef
+[INFO ODB-0000]     Created 18 technology layers
+[INFO ODB-0000]     Created 22 technology vias
+[INFO ODB-0000]     Created 16 library cells
+[INFO ODB-0000] Finished LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
+[INFO ODB-0000] Reading DEF file: testcase/ispd18_sample/ispd18_sample.input.def
+[INFO ODB-0000] Design: ispd18_sample
+[INFO ODB-0000]     Created 22 components and 146 component-terminals.
+[INFO ODB-0000]     Created 11 nets and 22 connections.
+[INFO ODB-0000] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
 USEMINSPACING OBS ON
 Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH

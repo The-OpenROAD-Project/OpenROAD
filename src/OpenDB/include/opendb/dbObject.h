@@ -33,7 +33,7 @@
 #pragma once
 
 #include "odb.h"
-namespace ord{
+namespace utl{
   class Logger;
 }
 namespace odb {
@@ -140,7 +140,7 @@ class dbObject
 
   static dbObject*   resolveDbName(dbDatabase* db, const char* name);
   static const char* getObjName(dbObjectType type);
-  ord::Logger*       getLogger() const;
+  utl::Logger*       getLogger() const;
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
   _dbObject*       getImpl();

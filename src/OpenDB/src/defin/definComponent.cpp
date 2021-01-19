@@ -40,6 +40,7 @@
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definComponent::definComponent()
@@ -146,10 +147,8 @@ void definComponent::begin(const char* iname, const char* mname)
   dbMaster* master = getMaster(mname);
 
   if (master == NULL) {
-    notice(0,
-           "error: unknown library cell referenced (%s) for instance (%s)\n",
-           mname,
-           iname);
+    _logger->warn(utl::ODB, 0, 
+"error: unknown library cell referenced ({}) for instance ({})",mname,iname);
     _errors++;
     return;
   }
@@ -157,7 +156,7 @@ void definComponent::begin(const char* iname, const char* mname)
   _cur_inst = dbInst::create(_block, master, iname);
 
   if (_cur_inst == NULL) {
-    notice(0, "error: duplicate instance definition(%s)\n", iname);
+    _logger->warn(utl::ODB, 0,  "error: duplicate instance definition({})", iname);
     _errors++;
     return;
   }
@@ -165,7 +164,7 @@ void definComponent::begin(const char* iname, const char* mname)
   _iterm_cnt += master->getMTermCount();
   _inst_cnt++;
   if (_inst_cnt % 100000 == 0)
-    notice(0, "\t\tCreated %d Insts\n", _inst_cnt);
+    _logger->info(utl::ODB, 0,  "\t\tCreated {} Insts", _inst_cnt);
 }
 
 void definComponent::placement(int status, int x, int y, int orient)

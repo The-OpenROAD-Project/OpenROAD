@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-set db [odb::dbDatabase_create]
+set db [ord::get_db]
 odb::read_lef $db "data/gscl45nm.lef"
 odb::read_def $db "data/design.def"
 if {[$db getChip] == "NULL"} {

@@ -41,6 +41,7 @@
 #include "dbTransform.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -53,6 +54,7 @@ dbFlatten::dbFlatten()
       _hier_d(0),
       _next_bterm_map_id(0)
 {
+
 }
 
 dbFlatten::~dbFlatten()
@@ -535,8 +537,8 @@ FILE* dbFlatten::debugNetWires(FILE*       fp,
     sprintf(buf, "%d", dst->getId());
     fp = fopen(buf, "w");
 
-    if (fp == NULL) {
-      error(0, "Cannot Open file %s to write\n", buf);
+    if (fp == NULL) {      
+      src->getLogger()->error(utl::ODB, 0,  "Cannot Open file {} to write", buf);
       return nullptr;
     }
   }
@@ -1097,7 +1099,7 @@ bool dbFlatten::createParentCapNode(dbCapNode* node, dbNet* dstNet)
 {
   bool foreign = false;
 
-  debug("FLATTEN", "C", "\n\tCap %d num %d\n", node->getId(), node->getNode());
+  debugPrint(node->getLogger(), utl::ODB, "FLATTEN", 3, "Cap {} num {}", node->getId(), node->getNode());
 
   dbCapNode* cap = NULL;
   if (!node->isBTerm()) {  //
@@ -1108,8 +1110,7 @@ bool dbFlatten::createParentCapNode(dbCapNode* node, dbNet* dstNet)
     cap->setInternalFlag();
     uint nodeNum = _shape_rc_map[node->getNode()];
     cap->setNode(nodeNum);
-    debug(
-        "FLATTEN", "C", "\n\t--> %d     %d\n\n", cap->getId(), cap->getNode());
+    debugPrint(node->getLogger(), utl::ODB, "FLATTEN", 3,  "\t--> {}     {}", cap->getId(), cap->getNode());
   } else if (node->isITerm()) {  //
     dbITerm* src_iterm = node->getITerm();
     dbInst*  src_inst  = src_iterm->getInst();
@@ -1120,8 +1121,7 @@ bool dbFlatten::createParentCapNode(dbCapNode* node, dbNet* dstNet)
     dbITerm* dst_iterm = dst_inst->getITerm(mterm);
     cap->setNode(dst_iterm->getId());
     cap->setITermFlag();
-    debug(
-        "FLATTEN", "C", "\n\t--> %d     %d\n\n", cap->getId(), cap->getNode());
+    debugPrint(node->getLogger(), utl::ODB, "FLATTEN", 3,  "\t--> {}     {}", cap->getId(), cap->getNode());
   } else if (node->isBTerm()) {  //
 
     dbBTerm* bterm           = node->getBTerm();
@@ -1129,14 +1129,7 @@ bool dbFlatten::createParentCapNode(dbCapNode* node, dbNet* dstNet)
     uint     parentId        = adjustParentNode2(dstNet, iterm->getId());
     _node_map[node->getId()] = parentId;
 
-    debug("FLATTEN",
-          "C",
-          "\t\tG BTerm %d --> %s <-- %d ==> %d %d\n",
-          node->getId(),
-          bterm->getConstName(),
-          iterm->getId(),
-          _node_map[node->getId()],
-          parentId);
+    debugPrint(node->getLogger(), utl::ODB, "FLATTEN", 3, "\t\tG BTerm {} --> {} <-- {} ==> {} {}",node->getId(),bterm->getConstName(),iterm->getId(),_node_map[node->getId()],parentId);
   }
   return true;
 }
@@ -1155,13 +1148,7 @@ uint dbFlatten::adjustParentNode2(dbNet* dstNet, uint srcTermId)
       continue;
 
     uint jid = node->getShapeId();
-    debug("FLATTEN",
-          "C",
-          "\tadjustParentNode %d J%d N%d srcTermId=%d\n",
-          node->getId(),
-          jid,
-          nodeNum,
-          srcTermId);
+    debugPrint(node->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode {} J{} N{} srcTermId={}",node->getId(),jid,nodeNum,srcTermId);
 
     node->resetITermFlag();
     node->setInternalFlag();
@@ -1179,12 +1166,7 @@ dbCapNode* dbFlatten::checkNode(dbCapNode* src, uint srcTermId)
   if (!src->isITerm())
     return NULL;
 
-  debug("FLATTEN",
-        "C",
-        "\tcheckNode node=%d i%d rcTermId=%d\n",
-        src->getId(),
-        src->getITerm()->getId(),
-        srcTermId);
+  debugPrint(src->getLogger(), utl::ODB, "FLATTEN", 3, "\tcheckNode node={} i{} rcTermId={}",src->getId(),src->getITerm()->getId(),srcTermId);
 
   if (src->getITerm()->getId() == srcTermId)
     return src;
@@ -1199,14 +1181,7 @@ uint dbFlatten::adjustParentNode(dbNet* dstNet, uint srcTermId)
     dbRSeg* rseg = *rseg_itr;
 
     uint jid = rseg->getShapeId();
-    debug("FLATTEN",
-          "C",
-          "\tadjustParentNode J%d rseg%d %d %d srcTermId=%d\n",
-          jid,
-          rseg->getId(),
-          rseg->getSourceNode(),
-          rseg->getTargetNode(),
-          srcTermId);
+    debugPrint(dstNet->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode J{} rseg{} {} {} srcTermId={}",jid,rseg->getId(),rseg->getSourceNode(),rseg->getTargetNode(),srcTermId);
     if ((rseg->getSourceNode() > 0) && (rseg->getTargetNode() > 0))
       continue;
     dbCapNode* src = rseg->getSourceCapNode();
@@ -1221,14 +1196,7 @@ uint dbFlatten::adjustParentNode(dbNet* dstNet, uint srcTermId)
 
     // uint jid= rseg->getShapeId();
 
-    debug("FLATTEN",
-          "C",
-          "\tadjustParentNode rseg%d J%d %d %d srcTermId=%d\n",
-          rseg->getId(),
-          jid,
-          src->getId(),
-          tgt->getId(),
-          srcTermId);
+    debugPrint(dstNet->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode rseg{} J{} {} {} srcTermId={}",rseg->getId(),jid,src->getId(),tgt->getId(),srcTermId);
 
     node->resetITermFlag();
     node->setInternalFlag();
@@ -1262,11 +1230,7 @@ uint dbFlatten::createCapNodes(dbNet* src, dbNet* dst, bool noDstWires)
 
   // uint maxCap= dst->maxInternalCapNum()+1;
 
-  debug("FLATTEN",
-        "C",
-        "\n\tCapNodes: %s %s\n",
-        src->getConstName(),
-        dst->getConstName());
+  debugPrint(src->getLogger(), utl::ODB, "FLATTEN", 3, "\tCapNodes: {} {}",src->getConstName(),dst->getConstName());
 
   uint                       gCnt         = 0;
   dbSet<dbCapNode>           capNodes     = src->getCapNodes();
@@ -1292,10 +1256,8 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
 
     uint sid = rseg->getShapeId();
     if (sid == 0) {
-      warning(0,
-              "rsegId %d has zero shape : %s\n",
-              rseg->getId(),
-              dst->getConstName());
+      dst->getLogger()->warn(utl::ODB, 0, 
+"rsegId {} has zero shape : {}",rseg->getId(),dst->getConstName());
       continue;
     }
     if (!rseg->getTargetCapNode()->isInternal())
@@ -1313,11 +1275,7 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
 }
 uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 {
-  debug("FLATTEN",
-        "R",
-        "\n\tRSegs: %s %s\n",
-        src->getConstName(),
-        dst->getConstName());
+  debugPrint(src->getLogger(), utl::ODB, "FLATTEN", 18, "\tRSegs: {} {}",src->getConstName(),dst->getConstName());
 
   dbBlock* block = dst->getBlock();
   // extMain::printRSegs(parentNet);
@@ -1346,15 +1304,7 @@ uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 
       rc->setResistance(res, corner);
       rc->setCapacitance(cap, corner);
-      debug("FLATTEN",
-            "R",
-            "\t\tsrc:%d->%d - tgt:%d->%d - %g  %g\n",
-            srcId,
-            _node_map[srcId],
-            tgtId,
-            _node_map[tgtId],
-            res,
-            cap);
+      debugPrint(src->getLogger(), utl::ODB, "FLATTEN", 18, "\t\tsrc:{}->{} - tgt:{}->{} - {}  {}",srcId,_node_map[srcId],tgtId,_node_map[tgtId],res,cap);
     }
     rCnt++;
   }
@@ -1364,7 +1314,7 @@ uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
 {
   if (fp == NULL)
-    notice(0, "\t\t\tprintRSegs: %s\n", net->getConstName());
+    net->getLogger()->info(utl::ODB, 0,  "\t\t\tprintRSegs: {}", net->getConstName());
   else
     fprintf(fp, "\t\t\tprintRSegs: %s\n", net->getConstName());
 
@@ -1376,8 +1326,7 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbRSeg* rseg = *rseg_itr;
 
     if (fp == NULL)
-      notice(
-          0, "\t\t\t\t\trsegId: %d J%d -- ", rseg->getId(), rseg->getShapeId());
+      net->getLogger()->info(utl::ODB, 0,  "\t\t\t\t\trsegId: {} J{} -- ", rseg->getId(), rseg->getShapeId());
     else
       fprintf(fp,
               "\t\t\t\t\trsegId: %d J%d -- ",
@@ -1387,13 +1336,10 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* src = rseg->getSourceCapNode();
     if (fp == NULL) {
       if (src == NULL)
-        notice(0, " 0 --");
+        net->getLogger()->info(utl::ODB, 0,  " 0 --");
       else
-        notice(0,
-               " %d I%d B%d -- ",
-               src->getNode(),
-               src->isITerm(),
-               src->isBTerm());
+        net->getLogger()->info(utl::ODB, 0, 
+" {} I{} B{} -- ",src->getNode(),src->isITerm(),src->isBTerm());
     } else {
       if (src == NULL)
         fprintf(fp, " 0 --");
@@ -1407,10 +1353,9 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* tgt = rseg->getTargetCapNode();
     if (fp == NULL) {
       if (tgt == NULL)
-        notice(0, " 0\n");
+        net->getLogger()->info(utl::ODB, 0,  " 0");
       else
-        notice(
-            0, " %d I%d B%d\n", tgt->getNode(), tgt->isITerm(), tgt->isBTerm());
+        net->getLogger()->info(utl::ODB, 0,  " {} I{} B{}", tgt->getNode(), tgt->isITerm(), tgt->isBTerm());
 
     } else {
       if (tgt == NULL)

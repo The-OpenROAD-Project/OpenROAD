@@ -39,6 +39,7 @@
 #include "dbJournal.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -47,7 +48,7 @@ void invalidateTiming(dbInst* inst);
 void invalidateTiming(dbNet* net);
 
 dbJournal::dbJournal(dbBlock* block)
-    : _block(block), _start_action(false), _action_idx(0), _cur_action(0)
+    : _block(block), _logger(block->getLogger()), _start_action(false), _action_idx(0), _cur_action(0)
 {
 }
 
@@ -287,7 +288,7 @@ void dbJournal::redo_createObject()
     case dbNetObj: {
       std::string name;
       _log.pop(name);
-      debug("DB_ECO", "R", "REDO ECO: create dbNet %s\n", name.c_str());
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: create dbNet {}", name.c_str());
       dbNet::create(_block, name.c_str());
       break;
     }
@@ -301,10 +302,9 @@ void dbJournal::redo_createObject()
       _log.pop(name);
       dbLib*    lib    = dbLib::getLib(_block->getDb(), lib_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: create dbInstObj %s, master: %u, lib: %u\n",
-            name.c_str(),
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: create dbInstObj {}, master: {}, lib: {}",
+            name,
             master_id,
             lib_id);
       dbInst::create(_block, master, name.c_str());
@@ -323,10 +323,9 @@ void dbJournal::redo_createObject()
       _log.pop(path_dir);
       _log.pop(allocate_cap);
       dbNet* net = dbNet::getNet(_block, net_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: create dbRSeg, net %u, x %d, y %d, path_dir %u, "
-            "alloc_cap %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: create dbRSeg, net {}, x {}, y {}, path_dir {}, "
+            "alloc_cap {}",
             net_id,
             x,
             y,
@@ -344,9 +343,8 @@ void dbJournal::redo_createObject()
       _log.pop(node);
       _log.pop(foreign);
       dbNet* net = dbNet::getNet(_block, net_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: create dbCapNodeObj, net_id %u, node %u, foreign %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: create dbCapNodeObj, net_id {}, node {}, foreign {}",
             net_id,
             node,
             foreign);
@@ -362,9 +360,8 @@ void dbJournal::redo_createObject()
       _log.pop(merge);
       dbCapNode* a = dbCapNode::getCapNode(_block, nodeA);
       dbCapNode* b = dbCapNode::getCapNode(_block, nodeB);
-      debug("DB_ECO",
-            "A",
-            "REDO: dbCCSeg::create, nodeA = %d, nodeB = %d, merge = %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 1,
+            "REDO: dbCCSeg::create, nodeA = {}, nodeB = {}, merge = {}",
             a->getId(),
             b->getId(),
             merge);
@@ -386,7 +383,7 @@ void dbJournal::redo_deleteObject()
       uint net_id;
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
-      debug("DB_ECO", "R", "REDO ECO: destroy dbNet, net_id %u\n", net_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: destroy dbNet, net_id {}", net_id);
       dbNet::destroy(net);
       break;
     }
@@ -395,7 +392,7 @@ void dbJournal::redo_deleteObject()
       uint inst_id;
       _log.pop(inst_id);
       dbInst* inst = dbInst::getInst(_block, inst_id);
-      debug("DB_ECO", "R", "REDO ECO: destroy dbInst, inst_id %u\n", inst_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: destroy dbInst, inst_id {}", inst_id);
       dbInst::destroy(inst);
       break;
     }
@@ -408,16 +405,14 @@ void dbJournal::redo_deleteObject()
       _log.pop(net_id);
       if (net_id) {
         dbNet* net = dbNet::getNet(_block, net_id);
-        debug("DB_ECO",
-              "R",
-              "REDO ECO: destroy dbRSegObj, rseg_id %u, net_id %u\n",
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+              "REDO ECO: destroy dbRSegObj, rseg_id {}, net_id {}",
               rseg_id,
               net_id);
         dbRSeg::destroy(rseg, net);
       } else {
-        debug("DB_ECO",
-              "R",
-              "REDO ECO: simple destroy dbRSegObj, rseg_id %u, net_id %u\n",
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+              "REDO ECO: simple destroy dbRSegObj, rseg_id {}, net_id {}",
               rseg_id,
               net_id);
         dbRSeg::destroyS(rseg);
@@ -429,8 +424,7 @@ void dbJournal::redo_deleteObject()
       uint node_id;
       _log.pop(node_id);
       dbCapNode* node = dbCapNode::getCapNode(_block, node_id);
-      debug(
-          "DB_ECO", "R", "REDO ECO: destroy dbCapNode, node_id %u\n", node_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: destroy dbCapNode, node_id {}", node_id);
       dbCapNode::destroy(node);
       break;
     }
@@ -442,12 +436,11 @@ void dbJournal::redo_deleteObject()
       _log.pop(regular);
       dbCCSeg* seg = dbCCSeg::getCCSeg(_block, seg_id);
       if (regular) {
-        debug("DB_ECO", "R", "REDO ECO: destroy dbCCSeg, inst_id %u\n", seg_id);
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: destroy dbCCSeg, inst_id {}", seg_id);
         dbCCSeg::destroy(seg);
       } else {
-        debug("DB_ECO",
-              "R",
-              "REDO ECO: simple destroy dbCCSeg, inst_id %u\n",
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+              "REDO ECO: simple destroy dbCCSeg, inst_id {}",
               seg_id);
         dbCCSeg::destroyS(seg);
       }
@@ -471,9 +464,8 @@ void dbJournal::redo_connectObject()
       uint     net_id;
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: connect dbITermObj, iterm_id %u, net_id %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
             iterm_id,
             net_id);
       dbITerm::connect(iterm, net);
@@ -495,9 +487,8 @@ void dbJournal::redo_disconnectObject()
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: disconnect dbITermObj, iterm_id %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: disconnect dbITermObj, iterm_id {}",
             iterm_id);
       dbITerm::disconnect(iterm);
       break;
@@ -532,10 +523,9 @@ void dbJournal::redo_swapObject()
       uint master_id;
       _log.pop(master_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: swapMaster inst %u, prev lib/master: %u/%u, new "
-            "lib/master: %u/%u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: swapMaster inst {}, prev lib/master: {}/{}, new "
+            "lib/master: {}/{}",
             inst_id,
             prev_lib_id,
             prev_master_id,
@@ -603,10 +593,9 @@ void dbJournal::redo_updateBlockField()
       _log.pop(extDbCount);
       std::string name;
       _log.pop(name);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbBlock %d, setCornerCount cornerCount %d, extDbCount "
-            "%d, name_list %s",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbBlock {}, setCornerCount cornerCount {}, extDbCount "
+            "{}, name_list {}",
             block_id,
             cornerCount,
             extDbCount,
@@ -620,9 +609,8 @@ void dbJournal::redo_updateBlockField()
       _log.pop(name);
       int allNode;
       _log.pop(allNode);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbBlock %d, writeDb, filename %s, allNode %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbBlock {}, writeDb, filename {}, allNode {}",
             block_id,
             name.c_str(),
             allNode);
@@ -655,9 +643,8 @@ void dbJournal::redo_updateNetField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &net->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbNetObj %u, updateNetField: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbNetObj {}, updateNetField: {} to {}",
             net_id,
             prev_flags,
             *flags);
@@ -673,9 +660,8 @@ void dbJournal::redo_updateNetField()
       _log.pop(prev_block_rule);
       _log.pop(cur_block_rule);
       net->_flags._block_rule = cur_block_rule;
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbNetObj %u, updateNonDefaultRule: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbNetObj {}, updateNonDefaultRule: {} to {}",
             net_id,
             prev_rule,
             net->_non_default_rule.id());
@@ -686,11 +672,11 @@ void dbJournal::redo_updateNetField()
       int capId;
       _log.pop(capId);
       ((dbNet*) net)->setTermExtIds(capId);
-      if (capId)
-        debug("DB_ECO", "R", "REDO ECO: dbNetObj %u set term extId\n", net_id);
+      if (capId){
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: dbNetObj {} set term extId", net_id);
+      }
       else
-        debug(
-            "DB_ECO", "R", "REDO ECO: dbNetObj %u reset term extId\n", net_id);
+        debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: dbNetObj {} reset term extId", net_id);
       break;
     }
 
@@ -700,9 +686,8 @@ void dbJournal::redo_updateNetField()
       _log.pop(pid);
       _log.pop(rid);
       ((dbNet*) net)->set1stRSegId(rid);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbNetObj %u, set1stRSegId  %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbNetObj {}, set1stRSegId {} to {}",
             net_id,
             pid,
             rid);
@@ -712,9 +697,8 @@ void dbJournal::redo_updateNetField()
     case _dbNet::REVERSE_RSEG: {
       dbSet<dbRSeg> rSet = ((dbNet*) net)->getRSegs();
       rSet.reverse();
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbNetObj %u, reverse rsegs sequence\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbNetObj {}, reverse rsegs sequence",
             net_id);
       break;
     }
@@ -725,9 +709,8 @@ void dbJournal::redo_updateNetField()
       _log.pop(pid);
       _log.pop(cid);
       ((dbNet*) net)->set1stCapNodeId(cid);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbNetObj %u, set1stRSegId  %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbNetObj {}, set1stRSegId {} to {}",
             net_id,
             pid,
             cid);
@@ -760,9 +743,8 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &inst->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbInst %u, updateInstField: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbInst {}, updateInstField: {} to {}",
             inst_id,
             prev_flags,
             *flags);
@@ -776,9 +758,8 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_y);
       _log.pop(inst->_x);
       _log.pop(inst->_y);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbInst %u, origin: %u,%u to %u,%u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbInst {}, origin: {},{} to {},{}",
             inst_id,
             prev_x,
             prev_y,
@@ -813,9 +794,8 @@ void dbJournal::redo_updateITermField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &iterm->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbITerm %d, updateITermField: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbITerm {}, updateITermField: {} to {}",
             iterm_id,
             prev_flags,
             *flags);
@@ -839,9 +819,8 @@ void dbJournal::redo_updateRSegField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &rseg->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateRSegField: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateRSegField: {} to {}",
             rseg_id,
             prev_flags,
             *flags);
@@ -852,9 +831,8 @@ void dbJournal::redo_updateRSegField()
       uint prev_source;
       _log.pop(prev_source);
       _log.pop(rseg->_source);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateSource: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateSource: {} to {}",
             rseg_id,
             prev_source,
             rseg->_source);
@@ -865,9 +843,8 @@ void dbJournal::redo_updateRSegField()
       uint prev_target;
       _log.pop(prev_target);
       _log.pop(rseg->_target);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateTarget: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateTarget: {} to {}",
             rseg_id,
             prev_target,
             rseg->_target);
@@ -878,9 +855,8 @@ void dbJournal::redo_updateRSegField()
       uint prev_shape_id;
       _log.pop(prev_shape_id);
       _log.pop(rseg->_shape_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateShape: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateShape: {} to {}",
             rseg_id,
             prev_shape_id,
             rseg->_shape_id);
@@ -894,9 +870,8 @@ void dbJournal::redo_updateRSegField()
       _log.pop(prev_r);
       _log.pop(r);
       _log.pop(cnr);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateResistance: %f to %f,%d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateResistance: {} to {},{}",
             rseg_id,
             prev_r,
             r,
@@ -912,9 +887,8 @@ void dbJournal::redo_updateRSegField()
       _log.pop(prev_c);
       _log.pop(c);
       _log.pop(cnr);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateCapacitance: %f to %f,%d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateCapacitance: {} to {},{}",
             rseg_id,
             prev_c,
             c,
@@ -927,9 +901,8 @@ void dbJournal::redo_updateRSegField()
       uint oseg_id;
       _log.pop(oseg_id);
       _dbRSeg* other = (_dbRSeg*) dbRSeg::getRSeg(_block, oseg_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %d, other dbRSeg %d, addCcCapacitance\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, other dbRSeg {}, addCcCapacitance",
             rseg_id,
             oseg_id);
       ((dbRSeg*) rseg)->addRSegCapacitance((dbRSeg*) other);
@@ -940,9 +913,8 @@ void dbJournal::redo_updateRSegField()
       uint oseg_id;
       _log.pop(oseg_id);
       _dbRSeg* other = (_dbRSeg*) dbRSeg::getRSeg(_block, oseg_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %d, other dbRSeg %d, addCcCapacitance\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, other dbRSeg {}, addCcCapacitance",
             rseg_id,
             oseg_id);
       ((dbRSeg*) rseg)->addRSegResistance((dbRSeg*) other);
@@ -958,9 +930,8 @@ void dbJournal::redo_updateRSegField()
       _log.pop(x);
       _log.pop(prev_y);
       _log.pop(y);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbRSeg %u, updateCoordinates x: %d to %d, y: %d to %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbRSeg {}, updateCoordinates x: {} to {}, y: {} to {}",
             rseg_id,
             prev_x,
             x,
@@ -987,9 +958,8 @@ void dbJournal::redo_updateCapNodeField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &node->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %u, updateFlags: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, updateFlags: {} to {}",
             node_id,
             prev_flags,
             *flags);
@@ -1000,9 +970,8 @@ void dbJournal::redo_updateCapNodeField()
       uint prev_num;
       _log.pop(prev_num);
       _log.pop(node->_node_num);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %u, updateNodeNum: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, updateNodeNum: {} to {}",
             node_id,
             prev_num,
             node->_node_num);
@@ -1016,9 +985,8 @@ void dbJournal::redo_updateCapNodeField()
       _log.pop(prev_c);
       _log.pop(c);
       _log.pop(cnr);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %u, updateCapacitance: %f to %f,%d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, updateCapacitance: {} to {},{}",
             node_id,
             prev_c,
             c,
@@ -1030,9 +998,8 @@ void dbJournal::redo_updateCapNodeField()
       uint oseg_id;
       _log.pop(oseg_id);
       _dbCapNode* other = (_dbCapNode*) dbCapNode::getCapNode(_block, oseg_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %d, other dbCapNode %d, addCcCapacitance\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, other dbCapNode {}, addCcCapacitance",
             node_id,
             oseg_id);
       ((dbCapNode*) node)->addCapnCapacitance((dbCapNode*) other);
@@ -1043,9 +1010,8 @@ void dbJournal::redo_updateCapNodeField()
       _log.pop(onet_id);
       uint nnet_id;
       _log.pop(nnet_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %d, set net %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, set net {}",
             node_id,
             nnet_id);
       ((dbCapNode*) node)->setNet(nnet_id);
@@ -1056,9 +1022,8 @@ void dbJournal::redo_updateCapNodeField()
       _log.pop(onext);
       uint nnext;
       _log.pop(nnext);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCapNode %d, set next %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCapNode {}, set next {}",
             node_id,
             nnext);
       ((dbCapNode*) node)->setNext(nnext);
@@ -1082,9 +1047,8 @@ void dbJournal::redo_updateCCSegField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &seg->_flags;
       _log.pop(*flags);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %u, updateFlags: %u to %u\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}, updateFlags: {} to {}",
             seg_id,
             prev_flags,
             *flags);
@@ -1098,9 +1062,8 @@ void dbJournal::redo_updateCCSegField()
       _log.pop(prev_c);
       _log.pop(c);
       _log.pop(cnr);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %d, updateCapacitance: %f to %f,%d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}, updateCapacitance: {} to {},{}",
             seg_id,
             prev_c,
             c,
@@ -1113,9 +1076,8 @@ void dbJournal::redo_updateCCSegField()
       uint oseg_id;
       _log.pop(oseg_id);
       _dbCCSeg* other = (_dbCCSeg*) dbCCSeg::getCCSeg(_block, oseg_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %d, other dbCCSeg %d, addCcCapacitance\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}, other dbCCSeg {}, addCcCapacitance",
             seg_id,
             oseg_id);
       ((dbCCSeg*) seg)->addCcCapacitance((dbCCSeg*) other);
@@ -1129,10 +1091,8 @@ void dbJournal::redo_updateCCSegField()
       uint        ncap_id;
       _log.pop(ncap_id);
       _dbCapNode* newn = (_dbCapNode*) dbCapNode::getCapNode(_block, ncap_id);
-      debug(
-          "DB_ECO",
-          "R",
-          "REDO ECO: dbCCSeg %d, origCapNode %d, newCapNode %d, swapCapnode\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+          "REDO ECO: dbCCSeg {}, origCapNode {}, newCapNode {}, swapCapnode",
           seg->getOID(),
           ocap_id,
           ncap_id);
@@ -1145,9 +1105,8 @@ void dbJournal::redo_updateCCSegField()
       uint cseq;
       _log.pop(cseq);
       dbCapNode* capn = (dbCapNode*) dbCapNode::getCapNode(_block, cap_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %d, Link_cc_seg, capNode %d, cseq %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}}, Link_cc_seg, capNode {}, cseq {}",
             seg->getOID(),
             cap_id,
             cseq);
@@ -1158,9 +1117,8 @@ void dbJournal::redo_updateCCSegField()
       uint cap_id;
       _log.pop(cap_id);
       dbCapNode* capn = (dbCapNode*) dbCapNode::getCapNode(_block, cap_id);
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %d, unLink_cc_seg, capNode %d\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}, unLink_cc_seg, capNode {}",
             seg->getOID(),
             cap_id);
       ((dbCCSeg*) seg)->unLink_cc_seg(capn);
@@ -1176,9 +1134,8 @@ void dbJournal::redo_updateCCSegField()
         _log.pop(ttcap[ii]);
         pos += sprintf(&ccCaps[pos], "%f ", ttcap[ii]);
       }
-      debug("DB_ECO",
-            "R",
-            "REDO ECO: dbCCSeg %d, setAllCcCap, caps: %s\n",
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbCCSeg {}, setAllCcCap, caps: {}",
             seg_id,
             &ccCaps[0]);
       ((dbCCSeg*) seg)->setAllCcCap(&ttcap[0]);

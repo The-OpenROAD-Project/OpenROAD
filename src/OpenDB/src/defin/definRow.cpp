@@ -38,6 +38,7 @@
 #include "dbShape.h"
 #include "definRow.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definRow::definRow()
@@ -107,10 +108,8 @@ void definRow::begin(const char*  name,
   dbSite* site = getSite(site_name);
 
   if (site == NULL) {
-    notice(0,
-           "error: undefined site (%s) referenced in row (%s) statement.\n",
-           site_name,
-           name);
+    _logger->warn(utl::ODB, 0, 
+"error: undefined site ({}) referenced in row ({}) statement.",site_name,name);
     ++_errors;
     return;
   }

@@ -45,6 +45,7 @@
 #include "dbWire.h"
 #include "dbWireOpcode.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 template class dbTable<_dbWire>;
@@ -1875,7 +1876,7 @@ void dbWire::destroy(dbWire* wire_)
       net->_flags._wire_altered = 1;
     }
   } else
-    warning(0, "This wire has no net\n");
+    wire_->getLogger()->warn(utl::ODB, 0,  "This wire has no net");
 
   dbProperty::destroyProperties(wire);
   block->_wire_tbl->destroy(wire);

@@ -1,19 +1,18 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: Reading LEF file:  pad.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  pad.lef
-Notice 0: 
-Reading DEF file: make_parasitics5.def
-Notice 0: Design: RocketTile
-Notice 0:     Created 2 pins.
-Notice 0:     Created 3 components and 16 component-terminals.
-Notice 0:     Created 2 special nets and 2 connections.
-Notice 0:     Created 4 nets and 6 connections.
-Notice 0: Finished DEF file: make_parasitics5.def
+[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 27 technology vias
+[INFO ODB-0000]     Created 134 library cells
+[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0000] Reading LEF file: pad.lef
+[INFO ODB-0000]     Created 1 library cells
+[INFO ODB-0000] Finished LEF file:  pad.lef
+[INFO ODB-0000] Reading DEF file: make_parasitics5.def
+[INFO ODB-0000] Design: RocketTile
+[INFO ODB-0000]     Created 2 pins.
+[INFO ODB-0000]     Created 3 components and 16 component-terminals.
+[INFO ODB-0000]     Created 2 special nets and 2 connections.
+[INFO ODB-0000]     Created 4 nets and 6 connections.
+[INFO ODB-0000] Finished DEF file: make_parasitics5.def
 Net in1
  Pin capacitance: 2.20
  Wire capacitance: 0.00

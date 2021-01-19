@@ -35,7 +35,6 @@
 #include "ZException.h"
 #include "dbDiff.h"
 #include "dbStream.h"
-#include "dbLogger.h"
 #include "odb.h"
 namespace odb {
 

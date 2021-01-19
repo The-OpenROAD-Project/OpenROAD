@@ -58,7 +58,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbWire.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -699,7 +699,7 @@ void dbDatabase::commitEco(dbBlock* block_)
   }
 }
 
-void dbDatabase::setLogger(ord::Logger* logger)
+void dbDatabase::setLogger(utl::Logger* logger)
 {
   _dbDatabase* _db = (_dbDatabase*) this;
   _db->_logger = logger;
@@ -748,7 +748,12 @@ dbDatabase* dbObject::getDb() const
   return (dbDatabase*) getImpl()->getDatabase();
 }
 
-ord::Logger* dbObject::getLogger() const
+utl::Logger* dbDatabase::getLogger() const
+{
+  _dbDatabase* _db = (_dbDatabase*) this;
+  return _db->_logger;
+}
+utl::Logger* dbObject::getLogger() const
 {
   return getImpl()->getDatabase()->_logger;
 }

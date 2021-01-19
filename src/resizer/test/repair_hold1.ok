@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: repair_hold1.def
-Notice 0: Design: top
-Notice 0:     Created 4 pins.
-Notice 0:     Created 13 components and 59 component-terminals.
-Notice 0:     Created 16 nets and 30 connections.
-Notice 0: Finished DEF file: repair_hold1.def
+[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 27 technology vias
+[INFO ODB-0000]     Created 134 library cells
+[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0000] Reading DEF file: repair_hold1.def
+[INFO ODB-0000] Design: top
+[INFO ODB-0000]     Created 4 pins.
+[INFO ODB-0000]     Created 13 components and 59 component-terminals.
+[INFO ODB-0000]     Created 16 nets and 30 connections.
+[INFO ODB-0000] Finished DEF file: repair_hold1.def
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

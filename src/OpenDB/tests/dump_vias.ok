@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  data/gscl45nm.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 14 technology vias
-Notice 0:     Created 33 library cells
-Notice 0: Finished LEF file:  data/gscl45nm.lef
+[INFO ODB-0000] Reading LEF file: data/gscl45nm.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 14 technology vias
+[INFO ODB-0000]     Created 33 library cells
+[INFO ODB-0000] Finished LEF file:  data/gscl45nm.lef
 M2_M1_via
 M3_M2_via
 M4_M3_via

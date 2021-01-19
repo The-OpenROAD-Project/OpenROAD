@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: check_buffers.def
-Notice 0: Design: multi_sink
-Notice 0:     Created 1 pins.
-Notice 0:     Created 288 components and 1728 component-terminals.
-Notice 0:     Created 1 nets and 288 connections.
-Notice 0: Finished DEF file: check_buffers.def
+[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0000]     Created 22 technology layers
+[INFO ODB-0000]     Created 27 technology vias
+[INFO ODB-0000]     Created 134 library cells
+[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0000] Reading DEF file: check_buffers.def
+[INFO ODB-0000] Design: multi_sink
+[INFO ODB-0000]     Created 1 pins.
+[INFO ODB-0000]     Created 288 components and 1728 component-terminals.
+[INFO ODB-0000]     Created 1 nets and 288 connections.
+[INFO ODB-0000] Finished DEF file: check_buffers.def
  *****************
  * TritonCTS 2.0 *
  *****************

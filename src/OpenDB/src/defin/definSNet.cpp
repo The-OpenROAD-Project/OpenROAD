@@ -40,6 +40,7 @@
 #include "definPolygon.h"
 #include "definSNet.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 inline uint get_net_dbid(const char* name)
@@ -120,7 +121,7 @@ void definSNet::begin(const char* name)
     }
 
     if (_cur_net == NULL) {
-      notice(0, "special net %s does not exist\n", name);
+      _logger->warn(utl::ODB, 0,  "special net {} does not exist", name);
       ++_errors;
     } else {
       dbWire* wire = _cur_net->getWire();
@@ -173,7 +174,7 @@ void definSNet::connection(const char* iname, const char* tname, bool /* unused:
   dbInst* inst = _block->findInst(iname);
 
   if (inst == NULL) {
-    notice(0, "error: netlist component (%s) is not defined\n", iname);
+    _logger->warn(utl::ODB, 0,  "error: netlist component ({}) is not defined", iname);
     ++_errors;
     return;
   }
@@ -182,10 +183,8 @@ void definSNet::connection(const char* iname, const char* tname, bool /* unused:
   dbMTerm*  mterm  = master->findMTerm(_block, tname);
 
   if (mterm == NULL) {
-    notice(0,
-           "error: netlist component-pin (%s, %s) is not defined\n",
-           iname,
-           tname);
+    _logger->warn(utl::ODB, 0, 
+"error: netlist component-pin ({}, {}) is not defined",iname,tname);
     ++_errors;
     return;
   }
@@ -235,7 +234,7 @@ void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer_name);
     return;
   }
 
@@ -253,7 +252,7 @@ void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer_name);
     return;
   }
 
@@ -287,7 +286,7 @@ void definSNet::wire(dbWireType type, const char* shield)
     _shield_net = _block->findNet(shield);
 
     if (_shield_net == NULL) {
-      notice(0, "error: SHIELD net (%s) does not exists.\n", shield);
+      _logger->warn(utl::ODB, 0,  "error: SHIELD net ({}) does not exists.", shield);
       _wire_type = dbWireType::NONE;
       ++_errors;
     }
@@ -304,7 +303,7 @@ void definSNet::path(const char* layer_name, int width)
   _cur_layer = _tech->findLayer(layer_name);
 
   if (_cur_layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     dbSWire::destroy(_swire);
     _swire = NULL;
@@ -427,7 +426,7 @@ void definSNet::pathVia(const char* via_name)
     dbVia* via = _block->findVia(via_name);
 
     if (via == NULL) {
-      notice(0, "error: undefined ia (%s) referenced\n", via_name);
+      _logger->warn(utl::ODB, 0,  "error: undefined ia ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -481,7 +480,7 @@ void definSNet::pathViaArray(const char* via_name,
     dbVia* via = _block->findVia(via_name);
 
     if (via == NULL) {
-      notice(0, "error: undefined ia (%s) referenced\n", via_name);
+      _logger->warn(utl::ODB, 0,  "error: undefined ia ({}) referenced", via_name);
       ++_errors;
       return;
     }
