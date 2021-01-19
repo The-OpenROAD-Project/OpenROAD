@@ -9,7 +9,7 @@
 
 bool 
 dump_netlist(odb::dbBlock* block, const char* path, bool includeFillers){
-  return (cdl::dumpNetLists(block, path, includeFillers) == 1); 
+  return cdl::dumpNetLists(block, path, includeFillers); 
 }
 
 odb::dbLib*

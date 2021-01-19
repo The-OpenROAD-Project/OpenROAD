@@ -2,7 +2,7 @@ source "helpers.tcl"
 
 
 set db [odb::dbDatabase_create]
-odb::read_lef $db "data/Nangate45/Nangate45.lef"
+odb::read_lef $db "../../../test/Nangate45/Nangate45.lef"
 set chip [odb::read_def $db "data/gcd/gcd.def"]
 set block [$chip getBlock]
 
