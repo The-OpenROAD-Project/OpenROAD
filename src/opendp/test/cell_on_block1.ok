@@ -12,5 +12,14 @@
 [INFO ODB-0000]     Created 5 components and 20 component-terminals.
 [INFO ODB-0000]     Created 2 nets and 0 connections.
 [INFO ODB-0000] Finished DEF file: cell_on_block1.def
-[INFO DPL-0025] moved 4 cells off of blocks.
+[WARNING DPL-0011] Could not find power special net.
+Placement Analysis
+---------------------------------
+total displacement         62.6 u
+average displacement       12.5 u
+max displacement           16.6 u
+original HPWL               0.0 u
+legalized HPWL              0.0 u
+delta HPWL                    0 %
+
 No differences found.

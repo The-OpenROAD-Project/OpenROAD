@@ -273,20 +273,22 @@ proc repair_hold_violations { args } {
   if { $resize_libs == {} } {
     ord::error RSZ 9 "No liberty libraries found."
   }
+
   rsz::check_parasitics
   rsz::resizer_preamble $resize_libs
-  rsz::repair_hold 0.0 $allow_setup_violations
+  rsz::repair_hold 0.0 $allow_setup_violations $max_buffer_percent
 }
 
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
+                                        [-max_buffer_percent buffer_percent]\
                                         [-allow_setup_violations]\
                                         [-libraries resize_libs]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-slack_margin -libraries -max_utilization} \
+    keys {-slack_margin -libraries -max_utilization -max_buffer_percent} \
     flags {-setup -hold -allow_setup_violations}
 
   set setup [info exists flags(-setup)]
@@ -308,6 +310,13 @@ proc repair_timing { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
+  set max_buffer_percent 20
+  if { [info exists keys(-max_buffer_percent)] } {
+    set max_buffer_percent $keys(-max_buffer_percent)
+    sta::check_positive_float "-max_buffer_percent" $max_buffer_percent
+    set max_buffer_percent [expr $max_buffer_percent / 100.0]
+  }
+
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   rsz::resizer_preamble $resize_libs
@@ -315,7 +324,7 @@ proc repair_timing { args } {
     rsz::repair_setup $slack_margin
   }
   if { $hold } {
-    rsz::repair_hold $slack_margin $allow_setup_violations
+    rsz::repair_hold $slack_margin $allow_setup_violations $max_buffer_percent
   }
 }
 

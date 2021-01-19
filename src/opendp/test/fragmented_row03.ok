@@ -10,29 +10,15 @@
 [INFO ODB-0000]     Created 2 nets and 2 connections.
 [INFO ODB-0000] Finished DEF file: fragmented_row03.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances             1
-multi row instances         0
-fixed instances             0
-nets                        2
-design area               4.8 u^2
-fixed area                0.0 u^2
-movable area              1.9 u^2
-utilization                39 %
-utilization padded         39 %
-rows                        1
-row height                1.4 u
-
 [WARNING DPL-0018] detailed placement failed on _277_.
 Placement Analysis
---------------------------------
-total displacement        0.0 u
-average displacement      0.0 u
-max displacement          0.0 u
-original HPWL            61.5 u
-legalized HPWL           61.5 u
-delta HPWL                  0 %
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL              61.5 u
+legalized HPWL             61.5 u
+delta HPWL                    0 %
 
 [WARNING DPL-0004] Placed in rows check failed (1).
  _277_

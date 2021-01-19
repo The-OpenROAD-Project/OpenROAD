@@ -34,32 +34,18 @@
 ###############################################################################
 
 #Clock Tree Synthesis TCL -> Required commands:
-#                               clock_tree_synthesis -lut_file , -sol_list , -root-buf, -wire_unit
-#                                               or
-#                               configure_cts_characterization -sqr_cap , -sqr_res + clock_tree_synthesis -buf_list 
+#clock_tree_synthesis -buf_list 
 
 sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
                                                        [-max_slew slew] \
-                                                       [-sqr_cap capvalue] \
-                                                       [-sqr_res resvalue] \
                                                        [-slew_inter slewvalue] \
                                                        [-cap_inter capvalue] \
                                                       } 
 
 proc configure_cts_characterization { args } {
   sta::parse_key_args "configure_cts_characterization" args \
-    keys {-max_cap -max_slew -sqr_cap -sqr_res -slew_inter -cap_inter} flags {}
+    keys {-max_cap -max_slew -slew_inter -cap_inter} flags {}
   
-  if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
-    set sqr_cap $keys(-sqr_cap)
-    cts::set_cap_per_sqr $sqr_cap
-    set sqr_res $keys(-sqr_res)
-    cts::set_res_per_sqr $sqr_res
-  } else {
-    #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-    ord::error CTS 52 "Missing argument -sqr_cap and/or -sqr_res"
-  }
-
   if { [info exists keys(-max_cap)] } {
     set max_cap_value $keys(-max_cap)
     cts::set_max_char_cap $max_cap_value
@@ -81,14 +67,11 @@ proc configure_cts_characterization { args } {
   } 
 }
 
-sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
-                                             [-sol_list slist] \
-                                             [-wire_unit unit]
+sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-buf_list buflist] \
                                              [-root_buf buf] \
                                              [-clk_nets nets] \ 
                                              [-out_path path] \
-                                             [-characterization_only] \
                                              [-tree_buf buf] \
                                              [-post_cts_disable] \
                                              [-distance_between_buffers] \
@@ -104,12 +87,10 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
+    keys {-root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf}\
-    flags {-characterization_only -post_cts_disable -sink_clustering_enable}
-
-  cts::set_only_characterization [info exists flags(-characterization_only)]
+    flags {-post_cts_disable -sink_clustering_enable}
 
   cts::set_disable_post_cts [info exists flags(-post_cts_disable)]
 
@@ -150,32 +131,12 @@ proc clock_tree_synthesis { args } {
     cts::set_clustering_unbalance_ratio $unbalance
   } 
 
-  if { [info exists keys(-lut_file)] } {
-    if { ![info exists keys(-sol_list)] } {
-      ord::error CTS 53 "Missing argument -sol_list"
-    }
-	  set lut $keys(-lut_file)
-    cts::set_lut_file $lut 
-    cts::set_auto_lut 0
-  } 
- 
-  if { [info exists keys(-sol_list)] } {
-    if { ![info exists keys(-lut_file)] } {
-      ord::error CTS 54 "Missing argument -lut_file"
-    }
-	  set sol_list $keys(-sol_list)
-    cts::set_sol_list_file $sol_list
-    cts::set_auto_lut 0
-  } 
-
   if { [info exists keys(-buf_list)] } {
     set buf_list $keys(-buf_list)
     cts::set_buffer_list $buf_list
   } else {
-    if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
-      #User must either input a lut file or the buffer list.
-      ord::error CTS 55 "Missing argument -buf_list or -lut_file / -sol_list"
-    }
+    #User must input the buffer list.
+    ord::error CTS 55 "Missing argument -buf_list"
   }
 
   if { [info exists keys(-wire_unit)] } {

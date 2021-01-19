@@ -12,30 +12,15 @@
 [INFO ODB-0000]     Created 2 special nets and 0 connections.
 [INFO ODB-0000]     Created 11 nets and 25 connections.
 [INFO ODB-0000] Finished DEF file: multi_height04.def
-Design Stats
---------------------------------
-total instances            10
-multi row instances         1
-fixed instances             0
-nets                       13
-design area              40.0 u^2
-fixed area                0.0 u^2
-movable area             24.8 u^2
-utilization                62 %
-utilization padded         62 %
-rows                        2
-row height                2.0 u
-max height                  2 rows
-
 [WARNING DPL-0018] detailed placement failed on _281_.
 Placement Analysis
---------------------------------
-total displacement        7.7 u
-average displacement      0.8 u
-max displacement          2.1 u
-original HPWL            81.8 u
-legalized HPWL           81.8 u
-delta HPWL                  0 %
+---------------------------------
+total displacement          7.7 u
+average displacement        0.8 u
+max displacement            2.1 u
+original HPWL              81.8 u
+legalized HPWL             81.8 u
+delta HPWL                    0 %
 
 [WARNING DPL-0005] Overlap check failed (1).
  _281_ overlaps _282_

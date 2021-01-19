@@ -402,16 +402,17 @@ repair_hold_pin(Pin *end_pin,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations);
+  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations, 0.2);
 }
 
 void
 repair_hold(float slack_margin,
-            bool allow_setup_violations)
+            bool allow_setup_violations,
+            float max_buffer_percent)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(slack_margin, allow_setup_violations);
+  resizer->repairHold(slack_margin, allow_setup_violations, max_buffer_percent);
 }
 
 ////////////////////////////////////////////////////////////////
