@@ -120,6 +120,13 @@ detailed_placement_cmd(int max_displacment)
   opendp->detailedPlacement(max_displacment);
 }
 
+void
+report_legalization_stats()
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->reportLegalizationStats();
+}
+
 bool
 check_placement_cmd(bool verbose)
 {

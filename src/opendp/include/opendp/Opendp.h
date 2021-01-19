@@ -171,6 +171,7 @@ public:
   // legalize/report
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
+  void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
                   int left,
@@ -187,17 +188,9 @@ public:
   // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
-  void reportLegalizationStats(int64_t hpwl_before,
-                               int64_t avg_displacement,
-                               int64_t sum_displacement,
-                               int64_t max_displacement) const;
-  void reportDesignStats() const;
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
-  void displacementStats(// Return values.
-                         int64_t *avg_displacement,
-                         int64_t *sum_displacement,
-                         int64_t *max_displacement) const;
+  void findDisplacementStats();
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
@@ -224,8 +217,6 @@ private:
   int find_ymax(dbMTerm *term) const;
 
   void initGrid();
-  void findDesignStats();
-
   void detailedPlacement();
   Point nearestPt(const Cell *cell, const Rect *rect) const;
   int dist_for_rect(const Cell *cell, const Rect *rect) const;
@@ -385,31 +376,23 @@ private:
   int site_width_;
   int row_count_;
   int row_site_count_;
-  int max_cell_height_;
+  int have_multi_height_cells_;
   int max_displacement_constraint_;  // rows
 
   // 2D pixel grid
   Grid *grid_;
   Cell dummy_cell_;
 
-  // Design stats.
-  int fixed_inst_count_;
-  int multi_row_inst_count_;
-  // total placeable area (excluding row blockages) dbu^2
-  int64_t design_area_;
-  // total movable cell area dbu^2
-  int64_t movable_area_;
-  int64_t movable_padded_area_;
-  // total fixed cell area dbu^2
-  int64_t fixed_area_;
-  int64_t fixed_padded_area_;
-  double design_util_;
-  double design_padded_util_;
-
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
   int filler_count_;
+
+  // Results saved for optional reporting.
+  int64_t hpwl_before_;
+  int64_t displacement_avg_;
+  int64_t displacement_sum_;
+  int64_t displacement_max_;
 
   // Magic numbers
   int diamond_search_height_;  // grid units

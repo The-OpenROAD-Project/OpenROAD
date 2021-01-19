@@ -190,16 +190,12 @@ Opendp::detailedPlacement(int max_displacment)
 {
   importDb();
   reportImportWarnings();
-  findDesignStats();
   max_displacement_constraint_ = max_displacment;
-  reportDesignStats();
-  int64_t hpwl_before = hpwl();
+  hpwl_before_ = hpwl();
   detailedPlacement();
-  int64_t avg_displacement, sum_displacement, max_displacement;
-  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
+  // Save displacement stats before updating instance DB locations.
+  findDisplacementStats();
   updateDbInstLocations();
-  reportLegalizationStats(hpwl_before, avg_displacement,
-                          sum_displacement, max_displacement);
 }
 
 void
@@ -222,89 +218,19 @@ Opendp::updateDbInstLocations()
 }
 
 void
-Opendp::findDesignStats()
-{
-  fixed_inst_count_ = 0;
-  fixed_area_ = 0;
-  fixed_padded_area_ = 0;
-  movable_area_ = 0;
-  movable_padded_area_ = 0;
-  max_cell_height_ = 0;
-
-  for (Cell &cell : cells_) {
-    int64_t cell_area = cell.area();
-    int64_t cell_padded_area = paddedArea(&cell);
-    if (isFixed(&cell)) {
-      fixed_area_ += cell_area;
-      fixed_padded_area_ += cell_padded_area;
-      fixed_inst_count_++;
-    }
-    else {
-      movable_area_ += cell_area;
-      movable_padded_area_ += cell_padded_area;
-      int cell_height = gridNearestHeight(&cell);
-      if (cell_height > max_cell_height_) {
-        max_cell_height_ = cell_height;
-      }
-    }
-  }
-
-  design_area_ = row_count_ * static_cast<int64_t>(row_site_count_)
-    * site_width_ * row_height_;
-
-  design_util_ = static_cast<double>(movable_area_) / (design_area_ - fixed_area_);
-
-  design_padded_util_ = static_cast<double>(movable_padded_area_)
-    / (design_area_ - fixed_padded_area_);
-
-  if (design_util_ > 1.0)
-    logger_->error(DPL, 14, "utilization exceeds 100%.");
-}
-
-void
-Opendp::reportDesignStats() const
-{
-  logger_->report("Design Stats");
-  logger_->report("-----------------------------------");
-  logger_->report("total instances      {:10}", block_->getInsts().size());
-  logger_->report("multi row instances  {:10}", multi_row_inst_count_);
-  logger_->report("fixed instances      {:10}", fixed_inst_count_);
-  logger_->report("nets                 {:10}", block_->getNets().size());
-  logger_->report("design area          {:10.1f} u^2", dbuAreaToMicrons(design_area_));
-  logger_->report("fixed area           {:10.1f} u^2", dbuAreaToMicrons(fixed_area_));
-  logger_->report("movable area         {:10.1f} u^2", dbuAreaToMicrons(movable_area_));
-  int util = round(design_util_ * 100);
-  logger_->report("utilization          {:10} %", util);
-  int padded_util = round(design_padded_util_ * 100);
-  logger_->report("utilization padded   {:10} %", padded_util);
-  logger_->report("rows                 {:10}", row_count_);
-  logger_->report("row height           {:10.1f} u", dbuToMicrons(row_height_));
-  if (max_cell_height_ > 1) {
-    logger_->report("max height           {:10} rows", max_cell_height_);
-  }
-  if (groups_.size() > 0) {
-    logger_->report("group count          {:10}", groups_.size());
-  }
-  logger_->report("");
-}
-
-void
-Opendp::reportLegalizationStats(int64_t hpwl_before,
-                                int64_t avg_displacement,
-                                int64_t sum_displacement,
-                                int64_t max_displacement) const
+Opendp::reportLegalizationStats() const
 {
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
-  logger_->report("total displacement   {:10.1f} u", dbuToMicrons(sum_displacement));
-  logger_->report("average displacement {:10.1f} u", dbuToMicrons(avg_displacement));
-  logger_->report("max displacement     {:10.1f} u", dbuToMicrons(max_displacement));
-  logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before));
+  logger_->report("total displacement   {:10.1f} u", dbuToMicrons(displacement_sum_));
+  logger_->report("average displacement {:10.1f} u", dbuToMicrons(displacement_avg_));
+  logger_->report("max displacement     {:10.1f} u", dbuToMicrons(displacement_max_));
+  logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before_));
   double hpwl_legal = hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
-  int hpwl_delta = (hpwl_before == 0.0)
+  int hpwl_delta = (hpwl_before_ == 0.0)
     ? 0.0
-    : round((hpwl_legal - hpwl_before) / hpwl_before * 100);
+    : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
 }
@@ -312,26 +238,23 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::displacementStats(// Return values.
-                          int64_t *avg_displacement,
-                          int64_t *sum_displacement,
-                          int64_t *max_displacement) const
+Opendp::findDisplacementStats()
 {
-  *avg_displacement = 0;
-  *sum_displacement = 0;
-  *max_displacement = 0;
+  displacement_avg_ = 0;
+  displacement_sum_ = 0;
+  displacement_max_ = 0;
 
   for (const Cell &cell : cells_) {
     int displacement = disp(&cell);
-    *sum_displacement += displacement;
-    if (displacement > *max_displacement) {
-      *max_displacement = displacement;
+    displacement_sum_ += displacement;
+    if (displacement > displacement_max_) {
+      displacement_max_ = displacement;
     }
   }
   if (cells_.size())
-    *avg_displacement = *sum_displacement / cells_.size();
+    displacement_avg_ = displacement_sum_ / cells_.size();
   else
-    *avg_displacement = 0.0;
+    displacement_avg_ = 0.0;
 }
 
 // Note that this does NOT use cell/core coordinates.

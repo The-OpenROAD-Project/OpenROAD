@@ -321,7 +321,7 @@ Opendp::place()
   sort(sorted_cells.begin(), sorted_cells.end(), cellAreaLess);
 
   // Place multi-row instances first.
-  if (multi_row_inst_count_ > 0) {
+  if (have_multi_height_cells_) {
     for (Cell *cell : sorted_cells) {
       if (isMultiRow(cell) && cellFitsInCore(cell)) {
         if (!map_move(cell)) {
@@ -804,10 +804,7 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
   cout << " y bound ( " << y_start << ") - (" << y_end << ")" << endl;
 #endif
 
-  int diamond_height = diamond_search_height_
-      // magic number alert
-      * ((design_util_ > 0.6 || fixed_inst_count_ > 0) ? 2 : .5);
-  for (int i = 1; i < diamond_height; i++) {
+  for (int i = 1; i < diamond_search_height_; i++) {
     Pixel *pixel = nullptr;
     int best_dist = 0;
     // right side

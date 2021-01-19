@@ -345,7 +345,7 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
       }
     }
   }
-  if (max_cell_height_ > 1) {
+  if (have_multi_height_cells_) {
     if (y_step % 2 == 1) {
       if (rowTopPower(grid_y) != topPower(cell)) {
         cell->orient_ = dbOrientType::MX;

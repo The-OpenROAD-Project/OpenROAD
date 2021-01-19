@@ -48,6 +48,7 @@ proc detailed_placement { args } {
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
     dpl::detailed_placement_cmd $max_displacement
+    dpl::report_legalization_stats
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }

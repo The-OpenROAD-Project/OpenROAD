@@ -11,20 +11,6 @@ Notice 0:     Created 34184 components and 173049 component-terminals.
 Notice 0:     Created 33171 nets and 104681 connections.
 Notice 0: Finished DEF file: ibex_core_replace.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
------------------------------------
-total instances           34184
-multi row instances           0
-fixed instances            4883
-nets                      33171
-design area            662017.6 u^2
-fixed area               1298.9 u^2
-movable area            49735.6 u^2
-utilization                   8 %
-utilization padded            8 %
-rows                        514
-row height                  1.4 u
-
 Placement Analysis
 ---------------------------------
 total displacement      29151.9 u
