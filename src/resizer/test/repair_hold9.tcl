@@ -1,4 +1,4 @@
-# repair_timing -hold -max_utilization
+# repair_timing -hold -max_buffer_percent
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def gcd_placed.def
@@ -8,6 +8,6 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 report_design_area
-catch {repair_timing -hold -slack_margin .4 -max_utilization 13} error
+catch {repair_timing -hold -slack_margin .4 -max_buffer_percent 2} error
 puts $error
 report_design_area
