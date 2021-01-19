@@ -10,10 +10,12 @@ target_include_directories(cdl
         ${PROJECT_SOURCE_DIR}/src/cdl
 )
 
-target_link_libraries(defin
+target_link_libraries(cdl
     PUBLIC
         zutil
         def
+    PRIVATE
+        tcl
 )
 target_compile_features(cdl PRIVATE cxx_auto_type)
 target_compile_options(cdl PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
