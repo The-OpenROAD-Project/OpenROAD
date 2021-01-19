@@ -436,7 +436,7 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
       Rect  r(p0.getX(), p0.getY(), p1.getX(), p1.getY());
       reader->_block->setDieArea(r);
     } else {
-     reader->_logger->warn(utl::ODB, 0, 
+     reader->_logger->warn(utl::ODB, 124, 
 "warning: Polygon DIEAREA statement not supported.  The bounding ""box will be used instead");
       int                          xmin = INT_MAX;
       int                          ymin = INT_MAX;
@@ -1470,12 +1470,12 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
 
 void definReader::line(int line_num)
 {
-  _logger->info(utl::ODB, 0,  "lines processed: {}", line_num);
+  _logger->info(utl::ODB, 125,  "lines processed: {}", line_num);
 }
 
 void definReader::error(const char* msg)
 {
-  _logger->warn(utl::ODB, 0,  "error: {}", msg);
+  _logger->warn(utl::ODB, 126,  "error: {}", msg);
   ++_errors;
 }
 
@@ -1627,32 +1627,32 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
 
   _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
 
-  _logger->info(utl::ODB, 0,  "Reading DEF file: {}", file);
-  _logger->info(utl::ODB, 0,  "Design: {}", hdr->_design);
+  _logger->info(utl::ODB, 127,  "Reading DEF file: {}", file);
+  _logger->info(utl::ODB, 128,  "Design: {}", hdr->_design);
 
   if (!createBlock(file)) {
     delete hdr;
     dbChip::destroy(chip);
-    _logger->warn(utl::ODB, 0,  "Error: Failed to read DEF file");
+    _logger->warn(utl::ODB, 129,  "Error: Failed to read DEF file");
     return NULL;
   }
 
   if (_pinR->_bterm_cnt)
-    _logger->info(utl::ODB, 0,  "    Created {} pins.", _pinR->_bterm_cnt);
+    _logger->info(utl::ODB, 130,  "    Created {} pins.", _pinR->_bterm_cnt);
 
   if (_componentR->_inst_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 131, 
 "    Created {} components and {} component-terminals.",_componentR->_inst_cnt,_componentR->_iterm_cnt);
 
   if (_snetR->_snet_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 132, 
 "    Created {} special nets and {} connections.",_snetR->_snet_cnt,_snetR->_snet_iterm_cnt);
 
   if (_netR->_net_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 133, 
 "    Created {} nets and {} connections.",_netR->_net_cnt,_netR->_net_iterm_cnt);
 
-  _logger->info(utl::ODB, 0,  "Finished DEF file: {}", file);
+  _logger->info(utl::ODB, 134,  "Finished DEF file: {}", file);
   delete hdr;
   return chip;
 }
@@ -1718,32 +1718,32 @@ dbBlock* definReader::createBlock(dbBlock*             parent,
 
   _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
 
-  _logger->info(utl::ODB, 0,  "Reading DEF file: {}", def_file);
-  _logger->info(utl::ODB, 0,  "Design: {}", hdr->_design);
+  _logger->info(utl::ODB, 135,  "Reading DEF file: {}", def_file);
+  _logger->info(utl::ODB, 136,  "Design: {}", hdr->_design);
 
   if (!createBlock(def_file)) {
     dbBlock::destroy(_block);
-    _logger->warn(utl::ODB, 0,  "Error: Failed to read DEF file");
+    _logger->warn(utl::ODB, 137,  "Error: Failed to read DEF file");
     delete hdr;
     return NULL;
   }
 
   if (_pinR->_bterm_cnt)
-    _logger->info(utl::ODB, 0,  "    Created {} pins.", _pinR->_bterm_cnt);
+    _logger->info(utl::ODB, 138,  "    Created {} pins.", _pinR->_bterm_cnt);
 
   if (_componentR->_inst_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 139, 
 "    Created {} components and {} component-terminals.",_componentR->_inst_cnt,_componentR->_iterm_cnt);
 
   if (_snetR->_snet_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 140, 
 "    Created {} special nets and {} connections.",_snetR->_snet_cnt,_snetR->_snet_iterm_cnt);
 
   if (_netR->_net_cnt)
-    _logger->info(utl::ODB, 0, 
+    _logger->info(utl::ODB, 141, 
 "    Created {} nets and {} connections.",_netR->_net_cnt,_netR->_net_iterm_cnt);
 
-  _logger->info(utl::ODB, 0,  "Finished DEF file: {}", def_file);
+  _logger->info(utl::ODB, 142,  "Finished DEF file: {}", def_file);
 
   delete hdr;
   return _block;
@@ -1755,21 +1755,21 @@ bool definReader::replaceWires(dbBlock* block, const char* def_file)
   setBlock(block);
   setTech(_db->getTech());
 
-  _logger->info(utl::ODB, 0,  "Reading DEF file: {}", def_file);
+  _logger->info(utl::ODB, 143,  "Reading DEF file: {}", def_file);
 
   if (!replaceWires(def_file)) {
     // dbBlock::destroy(_block);
-    _logger->warn(utl::ODB, 0,  "Error: Failed to read DEF file");
+    _logger->warn(utl::ODB, 144,  "Error: Failed to read DEF file");
     return false;
   }
 
   if (_snetR->_snet_cnt)
-    _logger->info(utl::ODB, 0,  "    Processed {} special nets.", _snetR->_snet_cnt);
+    _logger->info(utl::ODB, 145,  "    Processed {} special nets.", _snetR->_snet_cnt);
 
   if (_netR->_net_cnt)
-    _logger->info(utl::ODB, 0,  "    Processed {} nets.", _netR->_net_cnt);
+    _logger->info(utl::ODB, 146,  "    Processed {} nets.", _netR->_net_cnt);
 
-  _logger->info(utl::ODB, 0,  "Finished DEF file: {}", def_file);
+  _logger->info(utl::ODB, 147,  "Finished DEF file: {}", def_file);
   return errors() == 0;
 }
 
@@ -1778,7 +1778,7 @@ bool definReader::createBlock(const char* file)
   FILE* f = fopen(file, "r");
 
   if (f == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: Cannot open DEF file {}", file);
+    _logger->warn(utl::ODB, 148,  "error: Cannot open DEF file {}", file);
     return false;
   }
 
@@ -1823,7 +1823,7 @@ bool definReader::createBlock(const char* file)
 
   int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
   if (res != 0 || _errors != 0) {
-    _logger->warn(utl::ODB, 0,  "DEF parser returns an error!");
+    _logger->warn(utl::ODB, 149,  "DEF parser returns an error!");
     if (!_continue_on_errors) {
       exit(2);
     }
@@ -1840,7 +1840,7 @@ bool definReader::replaceWires(const char* file)
   FILE* f = fopen(file, "r");
 
   if (f == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: Cannot open DEF file {}", file);
+    _logger->warn(utl::ODB, 150,  "error: Cannot open DEF file {}", file);
     return false;
   }
 
@@ -1858,7 +1858,7 @@ bool definReader::replaceWires(const char* file)
 
   int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
   if (res != 0) {
-    _logger->warn(utl::ODB, 0,  "DEF parser returns an error!");
+    _logger->warn(utl::ODB, 151,  "DEF parser returns an error!");
     if (!_continue_on_errors) {
       exit(2);
     }

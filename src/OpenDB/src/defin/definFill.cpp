@@ -63,7 +63,7 @@ void definFill::fillBegin(const char* layer,
   _cur_layer = _tech->findLayer(layer);
 
   if (_cur_layer == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer);
+    _logger->warn(utl::ODB, 95,  "error: undefined layer ({}) referenced", layer);
     ++_errors;
   }
   _mask_number = mask_number;

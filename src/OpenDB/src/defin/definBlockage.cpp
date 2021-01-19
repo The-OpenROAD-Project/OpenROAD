@@ -69,7 +69,7 @@ void definBlockage::blockageRoutingBegin(const char* layer)
   _effective_width     = 0;
 
   if (_layer == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer);
+    _logger->warn(utl::ODB, 88,  "error: undefined layer ({}) referenced", layer);
     ++_errors;
   }
 }
@@ -79,7 +79,7 @@ void definBlockage::blockageRoutingComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: undefined component ({}) referenced", comp);
+    _logger->warn(utl::ODB, 89,  "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -191,7 +191,7 @@ void definBlockage::blockagePlacementComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: undefined component ({}) referenced", comp);
+    _logger->warn(utl::ODB, 90,  "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -211,7 +211,7 @@ void definBlockage::blockagePlacementMaxDensity(double max_density)
   if (max_density >= 0 && max_density <= 100) {
     _max_density = max_density;
   } else {
-    _logger->warn(utl::ODB, 0, 
+    _logger->warn(utl::ODB, 91, 
 "warning: Blockage max density {} not in [0, 100] will be ignored",max_density);
   }
 }

@@ -538,7 +538,7 @@ FILE* dbFlatten::debugNetWires(FILE*       fp,
     fp = fopen(buf, "w");
 
     if (fp == NULL) {      
-      src->getLogger()->error(utl::ODB, 0,  "Cannot Open file {} to write", buf);
+      src->getLogger()->error(utl::ODB, 26,  "Cannot Open file {} to write", buf);
       return nullptr;
     }
   }
@@ -1256,7 +1256,7 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
 
     uint sid = rseg->getShapeId();
     if (sid == 0) {
-      dst->getLogger()->warn(utl::ODB, 0, 
+      dst->getLogger()->warn(utl::ODB, 27, 
 "rsegId {} has zero shape : {}",rseg->getId(),dst->getConstName());
       continue;
     }
@@ -1314,7 +1314,7 @@ uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
 {
   if (fp == NULL)
-    net->getLogger()->info(utl::ODB, 0,  "\t\t\tprintRSegs: {}", net->getConstName());
+    net->getLogger()->info(utl::ODB, 28,  "\t\t\tprintRSegs: {}", net->getConstName());
   else
     fprintf(fp, "\t\t\tprintRSegs: %s\n", net->getConstName());
 
@@ -1326,7 +1326,7 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbRSeg* rseg = *rseg_itr;
 
     if (fp == NULL)
-      net->getLogger()->info(utl::ODB, 0,  "\t\t\t\t\trsegId: {} J{} -- ", rseg->getId(), rseg->getShapeId());
+      net->getLogger()->info(utl::ODB, 29,  "\t\t\t\t\trsegId: {} J{} -- ", rseg->getId(), rseg->getShapeId());
     else
       fprintf(fp,
               "\t\t\t\t\trsegId: %d J%d -- ",
@@ -1336,9 +1336,9 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* src = rseg->getSourceCapNode();
     if (fp == NULL) {
       if (src == NULL)
-        net->getLogger()->info(utl::ODB, 0,  " 0 --");
+        net->getLogger()->info(utl::ODB, 30,  " 0 --");
       else
-        net->getLogger()->info(utl::ODB, 0, 
+        net->getLogger()->info(utl::ODB, 31, 
 " {} I{} B{} -- ",src->getNode(),src->isITerm(),src->isBTerm());
     } else {
       if (src == NULL)
@@ -1353,9 +1353,9 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* tgt = rseg->getTargetCapNode();
     if (fp == NULL) {
       if (tgt == NULL)
-        net->getLogger()->info(utl::ODB, 0,  " 0");
+        net->getLogger()->info(utl::ODB, 32,  " 0");
       else
-        net->getLogger()->info(utl::ODB, 0,  " {} I{} B{}", tgt->getNode(), tgt->isITerm(), tgt->isBTerm());
+        net->getLogger()->info(utl::ODB, 33,  " {} I{} B{}", tgt->getNode(), tgt->isITerm(), tgt->isBTerm());
 
     } else {
       if (tgt == NULL)

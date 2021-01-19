@@ -41,10 +41,6 @@
 #include <string>
 #include "defout.h"
 
-namespace utl {
-  class Logger;
-}
-
 namespace odb {
 
 class dbBlock;

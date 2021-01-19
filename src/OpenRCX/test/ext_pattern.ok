@@ -1,12 +1,12 @@
-[INFO ODB-0000] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0000]     Created 11 technology layers
-[INFO ODB-0000]     Created 25 technology vias
-[INFO ODB-0000] Finished LEF file:  sky130/sky130_tech.lef
-[INFO ODB-0000] Reading DEF file: generate_pattern.defok
-[INFO ODB-0000] Design: blk
-[INFO ODB-0000]     Created 138176 pins.
-[INFO ODB-0000]     Created 69088 nets and 0 connections.
-[INFO ODB-0000] Finished DEF file: generate_pattern.defok
+[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
+[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0127] Reading DEF file: generate_pattern.defok
+[INFO ODB-0128] Design: blk
+[INFO ODB-0130]     Created 138176 pins.
+[INFO ODB-0133]     Created 69088 nets and 0 connections.
+[INFO ODB-0134] Finished DEF file: generate_pattern.defok
 Notice 0: Defined process_corner X with ext_model_index 0
 Notice 0: Defined Extraction corner X
 Notice 0: extracting blk ...

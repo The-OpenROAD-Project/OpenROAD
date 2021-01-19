@@ -474,7 +474,7 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
   const char* prfx  = "dumpWirePaths:";
   dbWire*     wire0 = innet->getWire();
   if (!wire0) {
-    logger->warn(utl::ODB, 0, "{} No wires for net {}", prfx, innet->getName());
+    logger->warn(utl::ODB, 87, "{} No wires for net {}", prfx, innet->getName());
     return;
   }
   debugPrint(logger, utl::ODB, group, level, "{} Dumping wire paths for net {}",prfx, innet->getName());

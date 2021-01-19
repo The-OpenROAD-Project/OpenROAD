@@ -147,7 +147,7 @@ void definComponent::begin(const char* iname, const char* mname)
   dbMaster* master = getMaster(mname);
 
   if (master == NULL) {
-    _logger->warn(utl::ODB, 0, 
+    _logger->warn(utl::ODB, 92, 
 "error: unknown library cell referenced ({}) for instance ({})",mname,iname);
     _errors++;
     return;
@@ -156,7 +156,7 @@ void definComponent::begin(const char* iname, const char* mname)
   _cur_inst = dbInst::create(_block, master, iname);
 
   if (_cur_inst == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: duplicate instance definition({})", iname);
+    _logger->warn(utl::ODB, 93,  "error: duplicate instance definition({})", iname);
     _errors++;
     return;
   }
@@ -164,7 +164,7 @@ void definComponent::begin(const char* iname, const char* mname)
   _iterm_cnt += master->getMTermCount();
   _inst_cnt++;
   if (_inst_cnt % 100000 == 0)
-    _logger->info(utl::ODB, 0,  "\t\tCreated {} Insts", _inst_cnt);
+    _logger->info(utl::ODB, 94,  "\t\tCreated {} Insts", _inst_cnt);
 }
 
 void definComponent::placement(int status, int x, int y, int orient)

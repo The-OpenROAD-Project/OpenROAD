@@ -108,7 +108,7 @@ void definRow::begin(const char*  name,
   dbSite* site = getSite(site_name);
 
   if (site == NULL) {
-    _logger->warn(utl::ODB, 0, 
+    _logger->warn(utl::ODB, 155, 
 "error: undefined site ({}) referenced in row ({}) statement.",site_name,name);
     ++_errors;
     return;

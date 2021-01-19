@@ -510,21 +510,21 @@ void dbRSeg::printCcSegs()
 {
   std::vector<dbCCSeg*> ccsegs;
   getCcSegs(ccsegs);
-  getLogger()->info(utl::ODB, 0,  "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
+  getLogger()->info(utl::ODB, 54,  "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
 #if 0
     uint j;
     dbCCSeg *seg;
     for (j=0;j<ccsegs.size();j++)
     {
         seg = ccsegs[j];
-        getLogger()->info(utl::ODB, 0, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
+        getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
     }
 #endif
 }
 
 void dbRSeg::printCC()
 {
-  getLogger()->info(utl::ODB, 0,  "rseg {}", getId());
+  getLogger()->info(utl::ODB, 56,  "rseg {}", getId());
   getTargetCapNode()->printCC();
 }
 
@@ -782,7 +782,7 @@ bool dbRSeg::addToNet()
   if (cap_node == NULL) {
     cap_node = getSourceCapNode();
     if (cap_node == NULL) {
-      getLogger()->warn(utl::ODB, 0,  "Cannot find cap nodes for Rseg {}", this->getId());
+      getLogger()->warn(utl::ODB, 57,  "Cannot find cap nodes for Rseg {}", this->getId());
       return false;
     }
   }

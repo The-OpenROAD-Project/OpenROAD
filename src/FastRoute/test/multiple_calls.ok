@@ -1,14 +1,14 @@
-[INFO ODB-0000] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0000]     Created 22 technology layers
-[INFO ODB-0000]     Created 27 technology vias
-[INFO ODB-0000]     Created 134 library cells
-[INFO ODB-0000] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0000] Reading DEF file: multiple_calls.def
-[INFO ODB-0000] Design: gcd
-[INFO ODB-0000]     Created 54 pins.
-[INFO ODB-0000]     Created 676 components and 2850 component-terminals.
-[INFO ODB-0000]     Created 87 nets and 250 connections.
-[INFO ODB-0000] Finished DEF file: multiple_calls.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: multiple_calls.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 87 nets and 250 connections.
+[INFO ODB-0134] Finished DEF file: multiple_calls.def
 Min routing layer: 1
 Max routing layer: 10
 Global adjustment: 0.0

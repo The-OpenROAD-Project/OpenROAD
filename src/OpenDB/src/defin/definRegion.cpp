@@ -71,7 +71,7 @@ void definRegion::begin(const char* name, bool is_group)
 
   if (_cur_region) {
     if (!is_group) {
-      _logger->warn(utl::ODB, 0,  "Region \"{}\" already exists", name);
+      _logger->warn(utl::ODB, 152,  "Region \"{}\" already exists", name);
       ++_errors;
       _cur_region = NULL;
       return;
@@ -84,7 +84,7 @@ void definRegion::begin(const char* name, bool is_group)
       return;
 
     getGroupName(_block, region_name);
-    _logger->warn(utl::ODB, 0, 
+    _logger->warn(utl::ODB, 153, 
 "Warning: A REGION with the name \"{}\" already exists, renaming ""this GROUP to \"{}\".",name,region_name.c_str());
   }
 
@@ -125,7 +125,7 @@ void definRegion::inst(const char* name)
     } else {
       dbInst* inst = _block->findInst(name);
       if (inst == NULL) {
-        _logger->warn(utl::ODB, 0,  "error: netlist component ({}) is not defined", name);
+        _logger->warn(utl::ODB, 154,  "error: netlist component ({}) is not defined", name);
         ++_errors;
         return;
       }

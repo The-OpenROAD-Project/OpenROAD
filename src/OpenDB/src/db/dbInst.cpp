@@ -635,7 +635,7 @@ void dbInst::setLevel(uint v, bool fromPI)
 {
   _dbInst* inst = (_dbInst*) this;
   if (v > 255) {
-    getLogger()->info(utl::ODB, 0, "setLevel {} greater than 255 is illegal! inst {}", v, getId());
+    getLogger()->info(utl::ODB, 36, "setLevel {} greater than 255 is illegal! inst {}", v, getId());
     return;
   }
   inst->_flags._level       = v;
@@ -989,7 +989,7 @@ bool dbInst::resetHierarchy(bool verbose)
 
   if (inst->_hierarchy) {
     if (verbose)
-      getLogger()->info(utl::ODB, 0, "instance bound to a block {}", inst->_hierarchy.id());
+      getLogger()->info(utl::ODB, 37, "instance bound to a block {}", inst->_hierarchy.id());
     inst->_hierarchy = 0;
     return true;
   }
@@ -1009,9 +1009,9 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (inst->_hierarchy) {
-    getLogger()->warn(utl::ODB, 0, "instance already bound to a block {}", inst->_hierarchy.id());
+    getLogger()->warn(utl::ODB, 38, "instance already bound to a block {}", inst->_hierarchy.id());
     if (force) {
-      getLogger()->warn(utl::ODB, 0, "Forced Initialize to 0");
+      getLogger()->warn(utl::ODB, 39, "Forced Initialize to 0");
       inst->_hierarchy = 0;
     } else {
       return false;
@@ -1019,9 +1019,9 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   }
 
   if (block->_parent_inst) {
-    getLogger()->warn(utl::ODB, 0, "block already bound to an instance {}", block->_parent_inst.id());
+    getLogger()->warn(utl::ODB, 40, "block already bound to an instance {}", block->_parent_inst.id());
     if (force) {
-      getLogger()->warn(utl::ODB, 0, "Forced Initialize to 0");
+      getLogger()->warn(utl::ODB, 41, "Forced Initialize to 0");
       block->_parent_inst = 0;
     } else {
       return false;
@@ -1029,7 +1029,7 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   }
 
   if (block_->getParent() != getBlock()) {
-    getLogger()->warn(utl::ODB, 0, "block not a direct child of instance owner");
+    getLogger()->warn(utl::ODB, 42, "block not a direct child of instance owner");
     return false;
   }
 
@@ -1037,7 +1037,7 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
 
   // _dbHier::create fails if bterms cannot be mapped (1-to-1) to mterms
   if (hier == NULL) {
-    getLogger()->warn(utl::ODB, 0, "_dbHier::create fails");
+    getLogger()->warn(utl::ODB, 43, "_dbHier::create fails");
     return false;
   }
   return true;
@@ -1148,7 +1148,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   dbMaster* old_master_ = getMaster();
 
   if (inst->_hierarchy) {
-    getLogger()->warn(utl::ODB, 0,
+    getLogger()->warn(utl::ODB, 44,
            "Failed(_hierarchy) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
@@ -1194,7 +1194,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     old_terms.push_back((_dbMTerm*) *itr);
 
   if (old_terms.size() != new_terms.size()) {
-    getLogger()->warn(utl::ODB, 0,
+    getLogger()->warn(utl::ODB, 45,
            "Failed(termSize) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
@@ -1220,7 +1220,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // mterms are not equivalent
   if (i1 != new_terms.end() || i2 != old_terms.end()) {
-    getLogger()->warn(utl::ODB, 0,
+    getLogger()->warn(utl::ODB, 46,
            "Failed(mtermEquiv) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
@@ -1488,7 +1488,7 @@ dbITerm* dbInst::getFirstOutput()
 
     return tr;
   }
-  getLogger()->warn(utl::ODB, 0, "instance {} has no output pin", getConstName());
+  getLogger()->warn(utl::ODB, 47, "instance {} has no output pin", getConstName());
   return NULL;
 }
 

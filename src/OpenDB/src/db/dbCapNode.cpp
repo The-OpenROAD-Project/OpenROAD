@@ -178,7 +178,7 @@ bool dbCapNode::groundCC(float gndFactor)
     if (agrNetId < vicNetId)
       continue;  //  avoid duplicate grounding
     if (agrNetId == vicNetId) {
-      getLogger()->warn(utl::ODB, 0,
+      getLogger()->warn(utl::ODB, 24,
               "cc seg {} has both capNodes {} {} from the same net {} . "
               "ignored by groundCC .",
               cc->getId(),
@@ -996,7 +996,7 @@ void dbCapNode::printCC()
   if (ccn == 0)
     return;
   dbCCSeg* ccs = dbCCSeg::getCCSeg(block, ccn);
-  getLogger()->info(utl::ODB, 0, "  capn {}", getId());
+  getLogger()->info(utl::ODB, 25, "  capn {}", getId());
   ccs->printCapnCC(getId());
 }
 

@@ -544,7 +544,7 @@ bool lefin_parse(lefin* lef, const char* file_name)
   FILE* file = fopen(file_name, "r");
 
   if (file == NULL) {
-    lef->getLogger()->warn(utl::ODB, 0, "error: Cannot open LEF file %s\n", file_name);
+    lef->getLogger()->warn(utl::ODB, 240, "error: Cannot open LEF file %s\n", file_name);
     return false;
   }
 

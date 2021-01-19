@@ -66,7 +66,7 @@ void definTracks::tracksLayer(const char* layer_name)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 0,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(utl::ODB, 165,  "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }

@@ -991,7 +991,7 @@ bool dbNet::adjustCC(uint                   adjOrder,
                      std::vector<dbNet*>&   halonets)
 {
   if (((_dbNet*) this)->_ccAdjustFactor > 0) {
-    getLogger()->warn(utl::ODB, 0,
+    getLogger()->warn(utl::ODB, 48,
             "Net {} {} had been CC adjusted by {}. Please unadjust first.",
             getId(),
             getConstName(),
@@ -1975,9 +1975,9 @@ void dbNet::donateRC(dbITerm*               donorterm,
     }
   }
   if (!drseg)
-    getLogger()->error(utl::ODB, 0, "Donor net {} {} has no rc data", getId(), getConstName());
+    getLogger()->error(utl::ODB, 49, "Donor net {} {} has no rc data", getId(), getConstName());
   if (!dtrseg)
-    getLogger()->error(utl::ODB, 0,
+    getLogger()->error(utl::ODB, 50,
           "Donor net {} {} has no capnode attached to iterm {}/{}",
           getId(),
           getConstName(),
@@ -1999,7 +1999,7 @@ void dbNet::donateRC(dbITerm*               donorterm,
     lastrrseg = rrseg;
   }
   if (!rtrseg)
-    getLogger()->error(utl::ODB, 0,
+    getLogger()->error(utl::ODB, 51,
           "Receiver net {} {} has no capnode attached to iterm {}/{}",
           rcvnet->getId(),
           rcvnet->getConstName(),
@@ -2396,7 +2396,7 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
-    getLogger()->warn(utl::ODB, 0, "Net {}, {} has no extraction data", getId(), getConstName());
+    getLogger()->warn(utl::ODB, 52, "Net {}, {} has no extraction data", getId(), getConstName());
     return;
   }
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
@@ -2438,7 +2438,7 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
-    getLogger()->warn(utl::ODB, 0, "Net {}, {} has no extraction data", getId(), getConstName());
+    getLogger()->warn(utl::ODB, 53, "Net {}, {} has no extraction data", getId(), getConstName());
     return;
   }
   dbRSeg* prc = getZeroRSeg();

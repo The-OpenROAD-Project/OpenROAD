@@ -387,7 +387,7 @@ void dbCCSeg::printCapnCC(uint capn)
            capn);
     return;
   }
-  getLogger()->info(utl::ODB, 0,
+  getLogger()->info(utl::ODB, 21,
          "    ccSeg={} capn0={} next0={} capn1={} next1={}",
          getId(),
          (uint) seg->_cap_node[0],
@@ -411,7 +411,7 @@ bool dbCCSeg::checkCapnCC(uint capn)
   else if (capn == seg->_cap_node[1])
     sidx = 1;
   else {
-    getLogger()->info(utl::ODB, 0,
+    getLogger()->info(utl::ODB, 22,
            "ccSeg {} has capnd {} {}, not {} !",
            getId(),
            (uint) seg->_cap_node[0],
@@ -712,7 +712,7 @@ void dbCCSeg::swapCapnode(dbCapNode* orig_, dbCapNode* new_)
   } else if (oid == seg->_cap_node[1]) {
     sidx = 1;
   } else {
-    getLogger()->error(utl::ODB, 0,
+    getLogger()->error(utl::ODB, 23,
           "CCSeg {} does not have orig capNode {}. Can not swap.",
           seg->getOID(),
           oid);

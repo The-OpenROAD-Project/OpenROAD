@@ -1119,7 +1119,7 @@ void dumpDecoder4Net(dbNet* innet)
   dbWire*     wire0 = innet->getWire();
   utl::Logger* logger = innet->getLogger();
   if (!wire0) {
-    logger->warn(utl::ODB, 0 , "{} No wires for net {}", prfx, innet->getName());
+    logger->warn(utl::ODB, 63 , "{} No wires for net {}", prfx, innet->getName());
     return;
   }
 
@@ -1127,7 +1127,7 @@ void dumpDecoder4Net(dbNet* innet)
   dbWireDecoder::OpCode opcode;
   int                   x, y, ext;
   decoder.begin(wire0);
-  logger->info(utl::ODB, 0 , "{} begin decoder for net {}", prfx, innet->getName());
+  logger->info(utl::ODB, 64 , "{} begin decoder for net {}", prfx, innet->getName());
 
   dbTechLayer*     layer;
   dbWireType       wtype;
@@ -1135,7 +1135,7 @@ void dumpDecoder4Net(dbNet* innet)
   while (1) {
     opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
-      logger->info(utl::ODB, 0 , "{} End decoder for net {}", prfx, innet->getName());
+      logger->info(utl::ODB, 65 , "{} End decoder for net {}", prfx, innet->getName());
       break;
     }
 
@@ -1146,7 +1146,7 @@ void dumpDecoder4Net(dbNet* innet)
         if (decoder.peek() == dbWireDecoder::RULE) {
           opcode   = decoder.next();
           lyr_rule = decoder.getRule();
-          logger->info(utl::ODB, 0 ,
+          logger->info(utl::ODB, 66 ,
                  "{} New path: layer {} type {}  non-default rule {}",
                  prfx,
                  layer->getName(),
@@ -1154,7 +1154,7 @@ void dumpDecoder4Net(dbNet* innet)
                  lyr_rule->getNonDefaultRule()->getName());
 
         } else {
-          logger->info(utl::ODB, 0 ,
+          logger->info(utl::ODB, 67 ,
                  "{} New path: layer {} type {}\n",
                  prfx,
                  layer->getName(),
@@ -1176,7 +1176,7 @@ void dumpDecoder4Net(dbNet* innet)
           opcode = decoder.next();
           decoder.getPoint(x, y, ext);
           if (lyr_rule)
-            logger->info(utl::ODB, 0 ,
+            logger->info(utl::ODB, 68 ,
                    "{} New path at junction {}, point(ext) {} {} {}, with rule "
                    "{}",
                    prfx,
@@ -1186,7 +1186,7 @@ void dumpDecoder4Net(dbNet* innet)
                    ext,
                    lyr_rule->getNonDefaultRule()->getName());
           else
-            logger->info(utl::ODB, 0 ,
+            logger->info(utl::ODB, 69 ,
                    "{} New path at junction {}, point(ext) {} {} {}",
                    prfx,
                    jct,
@@ -1197,7 +1197,7 @@ void dumpDecoder4Net(dbNet* innet)
           opcode = decoder.next();
           decoder.getPoint(x, y);
           if (lyr_rule)
-            logger->info(utl::ODB, 0,
+            logger->info(utl::ODB, 70,
                    "{} New path at junction {}, point {} {}, with rule {}",
                    prfx,
                    jct,
@@ -1205,7 +1205,7 @@ void dumpDecoder4Net(dbNet* innet)
                    y,
                    lyr_rule->getNonDefaultRule()->getName());
           else
-            logger->info(utl::ODB, 0 ,
+            logger->info(utl::ODB, 71 ,
                    "{} New path at junction {}, point {} {}",
                    prfx,
                    jct,
@@ -1213,7 +1213,7 @@ void dumpDecoder4Net(dbNet* innet)
                    y);
 
         } else {
-          logger->warn(utl::ODB, 0 ,
+          logger->warn(utl::ODB, 72 ,
                  "{} opcode after junction is not point or point_ext??\n",
                  prfx);
         }
@@ -1231,13 +1231,13 @@ void dumpDecoder4Net(dbNet* innet)
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule)
-          logger->info(utl::ODB, 0 ,
+          logger->info(utl::ODB, 73 ,
                  "{} Short at junction {}, with rule {}",
                  prfx,
                  jval,
                  lyr_rule->getNonDefaultRule()->getName());
         else
-          logger->info(utl::ODB, 0 , "{} Short at junction {}", prfx, jval);
+          logger->info(utl::ODB, 74 , "{} Short at junction {}", prfx, jval);
         break;
       }
 
@@ -1252,30 +1252,30 @@ void dumpDecoder4Net(dbNet* innet)
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule)
-          logger->info(utl::ODB, 0 ,
+          logger->info(utl::ODB, 75 ,
                  "{} Virtual wire at junction {}, with rule {}",
                  prfx,
                  jval,
                  lyr_rule->getNonDefaultRule()->getName());
         else
-          logger->info(utl::ODB, 0 , "{} Virtual wire at junction {}", prfx, jval);
+          logger->info(utl::ODB, 76 , "{} Virtual wire at junction {}", prfx, jval);
         break;
       }
 
       case dbWireDecoder::POINT: {
         decoder.getPoint(x, y);
-        logger->info(utl::ODB, 0 , "{} Found point {} {}", prfx, x, y);
+        logger->info(utl::ODB, 77 , "{} Found point {} {}", prfx, x, y);
         break;
       }
 
       case dbWireDecoder::POINT_EXT: {
         decoder.getPoint(x, y, ext);
-        logger->info(utl::ODB, 0 , "{} Found point(ext){} {} {}", prfx, x, y, ext);
+        logger->info(utl::ODB, 78 , "{} Found point(ext){} {} {}", prfx, x, y, ext);
         break;
       }
 
       case dbWireDecoder::TECH_VIA: {
-        logger->info(utl::ODB, 0 ,
+        logger->info(utl::ODB, 79 ,
                "{} Found via {}",
                prfx,
                decoder.getTechVia()->getName());
@@ -1283,7 +1283,7 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::VIA: {
-        logger->info(utl::ODB, 0 , "block via found in signal net!");
+        logger->info(utl::ODB, 80 , "block via found in signal net!");
         break;
       }
 
@@ -1297,12 +1297,12 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::ITERM: {
-        logger->info(utl::ODB, 0 , "{} Found Iterm", prfx);
+        logger->info(utl::ODB, 81 , "{} Found Iterm", prfx);
         break;
       }
 
       case dbWireDecoder::BTERM: {
-        logger->info(utl::ODB, 0 , "{} Found Bterm", prfx);
+        logger->info(utl::ODB, 82 , "{} Found Bterm", prfx);
         break;
       }
 
@@ -1310,14 +1310,14 @@ void dumpDecoder4Net(dbNet* innet)
         if (strcmp(
                 lyr_rule->getNonDefaultRule()->getName().c_str(),
                 (decoder.getRule())->getNonDefaultRule()->getName().c_str())) {
-          logger->error(utl::ODB, 0 ,
+          logger->error(utl::ODB, 83 ,
                 "{} GOT RULE {}, EXPECTED RULE {}",
                 prfx,
                 lyr_rule->getNonDefaultRule()->getName().c_str(),
                 decoder.getRule()->getNonDefaultRule()->getName().c_str());
         }
         lyr_rule = decoder.getRule();
-        logger->info(utl::ODB, 0 ,
+        logger->info(utl::ODB, 84 ,
                "{} Found Rule {} in middle of path",
                prfx,
                lyr_rule->getNonDefaultRule()->getName().c_str());
@@ -1325,11 +1325,11 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::END_DECODE:
-        logger->info(utl::ODB, 0 , "{} End decoder for net {}", prfx, innet->getName().c_str());
+        logger->info(utl::ODB, 85 , "{} End decoder for net {}", prfx, innet->getName().c_str());
         break;
 
       default: {
-        logger->error(utl::ODB, 0 ,"{} Hit default!", prfx);
+        logger->error(utl::ODB, 86 ,"{} Hit default!", prfx);
         break;
       }
     }  // switch opcode
