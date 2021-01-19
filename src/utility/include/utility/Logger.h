@@ -128,7 +128,7 @@ class Logger
     inline void error(ToolId tool,
                       int id,
                       const std::string& message,
-                      const Args&... args)
+                      const Args&... args) __attribute((noreturn))
     {
       log(tool, spdlog::level::err, id, message, args...);
       char tool_id[32];
@@ -142,7 +142,7 @@ class Logger
     void critical(ToolId tool,
                   int id,
                   const std::string& message,
-                  const Args&... args)
+                  const Args&... args) __attribute((noreturn))
     {
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
       exit(EXIT_FAILURE);
