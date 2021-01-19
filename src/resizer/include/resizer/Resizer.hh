@@ -175,11 +175,14 @@ public:
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   void repairHold(float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  // Max buffer count as percent of design instance count.
+                  float max_buffer_percent);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
                   float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  float max_buffer_percent);
   void repairSetup(float slack_margin);
   // For testing.
   void repairSetup(Pin *drvr_pin);
@@ -407,12 +410,14 @@ protected:
   void repairHold(VertexSet *ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  int max_buffer_count);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
                      float buffer_delay,
                      float slack_margin,
-                     bool allow_setup_violations);
+                     bool allow_setup_violations,
+                     int max_buffer_count);
   void findHoldViolations(VertexSet *ends,
                           float slack_margin,
                           // Return values.
@@ -444,7 +449,6 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void setWireCorner(Corner *corner);
   void estimateWireParasiticSteiner(const Net *net);
   void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
