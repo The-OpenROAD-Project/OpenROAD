@@ -3930,7 +3930,7 @@ int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lef
   io::Parser* parser = (io::Parser*) data;
 
   // term
-  unique_ptr<frTerm>         uTerm = make_unique<frTerm>(pin->name());
+  unique_ptr<frTerm> uTerm = make_unique<frTerm>(pin->name());
   auto term = uTerm.get();
   term->setId(parser->numTerms);
   parser->numTerms++;

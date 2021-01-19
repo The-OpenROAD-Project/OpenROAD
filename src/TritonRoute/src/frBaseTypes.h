@@ -293,6 +293,7 @@ namespace fr {
     frDebugSettings()
       : debugDR(false),
         debugMaze(false),
+        debugPA(false),
         gcellX(-1),
         gcellY(-1),
         iter(0)
@@ -301,7 +302,9 @@ namespace fr {
 
     bool debugDR;
     bool debugMaze;
+    bool debugPA;
     std::string netName;
+    std::string pinName;
     int gcellX;
     int gcellY;
     int iter;
