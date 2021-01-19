@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <string>
 #include <functional>
 
 namespace ord {
@@ -90,7 +91,6 @@ class TritonCTS
   void printHeader() const;
   void setupCharacterization();
   void createCharacterization();
-  void importCharacterization();
   void checkCharacterization();
   void findClockRoots();
   void populateTritonCts();

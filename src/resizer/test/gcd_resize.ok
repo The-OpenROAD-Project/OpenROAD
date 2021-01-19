@@ -14,12 +14,13 @@ Notice 0: Finished DEF file: gcd_placed.def
 worst slack 1.36
 [INFO RSZ-0027] Inserted 35 input buffers.
 [INFO RSZ-0028] Inserted 18 output buffers.
-[INFO RSZ-0058] using max wire length 851u.
-[INFO RSZ-0039] Resized 40 instances.
+[INFO RSZ-0058] using max wire length 853u.
+[INFO RSZ-0039] Resized 42 instances.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 100 hold buffers.
-Startpoint: _892_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
+[INFO RSZ-0032] Inserted 93 hold buffers.
+Startpoint: _889_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _889_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: min
 
@@ -27,33 +28,30 @@ Path Type: min
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _892_/CK (DFF_X1)
-   0.06    0.06 ^ _892_/QN (DFF_X1)
-   0.02    0.08 ^ _800_/Z (BUF_X1)
-   0.02    0.10 ^ hold63/Z (BUF_X1)
-   0.01    0.12 v _641_/ZN (OAI21_X1)
-   0.03    0.14 ^ _648_/ZN (OAI21_X1)
-   0.01    0.16 v _649_/ZN (OAI21_X1)
-   0.02    0.18 v _802_/Z (BUF_X1)
-   0.02    0.20 v hold136/Z (BUF_X1)
-   0.00    0.20 v _876_/D (DFF_X1)
-           0.20   data arrival time
+   0.00    0.00 ^ _889_/CK (DFF_X1)
+   0.08    0.08 ^ _889_/Q (DFF_X1)
+   0.04    0.12 ^ _742_/Z (BUF_X1)
+   0.04    0.16 ^ _706_/Z (MUX2_X1)
+   0.02    0.18 ^ _832_/Z (BUF_X1)
+   0.03    0.21 ^ hold138/Z (CLKBUF_X3)
+   0.00    0.21 ^ _889_/D (DFF_X1)
+           0.21   data arrival time
 
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00   clock reconvergence pessimism
-           0.00 ^ _876_/CK (DFF_X1)
+           0.00 ^ _889_/CK (DFF_X1)
    0.00    0.00   library hold time
            0.00   data required time
 ---------------------------------------------------------
            0.00   data required time
-          -0.20   data arrival time
+          -0.21   data arrival time
 ---------------------------------------------------------
            0.20   slack (MET)
 
 
-Startpoint: _885_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
+Startpoint: _867_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _877_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -61,38 +59,39 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _885_/CK (DFF_X1)
-   0.08    0.08 ^ _885_/Q (DFF_X1)
-   0.04    0.13 ^ _750_/Z (BUF_X1)
-   0.05    0.18 ^ _474_/ZN (XNOR2_X1)
-   0.05    0.23 ^ _476_/ZN (AND2_X1)
-   0.05    0.28 ^ _480_/ZN (AND2_X1)
-   0.02    0.30 v _615_/ZN (OAI21_X1)
-   0.03    0.33 ^ _616_/ZN (NAND2_X1)
-   0.04    0.37 ^ _651_/ZN (AND2_X1)
-   0.01    0.38 v _655_/ZN (NOR3_X2)
-   0.07    0.45 v _669_/ZN (OR3_X1)
-   0.04    0.49 ^ _673_/ZN (AOI21_X1)
-   0.01    0.50 v _680_/ZN (NOR2_X1)
-   0.04    0.54 v _681_/ZN (XNOR2_X1)
-   0.03    0.57 v _682_/ZN (AND2_X1)
-   0.03    0.60 ^ _685_/ZN (OAI21_X1)
-   0.02    0.61 v _686_/ZN (OAI21_X1)
-   0.03    0.64 v hold67/Z (BUF_X1)
-   0.02    0.66 v _814_/Z (BUF_X1)
-   0.02    0.69 v hold66/Z (BUF_X1)
-   0.00    0.69 v _880_/D (DFF_X1)
-           0.69   data arrival time
+   0.00    0.00 ^ _867_/CK (DFF_X1)
+   0.08    0.08 ^ _867_/Q (DFF_X1)
+   0.04    0.12 ^ _753_/Z (BUF_X1)
+   0.05    0.17 ^ _489_/ZN (XNOR2_X1)
+   0.02    0.19 v _490_/ZN (INV_X1)
+   0.03    0.23 ^ _492_/ZN (NOR2_X1)
+   0.02    0.25 v _497_/ZN (NAND3_X1)
+   0.07    0.31 v _502_/ZN (OR3_X1)
+   0.02    0.33 ^ _518_/ZN (NAND3_X1)
+   0.01    0.34 v _520_/ZN (NAND2_X1)
+   0.03    0.37 v _536_/ZN (AND4_X1)
+   0.04    0.42 ^ _542_/ZN (AOI21_X1)
+   0.03    0.45 v _548_/ZN (NAND2_X1)
+   0.06    0.51 v _549_/ZN (OR2_X1)
+   0.03    0.54 v _550_/Z (BUF_X8)
+   0.03    0.57 v _551_/Z (BUF_X16)
+   0.03    0.59 ^ _658_/ZN (OAI211_X2)
+   0.04    0.63 ^ _659_/Z (MUX2_X1)
+   0.03    0.66 ^ hold112/Z (CLKBUF_X3)
+   0.02    0.68 ^ _805_/Z (BUF_X1)
+   0.02    0.70 ^ hold111/Z (CLKBUF_X3)
+   0.00    0.70 ^ _877_/D (DFF_X1)
+           0.70   data arrival time
 
    2.00    2.00   clock core_clock (rise edge)
    0.00    2.00   clock network delay (ideal)
    0.00    2.00   clock reconvergence pessimism
-           2.00 ^ _880_/CK (DFF_X1)
-  -0.04    1.96   library setup time
-           1.96   data required time
+           2.00 ^ _877_/CK (DFF_X1)
+  -0.03    1.97   library setup time
+           1.97   data required time
 ---------------------------------------------------------
-           1.96   data required time
-          -0.69   data arrival time
+           1.97   data required time
+          -0.70   data arrival time
 ---------------------------------------------------------
            1.27   slack (MET)
 
@@ -101,7 +100,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-_449_/ZN                                0.20    0.05    0.15 (MET)
+_443_/ZN                                0.20    0.06    0.14 (MET)
 
 max fanout
 
@@ -113,7 +112,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-_449_/ZN                               10.47    2.91    7.56 (MET)
+_443_/ZN                               10.47    3.57    6.90 (MET)
 
 worst slack 1.27
 Driver    length delay
@@ -128,4 +127,4 @@ _851_/Z manhtn 69.5 steiner 69.5 0.00
 _725_/Z manhtn 67.2 steiner 67.2 0.00
 _849_/Z manhtn 64.8 steiner 64.8 0.00
 _860_/Z manhtn 64.5 steiner 64.5 0.00
-Design area 816 u^2 13% utilization.
+Design area 855 u^2 13% utilization.

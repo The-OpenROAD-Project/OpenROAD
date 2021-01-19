@@ -82,7 +82,8 @@ pipeline {
       }
     }
     always {
-      archiveArtifacts '**/results/*'
+      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'"
+      archiveArtifacts '**/results.tgz'
     }
   }
 }

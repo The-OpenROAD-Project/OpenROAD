@@ -93,9 +93,6 @@ void TritonCTS::runTritonCts()
   findClockRoots();
   populateTritonCts();
   checkCharacterization();
-  if (_options->getOnlyCharacterization()) {
-    return;
-  }
   buildClockTrees();
   if (_options->runPostCtsOpt()) {
     runPostCtsOpt();
@@ -118,27 +115,14 @@ void TritonCTS::printHeader() const
 
 void TritonCTS::setupCharacterization()
 {
-  if (_options->runAutoLut()) {
-    // A new characteriztion is created.
-    createCharacterization();
-  } else {
-    // LUT files exists. Import the characterization results.
-    importCharacterization();
-  }
+  // A new characteriztion is always created.
+  createCharacterization();
+  
   // Also resets metrics everytime the setup is done
   _options->setNumSinks(0);
   _options->setNumBuffersInserted(0);
   _options->setNumClockRoots(0);
   _options->setNumClockSubnets(0);
-}
-
-void TritonCTS::importCharacterization()
-{
-  _logger->report(" *****************************");
-  _logger->report(" *  Import characterization  *");
-  _logger->report(" *****************************");
-
-  _techChar->parse(_options->getLutFile(), _options->getSolListFile());
 }
 
 void TritonCTS::createCharacterization()
@@ -246,7 +230,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
           countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks);
         else
         {
-          std::cout << "  Hanging buffer " << name << std::endl;
+          _logger->report("  Hanging buffer {}", name);
         }
         if (strlen(name.c_str()) > 11 && !strncmp(name.c_str(), "clkbuf_leaf", 11))
           leafSinks++;
@@ -270,8 +254,7 @@ void TritonCTS::writeDataToDb()
       unsigned sinkCount = 0;
       unsigned leafSinks = 0;
       countSinksPostDbWrite(topClockNet, sinkCount, leafSinks);
-      std::cout << "  Sinks after db write = " << sinkCount
-                << " (Leaf Buffers = " << leafSinks << ")" << std::endl;
+      _logger->report("  Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
     }
   }
 }

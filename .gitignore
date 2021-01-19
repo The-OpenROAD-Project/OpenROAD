@@ -9,6 +9,7 @@
 *.gcno
 *.rej
 *.orig
+*.vscode
 TAGS
 *~
 \#*#
