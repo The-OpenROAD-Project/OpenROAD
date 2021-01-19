@@ -93,6 +93,7 @@ Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid(grid_);
   grid_ = nullptr;
+  have_multi_height_cells_ = false;
 }
 
 void
@@ -182,8 +183,6 @@ Opendp::examineRows()
 void
 Opendp::makeCells()
 {
-  multi_row_inst_count_ = 0;
-
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
@@ -211,9 +210,8 @@ Opendp::makeCells()
       cell.is_placed_ = isFixed(&cell);
 
       Macro &macro = db_master_map_[master];
-      if (macro.is_multi_row_) {
-        multi_row_inst_count_++;
-      }
+      if (macro.is_multi_row_)
+        have_multi_height_cells_ = true;
     }
   }
 }

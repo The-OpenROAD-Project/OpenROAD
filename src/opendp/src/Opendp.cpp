@@ -190,7 +190,6 @@ Opendp::detailedPlacement(int max_displacment)
 {
   importDb();
   reportImportWarnings();
-  findDesignStats();
   max_displacement_constraint_ = max_displacment;
   hpwl_before_ = hpwl();
   detailedPlacement();
@@ -216,35 +215,6 @@ Opendp::updateDbInstLocations()
         db_inst_->setLocation(x, y);
     }
   }
-}
-
-void
-Opendp::findDesignStats()
-{
-  fixed_inst_count_ = 0;
-  int64_t fixed_area = 0;
-  int64_t movable_area = 0;
-  max_cell_height_ = 0;
-
-  for (Cell &cell : cells_) {
-    int64_t cell_area = cell.area();
-    if (isFixed(&cell)) {
-      fixed_area += cell_area;
-      fixed_inst_count_++;
-    }
-    else {
-      movable_area += cell_area;
-      int cell_height = gridNearestHeight(&cell);
-      if (cell_height > max_cell_height_) {
-        max_cell_height_ = cell_height;
-      }
-    }
-  }
-
-  int64_t design_area = row_count_ * static_cast<int64_t>(row_site_count_)
-    * site_width_ * row_height_;
-
-  design_util_ = static_cast<double>(movable_area) / (design_area - fixed_area);
 }
 
 void

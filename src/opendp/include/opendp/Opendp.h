@@ -217,8 +217,6 @@ private:
   int find_ymax(dbMTerm *term) const;
 
   void initGrid();
-  void findDesignStats();
-
   void detailedPlacement();
   Point nearestPt(const Cell *cell, const Rect *rect) const;
   int dist_for_rect(const Cell *cell, const Rect *rect) const;
@@ -378,17 +376,12 @@ private:
   int site_width_;
   int row_count_;
   int row_site_count_;
-  int max_cell_height_;
+  int have_multi_height_cells_;
   int max_displacement_constraint_;  // rows
 
   // 2D pixel grid
   Grid *grid_;
   Cell dummy_cell_;
-
-  // Design stats.
-  int fixed_inst_count_;
-  int multi_row_inst_count_;
-  double design_util_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters
