@@ -1,16 +1,67 @@
-sta::define_cmd_args "global_placement" {
+###############################################################################
+## BSD 3-Clause License
+##
+## Copyright (c) 2018-2020, The Regents of the University of California
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE
+## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
-  [-density target_density]\
-  [-disable_timing_driven]\
-  [-disable_routability_driven]\
-  [-timing_driven]\
-  [-incremental]\
-  [-density target_density]\
-    [-bin_grid_count grid_count]}
+    [-disable_timing_driven]\
+    [-disable_routability_driven]\
+    [-incremental]\
+    [-bin_grid_count grid_count]\
+    [-density target_density]\
+    [-init_density_penalty init_density_penalty]\
+    [-init_wirelength_coef init_wirelength_coef]\
+    [-min_phi_coef min_phi_conef]\
+    [-max_phi_coef max_phi_coef]\
+    [-overflow overflow]\
+    [-initial_place_max_iter initial_place_max_iter]\
+    [-initial_place_max_fanout initial_place_max_fanout]\
+    [-routability_check_overflow routability_check_overflow]\
+    [-routability_max_density routability_max_density]\
+    [-routability_max_bloat_iter routability_max_bloat_iter]\
+    [-routability_max_inflation_iter routability_max_inflation_iter]\
+    [-routability_target_rc_metric routability_target_rc_metric]\
+    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
+    [-routability_pitch_scale routability_pitch_scale]\
+    [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_rc_coefficients routability_rc_coefficients]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+    [-verbose_level level]\
+}
 
 proc global_placement { args } {
   sta::parse_key_args "global_placement" args \
-    keys {-bin_grid_count -wire_res -wire_cap -density \
+    keys {-bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
       -initial_place_max_iter -initial_place_max_fanout \
@@ -27,7 +78,6 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -incremental}
-
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
