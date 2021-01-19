@@ -192,14 +192,11 @@ Opendp::detailedPlacement(int max_displacment)
   reportImportWarnings();
   findDesignStats();
   max_displacement_constraint_ = max_displacment;
-  reportDesignStats();
-  int64_t hpwl_before = hpwl();
+  hpwl_before_ = hpwl();
   detailedPlacement();
-  int64_t avg_displacement, sum_displacement, max_displacement;
-  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
+  // Save displacement stats before updating instance DB locations.
+  findDisplacementStats();
   updateDbInstLocations();
-  reportLegalizationStats(hpwl_before, avg_displacement,
-                          sum_displacement, max_displacement);
 }
 
 void
@@ -289,22 +286,19 @@ Opendp::reportDesignStats() const
 }
 
 void
-Opendp::reportLegalizationStats(int64_t hpwl_before,
-                                int64_t avg_displacement,
-                                int64_t sum_displacement,
-                                int64_t max_displacement) const
+Opendp::reportLegalizationStats() const
 {
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
-  logger_->report("total displacement   {:10.1f} u", dbuToMicrons(sum_displacement));
-  logger_->report("average displacement {:10.1f} u", dbuToMicrons(avg_displacement));
-  logger_->report("max displacement     {:10.1f} u", dbuToMicrons(max_displacement));
-  logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before));
+  logger_->report("total displacement   {:10.1f} u", dbuToMicrons(displacement_sum_));
+  logger_->report("average displacement {:10.1f} u", dbuToMicrons(displacement_avg_));
+  logger_->report("max displacement     {:10.1f} u", dbuToMicrons(displacement_max_));
+  logger_->report("original HPWL        {:10.1f} u", dbuToMicrons(hpwl_before_));
   double hpwl_legal = hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
-  int hpwl_delta = (hpwl_before == 0.0)
+  int hpwl_delta = (hpwl_before_ == 0.0)
     ? 0.0
-    : round((hpwl_legal - hpwl_before) / hpwl_before * 100);
+    : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
 }
@@ -312,26 +306,23 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::displacementStats(// Return values.
-                          int64_t *avg_displacement,
-                          int64_t *sum_displacement,
-                          int64_t *max_displacement) const
+Opendp::findDisplacementStats()
 {
-  *avg_displacement = 0;
-  *sum_displacement = 0;
-  *max_displacement = 0;
+  displacement_avg_ = 0;
+  displacement_sum_ = 0;
+  displacement_max_ = 0;
 
   for (const Cell &cell : cells_) {
     int displacement = disp(&cell);
-    *sum_displacement += displacement;
-    if (displacement > *max_displacement) {
-      *max_displacement = displacement;
+    displacement_sum_ += displacement;
+    if (displacement > displacement_max_) {
+      displacement_max_ = displacement;
     }
   }
   if (cells_.size())
-    *avg_displacement = *sum_displacement / cells_.size();
+    displacement_avg_ = displacement_sum_ / cells_.size();
   else
-    *avg_displacement = 0.0;
+    displacement_avg_ = 0.0;
 }
 
 // Note that this does NOT use cell/core coordinates.

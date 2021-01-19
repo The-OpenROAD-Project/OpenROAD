@@ -13,6 +13,7 @@ Notice 0:     Created 10 components and 46 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: multi_height03.def
+[WARNING DPL-0018] detailed placement failed on _281_.
 Design Stats
 -----------------------------------
 total instances              10
@@ -28,7 +29,6 @@ rows                          2
 row height                  2.0 u
 max height                    2 rows
 
-[WARNING DPL-0018] detailed placement failed on _281_.
 Placement Analysis
 ---------------------------------
 total displacement          7.7 u

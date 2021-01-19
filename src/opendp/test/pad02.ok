@@ -11,6 +11,7 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: simple01.def
+[WARNING DPL-0015] instance _277_ does not fit inside the ROW core area.
 Design Stats
 -----------------------------------
 total instances               1
@@ -25,7 +26,6 @@ utilization padded           29 %
 rows                          4
 row height                  1.4 u
 
-[WARNING DPL-0015] instance _277_ does not fit inside the ROW core area.
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
