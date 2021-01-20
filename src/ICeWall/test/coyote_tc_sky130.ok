@@ -33,19 +33,10 @@ coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
-coyote_tc/lef/sky130_sram_1rw1r_64x256_8.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_sram_1rw1r_64x256_8.lef
-Notice 0: 1000000 lines parsed!
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_sram_1rw1r_64x256_8.lef
 coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
-coyote_tc/lef/sky130_sram_1rw1r_44x64_8.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_sram_1rw1r_44x64_8.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_sram_1rw1r_44x64_8.lef
 coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
 Notice 0:     Created 1 library cells
@@ -74,11 +65,6 @@ coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
-coyote_tc/lef/sky130_sram_1rw1r_128x256_8.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_sram_1rw1r_128x256_8.lef
-Notice 0: 1000000 lines parsed!
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_sram_1rw1r_128x256_8.lef
 coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 Notice 0:     Created 1 library cells
@@ -99,10 +85,6 @@ coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
-coyote_tc/lef/sky130_sram_1rw1r_80x64_8.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_sram_1rw1r_80x64_8.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_sram_1rw1r_80x64_8.lef
 coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
 Notice 0:     Created 1 library cells
@@ -111,7 +93,6 @@ coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
-[WARNING ORD-1000] LEF master sky130_fd_io__top_gpiov2 has no liberty cell.
 Loading library IO cell meta-data
 Loaded library IO cell data
 [INFO IFP-0001] Added 1266 rows of 10417 sites.

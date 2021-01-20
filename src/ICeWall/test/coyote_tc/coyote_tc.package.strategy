@@ -12,7 +12,7 @@ Footprint definition {
   ground_nets "VSS VSSIO"
 
   offsets 0
-  tracks sky130.track.info
+  tracks results/sky130.track.info
   pin_layer met5
   
   pad_inst_name "u_%s"
