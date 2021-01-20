@@ -269,12 +269,12 @@ namespace fr {
     ENDCAP_BOTTOMLEFT // ispd19
   };
 
-  // note: FlexPA hardcoded the cost, don't change here
+  // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
-    frcOnGridAP   = 0,
-    frcHalfGridAP = 1,
-    frcCenterAP   = 2,
-    frcEncOptAP   = 3
+    OnGridAP   = 0,
+    HalfGridAP = 1,
+    CenterAP   = 2,
+    EncOptAP   = 3
   };
 
   namespace bg  = boost::geometry;
