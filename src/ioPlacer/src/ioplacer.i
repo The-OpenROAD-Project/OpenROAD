@@ -151,6 +151,12 @@ add_ver_layer(int layer)
 }
 
 void
+set_pin_group(const char* pin_names)
+{
+  getIOPlacer()->setPinGroup(pin_names);
+}
+
+void
 run_io_placement(bool randomMode)
 {
   getIOPlacer()->run(randomMode);
