@@ -1,8 +1,8 @@
 source "helpers.tcl"
 
 set db [ord::get_db]
-odb::read_lef $db "data/gscl45nm.lef"
-odb::read_def $db "data/design.def"
+read_lef "data/gscl45nm.lef"
+read_def "data/design.def"
 if {[$db getChip] == "NULL"} {
     puts "FAIL: Read DEF Failed"
     exit 1

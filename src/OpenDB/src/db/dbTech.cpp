@@ -967,21 +967,21 @@ void dbTech::checkLayer(bool typeChk,
     if (typeChk && type.getValue() != dbTechLayerType::ROUTING) {
       //TODO: remove this line
       warning(0, "Layer %s is not a routing layer!\n", layer->getConstName());
-      getLogger()->warn(utl::ODB, 58,  "Layer {} is not a routing layer!", layer->getConstName());
+      getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 58,  "Layer {} is not a routing layer!", layer->getConstName());
       continue;
     }
     level = layer->getRoutingLevel();
     pitch = layer->getPitch();
     if (pitchChk && pitch <= 0)
-      getLogger()->error(utl::ODB, 59, 
+      getImpl()->getDatabase()->getLogger()->error(utl::ODB, 59, 
 "Layer {}, routing level {}, has {} pitch !!",layer->getConstName(),level,pitch);
     width = layer->getWidth();
     if (widthChk && width == 0)
-      getLogger()->error(utl::ODB, 60, 
+      getImpl()->getDatabase()->getLogger()->error(utl::ODB, 60, 
 "Layer {}, routing level {}, has {} width !!",layer->getConstName(),level,width);
     spacing = layer->getSpacing();
     if (spacingChk && spacing <= 0)
-      getLogger()->error(utl::ODB, 61, 
+      getImpl()->getDatabase()->getLogger()->error(utl::ODB, 61, 
 "Layer {}, routing level {}, has {} spacing !!",layer->getConstName(),level,spacing);
   }
 

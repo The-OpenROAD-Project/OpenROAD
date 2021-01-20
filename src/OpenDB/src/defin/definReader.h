@@ -79,7 +79,6 @@ class definReader : public definBase
   bool                    _update;
   bool                    _continue_on_errors;
   const char*             _block_name;
-  utl::Logger*            _logger;
 
   void init();
   void setLibs(std::vector<dbLib*>& lib_names);
@@ -89,6 +88,7 @@ class definReader : public definBase
 
   void setTech(dbTech* tech);
   void setBlock(dbBlock* block);
+  void setLogger(utl::Logger* logger);
 
   bool createBlock(const char* file);
   bool replaceWires(const char* file);
@@ -219,7 +219,7 @@ class definReader : public definBase
                          defiUserData       data);
 
  public:
-  definReader(dbDatabase* db);
+  definReader(dbDatabase* db, utl::Logger* logger);
   virtual ~definReader();
 
   void skipConnections();

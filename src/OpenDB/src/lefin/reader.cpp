@@ -470,7 +470,7 @@ static void lineNumberCB(int line)
   lef->lineNumber(line);
 }
 
-bool lefin_parse(lefin* lef, const char* file_name)
+bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
 {
   // sets the parser to be case sensitive...
   // default was supposed to be the case but false...
@@ -544,7 +544,7 @@ bool lefin_parse(lefin* lef, const char* file_name)
   FILE* file = fopen(file_name, "r");
 
   if (file == NULL) {
-    lef->getLogger()->warn(utl::ODB, 240, "error: Cannot open LEF file %s\n", file_name);
+    logger->warn(utl::ODB, 240, "error: Cannot open LEF file %s\n", file_name);
     return false;
   }
 

@@ -61,7 +61,6 @@ void definBase::units(int d)
 void definBase::setTech(dbTech* tech)
 {
   _tech        = tech;
-  _logger      = tech->getLogger();
   int dbu      = _tech->getDbUnitsPerMicron();
   _dist_factor = dbu / 100;
 }
@@ -69,7 +68,11 @@ void definBase::setTech(dbTech* tech)
 void definBase::setBlock(dbBlock* block)
 {
   _block  = block;
-  _logger = block->getLogger();
+}
+
+void definBase::setLogger(utl::Logger* logger)
+{
+  _logger  = logger;
 }
 
 dbOrientType definBase::translate_orientation(int orient)

@@ -175,7 +175,7 @@ void dbRSeg::addRSegCapacitance(dbRSeg* other)
   }
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, other dbRSeg {}, addRSegCapacitance",seg->getId(),oseg->getId());
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, other dbRSeg {}, addRSegCapacitance",seg->getId(),oseg->getId());
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -201,7 +201,7 @@ void dbRSeg::addRSegResistance(dbRSeg* other)
   }
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, other dbRSeg {}, addRSegResistance",seg->getId(),oseg->getId());
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, other dbRSeg {}, addRSegResistance",seg->getId(),oseg->getId());
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -224,7 +224,7 @@ void dbRSeg::setResistance(double res, int corner)
   value            = (float) res;
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setResistance {}, corner {}",seg->getId(),res,corner);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setResistance {}, corner {}",seg->getId(),res,corner);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -249,7 +249,7 @@ void dbRSeg::adjustResistance(float factor, int corner)
   value *= factor;
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, adjustResistance {}, corner {}",seg->getId(),factor,corner);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, adjustResistance {}, corner {}",seg->getId(),factor,corner);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -291,7 +291,7 @@ void dbRSeg::setCapacitance(double cap, int corner)
   value            = (float) cap;
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setCapacitance {}, corner {}",seg->getId(),cap,corner);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setCapacitance {}, corner {}",seg->getId(),cap,corner);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -331,7 +331,7 @@ void dbRSeg::adjustCapacitance(float factor, uint corner)
     value *= factor;
 
     if (block->_journal) {
-      debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, adjustCapacitance {}, corner {}",seg->getId(),value,0);
+      debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, adjustCapacitance {}, corner {}",seg->getId(),value,0);
       block->_journal->beginAction(dbJournal::UPDATE_FIELD);
       block->_journal->pushParam(dbRSegObj);
       block->_journal->pushParam(seg->getId());
@@ -510,21 +510,21 @@ void dbRSeg::printCcSegs()
 {
   std::vector<dbCCSeg*> ccsegs;
   getCcSegs(ccsegs);
-  getLogger()->info(utl::ODB, 54,  "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
+  getImpl()->getDatabase()->getLogger()->info(utl::ODB, 54,  "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
 #if 0
     uint j;
     dbCCSeg *seg;
     for (j=0;j<ccsegs.size();j++)
     {
         seg = ccsegs[j];
-        getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
+        getImpl()->getDatabase()->getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
     }
 #endif
 }
 
 void dbRSeg::printCC()
 {
-  getLogger()->info(utl::ODB, 56,  "rseg {}", getId());
+  getImpl()->getDatabase()->getLogger()->info(utl::ODB, 56,  "rseg {}", getId());
   getTargetCapNode()->printCC();
 }
 
@@ -568,7 +568,7 @@ void dbRSeg::setSourceNode(uint source_node)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setSourceNode {}",seg->getId(),source_node);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setSourceNode {}",seg->getId(),source_node);
     block->_journal->updateField(
         this, _dbRSeg::SOURCE, seg->_source, source_node);
   }
@@ -582,7 +582,7 @@ void dbRSeg::setTargetNode(uint target_node)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setTargetNode {}",seg->getId(),target_node);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg {}, setTargetNode {}",seg->getId(),target_node);
     block->_journal->updateField(
         this, _dbRSeg::TARGET, seg->_target, target_node);
   }
@@ -614,7 +614,7 @@ void dbRSeg::setCoords(int x, int y)
   seg->_ycoord    = y;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   if (block->_journal) {
-    debugPrint(getLogger(), utl::ODB, "DB_ECO", 1,  "ECO: dbRSeg {}, setCoords {} {}", seg->getId(), x, y);
+    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1,  "ECO: dbRSeg {}, setCoords {} {}", seg->getId(), x, y);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
@@ -680,7 +680,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   uint      cornerCnt = block->_corners_per_block;
 
   if (block->_journal) {
-    debugPrint(net_->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg create 2, net id {}, x: {}, y: {}, path_dir: {}, ""allocate_cap: {}",net->getId(),x,y,path_dir,allocate_cap);
+    debugPrint(net_->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg create 2, net id {}, x: {}, y: {}, path_dir: {}, ""allocate_cap: {}",net->getId(),x,y,path_dir,allocate_cap);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(net->getId());
@@ -782,7 +782,7 @@ bool dbRSeg::addToNet()
   if (cap_node == NULL) {
     cap_node = getSourceCapNode();
     if (cap_node == NULL) {
-      getLogger()->warn(utl::ODB, 57,  "Cannot find cap nodes for Rseg {}", this->getId());
+      getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 57,  "Cannot find cap nodes for Rseg {}", this->getId());
       return false;
     }
   }
@@ -805,13 +805,13 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   if (block->_journal) {
-    debugPrint(net_->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg destroy seg {}, net {} ({})",seg->getId(),net->getId(),block->_journal->size());
+    debugPrint(net_->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg destroy seg {}, net {} ({})",seg->getId(),net->getId(),block->_journal->size());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->pushParam(net->getId());
     block->_journal->endAction();
-    debugPrint(net_->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg destroyed seg {}, net {} ({}) ({} {})",seg->getId(),net->getId(),block->_journal->size(),(void*)block,(void*)block->_journal);
+    debugPrint(net_->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbRSeg destroyed seg {}, net {} ({}) ({} {})",seg->getId(),net->getId(),block->_journal->size(),(void*)block,(void*)block->_journal);
   }
 
   dbId<_dbRSeg> c = net->_r_segs;
@@ -841,7 +841,7 @@ void dbRSeg::destroyS(dbRSeg* seg_)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   if (block->_journal) {
-    debugPrint(seg_->getLogger(), utl::ODB, "DB_ECO", 1,  "ECO: dbRSeg simple destroy seg {}", seg->getId());
+    debugPrint(seg_->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1,  "ECO: dbRSeg simple destroy seg {}", seg->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());

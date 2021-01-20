@@ -55,13 +55,13 @@ namespace odb {
 
 using LefDefParser::lefrSetRelaxMode;
 
-extern bool lefin_parse(lefin*, const char*);
+extern bool lefin_parse(lefin*, utl::Logger*, const char*);
 
-lefin::lefin(dbDatabase* db, bool ignore_non_routing_layers)
+lefin::lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers)
     : _db(db),
       _tech(NULL),
       _master(NULL),
-      _logger(db->getLogger()),
+      _logger(logger),
       _create_tech(false),
       _create_lib(false),
       _skip_obstructions(false),
@@ -124,7 +124,8 @@ static void create_path_box(dbObject*    obj,
                             int          prev_x,
                             int          prev_y,
                             int          cur_x,
-                            int          cur_y)
+                            int          cur_y,
+                            utl::Logger* logger)
 {
   int x1, x2, y1, y2;
 
@@ -171,7 +172,7 @@ static void create_path_box(dbObject*    obj,
     else
       dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
   } else {
-    obj->getLogger()->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
+    logger->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
   }
 }
 
@@ -211,7 +212,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         if (path->numPoints == 1) {
           int x = dbdist(path->x[0]);
           int y = dbdist(path->y[0]);
-          create_path_box(object, is_pin, layer, dw, x, y, x, y);
+          create_path_box(object, is_pin, layer, dw, x, y, x, y, _logger);
           break;
         }
 
@@ -223,7 +224,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
           int cur_x = dbdist(path->x[j]);
           int cur_y = dbdist(path->y[j]);
           create_path_box(
-              object, is_pin, layer, dw, prev_x, prev_y, cur_x, cur_y);
+              object, is_pin, layer, dw, prev_x, prev_y, cur_x, cur_y, _logger);
           prev_x = cur_x;
           prev_y = cur_y;
         }
@@ -252,7 +253,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
               Point p = points[0];
               int   x = p.getX() + dx;
               int   y = p.getY() + dy;
-              create_path_box(object, is_pin, layer, dw, x, y, x, y);
+              create_path_box(object, is_pin, layer, dw, x, y, x, y, _logger);
               continue;
             }
 
@@ -266,7 +267,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
               int   cur_x = c.getX() + dx;
               int   cur_y = c.getY() + dy;
               create_path_box(
-                  object, is_pin, layer, dw, cur_x, cur_y, prev_x, prev_y);
+                  object, is_pin, layer, dw, cur_x, cur_y, prev_x, prev_y, _logger);
               prev_x = cur_x;
               prev_y = cur_y;
             }
@@ -1813,7 +1814,7 @@ bool lefin::readLef(const char* lef_file)
 {
   _logger->info(utl::ODB, 222,  "Reading LEF file: {}", lef_file);
 
-  bool r = lefin_parse(this, lef_file);
+  bool r = lefin_parse(this, _logger, lef_file);
 
   if (_layer_cnt)
     _logger->info(utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
@@ -1962,7 +1963,7 @@ dbLib* lefin::createTechAndLib(const char*             lib_name,
     std::string str      = *it;
     const char* lef_file = str.c_str();
     _logger->info(utl::ODB, 234, "Reading LEF file:  {} ...", lef_file);
-    if (!lefin_parse(this, lef_file)) {
+    if (!lefin_parse(this, _logger, lef_file)) {
       _logger->warn(utl::ODB, 235, "Error reading {}", lef_file);
 
       if (_lib)
@@ -2046,11 +2047,6 @@ bool lefin::updateTech(dbTech* tech, const char* lef_file)
     return false;
 
   return _errors == 0;
-}
-
-utl::Logger* lefin::getLogger()
-{
-  return _logger;
 }
 
 }  // namespace odb

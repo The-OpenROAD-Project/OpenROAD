@@ -3,8 +3,9 @@ source "helpers.tcl"
 # Open database, load lef and design
 
 set db [ord::get_db]
-set lib [odb::read_lef $db "data/Nangate45/NangateOpenCellLibrary.mod.lef"]
-odb::read_def $db "data/gcd/floorplan.def"
+read_lef "data/Nangate45/NangateOpenCellLibrary.mod.lef"
+set lib [$db findLib NangateOpenCellLibrary]
+read_def "data/gcd/floorplan.def"
 set chip [$db getChip]
 
 # Block checks

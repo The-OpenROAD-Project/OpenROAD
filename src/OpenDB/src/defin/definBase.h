@@ -62,6 +62,7 @@ class definBase
   virtual ~definBase() {}
   void         setTech(dbTech* tech);
   void         setBlock(dbBlock* block);
+  void         setLogger(utl::Logger* logger);
   void         units(int d);
   virtual void init();
 

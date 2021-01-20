@@ -207,7 +207,7 @@ class lefin
   void warning(const char* msg);
   void lineNumber(int lineNo);
 
-  lefin(dbDatabase* db, bool ignore_non_routing_layers);
+  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
   ~lefin();
 
   // Skip macro-obstructions in the lef file.
@@ -253,7 +253,6 @@ class lefin
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
 
-  utl::Logger* getLogger();
 };
 
 }  // namespace odb

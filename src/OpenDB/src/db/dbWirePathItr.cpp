@@ -39,6 +39,7 @@
 #include "dbWireCodec.h"
 #include "dbWireOpcode.h"
 #include "utility/Logger.h"
+#include "dbDatabase.h"
 
 namespace odb {
 
@@ -469,7 +470,7 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 {
   if (!innet)
     return;
-  utl::Logger* logger = innet->getLogger();
+  utl::Logger* logger = innet->getImpl()->getDatabase()->getLogger();
 
   const char* prfx  = "dumpWirePaths:";
   dbWire*     wire0 = innet->getWire();

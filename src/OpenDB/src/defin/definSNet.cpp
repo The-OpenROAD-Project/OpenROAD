@@ -355,7 +355,8 @@ void definSNet::pathPoint(int x, int y, int ext)
                  cur_y,
                  ext,
                  true,
-                 _width);
+                 _width,
+                 _logger);
 
     _prev_x       = cur_x;
     _prev_y       = cur_y;
@@ -389,7 +390,8 @@ void definSNet::pathPoint(int x, int y)
                  cur_y,
                  0,
                  false,
-                 _width);
+                 _width,
+                 _logger);
 
     _prev_x       = cur_x;
     _prev_y       = cur_y;
@@ -418,7 +420,8 @@ void definSNet::pathVia(const char* via_name)
                                     1,
                                     1,
                                     0,
-                                    0);
+                                    0,
+                                    _logger);
       if (_cur_layer == NULL)
         _errors++;
     }
@@ -441,7 +444,8 @@ void definSNet::pathVia(const char* via_name)
                                     1,
                                     1,
                                     0,
-                                    0);
+                                    0,
+                                    _logger);
       if (_cur_layer == NULL)
         _errors++;
     }
@@ -475,7 +479,8 @@ void definSNet::pathViaArray(const char* via_name,
                                     numX,
                                     numY,
                                     stepX,
-                                    stepY);
+                                    stepY,
+                                    _logger);
   } else {
     dbVia* via = _block->findVia(via_name);
 
@@ -498,7 +503,8 @@ void definSNet::pathViaArray(const char* via_name,
                                     numX,
                                     numY,
                                     stepX,
-                                    stepY);
+                                    stepY,
+                                    _logger);
   }
 }
 

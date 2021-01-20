@@ -339,8 +339,6 @@ class dbDatabase : public dbObject
   ///
   void read(FILE* file);
 
-  utl::Logger* getLogger() const;
-
   ///
   /// Write a database to this stream.
   /// Throws ZIOError..

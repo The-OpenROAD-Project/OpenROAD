@@ -48,7 +48,7 @@ void invalidateTiming(dbInst* inst);
 void invalidateTiming(dbNet* net);
 
 dbJournal::dbJournal(dbBlock* block)
-    : _block(block), _logger(block->getLogger()), _start_action(false), _action_idx(0), _cur_action(0)
+    : _block(block), _logger(block->getImpl()->getDatabase()->getLogger()), _start_action(false), _action_idx(0), _cur_action(0)
 {
 }
 

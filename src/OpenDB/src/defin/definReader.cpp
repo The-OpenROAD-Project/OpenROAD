@@ -94,12 +94,13 @@ class DefHeader
   static DefHeader* getDefHeader(const char* file);
 };
 
-definReader::definReader(dbDatabase* db)
+definReader::definReader(dbDatabase* db, utl::Logger* logger)
 {
   _db                 = db;
-  _logger             = db->getLogger();
   _block_name         = NULL;
   _continue_on_errors = false;
+
+  definBase::setLogger(logger);
 
   _blockageR         = new definBlockage;
   _componentR        = new definComponent;
@@ -227,8 +228,10 @@ void definReader::useBlockName(const char* name)
 void definReader::init()
 {
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr){
     (*itr)->init();
+    (*itr)->setLogger(_logger);
+  }
   _update = false;
 }
 

@@ -1,9 +1,10 @@
 source "helpers.tcl"
 
 set db [ord::get_db]
-set lib [odb::read_lef $db "data/gscl45nm.lef"]
+read_lef "data/gscl45nm.lef"
+set lib [$db findLib gscl45nm]
 set tech [$db getTech]
-odb::read_def $db "data/design.def"
+read_def "data/design.def"
 set chip [$db getChip]
 
 set vias [$tech getVias]
@@ -34,12 +35,7 @@ $wire_encoder newPath $jid2
 set jid3 [$wire_encoder addTechVia $via2]
 $wire_encoder end
 
-set result [odb::write_def $block "results/wire_encoder.def"]
-
-if {$result != 1} {
-    puts "FAIL: error writing def"
-    exit 1
-}
+write_def "results/wire_encoder.def"
 
 puts "pass"
 exit 0

@@ -2,7 +2,7 @@ source "helpers.tcl"
 
 # Open database and load LEF
 set db [ord::get_db]
-odb::read_lef $db "data/gscl45nm.lef"
+read_lef "data/gscl45nm.lef"
 set tech [$db getTech]
 # Basic LEF checks"
 check "lef version" {$tech getLefVersion} "5.5"
