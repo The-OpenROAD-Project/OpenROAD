@@ -105,6 +105,8 @@ struct Constraint
   }
 };
 
+typedef std::set<std::string> Group;
+
 class IOPlacer
 {
  public:
@@ -124,6 +126,7 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
+  void setPinGroup(const char* names);
 
  private:
   Netlist netlist_;
@@ -140,6 +143,7 @@ class IOPlacer
   bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
+  std::vector<Group> groups_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
@@ -168,6 +172,7 @@ class IOPlacer
   void createSections();
   void setupSections();
   bool assignPinsSections();
+  void assignGroupsToSections(int&);
   int returnIONetsHPWL(Netlist&);
 
   void updateOrientation(IOPin&);

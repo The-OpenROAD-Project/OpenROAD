@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <random>
+#include <sstream>
 
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
@@ -65,6 +66,7 @@ void IOPlacer::clear()
   excluded_intervals_.clear();
   constraints_.clear();
   netlist_.clear();
+  groups_.clear();
 }
 
 void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx,
@@ -222,6 +224,8 @@ void IOPlacer::initIOLists()
       zero_sink_ios_.push_back(io_pin);
     }
   });
+
+  netlist_io_pins_.setIOGroups(netlist_.getIOGroups());
 }
 
 bool IOPlacer::checkBlocked(Edge edge, int pos)
@@ -434,37 +438,93 @@ void IOPlacer::createSections()
   }
 }
 
-bool IOPlacer::assignPinsSections()
+void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
 {
   Netlist& net = netlist_io_pins_;
   SectionVector& sections = sections_;
-  createSections();
-  int total_pins_assigned = 0;
-  net.forEachIOPin([&](int idx, IOPin& io_pin) {
-    bool pin_assigned = false;
-    std::vector<int> dst(sections.size());
-    std::vector<InstancePin> inst_pins_vector;
-    for (int i = 0; i < sections.size(); i++) {
-      dst[i] = net.computeIONetHPWL(
-          idx, sections[i].pos, sections[i].edge, constraints_);
+
+  int total_groups_assigned = 0;
+
+  net.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+    int group_size = io_group.size();
+    bool group_assigned = false;
+    std::vector<int> dst(sections.size(), 0);
+    for (int pin_idx : io_group) {
+      for (int i = 0; i < sections.size(); i++) {
+        dst[i] += net.computeIONetHPWL(
+            pin_idx, sections[i].pos, sections[i].edge, constraints_);
+      }
     }
-    net.forEachSinkOfIO(idx, [&](InstancePin& inst_pin) {
-      inst_pins_vector.push_back(inst_pin);
-    });
+
     for (auto i : sortIndexes(dst)) {
-      if (sections[i].cur_slots < sections[i].max_slots) {
-        sections[i].net.addIONet(io_pin, inst_pins_vector);
-        sections[i].cur_slots++;
-        pin_assigned = true;
-        total_pins_assigned++;
+      if (sections[i].cur_slots+group_size < sections[i].max_slots) {
+        for (int pin_idx : io_group) {
+          IOPin io_pin = net.getIoPin(pin_idx);
+
+          std::vector<InstancePin> inst_pins_vector;
+          net.forEachSinkOfIO(pin_idx, [&](InstancePin& inst_pin) {
+            inst_pins_vector.push_back(inst_pin);
+          });
+
+          sections[i].net.addIONet(io_pin, inst_pins_vector);
+          sections[i].cur_slots++;
+          net.assignPinToSection(pin_idx);
+        }
+        total_pins_assigned += group_size;
+        sections[i].net.addIOGroup(io_group);
+        group_assigned = true;
         break;
       }
       // Try to add pin just to first
       if (!force_pin_spread_)
         break;
     }
-    if (!pin_assigned) {
-      return;  // "break" forEachIOPin
+    if (!group_assigned) {
+      return;
+    } else {
+      total_groups_assigned++;
+    }
+  });
+
+  if (total_groups_assigned != net.numIOGroups()) {
+    logger_->error(PPL, 43, "Unsuccessfully assigned I/O groups");
+  }
+}
+
+bool IOPlacer::assignPinsSections()
+{
+  Netlist& net = netlist_io_pins_;
+  SectionVector& sections = sections_;
+  createSections();
+  int total_pins_assigned = 0;
+  assignGroupsToSections(total_pins_assigned);
+  net.forEachIOPin([&](int idx, IOPin& io_pin) {
+    if (!io_pin.isAssignedToSection()) {
+      bool pin_assigned = false;
+      std::vector<int> dst(sections.size());
+      std::vector<InstancePin> inst_pins_vector;
+      for (int i = 0; i < sections.size(); i++) {
+        dst[i] = net.computeIONetHPWL(
+            idx, sections[i].pos, sections[i].edge, constraints_);
+      }
+      net.forEachSinkOfIO(idx, [&](InstancePin& inst_pin) {
+        inst_pins_vector.push_back(inst_pin);
+      });
+      for (auto i : sortIndexes(dst)) {
+        if (sections[i].cur_slots < sections[i].max_slots) {
+          sections[i].net.addIONet(io_pin, inst_pins_vector);
+          sections[i].cur_slots++;
+          pin_assigned = true;
+          total_pins_assigned++;
+          break;
+        }
+        // Try to add pin just to first
+        if (!force_pin_spread_)
+          break;
+      }
+      if (!pin_assigned) {
+        return;  // "break" forEachIOPin
+      }
     }
   });
   // if forEachIOPin ends or returns/breaks goes here
@@ -716,6 +776,20 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
+void IOPlacer::setPinGroup(const char* names)
+{
+  std::stringstream ss(names);
+  std::istream_iterator<std::string> begin(ss);
+  std::istream_iterator<std::string> end;
+  std::vector<std::string> pins(begin, end);
+
+  Group group;
+  for (std::string pin : pins) {
+    group.insert(pin);
+  }
+  groups_.push_back(group);
+}
+
 void IOPlacer::run(bool random_mode)
 {
   initParms();
@@ -932,6 +1006,10 @@ void IOPlacer::initNetlist()
     }
 
     netlist_.addIONet(io_pin, inst_pins);
+  }
+
+  for (Group pin_group : groups_) {
+    netlist_.createIOGroup(pin_group);
   }
 }
 
