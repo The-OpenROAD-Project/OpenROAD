@@ -22,6 +22,13 @@ module top (in1,
  input clk3;
  output out;
 
+ wire VSS;
+ wire VDD;
+ wire r1q;
+ wire r2q;
+ wire u1z;
+ wire u2z;
+
  snl_ffqx1 r1 (.Q(r1q),
     .D(in1),
     .CP(clk1));

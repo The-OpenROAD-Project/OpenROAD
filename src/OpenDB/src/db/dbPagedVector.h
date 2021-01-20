@@ -47,10 +47,10 @@ class dbDiff;
 // as a series of pages of type T. The size of the page is specified
 // by the template params.
 //
-// PAGE_SIZE = number of objects per page (MUST BE POWER OF TWO)
-// PAGE_SHIFT = log2(PAGE_SIZE)
+// page_size = number of objects per page (MUST BE POWER OF TWO)
+// page_shift = log2(page_size)
 //
-template <class T, const uint PAGE_SIZE = 128, const uint PAGE_SHIFT = 7>
+template <class T, const uint page_size = 128, const uint page_shift = 7>
 class dbPagedVector
 {
  private:
@@ -67,7 +67,7 @@ class dbPagedVector
 
  public:
   dbPagedVector();
-  dbPagedVector(const dbPagedVector<T, PAGE_SIZE, PAGE_SHIFT>& V);
+  dbPagedVector(const dbPagedVector<T, page_size, page_shift>& V);
   ~dbPagedVector();
 
   void push_back(const T& item);
@@ -89,26 +89,26 @@ class dbPagedVector
   T& operator[](unsigned int id)
   {
     ZASSERT(id < _next_idx);
-    unsigned int page   = (id & ~(PAGE_SIZE - 1)) >> PAGE_SHIFT;
-    unsigned int offset = id & (PAGE_SIZE - 1);
+    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
+    unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
   const T& operator[](unsigned int id) const
   {
     ZASSERT(id < _next_idx);
-    unsigned int page   = (id & ~(PAGE_SIZE - 1)) >> PAGE_SHIFT;
-    unsigned int offset = id & (PAGE_SIZE - 1);
+    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
+    unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
 
-  bool operator==(const dbPagedVector<T, PAGE_SIZE, PAGE_SHIFT>& rhs) const;
-  bool operator!=(const dbPagedVector<T, PAGE_SIZE, PAGE_SHIFT>& rhs) const
+  bool operator==(const dbPagedVector<T, page_size, page_shift>& rhs) const;
+  bool operator!=(const dbPagedVector<T, page_size, page_shift>& rhs) const
   {
     return !operator==(rhs);
   }
   void differences(dbDiff&                                        diff,
                    const char*                                    field,
-                   const dbPagedVector<T, PAGE_SIZE, PAGE_SHIFT>& rhs) const;
+                   const dbPagedVector<T, page_size, page_shift>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
 

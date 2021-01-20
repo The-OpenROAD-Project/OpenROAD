@@ -17,6 +17,7 @@ module top (clk,
  input [3:0] in;
  output [3:0] out;
 
+
  bus4 bus1 (.clk(clk),
     .in({in[3],
     in[2],
