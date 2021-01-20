@@ -627,18 +627,24 @@ Opendp::shift_move(Cell *cell)
 {
   int x, y;
   prePlaceLocation(cell, false, &x, &y);
+  int grid_x = gridX(x);
+  int grid_y = gridY(y);
   // magic number alert
   int boundary_margin = 3;
-  // set region boundary
-  Rect rect(max(0, x - paddedWidth(cell) * boundary_margin),
-            max(0, y - cell->height_ * boundary_margin),
-            min(static_cast<int>(core_.dx()),
-                x + paddedWidth(cell) * boundary_margin),
-            min(static_cast<int>(core_.dy()), y + cell->height_ * boundary_margin));
-  const set<Cell *> overlap_region_cells = gridCellsInBoundary(&rect);
+  set<Cell *> region_cells;
+  for (int x = grid_x - boundary_margin; x < grid_x + boundary_margin; x++) {
+    for (int y = grid_y - boundary_margin; y < grid_y + boundary_margin; y++) {
+      Pixel *pixel = gridPixel(x, y);
+      if (pixel) {
+        Cell *cell = pixel->cell;
+        if (cell && !isFixed(cell))
+          region_cells.insert(cell);
+      }
+    }
+  }
 
   // erase region cells
-  for (Cell *around_cell : overlap_region_cells) {
+  for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
       erase_pixel(around_cell);
     }
@@ -652,7 +658,7 @@ Opendp::shift_move(Cell *cell)
   }
 
   // re-place erased cells
-  for (Cell *around_cell : overlap_region_cells) {
+  for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
       if (!map_move(around_cell)) {
         logger_->warn(DPL, 19, "detailed placement failed on {}",
@@ -662,26 +668,6 @@ Opendp::shift_move(Cell *cell)
     }
   }
   return true;
-}
-
-set<Cell *>
-Opendp::gridCellsInBoundary(const Rect *rect) const
-{
-  int x_start = divFloor(rect->xMin(), site_width_);
-  int y_start = divFloor(rect->yMin(), row_height_);
-  int x_end = divFloor(rect->xMax(), site_width_);
-  int y_end = divFloor(rect->yMax(), row_height_);
-
-  set<Cell *> cells;
-  for (int i = y_start; i < y_end; i++) {
-    for (int j = x_start; j < x_end; j++) {
-      Cell *cell = const_cast<Cell *>(grid_[i][j].cell);
-      if (cell && !isFixed(cell)) {
-        cells.insert(cell);
-      }
-    }
-  }
-  return cells;
 }
 
 bool
