@@ -5,39 +5,6 @@ namespace eval ICeWall {
   variable connect_pins_by_abutment
   variable idx {fill 0}
 
-# Messages:
-# 
-# Information
-#
-# Warning
-# 
-# Error
-#  4 "Cannot find a terminal [get_padcell_pin_name $padcell] for ${padcell}" 
-# 11 "Expected instance $name for signal [get_padcell_signal_name $padcell] not found"
-# 12 "Cannot find pin $pin_name of [$inst getName] ([[$inst getMaster] getName])"
-# 13 "Expected instance $name for signal $name not found"
-# 16 "Cannot find net for pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
-# 18 "No term $signal found on $inst_name"
-# 19 "Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]"
-# 20 "Cannot find pin [get_library_pad_pin_name] on cell [[$inst getMaster] getName]"
-# 
-# Critical
-#  1 "$str\nIncorrect signal assignments ([llength $errors]) found"
-#  3 "$str\nCannot create instance for $cell_name"
-#  6 "Illegal orientation $orient specified"
-#  7 "File $signal_assignment_file not found"
-#  8 "Cannot find cell $name in the database"
-#  9 "Expected 1, 2 or 4 offset values, got [llength $args]"
-# 10 "Expected 1, 2 or 4 inner_offset values, got [llength $args]"
-# 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
-# 15 "Cannot find breaker cell $inst_name"
-# 17 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
-# 21 "Value of bump spacing_to_edge not specified"
-# 22 "Cannot find padcell $padcell"
-# 23 "Signal name for padcell $padcell has not been set"
-# 24 "Cannot find bondpad type in library"
-# 25 "No instance found for $padcell"
-
   proc set_message {level message} {
     return "\[$level\] $message"
   }
@@ -57,29 +24,13 @@ namespace eval ICeWall {
     puts [set_message DEBUG "$str: $message"]
   }
 
-  proc information {id message} {
-    puts [set_message INFO [format "\[ICEW-%04d\] %s" $id $message]]
-  }
-
-  proc warning {id message} {
-    puts [set_message WARN [format "\[ICEW-%04d\] %s" $id $message]]
-  }
-
-  proc err {id message} {
-    puts [set_message ERROR [format "\[ICEW-%04d\] %s" $id $message]]
-  }
-
-  proc critical {id message} {
-    error [set_message CRIT [format "\[ICEW-%04d\] %s" $id $message]]
-  }
-
   proc catch_wrapper {command} {
     if {[catch $command error_msg options]} {
       if {[regexp {\[ICEW\-[0-9]*\]} $error_msg]} {
         puts "$error_msg $options"
       } else {
         puts $options
-        ICeWall::critical 9999 "Unexpected error: $error_msg"
+        ord::critical "PAD" 9999 "Unexpected error: $error_msg"
       }
       ord::error "Execution stopped"
     }
@@ -171,7 +122,7 @@ namespace eval ICeWall {
           set x [expr [dict get $centre x] + ($height / 2)]
           set y [expr [dict get $centre y] + ($width / 2)]
         }
-        default {critical 6 "Illegal orientation $orient specified"}
+        default {ord::error "PAD" 6 "Illegal orientation $orient specified"}
       }
 
       return [list x $x y $y]
@@ -204,7 +155,7 @@ namespace eval ICeWall {
       return [$bondpad_cell getWidth]
     }
 
-    critical 24 "Cannot find bondpad type in library"
+    ord::error "PAD" 24 "Cannot find bondpad type in library"
   }
   
   proc get_library_bondpad_height {} {
@@ -215,7 +166,7 @@ namespace eval ICeWall {
       return [$bondpad_cell getHeight]
     }
     
-    critical 24 "Cannot find bondpad type in library"
+    ord::error "PAD" 26 "Cannot find bondpad type in library"
   }
   
   proc get_footprint_padcell_names {} {
@@ -262,7 +213,7 @@ namespace eval ICeWall {
     } elseif {[dict exists $footprint place $padcell]} {
       set inst [dict get $footprint place $padcell]
     } else {
-      critical 25 "No instance found for $padcell"
+      ord::error "PAD" 25 "No instance found for $padcell"
     }    
 
     return  $inst
@@ -408,7 +359,7 @@ namespace eval ICeWall {
     variable footprint
     
     if {![dict exists $footprint die_area]} {
-      critical 99 "No die_area specified in the footprint specification"
+      ord::error "PAD" 31 "No die_area specified in the footprint specification"
     }
     return [dict get $footprint die_area]
   }
@@ -529,7 +480,7 @@ namespace eval ICeWall {
           # debug "Pad match by net for $padcell ($signal_name)"
           set net [$block findNet $signal_name]
           if {$net == "NULL"} {
-            critical 99 "Cannot find net $signal_name for $padcell in the design"
+            ord::error "PAD" 32 "Cannot find net $signal_name for $padcell in the design"
           }
           set pad_pin_name [get_padcell_pad_pin_name $padcell]
           # debug "Found net [$net getName] for $padcell"
@@ -646,7 +597,7 @@ namespace eval ICeWall {
 
     if {[set cell [$db findMaster $name]] != "NULL"} {return $cell}
     
-    critical 8 "Cannot find cell $name in the database"
+    ord::error "PAD" 8 "Cannot find cell $name in the database"
   }
 
   proc get_library_cell_orientation {cell_type position} {
@@ -733,7 +684,7 @@ namespace eval ICeWall {
     if {[dict exists $library pad_pin_name]} {
       return [dict get $library pad_pin_name]
     } else {
-      critical 99 "No value defined for pad_pin_name in the library or cell data for $type"
+      ord::error "PAD" 33 "No value defined for pad_pin_name in the library or cell data for $type"
     }
 
     return "PAD"
@@ -799,11 +750,11 @@ namespace eval ICeWall {
 
     if {![dict exists $footprint padcell $padcell]} {
       # debug "padcell: $padcell cells: [dict keys [dict get $footprint padcell]]"
-      critical 22 "Cannot find padcell $padcell"
+      ord::error "PAD" 22 "Cannot find padcell $padcell"
     }
     
     if {![dict exists $footprint padcell $padcell signal_name]} {
-      critical 23 "Signal name for padcell $padcell has not been set"
+      ord::error "PAD" 23 "Signal name for padcell $padcell has not been set"
     }
     
     return [dict get $footprint padcell $padcell signal_name]
@@ -817,7 +768,7 @@ namespace eval ICeWall {
       return [expr round(([dict get $library bump spacing_to_edge]) * $def_units)]
     }
 
-    critical 21 "Value of bump spacing_to_edge not specified"
+    ord::error "PAD" 21 "Value of bump spacing_to_edge not specified"
   }
   
   proc get_footprint_min_bump_spacing_to_die_edge {} {
@@ -1099,7 +1050,7 @@ namespace eval ICeWall {
           set_padcell_inst $padcell "NULL"
           # set_padcell_inst $padcell [odb::dbInst_create $block [get_cell_master $cell] $name]
         } else {
-          err 11 "Expected instance $name for padcell $padcell not found"
+          ord::warn "PAD" 11 "Expected instance $name for padcell $padcell not found"
           continue
         }
       }
@@ -1137,7 +1088,7 @@ namespace eval ICeWall {
     
     set padcells [get_footprint_padcell_order_connected]
     if {[set required [llength $padcells]] > [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)]} {
-      critical 2 "Not enough bumps: available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required"
+      ord::error "PAD" 2 "Not enough bumps: available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required"
     }
     # debug "available [expr 2 * ($num_signals_top_bottom + $num_signals_left_right)] required $required"
     
@@ -1331,7 +1282,7 @@ namespace eval ICeWall {
   
   proc read_signal_assignments {signal_assignment_file} {
     if {![file exists $signal_assignment_file]} {
-      critical 7 "File $signal_assignment_file not found"
+      ord::error "PAD" 7 "File $signal_assignment_file not found"
     }
     set errors {}
     set ch [open $signal_assignment_file]
@@ -1357,7 +1308,7 @@ namespace eval ICeWall {
       foreach msg $errors {
          set str "$str\n  $msg"
       }
-      critical 1 "$str\nIncorrect signal assignments ([llength $errors]) found"
+      ord::error "PAD" 1 "$str\nIncorrect signal assignments ([llength $errors]) found"
     }
     
     close $ch
@@ -1540,7 +1491,7 @@ namespace eval ICeWall {
       set layer [$tech findLayer [get_footprint_pad_pin_layer]]
 
       if {[set mterm [[$inst getMaster] findMTerm [get_library_pad_pin_name [get_padcell_type $padcell]]]] == "NULL"} {
-        err 20 "Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]"
+        ord::warn "PAD" 20 "Cannot find pin [get_library_pad_pin_name [get_padcell_type $padcell]] on cell [[$inst getMaster] getName]"
         return 0
       } else {
         set mpin [lindex [$mterm getMPins] 0]
@@ -1554,13 +1505,13 @@ namespace eval ICeWall {
           }
         } 
         if {[[$geometry getTechLayer] getName] != [get_footprint_pad_pin_layer]} {
-          err 19 "Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]"
+          ord::warn "PAD" 19 "Cannot find shape on layer [get_footprint_pad_pin_layer] for [$inst getName]:[[$inst getMaster] getName]:[$mterm getName]"
           return 0
         }
       }
     }
     if {[get_padcell_type $padcell] == "sig"} {
-      err 4 "Cannot find a terminal [get_padcell_pin_name $padcell] for ${padcell}" 
+      ord::warn "PAD" 4 "Cannot find a terminal [get_padcell_pin_name $padcell] for ${padcell}" 
     }
   }
 
@@ -1607,7 +1558,7 @@ namespace eval ICeWall {
         set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
         set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
-        err 4 "Cannot find a terminal [get_padcell_pin_name $padcell] for $padcell to associate with bondpad [$inst getName]"
+        ord::warn "PAD" 5 "Cannot find a terminal [get_padcell_pin_name $padcell] for $padcell to associate with bondpad [$inst getName]"
         return
       }
     }
@@ -1692,7 +1643,7 @@ namespace eval ICeWall {
           dict set library scaled lookup_by_pitch $scaled_key $value
         }
       } else {
-        critical 99 "No bump pitch table defined in the library"
+        ord::error "PAD" 34 "No bump pitch table defined in the library"
       }
     }
     return [dict get $library scaled lookup_by_pitch]
@@ -1782,7 +1733,7 @@ namespace eval ICeWall {
       if {[dict exists $library bump pitch]} {
         dict set library scaled bump_pitch [expr round([dict get $library bump pitch] * $def_units)]
       } else {
-        critical 99 "No bump_pitch defined in library data"
+        ord::error "PAD" 35 "No bump_pitch defined in library data"
       }
     }
     return [dict get $library scaled bump_pitch]
@@ -1801,10 +1752,10 @@ namespace eval ICeWall {
           if  {[dict exists $library cells $cell_name width]} {
             dict set library scaled bump_width [expr round([dict get $library cells $cell_name width] * $def_units)]
           } else {
-            critical 99 "No width defined for selected bump cell $cell_name"
+            ord::error "PAD" 36 "No width defined for selected bump cell $cell_name"
           }
         } else {
-          critical 99 "No bump_width defined in library data"
+          ord::error "PAD" 37 "No bump_width defined in library data"
         }
       }
     }
@@ -1816,7 +1767,7 @@ namespace eval ICeWall {
     variable def_units
     
     if {![dict exists $library bump pin_name]} {
-      critical 99 "No bump_pin_name attribute found in the library"
+      ord::error "PAD" 38 "No bump_pin_name attribute found in the library"
     }
     return [dict get $library bump pin_name]
   }
@@ -1829,7 +1780,7 @@ namespace eval ICeWall {
       if {[dict exists $library rdl width]} {
         dict set library scaled rdl_width [expr round([dict get $library rdl width] * $def_units)]
       } else {
-        critical 99 "No rdl_width defined in library data"
+        ord::error "PAD" 39 "No rdl_width defined in library data"
       }
     }
     return [dict get $library scaled rdl_width]
@@ -1843,7 +1794,7 @@ namespace eval ICeWall {
       if {[dict exists $library rdl spacing]} {
         dict set library scaled rdl_spacing [expr round([dict get $library rdl spacing] * $def_units)]
       } else {
-        critical 99 "No rdl_spacing defined in library data"
+        ord::error "PAD" 40 "No rdl_spacing defined in library data"
       }
     }
     return [dict get $library scaled rdl_spacing]
@@ -2031,7 +1982,7 @@ namespace eval ICeWall {
       MY    {set new_point [list [expr -1 * $x] $y]}
       MXR90 {set new_point [list $y $x]}
       MYR90 {set new_point [list [expr -1 * $y] [expr -1 * $x]]}
-      default {critical 27 "Illegal orientation $orientation specified"}
+      default {ord::error "PAD" 27 "Illegal orientation $orientation specified"}
     }
     return [list \
       [expr [lindex $new_point 0] + [lindex $origin 0]] \
@@ -2052,7 +2003,7 @@ namespace eval ICeWall {
       MY    {set new_point [list [expr -1 * $x] $y]}
       MXR90 {set new_point [list $y $x]}
       MYR90 {set new_point [list [expr -1 * $y] [expr -1 * $x]]}
-      default {critical 27 "Illegal orientation $orientation specified"}
+      default {ord::error "PAD" 28 "Illegal orientation $orientation specified"}
     }
 
     return $new_point
@@ -2381,7 +2332,7 @@ namespace eval ICeWall {
         set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
 
         if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
-          # err 13 "Expected instance $name for signal $name not found"
+          # ord::warn "PAD" 13 "Expected instance $name for signal $name not found"
           continue
         }
 
@@ -2507,7 +2458,7 @@ namespace eval ICeWall {
           set str "$str\ninit_footprint: name $name"
           set str "$str\ninit_footprint: type $type"
           set str "$str\ninit_footprint: cell $cell"
-          critical 3 "$str\nCannot create instance for $cell_name"
+          ord::error "PAD" 3 "$str\nCannot create instance for $cell_name"
         }
 
         set origin [get_scaled_origin $cell_name cell]
@@ -2603,7 +2554,7 @@ namespace eval ICeWall {
       dict for {signal sections} [dict get $segment cells] {
         foreach section [dict keys $sections] {
           if {[set net [$block findNet "${signal}_$section"]] != "NULL"} {
-            # critical 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
+            # ord::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
           } else {
             set net [odb::dbNet_create $block "${signal}_$section"]
           }
@@ -2622,7 +2573,7 @@ namespace eval ICeWall {
               set iterm [odb::dbITerm_connect $inst $net $mterm]
               $iterm setSpecial
             } else {
-              err 18 "No term $signal found on $inst_name"
+              ord::warn "PAD" 18 "No term $signal found on $inst_name"
             }
           }
         }
@@ -2665,7 +2616,7 @@ namespace eval ICeWall {
     variable library
     
     if {![dict exists $library types]} {
-      error 99 "No types specified in the library"
+      ord::error 29 "No types specified in the library"
     }
     
     return [dict keys [dict get $library types]]
@@ -2694,7 +2645,7 @@ namespace eval ICeWall {
     }
 
     if {[llength $arglist] > 1} {
-      critical 99 "Unrecognised arguments to init_footprint $arglist"
+      ord::error "PAD" 30 "Unrecognised arguments to init_footprint $arglist"
     }
 
     if {[llength $arglist] == 1} {
@@ -2824,7 +2775,7 @@ namespace eval ICeWall {
       set edge_top_offset    [expr [lindex $args 2] * $def_units]
       set edge_left_offset   [expr [lindex $args 3] * $def_units]
     } else {
-      critical 9 "Expected 1, 2 or 4 offset values, got [llength $args]"
+      ord::error "PAD" 9 "Expected 1, 2 or 4 offset values, got [llength $args]"
     }
   }
 
@@ -2852,7 +2803,7 @@ namespace eval ICeWall {
       set inner_top_offset    [expr [lindex $args 2] * $def_units]
       set inner_left_offset   [expr [lindex $args 3] * $def_units]
     } else {
-      critical 10 "Expected 1, 2 or 4 inner_offset values, got [llength $args]"
+      ord::error "PAD" 10 "Expected 1, 2 or 4 inner_offset values, got [llength $args]"
     }
   }
   

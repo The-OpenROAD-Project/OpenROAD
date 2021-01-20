@@ -7,5 +7,5 @@ Notice 0: Reading LEF file:  dummy_pads.lef
 Notice 0:     Created 24 library cells
 Notice 0: Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
-[INFO] [PDNG-0015] Writing to database
+[INFO PDN-0015] Writing to database
 No differences found.
