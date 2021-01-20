@@ -943,6 +943,9 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
     #pragma omp atomic
     macroCellPinGenApCnt_ += tmpAps.size();
   }
+  if (graphics_) {
+    graphics_->setAPs(tmpAps);
+  }
   for (auto &ap: tmpAps) {
     // for stdcell, add (i) planar access if layerNum != VIA_ACCESS_LAYERNUM, and (ii) access if exist access
     // for macro, allow pure planar ap
@@ -955,9 +958,6 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
     } else if ((isMacroCellPin || isIOPin) && ap->hasAccess()) {
       aps.push_back(std::move(ap));
     }
-  }
-  if (graphics_) {
-    graphics_->setAPs(tmpAps);
   }
   if (isStdCellPin && (int)aps.size() >= MINNUMACCESSPOINT_STDCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);

@@ -112,17 +112,11 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
 void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps)
 {
   // We make a copy of the aps
-  aps_.reserve(aps.size());
-  int added = 0;
-  for (auto& ap : aps){
-    if (ap.get()) {
-      aps_.emplace_back(*ap.get());
-      ++added;
-    }
+  for (auto& ap : aps) {
+    aps_.emplace_back(*ap.get());
   }
-  status("setAPS " + std::to_string(added)
-         + '/' + std::to_string(aps.size())
-         + " total: " + std::to_string(aps_.size()));
+  status("add " + std::to_string(aps.size())
+         + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
 }
