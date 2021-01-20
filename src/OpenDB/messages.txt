@@ -234,3 +234,9 @@ ODB 0237 lefin.cpp:1977		    Created {} technology layers
 ODB 0238 lefin.cpp:1980		    Created {} technology vias
 ODB 0239 lefin.cpp:1983		    Created {} library cells
 ODB 0240 reader.cpp:547		error: Cannot open LEF file %s\n
+ODB 0241 create_box.cpp:136		error: Cannot create a via instance, via ({}) has no shapes
+ODB 0242 create_box.cpp:163		error: Can not determine which direction to continue path,
+ODB 0243 create_box.cpp:164		       via ({}) spans above and below the current layer ({}).
+ODB 0244 create_box.cpp:192		error: Cannot create a via instance, via ({}) has no shapes
+ODB 0245 create_box.cpp:219		error: Net {}: Can not determine which direction to continue path,
+ODB 0246 create_box.cpp:220		       via ({}) spans above and below the current layer ({}).
