@@ -72,7 +72,9 @@ Opendp::detailedPlacement()
   place();
 }
 
-// Move std cells off of macros.
+// Find the location inside the core and not on top of a macro to start
+// placement.
+//
 // This is preferable to using a the diamond search because the max_displacement
 // would have to know the macro size and no search is necessary.
 // Note that this does not need to consider padding because its only job is to
@@ -87,6 +89,12 @@ Opendp::prePlaceLocation(const Cell *cell,
 {
   int pre_x, pre_y;
   initialLocation(cell, padded, &pre_x, &pre_y);
+
+  // Move inside core.
+  pre_x = min(max(0, pre_x), row_site_count_ * site_width_);
+  pre_y = min(max(0, pre_y), row_count_ * row_height_);
+
+  // Move std cells off of macros.
   int grid_x = gridX(pre_x);
   int grid_y = gridY(pre_y);
   Pixel *pixel = gridPixel(grid_x, grid_y);
