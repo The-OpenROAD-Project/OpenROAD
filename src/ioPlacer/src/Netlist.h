@@ -102,7 +102,9 @@ class IOPin
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
         net_name_(net_name),
-        location_type_(location_type)
+        location_type_(location_type),
+        assigned_to_section_(false),
+        assigned_to_slot_(false)
   {
   }
 
@@ -132,6 +134,10 @@ class IOPin
   std::string getNetName() const { return net_name_; }
   std::string getLocationType() const { return location_type_; };
   int getLayer() const { return layer_; }
+  bool isAssignedToSection() const { return assigned_to_section_; }
+  bool isAssignedToSlot() const { return assigned_to_slot_; }
+  void assignToSection() { assigned_to_section_ = true; }
+  void assignToSlot() { assigned_to_slot_ = true; }
 
  private:
   std::string name_;
@@ -143,6 +149,8 @@ class IOPin
   std::string net_name_;
   std::string location_type_;
   int layer_;
+  bool assigned_to_section_;
+  bool assigned_to_slot_;
 };
 
 class Netlist
@@ -151,13 +159,24 @@ class Netlist
   Netlist();
 
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
+  void createIOGroup(const std::set<std::string>& pin_list);
+  void addIOGroup(const std::set<int>& pin_group);
+  std::vector<std::set<int>> getIOGroups() { return io_groups_; }
+  void setIOGroups(const std::vector<std::set<int>>& io_groups) { io_groups_ = io_groups; }
 
   void forEachIOPin(std::function<void(int, IOPin&)>);
   void forEachIOPin(std::function<void(int, const IOPin&)>) const;
+  void forEachIOGroup(std::function<void(int, std::set<int>&)>);
+  void forEachIOGroup(std::function<void(int, const std::set<int>&)>) const;
   void forEachSinkOfIO(int, std::function<void(InstancePin&)>);
   void forEachSinkOfIO(int, std::function<void(const InstancePin&)>) const;
   int numSinksOfIO(int);
   int numIOPins();
+  int numIOGroups() { return io_groups_.size(); }
+  IOPin getIoPin(int idx) { return io_pins_[idx]; }
+  int findIoPinByName(std::string pin_name);
+  void assignPinToSection(int idx);
+  void assignPinToSlot(int idx);
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
@@ -169,6 +188,7 @@ class Netlist
   std::vector<InstancePin> inst_pins_;
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
+  std::vector<std::set<int>> io_groups_;
 
   bool checkSlotForPin(IOPin& pin,
                        Edge edge,

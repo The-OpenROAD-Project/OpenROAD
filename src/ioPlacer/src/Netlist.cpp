@@ -53,6 +53,21 @@ void Netlist::addIONet(const IOPin& io_pin,
   net_pointer_.push_back(inst_pins_.size());
 }
 
+void Netlist::createIOGroup(const std::set<std::string>& pin_list)
+{
+  std::set<int> pin_indices;
+  for (std::string pin_name : pin_list) {
+    pin_indices.insert(findIoPinByName(pin_name));
+  }
+
+  io_groups_.push_back(pin_indices);
+}
+
+void Netlist::addIOGroup(const std::set<int>& pin_group)
+{
+  io_groups_.push_back(pin_group);
+}
+
 void Netlist::forEachIOPin(std::function<void(int idx, IOPin&)> func)
 {
   for (int idx = 0; idx < io_pins_.size(); ++idx) {
@@ -65,6 +80,22 @@ void Netlist::forEachIOPin(
 {
   for (int idx = 0; idx < io_pins_.size(); ++idx) {
     func(idx, io_pins_[idx]);
+  }
+}
+
+void Netlist::forEachIOGroup(
+    std::function<void(int, std::set<int>&)> func)
+{
+  for (int idx = 0; idx < io_groups_.size(); ++idx) {
+    func(idx, io_groups_[idx]);
+  }
+}
+
+void Netlist::forEachIOGroup(
+  std::function<void(int, const std::set<int>&)> func) const
+{
+  for (int idx = 0; idx < io_groups_.size(); ++idx) {
+    func(idx, io_groups_[idx]);
   }
 }
 
@@ -98,6 +129,27 @@ int Netlist::numSinksOfIO(int idx)
 int Netlist::numIOPins()
 {
   return io_pins_.size();
+}
+
+int Netlist::findIoPinByName(std::string pin_name)
+{
+  for (int idx = 0; idx < io_pins_.size(); ++idx) {
+    if (io_pins_[idx].getName() == pin_name) {
+      return idx;
+    }
+  }
+
+  return -1;
+}
+
+void Netlist::assignPinToSection(int idx)
+{
+  io_pins_[idx].assignToSection();
+}
+
+void Netlist::assignPinToSlot(int idx)
+{
+  io_pins_[idx].assignToSlot();
 }
 
 Rect Netlist::getBB(int idx, Point slot_pos)
