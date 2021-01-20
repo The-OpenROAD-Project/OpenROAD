@@ -77,7 +77,7 @@ void highlight_inst(const char* name, int highlightGroup)
   gui->addInstToHighlightSet(name, highlightGroup);
 }
 
-void highlight_net(const char* name, int highlightGroup)
+void highlight_net(const char* name, int highlightGroup=0)
 {
   auto gui = gui::Gui::get();
   gui->addNetToHighlightSet(name, highlightGroup);

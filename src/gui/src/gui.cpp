@@ -379,7 +379,8 @@ bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
 void OpenDbDescriptor::highlight(void* object,
                                  Painter& painter,
                                  bool selectFlag,
-                                 int highlightGroup) const
+                                 int highlightGroup,
+                                 void* addnlData) const
 {
   auto highlightColor = Painter::persistHighlight;
   if (selectFlag == true) {
@@ -395,6 +396,9 @@ void OpenDbDescriptor::highlight(void* object,
       painter.setPen(Painter::persistHighlight);
   }
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  odb::dbObject* sinkObject = nullptr;
+  if (addnlData != nullptr)
+    sinkObject = static_cast<odb::dbObject*>(addnlData);
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
@@ -415,7 +419,7 @@ void OpenDbDescriptor::highlight(void* object,
         std::set<odb::Point> sinkLocs;
 
         auto iTerms = net->getITerms();
-        // auto bTerms = net->getBTerms();
+        auto bTerms = net->getBTerms();
 
         auto iiter = iTerms.begin();
         auto iiterE = iTerms.end();
@@ -426,11 +430,37 @@ void OpenDbDescriptor::highlight(void* object,
           bbox->getBox(rect);
           odb::Point rectCenter((rect.xMax() + rect.xMin()) / 2.0,
                                 (rect.yMax() + rect.yMin()) / 2.0);
-          if ((*iiter)->getIoType() == INPUT || (*iiter)->getIoType() == INOUT)
+          auto iotype = (*iiter)->getIoType();
+          if (iotype == INPUT || iotype == INOUT) {
+            if (sinkObject != nullptr && sinkObject != *iiter)
+              continue;
             sinkLocs.insert(rectCenter);
-          else
+          }
+          if (iotype == INOUT || iotype == OUTPUT)
             driverLocs.insert(rectCenter);
         }
+
+        auto bIter = bTerms.begin();
+        auto bIterE = bTerms.end();
+        for (; bIter != bIterE; ++bIter) {
+          auto bTerm = *bIter;
+          auto bPins = bTerm->getBPins();
+          auto iotype = bTerm->getIoType();
+          bool driverTerm = iotype == INPUT || iotype == INOUT
+                            || iotype == odb::dbIoType::FEEDTHRU;
+          bool sinkTerm = iotype == INOUT || iotype == OUTPUT
+                          || iotype == odb::dbIoType::FEEDTHRU;
+          for (auto pin : bPins) {
+            auto pinRect = pin->getBBox();
+            odb::Point rectCenter((pinRect.xMax() + pinRect.xMin()) / 2.0,
+                                  (pinRect.yMax() + pinRect.yMin()) / 2.0);
+            if (driverTerm == true)
+              driverLocs.insert(rectCenter);
+            if (sinkTerm)
+              sinkLocs.insert(rectCenter);
+          }
+        }
+
         if (driverLocs.empty() || sinkLocs.empty())
           return;
         highlightColor.a = 255;

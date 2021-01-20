@@ -427,9 +427,11 @@ void MainWindow::selectHighlightConnectedNets(bool selectFlag,
             || iTerm->getNet()->getSigType() != SIGNAL)
           continue;
         auto iTermDir = iTerm->getIoType().getValue();
-        if ((iTermDir == INPUT && input == true)
-            || (iTermDir == OUTPUT && output) || iTermDir == INOUT)
+
+        if (output && (iTermDir == OUTPUT || iTermDir == INOUT))
           connNets.insert(Selected(iTerm->getNet()));
+        if (input && (iTermDir == INPUT || iTermDir == INOUT))
+          connNets.insert(Selected(iTerm->getNet(), iTerm));
       }
     }
   }

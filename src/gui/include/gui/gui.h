@@ -63,7 +63,8 @@ class Descriptor
   virtual void highlight(void* object,
                          Painter& painter,
                          bool selectFlag = true,
-                         int highlightGroup = 0) const = 0;
+                         int highlightGroup = 0,
+                         void* addnlData = nullptr) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -78,7 +79,8 @@ class OpenDbDescriptor : public Descriptor
   void highlight(void* object,
                  Painter& painter,
                  bool selectFlag,
-                 int highlightGroup) const override;
+                 int highlightGroup,
+                 void* addnlData) const override;
 
   static OpenDbDescriptor* get();
 
@@ -95,15 +97,17 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_(nullptr), descriptor_(nullptr) {}
+  Selected() : object_(nullptr), addnlData_(nullptr), descriptor_(nullptr) {}
 
-  Selected(void* object, Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+  Selected(void* object, Descriptor* descriptor, void* addnlData = nullptr)
+      : object_(object), addnlData_(addnlData), descriptor_(descriptor)
   {
   }
 
-  Selected(odb::dbObject* object)
-      : object_(object), descriptor_(OpenDbDescriptor::get())
+  Selected(odb::dbObject* object, odb::dbObject* sinkObject = nullptr)
+      : object_(object),
+        addnlData_(sinkObject),
+        descriptor_(OpenDbDescriptor::get())
   {
   }
 
@@ -136,7 +140,8 @@ class Selected
                  bool selectFlag = true,
                  int highlightGroup = 0) const
   {
-    return descriptor_->highlight(object_, painter, selectFlag, highlightGroup);
+    return descriptor_->highlight(
+        object_, painter, selectFlag, highlightGroup, addnlData_);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -149,6 +154,8 @@ class Selected
 
  private:
   void* object_;
+  void* addnlData_;  // Will only be required for highlighting input nets, in
+                     // which case it will store the input instTerm
   Descriptor* descriptor_;
 };
 
