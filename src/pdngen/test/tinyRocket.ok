@@ -17,7 +17,7 @@ Notice 0:     Created 41868 components and 209139 component-terminals.
 Notice 0:     Created 42811 nets and 125379 connections.
 Notice 0: Finished DEF file: tinyRocket/2_5_floorplan_tapcell.def
 [INFO PDN-0016] Power Delivery Network Generator: Generating PDN
-[INFO PDN-0016]   config: tinyRocket/PDN.cfg
+  config: tinyRocket/PDN.cfg
 [INFO PDN-0008] Design Name is RocketTile
 [INFO PDN-0009] Reading technology data
 [WARNING PDN-0037] Cannot find pin VDDPE on instance dcache.data.data_arrays_0.data_arrays_0_ext.mem (fakeram45_64x32)
