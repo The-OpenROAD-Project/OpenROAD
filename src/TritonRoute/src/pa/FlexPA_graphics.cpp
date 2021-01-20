@@ -120,6 +120,8 @@ static const char* to_string(frAccessPointEnum e)
     return "center";
   case frAccessPointEnum::EncOpt:
     return "enclose";
+  case frAccessPointEnum::NearbyGrid:
+    return "nearby";
   }
   return "unknown";
 }

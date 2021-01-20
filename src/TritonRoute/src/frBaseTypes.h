@@ -274,7 +274,8 @@ namespace fr {
     OnGrid   = 0,
     HalfGrid = 1,
     Center   = 2,
-    EncOpt   = 3
+    EncOpt   = 3,
+    NearbyGrid = 4 // nearby grid or 1/2 grid
   };
 
   namespace bg  = boost::geometry;
