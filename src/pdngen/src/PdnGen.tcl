@@ -95,9 +95,8 @@ proc pdngen { args } {
   set config_file [file nativename [lindex $args 0]]
 
   if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg options]} {
-    if {[regexp {\[PDN\-[0-9]*\]} $error_msg]} {
+    if {![regexp {PDN\-[0-9]*} $error_msg]} {
       puts $error_msg
-    } else {
       puts $options
       pdngen::critical 9999 "Unexpected error: $error_msg"
     }
@@ -1502,7 +1501,7 @@ proc get_via_option {lower width height constraints} {
     }
     set min_cut_rule [get_minimumcuts $lower_layer $lower_width fromabove $cut_class]
     if {$num_cuts < $min_cut_rule} {
-      err 35 "Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $lower_layer to $cut_class with width [expr 1.0 * $lower_width / $def_units]"
+      warning 35 "Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $lower_layer to $cut_class with width [expr 1.0 * $lower_width / $def_units]"
       dict set via_rule illegal 1  
     } else {
       # debug "Legal number of cuts ($num_cuts) meets minimum cut rule ($min_cut_rule) for $lower_layer, $lower_width, $cut_class"
@@ -1523,13 +1522,13 @@ proc get_via_option {lower width height constraints} {
     set min_cut_rule [get_minimumcuts $upper_layer $upper_width frombelow $cut_class]
 
     if {$num_cuts < $min_cut_rule} {
-      err 35 "Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $upper_layer to $cut_class with width [expr 1.0 * $upper_width / $def_units]"
+      warning 35 "Illegal via number of cuts ($num_cuts) does not meet minimum cut rule ($min_cut_rule) for $upper_layer to $cut_class with width [expr 1.0 * $upper_width / $def_units]"
       dict set via_rule illegal 1  
     } else {
       # debug "Legal number of cuts ($num_cuts) meets minimum cut rule ($min_cut_rule) for $upper_layer, $upper_width $cut_class"
     }
     if {[dict exists $via_rule illegal]} {
-      err 36 "Attempt to add illegal via at : ([expr 1.0 * [lindex $via_location 0] / $def_units] [expr 1.0 * [lindex $via_location 1] / $def_units]), via will not be added"
+      warning 36 "Attempt to add illegal via at : ([expr 1.0 * [lindex $via_location 0] / $def_units] [expr 1.0 * [lindex $via_location 1] / $def_units]), via will not be added"
     }
     lappend checked_rules $via_rule
   }
@@ -2914,7 +2913,7 @@ proc get_memory_instance_pg_pins {} {
       set master [$inst getMaster]
       set mterm [$master findMTerm $term_name]
       if {$mterm == "NULL"} {
-        err 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
+        warning 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
         continue
       }
 
@@ -3247,11 +3246,11 @@ proc get_core_facing_pins {instance pin_name side layer} {
   set core_pins {}
   set inst [$block findInst [dict get $instance name]]
   if {[set iterm [$inst findITerm $pin_name]] == "NULL"} {
-    err 55 "Cannot find pin $pin_name on inst [$inst getName]"
+    warning 55 "Cannot find pin $pin_name on inst [$inst getName]"
     return {}
   }
   if {[set mterm [$iterm getMTerm]] == "NULL"} {
-    err 56 "Cannot find master pin $pin_name for cell [[$inst getMaster] getName]"
+    warning 56 "Cannot find master pin $pin_name for cell [[$inst getMaster] getName]"
     return {}
   }
   set pins [$mterm getMPins]
@@ -4215,7 +4214,7 @@ proc repair_channel {channel layer_name} {
   if {([expr $vdd_routing_grid - $width / 2] < $xMin) || ([expr $vss_routing_grid + $width / 2] > $xMax)} {
     variable def_units
 
-    err 47 "Channel ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) too narrow. Channel on layer $layer_name must be at least [expr (2.0 * $width + $channel_spacing) / $def_units] wide"
+    warning 47 "Channel ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) too narrow. Channel on layer $layer_name must be at least [expr (2.0 * $width + $channel_spacing) / $def_units] wide"
   }
     
   set vdd_stripe [odb::newSetFromRect [expr $vdd_routing_grid - $width / 2] $yMin [expr $vdd_routing_grid + $width / 2] $yMax]
@@ -4260,7 +4259,7 @@ proc process_channels {} {
     foreach channel [::odb::getPolygons $channels] {
       set points [::odb::getPoints $channel]
       if {[llength $points] != 4} {
-        err 46 "Non-rectangular channel area"
+        warning 46 "Non-rectangular channel area"
         continue
       }
     
