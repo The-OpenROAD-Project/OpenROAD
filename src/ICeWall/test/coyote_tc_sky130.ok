@@ -5,94 +5,72 @@ Notice 0: Finished LEF file:  ../../../test/sky130/sky130_tech.lef
 Notice 0: Reading LEF file:  ../../../test/sky130/sky130_std_cell.lef
 Notice 0:     Created 390 library cells
 Notice 0: Finished LEF file:  ../../../test/sky130/sky130_std_cell.lef
-coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
-coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
-coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
-coyote_tc/lef/sky130io_fill.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130io_fill.lef
-Notice 0:     Created 2 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
-coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
-coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
-coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
-coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
-coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
-coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
 Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
-coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
-coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
-Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
-coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
-coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
 Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
 Notice 0:     Created 1 library cells
 Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+Notice 0: Reading LEF file:  coyote_tc/lef/sky130io_fill.lef
+Notice 0:     Created 2 library cells
+Notice 0: Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
 Loading library IO cell meta-data
 Loaded library IO cell data
 [INFO IFP-0001] Added 1266 rows of 10417 sites.

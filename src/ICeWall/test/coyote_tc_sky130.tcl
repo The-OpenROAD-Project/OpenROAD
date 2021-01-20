@@ -4,15 +4,31 @@ source ../src/ICeWall.tcl
 read_lef ../../../test/sky130/sky130_tech.lef
 read_lef ../../../test/sky130/sky130_std_cell.lef
 
-foreach file [glob -nocomplain coyote_tc/lef/*] {
-  puts $file
-  read_lef $file
-}
+read_lef coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+read_lef coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+read_lef coyote_tc/lef/sky130io_fill.lef
 
 read_liberty ../../../test/sky130/sky130_tt.lib
-foreach file [glob -nocomplain coyote_tc/lib/*] {
-  read_liberty $file
-}
+read_liberty coyote_tc/lib/sky130_dummy_io.lib
 
 read_verilog coyote_tc/1_synth.v
 
