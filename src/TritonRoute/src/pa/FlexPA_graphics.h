@@ -55,7 +55,8 @@ class FlexPAGraphics : public gui::Renderer
 
   void startPin(frPin* pin, frInstTerm* inst_term);
 
-  void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps);
+  void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
+              frAccessPointEnum lower_type, frAccessPointEnum upper_type);
 
   // Show a message in the status bar
   void status(const std::string& message);
