@@ -748,6 +748,11 @@ dbDatabase* dbObject::getDb() const
   return (dbDatabase*) getImpl()->getDatabase();
 }
 
+utl::Logger* _dbObject::getLogger() const
+{
+  return getDatabase()->getLogger();
+}
+
 bool dbDatabase::diff(dbDatabase* db0_,
                       dbDatabase* db1_,
                       FILE*       file,

@@ -762,7 +762,7 @@ void dbNet::setWireType(dbWireType wire_type)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1,
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
           "ECO: net {}, setWireType: {}",
           getId(),
           wire_type.getValue());
@@ -794,7 +794,7 @@ void dbNet::setSigType(dbSigType sig_type)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1,
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
           "ECO: net {}, setSigType: {}",
           getId(),
           sig_type.getValue());
@@ -991,7 +991,7 @@ bool dbNet::adjustCC(uint                   adjOrder,
                      std::vector<dbNet*>&   halonets)
 {
   if (((_dbNet*) this)->_ccAdjustFactor > 0) {
-    getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 48,
+    getImpl()->getLogger()->warn(utl::ODB, 48,
             "Net {} {} had been CC adjusted by {}. Please unadjust first.",
             getId(),
             getConstName(),
@@ -1135,7 +1135,7 @@ void dbNet::setSpef(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpef: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpef: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1156,7 +1156,7 @@ void dbNet::setSelect(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSelect: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSelect: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1206,7 +1206,7 @@ void dbNet::setMark(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1227,7 +1227,7 @@ void dbNet::setMark_1(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark_1: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark_1: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1328,7 +1328,7 @@ void dbNet::setWireOrdered(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireOrdered: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireOrdered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1351,7 +1351,7 @@ void dbNet::setBuffered(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setBuffered: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setBuffered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1374,7 +1374,7 @@ void dbNet::setDisconnected(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setDisconnected: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setDisconnected: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1393,7 +1393,7 @@ void dbNet::setWireAltered(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireAltered: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireAltered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1416,7 +1416,7 @@ void dbNet::setExtracted(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setExtracted: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setExtracted: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1439,7 +1439,7 @@ void dbNet::setRCgraph(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setRCgraph: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setRCgraph: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1460,7 +1460,7 @@ void dbNet::setReduced(bool value)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setReduced: {}", getId(), value);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setReduced: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1614,7 +1614,7 @@ bool dbNet::setIOflag()
 
 #ifdef FULL_ECO
     if (block->_journal) {
-      debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
+      debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
       block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
     }
 #endif
@@ -1624,7 +1624,7 @@ bool dbNet::setIOflag()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1682,7 +1682,7 @@ void dbNet::setSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpecial", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpecial", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1699,7 +1699,7 @@ void dbNet::clearSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearSpecial", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearSpecial", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1721,7 +1721,7 @@ void dbNet::setWildConnected()
   net->_flags._wild_connect = 1;
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWildConnected", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWildConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1738,7 +1738,7 @@ void dbNet::clearWildConnected()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearWildConnected", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearWildConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
 #endif
@@ -1790,7 +1790,7 @@ void dbNet::reverseRSegs()
   rSet.reverse();
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, reverse rsegs sequence", getId());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, reverse rsegs sequence", getId());
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
@@ -1846,7 +1846,7 @@ void dbNet::set1stRSegId(uint rid)
   uint      pid   = net->_r_segs;
   net->_r_segs    = rid;
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, set 1stRSegNode {}", getId(), rid);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, set 1stRSegNode {}", getId(), rid);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
@@ -1975,9 +1975,9 @@ void dbNet::donateRC(dbITerm*               donorterm,
     }
   }
   if (!drseg)
-    getImpl()->getDatabase()->getLogger()->error(utl::ODB, 49, "Donor net {} {} has no rc data", getId(), getConstName());
+    getImpl()->getLogger()->error(utl::ODB, 49, "Donor net {} {} has no rc data", getId(), getConstName());
   if (!dtrseg)
-    getImpl()->getDatabase()->getLogger()->error(utl::ODB, 50,
+    getImpl()->getLogger()->error(utl::ODB, 50,
           "Donor net {} {} has no capnode attached to iterm {}/{}",
           getId(),
           getConstName(),
@@ -1999,7 +1999,7 @@ void dbNet::donateRC(dbITerm*               donorterm,
     lastrrseg = rrseg;
   }
   if (!rtrseg)
-    getImpl()->getDatabase()->getLogger()->error(utl::ODB, 51,
+    getImpl()->getLogger()->error(utl::ODB, 51,
           "Receiver net {} {} has no capnode attached to iterm {}/{}",
           rcvnet->getId(),
           rcvnet->getConstName(),
@@ -2179,9 +2179,9 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
 
   if (block->_journal) {
     if (capId){
-      debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: set net {} term extId", getId());
+      debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: set net {} term extId", getId());
     }else
-      debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: reset net {} term extId", getId());
+      debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: reset net {} term extId", getId());
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
@@ -2215,7 +2215,7 @@ void dbNet::set1stCapNodeId(uint cid)
   uint      pid   = net->_cap_nodes;
   net->_cap_nodes = cid;
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, set 1stCapNode {}", getId(), cid);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbNet {}, set 1stCapNode {}", getId(), cid);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(getId());
@@ -2396,7 +2396,7 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
-    getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 52, "Net {}, {} has no extraction data", getId(), getConstName());
+    getImpl()->getLogger()->warn(utl::ODB, 52, "Net {}, {} has no extraction data", getId(), getConstName());
     return;
   }
   bool foreign = ((dbBlock*) getImpl()->getOwner())->getExtControl()->_foreign;
@@ -2438,7 +2438,7 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
-    getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 53, "Net {}, {} has no extraction data", getId(), getConstName());
+    getImpl()->getLogger()->warn(utl::ODB, 53, "Net {}, {} has no extraction data", getId(), getConstName());
     return;
   }
   dbRSeg* prc = getZeroRSeg();
@@ -2560,7 +2560,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
   }
 
   if (block->_journal) {
-    debugPrint(getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1,
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
           "ECO: net {}, setNonDefaultRule: ",
           getId(),
           (rule) ? rule->getImpl()->getOID() : 0);
@@ -2722,7 +2722,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     return NULL;
 
   if (block->_journal) {
-    debugPrint(block->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: create net, name {}", name_);
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: create net, name {}", name_);
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);
@@ -2780,7 +2780,7 @@ void dbNet::destroy(dbNet* net_)
 
 
   if (block->_journal) {
-    debugPrint(block->getImpl()->getDatabase()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: destroy net, id: {}", net->getId());
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: destroy net, id: {}", net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net->getId());

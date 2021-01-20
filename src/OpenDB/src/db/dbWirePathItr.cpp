@@ -470,7 +470,7 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 {
   if (!innet)
     return;
-  utl::Logger* logger = innet->getImpl()->getDatabase()->getLogger();
+  utl::Logger* logger = innet->getImpl()->getLogger();
 
   const char* prfx  = "dumpWirePaths:";
   dbWire*     wire0 = innet->getWire();

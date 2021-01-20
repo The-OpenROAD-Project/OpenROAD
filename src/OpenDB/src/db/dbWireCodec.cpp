@@ -1118,7 +1118,7 @@ void dumpDecoder4Net(dbNet* innet)
 
   const char* prfx  = "dumpDecoder:";
   dbWire*     wire0 = innet->getWire();
-  utl::Logger* logger = innet->getImpl()->getDatabase()->getLogger();
+  utl::Logger* logger = innet->getImpl()->getLogger();
   if (!wire0) {
     logger->warn(utl::ODB, 63 , "{} No wires for net {}", prfx, innet->getName());
     return;
@@ -1355,7 +1355,7 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
   innet = (*ckdigit == '\0') ? dbNet::getNet(inblk, atoi(net_name_or_id))
                              : inblk->findNet(net_name_or_id);
   if (!innet) {
-    inblk->getImpl()->getDatabase()->getLogger()->error(utl::ODB, 0, "{} Net {} not found", prfx, net_name_or_id);
+    inblk->getImpl()->getLogger()->error(utl::ODB, 0, "{} Net {} not found", prfx, net_name_or_id);
     return;
   }
 

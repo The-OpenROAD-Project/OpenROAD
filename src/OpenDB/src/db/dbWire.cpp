@@ -1876,7 +1876,7 @@ void dbWire::destroy(dbWire* wire_)
       net->_flags._wire_altered = 1;
     }
   } else
-    wire_->getImpl()->getDatabase()->getLogger()->warn(utl::ODB, 62,  "This wire has no net");
+    wire_->getImpl()->getLogger()->warn(utl::ODB, 62,  "This wire has no net");
 
   dbProperty::destroyProperties(wire);
   block->_wire_tbl->destroy(wire);
