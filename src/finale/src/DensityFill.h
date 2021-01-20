@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "opendb/db.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace fin {
 
@@ -52,7 +52,7 @@ class Graphics;
 class DensityFill
 {
  public:
-  DensityFill(odb::dbDatabase* db, ord::Logger* logger, bool debug);
+  DensityFill(odb::dbDatabase* db, utl::Logger* logger, bool debug);
   ~DensityFill();
 
   DensityFill(const DensityFill&) = delete;
@@ -64,16 +64,16 @@ class DensityFill
 
  private:
   void loadConfig(const char* cfg_filename, odb::dbTech* tech);
-  void read_and_expand_layers(odb::dbTech* tech,
-                              boost::property_tree::ptree& tree);
-  void fill_layer(odb::dbBlock* block,
-                  odb::dbTechLayer* layer,
-                  const odb::Rect& fill_bounds);
+  void readAndExpandLayers(odb::dbTech* tech,
+                           boost::property_tree::ptree& tree);
+  void fillLayer(odb::dbBlock* block,
+                 odb::dbTechLayer* layer,
+                 const odb::Rect& fill_bounds);
 
   odb::dbDatabase* db_;
   std::map<odb::dbTechLayer*, DensityFillLayerConfig> layers_;
   std::unique_ptr<Graphics> graphics_;
-  ord::Logger* logger_;
+  utl::Logger* logger_;
 };
 
 }  // namespace fin

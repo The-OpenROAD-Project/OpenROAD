@@ -39,13 +39,13 @@
 #include "sta/GraphClass.hh"
 #include "opendb/db.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
 namespace sta {
 
-using ord::Logger;
+using utl::Logger;
 
 using odb::dbDatabase;
 using odb::dbObject;
@@ -207,7 +207,9 @@ public:
   virtual Pin *connect(Instance *inst,
 		       LibertyPort *port,
 		       Net *net);
+  void connectPinAfter(Pin *pin);
   virtual void disconnectPin(Pin *pin);
+  void disconnectPinBefore(Pin *pin);
   virtual void deletePin(Pin *pin);
   virtual Net *makeNet(const char *name,
 		       Instance *parent);

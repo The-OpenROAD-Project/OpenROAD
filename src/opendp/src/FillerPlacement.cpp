@@ -35,7 +35,7 @@
 #include "opendp/Opendp.h"
 
 #include <algorithm>
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace dpl {
 
@@ -43,7 +43,7 @@ using std::max;
 using std::min;
 using std::to_string;
 
-using ord::DPL;
+using utl::DPL;
 
 using odb::dbLib;
 using odb::dbMaster;
@@ -73,7 +73,7 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
   for (const string &master_name : *filler_master_names) {
     for (dbLib *lib : db_->getLibs()) {
       dbMaster *master = lib->findMaster(master_name.c_str());
-      if (master != nullptr) {
+      if (master) {
         filler_masters_.push_back(master);
         break;
       }

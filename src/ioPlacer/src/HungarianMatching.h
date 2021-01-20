@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __HUNGARIANMATCHING_H_
-#define __HUNGARIANMATCHING_H_
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -44,11 +43,11 @@
 #include <utility>
 
 #include "Hungarian.h"
-#include "ioplacer/IOPlacer.h"
 #include "Netlist.h"
 #include "Slots.h"
+#include "ioplacer/IOPlacer.h"
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -56,33 +55,32 @@ namespace ppl {
 
 using odb::Point;
 using odb::Rect;
-using ord::Logger;
+using utl::Logger;
 
 class HungarianMatching
 {
- private:
-  std::vector<std::vector<int>> _hungarianMatrix;
-  std::vector<int> _assignment;
-  HungarianAlgorithm _hungarianSolver;
-  Netlist& _netlist;
-  slotVector_t& _slots;
-  int _beginSlot;
-  int _endSlot;
-  int _numSlots;
-  int _numIOPins;
-  int _nonBlockedSlots;
-  Edge _edge;
-  const int hungarian_fail = std::numeric_limits<int>::max();
-  Logger *_logger;
-
-  void createMatrix(std::vector<Constraint>& constraints);
-
  public:
-  HungarianMatching(Section_t&, slotVector_t&, Logger *logger);
+  HungarianMatching(Section&, SlotVector&, Logger* logger);
   virtual ~HungarianMatching() = default;
   void findAssignment(std::vector<Constraint>& constraints);
-  void getFinalAssignment(std::vector<IOPin>&);
+  void getFinalAssignment(std::vector<IOPin>&) const;
+
+ private:
+  std::vector<std::vector<int>> hungarian_matrix_;
+  std::vector<int> assignment_;
+  HungarianAlgorithm hungarian_solver_;
+  Netlist& netlist_;
+  SlotVector& slots_;
+  int begin_slot_;
+  int end_slot_;
+  int num_slots_;
+  int num_io_pins_;
+  int non_blocked_slots_;
+  Edge edge_;
+  const int hungarian_fail = std::numeric_limits<int>::max();
+  Logger* logger_;
+
+  void createMatrix(std::vector<Constraint>& constraints);
 };
 
 }  // namespace ppl
-#endif /* __HUNGARIANMATCHING_H_ */

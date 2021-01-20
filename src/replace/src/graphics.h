@@ -4,10 +4,15 @@
 
 #include "gui/gui.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace gpl {
 
 class InitialPlace;
 class NesterovBase;
+class NesterovPlace;
 class PlacerBase;
 class GCell;
 
@@ -16,11 +21,14 @@ class Graphics : public gui::Renderer
 {
  public:
   // Debug InitialPlace
-  Graphics(std::shared_ptr<PlacerBase> pb,
+  Graphics(utl::Logger* logger,
+           std::shared_ptr<PlacerBase> pb,
            InitialPlace* ip);
 
   // Debug NesterovPlace
-  Graphics(std::shared_ptr<PlacerBase> pb,
+  Graphics(utl::Logger* logger,
+           NesterovPlace* np,
+           std::shared_ptr<PlacerBase> pb,
            std::shared_ptr<NesterovBase> nb,
            bool draw_bins);
 
@@ -41,13 +49,16 @@ class Graphics : public gui::Renderer
  private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
+  NesterovPlace* np_;
   InitialPlace* ip_;
   GCell* selected_;
   bool draw_bins_;
+  utl::Logger* logger_;
 
   void drawNesterov(gui::Painter& painter);
   void drawInitial(gui::Painter& painter);
   void drawBounds(gui::Painter& painter);
+  void reportSelected();
 };
 
 }  // namespace gpl

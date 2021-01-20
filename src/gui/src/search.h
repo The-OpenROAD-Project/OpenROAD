@@ -50,14 +50,15 @@ namespace bgi = boost::geometry::index;
 // db changes.  TODO: this should be into an observer of OpenDB.
 class Search
 {
-  using point_t = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-  using box_t = bg::model::box<point_t>;
-  using polygon_t = bg::model::polygon<point_t,false>;//counterclockwise(clockwise=false)
+  using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
+  using Box = bg::model::box<Point>;
+  using Polygon
+      = bg::model::polygon<Point, false>;  // counterclockwise(clockwise=false)
   template <typename T>
-  using value_t = std::tuple<box_t,polygon_t, T>;
+  using Value = std::tuple<Box, Polygon, T>;
 
   template <typename T>
-  using rtree = bgi::rtree<value_t<T>, bgi::quadratic<16>>;
+  using Rtree = bgi::rtree<Value<T>, bgi::quadratic<16>>;
 
   template <typename T>
   class MinSizePredicate;
@@ -71,19 +72,19 @@ class Search
   class Range
   {
    public:
-    using iterator = typename rtree<T>::const_query_iterator;
+    using Iterator = typename Rtree<T>::const_query_iterator;
 
     Range() = default;
-    Range(const iterator& begin, const iterator& end) : begin_(begin), end_(end)
+    Range(const Iterator& begin, const Iterator& end) : begin_(begin), end_(end)
     {
     }
 
-    iterator begin() { return begin_; }
-    iterator end() { return end_; }
+    Iterator begin() { return begin_; }
+    Iterator end() { return end_; }
 
    private:
-    iterator begin_;
-    iterator end_;
+    Iterator begin_;
+    Iterator end_;
   };
   using InstRange = Range<odb::dbInst*>;
   using ShapeRange = Range<odb::dbNet*>;
@@ -93,25 +94,29 @@ class Search
   void init(odb::dbBlock* block);
 
   // Find all shapes in the given bounds on the given layer which
-  // are at least minSize in either dimension.
-  ShapeRange search_shapes(odb::dbTechLayer* layer,
-                           int xLo,
-                           int yLo,
-                           int xHi,
-                           int yHi,
-                           int minSize = 0);
+  // are at least min_size in either dimension.
+  ShapeRange searchShapes(odb::dbTechLayer* layer,
+                          int x_lo,
+                          int y_lo,
+                          int x_hi,
+                          int y_hi,
+                          int min_size = 0);
 
   // Find all fills in the given bounds on the given layer which
-  // are at least minSize in either dimension.
-  FillRange search_fills(odb::dbTechLayer* layer,
-                         int xLo,
-                         int yLo,
-                         int xHi,
-                         int yHi,
-                         int minSize = 0);
+  // are at least min_size in either dimension.
+  FillRange searchFills(odb::dbTechLayer* layer,
+                        int x_lo,
+                        int y_lo,
+                        int x_hi,
+                        int y_hi,
+                        int min_size = 0);
 
-  // Find all instances in the given bounds with height of at least minHeight
-  InstRange search_insts(int xLo, int yLo, int xHi, int yHi, int minHeight = 0);
+  // Find all instances in the given bounds with height of at least min_height
+  InstRange searchInsts(int x_lo,
+                        int y_lo,
+                        int x_hi,
+                        int y_hi,
+                        int min_height = 0);
 
   void clear();
 
@@ -122,9 +127,9 @@ class Search
   void addInst(odb::dbInst* inst);
 
   // The net is used for filter shapes by net type
-  std::map<odb::dbTechLayer*, rtree<odb::dbNet*>> shapes_;
-  std::map<odb::dbTechLayer*, rtree<odb::dbFill*>> fills_;
-  rtree<odb::dbInst*> insts_;
+  std::map<odb::dbTechLayer*, Rtree<odb::dbNet*>> shapes_;
+  std::map<odb::dbTechLayer*, Rtree<odb::dbFill*>> fills_;
+  Rtree<odb::dbInst*> insts_;
 };
 
 }  // namespace gui

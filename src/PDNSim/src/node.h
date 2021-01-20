@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 #include "opendb/db.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 namespace psm {
 using odb::dbInst;
 
@@ -85,7 +85,7 @@ class Node
   //! Get location of the node in G matrix
   void SetGLoc(NodeIdx loc);
   //! Function to print node details
-  void Print(ord::Logger* logger);
+  void Print(utl::Logger* logger);
   //! Function to set the bounding box of the stripe
   void SetBbox(int dX, int dY);
   //! Function to get the bounding box of the stripe

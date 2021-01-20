@@ -37,19 +37,21 @@
 namespace fr {
   class frNet;
   class frInstTerm;
+  class frBlock;
 
   class frTerm: public frBlockObject {
   public:
     // constructors
-    frTerm(const frString &name): frBlockObject(), name_(name), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm), direction_(frTermDirectionEnum::UNKNOWN) {}
-    frTerm(const frTerm &in): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
+    frTerm(const frString &name): frBlockObject(), name_(name), block_(nullptr), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm), direction_(frTermDirectionEnum::UNKNOWN) {
+    }
+    frTerm(const frTerm &in): frBlockObject(), name_(in.name_), block_(in.block_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin);
         addPin(std::move(tmp));
       }
     }
-    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
+    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), block_(in.block_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin, xform);
@@ -57,6 +59,9 @@ namespace fr {
       }
     }
     // getters
+    frBlock* getBlock() const {
+      return block_;
+    }
     bool hasNet() const {
       return (net_);
     }
@@ -70,6 +75,9 @@ namespace fr {
       return pins_;
     }
     // setters
+    void setBlock(frBlock* in) {
+      block_ = in;
+    }
     void addToNet(frNet* in) {
       net_ = in;
     }
@@ -93,12 +101,22 @@ namespace fr {
     frBlockObjectEnum typeId() const override {
       return frcTerm;
     }
+    void setOrderId(int order_id)
+    {
+      _order_id = order_id;
+    }
+    int getOrderId()
+    {
+      return _order_id;
+    }
   protected:
     frString name_; // A, B, Z, VSS, VDD
+    frBlock* block_;
     frNet* net_; // set later, term in instTerm does not have net
     std::vector<std::unique_ptr<frPin> > pins_; // set later
     frTermEnum type_;
     frTermDirectionEnum direction_;
+    int _order_id;
   };
 }
 

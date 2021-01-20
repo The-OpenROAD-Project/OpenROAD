@@ -40,7 +40,7 @@ namespace fr {
 namespace odb {
   class dbDatabase;
 }
-namespace ord {
+namespace utl {
   class Logger;
 }
 namespace triton_route {
@@ -48,7 +48,7 @@ namespace triton_route {
   public:
     TritonRoute();
     ~TritonRoute();
-    void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, ord::Logger* logger);
+    void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
 
     fr::frDesign* getDesign() const {
       return design_.get();
@@ -60,7 +60,9 @@ namespace triton_route {
 
     void setDebugDR(bool on = true);
     void setDebugMaze(bool on = true);
-    void setDebugNetName(const char* name);
+    void setDebugPA(bool on = true);
+    void setDebugNetName(const char* name); // for DR
+    void setDebugPinName(const char* name); // for PA
     void setDebugGCell(int x, int y);
     void setDebugIter(int iter);
 
@@ -70,7 +72,7 @@ namespace triton_route {
     std::unique_ptr<fr::frDesign> design_;
     std::unique_ptr<fr::frDebugSettings> debug_;
     odb::dbDatabase *db_;
-    ord::Logger *logger_;
+    utl::Logger *logger_;
     int num_drvs_;
     
     void init();

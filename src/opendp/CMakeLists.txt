@@ -61,7 +61,6 @@ set(OPENDP_SRC
   src/Grid.cpp
   src/CheckPlacement.cpp
   src/Place.cpp
-  src/Utility.cpp
   src/FillerPlacement.cpp
   src/OptMirror.cpp
 
@@ -84,7 +83,7 @@ target_include_directories(opendp
 
 target_link_libraries(opendp
   PUBLIC
-  spdlog::spdlog
+  utility
   )
 
 ################################################################

@@ -65,3 +65,5 @@ src/def/def/def.tab.cpp
 src/def/def/def.tab.h
 src/lef/lef/lef.tab.cpp
 src/lef/lef/lef.tab.h
+
+tests/results

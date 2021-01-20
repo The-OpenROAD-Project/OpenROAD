@@ -68,8 +68,7 @@ void initFinale(OpenRoad* openroad)
   Finale_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::finale_tcl_inits);
-  openroad->getFinale()->init(openroad->getDb(),
-                              openroad->getLogger());
+  openroad->getFinale()->init(openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord

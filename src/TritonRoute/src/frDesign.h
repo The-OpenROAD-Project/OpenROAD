@@ -43,8 +43,11 @@ namespace fr {
   class frDesign {
   public:
     // constructors
-    frDesign(): topBlock_(nullptr), tech_(std::make_unique<frTechObject>()), 
-                rq_(std::make_unique<frRegionQuery>(this)) {}
+    frDesign(Logger* logger): topBlock_(nullptr),
+                              tech_(std::make_unique<frTechObject>()), 
+                              rq_(std::make_unique<frRegionQuery>(this, logger))
+    {
+    }
     // getters
     frBlock* getTopBlock() const {
       return topBlock_.get();
@@ -70,9 +73,6 @@ namespace fr {
       refBlocks_.push_back(std::move(in));
     }
     // others
-    void printAllMacros();
-    void printAllComps();
-    void printAllTerms();
     friend class io::Parser;
   protected:
     std::unique_ptr<frBlock>                      topBlock_;

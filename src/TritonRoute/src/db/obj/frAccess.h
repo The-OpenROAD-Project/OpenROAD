@@ -42,8 +42,8 @@ namespace fr {
     // constructors
     frAccessPoint(const frPoint& point, frLayerNum layerNum): frBlockObject(),
                     point_(point), layerNum_(layerNum), accesses_(std::vector<bool>(6, false)),
-                     viaDefs_(), typeL_(frAccessPointEnum::frcOnGridAP), 
-                     typeH_(frAccessPointEnum::frcOnGridAP), aps_(nullptr) {}
+                     viaDefs_(), typeL_(frAccessPointEnum::OnGridAP),
+                     typeH_(frAccessPointEnum::OnGridAP), aps_(nullptr) {}
     // getters
     void getPoint(frPoint &in) const {
       in.set(point_);

@@ -28,8 +28,6 @@
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#sta::define_cmd_args "pdngen" {[-verbose] config_file}
-
 # Messages:
 # 
 # Information
@@ -85,6 +83,8 @@
 # 9999 - Unexpected error
 #
 
+sta::define_cmd_args "pdngen" {[-verbose] config_file}
+
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
     keys {} flags {-verbose}
@@ -92,7 +92,7 @@ proc pdngen { args } {
   set verbose [info exists flags(-verbose)]
 
   sta::check_argc_eq1 "pdngen" $args
-  set config_file $args
+  set config_file [file nativename [lindex $args 0]]
 
   if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg options]} {
     if {[regexp {\[PDNG\-[0-9]*\]} $error_msg]} {

@@ -38,7 +38,7 @@
 #include <fstream>
 #include <string>
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 // Move logger macro out of the way.
 #undef debugPrint
 
@@ -53,7 +53,7 @@ namespace rsz {
 using std::abs;
 using std::string;
 
-using ord::RSZ;
+using utl::RSZ;
 
 using odb::dbShape;
 using odb::dbPlacementStatus;

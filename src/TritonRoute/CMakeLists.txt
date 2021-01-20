@@ -58,7 +58,6 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/gc/FlexGC.cpp
   ${FLEXROUTE_HOME}/src/gc/FlexGC_init.cpp
   ${FLEXROUTE_HOME}/src/gc/FlexGC_main.cpp
-  ${FLEXROUTE_HOME}/src/utility.cpp
   ${FLEXROUTE_HOME}/src/db/drObj/drShape.cpp
   ${FLEXROUTE_HOME}/src/db/drObj/drVia.cpp
   ${FLEXROUTE_HOME}/src/db/infra/frBox.cpp
@@ -82,6 +81,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/pa/FlexPA_init.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA_prep.cpp
+  ${FLEXROUTE_HOME}/src/pa/FlexPA_graphics.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_init.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp
@@ -162,6 +162,7 @@ target_link_libraries( TritonRouteLib
   OpenMP::OpenMP_CXX
   Boost::boost
   ZLIB::ZLIB
+  utility
 )
 
 ############################################################
@@ -188,6 +189,7 @@ add_executable(trTest
 target_include_directories( trTest
   PRIVATE
   ${FLEXROUTE_HOME}/src
+  ${OPENROAD_HOME}/include
 )
 
 target_link_libraries(trTest

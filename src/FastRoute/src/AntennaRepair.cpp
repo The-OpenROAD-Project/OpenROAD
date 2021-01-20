@@ -47,17 +47,17 @@
 #include "Net.h"
 #include "Pin.h"
 #include "fastroute/GlobalRouter.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace grt {
 
-using ord::GRT;
+using utl::GRT;
 
 AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
                              odb::dbDatabase* db,
-                             ord::Logger *logger)
+                             utl::Logger *logger)
     : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db), _logger(logger)
 {
   _block = _db->getChip()->getBlock();
@@ -84,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        _logger->error(GRT, 77, "Global route segment not valid");
+        _logger->error(GRT, 68, "Global route segment not valid");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
@@ -144,7 +144,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     }
 
     if (siteWidth != site_width) {
-      _logger->warn(GRT, 7, "Design has rows with different site width");
+      _logger->warn(GRT, 27, "Design has rows with different site width");
     }
   }
 
@@ -256,8 +256,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
     odb::dbBox* instBox = antennaInst->getBBox();
     box box(
-        point(instBox->xMin() - (leftPad * siteWidth) + 1, instBox->yMin() + 1),
-        point(instBox->xMax() + (rightPad * siteWidth) - 1,
+        point(instBox->xMin() - ((leftPad+rightPad) * siteWidth) + 1, instBox->yMin() + 1),
+        point(instBox->xMax() + ((leftPad+rightPad) * siteWidth) - 1,
               instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 

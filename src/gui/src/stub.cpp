@@ -50,11 +50,11 @@ Gui* gui::Gui::get()
   return singleton_;
 }
 
-void gui::Gui::register_renderer(gui::Renderer*)
+void gui::Gui::registerRenderer(gui::Renderer*)
 {
 }
 
-void gui::Gui::unregister_renderer(gui::Renderer*)
+void gui::Gui::unregisterRenderer(gui::Renderer*)
 {
 }
 
@@ -84,7 +84,7 @@ OpenDbDescriptor* OpenDbDescriptor::get()
 }
 
 // using namespace odb;
-int start_gui(int argc, char* argv[])
+int startGui(int argc, char* argv[])
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

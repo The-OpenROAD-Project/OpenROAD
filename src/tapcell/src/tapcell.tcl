@@ -499,7 +499,7 @@ namespace eval tap {
                     set tap_urx [expr $x + $tap_width]
                     set end_llx [expr $urx - $endcap_width]
 
-                    set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                    set x_tmp [expr {floor (1.0*$x/$site_x)*$site_x}]
                     set row_orig_fix [expr { $llx % $site_x }]
                     set x [expr { int($x_tmp + $row_orig_fix) }]
                     set x_end [expr $x + $site_x]
@@ -523,7 +523,7 @@ namespace eval tap {
                             continue
                         }
 
-                        set new_x [expr {ceil (1.0*$x_tmp/$site_x)*$site_x}]
+                        set new_x [expr {floor (1.0*$x_tmp/$site_x)*$site_x}]
                         set new_x [expr { int($new_x) }]
                         set real_x [get_correct_llx $new_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
 

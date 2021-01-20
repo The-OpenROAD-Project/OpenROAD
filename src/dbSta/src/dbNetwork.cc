@@ -37,7 +37,7 @@
 
 #include "db_sta/dbNetwork.hh"
 
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -47,7 +47,7 @@
 
 namespace sta {
 
-using ord::ORD;
+using utl::ORD;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -1066,12 +1066,20 @@ dbNetwork::connect(Instance *inst,
     dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
     pin = dbToSta(iterm);
   }
+  return pin;
+}
+
+// Used by dbStaCbk
+// Incrementally update drivers.
+void
+dbNetwork::connectPinAfter(Pin *pin)
+{
   if (isDriver(pin)) {
+    Net *net = this->net(pin);
     PinSet *drvrs = net_drvr_pin_map_[net];
     if (drvrs)
       drvrs->insert(pin);
   }
-  return pin;
 }
 
 Pin *
@@ -1103,18 +1111,23 @@ dbNetwork::connect(Instance *inst,
     dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
     pin = dbToSta(iterm);
   }
-
-  // Incrementally update drivers.
-  if (isDriver(pin)) {
-    PinSet *drvrs = net_drvr_pin_map_[net];
-    if (drvrs)
-      drvrs->insert(pin);
-  }
   return pin;
 }
 
 void
 dbNetwork::disconnectPin(Pin *pin)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm)
+    dbITerm::disconnect(iterm);
+  else if (bterm)
+    bterm->disconnect();
+}
+
+void
+dbNetwork::disconnectPinBefore(Pin *pin)
 {
   Net *net = this->net(pin);
   // Incrementally update drivers.
@@ -1123,14 +1136,6 @@ dbNetwork::disconnectPin(Pin *pin)
     if (drvrs)
       drvrs->erase(pin);
   }
-
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  staToDb(pin, iterm, bterm);
-  if (iterm)
-    dbITerm::disconnect(iterm);
-  else if (bterm)
-    bterm->disconnect();
 }
 
 void
