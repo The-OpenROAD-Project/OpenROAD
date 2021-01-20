@@ -35,7 +35,7 @@
 
 #pragma once
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -51,7 +51,7 @@ class Report;
 namespace ifp {
 
 using odb::dbDatabase;
-using ord::Logger;
+using utl::Logger;
 
 void
 initFloorplan(double die_lx,

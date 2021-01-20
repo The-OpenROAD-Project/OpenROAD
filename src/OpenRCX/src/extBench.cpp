@@ -970,8 +970,7 @@ uint extRCModel::netWiresBench(extMainOptions* opt,
            s.xMin(),
            s.yMin(),
            s.xMax(),
-           s.yMax(),
-           boxCnt);
+           s.yMax());
 
     if (boxCnt == 0)
       return 0;

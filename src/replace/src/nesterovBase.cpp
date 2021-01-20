@@ -36,7 +36,7 @@
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "fft.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 #include <iostream>
 #include <random>
@@ -47,7 +47,7 @@
 
 namespace gpl {
 
-using ord::GPL;
+using utl::GPL;
 
 using namespace std;
 using namespace odb;
@@ -578,7 +578,7 @@ BinGrid::setPlacerBase(const std::shared_ptr<PlacerBase> pb) {
 }
 
 void
-BinGrid::setLogger(ord::Logger* log) {
+BinGrid::setLogger(utl::Logger* log) {
   log_ = log;
 }
 
@@ -943,7 +943,7 @@ NesterovBase::NesterovBase()
 NesterovBase::NesterovBase(
     NesterovBaseVars nbVars, 
     std::shared_ptr<PlacerBase> pb,
-    ord::Logger* log)
+    utl::Logger* log)
   : NesterovBase() {
   nbVars_ = nbVars;
   pb_ = pb;

@@ -11,28 +11,13 @@ Notice 0: Design: multi_height_multi_port_rails
 Notice 0:     Created 3 components and 6 component-terminals.
 Notice 0: Finished DEF file: multi_height05.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances             3
-multi row instances         2
-fixed instances             0
-nets                        0
-design area            1601.5 u^2
-fixed area                0.0 u^2
-movable area             22.5 u^2
-utilization                 1 %
-utilization padded          1 %
-rows                        5
-row height                2.7 u
-max height                  3 rows
-
 Placement Analysis
---------------------------------
-total displacement        5.4 u
-average displacement      1.8 u
-max displacement          3.3 u
-original HPWL             0.0 u
-legalized HPWL            0.0 u
-delta HPWL                  0 %
+---------------------------------
+total displacement          5.4 u
+average displacement        1.8 u
+max displacement            3.3 u
+original HPWL               0.0 u
+legalized HPWL              0.0 u
+delta HPWL                    0 %
 
 No differences found.

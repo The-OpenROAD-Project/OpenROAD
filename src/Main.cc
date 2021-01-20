@@ -57,7 +57,7 @@
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.h" 
+#include "utility/Logger.h" 
 #include "gui/gui.h"
 
 using std::string;
@@ -101,7 +101,7 @@ main(int argc,
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
-    return gui::start_gui(cmd_argc, cmd_argv);
+    return gui::startGui(cmd_argc, cmd_argv);
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -227,7 +227,7 @@ showUsage(const char *prog,
 static void
 showSplash()
 {
-  ord::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
+  utl::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
   string sha = OPENROAD_GIT_SHA1;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,

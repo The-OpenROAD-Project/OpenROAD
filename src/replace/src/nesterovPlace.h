@@ -38,7 +38,7 @@
 #include <memory>
 #include <vector>
 
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -86,7 +86,7 @@ public:
       std::shared_ptr<PlacerBase> pb,
       std::shared_ptr<NesterovBase> nb,
       std::shared_ptr<RouteBase> rb,
-      ord::Logger* log);
+      utl::Logger* log);
   ~NesterovPlace();
 
   void doNesterovPlace();
@@ -111,10 +111,14 @@ public:
 
   void updateDb();
 
+  float getWireLengthCoefX() const { return wireLengthCoefX_; }
+  float getWireLengthCoefY() const { return wireLengthCoefY_; }
+  float getDensityPenalty() const { return densityPenalty_; }
+
 private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
-  ord::Logger* log_;
+  utl::Logger* log_;
   std::shared_ptr<RouteBase> rb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;

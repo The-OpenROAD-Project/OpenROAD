@@ -38,7 +38,7 @@
 #include <limits>
 
 #include "opendp/Opendp.h"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 
 namespace dpl {
 
@@ -48,7 +48,7 @@ using std::vector;
 
 using odb::dbPlacementStatus;
 
-using ord::DPL;
+using utl::DPL;
 
 bool
 Opendp::checkPlacement(bool verbose)
@@ -78,7 +78,7 @@ Opendp::checkPlacement(bool verbose)
     if (!isPlaced(&cell))
       placed_failures.push_back(&cell);
     // Overlap check
-    if (checkOverlap(cell, grid) != nullptr)
+    if (checkOverlap(cell, grid))
       overlap_failures.push_back(&cell);
   }
 
@@ -219,7 +219,7 @@ Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
     for (int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
       const Cell *pixel_cell = pixel.cell;
-      if (pixel_cell != nullptr) {
+      if (pixel_cell) {
         if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;
         }
@@ -243,15 +243,13 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
   bool padded = havePadding() && isOverlapPadded(cell1, cell2);
   int x_ll1, x_ur1, y_ll1, y_ur1;
   int x_ll2, x_ur2, y_ll2, y_ur2;
+  initialLocation(cell1, padded, &x_ll1, &y_ll1);
+  initialLocation(cell2, padded, &x_ll2, &y_ll2);
   if (padded) {
-    initialPaddedLocation(cell1, &x_ll1, &y_ll1);
-    initialPaddedLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + paddedWidth(cell1);
     x_ur2 = x_ll2 + paddedWidth(cell2);
   }
   else {
-    initialLocation(cell1, &x_ll1, &y_ll1);
-    initialLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + cell1->width_;
     x_ur2 = x_ll2 + cell2->width_;
   }

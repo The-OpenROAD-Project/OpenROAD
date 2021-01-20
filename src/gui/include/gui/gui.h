@@ -56,12 +56,12 @@ class Descriptor
   virtual std::string getLocation(void* object) const = 0;
   virtual bool getBBox(void* object, odb::Rect& bbox) const = 0;
 
-  // If the selectFlag is false, the drawing will happen in highlight mode.
+  // If the select_flag is false, the drawing will happen in highlight mode.
   // Highlight shapes are persistent which will not get removed from
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   virtual void highlight(void* object,
                          Painter& painter,
-                         bool selectFlag = true) const = 0;
+                         bool select_flag = true) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -75,7 +75,7 @@ class OpenDbDescriptor : public Descriptor
 
   void highlight(void* object,
                  Painter& painter,
-                 bool selectFlag) const override;
+                 bool select_flag) const override;
 
   static OpenDbDescriptor* get();
 
@@ -111,9 +111,9 @@ class Selected
     return descriptor_->getBBox(object_, bbox);
   }
 
-  void highlight(Painter& painter, bool selectFlag = true) const
+  void highlight(Painter& painter, bool select_flag = true) const
   {
-    return descriptor_->highlight(object_, painter, selectFlag);
+    return descriptor_->highlight(object_, painter, select_flag);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -173,7 +173,7 @@ class Painter
 
   // The color to highlight in
   static inline const Color highlight = yellow;
-  static inline const Color persistHighlight = cyan;
+  static inline const Color persist_highlight = cyan;
 
   virtual ~Painter() = default;
 
@@ -244,26 +244,26 @@ class Gui
  public:
   // Registered renderers must remain valid until they are
   // unregistered.
-  void register_renderer(Renderer* renderer);
-  void unregister_renderer(Renderer* renderer);
+  void registerRenderer(Renderer* renderer);
+  void unregisterRenderer(Renderer* renderer);
 
   // Add a net to the selection set
   void addSelectedNet(const char* name);
 
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
-                       bool matchCase = true,
-                       bool matchRegEx = false,
-                       bool addToHighlightSet = false);
+                       bool match_case = true,
+                       bool match_regex = false,
+                       bool add_to_highlight_set = false);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
   // Add instances matching the pattern to the selection set
   void addSelectedInsts(const char* pattern,
-                        bool matchCase = true,
-                        bool matchRegEx = true,
-                        bool addToHighlightSet = false);
+                        bool match_case = true,
+                        bool match_regex = false,
+                        bool add_to_highlight_set = false);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -291,6 +291,6 @@ class Gui
 };
 
 // The main entry point
-int start_gui(int argc, char* argv[]);
+int startGui(int argc, char* argv[]);
 
 }  // namespace gui

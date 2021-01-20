@@ -34,11 +34,14 @@
 #include <map>
 #include <string>
 #include <utility>
+#include "utility/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/box.hpp>
 
 namespace fr {
+  using Logger = utl::Logger;
+  const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
   using frUInt4 = unsigned int;
@@ -266,12 +269,12 @@ namespace fr {
     ENDCAP_BOTTOMLEFT // ispd19
   };
 
-  // note: FlexPA hardcoded the cost, don't change here
+  // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
-    frcOnGridAP   = 0,
-    frcHalfGridAP = 1,
-    frcCenterAP   = 2,
-    frcEncOptAP   = 3
+    OnGridAP   = 0,
+    HalfGridAP = 1,
+    CenterAP   = 2,
+    EncOptAP   = 3
   };
 
   namespace bg  = boost::geometry;
@@ -290,6 +293,7 @@ namespace fr {
     frDebugSettings()
       : debugDR(false),
         debugMaze(false),
+        debugPA(false),
         gcellX(-1),
         gcellY(-1),
         iter(0)
@@ -298,7 +302,9 @@ namespace fr {
 
     bool debugDR;
     bool debugMaze;
+    bool debugPA;
     std::string netName;
+    std::string pinName;
     int gcellX;
     int gcellY;
     int iter;

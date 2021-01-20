@@ -5,10 +5,10 @@ read_lef Nangate45/Nangate45.lef
 read_def check_buffers.def
 
 create_clock -period 5 clk
+set_wire_rc -clock -layer metal5
 
-clock_tree_synthesis -lut_file "lut.txt" \
-                     -sol_list "sol_list.txt" \
-                     -root_buf CLKBUF_X3 \
+clock_tree_synthesis -root_buf CLKBUF_X3 \
+                     -buf_list CLKBUF_X3 \
                      -wire_unit 20 \
                      -post_cts_disable \
                      -sink_clustering_enable \

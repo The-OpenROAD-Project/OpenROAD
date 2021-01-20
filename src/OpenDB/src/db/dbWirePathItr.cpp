@@ -212,9 +212,14 @@ nextOpCode:
     case dbWireDecoder::JUNCTION:
     case dbWireDecoder::SHORT:
     case dbWireDecoder::VWIRE:
-    case dbWireDecoder::RECT:
       return false;
 
+    case dbWireDecoder::RECT: {
+      // order wires doesn't understand RECTs so just hide them for now
+      // they aren't required to establish connectivity in our flow
+      _opcode = _decoder.next();
+      goto nextOpCode;
+    }
     case dbWireDecoder::POINT: {
       int cur_x;
       int cur_y;

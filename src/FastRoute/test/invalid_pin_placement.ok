@@ -19,5 +19,5 @@ Grid origin: (0, 0)
 [INFO GRT-0005] #DB Obstacles: 910
 [INFO GRT-0006] #DB Macros: 0
 [INFO GRT-0017] Found 0 clock nets
-[ERROR GRT-0078] Pin clk does not have layer assignment
-GRT-0078
+[ERROR GRT-0093] Pin clk does not have layer assignment
+GRT-0093

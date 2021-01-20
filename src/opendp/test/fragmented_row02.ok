@@ -11,27 +11,13 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: fragmented_row02.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances             1
-multi row instances         0
-fixed instances             0
-nets                        2
-design area              16.5 u^2
-fixed area                0.0 u^2
-movable area              1.9 u^2
-utilization                11 %
-utilization padded         11 %
-rows                        2
-row height                1.4 u
-
 Placement Analysis
---------------------------------
-total displacement        0.4 u
-average displacement      0.4 u
-max displacement          0.4 u
-original HPWL            64.0 u
-legalized HPWL           65.0 u
-delta HPWL                  2 %
+---------------------------------
+total displacement          0.4 u
+average displacement        0.4 u
+max displacement            0.4 u
+original HPWL              64.0 u
+legalized HPWL             65.0 u
+delta HPWL                    2 %
 
 No differences found.

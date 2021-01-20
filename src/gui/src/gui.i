@@ -38,7 +38,7 @@
 %{
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
-#include "openroad/Logger.h"
+#include "utility/Logger.h"
 #include "gui/gui.h"
 %}
 
@@ -78,7 +78,7 @@ void zoom_to(double xlo, double ylo, double xhi, double yhi)
   auto gui = gui::Gui::get();
   auto db = ord::OpenRoad::openRoad()->getDb();
   auto logger = ord::OpenRoad::openRoad()->getLogger();
-  using ord::GUI;
+  using utl::GUI;
   if (!db) {
     logger->error(GUI, 1, "No database loaded");
   }

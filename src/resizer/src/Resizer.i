@@ -63,6 +63,8 @@ LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
                       Tcl_Interp *interp);
 
+typedef NetSeq TmpNetSeq;
+
 } // namespace
 
 using ord::getResizer;
@@ -79,6 +81,7 @@ using sta::RiseFall;
 using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
+using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
@@ -115,7 +118,7 @@ using rsz::Resizer;
   $1 = tclListSeqLibertyCell($input, interp);
 }
 
-%typemap(out) NetSeq* {
+%typemap(out) TmpNetSeq* {
   Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   NetSeq *nets = $1;
   NetSeq::Iterator net_iter(nets);
@@ -125,6 +128,18 @@ using rsz::Resizer;
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   delete nets;
+  Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) NetSeq* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  NetSeq *nets = $1;
+  NetSeq::Iterator net_iter(nets);
+  while (net_iter.hasNext()) {
+    Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
   Tcl_SetObjResult(interp, list);
 }
 
@@ -313,7 +328,7 @@ design_area()
   return resizer->designArea();
 }
 
-NetSeq *
+TmpNetSeq *
 find_floating_nets()
 {
   ensureLinked();
@@ -387,16 +402,17 @@ repair_hold_pin(Pin *end_pin,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations);
+  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations, 0.2);
 }
 
 void
 repair_hold(float slack_margin,
-            bool allow_setup_violations)
+            bool allow_setup_violations,
+            float max_buffer_percent)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(slack_margin, allow_setup_violations);
+  resizer->repairHold(slack_margin, allow_setup_violations, max_buffer_percent);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -417,6 +433,37 @@ report_long_wires_cmd(int count,
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->reportLongWires(count, digits);
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+resize_slack_preamble()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resizeSlackPreamble();
+}
+
+void
+find_resize_slacks()
+{
+  Resizer *resizer = getResizer();
+  resizer->findResizeSlacks();
+}
+
+NetSeq *
+resize_worst_slack_nets()
+{
+  Resizer *resizer = getResizer();
+  return &resizer->resizeWorstSlackNets();
+}
+
+float
+resize_net_slack(Net *net)
+{
+  Resizer *resizer = getResizer();
+  return resizer->resizeNetSlack(net);
 }
 
 ////////////////////////////////////////////////////////////////
