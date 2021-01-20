@@ -12,27 +12,13 @@ Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: fragmented_row04.def
 [WARNING DPL-0004] Placed in rows check failed (1).
-Design Stats
---------------------------------
-total instances             1
-multi row instances         0
-fixed instances             0
-nets                        4
-design area              34.0 u^2
-fixed area                0.0 u^2
-movable area              1.9 u^2
-utilization                 5 %
-utilization padded          5 %
-rows                        4
-row height                1.4 u
-
 Placement Analysis
---------------------------------
-total displacement        1.4 u
-average displacement      1.4 u
-max displacement          1.4 u
-original HPWL            16.2 u
-legalized HPWL           13.7 u
-delta HPWL                -16 %
+---------------------------------
+total displacement          1.4 u
+average displacement        1.4 u
+max displacement            1.4 u
+original HPWL              16.2 u
+legalized HPWL             13.7 u
+delta HPWL                  -16 %
 
 No differences found.

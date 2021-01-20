@@ -77,29 +77,6 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 [INFO GRT-0012] #Antenna violations: 13
 [INFO GRT-0011] 6676 filler cells deleted
-Design Stats
---------------------------------
-total instances          1224
-multi row instances         0
-fixed instances          1011
-nets                      264
-design area           78411.1 u^2
-fixed area             2597.4 u^2
-movable area           2605.4 u^2
-utilization                 3 %
-utilization padded          6 %
-rows                       84
-row height                3.3 u
-
-Placement Analysis
---------------------------------
-total displacement       12.0 u
-average displacement      0.0 u
-max displacement          3.3 u
-original HPWL         16287.2 u
-legalized HPWL        16302.8 u
-delta HPWL                  0 %
-
 [INFO GRT-0015] 13 diodes inserted
 Min routing layer: 2
 Max routing layer: 6

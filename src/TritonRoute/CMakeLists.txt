@@ -81,6 +81,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/pa/FlexPA_init.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA_prep.cpp
+  ${FLEXROUTE_HOME}/src/pa/FlexPA_graphics.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_init.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp

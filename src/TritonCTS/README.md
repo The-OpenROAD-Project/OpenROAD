@@ -2,9 +2,11 @@
 TritonCTS 2.0 is the clock tree synthesis engine of The OpenROAD Project.
 
 ### Usage
-TritonCTS 2.0 is available under the OpenROAD app as ``clock_tree_synthesis`` command. There are currently two ways one can run this command.
-The first is if the user does not have a characterization file. TritonCTS 2.0 creates the wire segments manually based on the user parameters. 
-The following tcl snippet shows how to call TritonCTS and exporting a characterization file..
+TritonCTS 2.0 is available under the OpenROAD app as ``clock_tree_synthesis`` command.
+The following tcl snippet shows how to call TritonCTS. TritonCTS 2.0 performs on-the-fly characterization.
+Thus there is no need to generate characterization data. On-the-fly characterization feature could still
+be optionally controlled by parameters specified to cts_configure_characterization command.
+Use set_wire_rc command to set clock routing layer.
 
 ```
 read_lef "mylef.lef"
@@ -12,39 +14,39 @@ read_liberty "myliberty.lib"
 read_def "mydef.def"
 read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
+set_wire_rc -clock -layer metal5
 
 report_checks
+cts_configure_characterization [-max_slew <max_slew>] \
+                               [-max_cap <max_cap>] \
+                               [-slew_inter <slew_inter>] \
+                               [-cap_inter <cap_inter>]
 
 clock_tree_synthesis -buf_list <list_of_buffers> \
-                     -sqr_cap <cap_per_sqr> \
-                     -sqr_res <res_per_sqr> \
                      [-root_buf <root_buf>] \
-                     [-max_slew <max_slew>] \
-                     [-max_cap <max_cap>] \
-                     [-slew_inter <slew_inter>] \
-                     [-cap_inter <cap_inter>] \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] \
                      [-out_path <lut_path>] \
-                     [-characterization_only] \
                      [-post_cts_disable] \
                      [-distance_between_buffers] \
                      [-branching_point_buffers_distance] \
                      [-clustering_exponent] \
-                     [-clustering_unbalance_ratio] 
+                     [-clustering_unbalance_ratio] \
+                     [-sink_clustering_enable] \
+                     [-sink_clustering_size <cluster_size>] \
+                     [-sink_clustering_max_diameter <max_diameter>]
+
 
 write_def "final.def"
 ```
 Argument description:
 - ``-buf_list`` are the master cells (buffers) that will be considered when making the wire segments.
-- ``-sqr_cap`` is the capacitance (in picofarad) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
-- ``-sqr_res`` is the resistance (in ohm) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
 - ``-root_buffer`` is the master cell of the buffer that serves as root for the clock tree. 
 If this parameter is omitted, the first master cell from ``-buf_list`` is taken.
 - ``-max_slew`` is the max slew value (in seconds) that the characterization will test. 
-If this parameter is omitted, the code tries to obtain the value from the liberty file.
+If this parameter is omitted, the code would use max slew value for specified buffer in buf_list from liberty file.
 - ``-max_cap`` is the max capacitance value (in farad) that the characterization will test. 
-If this parameter is omitted, the code tries to obtain the value from the liberty file.
+If this parameter is omitted, the code would use max cap value for specified buffer in buf_list from liberty file.
 - ``-slew_inter`` is the time value (in seconds) that the characterization will consider for results. 
 If this parameter is omitted, the code gets the default value (5.0e-12). Be careful that this value can be quite low for bigger technologies (>65nm).
 - ``-cap_inter`` is the capacitance value (in farad) that the characterization will consider for results. 
@@ -54,40 +56,14 @@ If this parameter is omitted, the code gets the value from ten times the height 
 - ``-clk_nets`` is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``-out_path`` is the output path (full) that the lut.txt and sol_list.txt files will be saved. This is used to load an existing characterization, without creating one from scratch.
-- ``-characterization_only`` is a flag that, when specified, makes so that only the library characterization step is run and no clock tree is inserted in the design.
 - ``-post_cts_disable`` is a flag that, when specified, disables the post-processing operation for outlier sinks (buffer insertion on 10% of the way between source and sink). 
 - ``-distance_between_buffers`` is the distance (in micron) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT.
 - ``-branching_point_buffers_distance`` is the distance (in micron) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the ``-distance_between_buffers`` value to be set.
 - ``-clustering_exponent`` is a value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. If this parameter is omitted, the code gets the default value (4).
 - ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have extacly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
-
-Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
-
-```
-read_lef "mylef.lef"
-read_liberty "myliberty.lib"
-read_def "mydef.def"
-read_verilog "myverilog.v"
-read_sdc "mysdc.sdc"
-
-report_checks
-
-clock_tree_synthesis -lut_file <lut_file> \
-                     -sol_list <sol_list_file> \
-                     -root_buf <root_buf> \
-                     [-wire_unit <wire_unit>] \
-                     [-clk_nets <list_of_clk_nets>] 
-
-write_def "final.def"
-```
-Argument description:
-- ``-lut_file`` is the file containing delay, power and other metrics for each segment.
-- ``-sol_list`` is the file containing the information on the topology of each segment (wirelengths and buffer masters).
-- ``-sqr_res`` is the resistance (in ohm) per database units to be used in the wire segments. 
-- ``-root_buffer`` is the master cell of the buffer that serves as root for the clock tree. 
-If this parameter is omitted, you can use the ``-buf_list`` argument, using the first master cell. If both arguments are omitted, an error is raised.
-- ``-wire_unit`` is the minimum unit distance between buffers for a specific wire, based on your ``-lut_file``. 
-If this parameter is omitted, the code gets the value from the header of the ``-lut_file``. For the old technology characterization, described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md), this argument is mandatory, and omitting it raises an error.
+- ``-sink_clustering_enable`` enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure.
+- ``-sink_clustering_size`` specifies the maximum number of sinks per cluster. Default value is 50.
+- ``sink_clustering_max_diameter`` specifies maximum diameter (in micron) of sink cluster.  The default value is 20.
 - ``-clk_nets`` is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 
@@ -101,11 +77,11 @@ read_def "mydef.def"
 read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
 
+set_wire_rc -clock -layer metal5
 report_checks
 
-clock_tree_synthesis -lut_file "lut.txt" \
-                     -sol_list "sol_list.txt" \
-                     -root_buf "BUF_X4" \
+clock_tree_synthesis -root_buf "BUF_X4" \
+                     -buf_list "BUF_X4" \
                      -wire_unit 20 
 
 report_cts [-out_file "file.txt"]

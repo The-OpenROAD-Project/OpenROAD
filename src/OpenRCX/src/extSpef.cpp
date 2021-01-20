@@ -1822,7 +1822,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
     }
   }
   if (excmaster.size())
-    odb::notice(0, "%d cells are excluded from write_spef\n", excmaster.size());
+    odb::notice(0, "%lu cells are excluded from write_spef\n", excmaster.size());
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
     if (strcmp("PF", capUnit) == 0) {
       _cap_unit = 0.001;
