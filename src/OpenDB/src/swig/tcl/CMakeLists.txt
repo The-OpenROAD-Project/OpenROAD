@@ -20,6 +20,7 @@ target_link_libraries(opendbtcl
         opendb
         utility
         tcl
+        cdl
 	${Boost_LIBRARIES}
 )
 

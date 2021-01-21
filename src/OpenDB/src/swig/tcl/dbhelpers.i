@@ -14,8 +14,13 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
+#include "cdl.h"
 #include "utility/Logger.h"
 
+bool 
+dump_netlist(odb::dbBlock* block, const char* path, int includeFillers){
+  return cdl::dumpNetLists(block, path, includeFillers); 
+}
 
 int
 write_lef(odb::dbLib* lib, const char* path) {
@@ -63,6 +68,9 @@ write_db(odb::dbDatabase* db, const char* db_path)
 }
 
 %}
+
+bool 
+dump_netlist(odb::dbBlock* block, const char* path, int includeFillers);
 
 int
 write_lef(odb::dbLib* lib, const char* path);
