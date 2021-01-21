@@ -87,16 +87,16 @@ BOOST_AUTO_TEST_CASE(test_group_default)
   BOOST_TEST (block->getGroups().size()==4);
   BOOST_TEST (block->findGroup("group")==nullptr);
 
-  TEST_OBJECT_EQUAL(domain->getBox(),Rect(0,0,100,100));
+  BOOST_TEST((domain->getBox() == Rect(0,0,100,100)));
   BOOST_TEST(domain->hasBox());
   BOOST_TEST(!child1->hasBox());
   domain->setBox(Rect(2,2,50,50));
-  TEST_OBJECT_EQUAL(domain->getBox(),Rect(2,2,50,50));
+  BOOST_TEST((domain->getBox() == Rect(2,2,50,50)));
   
-  TEST_ENUM_EQUAL(child1->getType(),dbGroup::PHYSICAL_CLUSTER);
-  TEST_ENUM_EQUAL(domain->getType(),dbGroup::VOLTAGE_DOMAIN);
+  BOOST_TEST(child1->getType() == dbGroup::PHYSICAL_CLUSTER);
+  BOOST_TEST(domain->getType() == dbGroup::VOLTAGE_DOMAIN);
   domain->setType(dbGroup::PHYSICAL_CLUSTER);
-  TEST_ENUM_EQUAL(domain->getType(),dbGroup::PHYSICAL_CLUSTER);
+  BOOST_TEST(domain->getType() == dbGroup::PHYSICAL_CLUSTER);
 
 }
 BOOST_AUTO_TEST_CASE(test_group_modinst)
