@@ -36,6 +36,10 @@
 
 #include <list>
 
+namespace utl {
+  class Logger;
+}
+
 namespace LefDefParser {
 class lefiArray;
 struct lefiNoiseMargin;
@@ -77,28 +81,29 @@ using namespace LefDefParser;
 
 class lefin
 {
-  dbDatabase* _db;
-  dbTech*     _tech;
-  dbLib*      _lib;
-  dbMaster*   _master;
-  bool        _create_tech;
-  bool        _create_lib;
-  bool        _skip_obstructions;
-  char        _left_bus_delimeter;
-  char        _right_bus_delimeter;
-  char        _hier_delimeter;
-  int         _layer_cnt;
-  int         _master_cnt;
-  int         _via_cnt;
-  int         _errors;
-  int         _lef_units;
-  const char* _lib_name;
-  double      _dist_factor;
-  double      _area_factor;
-  int         _dbu_per_micron;
-  bool        _override_lef_dbu;
-  bool        _master_modified;
-  bool        _ignore_non_routing_layers;
+  dbDatabase*  _db;
+  dbTech*      _tech;
+  dbLib*       _lib;
+  dbMaster*    _master;
+  utl::Logger* _logger;
+  bool         _create_tech;
+  bool         _create_lib;
+  bool         _skip_obstructions;
+  char         _left_bus_delimeter;
+  char         _right_bus_delimeter;
+  char         _hier_delimeter;
+  int          _layer_cnt;
+  int          _master_cnt;
+  int          _via_cnt;
+  int          _errors;
+  int          _lef_units;
+  const char*  _lib_name;
+  double       _dist_factor;
+  double       _area_factor;
+  int          _dbu_per_micron;
+  bool         _override_lef_dbu;
+  bool         _master_modified;
+  bool         _ignore_non_routing_layers;
 
   void init();
   void setDBUPerMicron(int dbu);
@@ -202,7 +207,7 @@ class lefin
   void warning(const char* msg);
   void lineNumber(int lineNo);
 
-  lefin(dbDatabase* db, bool ignore_non_routing_layers);
+  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
   ~lefin();
 
   // Skip macro-obstructions in the lef file.
@@ -247,6 +252,7 @@ class lefin
 
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
+
 };
 
 }  // namespace odb

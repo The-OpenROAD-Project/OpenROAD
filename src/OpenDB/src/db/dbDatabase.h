@@ -35,6 +35,10 @@
 #include "dbCore.h"
 #include "odb.h"
 
+namespace utl{
+  class Logger;
+}
+
 namespace odb {
 
 //
@@ -98,12 +102,15 @@ class _dbDatabase : public _dbObject
   dbPropertyItr*        _prop_itr;
   int                   _unique_id;
 
-  char* _file;
+  char*        _file;
+  utl::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);
   _dbDatabase(_dbDatabase* db, const _dbDatabase& d);
   ~_dbDatabase();
+
+  inline utl::Logger* getLogger() const { return _logger; }
 
   bool operator==(const _dbDatabase& rhs) const;
   bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }

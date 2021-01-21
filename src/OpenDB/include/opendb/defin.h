@@ -35,6 +35,9 @@
 #include <vector>
 
 #include "odb.h"
+namespace utl{
+  class Logger;
+}
 
 namespace odb {
 
@@ -49,8 +52,9 @@ class defin
 {
   definReader* _reader;
 
+
  public:
-  defin(dbDatabase* db);
+  defin(dbDatabase* db, utl::Logger* logger);
   ~defin();
 
   void skipWires();

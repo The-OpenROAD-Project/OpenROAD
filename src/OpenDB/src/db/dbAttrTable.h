@@ -48,8 +48,8 @@ template <typename T>
 class dbAttrTable
 {
  public:
-  static const uint PAGE_SIZE;
-  static const uint PAGE_SHIFT;
+  static const uint page_size;
+  static const uint page_shift;
   unsigned int      _page_cnt;
   T**               _pages;
 
@@ -72,7 +72,7 @@ class dbAttrTable
     // Pages are not created util the prop-list is being set.
     // This approach allows objects to test for properties without populating
     // pages. (which would populate the table).
-    unsigned int page = (id & ~(PAGE_SIZE - 1)) >> PAGE_SHIFT;
+    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
 
     if (page >= _page_cnt)  // Page not present...
       return T();
@@ -80,15 +80,15 @@ class dbAttrTable
     if (_pages[page] == NULL)  // Page not present
       return T();
 
-    unsigned int offset = id & (PAGE_SIZE - 1);
+    unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
 
   void setAttr(uint id, T attr)
   {
-    unsigned int page   = (id & ~(PAGE_SIZE - 1)) >> PAGE_SHIFT;
+    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
     T*           pg     = getPage(page);
-    unsigned int offset = id & (PAGE_SIZE - 1);
+    unsigned int offset = id & (page_size - 1);
     pg[offset]          = attr;
   }
 
@@ -120,12 +120,12 @@ class dbAttrTable
       resizePageTable(page);
 
     if (_pages[page] == NULL) {
-      _pages[page] = new T[PAGE_SIZE];
+      _pages[page] = new T[page_size];
       ZALLOCATED(_pages[page]);
 
       uint i;
 
-      for (i = 0; i < PAGE_SIZE; ++i)
+      for (i = 0; i < page_size; ++i)
         _pages[page][i] = 0U;
     }
 
@@ -159,9 +159,9 @@ class dbAttrTable
 };
 
 template <typename T>
-const uint dbAttrTable<T>::PAGE_SIZE = 32;
+const uint dbAttrTable<T>::page_size = 32;
 template <typename T>
-const uint dbAttrTable<T>::PAGE_SHIFT = 5;
+const uint dbAttrTable<T>::page_shift = 5;
 
 template <typename T>
 inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
@@ -170,7 +170,7 @@ inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
     return false;
 
   uint i;
-  uint n = _page_cnt * PAGE_SIZE;
+  uint n = _page_cnt * page_size;
 
   for (i = 0; i < n; ++i)
     if (getAttr(i) != rhs.getAttr(i))
@@ -184,8 +184,8 @@ inline void dbAttrTable<T>::differences(dbDiff&               diff,
                                         const char*           field,
                                         const dbAttrTable<T>& rhs) const
 {
-  uint sz1 = _page_cnt * PAGE_SIZE;
-  uint sz2 = rhs._page_cnt * PAGE_SIZE;
+  uint sz1 = _page_cnt * page_size;
+  uint sz2 = rhs._page_cnt * page_size;
   uint i   = 0;
 
   for (; i < sz1 && i < sz2; ++i) {
@@ -226,7 +226,7 @@ inline void dbAttrTable<T>::out(dbDiff&     diff,
                                 char        side,
                                 const char* field) const
 {
-  uint sz1 = _page_cnt * PAGE_SIZE;
+  uint sz1 = _page_cnt * page_size;
   uint i   = 0;
 
   for (; i < sz1; ++i) {
@@ -251,7 +251,7 @@ inline dbOStream& operator<<(dbOStream& stream, const dbAttrTable<T>& t)
 
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::PAGE_SIZE; ++j)
+      for (j = 0; j < dbAttrTable<T>::page_size; ++j)
         stream << t._pages[i][j];
     }
   }
@@ -281,11 +281,11 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
     if (p == 0U)
       t._pages[i] = NULL;
     else {
-      t._pages[i] = new T[dbAttrTable<T>::PAGE_SIZE];
+      t._pages[i] = new T[dbAttrTable<T>::page_size];
       ZALLOCATED(t._pages[i]);
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::PAGE_SIZE; j++)
+      for (j = 0; j < dbAttrTable<T>::page_size; j++)
         stream >> t._pages[i][j];
     }
   }

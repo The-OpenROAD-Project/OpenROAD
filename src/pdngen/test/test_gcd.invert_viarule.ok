@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  NangateOpenCellLibrary.invert_viarule.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  NangateOpenCellLibrary.invert_viarule.lef
-Notice 0: 
-Reading DEF file: gcd/floorplan.def
-Notice 0: Design: gcd
-Notice 0:     Created 54 pins.
-Notice 0:     Created 482 components and 2074 component-terminals.
-Notice 0:     Created 385 nets and 1110 connections.
-Notice 0: Finished DEF file: gcd/floorplan.def
+[INFO ODB-0222] Reading LEF file: NangateOpenCellLibrary.invert_viarule.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  NangateOpenCellLibrary.invert_viarule.lef
+[INFO ODB-0127] Reading DEF file: gcd/floorplan.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[INFO ODB-0134] Finished DEF file: gcd/floorplan.def
 [INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
 [INFO] [PDNG-0016]   config: gcd/PDN.cfg
 [WARN] [PDNG-0035] No track information found for layer metal10
