@@ -61,6 +61,7 @@
 #include "dbTransform.h"
 #include "dbModule.h"
 #include "dbGroup.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -472,7 +473,7 @@ void dbInst::setOrigin(int x, int y)
   setInstBBox(inst);
 
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: setOrigin %d, %d\n", x, y);
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: setOrigin {}, {}", x, y);
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(inst->getObjectType());
     block->_journal->pushParam(inst->getId());
@@ -546,7 +547,7 @@ void dbInst::setOrient(dbOrientType orient)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: setOrient %d\n", orient.getValue());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: setOrient {}", orient.getValue());
     block->_journal->updateField(this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
   }
 #endif
@@ -573,7 +574,7 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
   block->_flags._valid_bbox = 0;
 #ifdef FULL_ECO
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: setPlacementStatus %d\n", status.getValue());
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: setPlacementStatus {}", status.getValue());
     block->_journal->updateField(this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
   }
 #endif
@@ -634,7 +635,7 @@ void dbInst::setLevel(uint v, bool fromPI)
 {
   _dbInst* inst = (_dbInst*) this;
   if (v > 255) {
-    notice(0, "setLevel %d greater than 255 is illegal! inst %d\n", v, getId());
+    getImpl()->getLogger()->info(utl::ODB, 36, "setLevel {} greater than 255 is illegal! inst {}", v, getId());
     return;
   }
   inst->_flags._level       = v;
@@ -988,7 +989,7 @@ bool dbInst::resetHierarchy(bool verbose)
 
   if (inst->_hierarchy) {
     if (verbose)
-      notice(0, "instance bound to a block %d\n", inst->_hierarchy.id());
+      getImpl()->getLogger()->info(utl::ODB, 37, "instance bound to a block {}", inst->_hierarchy.id());
     inst->_hierarchy = 0;
     return true;
   }
@@ -1008,9 +1009,9 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (inst->_hierarchy) {
-    warning(0, "instance already bound to a block %d\n", inst->_hierarchy.id());
+    getImpl()->getLogger()->warn(utl::ODB, 38, "instance already bound to a block {}", inst->_hierarchy.id());
     if (force) {
-      warning(0, "Forced Initialize to 0\n");
+      getImpl()->getLogger()->warn(utl::ODB, 39, "Forced Initialize to 0");
       inst->_hierarchy = 0;
     } else {
       return false;
@@ -1018,10 +1019,9 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   }
 
   if (block->_parent_inst) {
-    warning(
-        0, "block already bound to an instance %d\n", block->_parent_inst.id());
+    getImpl()->getLogger()->warn(utl::ODB, 40, "block already bound to an instance {}", block->_parent_inst.id());
     if (force) {
-      warning(0, "Forced Initialize to 0\n");
+      getImpl()->getLogger()->warn(utl::ODB, 41, "Forced Initialize to 0");
       block->_parent_inst = 0;
     } else {
       return false;
@@ -1029,7 +1029,7 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   }
 
   if (block_->getParent() != getBlock()) {
-    warning(0, "block not a direct child of instance owner\n");
+    getImpl()->getLogger()->warn(utl::ODB, 42, "block not a direct child of instance owner");
     return false;
   }
 
@@ -1037,7 +1037,7 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
 
   // _dbHier::create fails if bterms cannot be mapped (1-to-1) to mterms
   if (hier == NULL) {
-    warning(0, "_dbHier::create fails\n");
+    getImpl()->getLogger()->warn(utl::ODB, 43, "_dbHier::create fails");
     return false;
   }
   return true;
@@ -1148,8 +1148,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   dbMaster* old_master_ = getMaster();
 
   if (inst->_hierarchy) {
-    notice(0,
-           "Failed(_hierarchy) to swap: %s -> %s %s\n",
+    getImpl()->getLogger()->warn(utl::ODB, 44,
+           "Failed(_hierarchy) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
            this->getConstName());
@@ -1157,7 +1157,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   }
 
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: swapMaster\n");
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: swapMaster");
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->_journal->beginAction(dbJournal::SWAP_OBJECT);
@@ -1194,8 +1194,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     old_terms.push_back((_dbMTerm*) *itr);
 
   if (old_terms.size() != new_terms.size()) {
-    notice(0,
-           "Failed(termSize) to swap: %s -> %s %s\n",
+    getImpl()->getLogger()->warn(utl::ODB, 45,
+           "Failed(termSize) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
            this->getConstName());
@@ -1220,8 +1220,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // mterms are not equivalent
   if (i1 != new_terms.end() || i2 != old_terms.end()) {
-    notice(0,
-           "Failed(mtermEquiv) to swap: %s -> %s %s\n",
+    getImpl()->getLogger()->warn(utl::ODB, 46,
+           "Failed(mtermEquiv) to swap: {} -> {} {}",
            oldMasterName,
            newMasterName,
            this->getConstName());
@@ -1301,7 +1301,7 @@ dbInst* dbInst::create(dbBlock*    block_,
     return NULL;
 
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: dbInst:create\n");
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbInst:create");
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
@@ -1413,7 +1413,7 @@ void dbInst::destroy(dbInst* inst_)
   //        dbInstHdr::destroy( (dbInstHdr *) inst_hdr );
 
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: dbInst:destroy\n");
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbInst:destroy");
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
     block->_journal->pushParam(inst->getId());
@@ -1488,7 +1488,7 @@ dbITerm* dbInst::getFirstOutput()
 
     return tr;
   }
-  warning(0, "instance %s has no output pin\n", getConstName());
+  getImpl()->getLogger()->warn(utl::ODB, 47, "instance {} has no output pin", getConstName());
   return NULL;
 }
 

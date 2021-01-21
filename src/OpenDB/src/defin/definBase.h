@@ -40,6 +40,10 @@
 #include "dbTypes.h"
 #include "geom.h"
 
+namespace utl{
+  class Logger;
+}
+
 namespace odb {
 
 class dbBlock;
@@ -50,6 +54,7 @@ class definBase
  public:
   dbTech*  _tech;
   dbBlock* _block;
+  utl::Logger* _logger;
   int      _errors;
   int      _dist_factor;
 
@@ -57,6 +62,7 @@ class definBase
   virtual ~definBase() {}
   void         setTech(dbTech* tech);
   void         setBlock(dbBlock* block);
+  void         setLogger(utl::Logger* logger);
   void         units(int d);
   virtual void init();
 
