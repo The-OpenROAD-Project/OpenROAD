@@ -36,9 +36,9 @@
 
 namespace odb {
 
-defin::defin(dbDatabase* db)
+defin::defin(dbDatabase* db,utl::Logger* logger)
 {
-  _reader = new definReader(db);
+  _reader = new definReader(db, logger);
 }
 
 defin::~defin()

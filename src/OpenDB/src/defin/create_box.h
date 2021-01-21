@@ -34,6 +34,9 @@
 
 #include "odb.h"
 #include "db.h"
+namespace utl{
+    class Logger;
+}
 
 namespace odb {
 
@@ -48,7 +51,8 @@ void create_box(dbSWire*        wire,
                 int             cur_y,
                 int             cur_ext,
                 bool            has_cur_ext,
-                int             width);
+                int             width,
+                utl::Logger*    logger);
 
 dbTechLayer* create_via_array(dbSWire*        wire,
                               dbWireShapeType type,
@@ -59,7 +63,8 @@ dbTechLayer* create_via_array(dbSWire*        wire,
                               int             numX,
                               int             numY,
                               int             stepX,
-                              int             stepY);
+                              int             stepY,
+                              utl::Logger*    logger);
 
 dbTechLayer* create_via_array(dbSWire*        wire,
                               dbWireShapeType type,
@@ -70,6 +75,7 @@ dbTechLayer* create_via_array(dbSWire*        wire,
                               int             numX,
                               int             numY,
                               int             stepX,
-                              int             stepY);
+                              int             stepY,
+                              utl::Logger*    logger);
 
 }  // namespace odb

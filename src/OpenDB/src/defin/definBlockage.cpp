@@ -39,6 +39,7 @@
 #include "definBlockage.h"
 #include "definPolygon.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definBlockage::definBlockage()
@@ -68,7 +69,7 @@ void definBlockage::blockageRoutingBegin(const char* layer)
   _effective_width     = 0;
 
   if (_layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer);
+    _logger->warn(utl::ODB, 88,  "error: undefined layer ({}) referenced", layer);
     ++_errors;
   }
 }
@@ -78,7 +79,7 @@ void definBlockage::blockageRoutingComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    notice(0, "error: undefined component (%s) referenced\n", comp);
+    _logger->warn(utl::ODB, 89,  "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -190,7 +191,7 @@ void definBlockage::blockagePlacementComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    notice(0, "error: undefined component (%s) referenced\n", comp);
+    _logger->warn(utl::ODB, 90,  "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -210,9 +211,8 @@ void definBlockage::blockagePlacementMaxDensity(double max_density)
   if (max_density >= 0 && max_density <= 100) {
     _max_density = max_density;
   } else {
-    notice(0,
-           "warning: Blockage max density %f not in [0, 100] will be ignored\n",
-           max_density);
+    _logger->warn(utl::ODB, 91, 
+"warning: Blockage max density {} not in [0, 100] will be ignored",max_density);
   }
 }
 
