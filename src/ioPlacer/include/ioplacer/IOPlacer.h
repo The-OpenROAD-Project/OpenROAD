@@ -105,7 +105,7 @@ struct Constraint
   }
 };
 
-typedef std::set<std::string> Group;
+typedef std::vector<std::string> Group;
 
 class IOPlacer
 {

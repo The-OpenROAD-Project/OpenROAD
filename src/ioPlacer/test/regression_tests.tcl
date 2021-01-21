@@ -18,4 +18,5 @@ record_tests {
   add_constraint5
   group_pins1
   group_pins2
+  group_pins_fail1
 }

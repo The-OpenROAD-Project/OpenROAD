@@ -53,16 +53,22 @@ void Netlist::addIONet(const IOPin& io_pin,
   net_pointer_.push_back(inst_pins_.size());
 }
 
-void Netlist::createIOGroup(const std::set<std::string>& pin_list)
+int Netlist::createIOGroup(const std::vector<std::string>& pin_list)
 {
+  int pin_cnt = 0;
   std::set<int> pin_indices;
   for (std::string pin_name : pin_list) {
     int pin_idx = findIoPinByName(pin_name);
+    if (pin_idx < 0) {
+      return pin_cnt;
+    }
     io_pins_[pin_idx].inGroup();
     pin_indices.insert(pin_idx);
+    pin_cnt++;
   }
 
   io_groups_.push_back(pin_indices);
+  return pin_indices.size();
 }
 
 void Netlist::addIOGroup(const std::set<int>& pin_group)

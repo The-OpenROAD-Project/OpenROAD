@@ -788,7 +788,7 @@ void IOPlacer::setPinGroup(const char* names)
 
   Group group;
   for (std::string pin : pins) {
-    group.insert(pin);
+    group.push_back(pin);
   }
   groups_.push_back(group);
 }
@@ -1015,8 +1015,14 @@ void IOPlacer::initNetlist()
     netlist_.addIONet(io_pin, inst_pins);
   }
 
+  int group_idx = 0;
   for (Group pin_group : groups_) {
-    netlist_.createIOGroup(pin_group);
+    int group_created = netlist_.createIOGroup(pin_group); 
+    if(group_created == pin_group.size()) {
+      group_idx++;
+    } else {
+      logger_->error(PPL, 43, "Pin {} not found in group {}", pin_group[group_created], group_idx);
+    }
   }
 }
 
