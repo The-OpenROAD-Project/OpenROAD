@@ -11,8 +11,8 @@ BOOST_AUTO_TEST_CASE( test_oct )
 {
     Oct* oct = new Oct;
     oct->init(Point(0,0),Point(400,400),40);
-    TEST_OBJECT_EQUAL(oct->getCenterHigh(), Point(400,400));
-    TEST_OBJECT_EQUAL(oct->getCenterLow(), Point(0,0));
+    BOOST_TEST((oct->getCenterHigh() == Point(400,400)));
+    BOOST_TEST((oct->getCenterLow() == Point(0,0)));
     BOOST_TEST(oct->getWidth()==40);
     BOOST_TEST(oct->xMin()==-20);
     BOOST_TEST(oct->xMax()==420);
@@ -21,13 +21,13 @@ BOOST_AUTO_TEST_CASE( test_oct )
     BOOST_TEST(oct->dx()==440);
     BOOST_TEST(oct->dy()==440);
 
-    TEST_ENUM_EQUAL(oct->getDir(), Oct::OCT_DIR::RIGHT);
+    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
     oct->init(Point(0,0),Point(-400,400),40);
-    TEST_ENUM_EQUAL(oct->getDir(),Oct::OCT_DIR::LEFT);
+    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
     oct->init(Point(0,0),Point(-400,-400),40);
-    TEST_ENUM_EQUAL(oct->getDir(), Oct::OCT_DIR::RIGHT);
+    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::RIGHT);
     oct->init(Point(0,0),Point(400,-400),40);
-    TEST_ENUM_EQUAL(oct->getDir(), Oct::OCT_DIR::LEFT);
+    BOOST_TEST(oct->getDir() == Oct::OCT_DIR::LEFT);
 }
 BOOST_AUTO_TEST_CASE( test_geom_shape )
 {
@@ -42,15 +42,15 @@ BOOST_AUTO_TEST_CASE( test_geom_shape )
     //OCT POINTS
     std::vector<Point> points = shape->getPoints();
     BOOST_TEST(points.size()==9);
-    TEST_OBJECT_EQUAL(points[0], Point(-9,-20));
-    TEST_OBJECT_EQUAL(points[1], Point(9,-20));
-    TEST_OBJECT_EQUAL(points[2], Point(420,391));
-    TEST_OBJECT_EQUAL(points[3], Point(420,409));
-    TEST_OBJECT_EQUAL(points[4], Point(409,420));
-    TEST_OBJECT_EQUAL(points[5], Point(391,420));
-    TEST_OBJECT_EQUAL(points[6], Point(-20,9));
-    TEST_OBJECT_EQUAL(points[7], Point(-20,-9));
-    TEST_OBJECT_EQUAL(points[8], Point(-9,-20));
+    BOOST_TEST((points[0] == Point(-9,-20)));
+    BOOST_TEST((points[1] == Point(9,-20)));
+    BOOST_TEST((points[2] == Point(420,391)));
+    BOOST_TEST((points[3] == Point(420,409)));
+    BOOST_TEST((points[4] == Point(409,420)));
+    BOOST_TEST((points[5] == Point(391,420)));
+    BOOST_TEST((points[6] == Point(-20,9)));
+    BOOST_TEST((points[7] == Point(-20,-9)));
+    BOOST_TEST((points[8] == Point(-9,-20)));
 
     //RECT
     Rect rect(Point(0,0),Point(400,400));
@@ -64,11 +64,11 @@ BOOST_AUTO_TEST_CASE( test_geom_shape )
     //RECT POINTS
     points = shape->getPoints();
     BOOST_TEST(points.size()==5);
-    TEST_OBJECT_EQUAL(points[0], Point(0,0));
-    TEST_OBJECT_EQUAL(points[1], Point(400,0));
-    TEST_OBJECT_EQUAL(points[2], Point(400,400));
-    TEST_OBJECT_EQUAL(points[3], Point(0,400));
-    TEST_OBJECT_EQUAL(points[4], Point(0,0));
+    BOOST_TEST((points[0] == Point(0,0)));
+    BOOST_TEST((points[1] == Point(400,0)));
+    BOOST_TEST((points[2] == Point(400,400)));
+    BOOST_TEST((points[3] == Point(0,400)));
+    BOOST_TEST((points[4] == Point(0,0)));
 
 }
 BOOST_AUTO_TEST_CASE( test_rect_merge )
