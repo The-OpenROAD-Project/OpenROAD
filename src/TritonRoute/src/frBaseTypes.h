@@ -301,6 +301,10 @@ namespace fr {
     {
     }
 
+    bool is_on() const {
+      return debugDR || debugPA;
+    }
+
     bool debugDR;
     bool debugMaze;
     bool debugPA;
