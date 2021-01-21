@@ -127,7 +127,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
-  void clearSelectHighlight(bool selectFlag);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);

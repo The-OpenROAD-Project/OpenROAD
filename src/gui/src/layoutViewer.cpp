@@ -889,11 +889,6 @@ void LayoutViewer::selectHighlightConnectedNets(bool selectFlag,
   Gui::get()->selectHighlightConnectedNets(selectFlag, output, input);
 }
 
-void LayoutViewer::clearSelectHighlight(bool selectFlag)
-{
-  qDebug() << "Came To clearSelectHighlight with select Flag : " << selectFlag;
-}
-
 void LayoutViewer::updateContextMenuItems()
 {
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)

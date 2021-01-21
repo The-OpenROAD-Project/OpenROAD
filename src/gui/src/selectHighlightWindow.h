@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <QAbstractItemDelegate>
 #include <QAbstractTableModel>
 #include <QAction>
 #include <QDockWidget>
@@ -42,6 +43,7 @@
 #include <QPoint>
 #include <QShortcut>
 #include <QStringList>
+#include <QStyledItemDelegate>
 #include <QToolBar>
 #include <QVariant>
 #include <unordered_map>
@@ -91,17 +93,18 @@ class HighlightModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
-  const Selected* getItemAt(int idx) const { return tableData_[idx].second; }
+  const Selected* getItemAt(int idx) const { return table_data_[idx].second; }
   void populateModel();
 
+  int highlightGroup(const QModelIndex& index) const;
   bool setData(const QModelIndex& index, const QVariant& value, int role);
 
  private:
   const HighlightSet& objs_;
-  std::vector<std::pair<int, const Selected*>> tableData_;
+  std::vector<std::pair<int, const Selected*>> table_data_;
 };
 
-class HighlightGroupDelegate : public QItemDelegate
+class HighlightGroupDelegate : public QStyledItemDelegate
 {
   Q_OBJECT
  public:
@@ -122,7 +125,8 @@ class HighlightGroupDelegate : public QItemDelegate
              const QModelIndex& index) const;
 
  private:
-  std::vector<std::string> Items;
+  std::vector<std::string> items_;
+  HighlightModel* table_model_;
 };
 
 class SelectHighlightWindow : public QDockWidget
@@ -130,7 +134,6 @@ class SelectHighlightWindow : public QDockWidget
   Q_OBJECT
 
  public:
-
   explicit SelectHighlightWindow(const SelectionSet& selSet,
                                  const HighlightSet& hltSet,
                                  QWidget* parent = nullptr);
@@ -159,8 +162,8 @@ class SelectHighlightWindow : public QDockWidget
 
  private:
   Ui::SelectHighlightWidget* ui;
-  SelectionModel selectionModel_;
-  HighlightModel highlightModel_;
+  SelectionModel selection_model_;
+  HighlightModel highlight_model_;
 
   QMenu* select_context_menu_;
   QMenu* highlight_context_menu_;
