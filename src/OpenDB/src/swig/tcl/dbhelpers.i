@@ -22,7 +22,7 @@ dump_netlist(odb::dbBlock* block, const char* path, int includeFillers){
   return cdl::dumpNetLists(block, path, includeFillers); 
 }
 
- int
+int
 write_lef(odb::dbLib* lib, const char* path) {
   lefout writer;
   return writer.writeTechAndLib(lib, path);
@@ -69,18 +69,8 @@ write_db(odb::dbDatabase* db, const char* db_path)
 
 %}
 
-odb::dbLib*
-read_lef(odb::dbDatabase* db, const char* path);
-
-odb::dbChip*
-read_def(odb::dbDatabase* db, std::string path);
-
 bool 
 dump_netlist(odb::dbBlock* block, const char* path, int includeFillers);
-
-int
-write_def(odb::dbBlock* block, const char* path,
-	      odb::defout::Version version = odb::defout::Version::DEF_5_8);
 
 int
 write_lef(odb::dbLib* lib, const char* path);
