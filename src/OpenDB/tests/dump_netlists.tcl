@@ -1,9 +1,9 @@
 source "helpers.tcl"
 
-
-set db [odb::dbDatabase_create]
-odb::read_lef $db "../../../test/Nangate45/Nangate45.lef"
-set chip [odb::read_def $db "data/gcd/gcd.def"]
+set db [ord::get_db]
+read_lef "../../../test/Nangate45/Nangate45.lef"
+read_def "data/gcd/gcd.def"
+set chip [$db getChip]
 set block [$chip getBlock]
 
 odb::dump_netlist $block "results/gcd.cdl" 0
