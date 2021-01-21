@@ -19,3 +19,7 @@ record_tests {
   def_parser
 }
 
+record_pass_fail_tests {
+  cpp_tests
+}
+
