@@ -1066,6 +1066,11 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
                         frAccessPointEnum::HalfGrid,
                         frAccessPointEnum::Center,
                         frAccessPointEnum::EncOpt}) {
+      if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
+        // Only use NearbyGrid as a last resort (at least until
+        // nangate45/aes is resolved).
+        continue;
+      }
       if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, lower, upper)) {
         return;
       }
