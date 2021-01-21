@@ -130,6 +130,10 @@ void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& a
                             frAccessPointEnum lower_type,
                             frAccessPointEnum upper_type)
 {
+  if (!pin_) {
+    return;
+  }
+
   // We make a copy of the aps
   for (auto& ap : aps) {
     aps_.emplace_back(*ap.get());
