@@ -1,4 +1,4 @@
-Notice 0: Reading LEF file:  bidir1.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  bidir1.lef
+[INFO ODB-0222] Reading LEF file: bidir1.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  bidir1.lef
 No differences found.

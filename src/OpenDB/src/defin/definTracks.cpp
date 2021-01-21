@@ -37,6 +37,7 @@
 #include "db.h"
 #include "dbShape.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definTracks::definTracks()
@@ -65,7 +66,7 @@ void definTracks::tracksLayer(const char* layer_name)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 165,  "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }

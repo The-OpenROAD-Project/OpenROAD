@@ -67,7 +67,12 @@ void definBase::setTech(dbTech* tech)
 
 void definBase::setBlock(dbBlock* block)
 {
-  _block = block;
+  _block  = block;
+}
+
+void definBase::setLogger(utl::Logger* logger)
+{
+  _logger  = logger;
 }
 
 dbOrientType definBase::translate_orientation(int orient)

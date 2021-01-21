@@ -129,7 +129,7 @@ Opendp::reportFailures(const vector<Cell *> &failures,
 }
 
 void
-Opendp::reportOverlapFailure(const Cell *cell, const Grid *grid) const
+Opendp::reportOverlapFailure(Cell *cell, Grid *grid) const
 {
   const Cell *overlap = checkOverlap(*cell, grid);
   logger_->report(" {} overlaps {}", cell->name(), overlap->name());
@@ -203,8 +203,8 @@ Opendp::checkInRows(const Cell &cell,
 
 // Return the cell this cell overlaps.
 
-const Cell *
-Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
+Cell *
+Opendp::checkOverlap(Cell &cell, Grid *grid) const
 {
   int x_ll = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
@@ -218,7 +218,7 @@ Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
   for (int j = y_ll; j < y_ur; j++) {
     for (int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
-      const Cell *pixel_cell = pixel.cell;
+      Cell *pixel_cell = pixel.cell;
       if (pixel_cell) {
         if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;

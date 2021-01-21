@@ -30,17 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifdef WIN32
-#pragma warning(disable : 4786)
-#endif
-
 #include <stdio.h>
-
-#ifndef WIN32
 #include <unistd.h>
-#else
-#include <windows.h>
-#endif
 
 #include <list>
 #include <string>
@@ -49,7 +40,7 @@
 #include "lefiUtil.hpp"
 #include "lefin.h"
 #include "lefrReader.hpp"
-#include "dbLogger.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -479,7 +470,7 @@ static void lineNumberCB(int line)
   lef->lineNumber(line);
 }
 
-bool lefin_parse(lefin* lef, const char* file_name)
+bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
 {
   // sets the parser to be case sensitive...
   // default was supposed to be the case but false...
@@ -553,7 +544,7 @@ bool lefin_parse(lefin* lef, const char* file_name)
   FILE* file = fopen(file_name, "r");
 
   if (file == NULL) {
-    notice(0, "error: Cannot open LEF file %s\n", file_name);
+    logger->warn(utl::ODB, 240, "error: Cannot open LEF file %s\n", file_name);
     return false;
   }
 

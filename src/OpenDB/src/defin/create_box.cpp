@@ -32,6 +32,7 @@
 
 #include "create_box.h"
 #include <stdio.h>
+#include "utility/Logger.h"
 namespace odb {
 
 void create_box(dbSWire*        wire,
@@ -45,7 +46,8 @@ void create_box(dbSWire*        wire,
                 int             cur_y,
                 int             cur_ext,
                 bool            has_cur_ext,
-                int             width)
+                int             width,
+                utl::Logger*    logger)
 {
   int x1, x2, y1, y2;
   int dw = width >> 1;
@@ -126,13 +128,13 @@ dbTechLayer* create_via_array(dbSWire*        wire,
                               int             numX,
                               int             numY,
                               int             stepX,
-                              int             stepY)
+                              int             stepY,
+                              utl::Logger*    logger)
 {
   if (via->getBBox() == NULL) {
     std::string n = via->getName();
-    notice(0,
-           "error: Cannot create a via instance, via (%s) has no shapes\n",
-           n.c_str());
+    logger->warn(utl::ODB, 241, 
+"error: Cannot create a via instance, via ({}) has no shapes",n.c_str());
     return NULL;
   }
 
@@ -158,11 +160,9 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     std::string vname = via->getName();
     std::string lname = layer->getName();
 
-    notice(0, "error: Can not determine which direction to continue path,\n");
-    notice(0,
-           "       via (%s) spans above and below the current layer (%s).\n",
-           vname.c_str(),
-           lname.c_str());
+    logger->warn(utl::ODB, 242,  "error: Can not determine which direction to continue path,");
+    logger->info(utl::ODB, 243, 
+"       via ({}) spans above and below the current layer ({}).",vname.c_str(),lname.c_str());
     return NULL;
   }
 
@@ -184,13 +184,13 @@ dbTechLayer* create_via_array(dbSWire*        wire,
                               int             numX,
                               int             numY,
                               int             stepX,
-                              int             stepY)
+                              int             stepY,
+                              utl::Logger*    logger)
 {
   if (via->getBBox() == NULL) {
     std::string vname = via->getName();
-    notice(0,
-           "error: Cannot create a via instance, via (%s) has no shapes\n",
-           vname.c_str());
+    logger->warn(utl::ODB, 244, 
+"error: Cannot create a via instance, via ({}) has no shapes",vname.c_str());
     return NULL;
   }
 
@@ -216,14 +216,9 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     std::string vname = via->getName();
     std::string lname = layer->getName();
 
-    notice(
-        0,
-        "error: Net %s: Can not determine which direction to continue path,\n",
-        wire->getNet()->getConstName());
-    notice(0,
-           "       via (%s) spans above and below the current layer (%s).\n",
-           vname.c_str(),
-           lname.c_str());
+    logger->warn(utl::ODB, 245, "error: Net {}: Can not determine which direction to continue path,",wire->getNet()->getConstName());
+    logger->info(utl::ODB, 246, 
+"       via ({}) spans above and below the current layer ({}).",vname.c_str(),lname.c_str());
     return NULL;
   }
 

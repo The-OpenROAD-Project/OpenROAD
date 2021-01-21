@@ -133,7 +133,7 @@ struct Pixel
   int grid_x_;
   int grid_y_;
   Group *group_;
-  const Cell *cell;
+  Cell *cell;
   double util;
   bool is_valid;  // false for dummy cells
 };
@@ -235,7 +235,6 @@ private:
   bool shift_move(Cell *cell);
   bool map_move(Cell *cell);
   bool map_move(Cell *cell, int x, int y);
-  set<Cell *> gridCellsInBoundary(const Rect *rect) const;
   int distChange(const Cell *cell, int x, int y) const;
   bool swap_cell(Cell *cell1, Cell *cell2);
   bool refine_move(Cell *cell);
@@ -270,7 +269,7 @@ private:
   bool checkPowerLine(const Cell &cell) const;
   bool checkInRows(const Cell &cell,
                    const Grid *grid) const;
-  const Cell *checkOverlap(const Cell &cell, const Grid *grid) const;
+  Cell *checkOverlap(Cell &cell, Grid *grid) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
   bool isCrWtBlClass(const Cell *cell) const;
@@ -284,7 +283,7 @@ private:
                       const char *msg,
                       bool verbose,
                       const std::function<void(Cell *cell)> &report_failure) const;
-  void reportOverlapFailure(const Cell *cell, const Grid *grid) const;
+  void reportOverlapFailure(Cell *cell, Grid *grid) const;
 
   void rectDist(const Cell *cell,
                 const Rect *rect,
