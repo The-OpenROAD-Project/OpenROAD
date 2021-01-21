@@ -316,6 +316,7 @@ target_link_libraries(openroad
   defout
   lefin
   lefout
+  cdl
   antennachecker
   zutil
   PartitionMgr

@@ -38,6 +38,7 @@
 #include "dbShape.h"
 #include "dbTransform.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definPin::definPin()
@@ -105,13 +106,13 @@ void definPin::pinBegin(const char* name, const char* net_name)
 
     } else if (busleft) {
       ++_errors;
-      notice(0, "PIN %s missing right bus character.\n", name);
+      _logger->warn(utl::ODB, 117,  "PIN {} missing right bus character.", name);
       return;
     }
 
     else if (busright) {
       ++_errors;
-      notice(0, "PIN %s missing left bus character.\n", name);
+      _logger->warn(utl::ODB, 118,  "PIN {} missing left bus character.", name);
       return;
     } else {
       // PIN Name of form pinName.extraN
@@ -186,9 +187,8 @@ void definPin::pinPlacement(defPlacement status, int x, int y, dbOrientType orie
 void definPin::pinMinSpacing(int spacing)
 {
   if (_has_effective_width) {
-    notice(0,
-           "error: Cannot specify effective width and minimum spacing "
-           "together.\n");
+    _logger->warn(utl::ODB, 119, 
+"error: Cannot specify effective width and minimum spacing ""together.");
     ++_errors;
     return;
   }
@@ -200,9 +200,8 @@ void definPin::pinMinSpacing(int spacing)
 void definPin::pinEffectiveWidth(int width)
 {
   if (_has_min_spacing) {
-    notice(0,
-           "error: Cannot specify effective width and minimum spacing "
-           "together.\n");
+    _logger->warn(utl::ODB, 120, 
+"error: Cannot specify effective width and minimum spacing ""together.");
     ++_errors;
     return;
   }
@@ -219,7 +218,7 @@ void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
   _layer = _tech->findLayer(layer_name);
 
   if (_layer == NULL) {
-    notice(0, "error: undefined layer (%s) referenced\n", layer_name);
+    _logger->warn(utl::ODB, 121,  "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }
@@ -353,7 +352,7 @@ void definPin::pinsEnd()
       p._bterm->setGroundPin(ground);
     } else {
       ++_errors;
-      notice(0, "error: Cannot find PIN %s\n", p._pin.c_str());
+      _logger->warn(utl::ODB, 122,  "error: Cannot find PIN {}", p._pin.c_str());
     }
   }
 
@@ -366,7 +365,7 @@ void definPin::pinsEnd()
       p._bterm->setSupplyPin(supply);
     } else {
       ++_errors;
-      notice(0, "error: Cannot find PIN %s\n", p._pin.c_str());
+      _logger->warn(utl::ODB, 123,  "error: Cannot find PIN {}", p._pin.c_str());
     }
   }
 }
