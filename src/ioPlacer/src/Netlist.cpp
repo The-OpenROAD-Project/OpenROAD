@@ -57,7 +57,9 @@ void Netlist::createIOGroup(const std::set<std::string>& pin_list)
 {
   std::set<int> pin_indices;
   for (std::string pin_name : pin_list) {
-    pin_indices.insert(findIoPinByName(pin_name));
+    int pin_idx = findIoPinByName(pin_name);
+    io_pins_[pin_idx].inGroup();
+    pin_indices.insert(pin_idx);
   }
 
   io_groups_.push_back(pin_indices);
@@ -145,11 +147,6 @@ int Netlist::findIoPinByName(std::string pin_name)
 void Netlist::assignPinToSection(int idx)
 {
   io_pins_[idx].assignToSection();
-}
-
-void Netlist::assignPinToSlot(int idx)
-{
-  io_pins_[idx].assignToSlot();
 }
 
 Rect Netlist::getBB(int idx, Point slot_pos)

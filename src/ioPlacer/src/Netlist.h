@@ -104,7 +104,7 @@ class IOPin
         net_name_(net_name),
         location_type_(location_type),
         assigned_to_section_(false),
-        assigned_to_slot_(false)
+        in_group(false)
   {
   }
 
@@ -135,9 +135,9 @@ class IOPin
   std::string getLocationType() const { return location_type_; };
   int getLayer() const { return layer_; }
   bool isAssignedToSection() const { return assigned_to_section_; }
-  bool isAssignedToSlot() const { return assigned_to_slot_; }
+  bool isInGroup() const { return in_group; }
   void assignToSection() { assigned_to_section_ = true; }
-  void assignToSlot() { assigned_to_slot_ = true; }
+  void inGroup() { in_group = true; }
 
  private:
   std::string name_;
@@ -149,8 +149,8 @@ class IOPin
   std::string net_name_;
   std::string location_type_;
   int layer_;
+  bool in_group;
   bool assigned_to_section_;
-  bool assigned_to_slot_;
 };
 
 class Netlist
@@ -173,10 +173,9 @@ class Netlist
   int numSinksOfIO(int);
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }
-  IOPin getIoPin(int idx) { return io_pins_[idx]; }
+  IOPin& getIoPin(int idx) { return io_pins_[idx]; }
   int findIoPinByName(std::string pin_name);
   void assignPinToSection(int idx);
-  void assignPinToSlot(int idx);
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
