@@ -225,7 +225,9 @@ void IOPlacer::initIOLists()
     }
   });
 
-  netlist_io_pins_.setIOGroups(netlist_.getIOGroups());
+  for (Group pin_group : groups_) {
+    netlist_io_pins_.createIOGroup(pin_group);
+  }
 }
 
 bool IOPlacer::checkBlocked(Edge edge, int pos)
@@ -458,6 +460,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
 
     for (auto i : sortIndexes(dst)) {
       if (sections[i].cur_slots+group_size < sections[i].max_slots) {
+        std::set<int> group;
         for (int pin_idx : io_group) {
           IOPin io_pin = net.getIoPin(pin_idx);
 
@@ -467,11 +470,12 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
           });
 
           sections[i].net.addIONet(io_pin, inst_pins_vector);
+          group.insert(sections[i].net.numIOPins()-1);
           sections[i].cur_slots++;
           net.assignPinToSection(pin_idx);
         }
         total_pins_assigned += group_size;
-        sections[i].net.addIOGroup(io_group);
+        sections[i].net.addIOGroup(group);
         group_assigned = true;
         break;
       }
@@ -819,6 +823,10 @@ void IOPlacer::run(bool random_mode)
         HungarianMatching hg(sections_[idx], slots_, logger_);
         hg_vec.push_back(hg);
       }
+    }
+
+    for (int idx = 0; idx < hg_vec.size(); idx++) {
+      hg_vec[idx].getAssignmentForGroups(assignment_);
     }
 
     for (int idx = 0; idx < hg_vec.size(); idx++) {

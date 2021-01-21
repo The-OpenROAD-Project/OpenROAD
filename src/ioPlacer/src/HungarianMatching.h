@@ -64,6 +64,7 @@ class HungarianMatching
   virtual ~HungarianMatching() = default;
   void findAssignment(std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&) const;
+  void getAssignmentForGroups(std::vector<IOPin>&);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
