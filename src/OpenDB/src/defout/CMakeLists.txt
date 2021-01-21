@@ -11,7 +11,9 @@ target_include_directories(defout
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src/defout
 )
-
+target_link_libraries(defout
+    utility
+)
 target_compile_features(defout PRIVATE cxx_auto_type)
 target_compile_options(defout PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 set_property(TARGET defout PROPERTY POSITION_INDEPENDENT_CODE ON)

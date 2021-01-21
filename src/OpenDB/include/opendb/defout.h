@@ -33,7 +33,9 @@
 #pragma once
 
 #include "odb.h"
-
+namespace utl{
+  class Logger;
+}
 namespace odb {
 
 class defout_impl;
@@ -54,7 +56,7 @@ class defout
     DEF_5_8
   };
 
-  defout();
+  defout(utl::Logger* logger);
   ~defout();
 
   void setUseLayerAlias(bool value);
