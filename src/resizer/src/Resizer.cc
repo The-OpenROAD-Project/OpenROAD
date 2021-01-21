@@ -477,7 +477,7 @@ Resizer::bufferInput(Pin *top_pin,
                                                parent);
   if (buffer) {
     Point pin_loc = db_network_->location(top_pin);
-    Point buf_loc = closestPtInRect(core_, pin_loc);
+    Point buf_loc = core_exists_ ? closestPtInRect(core_, pin_loc) : pin_loc;
     setLocation(buffer, buf_loc);
     designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
@@ -2676,7 +2676,9 @@ Resizer::makeHoldDelay(Vertex *drvr,
   }
 
   // Spread buffers between driver and load center.
-  Point drvr_loc = db_network_->location(drvr_pin);
+  Point drvr_pin_loc = db_network_->location(drvr_pin);
+  // Stay inside the core.
+  Point drvr_loc = core_exists_ ? closestPtInRect(core_, drvr_pin_loc) : drvr_pin_loc;
   Point load_center = findCenter(load_pins);
   int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
   int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);

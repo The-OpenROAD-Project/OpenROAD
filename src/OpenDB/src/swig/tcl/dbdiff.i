@@ -1,5 +1,6 @@
 %{
 #include "defin.h"
+#include "utility/Logger.h"
 
 bool
 db_diff(odb::dbDatabase *db1,
@@ -44,8 +45,8 @@ db_def_diff(odb::dbDatabase *db1,
   odb::dbChip *chip2 = db2->getChip();
   if (chip2)
     odb::dbChip::destroy(chip2);
-
-  odb::defin def_reader(db2);
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::defin def_reader(db2, logger);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db2->getLibs())
     search_libs.push_back(lib);
