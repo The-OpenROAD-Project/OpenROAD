@@ -92,7 +92,7 @@ target_include_directories( replace
 
 target_link_libraries( replace
   PRIVATE
-  spdlog::spdlog
+  utility
   Eigen3::Eigen
   gui
 )
