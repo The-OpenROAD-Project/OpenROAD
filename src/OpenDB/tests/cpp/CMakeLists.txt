@@ -13,6 +13,7 @@ set(TEST_LIBS
         cdl
         ${TCL_LIBRARY}
         Boost::boost
+        utility
 )
 
 add_executable( TestCallBacks ${PROJECT_SOURCE_DIR}/tests/cpp/TestCallBacks.cpp )

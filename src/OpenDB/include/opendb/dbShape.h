@@ -39,7 +39,9 @@
 #include "dbWireCodec.h"
 #include "geom.h"
 #include "odb.h"
-
+namespace utl {
+  class Logger;
+}
 namespace odb {
 
 class _dbWire;
@@ -249,7 +251,7 @@ class dbShape
   //
   //  Dump contents into logger
   //
-  void dump(const char* module_name, const char* tag) const;
+  void dump(utl::Logger* logger, const char* group, int level) const;
 
   //
   // Get the via-boxes of this via-shape.
@@ -310,8 +312,7 @@ struct dbWirePath
   bool is_short;  // true if this path is a virtual short to a previous junction
   int  short_junction;         // junction id of the virtual short.
   dbTechNonDefaultRule* rule;  // nondefaultrule for this path
-
-  void dump(const char* module_name, const char* tag) const;
+  void dump(utl::Logger* logger, const char* group, int level) const;
 };
 
 struct dbWirePathShape
@@ -323,7 +324,7 @@ struct dbWirePathShape
   dbITerm*     iterm;        // dbITerm connected at this point, otherwise NULL
   dbShape      shape;        // shape at this point
 
-  void dump(const char* module_name, const char* tag) const;
+  void dump(utl::Logger* logger, const char* group, int level) const;
 };
 
 class dbWirePathItr
@@ -692,6 +693,6 @@ inline void dbShape::setSegmentFromRect(int          x1,
 //
 // Print utilities declared here
 //
-void dumpWirePaths4Net(dbNet* innet, const char* module_name, const char* tag);
+void dumpWirePaths4Net(dbNet* innet, const char* group, int level);
 
 }  // namespace odb

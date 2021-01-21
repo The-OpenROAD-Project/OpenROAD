@@ -2,9 +2,10 @@ source "helpers.tcl"
 
 # Open database, load lef and design
 
-set db [odb::dbDatabase_create]
-set lib [odb::read_lef $db "data/Nangate45/NangateOpenCellLibrary.mod.lef"]
-odb::read_def $db "data/gcd/floorplan.def"
+set db [ord::get_db]
+read_lef "data/Nangate45/NangateOpenCellLibrary.mod.lef"
+set lib [$db findLib NangateOpenCellLibrary.mod]
+read_def "data/gcd/floorplan.def"
 set chip [$db getChip]
 
 # Block checks
@@ -70,7 +71,7 @@ check "master logically equiv" {$master getLEQ} "NULL" ; # Return value is curre
 check "master electrially equiv" {$master getEEQ} "NULL" ; # Return value is currently NULL, better to be an empty list
 check "master symmetry" {list [$master getSymmetryX] [$master getSymmetryY] [$master getSymmetryR90]} "1 1 0"
 check "master number of terms" {llength [$master getMTerms]} 4
-check "master library" {[$master getLib] getName} NangateOpenCellLibrary.mod.lef
+check "master library" {[$master getLib] getName} NangateOpenCellLibrary.mod
 check "master num obstructions" {llength [$master getObstructions]} 0
 check "master placement boundary" {set rect [$master getPlacementBoundary]; list [$rect xMin] [$rect yMin] [$rect xMax] [$rect yMax]} "0 0 760 2800"
 check "master term count" {$master getMTermCount} 4

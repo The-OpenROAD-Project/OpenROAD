@@ -1,13 +1,12 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: no_clock.def
-Notice 0: Design: test_no_clk
-Notice 0:     Created 2 components and 8 component-terminals.
-Notice 0:     Created 1 nets and 2 connections.
-Notice 0: Finished DEF file: no_clock.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: no_clock.def
+[INFO ODB-0128] Design: test_no_clk
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[INFO ODB-0134] Finished DEF file: no_clock.def
 [ERROR CTS-0055] Missing argument -buf_list
 CTS-0055

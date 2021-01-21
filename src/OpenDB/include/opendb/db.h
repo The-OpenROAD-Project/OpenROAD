@@ -49,6 +49,10 @@
 
 #define ADS_MAX_CORNER 10
 
+namespace utl{
+  class Logger;
+}
+
 namespace odb {
 
 class dbShape;
@@ -404,6 +408,11 @@ class dbDatabase : public dbObject
   /// Commit any pending netlist changes.
   ///
   static void commitEco(dbBlock* block);
+
+  ///
+  /// links to utl::Logger
+  ///
+  void setLogger(utl::Logger* logger);
 
   ///
   /// Initializes the database to nothing.

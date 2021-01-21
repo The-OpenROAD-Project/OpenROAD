@@ -33,7 +33,9 @@
 #pragma once
 
 #include "odb.h"
-
+namespace utl{
+  class Logger;
+}
 namespace odb {
 
 ///
@@ -138,7 +140,6 @@ class dbObject
 
   static dbObject*   resolveDbName(dbDatabase* db, const char* name);
   static const char* getObjName(dbObjectType type);
-
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
   _dbObject*       getImpl();

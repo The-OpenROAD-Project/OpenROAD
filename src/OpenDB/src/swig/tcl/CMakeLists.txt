@@ -18,6 +18,7 @@ target_include_directories(opendbtcl
 target_link_libraries(opendbtcl
     PUBLIC
         opendb
+        utility
         tcl
         cdl
 	${Boost_LIBRARIES}
