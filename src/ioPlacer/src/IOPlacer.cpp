@@ -491,7 +491,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
   });
 
   if (total_groups_assigned != net.numIOGroups()) {
-    logger_->error(PPL, 43, "Unsuccessfully assigned I/O groups");
+    logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
   }
 }
 

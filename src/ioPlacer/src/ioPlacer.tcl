@@ -243,7 +243,7 @@ proc place_pins { args } {
 
   if { $pin_groups != {} } {
     foreach group $pin_groups {
-      ord::info PPL 42 "Grouping pins \[$group\]"
+      ord::info PPL 41 "Grouping pins \[$group\]"
       ppl::set_pin_group $group
     }
   }
