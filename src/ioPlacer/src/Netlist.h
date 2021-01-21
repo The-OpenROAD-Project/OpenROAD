@@ -103,7 +103,6 @@ class IOPin
         upper_bound_(upper_bound),
         net_name_(net_name),
         location_type_(location_type),
-        assigned_to_section_(false),
         in_group(false)
   {
   }
@@ -134,9 +133,7 @@ class IOPin
   std::string getNetName() const { return net_name_; }
   std::string getLocationType() const { return location_type_; };
   int getLayer() const { return layer_; }
-  bool isAssignedToSection() const { return assigned_to_section_; }
   bool isInGroup() const { return in_group; }
-  void assignToSection() { assigned_to_section_ = true; }
   void inGroup() { in_group = true; }
 
  private:
@@ -150,7 +147,6 @@ class IOPin
   std::string location_type_;
   int layer_;
   bool in_group;
-  bool assigned_to_section_;
 };
 
 class Netlist
@@ -174,8 +170,6 @@ class Netlist
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }
   IOPin& getIoPin(int idx) { return io_pins_[idx]; }
-  int findIoPinByName(std::string pin_name);
-  void assignPinToSection(int idx);
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
@@ -194,6 +188,7 @@ class Netlist
                        odb::Point& point,
                        std::vector<Constraint> restrictions);
   bool checkInterval(Constraint constraint, Edge edge, int pos);
+  int findIoPinByName(std::string pin_name);
 };
 
 }  // namespace ppl

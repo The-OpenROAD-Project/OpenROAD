@@ -144,11 +144,6 @@ int Netlist::findIoPinByName(std::string pin_name)
   return -1;
 }
 
-void Netlist::assignPinToSection(int idx)
-{
-  io_pins_[idx].assignToSection();
-}
-
 Rect Netlist::getBB(int idx, Point slot_pos)
 {
   int net_start = net_pointer_[idx];

@@ -472,7 +472,6 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.insert(sections[i].net.numIOPins()-1);
           sections[i].cur_slots++;
-          net.assignPinToSection(pin_idx);
         }
         total_pins_assigned += group_size;
         sections[i].net.addIOGroup(group);
@@ -503,7 +502,7 @@ bool IOPlacer::assignPinsSections()
   int total_pins_assigned = 0;
   assignGroupsToSections(total_pins_assigned);
   net.forEachIOPin([&](int idx, IOPin& io_pin) {
-    if (!io_pin.isAssignedToSection()) {
+    if (!io_pin.isInGroup()) {
       bool pin_assigned = false;
       std::vector<int> dst(sections.size());
       std::vector<InstancePin> inst_pins_vector;
