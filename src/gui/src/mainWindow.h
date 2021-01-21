@@ -145,7 +145,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
-  bool anyObjectInSet(bool selection_set, bool inst_type);
+  bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
   void selectHighlightConnectedNets(bool select_flag,
                                     bool output,

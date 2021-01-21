@@ -306,7 +306,7 @@ class Gui
                         bool add_to_highlight_set = false,
                         int highlight_group = 0);
   // check if any object(inst/net) is present in sect/highlight set
-  bool anyObjectInSet(bool selection_set, bool inst_type) const;
+  bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
   void selectHighlightConnectedNets(bool select_flag,

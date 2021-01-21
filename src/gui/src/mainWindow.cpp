@@ -359,22 +359,22 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-bool MainWindow::anyObjectInSet(bool selection_set, bool inst_type)
+bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set == true) {
     for (auto& selected_obj : selected_) {
-      if (selected_obj.isInst() && inst_type == true)
+      if (selected_obj.isInst() && obj_type == odb::dbInstObj)
         return true;
-      if (selected_obj.isNet() && inst_type == false)
+      if (selected_obj.isNet() && obj_type == odb::dbNetObj)
         return true;
     }
     return false;
   } else {
     for (auto& highlight_set : highlighted_) {
       for (auto& selected_obj : highlight_set) {
-        if (selected_obj.isInst() && inst_type == true)
+        if (selected_obj.isInst() && obj_type == odb::dbInstObj)
           return true;
-        if (selected_obj.isNet() && inst_type == false)
+        if (selected_obj.isNet() && obj_type == odb::dbNetObj)
           return true;
       }
     }

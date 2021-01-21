@@ -896,7 +896,7 @@ void LayoutViewer::clearSelectHighlight(bool selectFlag)
 
 void LayoutViewer::updateContextMenuItems()
 {
-  if (Gui::get()->anyObjectInSet(true /*selection set*/, true /*inst type*/)
+  if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
       == false)  // No Instance in selected set
   {
     menuActions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
@@ -916,7 +916,7 @@ void LayoutViewer::updateContextMenuItems()
     menuActions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
   }
 
-  if (Gui::get()->anyObjectInSet(true, false)
+  if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
       == false) {  // No Net in selected set
     menuActions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
     menuActions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);

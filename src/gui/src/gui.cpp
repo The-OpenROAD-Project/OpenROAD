@@ -219,9 +219,9 @@ void Gui::addSelectedInsts(const char* pattern,
     main_window->addHighlighted(insts, highlight_group);
 }
 
-bool Gui::anyObjectInSet(bool selection_set, bool inst_type) const
+bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 {
-  return main_window->anyObjectInSet(selection_set, inst_type);
+  return main_window->anyObjectInSet(selection_set, obj_type);
 }
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
@@ -501,7 +501,7 @@ bool OpenDbDescriptor::isInst(void* object) const
 bool OpenDbDescriptor::isNet(void* object) const
 {
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
-  return db_obj->getObjectType() == odb::dbInstObj;
+  return db_obj->getObjectType() == odb::dbNetObj;
 }
 
 // This is the main entry point to start the GUI.  It only
