@@ -113,25 +113,25 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void addSelected(const SelectionSet& selections);
 
   // Displays the selection in the status bar
-  void setSelected(const Selected& selection, bool showConnectivity = false);
+  void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection,
-                      unsigned highlightGroup = 0);
+  void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
 
   // Add the selections(List) to highlight set
-  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight,
-                            unsigned highlightGroup = 0);
+  void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
+                            int highlight_group = 0);
 
   // Higlight set will be cleared with this explicit call
-  void clearHighlighted(int highlightGroup = -1 /* -1 : clear all Groups */);
+  void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
 
   // Remove items from the Selected Set
   void removeFromSelected(const QList<const Selected*>& items);
 
   // Remove items from the Highlighted Set
   void removeFromHighlighted(const QList<const Selected*>& items,
-                             int highlightGroup = -1 /* Search and remove...*/);
+                             int highlight_group
+                             = -1 /* Search and remove...*/);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -145,12 +145,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
-  bool anyObjectInSet(bool selectionSet, bool instType);
-  void selectHighlightConnectedInsts(bool selectFlag, int highlightGroup = 0);
-  void selectHighlightConnectedNets(bool selectFlag,
+  bool anyObjectInSet(bool selection_set, bool inst_type);
+  void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
+  void selectHighlightConnectedNets(bool select_flag,
                                     bool output,
                                     bool input,
-                                    int highlightGroup = 0);
+                                    int highlight_group = 0);
 
  private:
   void createMenus();
@@ -168,25 +168,25 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
-  SelectHighlightWindow* selectionBrowser_;
+  SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
 
-  QMenu* fileMenu_;
-  QMenu* viewMenu_;
-  QMenu* windowsMenu_;
+  QMenu* file_menu_;
+  QMenu* view_menu_;
+  QMenu* windows_menu_;
 
-  QToolBar* viewToolBar_;
+  QToolBar* view_tool_bar_;
 
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
-  QAction* zoomIn_;
-  QAction* zoomOut_;
+  QAction* zoom_in_;
+  QAction* zoom_out_;
 
   QLabel* location_;
 
-  FindObjectDialog* findDialog_;
+  FindObjectDialog* find_dialog_;
 };
 
 }  // namespace gui

@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget* parent)
       db_(nullptr),
       controls_(new DisplayControls(this)),
       viewer_(new LayoutViewer(controls_, selected_, highlighted_, this)),
-      selectionBrowser_(
+      selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this))
@@ -59,15 +59,15 @@ MainWindow::MainWindow(QWidget* parent)
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
 
-  findDialog_ = new FindObjectDialog(this);
+  find_dialog_ = new FindObjectDialog(this);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
-  addDockWidget(Qt::BottomDockWidgetArea, selectionBrowser_);
+  addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
 
-  tabifyDockWidget(selectionBrowser_, script_);
-  selectionBrowser_->hide();
+  tabifyDockWidget(selection_browser_, script_);
+  selection_browser_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(commandExecuted()), viewer_, SLOT(update()));
@@ -99,37 +99,37 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this,
           SIGNAL(selectionChanged()),
-          selectionBrowser_,
+          selection_browser_,
           SLOT(updateSelectionModel()));
   connect(this,
           SIGNAL(highlightChanged()),
-          selectionBrowser_,
+          selection_browser_,
           SLOT(updateHighlightModel()));
 
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
           this,
           [this]() { this->setSelected(Selected(), false); });
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           &SelectHighlightWindow::clearAllHighlights,
           this,
           [this]() { this->clearHighlighted(); });
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           SIGNAL(clearSelectedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromSelected(const QList<const Selected*>&)));
 
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           SIGNAL(zoomInToItems(const QList<const Selected*>&)),
           this,
           SLOT(zoomInToItems(const QList<const Selected*>&)));
 
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
-  connect(selectionBrowser_,
+  connect(selection_browser_,
           SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&)));
@@ -179,43 +179,43 @@ void MainWindow::createActions()
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
 
-  zoomIn_ = new QAction("Zoom in", this);
-  zoomIn_->setShortcut(QString("Z"));
+  zoom_in_ = new QAction("Zoom in", this);
+  zoom_in_->setShortcut(QString("Z"));
 
-  zoomOut_ = new QAction("Zoom out", this);
-  zoomOut_->setShortcut(QString("Shift+Z"));
+  zoom_out_ = new QAction("Zoom out", this);
+  zoom_out_->setShortcut(QString("Shift+Z"));
 
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
-  connect(zoomIn_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
-  connect(zoomOut_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
+  connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
+  connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
 }
 
 void MainWindow::createMenus()
 {
-  fileMenu_ = menuBar()->addMenu("&File");
-  fileMenu_->addAction(exit_);
+  file_menu_ = menuBar()->addMenu("&File");
+  file_menu_->addAction(exit_);
 
-  viewMenu_ = menuBar()->addMenu("&View");
-  viewMenu_->addAction(fit_);
-  viewMenu_->addAction(find_);
-  viewMenu_->addAction(zoomIn_);
-  viewMenu_->addAction(zoomOut_);
+  view_menu_ = menuBar()->addMenu("&View");
+  view_menu_->addAction(fit_);
+  view_menu_->addAction(find_);
+  view_menu_->addAction(zoom_in_);
+  view_menu_->addAction(zoom_out_);
 
-  windowsMenu_ = menuBar()->addMenu("&Windows");
-  windowsMenu_->addAction(controls_->toggleViewAction());
-  windowsMenu_->addAction(script_->toggleViewAction());
-  windowsMenu_->addAction(selectionBrowser_->toggleViewAction());
-  selectionBrowser_->setVisible(false);
+  windows_menu_ = menuBar()->addMenu("&Windows");
+  windows_menu_->addAction(controls_->toggleViewAction());
+  windows_menu_->addAction(script_->toggleViewAction());
+  windows_menu_->addAction(selection_browser_->toggleViewAction());
+  selection_browser_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
 {
-  viewToolBar_ = addToolBar("View");
-  viewToolBar_->addAction(fit_);
-  viewToolBar_->addAction(find_);
-  viewToolBar_->setObjectName("view_toolbar");  // for settings
+  view_tool_bar_ = addToolBar("View");
+  view_tool_bar_->addAction(fit_);
+  view_tool_bar_->addAction(find_);
+  view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
 void MainWindow::setDb(odb::dbDatabase* db)
@@ -237,7 +237,7 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
-  selectionBrowser_->show();
+  selection_browser_->show();
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -245,52 +245,52 @@ void MainWindow::addSelected(const SelectionSet& selections)
   selected_.insert(selections.begin(), selections.end());
   status(std::string("Added ") + std::to_string(selections.size()));
   emit selectionChanged();
-  selectionBrowser_->show();
+  selection_browser_->show();
 }
 
-void MainWindow::setSelected(const Selected& selection, bool showConnectivity)
+void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
 {
   selected_.clear();
   addSelected(selection);
-  if (showConnectivity)
+  if (show_connectivity)
     selectHighlightConnectedNets(true, true, true, false);
 }
 
 void MainWindow::addHighlighted(const SelectionSet& highlights,
-                                unsigned highlightGroup)
+                                int highlight_group)
 {
-  if (highlightGroup >= 7)
+  if (highlight_group >= 7)
     return;
-  highlighted_[highlightGroup].insert(highlights.begin(), highlights.end());
+  highlighted_[highlight_group].insert(highlights.begin(), highlights.end());
   emit highlightChanged();
 }
 
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
-                                      unsigned highlightGroup)
+                                      int highlight_group)
 {
-  if (highlightGroup >= 7)
+  if (highlight_group >= 7)
     return;
   for (auto item : items) {
-    highlighted_[highlightGroup].insert(*item);
+    highlighted_[highlight_group].insert(*item);
   }
   emit highlightChanged();
 }
 
-void MainWindow::clearHighlighted(int highlightGroup)
+void MainWindow::clearHighlighted(int highlight_group)
 {
   if (highlighted_.empty())
     return;
-  int numItemsCleared = 0;
-  if (highlightGroup < 0) {
-    for (auto& highlightedSet : highlighted_) {
-      numItemsCleared += highlightedSet.size();
-      highlightedSet.clear();
+  int num_items_cleared = 0;
+  if (highlight_group < 0) {
+    for (auto& highlighted_set : highlighted_) {
+      num_items_cleared += highlighted_set.size();
+      highlighted_set.clear();
     }
-  } else if (highlightGroup < 7) {
-    numItemsCleared += highlighted_[highlightGroup].size();
-    highlighted_[highlightGroup].clear();
+  } else if (highlight_group < 7) {
+    num_items_cleared += highlighted_[highlight_group].size();
+    highlighted_[highlight_group].clear();
   }
-  if (numItemsCleared > 0)
+  if (num_items_cleared > 0)
     emit highlightChanged();
 }
 
@@ -305,18 +305,18 @@ void MainWindow::removeFromSelected(const QList<const Selected*>& items)
 }
 
 void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
-                                       int highlightGroup)
+                                       int highlight_group)
 {
   if (items.empty())
     return;
-  if (highlightGroup < 0) {
+  if (highlight_group < 0) {
     for (auto& item : items) {
-      for (auto& highlightedSet : highlighted_)
-        highlightedSet.erase(*item);
+      for (auto& highlighted_set : highlighted_)
+        highlighted_set.erase(*item);
     }
-  } else if (highlightGroup < 7) {
+  } else if (highlight_group < 7) {
     for (auto& item : items) {
-      highlighted_[highlightGroup].erase(*item);
+      highlighted_[highlight_group].erase(*item);
     }
   }
 
@@ -356,26 +356,25 @@ void MainWindow::showFindDialog()
 {
   if (getBlock() == nullptr)
     return;
-  findDialog_->exec();
+  find_dialog_->exec();
 }
 
-bool MainWindow::anyObjectInSet(bool selectionSet, bool instType)
+bool MainWindow::anyObjectInSet(bool selection_set, bool inst_type)
 {
-  if (selectionSet == true) {
-    for (auto& selObj : selected_) {
-      auto instObjType = selObj.isInst();
-      if (selObj.isInst() && instType == true)
+  if (selection_set == true) {
+    for (auto& selected_obj : selected_) {
+      if (selected_obj.isInst() && inst_type == true)
         return true;
-      if (selObj.isNet() && instType == false)
+      if (selected_obj.isNet() && inst_type == false)
         return true;
     }
     return false;
   } else {
-    for (auto& highlightSet : highlighted_) {
-      for (auto& selObj : highlightSet) {
-        if (selObj.isInst() && instType == true)
+    for (auto& highlight_set : highlighted_) {
+      for (auto& selected_obj : highlight_set) {
+        if (selected_obj.isInst() && inst_type == true)
           return true;
-        if (selObj.isNet() && instType == false)
+        if (selected_obj.isNet() && inst_type == false)
           return true;
       }
     }
@@ -383,64 +382,56 @@ bool MainWindow::anyObjectInSet(bool selectionSet, bool instType)
   return false;
 }
 
-void MainWindow::selectHighlightConnectedInsts(bool selectFlag,
-                                               int highlightGroup)
+void MainWindow::selectHighlightConnectedInsts(bool select_flag,
+                                               int highlight_group)
 {
-  SelectionSet connInsts;
+  SelectionSet connected_insts;
   for (auto& selObj : selected_) {
     if (selObj.isNet()) {
-      odb::dbObject* dbObj = selObj.getDbObject();
-      odb::dbNet* netObj = static_cast<odb::dbNet*>(dbObj);
-      auto instTerms = netObj->getITerms();
-      auto itr = instTerms.begin();
-      auto itrE = instTerms.end();
-      for (; itr != itrE; ++itr) {
-        auto iTerm = *itr;
-        connInsts.insert(Selected(iTerm));
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+      odb::dbNet* net_obj = static_cast<odb::dbNet*>(db_obj);
+      for (auto inst_term : net_obj->getITerms()) {
+        connected_insts.insert(Selected(inst_term));
       }
     }
   }
-  if (connInsts.empty())
+  if (connected_insts.empty())
     return;
-  if (selectFlag)
-    addSelected(connInsts);
+  if (select_flag)
+    addSelected(connected_insts);
   else
-    addHighlighted(connInsts, highlightGroup);
+    addHighlighted(connected_insts, highlight_group);
 }
 
-void MainWindow::selectHighlightConnectedNets(bool selectFlag,
+void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               bool output,
                                               bool input,
-                                              int highlightGroup)
+                                              int highlight_group)
 {
-  SelectionSet connNets;
+  SelectionSet connected_nets;
   for (auto selObj : selected_) {
     if (selObj.isInst()) {
-      odb::dbObject* dbObj = selObj.getDbObject();
-      odb::dbInst* instObj = static_cast<odb::dbInst*>(dbObj);
-      auto instTerms = instObj->getITerms();
-      auto itr = instTerms.begin();
-      auto itrE = instTerms.end();
-      for (; itr != itrE; ++itr) {
-        auto iTerm = *itr;
-        if (iTerm->getNet() == nullptr
-            || iTerm->getNet()->getSigType() != SIGNAL)
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+      odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
+      for (auto inst_term : inst_obj->getITerms()) {
+        if (inst_term->getNet() == nullptr
+            || inst_term->getNet()->getSigType() != SIGNAL)
           continue;
-        auto iTermDir = iTerm->getIoType().getValue();
+        auto inst_term_dir = inst_term->getIoType().getValue();
 
-        if (output && (iTermDir == OUTPUT || iTermDir == INOUT))
-          connNets.insert(Selected(iTerm->getNet()));
-        if (input && (iTermDir == INPUT || iTermDir == INOUT))
-          connNets.insert(Selected(iTerm->getNet(), iTerm));
+        if (output && (inst_term_dir == OUTPUT || inst_term_dir == INOUT))
+          connected_nets.insert(Selected(inst_term->getNet()));
+        if (input && (inst_term_dir == INPUT || inst_term_dir == INOUT))
+          connected_nets.insert(Selected(inst_term->getNet(), inst_term));
       }
     }
   }
-  if (connNets.empty())
+  if (connected_nets.empty())
     return;
-  if (selectFlag)
-    addSelected(connNets);
+  if (select_flag)
+    addSelected(connected_nets);
   else
-    addHighlighted(connNets, highlightGroup);
+    addHighlighted(connected_nets, highlight_group);
 }
 
 void MainWindow::saveSettings()
