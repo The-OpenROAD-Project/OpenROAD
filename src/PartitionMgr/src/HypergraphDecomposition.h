@@ -50,7 +50,8 @@ enum GraphType : uint8_t
 {
   CLIQUE,
   HYBRID,
-  STAR
+  STAR,
+  HYPERGRAPH
 };
 
 class HypergraphDecomposition

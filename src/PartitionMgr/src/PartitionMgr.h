@@ -130,7 +130,7 @@ class PartOptions
   bool _termProp = false;
   double _cutHopRatio = 1.0;
   std::string _tool = "chaco";
-  GraphType _graphModel = STAR;
+  GraphType _graphModel = HYPERGRAPH;
   std::string _evaluationFunction = "hyperedges";
   unsigned _cliqueThreshold = 50;
   unsigned _weightModel = 1;
@@ -244,7 +244,7 @@ class PartitionMgr
   void setDbId(unsigned id) { _dbId = id; }
   void toGraph();
   void toHypergraph();
-  void hypergraph();
+  void hypergraph(bool buildGraph = false);
   unsigned generatePartitionId();
   unsigned generateClusterId();
   void computePartitionResult(unsigned partitionId, std::string function);
@@ -258,6 +258,7 @@ class PartitionMgr
   void dumpClusIdToFile(std::string name);
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
+  void reportGraph();
 };
 
 }  // namespace par

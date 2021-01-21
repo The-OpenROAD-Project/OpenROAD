@@ -491,3 +491,23 @@ proc run_clustering { args } {
   }
   PartitionMgr::run_clustering
 }
+
+sta::define_cmd_args "report_graph" { [-graph_model name] \
+					 }
+
+proc report_graph { args } {
+  sta::parse_key_args "report_graph" args \
+    keys {-graph_model \
+         } flags {}
+
+  set graph_models "clique star hybrid"
+  if { [info exists keys(-graph_model)] } {
+    if { $keys(-graph_model) in $graph_models } {
+    } else {
+      ord::error "invalid graph model. Use one of the following: $graph_models"
+    }
+    PartitionMgr::set_graph_model $keys(-graph_model)
+  } 
+
+  PartitionMgr::report_graph
+}
