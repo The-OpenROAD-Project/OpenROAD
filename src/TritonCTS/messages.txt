@@ -52,22 +52,13 @@ CTS 0049 TechChar.cpp:203              Num wire segments: {}
 CTS 0050 TechChar.cpp:205              Num keys in characterization LUT: {}
 CTS 0051 TechChar.cpp:207              Actual min input cap: {}
 CTS 0052 tritoncts.tcl:60          Missing argument -sqr_cap and/or -sqr_res
-CTS 0053 tritoncts.tcl:155         Missing argument -sol_list
-CTS 0054 tritoncts.tcl:164         Missing argument -lut_file
-CTS 0055 tritoncts.tcl:177         Missing argument -buf_list or -lut_file / -sol_list
+CTS 0055 tritoncts.tcl:177         Missing argument -buf_list
 CTS 0056 tritoncts.tcl:190         Error when finding -clk_nets in DB!
 CTS 0057 tritoncts.tcl:212         Missing argument -root_buf
 CTS 0058 SinkClustering.cpp:121    Invalid parameters in {}
-CTS 0059 TechChar.cpp:386          Could not open characterization file.
-CTS 0060 TechChar.cpp:418           Could not open characterization file.
-CTS 0061 TechChar.cpp:134          Could not find LUT file.
-CTS 0062 TechChar.cpp:140          Problem reading the LUT file.
-CTS 0063 TechChar.cpp:146          Problem reading the LUT file.
-CTS 0064 TechChar.cpp:149          Problem reading the LUT file.
 CTS 0065 TechChar.cpp:240          Normalized values in the LUT should be in the range [1, {}
-CTS 0066 TechChar.cpp:275          Could not find sol_list file.
+CTS 0066 TechChar.cpp:563          Could not get maxSlew/maxCap values from buffer {}. Using library values
 CTS 0067 TechChar.cpp:294          Number of buffers does not match on solution.
-
 CTS 0068 TechChar.cpp:495          Network not found. Check your lef/def/verilog file.
 CTS 0069 TechChar.cpp:499          Database not found. Check your lef/def/verilog file.
 CTS 0070 TechChar.cpp:503          Chip not found. Check your lef/def/verilog file.
@@ -84,8 +75,6 @@ CTS 0080 HTreeBuilder.cpp:769      Sink not found.
 CTS 0081 TritonCTS.cpp:167         Buffer {} is not in the loaded DB.
 CTS 0082 TritonCTS.cpp:201         No valid clock nets in the design.
 CTS 0083 TritonCTS.cpp:424         No clock nets have been found.
-CTS 0084 TechChar.cpp:59           Compiling LUT
-CTS 0085 TechChar.cpp:130          {}"
 CTS 0086 TechChar.cpp:271          .
 CTS 0087 TritonCTS.cpp:300         Could not open output metric file.
 CTS 0088 SinkClustering.cpp:159    Matching0 size: {}.

@@ -9,4 +9,5 @@ estimate_parasitics -placement
 
 report_design_area
 catch {repair_timing -hold -slack_margin .4 -max_utilization 13} error
+puts $error
 report_design_area

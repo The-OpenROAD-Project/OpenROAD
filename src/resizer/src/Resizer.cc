@@ -143,6 +143,7 @@ using sta::fuzzyLess;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::stringPrint;
+using sta::Unit;
 
 using odb::dbMasterType;
 
@@ -354,7 +355,7 @@ Resizer::setWireRC(float wire_res,
                    float wire_cap,
                    Corner *corner)
 {
-  setWireCorner(corner);
+  initCorner(corner);
   wire_res_ = wire_res;
   wire_cap_ = wire_cap;
 }
@@ -364,24 +365,9 @@ Resizer::setWireClkRC(float wire_res,
                       float wire_cap,
                       Corner *corner)
 {
-  setWireCorner(corner);
+  initCorner(corner);
   wire_clk_res_ = wire_res;
   wire_clk_cap_ = wire_cap;
-}
-
-void
-Resizer::setWireCorner(Corner *corner)
-{
-  initCorner(corner);
-  // Abbreviated copyState
-  graph_delay_calc_ = sta_->graphDelayCalc();
-  search_ = sta_->search();
-  graph_ = sta_->ensureGraph();
-
-  sta_->ensureLevelized();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
 }
 
 void
@@ -491,7 +477,7 @@ Resizer::bufferInput(Pin *top_pin,
                                                parent);
   if (buffer) {
     Point pin_loc = db_network_->location(top_pin);
-    Point buf_loc = closestPtInRect(core_, pin_loc);
+    Point buf_loc = core_exists_ ? closestPtInRect(core_, pin_loc) : pin_loc;
     setLocation(buffer, buf_loc);
     designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
@@ -791,7 +777,9 @@ Resizer::repairNet(Net *net,
           // Find max load cap that corresponds to max_slew.
           double max_cap1 = findSlewLoadCap(drvr_port, max_slew);
           max_cap = min(max_cap, max_cap1);
-          debugPrint(debug_, "repair_net", 2, "slew max_cap=%s",
+          debugPrint(debug_, "repair_net", 2, "slew=%s max_slew=%s max_cap=%s",
+                     delayAsString(slew, this, 3),
+                     delayAsString(max_slew, this, 3),
                      units_->capacitanceUnit()->asString(max_cap1, 3));
           repair_slew = true;
         }
@@ -2409,14 +2397,23 @@ Resizer::upsizeCell(LibertyPort *in_port,
 
 void
 Resizer::repairHold(float slack_margin,
-                    bool allow_setup_violations)
+                    bool allow_setup_violations,
+                    // Max buffer count as percent of design instance count.
+                    float max_buffer_percent)
 {
   init();
-  sta_->findRequireds();
-  Search *search = sta_->search();
-  VertexSet *ends = sta_->search()->endpoints();
   LibertyCell *buffer_cell = findHoldBuffer();
-  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations);
+  float buffer_delay = bufferDelay(buffer_cell);
+  Unit *time_unit = units_->timeUnit();
+  logger_->info(RSZ, 59, "Using {} with {}{}{} delay for hold repairs.",
+                buffer_cell->name(),
+                time_unit->asString(buffer_delay),
+                time_unit->scaleAbreviation(),
+                time_unit->suffix());
+  sta_->findRequireds();
+  VertexSet *ends = sta_->search()->endpoints();
+  int max_buffer_count = max_buffer_percent * network_->instanceCount();
+  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
 }
 
 // For testing/debug.
@@ -2424,7 +2421,8 @@ void
 Resizer::repairHold(Pin *end_pin,
                     LibertyCell *buffer_cell,
                     float slack_margin,
-                    bool allow_setup_violations)
+                    bool allow_setup_violations,
+                    float max_buffer_percent)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
@@ -2432,7 +2430,8 @@ Resizer::repairHold(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations);
+  int max_buffer_count = max_buffer_percent * network_->instanceCount();
+  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
 }
 
 LibertyCell *
@@ -2454,7 +2453,8 @@ void
 Resizer::repairHold(VertexSet *ends,
                     LibertyCell *buffer_cell,
                     float slack_margin,
-                    bool allow_setup_violations)
+                    bool allow_setup_violations,
+                    int max_buffer_count)
 {
   // Find endpoints with hold violation.
   VertexSet hold_failures;
@@ -2467,13 +2467,14 @@ Resizer::repairHold(VertexSet *ends,
     int repair_count = 1;
     int pass = 1;
     float buffer_delay = bufferDelay(buffer_cell);
-    bool over_max_area = false;
     while (!hold_failures.empty()
            // Make sure we are making progress.
            && repair_count > 0
-           && !over_max_area) {
+           && !overMaxArea()
+           && inserted_buffer_count_ <= max_buffer_count) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
-                                    slack_margin, allow_setup_violations);
+                                    slack_margin, allow_setup_violations,
+                                    max_buffer_count);
       debugPrint(debug_, "repair_hold", 1,
                  "pass %d worst slack %s failures %lu inserted %d",
                  pass,
@@ -2482,15 +2483,16 @@ Resizer::repairHold(VertexSet *ends,
                  repair_count);
       sta_->findRequireds();
       findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
-      over_max_area = overMaxArea();
       pass++;
     }
     if (inserted_buffer_count_ > 0) {
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_vertices_valid_ = false;
     }
-    if (over_max_area)
-      logger_->error(RSZ, 50, "max utilization reached.");
+    if (inserted_buffer_count_ > max_buffer_count)
+      logger_->error(RSZ, 60, "Max buffer count reached.");
+    if (overMaxArea())
+      logger_->error(RSZ, 50, "Max utilization reached.");
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");
@@ -2525,7 +2527,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
                         LibertyCell *buffer_cell,
                         float buffer_delay,
                         float slack_margin,
-                        bool allow_setup_violations)
+                        bool allow_setup_violations,
+                        int max_buffer_count)
 {
   VertexSet fanins = findHoldFanins(hold_failures);
   VertexSeq sorted_fanins = sortHoldFanins(fanins);
@@ -2568,7 +2571,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = 1; //std::ceil(buffer_delay1 / buffer_delay);
+        int buffer_count = std::ceil(buffer_delay1 / buffer_delay);
         debugPrint(debug_, "repair_hold", 2,
                    " %s hold=%s inserted %d for %lu/%d loads",
                    vertex->name(sdc_network_),
@@ -2579,7 +2582,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         makeHoldDelay(vertex, buffer_count, load_pins,
                       loads_have_out_port, buffer_cell);
         repair_count += buffer_count;
-        if (overMaxArea())
+        if (inserted_buffer_count_ > max_buffer_count
+            || overMaxArea())
           return repair_count;
       }
     }
@@ -2672,7 +2676,9 @@ Resizer::makeHoldDelay(Vertex *drvr,
   }
 
   // Spread buffers between driver and load center.
-  Point drvr_loc = db_network_->location(drvr_pin);
+  Point drvr_pin_loc = db_network_->location(drvr_pin);
+  // Stay inside the core.
+  Point drvr_loc = core_exists_ ? closestPtInRect(core_, drvr_pin_loc) : drvr_pin_loc;
   Point load_center = findCenter(load_pins);
   int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
   int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);

@@ -10,8 +10,10 @@ set(TEST_LIBS
         defout
         lefout
         lefin
+        cdl
         ${TCL_LIBRARY}
         Boost::boost
+        utility
 )
 
 add_executable( TestCallBacks ${PROJECT_SOURCE_DIR}/tests/cpp/TestCallBacks.cpp )

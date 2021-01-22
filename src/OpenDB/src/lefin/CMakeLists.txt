@@ -23,4 +23,5 @@ target_link_libraries(lefin
     PUBLIC
         zutil
         lef
+        utility
 )

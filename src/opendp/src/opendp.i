@@ -120,6 +120,13 @@ detailed_placement_cmd(int max_displacment)
   opendp->detailedPlacement(max_displacment);
 }
 
+void
+report_legalization_stats()
+{
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->reportLegalizationStats();
+}
+
 bool
 check_placement_cmd(bool verbose)
 {
@@ -166,13 +173,6 @@ optimize_mirroring_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->optimizeMirroring();
-}
-
-void
-place_cells_off_blocks()
-{
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->placeCellsOffBlocks();
 }
 
 } // namespace

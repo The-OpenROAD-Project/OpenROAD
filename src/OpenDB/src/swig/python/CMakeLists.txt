@@ -30,6 +30,7 @@ swig_add_library(opendbpy
 swig_link_libraries(opendbpy
     PUBLIC
         opendb
+        utility
         Python3::Python
 )
 

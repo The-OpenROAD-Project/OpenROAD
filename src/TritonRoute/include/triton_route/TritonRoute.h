@@ -60,7 +60,9 @@ namespace triton_route {
 
     void setDebugDR(bool on = true);
     void setDebugMaze(bool on = true);
-    void setDebugNetName(const char* name);
+    void setDebugPA(bool on = true);
+    void setDebugNetName(const char* name); // for DR
+    void setDebugPinName(const char* name); // for PA
     void setDebugGCell(int x, int y);
     void setDebugIter(int iter);
 

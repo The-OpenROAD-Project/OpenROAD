@@ -2,8 +2,9 @@ read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def "no_clock.def"
 
-catch {clock_tree_synthesis -lut_file "lut.txt" \
-         -sol_list "sol_list.txt" \
+set_wire_rc -clock -layer metal5
+catch {clock_tree_synthesis
          -root_buf CLKBUF_X3 \
+         -buf_list CLKBUF_X3 \
          -wire_unit 20} error
 puts $error

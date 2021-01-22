@@ -78,7 +78,7 @@ Opendp::checkPlacement(bool verbose)
     if (!isPlaced(&cell))
       placed_failures.push_back(&cell);
     // Overlap check
-    if (checkOverlap(cell, grid) != nullptr)
+    if (checkOverlap(cell, grid))
       overlap_failures.push_back(&cell);
   }
 
@@ -129,7 +129,7 @@ Opendp::reportFailures(const vector<Cell *> &failures,
 }
 
 void
-Opendp::reportOverlapFailure(const Cell *cell, const Grid *grid) const
+Opendp::reportOverlapFailure(Cell *cell, Grid *grid) const
 {
   const Cell *overlap = checkOverlap(*cell, grid);
   logger_->report(" {} overlaps {}", cell->name(), overlap->name());
@@ -203,8 +203,8 @@ Opendp::checkInRows(const Cell &cell,
 
 // Return the cell this cell overlaps.
 
-const Cell *
-Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
+Cell *
+Opendp::checkOverlap(Cell &cell, Grid *grid) const
 {
   int x_ll = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
@@ -218,8 +218,8 @@ Opendp::checkOverlap(const Cell &cell, const Grid *grid) const
   for (int j = y_ll; j < y_ur; j++) {
     for (int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
-      const Cell *pixel_cell = pixel.cell;
-      if (pixel_cell != nullptr) {
+      Cell *pixel_cell = pixel.cell;
+      if (pixel_cell) {
         if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;
         }
@@ -243,15 +243,13 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
   bool padded = havePadding() && isOverlapPadded(cell1, cell2);
   int x_ll1, x_ur1, y_ll1, y_ur1;
   int x_ll2, x_ur2, y_ll2, y_ur2;
+  initialLocation(cell1, padded, &x_ll1, &y_ll1);
+  initialLocation(cell2, padded, &x_ll2, &y_ll2);
   if (padded) {
-    initialPaddedLocation(cell1, &x_ll1, &y_ll1);
-    initialPaddedLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + paddedWidth(cell1);
     x_ur2 = x_ll2 + paddedWidth(cell2);
   }
   else {
-    initialLocation(cell1, &x_ll1, &y_ll1);
-    initialLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + cell1->width_;
     x_ur2 = x_ll2 + cell2->width_;
   }

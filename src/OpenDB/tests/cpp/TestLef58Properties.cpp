@@ -6,6 +6,7 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
+#include "utility/Logger.h"
 
 #include <iostream>
 using namespace odb;
@@ -14,8 +15,10 @@ BOOST_AUTO_TEST_SUITE( test_suite )
 
 BOOST_AUTO_TEST_CASE( test_default )
 {
+    utl::Logger* logger = new utl::Logger(nullptr);
     dbDatabase*  db   = dbDatabase::create();
-    lefin lefParser(db, false);
+    db->setLogger(logger);
+    lefin lefParser(db, logger, false);
     const char *libname = "gscl45nm.lef";
     
     std::string path = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";

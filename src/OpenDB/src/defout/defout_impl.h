@@ -40,6 +40,10 @@
 #include <map>
 #include <string>
 #include "defout.h"
+namespace utl
+{
+  class Logger;
+} 
 
 namespace odb {
 
@@ -76,6 +80,7 @@ class defout_impl
   dbTechNonDefaultRule*       _non_default_rule;
   int                         _version;
   std::map<std::string, bool> _prop_defs[9];
+  utl::Logger*                _logger;
 
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
@@ -111,7 +116,7 @@ class defout_impl
   bool hasProperties(dbObject* object, ObjType type);
 
  public:
-  defout_impl()
+  defout_impl(utl::Logger* logger)
   {
     _use_net_inst_ids = false;
     _use_master_ids   = false;
@@ -119,6 +124,7 @@ class defout_impl
     _select_net_map   = NULL;
     _select_inst_map  = NULL;
     _version          = defout::DEF_5_8;
+    _logger           = logger;
   }
 
   ~defout_impl() {}

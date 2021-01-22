@@ -56,12 +56,6 @@ using ord::getTritonCts;
 %inline %{
 
 void
-set_only_characterization(bool enable)
-{
-  getTritonCts()->getParms()->setOnlyCharacterization(enable);
-}
-
-void
 set_simple_cts(bool enable)
 {
   getTritonCts()->getParms()->setSimpleCts(enable);
@@ -71,24 +65,6 @@ void
 set_sink_clustering(bool enable)
 {
   getTritonCts()->getParms()->setSinkClustering(enable);
-}
-
-void
-set_auto_lut(bool enable)
-{
-  getTritonCts()->getParms()->setAutoLut(enable);
-}
-
-void
-set_lut_file(const char* file)
-{
-  getTritonCts()->getParms()->setLutFile(file);
-}
-
-void
-set_sol_list_file(const char* file)
-{
-  getTritonCts()->getParms()->setSolListFile(file);
 }
 
 void

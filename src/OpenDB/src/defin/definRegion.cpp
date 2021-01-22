@@ -37,6 +37,7 @@
 #include <string>
 #include "db.h"
 
+#include "utility/Logger.h"
 namespace odb {
 
 definRegion::definRegion()
@@ -70,7 +71,7 @@ void definRegion::begin(const char* name, bool is_group)
 
   if (_cur_region) {
     if (!is_group) {
-      notice(0, "Region \"%s\" already exists\n", name);
+      _logger->warn(utl::ODB, 152,  "Region \"{}\" already exists", name);
       ++_errors;
       _cur_region = NULL;
       return;
@@ -83,11 +84,8 @@ void definRegion::begin(const char* name, bool is_group)
       return;
 
     getGroupName(_block, region_name);
-    notice(0,
-           "Warning: A REGION with the name \"%s\" already exists, renaming "
-           "this GROUP to \"%s\".\n",
-           name,
-           region_name.c_str());
+    _logger->warn(utl::ODB, 153, 
+"Warning: A REGION with the name \"{}\" already exists, renaming ""this GROUP to \"{}\".",name,region_name.c_str());
   }
 
   _cur_region = dbRegion::create(_block, region_name.c_str());
@@ -127,7 +125,7 @@ void definRegion::inst(const char* name)
     } else {
       dbInst* inst = _block->findInst(name);
       if (inst == NULL) {
-        notice(0, "error: netlist component (%s) is not defined\n", name);
+        _logger->warn(utl::ODB, 154,  "error: netlist component ({}) is not defined", name);
         ++_errors;
         return;
       }

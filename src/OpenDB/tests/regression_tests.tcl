@@ -21,5 +21,7 @@ record_tests {
 
 record_pass_fail_tests {
   cpp_tests
+  dump_netlists
+  dump_netlists_withfill
 }
 

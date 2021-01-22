@@ -33,26 +33,34 @@
 #include <boost/polygon/polygon.hpp>
 namespace gtl = boost::polygon;
 
+namespace odb {
+  class dbDatabase;
+}
+
 namespace fr {
   // not default via, upperWidth, lowerWidth, not align upper, upperArea, lowerArea, not align lower
   typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool> viaRawPriorityTuple;
   class FlexPinAccessPattern;
   class FlexDPNode;
+  class FlexPAGraphics;
 
   class FlexPA {
   public:
     // constructor
-    FlexPA(frDesign* in, Logger* logger): design_(in), logger_(logger), stdCellPinGenApCnt_(0), stdCellPinValidPlanarApCnt_(0), stdCellPinValidViaApCnt_(0), stdCellPinNoApCnt_(0),
-                          macroCellPinGenApCnt_(0), macroCellPinValidPlanarApCnt_(0), macroCellPinValidViaApCnt_(0), macroCellPinNoApCnt_(0), maxAccessPatternSize_(0) {}
+    FlexPA(frDesign* in, Logger* logger);
+    ~FlexPA();
     // getters
     frDesign* getDesign() const {
       return design_;
     }
     // setters
     int main();
+    void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
     frDesign* design_;
     Logger*   logger_;
+    std::unique_ptr<FlexPAGraphics>    graphics_;
+    std::string                        debugPinName_;
 
     int stdCellPinGenApCnt_;
     int stdCellPinValidPlanarApCnt_;
@@ -73,7 +81,7 @@ namespace fr {
     int maxAccessPatternSize_;
 
     // helper strutures
-    std::vector<std::map<frCoord, int> > trackCoords_; // 0 -- on grid; 1 -- half-grid; 2 -- center; 3 -- 1/4 grid
+    std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
     std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*> > > layerNum2ViaDefs_;
 
     // helper functions
@@ -102,24 +110,24 @@ namespace fr {
     void prepPoint_pin_mergePinShapes(std::vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, frPin* pin, frInstTerm* instTerm, bool isShrink = false);
     // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
     void prepPoint_pin_genPoints(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset, frPin* pin, 
-                                 frInstTerm* instTerm, const std::vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, int lowerType, int upperType);
+                                 frInstTerm* instTerm, const std::vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, frAccessPointEnum lowerType, frAccessPointEnum upperType);
     void prepPoint_pin_genPoints_layerShapes(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset,
                                              frPin* pin, frInstTerm* instTerm, const gtl::polygon_90_set_data<frCoord> &layerShapes,
-                                             frLayerNum layerNum, bool allowVia, int lowerType, int upperType);
+                                             frLayerNum layerNum, bool allowVia, frAccessPointEnum lowerType, frAccessPointEnum upperType);
     void prepPoint_pin_genPoints_rect(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset,
                                       const gtl::rectangle_data<frCoord> &rect,
-                                      frLayerNum layerNum, bool allowPlanar, bool allowVia, int lowerType, int upperType, bool isMacroCellPin);
-    void prepPoint_pin_genPoints_rect_genGrid(std::map<frCoord, int> &coords, const std::map<frCoord, int> &trackCoords, frCoord low, frCoord high);
-    void prepPoint_pin_genPoints_rect_genCenter(std::map<frCoord, int> &coords, frLayerNum layerNum, frCoord low, frCoord high);
-    void prepPoint_pin_genPoints_rect_genEnc(std::map<frCoord, int> &coords, const gtl::rectangle_data<frCoord> &rect, 
+                                      frLayerNum layerNum, bool allowPlanar, bool allowVia, frAccessPointEnum lowerType, frAccessPointEnum upperType, bool isMacroCellPin);
+    void prepPoint_pin_genPoints_rect_genGrid(std::map<frCoord, frAccessPointEnum> &coords, const std::map<frCoord, frAccessPointEnum> &trackCoords, frCoord low, frCoord high, bool useNearbyGrid = false);
+    void prepPoint_pin_genPoints_rect_genCenter(std::map<frCoord, frAccessPointEnum> &coords, frLayerNum layerNum, frCoord low, frCoord high);
+    void prepPoint_pin_genPoints_rect_genEnc(std::map<frCoord, frAccessPointEnum> &coords, const gtl::rectangle_data<frCoord> &rect,
                                              frLayerNum layerNum, bool isCurrLayerHorz);
     void prepPoint_pin_genPoints_rect_ap(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset, 
                                          const gtl::rectangle_data<frCoord> &rect, 
                                          frLayerNum layerNum, bool allowPlanar, bool allowVia, bool isLayer1Horz, 
-                                         const std::map<frCoord, int> &xCoords, const std::map<frCoord, int> &yCoords, int lowerType, int upperType);
+                                         const std::map<frCoord, frAccessPointEnum> &xCoords, const std::map<frCoord, frAccessPointEnum> &yCoords, frAccessPointEnum lowerType, frAccessPointEnum upperType);
     void prepPoint_pin_genPoints_rect_ap_helper(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset,
                                                 const gtl::rectangle_data<frCoord> &maxrect,
-                                                frCoord x, frCoord y, frLayerNum layerNum, bool allowPlanar, bool allowVia, int lowCost, int highCost);
+                                                frCoord x, frCoord y, frLayerNum layerNum, bool allowPlanar, bool allowVia, frAccessPointEnum lowCost, frAccessPointEnum highCost);
     void prepPoint_pin_checkPoints(std::vector<std::unique_ptr<frAccessPoint> > &aps, 
                                    const std::vector<gtl::polygon_90_set_data<frCoord> > &pinShapes,
                                    frPin* pin, frInstTerm* instTerm);
@@ -137,7 +145,7 @@ namespace fr {
     void prepPoint_pin_updateStat(const std::vector<std::unique_ptr<frAccessPoint> > &tmpAps, frPin* pin, frInstTerm* instTerm);
     bool prepPoint_pin_helper(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset,
                               std::vector<gtl::polygon_90_set_data<frCoord> > &pinShapes,
-                              frPin* pin, frInstTerm* instTerm, int lowerType, int upperType);
+                              frPin* pin, frInstTerm* instTerm, frAccessPointEnum lowerType, frAccessPointEnum upperType);
     
     void prepPattern();
     void prepPattern_inst(frInst *inst, int currUniqueInstIdx);

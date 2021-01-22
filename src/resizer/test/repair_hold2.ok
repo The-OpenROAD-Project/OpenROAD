@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: repair_hold1.def
-Notice 0: Design: top
-Notice 0:     Created 4 pins.
-Notice 0:     Created 13 components and 59 component-terminals.
-Notice 0:     Created 16 nets and 30 connections.
-Notice 0: Finished DEF file: repair_hold1.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: repair_hold1.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 13 components and 59 component-terminals.
+[INFO ODB-0133]     Created 16 nets and 30 connections.
+[INFO ODB-0134] Finished DEF file: repair_hold1.def
 Startpoint: in2 (input port clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -91,8 +90,9 @@ Path Type: min
           -0.07   slack (VIOLATED)
 
 
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 9 hold buffers.
+[INFO RSZ-0032] Inserted 11 hold buffers.
 Startpoint: in2 (input port clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -104,10 +104,10 @@ Path Type: min
    0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ input external delay
    0.00    0.00 ^ in2 (in)
-   0.02    0.02 ^ hold7/Z (CLKBUF_X3)
-   0.03    0.05 ^ hold1/Z (CLKBUF_X3)
-   0.03    0.07 ^ hold6/Z (CLKBUF_X3)
-   0.02    0.10 ^ hold9/Z (CLKBUF_X3)
+   0.02    0.02 ^ hold1/Z (CLKBUF_X3)
+   0.03    0.05 ^ hold2/Z (CLKBUF_X3)
+   0.03    0.07 ^ hold3/Z (CLKBUF_X3)
+   0.02    0.10 ^ hold10/Z (CLKBUF_X3)
    0.00    0.10 ^ r2/D (DFF_X1)
            0.10   data arrival time
 
@@ -136,7 +136,7 @@ Driver pins
  in2 input port
 
 Load pins
- hold7/A input (CLKBUF_X3) r 1.42 f 1.25 (0, 1)
+ hold1/A input (CLKBUF_X3) r 1.42 f 1.25 (0, 1)
 Net out
  Pin capacitance: 0.00
  Wire capacitance: 0.31
@@ -146,7 +146,7 @@ Net out
  Number of pins: 2
 
 Driver pins
- hold2/Z output (CLKBUF_X3) (4, 2)
+ hold6/Z output (CLKBUF_X3) (6, 2)
 
 Load pins
  out output port
