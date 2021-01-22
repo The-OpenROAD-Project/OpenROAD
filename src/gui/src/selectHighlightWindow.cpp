@@ -356,6 +356,8 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
 
   ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
   ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+  ui->tabWidget->setCurrentIndex(0);
 }
 
 SelectHighlightWindow::~SelectHighlightWindow()
