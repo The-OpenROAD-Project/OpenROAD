@@ -5,6 +5,7 @@ read_def repair_setup1.def
 create_clock -period 1 clk
 set_wire_rc -layer metal3
 
+remove_buffers
 rsz::resize_slack_preamble
 
 rsz::find_resize_slacks

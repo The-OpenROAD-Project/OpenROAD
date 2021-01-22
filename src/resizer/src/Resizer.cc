@@ -309,7 +309,6 @@ Resizer::removeBuffers()
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
-
 bool
 Resizer::removeBuffer(Instance *buffer)
 {
@@ -1363,7 +1362,6 @@ Resizer::hasMultipleOutputs(const Instance *inst)
 void
 Resizer::resizeSlackPreamble()
 {
-  removeBuffers();
   LibertyLibrarySeq resize_libs = allLibraries();
   resizePreamble(&resize_libs);
   // Save max_wire_length for multiple repairDesign calls.
