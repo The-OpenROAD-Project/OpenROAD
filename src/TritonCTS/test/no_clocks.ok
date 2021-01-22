@@ -1,37 +1,12 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: no_clock.def
-Notice 0: Design: test_no_clk
-Notice 0:     Created 2 components and 8 component-terminals.
-Notice 0:     Created 1 nets and 2 connections.
-Notice 0: Finished DEF file: no_clock.def
- *****************
- * TritonCTS 2.0 *
- *****************
- *****************************
- *  Import characterization  *
- *****************************
-[INFO CTS-0085]  Reading LUT file "lut.txt"
-Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           52          1           24          
-[WARNING CTS-0044] 180 wires are pure wire and no slew degration.
-TritonCTS forced slew degradation on these wires.
-[INFO CTS-0049]     Num wire segments: 4994
-[INFO CTS-0050]     Num keys in characterization LUT: 1677
-[INFO CTS-0051]     Actual min input cap: 8
-[INFO CTS-0086]  Reading solution list file "sol_list.txt".
- **********************
- *  Find clock roots  *
- **********************
-[INFO CTS-0002]  User did not specify clock roots.
- ************************
- *  Populate TritonCTS  *
- ************************
- Initializing clock nets
- Looking for clock nets in the design
-[ERROR CTS-0083] No clock nets have been found.
-CTS-0083
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: no_clock.def
+[INFO ODB-0128] Design: test_no_clk
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 2 connections.
+[INFO ODB-0134] Finished DEF file: no_clock.def
+[ERROR CTS-0055] Missing argument -buf_list
+CTS-0055

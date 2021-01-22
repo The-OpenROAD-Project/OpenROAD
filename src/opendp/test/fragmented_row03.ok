@@ -1,39 +1,24 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: fragmented_row03.def
-Notice 0: Design: single_cell
-Notice 0:     Created 2 pins.
-Notice 0:     Created 1 components and 4 component-terminals.
-Notice 0:     Created 2 nets and 2 connections.
-Notice 0: Finished DEF file: fragmented_row03.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: fragmented_row03.def
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO ODB-0134] Finished DEF file: fragmented_row03.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances             1
-multi row instances         0
-fixed instances             0
-nets                        2
-design area               4.8 u^2
-fixed area                0.0 u^2
-movable area              1.9 u^2
-utilization                39 %
-utilization padded         39 %
-rows                        1
-row height                1.4 u
-
 [WARNING DPL-0018] detailed placement failed on _277_.
 Placement Analysis
---------------------------------
-total displacement        0.0 u
-average displacement      0.0 u
-max displacement          0.0 u
-original HPWL            61.5 u
-legalized HPWL           61.5 u
-delta HPWL                  0 %
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL              61.5 u
+legalized HPWL             61.5 u
+delta HPWL                    0 %
 
 [WARNING DPL-0004] Placed in rows check failed (1).
  _277_

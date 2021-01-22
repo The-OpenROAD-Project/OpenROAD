@@ -269,12 +269,13 @@ namespace fr {
     ENDCAP_BOTTOMLEFT // ispd19
   };
 
-  // note: FlexPA hardcoded the cost, don't change here
+  // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
-    frcOnGridAP   = 0,
-    frcHalfGridAP = 1,
-    frcCenterAP   = 2,
-    frcEncOptAP   = 3
+    OnGrid   = 0,
+    HalfGrid = 1,
+    Center   = 2,
+    EncOpt   = 3,
+    NearbyGrid = 4 // nearby grid or 1/2 grid
   };
 
   namespace bg  = boost::geometry;
@@ -293,15 +294,22 @@ namespace fr {
     frDebugSettings()
       : debugDR(false),
         debugMaze(false),
+        debugPA(false),
         gcellX(-1),
         gcellY(-1),
         iter(0)
     {
     }
 
+    bool is_on() const {
+      return debugDR || debugPA;
+    }
+
     bool debugDR;
     bool debugMaze;
+    bool debugPA;
     std::string netName;
+    std::string pinName;
     int gcellX;
     int gcellY;
     int iter;

@@ -38,7 +38,8 @@
 #include "dbWire.h"
 #include "dbWireCodec.h"
 #include "dbWireOpcode.h"
-#include "dbLogger.h"
+#include "utility/Logger.h"
+#include "dbDatabase.h"
 
 namespace odb {
 
@@ -365,84 +366,76 @@ nextOpCode:
 //
 // Routines for struct dbWirePath here
 //
-void dbWirePath::dump(const char* module_name, const char* tag) const
+void dbWirePath::dump(utl::Logger* logger,const char* group, int level) const
 {
-  debug(module_name,
-        tag,
-        "Path id: %d  at %d %d  ",
+  debugPrint(logger, utl::ODB, group, level,
+        "Path id: {}  at {} {}  ",
         junction_id,
         point.getX(),
         point.getY());
-  if (layer)
-    debug(module_name, tag, "layer %s  ", layer->getName().c_str());
-  else
-    debug(module_name, tag, "NO LAYER  ");
+  if (layer){
+    debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
+  }else
+    debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
 
   if (rule)
-    debug(module_name, tag, "non-default rule %s  ", rule->getName().c_str());
+    debugPrint(logger, utl::ODB, group, level, "non-default rule {} ", rule->getName());
 
   if (iterm)
-    debug(module_name,
-          tag,
-          "Connects to Iterm %s  ",
-          iterm->getMTerm()->getName().c_str());
+    debugPrint(logger, utl::ODB, group, level,
+          "Connects to Iterm {}  ",
+          iterm->getMTerm()->getName());
 
   if (bterm)
-    debug(module_name, tag, "Connects to Bterm %s  ", bterm->getName().c_str());
+    debugPrint(logger, utl::ODB, group, level, "Connects to Bterm {}  ", bterm->getName());
 
   if (is_branch)
-    debug(module_name, tag, "is branch  ");
+    debugPrint(logger, utl::ODB, group, level, "is branch  ");
 
   if (is_short)
-    debug(module_name, tag, "is short to %d  ", short_junction);
-
-  debug(module_name, tag, "\n");
+    debugPrint(logger, utl::ODB, group, level, "is short to {} ", short_junction);
 }
 
 //
 // Routines for struct dbWirePathShape here
 //
-void dbWirePathShape::dump(const char* module_name, const char* tag) const
+void dbWirePathShape::dump(utl::Logger* logger, const char* group, int level) const
 {
-  debug(module_name,
-        tag,
-        "WireShape id: %d  at %d %d  ",
+  debugPrint(logger, utl::ODB, group, level,
+        "WireShape id: {}  at {} {}  ",
         junction_id,
         point.getX(),
         point.getY());
 
-  if (layer)
-    debug(module_name, tag, "layer %s  ", layer->getName().c_str());
+  if (layer){
+    debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
+  }
   else
-    debug(module_name, tag, "NO LAYER  ");
+    debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
 
   if (iterm)
-    debug(module_name,
-          tag,
-          "Connects to Iterm %d %s  ",
+    debugPrint(logger, utl::ODB, group, level,
+          "Connects to Iterm {} {}  ",
           iterm->getId(),
-          iterm->getMTerm()->getName().c_str());
+          iterm->getMTerm()->getName());
 
   if (bterm)
-    debug(module_name,
-          tag,
-          "Connects to Bterm %d %s  ",
+    debugPrint(logger, utl::ODB, group, level,
+          "Connects to Bterm {} {}  ",
           bterm->getId(),
-          bterm->getName().c_str());
+          bterm->getName());
 
-  shape.dump(module_name, tag);
+  shape.dump(logger, group, level);
 
-  debug(module_name, tag, " \n");
 }
 
 //
 //  Inline routines of dbShape are in dbShape.h -- non-inlines are here
 //
-void dbShape::dump(const char* module_name, const char* tag) const
+void dbShape::dump(utl::Logger* logger, const char* group, int level) const
 {
-  debug(module_name,
-        tag,
-        "Shape at (%d %d) (%d %d) of type ",
+  debugPrint(logger, utl::ODB, group, level,
+        "Shape at ({} {}) ({} {}) of type ",
         xMin(),
         yMin(),
         xMax(),
@@ -450,59 +443,51 @@ void dbShape::dump(const char* module_name, const char* tag) const
 
   switch (getType()) {
     case VIA: {
-      debug(module_name, tag, "Block Via:  ");
+      debugPrint(logger, utl::ODB, group, level, "Block Via:  ");
       break;
     }
 
     case TECH_VIA: {
-      debug(module_name, tag, "Tech Via %s  ", getTechVia()->getName().c_str());
+      debugPrint(logger, utl::ODB, group, level, "Tech Via {}  ", getTechVia()->getName());
       break;
     }
 
     case SEGMENT: {
-      debug(module_name,
-            tag,
-            "Wire Segment on layer %s  ",
-            getTechLayer()->getName().c_str());
+      debugPrint(logger, utl::ODB, group, level,
+            "Wire Segment on layer {}  ",
+            getTechLayer()->getName());
       break;
     }
     default:
       break;
   }
-
-  debug(module_name, tag, " \n");
 }
 
 //
 // Utility to dump out wire path iterator for a net.
 //
-void dumpWirePaths4Net(dbNet* innet, const char* module_name, const char* tag)
+void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 {
   if (!innet)
     return;
+  utl::Logger* logger = innet->getImpl()->getLogger();
 
   const char* prfx  = "dumpWirePaths:";
   dbWire*     wire0 = innet->getWire();
   if (!wire0) {
-    warning(0, "%s No wires for net %s\n", prfx, innet->getName().c_str());
+    logger->warn(utl::ODB, 87, "{} No wires for net {}", prfx, innet->getName());
     return;
   }
-
-  debug(module_name,
-        tag,
-        "\n%s Dumping wire paths for net %s\n",
-        prfx,
-        innet->getName().c_str());
-
+  debugPrint(logger, utl::ODB, group, level, "{} Dumping wire paths for net {}",prfx, innet->getName());
   dbWirePathItr          pitr;
   struct dbWirePath      curpath;
   struct dbWirePathShape curshp;
   pitr.begin(wire0);
 
   while (pitr.getNextPath(curpath)) {
-    curpath.dump(module_name, tag);
+    curpath.dump(logger, group, level);
     while (pitr.getNextShape(curshp))
-      curshp.dump(module_name, tag);
+      curshp.dump(logger, group, level);
   }
 }
 

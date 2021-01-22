@@ -35,6 +35,10 @@
 #include "dbJournalLog.h"
 #include "odb.h"
 
+namespace utl {
+  class Logger;
+}
+
 namespace odb {
 
 class dbIStream;
@@ -49,6 +53,7 @@ class dbJournal
 {
   dbJournalLog  _log;
   dbBlock*      _block;
+  utl::Logger*  _logger;
   bool          _start_action;
   uint          _action_idx;
   unsigned char _cur_action;

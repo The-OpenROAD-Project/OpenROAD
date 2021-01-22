@@ -31,11 +31,40 @@
 #include <chrono>
 #include "frProfileTask.h"
 #include "FlexPA.h"
+#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
 using namespace std;
 using namespace fr;
+
+FlexPA::FlexPA(frDesign* in, Logger* logger)
+  : design_(in),
+    logger_(logger),
+    stdCellPinGenApCnt_(0),
+    stdCellPinValidPlanarApCnt_(0),
+    stdCellPinValidViaApCnt_(0),
+    stdCellPinNoApCnt_(0),
+    macroCellPinGenApCnt_(0),
+    macroCellPinValidPlanarApCnt_(0),
+    macroCellPinValidViaApCnt_(0),
+    macroCellPinNoApCnt_(0),
+    maxAccessPatternSize_(0)
+{
+}
+
+FlexPA::~FlexPA()
+{
+  // must be out-of-line due to unique_ptr
+}
+
+void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+{
+  bool on = settings->debugPA;
+  graphics_ = on && FlexPAGraphics::guiActive() ?
+    std::make_unique<FlexPAGraphics>(settings, design_, db)
+    : nullptr;
+}
 
 void FlexPA::init() {
   ProfileTask profile("PA:init");
@@ -48,19 +77,9 @@ void FlexPA::init() {
 
 void FlexPA::prep() {
   ProfileTask profile("PA:prep");
-  using namespace std::chrono;
-  high_resolution_clock::time_point t0 = high_resolution_clock::now();
   prepPoint();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
   revertAccessPoints();
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
   prepPattern();
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
-
-  duration<double> time_span1 = duration_cast<duration<double>>(t1 - t0);
-  duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-  // cout << "Expt1 runtime (pin-level access point gen): " << time_span1.count() << endl;
-  // cout << "Expt2 runtime (design-level access pattern gen): " << time_span2.count() << endl;
 }
 
 int FlexPA::main() {

@@ -37,9 +37,9 @@
 
 namespace odb {
 
-defout::defout()
+defout::defout(utl::Logger* logger)
 {
-  _writer = new defout_impl();
+  _writer = new defout_impl(logger);
   assert(_writer);
 }
 

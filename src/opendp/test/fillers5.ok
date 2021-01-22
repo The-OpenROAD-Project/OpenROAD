@@ -1,38 +1,23 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: fragmented_row04.def
-Notice 0: Design: single_cell
-Notice 0:     Created 2 pins.
-Notice 0:     Created 1 components and 4 component-terminals.
-Notice 0:     Created 2 special nets and 2 connections.
-Notice 0:     Created 2 nets and 2 connections.
-Notice 0: Finished DEF file: fragmented_row04.def
-Design Stats
---------------------------------
-total instances             1
-multi row instances         0
-fixed instances             0
-nets                        4
-design area              34.0 u^2
-fixed area                0.0 u^2
-movable area              1.9 u^2
-utilization                 5 %
-utilization padded          5 %
-rows                        4
-row height                1.4 u
-
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: fragmented_row04.def
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO ODB-0134] Finished DEF file: fragmented_row04.def
 Placement Analysis
---------------------------------
-total displacement        1.4 u
-average displacement      1.4 u
-max displacement          1.4 u
-original HPWL            16.2 u
-legalized HPWL           13.7 u
-delta HPWL                -16 %
+---------------------------------
+total displacement          1.4 u
+average displacement        1.4 u
+max displacement            1.4 u
+original HPWL              16.2 u
+legalized HPWL             13.7 u
+delta HPWL                  -16 %
 
 [INFO DPL-0001] Placed 10 filler instances.
 No differences found.

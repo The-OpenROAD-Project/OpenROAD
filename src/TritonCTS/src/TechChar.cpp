@@ -43,6 +43,9 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Units.hh"
+#include "sta/TableModel.hh"
+#include "sta/TimingArc.hh"
+#include "resizer/Resizer.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -125,95 +128,6 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
                 _actualMinInputCap);
 }
 
-void TechChar::parseLut(const std::string& file)
-{
-  _logger->info(CTS, 85, " Reading LUT file \"{}\"", file);
-  std::ifstream lutFile(file.c_str());
-
-  if (!lutFile.is_open()) {
-    _logger->error(CTS, 61, "Could not find LUT file.");
-  }
-
-  // First line of the LUT is a header with normalization values
-  if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance
-        >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-    _logger->error(CTS, 62, "Problem reading the LUT file.");
-  }
-
-  if (_options->getWireSegmentUnit() == 0) {
-    unsigned presetWireUnit = 0;
-    if (!(lutFile >> presetWireUnit)) {
-      _logger->error(CTS, 63, "Problem reading the LUT file.");
-    }
-    if (presetWireUnit == 0) {
-      _logger->error(CTS, 64, "Problem reading the LUT file.");
-    }
-    _options->setWireSegmentUnit(presetWireUnit);
-    setLenghthUnit(static_cast<unsigned>(presetWireUnit) / 2);
-  }
-
-  initLengthUnits();
-
-  _minSegmentLength = toInternalLengthUnit(_minSegmentLength);
-  _maxSegmentLength = toInternalLengthUnit(_maxSegmentLength);
-
-  reportCharacterizationBounds();
-  checkCharacterizationBounds();
-
-  std::string line;
-  std::getline(lutFile, line);  // Ignore first line
-  unsigned noSlewDegradationCount = 0;
-  _actualMinInputCap = std::numeric_limits<unsigned>::max();
-  while (std::getline(lutFile, line)) {
-    unsigned idx, delay;
-    double power;
-    unsigned length, load, outputSlew, inputCap, inputSlew;
-    bool isPureWire;
-
-    std::stringstream ss(line);
-    ss >> idx >> length >> load >> outputSlew >> power >> delay >> inputCap
-        >> inputSlew >> isPureWire;
-
-    length = toInternalLengthUnit(length);
-
-    _actualMinInputCap = std::min(inputCap, _actualMinInputCap);
-
-    if (isPureWire && outputSlew <= inputSlew) {
-      ++noSlewDegradationCount;
-      ++outputSlew;
-    }
-
-    WireSegment& segment = createWireSegment(
-        length, load, outputSlew, power, delay, inputCap, inputSlew);
-
-    if (!(isPureWire)) {
-      double bufferLocation;
-      while (ss >> bufferLocation) {
-        segment.addBuffer(bufferLocation);
-      }
-    }
-  }
-
-  if (noSlewDegradationCount > 0) {
-    _logger->warn(CTS, 44, "{} wires are pure wire and no slew degration.\n"
-                  "TritonCTS forced slew degradation on these wires.",
-                  noSlewDegradationCount);
-  }
-
-  _logger->info(CTS, 49, "    Num wire segments: {}",
-                _wireSegments.size());
-  _logger->info(CTS, 50, "    Num keys in characterization LUT: {}",
-                _keyToWireSegments.size());
-  _logger->info(CTS, 51, "    Actual min input cap: {}",
-                _actualMinInputCap);
-}
-
-void TechChar::parse(const std::string& lutFile, const std::string solListFile)
-{
-  parseLut(lutFile);
-  parseSolList(solListFile);
-}
-
 void TechChar::initLengthUnits()
 {
   _charLengthUnit = _options->getWireSegmentUnit();
@@ -264,38 +178,6 @@ inline WireSegment& TechChar::createWireSegment(uint8_t length,
   _keyToWireSegments[key].push_back(segmentIdx);
 
   return _wireSegments.back();
-}
-
-void TechChar::parseSolList(const std::string& file)
-{
-  _logger->info(CTS, 86, " Reading solution list file \"{}\".", file);
-  std::ifstream solFile(file.c_str());
-
-  if (!solFile.is_open()) {
-    _logger->error(CTS, 66, "Could not find sol_list file.");
-  }
-
-  unsigned solIdx = 0;
-  std::string line;
-
-  while (getline(solFile, line)) {
-    std::stringstream ss(line);
-    std::string token;
-    unsigned numBuffers = 0;
-    while (getline(ss, token, ',')) {
-      if (std::any_of(std::begin(token), std::end(token), ::isalpha)) {
-        _wireSegments[solIdx].addBufferMaster(token);
-        ++numBuffers;
-      }
-    }
-
-    // Sanity check
-    if (_wireSegments[solIdx].getNumBuffers() != numBuffers) {
-      _logger->error(CTS, 67, "Number of buffers does not match on solution.\n"
-                     "{} {}.", solIdx, numBuffers);
-    }
-    ++solIdx;
-  }
 }
 
 void TechChar::forEachWireSegment(
@@ -483,6 +365,61 @@ void TechChar::reportSegment(unsigned key) const
                   seg.getLength(), seg.isBuffered());
 }
 
+void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
+                                     float& maxCap, bool& maxCapExist)
+{
+  if (axis) {
+    switch (axis->variable()) {
+      case sta::TableAxisVariable::total_output_net_capacitance:
+        maxCap = axis->axisValue(axis->size() - 1);
+        maxCapExist = true;
+        break;
+      case sta::TableAxisVariable::input_net_transition:
+      case sta::TableAxisVariable::input_transition_time:
+        maxSlew = axis->axisValue(axis->size() - 1);
+        maxSlewExist = true;
+        break;
+      default:
+        break;
+    }
+  }
+}
+void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
+                                      float &maxSlew, bool &maxSlewExist,
+                                      float &maxCap, bool &maxCapExist)
+{
+  sta::LibertyPort *input, *output;
+  buffer->bufferPorts(input, output);
+  sta::TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
+  if (arc_sets) {
+    for (sta::TimingArcSet *arc_set : *arc_sets) {
+      sta::TimingArcSetArcIterator arc_iter(arc_set);
+      while (arc_iter.hasNext()) {
+        sta::TimingArc *arc = arc_iter.next();
+        sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if(model && model->delayModel()) {
+          auto delayModel = model->delayModel();
+          sta::TableAxis *axis1 = delayModel->axis1();
+          sta::TableAxis *axis2 = delayModel->axis2();
+          sta::TableAxis *axis3 = delayModel->axis3();
+          if(axis1) getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap, maxCapExist);
+          if(axis2) getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap, maxCapExist);
+          if(axis3) getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap, maxCapExist);
+        }
+      }
+    }
+  }
+}
+
+void TechChar::getClockLayerResCap(double &cap, double &res)
+{
+  /* Clock layer should be set with set_wire_rc -clock */
+  rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
+  
+  cap   = sizer->wireClkCapacitance()*1e-6; //convert from per micron to per meter
+  res   = sizer->wireClkResistance()*1e-6; //convert from per micron to per meter
+
+}
 // Characterization Methods
 
 void TechChar::initCharacterization()
@@ -514,12 +451,20 @@ void TechChar::initCharacterization()
   float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
 
   // Change resPerSqr and capPerSqr to DBU units.
-  double newCapPerSqr
-      = (_options->getCapPerSqr() * std::pow(10.0, -12)) / dbUnitsPerMicron;
+  double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12)) / dbUnitsPerMicron;
   double newResPerSqr = (_options->getResPerSqr()) / dbUnitsPerMicron;
-  _options->setCapPerSqr(newCapPerSqr);  // picofarad/micron to farad/DBU
-  _options->setResPerSqr(newResPerSqr);  // ohm/micron to ohm/DBU
-
+  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
+    getClockLayerResCap(newCapPerSqr, newResPerSqr);
+    newCapPerSqr = (newCapPerSqr / dbUnitsPerMicron);  // picofarad/micron to farad/DBU
+    newResPerSqr = (newResPerSqr / dbUnitsPerMicron);  // ohm/micron to ohm/DBU
+  }
+  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
+    std::cout << "    [WARNING] Per unit resistance or capacitance not set or zero." << std::endl;
+    std::cout << "              Use set_wire_rc before running clock_tree_synthesis." << std::endl;
+  } else {
+    _options->setCapPerSqr(newCapPerSqr);  // picofarad/micron to farad/DBU
+    _options->setResPerSqr(newResPerSqr);  // ohm/micron to ohm/DBU
+  }
   // Change intervals if needed
   if (_options->getSlewInter() != 0) {
     _charSlewInter = _options->getSlewInter();
@@ -613,8 +558,13 @@ void TechChar::initCharacterization()
     sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
     bool maxSlewExist = false;
     bool maxCapExist = false;
-    staLib->defaultMaxSlew(maxSlew, maxSlewExist);
-    staLib->defaultMaxCapacitance(maxCap, maxCapExist);
+    getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
+    if (!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
+      _logger->warn(CTS, 66,
+             "Could not get maxSlew/maxCap values from buffer {}. Using library values", bufMasterName);
+      staLib->defaultMaxSlew(maxSlew, maxSlewExist);
+      staLib->defaultMaxCapacitance(maxCap, maxCapExist);
+    }
     if (!maxSlewExist || !maxCapExist) {
       _logger->error(CTS, 77, "Liberty Library does not have Max Slew or Max Cap values.");
     } else {
@@ -625,7 +575,6 @@ void TechChar::initCharacterization()
     _charMaxSlew = _options->getMaxCharSlew();
     _charMaxCap = _options->getMaxCharCap();
   }
-
   // Creates the different slews and loads to test.
   unsigned slewIterations = _options->getCharSlewIterations();
   unsigned loadIterations = _options->getCharLoadIterations();

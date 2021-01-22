@@ -1,21 +1,20 @@
-Notice 0: Reading LEF file:  NangateOpenCellLibrary.mod.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  NangateOpenCellLibrary.mod.lef
-Notice 0: Reading LEF file:  fakeram45_64x32.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  fakeram45_64x32.lef
-Notice 0: Reading LEF file:  fakeram45_1024x32.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  fakeram45_1024x32.lef
-Notice 0: 
-Reading DEF file: tinyRocket/2_5_floorplan_tapcell.def
-Notice 0: Design: RocketTile
-Notice 0:     Created 269 pins.
-Notice 0:     Created 41868 components and 209139 component-terminals.
-Notice 0:     Created 42811 nets and 125379 connections.
-Notice 0: Finished DEF file: tinyRocket/2_5_floorplan_tapcell.def
+[INFO ODB-0222] Reading LEF file: NangateOpenCellLibrary.mod.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  NangateOpenCellLibrary.mod.lef
+[INFO ODB-0222] Reading LEF file: fakeram45_64x32.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  fakeram45_64x32.lef
+[INFO ODB-0222] Reading LEF file: fakeram45_1024x32.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  fakeram45_1024x32.lef
+[INFO ODB-0127] Reading DEF file: tinyRocket/2_5_floorplan_tapcell.def
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 41868 components and 209139 component-terminals.
+[INFO ODB-0133]     Created 42811 nets and 125379 connections.
+[INFO ODB-0134] Finished DEF file: tinyRocket/2_5_floorplan_tapcell.def
 [INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
 [INFO] [PDNG-0016]   config: tinyRocket/PDN.cfg
 [INFO] [PDNG-0008] Design Name is RocketTile

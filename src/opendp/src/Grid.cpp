@@ -114,7 +114,7 @@ Opendp::initGridPixels(Grid *grid)
 void
 Opendp::deleteGrid(Grid *grid)
 {
-  if (grid != nullptr) {
+  if (grid) {
     for (int i = 0; i < row_count_; i++) {
       delete [] grid[i];
     }
@@ -124,7 +124,7 @@ Opendp::deleteGrid(Grid *grid)
 
 Pixel *
 Opendp::gridPixel(int x,
-                  int y)
+                  int y) const
 {
   if (x >= 0 && x < row_site_count_
       && y >= 0 && y < row_count_)
@@ -229,6 +229,19 @@ Opendp::group_pixel_assign2()
   }
 }
 
+/* static */
+bool
+Opendp::check_inside(const Rect &cell, const Rect &box)
+{
+  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax() && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
+}
+
+bool
+Opendp::check_overlap(const Rect &cell, const Rect &box)
+{
+  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin() && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
+}
+
 void
 Opendp::group_pixel_assign()
 {
@@ -323,7 +336,7 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
   for (int i = grid_y; i < grid_y + y_step; i++) {
     for (int j = grid_x; j < grid_x + x_step; j++) {
       Pixel &pixel = grid_[i][j];
-      if (pixel.cell != nullptr) {
+      if (pixel.cell) {
         logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
       }
       else {
@@ -332,7 +345,7 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
       }
     }
   }
-  if (max_cell_height_ > 1) {
+  if (have_multi_height_cells_) {
     if (y_step % 2 == 1) {
       if (rowTopPower(grid_y) != topPower(cell)) {
         cell->orient_ = dbOrientType::MX;

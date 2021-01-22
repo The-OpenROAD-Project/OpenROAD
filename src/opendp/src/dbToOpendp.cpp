@@ -93,6 +93,7 @@ Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid(grid_);
   grid_ = nullptr;
+  have_multi_height_cells_ = false;
 }
 
 void
@@ -122,7 +123,7 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
     }
   }
 
-  if (power != nullptr && gnd != nullptr) {
+  if (power && gnd) {
     int master_height = master->getHeight();
     bool is_multi_row = master_height != row_height_
                         && master_height % row_height_ == 0;
@@ -182,8 +183,6 @@ Opendp::examineRows()
 void
 Opendp::makeCells()
 {
-  multi_row_inst_count_ = 0;
-
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
@@ -203,7 +202,7 @@ Opendp::makeCells()
       cell.height_ = height;
 
       int init_x, init_y;
-      initialLocation(&cell, &init_x, &init_y);
+      initialLocation(&cell, false, &init_x, &init_y);
       // Shift by core lower left.
       cell.x_ = init_x;
       cell.y_ = init_y;
@@ -211,9 +210,8 @@ Opendp::makeCells()
       cell.is_placed_ = isFixed(&cell);
 
       Macro &macro = db_master_map_[master];
-      if (macro.is_multi_row_) {
-        multi_row_inst_count_++;
-      }
+      if (macro.is_multi_row_)
+        have_multi_height_cells_ = true;
     }
   }
 }
@@ -250,7 +248,7 @@ Opendp::makeGroups()
   groups_.reserve(block_->getRegions().size());
   for (auto db_region : db_regions) {
     dbRegion *parent = db_region->getParent();
-    if (parent != nullptr) {
+    if (parent) {
       groups_.emplace_back(Group());
       struct Group &group = groups_.back();
       string group_name = db_region->getName();
