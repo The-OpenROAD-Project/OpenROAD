@@ -31,7 +31,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     }
   }
 
-  gui_->register_renderer(this);
+  gui_->registerRenderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)

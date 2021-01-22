@@ -531,13 +531,17 @@ dbStaCbk::inDbNetDestroy(dbNet *db_net)
 void
 dbStaCbk::inDbITermPostConnect(dbITerm *iterm)
 {
-  sta_->connectPinAfter(network_->dbToSta(iterm));
+  Pin *pin = network_->dbToSta(iterm);
+  network_->connectPinAfter(pin);
+  sta_->connectPinAfter(pin);
 }
 
 void
 dbStaCbk::inDbITermPreDisconnect(dbITerm *iterm)
 {
-  sta_->disconnectPinBefore(network_->dbToSta(iterm));
+  Pin *pin = network_->dbToSta(iterm);
+  sta_->disconnectPinBefore(pin);
+  network_->disconnectPinBefore(pin);
 }
 
 void
@@ -549,13 +553,17 @@ dbStaCbk::inDbITermDestroy(dbITerm *iterm)
 void
 dbStaCbk::inDbBTermPostConnect(dbBTerm *bterm)
 {
-  sta_->connectPinAfter(network_->dbToSta(bterm));
+  Pin *pin = network_->dbToSta(bterm);
+  network_->connectPinAfter(pin);
+  sta_->connectPinAfter(pin);
 }
 
 void
 dbStaCbk::inDbBTermPreDisconnect(dbBTerm *bterm)
 {
-  sta_->disconnectPinBefore(network_->dbToSta(bterm));
+  Pin *pin = network_->dbToSta(bterm);
+  sta_->disconnectPinBefore(pin);
+  network_->disconnectPinBefore(pin);
 }
 
 void
@@ -573,7 +581,7 @@ dbSta::highlight(PathRef *path)
   if (gui_) {
     if (path_renderer_ == nullptr) {
       path_renderer_ = new PathRenderer(this);
-      gui_->register_renderer(path_renderer_);
+      gui_->registerRenderer(path_renderer_);
     }
     path_renderer_->highlight(path);
   }

@@ -26,7 +26,7 @@ set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 
 source [file join $openroad_dir "test" "regression.tcl"]
-source [file join $test_dir "regression_rcx.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
 
 regression_main
 

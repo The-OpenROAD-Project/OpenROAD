@@ -256,8 +256,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
     odb::dbBox* instBox = antennaInst->getBBox();
     box box(
-        point(instBox->xMin() - (leftPad * siteWidth) + 1, instBox->yMin() + 1),
-        point(instBox->xMax() + (rightPad * siteWidth) - 1,
+        point(instBox->xMin() - ((leftPad+rightPad) * siteWidth) + 1, instBox->yMin() + 1),
+        point(instBox->xMax() + ((leftPad+rightPad) * siteWidth) - 1,
               instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 

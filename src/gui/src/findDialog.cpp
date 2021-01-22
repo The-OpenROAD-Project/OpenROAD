@@ -45,23 +45,23 @@ FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
 
 void FindObjectDialog::accept()
 {
-  std::string patternToFind = findObjEdit->text().toStdString();
-  bool matchCase = false;
-  bool matchRegEx = false;
+  std::string pattern_to_find = findObjEdit->text().toStdString();
+  bool match_case = false;
+  bool match_regex = false;
   if (matchCaseCheckBox->isEnabled())
-    matchCase = matchCaseCheckBox->isChecked();
+    match_case = matchCaseCheckBox->isChecked();
   if (matchRegExCheckBox->isEnabled())
-    matchRegEx = matchRegExCheckBox->isChecked();
+    match_regex = matchRegExCheckBox->isChecked();
 
   if (this->findObjType->currentText() == "Instance") {
-    Gui::get()->addSelectedInsts(patternToFind.c_str(),
-                                 matchCase,
-                                 matchRegEx,
+    Gui::get()->addSelectedInsts(pattern_to_find.c_str(),
+                                 match_case,
+                                 match_regex,
                                  addToHighlightCheckBox->isChecked());
   } else
-    Gui::get()->addSelectedNets(patternToFind.c_str(),
-                                matchCase,
-                                matchRegEx,
+    Gui::get()->addSelectedNets(pattern_to_find.c_str(),
+                                match_case,
+                                match_regex,
                                 addToHighlightCheckBox->isChecked());
   QDialog::accept();
 }
