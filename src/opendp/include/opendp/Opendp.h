@@ -219,11 +219,11 @@ private:
   void initGrid();
   void detailedPlacement();
   Point nearestPt(const Cell *cell, const Rect *rect) const;
-  int dist_for_rect(const Cell *cell, const Rect *rect) const;
+  int distToRect(const Cell *cell, const Rect *rect) const;
   static bool check_overlap(const Rect &cell, const Rect &box);
   bool check_overlap(const Cell *cell, const Rect *rect) const;
-  static bool check_inside(const Rect &cell, const Rect &box);
-  bool check_inside(const Cell *cell, const Rect *rect) const;
+  static bool isInside(const Rect &cell, const Rect &box);
+  bool isInside(const Cell *cell, const Rect *rect) const;
   bool binSearch(int grid_x,
                  const Cell *cell,
                  int x,
@@ -244,6 +244,8 @@ private:
                         // Return values.
                         int *x,
                         int *y) const;
+  Point legalLocation(const Cell *cell,
+                      Point pt) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();

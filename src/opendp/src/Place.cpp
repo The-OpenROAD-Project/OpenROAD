@@ -72,14 +72,6 @@ Opendp::detailedPlacement()
   place();
 }
 
-// Find the location inside the core and not on top of a macro to start
-// placement.
-//
-// This is preferable to using a the diamond search because the max_displacement
-// would have to know the macro size and no search is necessary.
-// Note that this does not need to consider padding because its only job is to
-// get the overlapping cells close to the edge of the block so that the normal
-// diamond search can do it's job.
 void
 Opendp::prePlaceLocation(const Cell *cell,
                          bool padded,
@@ -87,16 +79,35 @@ Opendp::prePlaceLocation(const Cell *cell,
                          int *x,
                          int *y) const
 {
-  int pre_x, pre_y;
-  initialLocation(cell, padded, &pre_x, &pre_y);
+  if (isFixed(cell))
+    logger_->critical(DPL, 26, "prePlaceLocation called on fixed cell.");
 
+  int init_x, init_y;
+  initialLocation(cell, padded, &init_x, &init_y);
+  Point legal = legalLocation(cell, Point(init_x, init_y));
+  *x = legal.getX();
+  *y = legal.getY();
+}
+
+// Legalize pt origin for cell
+//  inside the core
+//  not on top of a macro
+//  row site
+Point
+Opendp::legalLocation(const Cell *cell,
+                      Point pt) const
+{
   // Move inside core.
-  pre_x = min(max(0, pre_x), row_site_count_ * site_width_);
-  pre_y = min(max(0, pre_y), row_count_ * row_height_);
+  int core_x = min(max(0, pt.getX()), row_site_count_ * site_width_ - cell->width_);
+  int core_y = min(max(0, pt.getY()), row_count_ * row_height_ - cell->height_);
+
+  // Align with row site.
+  int grid_x = divRound(core_x, site_width_);
+  int grid_y = divRound(core_y, row_height_);
+  int legal_x = grid_x * site_width_;
+  int legal_y = grid_y * row_height_;
 
   // Move std cells off of macros.
-  int grid_x = gridX(pre_x);
-  int grid_y = gridY(pre_y);
   Pixel *pixel = gridPixel(grid_x, grid_y);
   if (pixel) {
     const Cell *block = pixel->cell;
@@ -104,39 +115,54 @@ Opendp::prePlaceLocation(const Cell *cell,
         && isBlock(block)) {
       Rect block_bbox(block->x_, block->y_,
                       block->x_ + block->width_, block->y_ + block->height_);
-      if (pre_x >= block_bbox.xMin()
-          && pre_x <= block_bbox.xMax()
-          && pre_y >= block_bbox.yMin()
-          && pre_y <= block_bbox.yMax()) {
-        int x_dist_min = pre_x - block_bbox.xMin();
-        int x_dist_max = block_bbox.xMax() - pre_x;
-        int y_dist_min = pre_y - block_bbox.yMin();
-        int y_dist_max = block_bbox.yMax() - pre_y;
+      if (legal_x >= block_bbox.xMin()
+          && legal_x <= block_bbox.xMax()
+          && legal_y >= block_bbox.yMin()
+          && legal_y <= block_bbox.yMax()) {
+        int x_dist_min = legal_x - block_bbox.xMin();
+        int x_dist_max = block_bbox.xMax() - legal_x;
+        int y_dist_min = legal_y - block_bbox.yMin();
+        int y_dist_max = block_bbox.yMax() - legal_y;
         if (x_dist_min < x_dist_max
             && x_dist_min < y_dist_min
             && x_dist_min < y_dist_max) {
-          pre_x = block_bbox.xMin() - cell->width_;
+          // left block
+          int off_x = block_bbox.xMin() - cell->width_;
+          // re-legalize
+          core_x = min(max(0, off_x), row_site_count_ * site_width_ - cell->width_);
+          legal_x = divRound(core_x, site_width_) * site_width_;
         }
         else if (x_dist_max <= x_dist_min
                  && x_dist_max <= y_dist_min
                  && x_dist_max <= y_dist_max) {
-          pre_x = block_bbox.xMax();
+          // right block
+          int off_x = divCeil(block_bbox.xMax(), site_width_) * site_width_;
+          // re-legalize
+          core_x = min(max(0, off_x), row_site_count_ * site_width_ - cell->width_);
+          grid_x = divRound(core_x, site_width_) * site_width_;
         }
         else if (y_dist_min <= x_dist_min
                  && y_dist_min <= x_dist_max
                  && y_dist_min <= y_dist_max) {
-          pre_y = block_bbox.yMin() - cell->height_;
+          // below block
+          int off_y = divFloor(block_bbox.yMin(),row_height_)*row_height_-cell->height_;
+          // re-legalize
+          core_y = min(max(0, off_y), row_count_ * row_height_ - cell->height_);
+          legal_y = divRound(core_y, row_height_) * row_height_;
         }
         else if (y_dist_max <= x_dist_min
                  && y_dist_max <= x_dist_max
                  && y_dist_max <= y_dist_min) {
-          pre_y = block_bbox.yMax();
+          // above block
+          int off_y = divCeil(block_bbox.yMax(), row_height_) * row_height_;
+          // re-legalize
+          core_y = min(max(0, off_y), row_count_ * row_height_ - cell->height_);
+          legal_y = divRound(core_y, row_height_) * row_height_;
         }
       }
     }
   }
-  *x = pre_x;
-  *y = pre_y;
+  return Point(legal_x, legal_y);
 }
 
 void
@@ -166,18 +192,16 @@ void
 Opendp::prePlace()
 {
   for (Cell &cell : cells_) {
-    bool in_group = false;
-    Rect *target;
+    Rect *target = nullptr;
     if (!cell.inGroup() && !cell.is_placed_) {
       for (Group &group : groups_) {
         for (Rect &rect : group.regions) {
           if (check_overlap(&cell, &rect)) {
-            in_group = true;
             target = &rect;
           }
         }
       }
-      if (in_group) {
+      if (target) {
         Point nearest = nearestPt(&cell, target);
         if (map_move(&cell, nearest.x(), nearest.y())) {
           cell.hold_ = true;
@@ -187,12 +211,11 @@ Opendp::prePlace()
   }
 }
 
-/* static */
 bool
 Opendp::check_overlap(const Cell *cell, const Rect *rect) const
 {
   int x, y;
-  prePlaceLocation(cell, true, &x, &y);
+  initialLocation(cell, true, &x, &y);
 
   return x + paddedWidth(cell) > rect->xMin() && x < rect->xMax() && y + cell->height_ > rect->yMin() && y < rect->yMax();
 }
@@ -259,12 +282,12 @@ Opendp::prePlaceGroups()
         bool in_group = false;
         Rect *target = nullptr;
         for (Rect &rect : group.regions) {
-          if (check_inside(cell, &rect)) {
+          if (isInside(cell, &rect)) {
             in_group = true;
           }
-          int temp_dist = dist_for_rect(cell, &rect);
-          if (temp_dist < dist) {
-            dist = temp_dist;
+          int rect_dist = distToRect(cell, &rect);
+          if (rect_dist < dist) {
+            dist = rect_dist;
             target = &rect;
           }
         }
@@ -280,18 +303,18 @@ Opendp::prePlaceGroups()
 }
 
 bool
-Opendp::check_inside(const Cell *cell, const Rect *rect) const
+Opendp::isInside(const Cell *cell, const Rect *rect) const
 {
   int x, y;
-  prePlaceLocation(cell, true, &x, &y);
+  initialLocation(cell, true, &x, &y);
   return x >= rect->xMin() && x + paddedWidth(cell) <= rect->xMax() && y >= rect->yMin() && y + cell->height_ <= rect->yMax();
 }
 
 int
-Opendp::dist_for_rect(const Cell *cell, const Rect *rect) const
+Opendp::distToRect(const Cell *cell, const Rect *rect) const
 {
   int x, y;
-  prePlaceLocation(cell, true, &x, &y);
+  initialLocation(cell, true, &x, &y);
   int dist_x = 0;
   int dist_y = 0;
 

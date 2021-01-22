@@ -193,7 +193,7 @@ Opendp::group_cell_region_assign()
       cell_area += cell->area();
 
       for (Rect &rect : group.regions) {
-        if (check_inside(cell, &rect)) {
+        if (isInside(cell, &rect)) {
           cell->region_ = &rect;
         }
       }
@@ -217,7 +217,7 @@ Opendp::group_pixel_assign2()
                (i + 1) * row_height_);
       for (Group &group : groups_) {
         for (Rect &rect : group.regions) {
-          if (!check_inside(sub, rect) && check_overlap(sub, rect)) {
+          if (!isInside(sub, rect) && check_overlap(sub, rect)) {
             Pixel &pixel = grid_[i][j];
             pixel.util = 0.0;
             pixel.cell = &dummy_cell_;
@@ -231,7 +231,7 @@ Opendp::group_pixel_assign2()
 
 /* static */
 bool
-Opendp::check_inside(const Rect &cell, const Rect &box)
+Opendp::isInside(const Rect &cell, const Rect &box)
 {
   return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax() && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
 }
