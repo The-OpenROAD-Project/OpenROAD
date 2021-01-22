@@ -36,6 +36,7 @@
 #pragma once
 
 #include "Util.h"
+#include "CtsOptions.h"
 
 #include <limits>
 #include <map>
@@ -66,11 +67,15 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering() = default;
+  SinkClustering(CtsOptions* options): _options(options),
+                                   _maxInternalDiameter(10), _capPerUnit(0.0),
+                                  _useMaxCapLimit(options->getSinkClusteringUseMaxCap()),
+                                  _logger(options->getLogger()) { }
 
   void addPoint(double x, double y) { _points.emplace_back(x, y); }
+  void addCap(float cap) { _pointsCap.emplace_back(cap);}
   void run();
-  void run(unsigned groupSize, float maxDiameter);
+  void run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor);
   unsigned getNumPoints() const { return _points.size(); }
 
   const std::vector<Matching>& allMatchings() const { return _matchings; }
@@ -92,6 +97,7 @@ class SinkClustering
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
 
+  bool isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit);
   bool isOne(double pos) const
   {
     return (1 - pos) < std::numeric_limits<double>::epsilon();
@@ -102,12 +108,17 @@ class SinkClustering
   }
 
   Logger *_logger;
+  CtsOptions *_options;
   std::vector<Point<double>> _points;
+  std::vector<float> _pointsCap;
   std::vector<std::pair<double, unsigned>> _thetaIndexVector;
   std::vector<Matching> _matchings;
   std::map<unsigned, std::vector<Point<double>>> _sinkClusters;
   std::vector<std::vector<unsigned>> _bestSolution;
-  float _maxInternalDiameter = 10;
+  float _maxInternalDiameter;
+  float _capPerUnit;
+  bool _useMaxCapLimit;
+  cts::DBU _scaleFactor;
 };
 
 }  // namespace cts

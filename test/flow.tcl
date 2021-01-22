@@ -83,6 +83,8 @@ estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_timing
 
+report_clock_skew
+
 detailed_placement
 
 # post cts timing report (propagated clocks)

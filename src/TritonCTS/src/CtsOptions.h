@@ -76,6 +76,8 @@ class CtsOptions
   bool getSimpleCts() const { return _simpleCts; }
   void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
   bool getSinkClustering() const { return _sinkClusteringEnable; }
+  void setSinkClusteringUseMaxCap(bool useMaxCap) { _sinkClusteringUseMaxCap = useMaxCap; }
+  bool getSinkClusteringUseMaxCap() { return _sinkClusteringUseMaxCap; }
   void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
   unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }
   void setMaxSlew(unsigned slew) { _maxSlew = slew; }
@@ -169,9 +171,9 @@ class CtsOptions
   bool isSimpleSegmentEnabled() const { return _simpleSegmentsEnable; }
   void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
   double getMaxDiameter() const { return _maxDiameter; }
-  void setMaxDiameter(double distance) { _maxDiameter = distance; }
+  void setMaxDiameter(double distance) { _maxDiameter = distance; _sinkClusteringUseMaxCap = false; }
   unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
-  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; }
+  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
   unsigned getNumStaticLayers() const { return _numStaticLayers; }
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
@@ -192,6 +194,7 @@ class CtsOptions
   bool _plotSolution = false;
   bool _simpleCts = false;
   bool _sinkClusteringEnable = false;
+  bool _sinkClusteringUseMaxCap = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
   double _vertexBufDistance = 240;

@@ -68,6 +68,7 @@ void TritonCTS::makeComponents()
 {
   _db = _openroad->getDb();
   _options = new CtsOptions;
+  _options->setLogger(_logger);
   _techChar = new TechChar(_options, _logger);
   _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
@@ -445,7 +446,7 @@ void TritonCTS::initClock(odb::dbNet* net)
                          + std::string(mterm->getConstName());
       int x, y;
       computeITermPosition(iterm, x, y);
-      clockNet.addSink(name, x, y, iterm);
+      clockNet.addSink(name, x, y, iterm, _staEngine->getInputPinCap(iterm));
     }
   }
 

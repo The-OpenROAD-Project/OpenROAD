@@ -55,6 +55,7 @@ class StaEngine
 
   void init();
   void findClockRoots(utl::Logger* _logger);
+  float getInputPinCap(odb::dbITerm* iterm);
 
  private:
   sta::dbSta* _openSta = nullptr;
