@@ -68,17 +68,8 @@ read_def $def_filename
 
 create_clock -period 5 clk
 
-set_debug_level "CTS" "Stree" 3
-set_debug_level "CTS" "HTree" 3
-
 set_wire_rc -signal -layer metal3
 set_wire_rc -clock -layer metal5
-
-configure_cts_characterization  -max_slew 10.0e-12 \
-                                -max_cap 30.0e-15 \
-                                -sqr_cap 7.7161e-5 \
-                                -sqr_res 3.8e-1
-
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
@@ -88,10 +79,4 @@ clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -distance_between_buffers 100 \
                      -num_static_layers 1
 
-set_propagated_clock [all_clocks]
-
-estimate_parasitics -placement
-
-report_clock_skew
-report_check_types -max_slew -max_capacitance -max_fanout -violators
 exit
