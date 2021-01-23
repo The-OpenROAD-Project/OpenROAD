@@ -33,8 +33,8 @@ sta::define_cmd_args "check_antennas" { [-path path] }
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
-  keys {-path} \
-  flags {}
+    keys {-path} \
+    flags {}
 
   ant::antennachecker_set_verbose [info exists flags(-verbose)]
   ant::load_antenna_rules
@@ -58,10 +58,10 @@ proc get_met_avail_length { args } {
       sta::check_positive_integer "-route_level" $rt_lv
       ant::antennachecker_set_route_level $rt_lv
     } else {
-      ord::error "no -route_level specified."
+      utl::error ANT 1 "no -route_level specified."
     }
   } else {
-    ord::error "no -net_name specified."
+    utl::error ANT 2 "no -net_name specified."
   }
   ant::get_met_avail_length
 }
@@ -79,33 +79,8 @@ proc check_net_violation { args } {
     
     return $res
   } else {
-    ord::error "no -net_name specified."
+    utl::error ANT 3 "no -net_name specified."
   }  
-  
-  return 0
-}
-
-
-proc add_antenna_cell { net antenna_cell_name pin_name sink_inst antenna_inst_name } {
-
-  set block [[[::ord::get_db] getChip] getBlock]
-  set net_name [$net getName]
-
-  set antenna_master [[::ord::get_db] findMaster $antenna_cell_name]
-  set antenna_mterm [$antenna_master getMTerms]
-
-  set inst_loc_x [lindex [$sink_inst getLocation] 0]
-  set inst_loc_y [lindex [$sink_inst getLocation] 1]
-  set inst_ori [$sink_inst getOrient]
-
-  set antenna_inst [odb::dbInst_create $block $antenna_master $antenna_inst_name]
-  set antenna_iterm [$antenna_inst findITerm $pin_name]
-
-  $antenna_inst setLocation $inst_loc_x $inst_loc_y
-  $antenna_inst setOrient $inst_ori
-  $antenna_inst setPlacementStatus PLACED
-  odb::dbITerm_connect $antenna_iterm $net
-
 }
 
 proc antenna_fix { antenna_cell_name pin_name } {
@@ -139,7 +114,26 @@ proc antenna_fix { antenna_cell_name pin_name } {
       }
       break
     }
-
   }
+}
 
+proc add_antenna_cell { net antenna_cell_name pin_name sink_inst antenna_inst_name } {
+
+  set block [[[::ord::get_db] getChip] getBlock]
+  set net_name [$net getName]
+
+  set antenna_master [[::ord::get_db] findMaster $antenna_cell_name]
+  set antenna_mterm [$antenna_master getMTerms]
+
+  set inst_loc_x [lindex [$sink_inst getLocation] 0]
+  set inst_loc_y [lindex [$sink_inst getLocation] 1]
+  set inst_ori [$sink_inst getOrient]
+
+  set antenna_inst [odb::dbInst_create $block $antenna_master $antenna_inst_name]
+  set antenna_iterm [$antenna_inst findITerm $pin_name]
+
+  $antenna_inst setLocation $inst_loc_x $inst_loc_y
+  $antenna_inst setOrient $inst_ori
+  $antenna_inst setPlacementStatus PLACED
+  odb::dbITerm_connect $antenna_iterm $net
 }

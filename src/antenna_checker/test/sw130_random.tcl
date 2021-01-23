@@ -20,10 +20,3 @@ set pin_name "DIODE"
 # set the output file name
 set target_file "design_with_diodes"
 antenna_fix $antenna_cell_name $pin_name
-
-set verilog_file_name [make_result_file "$target_file.v"]
-write_verilog  $verilog_file_name
-
-set def_file_name [make_result_file "$target_file.def"]
-write_def $def_file_name
-
