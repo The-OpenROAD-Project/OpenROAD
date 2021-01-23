@@ -99,11 +99,6 @@ double AntennaChecker::defdist(valueType value)
   return ((double) value) * _dist_factor;
 }
 
-dbNet* AntennaChecker::get_net(std::string net_name)
-{
-  return db_->getChip()->getBlock()->findNet(net_name.c_str());
-}
-
 void AntennaChecker::load_antenna_rules()
 {
   odb::dbTech* tech = db_->getTech();
@@ -1258,20 +1253,12 @@ bool AntennaChecker::check_VIA_CAR(ARinfo AntennaRatio)
   return if_violated;
 }
 
-std::vector<int> AntennaChecker::GetAntennaRatio(std::string path)
+std::vector<int> AntennaChecker::GetAntennaRatio(std::string report_filename)
 {
   std::string bname = db_->getChip()->getBlock()->getName();
 
-  std::string output_file_name = path + "/antenna.rpt";
-  _out = fopen(output_file_name.c_str(), "w");
-
-  if (_out == nullptr) {
-    odb::notice(0,
-                "Cannot open report file (%s) for writing\n",
-                output_file_name.c_str());
-    return {0, 0, 0};
-  }
-
+  _out = fopen(report_filename.c_str(), "w");
+  if (_out) {
   check_antenna_cell();
 
   dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
@@ -1419,6 +1406,12 @@ std::vector<int> AntennaChecker::GetAntennaRatio(std::string path)
           num_total_net);
   return {num_violated_pins, num_violated_net, num_total_net};
 }
+  else {
+    logger_->error(ANT, 7, "Cannot open report file (%s) for writing",
+                   report_filename.c_str());
+    return {0, 0, 0};
+  }
+}
 
 void AntennaChecker::check_antenna_cell()
 {
@@ -1482,7 +1475,7 @@ void AntennaChecker::find_wireroot_iterms(dbWireGraph::Node* node,
 }
 
 std::vector<std::pair<double, std::vector<dbITerm*>>>
-AntennaChecker::PAR_max_wire_length(dbNet* net, int route_level)
+AntennaChecker::PAR_max_wire_length(dbNet* net, int layer)
 {
   std::vector<std::pair<double, std::vector<dbITerm*>>> par_wires;
   if (net->isSpecial())
@@ -1503,7 +1496,7 @@ AntennaChecker::PAR_max_wire_length(dbNet* net, int route_level)
       dbWireGraph::Node* wireroot = root_itr;
       odb::dbTechLayer* tech_layer = wireroot->layer();
       if (level_nodes.find(wireroot) == level_nodes.end()
-          && tech_layer->getRoutingLevel() == route_level) {
+          && tech_layer->getRoutingLevel() == layer) {
         double max_length = 0;
         std::set<dbWireGraph::Node*> nv;
         std::pair<double, double> areas = calculate_wire_area(
@@ -1578,26 +1571,19 @@ AntennaChecker::PAR_max_wire_length(dbNet* net, int route_level)
   return par_wires;
 }
 
-void AntennaChecker::check_par_max_length()
+void AntennaChecker::check_max_length(const char *net_name,
+                                      int layer)
 {
   std::string bname = db_->getChip()->getBlock()->getName();
-  dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
-  if (nets.size() != 0) {
-    dbSet<dbNet>::iterator net_itr;
-    for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-      dbNet* net = *net_itr;
-      if (net->isSpecial())
-        continue;
-      if (std::string(net->getConstName()).compare(net_name_) == 0) {
-        std::vector<std::pair<double, std::vector<dbITerm*>>>
-            par_max_length_wires = PAR_max_wire_length(net, route_level_);
-        for (auto par_wire : par_max_length_wires) {
-          logger_->warn(ANT, 3, "Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}",
-                        net_name_.c_str(),
-                        route_level_,
-                        par_wire.first);
-        }
-      }
+  dbNet* net = db_->getChip()->getBlock()->findNet(net_name);
+  if (!net->isSpecial()) {
+    std::vector<std::pair<double, std::vector<dbITerm*>>>
+      par_max_length_wires = PAR_max_wire_length(net, layer);
+    for (auto par_wire : par_max_length_wires) {
+      logger_->warn(ANT, 3, "Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}",
+                    net_name,
+                    layer,
+                    par_wire.first);
     }
   }
 }

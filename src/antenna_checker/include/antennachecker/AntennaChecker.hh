@@ -1,4 +1,3 @@
-
 // BSD 3-Clause License
 //
 // Copyright (c) 2020, MICL, DD-Lab, University of Michigan
@@ -134,10 +133,6 @@ class AntennaChecker
 
   void init(odb::dbDatabase* db,
             utl::Logger *logger);
-  void set_verbose(bool verbose) { verbose_ = verbose; }
-  void set_net_name(std::string net_name) { net_name_ = net_name; }
-  void set_route_level(int route_level) { route_level_ = route_level; }
-
   dbNet* get_net(std::string net_name);
 
   template <class valueType>
@@ -205,7 +200,7 @@ class AntennaChecker
 
   void load_antenna_rules();
   void check_antenna_cell();
-  void check_antennas(std::string path);
+  void check_antennas(std::string report_filename);
 
   bool check_violation(PARinfo par_info, dbTechLayer* layer);
 
@@ -214,8 +209,9 @@ class AntennaChecker
                             std::vector<dbITerm*>& gates);
   std::vector<std::pair<double, std::vector<dbITerm*>>> PAR_max_wire_length(
       dbNet* net,
-      int route_level);
-  void check_par_max_length();
+      int layer);
+  void check_max_length(const char *net_name,
+                        int layer);
   std::vector<VINFO> get_net_antenna_violations(dbNet* net,
                                                 std::string antenna_cell_name
                                                 = "",
@@ -229,9 +225,6 @@ class AntennaChecker
   odb::dbDatabase* db_;
   utl::Logger *logger_;
   FILE* _out;
-  bool verbose_;
-  std::string net_name_;
-  int route_level_;
   std::map<odb::dbTechLayer*, ANTENNAmodel> layer_info;
 };
 
