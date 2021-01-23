@@ -136,7 +136,7 @@ proc clock_tree_synthesis { args } {
     cts::set_buffer_list $buf_list
   } else {
     #User must input the buffer list.
-    ord::error CTS 55 "Missing argument -buf_list"
+    utl::error CTS 55 "Missing argument -buf_list"
   }
 
   if { [info exists keys(-wire_unit)] } {
@@ -148,7 +148,7 @@ proc clock_tree_synthesis { args } {
     set clk_nets $keys(-clk_nets)
     set fail [cts::set_clock_nets $clk_nets]
     if {$fail} {
-      ord::error CTS 56 "Error when finding -clk_nets in DB!"
+      utl::error CTS 56 "Error when finding -clk_nets in DB!"
     }
   }
 
@@ -170,7 +170,7 @@ proc clock_tree_synthesis { args } {
       cts::set_root_buffer $root_buf
     } else {
       #User must enter at least one of -root_buf or -buf_list.
-      ord::error CTS 57 "Missing argument -root_buf"
+      utl::error CTS 57 "Missing argument -root_buf"
     }
   }
 
