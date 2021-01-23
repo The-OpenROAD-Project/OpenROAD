@@ -30,15 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "extRCap.h"
 #include <wire.h>
 
 #include <map>
 #include <vector>
 
 #include "dbUtil.h"
-#include <dbLogger.h>
-
+#include "extRCap.h"
 #include "utility/Logger.h"
 
 //#define MAXINT 0x7FFFFFFF;
@@ -68,7 +66,6 @@ using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
-using odb::debug;
 using odb::gs;
 using odb::Rect;
 
@@ -94,17 +91,17 @@ void extMain::closeSearchFile()
   if (_searchFP != NULL)
     fclose(_searchFP);
 }
-uint extMain::addNetOnTable(uint                  netId,
-                            uint                  dir,
-                            Rect*                 maxRect,
-                            uint*                 nm_step,
-                            int*                  bb_ll,
-                            int*                  bb_ur,
+uint extMain::addNetOnTable(uint netId,
+                            uint dir,
+                            Rect* maxRect,
+                            uint* nm_step,
+                            int* bb_ll,
+                            int* bb_ur,
                             Ath__array1D<uint>*** wireTable)
 {
-  uint cnt   = 0;
-  int  ll[2] = {maxRect->xMin(), maxRect->yMin()};
-  int  ur[2] = {maxRect->xMax(), maxRect->yMax()};
+  uint cnt = 0;
+  int ll[2] = {maxRect->xMin(), maxRect->yMin()};
+  int ur[2] = {maxRect->xMax(), maxRect->yMax()};
 
   uint lo_bound = getBucketNum(bb_ll[dir], bb_ur[dir], nm_step[dir], ll[dir]);
   uint hi_bound = getBucketNum(bb_ll[dir], bb_ur[dir], nm_step[dir], ur[dir]);
@@ -125,9 +122,9 @@ uint extMain::getNetBbox(dbNet* net, Rect& maxRect)
     return 0;
 
   maxRect.reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
-  uint           cnt = 0;
+  uint cnt = 0;
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     if (s.isVia())
       continue;
@@ -148,9 +145,9 @@ uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2])
 
   maxRect[0]->reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
   maxRect[1]->reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
-  uint           cnt = 0;
+  uint cnt = 0;
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     if (s.isVia())
       continue;
@@ -165,16 +162,16 @@ uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2])
 }
 void extMain::getNetShapes(dbNet* net,
                            Rect** maxRectSdb,
-                           Rect&  maxRectGs,
-                           bool*  hasSdbWires,
-                           bool&  hasGsWires)
+                           Rect& maxRectGs,
+                           bool* hasSdbWires,
+                           bool& hasGsWires)
 {
   dbWire* wire = net->getWire();
   if (wire == NULL)
     return;
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     if (s.isVia())
       continue;
@@ -195,16 +192,16 @@ void extMain::getNetShapes(dbNet* net,
 }
 void extMain::getNetSboxes(dbNet* net,
                            Rect** maxRectSdb,
-                           Rect&  maxRectGs,
-                           bool*  hasSdbWires,
-                           bool&  hasGsWires)
+                           Rect& maxRectGs,
+                           bool* hasSdbWires,
+                           bool& hasGsWires)
 {
-  dbSet<dbSWire>           swires = net->getSWires();
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -228,10 +225,10 @@ void extMain::getNetSboxes(dbNet* net,
     }
   }
 }
-void extMain::freeSignalTables(bool                  rlog,
+void extMain::freeSignalTables(bool rlog,
                                Ath__array1D<uint>*** sdbSignalTable,
                                Ath__array1D<uint>*** signalGsTable,
-                               uint*                 bucketCnt)
+                               uint* bucketCnt)
 {
   for (uint dd = 0; dd < 2; dd++) {
     uint n = bucketCnt[dd];
@@ -248,37 +245,37 @@ void extMain::freeSignalTables(bool                  rlog,
       delete[] signalGsTable[dd];
   }
 }
-extWireBin::extWireBin(uint              d,
-                       uint              num,
-                       int               base,
+extWireBin::extWireBin(uint d,
+                       uint num,
+                       int base,
                        AthPool<extWire>* wpool,
-                       uint              allocChunk)
+                       uint allocChunk)
 {
-  _dir         = d;
-  _num         = num;
+  _dir = d;
+  _num = num;
   _extWirePool = wpool;
-  _base        = base;
-  _table       = new Ath__array1D<extWire*>(allocChunk);
+  _base = base;
+  _table = new Ath__array1D<extWire*>(allocChunk);
 }
 
 int extWireBin::addWire(uint netId, int sid, dbTechLayer* layer)
 {
-  extWire* w  = _extWirePool->alloc();
-  w->_layer   = layer;
-  w->_netId   = netId;
+  extWire* w = _extWirePool->alloc();
+  w->_layer = layer;
+  w->_netId = netId;
   w->_shapeId = sid;
   return _table->add(w);
 }
-void extMain::addExtWires(Rect&             r,
-                          extWireBin***     wireBinTable,
-                          uint              netId,
-                          int               shapeId,
-                          dbTechLayer*      layer,
-                          uint*             nm_step,
-                          int*              bb_ll,
-                          int*              bb_ur,
+void extMain::addExtWires(Rect& r,
+                          extWireBin*** wireBinTable,
+                          uint netId,
+                          int shapeId,
+                          dbTechLayer* layer,
+                          uint* nm_step,
+                          int* bb_ll,
+                          int* bb_ur,
                           AthPool<extWire>* wpool,
-                          bool              cntxFlag)
+                          bool cntxFlag)
 {
   int ll[2] = {r.xMin(), r.yMin()};
   int ur[2] = {r.xMax(), r.yMax()};
@@ -294,7 +291,7 @@ void extMain::addExtWires(Rect&             r,
     wireBinTable[dir][binNum]->addWire(netId, shapeId, layer);
   } else {
     uint not_dir = !dir;
-    uint loBin   = getBucketNum(
+    uint loBin = getBucketNum(
         bb_ll[not_dir], bb_ur[not_dir], nm_step[not_dir], ll[not_dir]);
     uint hiBin = getBucketNum(
         bb_ll[not_dir], bb_ur[not_dir], nm_step[not_dir], ur[not_dir]);
@@ -308,33 +305,34 @@ void extMain::addExtWires(Rect&             r,
     }
   }
 }
-Ath__array1D<uint>*** extMain::mkInstBins(uint  binSize,
-                                          int*  bb_ll,
-                                          int*  bb_ur,
+Ath__array1D<uint>*** extMain::mkInstBins(uint binSize,
+                                          int* bb_ll,
+                                          int* bb_ur,
                                           uint* bucketCnt)
 {
-  uint                  nm_step[2] = {binSize, binSize};
-  Ath__array1D<uint>*** instTable  = new Ath__array1D<uint>**[2];
+  uint nm_step[2] = {binSize, binSize};
+  Ath__array1D<uint>*** instTable = new Ath__array1D<uint>**[2];
 
   for (uint dd = 0; dd < 2; dd++) {
     bucketCnt[dd] = (bb_ur[dd] - bb_ll[dd]) / nm_step[dd] + 1;
-    uint n        = bucketCnt[dd];
+    uint n = bucketCnt[dd];
 
     instTable[dd] = new Ath__array1D<uint>*[n];
     if (instTable[dd] == NULL) {
-      logger_->error(RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
+      logger_->error(
+          RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
     }
     for (uint jj = 0; jj < n; jj++) {
       instTable[dd][jj] = NULL;
     }
   }
   // uint cnt= 0;
-  dbSet<dbInst>           insts = _block->getInsts();
+  dbSet<dbInst> insts = _block->getInsts();
   dbSet<dbInst>::iterator inst_itr;
 
   for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
     dbInst* inst = *inst_itr;
-    dbBox*  bb   = inst->getBBox();
+    dbBox* bb = inst->getBBox();
 
     Rect r;
     bb->getBox(r);
@@ -345,30 +343,31 @@ Ath__array1D<uint>*** extMain::mkInstBins(uint  binSize,
   return instTable;
 }
 
-extWireBin*** extMain::mkSignalBins(uint              binSize,
-                                    int*              bb_ll,
-                                    int*              bb_ur,
-                                    uint*             bucketCnt,
+extWireBin*** extMain::mkSignalBins(uint binSize,
+                                    int* bb_ll,
+                                    int* bb_ur,
+                                    uint* bucketCnt,
                                     AthPool<extWire>* wpool,
-                                    bool              cntxFlag)
+                                    bool cntxFlag)
 {
   uint nm_step[2] = {binSize, binSize};
 
   extWireBin*** sdbWireTable = new extWireBin**[2];
   for (uint dd = 0; dd < 2; dd++) {
     bucketCnt[dd] = (bb_ur[dd] - bb_ll[dd]) / nm_step[dd] + 1;
-    uint n        = bucketCnt[dd];
+    uint n = bucketCnt[dd];
 
     sdbWireTable[dd] = new extWireBin*[n];
     if (sdbWireTable[dd] == NULL) {
-      logger_->error(RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
+      logger_->error(
+          RCX, 80, "cannot allocate <Ath__array1D<extWireBin*>*[layerCnt]>");
     }
     for (uint jj = 0; jj < n; jj++) {
       sdbWireTable[dd][jj] = NULL;
     }
   }
   // uint cnt= 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -378,12 +377,12 @@ extWireBin*** extMain::mkSignalBins(uint              binSize,
 
     if ((net->getSigType() == dbSigType::POWER)
         || (net->getSigType() == dbSigType::GROUND)) {
-      dbSet<dbSWire>           swires = net->getSWires();
+      dbSet<dbSWire> swires = net->getSWires();
       dbSet<dbSWire>::iterator itr;
 
       for (itr = swires.begin(); itr != swires.end(); ++itr) {
-        dbSWire*                swire = *itr;
-        dbSet<dbSBox>           wires = swire->getWires();
+        dbSWire* swire = *itr;
+        dbSet<dbSBox> wires = swire->getWires();
         dbSet<dbSBox>::iterator box_itr;
 
         for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -414,7 +413,7 @@ extWireBin*** extMain::mkSignalBins(uint              binSize,
       continue;
 
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -474,28 +473,28 @@ extWireBin*** extMain::mkSignalBins(uint              binSize,
   }
   return sdbWireTable;
 }
-uint extMain::mkSignalTables2(uint*                 nm_step,
-                              int*                  bb_ll,
-                              int*                  bb_ur,
+uint extMain::mkSignalTables2(uint* nm_step,
+                              int* bb_ll,
+                              int* bb_ur,
                               Ath__array1D<uint>*** sdbSignalTable,
-                              Ath__array1D<uint>*   sdbPowerTable,
+                              Ath__array1D<uint>* sdbPowerTable,
                               Ath__array1D<uint>*** instTable,
-                              uint*                 bucketCnt)
+                              uint* bucketCnt)
 {
   for (uint dd = 0; dd < 2; dd++) {
     bucketCnt[dd] = (bb_ur[dd] - bb_ll[dd]) / nm_step[dd] + 2;
-    uint n        = bucketCnt[dd];
+    uint n = bucketCnt[dd];
 
     sdbSignalTable[dd] = new Ath__array1D<uint>*[n];
-    instTable[dd]      = new Ath__array1D<uint>*[n];
+    instTable[dd] = new Ath__array1D<uint>*[n];
 
     for (uint jj = 0; jj < n; jj++) {
       sdbSignalTable[dd][jj] = NULL;
-      instTable[dd][jj]      = NULL;
+      instTable[dd][jj] = NULL;
     }
   }
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -521,12 +520,12 @@ uint extMain::mkSignalTables2(uint*                 nm_step,
     cnt += cnt1;
   }
   if (_overCell) {
-    dbSet<dbInst>           insts = _block->getInsts();
+    dbSet<dbInst> insts = _block->getInsts();
     dbSet<dbInst>::iterator inst_itr;
 
     for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
       dbInst* inst = *inst_itr;
-      dbBox*  bb   = inst->getBBox();
+      dbBox* bb = inst->getBBox();
 
       Rect s;
       bb->getBox(s);
@@ -539,26 +538,26 @@ uint extMain::mkSignalTables2(uint*                 nm_step,
   }
   return cnt;
 }
-uint extMain::mkSignalTables(uint*                 nm_step,
-                             int*                  bb_ll,
-                             int*                  bb_ur,
+uint extMain::mkSignalTables(uint* nm_step,
+                             int* bb_ll,
+                             int* bb_ur,
                              Ath__array1D<uint>*** sdbSignalTable,
                              Ath__array1D<uint>*** signalGsTable,
                              Ath__array1D<uint>*** instTable,
-                             uint*                 bucketCnt)
+                             uint* bucketCnt)
 {
   for (uint dd = 0; dd < 2; dd++) {
     bucketCnt[dd] = (bb_ur[dd] - bb_ll[dd]) / nm_step[dd] + 2;
-    uint n        = bucketCnt[dd];
+    uint n = bucketCnt[dd];
 
     sdbSignalTable[dd] = new Ath__array1D<uint>*[n];
-    signalGsTable[dd]  = new Ath__array1D<uint>*[n];
-    instTable[dd]      = new Ath__array1D<uint>*[n];
+    signalGsTable[dd] = new Ath__array1D<uint>*[n];
+    instTable[dd] = new Ath__array1D<uint>*[n];
 
     for (uint jj = 0; jj < n; jj++) {
       sdbSignalTable[dd][jj] = NULL;
-      signalGsTable[dd][jj]  = NULL;
-      instTable[dd][jj]      = NULL;
+      signalGsTable[dd][jj] = NULL;
+      instTable[dd][jj] = NULL;
     }
     // bb_ur of chip has to be relace with one based on gs
 
@@ -566,8 +565,8 @@ uint extMain::mkSignalTables(uint*                 nm_step,
     bb_ur[dd] *= nm_step[dd];
   }
 
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -577,8 +576,8 @@ uint extMain::mkSignalTables(uint*                 nm_step,
     maxRectGs.reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
     bool hasGsWires = false;
 
-    Rect  a;
-    Rect  b;
+    Rect a;
+    Rect b;
     Rect* maxRectSdb[2] = {&a, &b};
     maxRectSdb[0]->reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
     maxRectSdb[1]->reset(MAX_INT, MAX_INT, MIN_INT, MIN_INT);
@@ -611,12 +610,12 @@ uint extMain::mkSignalTables(uint*                 nm_step,
 
     cnt++;
   }
-  dbSet<dbInst>           insts = _block->getInsts();
+  dbSet<dbInst> insts = _block->getInsts();
   dbSet<dbInst>::iterator inst_itr;
 
   for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
     dbInst* inst = *inst_itr;
-    dbBox*  bb   = inst->getBBox();
+    dbBox* bb = inst->getBBox();
 
     Rect s;
     bb->getBox(s);
@@ -676,30 +675,30 @@ void extMain::GetDBcoords2(Rect& r)
   int x2 = r.xMax();
   int y1 = r.yMin();
   int y2 = r.yMax();
-  x1     = GetDBcoords2(x1);
-  x2     = GetDBcoords2(x2);
-  y1     = GetDBcoords2(y1);
-  y2     = GetDBcoords2(y2);
+  x1 = GetDBcoords2(x1);
+  x2 = GetDBcoords2(x2);
+  y1 = GetDBcoords2(y1);
+  y2 = GetDBcoords2(y2);
   r.set_xlo(x1);
   r.set_ylo(y1);
   r.set_xhi(x2);
   r.set_yhi(y2);
 }
-uint extMain::initSearchForNets(int*  X1,
-                                int*  Y1,
+uint extMain::initSearchForNets(int* X1,
+                                int* Y1,
                                 uint* pitchTable,
                                 uint* widthTable,
                                 uint* dirTable,
                                 Rect& extRect,
-                                bool  skipBaseCalc)
+                                bool skipBaseCalc)
 {
   bool USE_DB_UNITS = false;
   uint W[32];
   uint S[32];
 
-  dbSet<dbTechLayer>           layers = _tech->getLayers();
+  dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
-  dbTrackGrid*                 tg = NULL;
+  dbTrackGrid* tg = NULL;
 
   Rect maxRect;
   if ((extRect.dx() > 0) && (extRect.dy() > 0)) {
@@ -707,7 +706,8 @@ uint extMain::initSearchForNets(int*  X1,
   } else {
     _block->getDieArea(maxRect);
     if (!((maxRect.dx() > 0) && (maxRect.dy() > 0)))
-      logger_->error(RCX, 81, "Die Area for the block has 0 size, or is undefined!");
+      logger_->error(
+          RCX, 81, "Die Area for the block has 0 size, or is undefined!");
   }
 
   if (USE_DB_UNITS) {
@@ -716,39 +716,40 @@ uint extMain::initSearchForNets(int*  X1,
   }
 
   std::vector<int> trackXY(32000);
-  uint             n = 0;
+  uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer*    layer = *itr;
-    dbTechLayerType type  = layer->getType();
+    dbTechLayer* layer = *itr;
+    dbTechLayerType type = layer->getType();
 
     if (type.getValue() != dbTechLayerType::ROUTING)
       continue;
 
-    n             = layer->getRoutingLevel();
-    int w         = GetDBcoords2(layer->getWidth());
+    n = layer->getRoutingLevel();
+    int w = GetDBcoords2(layer->getWidth());
     widthTable[n] = layer->getWidth();
 
     if (USE_DB_UNITS)
       widthTable[n] = w;
 
-    W[n]  = 1;
+    W[n] = 1;
     int s = GetDBcoords2(layer->getSpacing());
-    S[n]  = layer->getSpacing();
+    S[n] = layer->getSpacing();
 
     if (USE_DB_UNITS)
       S[n] = s;
 
-    int p         = GetDBcoords2(layer->getPitch());
+    int p = GetDBcoords2(layer->getPitch());
     pitchTable[n] = layer->getPitch();
 
     if (USE_DB_UNITS)
       pitchTable[n] = p;
     if (pitchTable[n] <= 0)
-      logger_->error(RCX, 82,
-            "Layer {}, routing level {}, has pitch {}!!",
-            layer->getConstName(),
-            n,
-            pitchTable[n]);
+      logger_->error(RCX,
+                     82,
+                     "Layer {}, routing level {}, has pitch {}!!",
+                     layer->getConstName(),
+                     n,
+                     pitchTable[n]);
 
     dirTable[n] = 0;
     if (layer->getDirection() == dbTechLayerDir::HORIZONTAL)
@@ -777,13 +778,13 @@ uint extMain::initSearchForNets(int*  X1,
 
 uint extMain::sBoxCounter(dbNet* net, uint& maxWidth)
 {
-  uint                     cnt    = 0;
-  dbSet<dbSWire>           swires = net->getSWires();
+  uint cnt = 0;
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -807,8 +808,8 @@ uint extMain::sBoxCounter(dbNet* net, uint& maxWidth)
 }
 uint extMain::powerWireCounter(uint& maxWidth)
 {
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -823,11 +824,11 @@ uint extMain::powerWireCounter(uint& maxWidth)
   return cnt;
 }
 uint extMain::addMultipleRectsOnSearch(Rect& r,
-                                       uint  level,
-                                       uint  dir,
-                                       uint  id,
-                                       uint  shapeId,
-                                       uint  wtype)
+                                       uint level,
+                                       uint dir,
+                                       uint id,
+                                       uint shapeId,
+                                       uint wtype)
 {
   if (_geoThickTable == NULL)
     return _search->addBox(
@@ -887,20 +888,20 @@ uint extMain::addMultipleRectsOnSearch(Rect& r,
     return 0;
 }
 
-uint extMain::addNetSBoxes(dbNet*           net,
-                           uint             dir,
-                           int*             bb_ll,
-                           int*             bb_ur,
-                           uint             wtype,
+uint extMain::addNetSBoxes(dbNet* net,
+                           uint dir,
+                           int* bb_ll,
+                           int* bb_ur,
+                           uint wtype,
                            dbCreateNetUtil* netUtil)
 {
-  uint                     cnt    = 0;
-  dbSet<dbSWire>           swires = net->getSWires();
+  uint cnt = 0;
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -952,19 +953,19 @@ uint extMain::addNetSBoxes(dbNet*           net,
   return cnt;
 }
 uint extMain::addNetSBoxes2(dbNet* net,
-                            uint   dir,
-                            int*   bb_ll,
-                            int*   bb_ur,
-                            uint   wtype,
-                            uint   step)
+                            uint dir,
+                            int* bb_ll,
+                            int* bb_ur,
+                            uint wtype,
+                            uint step)
 {
-  uint                     cnt    = 0;
-  dbSet<dbSWire>           swires = net->getSWires();
+  uint cnt = 0;
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -1033,8 +1034,8 @@ uint extMain::addNetSBoxes2(dbNet* net,
 }
 uint extMain::signalWireCounter(uint& maxWidth)
 {
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -1049,7 +1050,7 @@ uint extMain::signalWireCounter(uint& maxWidth)
       continue;
 
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -1065,21 +1066,21 @@ uint extMain::signalWireCounter(uint& maxWidth)
     }
 
     uint wireCnt = 0;
-    uint viaCnt  = 0;
+    uint viaCnt = 0;
     net->getSignalWireCount(wireCnt, viaCnt);
 
     cnt += wireCnt;
   }
   return cnt;
 }
-uint extMain::addPowerNets(uint             dir,
-                           int*             bb_ll,
-                           int*             bb_ur,
-                           uint             wtype,
+uint extMain::addPowerNets(uint dir,
+                           int* bb_ll,
+                           int* bb_ur,
+                           uint wtype,
                            dbCreateNetUtil* netUtil)
 {
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -1102,18 +1103,18 @@ double extMain::GetDBcoords1(int coord)
 
 int extMain::GetDBcoords2(int coord)
 {
-  int    db_factor = _block->getDbUnitsPerMicron();
-  double d         = (1.0 * coord) / db_factor;
-  int    n         = (int) ceil(1000 * d);
+  int db_factor = _block->getDbUnitsPerMicron();
+  double d = (1.0 * coord) / db_factor;
+  int n = (int) ceil(1000 * d);
   return n;
 }
 
-uint extMain::addNetShapesOnSearch(dbNet*           net,
-                                   uint             dir,
-                                   int*             bb_ll,
-                                   int*             bb_ur,
-                                   uint             wtype,
-                                   FILE*            fp,
+uint extMain::addNetShapesOnSearch(dbNet* net,
+                                   uint dir,
+                                   int* bb_ll,
+                                   int* bb_ur,
+                                   uint wtype,
+                                   FILE* fp,
                                    dbCreateNetUtil* netUtil)
 {
   bool USE_DB_UNITS = false;
@@ -1130,7 +1131,7 @@ uint extMain::addNetShapesOnSearch(dbNet*           net,
   //	uint wireId= wire->getId();
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     //		uint level= 0;
 
@@ -1156,8 +1157,8 @@ uint extMain::addNetShapesOnSearch(dbNet*           net,
       if (netUtil != NULL) {
         netUtil->createNetSingleWire(r, level, net->getId(), shapeId);
       } else {
-        int dx      = r.xMax() - r.xMin();
-        int dy      = r.yMax() - r.yMin();
+        int dx = r.xMax() - r.xMin();
+        int dy = r.yMax() - r.yMin();
         int via_ext = 32;
 
         // int xmin= r.xMin();
@@ -1203,23 +1204,27 @@ uint extMain::addNetShapesOnSearch(dbNet*           net,
                                        shapeId,
                                        wtype);
             if (net->getId() == _debug_net_id) {
-              debug("Search",
-                    "W",
-                    "onSearch: tr=%g L%g  DX=%d DY=%d %d %d  %d %d -- %.3f "
-                    "%.3f  %.3f %.3f net %g\n",
-                    trackNum,
-                    level,
-                    dx,
-                    dy,
-                    r.xMin(),
-                    r.yMin(),
-                    r.xMax(),
-                    r.yMax(),
-                    GetDBcoords1(r.xMin()),
-                    GetDBcoords1(r.yMin()),
-                    GetDBcoords1(r.xMax()),
-                    GetDBcoords1(r.yMax()),
-                    net->getId());
+              debugPrint(
+                  logger_,
+                  RCX,
+                  "debug_net",
+                  1,
+                  "\t[Search:W]"
+                  "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
+                  "{:.3f}  {:.3f} {:.3f} net {}",
+                  trackNum,
+                  level,
+                  dx,
+                  dy,
+                  r.xMin(),
+                  r.yMin(),
+                  r.xMax(),
+                  r.yMax(),
+                  GetDBcoords1(r.xMin()),
+                  GetDBcoords1(r.yMin()),
+                  GetDBcoords1(r.xMax()),
+                  GetDBcoords1(r.yMax()),
+                  net->getId());
             }
           }
         }
@@ -1257,16 +1262,16 @@ uint extMain::addNetShapesOnSearch(dbNet*           net,
 uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
 {
   int rcid = getShapeProperty(net, shapeId);
-  wtype    = 5;  // Via Type
+  wtype = 5;  // Via Type
 
   bool USE_DB_UNITS = false;
-  uint cnt          = 0;
+  uint cnt = 0;
 
-  int X1[2]  = {0, 0};
-  int X2[2]  = {0, 0};
-  int Y1[2]  = {0, 0};
-  int Y2[2]  = {0, 0};
-  int id[2]  = {0, 0};
+  int X1[2] = {0, 0};
+  int X2[2] = {0, 0};
+  int Y1[2] = {0, 0};
+  int Y2[2] = {0, 0};
+  int id[2] = {0, 0};
   int LEN[2] = {0, 0};
 
   int botLevel = 0;
@@ -1321,22 +1326,22 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
     }
     // if (net->getId()==_debug_net_id) {
     //	debug("Search", "W", "addViaBoxes: L%d  DX=%3d DY=%d %d %d  %d %d --
-    //%.3f %.3f  %.3f %.3f dx=%g dy=%g\n", 		level, dx, dy, x1, y1, x2, y2,
-    //GetDBcoords1(x1), GetDBcoords1(y1), GetDBcoords1(x2), GetDBcoords1(y2),
-    //		GetDBcoords1(dx), GetDBcoords1(dy));
+    //%.3f %.3f  %.3f %.3f dx=%g dy=%g\n", 		level, dx, dy, x1, y1,
+    // x2, y2, GetDBcoords1(x1), GetDBcoords1(y1), GetDBcoords1(x2),
+    // GetDBcoords1(y2), 		GetDBcoords1(dx), GetDBcoords1(dy));
     //}
   }
   return cnt;
 }
 
-uint extMain::addSignalNets(uint             dir,
-                            int*             bb_ll,
-                            int*             bb_ur,
-                            uint             wtype,
+uint extMain::addSignalNets(uint dir,
+                            int* bb_ll,
+                            int* bb_ur,
+                            uint wtype,
                             dbCreateNetUtil* createDbNet)
 {
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   FILE* fp = NULL;
@@ -1375,14 +1380,14 @@ uint extMain::addSignalNets(uint             dir,
 #endif
   return cnt;
 }
-uint extMain::addPowerNets2(uint                dir,
-                            int*                bb_ll,
-                            int*                bb_ur,
-                            uint                wtype,
+uint extMain::addPowerNets2(uint dir,
+                            int* bb_ll,
+                            int* bb_ur,
+                            uint wtype,
                             Ath__array1D<uint>* sdbPowerTable,
-                            dbCreateNetUtil*    createDbNet)
+                            dbCreateNetUtil* createDbNet)
 {
-  uint cnt    = 0;
+  uint cnt = 0;
   uint netCnt = sdbPowerTable->getCnt();
 
   if (createDbNet != NULL)
@@ -1398,8 +1403,8 @@ uint extMain::addPowerNets2(uint                dir,
 void extMain::resetNetSpefFlag(Ath__array1D<uint>* tmpNetIdTable)
 {
   for (uint ii = 0; ii < tmpNetIdTable->getCnt(); ii++) {
-    uint   netId = tmpNetIdTable->get(ii);
-    dbNet* net   = dbNet::getNet(_block, netId);
+    uint netId = tmpNetIdTable->get(ii);
+    dbNet* net = dbNet::getNet(_block, netId);
     net->setSpef(false);
   }
 }
@@ -1407,9 +1412,9 @@ uint extWireBin::createDbNetsGS(dbBlock* block, dbCreateNetUtil* createDbNet)
 {
   uint cnt = 0;
 
-  uint    prevNetId = 0;
-  dbNet*  net       = NULL;
-  dbWire* wire      = NULL;
+  uint prevNetId = 0;
+  dbNet* net = NULL;
+  dbWire* wire = NULL;
 
   char netName[128];
   sprintf(netName, "GS_%d_%d", _dir, _num);
@@ -1422,8 +1427,8 @@ uint extWireBin::createDbNetsGS(dbBlock* block, dbCreateNetUtil* createDbNet)
 
     if (w->_netId != prevNetId) {
       prevNetId = w->_netId;
-      net       = dbNet::getNet(block, w->_netId);
-      wire      = net->getWire();
+      net = dbNet::getNet(block, w->_netId);
+      wire = net->getWire();
     }
 
     Rect r;
@@ -1442,13 +1447,13 @@ uint extWireBin::createDbNetsGS(dbBlock* block, dbCreateNetUtil* createDbNet)
   }
   return cnt;
 }
-uint extMain::addNets3GS(uint             dir,
-                         int*             lo_sdb,
-                         int*             hi_sdb,
-                         int*             bb_ll,
-                         int*             bb_ur,
-                         uint             bucketSize,
-                         extWireBin***    wireBinTable,
+uint extMain::addNets3GS(uint dir,
+                         int* lo_sdb,
+                         int* hi_sdb,
+                         int* bb_ll,
+                         int* bb_ur,
+                         uint bucketSize,
+                         extWireBin*** wireBinTable,
                          dbCreateNetUtil* createDbNet)
 {
   uint lo_index
@@ -1474,16 +1479,16 @@ uint extWireBin::createDbNets(dbBlock* block, dbCreateNetUtil* createDbNet)
 {
   uint cnt = 0;
 
-  uint    prevNetId = 0;
-  dbNet*  net       = NULL;
-  dbWire* wire      = NULL;
+  uint prevNetId = 0;
+  dbNet* net = NULL;
+  dbWire* wire = NULL;
 
   for (uint ii = 0; ii < _table->getCnt(); ii++) {
     extWire* w = _table->get(ii);
 
     if (w->_netId != prevNetId) {
       prevNetId = w->_netId;
-      net       = dbNet::getNet(block, w->_netId);
+      net = dbNet::getNet(block, w->_netId);
       createDbNet->checkAndSet(w->_netId);
 
       if (w->_shapeId < 0)
@@ -1512,13 +1517,13 @@ uint extWireBin::createDbNets(dbBlock* block, dbCreateNetUtil* createDbNet)
   }
   return cnt;
 }
-uint extMain::addNets3(uint             dir,
-                       int*             lo_sdb,
-                       int*             hi_sdb,
-                       int*             bb_ll,
-                       int*             bb_ur,
-                       uint             bucketSize,
-                       extWireBin***    wireBinTable,
+uint extMain::addNets3(uint dir,
+                       int* lo_sdb,
+                       int* hi_sdb,
+                       int* bb_ll,
+                       int* bb_ur,
+                       uint bucketSize,
+                       extWireBin*** wireBinTable,
                        dbCreateNetUtil* createDbNet)
 {
   uint lo_index = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize, lo_sdb[dir]);
@@ -1538,14 +1543,14 @@ uint extMain::addNets3(uint             dir,
 
   return cnt;
 }
-uint extMain::addInsts(uint                  dir,
-                       int*                  lo_gs,
-                       int*                  hi_gs,
-                       int*                  bb_ll,
-                       int*                  bb_ur,
-                       uint                  bucketSize,
+uint extMain::addInsts(uint dir,
+                       int* lo_gs,
+                       int* hi_gs,
+                       int* bb_ll,
+                       int* bb_ur,
+                       uint bucketSize,
                        Ath__array1D<uint>*** wireBinTable,
-                       dbCreateNetUtil*      createDbNet)
+                       dbCreateNetUtil* createDbNet)
 {
   uint lo_index = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize, lo_gs[dir]);
   uint hi_index = getBucketNum(bb_ll[dir], bb_ur[dir], bucketSize, hi_gs[dir]);
@@ -1558,8 +1563,8 @@ uint extMain::addInsts(uint                  dir,
 
     uint instCnt = wireBinTable[dir][bucket]->getCnt();
     for (uint ii = 0; ii < instCnt; ii++) {
-      uint    instId = wireBinTable[dir][bucket]->get(ii);
-      dbInst* inst0  = dbInst::getInst(_block, instId);
+      uint instId = wireBinTable[dir][bucket]->get(ii);
+      dbInst* inst0 = dbInst::getInst(_block, instId);
 
       if (inst0->getUserFlag1())
         continue;
@@ -1576,24 +1581,24 @@ uint extMain::addInsts(uint                  dir,
 
     uint instCnt = wireBinTable[dir][bucket]->getCnt();
     for (uint ii = 0; ii < instCnt; ii++) {
-      uint    instId = wireBinTable[dir][bucket]->get(ii);
-      dbInst* inst0  = dbInst::getInst(_block, instId);
+      uint instId = wireBinTable[dir][bucket]->get(ii);
+      dbInst* inst0 = dbInst::getInst(_block, instId);
 
       inst0->clearUserFlag1();
     }
   }
   return cnt;
 }
-uint extMain::addSignalNets2(uint                  dir,
-                             int*                  lo_sdb,
-                             int*                  hi_sdb,
-                             int*                  bb_ll,
-                             int*                  bb_ur,
-                             uint*                 bucketSize,
-                             uint                  wtype,
+uint extMain::addSignalNets2(uint dir,
+                             int* lo_sdb,
+                             int* hi_sdb,
+                             int* bb_ll,
+                             int* bb_ur,
+                             uint* bucketSize,
+                             uint wtype,
                              Ath__array1D<uint>*** sdbSignalTable,
-                             Ath__array1D<uint>*   tmpNetIdTable,
-                             dbCreateNetUtil*      createDbNet)
+                             Ath__array1D<uint>* tmpNetIdTable,
+                             dbCreateNetUtil* createDbNet)
 {
   if (sdbSignalTable == NULL)
     return 0;
@@ -1617,8 +1622,8 @@ uint extMain::addSignalNets2(uint                  dir,
 
     uint netCnt = sdbSignalTable[dir][bucket]->getCnt();
     for (uint ii = 0; ii < netCnt; ii++) {
-      uint   netId = sdbSignalTable[dir][bucket]->get(ii);
-      dbNet* net   = dbNet::getNet(_block, netId);
+      uint netId = sdbSignalTable[dir][bucket]->get(ii);
+      dbNet* net = dbNet::getNet(_block, netId);
 
       if (net->isSpef())  // tmp flag
         continue;
@@ -1649,11 +1654,14 @@ uint extMain::addSignalNets2(uint                  dir,
 
   return cnt;
 }
-void extMain::reportTableNetCnt(uint*                 sdbBucketCnt,
+void extMain::reportTableNetCnt(uint* sdbBucketCnt,
                                 Ath__array1D<uint>*** sdbSignalTable)
 {
   for (uint dir = 0; dir < 2; dir++) {
-    logger_->info(RCX, 83, "DIR= {} -----------------------------------------------", dir);
+    logger_->info(RCX,
+                  83,
+                  "DIR= {} -----------------------------------------------",
+                  dir);
 
     for (uint bucket = 0; bucket < sdbBucketCnt[dir]; bucket++) {
       if (sdbSignalTable[dir][bucket] == NULL)
@@ -1664,17 +1672,17 @@ void extMain::reportTableNetCnt(uint*                 sdbBucketCnt,
     }
   }
 }
-uint extMain::addNets(uint                dir,
-                      int*                bb_ll,
-                      int*                bb_ur,
-                      uint                wtype,
-                      uint                ptype,
+uint extMain::addNets(uint dir,
+                      int* bb_ll,
+                      int* bb_ur,
+                      uint wtype,
+                      uint ptype,
                       Ath__array1D<uint>* sdbSignalTable)
 {
   if (sdbSignalTable == NULL)
     return 0;
 
-  uint cnt    = 0;
+  uint cnt = 0;
   uint netCnt = sdbSignalTable->getCnt();
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, sdbSignalTable->get(ii));
@@ -1702,15 +1710,15 @@ uint extMain::getDir(int x1, int y1, int x2, int y2)
 
   return dd;
 }
-uint extMain::addShapeOnGS(dbNet*           net,
-                           uint             sId,
-                           Rect&            r,
-                           bool             plane,
-                           dbTechLayer*     layer,
-                           bool             gsRotated,
-                           bool             swap_coords,
-                           int              dir,
-                           bool             specialWire,
+uint extMain::addShapeOnGS(dbNet* net,
+                           uint sId,
+                           Rect& r,
+                           bool plane,
+                           dbTechLayer* layer,
+                           bool gsRotated,
+                           bool swap_coords,
+                           int dir,
+                           bool specialWire,
                            dbCreateNetUtil* createDbNet)
 {
   if (dir >= 0) {
@@ -1730,7 +1738,7 @@ uint extMain::addShapeOnGS(dbNet*           net,
     checkFlag = true;
 
   uint level = layer->getRoutingLevel();
-  int  n     = 0;
+  int n = 0;
   if (!gsRotated) {
     n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
   } else {
@@ -1752,15 +1760,15 @@ uint extMain::addShapeOnGS(dbNet*           net,
   }
   return 0;
 }
-uint extMain::addNetShapesGs(dbNet*           net,
-                             bool             gsRotated,
-                             bool             swap_coords,
-                             int              dir,
+uint extMain::addNetShapesGs(dbNet* net,
+                             bool gsRotated,
+                             bool swap_coords,
+                             int dir,
                              dbCreateNetUtil* createDbNet)
 {
-  bool    USE_DB_UNITS = false;
-  uint    cnt          = 0;
-  dbWire* wire         = net->getWire();
+  bool USE_DB_UNITS = false;
+  uint cnt = 0;
+  dbWire* wire = net->getWire();
   if (wire == NULL)
     return 0;
 
@@ -1769,7 +1777,7 @@ uint extMain::addNetShapesGs(dbNet*           net,
     plane = true;
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     if (s.isVia())
       continue;
@@ -1818,20 +1826,20 @@ uint extMain::addNetShapesGs(dbNet*           net,
   }
   return cnt;
 }
-uint extMain::addNetSboxesGs(dbNet*           net,
-                             bool             gsRotated,
-                             bool             swap_coords,
-                             int              dir,
+uint extMain::addNetSboxesGs(dbNet* net,
+                             bool gsRotated,
+                             bool swap_coords,
+                             int dir,
                              dbCreateNetUtil* createDbNet)
 {
   uint cnt = 0;
 
-  dbSet<dbSWire>           swires = net->getSWires();
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -1885,7 +1893,7 @@ uint extMain::addNetsGs(Ath__array1D<uint>* gsTable, int dir)
   if (gsTable == NULL)
     return 0;
 
-  uint cnt    = 0;
+  uint cnt = 0;
   uint netCnt = gsTable->getCnt();
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, gsTable->get(ii));
@@ -1901,7 +1909,7 @@ uint extMain::addNetsGs(Ath__array1D<uint>* gsTable, int dir)
 int extMain::getXY_gs(int base, int XY, uint minRes)
 {
   uint maxRow = (XY - base) / minRes;
-  int  v      = base + maxRow * minRes;
+  int v = base + maxRow * minRes;
   return v;
 }
 int extMain::getXY_gs2(int base, int hiXY, int loXY, uint minRes)
@@ -1912,18 +1920,18 @@ int extMain::getXY_gs2(int base, int hiXY, int loXY, uint minRes)
   uint deltaRow = hiRow - loRow;
 
   int targetRow = hiRow - deltaRow;
-  int v         = base + targetRow * minRes;
+  int v = base + targetRow * minRes;
   return v;
 }
-uint extMain::initPlanes(uint  dir,
-                         int*  wLL,
-                         int*  wUR,
-                         uint  layerCnt,
+uint extMain::initPlanes(uint dir,
+                         int* wLL,
+                         int* wUR,
+                         uint layerCnt,
                          uint* pitchTable,
                          uint* widthTable,
                          uint* dirTable,
-                         int*  bb_ll,
-                         bool  skipMemAlloc)
+                         int* bb_ll,
+                         bool skipMemAlloc)
 {
   bool rotatedFlag = getRotatedFlag();
 
@@ -1945,15 +1953,16 @@ uint extMain::initPlanes(uint  dir,
       continue;
     int ll[2];
     ll[!dir] = bb_ll[!dir];
-    ll[dir]  = getXY_gs(bb_ll[dir], wLL[dir], res[dir]);
+    ll[dir] = getXY_gs(bb_ll[dir], wLL[dir], res[dir]);
 
     int ur[2];
     ur[!dir] = wUR[!dir];
-    ur[dir]  = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
+    ur[dir] = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
-      // _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+      // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={},
+      // _y0={}, _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0],
+      // ur[1]);
 
       _geomSeq->configureSlice(
           ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
@@ -1962,8 +1971,9 @@ uint extMain::initPlanes(uint  dir,
         _geomSeq->configureSlice(
             ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
 
-        // logger_->info(RCX, 0, "HSE_GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
-        // _x1={}, _y1={}", 	ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+        // logger_->info(RCX, 0, "HSE_GS: _slicenum={}, _xres={}, _yres={},
+        // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, res[0], res[1], ll[0],
+        // ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
           _geomSeq->configureSlice(ii,
@@ -1975,9 +1985,9 @@ uint extMain::initPlanes(uint  dir,
                                    ur[0],
                                    skipMemAlloc);
 
-          // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
-          // _x1={}, _y1={}", 	ii, pitchTable[ii], widthTable[ii],
-          // ll[1], ll[0], ur[1], ur[0]);
+          // logger_->info(RCX, 0, "GS: _slicenum={}, _xres={}, _yres={},
+          // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, pitchTable[ii],
+          // widthTable[ii], ll[1], ll[0], ur[1], ur[0]);
         } else {
           _geomSeq->configureSlice(ii,
                                    widthTable[ii],
@@ -1987,9 +1997,9 @@ uint extMain::initPlanes(uint  dir,
                                    ur[1],
                                    ur[0],
                                    skipMemAlloc);
-          // logger_->info(RCX, 0, "H_GS: _slicenum={}, _xres={}, _yres={}, _x0={}, _y0={},
-          // _x1={}, _y1={}", 	ii, widthTable[ii], pitchTable[ii],
-          // ll[1], ll[0], ur[1], ur[0]);
+          // logger_->info(RCX, 0, "H_GS: _slicenum={}, _xres={}, _yres={},
+          // _x0={}, _y0={}, _x1={}, _y1={}", 	ii, widthTable[ii],
+          // pitchTable[ii], ll[1], ll[0], ur[1], ur[0]);
         }
       }
     }
@@ -1998,19 +2008,19 @@ uint extMain::initPlanes(uint  dir,
 }
 uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
                          Ath__array1D<uint>* tmpInstIdTable,
-                         uint                dir)
+                         uint dir)
 {
   if (instTable == NULL)
     return 0;
 
   bool rotatedGs = getRotatedFlag();
 
-  uint cnt     = 0;
+  uint cnt = 0;
   uint instCnt = instTable->getCnt();
 
   for (uint ii = 0; ii < instCnt; ii++) {
-    uint    instId = instTable->get(ii);
-    dbInst* inst   = dbInst::getInst(_block, instId);
+    uint instId = instTable->get(ii);
+    dbInst* inst = dbInst::getInst(_block, instId);
 
     if (tmpInstIdTable != NULL) {
       if (inst->getUserFlag1())
@@ -2032,8 +2042,8 @@ uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
   }
   if (tmpInstIdTable != NULL) {
     for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
-      uint    instId = instTable->get(jj);
-      dbInst* inst   = dbInst::getInst(_block, instId);
+      uint instId = instTable->get(jj);
+      dbInst* inst = dbInst::getInst(_block, instId);
 
       inst->clearUserFlag1();
     }
@@ -2054,15 +2064,15 @@ bool extMain::enableRotatedFlag()
 
   return _rotatedGs;
 }
-uint extMain::fill_gs4(int              dir,
-                       int*             ll,
-                       int*             ur,
-                       int*             lo_gs,
-                       int*             hi_gs,
-                       uint             layerCnt,
-                       uint*            dirTable,
-                       uint*            pitchTable,
-                       uint*            widthTable,
+uint extMain::fill_gs4(int dir,
+                       int* ll,
+                       int* ur,
+                       int* lo_gs,
+                       int* hi_gs,
+                       uint layerCnt,
+                       uint* dirTable,
+                       uint* pitchTable,
+                       uint* widthTable,
                        dbCreateNetUtil* createDbNet)
 {
   bool rotatedGs = getRotatedFlag();
@@ -2086,8 +2096,8 @@ uint extMain::fill_gs4(int              dir,
   gs_dir = -1;
 #endif
 
-  uint                   pcnt = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint pcnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -2129,7 +2139,7 @@ uint extMain::fill_gs4(int              dir,
     Ath__array1D<uint> instGsTable(nets.size());
     Ath__array1D<uint> tmpNetIdTable(nets.size());
 
-    dbSet<dbInst>           insts = _block->getInsts();
+    dbSet<dbInst> insts = _block->getInsts();
     dbSet<dbInst>::iterator inst_itr;
     for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
       dbInst* inst = *inst_itr;
@@ -2161,29 +2171,29 @@ uint extMain::fill_gs4(int              dir,
           if (fp!=NULL)
                   fclose(fp);
   #endif
-          // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1],
-  hi_gs[0], hi_gs[1]);
+          // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0],
+  lo_gs[1], hi_gs[0], hi_gs[1]);
   */
   return pcnt + scnt;
 }
 
-int extMain::fill_gs3(int                   dir,
-                      int*                  ll,
-                      int*                  ur,
-                      int*                  lo_gs,
-                      int*                  hi_gs,
-                      uint                  layerCnt,
-                      uint*                 dirTable,
-                      uint*                 pitchTable,
-                      uint*                 widthTable,
-                      int*                  sdbTable_ll,
-                      int*                  sdbTable_ur,
-                      uint*                 bucketSize,
-                      Ath__array1D<uint>*   powerNetTable,
-                      Ath__array1D<uint>*   tmpNetIdTable,
+int extMain::fill_gs3(int dir,
+                      int* ll,
+                      int* ur,
+                      int* lo_gs,
+                      int* hi_gs,
+                      uint layerCnt,
+                      uint* dirTable,
+                      uint* pitchTable,
+                      uint* widthTable,
+                      int* sdbTable_ll,
+                      int* sdbTable_ur,
+                      uint* bucketSize,
+                      Ath__array1D<uint>* powerNetTable,
+                      Ath__array1D<uint>* tmpNetIdTable,
                       Ath__array1D<uint>*** sdbSignalTable,
                       Ath__array1D<uint>*** instGsTable,
-                      dbCreateNetUtil*      createDbNet)
+                      dbCreateNetUtil* createDbNet)
 {
   if (sdbSignalTable == NULL)
     return 0;
@@ -2211,7 +2221,7 @@ int extMain::fill_gs3(int                   dir,
   gs_dir = -1;
 #endif
 
-  uint pcnt   = 0;
+  uint pcnt = 0;
   uint netCnt = powerNetTable->getCnt();
   for (uint ii = 0; ii < netCnt; ii++) {
     dbNet* net = dbNet::getNet(_block, powerNetTable->get(ii));
@@ -2238,8 +2248,8 @@ int extMain::fill_gs3(int                   dir,
     uint netCnt = sdbSignalTable[dir][bucket]->getCnt();
 
     for (uint ii = 0; ii < netCnt; ii++) {
-      uint   netId = sdbSignalTable[dir][bucket]->get(ii);
-      dbNet* net   = dbNet::getNet(_block, netId);
+      uint netId = sdbSignalTable[dir][bucket]->get(ii);
+      dbNet* net = dbNet::getNet(_block, netId);
 
       if (net->isSpef())  // tmp flag
         continue;
@@ -2259,7 +2269,7 @@ int extMain::fill_gs3(int                   dir,
 
 #ifdef TEST_SIGNAL_TABLE
   FILE* fp = NULL;
-  char  filename[64];
+  char filename[64];
   sprintf(filename, "new/%d.%d.%d.fill", dir, minExt, hiXY);
   fp = fopen(filename, "w");
 
@@ -2279,21 +2289,21 @@ int extMain::fill_gs3(int                   dir,
   if (fp != NULL)
     fclose(fp);
 #endif
-  // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1], hi_gs[0],
-  // hi_gs[1]);
+  // logger_->info(RCX, 0, "Extracting {} {}   {} {} ....", lo_gs[0], lo_gs[1],
+  // hi_gs[0], hi_gs[1]);
   return lo_gs[dir];
 }
 
-int extMain::fill_gs2(int                   dir,
-                      int*                  ll,
-                      int*                  ur,
-                      int*                  lo_gs,
-                      int*                  hi_gs,
-                      uint                  layerCnt,
-                      uint*                 dirTable,
-                      uint*                 pitchTable,
-                      uint*                 widthTable,
-                      uint                  bucket,
+int extMain::fill_gs2(int dir,
+                      int* ll,
+                      int* ur,
+                      int* lo_gs,
+                      int* hi_gs,
+                      uint layerCnt,
+                      uint* dirTable,
+                      uint* pitchTable,
+                      uint* widthTable,
+                      uint bucket,
                       Ath__array1D<uint>*** gsTable,
                       Ath__array1D<uint>*** instGsTable)
 {
@@ -2333,7 +2343,7 @@ int extMain::fill_gs2(int                   dir,
 
 #ifdef TEST_SIGNAL_TABLE
     FILE* fp = NULL;
-    char  filename[64];
+    char filename[64];
     sprintf(filename, "old/%d.%d.%d.fill", dir, minExt, hiXY);
     fp = fopen(filename, "w");
 
@@ -2362,7 +2372,7 @@ void extMain::resetGndCaps()
 {
   uint cornerCnt = _block->getCornerCount();
 
-  dbSet<dbNet>           nets = _block->getNets();
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   // uint cnt= 0;
@@ -2385,32 +2395,33 @@ void extMain::resetGndCaps()
       for (uint ii = 0; ii < cornerCnt; ii++)
         rc->setCapacitance(0.0, ii);
 
-      uint n  = rc->getShapeId();
+      uint n = rc->getShapeId();
       uint n1 = rc->getTargetCapNode()->getShapeId();
       uint n2 = rc->getSourceCapNode()->getShapeId();
 
       if (n != n1) {
-        logger_->info(RCX, 85,
-               "shapeIds {}: rc= {} tgt= {} src {}",
-               net->getConstName(),
-               n,
-               n1,
-               n2);
+        logger_->info(RCX,
+                      85,
+                      "shapeIds {}: rc= {} tgt= {} src {}",
+                      net->getConstName(),
+                      n,
+                      n1,
+                      n2);
       }
     }
   }
 }
-uint extMain::couplingFlow(bool        rlog,
-                           Rect&       extRect,
-                           uint        trackStep,
-                           uint        ccFlag,
+uint extMain::couplingFlow(bool rlog,
+                           Rect& extRect,
+                           uint trackStep,
+                           uint ccFlag,
                            extMeasure* m,
                            void (*coupleAndCompute)(int*, void*))
 {
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
   if (p != NULL) {
     _use_signal_tables = 3;
-    int DIR            = p->getValue();
+    int DIR = p->getValue();
 
     extWindow* W = new extWindow(20, logger_);
     W->getExtProperties(_block);
@@ -2454,8 +2465,8 @@ uint extMain::couplingFlow(bool        rlog,
     widthTable[ii] = 0;
   }
   uint dirTable[16];
-  int  baseX[32];
-  int  baseY[32];
+  int baseX[32];
+  int baseY[32];
   uint layerCnt = initSearchForNets(
       baseX, baseY, pitchTable, widthTable, dirTable, extRect, false);
   for (uint i = 0; i < layerCnt + 1; i++)
@@ -2480,7 +2491,7 @@ uint extMain::couplingFlow(bool        rlog,
   int hi_sdb[2];
 
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  _useDbSdb                     = true;
+  _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,
                          (uint) overlapAdj,
@@ -2506,9 +2517,9 @@ uint extMain::couplingFlow(bool        rlog,
 
   _seqPool = m->_seqPool;
 
-  uint maxWidth        = 0;
+  uint maxWidth = 0;
   uint totPowerWireCnt = powerWireCounter(maxWidth);
-  uint totWireCnt      = signalWireCounter(maxWidth);
+  uint totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
   logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
@@ -2535,26 +2546,27 @@ uint extMain::couplingFlow(bool        rlog,
   // _use_signal_tables
   Ath__array1D<uint>** sdbSignalTable[2];
   Ath__array1D<uint>** gsInstTable[2];
-  Ath__array1D<uint>   sdbPowerTable;
-  Ath__array1D<uint>   tmpNetIdTable(64000);
-  uint                 sdbBucketCnt[2];
-  uint                 sdbBucketSize[2];
-  int                  sdbTable_ll[2];
-  int                  sdbTable_ur[2];
+  Ath__array1D<uint> sdbPowerTable;
+  Ath__array1D<uint> tmpNetIdTable(64000);
+  uint sdbBucketCnt[2];
+  uint sdbBucketSize[2];
+  int sdbTable_ll[2];
+  int sdbTable_ur[2];
 
   bool use_signal_tables = false;
   if ((_use_signal_tables == 1) || (_use_signal_tables == 2)) {
     use_signal_tables = true;
 
-    logger_->info(RCX, 88,
-           "Signal_table= {} ----------------------------- ",
-           _use_signal_tables);
+    logger_->info(RCX,
+                  88,
+                  "Signal_table= {} ----------------------------- ",
+                  _use_signal_tables);
 
     for (uint ii = 0; ii < 2; ii++) {
-      sdbBucketCnt[ii]  = 0;
+      sdbBucketCnt[ii] = 0;
       sdbBucketSize[ii] = 2 * step_nm[ii];
-      sdbTable_ll[ii]   = ll[ii] - step_nm[ii] / 10;
-      sdbTable_ur[ii]   = ur[ii] + step_nm[ii] / 10;
+      sdbTable_ll[ii] = ll[ii] - step_nm[ii] / 10;
+      sdbTable_ur[ii] = ur[ii] + step_nm[ii] / 10;
     }
 
     // mkSignalTables(sdbBucketSize, sdbTable_ll, sdbTable_ur, sdbSignalTable,
@@ -2596,15 +2608,16 @@ uint extMain::couplingFlow(bool        rlog,
       enableRotatedFlag();
 
     // if (getRotatedFlag())
-    //   logger_->info(RCX, 0, "======> Fast Mode enabled for d= {} <======", dir);
+    //   logger_->info(RCX, 0, "======> Fast Mode enabled for d= {} <======",
+    //   dir);
 
-    lo_gs[!dir]  = ll[!dir];
-    hi_gs[!dir]  = ur[!dir];
+    lo_gs[!dir] = ll[!dir];
+    hi_gs[!dir] = ur[!dir];
     lo_sdb[!dir] = ll[!dir];
     hi_sdb[!dir] = ur[!dir];
 
     int minExtracted = ll[dir];
-    int gs_limit     = ll[dir];
+    int gs_limit = ll[dir];
 
     _search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
     if (rlog)
@@ -2657,7 +2670,7 @@ uint extMain::couplingFlow(bool        rlog,
         // fill_gs2(dir, ll, ur, lo_gs, hi_gs, layerCnt, dirTable, pitchTable,
         // widthTable, 0, NULL, NULL);
 
-        m->_rotatedGs  = getRotatedFlag();
+        m->_rotatedGs = getRotatedFlag();
         m->_pixelTable = _geomSeq;
         if (rlog)
           AthResourceLog("Fill GS", 0);
@@ -2690,8 +2703,8 @@ uint extMain::couplingFlow(bool        rlog,
         AthResourceLog("Fill Sdb", 0);
 
       uint extractedWireCnt = 0;
-      int  extractLimit     = hiXY - ccDist * maxPitch;
-      minExtracted          = _search->couplingCaps(extractLimit,
+      int extractLimit = hiXY - ccDist * maxPitch;
+      minExtracted = _search->couplingCaps(extractLimit,
                                            ccFlag,
                                            dir,
                                            extractedWireCnt,
@@ -2709,7 +2722,7 @@ uint extMain::couplingFlow(bool        rlog,
                 processWireCnt,
                 dir,
                 minExtracted);
-        
+
         AthResourceLog(buff, 0);
       }
 
@@ -2726,7 +2739,7 @@ uint extMain::couplingFlow(bool        rlog,
       _search->dealloc(dir, deallocLimit);
 
       lo_sdb[dir] = hiXY;
-      gs_limit    = minExtracted - (ccDist + 2) * maxPitch;
+      gs_limit = minExtracted - (ccDist + 2) * maxPitch;
 
       stepNum++;
       // totalWiresExtracted += extractedWireCnt;
@@ -2736,10 +2749,11 @@ uint extMain::couplingFlow(bool        rlog,
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {
-        logger_->info(RCX, 44,
-               "{:d}% completion -- {:d} wires have been extracted",
-               (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
-               totalWiresExtracted);
+        logger_->info(RCX,
+                      44,
+                      "{:d}% completion -- {:d} wires have been extracted",
+                      (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
+                      totalWiresExtracted);
 
         _previous_percent_extracted = percent_extracted;
       }
@@ -2763,9 +2777,9 @@ uint extMain::couplingFlow(bool        rlog,
 
 //=============================================== WINDOW BASED ==============
 void extWindow::initWindowStep(Rect& extRect,
-                               uint  trackStep,
-                               uint  layerCnt,
-                               uint  modelLevelCnt)
+                               uint trackStep,
+                               uint layerCnt,
+                               uint modelLevelCnt)
 {
   _maxPitch = _pitchTable[layerCnt - 1];
 
@@ -2802,47 +2816,47 @@ extWindow::extWindow(extWindow* e, uint num, Logger* logger)
   _layerCnt = e->_layerCnt;
 
   for (uint ii = 0; ii < 2; ii++) {
-    _ll[ii]      = e->_ll[ii];
-    _ur[ii]      = e->_ur[ii];
+    _ll[ii] = e->_ll[ii];
+    _ur[ii] = e->_ur[ii];
     _step_nm[ii] = e->_step_nm[ii];
-    _lo_gs[ii]   = e->_lo_gs[ii];
-    _hi_gs[ii]   = e->_hi_gs[ii];
-    _lo_sdb[ii]  = e->_lo_sdb[ii];
-    _hi_sdb[ii]  = e->_hi_sdb[ii];
+    _lo_gs[ii] = e->_lo_gs[ii];
+    _hi_gs[ii] = e->_hi_gs[ii];
+    _lo_sdb[ii] = e->_lo_sdb[ii];
+    _hi_sdb[ii] = e->_hi_sdb[ii];
   }
-  _gs_limit     = e->_gs_limit;
+  _gs_limit = e->_gs_limit;
   _minExtracted = e->_minExtracted;
 
   for (uint i = 0; i < _layerCnt + 1; i++) {
-    _dirTable[i]   = e->_dirTable[i];
+    _dirTable[i] = e->_dirTable[i];
     _widthTable[i] = e->_widthTable[i];
     _pitchTable[i] = e->_pitchTable[i];
     //_extractLimit[i]= e->_extractLimit[i];
     for (uint j = 0; j < 2; j++) {
-      _extTrack[j][i]  = e->_extTrack[j][i];
-      _extLimit[j][i]  = e->_extLimit[j][i];
+      _extTrack[j][i] = e->_extTrack[j][i];
+      _extLimit[j][i] = e->_extLimit[j][i];
       _cntxTrack[j][i] = e->_cntxTrack[j][i];
       _cntxLimit[j][i] = e->_cntxLimit[j][i];
-      _sdbBase[j][i]   = e->_sdbBase[j][i];
+      _sdbBase[j][i] = e->_sdbBase[j][i];
     }
   }
-  _extractLimit    = e->_extractLimit;
+  _extractLimit = e->_extractLimit;
   _totPowerWireCnt = e->_totPowerWireCnt;
-  _totWireCnt      = e->_totPowerWireCnt;
+  _totWireCnt = e->_totPowerWireCnt;
 
-  _currentDir    = e->_currentDir;
-  _hiXY          = e->_hiXY;
+  _currentDir = e->_currentDir;
+  _hiXY = e->_hiXY;
   _gsRotatedFlag = e->_gsRotatedFlag;
-  _deallocLimit  = e->_deallocLimit;
+  _deallocLimit = e->_deallocLimit;
 }
-extWindow* extMain::initWindowSearch(Rect&       extRect,
-                                     uint        trackStep,
-                                     uint        ccFlag,
-                                     uint        modelLevelCnt,
+extWindow* extMain::initWindowSearch(Rect& extRect,
+                                     uint trackStep,
+                                     uint ccFlag,
+                                     uint modelLevelCnt,
                                      extMeasure* m)
 {
   extWindow* W = new extWindow(20, logger_);
-  W->_ccDist   = ccFlag;
+  W->_ccDist = ccFlag;
 
   uint layerCnt = initSearchForNets(W->_sdbBase[0],
                                     W->_sdbBase[1],
@@ -2879,29 +2893,29 @@ void extWindow::init(uint maxLayerCnt)
 
   _maxLayerCnt = maxLayerCnt;
 
-  _dirTable   = new uint[maxLayerCnt];
+  _dirTable = new uint[maxLayerCnt];
   _pitchTable = new uint[maxLayerCnt];
   _widthTable = new uint[maxLayerCnt];
   //_extractLimit= new int[maxLayerCnt];
   for (uint i = 0; i < 2; i++) {
-    _extTrack[i]  = new int[maxLayerCnt];
-    _extLimit[i]  = new int[maxLayerCnt];
+    _extTrack[i] = new int[maxLayerCnt];
+    _extLimit[i] = new int[maxLayerCnt];
     _cntxTrack[i] = new int[maxLayerCnt];
     _cntxLimit[i] = new int[maxLayerCnt];
-    _sdbBase[i]   = new int[maxLayerCnt];
+    _sdbBase[i] = new int[maxLayerCnt];
   }
 
   for (uint ii = 0; ii < maxLayerCnt; ii++) {
-    _dirTable[ii]   = 0;
+    _dirTable[ii] = 0;
     _pitchTable[ii] = 0;
     _widthTable[ii] = 0;
   }
-  _ccDist                 = 0;
-  _layerCnt               = 0;
-  _maxPitch               = 0;
-  _gsRotatedFlag          = false;
-  _totalWiresExtracted    = 0;
-  _totWireCnt             = 0;
+  _ccDist = 0;
+  _layerCnt = 0;
+  _maxPitch = 0;
+  _gsRotatedFlag = false;
+  _totalWiresExtracted = 0;
+  _totWireCnt = 0;
   _prev_percent_extracted = 0;
 }
 void extWindow::updateExtLimits(int** limitArray)
@@ -2924,15 +2938,18 @@ void extMain::printLimitArray(int** limitArray, uint layerCnt)
   logger_->info(RCX, 89, " ------------------------ Context Lower Limits");
   uint ii;
   for (ii = 1; ii < layerCnt; ii++)
-    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
+    logger_->info(
+        RCX, 90, "L={} {}    {}", ii, limitArray[ii][0], limitArray[ii][1]);
 
   logger_->info(RCX, 91, "--------------------------- EXT Lower Limits");
   for (ii = 1; ii < layerCnt; ii++)
-    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
+    logger_->info(
+        RCX, 90, "L={} {}    {}", ii, limitArray[ii][2], limitArray[ii][3]);
 
   logger_->info(RCX, 92, " ------------------------ EXT Upper Limits");
-  for (ii = 1; ii < layerCnt;  ii++)
-    logger_->info(RCX, 90, "L={} {}    {}", ii, limitArray[ii][4], limitArray[ii][5]);
+  for (ii = 1; ii < layerCnt; ii++)
+    logger_->info(
+        RCX, 90, "L={} {}    {}", ii, limitArray[ii][4], limitArray[ii][5]);
 }
 int extWindow::getIntProperty(dbBlock* block, const char* name)
 {
@@ -2947,23 +2964,23 @@ int extWindow::getIntProperty(dbBlock* block, const char* name)
 
 void extWindow::getExtProperties(dbBlock* block)
 {
-  _num          = getIntProperty(block, "_num");
-  _currentDir   = getIntProperty(block, "_currentDir");
+  _num = getIntProperty(block, "_num");
+  _currentDir = getIntProperty(block, "_currentDir");
   _extractLimit = getIntProperty(block, "_extractLimit");
-  _ccDist       = getIntProperty(block, "_ccDist");
-  _maxPitch     = getIntProperty(block, "_maxPitch");
-  _lo_gs[0]     = getIntProperty(block, "_lo_gs[0]");
-  _lo_gs[1]     = getIntProperty(block, "_lo_gs[1]");
-  _hi_gs[0]     = getIntProperty(block, "_hi_gs[0]");
-  _hi_gs[1]     = getIntProperty(block, "_hi_gs[1]");
-  _gs_limit     = getIntProperty(block, "_gs_limit");
-  _layerCnt     = getIntProperty(block, "_layerCnt");
+  _ccDist = getIntProperty(block, "_ccDist");
+  _maxPitch = getIntProperty(block, "_maxPitch");
+  _lo_gs[0] = getIntProperty(block, "_lo_gs[0]");
+  _lo_gs[1] = getIntProperty(block, "_lo_gs[1]");
+  _hi_gs[0] = getIntProperty(block, "_hi_gs[0]");
+  _hi_gs[1] = getIntProperty(block, "_hi_gs[1]");
+  _gs_limit = getIntProperty(block, "_gs_limit");
+  _layerCnt = getIntProperty(block, "_layerCnt");
 
-  _ll[0]      = getIntProperty(block, "_ll[0]");
-  _ll[1]      = getIntProperty(block, "_ll[1]");
-  _ur[0]      = getIntProperty(block, "_ur[0]");
-  _ur[1]      = getIntProperty(block, "_ur[1]");
-  _hiXY       = getIntProperty(block, "_hiXY");
+  _ll[0] = getIntProperty(block, "_ll[0]");
+  _ll[1] = getIntProperty(block, "_ll[1]");
+  _ur[0] = getIntProperty(block, "_ur[0]");
+  _ur[1] = getIntProperty(block, "_ur[1]");
+  _hiXY = getIntProperty(block, "_hiXY");
   _step_nm[0] = getIntProperty(block, "_step_nm[0]");
   _step_nm[1] = getIntProperty(block, "_step_nm[1]");
 
@@ -2986,9 +3003,9 @@ void extWindow::getExtProperties(dbBlock* block)
     _hi_sdb[j] = getIntArrayProperty(block, j, "_hi_sdb");
   }
 }
-void extWindow::makeIntArrayProperty(dbBlock*    block,
-                                     uint        ii,
-                                     int*        A,
+void extWindow::makeIntArrayProperty(dbBlock* block,
+                                     uint ii,
+                                     int* A,
                                      const char* name)
 {
   char bufName[64];
@@ -3007,8 +3024,8 @@ int extWindow::getIntArrayProperty(dbBlock* block, uint ii, const char* name)
 }
 
 dbBlock* extWindow::createExtBlock(extMeasure* m,
-                                   dbBlock*    mainBlock,
-                                   Rect&       extRect)
+                                   dbBlock* mainBlock,
+                                   Rect& extRect)
 {
   uint nm = 1000;
 
@@ -3071,11 +3088,11 @@ dbBlock* extWindow::createExtBlock(extMeasure* m,
 
   return block;
 }
-void extWindow::printLimits(FILE*       fp,
+void extWindow::printLimits(FILE* fp,
                             const char* header,
-                            uint        maxLayer,
-                            int**       limitArray,
-                            int**       trackArray)
+                            uint maxLayer,
+                            int** limitArray,
+                            int** trackArray)
 {
   fprintf(fp, "%s\n", header);
   for (uint ii = 1; ii < _layerCnt; ii++) {
@@ -3109,14 +3126,14 @@ extWindow::extWindow(uint maxLayerCnt, Logger* logger)
 }
 void extWindow::makeSdbBuckets(uint sdbBucketCnt[2],
                                uint sdbBucketSize[2],
-                               int  sdbTable_ll[2],
-                               int  sdbTable_ur[2])
+                               int sdbTable_ll[2],
+                               int sdbTable_ur[2])
 {
   for (uint ii = 0; ii < 2; ii++) {
-    sdbBucketCnt[ii]  = 0;
+    sdbBucketCnt[ii] = 0;
     sdbBucketSize[ii] = 2 * _step_nm[ii];
-    sdbTable_ll[ii]   = _ll[ii] - _step_nm[ii] / 10;
-    sdbTable_ur[ii]   = _ur[ii] + _step_nm[ii] / 10;
+    sdbTable_ll[ii] = _ll[ii] - _step_nm[ii] / 10;
+    sdbTable_ur[ii] = _ur[ii] + _step_nm[ii] / 10;
   }
 }
 void extWindow::printBoundaries(FILE* fp, bool flag)
@@ -3125,15 +3142,26 @@ void extWindow::printBoundaries(FILE* fp, bool flag)
     return;
 
   if (fp == NULL) {
-    logger_->info(RCX, 0, "%15s= {}", "_currentDir", _currentDir);
-    logger_->info(RCX, 0, "%15s= {}", "_hiXY", _hiXY);
-    logger_->info(RCX, 0, "%15s= {}", "_lo_gs", _lo_gs[_currentDir]);
-    logger_->info(RCX, 0, "%15s= {}", "_hi_gs", _hi_gs[_currentDir]);
-    logger_->info(RCX, 0, "%15s= {}", "_lo_sdb", _lo_sdb[_currentDir]);
-    logger_->info(RCX, 0, "%15s= {}", "_hi_sdb", _hi_sdb[_currentDir]);
-    logger_->info(RCX, 0, "%15s= {}", "_gs_limit", _gs_limit);
-    logger_->info(RCX, 0, "%15s= {}", "_minExtracted", _minExtracted);
-    logger_->info(RCX, 0, "%15s= {}", "_deallocLimit", _deallocLimit);
+    logger_->info(RCX,
+                  238,
+                  "{:15s}= {} \t_currentDir\n"
+                  "{:15s}= {} \t_hiXY\n"
+                  "{:15s}= {} \t_lo_gs\n"
+                  "{:15s}= {} \t_hi_gs\n"
+                  "{:15s}= {} \t_lo_sdb\n"
+                  "{:15s}= {} \t_hi_sdb\n"
+                  "{:15s}= {} \t_gs_limit\n"
+                  "{:15s}= {} \t_minExtracted\n"
+                  "{:15s}= {} \t_deallocLimit",
+                  _currentDir,
+                  _hiXY,
+                  _lo_gs[_currentDir],
+                  _hi_gs[_currentDir],
+                  _lo_sdb[_currentDir],
+                  _hi_sdb[_currentDir],
+                  _gs_limit,
+                  _minExtracted,
+                  _deallocLimit);
   } else {
     fprintf(fp, "\n%15s= {}\n", "_currentDir", _currentDir);
     fprintf(fp, "%15s= {}\n", "_hiXY", _hiXY);
@@ -3151,13 +3179,13 @@ int extWindow::setExtBoundaries(uint dir)
 {
   _currentDir = dir;
 
-  _lo_gs[!dir]  = _ll[!dir];
-  _hi_gs[!dir]  = _ur[!dir];
+  _lo_gs[!dir] = _ll[!dir];
+  _hi_gs[!dir] = _ur[!dir];
   _lo_sdb[!dir] = _ll[!dir];
   _hi_sdb[!dir] = _ur[!dir];
 
   _minExtracted = _ll[dir];
-  _gs_limit     = _ll[dir];
+  _gs_limit = _ll[dir];
 
   _lo_sdb[dir] = _ll[dir] - _step_nm[dir];
 
@@ -3187,15 +3215,15 @@ int extWindow::adjust_hiXY(int hiXY)
 
   return _hiXY;
 }
-void extMain::fillWindowGs(extWindow*            W,
-                           int*                  sdbTable_ll,
-                           int*                  sdbTable_ur,
-                           uint*                 bucketSize,
-                           Ath__array1D<uint>*   powerNetTable,
-                           Ath__array1D<uint>*   tmpNetIdTable,
+void extMain::fillWindowGs(extWindow* W,
+                           int* sdbTable_ll,
+                           int* sdbTable_ur,
+                           uint* bucketSize,
+                           Ath__array1D<uint>* powerNetTable,
+                           Ath__array1D<uint>* tmpNetIdTable,
                            Ath__array1D<uint>*** sdbSignalTable,
                            Ath__array1D<uint>*** instGsTable,
-                           dbCreateNetUtil*      createDbNet)
+                           dbCreateNetUtil* createDbNet)
 {
   if (sdbSignalTable != NULL) {
     tmpNetIdTable->resetCnt();
@@ -3231,16 +3259,16 @@ void extMain::fillWindowGs(extWindow*            W,
              createDbNet);
   }
 }
-uint extMain::fillWindowSearch(extWindow*            W,
-                               int*                  lo_sdb,
-                               int*                  hi_sdb,
-                               int*                  sdbTable_ll,
-                               int*                  sdbTable_ur,
-                               uint*                 bucketSize,
-                               Ath__array1D<uint>*   powerNetTable,
-                               Ath__array1D<uint>*   tmpNetIdTable,
+uint extMain::fillWindowSearch(extWindow* W,
+                               int* lo_sdb,
+                               int* hi_sdb,
+                               int* sdbTable_ll,
+                               int* sdbTable_ur,
+                               uint* bucketSize,
+                               Ath__array1D<uint>* powerNetTable,
+                               Ath__array1D<uint>* tmpNetIdTable,
                                Ath__array1D<uint>*** sdbSignalTable,
-                               dbCreateNetUtil*      createDbNet)
+                               dbCreateNetUtil* createDbNet)
 {
   int ll[2] = {lo_sdb[0], lo_sdb[1]};
   int ur[2] = {hi_sdb[0], hi_sdb[1]};
@@ -3299,7 +3327,7 @@ void extWindow::reportProcessedWires(bool rlog)
             _currentDir,
             _minExtracted);
 #ifdef _WIN32
-    logger_->info(RCX, 0, "{}", buff);
+    logger_->info(RCX, 214, "{}", buff);
 #endif
     AthResourceLog(buff, 0);
   }
@@ -3312,7 +3340,7 @@ int extWindow::getDeallocLimit()
 void extWindow::updateLoBounds(bool reportFlag)
 {
   _lo_sdb[_currentDir] = _hiXY;
-  _gs_limit            = _minExtracted - (_ccDist + 2) * _maxPitch;
+  _gs_limit = _minExtracted - (_ccDist + 2) * _maxPitch;
 
   _totalWiresExtracted += _processPowerWireCnt + _processSignalWireCnt;
   if (!reportFlag)
@@ -3322,17 +3350,18 @@ void extWindow::updateLoBounds(bool reportFlag)
       = (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt));
 
   if ((_totWireCnt > 0) && (_totalWiresExtracted > 0)) {
-    logger_->info(RCX, 44,
-           "{:d}% completion -- {:d} wires have been extracted",
-           (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
-           _totalWiresExtracted);
+    logger_->info(RCX,
+                  44,
+                  "{:d}% completion -- {:d} wires have been extracted",
+                  (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
+                  _totalWiresExtracted);
 
     _prev_percent_extracted = percent_extracted;
   }
 }
 uint extMain::mkNetPropertiesForRsegs(dbBlock* blk, uint dir)
 {
-  dbSet<dbNet>           nets = blk->getNets();
+  dbSet<dbNet> nets = blk->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   uint cnt = 0;
@@ -3343,9 +3372,9 @@ uint extMain::mkNetPropertiesForRsegs(dbBlock* blk, uint dir)
         || (net->getSigType() == dbSigType::GROUND))
       continue;
 
-    dbWire*        wire = net->getWire();
+    dbWire* wire = net->getWire();
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -3382,11 +3411,11 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
 
   Ath__array1D<dbRSeg*> rsegTable;
 
-  dbSet<dbNet>           nets = blk->getNets();
+  dbSet<dbNet> nets = blk->getNets();
   dbSet<dbNet>::iterator net_itr;
 
-  uint cnt  = 0;
-  uint tot  = 0;
+  uint cnt = 0;
+  uint tot = 0;
   uint dCnt = 0;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
@@ -3401,9 +3430,9 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
       dstNetId = parser.getInt(0, 1);
     }
 
-    dbWire*        wire = net->getWire();
+    dbWire* wire = net->getWire();
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -3422,11 +3451,12 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
 
       dbRSeg* rseg1 = dbRSeg::getRSeg(blk, rsegId1);
       if (rseg1 == NULL) {
-        logger_->warn(RCX, 94,
-                "GndCap: cannot find rseg for net [{}] {} and shapeId {}",
-                net->getId(),
-                net->getConstName(),
-                shapeId);
+        logger_->warn(RCX,
+                      94,
+                      "GndCap: cannot find rseg for net [{}] {} and shapeId {}",
+                      net->getId(),
+                      net->getConstName(),
+                      shapeId);
         continue;
       }
       tot++;
@@ -3446,13 +3476,13 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
 
           char bufName[16];
           sprintf(bufName, "J%d", shapeId);
-          dbProperty* p       = dbProperty::find(net, bufName);
-          uint        rsegId2 = 0;
+          dbProperty* p = dbProperty::find(net, bufName);
+          uint rsegId2 = 0;
           if (p == NULL) {
             rsegId2 = 0;
           } else {
             dbIntProperty* ip = (dbIntProperty*) p;
-            rsegId2           = ip->getValue();
+            rsegId2 = ip->getValue();
           }
           node->setNode(rsegId2);
         }
@@ -3462,23 +3492,24 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
     uint destroySegCnt = rsegTable.getCnt();
     dCnt += destroySegCnt;
     for (uint ii = 0; ii < destroySegCnt; ii++) {
-      dbRSeg*    rc   = rsegTable.get(ii);
+      dbRSeg* rc = rsegTable.get(ii);
       dbCapNode* node = rc->getTargetCapNode();
       dbCapNode::destroy(node);
       dbRSeg::destroy(rc, net);
     }
     rsegTable.resetCnt();
   }
-  logger_->info(RCX, 95,
-         "Deleted {} Rsegs/CapNodes from total {} with {} remaing",
-         dCnt,
-         tot,
-         cnt);
+  logger_->info(RCX,
+                95,
+                "Deleted {} Rsegs/CapNodes from total {} with {} remaing",
+                dCnt,
+                tot,
+                cnt);
   return cnt;
 }
 uint extMain::createNetShapePropertires(dbBlock* blk)
 {
-  dbSet<dbNet>           nets = blk->getNets();
+  dbSet<dbNet> nets = blk->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   uint cnt = 0;
@@ -3491,11 +3522,11 @@ uint extMain::createNetShapePropertires(dbBlock* blk)
 
     // uint netId= net->getId();
 
-    dbWirePath      path;
+    dbWirePath path;
     dbWirePathShape pshape;
 
     dbWirePathItr pitr;
-    dbWire*       wire = net->getWire();
+    dbWire* wire = net->getWire();
 
     for (pitr.begin(wire); pitr.getNextPath(path);) {
       pitr.getNextShape(pshape);
@@ -3518,7 +3549,7 @@ uint extMain::rcGenTile(dbBlock* blk)
 {
   Ath__parser parser;
 
-  dbSet<dbNet>           nets = blk->getNets();
+  dbSet<dbNet> nets = blk->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   uint cnt = 0;
@@ -3541,11 +3572,11 @@ uint extMain::rcGenTile(dbBlock* blk)
   return cnt;
 }
 
-uint extMain::couplingWindowFlow(bool        rlog,
-                                 Rect&       extRect,
-                                 uint        trackStep,
-                                 uint        ccFlag,
-                                 bool        doExt,
+uint extMain::couplingWindowFlow(bool rlog,
+                                 Rect& extRect,
+                                 uint trackStep,
+                                 uint ccFlag,
+                                 bool doExt,
                                  extMeasure* m,
                                  void (*coupleAndCompute)(int*, void*))
 {
@@ -3555,7 +3586,7 @@ uint extMain::couplingWindowFlow(bool        rlog,
       extRect, trackStep, ccFlag, _currentModel->getLayerCnt(), m);
 
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  _useDbSdb                     = true;
+  _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,
                          (uint) overlapAdj,
@@ -3584,20 +3615,21 @@ uint extMain::couplingWindowFlow(bool        rlog,
   // _use_signal_tables^M
   Ath__array1D<uint>** sdbSignalTable[2];
   Ath__array1D<uint>** gsInstTable[2];
-  Ath__array1D<uint>   sdbPowerTable;
-  Ath__array1D<uint>   tmpNetIdTable(64000);
-  uint                 sdbBucketCnt[2];
-  uint                 sdbBucketSize[2];
-  int                  sdbTable_ll[2];
-  int                  sdbTable_ur[2];
+  Ath__array1D<uint> sdbPowerTable;
+  Ath__array1D<uint> tmpNetIdTable(64000);
+  uint sdbBucketCnt[2];
+  uint sdbBucketSize[2];
+  int sdbTable_ll[2];
+  int sdbTable_ur[2];
 
   bool use_signal_tables = false;
   if ((_use_signal_tables == 1) || (_use_signal_tables == 2)) {
     use_signal_tables = true;
 
-    logger_->info(RCX, 88,
-           "Signal_table= {} ----------------------------- ",
-           _use_signal_tables);
+    logger_->info(RCX,
+                  88,
+                  "Signal_table= {} ----------------------------- ",
+                  _use_signal_tables);
 
     W->makeSdbBuckets(sdbBucketCnt, sdbBucketSize, sdbTable_ll, sdbTable_ur);
 
@@ -3644,7 +3676,7 @@ uint extMain::couplingWindowFlow(bool        rlog,
       AthResourceLog("initCouplingCapLoops", 0);
 
     uint stepNum = 0;
-    int  hiXY    = W->setExtBoundaries(dir);
+    int hiXY = W->setExtBoundaries(dir);
     for (; hiXY <= W->_ur[dir]; hiXY += W->_step_nm[dir]) {
       hiXY = W->adjust_hiXY(hiXY);
 
@@ -3728,7 +3760,7 @@ uint extMain::couplingWindowFlow(bool        rlog,
   FILE* limFP = fopen("window.limits.after", "w");
 
   bool extractionFlag = doExt;
-  bool skipInit       = false;
+  bool skipInit = false;
   for (int jj = 0; jj < windowCnt; jj++) {
     extWindow* w = windowTable[jj];
 
@@ -3770,10 +3802,11 @@ uint extMain::couplingWindowFlow(bool        rlog,
                                              &m->_create_net_util);
 
       uint signalWireCnt = createNetShapePropertires(extBlock);
-      logger_->info(RCX, 96,
-             "Block {} has {} signal wires",
-             extBlock->getConstName(),
-             processWireCnt);
+      logger_->info(RCX,
+                    96,
+                    "Block {} has {} signal wires",
+                    extBlock->getConstName(),
+                    processWireCnt);
 
       continue;
       // break;
@@ -3809,17 +3842,17 @@ uint extMain::couplingWindowFlow(bool        rlog,
   return 0;
 }
 
-uint extMain::extractWindow(bool        rlog,
-                            extWindow*  W,
-                            Rect&       extRect,
-                            bool        single_sdb,
+uint extMain::extractWindow(bool rlog,
+                            extWindow* W,
+                            Rect& extRect,
+                            bool single_sdb,
                             extMeasure* m,
                             void (*coupleAndCompute)(int*, void*),
-                            int*                  sdbTable_ll,
-                            int*                  sdbTable_ur,
-                            uint*                 sdbBucketSize,
-                            Ath__array1D<uint>*   sdbPowerTable,
-                            Ath__array1D<uint>*   tmpNetIdTable,
+                            int* sdbTable_ll,
+                            int* sdbTable_ur,
+                            uint* sdbBucketSize,
+                            Ath__array1D<uint>* sdbPowerTable,
+                            Ath__array1D<uint>* tmpNetIdTable,
                             Ath__array1D<uint>*** sdbSignalTable,
                             Ath__array1D<uint>*** gsInstTable)
 {
@@ -3875,7 +3908,7 @@ uint extMain::extractWindow(bool        rlog,
       m->_dirTable[i] = W->_dirTable[i];
 
     Ath__overlapAdjust overlapAdj = Z_noAdjust;
-    _useDbSdb                     = true;
+    _useDbSdb = true;
     _search->setExtControl(_block,
                            _useDbSdb,
                            (uint) overlapAdj,
@@ -3934,7 +3967,7 @@ uint extMain::extractWindow(bool        rlog,
   if (rlog)
     AthResourceLog("Fill GS", 0);
 
-  m->_rotatedGs  = getRotatedFlag();
+  m->_rotatedGs = getRotatedFlag();
   m->_pixelTable = _geomSeq;
 
   if (rlog)
@@ -3970,8 +4003,8 @@ uint extMain::extractWindow(bool        rlog,
 dbNet* extMain::getDstNet(dbNet* net, dbBlock* dstBlock, Ath__parser* parser)
 {
   parser->mkWords(net->getConstName());
-  int    dstNetId = parser->getInt(0, 1);
-  dbNet* dstNet   = dbNet::getNet(dstBlock, dstNetId);
+  int dstNetId = parser->getInt(0, 1);
+  dbNet* dstNet = dbNet::getNet(dstBlock, dstNetId);
   return dstNet;
 }
 dbRSeg* extMain::getMainRSeg3(dbNet* srcNet, int srcShapeId, dbNet* dstNet)
@@ -3982,8 +4015,8 @@ dbRSeg* extMain::getMainRSeg3(dbNet* srcNet, int srcShapeId, dbNet* dstNet)
   if (p == NULL)
     return NULL;
 
-  dbIntProperty* ip      = (dbIntProperty*) p;
-  uint           rsegId2 = ip->getValue();
+  dbIntProperty* ip = (dbIntProperty*) p;
+  uint rsegId2 = ip->getValue();
 
   if (rsegId2 == 0)
     return NULL;
@@ -4000,8 +4033,8 @@ dbRSeg* extMain::getMainRSeg(dbNet* srcNet, int srcShapeId, dbNet* dstNet)
   if (p == NULL)
     return NULL;
 
-  dbIntProperty* ip   = (dbIntProperty*) p;
-  uint           jid2 = ip->getValue();
+  dbIntProperty* ip = (dbIntProperty*) p;
+  uint jid2 = ip->getValue();
 
   int rsegId2 = 0;
   dstNet->getWire()->getProperty(jid2, rsegId2);
@@ -4028,21 +4061,23 @@ dbRSeg* extMain::getRseg(dbNet* net, uint shapeId, Logger* logger)
   int rsegId2 = 0;
   net->getWire()->getProperty(shapeId, rsegId2);
   if (rsegId2 == 0) {
-    logger->warn(RCX, 0,
-            "zero rseg wire property {} on main net {} {}\n",
-            shapeId,
-            net->getId(),
-            net->getConstName());
+    logger->warn(RCX,
+                 239,
+                 "Zero rseg wire property {} on main net {} {}",
+                 shapeId,
+                 net->getId(),
+                 net->getConstName());
     return NULL;
   }
   dbRSeg* rseg2 = dbRSeg::getRSeg(net->getBlock(), rsegId2);
 
   if (rseg2 == NULL) {
-    logger->warn(RCX, 0,
-            "GndCap: cannot find rseg for rsegId {} on net {} {}\n",
-            rsegId2,
-            net->getId(),
-            net->getConstName());
+    logger->warn(RCX,
+                 240,
+                 "GndCap: cannot find rseg for rsegId {} on net {} {}",
+                 rsegId2,
+                 net->getId(),
+                 net->getConstName());
     return NULL;
   }
   return rseg2;
@@ -4054,30 +4089,30 @@ uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
     return assemblyExt__2(mainBlock, blk, logger);
   else {  // block based
     dbSet<dbCapNode> capNodes = blk->getCapNodes();
-    uint             csize    = capNodes.size();
+    uint csize = capNodes.size();
 
-    uint                       gndCnt       = 0;
+    uint gndCnt = 0;
     dbSet<dbCapNode>::iterator cap_node_itr = capNodes.begin();
     for (; cap_node_itr != capNodes.end(); ++cap_node_itr) {
       dbCapNode* node = *cap_node_itr;
       node->addToNet();
       gndCnt++;
     }
-    logger->info(RCX, 0, "{} nodes on block {}\n", gndCnt, blk->getConstName());
+    logger->info(RCX, 241, "{} nodes on block {}", gndCnt, blk->getConstName());
     if (csize != gndCnt)
-      logger->info(RCX, 0, "\tdifferent from {} cap nodes read\n", csize);
+      logger->info(RCX, 242, "\tdifferent from {} cap nodes read", csize);
 
     dbSet<dbRSeg> rsegs = blk->getRSegs();
-    uint          rsize = rsegs.size();
+    uint rsize = rsegs.size();
 
-    dbNet*                  net      = NULL;
-    uint                    rCnt     = 0;
+    dbNet* net = NULL;
+    uint rCnt = 0;
     dbSet<dbRSeg>::iterator rseg_itr = rsegs.begin();
     for (; rseg_itr != rsegs.end(); ++rseg_itr) {
       rCnt++;
-      dbRSeg* rseg  = *rseg_itr;
-      uint    tgtId = rseg->getTargetNode();
-      uint    srcId = rseg->getSourceNode();
+      dbRSeg* rseg = *rseg_itr;
+      uint tgtId = rseg->getTargetNode();
+      uint srcId = rseg->getSourceNode();
       if ((srcId == 0) && (tgtId == rseg->getId())) {  // new net
         if (net != NULL) {
           dbSet<dbRSeg> rSet = net->getRSegs();
@@ -4091,28 +4126,33 @@ uint extMain::assemblyExt(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
       dbSet<dbRSeg> rSet = net->getRSegs();
       rSet.reverse();
     }
-    logger->info(RCX, 0, "{} rsegs on block {}\n", rCnt, blk->getConstName());
+    logger->info(RCX, 243, "{} rsegs on block {}", rCnt, blk->getConstName());
     if (rsize != rCnt)
-      logger->info(RCX, 0, "different from {} rsegs read\n", rsize);
+      logger->info(RCX, 244, "Different from {} rsegs read", rsize);
     return rCnt;
   }
 }
-dbRSeg* extMain::getMainRseg(dbCapNode* node, dbBlock* blk, Ath__parser* parser, Logger* logger)
+dbRSeg* extMain::getMainRseg(dbCapNode* node,
+                             dbBlock* blk,
+                             Ath__parser* parser,
+                             Logger* logger)
 {
   if (parser != NULL) {
     dbNet* mainNet = getDstNet(node->getNet(), blk, parser);
 
     if (mainNet == NULL) {
-      logger->warn(RCX, 0,
-              "CCap: cannot find main net for {}\n",
-              node->getNet()->getConstName());
+      logger->warn(RCX,
+                   245,
+                   "CCap: cannot find main net for {}",
+                   node->getNet()->getConstName());
       return NULL;
     }
     dbRSeg* rseg = getMainRSeg3(node->getNet(), node->getShapeId(), mainNet);
     if (rseg == NULL) {
-      logger->warn(RCX, 0,
-              "CCap: cannot find rseg for net for {}\n",
-              node->getNet()->getConstName());
+      logger->warn(RCX,
+                   246,
+                   "CCap: cannot find rseg for net for {}",
+                   node->getNet()->getConstName());
       return NULL;
     }
     return rseg;
@@ -4120,12 +4160,13 @@ dbRSeg* extMain::getMainRseg(dbCapNode* node, dbBlock* blk, Ath__parser* parser,
     // uint netId= node->getNetId();
     uint rsegId = node->getShapeId();
     if (rsegId == 0) {
-      logger->warn(RCX, 0, "CCap: cannot find rseg for capNode {}\n", node->getId());
+      logger->warn(
+          RCX, 247, "CCap: cannot find rseg for capNode {}", node->getId());
       return NULL;
     }
     dbRSeg* rseg = dbRSeg::getRSeg(blk, rsegId);
     if (rseg == NULL) {
-      logger->warn(RCX, 0, "CCap: cannot find rseg {}\n", rsegId);
+      logger->warn(RCX, 248, "CCap: cannot find rseg {}", rsegId);
       return NULL;
     }
     return rseg;
@@ -4144,14 +4185,17 @@ void extMain::updateRseg(dbRSeg* rseg1, dbRSeg* rseg2, uint cornerCnt)
     rseg2->setCapacitance(cap, ii);
   }
 }
-uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt, Logger* logger)
+uint extMain::assembly_RCs(dbBlock* mainBlock,
+                           dbBlock* blk,
+                           uint cornerCnt,
+                           Logger* logger)
 {
   uint rcCnt = 0;
 
-  Ath__parser  p;
+  Ath__parser p;
   Ath__parser* parser = NULL;
 
-  dbSet<dbRSeg>           rcSegs = blk->getRSegs();
+  dbSet<dbRSeg> rcSegs = blk->getRSegs();
   dbSet<dbRSeg>::iterator rcitr;
 
   for (rcitr = rcSegs.begin(); rcitr != rcSegs.end(); ++rcitr) {
@@ -4159,7 +4203,8 @@ uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt, Log
     if (!rseg1->updatedCap())
       continue;
 
-    dbRSeg* rseg2 = getMainRseg(rseg1->getTargetCapNode(), mainBlock, parser, logger);
+    dbRSeg* rseg2
+        = getMainRseg(rseg1->getTargetCapNode(), mainBlock, parser, logger);
 
     if (rseg2 == NULL)
       continue;
@@ -4174,27 +4219,30 @@ uint extMain::assembly_RCs(dbBlock* mainBlock, dbBlock* blk, uint cornerCnt, Log
 
 uint extMain::assemblyCCs(dbBlock* mainBlock,
                           dbBlock* blk,
-                          uint     cornerCnt,
-                          uint&    missCCcnt, Logger* logger)
+                          uint cornerCnt,
+                          uint& missCCcnt,
+                          Logger* logger)
 {
   uint ccCnt = 0;
 
-  Ath__parser  p;
+  Ath__parser p;
   Ath__parser* parser = NULL;
 
-  dbSet<dbCCSeg>           ccSegs = blk->getCCSegs();
+  dbSet<dbCCSeg> ccSegs = blk->getCCSegs();
   dbSet<dbCCSeg>::iterator ccitr;
 
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     dbCCSeg* cc = *ccitr;
 
-    dbRSeg* srcRC = getMainRseg(cc->getSourceCapNode(), mainBlock, parser, logger);
+    dbRSeg* srcRC
+        = getMainRseg(cc->getSourceCapNode(), mainBlock, parser, logger);
 
     if (srcRC == NULL) {
       missCCcnt++;
       continue;
     }
-    dbRSeg* dstRC = getMainRseg(cc->getTargetCapNode(), mainBlock, parser, logger);
+    dbRSeg* dstRC
+        = getMainRseg(cc->getTargetCapNode(), mainBlock, parser, logger);
     if (dstRC == NULL) {
       missCCcnt++;
       continue;
@@ -4219,32 +4267,33 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
 
   uint cornerCnt = mainBlock->getCornerCount();
   if (flag) {
-    uint rcCnt     = assembly_RCs(mainBlock, blk, cornerCnt, logger);
+    uint rcCnt = assembly_RCs(mainBlock, blk, cornerCnt, logger);
     uint missCCcnt = 0;
-    uint ccCnt     = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt, logger);
+    uint ccCnt = assemblyCCs(mainBlock, blk, cornerCnt, missCCcnt, logger);
 
     int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
     mainBlock->getExtCount(numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg);
 
-    logger->info(RCX, 0,
-           "Updated {} rsegs and added {} ccsegs of {} from {}",
-           rcCnt,
-           ccCnt,
-           mainBlock->getConstName(),
-           blk->getConstName());
+    logger->info(RCX,
+                 249,
+                 "Updated {} rsegs and added {} ccsegs of {} from {}",
+                 rcCnt,
+                 ccCnt,
+                 mainBlock->getConstName(),
+                 blk->getConstName());
 
     return rcCnt;
   }
 
   Ath__parser parser;
 
-  dbSet<dbNet>           nets = blk->getNets();
+  dbSet<dbNet> nets = blk->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   uint missCCcnt = 0;
-  uint gndCnt    = 0;
-  uint ccCnt     = 0;
-  uint cnt       = 0;
+  uint gndCnt = 0;
+  uint ccCnt = 0;
+  uint cnt = 0;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
 
@@ -4264,7 +4313,7 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
       continue;
 
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -4290,9 +4339,9 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
                               int rsegId2= 0;
                               dstNet->getWire()->getProperty(shapeId, rsegId2);
                               if (rsegId2==0) {
-                                      logger_->warn(RCX, 0, "zero rseg wire property {} on
-         main net {} {}", shapeId, dstNet->getId(), dstNet->getConstName());
-                                      continue;
+                                      logger_->warn(RCX, 0, "zero rseg wire
+         property {} on main net {} {}", shapeId, dstNet->getId(),
+         dstNet->getConstName()); continue;
                               }
                               dbRSeg *rseg2= dbRSeg::getRSeg(dstNet->getBlock(),
          rsegId2);
@@ -4301,11 +4350,12 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
       dbRSeg* rseg2 = getMainRSeg3(net, shapeId, dstNet);
 
       if (rseg2 == NULL) {
-        logger->warn(RCX, 0,
-                "GndCap: cannot find rseg for rsegId {} on main net {} {}\n",
-                rsegId1,
-                dstNet->getId(),
-                dstNet->getConstName());
+        logger->warn(RCX,
+                     240,
+                     "GndCap: cannot find rseg for rsegId {} on net {} {}",
+                     rsegId1,
+                     dstNet->getId(),
+                     dstNet->getConstName());
         continue;
       }
 
@@ -4323,8 +4373,8 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
 
       continue;
 
-      dbCapNode*               srcCapNode1 = rseg1->getTargetCapNode();
-      dbSet<dbCCSeg>           ccSegs      = srcCapNode1->getCCSegs();
+      dbCapNode* srcCapNode1 = rseg1->getTargetCapNode();
+      dbSet<dbCCSeg> ccSegs = srcCapNode1->getCCSegs();
       dbSet<dbCCSeg>::iterator ccitr;
 
       for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
@@ -4339,19 +4389,21 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
         if (cc->getSourceCapNode() != srcCapNode1) {
           dstCapNode1 = cc->getSourceCapNode();
           if (cc->getTargetCapNode() != srcCapNode1) {
-            logger->warn(RCX, 0,
-                    "Mismatch for CCap {} for net {}\n",
-                    cc->getId(),
-                    dstNet->getId());
+            logger->warn(RCX,
+                         250,
+                         "Mismatch for CCap {} for net {}",
+                         cc->getId(),
+                         dstNet->getId());
           }
         }
 
         dbNet* dstTgtNet
             = extMain::getDstNet(dstCapNode1->getNet(), mainBlock, &parser);
         if (dstTgtNet == NULL) {
-          logger->warn(RCX, 0,
-                  "CCap: cannot find main net for {}\n",
-                  dstCapNode1->getNet()->getConstName());
+          logger->warn(RCX,
+                       245,
+                       "CCap: cannot find main net for {}",
+                       dstCapNode1->getNet()->getConstName());
           continue;
         }
 
@@ -4383,14 +4435,16 @@ uint extMain::assemblyExt__2(dbBlock* mainBlock, dbBlock* blk, Logger* logger)
   int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
   mainBlock->getExtCount(numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg);
 
-  logger->info(RCX, 0,
-         "Updated {} nets, {} rsegs, and added {} ({}) ccsegs of {} from {}\n",
-         cnt,
-         gndCnt,
-         ccCnt,
-         numOfCCSeg,
-         mainBlock->getConstName(),
-         blk->getConstName());
+  logger->info(
+      RCX,
+      251,
+      "Updated {} nets, {} rsegs, and added {} ({}) ccsegs of {} from {}",
+      cnt,
+      gndCnt,
+      ccCnt,
+      numOfCCSeg,
+      mainBlock->getConstName(),
+      blk->getConstName());
 
   return cnt;
 }
@@ -4410,11 +4464,11 @@ extTileSystem::extTileSystem(Rect& extRect, uint* size)
     uint n = _tileCnt[dd];
 
     _signalTable[dd] = new Ath__array1D<uint>*[n];
-    _instTable[dd]   = new Ath__array1D<uint>*[n];
+    _instTable[dd] = new Ath__array1D<uint>*[n];
 
     for (uint jj = 0; jj < n; jj++) {
       _signalTable[dd][jj] = NULL;
-      _instTable[dd][jj]   = NULL;
+      _instTable[dd][jj] = NULL;
     }
   }
 
@@ -4423,8 +4477,8 @@ extTileSystem::extTileSystem(Rect& extRect, uint* size)
 }
 uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts)
 {
-  uint                   cnt  = 0;
-  dbSet<dbNet>           nets = _block->getNets();
+  uint cnt = 0;
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -4458,12 +4512,12 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts)
     cnt += cnt1;
   }
   if (_overCell || !skipInsts) {
-    dbSet<dbInst>           insts = _block->getInsts();
+    dbSet<dbInst> insts = _block->getInsts();
     dbSet<dbInst>::iterator inst_itr;
 
     for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
       dbInst* inst = *inst_itr;
-      dbBox*  bb   = inst->getBBox();
+      dbBox* bb = inst->getBBox();
 
       Rect s;
       bb->getBox(s);
@@ -4482,23 +4536,24 @@ uint extMain::mkTileBoundaries(bool skipPower, bool skipInsts)
   }
   return cnt;
 }
-uint extMain::mkTileNets(uint             dir,
-                         int*             lo_sdb,
-                         int*             hi_sdb,
-                         bool             powerNets,
+uint extMain::mkTileNets(uint dir,
+                         int* lo_sdb,
+                         int* hi_sdb,
+                         bool powerNets,
                          dbCreateNetUtil* createDbNet,
-                         uint&            rcCnt,
-                         bool             countOnly)
+                         uint& rcCnt,
+                         bool countOnly)
 {
   if (_tiles == NULL)
     return 0;
 
   if (powerNets) {
     uint pCnt = mkTilePowerNets(dir, lo_sdb, hi_sdb, createDbNet);
-    logger_->info(RCX, 97,
-           "created {} power wires for block {}",
-           pCnt,
-           _block->getConstName());
+    logger_->info(RCX,
+                  97,
+                  "created {} power wires for block {}",
+                  pCnt,
+                  _block->getConstName());
   }
 
   uint lo_index = getBucketNum(
@@ -4513,8 +4568,8 @@ uint extMain::mkTileNets(uint             dir,
   fp = fopen(filename, "w");
 #endif
 
-  uint tot   = 0;
-  uint cnt1  = 0;
+  uint tot = 0;
+  uint cnt1 = 0;
   uint local = 0;
   for (uint bucket = lo_index; bucket <= hi_index; bucket++) {
     if (_tiles->_signalTable[dir][bucket] == NULL)
@@ -4523,8 +4578,8 @@ uint extMain::mkTileNets(uint             dir,
     uint netCnt = _tiles->_signalTable[dir][bucket]->getCnt();
 
     for (uint ii = 0; ii < netCnt; ii++) {
-      uint   netId = _tiles->_signalTable[dir][bucket]->get(ii);
-      dbNet* net   = dbNet::getNet(_block, netId);
+      uint netId = _tiles->_signalTable[dir][bucket]->get(ii);
+      dbNet* net = dbNet::getNet(_block, netId);
 
       if (net->isSpef())  // tmp flag
         continue;
@@ -4583,8 +4638,12 @@ uint extMain::mkTileNets(uint             dir,
       */
     }
   }
-  logger_->info(RCX, 
-      98, "{} local out of {} tile wires out of {} total", local, cnt1, tot);
+  logger_->info(RCX,
+                98,
+                "{} local out of {} tile wires out of {} total",
+                local,
+                cnt1,
+                tot);
 
   resetNetSpefFlag(_tiles->_tmpIdTable);
 
@@ -4604,9 +4663,9 @@ uint extMain::mkTileNets(uint             dir,
 
   return cnt1;
 }
-uint extMain::mkTilePowerNets(uint             dir,
-                              int*             lo_sdb,
-                              int*             hi_sdb,
+uint extMain::mkTilePowerNets(uint dir,
+                              int* lo_sdb,
+                              int* hi_sdb,
                               dbCreateNetUtil* createDbNet)
 {
   Rect tileRect;
@@ -4622,12 +4681,12 @@ uint extMain::mkTilePowerNets(uint             dir,
     dbNet* net = dbNet::getNet(_block, netId);
     createDbNet->createSpecialNet(net, NULL);
 
-    dbSet<dbSWire>           swires = net->getSWires();
+    dbSet<dbSWire> swires = net->getSWires();
     dbSet<dbSWire>::iterator itr;
     for (itr = swires.begin(); itr != swires.end(); ++itr) {
       dbSWire* swire = *itr;
 
-      dbSet<dbSBox>           wires = swire->getWires();
+      dbSet<dbSBox> wires = swire->getWires();
       dbSet<dbSBox>::iterator box_itr;
 
       for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -4649,18 +4708,18 @@ uint extMain::mkTilePowerNets(uint             dir,
   return cnt;
 }
 
-uint extMain::createWindowsDB(bool  rlog,
+uint extMain::createWindowsDB(bool rlog,
                               Rect& extRect,
-                              uint  trackStep,
-                              uint  ccFlag,
-                              uint  use_bin_tables)
+                              uint trackStep,
+                              uint ccFlag,
+                              uint use_bin_tables)
 {
   bool single_gs = false;
 
   extWindow* W = initWindowSearch(extRect, trackStep, ccFlag, 0, NULL);
 
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
-  _useDbSdb                     = true;
+  _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,
                          (uint) overlapAdj,
@@ -4685,7 +4744,7 @@ uint extMain::createWindowsDB(bool  rlog,
                          NULL);
 
   extWindow* windowTable[1000];
-  uint       windowCnt = 0;
+  uint windowCnt = 0;
 
   int** limitArray;
   limitArray = new int*[W->_layerCnt];
@@ -4694,19 +4753,20 @@ uint extMain::createWindowsDB(bool  rlog,
 
   _tiles = NULL;
 
-  _wireBinTable  = NULL;
-  _cntxBinTable  = NULL;
+  _wireBinTable = NULL;
+  _cntxBinTable = NULL;
   _cntxInstTable = NULL;
-  uint              binCnt[2];
+  uint binCnt[2];
   AthPool<extWire>* wpool = NULL;
 
   bool use_signal_tables = false;
   if ((use_bin_tables == 1) || (use_bin_tables == 2)) {
     use_signal_tables = true;
 
-    logger_->info(RCX, 88,
-           "Signal_table= {} ----------------------------- ",
-           _use_signal_tables);
+    logger_->info(RCX,
+                  88,
+                  "Signal_table= {} ----------------------------- ",
+                  _use_signal_tables);
 
     wpool = new AthPool<extWire>(false, 1024);
 
@@ -4720,10 +4780,10 @@ uint extMain::createWindowsDB(bool  rlog,
     if (rlog)
       AthResourceLog("Making net tables ", 0);
   } else if (use_bin_tables == 3) {  // signal_table based tiling
-    _tiles         = new extTileSystem(extRect, W->_step_nm);
+    _tiles = new extTileSystem(extRect, W->_step_nm);
     bool skipPower = false;
     bool skipInsts = false;
-    uint wireCnt   = mkTileBoundaries(skipPower, skipInsts);
+    uint wireCnt = mkTileBoundaries(skipPower, skipInsts);
   }
 
   for (int dir = 1; dir >= 0; dir--) {
@@ -4736,14 +4796,14 @@ uint extMain::createWindowsDB(bool  rlog,
     _search->initCouplingCapLoops(dir, ccFlag, NULL, NULL);
 
     uint stepNum = 0;
-    int  hiXY    = W->setExtBoundaries(dir);
+    int hiXY = W->setExtBoundaries(dir);
     // logger_->info(RCX, 0, "Dir={} hiXY= {}", dir, hiXY);
     for (; hiXY <= W->_ur[dir]; hiXY += W->_step_nm[dir]) {
       hiXY = W->adjust_hiXY(hiXY);
 
       uint extractedWireCnt = 0;
-      int  extractLimit     = W->set_extractLimit();
-      W->_minExtracted      = _search->couplingCaps(W->_extractLimit,
+      int extractLimit = W->set_extractLimit();
+      W->_minExtracted = _search->couplingCaps(W->_extractLimit,
                                                W->_ccDist,
                                                W->_currentDir,
                                                extractedWireCnt,
@@ -4761,7 +4821,7 @@ uint extMain::createWindowsDB(bool  rlog,
 
       W->updateExtLimits(limitArray);
 
-      extWindow* W1            = new extWindow(W, windowCnt, logger_);
+      extWindow* W1 = new extWindow(W, windowCnt, logger_);
       windowTable[windowCnt++] = W1;
 
       W->updateLoBounds(false /*report*/);
@@ -4779,9 +4839,10 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
 {
   dbIntProperty* p = (dbIntProperty*) dbProperty::find(_block, "_currentDir");
   if (p == NULL) {
-    logger_->warn(RCX, 99,
-            "Block {} has no defined extraction boundaries",
-            _block->getConstName());
+    logger_->warn(RCX,
+                  99,
+                  "Block {} has no defined extraction boundaries",
+                  _block->getConstName());
     return 0;
   }
   bool rcgenFlag = use_signal_tables > 1 ? true : false;
@@ -4796,7 +4857,7 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
 
   if (use_signal_tables == 2) {
     uint extWireCnt = 0;
-    uint rcCnt      = 0;
+    uint rcCnt = 0;
     if (_tiles != NULL)
       extWireCnt = mkTileNets(
           W->_currentDir, W->_lo_sdb, W->_hi_sdb, false, NULL, rcCnt, true);
@@ -4847,11 +4908,12 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
                             powerNets,
                             &createNetUtil,
                             rcCnt);
-    logger_->info(RCX, 100,
-           "BBlock {} has {} signal wires and {} rcSegs were generated",
-           extBlock->getConstName(),
-           extWireCnt,
-           rcCnt);
+    logger_->info(RCX,
+                  100,
+                  "BBlock {} has {} signal wires and {} rcSegs were generated",
+                  extBlock->getConstName(),
+                  extWireCnt,
+                  rcCnt);
     rcgenFlag = false;
   } else {
     createNetUtil.allocMapArray(2000000);
@@ -4873,7 +4935,7 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
                               _cntxBinTable,
                               &createNetUtil);
 
-    uint instCnt       = addInsts(W->_currentDir,
+    uint instCnt = addInsts(W->_currentDir,
                             W->_lo_gs,
                             W->_hi_gs,
                             W->_ll,
@@ -4882,10 +4944,11 @@ uint extMain::fillWindowsDB(bool rlog, Rect& extRect, uint use_signal_tables)
                             _cntxInstTable,
                             &createNetUtil);
     uint signalWireCnt = createNetShapePropertires(extBlock);
-    logger_->info(RCX, 96,
-           "Block {} has {} signal wires",
-           extBlock->getConstName(),
-           signalWireCnt);
+    logger_->info(RCX,
+                  96,
+                  "Block {} has {} signal wires",
+                  extBlock->getConstName(),
+                  signalWireCnt);
   }
 
   if (rcgenFlag) {
@@ -4916,14 +4979,17 @@ uint extMain::rcNetGen(dbNet* net)
   return cnt;
 }
 uint extMain::rcGen(const char* netNames,
-                    double      resBound,
-                    bool        mergeViaRes,
-                    uint        debug,
-                    bool        rlog,
+                    double resBound,
+                    bool mergeViaRes,
+                    uint debug,
+                    bool rlog,
                     ZInterface* Interface)
 {
   if (debug != 77)
-    logger_->info(RCX, 102, "RC segment generation {} ...", getBlock()->getName().c_str());
+    logger_->info(RCX,
+                  102,
+                  "RC segment generation {} ...",
+                  getBlock()->getName().c_str());
 
   if (!_lefRC && (getRCmodel(0) == NULL)) {
     logger_->warn(RCX, 103, "No RC model was read with command <load_model>");
@@ -4935,7 +5001,7 @@ uint extMain::rcGen(const char* netNames,
     logger_->warn(RCX, 105, "Wrong combination of corner related options");
     return 0;
   }
-  _mergeViaRes   = mergeViaRes;
+  _mergeViaRes = mergeViaRes;
   _mergeResBound = resBound;
 
   _foreign = false;  // extract after read_spef
@@ -4957,7 +5023,7 @@ uint extMain::rcGen(const char* netNames,
     logger_->info(RCX, 106, "Setup for RCgen done!");
     return 0;
   }
-  dbSet<dbNet>           bnets = _block->getNets();
+  dbSet<dbNet> bnets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     dbNet* net = *net_itr;
@@ -4974,7 +5040,7 @@ uint extMain::rcGenBlock(dbBlock* block)
 
   uint cnt = 0;
 
-  dbSet<dbNet>           bnets = block->getNets();
+  dbSet<dbNet> bnets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     dbNet* net = *net_itr;
@@ -4995,7 +5061,7 @@ void extMain::writeMapping(dbBlock* block)
 
   uint cnt = 0;
 
-  dbSet<dbNet>           bnets = block->getNets();
+  dbSet<dbNet> bnets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     dbNet* net = *net_itr;
@@ -5008,7 +5074,7 @@ void extMain::writeMapping(dbBlock* block)
       continue;
 
     dbWireShapeItr shapes;
-    dbShape        s;
+    dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       if (s.isVia())
         continue;

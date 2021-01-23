@@ -31,7 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "extRCap.h"
-#include <dbLogger.h>
 #include "utility/Logger.h"
 
 namespace rcx {
@@ -40,7 +39,7 @@ using utl::RCX;
 
 uint extMain::allocateOverUnderMaps(uint layerCnt)
 {
-  uint cnt                = layerCnt + 1;
+  uint cnt = layerCnt + 1;
   _overUnderPlaneLayerMap = new uint*[layerCnt + 1];
   uint ii;
   for (ii = 1; ii < layerCnt + 1; ii++) {
@@ -85,24 +84,25 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
 
   if (bb != NULL) {
     maxRect = *bb;
-    logger_->info(RCX, 0,
-                "init planes area: {} {}  {} {}",
-                maxRect.xMin(),
-                maxRect.yMin(),
-                maxRect.xMax(),
-                maxRect.yMax());
+    logger_->info(RCX,
+                  183,
+                  "Init planes area: {} {}  {} {}",
+                  maxRect.xMin(),
+                  maxRect.yMin(),
+                  maxRect.xMax(),
+                  maxRect.yMax());
   }
 
-  odb::dbSet<odb::dbTechLayer>           layers = _tech->getLayers();
+  odb::dbSet<odb::dbTechLayer> layers = _tech->getLayers();
   odb::dbSet<odb::dbTechLayer>::iterator litr;
-  odb::dbTechLayer*                      layer;
+  odb::dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
     if (layer->getType() != odb::dbTechLayerType::ROUTING)
       continue;
 
-    uint level    = layer->getRoutingLevel();
-    uint pp       = layer->getPitch();
+    uint level = layer->getRoutingLevel();
+    uint pp = layer->getPitch();
     uint minWidth = layer->getWidth();
 
     odb::Rect r = maxRect;
@@ -120,12 +120,12 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
   }
   return planeCnt + 1;
 }
-uint extMain::initPlanes(uint  dir,
-                         uint  layerCnt,
+uint extMain::initPlanes(uint dir,
+                         uint layerCnt,
                          uint* pitchTable,
                          uint* widthTable,
-                         int*  ll,
-                         int*  ur)
+                         int* ll,
+                         int* ur)
 {
   if (_geomSeq != NULL)
     delete _geomSeq;
@@ -241,24 +241,24 @@ uint extMain::addSBoxOnGs(odb::dbSBox* s, bool swap_coords)
 
 uint extMain::addPowerGs(int dir, int* ll, int* ur)
 {
-  bool rotatedGs   = getRotatedFlag();
+  bool rotatedGs = getRotatedFlag();
   bool swap_coords = !dir;
 
-  uint                             cnt   = 0;
-  odb::dbSet<odb::dbNet>           bnets = _block->getNets();
+  uint cnt = 0;
+  odb::dbSet<odb::dbNet> bnets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
-  odb::dbNet*                      net;
+  odb::dbNet* net;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     net = *net_itr;
 
     odb::dbSigType type = net->getSigType();
     if (type != odb::dbSigType::POWER && type != odb::dbSigType::GROUND)
       continue;
-    odb::dbSet<odb::dbSWire>           swires = net->getSWires();
+    odb::dbSet<odb::dbSWire> swires = net->getSWires();
     odb::dbSet<odb::dbSWire>::iterator itr;
     for (itr = swires.begin(); itr != swires.end(); ++itr) {
-      odb::dbSWire*                     swire  = *itr;
-      odb::dbSet<odb::dbSBox>           sboxes = swire->getWires();
+      odb::dbSWire* swire = *itr;
+      odb::dbSet<odb::dbSBox> sboxes = swire->getWires();
       odb::dbSet<odb::dbSBox>::iterator box_itr;
       for (box_itr = sboxes.begin(); box_itr != sboxes.end(); ++box_itr) {
         odb::dbSBox* s = *box_itr;
@@ -310,14 +310,14 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur)
 }
 void extMain::getBboxPerLayer(odb::Rect* rectTable)
 {
-  odb::dbSet<odb::dbNet>           bnets = _block->getNets();
+  odb::dbSet<odb::dbNet> bnets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
-  odb::dbWirePathItr               pitr;
-  odb::dbWire*                     wire;
-  odb::dbWirePath                  path;
-  odb::dbWirePathShape             pshape;
-  odb::dbShape                     dshape;
-  odb::dbNet*                      net;
+  odb::dbWirePathItr pitr;
+  odb::dbWire* wire;
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbShape dshape;
+  odb::dbNet* net;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
     net = *net_itr;
 
@@ -346,11 +346,11 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable)
       continue;
     }
 
-    odb::dbSet<odb::dbSWire>           swires = net->getSWires();
+    odb::dbSet<odb::dbSWire> swires = net->getSWires();
     odb::dbSet<odb::dbSWire>::iterator itr;
     for (itr = swires.begin(); itr != swires.end(); ++itr) {
-      odb::dbSWire*                     swire  = *itr;
-      odb::dbSet<odb::dbSBox>           sboxes = swire->getWires();
+      odb::dbSWire* swire = *itr;
+      odb::dbSet<odb::dbSBox> sboxes = swire->getWires();
       odb::dbSet<odb::dbSBox>::iterator box_itr;
       for (box_itr = sboxes.begin(); box_itr != sboxes.end(); ++box_itr) {
         odb::dbSBox* s = *box_itr;
@@ -369,20 +369,20 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable)
 }
 uint extMain::addSignalGs(int dir, int* ll, int* ur)
 {
-  bool rotatedGs   = getRotatedFlag();
+  bool rotatedGs = getRotatedFlag();
   bool swap_coords = !dir;
 
-  uint                             cnt   = 0;
-  odb::dbSet<odb::dbNet>           bnets = _block->getNets();
+  uint cnt = 0;
+  odb::dbSet<odb::dbNet> bnets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
-  odb::dbNet*                      net;
-  odb::dbWirePathItr               pitr;
-  odb::dbWire*                     wire;
-  odb::dbWirePath                  path;
-  odb::dbWirePathShape             pshape;
-  odb::dbShape                     dshape;
+  odb::dbNet* net;
+  odb::dbWirePathItr pitr;
+  odb::dbWire* wire;
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbShape dshape;
   for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-    net                 = *net_itr;
+    net = *net_itr;
     odb::dbSigType type = net->getSigType();
     if (type == odb::dbSigType::POWER || type == odb::dbSigType::GROUND)
       continue;
@@ -440,8 +440,8 @@ uint extMain::addSignalGs(int dir, int* ll, int* ur)
   return cnt;
 }
 uint extMain::addObsShapesOnPlanes(odb::dbInst* inst,
-                                   bool         rotatedFlag,
-                                   bool         swap_coords)
+                                   bool rotatedFlag,
+                                   bool swap_coords)
 {
   uint cnt = 0;
 
@@ -464,17 +464,17 @@ uint extMain::addObsShapesOnPlanes(odb::dbInst* inst,
   return cnt;
 }
 uint extMain::addItermShapesOnPlanes(odb::dbInst* inst,
-                                     bool         rotatedFlag,
-                                     bool         swap_coords)
+                                     bool rotatedFlag,
+                                     bool swap_coords)
 {
-  uint                               cnt    = 0;
-  odb::dbSet<odb::dbITerm>           iterms = inst->getITerms();
+  uint cnt = 0;
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   odb::dbSet<odb::dbITerm>::iterator iterm_itr;
 
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     odb::dbITerm* iterm = *iterm_itr;
 
-    odb::dbShape         s;
+    odb::dbShape s;
     odb::dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {
       if (s.isVia())
@@ -498,8 +498,8 @@ uint extMain::addInstShapesOnPlanes(uint dir, int* ll, int* ur)
 {
   bool rotated = getRotatedFlag();
 
-  uint                              cnt   = 0;
-  odb::dbSet<odb::dbInst>           insts = _block->getInsts();
+  uint cnt = 0;
+  odb::dbSet<odb::dbInst> insts = _block->getInsts();
   odb::dbSet<odb::dbInst>::iterator inst_itr;
   for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
     odb::dbInst* inst = *inst_itr;
