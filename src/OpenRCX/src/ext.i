@@ -41,6 +41,10 @@ namespace ord {
 // Defined in OpenRoad.i
 rcx::Ext*
 getOpenRCX();
+
+OpenRoad *
+getOpenRoad();
+
 }
 
 using ord::getOpenRCX;
@@ -95,6 +99,7 @@ write_spef(const char* file,
   opts.file = file;
   opts.nets = nets;
   opts.net_id = net_id;
+  
   ext->write_spef(opts);
 }
 
@@ -121,6 +126,7 @@ diff_spef(const char* file,
   opts.r_cap = r_cap;
   opts.r_cc_cap = r_cc_cap;
   opts.r_conn = r_conn;
+  
   ext->diff_spef(opts);
 }
 
@@ -180,8 +186,8 @@ read_spef(const char* file)
 {
   Ext* ext = getOpenRCX();
   Ext::ReadSpefOpts opts;
-
   opts.file = file;
+  
   ext->read_spef(opts);
 }
 

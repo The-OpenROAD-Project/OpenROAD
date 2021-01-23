@@ -33,27 +33,32 @@
 #ifndef ADS_EXTPROCESS_H
 #define ADS_EXTPROCESS_H
 
-#include "odb.h"
-
 #include "array1.h"
+#include "odb.h"
 #include "parse.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace rcx {
+
+using utl::Logger;
 
 class extProcess;
 
 class extConductor
 {
-  extConductor();
+  extConductor(Logger* logger);
   bool readConductor(Ath__parser* parser);
-  void print(FILE*       fp,
+  void print(FILE* fp,
              const char* sep,
              const char* key,
-             int         v,
-             bool        pos = false);
+             int v,
+             bool pos = false);
   void printConductor(FILE* fp, Ath__parser* parse);
 
-  char   _name[128];
+  char _name[128];
   double _height;
   double _distance;
   double _thickness;
@@ -68,7 +73,7 @@ class extConductor
   double _bot_ext;
 
   double _p;
-  int    _var_table_index;
+  int _var_table_index;
 
   double _min_cw_del;
   double _max_cw_del;
@@ -80,17 +85,20 @@ class extConductor
   friend class extRCModel;
   friend class extProcess;
   friend class extMasterConductor;
+
+ protected:
+  Logger* logger_;
 };
 
 class extDielectric
 {
-  extDielectric();
+  extDielectric(Logger* logger);
   bool readDielectric(Ath__parser* parser);
-  void printInt(FILE*       fp,
+  void printInt(FILE* fp,
                 const char* sep,
                 const char* key,
-                int         v,
-                bool        pos = false);
+                int v,
+                bool pos = false);
   void printDielectric(FILE* fp, Ath__parser* parser);
   void printDielectric(FILE* fp, float planeWidth, float planeThickness);
   void printDielectric3D(FILE* fp,
@@ -98,9 +106,9 @@ class extDielectric
                          float blockThickness,
                          float blockLength);
 
-  char   _name[128];
-  char   _non_conformal_metal[128];
-  bool   _conformal;
+  char _name[128];
+  char _non_conformal_metal[128];
+  bool _conformal;
   double _epsilon;
   double _height;
   double _distance;
@@ -118,18 +126,25 @@ class extDielectric
 
   friend class extProcess;
   friend class extMasterConductor;
+
+ protected:
+  Logger* logger_;
 };
 class extMasterConductor
 {
-  extMasterConductor(uint condId, extConductor* cond, double prevHeight);
-  extMasterConductor(uint           dielId,
+  extMasterConductor(uint condId,
+                     extConductor* cond,
+                     double prevHeight,
+                     Logger* logger);
+  extMasterConductor(uint dielId,
                      extDielectric* diel,
-                     double         xlo,
-                     double         dx1,
-                     double         xhi,
-                     double         dx2,
-                     double         h,
-                     double         th);
+                     double xlo,
+                     double dx1,
+                     double xhi,
+                     double dx2,
+                     double h,
+                     double th,
+                     Logger* logger);
 
  public:
   void reset(double height,
@@ -139,64 +154,67 @@ class extMasterConductor
   void resetThicknessHeight(double height, double thickness);
   void resetWidth(double top_width, double bottom_width);
 
-  double writeRaphaelBox(FILE*  fp,
-                         uint   wireNum,
+  double writeRaphaelBox(FILE* fp,
+                         uint wireNum,
                          double width,
                          double X,
                          double volt);
-  void   writeRaphaelPoly(FILE* fp, uint wireNum, double X, double volt);
-  void   writeRaphaelPoly3D(FILE*  fp,
-                            uint   wireNum,
-                            double X,
-                            double length,
-                            double volt);
-  void   writeRaphaelConformalPoly(FILE*       fp,
-                                   double      width,
-                                   double      X,
+  void writeRaphaelPoly(FILE* fp, uint wireNum, double X, double volt);
+  void writeRaphaelPoly3D(FILE* fp,
+                          uint wireNum,
+                          double X,
+                          double length,
+                          double volt);
+  void writeRaphaelConformalPoly(FILE* fp,
+                                 double width,
+                                 double X,
+                                 extProcess* p);
+  void writeRaphaelConformalGround(FILE* fp,
+                                   double X,
+                                   double width,
                                    extProcess* p);
-  void   writeRaphaelConformalGround(FILE*       fp,
-                                     double      X,
-                                     double      width,
-                                     extProcess* p);
-  double writeRaphaelPoly(FILE*       fp,
-                          uint        wireNum,
-                          double      width,
-                          double      X,
-                          double      volt,
+  double writeRaphaelPoly(FILE* fp,
+                          uint wireNum,
+                          double width,
+                          double X,
+                          double volt,
                           extProcess* p = NULL);
-  double writeRaphaelPoly3D(FILE*  fp,
-                            uint   wireNum,
+  double writeRaphaelPoly3D(FILE* fp,
+                            uint wireNum,
                             double width,
                             double length,
                             double X,
                             double volt);
-  void   printDielBox(FILE*          fp,
-                      double         X,
-                      double         width,
+  void printDielBox(FILE* fp,
+                    double X,
+                    double width,
+                    extDielectric* diel,
+                    const char* width_name);
+  void printDielBox3D(FILE* fp,
+                      double X,
+                      double width,
+                      double length,
                       extDielectric* diel,
-                      const char*    width_name);
-  void   printDielBox3D(FILE*          fp,
-                        double         X,
-                        double         width,
-                        double         length,
-                        extDielectric* diel,
-                        const char*    width_name);
-  void   writeRaphaelPointXY(FILE* fp, double X, double Y);
-  void   writeRaphaelDielPoly(FILE*          fp,
-                              double         X,
-                              double         width,
+                      const char* width_name);
+  void writeRaphaelPointXY(FILE* fp, double X, double Y);
+  void writeRaphaelDielPoly(FILE* fp,
+                            double X,
+                            double width,
+                            extDielectric* diel);
+  void writeRaphaelDielPoly3D(FILE* fp,
+                              double X,
+                              double width,
+                              double length,
                               extDielectric* diel);
-  void   writeRaphaelDielPoly3D(FILE*          fp,
-                                double         X,
-                                double         width,
-                                double         length,
-                                extDielectric* diel);
-  void   writeBoxName(FILE* fp, uint wireNum);
+  void writeBoxName(FILE* fp, uint wireNum);
 
   uint _conformalId[3];
 
+ protected:
+  Logger* logger_;
+
  private:
-  uint   _condId;
+  uint _condId;
   double _loLeft[3];
   double _loRight[3];
   double _hiLeft[3];
@@ -212,26 +230,26 @@ class extVarTable
   extVarTable(uint rowCnt);
   ~extVarTable();
 
-  int                   readWidthSpacing2D(Ath__parser* parser,
-                                           const char*  keyword1,
-                                           const char*  keyword2,
-                                           const char*  keyword3,
-                                           const char*  key);
+  int readWidthSpacing2D(Ath__parser* parser,
+                         const char* keyword1,
+                         const char* keyword2,
+                         const char* keyword3,
+                         const char* key);
   Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
-                                        const char*  keyword);
-  void                  printOneLine(FILE*                 fp,
-                                     Ath__array1D<double>* A,
-                                     const char*           header,
-                                     const char*           trail);
-  void                  printTable(FILE* fp, const char* valKey);
+                                        const char* keyword);
+  void printOneLine(FILE* fp,
+                    Ath__array1D<double>* A,
+                    const char* header,
+                    const char* trail);
+  void printTable(FILE* fp, const char* valKey);
   double getVal(uint ii, uint jj) { return _vTable[ii]->get(jj); };
 
  private:
-  Ath__array1D<double>*  _width;
-  Ath__array1D<double>*  _space;
-  Ath__array1D<double>*  _density;
-  Ath__array1D<double>*  _p;
-  uint                   _rowCnt;
+  Ath__array1D<double>* _width;
+  Ath__array1D<double>* _space;
+  Ath__array1D<double>* _density;
+  Ath__array1D<double>* _p;
+  uint _rowCnt;
   Ath__array1D<double>** _vTable;
 
   friend class extVariation;
@@ -239,27 +257,28 @@ class extVarTable
 class extVariation
 {
  public:
-  int                   readVariation(Ath__parser* parser);
-  extVarTable*          readVarTable(Ath__parser* parser,
-                                     const char*  key1,
-                                     const char*  key2,
-                                     const char*  key3,
-                                     const char*  endKey);
-  void                  printVariation(FILE* fp, uint n);
+  int readVariation(Ath__parser* parser);
+  extVarTable* readVarTable(Ath__parser* parser,
+                            const char* key1,
+                            const char* key2,
+                            const char* key3,
+                            const char* endKey);
+  void printVariation(FILE* fp, uint n);
   Ath__array1D<double>* getWidthTable();
   Ath__array1D<double>* getSpaceTable();
   Ath__array1D<double>* getDataRateTable();
   Ath__array1D<double>* getPTable();
-  double                getTopWidth(uint ii, uint jj);
-  double                getTopWidthR(uint ii, uint jj);
-  double                getBottomWidth(double w, uint dIndex);
-  double                getBottomWidthR(double w, uint dIndex);
-  double                getThickness(double w, uint dIndex);
-  double                getThicknessR(double w, uint dIndex);
-  double                getP(double w);
-  double                interpolate(double                w,
-                                    Ath__array1D<double>* X,
-                                    Ath__array1D<double>* Y);
+  double getTopWidth(uint ii, uint jj);
+  double getTopWidthR(uint ii, uint jj);
+  double getBottomWidth(double w, uint dIndex);
+  double getBottomWidthR(double w, uint dIndex);
+  double getThickness(double w, uint dIndex);
+  double getThicknessR(double w, uint dIndex);
+  double getP(double w);
+  double interpolate(double w,
+                     Ath__array1D<double>* X,
+                     Ath__array1D<double>* Y);
+  void setLogger(Logger* logger) { logger_ = logger; }
 
   extVarTable* _hiWidthC;
   extVarTable* _loWidthC;
@@ -268,118 +287,124 @@ class extVariation
   extVarTable* _loWidthR;
   extVarTable* _thicknessR;
   extVarTable* _p;
+
+ protected:
+  Logger* logger_;
 };
 class extProcess
 {
+ protected:
+  Logger* logger_;
+
  public:
-  extProcess(uint condCnt, uint dielCnt);
+  extProcess(uint condCnt, uint dielCnt, Logger* logger);
   ~extProcess();
-  FILE*               openFile(const char* filename, const char* permissions);
-  uint                readProcess(const char* name, char* filename);
-  void                writeProcess(const char* filename);
-  void                createMasterLayers();
-  void                writeProcess(FILE* fp,
-                                   char* gndName,
-                                   float planeWidth,
-                                   float planeThickness);
-  void                writeProcess3D(FILE* fp,
-                                     char* gndName,
-                                     float blockWidth,
-                                     float blockThickness,
-                                     float blockLength);
-  extConductor*       getConductor(uint ii);
+  FILE* openFile(const char* filename, const char* permissions);
+  uint readProcess(const char* name, char* filename);
+  void writeProcess(const char* filename);
+  void createMasterLayers();
+  void writeProcess(FILE* fp,
+                    char* gndName,
+                    float planeWidth,
+                    float planeThickness);
+  void writeProcess3D(FILE* fp,
+                      char* gndName,
+                      float blockWidth,
+                      float blockThickness,
+                      float blockLength);
+  extConductor* getConductor(uint ii);
   extMasterConductor* getMasterConductor(uint ii);
-  uint                getConductorCnt() { return _condTable->getCnt(); };
-  extDielectric*      getDielectric(uint ii);
-  extMasterConductor* getMasterConductor(uint    met,
-                                         uint    wIndex,
-                                         uint    sIndex,
+  uint getConductorCnt() { return _condTable->getCnt(); };
+  extDielectric* getDielectric(uint ii);
+  extMasterConductor* getMasterConductor(uint met,
+                                         uint wIndex,
+                                         uint sIndex,
                                          double& w,
                                          double& s);
 
-  void writeFullProcess(FILE*  fp,
-                        char*  gndName,
+  void writeFullProcess(FILE* fp,
+                        char* gndName,
                         double planeWidth,
                         double planeThickness);
   void writeFullProcess(FILE* fp, double X, double width, char* width_name);
-  void writeFullProcess3D(FILE*  fp,
+  void writeFullProcess3D(FILE* fp,
                           double X,
                           double width,
                           double length,
-                          char*  width_name);
+                          char* width_name);
   void writeRaphaelPointXY(FILE* fp, double X, double Y);
   void writeParam(FILE* fp, const char* name, double val);
-  void writeWindow(FILE*       fp,
+  void writeWindow(FILE* fp,
                    const char* param_width_name,
-                   double      y1,
+                   double y1,
                    const char* param_thickness_name);
-  void writeWindow3D(FILE*       fp,
+  void writeWindow3D(FILE* fp,
                      const char* param_width_name,
-                     double      y1,
+                     double y1,
                      const char* param_thickness_name,
                      const char* param_length_name);
-  void writeGround(FILE*       fp,
-                   int         met,
+  void writeGround(FILE* fp,
+                   int met,
                    const char* name,
                    const char* param_width_name,
-                   double      x1,
-                   double      volt);
-  void writeGround(FILE*       fp,
-                   int         met,
+                   double x1,
+                   double volt);
+  void writeGround(FILE* fp,
+                   int met,
                    const char* name,
-                   double      width,
-                   double      x1,
-                   double      volt,
-                   bool        diag = false);
-  void writeGround3D(FILE*       fp,
-                     int         met,
+                   double width,
+                   double x1,
+                   double volt,
+                   bool diag = false);
+  void writeGround3D(FILE* fp,
+                     int met,
                      const char* name,
-                     double      width,
-                     double      length,
-                     double      x1,
-                     double      volt,
-                     bool        diag = false);
-  void writeProcessAndGround(FILE*       wfp,
+                     double width,
+                     double length,
+                     double x1,
+                     double volt,
+                     bool diag = false);
+  void writeProcessAndGround(FILE* wfp,
                              const char* gndName,
-                             int         underMet,
-                             int         overMet,
-                             double      X,
-                             double      width,
-                             double      thichness,
-                             bool        diag = false);
-  void writeProcessAndGround3D(FILE*       wfp,
+                             int underMet,
+                             int overMet,
+                             double X,
+                             double width,
+                             double thichness,
+                             bool diag = false);
+  void writeProcessAndGround3D(FILE* wfp,
                                const char* gndName,
-                               int         underMet,
-                               int         overMet,
-                               double      X,
-                               double      width,
-                               double      length,
-                               double      thickness,
-                               double      W,
-                               bool        diag = false);
+                               int underMet,
+                               int overMet,
+                               double X,
+                               double width,
+                               double length,
+                               double thickness,
+                               double W,
+                               bool diag = false);
 
-  extVariation*         getVariation(uint met);
+  extVariation* getVariation(uint met);
   Ath__array1D<double>* getWidthTable(uint met);
   Ath__array1D<double>* getSpaceTable(uint met);
   Ath__array1D<double>* getDiagSpaceTable(uint met);
   Ath__array1D<double>* getDataRateTable(uint met);
-  void   readDataRateTable(Ath__parser* parser, const char* keyword);
+  void readDataRateTable(Ath__parser* parser, const char* keyword);
   double adjustMasterLayersForHeight(uint met, double thickness);
   double adjustMasterDielectricsForHeight(uint met, double dth);
-  bool   getMaxMinFlag();
-  bool   getThickVarFlag();
+  bool getMaxMinFlag();
+  bool getThickVarFlag();
 
  private:
-  uint                               _condctorCnt;
-  uint                               _dielectricCnt;
-  bool                               _maxMinFlag;
-  bool                               _thickVarFlag;
-  Ath__array1D<extConductor*>*       _condTable;
-  Ath__array1D<extDielectric*>*      _dielTable;
+  uint _condctorCnt;
+  uint _dielectricCnt;
+  bool _maxMinFlag;
+  bool _thickVarFlag;
+  Ath__array1D<extConductor*>* _condTable;
+  Ath__array1D<extDielectric*>* _dielTable;
   Ath__array1D<extMasterConductor*>* _masterConductorTable;
   Ath__array1D<extMasterConductor*>* _masterDielectricTable;
-  Ath__array1D<extVariation*>*       _varTable;
-  Ath__array1D<double>*              _dataRateTable;
+  Ath__array1D<extVariation*>* _varTable;
+  Ath__array1D<double>* _dataRateTable;
 };
 
 }  // namespace rcx
