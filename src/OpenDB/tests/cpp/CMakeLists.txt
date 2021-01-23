@@ -10,6 +10,7 @@ set(TEST_LIBS
         defout
         lefout
         lefin
+        cdl
         ${TCL_LIBRARY}
         Boost::boost
         utility

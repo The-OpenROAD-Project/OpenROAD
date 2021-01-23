@@ -19,3 +19,8 @@ record_tests {
   def_parser
 }
 
+record_pass_fail_tests {
+    dump_netlists
+    dump_netlists_withfill
+}
+
