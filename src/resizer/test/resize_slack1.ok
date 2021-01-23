@@ -11,9 +11,4 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 [INFO ODB-0134] Finished DEF file: repair_setup1.def
 [INFO RSZ-0026] Removed 5 buffers.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
-[INFO RSZ-0026] Removed 1 buffers.
 r1q 0.757

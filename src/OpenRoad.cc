@@ -37,6 +37,7 @@
 
 #include <iostream>
 
+#include "utility/MakeLogger.h"
 #include "utility/Logger.h"
 
 #include "opendb/db.h"
@@ -190,7 +191,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = new utl::Logger(log_filename);
+  logger_ = makeLogger(log_filename);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
@@ -214,6 +215,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import TCL scripts.
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
+  initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
