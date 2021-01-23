@@ -1,113 +1,111 @@
-##################################################################################BSD 3
-    - Clause License####Copyright(c) 2020,
-    OpenRoad Project UCSD
-    ##All rights reserved.####Redistribution and use in source and binary forms,
-    with or without##modification,
-    are permitted provided that the following conditions are met
-    :####*Redistributions of source code must retain the above copyright notice,
-     this##list of conditions and the following disclaimer.####*Redistributions
-     in binary form must reproduce the above copyright notice,
-     ##this list of conditions and the following disclaimer in the documentation
-         ##and#
-         or other materials provided with the distribution.####*Neither the name
-            of the copyright holder nor the names of its
-            ##contributors may be used to endorse
-         or promote products derived from
-            ##this software without specific prior written permission.####THIS
-            SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-            "AS IS"##AND ANY EXPRESS OR IMPLIED WARRANTIES,
-     INCLUDING,
-     BUT NOT LIMITED TO,
-     THE##IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-     PARTICULAR PURPOSE
-     ##ARE DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-     ##LIABLE FOR ANY DIRECT,
-     INDIRECT,
-     INCIDENTAL,
-     SPECIAL,
-     EXEMPLARY,
-     OR##CONSEQUENTIAL DAMAGES(INCLUDING,
-                               BUT NOT LIMITED TO,
-                               PROCUREMENT OF##SUBSTITUTE GOODS OR SERVICES;
-                               LOSS OF USE, DATA, OR PROFITS;
-                               OR BUSINESS##INTERRUPTION)
-         HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-     WHETHER IN##CONTRACT,
-     STRICT LIABILITY,
-     OR TORT(INCLUDING NEGLIGENCE OR
-                 OTHERWISE)##ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-     EVEN IF ADVISED OF THE##POSSIBILITY OF SUCH DAMAGE
-         .################################################################################
+################################################################################
+## BSD 3-Clause License
+##
+## Copyright (c) 2020, OpenRoad Project UCSD
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+################################################################################
 
-     find_package(SWIG REQUIRED) include(UseSWIG)
+find_package(SWIG REQUIRED)
+include(UseSWIG)
 
-         include_directories(PRIVATE ${PROJECT_SOURCE_DIR} / include
-                             / OpenRCX ${TCL_INCLUDE_PATH})
+include_directories(PRIVATE ${PROJECT_SOURCE_DIR}/include/OpenRCX ${TCL_INCLUDE_PATH})
 
-             set(OPENRCX_SWIG_FILES ${PROJECT_SOURCE_DIR} / src / ext.i)
+set(OPENRCX_SWIG_FILES
+    ${PROJECT_SOURCE_DIR}/src/ext.i
+)
 
-                 set_source_files_properties(${
-                     OPENRCX_SWIG_FILES} PROPERTIES CPLUSPLUS ON)
+set_source_files_properties(${OPENRCX_SWIG_FILES}
+    PROPERTIES CPLUSPLUS ON
+)
 
-                     swig_add_library(openrcx
-                                      - swig LANGUAGE tcl TYPE STATIC SOURCES
-                                          ${OPENRCX_SWIG_FILES})
+swig_add_library(openrcx-swig
+    LANGUAGE tcl
+    TYPE STATIC
+    SOURCES ${OPENRCX_SWIG_FILES}
+)
 
-                         set_property(TARGET openrcx
-                                      - swig PROPERTY SWIG_COMPILE_OPTIONS
-                                      - namespace - prefix rcx)
+set_property(TARGET openrcx-swig PROPERTY SWIG_COMPILE_OPTIONS -namespace -prefix rcx)
 
-                             swig_link_libraries(openrcx - swig PUBLIC opendb)
+swig_link_libraries(openrcx-swig
+    PUBLIC
+        opendb 
+)
 
-                                 target_include_directories(
-                                     openrcx
-                                     - swig PRIVATE ${OPENROAD_HOME} / include)
+target_include_directories(openrcx-swig
+  PRIVATE
+  ${OPENROAD_HOME}/include
+)
 
-                                     set(OPENRCX_TCL_INIT ${
-                                             CMAKE_CURRENT_BINARY_DIR}
-                                         / OpenrcxTclInitVar.cc)
+set(OPENRCX_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenrcxTclInitVar.cc)
 
-                                         add_custom_command(
-                                             OUTPUT ${
-                                                 OPENRCX_TCL_INIT} COMMAND ${
-                                                 OPENSTA_HOME}
-                                             / etc
-                                             / TclEncode
-                                                   .tcl
-                                                       ${OPENRCX_TCL_INIT} openrcx_tcl_inits
-                                                           OpenRCX
-                                                   .tcl WORKING_DIRECTORY ${
-                                                       OPENRCX_HOME}
-                                             / src DEPENDS
-                                                   OpenRCX.tcl ${OPENSTA_HOME}
-                                             / etc / TclEncode.tcl)
+add_custom_command(OUTPUT ${OPENRCX_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENRCX_TCL_INIT} openrcx_tcl_inits OpenRCX.tcl
+  WORKING_DIRECTORY ${OPENRCX_HOME}/src
+  DEPENDS OpenRCX.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+  )
 
-                                             add_library(
-                                                 OpenRCX ext.cpp extBench
-                                                     .cpp extBenchDB.cpp extCC
-                                                     .cpp extCoords.cpp extFlow
-                                                     .cpp extRCap.cpp extRCmodel
-                                                     .cpp extSpef.cpp extSpefIn
-                                                     .cpp ext_test_wire
-                                                     .cpp extmain.cpp extmeasure
-                                                     .cpp extDebugPrint
-                                                     .cpp extplanes.cpp extstats
-                                                     .cpp extprocess.cpp exttree
-                                                     .cpp hierSpef.cpp netRC
-                                                     .cpp powerConn
-                                                     .cpp MakeOpenRCX.cpp ${
-                                                         OPENRCX_TCL_INIT})
+add_library(OpenRCX
+    ext.cpp
+    extBench.cpp
+    extBenchDB.cpp
+    extCC.cpp
+    extCoords.cpp
+    extFlow.cpp
+    extRCap.cpp
+    extRCmodel.cpp
+    extSpef.cpp
+    extSpefIn.cpp
+    ext_test_wire.cpp
+    extmain.cpp
+    extmeasure.cpp
+    extDebugPrint.cpp
+    extplanes.cpp
+    extstats.cpp
+    extprocess.cpp
+    exttree.cpp
+    hierSpef.cpp
+    netRC.cpp
+    powerConn.cpp
+    MakeOpenRCX.cpp
+   ${OPENRCX_TCL_INIT}
+)
 
-                                                 target_include_directories(
-                                                     OpenRCX PUBLIC ${
-                                                         OPENRCX_HOME}
-                                                     / include PRIVATE
-                                                         ${OPENRCX_HOME}
-                                                     / include
-                                                     / OpenRCX ${OPENROAD_HOME}
-                                                     / include ${OPENSTA_HOME}
-                                                     / include)
+target_include_directories(OpenRCX
+  PUBLIC ${OPENRCX_HOME}/include
+  PRIVATE
+  ${OPENRCX_HOME}/include/OpenRCX
+  ${OPENROAD_HOME}/include
+  ${OPENSTA_HOME}/include
+)
 
-                                                     target_link_libraries(
-                                                         OpenRCX opendb openrcx
-                                                         - swig utility)
+target_link_libraries(OpenRCX
+                      opendb
+                      openrcx-swig
+                      utility
+)
