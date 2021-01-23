@@ -129,6 +129,10 @@ utl::error tool id message
 utl::critical tool id message
 ```
 
+Although there is a utl::critical function, it is really difficult to
+imagine any circumstances that would justify aborting execution of the
+application in a tcl function.
+
 ### Debug Messages
 The debug message have a different programming model.  As they are most often *not* issued the concern is to avoid slowing down normal execution.  For this reason such messages are issued by using the debugPrint macro.  This macro will avoid evaluating its arguments if they are not going to be printed.  The API is:
 
