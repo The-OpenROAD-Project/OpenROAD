@@ -100,23 +100,33 @@ The logger functions are shown below.
 
 ```
 Logger::report(const std::string& message,
-                       const Args&... args)
+               const Args&... args)
 Logger::info(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+             int id,
+             const std::string& message,
+             const Args&... args)
 Logger::warn(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+             int id,
+             const std::string& message,
+             const Args&... args)
 Logger::error(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+              int id,
+              const std::string& message,
+              const Args&... args)
 Logger::critical(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+                 int id,
+                 const std::string& message,
+                 const Args&... args)
+```
+
+The corresponding Tcl functions are shown below.
+
+```
+utl::report message
+utl::info tool id message
+utl::warn tool id message
+utl::error tool id message
+utl::critical tool id message
 ```
 
 ### Debug Messages
