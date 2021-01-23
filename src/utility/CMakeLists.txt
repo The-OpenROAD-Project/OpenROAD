@@ -36,6 +36,7 @@ add_library( utility
 target_include_directories( utility
   PUBLIC
   ${UTILITY_HOME}/include
+  ${TCL_INCLUDE_PATH}
 )
 
 target_link_libraries( utility

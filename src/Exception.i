@@ -1,5 +1,3 @@
-%{
-
 // Copyright (c) 2020, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -15,8 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "openroad/Error.hh"
-
+%{
 %}
 
 %exception {
@@ -25,7 +22,7 @@
     fprintf(stderr, "Error: out of memory.");
     exit(0);
   }
-  // This catches std::runtime_eror (ord::error) and sta::Exception.
+  // This catches std::runtime_eror (utl::error) and sta::Exception.
   catch (std::exception &excp) {
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, excp.what(), nullptr);

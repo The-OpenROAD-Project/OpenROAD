@@ -57,6 +57,9 @@ using ord::getLogger;
   $1 = utl::Logger::findToolId(arg);
 }
 
+// Catch exceptions in inline functions.
+%include "../../Exception.i"
+
 %inline %{
 
 namespace utl {
