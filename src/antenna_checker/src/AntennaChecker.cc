@@ -40,6 +40,7 @@
 #include "opendb/dbTypes.h"
 #include "opendb/dbWireGraph.h"
 #include "sta/StaMain.hh"
+#include "utility/Logger.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -68,6 +69,8 @@ using odb::dbWire;
 using odb::dbWireGraph;
 using odb::dbWireType;
 
+using utl::ANT;
+
 extern "C" {
 extern int Antennachecker_Init(Tcl_Interp* interp);
 }
@@ -78,6 +81,14 @@ AntennaChecker::AntennaChecker()
 
 AntennaChecker::~AntennaChecker()
 {
+}
+
+void
+AntennaChecker::init(odb::dbDatabase* db,
+                     Logger *logger)
+{
+  db_ = db;
+  logger_ = logger;
 }
 
 template <class valueType>
@@ -283,7 +294,6 @@ void AntennaChecker::find_wire_below_iterms(dbWireGraph::Node* node,
           (*edge_itr)->target(), iterm_areas, wire_level, iv, nv);
     }
   }
-  return;
 }
 
 std::pair<double, double> AntennaChecker::calculate_wire_area(
@@ -557,8 +567,6 @@ void AntennaChecker::find_car_path(
       if (existed_node == 0)
         path_found.push_back((*current_itr));
     }
-    current_path.pop_back();
-    return;
   } else {
     if (node->in_edge()
         && (node->in_edge()->type() == dbWireGraph::Edge::Type::VIA
@@ -591,7 +599,6 @@ void AntennaChecker::find_car_path(
     }
   }
   current_path.pop_back();
-  return;
 }
 
 void AntennaChecker::build_wire_PAR_table(
@@ -1448,19 +1455,18 @@ void AntennaChecker::check_antenna_cell()
   fprintf(_out,
           "Warning - class CORE ANTENNACELL is not found. This msg can be "
           "ignored if not in the antenna-avoid flow\n");
-  return;
 }
 
 void AntennaChecker::check_antennas(std::string path)
 {
   std::string bname = db_->getChip()->getBlock()->getName();
   std::vector<int> nets_info = GetAntennaRatio(path);
-  if (nets_info[2] != 0)
-    std::cout << "Number of pins violated: " << nets_info[0] << "\n"
-              << "Number of nets violated: " << nets_info[1] << "\n"
-              << "Total number of nets: " << nets_info[2] << std::endl;
-  else
-    printf("Design error!\n");
+  if (nets_info[2] != 0) {
+    logger_->info(ANT, 1, "Found {} pin violatations.", nets_info[0]);
+    logger_->info(ANT, 2, "Found {} net violatations in {} nets.",
+                  nets_info[1],
+                  nets_info[2]);
+  }
 }
 
 void AntennaChecker::find_wireroot_iterms(dbWireGraph::Node* node,
@@ -1586,10 +1592,10 @@ void AntennaChecker::check_par_max_length()
         std::vector<std::pair<double, std::vector<dbITerm*>>>
             par_max_length_wires = PAR_max_wire_length(net, route_level_);
         for (auto par_wire : par_max_length_wires) {
-          printf("Net name: %s, Routing Level: %d, Max Length for PAR: %f\n",
-                 net_name_.c_str(),
-                 route_level_,
-                 par_wire.first);
+          logger_->warn(ANT, 3, "Net {}: Routing Level: {}, Max Length for PAR: {:3.2f}",
+                        net_name_.c_str(),
+                        route_level_,
+                        par_wire.first);
         }
       }
     }

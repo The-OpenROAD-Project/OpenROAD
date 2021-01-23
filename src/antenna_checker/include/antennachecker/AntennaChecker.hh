@@ -38,6 +38,7 @@
 
 #include "opendb/db.h"
 #include "opendb/dbWireGraph.h"
+#include "utility/Logger.h"
 
 namespace ant {
 
@@ -48,6 +49,8 @@ using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWire;
 using odb::dbWireGraph;
+
+using utl::Logger;
 
 typedef std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>>
     wireroots_info_vec;
@@ -129,7 +132,8 @@ class AntennaChecker
   AntennaChecker();
   ~AntennaChecker();
 
-  void setDb(odb::dbDatabase* db) { db_ = db; }
+  void init(odb::dbDatabase* db,
+            utl::Logger *logger);
   void set_verbose(bool verbose) { verbose_ = verbose; }
   void set_net_name(std::string net_name) { net_name_ = net_name; }
   void set_route_level(int route_level) { route_level_ = route_level; }
@@ -223,6 +227,7 @@ class AntennaChecker
 
  private:
   odb::dbDatabase* db_;
+  utl::Logger *logger_;
   FILE* _out;
   bool verbose_;
   std::string net_name_;
