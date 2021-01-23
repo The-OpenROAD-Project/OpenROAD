@@ -35,12 +35,7 @@
 
 #pragma once
 
-#include <string>
-#include <iostream>
-
 namespace ord {
-
-using Exception = std::runtime_error;
 
 void
 error(const char *fmt, ...) __attribute__ ((deprecated));
