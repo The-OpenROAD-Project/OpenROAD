@@ -7,6 +7,7 @@ read_sdc gcd.sdc
 set_dont_use {AOI211_X1 OAI211_X1}
 set_wire_rc -layer metal3
 
+remove_buffers
 rsz::resize_slack_preamble
 
 rsz::find_resize_slacks

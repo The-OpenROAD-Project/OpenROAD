@@ -48,14 +48,14 @@ proc link_design { {top_cell_name ""} } {
 
   if { $top_cell_name == "" } {
     if { $current_design_name == "" } {
-      ord::error ORD 1009 "missing top_cell_name argument and no current_design."
+      utl::error ORD 1009 "missing top_cell_name argument and no current_design."
       return 0
     } else {
       set top_cell_name $current_design_name
     }
   }
   if { ![ord::db_has_tech] } {
-    ord::error ORD 1010 "no technology has been read."
+    utl::error ORD 1010 "no technology has been read."
   }
   ord::link_design_db_cmd $top_cell_name
 }
