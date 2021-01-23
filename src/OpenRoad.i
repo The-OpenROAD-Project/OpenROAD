@@ -71,6 +71,12 @@ getOpenRoad()
   return OpenRoad::openRoad();
 }
 
+utl::Logger *
+getLogger()
+{
+  return OpenRoad::openRoad()->getLogger();
+}
+
 dbDatabase *
 getDb()
 {
