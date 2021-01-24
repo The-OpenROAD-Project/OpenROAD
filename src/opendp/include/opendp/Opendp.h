@@ -345,9 +345,7 @@ private:
                            int col);
 
   // Optimizing mirroring
-  void getBox(dbNet *net,
-              // Return value.
-              Rect &net_box) const;
+  Rect getBox(dbNet *net) const;
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
                             vector<dbInst*> &mirror_candidates);

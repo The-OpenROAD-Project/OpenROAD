@@ -273,8 +273,7 @@ Opendp::hpwl(dbNet *net) const
   if (isSupply(net))
     return 0;
   else {
-    Rect bbox;
-    getBox(net, bbox);
+    Rect bbox = getBox(net);
     return bbox.dx() + bbox.dy();
   }
 }
@@ -287,11 +286,10 @@ Opendp::isSupply(dbNet *net) const
     || sig_type == dbSigType::GROUND;
 }
 
-void
-Opendp::getBox(dbNet *net,
-               // Return value.
-               Rect &net_box) const
+Rect
+Opendp::getBox(dbNet *net) const
 {
+  Rect net_box;
   net_box.mergeInit();
 
   for (dbITerm *iterm : net->getITerms()) {
@@ -324,6 +322,7 @@ Opendp::getBox(dbNet *net,
       }
     }
   }
+  return net_box;
 }
 
 ////////////////////////////////////////////////////////////////
