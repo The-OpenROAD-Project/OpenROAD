@@ -344,27 +344,24 @@ Opendp::rowOrient(int row) const
 
 ////////////////////////////////////////////////////////////////
 
-void
+Point
 Opendp::initialLocation(const Cell *cell,
-                        bool padded,
-                        // Return values.
-                        int *x,
-                        int *y) const
+                        bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  *x = loc_x - core_.xMin();
+  loc_x -= core_.xMin();
   if (padded)
-    *x -= padLeft(cell) * site_width_;
-  *y = loc_y - core_.yMin();
+    loc_x -= padLeft(cell) * site_width_;
+  loc_y -= core_.yMin();
+  return Point(loc_x, loc_y);
 }
 
 int
 Opendp::disp(const Cell *cell) const
 {
-  int init_x, init_y;
-  initialLocation(cell, false, &init_x, &init_y);
-  return abs(init_x - cell->x_) + abs(init_y - cell->y_);
+  Point init = initialLocation(cell, false);
+  return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
 }
 
 bool

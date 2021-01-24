@@ -247,11 +247,8 @@ private:
   bool swapCells(Cell *cell1, Cell *cell2);
   bool refineMove(Cell *cell);
 
-  void prePlaceLocation(const Cell *cell,
-                        bool padded,
-                        // Return values.
-                        int *x,
-                        int *y) const;
+  Point prePlaceLocation(const Cell *cell,
+                         bool padded) const;
   Point legalLocation(const Cell *cell,
                       Point pt) const;
   void placeGroups();
@@ -327,11 +324,8 @@ private:
   int gridEndX(const Cell *cell) const;
   int gridEndY(const Cell *cell) const;
   void setGridPaddedLoc(Cell *cell, int x, int y) const;
-  void initialLocation(const Cell *cell,
-                       bool padded,
-                       // Return values.
-                       int *x,
-                       int *y) const;
+  Point initialLocation(const Cell *cell,
+                        bool padded) const;
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;

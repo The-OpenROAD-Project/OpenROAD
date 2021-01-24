@@ -241,21 +241,19 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
   }
 
   bool padded = havePadding() && isOverlapPadded(cell1, cell2);
-  int x_ll1, x_ur1, y_ll1, y_ur1;
-  int x_ll2, x_ur2, y_ll2, y_ur2;
-  initialLocation(cell1, padded, &x_ll1, &y_ll1);
-  initialLocation(cell2, padded, &x_ll2, &y_ll2);
+  Point ll1 = initialLocation(cell1, padded);
+  Point ll2 = initialLocation(cell2, padded);
+  Point ur1, ur2;
   if (padded) {
-    x_ur1 = x_ll1 + paddedWidth(cell1);
-    x_ur2 = x_ll2 + paddedWidth(cell2);
+    ur1 = Point(ll1.getX() + paddedWidth(cell1), ll1.getY() + cell1->height_);
+    ur2 = Point(ll2.getX() + paddedWidth(cell2), ll2.getY() + cell2->height_);
   }
   else {
-    x_ur1 = x_ll1 + cell1->width_;
-    x_ur2 = x_ll2 + cell2->width_;
+    ur1 = Point(ll1.getX() + cell1->width_, ll1.getY() + cell1->height_);
+    ur2 = Point(ll2.getX() + cell2->width_, ll2.getY() + cell2->height_);
   }
-  y_ur1 = y_ll1 + cell1->height_;
-  y_ur2 = y_ll2 + cell2->height_;
-  return x_ll1 < x_ur2 && x_ur1 > x_ll2 && y_ll1 < y_ur2 && y_ur1 > y_ll2;
+  return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
+    && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
 }
 
 bool

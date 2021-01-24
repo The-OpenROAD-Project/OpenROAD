@@ -201,11 +201,10 @@ Opendp::makeCells()
       cell.width_ = width;
       cell.height_ = height;
 
-      int init_x, init_y;
-      initialLocation(&cell, false, &init_x, &init_y);
+      Point init = initialLocation(&cell, false);
       // Shift by core lower left.
-      cell.x_ = init_x;
-      cell.y_ = init_y;
+      cell.x_ = init.getX();
+      cell.y_ = init.getY();
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
 

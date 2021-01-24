@@ -77,21 +77,16 @@ Opendp::detailedPlacement()
   place();
 }
 
-void
+Point
 Opendp::prePlaceLocation(const Cell *cell,
-                         bool padded,
-                         // Return values.
-                         int *x,
-                         int *y) const
+                         bool padded) const
 {
   if (isFixed(cell))
     logger_->critical(DPL, 26, "prePlaceLocation called on fixed cell.");
 
-  int init_x, init_y;
-  initialLocation(cell, padded, &init_x, &init_y);
-  Point legal = legalLocation(cell, Point(init_x, init_y));
-  *x = legal.getX();
-  *y = legal.getY();
+  Point init = initialLocation(cell, padded);
+  Point legal = legalLocation(cell, init);
+  return legal;
 }
 
 // Legalize pt origin for cell
@@ -219,23 +214,27 @@ Opendp::prePlace()
 bool
 Opendp::checkOverlap(const Cell *cell, const Rect *rect) const
 {
-  int x, y;
-  initialLocation(cell, true, &x, &y);
-
-  return x + paddedWidth(cell) > rect->xMin() && x < rect->xMax() && y + cell->height_ > rect->yMin() && y < rect->yMax();
+  Point init = initialLocation(cell, true);
+  int x = init.getX();
+  int y = init.getY();
+  return x + paddedWidth(cell) > rect->xMin()
+    && x < rect->xMax()
+    && y + cell->height_ > rect->yMin()
+    && y < rect->yMax();
 }
 
 Point
 Opendp::nearestPt(const Cell *cell, const Rect *rect) const
 {
-  int x, y;
-  prePlaceLocation(cell, false, &x, &y);
+  Point init = prePlaceLocation(cell, false);
+  int x = init.getX();
+  int y = init.getY();
+  
   int temp_x = x;
   int temp_y = y;
 
   if (checkOverlap(cell, rect)) {
-    int dist_x = 0;
-    int dist_y = 0;
+    int dist_x, dist_y;
     if (abs(x - rect->xMin() + paddedWidth(cell)) > abs(rect->xMax() - x)) {
       dist_x = abs(rect->xMax() - x);
       temp_x = rect->xMax();
@@ -252,8 +251,6 @@ Opendp::nearestPt(const Cell *cell, const Rect *rect) const
       dist_y = abs(y - rect->yMin());
       temp_y = rect->yMin() - cell->height_;
     }
-    assert(dist_x >= 0);
-    assert(dist_y >= 0);
     if (dist_x < dist_y) {
       return Point(temp_x, y);
     }
@@ -310,8 +307,9 @@ Opendp::prePlaceGroups()
 bool
 Opendp::isInside(const Cell *cell, const Rect *rect) const
 {
-  int x, y;
-  initialLocation(cell, true, &x, &y);
+  Point init = initialLocation(cell, true);
+  int x = init.getX();
+  int y = init.getY();
   return x >= rect->xMin()
     && x + cell->width_ <= rect->xMax()
     && y >= rect->yMin()
@@ -321,8 +319,9 @@ Opendp::isInside(const Cell *cell, const Rect *rect) const
 int
 Opendp::distToRect(const Cell *cell, const Rect *rect) const
 {
-  int x, y;
-  initialLocation(cell, true, &x, &y);
+  Point init = initialLocation(cell, true);
+  int x = init.getX();
+  int y = init.getY();
 
   int dist_x, dist_y;
   if (x < rect->xMin()) {
@@ -491,8 +490,9 @@ Opendp::rectDist(const Cell *cell,
                  int *x,
                  int *y) const
 {
-  int init_x, init_y;
-  prePlaceLocation(cell, false, &init_x, &init_y);
+  Point init = prePlaceLocation(cell, false);
+  int init_x = init.getX();
+  int init_y = init.getY();
 
   if (init_x > (rect->xMin() + rect->xMax()) / 2) {
     *x = rect->xMax();
@@ -514,9 +514,8 @@ Opendp::rectDist(const Cell *cell, const Rect *rect) const
 {
   int x, y;
   rectDist(cell, rect, &x, &y);
-  int init_x, init_y;
-  prePlaceLocation(cell, false, &init_x, &init_y);
-  return abs(init_x - x) + abs(init_y - y);
+  Point init = prePlaceLocation(cell, false);
+  return abs(init.getX() - x) + abs(init.getY() - y);
 }
 
 // Place group cells toward region edges.
@@ -632,9 +631,8 @@ Opendp::refine()
 bool
 Opendp::mapMove(Cell *cell)
 {
-  int init_x, init_y;
-  prePlaceLocation(cell, true, &init_x, &init_y);
-  return mapMove(cell, init_x, init_y);
+  Point init = prePlaceLocation(cell, true);
+  return mapMove(cell, init.getX(), init.getY());
 }
 
 bool
@@ -659,10 +657,9 @@ Opendp::mapMove(Cell *cell, int x, int y)
 bool
 Opendp::shiftMove(Cell *cell)
 {
-  int x, y;
-  prePlaceLocation(cell, true, &x, &y);
-  int grid_x = gridX(x);
-  int grid_y = gridY(y);
+  Point init = prePlaceLocation(cell, true);
+  int grid_x = gridX(init.getX());
+  int grid_y = gridY(init.getY());
   // magic number alert
   int boundary_margin = 3;
   int margin_width = paddedWidth(cell) * boundary_margin;
@@ -686,7 +683,7 @@ Opendp::shiftMove(Cell *cell)
   }
 
   // place target cell
-  if (!mapMove(cell, x, y)) {
+  if (!mapMove(cell, init.getX(), init.getY())) {
     logger_->warn(DPL, 18, "detailed placement failed on {}.",
                   cell->name());
     return false;
@@ -737,12 +734,11 @@ Opendp::swapCells(Cell *cell1, Cell *cell2)
 bool
 Opendp::refineMove(Cell *cell)
 {
-  int init_x, init_y;
-  prePlaceLocation(cell, false, &init_x, &init_y);
-  PixelPt pixel_pt = diamondSearch(cell, init_x, init_y);
+  Point init = prePlaceLocation(cell, false);
+  PixelPt pixel_pt = diamondSearch(cell, init.getX(), init.getY());
   if (pixel_pt.pixel) {
-    double dist = abs(init_x - pixel_pt.pt.getX() * site_width_)
-      + abs(init_y - pixel_pt.pt.getY() * row_height_);
+    double dist = abs(init.getX() - pixel_pt.pt.getX() * site_width_)
+      + abs(init.getY() - pixel_pt.pt.getY() * row_height_);
     if (max_displacement_constraint_ != 0
         && (dist / row_height_ > max_displacement_constraint_)) {
       return false;
@@ -765,8 +761,9 @@ Opendp::refineMove(Cell *cell)
 int
 Opendp::distChange(const Cell *cell, int x, int y) const
 {
-  int init_x, init_y;
-  prePlaceLocation(cell, false, &init_x, &init_y);
+  Point init = prePlaceLocation(cell, false);
+  int init_x = init.getX();
+  int init_y = init.getY();
   int curr_dist = abs(cell->x_ - init_x) + abs(cell->y_ - init_y);
   int new_dist = abs(init_x - x) + abs(init_y - y);
   return new_dist - curr_dist;
