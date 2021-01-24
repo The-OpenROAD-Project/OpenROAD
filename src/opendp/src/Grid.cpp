@@ -83,8 +83,6 @@ Opendp::initGridPixels(Grid *grid)
   for (int i = 0; i < row_count_; i++) {
     for (int j = 0; j < row_site_count_; j++) {
       Pixel &pixel = grid[i][j];
-      pixel.grid_y_ = i;
-      pixel.grid_x_ = j;
       pixel.cell = nullptr;
       pixel.group_ = nullptr;
       pixel.util = 0.0;

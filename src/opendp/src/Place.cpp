@@ -55,6 +55,8 @@ using std::numeric_limits;
 using std::sort;
 using std::string;
 using std::vector;
+using std::tie;
+using std::make_tuple;
 
 using ord::closestPtInRect;
 using utl::DPL;
@@ -635,17 +637,21 @@ Opendp::map_move(Cell *cell)
 bool
 Opendp::map_move(Cell *cell, int x, int y)
 {
-  Pixel *pixel = diamondSearch(cell, x, y);
+  Pixel *pixel;
+  Point pixel_loc;
+  tie(pixel, pixel_loc) = diamondSearch(cell, x, y);
   if (pixel) {
-    Pixel *near_pixel = diamondSearch(
+    Pixel *near_pixel;
+    Point near_loc;
+    tie(near_pixel, near_loc) = diamondSearch(
         cell,
-        pixel->grid_x_ * site_width_,
-        pixel->grid_y_ * row_height_);
+        pixel_loc.getX() * site_width_,
+        pixel_loc.getY() * row_height_);
     if (near_pixel) {
-      paint_pixel(cell, near_pixel->grid_x_, near_pixel->grid_y_);
+      paint_pixel(cell, near_loc.getX(), near_loc.getY());
     }
     else {
-      paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
+      paint_pixel(cell, pixel_loc.getX(), pixel_loc.getY());
     }
     return true;
   }
@@ -735,20 +741,23 @@ Opendp::refine_move(Cell *cell)
 {
   int init_x, init_y;
   prePlaceLocation(cell, false, &init_x, &init_y);
-  Pixel *pixel = diamondSearch(cell, init_x, init_y);
+  Pixel *pixel;
+  Point pixel_loc;
+  tie(pixel, pixel_loc) = diamondSearch(cell, init_x, init_y);
   if (pixel) {
-    double dist = abs(init_x - pixel->grid_x_ * site_width_) + abs(init_y - pixel->grid_y_ * row_height_);
+    double dist = abs(init_x - pixel_loc.getX() * site_width_)
+      + abs(init_y - pixel_loc.getY() * row_height_);
     if (max_displacement_constraint_ != 0 && (dist / row_height_ > max_displacement_constraint_)) {
       return false;
     }
 
     int dist_change = distChange(cell,
-                                 pixel->grid_x_ * site_width_,
-                                 pixel->grid_y_ * row_height_);
+                                 pixel_loc.getX() * site_width_,
+                                 pixel_loc.getY() * row_height_);
 
     if (dist_change < 0) {
       erase_pixel(cell);
-      paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
+      paint_pixel(cell, pixel_loc.getX(), pixel_loc.getY());
       return true;
     }
     return false;
@@ -768,7 +777,7 @@ Opendp::distChange(const Cell *cell, int x, int y) const
 
 ////////////////////////////////////////////////////////////////
 
-Pixel *
+tuple<Pixel *, Point>
 Opendp::diamondSearch(const Cell *cell, int x, int y) const
 {
   int grid_x = gridX(x);
@@ -787,7 +796,7 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
 
   int avail_x, avail_y;
   if (binSearch(grid_x, cell, grid_x, grid_y, &avail_x, &avail_y)) {
-    return &grid_[avail_y][avail_x];
+    return make_tuple(&grid_[avail_y][avail_x], Point(avail_x,avail_y));
   }
 
   int x_start = grid_x - diamond_search_width_;
@@ -807,7 +816,8 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
 #endif
 
   for (int i = 1; i < diamond_search_height_; i++) {
-    Pixel *pixel = nullptr;
+    Pixel *best_pixel = nullptr;
+    Point best_loc;
     int best_dist = 0;
     // right side
     for (int j = 1; j < i * 2; j++) {
@@ -823,10 +833,13 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
               min(y_end, max(y_start, grid_y + y_offset)),
               &avail_x,
               &avail_y)) {
-        Pixel *avail = &grid_[avail_y][avail_x];
-        int avail_dist = abs(x - avail->grid_x_ * site_width_) + abs(y - avail->grid_y_ * row_height_);
-        if (pixel == nullptr || avail_dist < best_dist) {
-          pixel = avail;
+        Pixel *avail = gridPixel(avail_x, avail_y);
+        int avail_dist = abs(x - avail_x * site_width_)
+          + abs(y - avail_y * row_height_);
+        if (best_pixel == nullptr
+            || avail_dist < best_dist) {
+          best_pixel = avail;
+          best_loc = Point(avail_x, avail_y);
           best_dist = avail_dist;
         }
       }
@@ -847,18 +860,21 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
               &avail_x,
               &avail_y)) {
         Pixel *avail = &grid_[avail_y][avail_x];
-        int avail_dist = abs(x - avail->grid_x_ * site_width_) + abs(y - avail->grid_y_ * row_height_);
-        if (pixel == nullptr || avail_dist < best_dist) {
-          pixel = avail;
+        int avail_dist = abs(x - avail_x * site_width_)
+          + abs(y - avail_y * row_height_);
+        if (best_pixel == nullptr
+            || avail_dist < best_dist) {
+          best_pixel = avail;
+          best_loc = Point(avail_x, avail_y);
           best_dist = avail_dist;
         }
       }
     }
-    if (pixel) {
-      return pixel;
+    if (best_pixel) {
+      return make_tuple(best_pixel, best_loc);
     }
   }
-  return nullptr;
+  return make_tuple(nullptr, Point(0, 0));
 }
 
 bool

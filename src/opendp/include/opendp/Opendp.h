@@ -44,6 +44,7 @@
 #include <set>
 #include <vector>
 #include <utility> // pair
+#include <tuple> // pair
 
 #include "opendb/db.h"
 
@@ -58,6 +59,7 @@ using std::set;
 using std::string;
 using std::vector;
 using std::pair;
+using std::tuple;
 
 using utl::Logger;
 
@@ -130,14 +132,13 @@ struct Group
 
 struct Pixel
 {
-  int grid_x_;
-  int grid_y_;
-  Group *group_;
   Cell *cell;
+  Group *group_;
   double util;
   bool is_valid;  // false for dummy cells
 };
 
+// For optimize mirroring.
 class NetBox
 {
 public:
@@ -231,7 +232,7 @@ private:
                  // Return values
                  int *avail_x,
                  int *avail_y) const;
-  Pixel *diamondSearch(const Cell *cell, int x, int y) const;
+  tuple<Pixel *, Point>diamondSearch(const Cell *cell, int x, int y) const;
   bool shift_move(Cell *cell);
   bool map_move(Cell *cell);
   bool map_move(Cell *cell, int x, int y);
