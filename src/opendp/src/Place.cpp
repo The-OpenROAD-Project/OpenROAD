@@ -773,8 +773,7 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
 {
   int grid_x = gridX(x);
   int grid_y = gridY(y);
-
-  // Restrict check to group region.
+  // Restrict check to group boundary.
   Group *group = cell->group_;
   if (group) {
     Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
@@ -786,29 +785,15 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
     grid_y = in_boundary.y();
   }
 
-  // Restrict check to core.
-  Rect grid_core(0,
-                 0,
-                 row_site_count_ - gridPaddedWidth(cell),
-                 row_count_ - gridHeight(cell));
-  Point in_core = closestPtInRect(grid_core, Point(grid_x, grid_y));
   int avail_x, avail_y;
-  if (binSearch(grid_x, cell, in_core.x(), in_core.y(), &avail_x, &avail_y)) {
+  if (binSearch(grid_x, cell, grid_x, grid_y, &avail_x, &avail_y)) {
     return &grid_[avail_y][avail_x];
   }
 
-  // Set search boundary max / min
-  Point start = closestPtInRect(
-      grid_core,
-      Point(grid_x - diamond_search_width_, grid_y - diamond_search_height_));
-  Point end = closestPtInRect(
-      grid_core,
-      Point(grid_x + diamond_search_width_, grid_y + diamond_search_height_));
-  ;
-  int x_start = start.x();
-  int y_start = start.y();
-  int x_end = end.x();
-  int y_end = end.y();
+  int x_start = grid_x - diamond_search_width_;
+  int y_start = grid_y - diamond_search_height_;
+  int x_end = grid_x + diamond_search_width_;
+  int y_end = grid_y + diamond_search_height_;
 
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
@@ -905,7 +890,7 @@ Opendp::binSearch(int grid_x,
 #endif
   if (grid_x > x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      // check all grids are empty
+      // Check all pixels are empty.
       bool available = true;
 
       if (x_end + i > coreGridMaxX()) {
@@ -914,10 +899,12 @@ Opendp::binSearch(int grid_x,
       else {
         for (int k = y; k < y_end; k++) {
           for (int l = x + i; l < x_end + i; l++) {
-            Pixel &pixel = grid_[k][l];
-            if (pixel.cell || !pixel.is_valid
-                // check group regions
-                || (cell->inGroup() && pixel.group_ != cell->group_) || (!cell->inGroup() && pixel.group_)) {
+            Pixel *pixel = gridPixel(l, k);
+            if (pixel == nullptr
+                || pixel->cell
+                || !pixel->is_valid
+                || (cell->inGroup() && pixel->group_ != cell->group_)
+                || (!cell->inGroup() && pixel->group_)) {
               available = false;
               break;
             }
@@ -944,23 +931,14 @@ Opendp::binSearch(int grid_x,
       else {
         for (int k = y; k < y_end; k++) {
           for (int l = x + i; l < x_end + i; l++) {
-            Pixel &pixel = grid_[k][l];
-            if (pixel.cell || !pixel.is_valid) {
+            Pixel *pixel = gridPixel(l, k);
+            if (pixel == nullptr
+                || pixel->cell
+                || !pixel->is_valid
+                || (cell->inGroup() && pixel->group_ != cell->group_)
+                || (!cell->inGroup() && pixel->group_)) {
               available = false;
               break;
-            }
-            // check group regions
-            if (cell->inGroup()) {
-              if (pixel.group_ != cell->group_) {
-                available = false;
-                break;
-              }
-            }
-            else {
-              if (pixel.group_) {
-                available = false;
-                break;
-              }
             }
           }
         }
