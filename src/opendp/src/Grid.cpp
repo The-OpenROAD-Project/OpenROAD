@@ -101,9 +101,9 @@ Opendp::initGridPixels(Grid *grid)
     int x_end = x_start + db_row->getSiteCount();
     int y_end = y_start + 1;
 
-    for (int i = x_start; i < x_end; i++) {
-      for (int j = y_start; j < y_end; j++) {
-        grid[j][i].is_valid = true;
+    for (int x = x_start; x < x_end; x++) {
+      for (int y = y_start; y < y_end; y++) {
+        grid[y][x].is_valid = true;
       }
     }
   }
@@ -121,12 +121,12 @@ Opendp::deleteGrid(Grid *grid)
 }
 
 Pixel *
-Opendp::gridPixel(int x,
-                  int y) const
+Opendp::gridPixel(int grid_x,
+                  int grid_y) const
 {
-  if (x >= 0 && x < row_site_count_
-      && y >= 0 && y < row_count_)
-    return &grid_[y][x];
+  if (grid_x >= 0 && grid_x < row_site_count_
+      && grid_y >= 0 && grid_y < row_count_)
+    return &grid_[grid_y][grid_x];
   else
     return nullptr;
 }
@@ -160,10 +160,10 @@ Opendp::group_cell_region_assign()
 {
   for (Group &group : groups_) {
     int64_t site_count = 0;
-    for (int j = 0; j < row_count_; j++) {
-      for (int k = 0; k < row_site_count_; k++) {
-        Pixel &pixel = grid_[j][k];
-        if (pixel.is_valid && pixel.group_ == &group) {
+    for (int x = 0; x < row_site_count_; x++) {
+      for (int y = 0; y < row_count_; y++) {
+        Pixel *pixel = gridPixel(x, y);
+        if (pixel->is_valid && pixel->group_ == &group) {
           site_count++;
         }
       }
@@ -190,20 +190,20 @@ Opendp::group_cell_region_assign()
 void
 Opendp::group_pixel_assign2()
 {
-  for (int i = 0; i < row_count_; i++) {
-    for (int j = 0; j < row_site_count_; j++) {
+  for (int x = 0; x < row_site_count_; x++) {
+    for (int y = 0; y < row_count_; y++) {
       Rect sub;
-      sub.init(j * site_width_,
-               i * row_height_,
-               (j + 1) * site_width_,
-               (i + 1) * row_height_);
+      sub.init(x * site_width_,
+               y * row_height_,
+               (x + 1) * site_width_,
+               (y + 1) * row_height_);
+      Pixel *pixel = gridPixel(x, y);
       for (Group &group : groups_) {
         for (Rect &rect : group.regions) {
-          if (!isInside(sub, rect) && check_overlap(sub, rect)) {
-            Pixel &pixel = grid_[i][j];
-            pixel.util = 0.0;
-            pixel.cell = &dummy_cell_;
-            pixel.is_valid = false;
+          if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
+            pixel->util = 0.0;
+            pixel->cell = &dummy_cell_;
+            pixel->is_valid = false;
           }
         }
       }
@@ -215,11 +215,14 @@ Opendp::group_pixel_assign2()
 bool
 Opendp::isInside(const Rect &cell, const Rect &box)
 {
-  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax() && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
+  return cell.xMin() >= box.xMin()
+    && cell.xMax() <= box.xMax()
+    && cell.yMin() >= box.yMin()
+    && cell.yMax() <= box.yMax();
 }
 
 bool
-Opendp::check_overlap(const Rect &cell, const Rect &box)
+Opendp::checkOverlap(const Rect &cell, const Rect &box)
 {
   return box.xMin() < cell.xMax() && box.xMax() > cell.xMin() && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
 }
@@ -227,9 +230,10 @@ Opendp::check_overlap(const Rect &cell, const Rect &box)
 void
 Opendp::group_pixel_assign()
 {
-  for (int i = 0; i < row_count_; i++) {
-    for (int j = 0; j < row_site_count_; j++) {
-      grid_[i][j].util = 0.0;
+  for (int x = 0; x < row_site_count_; x++) {
+    for (int y = 0; y < row_count_; y++) {
+      Pixel *pixel = gridPixel(x, y);
+      pixel->util = 0.0;
     }
   }
 
@@ -243,13 +247,17 @@ Opendp::group_pixel_assign()
         int col_end = divFloor(rect.xMax(), site_width_);
 
         for (int l = col_start; l < col_end; l++) {
-          grid_[k][l].util += 1.0;
+          Pixel *pixel = gridPixel(l, k);
+          pixel->util += 1.0;
         }
         if (rect.xMin() % site_width_ != 0) {
-          grid_[k][col_start].util -= (rect.xMin() % site_width_) / static_cast<double>(site_width_);
+          Pixel *pixel = gridPixel(col_start, k);
+          pixel->util -= (rect.xMin() % site_width_) / static_cast<double>(site_width_);
         }
         if (rect.xMax() % site_width_ != 0) {
-          grid_[k][col_end - 1].util -= ((site_width_ - rect.xMax()) % site_width_) / static_cast<double>(site_width_);
+          Pixel *pixel = gridPixel(col_end - 1, k);
+          pixel->util -= ((site_width_ - rect.xMax()) % site_width_)
+            / static_cast<double>(site_width_);
         }
       }
     }
@@ -263,16 +271,16 @@ Opendp::group_pixel_assign()
 
         // Assign group to each pixel.
         for (int l = col_start; l < col_end; l++) {
-          Pixel &pixel = grid_[k][l];
-          if (pixel.util == 1.0) {
-            pixel.group_ = &group;
-            pixel.is_valid = true;
-            pixel.util = 1.0;
+          Pixel *pixel = gridPixel(l, k);
+          if (pixel->util == 1.0) {
+            pixel->group_ = &group;
+            pixel->is_valid = true;
+            pixel->util = 1.0;
           }
-          else if (pixel.util > 0.0 && pixel.util < 1.0) {
-            pixel.cell = &dummy_cell_;
-            pixel.util = 0.0;
-            pixel.is_valid = false;
+          else if (pixel->util > 0.0 && pixel->util < 1.0) {
+            pixel->cell = &dummy_cell_;
+            pixel->util = 0.0;
+            pixel->is_valid = false;
           }
         }
       }
@@ -281,16 +289,16 @@ Opendp::group_pixel_assign()
 }
 
 void
-Opendp::erase_pixel(Cell *cell)
+Opendp::erasePixel(Cell *cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
     int x_end = gridEndX(cell);
     int y_end = gridEndY(cell);
-    for (int i = gridY(cell); i < y_end; i++) {
-      for (int j = gridPaddedX(cell); j < x_end; j++) {
-        Pixel &pixel = grid_[i][j];
-        pixel.cell = nullptr;
-        pixel.util = 0;
+    for (int x = gridPaddedX(cell); x < x_end; x++) {
+      for (int y = gridY(cell); y < y_end; y++) {
+        Pixel *pixel = gridPixel(x, y);
+        pixel->cell = nullptr;
+        pixel->util = 0;
       }
     }
     cell->is_placed_ = false;
@@ -299,7 +307,7 @@ Opendp::erase_pixel(Cell *cell)
 }
 
 void
-Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
+Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
 {
   assert(!cell->is_placed_);
   int x_step = gridPaddedWidth(cell);
@@ -315,15 +323,15 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
   cout << "grid_x - grid_y : " << grid_x << " - " << grid_y << endl;
 #endif
 
-  for (int i = grid_y; i < grid_y + y_step; i++) {
-    for (int j = grid_x; j < grid_x + x_step; j++) {
-      Pixel &pixel = grid_[i][j];
-      if (pixel.cell) {
+  for (int y = grid_y; y < grid_y + y_step; y++) {
+    for (int x = grid_x; x < grid_x + x_step; x++) {
+      Pixel *pixel = gridPixel(x, y);
+      if (pixel->cell) {
         logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
       }
       else {
-        pixel.cell = cell;
-        pixel.util = 1.0;
+        pixel->cell = cell;
+        pixel->util = 1.0;
       }
     }
   }

@@ -201,14 +201,14 @@ Opendp::prePlace()
     if (!cell.inGroup() && !cell.is_placed_) {
       for (Group &group : groups_) {
         for (Rect &rect : group.regions) {
-          if (check_overlap(&cell, &rect)) {
+          if (checkOverlap(&cell, &rect)) {
             target = &rect;
           }
         }
       }
       if (target) {
         Point nearest = nearestPt(&cell, target);
-        if (map_move(&cell, nearest.x(), nearest.y())) {
+        if (mapMove(&cell, nearest.x(), nearest.y())) {
           cell.hold_ = true;
         }
       }
@@ -217,7 +217,7 @@ Opendp::prePlace()
 }
 
 bool
-Opendp::check_overlap(const Cell *cell, const Rect *rect) const
+Opendp::checkOverlap(const Cell *cell, const Rect *rect) const
 {
   int x, y;
   initialLocation(cell, true, &x, &y);
@@ -233,7 +233,7 @@ Opendp::nearestPt(const Cell *cell, const Rect *rect) const
   int temp_x = x;
   int temp_y = y;
 
-  if (check_overlap(cell, rect)) {
+  if (checkOverlap(cell, rect)) {
     int dist_x = 0;
     int dist_y = 0;
     if (abs(x - rect->xMin() + paddedWidth(cell)) > abs(rect->xMax() - x)) {
@@ -298,7 +298,7 @@ Opendp::prePlaceGroups()
         }
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
-          if (map_move(cell, nearest.x(), nearest.y())) {
+          if (mapMove(cell, nearest.x(), nearest.y())) {
             cell->hold_ = true;
           }
         }
@@ -366,8 +366,8 @@ Opendp::place()
   if (have_multi_height_cells_) {
     for (Cell *cell : sorted_cells) {
       if (isMultiRow(cell) && cellFitsInCore(cell)) {
-        if (!map_move(cell)) {
-          shift_move(cell);
+        if (!mapMove(cell)) {
+          shiftMove(cell);
         }
       }
     }
@@ -375,8 +375,8 @@ Opendp::place()
   for (Cell *cell : sorted_cells) {
     if (!isMultiRow(cell)
         && cellFitsInCore(cell)) {
-      if (!map_move(cell)) {
-        shift_move(cell);
+      if (!mapMove(cell)) {
+        shiftMove(cell);
       }
     }
   }
@@ -419,7 +419,7 @@ Opendp::placeGroups2()
       if (!isFixed(cell) && !cell->is_placed_) {
         assert(cell->inGroup());
         if (isMultiRow(cell)) {
-          multi_pass = map_move(cell);
+          multi_pass = mapMove(cell);
           if (!multi_pass) {
             break;
           }
@@ -433,7 +433,7 @@ Opendp::placeGroups2()
         if (!isFixed(cell) && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
-            single_pass = map_move(cell);
+            single_pass = mapMove(cell);
             if (!single_pass) {
               break;
             }
@@ -445,7 +445,7 @@ Opendp::placeGroups2()
     if (!single_pass || !multi_pass) {
       // Erase group cells
       for (Cell *cell : group.cells_) {
-        erase_pixel(cell);
+        erasePixel(cell);
       }
 
       // Determine brick placement by utilization.
@@ -478,7 +478,7 @@ Opendp::brickPlace1(const Group *group)
     // This looks for a site starting at the nearest corner in rect,
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
-    if (!map_move(cell, x, y)) {
+    if (!mapMove(cell, x, y)) {
       logger_->warn(DPL, 16, "cannot place instance {}.", cell->name());
     }
   }
@@ -537,7 +537,7 @@ Opendp::brickPlace2(const Group *group)
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
-      if (!map_move(cell, x, y))
+      if (!mapMove(cell, x, y))
         logger_->warn(DPL, 17, "cannot place instance {}.", cell->name());
     }
   }
@@ -556,7 +556,7 @@ Opendp::groupRefine(const Group *group)
   for (int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
     Cell *cell = sort_by_disp[i];
     if (!cell->hold_) {
-      if (refine_move(cell)) {
+      if (refineMove(cell)) {
         count++;
       }
     }
@@ -575,7 +575,7 @@ Opendp::anneal(Group *group)
   for (int i = 0; i < 100 * group->cells_.size(); i++) {
     Cell *cell1 = group->cells_[rand() % group->cells_.size()];
     Cell *cell2 = group->cells_[rand() % group->cells_.size()];
-    if (swap_cell(cell1, cell2)) {
+    if (swapCells(cell1, cell2)) {
       count++;
     }
   }
@@ -592,7 +592,7 @@ Opendp::anneal()
   for (int i = 0; i < 100 * cells_.size(); i++) {
     Cell *cell1 = &cells_[rand() % cells_.size()];
     Cell *cell2 = &cells_[rand() % cells_.size()];
-    if (swap_cell(cell1, cell2)) {
+    if (swapCells(cell1, cell2)) {
       count++;
     }
   }
@@ -619,7 +619,7 @@ Opendp::refine()
   for (int i = 0; i < sorted.size() * refine_percent_; i++) {
     Cell *cell = sorted[i];
     if (!cell->hold_) {
-      if (refine_move(cell)) {
+      if (refineMove(cell)) {
         count++;
       }
     }
@@ -630,15 +630,15 @@ Opendp::refine()
 ////////////////////////////////////////////////////////////////
 
 bool
-Opendp::map_move(Cell *cell)
+Opendp::mapMove(Cell *cell)
 {
   int init_x, init_y;
   prePlaceLocation(cell, true, &init_x, &init_y);
-  return map_move(cell, init_x, init_y);
+  return mapMove(cell, init_x, init_y);
 }
 
 bool
-Opendp::map_move(Cell *cell, int x, int y)
+Opendp::mapMove(Cell *cell, int x, int y)
 {
   PixelPt pixel_pt = diamondSearch(cell, x, y);
   if (pixel_pt.pixel) {
@@ -646,10 +646,10 @@ Opendp::map_move(Cell *cell, int x, int y)
                                     pixel_pt.pt.getX() * site_width_,
                                     pixel_pt.pt.getY() * row_height_);
     if (near_pt.pixel) {
-      paint_pixel(cell, near_pt.pt.getX(), near_pt.pt.getY());
+      paintPixel(cell, near_pt.pt.getX(), near_pt.pt.getY());
     }
     else {
-      paint_pixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
+      paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     }
     return true;
   }
@@ -657,7 +657,7 @@ Opendp::map_move(Cell *cell, int x, int y)
 }
 
 bool
-Opendp::shift_move(Cell *cell)
+Opendp::shiftMove(Cell *cell)
 {
   int x, y;
   prePlaceLocation(cell, true, &x, &y);
@@ -681,12 +681,12 @@ Opendp::shift_move(Cell *cell)
   // erase region cells
   for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      erase_pixel(around_cell);
+      erasePixel(around_cell);
     }
   }
 
   // place target cell
-  if (!map_move(cell, x, y)) {
+  if (!mapMove(cell, x, y)) {
     logger_->warn(DPL, 18, "detailed placement failed on {}.",
                   cell->name());
     return false;
@@ -695,7 +695,7 @@ Opendp::shift_move(Cell *cell)
   // re-place erased cells
   for (Cell *around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      if (!map_move(around_cell)) {
+      if (!mapMove(around_cell)) {
         logger_->warn(DPL, 19, "detailed placement failed on {}",
                       around_cell->name());
         return false;
@@ -706,7 +706,7 @@ Opendp::shift_move(Cell *cell)
 }
 
 bool
-Opendp::swap_cell(Cell *cell1, Cell *cell2)
+Opendp::swapCells(Cell *cell1, Cell *cell2)
 {
   if (cell1 != cell2
       && !cell1->hold_
@@ -724,10 +724,10 @@ Opendp::swap_cell(Cell *cell1, Cell *cell2)
       int grid_x2 = gridPaddedX(cell1);
       int grid_y2 = gridY(cell1);
 
-      erase_pixel(cell1);
-      erase_pixel(cell2);
-      paint_pixel(cell1, grid_x1, grid_y1);
-      paint_pixel(cell2, grid_x2, grid_y2);
+      erasePixel(cell1);
+      erasePixel(cell2);
+      paintPixel(cell1, grid_x1, grid_y1);
+      paintPixel(cell2, grid_x2, grid_y2);
       return true;
     }
   }
@@ -735,7 +735,7 @@ Opendp::swap_cell(Cell *cell1, Cell *cell2)
 }
 
 bool
-Opendp::refine_move(Cell *cell)
+Opendp::refineMove(Cell *cell)
 {
   int init_x, init_y;
   prePlaceLocation(cell, false, &init_x, &init_y);
@@ -753,8 +753,8 @@ Opendp::refine_move(Cell *cell)
                                  pixel_pt.pt.getY() * row_height_);
 
     if (dist_change < 0) {
-      erase_pixel(cell);
-      paint_pixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
+      erasePixel(cell);
+      paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
       return true;
     }
     return false;

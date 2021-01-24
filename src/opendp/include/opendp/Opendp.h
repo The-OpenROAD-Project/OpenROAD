@@ -231,8 +231,8 @@ private:
   void detailedPlacement();
   Point nearestPt(const Cell *cell, const Rect *rect) const;
   int distToRect(const Cell *cell, const Rect *rect) const;
-  static bool check_overlap(const Rect &cell, const Rect &box);
-  bool check_overlap(const Cell *cell, const Rect *rect) const;
+  static bool checkOverlap(const Rect &cell, const Rect &box);
+  bool checkOverlap(const Cell *cell, const Rect *rect) const;
   static bool isInside(const Rect &cell, const Rect &box);
   bool isInside(const Cell *cell, const Rect *rect) const;
   PixelPt diamondSearch(const Cell *cell, int x, int y) const;
@@ -240,12 +240,12 @@ private:
                     const Cell *cell,
                     int x,
                     int y) const;
-  bool shift_move(Cell *cell);
-  bool map_move(Cell *cell);
-  bool map_move(Cell *cell, int x, int y);
+  bool shiftMove(Cell *cell);
+  bool mapMove(Cell *cell);
+  bool mapMove(Cell *cell, int x, int y);
   int distChange(const Cell *cell, int x, int y) const;
-  bool swap_cell(Cell *cell1, Cell *cell2);
-  bool refine_move(Cell *cell);
+  bool swapCells(Cell *cell1, Cell *cell2);
+  bool refineMove(Cell *cell);
 
   void prePlaceLocation(const Cell *cell,
                         bool padded,
@@ -271,8 +271,8 @@ private:
   void group_cell_region_assign();
   void group_pixel_assign();
   void group_pixel_assign2();
-  void erase_pixel(Cell *cell);
-  void paint_pixel(Cell *cell, int grid_x, int grid_y);
+  void erasePixel(Cell *cell);
+  void paintPixel(Cell *cell, int grid_x, int grid_y);
 
   // checkPlacement
   static bool isPlaced(const Cell *cell);
