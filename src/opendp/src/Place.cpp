@@ -60,7 +60,7 @@ using ord::closestPtInRect;
 using utl::DPL;
 
 static bool
-cellAreaLess(const Cell *cell1, const Cell *cell2);
+cellAreaGreater(const Cell *cell1, const Cell *cell2);
 
 void
 Opendp::detailedPlacement()
@@ -280,7 +280,7 @@ Opendp::prePlaceGroups()
       if (!(isFixed(cell) || cell->is_placed_)) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
-        Rect *target = nullptr;
+        Rect *nearest_rect = nullptr;
         for (Rect &rect : group.regions) {
           if (isInside(cell, &rect)) {
             in_group = true;
@@ -288,11 +288,11 @@ Opendp::prePlaceGroups()
           int rect_dist = distToRect(cell, &rect);
           if (rect_dist < dist) {
             dist = rect_dist;
-            target = &rect;
+            nearest_rect = &rect;
           }
         }
         if (!in_group) {
-          Point nearest = nearestPt(cell, target);
+          Point nearest = nearestPt(cell, nearest_rect);
           if (map_move(cell, nearest.x(), nearest.y())) {
             cell->hold_ = true;
           }
@@ -307,7 +307,10 @@ Opendp::isInside(const Cell *cell, const Rect *rect) const
 {
   int x, y;
   initialLocation(cell, true, &x, &y);
-  return x >= rect->xMin() && x + paddedWidth(cell) <= rect->xMax() && y >= rect->yMin() && y + cell->height_ <= rect->yMax();
+  return x >= rect->xMin()
+    && x + cell->width_ <= rect->xMax()
+    && y >= rect->yMin()
+    && y + cell->height_ <= rect->yMax();
 }
 
 int
@@ -315,14 +318,13 @@ Opendp::distToRect(const Cell *cell, const Rect *rect) const
 {
   int x, y;
   initialLocation(cell, true, &x, &y);
-  int dist_x = 0;
-  int dist_y = 0;
 
+  int dist_x, dist_y;
   if (x < rect->xMin()) {
     dist_x = rect->xMin() - x;
   }
-  else if (x + paddedWidth(cell) > rect->xMax()) {
-    dist_x = x + paddedWidth(cell) - rect->xMax();
+  else if (x + cell->width_ > rect->xMax()) {
+    dist_x = x + cell->width_ - rect->xMax();
   }
 
   if (y < rect->yMin()) {
@@ -347,9 +349,13 @@ Opendp::place()
   for (Cell &cell : cells_) {
     if (!(isFixed(&cell) || cell.inGroup() || cell.is_placed_)) {
       sorted_cells.push_back(&cell);
+      if (!cellFitsInCore(&cell)) {
+        logger_->warn(DPL, 15, "instance {} does not fit inside the ROW core area.",
+                      cell.name());
+      }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), cellAreaLess);
+  sort(sorted_cells.begin(), sorted_cells.end(), cellAreaGreater);
 
   // Place multi-row instances first.
   if (have_multi_height_cells_) {
@@ -362,16 +368,11 @@ Opendp::place()
     }
   }
   for (Cell *cell : sorted_cells) {
-    if (cellFitsInCore(cell)) {
-      if (!isMultiRow(cell)) {
-        if (!map_move(cell)) {
-          shift_move(cell);
-        }
+    if (!isMultiRow(cell)
+        && cellFitsInCore(cell)) {
+      if (!map_move(cell)) {
+        shift_move(cell);
       }
-    }
-    else {
-      logger_->warn(DPL, 15, "instance {} does not fit inside the ROW core area.",
-                    cell->name());
     }
   }
   // This has negligible benefit -cherry
@@ -385,25 +386,19 @@ Opendp::cellFitsInCore(Cell *cell)
 }
 
 static bool
-cellAreaLess(const Cell *cell1, const Cell *cell2)
+cellAreaGreater(const Cell *cell1, const Cell *cell2)
 {
   int area1 = cell1->area();
   int area2 = cell2->area();
-  if (area1 > area2) {
-    return true;
-  }
-  if (area1 < area2) {
-    return false;
-  }
-  return cell1->db_inst_->getId() < cell2->db_inst_->getId();
+  return (area1 > area2)
+    || (area1 == area2
+        && cell1->db_inst_->getId() < cell2->db_inst_->getId());
 }
 
 void
 Opendp::placeGroups2()
 {
   for (Group &group : groups_) {
-    bool single_pass = true;
-    bool multi_pass = true;
     vector<Cell *> group_cells;
     group_cells.reserve(cells_.size());
     for (Cell *cell : group.cells_) {
@@ -411,8 +406,10 @@ Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), cellAreaLess);
-    // Place multi-row cells on each group region.
+    sort(group_cells.begin(), group_cells.end(), cellAreaGreater);
+
+    // Place multi-row cells in each group region.
+    bool multi_pass = true;
     for (Cell *cell : group_cells) {
       if (!isFixed(cell) && !cell->is_placed_) {
         assert(cell->inGroup());
@@ -424,6 +421,7 @@ Opendp::placeGroups2()
         }
       }
     }
+    bool single_pass = true;
     if (multi_pass) {
       // Place single-row cells in each group region.
       for (Cell *cell : group_cells) {
@@ -445,7 +443,7 @@ Opendp::placeGroups2()
         erase_pixel(cell);
       }
 
-      // determine brick placement by utilization
+      // Determine brick placement by utilization.
       // magic number alert
       if (group.util > 0.95) {
         brickPlace1(&group);
@@ -457,25 +455,26 @@ Opendp::placeGroups2()
   }
 }
 
-// place toward group edges
+// Place cells in group toward edges.
 void
 Opendp::brickPlace1(const Group *group)
 {
   const Rect *boundary = &group->boundary;
-  vector<Cell *> sort_by_dist(group->cells_);
+  vector<Cell *> sorted_cells(group->cells_);
 
-  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell *cell1, Cell *cell2) {
-    return rectDist(cell1, boundary) < rectDist(cell2, boundary);
-  });
+  sort(sorted_cells.begin(), sorted_cells.end(),
+       [&](Cell *cell1, Cell *cell2) {
+         return rectDist(cell1, boundary) < rectDist(cell2, boundary);
+       });
 
-  for (Cell *cell : sort_by_dist) {
+  for (Cell *cell : sorted_cells) {
     int x, y;
     rectDist(cell, boundary, &x, &y);
-
-    bool valid = map_move(cell, x, y);
-    if (!valid) {
-      logger_->warn(DPL, 16, "cannot place instance (brick place 1) {}.",
-                    cell->name());
+    // This looks for a site starting at the nearest corner in rect,
+    // which seems broken. It should start looking at the nearest point
+    // on the rect boundary. -cherry
+    if (!map_move(cell, x, y)) {
+      logger_->warn(DPL, 16, "cannot place instance {}.", cell->name());
     }
   }
 }
@@ -487,8 +486,6 @@ Opendp::rectDist(const Cell *cell,
                  int *x,
                  int *y) const
 {
-  *x = 0;
-  *y = 0;
   int init_x, init_y;
   prePlaceLocation(cell, false, &init_x, &init_y);
 
@@ -517,24 +514,26 @@ Opendp::rectDist(const Cell *cell, const Rect *rect) const
   return abs(init_x - x) + abs(init_y - y);
 }
 
-// place toward region edges
+// Place group cells toward region edges.
 void
 Opendp::brickPlace2(const Group *group)
 {
-  vector<Cell *> sort_by_dist(group->cells_);
+  vector<Cell *> sorted_cells(group->cells_);
 
-  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell *cell1, Cell *cell2) {
-    return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
-  });
+  sort(sorted_cells.begin(), sorted_cells.end(),
+       [&](Cell *cell1, Cell *cell2) {
+         return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
+       });
 
-  for (Cell *cell : sort_by_dist) {
+  for (Cell *cell : sorted_cells) {
     if (!cell->hold_) {
       int x, y;
       rectDist(cell, cell->region_, &x, &y);
-      bool valid = map_move(cell, x, y);
-      if (!valid)
-        logger_->warn(DPL, 17, "cannot place instance (brick place 2) {}.",
-                      cell->name());
+      // This looks for a site starting at the nearest corner in rect,
+      // which seems broken. It should start looking at the nearest point
+      // on the rect boundary. -cherry
+      if (!map_move(cell, x, y))
+        logger_->warn(DPL, 17, "cannot place instance {}.", cell->name());
     }
   }
 }

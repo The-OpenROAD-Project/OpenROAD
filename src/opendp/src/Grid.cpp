@@ -60,7 +60,7 @@ Opendp::initGrid()
   else
     initGridPixels(grid_);
   // Paint fixed cells.
-  fixed_cell_assign();
+  assignFixedCells();
   // group mapping & x_axis dummycell insertion
   group_pixel_assign2();
   // y axis dummycell insertion
@@ -136,7 +136,7 @@ Opendp::gridPixel(int x,
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::fixed_cell_assign()
+Opendp::assignFixedCells()
 {
   for (Cell &cell : cells_) {
     if (isFixed(&cell)) {
@@ -144,29 +144,13 @@ Opendp::fixed_cell_assign()
       int y_end = gridEndY(&cell);
       int x_start = gridPaddedX(&cell);
       int x_end = gridPaddedEndX(&cell);
-
-      int y_start_rf = 0;
-      int y_end_rf = gridEndY();
-      int x_start_rf = 0;
-      int x_end_rf = gridEndX();
-
-      y_start = max(y_start, y_start_rf);
-      y_end = min(y_end, y_end_rf);
-      x_start = max(x_start, x_start_rf);
-      x_end = min(x_end, x_end_rf);
-
-#ifdef ODP_DEBUG
-      cout << "FixedCellAssign: cell_name : " << cell.name() << endl;
-      cout << "FixedCellAssign: y_start : " << y_start << endl;
-      cout << "FixedCellAssign: y_end   : " << y_end << endl;
-      cout << "FixedCellAssign: x_start : " << x_start << endl;
-      cout << "FixedCellAssign: x_end   : " << x_end << endl;
-#endif
-      for (int j = y_start; j < y_end; j++) {
-        for (int k = x_start; k < x_end; k++) {
-          Pixel &pixel = grid_[j][k];
-          pixel.cell = &cell;
-          pixel.util = 1.0;
+      for (int x = x_start; x < x_end; x++) {
+        for (int y = y_start; y < y_end; y++) {
+          Pixel *pixel = gridPixel(x, y);
+          if (pixel) {
+            pixel->cell = &cell;
+            pixel->util = 1.0;
+          }
         }
       }
     }
@@ -186,7 +170,7 @@ Opendp::group_cell_region_assign()
         }
       }
     }
-    int64_t area = site_count * site_width_ * row_height_;
+    int64_t site_area = site_count * site_width_ * row_height_;
 
     int64_t cell_area = 0;
     for (Cell *cell : group.cells_) {
@@ -201,7 +185,7 @@ Opendp::group_cell_region_assign()
         cell->region_ = &group.regions[0];
       }
     }
-    group.util = static_cast<double>(cell_area) / area;
+    group.util = static_cast<double>(cell_area) / site_area;
   }
 }
 

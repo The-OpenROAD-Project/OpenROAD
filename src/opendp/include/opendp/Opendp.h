@@ -259,7 +259,7 @@ private:
   int refine();
   bool cellFitsInCore(Cell *cell);
 
-  void fixed_cell_assign();
+  void assignFixedCells();
   void group_cell_region_assign();
   void group_pixel_assign();
   void group_pixel_assign2();
