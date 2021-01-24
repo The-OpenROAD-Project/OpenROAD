@@ -35,12 +35,19 @@
 
 #include "HypergraphDecomposition.h"
 
+
 namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
 class dbNet;
 }  // namespace odb
+
+namespace utl {
+class Logger;
+}
+
+using utl::Logger;
 
 namespace par {
 
@@ -219,6 +226,7 @@ class PartitionMgr
   PartOptions _options;
   unsigned _dbId = 0;
   unsigned _bestId = 0;
+  Logger * _logger;
   Graph _graph;
   Hypergraph _hypergraph;
   std::vector<PartSolutions> _results;
@@ -242,6 +250,7 @@ class PartitionMgr
   unsigned getCurrentId() { return (_results.size() - 1); }
   unsigned getCurrentClusId() { return (_clusResults.size() - 1); }
   void setDbId(unsigned id) { _dbId = id; }
+  void setLogger(Logger * logger) {_logger = logger;}
   void toGraph();
   void toHypergraph();
   void hypergraph();

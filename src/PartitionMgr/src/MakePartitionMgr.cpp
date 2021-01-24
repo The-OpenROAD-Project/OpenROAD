@@ -66,6 +66,7 @@ void initPartitionMgr(OpenRoad* openroad)
   par::PartitionMgr* kernel = openroad->getPartitionMgr();
 
   kernel->setDbId(dbId);
+  kernel->setLogger(openroad->getLogger());
 };
 
 void deletePartitionMgr(par::PartitionMgr* partitionmgr)
