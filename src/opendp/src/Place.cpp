@@ -42,9 +42,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
+
+//#define ODP_DEBUG
 
 namespace dpl {
 
@@ -57,6 +60,8 @@ using std::string;
 using std::vector;
 using std::tie;
 using std::make_tuple;
+using std::cout;
+using std::endl;
 
 using ord::closestPtInRect;
 using utl::DPL;
