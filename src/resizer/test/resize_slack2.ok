@@ -11,8 +11,6 @@
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 [INFO ODB-0134] Finished DEF file: gcd_placed.def
 [INFO RSZ-0026] Removed 151 buffers.
-[INFO RSZ-0039] Resized 44 instances.
-[INFO RSZ-0026] Removed 0 buffers.
 _082_ 1.347
 _352_ 1.347
 _349_ 1.347
