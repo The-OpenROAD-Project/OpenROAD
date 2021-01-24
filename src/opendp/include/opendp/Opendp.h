@@ -155,6 +155,16 @@ typedef vector<NetBox> NetBoxes;
 
 typedef set<dbMaster *> dbMasterSet;
 
+// Return value for grid searches.
+class PixelPt
+{
+public:
+  PixelPt();
+  PixelPt(Pixel *pixel, int grid_x, int grid_y);
+  Pixel *pixel;
+  Point pt; // grid locataion
+};
+
 class Opendp
 {
 public:
@@ -225,14 +235,11 @@ private:
   bool check_overlap(const Cell *cell, const Rect *rect) const;
   static bool isInside(const Rect &cell, const Rect &box);
   bool isInside(const Cell *cell, const Rect *rect) const;
-  bool binSearch(int grid_x,
-                 const Cell *cell,
-                 int x,
-                 int y,
-                 // Return values
-                 int *avail_x,
-                 int *avail_y) const;
-  tuple<Pixel *, Point>diamondSearch(const Cell *cell, int x, int y) const;
+  PixelPt diamondSearch(const Cell *cell, int x, int y) const;
+  PixelPt binSearch(int grid_x,
+                    const Cell *cell,
+                    int x,
+                    int y) const;
   bool shift_move(Cell *cell);
   bool map_move(Cell *cell);
   bool map_move(Cell *cell, int x, int y);
