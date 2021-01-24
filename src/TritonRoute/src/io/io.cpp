@@ -842,10 +842,10 @@ void io::Parser::readDb(odb::dbDatabase* db)
 {
   ProfileTask profile("IO:readDb");
   if(db->getChip() == nullptr)
-    logger->error(utl::DRT, 116, "please load design first");
+    logger->error(utl::DRT, 116, "load design first");
   odb::dbBlock* block = db->getChip()->getBlock();
   if(block == nullptr)
-    logger->error(utl::DRT, 117, "please load design first");
+    logger->error(utl::DRT, 117, "load design first");
   tmpBlock = make_unique<frBlock>(string(block->getName()));
   tmpBlock->trackPatterns_.clear();
   tmpBlock->trackPatterns_.resize(tech->layers.size());
@@ -3924,6 +3924,197 @@ int io::Parser::Callbacks::getLefMacros(lefrCallbackType_e type, lefiMacro* macr
   return 0;
 }
 
+int io::Parser::Callbacks::getLefString(lefrCallbackType_e type, const char* str, lefiUserData data) {
+  //bool enableOutput = true;
+  bool enableOutput = false;
+  io::Parser* parser = (io::Parser*) data;
+  if (type == lefrMacroBeginCbkType) {
+    auto &tmpBlock = parser->tmpBlock;
+    tmpBlock = make_unique<frBlock>(string(str));
+    if (enableOutput) {
+      cout <<"MACRO " <<tmpBlock->getName() <<endl;
+    }
+  } else if (type == lefrMacroEndCbkType) {
+    auto &tmpBlock = parser->tmpBlock;
+    tmpBlock->setId(parser->numRefBlocks + 1);
+    if (enableOutput) {
+      cout <<"END " <<tmpBlock->getName() <<" " <<parser->numRefBlocks + 1 <<endl;
+    }
+    parser->design->addRefBlock(std::move(parser->tmpBlock));
+    parser->numRefBlocks++;
+    parser->numTerms     = 0;
+    parser->numBlockages = 0;
+  } else {
+    cout <<"Type is not supported!" <<endl;
+    // exit(2);
+  }
+  return 0;
+}
+
+void io::Parser::setMacros(odb::dbDatabase* db)
+{
+  for (auto lib : db->getLibs())
+  {
+    for(odb::dbMaster* master : lib->getMasters())
+    {
+      tmpBlock = make_unique<frBlock>(master->getName());
+      frCoord originX;
+      frCoord originY;
+      master->getOrigin(originX,originY);
+      frCoord sizeX   = master->getWidth();
+      frCoord sizeY   = master->getHeight();
+      vector<frBoundary> bounds;
+      frBoundary bound;
+      vector<frPoint> points;
+      points.push_back(frPoint(originX, originY));
+      points.push_back(frPoint(sizeX,   originY));
+      points.push_back(frPoint(sizeX,   sizeY));
+      points.push_back(frPoint(originX, sizeY));
+      bound.setPoints(points);
+      bounds.push_back(bound);
+      tmpBlock->setBoundaries(bounds);
+      const char* macroClass = master->getType().getString();
+      if(strcmp(macroClass, "NONE")){
+        if (strcmp(macroClass, "CORE") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE);
+        } else if (strcmp(macroClass, "CORE TIEHIGH") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
+        } else if (strcmp(macroClass, "CORE TIELOW") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
+        } else if (strcmp(macroClass, "CORE WELLTAP") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
+        } else if (strcmp(macroClass, "CORE SPACER") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
+        } else if (strcmp(macroClass, "CORE ANTENNACELL") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
+        } else if (strcmp(macroClass, "COVER") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::COVER);
+        } else if (strcmp(macroClass, "ENDCAP PRE") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+        } else if (strcmp(macroClass, "BLOCK") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+        } else if (strcmp(macroClass, "PAD") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::PAD);
+        } else if (strcmp(macroClass, "RING") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::RING);
+        } else if (strcmp(macroClass, "PAD POWER") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+        } else if (strcmp(macroClass, "PAD SPACER") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+        } else if (strcmp(macroClass, "ENDCAP BOTTOMLEFT") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
+        } else {
+          logger->warn(utl::DRT,119,"unknown macroClass {}, skipped macroClass property", macroClass);
+        }
+      }
+      
+      for(auto _term : master->getMTerms())
+      {
+        unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
+        auto term = uTerm.get();
+        term->setId(numTerms);
+        numTerms++;
+        tmpBlock->addTerm(std::move(uTerm));        
+        
+        frTermEnum termType = frTermEnum::frcNormalTerm;
+        string str(_term->getSigType().getString());
+        if (str == "SIGNAL") {
+          ;
+        } else if (str == "CLOCK") {
+          termType = frTermEnum::frcClockTerm;
+        } else if (str == "POWER") {
+          termType = frTermEnum::frcPowerTerm;
+        } else if (str == "GROUND") {
+          termType = frTermEnum::frcGroundTerm;
+        } else {
+          logger->error(utl::DRT,120,"unsupported PIN USE in lef");
+        }
+        term->setType(termType);
+        frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+        str = string(_term->getIoType().getString());
+        if (str == "INPUT") {
+          termDirection = frTermDirectionEnum::INPUT;
+        } else if (str == "OUTPUT") {
+          termDirection = frTermDirectionEnum::OUTPUT;
+        } else if (str == "OUTPUT TRISTATE") {
+          termDirection = frTermDirectionEnum::OUTPUT;
+        } else if (str == "INOUT") {
+          termDirection = frTermDirectionEnum::INOUT;
+        } else if (str == "FEEDTHRU") {
+          termDirection = frTermDirectionEnum::FEEDTHRU;
+        } else {
+          logger->error(utl::DRT,121,"unsupported term direction {} in lef",str);
+        }
+        term->setDirection(termDirection);
+        
+
+        int i = 0;
+        for(auto mpin : _term->getMPins())
+        {
+          auto pinIn = make_unique<frPin>();
+          pinIn->setId(i++);
+          for(auto box : mpin->getGeometry())
+          {
+            frLayerNum layerNum = -1;
+            string layer = box->getTechLayer()->getName();
+            if (tech->name2layer.find(layer) == tech->name2layer.end()) 
+              logger->warn(utl::DRT, 122, "layer {} is skipped for {}/{}",layer,tmpBlock->getName(),_term->getName());
+            else
+              layerNum = tech->name2layer.at(layer)->getLayerNum();
+            
+            frCoord xl = box->xMin();
+            frCoord yl = box->yMin();
+            frCoord xh = box->xMax();
+            frCoord yh = box->yMax();
+            unique_ptr<frRect> pinFig = make_unique<frRect>();
+            pinFig->setBBox(frBox(xl, yl, xh, yh));
+            pinFig->addToPin(pinIn.get());
+            pinFig->setLayerNum(layerNum);
+            unique_ptr<frPinFig> uptr(std::move(pinFig));
+            pinIn->addPinFig(std::move(uptr));
+          }
+          term->addPin(std::move(pinIn));
+        }
+      }
+
+      for(auto obs : master->getObstructions())
+      {
+        auto blkIn = make_unique<frBlockage>();
+        blkIn->setId(numBlockages);
+        numBlockages++;
+        auto pinIn = make_unique<frPin>();
+        pinIn->setId(0);
+        frLayerNum layerNum = -1;
+        string layer = obs->getTechLayer()->getName();
+        if (tech->name2layer.find(layer) == tech->name2layer.end()) 
+          logger->warn(utl::DRT, 123, "layer {} is skipped for {}/OBS",layer,tmpBlock->getName());
+        else
+          layerNum = tech->name2layer.at(layer)->getLayerNum();
+        frCoord xl = obs->xMin();
+        frCoord yl = obs->yMin();
+        frCoord xh = obs->xMax();
+        frCoord yh = obs->yMax();
+        // pinFig
+        unique_ptr<frRect> pinFig = make_unique<frRect>();
+        pinFig->setBBox(frBox(xl, yl, xh, yh));
+        pinFig->addToPin(pinIn.get());
+        pinFig->setLayerNum(layerNum);
+        // pinFig completed
+        // pin
+        unique_ptr<frPinFig> uptr(std::move(pinFig));
+        pinIn->addPinFig(std::move(uptr));
+        blkIn->setPin(std::move(pinIn));
+        tmpBlock->addBlockage(std::move(blkIn));
+      }
+      tmpBlock->setId(numRefBlocks + 1);
+      design->addRefBlock(std::move(tmpBlock));
+      numRefBlocks++;
+      numTerms     = 0;
+      numBlockages = 0;
+    }
+  }
+}
+
 int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lefiUserData data) {
   bool enableOutput = false;
   //bool enableOutput = true;
@@ -4108,7 +4299,6 @@ int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lef
   return 0;
 }
 
-
 int io::Parser::Callbacks::getLefObs(lefrCallbackType_e type, lefiObstruction* obs, lefiUserData data) {
   //bool enableOutput = true;
   bool enableOutput = false;
@@ -4232,33 +4422,6 @@ int io::Parser::Callbacks::getLefObs(lefrCallbackType_e type, lefiObstruction* o
   return 0;
 }
 
-int io::Parser::Callbacks::getLefString(lefrCallbackType_e type, const char* str, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  io::Parser* parser = (io::Parser*) data;
-  if (type == lefrMacroBeginCbkType) {
-    auto &tmpBlock = parser->tmpBlock;
-    tmpBlock = make_unique<frBlock>(string(str));
-    if (enableOutput) {
-      cout <<"MACRO " <<tmpBlock->getName() <<endl;
-    }
-  } else if (type == lefrMacroEndCbkType) {
-    auto &tmpBlock = parser->tmpBlock;
-    tmpBlock->setId(parser->numRefBlocks + 1);
-    if (enableOutput) {
-      cout <<"END " <<tmpBlock->getName() <<" " <<parser->numRefBlocks + 1 <<endl;
-    }
-    parser->design->addRefBlock(std::move(parser->tmpBlock));
-    parser->numRefBlocks++;
-    parser->numTerms     = 0;
-    parser->numBlockages = 0;
-  } else {
-    cout <<"Type is not supported!" <<endl;
-    // exit(2);
-  }
-  return 0;
-}
-
 int io::Parser::Callbacks::getLefUnits(lefrCallbackType_e type, lefiUnits* units, lefiUserData data) {
   //bool enableOutput = true;
   bool enableOutput = false;
@@ -4303,6 +4466,88 @@ int io::Parser::Callbacks::getLefManufacturingGrid(lefrCallbackType_e type, doub
     cout <<"MANUFACTURINGGRID " <<number <<endl;
   }
   return 0;
+}
+
+void io::Parser::setTechVias(odb::dbTech* _tech)
+{
+  for(auto via : _tech->getVias())
+  {
+    
+    auto viaDef = make_unique<frViaDef>(via->getName());
+    if (via->isDefault()) {
+      viaDef->setDefault(true);
+    }
+    map<frLayerNum,int> lNum2Int;
+    for(auto box : via->getBoxes()){
+      string layerName = box->getTechLayer()->getName();
+      if(tech->name2layer.find(layerName)==tech->name2layer.end())
+        logger->error(utl::DRT, 124, "unknown layer {} for via {}",layerName,via->getName());
+      frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
+      lNum2Int[lNum] = 1;
+    }
+    if (lNum2Int.size() != 3)
+      logger->error(utl::DRT, 125, "unsupported via {}",via->getName());
+    int curOrder = 0;
+    for(auto [lnum,i] : lNum2Int)
+    {
+      lNum2Int[lnum] = ++curOrder;
+    }
+
+    if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first) {
+      logger->error(utl::DRT, 126, "non consecutive layers for via {}",via->getName());
+    }
+
+    for(auto box: via->getBoxes())
+    {
+      frLayerNum layerNum;
+      string layer = box->getTechLayer()->getName();
+      if (tech->name2layer.find(layer) == tech->name2layer.end()) 
+        logger->error(utl::DRT, 127, "unknown layer {} for via {}",layer,via->getName());
+      else
+        layerNum = tech->name2layer.at(layer)->getLayerNum();
+      frCoord xl = box->xMin();
+      frCoord yl = box->yMin();
+      frCoord xh = box->xMax();
+      frCoord yh = box->yMax();
+      unique_ptr<frRect> pinFig = make_unique<frRect>();
+      pinFig->setBBox(frBox(xl, yl, xh, yh));
+      pinFig->setLayerNum(layerNum);
+      if(lNum2Int[layerNum]==1)
+      {
+        viaDef->addLayer1Fig(std::move(pinFig));
+      }
+      else if(lNum2Int[layerNum]==3)
+      {
+        viaDef->addLayer2Fig(std::move(pinFig));
+      }
+      else if(lNum2Int[layerNum]==2)
+      {
+        viaDef->addCutFig(std::move(pinFig));
+      }
+      
+    }
+    auto cutLayerNum = viaDef->getCutLayerNum();
+    auto cutLayer    = tech->getLayer(cutLayerNum);
+    int cutClassIdx = -1;
+    frLef58CutClass *cutClass = nullptr;
+
+    for (auto &cutFig: viaDef->getCutFigs()) {
+      frBox box;
+      cutFig->getBBox(box);
+      auto width  = box.width();
+      auto length = box.length();
+      cutClassIdx = cutLayer->getCutClassIdx(width, length);
+      if (cutClassIdx != -1) {
+        cutClass = cutLayer->getCutClass(cutClassIdx);
+        break;
+      }
+    }
+    if (cutClass) {
+      viaDef->setCutClass(cutClass);
+      viaDef->setCutClassIdx(cutClassIdx);
+    }
+    tech->addVia(std::move(viaDef));
+  }
 }
 
 int io::Parser::Callbacks::getLefVias(lefrCallbackType_e type, lefiVia* via, lefiUserData data) {
@@ -4449,6 +4694,103 @@ int io::Parser::Callbacks::getLefVias(lefrCallbackType_e type, lefiVia* via, lef
   return 0;
 }
 
+void io::Parser::setTechViaRules(odb::dbTech* _tech)
+{
+  for(auto rule : _tech->getViaGenerateRules())
+  {
+    int count = rule->getViaLayerRuleCount();
+     if (count != 3)
+      logger->error(utl::DRT, 128, "unsupported viarule {}",rule->getName());
+    map<frLayerNum,int> lNum2Int;
+    for(int i = 0; i < count; i++){
+      auto layerRule = rule->getViaLayerRule(i);
+      string layerName = layerRule->getLayer()->getName();
+      if(tech->name2layer.find(layerName)==tech->name2layer.end())
+        logger->error(utl::DRT, 129, "unknown layer {} for viarule {}",layerName,rule->getName());
+      frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
+      lNum2Int[lNum] = 1;
+    }
+    int curOrder = 0;
+    for(auto [lnum,i] : lNum2Int)
+    {
+      lNum2Int[lnum] = ++curOrder;
+    }
+    if (lNum2Int.begin()->first + count -1 != (--lNum2Int.end())->first) {
+      logger->error(utl::DRT, 130, "non consecutive layers for viarule {}",rule->getName());
+    }
+    auto viaRuleGen = make_unique<frViaRuleGenerate>(rule->getName());
+    if (rule->isDefault()) {
+      viaRuleGen->setDefault(1);
+    }
+    for(int i = 0; i < count; i++)
+    {
+      auto layerRule = rule->getViaLayerRule(i);
+      frLayerNum layerNum = tech->name2layer[layerRule->getLayer()->getName()]->getLayerNum();
+      if(layerRule->hasEnclosure())
+      {
+        frCoord x;
+        frCoord y;
+        layerRule->getEnclosure(x,y);
+        frPoint enc(x, y);
+        switch(lNum2Int[layerNum]) {
+          case 1:
+            viaRuleGen->setLayer1Enc(enc);
+            break;
+          case 2:
+            logger->warn(utl::DRT, 131, "cutLayer cannot have overhangs in viarule {}, skipping enclosure",rule->getName());
+            break;
+          default:
+            viaRuleGen->setLayer2Enc(enc);
+            break;
+        }
+      }
+      if(layerRule->hasRect())
+      {
+        odb::Rect rect;
+        layerRule->getRect(rect);
+        frCoord xl = rect.xMin();
+        frCoord yl = rect.yMin();
+        frCoord xh = rect.xMax();
+        frCoord yh = rect.yMax();
+        frBox box(xl, yl, xh, yh);
+        switch(lNum2Int[layerNum]) {
+          case 1:
+            logger->warn(utl::DRT, 132, "botLayer cannot have rect in viarule {}, skipping rect",rule->getName());
+            break;
+          case 2:
+            viaRuleGen->setCutRect(box);
+            break;
+          default:
+            logger->warn(utl::DRT, 133, "topLayer cannot have rect in viarule {}, skipping rect",rule->getName());
+            break;
+        }
+        
+      }
+      if(layerRule->hasSpacing())
+      {
+        
+        frCoord x;
+        frCoord y;
+        layerRule->getSpacing(x,y);
+        frPoint pt(x, y);
+        switch(lNum2Int[layerNum]) {
+          case 1:
+            logger->warn(utl::DRT, 134, "botLayer cannot have spacing in viarule {}, skipping spacing",rule->getName());
+            break;
+          case 2:
+            viaRuleGen->setCutSpacing(pt);
+            break;
+          default:
+            logger->warn(utl::DRT, 135, "botLayer cannot have spacing in viarule {}, skipping spacing",rule->getName());
+            break;
+        }
+
+      }
+    }
+    tech->addViaRuleGenerate(std::move(viaRuleGen));
+  }
+}
+
 int io::Parser::Callbacks::getLefViaRules(lefrCallbackType_e type, lefiViaRule* viaRule, lefiUserData data) {
   bool enableOutput = false;
   //bool enableOutput = true;
@@ -4587,17 +4929,17 @@ void io::Parser::readLef() {
 
   lefrSetUserData ((lefiUserData)this);
 
-  lefrSetMacroCbk(Callbacks::getLefMacros);
-  lefrSetMacroBeginCbk(Callbacks::getLefString);
-  lefrSetMacroEndCbk(Callbacks::getLefString);
-  lefrSetUnitsCbk(Callbacks::getLefUnits);
-  lefrSetManufacturingCbk(Callbacks::getLefManufacturingGrid);
-  lefrSetUseMinSpacingCbk(Callbacks::getLefUseMinSpacing);
-  lefrSetPinCbk(Callbacks::getLefPins);
-  lefrSetObstructionCbk(Callbacks::getLefObs);
+  // lefrSetMacroCbk(Callbacks::getLefMacros);
+  // lefrSetMacroBeginCbk(Callbacks::getLefString);
+  // lefrSetMacroEndCbk(Callbacks::getLefString);
+  // lefrSetUnitsCbk(Callbacks::getLefUnits);
+  // lefrSetManufacturingCbk(Callbacks::getLefManufacturingGrid);
+  // lefrSetUseMinSpacingCbk(Callbacks::getLefUseMinSpacing);
+  // lefrSetPinCbk(Callbacks::getLefPins);
+  // lefrSetObstructionCbk(Callbacks::getLefObs);
   lefrSetLayerCbk(Callbacks::getLefLayers);
-  lefrSetViaCbk(Callbacks::getLefVias);
-  lefrSetViaRuleCbk(Callbacks::getLefViaRules);
+  // lefrSetViaCbk(Callbacks::getLefVias);
+  // lefrSetViaRuleCbk(Callbacks::getLefViaRules);
 
   if ((f = fopen(LEF_FILE.c_str(),"r")) == 0) {
     cout <<"Couldn't open lef file" <<endl;
@@ -4613,17 +4955,30 @@ void io::Parser::readLef() {
 
   lefrClear();
 }
+void io::Parser::readTechDb1(odb::dbDatabase* db)
+{
+  auto _tech = db->getTech();
+  if(_tech==nullptr)
+    logger->error(utl::DRT,118,"load design first");
+  tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
+  USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
+  tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
+}
+void io::Parser::readTechDb2(odb::dbDatabase* db) {
+  setMacros(db);
+  setTechVias(db->getTech());
+  setTechViaRules(db->getTech());
+}
+
 
 void io::Parser::readLefDb(odb::dbDatabase* db) {
-  bool enableOutput = false;
-  // bool enableOutput = true;
 
   if (VERBOSE > 0) {
     cout <<endl <<"reading lef ..." <<endl;
   }
-
+  readTechDb1(db);
   readLef();
-
+  readTechDb2(db);
   if (VERBOSE > 0) {
     cout <<endl;
     cout <<"units:       " <<tech->getDBUPerUU()       <<endl;
@@ -4635,19 +4990,11 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
 
   auto numLefVia = tech->vias.size();
 
-  //tech->printAllConstraints();
-  
-  if (enableOutput) {
-    // printAllLayers();
-    //printLayerMaps();
-  }
-
   if (VERBOSE > 0) {
     cout <<endl <<"reading def ..." <<endl;
   }
+
   readDb(db);
-
-
 
   if (VERBOSE > 0) {
     cout <<endl;
@@ -4661,18 +5008,7 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
     cout <<"#terminals:  " <<design->getTopBlock()->terms_.size() <<endl;
     cout <<"#snets:      " <<design->getTopBlock()->snets_.size() <<endl;
     cout <<"#nets:       " <<design->getTopBlock()->nets_.size()  <<endl;
-    //cout <<"#pins:       " <<numPins <<endl;
   }
-  //cout <<flush;
-
-  if (enableOutput) {
-    //printCompMaps();
-    //printTermMaps();
-    //printAllNets();
-    //printAllTrackGens();
-    //printAllTrackPatterns();
-  }
-  //exit(1);
 
 }
 
@@ -5278,12 +5614,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(utl::DRT, 3, "please load design first");
+    logger->error(utl::DRT, 3, "load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(utl::DRT, 4, "please load design first");
+    logger->error(utl::DRT, 4, "load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);
