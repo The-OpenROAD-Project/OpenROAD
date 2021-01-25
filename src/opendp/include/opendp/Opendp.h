@@ -240,6 +240,12 @@ private:
                     const Cell *cell,
                     int x,
                     int y) const;
+  bool checkPixels(const Cell *cell,
+                   int x,
+                   int y,
+                   int x_end,
+                   int y_end,
+                   int i) const;
   bool shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell, int x, int y);
@@ -247,10 +253,12 @@ private:
   bool swapCells(Cell *cell1, Cell *cell2);
   bool refineMove(Cell *cell);
 
-  Point prePlaceLocation(const Cell *cell,
-                         bool padded) const;
+  Point legalLocation(const Cell *cell,
+                      bool padded) const;
   Point legalLocation(const Cell *cell,
                       Point pt) const;
+  Point legalPt(const Cell *cell,
+                Point pt) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
