@@ -341,8 +341,6 @@ private:
   int padLeft(const Cell *cell) const;
   int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
-  int coreGridMaxX() const;
-  int coreGridMaxY() const;
   // Place fillers
   void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);

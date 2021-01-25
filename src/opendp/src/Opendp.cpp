@@ -607,18 +607,6 @@ Opendp::gridEndY(const Cell *cell) const
   return divCeil(cell->y_ + cell->height_, row_height_);
 }
 
-int
-Opendp::coreGridMaxX() const
-{
-  return divRound(core_.xMax(), site_width_);
-}
-
-int
-Opendp::coreGridMaxY() const
-{
-  return divRound(core_.yMax(), row_height_);
-}
-
 double
 Opendp::dbuToMicrons(int64_t dbu) const
 {

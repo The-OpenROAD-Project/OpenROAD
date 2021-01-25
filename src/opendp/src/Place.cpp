@@ -647,15 +647,7 @@ Opendp::mapMove(Cell *cell, int x, int y)
 {
   PixelPt pixel_pt = diamondSearch(cell, x, y);
   if (pixel_pt.pixel) {
-    PixelPt near_pt = diamondSearch(cell,
-                                    pixel_pt.pt.getX() * site_width_,
-                                    pixel_pt.pt.getY() * row_height_);
-    if (near_pt.pixel) {
-      paintPixel(cell, near_pt.pt.getX(), near_pt.pt.getY());
-    }
-    else {
-      paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
-    }
+    paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     return true;
   }
   return false;
@@ -790,7 +782,7 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
                        divCeil(group->boundary.yMin(), row_height_),
                        group->boundary.xMax() / site_width_,
                        group->boundary.yMax() / row_height_);
-    Point in_boundary = closestPtInRect(grid_boundary, Point(grid_x, grid_y));
+    Point in_boundary = closestPtInRect(grid_boundary, grid_x, grid_y);
     grid_x = in_boundary.x();
     grid_y = in_boundary.y();
   }
@@ -806,12 +798,8 @@ Opendp::diamondSearch(const Cell *cell, int x, int y) const
   int y_end = grid_y + diamond_search_height_;
 
 #ifdef ODP_DEBUG
-  cout << " == Start Diamond Search ==  " << endl;
-  cout << " cell_name : " << cell->name() << endl;
-  cout << " x : " << x << endl;
-  cout << " y : " << y << endl;
-  cout << " grid_x : " << grid_x << endl;
-  cout << " grid_y : " << grid_y << endl;
+  cout << "Diamond Search "  << cell->name() << " (" << x << ", " << y << ")" << endl;
+  cout << " grid (" << grid_x ", " << grid_y << ")" endl;
   cout << " x bound ( " << x_start << ") - (" << x_end << ")" << endl;
   cout << " y bound ( " << y_start << ") - (" << y_end << ")" << endl;
 #endif
@@ -875,24 +863,21 @@ Opendp::binSearch(int grid_x,
                   int x,
                   int y) const
 {
+#ifdef ODP_DEBUG
+  cout << " Bin Search " << cell->name() << " (" << x << ", " << y << ")" << endl;
+#endif
+
   int x_end = x + gridPaddedWidth(cell);
   int height = gridHeight(cell);
   int y_end = y + height;
 
   // Check y is beyond the border.
-  if (y_end > coreGridMaxY()
+  if (y_end > row_count_
       // Check top power for even row multi-deck cell.
       || (height % 2 == 0 && rowTopPower(y) == topPower(cell))) {
     return PixelPt();
   }
 
-#ifdef ODP_DEBUG
-  cout << " - - - - - - - - - - - - - - - - - " << endl;
-  cout << " Start Bin Search " << endl;
-  cout << " cell name : " << cell->name() << endl;
-  cout << " target x : " << x << endl;
-  cout << " target y : " << y << endl;
-#endif
   if (grid_x > x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
       if (checkPixels(cell, x, y, x_end, y_end, i))
@@ -917,7 +902,7 @@ Opendp::checkPixels(const Cell *cell,
                     int y_end,
                     int i) const
 {
-  if (x_end + i > coreGridMaxX())
+  if (x_end + i > row_site_count_)
     return false;
   else {
     bool available = true;
