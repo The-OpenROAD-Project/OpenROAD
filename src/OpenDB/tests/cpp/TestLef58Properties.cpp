@@ -54,7 +54,12 @@ BOOST_AUTO_TEST_CASE( test_default )
                 BOOST_ASSERT(rule->isTwoEdgesValid() == 1);
                 BOOST_ASSERT(rule->isToConcaveCornerValid() == 0);
            }
-            
+            auto step_rules = layer->getMinStepRules();
+            BOOST_TEST(step_rules.size() == 1);
+            for (auto rule : step_rules)
+            {
+                BOOST_TEST(rule->getMinStepLength() == 0.6 * distFactor);
+            }
         }
     }
     

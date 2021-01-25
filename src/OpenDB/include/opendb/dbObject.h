@@ -33,8 +33,8 @@
 #pragma once
 
 #include "odb.h"
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 namespace odb {
 
@@ -91,6 +91,7 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin 1
   dbTechLayerSpacingEolRuleObj,
+  dbTechLayerMinStepRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,

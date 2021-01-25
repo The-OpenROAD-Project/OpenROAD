@@ -49,8 +49,8 @@
 
 #define ADS_MAX_CORNER 10
 
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 
 namespace odb {
@@ -105,6 +105,7 @@ class dbRegion;
 class dbBPin;
 // Generator Code Begin 2
 class dbTechLayerSpacingEolRule;
+class dbTechLayerMinStepRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -825,7 +826,7 @@ class dbBlock : public dbObject
   /// Returns the hierarchical parent of this block if it exists.
   ///
   dbInst* getParentInst();
-  
+
   ///
   /// Returns the top module of this block.
   ///
@@ -1784,7 +1785,7 @@ class dbBPin : public dbObject
   /// Get the placement status of this block-terminal.
   ///
   dbPlacementStatus getPlacementStatus();
-  
+
   ///
   /// Set the placement status of this block-terminal.
   ///
@@ -1804,7 +1805,7 @@ class dbBPin : public dbObject
   /// Get bbox of this pin (ie the bbox of getBoxes())
   ///
   Rect getBBox();
-  
+
   ///
   /// Returns true if this bpin has an effective-width rule.
   ///
@@ -5993,6 +5994,9 @@ class dbTechLayer : public dbObject
   // Get the collection of Eol Spacing Rules for the object
   dbSet<dbTechLayerSpacingEolRule> getEolSpacingRules() const;
 
+  // Get the collection of minstep Rules for the object
+  dbSet<dbTechLayerMinStepRule> getMinStepRules() const;
+
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
   /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
@@ -7493,6 +7497,60 @@ class dbTechLayerSpacingEolRule : public dbObject
   // User Code End dbTechLayerSpacingEolRule
 };
 
+class dbTechLayerMinStepRule : public dbObject
+{
+ public:
+  void setMinStepLength(int _min_step_length);
+
+  int getMinStepLength() const;
+
+  void setMaxEdges(int _max_edges);
+
+  int getMaxEdges() const;
+
+  void setMinAdjLength1(int _min_adj_length1);
+
+  int getMinAdjLength1() const;
+
+  void setMinAdjLength2(int _min_adj_length2);
+
+  int getMinAdjLength2() const;
+
+  void setMinBetweenLength(int _min_between_length);
+
+  int getMinBetweenLength() const;
+
+  void setMaxEdgesValid(bool _max_edges_valid);
+
+  bool isMaxEdgesValid() const;
+
+  void setMinAdjLength1Valid(bool _min_adj_length1_valid);
+
+  bool isMinAdjLength1Valid() const;
+
+  void setMinAdjLength2Valid(bool _min_adj_length2_valid);
+
+  bool isMinAdjLength2Valid() const;
+
+  void setConvexCorner(bool _convex_corner);
+
+  bool isConvexCorner() const;
+
+  void setMinBetweenLengthValid(bool _min_between_length_valid);
+
+  bool isMinBetweenLengthValid() const;
+
+  void setExceptSameCorners(bool _except_same_corners);
+
+  bool isExceptSameCorners() const;
+
+  // User Code Begin dbTechLayerMinStepRule
+  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
+  static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
+                                                         uint         dbid);
+  // User Code End dbTechLayerMinStepRule
+};
+
 class dbModule : public dbObject
 {
  public:
@@ -7541,7 +7599,7 @@ class dbModInst : public dbObject
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
   char* getName() const;
-  
+
   char* getHierarchalName() const;
   // User Code End dbModInst
 };

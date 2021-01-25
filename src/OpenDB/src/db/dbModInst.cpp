@@ -285,13 +285,15 @@ char* dbModInst::getName() const
 char* dbModInst::getHierarchalName() const
 {
   _dbModInst* _obj      = (_dbModInst*) this;
-  dbBlock*   block    = (dbBlock*) _obj->getOwner();
+  dbBlock*    block     = (dbBlock*) _obj->getOwner();
   std::string inst_name = getName();
-  dbModule* parent = getParent();
-  if(parent==block->getTopModule())
+  dbModule*   parent    = getParent();
+  if (parent == block->getTopModule())
     return strdup(inst_name.c_str());
   else
-    return strdup((std::string(parent->getModInst()->getHierarchalName())+"/"+inst_name).c_str());
+    return strdup((std::string(parent->getModInst()->getHierarchalName()) + "/"
+                   + inst_name)
+                      .c_str());
 }
 // User Code End dbModInstPublicMethods
 }  // namespace odb

@@ -50,6 +50,7 @@
 #include "utility/Logger.h"
 #include "poly_decomp.h"
 #include "lefTechLayerSpacingEolParser.h"
+#include "lefTechLayerMinStepParser.h"
 
 namespace odb {
 
@@ -566,8 +567,12 @@ void lefin::layer(lefiLayer* layer)
   }
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
-    if(strcmp(layer->propName(iii), "LEF58_SPACING") == 0 && type.getValue() == dbTechLayerType::ROUTING){
-      lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+    if(type.getValue() == dbTechLayerType::ROUTING)
+    {
+      if(!strcmp(layer->propName(iii), "LEF58_SPACING"))
+        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_MINSTEP"))
+        lefTechLayerMinStepParser::parse(layer->propValue(iii), l, this);
     }
   }
 
