@@ -238,7 +238,7 @@ private:
   PixelPt diamondSearch(const Cell *cell,
                         int grid_x,
                         int grid_y) const;
-  PixelPt binSearch(int grid_x,
+  PixelPt binSearch(int x_pos,
                     const Cell *cell,
                     int x,
                     int y) const;
@@ -247,15 +247,11 @@ private:
                    int y,
                    int x_end,
                    int y_end,
-                   int i) const;
+                   int x_offset) const;
   bool shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell,
-               int x,
-               int y);
-  bool mapMoveGrid(Cell *cell,
-                   int grid_x,
-                   int grid_y);
+               Point grid_pt);
   int distChange(const Cell *cell,
                  int x,
                  int y) const;

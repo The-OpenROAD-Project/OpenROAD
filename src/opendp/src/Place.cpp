@@ -58,8 +58,6 @@ using std::numeric_limits;
 using std::sort;
 using std::string;
 using std::vector;
-using std::cout;
-using std::endl;
 
 using ord::closestPtInRect;
 using utl::DPL;
@@ -117,7 +115,8 @@ Opendp::prePlace()
       }
       if (group_rect) {
         Point nearest = nearestPt(&cell, group_rect);
-        if (mapMove(&cell, nearest.x(), nearest.y())) {
+        Point legal = legalGridPt(&cell, nearest);
+        if (mapMove(&cell, legal)) {
           cell.hold_ = true;
         }
       }
@@ -140,7 +139,7 @@ Opendp::checkOverlap(const Cell *cell, const Rect *rect) const
 Point
 Opendp::nearestPt(const Cell *cell, const Rect *rect) const
 {
-  Point init = legalPt(cell, false);
+  Point init = initialLocation(cell, false);
   int x = init.getX();
   int y = init.getY();
   
@@ -210,8 +209,8 @@ Opendp::prePlaceGroups()
         }
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
-          Point legal = legalPt(cell, nearest);
-          if (mapMove(cell, legal.x(), legal.y())) {
+          Point legal = legalGridPt(cell, nearest);
+          if (mapMove(cell, legal)) {
             cell->hold_ = true;
           }
         }
@@ -387,10 +386,11 @@ Opendp::brickPlace1(const Group *group)
   for (Cell *cell : sorted_cells) {
     int x, y;
     rectDist(cell, boundary, &x, &y);
+    Point legal = legalGridPt(cell, Point(x, y));
     // This looks for a site starting at the nearest corner in rect,
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
-    if (!mapMove(cell, x, y)) {
+    if (!mapMove(cell, legal)) {
       logger_->warn(DPL, 16, "cannot place instance {}.", cell->name());
     }
   }
@@ -403,7 +403,7 @@ Opendp::rectDist(const Cell *cell,
                  int *x,
                  int *y) const
 {
-  Point init = legalPt(cell, false);
+  Point init = initialLocation(cell, false);
   int init_x = init.getX();
   int init_y = init.getY();
 
@@ -427,7 +427,7 @@ Opendp::rectDist(const Cell *cell, const Rect *rect) const
 {
   int x, y;
   rectDist(cell, rect, &x, &y);
-  Point init = legalPt(cell, false);
+  Point init = initialLocation(cell, false);
   return abs(init.getX() - x) + abs(init.getY() - y);
 }
 
@@ -446,10 +446,11 @@ Opendp::brickPlace2(const Group *group)
     if (!cell->hold_) {
       int x, y;
       rectDist(cell, cell->region_, &x, &y);
+      Point legal = legalGridPt(cell, Point(x, y));
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
-      if (!mapMove(cell, x, y))
+      if (!mapMove(cell, legal))
         logger_->warn(DPL, 17, "cannot place instance {}.", cell->name());
     }
   }
@@ -545,20 +546,15 @@ bool
 Opendp::mapMove(Cell *cell)
 {
   Point init = legalGridPt(cell, true);
-  return mapMoveGrid(cell, init.getX(), init.getY());
+  return mapMove(cell, init);
 }
 
 bool
-Opendp::mapMove(Cell *cell, int x, int y)
+Opendp::mapMove(Cell *cell,
+                Point grid_pt)
 {
-  return mapMoveGrid(cell, gridX(x), gridY(y));
-}
-
-bool
-Opendp::mapMoveGrid(Cell *cell,
-                    int grid_x,
-                    int grid_y)
-{
+  int grid_x = grid_pt.getX();
+  int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
@@ -711,13 +707,14 @@ Opendp::diamondSearch(const Cell *cell,
     y_end = end.getY();
   }
 
-#ifdef ODP_DEBUG
-  cout << "Diamond Search "  << cell->name() << " (" << x << ", " << y << ")" << endl;
-  cout << " grid (" << grid_x ", " << grid_y << ")" endl;
-  cout << " x bound ( " << x_start << ") - (" << x_end << ")" << endl;
-  cout << " y bound ( " << y_start << ") - (" << y_end << ")" << endl;
-#endif
+  debugPrint(logger_, DPL, "place", 1,
+             "Diamond Search {} ({}, {}) bounds ({}:{}, {}:())",
+             cell->name(),
+             grid_x, grid_y,
+             x_start, x_end,
+             y_start, y_end);
 
+  // Check the bin at the initial position first.
   PixelPt avail_pt = binSearch(grid_x, cell, grid_x, grid_y);
   if (avail_pt.pixel) {
     return avail_pt;
@@ -777,14 +774,13 @@ Opendp::diamondSearch(const Cell *cell,
 }
 
 PixelPt
-Opendp::binSearch(int grid_x,
+Opendp::binSearch(int x_pos,
                   const Cell *cell,
                   int x,
                   int y) const
 {
-#ifdef ODP_DEBUG
-  cout << " Bin Search " << cell->name() << " (" << x << ", " << y << ")" << endl;
-#endif
+  debugPrint(logger_, DPL, "place", 1,
+             "Bin Search {} ({}, {})", cell->name(), x, y);
 
   int x_end = x + gridPaddedWidth(cell);
   int height = gridHeight(cell);
@@ -797,7 +793,7 @@ Opendp::binSearch(int grid_x,
     return PixelPt();
   }
 
-  if (grid_x > x) {
+  if (x_pos > x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
       if (checkPixels(cell, x, y, x_end, y_end, i))
         return PixelPt(gridPixel(x + i, y), x + i, y);
@@ -819,14 +815,14 @@ Opendp::checkPixels(const Cell *cell,
                     int y,
                     int x_end,
                     int y_end,
-                    int i) const
+                    int x_offset) const
 {
-  if (x_end + i > row_site_count_)
+  if (x_end + x_offset > row_site_count_)
     return false;
   else {
     bool available = true;
     for (int y1 = y; y1 < y_end; y1++) {
-      for (int x1 = x + i; x1 < x_end + i; x1++) {
+      for (int x1 = x + x_offset; x1 < x_end + x_offset; x1++) {
         Pixel *pixel = gridPixel(x1, y1);
         if (pixel == nullptr
             || pixel->cell
