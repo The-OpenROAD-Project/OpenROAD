@@ -235,7 +235,9 @@ private:
   bool checkOverlap(const Cell *cell, const Rect *rect) const;
   static bool isInside(const Rect &cell, const Rect &box);
   bool isInside(const Cell *cell, const Rect *rect) const;
-  PixelPt diamondSearch(const Cell *cell, int x, int y) const;
+  PixelPt diamondSearch(const Cell *cell,
+                        int grid_x,
+                        int grid_y) const;
   PixelPt binSearch(int grid_x,
                     const Cell *cell,
                     int x,
@@ -253,12 +255,14 @@ private:
   bool swapCells(Cell *cell1, Cell *cell2);
   bool refineMove(Cell *cell);
 
-  Point legalLocation(const Cell *cell,
-                      bool padded) const;
-  Point legalLocation(const Cell *cell,
-                      Point pt) const;
   Point legalPt(const Cell *cell,
                 Point pt) const;
+  Point legalGridPt(const Cell *cell,
+                    Point pt) const;
+  Point legalPt(const Cell *cell,
+                bool padded) const;
+  Point legalGridPt(const Cell *cell,
+                    bool padded) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
