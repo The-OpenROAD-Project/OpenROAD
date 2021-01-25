@@ -5056,7 +5056,7 @@ void extMain::writeMapping(dbBlock* block)
     block = _block;
 
   char buf[1024];
-  sprintf(buf, "{}.netMap", block->getConstName());
+  sprintf(buf, "%s.netMap", block->getConstName());
   FILE* fp = fopen(buf, "w");
 
   uint cnt = 0;

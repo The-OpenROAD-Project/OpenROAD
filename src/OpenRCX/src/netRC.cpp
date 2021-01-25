@@ -838,12 +838,12 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     tname[0] = '\0';
     if (pshape.bterm)
       sprintf(&tname[0],
-              ", on bterm {} {}",
+              ", on bterm %d %s",
               pshape.bterm->getId(),
               (char*) pshape.bterm->getConstName());
     else if (pshape.iterm)
       sprintf(&tname[0],
-              ", on iterm {} {}/{}",
+              ", on iterm %d %s/%s",
               pshape.iterm->getId(),
               (char*) pshape.iterm->getInst()->getConstName(),
               (char*) pshape.iterm->getMTerm()->getConstName());
@@ -1230,17 +1230,17 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 void extMain::createShapeProperty(dbNet* net, int id, int id_val)
 {
   char buff[64];
-  sprintf(buff, "{}", id);
+  sprintf(buff, "%d", id);
   char const* pchar = strdup(buff);
   dbIntProperty::create(net, pchar, id_val);
-  sprintf(buff, "RC_{}", id_val);
+  sprintf(buff, "RC_%d", id_val);
   pchar = strdup(buff);
   dbIntProperty::create(net, pchar, id);
 }
 int extMain::getShapeProperty(dbNet* net, int id)
 {
   char buff[64];
-  sprintf(buff, "{}", id);
+  sprintf(buff, "%d", id);
   char const* pchar = strdup(buff);
   dbIntProperty* p = dbIntProperty::find(net, pchar);
   if (p == NULL)
@@ -1251,7 +1251,7 @@ int extMain::getShapeProperty(dbNet* net, int id)
 int extMain::getShapeProperty_rc(dbNet* net, int rc_id)
 {
   char buff[64];
-  sprintf(buff, "RC_{}", rc_id);
+  sprintf(buff, "RC_%d", rc_id);
   char const* pchar = strdup(buff);
   dbIntProperty* p = dbIntProperty::find(net, pchar);
   if (p == NULL)
@@ -2108,7 +2108,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
     t->_name = strdup(name);
   else {
     char buff[16];
-    sprintf(buff, "MinMax{}", model);
+    sprintf(buff, "MinMax%d", model);
     t->_name = strdup(buff);
   }
   t->_extCornerPtr = NULL;
@@ -2193,7 +2193,7 @@ char* extMain::addRCCornerScaled(const char* name,
     t->_name = strdup(name);
   else {
     char buff[16];
-    sprintf(buff, "derived_MinMax{}", model);
+    sprintf(buff, "derived_MinMax%d", model);
     t->_name = strdup(buff);
   }
   makeCornerNameMap();
@@ -2275,14 +2275,14 @@ void extMain::getCorners(std::list<std::string>& ecl)
        ii++) {
     std::string s1c("");
     extCorner* ec = _processCornerTable->get(ii);
-    sprintf(buffer, "{} {} {}", ec->_name, ec->_model + 1, ec->_dbIndex);
+    sprintf(buffer, "%s %d %d", ec->_name, ec->_model + 1, ec->_dbIndex);
     s1c += buffer;
     ecl.push_back(s1c);
   }
   for (ii = 0; _scaledCornerTable && ii < _scaledCornerTable->getCnt(); ii++) {
     std::string s1c("");
     extCorner* ec = _scaledCornerTable->get(ii);
-    sprintf(buffer, "{} {} {}", ec->_name, -(ec->_model + 1), ec->_dbIndex);
+    sprintf(buffer, "%s %d %d", ec->_name, -(ec->_model + 1), ec->_dbIndex);
     s1c += buffer;
     ecl.push_back(s1c);
   }
@@ -2367,10 +2367,10 @@ void extMain::makeCornerNameMap()
       map[s->_dbIndex] = s;
       A[s->_dbIndex] = -(ii + 1);
 
-      sprintf(extList, "{} {}", extList, s->_model);
-      sprintf(resList, "{} %g", resList, s->_resFactor);
-      sprintf(ccList, "{} %g", ccList, s->_ccFactor);
-      sprintf(gndcList, "{} %g", gndcList, s->_gndFactor);
+      sprintf(extList, "%s %d", extList, s->_model);
+      sprintf(resList, "%s %g", resList, s->_resFactor);
+      sprintf(ccList, "%s %g", ccList, s->_ccFactor);
+      sprintf(gndcList, "%s %g", gndcList, s->_gndFactor);
     }
     if (_prevControl->_derivedCornerList)
       free(_prevControl->_derivedCornerList);
@@ -2403,7 +2403,7 @@ void extMain::makeCornerNameMap()
       A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
 
-      sprintf(extList, "{} {}", extList, s->_model);
+      sprintf(extList, "%s %d", extList, s->_model);
     }
     if (_prevControl->_extractedCornerList)
       free(_prevControl->_extractedCornerList);
@@ -2417,7 +2417,7 @@ void extMain::makeCornerNameMap()
   strcpy(aList, "");
 
   for (uint k = 0; k < _cornerCnt; k++) {
-    sprintf(aList, "{} {}", aList, A[k]);
+    sprintf(aList, "%s %d", aList, A[k]);
   }
   if (_prevControl->_cornerIndexList)
     free(_prevControl->_cornerIndexList);
@@ -2425,16 +2425,16 @@ void extMain::makeCornerNameMap()
 
   char buff[1024];
   if (map[0] == NULL)
-    sprintf(buff, "{} {}", buff, 0);
+    sprintf(buff, "%s %d", buff, 0);
   else
-    sprintf(buff, "{}", map[0]->_name);
+    sprintf(buff, "%s", map[0]->_name);
 
   for (uint ii = 1; ii < _cornerCnt; ii++) {
     extCorner* s = map[ii];
     if (s == NULL)
-      sprintf(buff, "{} {}", buff, ii);
+      sprintf(buff, "%s %d", buff, ii);
     else
-      sprintf(buff, "{} {}", buff, s->_name);
+      sprintf(buff, "%s %d", buff, s->_name);
   }
   if (!_remote) {
     _block->setCornerCount(_cornerCnt);
@@ -3154,7 +3154,7 @@ uint extMain::makeBlockRCsegs(bool btermThresholdFlag,
         if (debugNetId > 0) {
           m._netId = debugNetId;
           char bufName[32];
-          sprintf(bufName, "{}", debugNetId);
+          sprintf(bufName, "%d", debugNetId);
           m._debugFP = fopen(bufName, "w");
         }
 

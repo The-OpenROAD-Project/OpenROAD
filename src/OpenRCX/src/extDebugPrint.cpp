@@ -274,7 +274,7 @@ bool extMeasure::ouCovered_debug(int covered)
              RCX,
              "debug_net",
              1,
-             "Trace:C",
+             "Trace:C"
              " ----- OverUnder Lengths\n\tLevel : M{}\n\tWidth : {}\n\tDist "
              " : {}\n\tLen   : {}\n\tOU_len: {}\n\tSubLen: {}\n\tDiag  : {}\n",
              _met,

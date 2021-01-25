@@ -3859,9 +3859,10 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
           ou = true;
           totR1 = _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
         }
-        if (!rvia2)
+        if (!rvia2) {
           ou = true;
-        totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
+          totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
+        }
       }
       double tot1 = 0;
       double tot2 = 0;
