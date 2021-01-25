@@ -93,7 +93,7 @@ Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid(grid_);
   grid_ = nullptr;
-  have_multi_height_cells_ = false;
+  have_multi_row_cells_ = false;
 }
 
 void
@@ -210,7 +210,7 @@ Opendp::makeCells()
 
       Macro &macro = db_master_map_[master];
       if (macro.is_multi_row_)
-        have_multi_height_cells_ = true;
+        have_multi_row_cells_ = true;
     }
   }
 }

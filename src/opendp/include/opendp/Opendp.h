@@ -246,8 +246,7 @@ private:
                    int x,
                    int y,
                    int x_end,
-                   int y_end,
-                   int x_offset) const;
+                   int y_end) const;
   bool shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
   bool mapMove(Cell *cell,
@@ -391,7 +390,7 @@ private:
   int site_width_;
   int row_count_;
   int row_site_count_;
-  int have_multi_height_cells_;
+  int have_multi_row_cells_;
   int max_displacement_constraint_;  // rows
 
   // 2D pixel grid

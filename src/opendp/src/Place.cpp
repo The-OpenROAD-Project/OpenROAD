@@ -274,7 +274,7 @@ Opendp::place()
   sort(sorted_cells.begin(), sorted_cells.end(), cellAreaGreater);
 
   // Place multi-row instances first.
-  if (have_multi_height_cells_) {
+  if (have_multi_row_cells_) {
     for (Cell *cell : sorted_cells) {
       if (isMultiRow(cell) && cellFitsInCore(cell)) {
         if (!mapMove(cell)) {
@@ -695,6 +695,7 @@ Opendp::diamondSearch(const Cell *cell,
   // Restrict search to group boundary.
   Group *group = cell->group_;
   if (group) {
+    // Map boundary to grid staying inside.
     Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
                        divCeil(group->boundary.yMin(), row_height_),
                        group->boundary.xMax() / site_width_,
@@ -707,12 +708,18 @@ Opendp::diamondSearch(const Cell *cell,
     y_end = end.getY();
   }
 
+  // Clip to grid bounds.
+  x_start = max(0, x_start);
+  y_start = max(0, y_start);
+  x_end = min(row_site_count_, x_end);
+  y_end = min(row_count_, y_end);
+
   debugPrint(logger_, DPL, "place", 1,
-             "Diamond Search {} ({}, {}) bounds ({}:{}, {}:())",
+             "Diamond Search {} ({}, {}) bounds ({}-{}, {}-{})",
              cell->name(),
              grid_x, grid_y,
-             x_start, x_end,
-             y_start, y_end);
+             x_start, x_end - 1,
+             y_start, y_end - 1);
 
   // Check the bin at the initial position first.
   PixelPt avail_pt = binSearch(grid_x, cell, grid_x, grid_y);
@@ -795,13 +802,13 @@ Opendp::binSearch(int x_pos,
 
   if (x_pos > x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      if (checkPixels(cell, x, y, x_end, y_end, i))
+      if (checkPixels(cell, x + i, y, x_end + i, y_end))
         return PixelPt(gridPixel(x + i, y), x + i, y);
     }
   }
   else {
     for (int i = 0; i < bin_search_width_; i++) {
-      if (checkPixels(cell, x, y, x_end, y_end, i))
+      if (checkPixels(cell, x + i, y, x_end + i, y_end))
         return PixelPt(gridPixel(x + i, y), x + i, y);
     }
   }
@@ -814,31 +821,25 @@ Opendp::checkPixels(const Cell *cell,
                     int x,
                     int y,
                     int x_end,
-                    int y_end,
-                    int x_offset) const
+                    int y_end) const
 {
-  if (x_end + x_offset > row_site_count_)
+  if (x_end > row_site_count_)
     return false;
   else {
-    bool available = true;
     for (int y1 = y; y1 < y_end; y1++) {
-      for (int x1 = x + x_offset; x1 < x_end + x_offset; x1++) {
+      for (int x1 = x; x1 < x_end; x1++) {
         Pixel *pixel = gridPixel(x1, y1);
         if (pixel == nullptr
             || pixel->cell
             || !pixel->is_valid
             || (cell->inGroup() && pixel->group_ != cell->group_)
             || (!cell->inGroup() && pixel->group_)) {
-          available = false;
-          break;
+          return false;
         }
       }
-      if (!available) {
-        break;
-      }
     }
-    return available;
   }
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////

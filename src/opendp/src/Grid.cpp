@@ -71,8 +71,8 @@ Grid *
 Opendp::makeGrid()
 {
   Grid *grid = new Pixel *[row_count_];
-  for (int i = 0; i < row_count_; i++)
-    grid[i] = new Pixel[row_site_count_];
+  for (int y = 0; y < row_count_; y++)
+    grid[y] = new Pixel[row_site_count_];
   initGridPixels(grid);
   return grid;
 }
@@ -80,9 +80,9 @@ Opendp::makeGrid()
 void
 Opendp::initGridPixels(Grid *grid)
 {
-  for (int i = 0; i < row_count_; i++) {
-    for (int j = 0; j < row_site_count_; j++) {
-      Pixel &pixel = grid[i][j];
+  for (int y = 0; y < row_count_; y++) {
+    for (int x = 0; x < row_site_count_; x++) {
+      Pixel &pixel = grid[y][x];
       pixel.cell = nullptr;
       pixel.group_ = nullptr;
       pixel.util = 0.0;
@@ -310,20 +310,18 @@ void
 Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
 {
   assert(!cell->is_placed_);
-  int x_step = gridPaddedWidth(cell);
-  int y_step = gridHeight(cell);
+  int x_end = grid_x + gridPaddedWidth(cell);
+  int grid_height = gridHeight(cell);
+  int y_end = grid_y + grid_height;
 
   setGridPaddedLoc(cell, grid_x, grid_y);
   cell->is_placed_ = true;
 
-#ifdef ODP_DEBUG
-  cout << "paint cell " << cell->name() " (" << cell->x_ ", " cell->y_ ")" << endl;
-  cout << " step (" << x_step ", " << y_step ")" << endl;
-  cout << " grid (" << grid_x ", " << grid_y ")" << endl;
-#endif
+  debugPrint(logger_, DPL, "place", 1, "paint {} ({}-{}, {}-{})",
+             cell->name(), grid_x, x_end - 1, grid_y, y_end - 1);
 
-  for (int x = grid_x; x < grid_x + x_step; x++) {
-    for (int y = grid_y; y < grid_y + y_step; y++) {
+  for (int x = grid_x; x < x_end; x++) {
+    for (int y = grid_y; y < y_end; y++) {
       Pixel *pixel = gridPixel(x, y);
       if (pixel->cell) {
         logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
@@ -334,8 +332,9 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
       }
     }
   }
-  if (have_multi_height_cells_) {
-    if (y_step % 2 == 1) {
+  // This is most likely broken. -cherry
+  if (have_multi_row_cells_) {
+    if (grid_height % 2 == 1) {
       if (rowTopPower(grid_y) != topPower(cell)) {
         cell->orient_ = dbOrientType::MX;
       }
