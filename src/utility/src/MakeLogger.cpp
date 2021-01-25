@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
 // Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,13 +33,31 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "utility/MakeLogger.h"
+
+#include <tcl.h>
+#include "utility/Logger.h"
+
+extern "C" {
+extern int Logger_Init(Tcl_Interp *interp);
+}
 
 namespace ord {
 
+using utl::Logger;
+
+Logger *
+makeLogger(const char *log_filename)
+{
+  return new Logger(log_filename);
+}
+
 void
-error(const char *fmt, ...) __attribute__ ((deprecated));
-void
-warn(const char *fmt, ...) __attribute__ ((deprecated));
+initLogger(Logger *logger,
+           Tcl_Interp *tcl_interp)
+{
+  // Define swig TCL commands.
+  Logger_Init(tcl_interp);
+}
 
 } // namespace

@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
 // Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,11 +35,20 @@
 
 #pragma once
 
+namespace utl {
+class Logger;
+}
+
+extern "C" {
+struct Tcl_Interp;
+}
+
 namespace ord {
 
+utl::Logger *
+makeLogger(const char *log_filename);
 void
-error(const char *fmt, ...) __attribute__ ((deprecated));
-void
-warn(const char *fmt, ...) __attribute__ ((deprecated));
+initLogger(utl::Logger *logger,
+           Tcl_Interp *tcl_interp);
 
 } // namespace

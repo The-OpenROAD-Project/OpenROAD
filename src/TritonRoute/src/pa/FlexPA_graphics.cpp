@@ -109,13 +109,37 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   gui_->pause();
 }
 
-void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps)
+static const char* to_string(frAccessPointEnum e)
 {
+  switch(e) {
+  case frAccessPointEnum::OnGrid:
+    return "on-grid";
+  case frAccessPointEnum::HalfGrid:
+    return "half-grid";
+  case frAccessPointEnum::Center:
+    return "center";
+  case frAccessPointEnum::EncOpt:
+    return "enclose";
+  case frAccessPointEnum::NearbyGrid:
+    return "nearby";
+  }
+  return "unknown";
+}
+
+void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                            frAccessPointEnum lower_type,
+                            frAccessPointEnum upper_type)
+{
+  if (!pin_) {
+    return;
+  }
+
   // We make a copy of the aps
   for (auto& ap : aps) {
     aps_.emplace_back(*ap.get());
   }
   status("add " + std::to_string(aps.size())
+         + " ( " + to_string(lower_type) + " / " + to_string(upper_type) + " ) "
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
