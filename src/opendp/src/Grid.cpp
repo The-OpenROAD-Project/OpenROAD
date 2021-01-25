@@ -62,9 +62,9 @@ Opendp::initGrid()
   // Paint fixed cells.
   assignFixedCells();
   // group mapping & x_axis dummycell insertion
-  group_pixel_assign2();
+  groupInitPixels2();
   // y axis dummycell insertion
-  group_pixel_assign();
+  groupInitPixels();
 }
 
 Grid *
@@ -156,7 +156,7 @@ Opendp::assignFixedCells()
 }
 
 void
-Opendp::group_cell_region_assign()
+Opendp::groupAssignCellRegions()
 {
   for (Group &group : groups_) {
     int64_t site_count = 0;
@@ -188,7 +188,7 @@ Opendp::group_cell_region_assign()
 }
 
 void
-Opendp::group_pixel_assign2()
+Opendp::groupInitPixels2()
 {
   for (int x = 0; x < row_site_count_; x++) {
     for (int y = 0; y < row_count_; y++) {
@@ -228,7 +228,7 @@ Opendp::checkOverlap(const Rect &cell, const Rect &box)
 }
 
 void
-Opendp::group_pixel_assign()
+Opendp::groupInitPixels()
 {
   for (int x = 0; x < row_site_count_; x++) {
     for (int y = 0; y < row_count_; y++) {
@@ -317,14 +317,13 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
   cell->is_placed_ = true;
 
 #ifdef ODP_DEBUG
-  cout << "paint cell : " << cell->name() << endl;
-  cout << "x_ - y_ : " << cell->x_ << " - " << cell->y_ << endl;
-  cout << "x_step - y_step : " << x_step << " - " << y_step << endl;
-  cout << "grid_x - grid_y : " << grid_x << " - " << grid_y << endl;
+  cout << "paint cell " << cell->name() " (" << cell->x_ ", " cell->y_ ")" << endl;
+  cout << " step (" << x_step ", " << y_step ")" << endl;
+  cout << " grid (" << grid_x ", " << grid_y ")" << endl;
 #endif
 
-  for (int y = grid_y; y < grid_y + y_step; y++) {
-    for (int x = grid_x; x < grid_x + x_step; x++) {
+  for (int x = grid_x; x < grid_x + x_step; x++) {
+    for (int y = grid_y; y < grid_y + y_step; y++) {
       Pixel *pixel = gridPixel(x, y);
       if (pixel->cell) {
         logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");

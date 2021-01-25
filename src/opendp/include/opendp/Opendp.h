@@ -250,9 +250,17 @@ private:
                    int i) const;
   bool shiftMove(Cell *cell);
   bool mapMove(Cell *cell);
-  bool mapMove(Cell *cell, int x, int y);
-  int distChange(const Cell *cell, int x, int y) const;
-  bool swapCells(Cell *cell1, Cell *cell2);
+  bool mapMove(Cell *cell,
+               int x,
+               int y);
+  bool mapMoveGrid(Cell *cell,
+                   int grid_x,
+                   int grid_y);
+  int distChange(const Cell *cell,
+                 int x,
+                 int y) const;
+  bool swapCells(Cell *cell1,
+                 Cell *cell2);
   bool refineMove(Cell *cell);
 
   Point legalPt(const Cell *cell,
@@ -277,9 +285,9 @@ private:
   bool cellFitsInCore(Cell *cell);
 
   void assignFixedCells();
-  void group_cell_region_assign();
-  void group_pixel_assign();
-  void group_pixel_assign2();
+  void groupAssignCellRegions();
+  void groupInitPixels();
+  void groupInitPixels2();
   void erasePixel(Cell *cell);
   void paintPixel(Cell *cell, int grid_x, int grid_y);
 

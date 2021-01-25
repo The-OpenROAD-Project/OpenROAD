@@ -82,7 +82,7 @@ Opendp::detailedPlacement()
 void
 Opendp::placeGroups()
 {
-  group_cell_region_assign();
+  groupAssignCellRegions();
 
   prePlaceGroups();
   prePlace();
@@ -544,15 +544,21 @@ Opendp::refine()
 bool
 Opendp::mapMove(Cell *cell)
 {
-  Point init = legalPt(cell, true);
-  return mapMove(cell, init.getX(), init.getY());
+  Point init = legalGridPt(cell, true);
+  return mapMoveGrid(cell, init.getX(), init.getY());
 }
 
 bool
 Opendp::mapMove(Cell *cell, int x, int y)
 {
-  int grid_x = gridX(x);
-  int grid_y = gridY(y);
+  return mapMoveGrid(cell, gridX(x), gridY(y));
+}
+
+bool
+Opendp::mapMoveGrid(Cell *cell,
+                    int grid_x,
+                    int grid_y)
+{
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
@@ -670,12 +676,12 @@ Opendp::refineMove(Cell *cell)
 int
 Opendp::distChange(const Cell *cell, int x, int y) const
 {
-  Point init = legalPt(cell, false);
+  Point init = initialLocation(cell, false);
   int init_x = init.getX();
   int init_y = init.getY();
-  int curr_dist = abs(cell->x_ - init_x) + abs(cell->y_ - init_y);
-  int new_dist = abs(init_x - x) + abs(init_y - y);
-  return new_dist - curr_dist;
+  int cell_dist = abs(cell->x_ - init_x) + abs(cell->y_ - init_y);
+  int pt_dist = abs(init_x - x) + abs(init_y - y);
+  return pt_dist - cell_dist;
 }
 
 ////////////////////////////////////////////////////////////////
