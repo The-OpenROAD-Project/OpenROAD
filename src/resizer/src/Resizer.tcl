@@ -56,12 +56,12 @@ proc set_wire_rc { args } {
   if { [info exists keys(-layer)] } {
     if { [info exists keys(-resistance)] \
            || [info exists keys(-capacitance)] } {
-      ord::error RSZ 1 "Use -layer or -resistance/-capacitance but not both."
+      utl::error RSZ 1 "Use -layer or -resistance/-capacitance but not both."
     }
     set layer_name $keys(-layer)
     set layer [[[ord::get_db] getTech] findLayer $layer_name]
     if { $layer == "NULL" } {
-      ord::error RSZ 2 "layer $layer_name not found."
+      utl::error RSZ 2 "layer $layer_name not found."
     }
     set layer_width_dbu [$layer getWidth]
     set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
@@ -77,10 +77,10 @@ proc set_wire_rc { args } {
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
     
     if { $wire_res == 0.0 } {
-      ord::warn RSZ 10 "layer resistance is 0.0"
+      utl::warn RSZ 10 "layer resistance is 0.0"
     }
     if { $wire_cap == 0.0 } {
-      ord::warn RSZ 11 "layer capacitance is 0.0"
+      utl::warn RSZ 11 "layer capacitance is 0.0"
     }
   } else {
     ord::ensure_units_initialized
@@ -99,13 +99,13 @@ proc set_wire_rc { args } {
   
   set corner [sta::cmd_corner]
   if { [info exists keys(-corner)] } {
-    ord::warn RSZ 12 "-corner argument ignored."
+    utl::warn RSZ 12 "-corner argument ignored."
   }
   sta::check_argc_eq0 "set_wire_rc" $args
   
   set signal [info exists flags(-signal)]
   if { [info exists flags(-data)] } {
-    ord::warn RSZ 13 "set_wire_rc -data is deprecated. Use -signal."
+    utl::warn RSZ 13 "set_wire_rc -data is deprecated. Use -signal."
     set signal 1
   }
   set clk [info exists flags(-clock)]
@@ -130,14 +130,14 @@ proc estimate_parasitics { args } {
   sta::check_argc_eq0 "estimate_parasitics" $args
   if { [info exists flags(-placement)] } {
     if { [rsz::wire_capacitance] == 0.0 } {
-      ord::warn RSZ 14 "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+      utl::warn RSZ 14 "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
     } else {
       rsz::estimate_parasitics_cmd
     }
   } elseif { [info exists flags(-global_routing)] } {
     grt::estimate_rc_cmd
   } else {
-    ord::error RSZ 3 "missing -placement or -global_routing flag."
+    utl::error RSZ 3 "missing -placement or -global_routing flag."
   }
 }
 
@@ -145,7 +145,7 @@ sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
   sta::check_argc_eq1 "set_dont_use" $args
-  rsz::set_dont_use_cmd [sta::get_lib_cells_arg "-dont_use" [lindex $args 0] ord::warn]
+  rsz::set_dont_use_cmd [sta::get_lib_cells_arg "-dont_use" [lindex $args 0] utl::warn]
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
@@ -157,7 +157,7 @@ proc buffer_ports { args } {
     flags {-inputs -outputs}
   
   if { [info exists keys(-buffer_cell)] } {
-    ord::warn RSZ 15 "-buffer_cell is deprecated."
+    utl::warn RSZ 15 "-buffer_cell is deprecated."
   }
 
   set buffer_inputs [info exists flags(-inputs)]
@@ -188,7 +188,7 @@ proc repair_design { args } {
     flags {}
   
   if { [info exists keys(-buffer_cell)] } {
-    ord::warn RSZ 16 "-buffer_cell is deprecated."
+    utl::warn RSZ 16 "-buffer_cell is deprecated."
   }
   set max_wire_length [rsz::parse_max_wire_length keys]
   
@@ -197,7 +197,7 @@ proc repair_design { args } {
   } else {
     set resize_libs [get_libs *]
     if { $resize_libs == {} } {
-      ord::error RSZ 8 "No liberty libraries found."
+      utl::error RSZ 8 "No liberty libraries found."
     }
   }
   rsz::set_max_utilization [rsz::parse_max_util keys]
@@ -217,7 +217,7 @@ proc repair_clock_nets { args } {
     flags {}
   
   if { [info exists keys(-buffer_cell)] } {
-    ord::warn RSZ 18 "-buffer_cell is deprecated."
+    utl::warn RSZ 18 "-buffer_cell is deprecated."
   }
   set max_wire_length [rsz::parse_max_wire_length keys]
   
@@ -268,10 +268,10 @@ proc repair_hold_violations { args } {
   
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   sta::check_argc_eq0 "repair_hold_violations" $args
-  ord::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
+  utl::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
   set resize_libs [get_libs *]
   if { $resize_libs == {} } {
-    ord::error RSZ 9 "No liberty libraries found."
+    utl::error RSZ 9 "No liberty libraries found."
   }
 
   rsz::check_parasitics
@@ -304,7 +304,7 @@ proc repair_timing { args } {
   } else {
     set resize_libs [get_libs *]
     if { $resize_libs == {} } {
-      ord::error RSZ 49 "No liberty libraries found."
+      utl::error RSZ 49 "No liberty libraries found."
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -335,7 +335,7 @@ sta::define_cmd_args "report_design_area" {}
 proc report_design_area {} {
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
-  ord::report "Design area ${area} u^2 ${util}% utilization."
+  utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
 sta::define_cmd_args "report_floating_nets" {[-verbose]}
@@ -347,10 +347,10 @@ proc report_floating_nets { args } {
   set floating_nets [rsz::find_floating_nets]
   set floating_net_count [llength $floating_nets]
   if { $floating_net_count > 0 } {
-    ord::warn RSZ 20 "found $floating_net_count floatiing nets."
+    utl::warn RSZ 20 "found $floating_net_count floatiing nets."
     if { $verbose } {
       foreach net $floating_nets {
-        ord::report " [get_full_name $net]"
+        utl::report " [get_full_name $net]"
       }
     }
   }
@@ -392,7 +392,7 @@ proc repair_setup_pin { end_pin } {
 
 proc check_parasitics { } {
   if { ![have_estimated_parasitics] } {
-    ord::warn RSZ 21 "no estimated parasitics. Using wire load models."
+    utl::warn RSZ 21 "no estimated parasitics. Using wire load models."
   }
 }
 
@@ -413,7 +413,7 @@ proc parse_max_util { keys_var } {
   if { [info exists keys(-max_utilization)] } {
     set max_util $keys(-max_utilization)
     if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      ord::error RSZ 4 "-max_utilization must be between 0 and 100%."
+      utl::error RSZ 4 "-max_utilization must be between 0 and 100%."
     }
     set max_util [expr $max_util / 100.0]
   }
@@ -436,12 +436,12 @@ proc check_max_wire_length { max_wire_length } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
-        ord::warn RSZ 17 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
+        utl::warn RSZ 17 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
       }
     } else {
       # Must follow preamble so buffers are known.
       set max_wire_length $min_delay_max_wire_length
-      ord::info RSZ 58 "using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]u."
+      utl::info RSZ 58 "using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]u."
     }
   }
   return $max_wire_length
