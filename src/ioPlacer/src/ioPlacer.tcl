@@ -110,12 +110,12 @@ proc place_pins { args } {
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
-    ord::error PPL 31 "missing dbTech"
+    utl::error PPL 31 "missing dbTech"
   }
 
   set dbBlock [ord::get_db_block]
   if { $dbBlock == "NULL" } {
-    ord::error PPL 32 "missing dbBlock"
+    utl::error PPL 32 "missing dbBlock"
   }
 
   set db [::ord::get_db]

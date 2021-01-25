@@ -42,6 +42,11 @@ getAntennaChecker()
   return ord::OpenRoad::openRoad()->getAntennaChecker();
 }
 
+namespace ord {
+// Defined in OpenRoad.i
+odb::dbDatabase *getDb();
+}
+
 %}
 
 %inline %{
@@ -49,34 +54,17 @@ getAntennaChecker()
 namespace ant {
 
 void
-antennachecker_set_verbose(bool verbose)
+check_antennas(char* report_filename)
 {
-  getAntennaChecker()->set_verbose(verbose);
+  getAntennaChecker()->check_antennas(report_filename);
 }
 
 void
-antennachecker_set_net_name(char * netname)
+check_max_length(const char *net_name,
+                 int layer)
 {
-  std::string net_name = netname;
-  getAntennaChecker()->set_net_name(net_name);
-}
-
-void
-antennachecker_set_route_level(int rt_lv)
-{
-  getAntennaChecker()->set_route_level(rt_lv);
-}
-
-void
-check_antennas(char* path)
-{
-  getAntennaChecker()->check_antennas(std::string(path));
-}
-
-void
-get_met_avail_length()
-{
-  getAntennaChecker()->check_par_max_length();
+  AntennaChecker *checker = getAntennaChecker();
+  checker->check_max_length(net_name, layer);
 }
 
 void
@@ -85,21 +73,22 @@ load_antenna_rules()
   getAntennaChecker()->load_antenna_rules();
 }
 
-int
-check_net_violation(char* netname)
+bool
+check_net_violation(char* net_name)
 { 
-  odb::dbNet* net = getAntennaChecker()->get_net( std::string(netname));
-  auto vios = getAntennaChecker()->get_net_antenna_violations(net);
-  if (vios.size() !=0)
-    return 1;
+  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
+  if (net) {
+    auto vios = getAntennaChecker()->get_net_antenna_violations(net);
+    return !vios.empty();
+  }
   else
-    return 0;       
+    return false;
 }
 
 void
 find_max_wire_length()
 {
-    getAntennaChecker()->find_max_wire_length();
+  getAntennaChecker()->find_max_wire_length();
 }
 
 }

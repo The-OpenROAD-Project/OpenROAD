@@ -58,6 +58,10 @@ target_include_directories(antennachecker
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENSTA_HOME}/include
-  ${OPENSTA_HOME}/app
   ${TCL_INCLUDE_PATH}
+  )
+
+target_link_libraries(antennachecker
+  PUBLIC
+  utility
   )

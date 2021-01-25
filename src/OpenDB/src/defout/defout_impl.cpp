@@ -660,7 +660,7 @@ void defout_impl::writeInst(dbInst* inst)
       int right  = defdist(box->xMax());
       int top    = defdist(box->yMax());
 
-      fprintf(_out, " + HALO ( %d %d ) ( %d %d )", left, bottom, right, top);
+      fprintf(_out, " + HALO %d %d %d %d", left, bottom, right, top);
     }
   }
 
