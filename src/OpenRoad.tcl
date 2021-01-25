@@ -208,64 +208,44 @@ proc set_debug_level {args} {
 
 namespace eval ord {
   
-  trace variable ::file_continue_on_error "w" \
-    ord::trace_file_continue_on_error
-  
-  # Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
-  proc trace_file_continue_on_error { name1 name2 op } {
-    set ::sta_continue_on_error $::file_continue_on_error
+# deprecated - use utl::error
+proc error { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    utl::error UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    utl::error $tool_id $id $msg
+  } else {
+    utl::error UKN 0 "ill-formed error arguments $args"
   }
-  
-  proc error { args } {
-    if { [llength $args] == 1 } {
-      # pre-logger compatibility
-      ord_error UKN 0 [lindex $args 0]
-    } elseif { [llength $args] == 3 } {
-      lassign $args tool_id id msg
-      ord_error $tool_id $id $msg
-    } else {
-      ord_error UKN 0 "ill-formed error arguments $args"
-    }
-  }
-  
-  proc warn { args } {
-    if { [llength $args] == 1 } {
-      # pre-logger compatibility
-      ord_warn UKN 0 [lindex $args 0]
-    } elseif { [llength $args] == 3 } {
-      lassign $args tool_id id msg
-      ord_warn $tool_id $id $msg
-    } else {
-      ord_warn UKN 14 "ill-formed warn arguments $args"
-    }
-  }
-  
-  proc ensure_units_initialized { } {
-    if { ![units_initialized] } {
-      utl::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
-    }
-  }
-  
-  proc clear {} {
-    sta::clear_network
-    sta::clear_sta
-    grt::clear_fastroute
-    [get_db] clear
-  }
-  
-  # namespace ord
 }
 
-# redefine sta::sta_error to call utl::error
-namespace eval sta {
-  
-  proc sta_error { id msg } {
-    utl::error STA $id $msg
+# deprecated - use utl::warn
+proc warn { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    utl::warn UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    utl::warn $tool_id $id $msg
+  } else {
+    utl::warn UKN 14 "ill-formed warn arguments $args"
   }
-  
-  proc sta_warn { id msg } {
-    utl::warn STA $id $msg
+}
+
+proc ensure_units_initialized { } {
+  if { ![units_initialized] } {
+    utl::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
   }
-  
-  # namespace sta
+}
+
+proc clear {} {
+  sta::clear_network
+  sta::clear_sta
+  grt::clear_fastroute
+  [get_db] clear
+}
+
+# namespace ord
 }

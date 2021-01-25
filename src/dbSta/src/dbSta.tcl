@@ -72,5 +72,14 @@ proc highlight_path { args } {
   }
 }
 
+# redefine sta::sta_warn/error to call utl::warn/error
+proc sta_error { id msg } {
+  utl::error STA $id $msg
+}
+
+proc sta_warn { id msg } {
+  utl::warn STA $id $msg
+}
+
 # namespace
 }
