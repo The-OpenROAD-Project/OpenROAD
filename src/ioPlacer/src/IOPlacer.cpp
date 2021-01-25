@@ -825,6 +825,10 @@ void IOPlacer::run(bool random_mode)
     }
 
     for (int idx = 0; idx < hg_vec.size(); idx++) {
+      hg_vec[idx].findAssignmentForGroups(constraints_);
+    }
+
+    for (int idx = 0; idx < hg_vec.size(); idx++) {
       hg_vec[idx].getAssignmentForGroups(assignment_);
     }
 

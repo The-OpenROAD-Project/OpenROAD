@@ -45,10 +45,13 @@ HungarianMatching::HungarianMatching(Section& section,
     : netlist_(section.net), slots_(slots)
 {
   num_io_pins_ = netlist_.numIOPins();
+  num_pin_groups_ = netlist_.numIOGroups();
   begin_slot_ = section.begin_slot;
   end_slot_ = section.end_slot;
   num_slots_ = end_slot_ - begin_slot_;
   non_blocked_slots_ = section.num_slots;
+  group_slots_ = 0;
+  group_size_ = -1;
   edge_ = section.edge;
   logger_ = logger;
 }
@@ -119,36 +122,99 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   });
 }
 
-void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
+void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constraints)
+{
+  createMatrixForGroups(constraints);
+
+  if (hungarian_matrix_.size() > 0)
+    hungarian_solver_.solve(hungarian_matrix_, assignment_);
+}
+
+void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constraints)
 {
   netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
-    int group_size = io_group.size();
-    for (int i = begin_slot_; i < end_slot_; i+=group_size) {
+    group_size_ = (io_group.size() > group_size_) ? group_size_ : io_group.size();
+  });
+
+  if (group_size_ > 0) {
+    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
       bool blocked = false;
-      for (int pin_cnt = 0; pin_cnt < io_group.size(); pin_cnt++) {
+      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
           blocked = true;
         }
       }
-
       if (!blocked) {
-        int pin_cnt = 0;
-        for (int pin_idx : io_group) {
-          if (!slots_[i + pin_cnt].blocked) {
-            IOPin& io_pin = netlist_.getIoPin(pin_idx);
-            io_pin.setPos(slots_[i + pin_cnt].pos);
-            io_pin.setLayer(slots_[i + pin_cnt].layer);
-            assigment.push_back(io_pin);
-            slots_[i + pin_cnt].used = true;
-            slots_[i + pin_cnt].blocked = true;
-            non_blocked_slots_--;
-          }
-          pin_cnt++;
-        }
-        break;
+        group_slots_++;
       }
     }
+
+    hungarian_matrix_.resize(group_slots_);
+    int slot_index = 0;
+    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
+      int groupIndex = 0;
+      Point newPos = slots_[i].pos;
+      
+      bool blocked = false;
+      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
+        if (slots_[i + pin_cnt].blocked) {
+          blocked = true;
+        }
+      }
+      if (blocked) {
+        continue;
+      }
+
+      hungarian_matrix_[slot_index].resize(num_pin_groups_);
+      netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+        int hpwl = 0;
+        int pin_count = 0;
+        for (int io_idx : io_group) {
+          hpwl += netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+          hungarian_matrix_[slot_index][groupIndex] = hpwl;
+        }
+        groupIndex++;
+      });
+      slot_index++;
+    }
+  }
+}
+
+void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
+{
+  if (hungarian_matrix_.size() <= 0)
+    return;
+
+  size_t rows = group_slots_;
+  size_t col = 0;
+  int slot_index = 0;
+  netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+    slot_index = begin_slot_;
+    for (size_t row = 0; row < rows; row++) {
+      while (slots_[slot_index].blocked && slot_index < slots_.size())
+        slot_index++;
+      if (assignment_[row] != col) {
+        slot_index++;
+        continue;
+      }
+      int pin_cnt = 0;
+      for (int pin_idx : io_group) {
+        IOPin io_pin = netlist_.getIoPin(pin_idx);
+        io_pin.setPos(slots_[slot_index + pin_cnt].pos);
+        io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
+        assigment.push_back(io_pin);
+        slots_[slot_index + pin_cnt].used = true;
+        slots_[slot_index + pin_cnt].blocked = true;
+        non_blocked_slots_--;
+        pin_cnt++;
+      }
+      break;
+    }
+    col++;
   });
+
+  hungarian_matrix_.clear();
+  assignment_.clear();
 }
 
 }  // namespace ppl
