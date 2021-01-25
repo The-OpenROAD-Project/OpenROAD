@@ -79,18 +79,18 @@ logger->info(DRT, 42, “Routed {} nets in {:3.2f}s.”, net_count, elapsed_time
 Tcl functions for reporting messages are defined in the OpenRoad swig file OpenRoad.i. The message is simply a Tcl string (no c++20 formatting). The logger for Tcl functions The above examples in Tcl are shown below.
 
 ```
-ord::report “Path startpoint: $startpoint”
-ord::error ODB 25 “Unable to open LEF file $file_name.”
-ord::info DRT 42 “Routed $net_count nets in [format %3.2f $elapsed_time].”
+utl::report “Path startpoint: $startpoint”
+utl::error ODB 25 “Unable to open LEF file $file_name.”
+utl::info DRT 42 “Routed $net_count nets in [format %3.2f $elapsed_time].”
 ```
 
-`ord::report` should be used instead of ‘puts’ so that all output is logged.
+`utl::report` should be used instead of ‘puts’ so that all output is logged.
 
-Calls to the Tcl functions ord::warn and ord::error with a single message argument report with tool ID “UKN” and message ID 0000.
+Calls to the Tcl functions utl::warn and utl::error with a single message argument report with tool ID “UKN” and message ID 0000.
 
 Tools `#include utility/Logger.h` that defines the logger API. The Logger instance is owned by the OpenRoad instance. Each tool should retrieve the logger instance in the tool init function called after the tool make function by the OpenRoad application.
 
-Every tool swig file must include src/Exception.i so that errors thrown by ord::error are caught at the Tcl command level. Use the following swig command before %inline.
+Every tool swig file must include src/Exception.i so that errors thrown by utl::error are caught at the Tcl command level. Use the following swig command before %inline.
 
 ```
 %include "../../Exception.i"
@@ -100,24 +100,38 @@ The logger functions are shown below.
 
 ```
 Logger::report(const std::string& message,
-                       const Args&... args)
+               const Args&... args)
 Logger::info(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+             int id,
+             const std::string& message,
+             const Args&... args)
 Logger::warn(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+             int id,
+             const std::string& message,
+             const Args&... args)
 Logger::error(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+              int id,
+              const std::string& message,
+              const Args&... args)
 Logger::critical(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
+                 int id,
+                 const std::string& message,
+                 const Args&... args)
 ```
+
+The corresponding Tcl functions are shown below.
+
+```
+utl::report message
+utl::info tool id message
+utl::warn tool id message
+utl::error tool id message
+utl::critical tool id message
+```
+
+Although there is a utl::critical function, it is really difficult to
+imagine any circumstances that would justify aborting execution of the
+application in a tcl function.
 
 ### Debug Messages
 The debug message have a different programming model.  As they are most often *not* issued the concern is to avoid slowing down normal execution.  For this reason such messages are issued by using the debugPrint macro.  This macro will avoid evaluating its arguments if they are not going to be printed.  The API is:
@@ -137,7 +151,7 @@ Debug messages are enabled with the tcl command: set_debug_level \<tool\> \<grou
 The error functions in `include/openroad/Error.hh` should no longer be included or used.
 Use the corresponding logger functions.
 
-All uses of the tcl functions ord::error and ord::warn should be updated to pass in a Tool ID and message ID. For compatibility these are defaulted to 'UKN' and '0000' until they are updated.
+All uses of the tcl functions ord::error and ord::warn should be updated call the utl::error/warn with a Tool ID and message ID. For compatibility these are defaulted to 'UKN' and '0000' until they are updated.
 
 There is no reason to `puts` (ie, print) errors in regression tests that are caught.
 The logger prints the error now.

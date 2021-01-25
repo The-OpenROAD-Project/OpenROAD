@@ -58,7 +58,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbWire.h"
-#include "dbLogger.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -176,6 +176,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _schema_minor = db_schema_minor;
   _master_id    = 0;
   _file         = NULL;
+  _logger       = nullptr;
   _unique_id    = db_unique_id++;
 
   _chip_tbl = new dbTable<_dbChip>(
@@ -214,6 +215,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _schema_minor = db_schema_minor;
   _master_id    = 0;
   _file         = NULL;
+  _logger       = nullptr;
   _unique_id    = id;
 
   _chip_tbl = new dbTable<_dbChip>(
@@ -249,7 +251,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
       _chip(d._chip),
       _tech(d._tech),
       _unique_id(db_unique_id++),
-      _file(NULL)
+      _file(NULL),
+      _logger(nullptr)
 {
   if (d._file) {
     _file = strdup(d._file);
@@ -295,7 +298,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << db._magic2;
   stream << db._schema_major;
   stream << db._schema_minor;
-  // notice(0, "stream out ==> db._master_id= %d\n", db._master_id);
   stream << db._master_id;
   stream << db._chip;
   stream << db._tech;
@@ -331,7 +333,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 
   stream >> db._master_id;
 
-  // notice(0, "stream in ==> db._master_id= %d\n", db._master_id);
 
   stream >> db._chip;
   stream >> db._tech;
@@ -698,6 +699,12 @@ void dbDatabase::commitEco(dbBlock* block_)
   }
 }
 
+void dbDatabase::setLogger(utl::Logger* logger)
+{
+  _dbDatabase* _db = (_dbDatabase*) this;
+  _db->_logger = logger;
+}
+
 dbDatabase* dbDatabase::create()
 {
   if (db_tbl == NULL) {
@@ -739,6 +746,11 @@ dbDatabase* dbDatabase::getDatabase(uint dbid)
 dbDatabase* dbObject::getDb() const
 {
   return (dbDatabase*) getImpl()->getDatabase();
+}
+
+utl::Logger* _dbObject::getLogger() const
+{
+  return getDatabase()->getLogger();
 }
 
 bool dbDatabase::diff(dbDatabase* db0_,

@@ -1,9 +1,9 @@
 source "helpers.tcl"
 
 
-set db [odb::dbDatabase_create]
-odb::read_lef $db "data/gscl45nm.lef"
-odb::read_def $db "data/design.def"
+set db [ord::get_db]
+read_lef "data/gscl45nm.lef"
+read_def "data/design.def"
 
 set db_file "results/export.db"
 set write_result [odb::write_db $db $db_file]

@@ -80,7 +80,7 @@ int AthGetProcessMem(uint64* size, uint64* res)
 #if unix == 1
 #if sun == 1
 
-#define PAGE_SIZE 1024
+#define page_size 1024
   // for Solaris, read /proc/pid/psinfo and get the right fields
   psinfo_t psi;
   char     buff[1024];
@@ -100,13 +100,13 @@ int AthGetProcessMem(uint64* size, uint64* res)
     return -1;
   }
 
-  *size = psi.pr_size * PAGE_SIZE;
-  *res  = psi.pr_rssize * PAGE_SIZE;
+  *size = psi.pr_size * page_size;
+  *res  = psi.pr_rssize * page_size;
 
   return 0;
 
 #elif linux == 1
-#define PAGE_SIZE 4096
+#define page_size 4096
   // for Linux, parse the first two fields from /proc/pid/statm
   char buff[1024];
   int  pid = getpid();
@@ -120,8 +120,8 @@ int AthGetProcessMem(uint64* size, uint64* res)
     return -1;
   }
 
-  *size = *size * PAGE_SIZE;
-  *res  = *res * PAGE_SIZE;
+  *size = *size * page_size;
+  *res  = *res * page_size;
 
   return 0;
 
