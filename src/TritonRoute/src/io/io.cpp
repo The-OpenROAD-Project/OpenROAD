@@ -4079,17 +4079,19 @@ void io::Parser::setMacros(odb::dbDatabase* db)
 
       for(auto obs : master->getObstructions())
       {
+        
+        frLayerNum layerNum = -1;
+        string layer = obs->getTechLayer()->getName();
+        if (tech->name2layer.find(layer) == tech->name2layer.end()){
+          logger->warn(utl::DRT, 123, "layer {} is skipped for {}/OBS",layer,tmpBlock->getName());
+          continue;
+        }else
+          layerNum = tech->name2layer.at(layer)->getLayerNum();
         auto blkIn = make_unique<frBlockage>();
         blkIn->setId(numBlockages);
         numBlockages++;
         auto pinIn = make_unique<frPin>();
         pinIn->setId(0);
-        frLayerNum layerNum = -1;
-        string layer = obs->getTechLayer()->getName();
-        if (tech->name2layer.find(layer) == tech->name2layer.end()) 
-          logger->warn(utl::DRT, 123, "layer {} is skipped for {}/OBS",layer,tmpBlock->getName());
-        else
-          layerNum = tech->name2layer.at(layer)->getLayerNum();
         frCoord xl = obs->xMin();
         frCoord yl = obs->yMin();
         frCoord xh = obs->xMax();
@@ -4099,8 +4101,6 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         pinFig->setBBox(frBox(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
         pinFig->setLayerNum(layerNum);
-        // pinFig completed
-        // pin
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
         blkIn->setPin(std::move(pinIn));
