@@ -1,9 +1,11 @@
+%module logger
+
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,41 +35,78 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+%{
 
-#include "tapcell/tapcell.h"
-#include "sta/StaMain.hh"
+#include "utility/Logger.h"
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char *tapcell_tcl_inits[];
+namespace ord {
+// Defined in OpenRoad.i
+utl::Logger *
+getLogger();
 }
 
-namespace tap {
+using utl::ToolId;
+using utl::Logger;
+using ord::getLogger;
 
-extern "C" {
-extern int Tapcell_Init(Tcl_Interp *interp);
+%}
+
+%typemap(in) utl::ToolId {
+  int length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  $1 = utl::Logger::findToolId(arg);
 }
 
-Tapcell::Tapcell()
-  : db_(nullptr)
+// Catch exceptions in inline functions.
+%include "../../Exception.i"
+
+%inline %{
+
+namespace utl {
+
+void
+report(const char *msg)
 {
-}
-
-Tapcell::~Tapcell()
-{
+  Logger *logger = getLogger();
+  logger->report(msg);
 }
 
 void
-Tapcell::init(Tcl_Interp *tcl_interp,
-	   odb::dbDatabase *db)
+info(utl::ToolId tool,
+     int id,
+     const char *msg)
 {
-  db_ = db;
-
-  // Define swig TCL commands.
-  Tapcell_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::tapcell_tcl_inits);
+  Logger *logger = getLogger();
+  logger->info(tool, id, msg);
 }
 
-
+void
+warn(utl::ToolId tool,
+     int id,
+     const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->warn(tool, id, msg);
 }
+
+void
+error(utl::ToolId tool,
+      int id,
+      const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->error(tool, id, msg);
+}
+
+void
+critical(utl::ToolId tool,
+         int id,
+         const char *msg)
+{
+  Logger *logger = getLogger();
+  logger->critical(tool, id, msg);
+}
+
+} // namespace
+
+%} // inline

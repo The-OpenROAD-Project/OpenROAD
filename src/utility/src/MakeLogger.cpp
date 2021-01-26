@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,41 +33,31 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "utility/MakeLogger.h"
 
-#include "tapcell/tapcell.h"
-#include "sta/StaMain.hh"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char *tapcell_tcl_inits[];
-}
-
-namespace tap {
+#include <tcl.h>
+#include "utility/Logger.h"
 
 extern "C" {
-extern int Tapcell_Init(Tcl_Interp *interp);
+extern int Logger_Init(Tcl_Interp *interp);
 }
 
-Tapcell::Tapcell()
-  : db_(nullptr)
-{
-}
+namespace ord {
 
-Tapcell::~Tapcell()
+using utl::Logger;
+
+Logger *
+makeLogger(const char *log_filename)
 {
+  return new Logger(log_filename);
 }
 
 void
-Tapcell::init(Tcl_Interp *tcl_interp,
-	   odb::dbDatabase *db)
+initLogger(Logger *logger,
+           Tcl_Interp *tcl_interp)
 {
-  db_ = db;
-
   // Define swig TCL commands.
-  Tapcell_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::tapcell_tcl_inits);
+  Logger_Init(tcl_interp);
 }
 
-
-}
+} // namespace
