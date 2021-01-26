@@ -129,7 +129,7 @@ int *xcor, *ycor, *dcor;
 
 StTree* sttreesBK;
 
-short **parentX1, **parentY1, **parentX3, **parentY3;
+multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 float **heap2, **heap1;
 
