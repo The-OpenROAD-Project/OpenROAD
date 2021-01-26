@@ -804,7 +804,7 @@ void updateRouteType1(TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    exit(1);
+    logger->error(GRT, 169, "Invalid index for position ({}, {})", E1x, E1y);
   }
 
   // reallocate memory for route.gridsX and route.gridsY
@@ -982,7 +982,7 @@ void updateRouteType2(TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    exit(1);
+    logger->error(GRT, 170, "Invalid index for position ({}, {})", E1x, E1y);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
