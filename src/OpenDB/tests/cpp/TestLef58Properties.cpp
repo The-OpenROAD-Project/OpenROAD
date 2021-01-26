@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_SUITE( test_suite )
 
 BOOST_AUTO_TEST_CASE( test_default )
 {
-    utl::Logger* logger = new utl::Logger(nullptr);
+    utl::Logger* logger = new utl::Logger(nullptr, nullptr);
     dbDatabase*  db   = dbDatabase::create();
     db->setLogger(logger);
     lefin lefParser(db, logger, false);
