@@ -236,9 +236,10 @@ private:
   static bool isInside(const Rect &cell, const Rect &box);
   bool isInside(const Cell *cell, const Rect *rect) const;
   PixelPt diamondSearch(const Cell *cell,
-                        int grid_x,
-                        int grid_y) const;
-  PixelPt binSearch(int cell_x,
+                        // grid indices
+                        int x,
+                        int y) const;
+  PixelPt binSearch(int x,
                     const Cell *cell,
                     int bin_x,
                     int bin_y) const;
