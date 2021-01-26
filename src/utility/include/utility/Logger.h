@@ -87,7 +87,8 @@ class Logger
 {
  public:
   // Use nullptr if messages or metrics are not logged to a file.
-  Logger(const char* filename, const char *metrics_filename);
+  Logger(const char* filename = nullptr,
+         const char *metrics_filename = nullptr);
   ~Logger();
   static ToolId findToolId(const char *tool_name);
 
