@@ -103,3 +103,4 @@ DRT 0111 io.cpp:788                unsupported PIN USE in db
 DRT 0115 TritonRoute.cpp:243       Setting MAX_THREADS=1 for use with the GUI.
 DRT 0116 io.cpp:845                please load design first
 DRT 0117 io.cpp:848                please load design first
+DRT 0118 TritonRoute.tcl:93        -gcell is a list of 2 coordinates.
