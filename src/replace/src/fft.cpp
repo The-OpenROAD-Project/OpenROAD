@@ -45,7 +45,11 @@ namespace gpl {
 
 
 FFT::FFT()
-  : binCntX_(0), binCntY_(0), binSizeX_(0), binSizeY_(0) {}
+  : binDensity_(nullptr),
+    electroPhi_(nullptr),
+    electroForceX_(nullptr),
+    electroForceY_(nullptr),
+    binCntX_(0), binCntY_(0), binSizeX_(0), binSizeY_(0) {}
 
 FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
   : binCntX_(binCntX), binCntY_(binCntY), 
