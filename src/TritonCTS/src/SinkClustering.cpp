@@ -390,7 +390,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
 bool SinkClustering::isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit)
 {
   if (_useMaxCapLimit) {
-    if (capCost > _options->getMaxCharCap()/2) {
+    if (capCost > _options->getMaxCharCap()/2.5) {
       return true;
     } else
     {
