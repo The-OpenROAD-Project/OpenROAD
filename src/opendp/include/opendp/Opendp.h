@@ -238,10 +238,10 @@ private:
   PixelPt diamondSearch(const Cell *cell,
                         int grid_x,
                         int grid_y) const;
-  PixelPt binSearch(int x_pos,
+  PixelPt binSearch(int cell_x,
                     const Cell *cell,
-                    int x,
-                    int y) const;
+                    int bin_x,
+                    int bin_y) const;
   bool checkPixels(const Cell *cell,
                    int x,
                    int y,
@@ -339,6 +339,7 @@ private:
   int gridEndX(const Cell *cell) const;
   int gridEndY(const Cell *cell) const;
   void setGridPaddedLoc(Cell *cell, int x, int y) const;
+  // Lower left corner in core coordinates.
   Point initialLocation(const Cell *cell,
                         bool padded) const;
   bool isStdCell(const Cell *cell) const;

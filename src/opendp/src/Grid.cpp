@@ -317,7 +317,7 @@ Opendp::paintPixel(Cell *cell, int grid_x, int grid_y)
   setGridPaddedLoc(cell, grid_x, grid_y);
   cell->is_placed_ = true;
 
-  debugPrint(logger_, DPL, "place", 1, "paint {} ({}-{}, {}-{})",
+  debugPrint(logger_, DPL, "place", 1, " paint {} ({}-{}, {}-{})",
              cell->name(), grid_x, x_end - 1, grid_y, y_end - 1);
 
   for (int x = grid_x; x < x_end; x++) {
