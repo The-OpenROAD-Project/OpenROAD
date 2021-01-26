@@ -55,7 +55,7 @@ void printEdge(int netID, int edgeID)
   edge = sttrees[netID].edges[edgeID];
   nodes = sttrees[netID].nodes;
 
-  logger->report("edge {}: ({}, {})->({}, {})\n",
+  logger->report("edge {}: ({}, {})->({}, {})",
          edgeID,
          nodes[edge.n1].x,
          nodes[edge.n1].y,
@@ -1019,7 +1019,7 @@ void printTree3D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
-    logger->report("nodeID {},  [{}, {}]\n",
+    logger->report("nodeID {},  [{}, {}]",
            nodeID,
            sttrees[netID].nodes[nodeID].y,
            sttrees[netID].nodes[nodeID].x);
@@ -1047,7 +1047,7 @@ void checkRoute3D()
     for (nodeID = 0; nodeID < 2 * deg - 2; nodeID++) {
       if (nodeID < deg) {
         if (treenodes[nodeID].botL != 0) {
-          logger->error(GRT, 158, "Causing pin node floating\n");
+          logger->error(GRT, 158, "Causing pin node floating");
         }
       }
     }
@@ -1091,7 +1091,7 @@ void checkRoute3D()
                    + ADIFF(gridsL[i + 1], gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = TRUE;
-          logger->report("net {} edge[{}] maze route wrong, distance {}, i {}\n",
+          logger->report("net {} edge[{}] maze route wrong, distance {}, i {}",
                  netName(nets[netID]),
                  edgeID,
                  distance,
@@ -1523,7 +1523,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger->warn(GRT, 167, "checking failed {}\n", netID);
+        logger->warn(GRT, 167, "checking failed {}", netID);
         return (TRUE);
       }
     }
