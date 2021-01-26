@@ -15,12 +15,12 @@
 [WARNING DPL-0018] detailed placement failed on _281_.
 Placement Analysis
 ---------------------------------
-total displacement          7.7 u
-average displacement        0.8 u
+total displacement          5.6 u
+average displacement        0.6 u
 max displacement            2.1 u
 original HPWL              81.8 u
-legalized HPWL             81.8 u
-delta HPWL                    0 %
+legalized HPWL             84.7 u
+delta HPWL                    3 %
 
 [WARNING DPL-0005] Overlap check failed (1).
  _281_ overlaps _282_
@@ -28,4 +28,6 @@ delta HPWL                    0 %
  _281_
 [WARNING DPL-0007] Power line check failed (1).
  _281_
-No differences found.
+Differences found at line 12.
+    - _283_ in01f01 + PLACED ( 30800 32000 ) N ;
+    - _283_ in01f01 + PLACED ( 31200 32000 ) N ;
