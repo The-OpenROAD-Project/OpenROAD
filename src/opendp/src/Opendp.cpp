@@ -142,7 +142,7 @@ Opendp::Opendp() :
 
 Opendp::~Opendp()
 {
-  deleteGrid(grid_);
+  deleteGrid();
 }
 
 void

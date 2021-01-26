@@ -290,9 +290,8 @@ private:
   // checkPlacement
   static bool isPlaced(const Cell *cell);
   bool checkPowerLine(const Cell &cell) const;
-  bool checkInRows(const Cell &cell,
-                   const Grid *grid) const;
-  Cell *checkOverlap(Cell &cell, Grid *grid) const;
+  bool checkInRows(const Cell &cell) const;
+  Cell *checkOverlap(Cell &cell) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
   bool isCrWtBlClass(const Cell *cell) const;
@@ -306,7 +305,7 @@ private:
                       const char *msg,
                       bool verbose,
                       const std::function<void(Cell *cell)> &report_failure) const;
-  void reportOverlapFailure(Cell *cell, Grid *grid) const;
+  void reportOverlapFailure(Cell *cell) const;
 
   void rectDist(const Cell *cell,
                 const Rect *rect,
@@ -318,9 +317,7 @@ private:
   dbOrientType rowOrient(int row) const;
   bool havePadding() const;
 
-  Grid *makeGrid();
-  void initGridPixels(Grid *grid);
-  void deleteGrid(Grid *grid);
+  void deleteGrid();
   Pixel *gridPixel(int x,
                    int y) const;
   // Cell initial location wrt core origin.
@@ -353,10 +350,9 @@ private:
   // Place fillers
   void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
-  Grid *makeCellGrid();
-  void placeRowFillers(const Grid *grid, int row);
-  const char *gridInstName(const Grid *grid,
-                           int row,
+  void makeCellGrid();
+  void placeRowFillers(int row);
+  const char *gridInstName(int row,
                            int col);
 
   // Optimizing mirroring

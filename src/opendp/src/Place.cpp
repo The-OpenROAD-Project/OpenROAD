@@ -69,6 +69,13 @@ void
 Opendp::detailedPlacement()
 {
   initGrid();
+  // Paint fixed cells.
+  assignFixedCells();
+  // group mapping & x_axis dummycell insertion
+  groupInitPixels2();
+  // y axis dummycell insertion
+  groupInitPixels();
+
   if (!groups_.empty()) {
     placeGroups();
   }

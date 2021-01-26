@@ -61,7 +61,7 @@ Opendp::checkPlacement(bool verbose)
   vector<Cell *> site_failures;
   vector<Cell *> power_line_failures;
 
-  Grid *grid = makeGrid();
+  initGrid();
   for (Cell &cell : cells_) {
     if (isStdCell(&cell)) {
       // Site check
@@ -71,26 +71,24 @@ Opendp::checkPlacement(bool verbose)
         checkPowerLine(cell);
         power_line_failures.push_back(&cell);
       }
-      if (!checkInRows(cell, grid))
+      if (!checkInRows(cell))
         in_rows_failures.push_back(&cell);
     }
     // Placed check
     if (!isPlaced(&cell))
       placed_failures.push_back(&cell);
     // Overlap check
-    if (checkOverlap(cell, grid))
+    if (checkOverlap(cell))
       overlap_failures.push_back(&cell);
   }
 
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
   reportFailures(overlap_failures, 5, "Overlap", verbose, [&](Cell *cell) -> void {
-    reportOverlapFailure(cell, grid);
+    reportOverlapFailure(cell);
   });
   reportFailures(site_failures, 6, "Site", verbose);
   reportFailures(power_line_failures, 7, "Power line", verbose);
-
-  deleteGrid(grid);
 
   return !power_line_failures.empty()
     || !placed_failures.empty()
@@ -129,9 +127,9 @@ Opendp::reportFailures(const vector<Cell *> &failures,
 }
 
 void
-Opendp::reportOverlapFailure(Cell *cell, Grid *grid) const
+Opendp::reportOverlapFailure(Cell *cell) const
 {
-  const Cell *overlap = checkOverlap(*cell, grid);
+  const Cell *overlap = checkOverlap(*cell);
   logger_->report(" {} overlaps {}", cell->name(), overlap->name());
 }
 
@@ -160,22 +158,17 @@ Opendp::checkPowerLine(const Cell &cell) const
 }
 
 bool
-Opendp::checkInRows(const Cell &cell,
-                    const Grid *grid) const
+Opendp::checkInRows(const Cell &cell) const
 {
   int x_ll = gridX(&cell);
   int x_ur = gridEndX(&cell);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
-  if (!(x_ll >= 0
-        && x_ur <= row_site_count_
-        && y_ll >= 0
-        && y_ur <= row_count_))
-    return false;
-  for (int j = y_ll; j < y_ur; j++) {
-    for (int k = x_ll; k < x_ur; k++) {
-      Pixel &pixel = grid[j][k];
-      if (!pixel.is_valid)
+  for (int y = y_ll; y < y_ur; y++) {
+    for (int x = x_ll; x < x_ur; x++) {
+      Pixel *pixel = gridPixel(x, y);
+      if (pixel == nullptr  // outside core
+          || !pixel->is_valid)
         return false;
     }
   }
@@ -204,28 +197,26 @@ Opendp::checkInRows(const Cell &cell,
 // Return the cell this cell overlaps.
 
 Cell *
-Opendp::checkOverlap(Cell &cell, Grid *grid) const
+Opendp::checkOverlap(Cell &cell) const
 {
   int x_ll = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
-  x_ll = max(0, x_ll);
-  y_ll = max(0, y_ll);
-  x_ur = min(x_ur, row_site_count_);
-  y_ur = min(y_ur, row_count_);
 
-  for (int j = y_ll; j < y_ur; j++) {
-    for (int k = x_ll; k < x_ur; k++) {
-      Pixel &pixel = grid[j][k];
-      Cell *pixel_cell = pixel.cell;
-      if (pixel_cell) {
-        if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
-          return pixel_cell;
+  for (int y = y_ll; y < y_ur; y++) {
+    for (int x = x_ll; x < x_ur; x++) {
+      Pixel *pixel = gridPixel(x, y);
+      if (pixel) {
+        Cell *pixel_cell = pixel->cell;
+        if (pixel_cell) {
+          if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
+            return pixel_cell;
+          }
         }
-      }
-      else {
-        pixel.cell = &cell;
+        else {
+          pixel->cell = &cell;
+        }
       }
     }
   }

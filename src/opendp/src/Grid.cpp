@@ -55,34 +55,16 @@ void
 Opendp::initGrid()
 {
   // Make pixel grid
-  if (grid_ == nullptr)
-    grid_ = makeGrid();
-  else
-    initGridPixels(grid_);
-  // Paint fixed cells.
-  assignFixedCells();
-  // group mapping & x_axis dummycell insertion
-  groupInitPixels2();
-  // y axis dummycell insertion
-  groupInitPixels();
-}
+  if (grid_ == nullptr) {
+    grid_ = new Pixel *[row_count_];
+    for (int y = 0; y < row_count_; y++)
+      grid_[y] = new Pixel[row_site_count_];
+  }
 
-Grid *
-Opendp::makeGrid()
-{
-  Grid *grid = new Pixel *[row_count_];
-  for (int y = 0; y < row_count_; y++)
-    grid[y] = new Pixel[row_site_count_];
-  initGridPixels(grid);
-  return grid;
-}
-
-void
-Opendp::initGridPixels(Grid *grid)
-{
+  // Init pixels.
   for (int y = 0; y < row_count_; y++) {
     for (int x = 0; x < row_site_count_; x++) {
-      Pixel &pixel = grid[y][x];
+      Pixel &pixel = grid_[y][x];
       pixel.cell = nullptr;
       pixel.group_ = nullptr;
       pixel.util = 0.0;
@@ -103,21 +85,22 @@ Opendp::initGridPixels(Grid *grid)
 
     for (int x = x_start; x < x_end; x++) {
       for (int y = y_start; y < y_end; y++) {
-        grid[y][x].is_valid = true;
+        grid_[y][x].is_valid = true;
       }
     }
   }
 }
 
 void
-Opendp::deleteGrid(Grid *grid)
+Opendp::deleteGrid()
 {
-  if (grid) {
+  if (grid_) {
     for (int i = 0; i < row_count_; i++) {
-      delete [] grid[i];
+      delete [] grid_[i];
     }
-    delete [] grid;
+    delete [] grid_;
   }
+  grid_ = nullptr;
 }
 
 Pixel *
