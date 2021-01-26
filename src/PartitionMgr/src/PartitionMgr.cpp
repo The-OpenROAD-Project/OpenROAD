@@ -61,7 +61,7 @@ namespace par {
 
 void PartitionMgr::runPartitioning()
 {
-  hypergraph();
+  hypergraph(true);
   if (_options.getTool() == "mlpart") {
     runMlPart();
   } else if (_options.getTool() == "gpmetis") {
@@ -635,16 +635,20 @@ void PartitionMgr::toHypergraph()
   hypergraphDecomp.toHypergraph(hype, _graph);
 }
 
-void PartitionMgr::hypergraph()
+void PartitionMgr::hypergraph(bool buildGraph)
 {
   _hypergraph.clearHypergraph();
+
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId, _logger);
   hypergraphDecomp.constructMap(_hypergraph, _options.getMaxVertexWeight());
+
   int numVertices = _hypergraph.getNumVertex();
   std::vector<unsigned long> clusters(numVertices, 0);
   hypergraphDecomp.createHypergraph(_hypergraph, clusters, 0);
-  toGraph();
+
+  if (buildGraph)
+    toGraph();
 }
 
 void PartitionMgr::toGraph()
@@ -953,7 +957,7 @@ void PartitionMgr::dumpPartIdToFile(std::string name)
 
 void PartitionMgr::run3PClustering()
 {
-  hypergraph();
+  hypergraph(true);
   if (_options.getTool() == "mlpart") {
     runMlPartClustering();
   } else if (_options.getTool() == "gpmetis") {
@@ -1409,6 +1413,23 @@ void PartSolutions::clearAssignments()
   _assignmentResults.clear();
   _runtimeResults.clear();
   _seeds.clear();
+}
+
+void PartitionMgr::reportGraph()
+{
+  hypergraph();
+  int numNodes;
+  int numEdges;
+  if (_options.getGraphModel() == HYPERGRAPH) {
+    numNodes = _hypergraph.getNumVertex();
+    numEdges = _hypergraph.getNumEdges();
+  } else {
+    toGraph();
+    numNodes = _graph.getNumVertex();
+    numEdges = _graph.getNumEdges();
+  }
+  _logger->info(PRT, 67, "#Nodes: {}", numNodes);
+  _logger->info(PRT, 68, "#Hyperedges/Edges: {}", numEdges);
 }
 
 }  // namespace par

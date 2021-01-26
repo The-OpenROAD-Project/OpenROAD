@@ -3,23 +3,23 @@ PRT 0002 PartitionMgr.cpp:205      Graph has too many sets (>8) or the number of
 PRT 0003 PartitionMgr.cpp:304      [Chaco] Partitioned graph for {} seeds.
 PRT 0004 PartitionMgr.cpp:307      [Chaco] Partitioned graph for seed {} in {} ms.
 PRT 0005 PartitionMgr.cpp:317      [Chaco] Run completed. Partition ID = {}. Total runs = {}.
-PRT 0006 PartitionMgr.cpp:884      Partitioning Results for ID = {} and Tool = {}.
-PRT 0007 PartitionMgr.cpp:887      Best results used seed {}.
-PRT 0008 PartitionMgr.cpp:888      Number of Hyperedge Cuts = {}.
-PRT 0009 PartitionMgr.cpp:889      Number of Terminals = {}.
-PRT 0010 PartitionMgr.cpp:890      Cluster Size SD = {}.
-PRT 0011 PartitionMgr.cpp:891      Cluster Area SD = {}.
-PRT 0012 PartitionMgr.cpp:892      Total Hop Weigth = {}.
-PRT 0013 PartitionMgr.cpp:893      Total Runtime = {}.
-PRT 0014 PartitionMgr.cpp:910      Partition id out of range ({}).
-PRT 0015 PartitionMgr.cpp:943      Property not found for inst {}
-PRT 0016 PartitionMgr.cpp:1089     [Chaco] Clustered graph in {} ms.
-PRT 0017 PartitionMgr.cpp:1095     [Chaco] Run completed. Cluster ID = {}.
-PRT 0018 PartitionMgr.cpp:1286     Cluster id out of range ({}}.
-PRT 0019 PartitionMgr.cpp:1350     The netlist has {} partitions.
-PRT 0020 PartitionMgr.cpp:1354     Partition {} has {} vertices.
-PRT 0021 PartitionMgr.cpp:1357     The total number of vertices is {}.
-PRT 0022 PartitionMgr.cpp:1382     Unable to open file.
+PRT 0006 PartitionMgr.cpp:888      Partitioning Results for ID = {} and Tool = {}.
+PRT 0007 PartitionMgr.cpp:891      Best results used seed {}.
+PRT 0008 PartitionMgr.cpp:892      Number of Hyperedge Cuts = {}.
+PRT 0009 PartitionMgr.cpp:893      Number of Terminals = {}.
+PRT 0010 PartitionMgr.cpp:894      Cluster Size SD = {}.
+PRT 0011 PartitionMgr.cpp:895      Cluster Area SD = {}.
+PRT 0012 PartitionMgr.cpp:896      Total Hop Weigth = {}.
+PRT 0013 PartitionMgr.cpp:897      Total Runtime = {}.
+PRT 0014 PartitionMgr.cpp:914      Partition id out of range ({}).
+PRT 0015 PartitionMgr.cpp:947      Property not found for inst {}
+PRT 0016 PartitionMgr.cpp:1093     [Chaco] Clustered graph in {} ms.
+PRT 0017 PartitionMgr.cpp:1099     [Chaco] Run completed. Cluster ID = {}.
+PRT 0018 PartitionMgr.cpp:1290     Cluster id out of range ({}}.
+PRT 0019 PartitionMgr.cpp:1354     The netlist has {} partitions.
+PRT 0020 PartitionMgr.cpp:1358     Partition {} has {} vertices.
+PRT 0021 PartitionMgr.cpp:1361     The total number of vertices is {}.
+PRT 0022 PartitionMgr.cpp:1386     Unable to open file.
 PRT 0023 Hypergraph.cpp:75         Number of edges equal to 0.
 PRT 0024 Hypergraph.cpp:112        Number of vertices equal to 0.
 PRT 0025 partitionmgr.tcl:84       missing mandatory argument -tool
@@ -58,8 +58,11 @@ PRT 0057 PartitionMgr.cpp:454      [GPMetis] Run completed. Partition ID = {}. T
 PRT 0058 PartitionMgr.cpp:612      [MLPart] Partitioned graph for {} seeds.
 PRT 0059 PartitionMgr.cpp:615      [MLPart] Partitioned graph for seed {} in {} ms.
 PRT 0060 PartitionMgr.cpp:626      [MLPart] Run completed. Partition ID = {}. Total runs = {}.
-PRT 0061 PartitionMgr.cpp:1168     [GPMetis] Clustered graph in {} ms.
-PRT 0062 PartitionMgr.cpp:1177     [GPMetis] Run completed. Cluster ID = {}.
-PRT 0063 PartitionMgr.cpp:1259     [MLPart] Clustered graph in {} ms.
-PRT 0064 PartitionMgr.cpp:1270     [MLPart] Run completed. Cluster ID = {}.
-PRT 0065 PartitionMgr.cpp:1319     Property not found for inst {}
+PRT 0061 PartitionMgr.cpp:1172     [GPMetis] Clustered graph in {} ms.
+PRT 0062 PartitionMgr.cpp:1181     [GPMetis] Run completed. Cluster ID = {}.
+PRT 0063 PartitionMgr.cpp:1263     [MLPart] Clustered graph in {} ms.
+PRT 0064 PartitionMgr.cpp:1274     [MLPart] Run completed. Cluster ID = {}.
+PRT 0065 PartitionMgr.cpp:1323     Property not found for inst {}
+PRT 0066 partitionmgr.tcl:507      invalid graph model. Use one of the following: $graph_models
+PRT 0067 PartitionMgr.cpp:1431     #Nodes: {}
+PRT 0068 PartitionMgr.cpp:1432     #Hyperedges/Edges: {}
