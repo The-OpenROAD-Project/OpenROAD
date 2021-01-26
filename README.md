@@ -1,8 +1,25 @@
 # OpenROAD
 
-OpenROAD is a chip physical design tool. It uses the OpenDB database
-as a design database and representation. OpenSTA is used for static
-timing analysis.
+OpenROAD is an integrated chip physical design tool that takes a
+design from synthesized Verilog to routed layout.  
+
+An outline of steps used to build a chip using OpenROAD are shown below.
+
+* Initialize floorplan - define the chip size and cell rows
+* Place pins (for designs without pads )
+* Place macro cells (RAMs, embedded macros)
+* Insert substrate tap cells
+* Insert power distribution network
+* Global placement of standard cells
+* Repair max slew, max capacitance, and max fanout violations and long wires
+* Clock tree synthesis
+* Optimize setup/hold timing
+* Insert fill cells
+* Global routing (route guides for detailed routing)
+* Detailed routing
+
+OpenROAD uses the OpenDB database and OpenSTA for static timing
+analysis.
 
 #### Build
 
