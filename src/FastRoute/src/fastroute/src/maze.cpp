@@ -35,6 +35,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iomanip>
+#include <sstream>
 
 #include <algorithm>
 
@@ -47,8 +49,11 @@
 #include "pdrev/pdrev.h"
 #include "route.h"
 #include "utility.h"
+#include "utility/Logger.h"
 
 namespace grt {
+
+using utl::GRT;
 
 #define PARENT(i) (i - 1) / 2
 //#define PARENT(i) ((i-1)>>1)
@@ -215,7 +220,7 @@ void convertToMazeroute()
       h_edges[grid].usage = h_edges[grid].est_usage;
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -281,8 +286,6 @@ void updateHeap(float** array, int arrayLen, int i)
 // extract the entry with minimum distance from Priority queue
 void extractMin(float** array, int arrayLen)
 {
-  //    if(arrayLen<1)
-  //        printf("Error: heap underflow\n");
   array[0] = array[arrayLen - 1];
   heapify(array, arrayLen - 1, 0);
 }
@@ -298,7 +301,7 @@ void updateCongestionHistory(int round, int upType)
 
   maxlimit = 0;
 
-  printf("Update congestion history type %d\n", upType);
+  logger->info(GRT, 124, "Update congestion history type {}", upType);
 
   if (upType == 1) {
     for (i = 0; i < yGrid; i++) {
@@ -596,7 +599,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    printf("Setup Heap: not maze routing\n");
+                    logger->error(GRT, 125, "Setup Heap: not maze routing");
                   }
                 }  // if not a degraded edge (len>0)
 
@@ -682,7 +685,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    printf("Setup Heap: not maze routing\n");
+                    logger->error(GRT, 126, "Setup Heap: not maze routing");
                   }
                 }  // if the edge is not degraded (len>0)
 
@@ -1032,8 +1035,6 @@ void reInitTree(int netID)
   TreeEdge* treeedge;
   Tree rsmt;
 
-  // printf("re init tree for net %d\n",netID);
-
   newRipupNet(netID);
 
   deg = sttrees[netID].deg;
@@ -1049,43 +1050,24 @@ void reInitTree(int netID)
   delete[] sttrees[netID].nodes;
   delete[] sttrees[netID].edges;
 
-  // printf("old tree component freed\n");
-  // fflush(stdout);
-
   d = nets[netID]->deg;
   int x[d];
   int y[d];
 
-  // printf("net deg %d\n",d);
-  // fflush(stdout);
   for (j = 0; j < d; j++) {
     x[j] = nets[netID]->pinX[j];
     y[j] = nets[netID]->pinY[j];
   }
-  // printf("before flute\n");
-  // fflush(stdout);
+
   fluteCongest(netID, d, x, y, 2, 1.2, &rsmt);
-  // printf("fluted worked\n");
-  // fflush(stdout);
+
   if (d > 3) {
     edgeShiftNew(&rsmt, netID);
   }
-  // fflush(stdout);
+
   copyStTree(netID, rsmt);
-  // printf("tree copied\n");
-  // fflush(stdout);
   newrouteLInMaze(netID);
-  // printf("L routing worked\n");
-  // fflush(stdout);
-  // newrouteZ(netID, 10);
-  // printf("Z routign worked\n");
-  // fflush(stdout);
   convertToMazerouteNet(netID);
-  // printf("L to mzed converted\n");
-  // fflush(stdout);
-  // checkRoute2DTree(netID);
-  // printf("tree double checked\n");
-  // fflush(stdout);
 }
 
 void mazeRouteMSMD(int iter,
@@ -1878,7 +1860,6 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   total_usage = 0;
   total_cap = 0;
 
-  //    fprintf(fph, "Horizontal Congestion\n");
   for (i = 0; i < yGrid; i++) {
     for (j = 0; j < xGrid - 1; j++) {
       grid = i * (xGrid - 1) + j;
@@ -1892,7 +1873,7 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
       }
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -1912,14 +1893,18 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   *maxOverflow = max_overflow;
 
   if (verbose > 1) {
-    printf("[Overflow Report] total Usage   : %d\n", (int) total_usage);
-    printf("[Overflow Report] Max H Overflow: %d\n", max_H_overflow);
-    printf("[Overflow Report] Max V Overflow: %d\n", max_V_overflow);
-    printf("[Overflow Report] Max Overflow  : %d\n", max_overflow);
-    printf("[Overflow Report] Num Overflow e: %d\n", numedges);
-    printf("[Overflow Report] H   Overflow  : %d\n", H_overflow);
-    printf("[Overflow Report] V   Overflow  : %d\n", V_overflow);
-    printf("[Overflow Report] Final Overflow: %d\n\n", totalOverflow);
+    logger->info(GRT, 127, "[Overflow Report] total Usage   : {}\n"
+           "                [Overflow Report] Max H Overflow: {}\n"
+           "                [Overflow Report] Max V Overflow: {}\n"
+           "                [Overflow Report] Max Overflow  : {}\n"
+           "                [Overflow Report] Num Overflow e: {}\n"
+           "                [Overflow Report] H   Overflow  : {}\n"
+           "                [Overflow Report] V   Overflow  : {}\n"
+           "                [Overflow Report] Final Overflow: {}",
+           (int) total_usage, max_H_overflow, max_V_overflow,
+           max_overflow, numedges, H_overflow, V_overflow,
+           totalOverflow);
+    
   }
 
   *tUsage = total_usage;
@@ -1946,7 +1931,7 @@ int getOverflow2D(int* maxOverflow)
 
   total_usage = 0;
   total_cap = 0;
-  //    fprintf(fph, "Horizontal Congestion\n");
+
   for (i = 0; i < yGrid; i++) {
     for (j = 0; j < xGrid - 1; j++) {
       grid = i * (xGrid - 1) + j;
@@ -1961,7 +1946,7 @@ int getOverflow2D(int* maxOverflow)
       }
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -1988,16 +1973,18 @@ int getOverflow2D(int* maxOverflow)
   }
 
   if (verbose > 1) {
-    printf("[Overflow Report] Total hCap    : %d\n", hCap);
-    printf("[Overflow Report] Total vCap    : %d\n", vCap);
-    printf("[Overflow Report] Total Usage   : %d\n", (int) total_usage);
-    printf("[Overflow Report] Max H Overflow: %d\n", max_H_overflow);
-    printf("[Overflow Report] Max V Overflow: %d\n", max_V_overflow);
-    printf("[Overflow Report] Max Overflow  : %d\n", max_overflow);
-    printf("[Overflow Report] Num Overflow e: %d\n", numedges);
-    printf("[Overflow Report] H   Overflow  : %d\n", H_overflow);
-    printf("[Overflow Report] V   Overflow  : %d\n", V_overflow);
-    printf("[Overflow Report] Final Overflow: %d\n\n", totalOverflow);
+    logger->info(GRT, 128, "[Overflow Report] Total hCap    : {}\n"
+           "                [Overflow Report] Total vCap    : {}\n"
+           "                [Overflow Report] Total Usage   : {}\n"
+           "                [Overflow Report] Max H Overflow: {}\n"
+           "                [Overflow Report] Max V Overflow: {}\n"
+           "                [Overflow Report] Max Overflow  : {}\n"
+           "                [Overflow Report] Num Overflow e: {}\n"
+           "                [Overflow Report] H   Overflow  : {}\n"
+           "                [Overflow Report] V   Overflow  : {}\n"
+           "                [Overflow Report] Final Overflow: {}",
+           hCap, vCap, (int) total_usage, max_H_overflow, max_V_overflow,
+           max_overflow, numedges, H_overflow, V_overflow, totalOverflow);
   }
 
   return (totalOverflow);
@@ -2016,7 +2003,6 @@ int getOverflow3D(void)
 
   total_usage = 0;
   cap = 0;
-  //    fprintf(fph, "Horizontal Congestion\n");
 
   int* cap_per_layer;
   int* usage_per_layer;
@@ -2069,51 +2055,78 @@ int getOverflow3D(void)
   max_overflow = std::max(max_H_overflow, max_V_overflow);
   totalOverflow = H_overflow + V_overflow;
 
-  printf("\n");
-  printf("Final usage/overflow report: \n");
+  logger->report("Final usage/overflow report:");
 
   if (verbose > 0) {
-    printf("[INFO] Usage per layer: \n");
+    std::string usage_per_layer_rpt;
+    usage_per_layer_rpt = "Usage per layer:\n";
 
     for (int l = 0; l < numLayers; l++) {
-      printf("    Layer %d usage: %d\n", (l + 1), usage_per_layer[l]);
+      usage_per_layer_rpt = usage_per_layer_rpt + "    Layer " +
+                            std::to_string(l + 1) + "usage: " +
+                            std::to_string(usage_per_layer[l]) + "\n";
     }
 
-    printf("\n[INFO] Capacity per layer: \n");
+    logger->info(GRT, 129, "{}", usage_per_layer_rpt);
+
+    std::string cap_per_layer_rpt;
+    cap_per_layer_rpt = "Capacity per layer:\n";
 
     for (int l = 0; l < numLayers; l++) {
-      printf("    Layer %d capacity: %d\n", (l + 1), cap_per_layer[l]);
+      cap_per_layer_rpt = cap_per_layer_rpt + "    Layer " +
+                          std::to_string(l + 1) + "capacity: " +
+                          std::to_string(cap_per_layer[l]) + "\n";
     }
 
-    printf("\n[INFO] Use percentage per layer: \n");
+    logger->info(GRT, 130, "{}", cap_per_layer_rpt);
+
+    std::string use_per_layer_rpt;
+    use_per_layer_rpt = "Usage percentage per layer:\n";
 
     for (int l = 0; l < numLayers; l++) {
       if (cap_per_layer[l] == 0) {
-        printf("    Layer %d use percentage: 0.0%%\n", (l + 1));
-        continue;
+        use_per_layer_rpt = use_per_layer_rpt + "    Layer " +
+                              std::to_string(l + 1) +
+                              "use percentage: 0.0%\n";
+      } else {
+        float use_percentage
+            = (float) usage_per_layer[l] / (float) cap_per_layer[l];
+        use_percentage *= 100;
+        
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << use_percentage;
+        std::string use_percentage_str = stream.str();
+
+        use_per_layer_rpt = use_per_layer_rpt + "    Layer " +
+                              std::to_string(l + 1) + " usage percentage: " +
+                              use_percentage_str + "%\n";
       }
-      float use_percentage
-          = (float) usage_per_layer[l] / (float) cap_per_layer[l];
-      use_percentage *= 100;
-      printf("    Layer %d use percentage: %.2f%%\n", (l + 1), use_percentage);
     }
 
-    printf("\n[INFO] Overflow per layer: \n");
+    logger->info(GRT, 131, "{}", use_per_layer_rpt);
+
+    std::string overflow_per_layer_rpt;
+    overflow_per_layer_rpt = "Overflow per layer:\n";
 
     for (int l = 0; l < numLayers; l++) {
-      printf("    Layer %d overflow: %d\n", (l + 1), overflow_per_layer[l]);
+      overflow_per_layer_rpt = overflow_per_layer_rpt + "    Layer " +
+                               std::to_string(l + 1) + " overflow: " + 
+                               std::to_string(overflow_per_layer[l]) + "\n";
     }
+
+    logger->info(GRT, 132, "{}", overflow_per_layer_rpt);
   }
 
-  printf("\n");
-  printf("[Overflow Report] Total Usage   : %d\n", total_usage);
-  printf("[Overflow Report] Total Capacity: %d\n", cap);
-  printf("[Overflow Report] Max H Overflow: %d\n", max_H_overflow);
-  printf("[Overflow Report] Max V Overflow: %d\n", max_V_overflow);
-  printf("[Overflow Report] Max Overflow  : %d\n", max_overflow);
-  printf("[Overflow Report] H   Overflow  : %d\n", H_overflow);
-  printf("[Overflow Report] V   Overflow  : %d\n", V_overflow);
-  printf("[Overflow Report] Final Overflow: %d\n\n", totalOverflow);
+  logger->info(GRT, 133, "[Overflow Report] Total Usage   : {}\n"
+         "                [Overflow Report] Total Capacity: {}\n"
+         "                [Overflow Report] Max H Overflow: {}\n"
+         "                [Overflow Report] Max V Overflow: {}\n"
+         "                [Overflow Report] Max Overflow  : {}\n"
+         "                [Overflow Report] H   Overflow  : {}\n"
+         "                [Overflow Report] V   Overflow  : {}\n"
+         "                [Overflow Report] Final Overflow: {}",
+         total_usage, cap, max_H_overflow, max_V_overflow,
+         max_overflow, H_overflow, V_overflow, totalOverflow);
 
   delete[] cap_per_layer;
   delete[] usage_per_layer;
@@ -2175,7 +2188,7 @@ void InitEstUsage()
       h_edges[grid].est_usage = 0;
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -2196,7 +2209,7 @@ void str_accu(int rnd)
       }
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -2217,7 +2230,7 @@ void InitLastUsage(int upType)
       h_edges[grid].last_usage = 0;
     }
   }
-  //    fprintf(fpv, "\nVertical Congestion\n");
+
   for (i = 0; i < yGrid - 1; i++) {
     for (j = 0; j < xGrid; j++) {
       grid = i * xGrid + j;
@@ -2232,7 +2245,7 @@ void InitLastUsage(int upType)
         h_edges[grid].congCNT = 0;
       }
     }
-    //    fprintf(fpv, "\nVertical Congestion\n");
+
     for (i = 0; i < yGrid - 1; i++) {
       for (j = 0; j < xGrid; j++) {
         grid = i * xGrid + j;
@@ -2246,7 +2259,7 @@ void InitLastUsage(int upType)
         h_edges[grid].last_usage = h_edges[grid].last_usage * 0.2;
       }
     }
-    //    fprintf(fpv, "\nVertical Congestion\n");
+
     for (i = 0; i < yGrid - 1; i++) {
       for (j = 0; j < xGrid; j++) {
         grid = i * xGrid + j;
