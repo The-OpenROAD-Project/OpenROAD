@@ -49,8 +49,7 @@
 #include "lefrReader.hpp"
 #include "utility/Logger.h"
 #include "poly_decomp.h"
-#include "lefTechLayerSpacingEolParser.h"
-#include "lefTechLayerMinStepParser.h"
+#include "lefLayerPropParser.h"
 
 namespace odb {
 
@@ -573,6 +572,12 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
       else if(!strcmp(layer->propName(iii), "LEF58_MINSTEP"))
         lefTechLayerMinStepParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
+        lefTechLayerCornerSpacingParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
+        lefTechLayerSpacingTablePrlParser parser;
+        parser.parse(layer->propValue(iii), l, this);
+      }
     }
   }
 

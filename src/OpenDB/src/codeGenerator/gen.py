@@ -131,10 +131,10 @@ for klass in schema['classes']:
         while tmp is not None:
             templateClassName = tmp
             tmp = getTemplateType(tmp)
-            
+          
 
         if templateClassName is not None:
-            if templateClassName not in klass['classes'] and klass['name'] != templateClassName[1:]:
+            if templateClassName not in klass['classes'] and templateClassName not in std and "no-template" not in field["flags"] and klass['name'] != templateClassName[1:]:
                 klass['classes'].append(templateClassName)
         ####
         ####

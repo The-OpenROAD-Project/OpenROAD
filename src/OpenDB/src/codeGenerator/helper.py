@@ -20,6 +20,23 @@ comparable = [
     'char',
     'Rect'
 ]
+std = [
+    'int',
+    'uint',
+    'unint_32t',
+    'bool',
+    'string',
+    'std::string',
+    'float',
+    'short',
+    'double',
+    'long',
+    'long long',
+    'long double',
+    'char *',
+    'char*',
+    'char',
+]
 
 removable = [
     'unsigned',

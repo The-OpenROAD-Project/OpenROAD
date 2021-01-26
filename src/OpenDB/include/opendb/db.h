@@ -36,6 +36,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "ISdb.h"
 #include "dbLogger.h"
@@ -106,6 +107,8 @@ class dbBPin;
 // Generator Code Begin 2
 class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
+class dbTechLayerCornerSpacingRule;
+class dbTechLayerSpacingTablePrlRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -5997,6 +6000,12 @@ class dbTechLayer : public dbObject
   // Get the collection of minstep Rules for the object
   dbSet<dbTechLayerMinStepRule> getMinStepRules() const;
 
+  // Get the collection of cornerspacing Rules for the object
+  dbSet<dbTechLayerCornerSpacingRule> getCornerSpacingRules() const;
+
+  // Get the collection of spacing table parallel length Rules for the object
+  dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
+
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
   /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
@@ -7504,9 +7513,9 @@ class dbTechLayerMinStepRule : public dbObject
 
   int getMinStepLength() const;
 
-  void setMaxEdges(int _max_edges);
+  void setMaxEdges(uint _max_edges);
 
-  int getMaxEdges() const;
+  uint getMaxEdges() const;
 
   void setMinAdjLength1(int _min_adj_length1);
 
@@ -7546,9 +7555,140 @@ class dbTechLayerMinStepRule : public dbObject
 
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);
+
   static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
                                                          uint         dbid);
+
+  static void destroy(dbTechLayerMinStepRule* rule);
   // User Code End dbTechLayerMinStepRule
+};
+
+class dbTechLayerCornerSpacingRule : public dbObject
+{
+ public:
+  enum CornerType
+  {
+    CONVEXCORNER  = 0,
+    CONCAVECORNER = 1
+  };
+
+  void setWithin(int _within);
+
+  int getWithin() const;
+
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setJogLength(int _jog_length);
+
+  int getJogLength() const;
+
+  void setMinLength(int _min_length);
+
+  int getMinLength() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setCornerOnly(bool _corner_only);
+
+  bool isCornerOnly() const;
+
+  void setExceptEol(bool _except_eol);
+
+  bool isExceptEol() const;
+
+  void setExceptJogLength(bool _except_jog_length);
+
+  bool isExceptJogLength() const;
+
+  void setIncludeShape(bool _include_shape);
+
+  bool isIncludeShape() const;
+
+  void setMinLengthValid(bool _min_length_valid);
+
+  bool isMinLengthValid() const;
+
+  void setExceptNotch(bool _except_notch);
+
+  bool isExceptNotch() const;
+
+  void setExceptSameNet(bool _except_same_net);
+
+  bool isExceptSameNet() const;
+
+  void setExceptSameMetal(bool _except_same_metal);
+
+  bool isExceptSameMetal() const;
+
+  // User Code Begin dbTechLayerCornerSpacingRule
+  void setType(CornerType _type);
+
+  CornerType getType() const;
+
+  void addSpacing(uint width, uint spacing);
+
+  void getSpacingTable(std::vector<std::pair<int, int>>& tbl);
+
+  static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
+
+  static dbTechLayerCornerSpacingRule* getTechLayerCornerSpacingRule(
+      dbTechLayer* inly,
+      uint         dbid);
+  static void destroy(dbTechLayerCornerSpacingRule* rule);
+  // User Code End dbTechLayerCornerSpacingRule
+};
+
+class dbTechLayerSpacingTablePrlRule : public dbObject
+{
+ public:
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setWrongDirection(bool _wrong_direction);
+
+  bool isWrongDirection() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setExceeptEol(bool _exceept_eol);
+
+  bool isExceeptEol() const;
+
+  // User Code Begin dbTechLayerSpacingTablePrlRule
+  static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(dbTechLayer* inly,
+                                                                         uint         dbid);
+  
+  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerSpacingTablePrlRule* rule);
+
+  void setTable(std::vector<int> width_tbl, 
+                std::vector<int> length_tbl, 
+                std::vector<std::vector<int>> spacing_tbl,
+                std::map<uint,std::pair<int,int>> excluded_map);
+  void getTable(std::vector<int>& width_tbl, 
+                std::vector<int>& length_tbl, 
+                std::vector<std::vector<int>>& spacing_tbl,
+                std::map<uint,std::pair<int,int>>& excluded_map);
+
+
+  void setSpacingTableInfluence(std::vector<std::tuple<int,int,int>> influence_tbl);
+
+  int getSpacing(const int width, const int length) const;
+
+  bool hasExceptWithin(int width) const;
+
+  std::pair<int, int> getExceptWithin(int width) const;
+
+
+  // User Code End dbTechLayerSpacingTablePrlRule
 };
 
 class dbModule : public dbObject

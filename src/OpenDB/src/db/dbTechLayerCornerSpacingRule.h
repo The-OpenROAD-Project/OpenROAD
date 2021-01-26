@@ -37,6 +37,7 @@
 #include "odb.h"
 
 // User Code Begin includes
+#include "dbVector.h"
 // User Code End includes
 
 namespace odb {
@@ -48,52 +49,58 @@ class _dbDatabase;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbTechLayerMinStepRuleFlags
+struct dbTechLayerCornerSpacingRuleFlags
 {
-  bool _max_edges_valid : 1;
-  bool _min_adj_length1_valid : 1;
-  bool _min_adj_length2_valid : 1;
-  bool _convex_corner : 1;
-  bool _min_between_length_valid : 1;
-  bool _except_same_corners : 1;
-  uint _spare_bits : 26;
+  uint _corner_type : 1;
+  bool _same_mask : 1;
+  bool _corner_only : 1;
+  bool _except_eol : 1;
+  bool _except_jog_length : 1;
+  bool _include_shape : 1;
+  bool _min_length_valid : 1;
+  bool _except_notch : 1;
+  bool _except_same_net : 1;
+  bool _except_same_metal : 1;
+  uint _spare_bits : 22;
 };
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerMinStepRule : public _dbObject
+class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerMinStepRuleFlags _flags;
-  int                         _min_step_length;
-  uint                        _max_edges;
-  int                         _min_adj_length1;
-  int                         _min_adj_length2;
-  int                         _min_between_length;
+  dbTechLayerCornerSpacingRuleFlags _flags;
+  int                               _within;
+  int                               _eol_width;
+  int                               _jog_length;
+  int                               _min_length;
 
   // User Code Begin fields
+  dbVector<std::pair<int, int>> _spacing_tbl;
   // User Code End fields
-  _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
-  _dbTechLayerMinStepRule(_dbDatabase*);
-  ~_dbTechLayerMinStepRule();
-  bool operator==(const _dbTechLayerMinStepRule& rhs) const;
-  bool operator!=(const _dbTechLayerMinStepRule& rhs) const
+  _dbTechLayerCornerSpacingRule(_dbDatabase*,
+                                const _dbTechLayerCornerSpacingRule& r);
+  _dbTechLayerCornerSpacingRule(_dbDatabase*);
+  ~_dbTechLayerCornerSpacingRule();
+  bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
+  bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbTechLayerMinStepRule& rhs) const;
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
-                   const _dbTechLayerMinStepRule& rhs) const;
+  bool operator<(const _dbTechLayerCornerSpacingRule& rhs) const;
+  void differences(dbDiff&                              diff,
+                   const char*                          field,
+                   const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin methods
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
+dbOStream& operator<<(dbOStream&                           stream,
+                      const _dbTechLayerCornerSpacingRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb

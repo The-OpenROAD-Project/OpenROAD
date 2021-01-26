@@ -38,9 +38,8 @@
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-
-// User Code Begin includes
 #include "dbTechLayer.h"
+// User Code Begin includes
 // User Code End includes
 namespace odb {
 
@@ -84,9 +83,6 @@ bool _dbTechLayerMinStepRule::operator==(
   if (_min_between_length != rhs._min_between_length)
     return false;
 
-  if (_layer != rhs._layer)
-    return false;
-
   // User Code Begin ==
   // User Code End ==
   return true;
@@ -116,7 +112,6 @@ void _dbTechLayerMinStepRule::differences(
   DIFF_FIELD(_min_adj_length1);
   DIFF_FIELD(_min_adj_length2);
   DIFF_FIELD(_min_between_length);
-  DIFF_FIELD(_layer);
   // User Code Begin differences
   // User Code End differences
   DIFF_END
@@ -137,7 +132,6 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_min_adj_length1);
   DIFF_OUT_FIELD(_min_adj_length2);
   DIFF_OUT_FIELD(_min_between_length);
-  DIFF_OUT_FIELD(_layer);
 
   // User Code Begin out
   // User Code End out
@@ -147,7 +141,7 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
   // User Code Begin constructor
   uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field = 0;
+  *_flags_bit_field      = 0;
   // User Code End constructor
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
@@ -166,7 +160,6 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
   _min_adj_length1                 = r._min_adj_length1;
   _min_adj_length2                 = r._min_adj_length2;
   _min_between_length              = r._min_between_length;
-  _layer                           = r._layer;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -180,7 +173,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
   stream >> obj._min_adj_length1;
   stream >> obj._min_adj_length2;
   stream >> obj._min_between_length;
-  stream >> obj._layer;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -194,7 +186,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj._min_adj_length1;
   stream << obj._min_adj_length2;
   stream << obj._min_between_length;
-  stream << obj._layer;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -222,14 +213,14 @@ int dbTechLayerMinStepRule::getMinStepLength() const
   return obj->_min_step_length;
 }
 
-void dbTechLayerMinStepRule::setMaxEdges(int _max_edges)
+void dbTechLayerMinStepRule::setMaxEdges(uint _max_edges)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
   obj->_max_edges = _max_edges;
 }
 
-int dbTechLayerMinStepRule::getMaxEdges() const
+uint dbTechLayerMinStepRule::getMaxEdges() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
   return obj->_max_edges;
@@ -364,7 +355,6 @@ dbTechLayerMinStepRule* dbTechLayerMinStepRule::create(dbTechLayer* _layer)
 {
   _dbTechLayer*            layer   = (_dbTechLayer*) _layer;
   _dbTechLayerMinStepRule* newrule = layer->_minstep_rules_tbl->create();
-  newrule->_layer                  = _layer->getImpl()->getOID();
   return ((dbTechLayerMinStepRule*) newrule);
 }
 
@@ -374,6 +364,12 @@ dbTechLayerMinStepRule* dbTechLayerMinStepRule::getTechLayerMinStepRule(
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerMinStepRule*) layer->_minstep_rules_tbl->getPtr(dbid);
+}
+void dbTechLayerMinStepRule::destroy(dbTechLayerMinStepRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->_minstep_rules_tbl->destroy((_dbTechLayerMinStepRule*) rule);
 }
 // User Code End dbTechLayerMinStepRulePublicMethods
 }  // namespace odb

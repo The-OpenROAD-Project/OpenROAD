@@ -1,4 +1,4 @@
-#include "lefTechLayerMinStepParser.h"
+#include "lefLayerPropParser.h"
 #include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -37,25 +37,16 @@ namespace lefTechLayerMinStep {
     // using qi::_1;
     using ascii::space;
     using phoenix::ref;
-    
-    void minAdjacentParser (const boost::fusion::vector<double,boost::optional< boost::variant<std::string, double> > >& params, odb::dbTechLayerMinStepRule* rule, odb::lefin* l)
+
+    void setMinAdjacentLength1(double length, odb::dbTechLayerMinStepRule* rule, odb::lefin* l)
     {
-        auto adjLength1 = at_c<0>(params);
-        rule->setMinAdjLength1(l->dbdist(adjLength1));
+        rule->setMinAdjLength1(l->dbdist(length));
         rule->setMinAdjLength1Valid(true);
-        auto opt = at_c<1>(params);
-        if(opt.is_initialized())
-        {
-            boost::variant<std::string, double> var = opt.value();
-            if(var.type()==typeid(std::string))
-            {
-                rule->setConvexCorner(true);
-            }else
-            {
-                rule->setMinAdjLength2(l->dbdist(boost::get<double>(var)));
-                rule->setMinAdjLength2Valid(true);
-            }
-        }
+    }
+    void setMinAdjacentLength2(double length, odb::dbTechLayerMinStepRule* rule, odb::lefin* l)
+    {
+        rule->setMinAdjLength2(l->dbdist(length));
+        rule->setMinAdjLength2Valid(true);
     }
     void minBetweenLngthParser(double length, odb::dbTechLayerMinStepRule* rule, odb::lefin* l)
     {
@@ -78,9 +69,12 @@ namespace lefTechLayerMinStep {
 
         qi::rule<std::string::iterator, space_type> minAdjacentRule = (
                                                                         lit("MINADJACENTLENGTH") 
-                                                                        >> double_ 
-                                                                        >> -(string("CONVEXCORNER") | double_)
+                                                                        >> double_[boost::bind(&setMinAdjacentLength1, _1, rule, l)]
+                                                                        >> -(string("CONVEXCORNER")[boost::bind(&odb::dbTechLayerMinStepRule::setConvexCorner, rule, true)] 
+                                                                            |
+                                                                            double_[boost::bind(&setMinAdjacentLength2, _1, rule, l)])
                                                                       );
+                                                                      
         qi::rule<std::string::iterator, space_type> minBetweenLngthRule = ( lit("MINBETWEENLENGTH") 
                                                                         >> (double_ [boost::bind(&minBetweenLngthParser, _1, rule, l)])
                                                                         >> -(lit("EXCEPTSAMECORNERS") [boost::bind(&odb::dbTechLayerMinStepRule::setExceptSameCorners, rule, true)])

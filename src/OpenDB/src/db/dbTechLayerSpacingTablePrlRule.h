@@ -34,9 +34,11 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbVector.h"
 #include "odb.h"
-
 // User Code Begin includes
+#include <tuple>
+#include <map>
 // User Code End includes
 
 namespace odb {
@@ -48,52 +50,57 @@ class _dbDatabase;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbTechLayerMinStepRuleFlags
+struct dbTechLayerSpacingTablePrlRuleFlags
 {
-  bool _max_edges_valid : 1;
-  bool _min_adj_length1_valid : 1;
-  bool _min_adj_length2_valid : 1;
-  bool _convex_corner : 1;
-  bool _min_between_length_valid : 1;
-  bool _except_same_corners : 1;
-  uint _spare_bits : 26;
+  bool _wrong_direction : 1;
+  bool _same_mask : 1;
+  bool _exceept_eol : 1;
+  uint _spare_bits : 29;
 };
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerMinStepRule : public _dbObject
+class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerMinStepRuleFlags _flags;
-  int                         _min_step_length;
-  uint                        _max_edges;
-  int                         _min_adj_length1;
-  int                         _min_adj_length2;
-  int                         _min_between_length;
+  dbTechLayerSpacingTablePrlRuleFlags _flags;
+  int                                 _eol_width;
+  dbVector<int>                       _length_tbl;
+  dbVector<int>                       _width_tbl;
+  dbVector<dbVector<int>>             _spacing_tbl;
+  dbVector<std::tuple<int, int, int>> _influence_tbl;
 
   // User Code Begin fields
+  std::map<uint,std::pair<int,int>>    _within_tbl;
   // User Code End fields
-  _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
-  _dbTechLayerMinStepRule(_dbDatabase*);
-  ~_dbTechLayerMinStepRule();
-  bool operator==(const _dbTechLayerMinStepRule& rhs) const;
-  bool operator!=(const _dbTechLayerMinStepRule& rhs) const
+  _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
+                                  const _dbTechLayerSpacingTablePrlRule& r);
+  _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
+  ~_dbTechLayerSpacingTablePrlRule();
+  bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
+  bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbTechLayerMinStepRule& rhs) const;
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
-                   const _dbTechLayerMinStepRule& rhs) const;
+  bool operator<(const _dbTechLayerSpacingTablePrlRule& rhs) const;
+  void differences(dbDiff&                                diff,
+                   const char*                            field,
+                   const _dbTechLayerSpacingTablePrlRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin methods
+  
+  uint getWidthIdx(const int width) const;
+  
+  uint getLengthIdx(const int length) const;
+  
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
+dbOStream& operator<<(dbOStream&                             stream,
+                      const _dbTechLayerSpacingTablePrlRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb

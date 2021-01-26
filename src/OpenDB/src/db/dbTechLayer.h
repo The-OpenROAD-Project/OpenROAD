@@ -51,6 +51,8 @@ class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
 class _dbTechLayerSpacingEolRule;
 class _dbTechLayerMinStepRule;
+class _dbTechLayerCornerSpacingRule;
+class _dbTechLayerSpacingTablePrlRule;
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -108,6 +110,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerSpacingRule>*  _spacing_rules_tbl;
   dbTable<_dbTechLayerSpacingEolRule>*  _spacing_eol_rules_tbl;
   dbTable<_dbTechLayerMinStepRule>*  _minstep_rules_tbl;
+  dbTable<_dbTechLayerCornerSpacingRule>*  _corner_spacing_rules_tbl;
+  dbTable<_dbTechLayerSpacingTablePrlRule>*  _spacing_table_prl_rules_tbl;
   dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
   dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
   dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
