@@ -1510,6 +1510,10 @@ void FlexDRWorker::modPathCost(drConnFig *connFig, int type) {
 
 bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &rerouteNets) {
   auto rerouteNetsComp1 = [](drNet* const &a, drNet* const &b) {
+                         if (a->getFrNet()->getNondefaultRule() && !b->getFrNet()->getNondefaultRule()) 
+                             return true;
+                         if (!a->getFrNet()->getNondefaultRule() && b->getFrNet()->getNondefaultRule()) 
+                             return false;
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
@@ -1519,9 +1523,17 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          };
   auto rerouteNetsComp2 = [](drNet* const &a, drNet* const &b) {
+                         if (a->getFrNet()->getNondefaultRule() && !b->getFrNet()->getNondefaultRule()) 
+                             return true;
+                         if (!a->getFrNet()->getNondefaultRule() && b->getFrNet()->getNondefaultRule()) 
+                             return false;
                          return (a->getMarkerDist() == b->getMarkerDist() ? a->getId() < b->getId() : a->getMarkerDist() < b->getMarkerDist());
                          };
   auto rerouteNetsComp3 = [](drNet* const &a, drNet* const &b) {
+                         if (a->getFrNet()->getNondefaultRule() && !b->getFrNet()->getNondefaultRule()) 
+                             return true;
+                         if (!a->getFrNet()->getNondefaultRule() && b->getFrNet()->getNondefaultRule()) 
+                             return false;
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
@@ -2944,7 +2956,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net, map<FlexMazeIdx, frCoord> &a
 bool FlexDRWorker::routeNet(drNet* net) {
   ProfileTask profile("DR:routeNet");
   //bool enableOutput = true;
-  bool enableOutput = false;
+  bool enableOutput = true;
   if (net->getPins().size() <= 1) {
     return true;
   }

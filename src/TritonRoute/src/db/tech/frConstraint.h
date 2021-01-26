@@ -36,6 +36,8 @@
 #include <memory>
 #include <utility>
 #include "db/tech/frLookupTbl.h"
+#include "frViaDef.h"
+#include "frViaRuleGenerate.h"
 
 namespace fr {
   enum class frLef58CornerSpacingExceptionEnum {
@@ -1972,6 +1974,124 @@ namespace fr {
     bool checkMask;
   };
 
+      using namespace std;
+  class frNonDefaultRule{
+      private:
+      
+        
+        
+  public:
+      string name;
+        //each vector position is a metal layer
+        vector<frCoord> widths_; 
+        vector<frCoord> spacings_;
+        vector<frCoord> wireExtensions_;
+        vector<int> minCuts_; //min cuts per cut layer 
+
+        //vias for each layer
+        vector<vector<frViaDef*>> vias_;
+        vector<vector<frViaRuleGenerate*>> viasRules_;  
+        
+        bool hardSpacing_ = false;
+//    void setWidth(frCoord w, int z);
+//    void setSpacing(frCoord s, int z);
+//    void setWireExtension(frCoord we, int z);
+    
+    void setWidth(frCoord w, int z){
+        if (z >= widths_.size())
+            for (int i = widths_.size(); i <= z; i++)
+                widths_.push_back(0);
+        widths_[z] = w;
+    }
+    
+    void setSpacing(frCoord s, int z){
+        if (z >= spacings_.size())
+            for (int i = spacings_.size(); i <= z; i++)
+                spacings_.push_back(0);
+        spacings_[z] = s;
+    }
+    
+    void setMinCuts(int ncuts, int z){
+        if (z >= minCuts_.size())
+            for (int i = minCuts_.size(); i <= z; i++)
+                minCuts_.push_back(1);
+        minCuts_[z] = ncuts;
+    }
+
+    void setWireExtension(frCoord we, int z){
+        if (z >= wireExtensions_.size())
+            for (int i = wireExtensions_.size(); i <= z; i++)
+                wireExtensions_.push_back(0);
+        wireExtensions_[z] = we;
+    }
+
+    void addVia(frViaDef* via, int z){
+        if (z >= vias_.size())
+            for (int i = vias_.size(); i <= z; i++)
+                vias_.push_back(vector<frViaDef*>());
+        vias_[z].push_back(via);
+    }
+
+    void addViaRule(frViaRuleGenerate* via, int z){
+        if (z >= viasRules_.size())
+            for (int i = viasRules_.size(); i <= z; i++)
+                viasRules_.push_back(vector<frViaRuleGenerate*>());
+        viasRules_[z].push_back(via);
+    }
+    
+    void setHardSpacing(bool isHard){
+        hardSpacing_ = isHard;
+    }
+    
+//    void addVia(frViaDef* via, int z);
+//    void addViaRule(frViaRuleGenerate* via, int z);
+    
+    void setName(const char* n){
+        name = string(n);
+    }
+    
+    void setName(string n){
+        name = n;
+    }
+    
+    string getName() const{
+        return name;
+    }
+    
+    frCoord getWidth(int z){
+        if (z >= widths_.size()) return 0;
+        return widths_[z];
+    }
+    
+    frCoord getSpacing(int z){
+        if (z >= spacings_.size()) return 0;
+        return spacings_[z];
+    }
+    
+    frCoord getWireExtension(int z){
+        if (z >= wireExtensions_.size()) return 0;
+        return wireExtensions_[z];
+    }
+    
+    int getMinCuts(int z){
+        if (z >= minCuts_.size()) return 1;
+        return minCuts_[z];
+    }
+    
+    const vector<frViaDef*>& getVias(int z){
+        return vias_[z];
+    }
+    
+    const vector<frViaRuleGenerate*>& getViaRules(int z){
+        return viasRules_[z];
+    }
+    
+    bool isHardSpacing(){
+        return hardSpacing_;
+    }
+    
+    
+  };
 }
 
 #endif

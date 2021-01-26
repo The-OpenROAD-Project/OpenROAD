@@ -60,6 +60,7 @@ public:
       static int getLefVias(lefrCallbackType_e type, lefiVia* via, lefiUserData data);
       static int getLefViaRules(lefrCallbackType_e type, lefiViaRule* via, lefiUserData data);
       static int getLefUseMinSpacing(lefrCallbackType_e type, lefiUseMinSpacing* spacing, lefiUserData data);
+      static int getNonDefaultCbk(lefrCallbackType_e type, lefiNonDefault* l, lefiUserData data);
 };
 
 int defdist(odb::dbBlock* block, int x)
@@ -377,6 +378,63 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
+void io::Parser::setNDRs(odb::dbBlock* block)
+{
+    frNonDefaultRule* fnd;
+    unique_ptr<frNonDefaultRule> ptnd;
+    int z;
+    for (auto ndr : block->getNonDefaultRules()) {
+        fnd = nullptr;
+        for (auto& pt : *design->tech_->getNondefaultRules()){  //find NDR in tech
+            if (pt->getName() ==  ndr->getName()){
+                fnd = pt.get();
+                break;
+            }
+        }
+        if (!fnd){
+            ptnd = make_unique<frNonDefaultRule>();
+            design->tech_->addNDR(std::move(ptnd));
+            fnd = ptnd.get();
+        }
+        fnd->setName(ndr->getName());
+        fnd->setHardSpacing(ndr->getHardSpacing());
+        vector<odb::dbTechLayerRule*> lr;
+        ndr->getLayerRules(lr);
+        for (auto& l : lr){
+            z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum()/2 -1;
+            fnd->setWidth(l->getWidth(), z);
+            fnd->setSpacing(l->getSpacing(), z);
+            fnd->setWireExtension(l->getWireExtension(), z);
+        }
+//        for (auto l : block->getDb()->getTech()->getLayers()){
+//            if (l->getType() == odb::dbTechLayerType::CUT){
+//                int nCuts;
+//                z = l->getNumber()/2;
+//                cout << "\nz " << z << "\n";
+//                ndr->getMinCuts(l, nCuts);
+//                fnd->setMinCuts(nCuts, z);
+//            }
+//        }
+        vector<odb::dbTechVia*> vias;
+        ndr->getUseVias(vias);
+        for (auto via : vias){
+//            cout << "bottom layer " << via->getBottomLayer()->getNumber() << "\n";
+            fnd->addVia(design->getTech()->getVia(via->getName()), via->getBottomLayer()->getNumber()-1);
+        }
+        vector<odb::dbTechViaGenerateRule*> viaRules;
+        ndr->getUseViaRules(viaRules);
+        z = std::numeric_limits<int>().max();
+        for (auto via : viaRules){
+            for (int i = 0; i < via->getViaLayerRuleCount(); i++){
+//                cout << i << "\n";
+                if (via->getViaLayerRule(i)->getLayer()->getType() == odb::dbTechLayerType::CUT) continue;
+                if (via->getViaLayerRule(i)->getLayer()->getNumber()/2 < z) 
+                    z = via->getViaLayerRule(i)->getLayer()->getNumber()/2;
+            }
+            fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
+        }
+    }
+}
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
                                frCoord& beginY,
@@ -467,6 +525,8 @@ void io::Parser::setNets(odb::dbBlock* block)
   for (auto net : block->getNets()) {
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
+    if (net->getNonDefaultRule()) uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
+    if (uNetIn->getNondefaultRule()) cout << "Net " << net->getName() << " NDR " << uNetIn->getNondefaultRule()->getName() << "\n";
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
@@ -852,6 +912,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
   setVias(block);
   setBTerms(block);
   setNets(block);
+  setNDRs(block);
   tmpBlock->setId(0);
   design->setTopBlock(std::move(tmpBlock));
   addFakeNets();
@@ -4574,6 +4635,36 @@ int io::Parser::Callbacks::getLefViaRules(lefrCallbackType_e type, lefiViaRule* 
   return 0;
 }
 
+int io::Parser::Callbacks::getNonDefaultCbk(lefrCallbackType_e type, lefiNonDefault* l, lefiUserData data){
+    io::Parser* parser = (io::Parser*) data;
+    int layerI; 
+    unique_ptr<frNonDefaultRule> ndr = make_unique<frNonDefaultRule>();
+    ndr->setHardSpacing(l->hasHardspacing());
+    ndr->setName(l->name());
+    for (int z = 0; z < l->numLayers(); z++){
+        layerI = parser->tech->name2layer.at(l->layerName(z))->getLayerNum()/2 -1;
+//        cout << "layer I " << layerI << " layer name " << l->layerName(z) << "\n";
+        ndr->setWidth(parser->tech->getDBUPerUU()*l->layerWidth(z), layerI);
+        ndr->setSpacing(parser->tech->getDBUPerUU()*l->layerSpacing(z), layerI);
+        ndr->setWireExtension(parser->tech->getDBUPerUU()*l->layerWireExtension(z), layerI);
+    }
+    for (int z = 0; z < l->numMinCuts(); z++){
+        layerI = parser->tech->name2layer.at(l->cutLayerName(z))->getLayerNum()/2-1;
+        ndr->setMinCuts(l->numCuts(z), layerI);
+    }
+    for (int i = 0; i < l->numUseVia(); i++){
+        frViaDef* via = parser->tech->getVia(l->viaName(i));
+        ndr->addVia(via, via->getLayer1Num()/2 -1);
+    }
+//    cout << "NUM viarule" << l->numUseViaRule() << "\n";
+    for (int i = 0; i < l->numUseViaRule(); i++){
+        frViaRuleGenerate* via = parser->tech->getViaRule(l->viaRuleName(i));
+        ndr->addViaRule(via, via->getLayer1Num()/2 -1);
+    }
+    parser->tech->addNDR(std::move(ndr));
+    return 0;
+}
+
 void io::Parser::readLef() {
   ProfileTask profile("IO:readLef");
   FILE* f;
@@ -4594,6 +4685,7 @@ void io::Parser::readLef() {
   lefrSetLayerCbk(Callbacks::getLefLayers);
   lefrSetViaCbk(Callbacks::getLefVias);
   lefrSetViaRuleCbk(Callbacks::getLefViaRules);
+  lefrSetNonDefaultCbk(Callbacks::getNonDefaultCbk);
 
   if ((f = fopen(LEF_FILE.c_str(),"r")) == 0) {
     cout <<"Couldn't open lef file" <<endl;
@@ -4606,7 +4698,7 @@ void io::Parser::readLef() {
     exit(2);
   }
   fclose(f);
-
+  
   lefrClear();
 }
 
@@ -4644,6 +4736,31 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
   readDb(db);
 
 
+  for (auto& ndr : design->getTech()->nonDefaultRules){
+      cout << "\nRule " << ndr->getName() << "\n";
+      for (int z = 0; z < ndr->widths_.size(); z++){
+          cout << "\nLayer" << z <<" \n";
+          cout << "WIDTH " << ndr->widths_[z] << "\n";
+          cout << "SPACING " << ndr->spacings_[z] << "\n";
+          cout << "WIRE EXT " << ndr->wireExtensions_[z] << "\n";
+      }
+      cout << "\nMin cuts\n";
+      for (int z = 0; z < ndr->minCuts_.size(); z++){
+          cout << "\nLayer" << z <<" " << ndr->getMinCuts(z);
+      }
+      cout << "\nVias \n";
+      for (int z = 0; z < ndr->vias_.size(); z++){
+          cout << "\nLayer " << z << "\n";
+          for (auto& via : ndr->vias_[z])
+            cout << via->getName() << "\n";
+      }
+      cout << "\nVia RULES \n";
+      for (int z = 0; z < ndr->viasRules_.size(); z++){
+          cout << "\nLayer " << z << "\n";
+          for (auto& via : ndr->viasRules_[z])
+            cout << via->getName() << "\n";
+      }
+  }
 
   if (VERBOSE > 0) {
     cout <<endl;

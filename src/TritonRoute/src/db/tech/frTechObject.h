@@ -158,6 +158,28 @@ namespace fr {
       return viaForbiddenThrough[tableLayerIdx][tableEntryIdx];
     }
 
+    frViaDef* getVia(frString name){
+        return name2via.at(name);
+    }
+    
+    frViaRuleGenerate* getViaRule(frString name){
+        return name2viaRuleGenerate.at(name);
+    }
+    
+    void addNDR(std::unique_ptr<frNonDefaultRule> n) {
+        nonDefaultRules.push_back(std::move(n));
+    }
+    
+    std::vector<std::unique_ptr<frNonDefaultRule>>* getNondefaultRules(){
+        return &nonDefaultRules;
+    }
+    
+    frNonDefaultRule* getNondefaultRule(string name){
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getName() == name) return nd.get();
+        }
+        return nullptr;
+    }
     // debug
     void printAllConstraints() {
       std::cout << "List of Constraints:\n";
@@ -203,6 +225,7 @@ namespace fr {
 
     frCollection<std::shared_ptr<frConstraint> >     constraints;
     std::vector<std::unique_ptr<frConstraint> >      uConstraints;
+    std::vector<std::unique_ptr<frNonDefaultRule>>    nonDefaultRules;
 
     // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forgidden x dist range (for non-shape-based rule)
     // via2ViaForbiddenLen[z][1], prev via is down, curr via is down, forgidden y dist range (for non-shape-based rule)

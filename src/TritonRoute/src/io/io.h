@@ -80,6 +80,7 @@ namespace fr {
       void setBTerms(odb::dbBlock* block);
       void setVias(odb::dbBlock* block);
       void setNets(odb::dbBlock* block);
+      void setNDRs(odb::dbBlock* block);
       void getSBoxCoords(odb::dbSBox* box,
                         frCoord& beginX,
                         frCoord& beginY,

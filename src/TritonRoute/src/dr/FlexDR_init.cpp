@@ -3200,6 +3200,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry> &rerouteQueue) 
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
     for (auto &net: nets_) {
+//        cout << net->getFrNet()->getName() << (net->getFrNet()->getNondefaultRule() ? " HAS NDR!\n" : " no ndr\n");
       ripupNets.push_back(net.get());
     }
 
