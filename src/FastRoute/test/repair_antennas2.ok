@@ -35,18 +35,15 @@ Layer 6 pitch: 3.33
 [INFO GRT-0023] Reducing resources of layer 4 by 15%
 [INFO GRT-0024] Reducing resources of layer 5 by 15%
 [INFO GRT-0025] Reducing resources of layer 6 by 15%
-
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 2368
-[Overflow Report] Total Capacity: 64204
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
+Final usage/overflow report:
+[INFO GRT-0133] [Overflow Report] Total Usage   : 2368
+                [Overflow Report] Total Capacity: 64204
+                [Overflow Report] Max H Overflow: 0
+                [Overflow Report] Max V Overflow: 0
+                [Overflow Report] Max Overflow  : 0
+                [Overflow Report] H   Overflow  : 0
+                [Overflow Report] V   Overflow  : 0
+                [Overflow Report] Final Overflow: 0
 [INFO GRT-0110] Final usage          : 2368
 [INFO GRT-0111] Final number of vias : 1435
 [INFO GRT-0112] Final usage 3D       : 6673
@@ -100,18 +97,15 @@ Layer 6 pitch: 3.33
 [INFO GRT-0024] Reducing resources of layer 5 by 15%
 [INFO GRT-0025] Reducing resources of layer 6 by 15%
 [INFO GRT-0009] #Nets to reroute: 25
-
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 516
-[Overflow Report] Total Capacity: 62410
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
+Final usage/overflow report:
+[INFO GRT-0133] [Overflow Report] Total Usage   : 516
+                [Overflow Report] Total Capacity: 62410
+                [Overflow Report] Max H Overflow: 0
+                [Overflow Report] Max V Overflow: 0
+                [Overflow Report] Max Overflow  : 0
+                [Overflow Report] H   Overflow  : 0
+                [Overflow Report] V   Overflow  : 0
+                [Overflow Report] Final Overflow: 0
 [INFO GRT-0110] Final usage          : 516
 [INFO GRT-0111] Final number of vias : 161
 [INFO GRT-0112] Final usage 3D       : 999
