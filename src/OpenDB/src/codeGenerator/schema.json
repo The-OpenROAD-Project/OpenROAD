@@ -424,263 +424,19 @@
       ]
     },
     {
-      "name": "dbTechLayerMinStepRule",
-      "type": "dbObject",
-      "fields": [
-        {
-          "type": "int",
-          "name": "_min_step_length",
-          "flags": []
-        },
-        {
-          "type": "uint",
-          "name": "_max_edges",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_max_edges_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_min_adj_length1",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_min_adj_length1_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_min_adj_length2",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_min_adj_length2_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type" : "bool",
-          "name" : "_convex_corner",
-          "flags" : [],
-          "bits" : 1
-        },
-        {
-          "type": "int",
-          "name": "_min_between_length",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_min_between_length_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name": "_except_same_corners",
-          "flags": [],
-          "bits" : 1
-        }
-      ],
-      "constructors": [],
-      "enums": [],
-      "includes": [
-        "dbObject.h"
-      ],
-      "cpp_includes":["dbTechLayer.h"]
+      "src":"dbTechLayerMinStepRule.json"
     },
     {
-      "name": "dbTechLayerCornerSpacingRule",
-      "type": "dbObject",
-      "fields": [
-        {
-          "type": "uint",
-          "name": "_corner_type",
-          "flags": ["no-get","no-set"],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name": "_same_mask",
-          "flags": [],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_corner_only",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_within",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_except_eol",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_eol_width",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_except_jog_length",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type" : "int",
-          "name" : "_jog_length",
-          "flags" : []
-        },
-        {
-          "type": "bool",
-          "name": "_include_shape",
-          "flags": [],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_min_length_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_min_length",
-          "flags": []
-        },
-        {
-          "type": "bool",
-          "name":"_except_notch",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_except_same_net",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_except_same_metal",
-          "flags":[],
-          "bits":1
-        }
-      ],
-      "constructors": [],
-      "enums":[
-        {
-          "name":"CornerType",
-          "values":[
-            "CONVEXCORNER",
-            "CONCAVECORNER"
-          ],
-          "public":true
-        }
-      ],
-      "includes": [
-        "dbObject.h"
-      ],
-      "cpp_includes":["dbTechLayer.h"]
+      "src":"dbTechLayerCornerSpacingRule.json"
     },
     {
-      "name": "dbTechLayerSpacingTablePrlRule",
-      "type": "dbObject",
-      "fields": [
-        {
-          "type": "bool",
-          "name": "_wrong_direction",
-          "flags": [],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_same_mask",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "bool",
-          "name":"_exceept_eol",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type": "int",
-          "name": "_eol_width",
-          "flags": []
-        },
-        {
-          "type": "dbVector<int>",
-          "name": "_length_tbl",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "type": "dbVector<int>",
-          "name": "_width_tbl",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "type": "dbVector<dbVector<int>>",
-          "name": "_spacing_tbl",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "type": "dbVector<std::tuple<int,int,int>>",
-          "name": "_influence_tbl",
-          "flags":["no-set","no-get","no-template","no-serial"]
-        }
-      ],
-      "constructors": [],
-      "enums":[],
-      "h_includes": [
-        "dbVector.h"
-      ],
-      "cpp_includes":["dbTechLayer.h"]
+      "src": "dbTechLayerSpacingTablePrlRule.json"
     },
     {
-      "name": "dbTechLayerRightWayOnGridOnlyRule",
-      "type": "dbObject",
-      "fields": [
-        {
-          "type": "bool",
-          "name": "_check_mask",
-          "flags": [],
-          "bits":1
-        }
-      ],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
+      "src": "dbTechLayerRightWayOnGridOnlyRule.json"
     },
     {
-      "name": "dbTechLayerRectOnlyRule",
-      "type": "dbObject",
-      "fields": [
-        {
-          "type": "bool",
-          "name": "_except_non_core_pins",
-          "flags": [],
-          "bits":1
-        }
-      ],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
+      "src": "dbTechLayerRectOnlyRule.json"
     },
     {
       "name": "dbTechLayerCutClassRule",
@@ -691,42 +447,18 @@
       "cpp_includes":["dbTechLayer.h"]
     },
     {
-      "name":"dbTechLayerCutClassSubRule",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_class_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "type":"int",
-          "name":"_width",
-          "flags":[]
-        },
-        {
-          "type":"int",
-          "name":"_length",
-          "flags":[]
-        },
-        {
-          "type":"int",
-          "name":"_num_cuts",
-          "flags":[]
-        },
-        {
-          "type":"bool",
-          "name":"_length_valid",
-          "flags":[],
-          "bits":1
-        },
-        {
-          "type":"bool",
-          "name":"_cuts_valid",
-          "flags":[],
-          "bits":1
-        }
-      ]
+      "src":"dbTechLayerCutClassSubRule.json"
+    },
+    {
+      "name": "dbTechLayerCutSpacingRule",
+      "type": "dbObject",
+      "fields": [],
+      "constructors": [],
+      "enums":[],
+      "cpp_includes":["dbTechLayer.h"]
+    },
+    {
+      "src":"dbTechLayerCutSpacingSubRule.json"
     },
     {
       "name":"dbModule",
@@ -948,6 +680,11 @@
     {
       "first":"dbTechLayerCutClassRule",
       "second":"dbTechLayerCutClassSubRule",
+      "type":"1_n"
+    },
+    {
+      "first":"dbTechLayerCutSpacingRule",
+      "second":"dbTechLayerCutSpacingSubRule",
       "type":"1_n"
     }
   ]

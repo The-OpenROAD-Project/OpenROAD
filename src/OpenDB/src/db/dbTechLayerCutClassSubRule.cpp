@@ -251,7 +251,7 @@ dbTechLayerCutClassSubRule* dbTechLayerCutClassSubRule::create(
   _dbTechLayerCutClassRule*    _parent = (_dbTechLayerCutClassRule*) parent;
   _dbTechLayerCutClassSubRule* newrule
       = _parent->_techlayercutclasssubrule_tbl->create();
-  newrule->_class_name       = strdup(name);
+  newrule->_class_name = strdup(name);
   return ((dbTechLayerCutClassSubRule*) newrule);
 }
 

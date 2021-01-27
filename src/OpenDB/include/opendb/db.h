@@ -113,6 +113,8 @@ class dbTechLayerRightWayOnGridOnlyRule;
 class dbTechLayerRectOnlyRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutClassSubRule;
+class dbTechLayerCutSpacingRule;
+class dbTechLayerCutSpacingSubRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -7793,6 +7795,115 @@ class dbTechLayerCutClassSubRule : public dbObject
 
   static void destroy(dbTechLayerCutClassSubRule* rule);
   // User Code End dbTechLayerCutClassSubRule
+};
+
+class dbTechLayerCutSpacingRule : public dbObject
+{
+ public:
+  dbSet<dbTechLayerCutSpacingSubRule> getTechLayerCutSpacingSubRules() const;
+
+  // User Code Begin dbTechLayerCutSpacingRule
+  // User Code End dbTechLayerCutSpacingRule
+};
+
+class dbTechLayerCutSpacingSubRule : public dbObject
+{
+ public:
+  enum CutSpacingType
+  {
+    NONE                = 0,
+    LAYER               = 1,
+    ADJACENTCUTS        = 2,
+    PARALLELOVERLAP     = 3,
+    PARALLELWITHIN      = 4,
+    SAMEMETALSHAREDEDGE = 5,
+    AREA                = 6
+  };
+
+  char* getSecondLayerName() const;
+
+  void setNumCuts(uint _num_cuts);
+
+  uint getNumCuts() const;
+
+  void setWithin(int _within);
+
+  int getWithin() const;
+
+  void setCutClassName(char* _cut_class_name);
+
+  char* getCutClassName() const;
+
+  void setCutArea(int _cut_area);
+
+  int getCutArea() const;
+
+  void setMaxXY(bool _max_x_y);
+
+  bool isMaxXY() const;
+
+  void setCenterToCenter(bool _center_to_center);
+
+  bool isCenterToCenter() const;
+
+  void setSameNet(bool _same_net);
+
+  bool isSameNet() const;
+
+  void setSameMetal(bool _same_metal);
+
+  bool isSameMetal() const;
+
+  void setSameVias(bool _same_vias);
+
+  bool isSameVias() const;
+
+  void setStack(bool _stack);
+
+  bool isStack() const;
+
+  void setAdjacentCuts(uint _adjacent_cuts);
+
+  uint getAdjacentCuts() const;
+
+  void setExactAligned(bool _exact_aligned);
+
+  bool isExactAligned() const;
+
+  void setExceptSamePgnet(bool _except_same_pgnet);
+
+  bool isExceptSamePgnet() const;
+
+  void setCutClassValid(bool _cut_class_valid);
+
+  bool isCutClassValid() const;
+
+  void setSideParallelOverlap(bool _side_parallel_overlap);
+
+  bool isSideParallelOverlap() const;
+
+  void setExceptSameNet(bool _except_same_net);
+
+  bool isExceptSameNet() const;
+
+  void setExceptSameMetal(bool _except_same_metal);
+
+  bool isExceptSameMetal() const;
+
+  void setExceptSameVia(bool _except_same_via);
+
+  bool isExceptSameVia() const;
+
+  void setAbove(bool _above);
+
+  bool isAbove() const;
+
+  void setExceptTwoEdges(bool _except_two_edges);
+
+  bool isExceptTwoEdges() const;
+
+  // User Code Begin dbTechLayerCutSpacingSubRule
+  // User Code End dbTechLayerCutSpacingSubRule
 };
 
 class dbModule : public dbObject

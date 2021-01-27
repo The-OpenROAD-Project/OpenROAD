@@ -62,7 +62,8 @@ namespace odb {
   struct {{ _struct.name }}
   {
     {% for field in _struct.fields %}
-    {{ field.type }} {{ field.name }}{% if "bits" in field %} : {{ field.bits }}{% endif %};
+    {{ field.type }} {{ field.name }}{% if "bits" in field %} : {{ field.bits }}{% endif %};{%if "comment" in field%} {{field.comment}}{%endif%}
+    
     {% endfor %}
   };
   {% endfor %}
@@ -90,7 +91,8 @@ namespace odb {
     {%if field.table%} 
     dbTable<_{{field.type}}>* {{field.name}}; 
     {%else%}
-    {{ field.type }} {{ field.name }}{%if "default" in field %}= {{ field.default }}{% endif %};
+    {{ field.type }} {{ field.name }};{%if "comment" in field%} {{field.comment}}{%endif%}
+
     {%endif%}
     {%endfor%}
 
