@@ -137,13 +137,13 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteFastRoute(fastRoute_);
+  // deleteFastRoute(fastRoute_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteTritonMp(tritonMp_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
-  deleteReplace(replace_);
+  // deleteReplace(replace_);
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
