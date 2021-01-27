@@ -3562,7 +3562,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
         }
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3, true);
+          modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true,  false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
           modEolSpacingCost(box, zIdx, 3);
@@ -3582,7 +3582,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
 
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3, true);
+          modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true,  false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
           modEolSpacingCost(box, zIdx, 3);
@@ -3606,7 +3606,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
           // unblock planar edge for obs over pin, ap will unblock via edge for legal pin access
           modBlockedPlanar(box, zIdx, false);
           if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-            modMinSpacingCostPlaner(box, zIdx, 3, true);
+            modMinSpacingCostPlanar(box, zIdx, 3, true);
             modEolSpacingCost(box, zIdx, 3);
           }
         } else {
@@ -3621,7 +3621,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
           cout <<"  initMazeCost_snet " <<ps->getNet()->getName() <<endl;
         }
         // assume only routing layer
-        modMinSpacingCostPlaner(box, zIdx, 3);
+        modMinSpacingCostPlanar(box, zIdx, 3);
         modMinSpacingCostVia(box, zIdx, 3, true,  true);
         modMinSpacingCostVia(box, zIdx, 3, false, true);
         modEolSpacingCost(box, zIdx, 3);
@@ -3638,7 +3638,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
         }
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3);
+          modMinSpacingCostPlanar(box, zIdx, 3);
           modMinSpacingCostVia(box, zIdx, 3, true,  false);
           modMinSpacingCostVia(box, zIdx, 3, false, false);
           modEolSpacingCost(box, zIdx, 3);
@@ -3706,7 +3706,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             int type = isAddPathCost ? 3 : 2;
 
             if (isRoutingLayer) {
-              modMinSpacingCostPlaner(box, zIdx, type);
+              modMinSpacingCostPlanar(box, zIdx, type);
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true,  false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);
@@ -3764,7 +3764,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             int type = isAddPathCost ? 3 : 2;
 
             if (isRoutingLayer) {
-              modMinSpacingCostPlaner(box, zIdx, type);
+              modMinSpacingCostPlanar(box, zIdx, type);
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true,  false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);

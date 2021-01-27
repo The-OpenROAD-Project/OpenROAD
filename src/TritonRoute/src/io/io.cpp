@@ -526,7 +526,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
     if (net->getNonDefaultRule()) uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
-    if (uNetIn->getNondefaultRule()) cout << "Net " << net->getName() << " NDR " << uNetIn->getNondefaultRule()->getName() << "\n";
+//    if (uNetIn->getNondefaultRule()) cout << "Net " << net->getName() << " NDR " << uNetIn->getNondefaultRule()->getName() << "\n";
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
@@ -4736,31 +4736,31 @@ void io::Parser::readLefDb(odb::dbDatabase* db) {
   readDb(db);
 
 
-  for (auto& ndr : design->getTech()->nonDefaultRules){
-      cout << "\nRule " << ndr->getName() << "\n";
-      for (int z = 0; z < ndr->widths_.size(); z++){
-          cout << "\nLayer" << z <<" \n";
-          cout << "WIDTH " << ndr->widths_[z] << "\n";
-          cout << "SPACING " << ndr->spacings_[z] << "\n";
-          cout << "WIRE EXT " << ndr->wireExtensions_[z] << "\n";
-      }
-      cout << "\nMin cuts\n";
-      for (int z = 0; z < ndr->minCuts_.size(); z++){
-          cout << "\nLayer" << z <<" " << ndr->getMinCuts(z);
-      }
-      cout << "\nVias \n";
-      for (int z = 0; z < ndr->vias_.size(); z++){
-          cout << "\nLayer " << z << "\n";
-          for (auto& via : ndr->vias_[z])
-            cout << via->getName() << "\n";
-      }
-      cout << "\nVia RULES \n";
-      for (int z = 0; z < ndr->viasRules_.size(); z++){
-          cout << "\nLayer " << z << "\n";
-          for (auto& via : ndr->viasRules_[z])
-            cout << via->getName() << "\n";
-      }
-  }
+//  for (auto& ndr : design->getTech()->nonDefaultRules){
+//      cout << "\nRule " << ndr->getName() << "\n";
+//      for (int z = 0; z < ndr->widths_.size(); z++){
+//          cout << "\nLayer" << z <<" \n";
+//          cout << "WIDTH " << ndr->widths_[z] << "\n";
+//          cout << "SPACING " << ndr->spacings_[z] << "\n";
+//          cout << "WIRE EXT " << ndr->wireExtensions_[z] << "\n";
+//      }
+//      cout << "\nMin cuts\n";
+//      for (int z = 0; z < ndr->minCuts_.size(); z++){
+//          cout << "\nLayer" << z <<" " << ndr->getMinCuts(z);
+//      }
+//      cout << "\nVias \n";
+//      for (int z = 0; z < ndr->vias_.size(); z++){
+//          cout << "\nLayer " << z << "\n";
+//          for (auto& via : ndr->vias_[z])
+//            cout << via->getName() << "\n";
+//      }
+//      cout << "\nVia RULES \n";
+//      for (int z = 0; z < ndr->viasRules_.size(); z++){
+//          cout << "\nLayer " << z << "\n";
+//          for (auto& via : ndr->viasRules_[z])
+//            cout << via->getName() << "\n";
+//      }
+//  }
 
   if (VERBOSE > 0) {
     cout <<endl;

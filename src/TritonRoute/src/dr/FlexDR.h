@@ -710,8 +710,8 @@ namespace fr {
     void modPathCost(drConnFig *connFig, int type);
     // minSpc
     void modMinSpacingCost(drNet* net, const frBox &box, frMIdx z, int type, bool isCurrPs);
-    void modMinSpacingCostPlaner(const frBox &box, frMIdx z, int type, bool isBlockage = false);
-    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false);
+    void modMinSpacingCostPlanar(const frBox &box, frMIdx z, int type, bool isBlockage = false, bool isNonDef = false);
+    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false, bool isNonDef = false);
     frCoord pt2boxDistSquare(const frPoint &pt, const frBox &box);
     frCoord box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
     frCoord box2boxDistSquareNew(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);

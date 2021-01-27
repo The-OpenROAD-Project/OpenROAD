@@ -371,7 +371,7 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
   // bending cost
   auto currDir = currGrid.getLastDir();
   auto lNum = getLayerNum(currGrid.z());
-  auto pathWidth = getDesign()->getTech()->getLayer(lNum)->getWidth();
+  auto layer = getDesign()->getTech()->getLayer(lNum);
 
   if (currDir != dir && currDir != frDirEnum::UNKNOWN) {
     // original
@@ -417,7 +417,7 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
     if (dir == frDirEnum::U || dir == frDirEnum::D) {
       isTLengthViaUp = (dir == frDirEnum::U);
       // if there was a turn before
-      if (tLength != std::numeric_limits<frCoord>::max()) {
+//      if (tLength != std::numeric_limits<frCoord>::max()) {
         if (currDir == frDirEnum::W || currDir == frDirEnum::E) {
           tLength = currGrid.getTLength();
           if (getTech()->isViaForbiddenTurnLen(gridZ, !isTLengthViaUp, true, tLength)) {
@@ -429,7 +429,7 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
             isForbiddenTLen = true;
           }
         }
-      }
+//      }
     // curr is a planar turn
     } else {
       isTLengthViaUp = currGrid.isPrevViaUp();
@@ -454,32 +454,205 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
     }
   }
 
-  bool gridCost   = hasGridCost(gridX, gridY, gridZ, dir);
-  bool drcCost    = hasDRCCost(gridX, gridY, gridZ, dir);
-  bool markerCost = hasMarkerCost(gridX, gridY, gridZ, dir);
-  bool shapeCost  = hasShapeCost(gridX, gridY, gridZ, dir);
-  bool blockCost  = isBlocked(gridX, gridY, gridZ, dir);
-  bool guideCost  = hasGuide(gridX, gridY, gridZ, dir);
-
-  // temporarily disable guideCost
-  nextPathCost += getEdgeLength(gridX, gridY, gridZ, dir)
-                  + (gridCost   ? GRIDCOST         * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (drcCost    ? ggDRCCost_       * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (markerCost ? ggMarkerCost_    * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (shapeCost  ? SHAPECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (blockCost  ? BLOCKCOST        * pathWidth * 20                          : 0)
-                  + (!guideCost ? GUIDECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
-  if (enableOutput) {
-    cout <<"edge grid/shape/drc/marker/blk/length = " 
-         <<hasGridCost(gridX, gridY, gridZ, dir)   <<"/"
-         <<hasShapeCost(gridX, gridY, gridZ, dir)  <<"/"
-         <<hasDRCCost(gridX, gridY, gridZ, dir)    <<"/"
-         <<hasMarkerCost(gridX, gridY, gridZ, dir) <<"/"
-         <<isBlocked(gridX, gridY, gridZ, dir) <<"/"
-         <<getEdgeLength(gridX, gridY, gridZ, dir) <<endl;
+  if (ndr_) nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
+  else{
+        nextPathCost += getCosts(gridX, gridY, gridZ, dir, layer);
+        if (enableOutput) {
+          cout <<"edge grid/shape/drc/marker/blk/length = " 
+               <<hasGridCost(gridX, gridY, gridZ, dir)   <<"/"
+               <<hasShapeCost(gridX, gridY, gridZ, dir)  <<"/"
+               <<hasDRCCost(gridX, gridY, gridZ, dir)    <<"/"
+               <<hasMarkerCost(gridX, gridY, gridZ, dir) <<"/"
+               <<isBlocked(gridX, gridY, gridZ, dir) <<"/"
+               <<getEdgeLength(gridX, gridY, gridZ, dir) <<endl;
+        }
   }
+  
   return nextPathCost;
 
+}
+
+frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const{
+    if (dir == frDirEnum::U || dir == frDirEnum::D) return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
+    frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
+    frCoord cost = el;
+    cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
+    cost += (hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
+    
+    frMIdx startX, startY, endX, endY;
+    frCoord r, x1, x2, y1, y2;
+    frCoord sp, wext;
+    sp = max(ndr_->getSpacing(gridZ), getMinSpacingValue(layer, ndr_->getWidth(gridZ), layer->getMinWidth(), 0));
+    wext = max(ndr_->getWireExtension(gridZ), (int)layer->getMinWidth()/2) - layer->getMinWidth()/2;
+    
+    //get iteration bounds
+    r = ndr_->getWidth(gridZ)/2 + sp + layer->getMinWidth()/2 -1;
+    if (dir == frDirEnum::N || dir == frDirEnum::S){
+        startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
+        endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
+        startY = endY = gridY;
+        y1 = y2 = yCoords_[startY];
+        if (prevDir == frDirEnum::UNKNOWN/*isSrc(gridX, gridY, gridZ)*/){
+            if (dir == frDirEnum::N)
+                startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r-wext));
+            else endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r+wext));
+        }else {
+            getNextGrid(gridX, gridY, gridZ, dir);
+            if (isDst(gridX, gridY, gridZ)){
+                if (dir == frDirEnum::N)
+                    endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r+wext));
+                else startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r-wext));
+            }
+            getPrevGrid(gridX, gridY, gridZ, dir);
+        }
+    }else{
+        startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
+        endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
+        startX = endX = gridX;
+        x1 = x2 = xCoords_[startX];
+        if (prevDir == frDirEnum::UNKNOWN){
+            if (dir == frDirEnum::E)
+                startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r-wext));
+            else endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r+wext));
+        }else {
+            getNextGrid(gridX, gridY, gridZ, dir);
+            if (isDst(gridX, gridY, gridZ)){
+                if (dir == frDirEnum::E)
+                    endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r+wext));
+                else startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r-wext));
+            }
+            getPrevGrid(gridX, gridY, gridZ, dir);
+        }
+    }
+    if (xCoords_[startX] < x1) startX++;
+    if (xCoords_[endX] > x2) endX--;
+    if (yCoords_[startY] < y1) startY++;
+    if (yCoords_[endY] > y2) endY--;
+    if (startX > endX || startY > endY) ERROR("ERROR FlexGridGraph::getCostsNDR");
+    //get costs
+    for (frMIdx x = startX; x <= endX; x++){
+        for (frMIdx y = startY; y <= endY; y++){
+            cost += (hasShapeCost(x, y, gridZ, dir) ? SHAPECOST*el : 0);
+            cost += (hasDRCCost(x, y, gridZ, dir) ? ggDRCCost_*el : 0);
+            cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_*el : 0);
+            cost += (isBlocked(x, y, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
+        }
+    }
+    return cost;
+}
+
+frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const{
+    if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr) return getCosts(gridX, gridY, gridZ, dir, layer);
+    frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
+    frCoord cost = el;
+    cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
+    cost += (hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
+    
+    frMIdx startX, startY, endX, endY, startZ, endZ, top;
+    frCoord spx, spy;
+    unique_ptr<frVia> via, defVia;
+    frBox viaBox, cutBox, defViaBox, defViaCutBox;
+    frLayer* cutLayer;
+    if (dir == frDirEnum::D){
+        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()-1);
+        endZ = gridZ - (prevDir == dir ? 1 : 0);
+        startZ = gridZ - 1;
+        top = gridZ;
+    }else {
+        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()+1);
+        endZ = gridZ+1;
+        startZ = (prevDir == dir ? endZ : gridZ);
+        top = gridZ + 1;
+    }
+    defVia = make_unique<frVia>(cutLayer->getDefaultViaDef());
+    if (startZ != gridZ) layer = design_->getTech()->getLayer(layer->getLayerNum()-2);
+    
+    via = make_unique<frVia>(ndr_->getPrefVia(top-1));
+    via->getCutBBox(cutBox);
+    defVia->getCutBBox(defViaCutBox);
+    cutBox.bloat(cutLayer->getCutSpacingValue()+defViaCutBox.width() - 1, cutBox); //WARNING: assuming cuts are square
+    for (gridZ = startZ; gridZ <= endZ; gridZ++){
+        //get bloated shape
+        if (gridZ == top) {
+            via->getLayer2BBox(viaBox);
+            defVia->getLayer2BBox(defViaBox);
+            layer = design_->getTech()->getLayer(layer->getLayerNum()+2);
+        }else {
+            via->getLayer1BBox(viaBox);
+            defVia->getLayer1BBox(defViaBox);
+        }
+        spx = getMinSpacingValue(layer, viaBox.width(), defViaBox.width(), 0);
+        spy = getMinSpacingValue(layer, viaBox.length(), defViaBox.length(), 0);
+        viaBox.set(viaBox.left() - spx - defViaBox.width()/2 + 1, viaBox.bottom() - spy - defViaBox.length()/2 + 1, 
+                   viaBox.right() + spx + defViaBox.width()/2 - 1, viaBox.top() + spy + defViaBox.length()/2 - 1);
+        viaBox.set(min(viaBox.left(), cutBox.left()), min(viaBox.bottom(), cutBox.bottom()), 
+                    max(viaBox.right(), cutBox.right()), max(viaBox.top(), cutBox.top()));
+        viaBox.set(viaBox.left()+xCoords_[gridX], viaBox.bottom()+yCoords_[gridY], 
+                viaBox.right()+xCoords_[gridX], viaBox.top()+yCoords_[gridY]);
+        //get Indexes (iteration bounds)
+        startX = getLowerBoundIndex(xCoords_, viaBox.left());
+        if (xCoords_[startX] < viaBox.left()) startX++;
+        endX = getUpperBoundIndex(xCoords_, viaBox.right());
+        if (xCoords_[endX] > viaBox.right()) endX--;
+        startY = getLowerBoundIndex(yCoords_, viaBox.bottom());
+        if (yCoords_[startY] < viaBox.bottom()) startY++;
+        endY = getUpperBoundIndex(yCoords_, viaBox.top());
+        if (yCoords_[endY] > viaBox.top()) endY--;
+        if (startX > endX || startY > endY) ERROR("ERROR FlexGridGraph::getViaCostsNDR");
+        //get costs
+        for (frMIdx x = startX; x <= endX; x++){
+            for (frMIdx y = startY; y <= endY; y++){
+                cost += (hasShapeCost(x, y, gridZ, dir) ? SHAPECOST*el : 0);
+                if (gridZ != endZ){
+                    cost += (hasDRCCost(x, y, gridZ, dir) ? ggDRCCost_*el : 0);
+                    cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_*el : 0);
+                    cost += (isBlocked(x, y, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
+                }
+            }
+        }
+    }
+    return cost;
+}
+
+frCost FlexGridGraph::getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const{
+    bool gridCost   = hasGridCost(gridX, gridY, gridZ, dir);
+    bool drcCost    = hasDRCCost(gridX, gridY, gridZ, dir);
+    bool markerCost = hasMarkerCost(gridX, gridY, gridZ, dir);
+    bool shapeCost  = hasShapeCost(gridX, gridY, gridZ, dir);
+    bool blockCost  = isBlocked(gridX, gridY, gridZ, dir);
+    bool guideCost  = hasGuide(gridX, gridY, gridZ, dir);
+
+    // temporarily disable guideCost
+    return getEdgeLength(gridX, gridY, gridZ, dir)
+                    + (gridCost   ? GRIDCOST         * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                    + (drcCost    ? ggDRCCost_       * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                    + (markerCost ? ggMarkerCost_    * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                    + (shapeCost  ? SHAPECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                    + (blockCost  ? BLOCKCOST        * layer->getMinWidth() * 20                          : 0)
+                    + (!guideCost ? GUIDECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+}
+
+frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const{
+    auto con = layer->getMinSpacing();
+    if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint)
+      return static_cast<frSpacingConstraint*>(con)->getMinSpacing();
+
+    if (con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint) 
+      return static_cast<frSpacingTablePrlConstraint*>(con)->find(width1, prl);
+    
+    if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
+      return static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
+    ERROR("ERROR FlexGridGraph::getMinSpacingValue");
+}
+
+frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const{
+    return std::lower_bound(tracks.begin(), tracks.end(), v) - tracks.begin();
+}
+
+frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks, frCoord v) const{
+    auto it = std::upper_bound(tracks.begin(), tracks.end(), v);
+    if (it == tracks.end()) it = std::prev(it);
+    return it - tracks.begin();
 }
 
 /*inline*/ FlexMazeIdx FlexGridGraph::getTailIdx(const FlexMazeIdx &currIdx, const FlexWavefrontGrid &currGrid) const {

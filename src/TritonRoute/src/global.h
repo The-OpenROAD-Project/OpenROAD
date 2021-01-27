@@ -123,6 +123,8 @@ namespace fr {
   frCoord getGCELLGRIDY();
   frCoord getGCELLOFFSETX();
   frCoord getGCELLOFFSETY();
+  
+  void ERROR(std::string s);
 
   // These need to be in the fr namespace to support argument-dependent
   // lookup

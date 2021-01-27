@@ -52,7 +52,7 @@ namespace fr {
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
                   ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
                   via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr),
-                  via2turnMinLen_(nullptr), ndrRouting_(false) {}
+                  via2turnMinLen_(nullptr), ndr_(nullptr) {}
     // getters
     frTechObject* getTech() const {
       return design_->getTech();
@@ -717,6 +717,18 @@ namespace fr {
       graphics_ = g;
     }
 
+    void setNDR(frNonDefaultRule* ndr){
+        ndr_ = ndr;
+    }
+    
+    frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
+    frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
+    frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
+    frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
+    
+    frNonDefaultRule* getNDR() const{
+        return ndr_;
+    }
     // functions
     void init(const frBox &routeBBox, const frBox &extBBox,
               std::map<frCoord, std::map<frLayerNum, frTrackPattern* > > &xMap,
@@ -832,7 +844,7 @@ namespace fr {
     frUInt4                                    ggMarkerCost_;
     // temporary variables
     FlexWavefront                              wavefront_;
-    bool                                       ndrRouting_;
+    frNonDefaultRule*                          ndr_;
     const std::vector<std::pair<frCoord, frCoord> >* halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
@@ -919,6 +931,9 @@ namespace fr {
       }
       return;
     }
+    frMIdx getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
+    frMIdx getUpperBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
+    
     void getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     void getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     bool isValid(frMIdx x, frMIdx y, frMIdx z) const {

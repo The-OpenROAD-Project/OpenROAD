@@ -1978,10 +1978,7 @@ namespace fr {
   class frNonDefaultRule{
       private:
       
-        
-        
-  public:
-      string name;
+         string name;
         //each vector position is a metal layer
         vector<frCoord> widths_; 
         vector<frCoord> spacings_;
@@ -1993,10 +1990,18 @@ namespace fr {
         vector<vector<frViaRuleGenerate*>> viasRules_;  
         
         bool hardSpacing_ = false;
+        
+        
+  public:
+      
 //    void setWidth(frCoord w, int z);
 //    void setSpacing(frCoord s, int z);
 //    void setWireExtension(frCoord we, int z);
     
+    frViaDef* getPrefVia(int z){
+        if (z >= vias_.size() || vias_[z].empty()) return nullptr;
+        return vias_[z][0];
+    }
     void setWidth(frCoord w, int z){
         if (z >= widths_.size())
             for (int i = widths_.size(); i <= z; i++)

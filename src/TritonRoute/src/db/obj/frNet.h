@@ -115,7 +115,7 @@ namespace fr {
     bool isFake() const {
       return isFakeNet_;
     }
-    const frNonDefaultRule* getNondefaultRule() const {
+    frNonDefaultRule* getNondefaultRule() const {
       return ndr_;
     }
     // setters
