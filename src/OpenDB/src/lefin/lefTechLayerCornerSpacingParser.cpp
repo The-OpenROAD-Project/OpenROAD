@@ -129,9 +129,8 @@ dbTechLayerCornerSpacingRule* lefTechLayerCornerSpacingParser::parse(std::string
         return rule;
     else 
     {
-        // should delete rule 
         odb::dbTechLayerCornerSpacingRule::destroy(rule);
-        return NULL;
+        return nullptr;
     }
 } 
 

@@ -107,7 +107,7 @@ dbTechLayerMinStepRule* lefTechLayerMinStepParser::parse(std::string s, dbTechLa
     else 
     {
         // should delete rule 
-        return NULL;
+        return nullptr;
     }
 } 
 

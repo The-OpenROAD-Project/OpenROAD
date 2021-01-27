@@ -135,8 +135,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   uint sz;
   stream >> sz;
   obj._influence_tbl.reserve(sz);
-  for(uint i = 0; i < sz;i++)
-  {
+  for (uint i = 0; i < sz; i++) {
     int first, second, third;
     stream >> first;
     stream >> second;
@@ -144,13 +143,12 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
     obj._influence_tbl.push_back(std::make_tuple(first, second, third));
   }
   stream >> sz;
-  for(uint i = 0; i<sz;i++)
-  {
+  for (uint i = 0; i < sz; i++) {
     int key, val1, val2;
     stream >> key;
     stream >> val1;
     stream >> val2;
-    obj._within_tbl[key] = {val1,val2};
+    obj._within_tbl[key] = {val1, val2};
   }
   // User Code End >>
   return stream;
@@ -167,16 +165,14 @@ dbOStream& operator<<(dbOStream&                             stream,
   // User Code Begin <<
   uint sz = obj._influence_tbl.size();
   stream << sz;
-  for(uint i = 0; i < sz;i++)
-  {
+  for (uint i = 0; i < sz; i++) {
     stream << std::get<0>(obj._influence_tbl[i]);
     stream << std::get<1>(obj._influence_tbl[i]);
     stream << std::get<2>(obj._influence_tbl[i]);
   }
   sz = obj._within_tbl.size();
   stream << sz;
-  for (auto const& [key, val] : obj._within_tbl)
-  {
+  for (auto const& [key, val] : obj._within_tbl) {
     stream << key;
     stream << val.first;
     stream << val.second;
@@ -259,27 +255,30 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
 
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
 
-uint _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const {
+uint _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
+{
   auto pos = --(std::lower_bound(_width_tbl.begin(), _width_tbl.end(), width));
-  return std::max(0, (int)std::distance(_width_tbl.begin(), pos));
+  return std::max(0, (int) std::distance(_width_tbl.begin(), pos));
 }
 
-uint _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const {
-  auto pos = --(std::lower_bound(_length_tbl.begin(), _length_tbl.end(), length));
-  return std::max(0, (int)std::distance(_length_tbl.begin(), pos));
+uint _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
+{
+  auto pos
+      = --(std::lower_bound(_length_tbl.begin(), _length_tbl.end(), length));
+  return std::max(0, (int) std::distance(_length_tbl.begin(), pos));
 }
 
-void dbTechLayerSpacingTablePrlRule::setTable(std::vector<int> width_tbl, 
-                                              std::vector<int> length_tbl, 
-                                              std::vector<std::vector<int>> spacing_tbl,
-                                              std::map<uint,std::pair<int,int>> excluded_map)
+void dbTechLayerSpacingTablePrlRule::setTable(
+    std::vector<int>                    width_tbl,
+    std::vector<int>                    length_tbl,
+    std::vector<std::vector<int>>       spacing_tbl,
+    std::map<uint, std::pair<int, int>> excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  obj->_width_tbl = width_tbl;
+  obj->_width_tbl  = width_tbl;
   obj->_length_tbl = length_tbl;
-  for(auto spacing: spacing_tbl)
-  {
+  for (auto spacing : spacing_tbl) {
     dbVector<int> tmp;
     tmp = spacing;
     obj->_spacing_tbl.push_back(tmp);
@@ -287,23 +286,24 @@ void dbTechLayerSpacingTablePrlRule::setTable(std::vector<int> width_tbl,
   obj->_within_tbl = excluded_map;
 }
 
-void dbTechLayerSpacingTablePrlRule::getTable(std::vector<int>& width_tbl, 
-                                              std::vector<int>& length_tbl, 
-                                              std::vector<std::vector<int>>& spacing_tbl,
-                                              std::map<uint,std::pair<int,int>>& excluded_map)
+void dbTechLayerSpacingTablePrlRule::getTable(
+    std::vector<int>&                    width_tbl,
+    std::vector<int>&                    length_tbl,
+    std::vector<std::vector<int>>&       spacing_tbl,
+    std::map<uint, std::pair<int, int>>& excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  width_tbl = obj->_width_tbl;
-  length_tbl = obj->_length_tbl;
+  width_tbl    = obj->_width_tbl;
+  length_tbl   = obj->_length_tbl;
   excluded_map = obj->_within_tbl;
-  for(auto spacing: obj->_spacing_tbl)
-  {
+  for (auto spacing : obj->_spacing_tbl) {
     spacing_tbl.push_back(spacing);
   }
 }
 
-void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(std::vector<std::tuple<int,int,int>> influence_tbl)
+void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(
+    std::vector<std::tuple<int, int, int>> influence_tbl)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
@@ -313,22 +313,24 @@ void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(std::vector<std::t
 dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
     dbTechLayer* _layer)
 {
-  _dbTechLayer*                  layer = (_dbTechLayer*) _layer;
+  _dbTechLayer*                    layer = (_dbTechLayer*) _layer;
   _dbTechLayerSpacingTablePrlRule* newrule
       = layer->_spacing_table_prl_rules_tbl->create();
   return ((dbTechLayerSpacingTablePrlRule*) newrule);
 }
 
 dbTechLayerSpacingTablePrlRule*
-dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(dbTechLayer* inly,
-                                                            uint         dbid)
+dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
+    dbTechLayer* inly,
+    uint         dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingTablePrlRule*)
       layer->_spacing_table_prl_rules_tbl->getPtr(dbid);
 }
 
-void dbTechLayerSpacingTablePrlRule::destroy(dbTechLayerSpacingTablePrlRule* rule)
+void dbTechLayerSpacingTablePrlRule::destroy(
+    dbTechLayerSpacingTablePrlRule* rule)
 {
   _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
   dbProperty::destroyProperties(rule);
@@ -336,7 +338,9 @@ void dbTechLayerSpacingTablePrlRule::destroy(dbTechLayerSpacingTablePrlRule* rul
       (_dbTechLayerSpacingTablePrlRule*) rule);
 }
 
-int dbTechLayerSpacingTablePrlRule::getSpacing(const int width, const int length) const {
+int dbTechLayerSpacingTablePrlRule::getSpacing(const int width,
+                                               const int length) const
+{
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
   uint rowIdx = obj->getWidthIdx(width);
@@ -344,14 +348,17 @@ int dbTechLayerSpacingTablePrlRule::getSpacing(const int width, const int length
   return obj->_spacing_tbl[rowIdx][colIdx];
 }
 
-bool dbTechLayerSpacingTablePrlRule::hasExceptWithin(int width) const {
+bool dbTechLayerSpacingTablePrlRule::hasExceptWithin(int width) const
+{
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
   uint rowIdx = obj->getWidthIdx(width);
   return (obj->_within_tbl.find(rowIdx) != obj->_within_tbl.end());
 }
 
-std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(int width) const {
+std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
+    int width) const
+{
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
   uint rowIdx = obj->getWidthIdx(width);

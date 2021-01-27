@@ -34,11 +34,9 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbVector.h"
 #include "odb.h"
+
 // User Code Begin includes
-#include <map>
-#include <tuple>
 // User Code End includes
 
 namespace odb {
@@ -50,57 +48,46 @@ class _dbDatabase;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbTechLayerSpacingTablePrlRuleFlags
+struct dbTechLayerRightWayOnGridOnlyRuleFlags
 {
-  bool _wrong_direction : 1;
-  bool _same_mask : 1;
-  bool _exceept_eol : 1;
-  uint _spare_bits : 29;
+  bool _check_mask : 1;
+  uint _spare_bits : 31;
 };
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerSpacingTablePrlRule : public _dbObject
+class _dbTechLayerRightWayOnGridOnlyRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerSpacingTablePrlRuleFlags _flags;
-  int                                 _eol_width;
-  dbVector<int>                       _length_tbl;
-  dbVector<int>                       _width_tbl;
-  dbVector<dbVector<int>>             _spacing_tbl;
-  dbVector<std::tuple<int, int, int>> _influence_tbl;
+  dbTechLayerRightWayOnGridOnlyRuleFlags _flags;
 
   // User Code Begin fields
-  std::map<uint, std::pair<int, int>> _within_tbl;
   // User Code End fields
-  _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
-                                  const _dbTechLayerSpacingTablePrlRule& r);
-  _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
-  ~_dbTechLayerSpacingTablePrlRule();
-  bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
-  bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
+  _dbTechLayerRightWayOnGridOnlyRule(
+      _dbDatabase*,
+      const _dbTechLayerRightWayOnGridOnlyRule& r);
+  _dbTechLayerRightWayOnGridOnlyRule(_dbDatabase*);
+  ~_dbTechLayerRightWayOnGridOnlyRule();
+  bool operator==(const _dbTechLayerRightWayOnGridOnlyRule& rhs) const;
+  bool operator!=(const _dbTechLayerRightWayOnGridOnlyRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbTechLayerSpacingTablePrlRule& rhs) const;
-  void differences(dbDiff&                                diff,
-                   const char*                            field,
-                   const _dbTechLayerSpacingTablePrlRule& rhs) const;
+  bool operator<(const _dbTechLayerRightWayOnGridOnlyRule& rhs) const;
+  void differences(dbDiff&                                   diff,
+                   const char*                               field,
+                   const _dbTechLayerRightWayOnGridOnlyRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin methods
-
-  uint getWidthIdx(const int width) const;
-
-  uint getLengthIdx(const int length) const;
-
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
-dbOStream& operator<<(dbOStream&                             stream,
-                      const _dbTechLayerSpacingTablePrlRule& obj);
+dbIStream& operator>>(dbIStream&                          stream,
+                      _dbTechLayerRightWayOnGridOnlyRule& obj);
+dbOStream& operator<<(dbOStream&                                stream,
+                      const _dbTechLayerRightWayOnGridOnlyRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb

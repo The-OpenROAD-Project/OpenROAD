@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     lefin lefParser(db, logger, false);
     const char *libname = "gscl45nm.lef";
     
-    std::string path = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+    std::string path = "/home/osama/Desktop/Workspace/Private/OpenROAD/src/OpenDB/tests/data/gscl45nm.lef";
 
     lefParser.createTechAndLib(libname, path.c_str());
     
@@ -90,6 +90,17 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(spacing_tbl.size()==2);
     BOOST_TEST(within.size()==1);
     BOOST_TEST(spacing_tbl_rule->getSpacing(0,0)==0.05*distFactor);
+
+    auto rwogoRules = layer->getRightWayOnGridOnlyRules();
+    BOOST_TEST(rwogoRules.size() == 1);
+    odb::dbTechLayerRightWayOnGridOnlyRule* rwogo_rule = (odb::dbTechLayerRightWayOnGridOnlyRule*) *rwogoRules.begin();
+    BOOST_TEST(rwogo_rule->isCheckMask()==true);
+
+    auto rectOnlyRules = layer->getRectOnlyRules();
+    BOOST_TEST(rectOnlyRules.size() == 1);
+    odb::dbTechLayerRectOnlyRule* rect_only_rule = (odb::dbTechLayerRectOnlyRule*) *rectOnlyRules.begin();
+    BOOST_TEST(rect_only_rule->isExceptNonCorePins()==true);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

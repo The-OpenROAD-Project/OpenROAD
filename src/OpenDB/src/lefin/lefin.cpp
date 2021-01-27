@@ -578,6 +578,10 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerSpacingTablePrlParser parser;
         parser.parse(layer->propValue(iii), l, this);
       }
+      else if(!strcmp(layer->propName(iii), "LEF58_RIGHTWAYONGRIDONLY"))
+        lefTechLayerRightWayOnGridOnlyParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_RECTONLY"))
+        lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
     }
   }
 

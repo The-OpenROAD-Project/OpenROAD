@@ -7,6 +7,8 @@ add_library(lefin
     lefTechLayerMinStepParser.cpp
     lefTechLayerCornerSpacingParser.cpp
     lefTechLayerSpacingTablePrlParser.cpp
+    lefTechLayerRightWayOnGridOnlyParser.cpp
+    lefTechLayerRectOnlyParser.cpp
 )
 
 target_include_directories(lefin

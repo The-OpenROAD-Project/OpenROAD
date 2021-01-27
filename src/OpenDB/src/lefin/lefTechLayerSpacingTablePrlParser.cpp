@@ -138,12 +138,12 @@ dbTechLayerSpacingTablePrlRule* lefTechLayerSpacingTablePrlParser::parse(std::st
         else
         {
             odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
-            return NULL;
+            return nullptr;
         }
     }else
     {
         odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
-        return NULL;
+        return nullptr;
     }
     
    

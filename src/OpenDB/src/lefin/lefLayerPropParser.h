@@ -42,6 +42,19 @@ namespace odb{
         dbTechLayerSpacingTablePrlRule* parse(std::string, dbTechLayer*, lefin*);
     };
 
+    class lefTechLayerRightWayOnGridOnlyParser
+    {
+        
+    public:
+        static dbTechLayerRightWayOnGridOnlyRule* parse(std::string, dbTechLayer*, lefin*);
+    };
+    
+    class lefTechLayerRectOnlyParser
+    {
+        
+    public:
+        static dbTechLayerRectOnlyRule* parse(std::string, dbTechLayer*, lefin*);
+    };
 
 
 }
