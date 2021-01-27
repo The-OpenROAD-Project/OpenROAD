@@ -98,16 +98,16 @@ void FastRouteCore::clear()
 
 void FastRouteCore::deleteComponents()
 {
-  for (int i = 0; i < numNets; i++) {
-    if (nets[i])
-      delete nets[i];
-    nets[i] = nullptr;
-  }
-
-  if (nets)
+  if (nets) {
+    for (int i = 0; i < numNets; i++) {
+      if (nets[i])
+        delete nets[i];
+      nets[i] = nullptr;
+    }
+  
     delete[] nets;
-
-  nets = nullptr;
+    nets = nullptr;
+  }
 
   if (h_edges)
     delete[] h_edges;
@@ -161,61 +161,42 @@ void FastRouteCore::deleteComponents()
     delete[] trees;
   trees = nullptr;
 
-  for (int i = 0; i < numValidNets; i++) {
-    int deg = sttrees[i].deg;
-    int numEdges = 2 * deg - 3;
-    for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-      TreeEdge* treeedge = &(sttrees[i].edges[edgeID]);
-      if (treeedge->len > 0) {
-        if (treeedge->route.gridsX)
-          free(treeedge->route.gridsX);
-        if (treeedge->route.gridsY)
-          free(treeedge->route.gridsY);
-        if (treeedge->route.gridsL)
-          free(treeedge->route.gridsL);
-        treeedge->route.gridsX = nullptr;
-        treeedge->route.gridsY = nullptr;
-        treeedge->route.gridsL = nullptr;
+  if (sttrees) {
+    for (int i = 0; i < numValidNets; i++) {
+      int deg = sttrees[i].deg;
+      int numEdges = 2 * deg - 3;
+      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
+        TreeEdge* treeedge = &(sttrees[i].edges[edgeID]);
+        if (treeedge->len > 0) {
+          if (treeedge->route.gridsX)
+            free(treeedge->route.gridsX);
+          if (treeedge->route.gridsY)
+            free(treeedge->route.gridsY);
+          if (treeedge->route.gridsL)
+            free(treeedge->route.gridsL);
+          treeedge->route.gridsX = nullptr;
+          treeedge->route.gridsY = nullptr;
+          treeedge->route.gridsL = nullptr;
+        }
       }
+
+      if (sttrees[i].nodes)
+        delete[] sttrees[i].nodes;
+      sttrees[i].nodes = nullptr;
+
+      if (sttrees[i].edges)
+        delete[] sttrees[i].edges;
+      sttrees[i].edges = nullptr;
     }
-
-    if (sttrees[i].nodes)
-      delete[] sttrees[i].nodes;
-    sttrees[i].nodes = nullptr;
-
-    if (sttrees[i].edges)
-      delete[] sttrees[i].edges;
-    sttrees[i].edges = nullptr;
-  }
-
-  if (sttrees)
     delete[] sttrees;
-  sttrees = nullptr;
-
-  for (int i = 0; i < yGrid; i++) {
-    if (parentX1[i])
-      delete[] parentX1[i];
-    if (parentY1[i])
-      delete[] parentY1[i];
-    if (parentX3[i])
-      delete[] parentX3[i];
-    if (parentY3[i])
-      delete[] parentY3[i];
-
-    parentX1[i] = nullptr;
-    parentY1[i] = nullptr;
-    parentX3[i] = nullptr;
-    parentY3[i] = nullptr;
+    sttrees = nullptr;
   }
+  
+  parentX1.resize(boost::extents[0][0]);
+  parentY1.resize(boost::extents[0][0]);
+  parentX3.resize(boost::extents[0][0]);
+  parentY3.resize(boost::extents[0][0]);
 
-  if (parentX1)
-    delete[] parentX1;
-  if (parentY1)
-    delete[] parentY1;
-  if (parentX3)
-    delete[] parentX3;
-  if (parentY3)
-    delete[] parentY3;
   if (pop_heap2)
     delete[] pop_heap2;
   if (heap1)
@@ -223,10 +204,6 @@ void FastRouteCore::deleteComponents()
   if (heap2)
     delete[] heap2;
 
-  parentX1 = nullptr;
-  parentY1 = nullptr;
-  parentX3 = nullptr;
-  parentY3 = nullptr;
   pop_heap2 = nullptr;
   heap1 = nullptr;
   heap2 = nullptr;
@@ -245,55 +222,60 @@ void FastRouteCore::deleteComponents()
   dcor = nullptr;
   netEO = nullptr;
 
-  for (int i = 0; i < YRANGE; i++) {
-    if (HV[i])
-      delete[] HV[i];
-    HV[i] = nullptr;
-  }
+  if (HV) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (HV[i])
+        delete[] HV[i];
+      HV[i] = nullptr;
+    }
 
-  if (HV)
     delete[] HV;
-  HV = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (hyperV[i])
-      delete[] hyperV[i];
-    hyperV[i] = nullptr;
+    HV = nullptr;
   }
 
-  if (hyperV)
+  if (hyperV) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (hyperV[i])
+        delete[] hyperV[i];
+      hyperV[i] = nullptr;
+    }
+
     delete[] hyperV;
-  hyperV = nullptr;
-
-  for (int i = 0; i < XRANGE; i++) {
-    if (hyperH[i])
-      delete[] hyperH[i];
-    hyperH[i] = nullptr;
+    hyperV = nullptr;
   }
 
-  if (hyperH)
+  if (hyperH) {
+    for (int i = 0; i < XRANGE; i++) {
+      if (hyperH[i])
+        delete[] hyperH[i];
+      hyperH[i] = nullptr;
+    }
+
     delete[] hyperH;
-  hyperH = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (inRegion[i])
-      delete[] inRegion[i];
-    inRegion[i] = nullptr;
+    hyperH = nullptr;
   }
 
-  if (inRegion)
+  if (inRegion) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (inRegion[i])
+        delete[] inRegion[i];
+      inRegion[i] = nullptr;
+    }
+
     delete[] inRegion;
-  inRegion = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (corrEdge[i])
-      delete[] corrEdge[i];
-    corrEdge[i] = nullptr;
+    inRegion = nullptr;
   }
 
-  if (corrEdge)
+  if (corrEdge) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (corrEdge[i])
+        delete[] corrEdge[i];
+      corrEdge[i] = nullptr;
+    }
+
     delete[] corrEdge;
-  corrEdge = nullptr;
+    corrEdge = nullptr;
+  }
 
   d13D.resize(boost::extents[0][0][0]);
   d23D.resize(boost::extents[0][0][0]);
@@ -327,35 +309,38 @@ void FastRouteCore::deleteComponents()
   gridHs = nullptr;
   gridVs = nullptr;
 
-  for (int i = 0; i < numLayers; i++) {
-    if (layerGrid[i])
-      delete[] layerGrid[i];
-    layerGrid[i] = nullptr;
-  }
+  if (layerGrid) {
+    for (int i = 0; i < numLayers; i++) {
+      if (layerGrid[i])
+        delete[] layerGrid[i];
+      layerGrid[i] = nullptr;
+    }
 
-  if (layerGrid)
     delete[] layerGrid;
-  layerGrid = nullptr;
-
-  for (int i = 0; i < numLayers; i++) {
-    if (gridD[i])
-      delete[] gridD[i];
-    gridD[i] = nullptr;
+    layerGrid = nullptr;
   }
 
-  if (gridD)
+  if (gridD) {
+    for (int i = 0; i < numLayers; i++) {
+      if (gridD[i])
+        delete[] gridD[i];
+      gridD[i] = nullptr;
+    }
+
     delete[] gridD;
-  gridD = nullptr;
-
-  for (int i = 0; i < numLayers; i++) {
-    if (viaLink[i])
-      delete[] viaLink[i];
-    viaLink[i] = nullptr;
+    gridD = nullptr;
   }
 
-  if (viaLink)
+  if (viaLink) {
+    for (int i = 0; i < numLayers; i++) {
+      if (viaLink[i])
+        delete[] viaLink[i];
+      viaLink[i] = nullptr;
+    }
+
     delete[] viaLink;
-  viaLink = nullptr;
+    viaLink = nullptr;
+  }
 
   if (costHVH)
     delete[] costHVH;
@@ -865,17 +850,10 @@ void FastRouteCore::initAuxVar()
 
   MaxDegree = MD;
 
-  parentX1 = new short*[yGrid];
-  parentY1 = new short*[yGrid];
-  parentX3 = new short*[yGrid];
-  parentY3 = new short*[yGrid];
-
-  for (int i = 0; i < yGrid; i++) {
-    parentX1[i] = new short[xGrid];
-    parentY1[i] = new short[xGrid];
-    parentX3[i] = new short[xGrid];
-    parentY3[i] = new short[xGrid];
-  }
+  parentX1.resize(boost::extents[yGrid][xGrid]);
+  parentY1.resize(boost::extents[yGrid][xGrid]);
+  parentX3.resize(boost::extents[yGrid][xGrid]);
+  parentY3.resize(boost::extents[yGrid][xGrid]);
 
   pop_heap2 = new Bool[yGrid * XRANGE];
 

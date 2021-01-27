@@ -111,12 +111,10 @@ void GlobalRouter::makeComponents()
 void GlobalRouter::deleteComponents()
 {
   delete _allRoutingTracks;
-  delete _db;
   delete _fastRoute;
   delete _grid;
   delete _gridOrigin;
   delete _nets;
-  delete _sta;
   delete _routingLayers;
 }
 
