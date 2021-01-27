@@ -44,6 +44,7 @@
 #include <set>
 #include <vector>
 #include <utility> // pair
+#include <tuple> // pair
 
 #include "opendb/db.h"
 
@@ -58,6 +59,7 @@ using std::set;
 using std::string;
 using std::vector;
 using std::pair;
+using std::tuple;
 
 using utl::Logger;
 
@@ -130,14 +132,13 @@ struct Group
 
 struct Pixel
 {
-  int grid_x_;
-  int grid_y_;
-  Group *group_;
   Cell *cell;
+  Group *group_;
   double util;
   bool is_valid;  // false for dummy cells
 };
 
+// For optimize mirroring.
 class NetBox
 {
 public:
@@ -153,6 +154,16 @@ typedef vector<NetBox> NetBoxes;
 ////////////////////////////////////////////////////////////////
 
 typedef set<dbMaster *> dbMasterSet;
+
+// Return value for grid searches.
+class PixelPt
+{
+public:
+  PixelPt();
+  PixelPt(Pixel *pixel, int grid_x, int grid_y);
+  Pixel *pixel;
+  Point pt; // grid locataion
+};
 
 class Opendp
 {
@@ -219,31 +230,43 @@ private:
   void initGrid();
   void detailedPlacement();
   Point nearestPt(const Cell *cell, const Rect *rect) const;
-  int dist_for_rect(const Cell *cell, const Rect *rect) const;
-  static bool check_overlap(const Rect &cell, const Rect &box);
-  bool check_overlap(const Cell *cell, const Rect *rect) const;
-  static bool check_inside(const Rect &cell, const Rect &box);
-  bool check_inside(const Cell *cell, const Rect *rect) const;
-  bool binSearch(int grid_x,
-                 const Cell *cell,
+  int distToRect(const Cell *cell, const Rect *rect) const;
+  static bool checkOverlap(const Rect &cell, const Rect &box);
+  bool checkOverlap(const Cell *cell, const Rect *rect) const;
+  static bool isInside(const Rect &cell, const Rect &box);
+  bool isInside(const Cell *cell, const Rect *rect) const;
+  PixelPt diamondSearch(const Cell *cell,
+                        // grid indices
+                        int x,
+                        int y) const;
+  PixelPt binSearch(int x,
+                    const Cell *cell,
+                    int bin_x,
+                    int bin_y) const;
+  bool checkPixels(const Cell *cell,
+                   int x,
+                   int y,
+                   int x_end,
+                   int y_end) const;
+  bool shiftMove(Cell *cell);
+  bool mapMove(Cell *cell);
+  bool mapMove(Cell *cell,
+               Point grid_pt);
+  int distChange(const Cell *cell,
                  int x,
-                 int y,
-                 // Return values
-                 int *avail_x,
-                 int *avail_y) const;
-  Pixel *diamondSearch(const Cell *cell, int x, int y) const;
-  bool shift_move(Cell *cell);
-  bool map_move(Cell *cell);
-  bool map_move(Cell *cell, int x, int y);
-  int distChange(const Cell *cell, int x, int y) const;
-  bool swap_cell(Cell *cell1, Cell *cell2);
-  bool refine_move(Cell *cell);
+                 int y) const;
+  bool swapCells(Cell *cell1,
+                 Cell *cell2);
+  bool refineMove(Cell *cell);
 
-  void prePlaceLocation(const Cell *cell,
-                        bool padded,
-                        // Return values.
-                        int *x,
-                        int *y) const;
+  Point legalPt(const Cell *cell,
+                Point pt) const;
+  Point legalGridPt(const Cell *cell,
+                    Point pt) const;
+  Point legalPt(const Cell *cell,
+                bool padded) const;
+  Point legalGridPt(const Cell *cell,
+                    bool padded) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -257,19 +280,18 @@ private:
   int refine();
   bool cellFitsInCore(Cell *cell);
 
-  void fixed_cell_assign();
-  void group_cell_region_assign();
-  void group_pixel_assign();
-  void group_pixel_assign2();
-  void erase_pixel(Cell *cell);
-  void paint_pixel(Cell *cell, int grid_x, int grid_y);
+  void assignFixedCells();
+  void groupAssignCellRegions();
+  void groupInitPixels();
+  void groupInitPixels2();
+  void erasePixel(Cell *cell);
+  void paintPixel(Cell *cell, int grid_x, int grid_y);
 
   // checkPlacement
   static bool isPlaced(const Cell *cell);
   bool checkPowerLine(const Cell &cell) const;
-  bool checkInRows(const Cell &cell,
-                   const Grid *grid) const;
-  Cell *checkOverlap(Cell &cell, Grid *grid) const;
+  bool checkInRows(const Cell &cell) const;
+  Cell *checkOverlap(Cell &cell) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
   bool isCrWtBlClass(const Cell *cell) const;
@@ -283,7 +305,7 @@ private:
                       const char *msg,
                       bool verbose,
                       const std::function<void(Cell *cell)> &report_failure) const;
-  void reportOverlapFailure(Cell *cell, Grid *grid) const;
+  void reportOverlapFailure(Cell *cell) const;
 
   void rectDist(const Cell *cell,
                 const Rect *rect,
@@ -295,9 +317,7 @@ private:
   dbOrientType rowOrient(int row) const;
   bool havePadding() const;
 
-  Grid *makeGrid();
-  void initGridPixels(Grid *grid);
-  void deleteGrid(Grid *grid);
+  void deleteGrid();
   Pixel *gridPixel(int x,
                    int y) const;
   // Cell initial location wrt core origin.
@@ -317,11 +337,9 @@ private:
   int gridEndX(const Cell *cell) const;
   int gridEndY(const Cell *cell) const;
   void setGridPaddedLoc(Cell *cell, int x, int y) const;
-  void initialLocation(const Cell *cell,
-                       bool padded,
-                       // Return values.
-                       int *x,
-                       int *y) const;
+  // Lower left corner in core coordinates.
+  Point initialLocation(const Cell *cell,
+                        bool padded) const;
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;
@@ -329,21 +347,16 @@ private:
   int padLeft(const Cell *cell) const;
   int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
-  int coreGridMaxX() const;
-  int coreGridMaxY() const;
   // Place fillers
   void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
-  Grid *makeCellGrid();
-  void placeRowFillers(const Grid *grid, int row);
-  const char *gridInstName(const Grid *grid,
-                           int row,
+  void makeCellGrid();
+  void placeRowFillers(int row);
+  const char *gridInstName(int row,
                            int col);
 
   // Optimizing mirroring
-  void getBox(dbNet *net,
-              // Return value.
-              Rect &net_box) const;
+  Rect getBox(dbNet *net) const;
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
                             vector<dbInst*> &mirror_candidates);
@@ -375,7 +388,7 @@ private:
   int site_width_;
   int row_count_;
   int row_site_count_;
-  int have_multi_height_cells_;
+  int have_multi_row_cells_;
   int max_displacement_constraint_;  // rows
 
   // 2D pixel grid
