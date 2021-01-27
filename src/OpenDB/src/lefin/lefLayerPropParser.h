@@ -56,6 +56,13 @@ namespace odb{
         static dbTechLayerRectOnlyRule* parse(std::string, dbTechLayer*, lefin*);
     };
 
+    class lefTechLayerCutClassParser
+    {
+        
+    public:
+        static dbTechLayerCutClassRule* parse(std::string, dbTechLayer*, lefin*);
+    };
+
 
 }
 

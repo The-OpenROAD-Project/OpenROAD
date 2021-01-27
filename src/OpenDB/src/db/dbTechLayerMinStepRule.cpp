@@ -139,9 +139,9 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
-  // User Code Begin constructor
   uint* _flags_bit_field = (uint*) &_flags;
   *_flags_bit_field      = 0;
+  // User Code Begin constructor
   // User Code End constructor
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(

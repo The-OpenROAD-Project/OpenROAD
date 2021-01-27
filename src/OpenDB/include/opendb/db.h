@@ -33,10 +33,10 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "ISdb.h"
 #include "dbLogger.h"
@@ -109,6 +109,10 @@ class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerRightWayOnGridOnlyRule;
+class dbTechLayerRectOnlyRule;
+class dbTechLayerCutClassRule;
+class dbTechLayerCutClassSubRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6006,6 +6010,15 @@ class dbTechLayer : public dbObject
   // Get the collection of spacing table parallel length Rules for the object
   dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
 
+  // Get the collection of rightwayongridonly Rules for the object
+  dbSet<dbTechLayerRightWayOnGridOnlyRule> getRightWayOnGridOnlyRules() const;
+
+  // Get the collection of rectonly Rules for the object
+  dbSet<dbTechLayerRectOnlyRule> getRectOnlyRules() const;
+
+  // Get the collection of cutclass Rules for the object
+  dbSet<dbTechLayerCutClassRule> getCutClassRules() const;
+
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
   /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
@@ -7662,24 +7675,25 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   bool isExceeptEol() const;
 
   // User Code Begin dbTechLayerSpacingTablePrlRule
-  static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(dbTechLayer* inly,
-                                                                         uint         dbid);
-  
+  static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(
+      dbTechLayer* inly,
+      uint         dbid);
+
   static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
 
   static void destroy(dbTechLayerSpacingTablePrlRule* rule);
 
-  void setTable(std::vector<int> width_tbl, 
-                std::vector<int> length_tbl, 
-                std::vector<std::vector<int>> spacing_tbl,
-                std::map<uint,std::pair<int,int>> excluded_map);
-  void getTable(std::vector<int>& width_tbl, 
-                std::vector<int>& length_tbl, 
-                std::vector<std::vector<int>>& spacing_tbl,
-                std::map<uint,std::pair<int,int>>& excluded_map);
+  void setTable(std::vector<int>                    width_tbl,
+                std::vector<int>                    length_tbl,
+                std::vector<std::vector<int>>       spacing_tbl,
+                std::map<uint, std::pair<int, int>> excluded_map);
+  void getTable(std::vector<int>&                    width_tbl,
+                std::vector<int>&                    length_tbl,
+                std::vector<std::vector<int>>&       spacing_tbl,
+                std::map<uint, std::pair<int, int>>& excluded_map);
 
-
-  void setSpacingTableInfluence(std::vector<std::tuple<int,int,int>> influence_tbl);
+  void setSpacingTableInfluence(
+      std::vector<std::tuple<int, int, int>> influence_tbl);
 
   int getSpacing(const int width, const int length) const;
 
@@ -7687,8 +7701,98 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 
   std::pair<int, int> getExceptWithin(int width) const;
 
-
   // User Code End dbTechLayerSpacingTablePrlRule
+};
+
+class dbTechLayerRightWayOnGridOnlyRule : public dbObject
+{
+ public:
+  void setCheckMask(bool _check_mask);
+
+  bool isCheckMask() const;
+
+  // User Code Begin dbTechLayerRightWayOnGridOnlyRule
+
+  static dbTechLayerRightWayOnGridOnlyRule* getTechLayerRightWayOnGridOnlyRule(
+      dbTechLayer* inly,
+      uint         dbid);
+
+  static dbTechLayerRightWayOnGridOnlyRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerRightWayOnGridOnlyRule* rule);
+
+  // User Code End dbTechLayerRightWayOnGridOnlyRule
+};
+
+class dbTechLayerRectOnlyRule : public dbObject
+{
+ public:
+  void setExceptNonCorePins(bool _except_non_core_pins);
+
+  bool isExceptNonCorePins() const;
+
+  // User Code Begin dbTechLayerRectOnlyRule
+
+  static dbTechLayerRectOnlyRule* getTechLayerRectOnlyRule(dbTechLayer* inly,
+                                                           uint         dbid);
+
+  static dbTechLayerRectOnlyRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerRectOnlyRule* rule);
+
+  // User Code End dbTechLayerRectOnlyRule
+};
+
+class dbTechLayerCutClassRule : public dbObject
+{
+ public:
+  dbSet<dbTechLayerCutClassSubRule> getTechLayerCutClassSubRules() const;
+
+  // User Code Begin dbTechLayerCutClassRule
+  static dbTechLayerCutClassRule* getTechLayerCutClassRule(dbTechLayer* inly,
+                                                           uint         dbid);
+
+  static dbTechLayerCutClassRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerCutClassRule* rule);
+  // User Code End dbTechLayerCutClassRule
+};
+
+class dbTechLayerCutClassSubRule : public dbObject
+{
+ public:
+  char* getClassName() const;
+
+  void setWidth(int _width);
+
+  int getWidth() const;
+
+  void setLength(int _length);
+
+  int getLength() const;
+
+  void setNumCuts(int _num_cuts);
+
+  int getNumCuts() const;
+
+  void setLengthValid(bool _length_valid);
+
+  bool isLengthValid() const;
+
+  void setCutsValid(bool _cuts_valid);
+
+  bool isCutsValid() const;
+
+  // User Code Begin dbTechLayerCutClassSubRule
+  static dbTechLayerCutClassSubRule* getTechLayerCutClassSubRule(
+      dbTechLayerCutClassRule* parent,
+      uint                     dbid);
+
+  static dbTechLayerCutClassSubRule* create(dbTechLayerCutClassRule* parent,
+                                            const char*              name);
+
+  static void destroy(dbTechLayerCutClassSubRule* rule);
+  // User Code End dbTechLayerCutClassSubRule
 };
 
 class dbModule : public dbObject

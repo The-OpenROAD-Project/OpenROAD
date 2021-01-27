@@ -160,9 +160,9 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 }
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
+  uint* _flags_bit_field = (uint*) &_flags;
+  *_flags_bit_field      = 0;
   // User Code Begin constructor
-  _flags._box  = 0;
-  _flags._type = 0;
   // User Code End constructor
 }
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)

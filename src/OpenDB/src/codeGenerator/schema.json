@@ -653,6 +653,82 @@
       "cpp_includes":["dbTechLayer.h"]
     },
     {
+      "name": "dbTechLayerRightWayOnGridOnlyRule",
+      "type": "dbObject",
+      "fields": [
+        {
+          "type": "bool",
+          "name": "_check_mask",
+          "flags": [],
+          "bits":1
+        }
+      ],
+      "constructors": [],
+      "enums":[],
+      "cpp_includes":["dbTechLayer.h"]
+    },
+    {
+      "name": "dbTechLayerRectOnlyRule",
+      "type": "dbObject",
+      "fields": [
+        {
+          "type": "bool",
+          "name": "_except_non_core_pins",
+          "flags": [],
+          "bits":1
+        }
+      ],
+      "constructors": [],
+      "enums":[],
+      "cpp_includes":["dbTechLayer.h"]
+    },
+    {
+      "name": "dbTechLayerCutClassRule",
+      "type": "dbObject",
+      "fields": [],
+      "constructors": [],
+      "enums":[],
+      "cpp_includes":["dbTechLayer.h"]
+    },
+    {
+      "name":"dbTechLayerCutClassSubRule",
+      "type":"dbObject",
+      "fields":[
+        {
+          "name":"_class_name",
+          "type":"char *",
+          "flags":["no-set"]
+        },
+        {
+          "type":"int",
+          "name":"_width",
+          "flags":[]
+        },
+        {
+          "type":"int",
+          "name":"_length",
+          "flags":[]
+        },
+        {
+          "type":"int",
+          "name":"_num_cuts",
+          "flags":[]
+        },
+        {
+          "type":"bool",
+          "name":"_length_valid",
+          "flags":[],
+          "bits":1
+        },
+        {
+          "type":"bool",
+          "name":"_cuts_valid",
+          "flags":[],
+          "bits":1
+        }
+      ]
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -866,6 +942,13 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbGroup.h", "dbInst.h", "dbTable.h"]
+    }
+  ],
+  "relations":[
+    {
+      "first":"dbTechLayerCutClassRule",
+      "second":"dbTechLayerCutClassSubRule",
+      "type":"1_n"
     }
   ]
 }

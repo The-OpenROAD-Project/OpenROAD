@@ -101,6 +101,10 @@ add_library(opendb
     dbTechLayerMinStepRule.cpp
     dbTechLayerCornerSpacingRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
+    dbTechLayerRightWayOnGridOnlyRule.cpp
+    dbTechLayerRectOnlyRule.cpp
+    dbTechLayerCutClassRule.cpp
+    dbTechLayerCutClassSubRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp

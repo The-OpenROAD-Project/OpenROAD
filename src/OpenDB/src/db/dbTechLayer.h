@@ -55,6 +55,7 @@ class _dbTechLayerCornerSpacingRule;
 class _dbTechLayerSpacingTablePrlRule;
 class _dbTechLayerRightWayOnGridOnlyRule;
 class _dbTechLayerRectOnlyRule;
+class _dbTechLayerCutClassRule;
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -116,6 +117,7 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerSpacingTablePrlRule>*  _spacing_table_prl_rules_tbl;
   dbTable<_dbTechLayerRightWayOnGridOnlyRule>*  _rwogo_rules_tbl;
   dbTable<_dbTechLayerRectOnlyRule>*  _rect_only_rules_tbl;
+  dbTable<_dbTechLayerCutClassRule>*  _cut_class_rules_tbl;
   dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
   dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
   dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;

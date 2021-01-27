@@ -582,6 +582,10 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerRightWayOnGridOnlyParser::parse(layer->propValue(iii), l, this);
       else if(!strcmp(layer->propName(iii), "LEF58_RECTONLY"))
         lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+    }else if(type.getValue() == dbTechLayerType::CUT)
+    {
+      if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
+        lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
     }
   }
 

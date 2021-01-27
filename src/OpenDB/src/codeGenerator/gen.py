@@ -167,7 +167,7 @@ for klass in schema['classes']:
 
 
     klass['fields'] = [field for field in klass['fields'] if 'bits' not in field]
-    
+    total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
             "name": "_spare_bits",
@@ -175,6 +175,7 @@ for klass in schema['classes']:
             "bits": 32 - (flag_num_bits%32),
             "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"]
         } 
+        total_num_bits +=spare_bits_field['bits']
         struct['fields'].append(spare_bits_field)
         
     if len(struct['fields'])>0:
@@ -188,6 +189,7 @@ for klass in schema['classes']:
             'components':components(klass['structs'], '_flags', struct['name']),
             'bitFields':True,
             'isStruct':True,
+            'numBits':total_num_bits,
             'flags': ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"]
         })
         

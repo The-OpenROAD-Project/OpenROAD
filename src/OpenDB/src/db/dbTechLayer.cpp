@@ -45,6 +45,7 @@
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerRightWayOnGridOnlyRule.h"
 #include "dbTechLayerRectOnlyRule.h"
+#include "dbTechLayerCutClassRule.h"
 #include "dbTechMinCutOrAreaRule.h"
 #include "lefout.h"
 
@@ -189,6 +190,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (*_rect_only_rules_tbl != *rhs._rect_only_rules_tbl)
     return false;
 
+  if (*_cut_class_rules_tbl != *rhs._cut_class_rules_tbl)
+    return false;
+
   if (*_min_cut_rules_tbl != *rhs._min_cut_rules_tbl)
     return false;
 
@@ -272,6 +276,7 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_TABLE_NO_DEEP(_spacing_table_prl_rules_tbl);
   DIFF_TABLE_NO_DEEP(_rwogo_rules_tbl);
   DIFF_TABLE_NO_DEEP(_rect_only_rules_tbl);
+  DIFF_TABLE_NO_DEEP(_cut_class_rules_tbl);
   DIFF_TABLE_NO_DEEP(_min_cut_rules_tbl);
   DIFF_TABLE_NO_DEEP(_min_enc_rules_tbl);
   DIFF_TABLE_NO_DEEP(_v55inf_tbl);
@@ -331,6 +336,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE_NO_DEEP(_spacing_table_prl_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_rwogo_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_rect_only_rules_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(_cut_class_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_min_cut_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_min_enc_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_v55inf_tbl);
@@ -440,6 +446,13 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerRectOnlyRuleObj);
   ZALLOCATED(_rect_only_rules_tbl);
+  
+  _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerCutClassRuleObj);
+  ZALLOCATED(_cut_class_rules_tbl);
 
   _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
       db,
@@ -542,6 +555,10 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& l)
       = new dbTable<_dbTechLayerRectOnlyRule>(db, this, *l._rect_only_rules_tbl);
   ZALLOCATED(_rect_only_rules_tbl);
 
+  _cut_class_rules_tbl
+      = new dbTable<_dbTechLayerCutClassRule>(db, this, *l._cut_class_rules_tbl);
+  ZALLOCATED(_cut_class_rules_tbl);
+
 
   _min_cut_rules_tbl
       = new dbTable<_dbTechMinCutRule>(db, this, *l._min_cut_rules_tbl);
@@ -580,6 +597,9 @@ _dbTechLayer::~_dbTechLayer()
 
   if (_rect_only_rules_tbl)
     delete _rect_only_rules_tbl;
+
+  if (_cut_class_rules_tbl)
+    delete _cut_class_rules_tbl;
 
   if (_min_cut_rules_tbl)
     delete _min_cut_rules_tbl;
@@ -628,6 +648,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& layer)
   stream << *layer._spacing_table_prl_rules_tbl;
   stream << *layer._rwogo_rules_tbl;
   stream << *layer._rect_only_rules_tbl;
+  stream << *layer._cut_class_rules_tbl;
   stream << *layer._min_cut_rules_tbl;
   stream << *layer._min_enc_rules_tbl;
   stream << *layer._v55inf_tbl;
@@ -684,6 +705,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& layer)
   stream >> *layer._spacing_table_prl_rules_tbl;
   stream >> *layer._rwogo_rules_tbl;
   stream >> *layer._rect_only_rules_tbl;
+  stream >> *layer._cut_class_rules_tbl;
   stream >> *layer._min_cut_rules_tbl;
   stream >> *layer._min_enc_rules_tbl;
   stream >> *layer._v55inf_tbl;
@@ -721,6 +743,9 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
 
     case dbTechLayerRectOnlyRuleObj:
       return _rect_only_rules_tbl;
+
+    case dbTechLayerCutClassRuleObj:
+      return _cut_class_rules_tbl;
 
 
     case dbTechMinCutRuleObj:
@@ -1002,6 +1027,13 @@ dbSet<dbTechLayerRectOnlyRule> dbTechLayer::getRectOnlyRules() const
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
   return dbSet<dbTechLayerRectOnlyRule>(layer, layer->_rect_only_rules_tbl);
+}
+
+dbSet<dbTechLayerCutClassRule> dbTechLayer::getCutClassRules() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+
+  return dbSet<dbTechLayerCutClassRule>(layer, layer->_cut_class_rules_tbl);
 }
 
 bool dbTechLayer::hasV55SpacingRules() const

@@ -68,7 +68,7 @@ dbTechLayerRectOnlyRule* lefTechLayerRectOnlyParser::parse(std::string s, dbTech
     else 
     {
         odb::dbTechLayerRectOnlyRule::destroy(rule);
-        return NULL;
+        return nullptr;
     }
 } 
 

@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     lefin lefParser(db, logger, false);
     const char *libname = "gscl45nm.lef";
     
-    std::string path = "/home/osama/Desktop/Workspace/Private/OpenROAD/src/OpenDB/tests/data/gscl45nm.lef";
+    std::string path = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
 
     lefParser.createTechAndLib(libname, path.c_str());
     
@@ -100,6 +100,18 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(rectOnlyRules.size() == 1);
     odb::dbTechLayerRectOnlyRule* rect_only_rule = (odb::dbTechLayerRectOnlyRule*) *rectOnlyRules.begin();
     BOOST_TEST(rect_only_rule->isExceptNonCorePins()==true);
+
+    auto cutLayer = dbTech->findLayer("via1");
+
+    auto cutRules = cutLayer->getCutClassRules();
+    BOOST_TEST(cutRules.size() == 1);
+    odb::dbTechLayerCutClassRule* cut_rule = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
+    auto subRules = cut_rule->getTechLayerCutClassSubRules();
+    BOOST_TEST(subRules.size() == 1);
+    odb::dbTechLayerCutClassSubRule* sub_rule = (odb::dbTechLayerCutClassSubRule*) *subRules.begin();
+    BOOST_TEST(std::string(sub_rule->getClassName())=="VA");
+    BOOST_TEST(sub_rule->getWidth()==0.15*distFactor);
+
 
 }
 

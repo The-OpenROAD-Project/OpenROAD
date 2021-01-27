@@ -105,6 +105,14 @@ class dbOStream
     return *this;
   }
 
+  dbOStream& operator<<(long long c)
+  {
+    int n = fwrite(&c, sizeof(c), 1, _f);
+    if (n != 1)
+      write_error();
+    return *this;
+  }
+
   dbOStream& operator<<(unsigned int c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
@@ -228,6 +236,14 @@ class dbIStream
   }
 
   dbIStream& operator>>(int& c)
+  {
+    int n = fread(&c, sizeof(c), 1, _f);
+    if (n != 1)
+      read_error();
+    return *this;
+  }
+
+  dbIStream& operator>>(long long& c)
   {
     int n = fread(&c, sizeof(c), 1, _f);
     if (n != 1)

@@ -90,9 +90,9 @@ void _dbTechLayerRightWayOnGridOnlyRule::out(dbDiff&     diff,
 _dbTechLayerRightWayOnGridOnlyRule::_dbTechLayerRightWayOnGridOnlyRule(
     _dbDatabase* db)
 {
-  // User Code Begin constructor
   uint* _flags_bit_field = (uint*) &_flags;
   *_flags_bit_field      = 0;
+  // User Code Begin constructor
   // User Code End constructor
 }
 _dbTechLayerRightWayOnGridOnlyRule::_dbTechLayerRightWayOnGridOnlyRule(

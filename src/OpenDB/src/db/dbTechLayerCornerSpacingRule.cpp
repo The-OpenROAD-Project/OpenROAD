@@ -154,9 +154,9 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
-  // User Code Begin constructor
   uint* _flags_bit_field = (uint*) &_flags;
   *_flags_bit_field      = 0;
+  // User Code Begin constructor
   // User Code End constructor
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(

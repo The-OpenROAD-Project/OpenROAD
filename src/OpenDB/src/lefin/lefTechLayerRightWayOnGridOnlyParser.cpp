@@ -68,7 +68,7 @@ dbTechLayerRightWayOnGridOnlyRule* lefTechLayerRightWayOnGridOnlyParser::parse(s
     else 
     {
         odb::dbTechLayerRightWayOnGridOnlyRule::destroy(rule);
-        return NULL;
+        return nullptr;
     }
 } 
 
