@@ -45,7 +45,11 @@ namespace gpl {
 
 
 FFT::FFT()
-  : binCntX_(0), binCntY_(0), binSizeX_(0), binSizeY_(0) {}
+  : binDensity_(nullptr),
+    electroPhi_(nullptr),
+    electroForceX_(nullptr),
+    electroForceY_(nullptr),
+    binCntX_(0), binCntY_(0), binSizeX_(0), binSizeY_(0) {}
 
 FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
   : binCntX_(binCntX), binCntY_(binCntY), 
@@ -56,15 +60,15 @@ FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
 FFT::~FFT() {
   using std::vector;
   for(int i=0; i<binCntX_; i++) {
-    delete(binDensity_[i]);
-    delete(electroPhi_[i]);
-    delete(electroForceX_[i]);
-    delete(electroForceY_[i]);
+    delete[] binDensity_[i];
+    delete[] electroPhi_[i];
+    delete[] electroForceX_[i];
+    delete[] electroForceY_[i];
   }
-  delete(binDensity_);
-  delete(electroPhi_);
-  delete(electroForceX_);
-  delete(electroForceY_);
+  delete[] binDensity_;
+  delete[] electroPhi_;
+  delete[] electroForceX_;
+  delete[] electroForceY_;
 
 
   csTable_.clear();
