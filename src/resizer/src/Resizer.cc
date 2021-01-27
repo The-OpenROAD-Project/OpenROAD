@@ -1837,7 +1837,7 @@ Resizer::makePadParasitic(const Net *net)
   // Use a small resistor to keep the connectivity intact.
   parasitics_->makeResistor(nullptr, n1, n2, .001, parasitics_ap_);
 
-  ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
+  ReducedParasiticType reduce_to = sta_->arcDelayCalc()->reducedParasiticType();
   const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
   parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                         corner_, MinMax::max(), parasitics_ap_);
