@@ -57,6 +57,11 @@ using utl::PRT;
 
 namespace par {
 
+void PartitionMgr::init(unsigned dbId, Logger* logger){
+  _dbId = dbId;
+  _logger = logger;
+}
+
 // Partition Netlist
 
 void PartitionMgr::runPartitioning()

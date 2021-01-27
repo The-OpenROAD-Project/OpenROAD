@@ -234,6 +234,7 @@ class PartitionMgr
 
  public:
   PartitionMgr() = default;
+  void init(unsigned dbId, Logger* logger);
   void runPartitioning();
   void runClustering();
   void run3PClustering();
@@ -249,8 +250,6 @@ class PartitionMgr
   PartOptions& getOptions() { return _options; }
   unsigned getCurrentId() { return (_results.size() - 1); }
   unsigned getCurrentClusId() { return (_clusResults.size() - 1); }
-  void setDbId(unsigned id) { _dbId = id; }
-  void setLogger(Logger * logger) {_logger = logger;}
   void toGraph();
   void toHypergraph();
   void hypergraph(bool buildGraph = false);
