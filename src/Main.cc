@@ -71,6 +71,7 @@ static int cmd_argc;
 static char **cmd_argv;
 bool gui_mode = false;
 const char* log_filename = nullptr;
+const char* metrics_filename = nullptr;
 
 static const char *init_filename = ".openroad";
 
@@ -96,6 +97,10 @@ main(int argc,
   log_filename = findCmdLineKey(argc, argv, "-log");
   if (log_filename)
     remove(log_filename);
+
+  metrics_filename = findCmdLineKey(argc, argv, "-metrics");
+  if (metrics_filename)
+    remove(metrics_filename);
 
   cmd_argc = argc;
   cmd_argv = argv;

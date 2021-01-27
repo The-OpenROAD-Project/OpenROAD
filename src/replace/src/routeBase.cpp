@@ -594,7 +594,6 @@ RouteBase::RouteBase(
 }
 
 RouteBase::~RouteBase() {
-  reset();
 }
 
 void 

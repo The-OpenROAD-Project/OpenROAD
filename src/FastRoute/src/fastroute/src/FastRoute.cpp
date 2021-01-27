@@ -192,30 +192,11 @@ void FastRouteCore::deleteComponents()
     delete[] sttrees;
   sttrees = nullptr;
 
-  for (int i = 0; i < yGrid; i++) {
-    if (parentX1[i])
-      delete[] parentX1[i];
-    if (parentY1[i])
-      delete[] parentY1[i];
-    if (parentX3[i])
-      delete[] parentX3[i];
-    if (parentY3[i])
-      delete[] parentY3[i];
+  parentX1.resize(boost::extents[0][0]);
+  parentY1.resize(boost::extents[0][0]);
+  parentX3.resize(boost::extents[0][0]);
+  parentY3.resize(boost::extents[0][0]);
 
-    parentX1[i] = nullptr;
-    parentY1[i] = nullptr;
-    parentX3[i] = nullptr;
-    parentY3[i] = nullptr;
-  }
-
-  if (parentX1)
-    delete[] parentX1;
-  if (parentY1)
-    delete[] parentY1;
-  if (parentX3)
-    delete[] parentX3;
-  if (parentY3)
-    delete[] parentY3;
   if (pop_heap2)
     delete[] pop_heap2;
   if (heap1)
@@ -223,10 +204,6 @@ void FastRouteCore::deleteComponents()
   if (heap2)
     delete[] heap2;
 
-  parentX1 = nullptr;
-  parentY1 = nullptr;
-  parentX3 = nullptr;
-  parentY3 = nullptr;
   pop_heap2 = nullptr;
   heap1 = nullptr;
   heap2 = nullptr;
@@ -865,17 +842,10 @@ void FastRouteCore::initAuxVar()
 
   MaxDegree = MD;
 
-  parentX1 = new short*[yGrid];
-  parentY1 = new short*[yGrid];
-  parentX3 = new short*[yGrid];
-  parentY3 = new short*[yGrid];
-
-  for (int i = 0; i < yGrid; i++) {
-    parentX1[i] = new short[xGrid];
-    parentY1[i] = new short[xGrid];
-    parentX3[i] = new short[xGrid];
-    parentY3[i] = new short[xGrid];
-  }
+  parentX1.resize(boost::extents[yGrid][xGrid]);
+  parentY1.resize(boost::extents[yGrid][xGrid]);
+  parentX3.resize(boost::extents[yGrid][xGrid]);
+  parentY3.resize(boost::extents[yGrid][xGrid]);
 
   pop_heap2 = new Bool[yGrid * XRANGE];
 
