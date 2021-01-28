@@ -84,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        _logger->error(GRT, 68, "Global route segment not valid");
+        _logger->error(GRT, 68, "Global route segment not valid.");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
@@ -125,7 +125,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     }
   }
 
-  _logger->info(GRT, 12, "#Antenna violations: {}", _antennaViolations.size());
+  _logger->info(GRT, 12, "#Antenna violations: {}.", _antennaViolations.size());
   return _antennaViolations.size();
 }
 
@@ -144,7 +144,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     }
 
     if (siteWidth != site_width) {
-      _logger->warn(GRT, 27, "Design has rows with different site width");
+      _logger->warn(GRT, 27, "Design has rows with different site width.");
     }
   }
 
@@ -199,7 +199,7 @@ void AntennaRepair::deleteFillerCells()
   }
 
   if (fillerCnt > 0) {
-    _logger->info(GRT, 11, "{} filler cells deleted", fillerCnt);
+    _logger->info(GRT, 11, "{} filler cells deleted.", fillerCnt);
   }
 }
 
