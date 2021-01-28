@@ -143,7 +143,7 @@ extern int *xcor, *ycor, *dcor;
 
 extern StTree* sttreesBK;
 
-extern short **parentX1, **parentY1, **parentX3, **parentY3;
+extern multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 extern float **heap2, **heap1;
 extern Bool* pop_heap2;

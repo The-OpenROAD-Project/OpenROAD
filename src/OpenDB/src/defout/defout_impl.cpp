@@ -963,7 +963,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
 
   bool isFirst = 1;
-  int dw, dh, x , y ;
+  int dw, dh, x = 0, y = 0;
   int xMin, yMin, xMax, yMax;
 
   for (dbBox* box : bpin->getBoxes())
