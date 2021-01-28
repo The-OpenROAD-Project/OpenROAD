@@ -404,6 +404,32 @@ namespace eval ICeWall {
     return [dict get $footprint padcell $padcell $type scaled_centre]
   }
 
+  proc get_core_area {} {	
+	variable footprint	
+
+	variable chip_width	
+	variable chip_height	
+	variable edge_bottom_offset	
+	variable edge_right_offset	
+	variable edge_top_offset	
+	variable edge_left_offset	
+	variable corner_width	
+	variable inner_bottom_offset	
+	variable inner_right_offset	
+	variable inner_top_offset	
+	variable inner_left_offset	
+
+	if {[dict exists $footprint core_area]} {	
+	    return [dict get $footprint core_area]	
+	}	
+
+	return [list \	
+		[expr $edge_left_offset + $corner_width + $inner_left_offset] \	
+		[expr $edge_bottom_offset + $corner_width + $inner_bottom_offset] \	
+		[expr $chip_width - $edge_right_offset - $corner_width - $inner_right_offset] \	
+		[expr $chip_height - $edge_top_offset - $corner_width - $inner_top_offset] \	
+	       ]	
+  }
   proc get_die_area {} {
     variable footprint
     
