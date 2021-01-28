@@ -178,6 +178,8 @@ int mapxy(int nx, int xs[], int nxs[], int d)
       min = mid + 1;
   }
 
+  debugPrint(logger, GRT, "fastroute", 3, "Fail when mapping coordinates");
+
   return -1;
 }
 
