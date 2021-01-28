@@ -84,7 +84,7 @@ void plotTree(int netID)
 
   fp = fopen("plottree", "w");
   if (fp == NULL) {
-    logger->error(GRT, 150, "Fail when open file plottree");
+    logger->error(GRT, 194, "Fail when open file plottree");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -181,12 +181,12 @@ void getlen()
     for (edgeID = 0; edgeID < 2 * sttrees[i].deg - 3; edgeID++) {
       treeedge = &(sttrees[i].edges[edgeID]);
       if (treeedge->route.type < MAZEROUTE)
-        logger->error(GRT, 151, "Invalid route type");
+        logger->error(GRT, 195, "Invalid route type");
       else
         totlen += treeedge->route.routelen;
     }
   }
-  logger->info(GRT, 152, "Routed len: {}", totlen);
+  logger->info(GRT, 196, "Routed len: {}", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -429,9 +429,9 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-   logger->info(GRT, 153, "Via related to pin nodes: {}", numVIAT1);
-   logger->info(GRT, 154, "Via related stiner nodes: {}", numVIAT2);
-   logger->info(GRT, 155, "Via filling finished");
+   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
+   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
+   logger->info(GRT, 199, "Via filling finished");
   }
 }
 
@@ -516,7 +516,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
         gridD[l][0] = 0;
       }
     } else {
-      logger->warn(GRT, 156, "Start point not assigned");
+      logger->warn(GRT, 200, "Start point not assigned");
       fflush(stdout);
     }
 

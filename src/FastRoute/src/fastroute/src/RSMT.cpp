@@ -178,8 +178,6 @@ int mapxy(int nx, int xs[], int nxs[], int d)
       min = mid + 1;
   }
 
-  if (min > max)
-    logger->error(GRT, 143, "Fail when mapping coordinates");
   return -1;
 }
 
@@ -245,10 +243,10 @@ void copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      logger->error(GRT, 144, "Invalid number of node neighbours");
+      logger->error(GRT, 188, "Invalid number of node neighbours");
   }
   if (edgecnt != numnodes - 1) {
-    logger->error(GRT, 145, "Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes");
+    logger->error(GRT, 189, "Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes");
   }
 }
 
@@ -904,7 +902,7 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      logger->warn(GRT, 146, "Net degree differs from rsmt degree");
+      logger->warn(GRT, 190, "Net degree differs from rsmt degree");
       d = rsmt.deg;
     }
 
@@ -957,9 +955,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   }  // loop i
 
   if (verbose > 1) {
-    logger->info(GRT, 147, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
-    logger->info(GRT, 148, "NumSeg  : {}", totalNumSeg);
-    logger->info(GRT, 149, "NumShift: {}", numShift);
+    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
+    logger->info(GRT, 192, "NumSeg  : {}", totalNumSeg);
+    logger->info(GRT, 193, "NumShift: {}", numShift);
   }
 }
 

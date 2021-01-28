@@ -106,7 +106,7 @@ static void updateHeap3D(int** array, int arrayLen, int i)
 static void extractMin3D(int** array, int arrayLen)
 {
   if (arrayLen < 1)
-    logger->error(GRT, 138, "Heap underflow");
+    logger->error(GRT, 183, "Heap underflow");
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
 }
@@ -506,7 +506,7 @@ void updateRouteType13D(int netID,
                          gridsL_n1A2);
 
   if (cnt_n1A1 == 1) {
-    logger->error(GRT, 139, "In 3D maze routing, type 1 node shift, cnt_n1A1 is 1");
+    logger->error(GRT, 187, "In 3D maze routing, type 1 node shift, cnt_n1A1 is 1");
   }
 
   E1_pos1 = -1;
@@ -816,7 +816,7 @@ void updateRouteType23D(int netID,
   }
 
   if (cnt_C1C2 == 1) {
-    logger->warn(GRT, 140, "Shift to 0 length edge, type2");
+    logger->warn(GRT, 184, "Shift to 0 length edge, type2");
   }
 
   // find the index of E1 in (C1, C2)
@@ -1842,14 +1842,14 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
     treenodes[n1].lID = nlID;
   } else {
     if (treenodes[n1].botL > 0) {
-      logger->warn(GRT, 141, "Bottom layer acutally {}", treenodes[n1].botL);
+      logger->warn(GRT, 185, "Bottom layer acutally {}", treenodes[n1].botL);
     }
     treenodes[n1].topL = 0;
     treenodes[n1].botL = 0;
     treenodes[n1].hID = BIG_INT;
     treenodes[n1].lID = BIG_INT;
     if (n1 >= deg) {
-      logger->error(GRT, 142, "Steiner nodes only have one connection");
+      logger->error(GRT, 186, "Steiner nodes only have one connection");
     }
   }
 }
