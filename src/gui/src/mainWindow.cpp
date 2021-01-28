@@ -415,7 +415,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
       odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != SIGNAL)
+            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
         auto inst_term_dir = inst_term->getIoType().getValue();
 

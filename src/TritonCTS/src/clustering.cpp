@@ -37,7 +37,7 @@
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include <lemon/network_simplex.h>
-#include <limits.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/timeb.h>
@@ -266,7 +266,7 @@ float clustering::calcSilh(const std::vector<std::pair<float, float>>& means,
   float sum_silh = 0;
   for (long int i = 0; i < flops.size(); ++i) {
     flop* f = &flops[i];
-    float in_d = 0, out_d = INT_MAX;
+    float in_d = 0, out_d = FLT_MAX;
     for (long int j = 0; j < means.size(); ++j) {
       float _x = means[j].first;
       float _y = means[j].second;
