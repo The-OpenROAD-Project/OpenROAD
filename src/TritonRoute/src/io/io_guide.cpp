@@ -311,8 +311,8 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
               if (VERBOSE > 0) {
                 frString name =
                   (origTerm->typeId() == frcInstTerm) ?
-                  name = ((frInstTerm *) origTerm)->getName() :
-                  name = term->getName();
+                  ((frInstTerm *) origTerm)->getName() :
+                  term->getName();
                 cout <<"Warning: genGuides_gCell2TermMap avoid condition2, may result in guide open: "
                      << name << endl;
               }
@@ -321,8 +321,8 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
               if (VERBOSE > 0) {
                 frString name =
                   (origTerm->typeId() == frcInstTerm) ?
-                  name = ((frInstTerm *) origTerm)->getName() :
-                  name = term->getName();
+                  ((frInstTerm *) origTerm)->getName() :
+                  term->getName();
                 cout <<"Warning: genGuides_gCell2TermMap avoid condition3, may result in guide open: "
                      << name << endl;
               }
