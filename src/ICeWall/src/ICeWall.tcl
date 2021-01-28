@@ -3030,7 +3030,7 @@ namespace eval ICeWall {
 
   namespace export get_die_area get_tracks
   namespace export init_footprint load_footprint
-  
+  namespace export get_core_area
   namespace ensemble create
 }
 
