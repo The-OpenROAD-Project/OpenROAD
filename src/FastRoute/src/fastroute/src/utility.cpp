@@ -84,7 +84,7 @@ void plotTree(int netID)
 
   fp = fopen("plottree", "w");
   if (fp == NULL) {
-    logger->error(GRT, 194, "Fail when open file plottree");
+    logger->error(GRT, 194, "Fail when open file plottree.");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -181,12 +181,12 @@ void getlen()
     for (edgeID = 0; edgeID < 2 * sttrees[i].deg - 3; edgeID++) {
       treeedge = &(sttrees[i].edges[edgeID]);
       if (treeedge->route.type < MAZEROUTE)
-        logger->error(GRT, 195, "Invalid route type");
+        logger->error(GRT, 195, "Invalid route type.");
       else
         totlen += treeedge->route.routelen;
     }
   }
-  logger->info(GRT, 196, "Routed len: {}", totlen);
+  logger->info(GRT, 196, "Routed len: {}.", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -268,7 +268,7 @@ static int comparePVMINX(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    logger->error(GRT, 175, "Invalid PVMINX comparison");
+    logger->error(GRT, 175, "Invalid PVMINX comparison.");
   } else {
     return ret;
   }
@@ -285,7 +285,7 @@ static int comparePVPV(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    logger->error(GRT, 176, "Invalid PVPV comparison");
+    logger->error(GRT, 176, "Invalid PVPV comparison.");
   } else {
     return ret;
   }
@@ -429,9 +429,9 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
-   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
-   logger->info(GRT, 199, "Via filling finished");
+   logger->info(GRT, 197, "Via related to pin nodes: {}.", numVIAT1);
+   logger->info(GRT, 198, "Via related stiner nodes: {}.", numVIAT2);
+   logger->info(GRT, 199, "Via filling finished.");
   }
 }
 
@@ -516,7 +516,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
         gridD[l][0] = 0;
       }
     } else {
-      logger->warn(GRT, 200, "Start point not assigned");
+      logger->warn(GRT, 200, "Start point not assigned.");
       fflush(stdout);
     }
 
@@ -627,7 +627,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
     if (treenodes[n2a].assigned) {
       if (gridsL[routelen] > treenodes[n2a].topL
           || gridsL[routelen] < treenodes[n2a].botL) {
-        logger->error(GRT, 202, "Target ending layer ({}) out of range", gridsL[routelen]);
+        logger->error(GRT, 202, "Target ending layer ({}) out of range.", gridsL[routelen]);
       }
     }
 
@@ -1047,7 +1047,7 @@ void checkRoute3D()
     for (nodeID = 0; nodeID < 2 * deg - 2; nodeID++) {
       if (nodeID < deg) {
         if (treenodes[nodeID].botL != 0) {
-          logger->error(GRT, 203, "Causing pin node floating");
+          logger->error(GRT, 203, "Causing pin node floating.");
         }
       }
     }
@@ -1108,7 +1108,7 @@ void checkRoute3D()
 
       for (i = 0; i <= treeedge->route.routelen; i++) {
         if (gridsL[i] < 0) {
-          logger->error(GRT, 204, "Invalid layer value in gridsL, {}", gridsL[i]);
+          logger->error(GRT, 204, "Invalid layer value in gridsL, {}.", gridsL[i]);
         }
       }
       if (gridFlag) {
@@ -1128,7 +1128,7 @@ void write3D()
 
   fp = fopen("output.out", "w");
   if (fp == NULL) {
-    logger->error(GRT, 205, "Error in opening output.out");
+    logger->error(GRT, 205, "Error in opening output.out.");
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
@@ -1181,7 +1181,7 @@ static int compareTEL(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    logger->error(GRT, 177, "Invalid TEL comparison");
+    logger->error(GRT, 177, "Invalid TEL comparison.");
   } else {
     return ret;
   }
@@ -1249,7 +1249,7 @@ void recoverEdge(int netID, int edgeID)
   routeLen = treeedge->route.routelen;
 
   if (treeedge->len == 0) {
-    logger->error(GRT, 206, "trying to recover an 0 length edge");
+    logger->error(GRT, 206, "trying to recover an 0 length edge.");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -1385,7 +1385,7 @@ static int compareEdgeLen(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    logger->error(GRT, 178, "Invalid EdgeLen comparison");
+    logger->error(GRT, 178, "Invalid EdgeLen comparison.");
   } else {
     return ret;
   }
@@ -1477,13 +1477,13 @@ Bool checkRoute2DTree(int netID)
     gridFlag = FALSE;
 
     if (treeedge->len < 0) {
-      logger->warn(GRT, 207, "rip upped edge without edge len re assignment");
+      logger->warn(GRT, 207, "rip upped edge without edge len re assignment.");
       STHwrong = TRUE;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger->warn(GRT, 208, ".routelen {} len {}",
+        logger->warn(GRT, 208, ".routelen {} len {}.",
           treeedge->route.routelen, treeedge->len);
         STHwrong = TRUE;
         return (TRUE);
@@ -1491,7 +1491,7 @@ Bool checkRoute2DTree(int netID)
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
         logger->warn(GRT, 164, "initial grid wrong y1 x1 [{} {}] , net start [{} {}] routelen "
-            "{}",
+            "{}.",
             y1,
             x1,
             gridsY[0],
@@ -1500,7 +1500,7 @@ Bool checkRoute2DTree(int netID)
         STHwrong = TRUE;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        logger->warn(GRT, 165, "end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}",
+        logger->warn(GRT, 165, "end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}.",
             y1,
             x1,
             gridsY[edgelength],
@@ -1512,7 +1512,7 @@ Bool checkRoute2DTree(int netID)
         distance
             = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
         if (distance != 1) {
-          logger->warn(GRT, 166, "net {} edge[{}] maze route wrong, distance {}, i {}",
+          logger->warn(GRT, 166, "net {} edge[{}] maze route wrong, distance {}, i {}.",
                  netName(nets[netID]),
                  edgeID,
                  distance,
@@ -1523,7 +1523,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        logger->warn(GRT, 167, "checking failed {}", netID);
+        logger->warn(GRT, 167, "checking failed {}.", netID);
         return (TRUE);
       }
     }
@@ -1542,7 +1542,7 @@ void writeRoute3D(char routingfile3D[])
 
   fp = fopen(routingfile3D, "w");
   if (fp == NULL) {
-    logger->error(GRT, 168, "Error in opening {}", routingfile3D);
+    logger->error(GRT, 168, "Error in opening {}.", routingfile3D);
   }
 
   for (netID = 0; netID < numValidNets; netID++) {

@@ -22,36 +22,36 @@ Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 22933
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0017] Found 0 clock nets
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 11
-[INFO GRT-0018] Processing 18040 obstacles on layer 1
-[INFO GRT-0019] Processing 3535 obstacles on layer 2
-[INFO GRT-0022] Processing 10 obstacles on layer 5
-[INFO GRT-0022] Reducing resources of layer 3 by 15%
-[INFO GRT-0023] Reducing resources of layer 4 by 15%
-[INFO GRT-0024] Reducing resources of layer 5 by 15%
-[INFO GRT-0025] Reducing resources of layer 6 by 15%
+[INFO GRT-0004] #DB Obstructions: 0.
+[INFO GRT-0005] #DB Obstacles: 22933.
+[INFO GRT-0006] #DB Macros: 0.
+[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2.
+[INFO GRT-0002] Maximum degree: 11.
+[INFO GRT-0018] Processing 18040 obstacles on layer 1.
+[INFO GRT-0019] Processing 3535 obstacles on layer 2.
+[INFO GRT-0022] Processing 10 obstacles on layer 5.
+[INFO GRT-0022] Reducing resources of layer 3 by 15%.
+[INFO GRT-0023] Reducing resources of layer 4 by 15%.
+[INFO GRT-0024] Reducing resources of layer 5 by 15%.
+[INFO GRT-0025] Reducing resources of layer 6 by 15%.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 2677
-[INFO GRT-0157] Total Capacity: 69927
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
+[INFO GRT-0156] Total Usage   : 2677.
+[INFO GRT-0157] Total Capacity: 69927.
+[INFO GRT-0158] Max H Overflow: 0.
+[INFO GRT-0159] Max V Overflow: 0.
+[INFO GRT-0160] Max Overflow  : 0.
+[INFO GRT-0161] H   Overflow  : 0.
+[INFO GRT-0162] V   Overflow  : 0.
+[INFO GRT-0163] Final Overflow: 0.
 
-[INFO GRT-0110] Final usage          : 2677
-[INFO GRT-0111] Final number of vias : 1768
-[INFO GRT-0112] Final usage 3D       : 7981
-[INFO GRT-0018] Total wirelength: 27547 um
+[INFO GRT-0110] Final usage          : 2677.
+[INFO GRT-0111] Final number of vias : 1768.
+[INFO GRT-0112] Final usage 3D       : 7981.
+[INFO GRT-0018] Total wirelength: 27547 um.
 Repairing antennas...
-[WARNING GRT-0043] No OR_DEFAULT vias defined
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -62,8 +62,8 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-[INFO GRT-0012] #Antenna violations: 2
-[INFO GRT-0015] 2 diodes inserted
+[INFO GRT-0012] #Antenna violations: 2.
+[INFO GRT-0015] 2 diodes inserted.
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 0.0
@@ -74,33 +74,33 @@ Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 22945
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 11
-[INFO GRT-0018] Processing 18046 obstacles on layer 1
-[INFO GRT-0019] Processing 3543 obstacles on layer 2
-[INFO GRT-0022] Processing 10 obstacles on layer 5
-[INFO GRT-0022] Reducing resources of layer 3 by 15%
-[INFO GRT-0023] Reducing resources of layer 4 by 15%
-[INFO GRT-0024] Reducing resources of layer 5 by 15%
-[INFO GRT-0025] Reducing resources of layer 6 by 15%
-[INFO GRT-0009] #Nets to reroute: 14
+[INFO GRT-0004] #DB Obstructions: 0.
+[INFO GRT-0005] #DB Obstacles: 22945.
+[INFO GRT-0006] #DB Macros: 0.
+[INFO GRT-0001] Minimum degree: 2.
+[INFO GRT-0002] Maximum degree: 11.
+[INFO GRT-0018] Processing 18046 obstacles on layer 1.
+[INFO GRT-0019] Processing 3543 obstacles on layer 2.
+[INFO GRT-0022] Processing 10 obstacles on layer 5.
+[INFO GRT-0022] Reducing resources of layer 3 by 15%.
+[INFO GRT-0023] Reducing resources of layer 4 by 15%.
+[INFO GRT-0024] Reducing resources of layer 5 by 15%.
+[INFO GRT-0025] Reducing resources of layer 6 by 15%.
+[INFO GRT-0009] #Nets to reroute: 14.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 172
-[INFO GRT-0157] Total Capacity: 67424
-[INFO GRT-0158] Max H Overflow: 0
-[INFO GRT-0159] Max V Overflow: 0
-[INFO GRT-0160] Max Overflow  : 0
-[INFO GRT-0161] H   Overflow  : 0
-[INFO GRT-0162] V   Overflow  : 0
-[INFO GRT-0163] Final Overflow: 0
+[INFO GRT-0156] Total Usage   : 172.
+[INFO GRT-0157] Total Capacity: 67424.
+[INFO GRT-0158] Max H Overflow: 0.
+[INFO GRT-0159] Max V Overflow: 0.
+[INFO GRT-0160] Max Overflow  : 0.
+[INFO GRT-0161] H   Overflow  : 0.
+[INFO GRT-0162] V   Overflow  : 0.
+[INFO GRT-0163] Final Overflow: 0.
 
-[INFO GRT-0110] Final usage          : 172
-[INFO GRT-0111] Final number of vias : 97
-[INFO GRT-0112] Final usage 3D       : 463
-[INFO GRT-0014] Num routed nets: 322
+[INFO GRT-0110] Final usage          : 172.
+[INFO GRT-0111] Final number of vias : 97.
+[INFO GRT-0112] Final usage 3D       : 463.
+[INFO GRT-0014] Num routed nets: 322.
 No differences found.
 No differences found.

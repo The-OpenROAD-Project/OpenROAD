@@ -693,7 +693,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}.", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -720,7 +720,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}.", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -909,7 +909,7 @@ void FastRouteCore::writeCongestionReport2D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    logger->error(GRT, 116, "Congestion report file could not be opened");
+    logger->error(GRT, 116, "Congestion report file could not be opened.");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -953,7 +953,7 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    logger->error(GRT, 117, "Congestion report file could not be opened");
+    logger->error(GRT, 117, "Congestion report file could not be opened.");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -1052,18 +1052,18 @@ NetRouteMap FastRouteCore::run()
   viacost = 0;
   gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ, logger);
   if (verbose > 1)
-    logger->info(GRT, 97, "First L Route");
+    logger->info(GRT, 97, "First L Route.");
   routeLAll(TRUE);
   gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ, logger);
   getOverflow2D(&maxOverflow);
   if (verbose > 1)
-    logger->info(GRT, 98, "Second L Route");
+    logger->info(GRT, 98, "Second L Route.");
   newrouteLAll(FALSE, TRUE);
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   newrouteZAll(10);
   if (verbose > 1)
-    logger->info(GRT, 99, "First Z Route");
+    logger->info(GRT, 99, "First Z Route.");
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
@@ -1088,7 +1088,7 @@ NetRouteMap FastRouteCore::run()
     LOGIS_COF = std::max<float>(2.0 / (1 + log(maxOverflow)), LOGIS_COF);
     LOGIS_COF = 2.0 / (1 + log(maxOverflow));
     if (verbose > 1)
-      logger->info(GRT, 100, "LV routing round {}, enlarge {}", i, enlarge);
+      logger->info(GRT, 100, "LV routing round {}, enlarge {}.", i, enlarge);
     routeLVAll(newTH, enlarge);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1119,7 +1119,7 @@ NetRouteMap FastRouteCore::run()
 
   InitLastUsage(upType);
   if (totalOverflow > 0) {
-    logger->info(GRT, 101, "Running extra iterations to remove overflow...");
+    logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
   while (totalOverflow > 0 && i <= overflowIterations) {
@@ -1200,9 +1200,9 @@ NetRouteMap FastRouteCore::run()
     }
 
     logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
-                  " threshold {} via cost {} \n"
+                  " threshold {} via cost {}. \n"
                   "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
-                  " {} updatetype {}",
+                  " {} updatetype {}.",
         i,
         enlarge,
         costheight,
@@ -1242,7 +1242,7 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        logger->info(GRT, 103, "Extra Run for hard benchmark");
+        logger->info(GRT, 103, "Extra Run for hard benchmark.");
         L = 0;
         upType = 3;
         stopDEC = TRUE;
@@ -1339,15 +1339,15 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
-    logger->error(GRT, 118, "Routing congestion too high");
+    logger->error(GRT, 118, "Routing congestion too high.");
   }
 
   if (allowOverflow && totalOverflow > 0) {
-    logger->warn(GRT, 115, "Global routing finished with overflow");
+    logger->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
   if (minofl > 0) {
-    logger->info(GRT, 104, "minimal ofl {}, occuring at round {}", minofl, minoflrnd);
+    logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
     copyBR();
   }
 
@@ -1356,7 +1356,7 @@ NetRouteMap FastRouteCore::run()
   checkUsage();
 
   if (verbose > 1)
-    logger->info(GRT, 105, "Maze routing finished");
+    logger->info(GRT, 105, "Maze routing finished.");
 
   clock_t t4 = clock();
   float maze_Time = (float) (t4 - t3) / CLOCKS_PER_SEC;
@@ -1367,10 +1367,10 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   if (verbose > 1)
-    logger->info(GRT, 106, "Layer Assignment Begins");
+    logger->info(GRT, 106, "Layer Assignment Begins.");
   newLA();
   if (verbose > 1)
-    logger->info(GRT, 107, "Layer assignment finished");
+    logger->info(GRT, 107, "Layer assignment finished.");
 
   clock_t t2 = clock();
   float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
@@ -1388,7 +1388,7 @@ NetRouteMap FastRouteCore::run()
 
   if (goingLV && past_cong == 0) {
     if (verbose > 1)
-      logger->info(GRT, 108, "Post Processing Begins");
+      logger->info(GRT, 108, "Post Processing Begins.");
     mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D);
 
     //  mazeRouteMSMDOrder3D(enlarge, 0, 10 );
@@ -1396,7 +1396,7 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      logger->info(GRT, 109, "Post Processsing finished\n Starting via filling");
+      logger->info(GRT, 109, "Post Processsing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1406,9 +1406,9 @@ NetRouteMap FastRouteCore::run()
 
   clock_t t5 = clock();
   maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
-  logger->info(GRT, 110, "Final usage          : {}", finallength);
-  logger->info(GRT, 111, "Final number of vias : {}", numVia);
-  logger->info(GRT, 112, "Final usage 3D       : {}", (finallength + 3 * numVia));
+  logger->info(GRT, 110, "Final usage          : {}.", finallength);
+  logger->info(GRT, 111, "Final number of vias : {}.", numVia);
+  logger->info(GRT, 112, "Final usage 3D       : {}.", (finallength + 3 * numVia));
 
   NetRouteMap routes = getRoutes();
 

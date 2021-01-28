@@ -383,7 +383,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
             costL1 = 0;
             costL2 = viacost;
           } else {
-            logger->warn(GRT, 179, "Wrong node status {}", treenodes[n1].status);
+            logger->warn(GRT, 179, "Wrong node status {}.", treenodes[n1].status);
           }
           if (treenodes[n2].status == 2) {
             costL2 += viacost;
@@ -616,7 +616,7 @@ void newrouteZ_edge(int netID, int edgeID)
         treeedge->route.HVH = HVH;
         treeedge->route.Zpoint = bestZ;
       } else {
-        logger->warn(GRT, 180, "In the maze edge, not HVH results is produced");
+        logger->warn(GRT, 180, "In the maze edge, not HVH results is produced.");
       }
     }  // else Z route
 
@@ -1283,7 +1283,7 @@ void spiralRoute(int netID, int edgeID)
         costL1 = 0;
         costL2 = viacost;
       } else {
-        logger->warn(GRT, 181, "Wrong node status {}", treenodes[n1].status);
+        logger->warn(GRT, 181, "Wrong node status {}.", treenodes[n1].status);
       }
       if (treenodes[n2].status == 2) {
         costL2 += viacost;
@@ -1834,7 +1834,7 @@ void routeLVAll(int threshold, int expand)
   int netID, edgeID, numEdges, i, forange;
 
   if (verbose > 1)
-    logger->info(GRT, 182, "{} threshold, {} expand", threshold, expand);
+    logger->info(GRT, 182, "{} threshold, {} expand.", threshold, expand);
 
   h_costTable = new float[10 * hCapacity];
 

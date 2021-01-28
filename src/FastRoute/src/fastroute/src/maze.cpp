@@ -301,7 +301,7 @@ void updateCongestionHistory(int round, int upType)
 
   maxlimit = 0;
 
-  logger->info(GRT, 124, "Update congestion history type {}", upType);
+  logger->info(GRT, 124, "Update congestion history type {}.", upType);
 
   if (upType == 1) {
     for (i = 0; i < yGrid; i++) {
@@ -599,7 +599,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    logger->error(GRT, 125, "Setup Heap: not maze routing");
+                    logger->error(GRT, 125, "Setup Heap: not maze routing.");
                   }
                 }  // if not a degraded edge (len>0)
 
@@ -685,7 +685,7 @@ void setupHeap(int netID,
                     }
                   }  // if MAZEROUTE
                   else {
-                    logger->error(GRT, 201, "Setup Heap: not maze routing");
+                    logger->error(GRT, 201, "Setup Heap: not maze routing.");
                   }
                 }  // if the edge is not degraded (len>0)
 
@@ -804,7 +804,7 @@ void updateRouteType1(TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    logger->error(GRT, 169, "Invalid index for position ({}, {})", E1x, E1y);
+    logger->error(GRT, 169, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   // reallocate memory for route.gridsX and route.gridsY
@@ -982,7 +982,7 @@ void updateRouteType2(TreeNode* treenodes,
   }
 
   if (E1_pos == -1) {
-    logger->error(GRT, 170, "Invalid index for position ({}, {})", E1x, E1y);
+    logger->error(GRT, 170, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
@@ -1894,14 +1894,14 @@ int getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 
   if (verbose > 1) {
     logger->info(GRT, 126, "Overflow Report:");
-    logger->info(GRT, 127, "total Usage   : {}", total_usage);
-    logger->info(GRT, 128, "Max H Overflow: {}", max_H_overflow);
-    logger->info(GRT, 129, "Max V Overflow: {}", max_V_overflow);
-    logger->info(GRT, 130, "Max Overflow  : {}", max_overflow);
-    logger->info(GRT, 131, "Num Overflow e: {}", numedges);
-    logger->info(GRT, 132, "H   Overflow  : {}", H_overflow);
-    logger->info(GRT, 133, "V   Overflow  : {}", V_overflow);
-    logger->info(GRT, 134, "Final Overflow: {}\n", totalOverflow);
+    logger->info(GRT, 127, "total Usage   : {}.", total_usage);
+    logger->info(GRT, 128, "Max H Overflow: {}.", max_H_overflow);
+    logger->info(GRT, 129, "Max V Overflow: {}.", max_V_overflow);
+    logger->info(GRT, 130, "Max Overflow  : {}.", max_overflow);
+    logger->info(GRT, 131, "Num Overflow e: {}.", numedges);
+    logger->info(GRT, 132, "H   Overflow  : {}.", H_overflow);
+    logger->info(GRT, 133, "V   Overflow  : {}.", V_overflow);
+    logger->info(GRT, 134, "Final Overflow: {}.\n", totalOverflow);
   }
 
   *tUsage = total_usage;
@@ -1971,16 +1971,16 @@ int getOverflow2D(int* maxOverflow)
 
   if (verbose > 1) {
     logger->info(GRT, 135, "Overflow Report:");
-    logger->info(GRT, 136, "Total hCap    : {}", hCap);
-    logger->info(GRT, 137, "Total vCap    : {}", vCap);
-    logger->info(GRT, 138, "Total Usage   : {}", total_usage);
-    logger->info(GRT, 139, "Max H Overflow: {}", max_H_overflow);
-    logger->info(GRT, 140, "Max V Overflow: {}", max_V_overflow);
-    logger->info(GRT, 141, "Max Overflow  : {}", max_overflow);
-    logger->info(GRT, 142, "Num Overflow e: {}", numedges);
-    logger->info(GRT, 143, "H   Overflow  : {}", H_overflow);
-    logger->info(GRT, 144, "V   Overflow  : {}", V_overflow);
-    logger->info(GRT, 145, "Final Overflow: {}\n", totalOverflow);
+    logger->info(GRT, 136, "Total hCap    : {}.", hCap);
+    logger->info(GRT, 137, "Total vCap    : {}.", vCap);
+    logger->info(GRT, 138, "Total Usage   : {}.", total_usage);
+    logger->info(GRT, 139, "Max H Overflow: {}.", max_H_overflow);
+    logger->info(GRT, 140, "Max V Overflow: {}.", max_V_overflow);
+    logger->info(GRT, 141, "Max Overflow  : {}.", max_overflow);
+    logger->info(GRT, 142, "Num Overflow e: {}.", numedges);
+    logger->info(GRT, 143, "H   Overflow  : {}.", H_overflow);
+    logger->info(GRT, 144, "V   Overflow  : {}.", V_overflow);
+    logger->info(GRT, 145, "Final Overflow: {}.\n", totalOverflow);
   }
 
   return (totalOverflow);
@@ -2057,13 +2057,13 @@ int getOverflow3D(void)
     logger->info(GRT, 147, "Usage per layer:");
 
     for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 148, "Layer {} usage: {}", (l+1), usage_per_layer[l]);
+      logger->info(GRT, 148, "Layer {} usage: {}.", (l+1), usage_per_layer[l]);
     }
 
     logger->info(GRT, 149, "Capacity per layer:");
 
     for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 150, "Layer {} capacity: {}", (l+1), cap_per_layer[l]);
+      logger->info(GRT, 150, "Layer {} capacity: {}.", (l+1), cap_per_layer[l]);
     }
 
     logger->info(GRT, 151, "Usage percentage per layer:");
@@ -2077,27 +2077,25 @@ int getOverflow3D(void)
             = (float) usage_per_layer[l] / (float) cap_per_layer[l];
         use_percentage *= 100;
       }
-      logger->info(GRT, 152, "Layer {} usage percentage: {:.2f}%", (l+1), use_percentage);
+      logger->info(GRT, 152, "Layer {} usage percentage: {:.2f}%.", (l+1), use_percentage);
     }
 
-    std::string overflow_per_layer_rpt;
-    overflow_per_layer_rpt = "Overflow per layer:\n";
     logger->info(GRT, 153, "Overflow per layer:");
 
     for (int l = 0; l < numLayers; l++) {
-      logger->info(GRT, 154, "Layer {} overflow: {}", (l+1), overflow_per_layer[l]);
+      logger->info(GRT, 154, "Layer {} overflow: {}.", (l+1), overflow_per_layer[l]);
     }
   }
 
   logger->info(GRT, 155, "Overflow Report:");
-  logger->info(GRT, 156, "Total Usage   : {}", total_usage);
-  logger->info(GRT, 157, "Total Capacity: {}", cap);
-  logger->info(GRT, 158, "Max H Overflow: {}", max_H_overflow);
-  logger->info(GRT, 159, "Max V Overflow: {}", max_V_overflow);
-  logger->info(GRT, 160, "Max Overflow  : {}", max_overflow);
-  logger->info(GRT, 161, "H   Overflow  : {}", H_overflow);
-  logger->info(GRT, 162, "V   Overflow  : {}", V_overflow);
-  logger->info(GRT, 163, "Final Overflow: {}\n", totalOverflow);
+  logger->info(GRT, 156, "Total Usage   : {}.", total_usage);
+  logger->info(GRT, 157, "Total Capacity: {}.", cap);
+  logger->info(GRT, 158, "Max H Overflow: {}.", max_H_overflow);
+  logger->info(GRT, 159, "Max V Overflow: {}.", max_V_overflow);
+  logger->info(GRT, 160, "Max Overflow  : {}.", max_overflow);
+  logger->info(GRT, 161, "H   Overflow  : {}.", H_overflow);
+  logger->info(GRT, 162, "V   Overflow  : {}.", V_overflow);
+  logger->info(GRT, 163, "Final Overflow: {}.\n", totalOverflow);
 
   delete[] cap_per_layer;
   delete[] usage_per_layer;
