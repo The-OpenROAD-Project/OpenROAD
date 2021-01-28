@@ -229,7 +229,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   std::vector<std::vector<std::vector<unsigned>>> solutions;
 
   if (_useMaxCapLimit) {
-    _logger->report("Clustering with max cap limit of {}", _techChar->getCharMaxCap());
+    debugPrint(_logger, CTS, "Stree", 1, "Clustering with max cap limit of {}", _options->getSinkBufferMaxCap());
   }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < _thetaIndexVector.size(); ++i) {
@@ -391,7 +391,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
 bool SinkClustering::isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit)
 {
   if (_useMaxCapLimit) {
-    if (capCost > _techChar->getCharMaxCap()/2.5) {
+    if (capCost > _options->getSinkBufferMaxCap()) {
       return true;
     } else {
       return false;
