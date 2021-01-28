@@ -49,6 +49,7 @@ extern int Tapcell_Init(Tcl_Interp *interp);
 }
 
 Tapcell::Tapcell()
+  : db_(nullptr)
 {
 }
 
