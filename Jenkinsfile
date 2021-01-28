@@ -64,7 +64,7 @@ pipeline {
   post {
     failure {
       script {
-        if ( env.BRANCH_NAME == 'openroad' ) {
+        if ( env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'openroad' ) {
           echo('Main development branch: report to stakeholders and commit author.')
           EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com"
           REPLY_TO="$EMAIL_TO"

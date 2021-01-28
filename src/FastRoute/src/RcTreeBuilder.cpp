@@ -43,6 +43,8 @@
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Sdc.hh"
+#include "sta/StaState.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Units.hh"
 
 namespace grt {
@@ -208,8 +210,7 @@ void RcTreeBuilder::reduceParasiticNetwork()
 {
   sta::Sdc* sdc = _sta->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);
-
-  sta::ReducedParasiticType reduce_to = sta::ReducedParasiticType::pi_elmore;
+  sta::ReducedParasiticType reduce_to = _sta->arcDelayCalc()->reducedParasiticType();
   _parasitics->reduceTo(_parasitic,
                         _sta_net,
                         reduce_to,
