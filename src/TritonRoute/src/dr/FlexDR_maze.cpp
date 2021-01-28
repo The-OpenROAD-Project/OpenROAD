@@ -2945,16 +2945,16 @@ bool FlexDRWorker::routeNet(drNet* net) {
   ProfileTask profile("DR:routeNet");
   //bool enableOutput = true;
   bool enableOutput = false;
+  if (graphics_) {
+    graphics_->startNet(net);
+  }
+
   if (net->getPins().size() <= 1) {
     return true;
   }
   
   if (TEST_ || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
-  }
-
-  if (graphics_) {
-    graphics_->startNet(net);
   }
 
   set<drPin*, frBlockObjectComp> unConnPins;
