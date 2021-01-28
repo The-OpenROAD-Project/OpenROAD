@@ -96,7 +96,8 @@ target_link_libraries(${BIN_NAME} INTERFACE
                 )
 endif (LOAD_PARTITIONERS)
 
-target_link_libraries(${BIN_NAME} INTERFACE
-                        ${TCL_LIB}
+target_link_libraries(${BIN_NAME}
+			PUBLIC
+			utility
                         )
 unset(LOAD_PARTITIONERS)

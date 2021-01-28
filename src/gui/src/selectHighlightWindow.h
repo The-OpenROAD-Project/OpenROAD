@@ -97,7 +97,7 @@ class HighlightModel : public QAbstractTableModel
   void populateModel();
 
   int highlightGroup(const QModelIndex& index) const;
-  bool setData(const QModelIndex& index, const QVariant& value, int role);
+  bool setData(const QModelIndex& index, const QVariant& value, int role) override;
 
  private:
   const HighlightSet& objs_;
