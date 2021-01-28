@@ -380,33 +380,6 @@ namespace eval ICeWall {
     return [expr round(([lindex [dict get $footprint die_area] 3] - [lindex [dict get $footprint die_area] 1]) * $def_units)]
   }
 
-  proc get_core_area {} {
-    variable footprint
-    
-    variable chip_width
-    variable chip_height
-    variable edge_bottom_offset
-    variable edge_right_offset
-    variable edge_top_offset
-    variable edge_left_offset
-    variable corner_width
-    variable inner_bottom_offset
-    variable inner_right_offset
-    variable inner_top_offset
-    variable inner_left_offset
-    
-    if {[dict exists $footprint core_area]} {
-      return [dict get $footprint core_area]
-    }
-    
-    return [list \
-      [expr $edge_left_offset + $corner_width + $inner_left_offset] \
-      [expr $edge_bottom_offset + $corner_width + $inner_bottom_offset] \
-      [expr $chip_width - $edge_right_offset - $corner_width - $inner_right_offset] \
-      [expr $chip_height - $edge_top_offset - $corner_width - $inner_top_offset] \
-    ]
-  }
-
   proc get_padcell_side_name {padcell} {
     variable footprint
     
@@ -504,11 +477,9 @@ namespace eval ICeWall {
     return [dict get $library types $type]
   }
   
-  proc get_library_cell_type_offset {type} {
+  proc get_library_cell_offset {cell_name} {
     variable library
     variable def_units
-
-    set cell_name [get_library_cell_by_type $type]
 
     if {![dict exists $library cells $cell_name scaled_offset]} {
       if {[dict exists $library cells $cell_name offset]} {
@@ -521,6 +492,25 @@ namespace eval ICeWall {
 
     return [dict get $library cells $cell_name scaled_offset]
   }
+ 
+  proc get_library_cell_type_offset {type} {
+    variable library
+
+    set cell_name [get_library_cell_by_type $type]
+    return [get_library_cell_offset $cell_name]
+  }
+
+  proc get_library_cell_overlay {type} {
+    variable library
+
+    set cell [get_library_cell_by_type $type]
+    if {[dict exists $library cells $cell overlay]} {
+      return [dict get $library cells $cell overlay]
+    }
+
+    return {}
+  }
+
   proc get_library_cell_name {type {position "none"}} {
     variable library
     # debug "cell_type $type, position $position"
@@ -541,6 +531,17 @@ namespace eval ICeWall {
     }
 
     return $cell_name
+  }
+
+  proc get_padcell_cell_overlay {padcell} {
+    variable footprint
+
+    if {![dict exist $footprint padcell $padcell overlay]} {
+      set overlay [get_library_cell_overlay [get_padcell_type $padcell]]
+      dict set footprint padcell $padcell overlay $overlay
+    }
+
+    return [dict get $footprint padcell $padcell overlay]
   }
 
   proc get_padcell_cell_name {padcell} {
@@ -1007,7 +1008,23 @@ namespace eval ICeWall {
 
     return [dict get $footprint full_order]
   }
-  
+
+  proc place_padcell_overlay {padcell} {
+    variable block
+
+    set overlay [get_padcell_cell_overlay $padcell]
+    set inst [get_padcell_inst $padcell]
+    if {$inst != "NULL" && [llength $overlay] > 0} {
+      set overlay_inst [odb::dbInst_create $block [get_cell_master $overlay] ${padcell}_overlay]
+
+      $overlay_inst setOrient [$inst getOrient]
+      $overlay_inst setOrigin {*}[$inst getOrigin]
+      $overlay_inst setPlacementStatus "FIRM"
+      # debug "padcell $padcell [$inst getOrigin] [$inst getOrient]"
+      # debug "overlay [$overlay_inst getName] [$overlay_inst getOrigin] [$overlay_inst getOrient]"
+    }
+  }
+ 
   proc place_padcells {} {
     variable block
     
@@ -1371,7 +1388,6 @@ namespace eval ICeWall {
     variable tech
     variable block
     variable def_units
-    variable corner_width
     variable chip_width 
     variable chip_height
 
@@ -1382,8 +1398,6 @@ namespace eval ICeWall {
     set block [[$db getChip] getBlock]
 
     set def_units [$tech getDbUnitsPerMicron]
-
-    set corner_width [[get_cell corner ll] getWidth]
 
     set chip_width  [get_footprint_die_size_x]
     set chip_height [get_footprint_die_size_y]
@@ -1581,6 +1595,12 @@ namespace eval ICeWall {
 
           set centre [get_padcell_centre $padcell bondpad]
           connect_to_bondpad_or_bump $inst $centre $padcell
+        } else {
+          if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
+            err 99 "No padcell instance found for $padcell"
+            continue
+          }
+          add_physical_pin $padcell [get_padcell_inst $padcell]
         }
       }
     }
@@ -2283,25 +2303,27 @@ namespace eval ICeWall {
     variable edge_right_offset 
     variable edge_top_offset 
     variable edge_left_offset
-    variable corner_width
-    
+    variable pad_ring
+
+    place_corners
+ 
     foreach side_name {bottom right top left} {
       switch $side_name \
         "bottom" {
-          set fill_start [expr $edge_left_offset + $corner_width]
-          set fill_end   [expr $chip_width - $edge_right_offset - $corner_width]
+          set fill_start [expr $edge_left_offset + [corner_width corner_ll]]
+          set fill_end   [expr $chip_width - $edge_right_offset - [corner_width corner_lr]]
         } \
         "right"  {
-          set fill_start [expr $edge_bottom_offset + $corner_width]
-          set fill_end   [expr $chip_height - $edge_top_offset - $corner_width]
+          set fill_start [expr $edge_bottom_offset + [corner_height corner_lr]]
+          set fill_end   [expr $chip_height - $edge_top_offset - [corner_height corner_ur]]
         } \
         "top"    {
-          set fill_start [expr $chip_width - $edge_right_offset - $corner_width]
-          set fill_end   [expr $edge_left_offset + $corner_width]
+          set fill_start [expr $chip_width - $edge_right_offset - [corner_width corner_ur]]
+          set fill_end   [expr $edge_left_offset + [corner_width corner_ul]]
         } \
         "left"   {
-          set fill_start [expr $chip_height - $edge_top_offset - $corner_width]
-          set fill_end   [expr $edge_bottom_offset + $corner_width]
+          set fill_start [expr $chip_height - $edge_top_offset - [corner_height corner_ul]]
+          set fill_end   [expr $edge_bottom_offset + [corner_height corner_ll]]
         }
 
       # debug "$side_name: fill_start = $fill_start"
@@ -2325,8 +2347,7 @@ namespace eval ICeWall {
         $inst setOrigin [dict get $origin x] [dict get $origin y]
         $inst setOrient [get_padcell_orient $padcell]
         $inst setPlacementStatus "FIRM"
-
-        # add_physical_pin $padcell $inst
+        place_padcell_overlay $padcell
 
         set bbox [$inst getBBox]
 
@@ -2374,6 +2395,31 @@ namespace eval ICeWall {
         }
 
     }
+  }
+
+  proc corner_width {corner} {
+    variable pad_ring
+
+    set inst [dict get $pad_ring $corner]
+    return [[$inst getBBox] getDX]
+  }
+
+  proc corner_height {corner} {
+    variable pad_ring
+
+    set inst [dict get $pad_ring $corner]
+    return [[$inst getBBox] getDY]
+  }
+
+  proc place_corners {} {
+    variable block
+    variable pad_ring
+    variable chip_width 
+    variable chip_height
+    variable edge_bottom_offset 
+    variable edge_right_offset 
+    variable edge_top_offset 
+    variable edge_left_offset
 
     dict set pad_ring corner_ll [set inst [odb::dbInst_create $block [set corner [get_cell corner ll]] "CORNER_LL"]]
     set cell_offset [get_library_cell_type_offset corner]
@@ -2872,7 +2918,12 @@ namespace eval ICeWall {
           set fill_start $y
         }
       # debug "inst [$inst getName], x: $x, y: $y"
-      $inst setOrigin $x $y
+      set offset [get_library_cell_offset $spacer_type]
+      set fill_origin [list $x $y]
+      set location [transform_point {*}$offset [list 0 0] $orient]
+      set place_at [list [expr [lindex $fill_origin 0] - [lindex $location 0]] [expr [lindex $fill_origin 1] - [lindex $location 1]]]
+      # debug "offset: $offset, fill_origin: $fill_origin, location: $location, place_at: $place_at"
+      $inst setOrigin {*}$place_at 
       $inst setOrient $orient
       $inst setPlacementStatus "FIRM"
 
@@ -2882,7 +2933,7 @@ namespace eval ICeWall {
  
   namespace export set_footprint set_library
 
-  namespace export get_die_area get_core_area get_tracks
+  namespace export get_die_area get_tracks
   namespace export init_footprint load_footprint
   
   namespace ensemble create
