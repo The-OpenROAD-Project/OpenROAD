@@ -61,6 +61,27 @@ struct GSegment
   }
 };
 
+struct GCellCongestion
+{
+  int minX;
+  int minY;
+  int maxX;
+  int maxY;
+  int layer;
+  short capacity;
+  short usage;
+  GCellCongestion(int x0, int y0, int x1, int y1, int l, short cap, short usage)
+      : minX(x0),
+        minY(y0),
+        maxX(x1),
+        maxY(y1),
+        layer(l),
+        capacity(cap),
+        usage(usage)
+  {
+  }
+};
+
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
