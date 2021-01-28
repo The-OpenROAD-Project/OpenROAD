@@ -35,18 +35,16 @@ Layer 6 pitch: 3.33
 [INFO GRT-0023] Reducing resources of layer 4 by 15%
 [INFO GRT-0024] Reducing resources of layer 5 by 15%
 [INFO GRT-0025] Reducing resources of layer 6 by 15%
-
-Final usage/overflow report:
-
-Overflow Report:
-[INFO GRT-0149] Total Usage   : 2677
-[INFO GRT-0150] Total Capacity: 69927
-[INFO GRT-0151] Max H Overflow: 0
-[INFO GRT-0152] Max V Overflow: 0
-[INFO GRT-0153] Max Overflow  : 0
-[INFO GRT-0154] H   Overflow  : 0
-[INFO GRT-0155] V   Overflow  : 0
-[INFO GRT-0156] Final Overflow: 0
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 2677
+[INFO GRT-0157] Total Capacity: 69927
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
 
 [INFO GRT-0110] Final usage          : 2677
 [INFO GRT-0111] Final number of vias : 1768
@@ -89,18 +87,16 @@ Layer 6 pitch: 3.33
 [INFO GRT-0024] Reducing resources of layer 5 by 15%
 [INFO GRT-0025] Reducing resources of layer 6 by 15%
 [INFO GRT-0009] #Nets to reroute: 14
-
-Final usage/overflow report:
-
-Overflow Report:
-[INFO GRT-0149] Total Usage   : 172
-[INFO GRT-0150] Total Capacity: 67424
-[INFO GRT-0151] Max H Overflow: 0
-[INFO GRT-0152] Max V Overflow: 0
-[INFO GRT-0153] Max Overflow  : 0
-[INFO GRT-0154] H   Overflow  : 0
-[INFO GRT-0155] V   Overflow  : 0
-[INFO GRT-0156] Final Overflow: 0
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 172
+[INFO GRT-0157] Total Capacity: 67424
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
 
 [INFO GRT-0110] Final usage          : 172
 [INFO GRT-0111] Final number of vias : 97
