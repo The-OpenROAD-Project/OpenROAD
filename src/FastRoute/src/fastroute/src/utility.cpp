@@ -627,7 +627,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
     if (treenodes[n2a].assigned) {
       if (gridsL[routelen] > treenodes[n2a].topL
           || gridsL[routelen] < treenodes[n2a].botL) {
-        logger->error(GRT, 157, "Target ending layer ({}) out of range", gridsL[routelen]);
+        logger->error(GRT, 202, "Target ending layer ({}) out of range", gridsL[routelen]);
       }
     }
 
@@ -1047,7 +1047,7 @@ void checkRoute3D()
     for (nodeID = 0; nodeID < 2 * deg - 2; nodeID++) {
       if (nodeID < deg) {
         if (treenodes[nodeID].botL != 0) {
-          logger->error(GRT, 158, "Causing pin node floating");
+          logger->error(GRT, 203, "Causing pin node floating");
         }
       }
     }
@@ -1108,7 +1108,7 @@ void checkRoute3D()
 
       for (i = 0; i <= treeedge->route.routelen; i++) {
         if (gridsL[i] < 0) {
-          logger->error(GRT, 159, "Invalid layer value in gridsL, {}", gridsL[i]);
+          logger->error(GRT, 204, "Invalid layer value in gridsL, {}", gridsL[i]);
         }
       }
       if (gridFlag) {
@@ -1128,7 +1128,7 @@ void write3D()
 
   fp = fopen("output.out", "w");
   if (fp == NULL) {
-    logger->error(GRT, 160, "Error in opening output.out");
+    logger->error(GRT, 205, "Error in opening output.out");
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
@@ -1249,7 +1249,7 @@ void recoverEdge(int netID, int edgeID)
   routeLen = treeedge->route.routelen;
 
   if (treeedge->len == 0) {
-    logger->error(GRT, 161, "trying to recover an 0 length edge");
+    logger->error(GRT, 206, "trying to recover an 0 length edge");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -1477,13 +1477,13 @@ Bool checkRoute2DTree(int netID)
     gridFlag = FALSE;
 
     if (treeedge->len < 0) {
-      logger->warn(GRT, 162, "rip upped edge without edge len re assignment");
+      logger->warn(GRT, 207, "rip upped edge without edge len re assignment");
       STHwrong = TRUE;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        logger->warn(GRT, 163, ".routelen {} len {}",
+        logger->warn(GRT, 208, ".routelen {} len {}",
           treeedge->route.routelen, treeedge->len);
         STHwrong = TRUE;
         return (TRUE);
