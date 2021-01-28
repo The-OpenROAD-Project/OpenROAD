@@ -1597,7 +1597,7 @@ namespace eval ICeWall {
           connect_to_bondpad_or_bump $inst $centre $padcell
         } else {
           if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
-            err 99 "No padcell instance found for $padcell"
+            utl::warn "PAD" 99 "No padcell instance found for $padcell"
             continue
           }
           add_physical_pin $padcell [get_padcell_inst $padcell]
