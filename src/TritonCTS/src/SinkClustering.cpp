@@ -228,8 +228,9 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   // Has the sink indexes for each cluster of each solution.
   std::vector<std::vector<std::vector<unsigned>>> solutions;
 
-  if (_useMaxCapLimit)
-    _logger->report("Clustering with max cap limit of {}", _options->getMaxCharCap());
+  if (_useMaxCapLimit) {
+    _logger->report("Clustering with max cap limit of {}", _techChar->getCharMaxCap());
+  }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < _thetaIndexVector.size(); ++i) {
     // The - groupSize is because each solution will start on a different index.
@@ -390,14 +391,12 @@ void SinkClustering::findBestMatching(unsigned groupSize)
 bool SinkClustering::isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit)
 {
   if (_useMaxCapLimit) {
-    if (capCost > _options->getMaxCharCap()/2.5) {
+    if (capCost > _techChar->getCharMaxCap()/2.5) {
       return true;
-    } else
-    {
+    } else {
       return false;
     }
-  }
-  else {
+  } else {
     if (size >= sizeLimit || cost > _maxInternalDiameter)
       return true;
     else

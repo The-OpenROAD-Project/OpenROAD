@@ -231,6 +231,8 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
+  float getCharMaxCap() const { return _charMaxCap; }
+  float getCharMaxSlew() const { return _charMaxSlew; }
   utl::Logger* getLogger() { return _options->getLogger(); }
 
  protected:

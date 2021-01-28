@@ -37,6 +37,7 @@
 
 #include "Util.h"
 #include "CtsOptions.h"
+#include "TechChar.h"
 
 #include <limits>
 #include <map>
@@ -67,7 +68,7 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering(CtsOptions* options): _options(options),
+  SinkClustering(CtsOptions* options, TechChar* techChar): _options(options), _techChar(techChar),
                                    _maxInternalDiameter(10), _capPerUnit(0.0),
                                   _useMaxCapLimit(options->getSinkClusteringUseMaxCap()),
                                   _logger(options->getLogger()) { }
@@ -109,6 +110,7 @@ class SinkClustering
 
   Logger *_logger;
   CtsOptions *_options;
+  TechChar* _techChar;
   std::vector<Point<double>> _points;
   std::vector<float> _pointsCap;
   std::vector<std::pair<double, unsigned>> _thetaIndexVector;

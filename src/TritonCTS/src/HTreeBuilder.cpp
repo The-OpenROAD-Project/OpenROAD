@@ -65,7 +65,7 @@ void HTreeBuilder::preSinkClustering(
     return;
   }
 
-  SinkClustering matching(_options);
+  SinkClustering matching(_options, _techChar);
   unsigned numPoints = points.size();
 
   for (long int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
@@ -175,8 +175,12 @@ void HTreeBuilder::run()
   _logger->info(CTS, 27, " Generating H-Tree topology for net {}", _clock.getName());
   _logger->info(CTS, 28, "    Tot. number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
-    _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
+    if (_options->getSinkClusteringUseMaxCap()) {
+      _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
+    } else {
+      _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
+    }
   }
   _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
 
