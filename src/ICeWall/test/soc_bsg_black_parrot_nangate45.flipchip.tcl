@@ -15,7 +15,11 @@ if {[catch {ICeWall load_footprint soc_bsg_black_parrot_nangate45/bsg_black_parr
   exit
 }
 
-initialize_floorplan -die_area [ICeWall get_die_area]  -core_area [ICeWall get_core_area] -tracks [ICeWall get_tracks] -site FreePDK45_38x28_10R_NP_162NW_34O
+initialize_floorplan \
+  -die_area  {0 0 3000.000 3000.000} \
+  -core_area {180.012 180.096 2819.964 2819.712} \
+  -tracks [ICeWall get_tracks] \
+  -site FreePDK45_38x28_10R_NP_162NW_34O
 
 if {[catch {ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.sigmap} msg]} {
   puts $errorInfo
