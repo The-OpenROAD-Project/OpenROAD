@@ -426,20 +426,24 @@ void OpenDbDescriptor::highlight(void* object,
           odb::Point rectCenter((rect.xMax() + rect.xMin()) / 2.0,
                                 (rect.yMax() + rect.yMin()) / 2.0);
           auto iotype = inst_term->getIoType();
-          if (iotype == INPUT || iotype == INOUT) {
+          if (iotype == odb::dbIoType::INPUT
+              || iotype == odb::dbIoType::INOUT) {
             if (sink_object != nullptr && sink_object != inst_term)
               continue;
             sink_locs.insert(rectCenter);
           }
-          if (iotype == INOUT || iotype == OUTPUT)
+          if (iotype == odb::dbIoType::INOUT
+              || iotype == odb::dbIoType::OUTPUT)
             driver_locs.insert(rectCenter);
         }
         for (auto blk_term : net->getBTerms()) {
           auto blk_term_pins = blk_term->getBPins();
           auto iotype = blk_term->getIoType();
-          bool driver_term = iotype == INPUT || iotype == INOUT
+          bool driver_term = iotype == odb::dbIoType::INPUT
+                             || iotype == odb::dbIoType::INOUT
                              || iotype == odb::dbIoType::FEEDTHRU;
-          bool sink_term = iotype == INOUT || iotype == OUTPUT
+          bool sink_term = iotype == odb::dbIoType::INOUT
+                           || iotype == odb::dbIoType::OUTPUT
                            || iotype == odb::dbIoType::FEEDTHRU;
           for (auto pin : blk_term_pins) {
             auto pin_rect = pin->getBBox();

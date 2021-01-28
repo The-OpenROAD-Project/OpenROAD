@@ -9,24 +9,24 @@
 [INFO ODB-0131]     Created 469 components and 2268 component-terminals.
 [INFO ODB-0133]     Created 500 nets and 1330 connections.
 [INFO ODB-0134] Finished DEF file: extend_to_core_ring/floorplan.def
-[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
-[INFO] [PDNG-0016]   config: extend_to_core_ring/pdn.cfg
-[INFO] [PDNG-0008] Design Name is gcd
-[INFO] [PDNG-0009] Reading technology data
-[WARN] [PDNG-0018] No macro grid specifications found - no straps added
-[INFO] [PDNG-0011] ****** INFO ******
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: extend_to_core_ring/pdn.cfg
+[INFO PDN-0008] Design Name is gcd
+[INFO PDN-0009] Reading technology data
+[WARNING PDN-0018] No macro grid specifications found - no straps added
+[INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
-      Layer: metal5 -  width: 5.000  spacing: 3.000  core_offset: 5.000 
-      Layer: metal6 -  width: 5.000  spacing: 3.000  core_offset: 5.000 
+      Layer: metal5  -  width: 5.000  spacing: 3.000  core_offset: 5.000 
+      Layer: metal6  -  width: 5.000  spacing: 3.000  core_offset: 5.000 
     Stdcell Rails
-      Layer: metal1 -  width: 0.170  pitch: 2.400  offset: 0.000 
+      Layer: metal1  -  width: 0.170  pitch: 2.400  offset: 0.000 
     Straps
-      Layer: metal6 -  width: 3.000  pitch: 50.000  offset: 11.500 
+      Layer: metal6  -  width: 3.000  pitch: 50.000  offset: 11.500 
     Connect: 
 	{metal1 metal6} {metal5 metal6}
     
-[INFO] [PDNG-0012] **** END INFO ****
-[INFO] [PDNG-0013] Inserting stdcell grid - grid
-[INFO] [PDNG-0015] Writing to database
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid
+[INFO PDN-0015] Writing to database
 No differences found.

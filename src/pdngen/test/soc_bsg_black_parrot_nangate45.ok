@@ -12,44 +12,44 @@
 [INFO ODB-0131]     Created 1514 components and 3116 component-terminals.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
 [INFO ODB-0134] Finished DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def
-[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
-[INFO] [PDNG-0016]   config: soc_bsg_black_parrot_nangate45/PDN.cfg
-[INFO] [PDNG-0008] Design Name is soc_bsg_black_parrot
-[INFO] [PDNG-0009] Reading technology data
-[ERROR] [PDNG-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER)
-[ERROR] [PDNG-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER)
-[ERROR] [PDNG-0037] Cannot find pin VSSE on instance u_marker0 (MARKER)
-[INFO] [PDNG-0011] ****** INFO ******
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: soc_bsg_black_parrot_nangate45/PDN.cfg
+[INFO PDN-0008] Design Name is soc_bsg_black_parrot
+[INFO PDN-0009] Reading technology data
+[WARNING PDN-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER)
+[WARNING PDN-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER)
+[WARNING PDN-0037] Cannot find pin VSSE on instance u_marker0 (MARKER)
+[INFO PDN-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
-      Layer: metal8 -  width: 5.000  spacing: 2.000  core_offset: 4.500 
-      Layer: metal9 -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+      Layer: metal8  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+      Layer: metal9  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
     Stdcell Rails
-      Layer: metal1 -  width: 0.170  pitch: 2.400  offset: 0.000 
+      Layer: metal1  -  width: 0.170  pitch: 2.400  offset: 0.000 
     Straps
-      Layer: metal4 -  width: 0.480  pitch: 56.000  offset: 2.000 
-      Layer: metal7 -  width: 1.400  pitch: 40.000  offset: 2.000 
-      Layer: metal8 -  width: 1.400  pitch: 40.000  offset: 2.000 
-      Layer: metal9 -  width: 1.400  pitch: 40.000  offset: 2.000 
+      Layer: metal4  -  width: 0.480  pitch: 56.000  offset: 2.000 
+      Layer: metal7  -  width: 1.400  pitch: 40.000  offset: 2.000 
+      Layer: metal8  -  width: 1.400  pitch: 40.000  offset: 2.000 
+      Layer: metal9  -  width: 1.400  pitch: 40.000  offset: 2.000 
     Connect: {metal1 metal4} {metal4 metal7} {metal7 metal8} {metal8 metal9}
 Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
     Straps
-      Layer: metal5 -  width: 0.930  pitch: 40.000  offset: 2.000 
-      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal5  -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6  -  width: 0.930  pitch: 40.000  offset: 2.000 
     Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
 Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Straps
-      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6  -  width: 0.930  pitch: 40.000  offset: 2.000 
     Connect: {metal4_PIN_hor metal6} {metal6 metal7}
 Type: macro, bumps
     Macro: PAD
 Type: macro, cdmm
     Macro: MARKER
-[INFO] [PDNG-0012] **** END INFO ****
-[INFO] [PDNG-0013] Inserting stdcell grid - grid
-[INFO] [PDNG-0010] Inserting macro grid for 1 macros
-[INFO] [PDNG-0034]   - grid for instance u_marker0
-[INFO] [PDNG-0015] Writing to database
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid
+[INFO PDN-0010] Inserting macro grid for 1 macros
+[INFO PDN-0034]   - grid for instance u_marker0
+[INFO PDN-0015] Writing to database
 No differences found.
