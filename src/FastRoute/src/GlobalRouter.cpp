@@ -1752,6 +1752,12 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
   return route;
 }
 
+std::vector<GCellCongestion> GlobalRouter::getCongestion() {
+  std::vector<GCellCongestion> congestion;
+  _fastRoute->findCongestionInformation(congestion);
+  return congestion;
+}
+
 void GlobalRouter::computeWirelength()
 {
   long totalWirelength = 0;
