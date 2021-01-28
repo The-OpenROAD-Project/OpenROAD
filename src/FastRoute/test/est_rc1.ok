@@ -21,15 +21,19 @@ Grid origin: (0, 0)
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 [INFO GRT-0018] Processing 8469 obstacles on layer 1
+
 Final usage/overflow report:
-[INFO GRT-0133] [Overflow Report] Total Usage   : 3333
-                [Overflow Report] Total Capacity: 117668
-                [Overflow Report] Max H Overflow: 0
-                [Overflow Report] Max V Overflow: 0
-                [Overflow Report] Max Overflow  : 0
-                [Overflow Report] H   Overflow  : 0
-                [Overflow Report] V   Overflow  : 0
-                [Overflow Report] Final Overflow: 0
+
+Overflow Report:
+[INFO GRT-0149] Total Usage   : 3333
+[INFO GRT-0150] Total Capacity: 117668
+[INFO GRT-0151] Max H Overflow: 0
+[INFO GRT-0152] Max V Overflow: 0
+[INFO GRT-0153] Max Overflow  : 0
+[INFO GRT-0154] H   Overflow  : 0
+[INFO GRT-0155] V   Overflow  : 0
+[INFO GRT-0156] Final Overflow: 0
+
 [INFO GRT-0110] Final usage          : 3333
 [INFO GRT-0111] Final number of vias : 2597
 [INFO GRT-0112] Final usage 3D       : 11124

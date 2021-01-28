@@ -30,15 +30,19 @@ Grid origin: (0, 0)
 [INFO GRT-0024] Reducing resources of layer 5 by 50%
 [INFO GRT-0025] Reducing resources of layer 6 by 50%
 Routing clock nets...
+
 Final usage/overflow report:
-[INFO GRT-0133] [Overflow Report] Total Usage   : 44
-                [Overflow Report] Total Capacity: 13960
-                [Overflow Report] Max H Overflow: 0
-                [Overflow Report] Max V Overflow: 0
-                [Overflow Report] Max Overflow  : 0
-                [Overflow Report] H   Overflow  : 0
-                [Overflow Report] V   Overflow  : 0
-                [Overflow Report] Final Overflow: 0
+
+Overflow Report:
+[INFO GRT-0149] Total Usage   : 44
+[INFO GRT-0150] Total Capacity: 13960
+[INFO GRT-0151] Max H Overflow: 0
+[INFO GRT-0152] Max V Overflow: 0
+[INFO GRT-0153] Max Overflow  : 0
+[INFO GRT-0154] H   Overflow  : 0
+[INFO GRT-0155] V   Overflow  : 0
+[INFO GRT-0156] Final Overflow: 0
+
 [INFO GRT-0110] Final usage          : 44
 [INFO GRT-0111] Final number of vias : 41
 [INFO GRT-0112] Final usage 3D       : 167
@@ -60,15 +64,19 @@ Grid origin: (0, 0)
 [INFO GRT-0023] Reducing resources of layer 4 by 50%
 [INFO GRT-0024] Reducing resources of layer 5 by 50%
 [INFO GRT-0025] Reducing resources of layer 6 by 50%
+
 Final usage/overflow report:
-[INFO GRT-0133] [Overflow Report] Total Usage   : 113
-                [Overflow Report] Total Capacity: 27356
-                [Overflow Report] Max H Overflow: 0
-                [Overflow Report] Max V Overflow: 0
-                [Overflow Report] Max Overflow  : 0
-                [Overflow Report] H   Overflow  : 0
-                [Overflow Report] V   Overflow  : 0
-                [Overflow Report] Final Overflow: 0
+
+Overflow Report:
+[INFO GRT-0149] Total Usage   : 113
+[INFO GRT-0150] Total Capacity: 27356
+[INFO GRT-0151] Max H Overflow: 0
+[INFO GRT-0152] Max V Overflow: 0
+[INFO GRT-0153] Max Overflow  : 0
+[INFO GRT-0154] H   Overflow  : 0
+[INFO GRT-0155] V   Overflow  : 0
+[INFO GRT-0156] Final Overflow: 0
+
 [INFO GRT-0110] Final usage          : 113
 [INFO GRT-0111] Final number of vias : 81
 [INFO GRT-0112] Final usage 3D       : 356
