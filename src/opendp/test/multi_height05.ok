@@ -14,9 +14,11 @@ Placement Analysis
 ---------------------------------
 total displacement          5.4 u
 average displacement        1.8 u
-max displacement            3.3 u
+max displacement            3.8 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-No differences found.
+Differences found at line 13.
+    - single sky130_fd_sc_hd__buf_1_single + PLACED ( 71760 16320 ) N ;
+    - single sky130_fd_sc_hd__buf_1_single + PLACED ( 71300 16320 ) N ;

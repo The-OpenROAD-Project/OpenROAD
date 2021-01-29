@@ -198,6 +198,7 @@ using sta::LibertyCell;
 
 using ord::OpenRoad;
 using ord::getOpenRoad;
+using ord::getLogger;
 using ord::getDb;
 using ord::ensureLinked;
 
@@ -241,47 +242,29 @@ openroad_git_sha1()
   return OPENROAD_GIT_SHA1;
 }
 
+// deprecated - use utl::report
 void
 report(const char *msg)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->report(msg);
+  getLogger()->report(msg);
 }
 
+// deprecated - use utl::info
 void
 info(utl::ToolId tool,
      int id,
      const char *msg)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->info(tool, id, msg);
+  getLogger()->info(tool, id, msg);
 }
 
-void
-ord_warn(utl::ToolId tool,
-         int id,
-         const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->warn(tool, id, msg);
-}
-
-void
-ord_error(utl::ToolId tool,
-          int id,
-          const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->error(tool, id, msg);
-}
-
+// deprecated - use utl::critical
 void
 critical(utl::ToolId tool,
          int id,
          const char *msg)
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->critical(tool, id, msg);
+  getLogger()->critical(tool, id, msg);
 }
 
 void
@@ -359,7 +342,7 @@ set_debug_level(const char* tool_name,
                 int level)
 {
   using namespace ord;
-  auto* logger = getOpenRoad()->getLogger();
+  auto logger = getLogger();
 
   auto id = utl::Logger::findToolId(tool_name);
   if (id == utl::UKN) {

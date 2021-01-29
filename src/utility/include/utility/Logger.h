@@ -41,6 +41,7 @@
 #include <map>
 #include <string_view>
 #include <cstdlib>
+#include <type_traits>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
@@ -64,6 +65,7 @@ namespace utl {
     X(PAR) \
     X(PDN) \
     X(PPL) \
+    X(PRT) \
     X(PSM) \
     X(PSN) \
     X(RCX) \
@@ -85,8 +87,10 @@ enum ToolId
 class Logger
 {
  public:
-  // Use nullptr if messages are not logged to a file.
-  Logger(const char* filename);
+  // Use nullptr if messages or metrics are not logged to a file.
+  Logger(const char* filename = nullptr,
+         const char *metrics_filename = nullptr);
+  ~Logger();
   static ToolId findToolId(const char *tool_name);
 
   template <typename... Args>
@@ -150,6 +154,41 @@ class Logger
       exit(EXIT_FAILURE);
     }
 
+  // For logging to the metrics file.  This is a much more restricted
+  // API as we are writing JSON not user messages.
+  // Note: these methods do no escaping so avoid special characters.
+  inline void metric(ToolId tool,
+                     const std::string_view metric,
+                     int value)
+  {
+    log_metric(tool, metric, value);
+  }
+
+  inline void metric(ToolId tool,
+                     const std::string_view metric,
+                     double value)
+  {
+    log_metric(tool, metric, value);
+  }
+
+  inline void metric(ToolId tool,
+                     const std::string_view metric,
+                     const std::string& value)
+  {
+    log_metric(tool, metric, '"' +  value + '"');
+  }
+
+  // Only true bools and not things that can be converted to bool like
+  // char*
+  template <typename Bool,
+            typename T = std::enable_if_t<std::is_same<Bool, bool>{}>>
+  inline void metric(ToolId tool,
+                     const std::string_view metric,
+                     Bool value)
+  {
+    log_metric(tool, metric, value ? "true" : "false");
+  }
+
   void setDebugLevel(ToolId tool, const char* group, int level);
 
   bool debugCheck(ToolId tool, const char* group, int level) const {
@@ -180,11 +219,24 @@ class Logger
                    args...);
     }
 
+  template <typename Value>
+    inline void log_metric(ToolId tool,
+                           const std::string_view metric,
+                           const Value& value)
+    {
+      metrics_logger_->info("  {}\"{}-{}\" : {}",
+                            first_metric_ ? "  " : ", ",
+                            tool_names_[tool],
+                            metric,
+                            value);
+      first_metric_ = false;
+    }
+
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup
   struct StringViewCmp {
     using is_transparent = std::true_type; // enabler
-    bool operator()(const std::string_view& a, const std::string_view& b) const {
+    bool operator()(const std::string_view a, const std::string_view b) const {
       return a < b;
     }
   };
@@ -192,8 +244,11 @@ class Logger
 
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
+  std::shared_ptr<spdlog::logger> metrics_logger_;
+
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;
+  bool first_metric_;
   static constexpr const char *level_names[] = {"TRACE",
                                                 "DEBUG",
                                                 "INFO",

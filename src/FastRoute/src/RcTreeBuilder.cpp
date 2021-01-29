@@ -43,6 +43,8 @@
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Sdc.hh"
+#include "sta/StaState.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Units.hh"
 
 namespace grt {
@@ -129,7 +131,7 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
     } else if (route.initLayer == route.finalLayer)
       layerRC(wire_length_dbu, route.initLayer, res, cap);
     else
-      _logger->warn(GRT, 25, "non wire or via route found on net {}", net->getConstName());
+      _logger->warn(GRT, 25, "non wire or via route found on net {}.", net->getConstName());
 
     if (_debug) {
       sta::Units* units = _sta->units();
@@ -176,7 +178,7 @@ void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
     _parasitics->incrCap(grid_node, cap / 2.0, _analysisPoint);
   } else {
     std::string pin_name = pin.getName();
-    _logger->warn(GRT, 26, "missing route to pin {}", pin_name.c_str());
+    _logger->warn(GRT, 26, "missing route to pin {}.", pin_name.c_str());
   }
 }
 
@@ -208,8 +210,7 @@ void RcTreeBuilder::reduceParasiticNetwork()
 {
   sta::Sdc* sdc = _sta->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);
-
-  sta::ReducedParasiticType reduce_to = sta::ReducedParasiticType::pi_elmore;
+  sta::ReducedParasiticType reduce_to = _sta->arcDelayCalc()->reducedParasiticType();
   _parasitics->reduceTo(_parasitic,
                         _sta_net,
                         reduce_to,

@@ -47,9 +47,9 @@ namespace ord {
 using utl::Logger;
 
 Logger *
-makeLogger(const char *log_filename)
+makeLogger(const char *log_filename, const char *metrics_filename)
 {
-  return new Logger(log_filename);
+  return new Logger(log_filename, metrics_filename);
 }
 
 void

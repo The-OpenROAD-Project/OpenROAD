@@ -38,13 +38,11 @@
 #include <array>
 #include <string>
 
-#include "db_sta/dbSta.hh"
-#include "sta/UnorderedSet.hh"
 #include "SteinerTree.hh"
 
-namespace ord {
-class Logger;
-}
+#include "utility/Logger.h"
+#include "db_sta/dbSta.hh"
+#include "sta/UnorderedSet.hh"
 
 namespace rsz {
 

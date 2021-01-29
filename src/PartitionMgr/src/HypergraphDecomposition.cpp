@@ -41,11 +41,12 @@
 
 namespace par {
 
-void HypergraphDecomposition::init(int dbId)
+void HypergraphDecomposition::init(int dbId, Logger * logger)
 {
   _db = odb::dbDatabase::getDatabase(dbId);
   _chip = _db->getChip();
   _block = _chip->getBlock();
+  _logger = logger;
 }
 
 void HypergraphDecomposition::addMapping(Hypergraph& hypergraph,
@@ -87,7 +88,7 @@ void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
       }
     }
   }
-  hypergraph.computeVertexWeightRange(maxVertexWeight);
+  hypergraph.computeVertexWeightRange(maxVertexWeight, _logger);
 }
 
 void HypergraphDecomposition::createHypergraph(
@@ -225,7 +226,7 @@ void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
   }
   createCompressedMatrix(graph);
   graph.assignVertexWeight(hypergraph.getVertexWeight());
-  graph.computeEdgeWeightRange(maxEdgeWeight);
+  graph.computeEdgeWeightRange(maxEdgeWeight, _logger);
 }
 
 /*
