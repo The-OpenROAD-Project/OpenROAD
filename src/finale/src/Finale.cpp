@@ -34,7 +34,6 @@
 #include "finale/Finale.h"
 
 #include "DensityFill.h"
-#include "openroad/Error.hh"
 
 namespace fin {
 

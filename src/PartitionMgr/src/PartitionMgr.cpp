@@ -50,7 +50,6 @@ extern "C" {
 #include <cmath>
 
 #include "opendb/db.h"
-#include "openroad/Error.hh"
 #include "utility/Logger.h"
 
 using utl::PRT;
