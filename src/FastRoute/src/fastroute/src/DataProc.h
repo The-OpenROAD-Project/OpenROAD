@@ -42,6 +42,10 @@
 
 #define MAXLEN 20000
 
+namespace utl {
+class Logger;
+}
+
 namespace grt {
 
 using boost::multi_array;
@@ -147,6 +151,8 @@ extern multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 
 extern float **heap2, **heap1;
 extern Bool* pop_heap2;
+
+extern utl::Logger* logger;
 
 extern void init_usage();
 extern void readFile(char benchFile[]);
