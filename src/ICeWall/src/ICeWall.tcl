@@ -352,6 +352,19 @@ namespace eval ICeWall {
     return [dict get $footprint die_area]
   }
 
+  proc get_core_area {} {
+    variable footprint
+    
+    if {![dict exists $footprint core_area]} {
+      if {[array names ::env CORE_AREA] != ""} {
+        dict set footprint core_area $::env(CORE_AREA)
+      } else {
+        utl::error "PAD" 41 "A value for core_area must specified in the footprint specification, or in the environment variable CORE_AREA"
+      }
+    }
+    return [dict get $footprint core_area]
+  }
+
   proc get_scaled_die_area {} {
     variable footprint
     variable def_units
@@ -2935,7 +2948,7 @@ namespace eval ICeWall {
 
   namespace export get_die_area get_tracks
   namespace export init_footprint load_footprint
-  
+  namespace export get_core_area
   namespace ensemble create
 }
 
