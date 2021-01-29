@@ -242,31 +242,6 @@ openroad_git_sha1()
   return OPENROAD_GIT_SHA1;
 }
 
-// deprecated - use utl::report
-void
-report(const char *msg)
-{
-  getLogger()->report(msg);
-}
-
-// deprecated - use utl::info
-void
-info(utl::ToolId tool,
-     int id,
-     const char *msg)
-{
-  getLogger()->info(tool, id, msg);
-}
-
-// deprecated - use utl::critical
-void
-critical(utl::ToolId tool,
-         int id,
-         const char *msg)
-{
-  getLogger()->critical(tool, id, msg);
-}
-
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
