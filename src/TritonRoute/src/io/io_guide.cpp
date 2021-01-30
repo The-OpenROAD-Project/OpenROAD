@@ -309,12 +309,22 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
           for (int y = y1; y <= y2; y++) {
             if (condition2 && x == tmpIdx.x() - 1 && y == tmpIdx.y() - 1) {
               if (VERBOSE > 0) {
-                cout <<"Warning: genGuides_gCell2TermMap avoid condition2, may result in guide open" <<endl;
+                frString name =
+                  (origTerm->typeId() == frcInstTerm) ?
+                  ((frInstTerm *) origTerm)->getName() :
+                  term->getName();
+                cout <<"Warning: genGuides_gCell2TermMap avoid condition2, may result in guide open: "
+                     << name << endl;
               }
             } else if (condition3 && ((x == tmpIdx.x() -1 && layer->getDir() == frcVertPrefRoutingDir) || 
                                       (y == tmpIdx.y() -1 && layer->getDir() == frcHorzPrefRoutingDir) )) {
               if (VERBOSE > 0) {
-                cout <<"Warning: genGuides_gCell2TermMap avoid condition3, may result in guide open" <<endl;
+                frString name =
+                  (origTerm->typeId() == frcInstTerm) ?
+                  ((frInstTerm *) origTerm)->getName() :
+                  term->getName();
+                cout <<"Warning: genGuides_gCell2TermMap avoid condition3, may result in guide open: "
+                     << name << endl;
               }
             } else {
               gCell2PinMap[make_pair(frPoint(x, y), lNum)].insert(origTerm);

@@ -306,7 +306,7 @@ proc report_physical_clusters {} {
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
-  ord::report "\nReporting Physical Clusters"
+  utl::report "\nReporting Physical Clusters"
   foreach group $groups {
     if { [$group getType] == "PHYSICAL_CLUSTER" } {
       report_group $group
@@ -324,7 +324,7 @@ proc report_voltage_domains {} {
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
-  ord::report "\nReporting Voltage Domains"
+  utl::report "\nReporting Voltage Domains"
   foreach group $groups {
     if { [$group getType] == "VOLTAGE_DOMAIN" } {
       report_group $group
@@ -333,10 +333,10 @@ proc report_voltage_domains {} {
 }
 
 proc report_group { group } {
-  ord::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
+  utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
     set rect [$group getBox]
-    ord::report "  * Box : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
+    utl::report "  * Box : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
   }
   set modinsts [$group getModInsts]
   set insts [$group getInsts]
@@ -344,33 +344,42 @@ proc report_group { group } {
   set powerNets [$group getPowerNets]
   set groundNets [$group getGroundNets]
   if { [llength $modinsts] > 0 } {
-    ord::report "  * ModInsts: "
+    utl::report "  * ModInsts: "
     foreach modinst $modinsts {
-      ord::report "    * [$modinst getHierarchalName]"
+      utl::report "    * [$modinst getHierarchalName]"
     }
   }
   if { [llength $insts] > 0 } {
-    ord::report "  * Insts: "
+    utl::report "  * Insts: "
     foreach inst $insts {
-      ord::report "    * [$inst getName]"
+      utl::report "    * [$inst getName]"
     }
   }
   if { [llength $children] > 0 } {
-    ord::report "  * Children: "
+    utl::report "  * Children: "
     foreach child $children {
-      ord::report "    * [$child getName]"
+      utl::report "    * [$child getName]"
     }
   }
   if { [llength $powerNets] > 0 } {
-    ord::report "  * Power Nets: "
+    utl::report "  * Power Nets: "
     foreach net $powerNets {
-      ord::report "    * [$net getName]"
+      utl::report "    * [$net getName]"
     }
   }
   if { [llength $groundNets] > 0 } {
-    ord::report "  * Ground Nets: "
+    utl::report "  * Ground Nets: "
     foreach net $groundNets {
-      ord::report "    * [$net getName]"
+      utl::report "    * [$net getName]"
     }
   }
+}
+
+# pre-logger compatibility for this file only
+namespace eval ord {
+
+proc error { args } {
+ utl::error ODB 0 [lindex $args 0]
+}
+
 }

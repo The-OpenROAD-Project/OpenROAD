@@ -37,6 +37,7 @@
 
 #include <iostream>
 
+#include "utility/MakeLogger.h"
 #include "utility/Logger.h"
 
 #include "opendb/db.h"
@@ -86,6 +87,7 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 
 // Main.cc set by main()
 extern const char* log_filename;
+extern const char* metrics_filename;
 
 namespace ord {
 
@@ -103,8 +105,6 @@ using odb::Point;
 using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
-
-OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
@@ -127,7 +127,6 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr), 
     partitionMgr_(nullptr) 
 {
-  openroad_ = this;
   db_ = dbDatabase::create();
 }
 
@@ -170,10 +169,9 @@ OpenRoad::getDbNetwork()
 /* static */
 OpenRoad *OpenRoad::openRoad()
 {
-  if (openroad_ == nullptr) {
-    openroad_ = new OpenRoad;    
-  }
-  return openroad_;
+  // This will be destroyed at application exit
+  static OpenRoad o;
+  return &o;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -190,7 +188,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = new utl::Logger(log_filename);
+  logger_ = makeLogger(log_filename, metrics_filename);
+  db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();
@@ -213,6 +212,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import TCL scripts.
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
+  initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
@@ -247,7 +247,7 @@ OpenRoad::readLef(const char *filename,
 		  bool make_tech,
 		  bool make_library)
 {
-  odb::lefin lef_reader(db_, false);
+  odb::lefin lef_reader(db_, logger_, false);
   dbLib *lib = nullptr;
   dbTech *tech = nullptr;
   if (make_tech && make_library) {
@@ -272,7 +272,7 @@ OpenRoad::readDef(const char *filename,
 		  bool order_wires,
 		  bool continue_on_errors)
 {
-  odb::defin def_reader(db_);
+  odb::defin def_reader(db_,logger_);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
@@ -321,7 +321,7 @@ OpenRoad::writeDef(const char *filename,
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      odb::defout def_writer;
+      odb::defout def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
     }

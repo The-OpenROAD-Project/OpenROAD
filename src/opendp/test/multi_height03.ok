@@ -1,42 +1,26 @@
-Notice 0: Reading LEF file:  multi_height_tech.lef
-Notice 0:     Created 9 technology layers
-Notice 0:     Created 64 technology vias
-Notice 0: Finished LEF file:  multi_height_tech.lef
-Notice 0: Reading LEF file:  multi_height_tech_cells.lef
-Notice 0:     Created 21 library cells
-Notice 0: Finished LEF file:  multi_height_tech_cells.lef
-Notice 0: 
-Reading DEF file: multi_height03.def
-Notice 0: Design: ten_cells_multi
-Notice 0:     Created 2 pins.
-Notice 0:     Created 10 components and 46 component-terminals.
-Notice 0:     Created 2 special nets and 0 connections.
-Notice 0:     Created 11 nets and 25 connections.
-Notice 0: Finished DEF file: multi_height03.def
-Design Stats
---------------------------------
-total instances            10
-multi row instances         1
-fixed instances             0
-nets                       13
-design area              40.0 u^2
-fixed area                0.0 u^2
-movable area             24.8 u^2
-utilization                62 %
-utilization padded         62 %
-rows                        2
-row height                2.0 u
-max height                  2 rows
-
+[INFO ODB-0222] Reading LEF file: multi_height_tech.lef
+[INFO ODB-0223]     Created 9 technology layers
+[INFO ODB-0224]     Created 64 technology vias
+[INFO ODB-0226] Finished LEF file:  multi_height_tech.lef
+[INFO ODB-0222] Reading LEF file: multi_height_tech_cells.lef
+[INFO ODB-0225]     Created 21 library cells
+[INFO ODB-0226] Finished LEF file:  multi_height_tech_cells.lef
+[INFO ODB-0127] Reading DEF file: multi_height03.def
+[INFO ODB-0128] Design: ten_cells_multi
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 10 components and 46 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 11 nets and 25 connections.
+[INFO ODB-0134] Finished DEF file: multi_height03.def
 [WARNING DPL-0018] detailed placement failed on _281_.
 Placement Analysis
---------------------------------
-total displacement        7.7 u
-average displacement      0.8 u
-max displacement          2.1 u
-original HPWL            81.8 u
-legalized HPWL           81.8 u
-delta HPWL                  0 %
+---------------------------------
+total displacement          5.6 u
+average displacement        0.6 u
+max displacement            2.1 u
+original HPWL              81.8 u
+legalized HPWL             84.7 u
+delta HPWL                    3 %
 
 [WARNING DPL-0005] Overlap check failed (1).
  _281_ overlaps _282_
@@ -44,4 +28,6 @@ delta HPWL                  0 %
  _281_
 [WARNING DPL-0007] Power line check failed (1).
  _281_
-No differences found.
+Differences found at line 12.
+    - _283_ in01f01 + PLACED ( 30800 32000 ) FS ;
+    - _283_ in01f01 + PLACED ( 31200 32000 ) FS ;

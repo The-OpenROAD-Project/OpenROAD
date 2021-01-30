@@ -185,7 +185,6 @@ class TechChar
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
-  void parse(const std::string& lutFile, const std::string solListFile);
   void write(const std::string& file) const;
   void writeSol(const std::string& file) const;
 
@@ -235,8 +234,6 @@ class TechChar
   utl::Logger* getLogger() { return _options->getLogger(); }
 
  protected:
-  void parseLut(const std::string& file);
-  void parseSolList(const std::string& file);
   void initLengthUnits();
   void reportCharacterizationBounds() const;
   void checkCharacterizationBounds() const;
@@ -282,6 +279,12 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
+  void getClockLayerResCap(double &cap, double &res);
+  void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
+                                      float &maxSlew, bool &maxSlewExist,
+                                      float &maxCap, bool &maxCapExist);
+  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
+                                     float& maxCap, bool& maxCapExist);
 
   Logger* _logger;
   sta::dbSta* _openSta = nullptr;

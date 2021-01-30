@@ -1,40 +1,24 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: fence02.def
-Notice 0: Design: ten_cells
-Notice 0: Warning: A REGION with the name "er0" already exists, renaming this GROUP to "er0_group".
-Notice 0: Warning: A REGION with the name "er1" already exists, renaming this GROUP to "er1_group".
-Notice 0:     Created 2 pins.
-Notice 0:     Created 10 components and 45 component-terminals.
-Notice 0:     Created 11 nets and 25 connections.
-Notice 0: Finished DEF file: fence02.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: fence02.def
+[INFO ODB-0128] Design: ten_cells
+[WARNING ODB-0153] Warning: A REGION with the name "er0" already exists, renaming this GROUP to "er0_group".
+[WARNING ODB-0153] Warning: A REGION with the name "er1" already exists, renaming this GROUP to "er1_group".
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 10 components and 45 component-terminals.
+[INFO ODB-0133]     Created 11 nets and 25 connections.
+[INFO ODB-0134] Finished DEF file: fence02.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances            10
-multi row instances         0
-fixed instances             1
-nets                       11
-design area              16.5 u^2
-fixed area                0.5 u^2
-movable area              8.0 u^2
-utilization                50 %
-utilization padded         50 %
-rows                        2
-row height                1.4 u
-group count                 2
-
 Placement Analysis
---------------------------------
-total displacement        9.6 u
-average displacement      1.0 u
-max displacement          2.0 u
-original HPWL           100.7 u
-legalized HPWL           93.2 u
-delta HPWL                 -7 %
+---------------------------------
+total displacement          9.6 u
+average displacement        1.0 u
+max displacement            2.0 u
+original HPWL             100.7 u
+legalized HPWL             93.2 u
+delta HPWL                   -7 %
 
 No differences found.

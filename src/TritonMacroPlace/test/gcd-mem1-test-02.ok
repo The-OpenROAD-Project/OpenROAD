@@ -1,19 +1,18 @@
-Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
-Notice 0: Reading LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
-Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
-Notice 0: 
-Reading DEF file: nangate45-bench/design/gcd_mem1/gcd_mem1.def
-Notice 0: Design: gcd_mem1
-Notice 0:     Created 61 pins.
-Notice 0:     Created 307 components and 1738 component-terminals.
-Notice 0:     Created 2 special nets and 0 connections.
-Notice 0:     Created 384 nets and 1124 connections.
-Notice 0: Finished DEF file: nangate45-bench/design/gcd_mem1/gcd_mem1.def
+[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/NangateOpenCellLibrary.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: nangate45-bench/design/gcd_mem1/gcd_mem1.def
+[INFO ODB-0128] Design: gcd_mem1
+[INFO ODB-0130]     Created 61 pins.
+[INFO ODB-0131]     Created 307 components and 1738 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 384 nets and 1124 connections.
+[INFO ODB-0134] Finished DEF file: nangate45-bench/design/gcd_mem1/gcd_mem1.def
 End Parsing Global Config
 Begin Extracting Macro Cells
 End Extracting Macro Cells

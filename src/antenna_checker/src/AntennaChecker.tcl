@@ -29,117 +29,19 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "check_antennas" { [-path path] }
+sta::define_cmd_args "check_antennas" { [-report_file report_file] }
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
-  keys {-path} \
-  flags {}
-
-  ant::antennachecker_set_verbose [info exists flags(-verbose)]
-  ant::load_antenna_rules
-  ant::check_antennas $keys(-path)
-}
-
-sta::define_cmd_args "get_met_rest_length" { [-net_name netname]\
-                                              [-route_level rt_lv] }
-
-proc get_met_avail_length { args } {
-  sta::parse_key_args "get_met_rest_length" args \
-    keys {-net_name -route_level} \
+    keys {-report_file} \
     flags {}
 
-  if { [info exists keys(-net_name)] } {
-    set netname $keys(-net_name)
-    ant::antennachecker_set_net_name $netname
-
-    if { [info exists keys(-route_level)] } {
-      set rt_lv $keys(-route_level)
-      sta::check_positive_integer "-route_level" $rt_lv
-      ant::antennachecker_set_route_level $rt_lv
-    } else {
-      ord::error "no -route_level specified."
-    }
+  if { [info exists keys(-report_file)] } {
+    set report_file $keys(-report_file)
   } else {
-    ord::error "no -net_name specified."
-  }
-  ant::get_met_avail_length
-}
-
-sta::define_cmd_args "check_net_violation" { [-net_name netname] }
-
-proc check_net_violation { args } {
-  sta::parse_key_args "check_net_violation" args \
-  keys {-net_name} \
-  flags {}
-
-  if { [info exists keys(-net_name)] } {
-    set netname $keys(-net_name)
-    set res [ant::check_net_violation $netname]
-    
-    return $res
-  } else {
-    ord::error "no -net_name specified."
-  }  
-  
-  return 0
-}
-
-
-proc add_antenna_cell { net antenna_cell_name pin_name sink_inst antenna_inst_name } {
-
-  set block [[[::ord::get_db] getChip] getBlock]
-  set net_name [$net getName]
-
-  set antenna_master [[::ord::get_db] findMaster $antenna_cell_name]
-  set antenna_mterm [$antenna_master getMTerms]
-
-  set inst_loc_x [lindex [$sink_inst getLocation] 0]
-  set inst_loc_y [lindex [$sink_inst getLocation] 1]
-  set inst_ori [$sink_inst getOrient]
-
-  set antenna_inst [odb::dbInst_create $block $antenna_master $antenna_inst_name]
-  set antenna_iterm [$antenna_inst findITerm $pin_name]
-
-  $antenna_inst setLocation $inst_loc_x $inst_loc_y
-  $antenna_inst setOrient $inst_ori
-  $antenna_inst setPlacementStatus PLACED
-  odb::dbITerm_connect $antenna_iterm $net
-
-}
-
-proc antenna_fix { antenna_cell_name pin_name } {
-
-  set block [[[::ord::get_db] getChip] getBlock]
-  foreach inst [$block getInsts] {
-    if {[[$inst getMaster] getType] == "CORE_SPACER"} {
-      odb::dbInst_destroy $inst
-    }
+    utl::error ANT 6 "missing -report_file argument."
   }
 
-  set antenna_node_counts 0
-
-  foreach net [$block getNets] {
-    set net_name [$net getConstName]
-    if {[$net isSpecial] || ![check_net_violation -net_name $net_name]} {
-      continue
-    }
-    foreach iterm [$net getITerms] {
-      set inst [$iterm getInst]
-
-      set antenna_inst_name "ANTENNA"
-      append antenna_inst_name "_" [$inst getName]
-
-      if {[catch {add_antenna_cell $net $antenna_cell_name $pin_name $inst $antenna_inst_name} result] } {
-        puts "adding node failed"
-        continue
-      } else {
-        set antenna_inst [$block findInst $antenna_inst_name]
-        puts "Diode - $antenna_inst_name added"
-      }
-      break
-    }
-
-  }
-
+  ant::load_antenna_rules
+  ant::check_antennas $report_file
 }

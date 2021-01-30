@@ -36,6 +36,11 @@
 #include "definBase.h"
 #include "defrReader.hpp"
 
+namespace utl
+{
+  class Logger;
+}
+
 namespace odb {
 
 class definBlockage;
@@ -83,6 +88,7 @@ class definReader : public definBase
 
   void setTech(dbTech* tech);
   void setBlock(dbBlock* block);
+  void setLogger(utl::Logger* logger);
 
   bool createBlock(const char* file);
   bool replaceWires(const char* file);
@@ -213,7 +219,7 @@ class definReader : public definBase
                          defiUserData       data);
 
  public:
-  definReader(dbDatabase* db);
+  definReader(dbDatabase* db, utl::Logger* logger);
   virtual ~definReader();
 
   void skipConnections();

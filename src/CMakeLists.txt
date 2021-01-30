@@ -41,7 +41,6 @@ set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
-  Error.cc
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -316,6 +315,7 @@ target_link_libraries(openroad
   defout
   lefin
   lefout
+  cdl
   antennachecker
   zutil
   PartitionMgr

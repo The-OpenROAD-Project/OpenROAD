@@ -841,7 +841,11 @@ void io::Parser::setBTerms(odb::dbBlock* block)
 void io::Parser::readDb(odb::dbDatabase* db)
 {
   ProfileTask profile("IO:readDb");
+  if(db->getChip() == nullptr)
+    logger->error(utl::DRT, 116, "please load design first");
   odb::dbBlock* block = db->getChip()->getBlock();
+  if(block == nullptr)
+    logger->error(utl::DRT, 117, "please load design first");
   tmpBlock = make_unique<frBlock>(string(block->getName()));
   tmpBlock->trackPatterns_.clear();
   tmpBlock->trackPatterns_.resize(tech->layers.size());
@@ -3930,7 +3934,7 @@ int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lef
   io::Parser* parser = (io::Parser*) data;
 
   // term
-  unique_ptr<frTerm>         uTerm = make_unique<frTerm>(pin->name());
+  unique_ptr<frTerm> uTerm = make_unique<frTerm>(pin->name());
   auto term = uTerm.get();
   term->setId(parser->numTerms);
   parser->numTerms++;

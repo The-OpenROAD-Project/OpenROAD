@@ -232,9 +232,6 @@ private:
   par::PartitionMgr *partitionMgr_;
 
   std::set<Observer *> observers_;
-
-  // Singleton used by tcl command interpreter.
-  static OpenRoad *openroad_;
 };
 
 // Return the bounding box of the db rows.

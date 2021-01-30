@@ -101,7 +101,7 @@ void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
       createSubClockNet(subNet, driver, sink);
       ++_numViolatingSinks;
       if (_logger->debugCheck(utl::CTS, "HTree", 3)) {
-        std::cout << "Fixing Sink off by dist " << dist << " , Name = " << sinkName << std::endl;
+        _logger->report("Fixing Sink off by dist { }, Name = { }", dist, sinkName);
       }
     }
   });

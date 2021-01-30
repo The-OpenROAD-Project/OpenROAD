@@ -1,43 +1,41 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: est_rc2.def
-Notice 0: Design: top
-Notice 0:     Created 4 pins.
-Notice 0:     Created 7 components and 35 component-terminals.
-Notice 0:     Created 10 nets and 18 connections.
-Notice 0: Finished DEF file: est_rc2.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: est_rc2.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 7 components and 35 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 18 connections.
+[INFO ODB-0134] Finished DEF file: est_rc2.def
 Min routing layer: 2
 Max routing layer: 10
 Global adjustment: 0.0
 Unidirectional routing: true
 Grid origin: (0, 0)
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 95
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0017] Found 0 clock nets
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 177 obstacles on layer 1
+[INFO GRT-0004] #DB Obstructions: 0.
+[INFO GRT-0005] #DB Obstacles: 95.
+[INFO GRT-0006] #DB Macros: 0.
+[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2.
+[INFO GRT-0002] Maximum degree: 3.
+[INFO GRT-0018] Processing 177 obstacles on layer 1.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 44.
+[INFO GRT-0157] Total Capacity: 9698.
+[INFO GRT-0158] Max H Overflow: 0.
+[INFO GRT-0159] Max V Overflow: 0.
+[INFO GRT-0160] Max Overflow  : 0.
+[INFO GRT-0161] H   Overflow  : 0.
+[INFO GRT-0162] V   Overflow  : 0.
+[INFO GRT-0163] Final Overflow: 0.
 
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 44
-[Overflow Report] Total Capacity: 9698
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
-[INFO GRT-0110] Final usage          : 44
-[INFO GRT-0111] Final number of vias : 44
-[INFO GRT-0112] Final usage 3D       : 176
-[INFO GRT-0018] Total wirelength: 161 um
+[INFO GRT-0110] Final usage          : 44.
+[INFO GRT-0111] Final number of vias : 44.
+[INFO GRT-0112] Final usage 3D       : 176.
+[INFO GRT-0018] Total wirelength: 161 um.
 Net clk
  Pin capacitance: r 3.402 f 3.004
  Wire capacitance: r 0.819 f 0.819

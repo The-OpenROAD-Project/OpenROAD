@@ -105,7 +105,7 @@ Opendp::findNetBoxes(NetBoxes &net_boxes)
     if (!isSupply(net)
         && !net->isSpecial()) {
       NetBox net_box(net);
-      getBox(net, net_box.box);
+      net_box.box = getBox(net);
       net_boxes.push_back(net_box);
     }
   }

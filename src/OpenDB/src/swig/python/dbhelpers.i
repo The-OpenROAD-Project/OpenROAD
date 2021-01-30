@@ -4,11 +4,19 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
+#include "cdl.h"
+#include "utility/Logger.h"
+
+bool 
+dump_netlist(odb::dbBlock* block, const char* path, bool includeFillers){
+  return cdl::dumpNetLists(block, path, includeFillers); 
+}
 
 odb::dbLib*
 read_lef(odb::dbDatabase* db, const char* path)
 {
-  lefin lefParser(db, false);
+  utl::Logger* logger = new utl::Logger(NULL);
+  lefin lefParser(db, logger, false);
   const char *libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
     return lefParser.createTechAndLib(libname, path);
@@ -20,11 +28,12 @@ read_lef(odb::dbDatabase* db, const char* path)
 odb::dbChip*
 read_def(odb::dbDatabase* db, std::string path)
 {
+  utl::Logger* logger = new utl::Logger(NULL);
   std::vector<odb::dbLib *> libs;
   for (dbLib *lib : db->getLibs()) {
     libs.push_back(lib);
   }
-  defin defParser(db);
+  defin defParser(db, logger);
   return defParser.createChip(libs, path.c_str());
 }
 
@@ -32,7 +41,8 @@ int
 write_def(odb::dbBlock* block, const char* path,
 	      odb::defout::Version version = odb::defout::Version::DEF_5_8)
 {
-  defout writer;
+  utl::Logger* logger = new utl::Logger(NULL);
+  defout writer(logger);
   writer.setVersion(version);
   return writer.writeBlock(block, path);
 }
@@ -89,6 +99,9 @@ odb::dbLib*
 read_lef(odb::dbDatabase* db, const char* path);
 odb::dbChip*
 read_def(odb::dbDatabase* db, std::string path);
+
+bool 
+dump_netlist(odb::dbBlock* block, const char* path, bool includeFillers);
 
 int
 write_def(odb::dbBlock* block, const char* path,

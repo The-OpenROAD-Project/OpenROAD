@@ -543,8 +543,8 @@ NesterovPlace::doNesterovPlace() {
     }
 
     if( i == 0 || (i+1) % 10 == 0 ) {
-      cout << "[NesterovSolve] Iter: " << i+1 
-        << " overflow: " << sumOverflow_ << " HPWL: " << prevHpwl_ << endl; 
+      log_->report("[NesterovSolve] Iter: {} overflow: {:g} HPWL: {}",
+          i+1, sumOverflow_, prevHpwl_);
 
 #ifdef ENABLE_CIMG_LIB
       pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
@@ -612,7 +612,7 @@ NesterovPlace::doNesterovPlace() {
       snapshotA = curA;
 
       isSnapshotSaved = true;
-      cout << "[NesterovSolve] Snapshot saved at iter = " + to_string(i) << endl;
+      log_->report("[NesterovSolve] Snapshot saved at iter = {}", i);
     }
 
     // check routability using GR

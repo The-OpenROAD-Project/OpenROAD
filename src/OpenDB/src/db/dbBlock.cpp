@@ -103,10 +103,10 @@
 #include "dbWire.h"
 #include "defout.h"
 #include "lefout.h"
-#include "dbLogger.h"
 #include "parse.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbGroupGroundNetItr.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -902,7 +902,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._minExtModelIndex;
   stream << block._maxExtModelIndex;
   if (block._flags._skip_hier_stream) {
-    notice(0, "\nHierarchical block information is lost\n");
+    block.getImpl()->getLogger()->info(utl::ODB, 4, "Hierarchical block information is lost");
     stream << 0;
   } else
     stream << block._children;
@@ -1754,7 +1754,7 @@ bool dbBlock::findSomeMaster(const char* names, std::vector<dbMaster*>& masters)
     if (master)
       masters.push_back(master);
     else
-      notice(0, "Can not find master %s\n", masterName);
+      getImpl()->getLogger()->warn(utl::ODB, 5, "Can not find master {}", masterName);
   }
   return masters.size() ? true : false;
 }
@@ -1778,7 +1778,7 @@ bool dbBlock::findSomeNet(const char* names, std::vector<dbNet*>& nets)
     if (net)
       nets.push_back(net);
     else
-      notice(0, "Can not find net %s\n", netName);
+      getImpl()->getLogger()->warn(utl::ODB, 6, "Can not find net {}", netName);
   }
   return nets.size() ? true : false;
 }
@@ -1803,7 +1803,7 @@ bool dbBlock::findSomeInst(const char* names, std::vector<dbInst*>& insts)
     if (inst)
       insts.push_back(inst);
     else
-      notice(0, "Can not find inst %s\n", instName);
+      getImpl()->getLogger()->warn(utl::ODB, 7, "Can not find inst {}", instName);
   }
   return insts.size() ? true : false;
 }
@@ -2326,10 +2326,9 @@ void dbBlock::setCornerCount(int         cornersStoredCnt,
   // TODO: Should this change be logged in the journal?
   //       Yes !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   if (block->_journal) {
-    debug("DB_ECO",
-          "A",
-          "ECO: dbBlock %d, setCornerCount cornerCnt %d, extDbCnt %d, "
-          "name_list %s",
+    debugPrint( getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
+          "ECO: dbBlock {}, setCornerCount cornerCnt {}, extDbCnt {}, "
+          "name_list {}",
           block->getId(),
           cornersStoredCnt,
           extDbCnt,
@@ -2384,11 +2383,10 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
     sprintf(name, "%d", net->getId());
     dbNet* xnet = dbNet::create(extBlk, name, true);
     if (xnet == NULL) {
-      error(0, "Cannot duplicate net %s\n", net->getConstName());
+      getImpl()->getLogger()->error(utl::ODB,8,"Cannot duplicate net {}",net->getConstName());
     }
     if (xnet->getId() != net->getId())
-      warning(0,
-              "id mismatch (%d,%d) for net %s\n",
+      getImpl()->getLogger()->warn(utl::ODB,9,"id mismatch ({},{}) for net {}",
               xnet->getId(),
               net->getId(),
               net->getConstName());
@@ -2745,7 +2743,7 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result, Rect* ibox)
 
     result.push_back(net);
   }
-  notice(0, "tot = %d, upd = %d, enc = %d\n", tot, upd, enc);
+  getImpl()->getLogger()->info(utl::ODB, 10 , "tot = {}, upd = {}, enc = {}", tot, upd, enc);
 }
 
 void dbBlock::destroyCCs(std::vector<dbNet*>& nets)
@@ -2888,18 +2886,17 @@ void dbBlock::restoreOldCornerParasitics(dbBlock*             pblock,
         if (otherNet->isMark_1ed() || !coupled_rc)  // link_cc_seg
           ccSeg->Link_cc_seg(otherCapnode, otherid);
         else {
-          notice(0,
-                 "net %d %s capNode %d ccseg %d has otherCapNode %d not from "
+          getImpl()->getLogger()->warn(utl::ODB, 11 ,
+                 "net {} {} capNode {} ccseg {} has otherCapNode {} not from "
                  "changed or halo nets",
                  net->getId(),
                  (char*) net->getConstName(),
                  capnd->getId(),
                  ccSeg->getId(),
                  otherCapnode->getId());
-          error(0,
-                "   the other capNode is from net %d %s\n",
+          getImpl()->getLogger()->error(utl::ODB, 12,"   the other capNode is from net {} {}",
                 otherNet->getId(),
-                (char*) otherNet->getConstName());
+                otherNet->getConstName());
         }
       }
     }
@@ -3049,8 +3046,7 @@ void dbBlock::keepOldCornerParasitics(dbBlock*             pblock,
         if (onet->isMark_1ed() || !coupled_rc)
           ccSeg->unLink_cc_seg(other);
         else
-          error(0,
-                "ccseg %d has other capn %d not from changed or halo nets",
+          getImpl()->getLogger()->error(utl::ODB,13,"ccseg {} has other capn {} not from changed or halo nets",
                 ccSeg->getId(),
                 other->getId());
       }
@@ -3220,7 +3216,8 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 			
 			if (!wdth_rule)
 			{
-				warning(0, "Failed to generate non-default rule for single wire net %s\n", innm);
+        
+				getImpl()->getLogger()->warn(utl::ODB, 14, "Failed to generate non-default rule for single wire net {}", innm);
 				return NULL;
 			}
 			
@@ -3293,11 +3290,11 @@ void dbBlock::saveLef(char* filename)
   lefout writer;
   dbLib* lib = getChip()->getDb()->findLib("lib");
   if (lib == NULL) {
-    warning(0, "Library lib does not exist\n");
+    getImpl()->getLogger()->warn(utl::ODB,15,"Library lib does not exist");
     return;
   }
   if (!writer.writeTechAndLib(lib, filename)) {
-    warning(0, "Failed to write lef file %s", filename);
+    getImpl()->getLogger()->warn(utl::ODB,16,"Failed to write lef file {}",filename);
   }
 }
 
@@ -3309,7 +3306,7 @@ void dbBlock::saveDef(char* filename, char* nets)
 {
   std::vector<dbNet*> inets;
   findSomeNet(nets, inets);
-  defout writer;
+  defout writer(getImpl()->getLogger());
   dbNet* net;
   uint   jj;
   for (jj = 0; jj < inets.size(); jj++) {
@@ -3317,7 +3314,7 @@ void dbBlock::saveDef(char* filename, char* nets)
     writer.selectNet(net);
   }
   if (!writer.writeBlock(this, filename))
-    notice(0, "Failed to write def file %s\n", filename);
+    getImpl()->getLogger()->warn(utl::ODB, 17, "Failed to write def file {}",filename);
 }
 
 //
@@ -3337,13 +3334,13 @@ void dbBlock::writeDb(char* filename, int allNode)
     sprintf(dbname, "%s.db", filename);
   FILE* file = fopen(dbname, "wb");
   if (!file) {
-    notice(0, "Can not open file %s to write!\n", dbname);
+    getImpl()->getLogger()->warn(utl::ODB, 19, "Can not open file {} to write!",dbname);
     return;
   }
   int   io_bufsize = 65536;
   char* buffer     = (char*) malloc(io_bufsize);
   if (buffer == NULL) {
-    warning(0, "Memory allocation failed for io buffer");
+    getImpl()->getLogger()->warn(utl::ODB,20,"Memory allocation failed for io buffer");
     fclose(file);
     return;
   }
@@ -3352,7 +3349,8 @@ void dbBlock::writeDb(char* filename, int allNode)
   free((void*) buffer);
   fclose(file);
   if (block->_journal) {
-    debug("DB_ECO", "A", "ECO: dbBlock %d, writeDb\n", block->getId());
+
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbBlock {}, writeDb", block->getId());
     block->_journal->beginAction(dbJournal::UPDATE_FIELD);
     block->_journal->pushParam(dbBlockObj);
     block->_journal->pushParam(block->getId());
@@ -3395,9 +3393,6 @@ uint dbBlock::levelize(std::vector<dbInst*>& startingInsts,
       level = -l;
     else
       level = l;
-    // notice(0, "%s inst %d %s\n",
-    //	inst->getMaster()->getConstName(), inst->getId(), inst->getConstName());
-
     dbSet<dbITerm>           iterms = inst->getITerms();
     dbSet<dbITerm>::iterator iitr;
     for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {

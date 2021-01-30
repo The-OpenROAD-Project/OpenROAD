@@ -1,15 +1,14 @@
-Notice 0: Reading LEF file:  liberty1.lef
-Notice 0:     Created 2 technology layers
-Notice 0:     Created 6 library cells
-Notice 0: Finished LEF file:  liberty1.lef
-Notice 0: 
-Reading DEF file: write_verilog4.def
-Notice 0: Design: top
-Notice 0:     Created 6 pins.
-Notice 0:     Created 5 components and 24 component-terminals.
-Notice 0:     Created 2 special nets and 10 connections.
-Notice 0:     Created 10 nets and 14 connections.
-Notice 0: Finished DEF file: write_verilog4.def
+[INFO ODB-0222] Reading LEF file: liberty1.lef
+[INFO ODB-0223]     Created 2 technology layers
+[INFO ODB-0225]     Created 6 library cells
+[INFO ODB-0226] Finished LEF file:  liberty1.lef
+[INFO ODB-0127] Reading DEF file: write_verilog4.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 24 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+[INFO ODB-0134] Finished DEF file: write_verilog4.def
 module top (clk1,
     clk2,
     clk3,
@@ -20,6 +19,13 @@ module top (clk1,
  input clk3;
  output out;
  input [1:0] \in[0] ;
+
+ wire VSS;
+ wire VDD;
+ wire r1q;
+ wire r2q;
+ wire u1z;
+ wire u2z;
 
  snl_ffqx1 r1 (.Q(r1q),
     .D(\in[0] [0]),

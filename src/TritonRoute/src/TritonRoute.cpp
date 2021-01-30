@@ -38,7 +38,6 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
-#include "openroad/Error.hh"
 
 using namespace std;
 using namespace fr;
@@ -73,9 +72,19 @@ void TritonRoute::setDebugMaze(bool on)
   debug_->debugMaze = on;
 }
 
+void TritonRoute::setDebugPA(bool on)
+{
+  debug_->debugPA = on;
+}
+
 void TritonRoute::setDebugNetName(const char* name)
 {
   debug_->netName = name;
+}
+
+void TritonRoute::setDebugPinName(const char* name)
+{
+  debug_->pinName = name;
 }
 
 void TritonRoute::setDebugGCell(int x, int y)
@@ -126,6 +135,7 @@ void TritonRoute::init() {
   }
   parser.postProcess();
   FlexPA pa(getDesign(), logger_);
+  pa.setDebug(debug_.get(), db_);
   pa.main();
   if (GUIDE_FILE != string("")) {
     parser.postProcessGuide();
@@ -226,6 +236,11 @@ void TritonRoute::readParams(const string &fileName)
       }
     }
     fin.close();
+  }
+
+  if (MAX_THREADS > 1 && debug_->is_on()) {
+    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the GUI.");
+    MAX_THREADS = 1;
   }
 
   if (readParamCnt < 5) {

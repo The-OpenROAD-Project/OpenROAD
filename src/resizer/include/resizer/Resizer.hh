@@ -38,13 +38,11 @@
 #include <array>
 #include <string>
 
-#include "db_sta/dbSta.hh"
-#include "sta/UnorderedSet.hh"
 #include "SteinerTree.hh"
 
-namespace ord {
-class Logger;
-}
+#include "utility/Logger.h"
+#include "db_sta/dbSta.hh"
+#include "sta/UnorderedSet.hh"
 
 namespace rsz {
 
@@ -175,11 +173,14 @@ public:
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   void repairHold(float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  // Max buffer count as percent of design instance count.
+                  float max_buffer_percent);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
                   float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  float max_buffer_percent);
   void repairSetup(float slack_margin);
   // For testing.
   void repairSetup(Pin *drvr_pin);
@@ -308,6 +309,12 @@ protected:
   int findMaxSteinerDist(SteinerTree *tree,
                          SteinerPt pt,
                          int dist_from_drvr);
+  void repairDesign(double max_wire_length, // zero for none (meters)
+                    int &repair_count,
+                    int &slew_violations,
+                    int &cap_violations,
+                    int &fanout_violations,
+                    int &length_violations);
   void repairNet(Net *net,
                  Vertex *drvr,
                  bool check_slew,
@@ -407,12 +414,14 @@ protected:
   void repairHold(VertexSet *ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,
-                  bool allow_setup_violations);
+                  bool allow_setup_violations,
+                  int max_buffer_count);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
                      float buffer_delay,
                      float slack_margin,
-                     bool allow_setup_violations);
+                     bool allow_setup_violations,
+                     int max_buffer_count);
   void findHoldViolations(VertexSet *ends,
                           float slack_margin,
                           // Return values.
@@ -444,7 +453,6 @@ protected:
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
-  void setWireCorner(Corner *corner);
   void estimateWireParasiticSteiner(const Net *net);
   void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
@@ -468,7 +476,8 @@ protected:
                           float load_cap,
                           float prev_drive);
   bool replaceCell(Instance *inst,
-                   LibertyCell *cell);
+                   LibertyCell *cell,
+                   bool journal);
 
   BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                      SteinerPt k,
@@ -495,6 +504,12 @@ protected:
   bool hasTopLevelOutputPort(Net *net);
   LibertyLibrarySeq allLibraries();
   void findResizeSlacks1();
+
+  bool removeBuffer(Instance *buffer);
+  void journalBegin();
+  void journalInstReplaceCellBefore(Instance *inst);
+  void journalMakeBuffer(Instance *buffer);
+  void journalRestore();
 
   int rebuffer_net_count_;
   BufferedNetSeq rebuffer_options_;
@@ -540,6 +555,10 @@ protected:
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
+
+  // Journal to roll back changes (OpenDB not up to the task).
+  Map<Instance*, LibertyCell*> resized_inst_map_;
+  InstanceSet inserted_buffers_;
 };
 
 } // namespace

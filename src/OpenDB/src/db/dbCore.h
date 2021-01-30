@@ -48,7 +48,9 @@
 #include "dbId.h"
 #include "dbObject.h"
 #include "odb.h"
-
+namespace utl {
+  class Logger;
+}
 namespace odb {
 
 class _dbDatabase;
@@ -75,6 +77,7 @@ class _dbObject : public dbObject
   dbObject*      getOwner() const;
   dbObjectType   getType() const;
   uint           getOID() const;
+  utl::Logger*   getLogger() const;
 
   template <class T>
   friend class dbTable;

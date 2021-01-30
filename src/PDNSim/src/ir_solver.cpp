@@ -53,7 +53,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "gmat.h"
 #include "get_power.h"
-#include "openroad/Error.hh"
 
 namespace psm {
 using odb::dbBlock;
@@ -71,8 +70,6 @@ using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbVia;
 using odb::dbViaParams;
-using ord::error;
-using ord::warn;
 
 using std::endl;
 using std::get;

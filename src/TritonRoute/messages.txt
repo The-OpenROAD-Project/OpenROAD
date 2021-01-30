@@ -1,7 +1,7 @@
-DRT 0001 TritonRoute.cpp:232       Error reading param file: {}
-DRT 0002 TritonRoute.cpp:95        Detailed routing has not been run yet.
-DRT 0003 io.cpp:5277               please load design first
-DRT 0004 io.cpp:5282               please load design first
+DRT 0001 TritonRoute.cpp:248       Error reading param file: {}
+DRT 0002 TritonRoute.cpp:105       Detailed routing has not been run yet.
+DRT 0003 io.cpp:5281               please load design first
+DRT 0004 io.cpp:5286               please load design first
 DRT 0005 frRegionQuery.cpp:99      Unsupported region query add
 DRT 0006 frRegionQuery.cpp:111     Unsupported region query add
 DRT 0007 frRegionQuery.cpp:131     Unsupported region query add
@@ -63,50 +63,44 @@ DRT 0063 FlexGC_main.cpp:3066      unsupported branch WRONGDIRECTION in checkLef
 DRT 0064 FlexGC_main.cpp:3690      attempting to add patch with no drNet.
 DRT 0065 FlexPA_init.cpp:86        instAnalysis unsupported pinFig.
 DRT 0066 FlexPA_init.cpp:93        instAnalysis skips {} due to no pin shapes
-DRT 0067 FlexPA_prep.cpp:98        FlexPA mergePinShapes unsupported shape.
-DRT 0068 FlexPA_prep.cpp:306       prepPoint_pin_genPoints_rect cannot find secondLayerNum.
+DRT 0067 FlexPA_prep.cpp:99        FlexPA mergePinShapes unsupported shape.
+DRT 0068 FlexPA_prep.cpp:314       prepPoint_pin_genPoints_rect cannot find secondLayerNum.
 DRT 0069 FlexPA_init.cpp:258       initPinAccess error.
-DRT 0070 FlexPA_prep.cpp:501       unexpected direction in getPlanarEP
-DRT 0071 FlexPA_prep.cpp:963       prepPoint_pin_helper unique2paidx not found.
-DRT 0072 FlexPA_prep.cpp:976       prepPoint_pin_helper unique2paidx not found
-DRT 0073 FlexPA_prep.cpp:1082      no ap for {}/{}
-DRT 0074 FlexPA_prep.cpp:1086      no ap for PIN/{}
-DRT 0075 FlexPA_prep.cpp:1098      prepPoint_pin unique2paidx not found.
-DRT 0076 FlexPA_prep.cpp:1160        complete {} pins
-DRT 0077 FlexPA_prep.cpp:1164        complete {} pins
-DRT 0078 FlexPA_prep.cpp:1197        complete {} pins
-DRT 0079 FlexPA_prep.cpp:1233        complete {} unique inst patterns
-DRT 0080 FlexPA_prep.cpp:1237        complete {} unique inst patterns
-DRT 0081 FlexPA_prep.cpp:1244        complete {} unique inst patterns
-DRT 0082 FlexPA_prep.cpp:1317        complete {} groups
-DRT 0083 FlexPA_prep.cpp:1321        complete {} groups
-DRT 0084 FlexPA_prep.cpp:1328        complete {} groups
-DRT 0085 FlexPA_prep.cpp:1514      valid access pattern combination not found.
-DRT 0086 FlexPA_prep.cpp:1751      pin does not have access point.
-DRT 0088 FlexPA_prep.cpp:1872      {}
-DRT 0089 FlexPA_prep.cpp:1938      genPattern_gc objs empty.
-DRT 0090 FlexPA_prep.cpp:2172      valid access pattern not found.
-DRT 0091 FlexPA_prep.cpp:2235      pin does not have valid ap.
+DRT 0070 FlexPA_prep.cpp:534       unexpected direction in getPlanarEP
+DRT 0071 FlexPA_prep.cpp:1004      prepPoint_pin_helper unique2paidx not found.
+DRT 0072 FlexPA_prep.cpp:1017      prepPoint_pin_helper unique2paidx not found
+DRT 0073 FlexPA_prep.cpp:1085      no ap for {}/{}
+DRT 0074 FlexPA_prep.cpp:1089      no ap for PIN/{}
+DRT 0075 FlexPA_prep.cpp:1101      prepPoint_pin unique2paidx not found.
+DRT 0076 FlexPA_prep.cpp:1163        complete {} pins
+DRT 0077 FlexPA_prep.cpp:1167        complete {} pins
+DRT 0078 FlexPA_prep.cpp:1200        complete {} pins
+DRT 0079 FlexPA_prep.cpp:1236        complete {} unique inst patterns
+DRT 0080 FlexPA_prep.cpp:1240        complete {} unique inst patterns
+DRT 0081 FlexPA_prep.cpp:1247        complete {} unique inst patterns
+DRT 0082 FlexPA_prep.cpp:1320        complete {} groups
+DRT 0083 FlexPA_prep.cpp:1324        complete {} groups
+DRT 0084 FlexPA_prep.cpp:1331        complete {} groups
+DRT 0085 FlexPA_prep.cpp:1517      valid access pattern combination not found.
+DRT 0086 FlexPA_prep.cpp:1754      pin does not have access point.
+DRT 0088 FlexPA_prep.cpp:1875      {}
+DRT 0089 FlexPA_prep.cpp:1941      genPattern_gc objs empty.
+DRT 0090 FlexPA_prep.cpp:2175      valid access pattern not found.
+DRT 0091 FlexPA_prep.cpp:2238      pin does not have valid ap.
 DRT 0092 FlexRP_prep.cpp:754       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
 DRT 0093 FlexRP_prep.cpp:766       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
-DRT 0094 io.cpp:94                 cannot find layer: {}
-DRT 0095 io.cpp:160                library cell {} not found
 DRT 0096 io.cpp:166                same cell name: {}
-DRT 0097 io.cpp:243                cannot find cut layer {}
-DRT 0098 io.cpp:253                cannot find bottom layer {}
-DRT 0099 io.cpp:263                cannot find top layer {}
 DRT 0100 io.cpp:347                unsupported via: {}
-DRT 0101 io.cpp:349                non-consecutive layers for via: {}
 DRT 0102 io.cpp:426                odd dimension in both directions
 DRT 0103 io.cpp:455                unknown direction
 DRT 0104 io.cpp:475                term {} not found
-DRT 0105 io.cpp:488                component {} not found
 DRT 0106 io.cpp:494                component pin {}/{} not found
 DRT 0107 io.cpp:559                unsupported layer {}
 DRT 0108 io.cpp:669                unsupported via in db
 DRT 0109 io.cpp:729                unsupported via in db
 DRT 0110 io.cpp:759                unsupported NET USE in def
 DRT 0111 io.cpp:788                unsupported PIN USE in db
-DRT 0112 io.cpp:818                unsupported layer {}
-DRT 0113 io.cpp:5151               techlayers for via {} not found in db tech
-DRT 0114 io.cpp:5262               unknown connfig type while writing net {}
+DRT 0115 TritonRoute.cpp:243       Setting MAX_THREADS=1 for use with the GUI.
+DRT 0116 io.cpp:845                please load design first
+DRT 0117 io.cpp:848                please load design first
+DRT 0118 TritonRoute.tcl:93        -gcell is a list of 2 coordinates.

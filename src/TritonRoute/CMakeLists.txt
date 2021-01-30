@@ -72,6 +72,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/db/obj/frAccess.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frRPin.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frNode.cpp
+  ${FLEXROUTE_HOME}/src/db/obj/frInstTerm.cpp
   ${FLEXROUTE_HOME}/src/frRegionQuery.cpp
   ${FLEXROUTE_HOME}/src/io/io_pin.cpp
   ${FLEXROUTE_HOME}/src/io/io.cpp
@@ -81,6 +82,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/pa/FlexPA_init.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA.cpp
   ${FLEXROUTE_HOME}/src/pa/FlexPA_prep.cpp
+  ${FLEXROUTE_HOME}/src/pa/FlexPA_graphics.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_init.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp

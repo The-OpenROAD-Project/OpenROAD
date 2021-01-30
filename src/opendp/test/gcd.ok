@@ -1,37 +1,24 @@
-Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
-Notice 0:     Created 22 technology layers
-Notice 0:     Created 27 technology vias
-Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0: 
-Reading DEF file: gcd_replace.def
-Notice 0: Design: gcd
-Notice 0:     Created 54 pins.
-Notice 0:     Created 549 components and 2166 component-terminals.
-Notice 0:     Created 364 nets and 1068 connections.
-Notice 0: Finished DEF file: gcd_replace.def
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd_replace.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO ODB-0134] Finished DEF file: gcd_replace.def
 [WARNING DPL-0011] Could not find power special net.
-Design Stats
---------------------------------
-total instances           549
-multi row instances         0
-fixed instances           255
-nets                      364
-design area           14266.9 u^2
-fixed area               67.8 u^2
-movable area            569.8 u^2
-utilization                 4 %
-utilization padded          4 %
-rows                       85
-row height                1.4 u
-
 Placement Analysis
---------------------------------
-total displacement      678.8 u
-average displacement      1.2 u
-max displacement         13.9 u
-original HPWL          6950.8 u
-legalized HPWL         7750.4 u
-delta HPWL                 12 %
+---------------------------------
+total displacement        638.3 u
+average displacement        1.2 u
+max displacement           11.6 u
+original HPWL            6950.8 u
+legalized HPWL           7709.2 u
+delta HPWL                   11 %
 
-No differences found.
+Differences found at line 113.
+    - _276_ NOR2_X2 + PLACED ( 163280 176400 ) N ;
+    - _276_ NOR2_X2 + PLACED ( 166700 173600 ) FS ;
