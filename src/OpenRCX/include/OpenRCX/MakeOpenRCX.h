@@ -36,20 +36,17 @@
 
 namespace rcx {
 class Ext;
-} // namespace rcx
+}  // namespace rcx
 
 namespace ord {
 
 class OpenRoad;
 
-rcx::Ext *
-makeOpenRCX();
+rcx::Ext* makeOpenRCX();
 
-void
-deleteOpenRCX(rcx::Ext *extractor);
+void deleteOpenRCX(rcx::Ext* extractor);
 
-void
-initOpenRCX(OpenRoad *openroad);
+void initOpenRCX(OpenRoad* openroad);
 
-} // namespace ord
+}  // namespace ord
 #endif

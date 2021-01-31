@@ -50,7 +50,8 @@ void deleteOpenRCX(rcx::Ext* extractor)
 
 void initOpenRCX(OpenRoad* openroad)
 {
-  openroad->getOpenRCX()->init(openroad->tclInterp(), openroad->getDb());
+  openroad->getOpenRCX()->init(
+      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord
