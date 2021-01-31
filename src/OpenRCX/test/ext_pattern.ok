@@ -1,7 +1,7 @@
-[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
 [INFO ODB-0130]     Created 138176 pins.
@@ -11,7 +11,7 @@ Notice 0: Defined process_corner X with ext_model_index 0
 Notice 0: Defined Extraction corner X
 Notice 0: extracting blk ...
 Notice 0: Reading extraction model file ext_pattern.rules ...
-Notice 0: dbFactor= 2  dbunit= 2000 
+Notice 0: dbFactor= 1  dbunit= 1000 
 Notice 0: RC segment generation blk (max_merge_res 0) ...
 Warning 0: Net 1 O6_M1oM0_W170W170_S170S170_1 does not start from an iterm or a bterm
 Warning 0: Net 2 O6_M1oM0_W170W170_S170S170_2 does not start from an iterm or a bterm
