@@ -1,7 +1,7 @@
 source "helpers.tcl"
-read_lef sky130/sky130_tech.lef
-read_lef sky130/sky130_std_cell.lef
-read_def gcd_sky130.def
+read_lef sky130hs/sky130hs.tlef
+read_lef sky130hs/sky130hs_std_cell.lef
+read_def gcd_sky130hs_floorplan.def
 
 set def_file [make_result_file gcd_sky130.def]
 
