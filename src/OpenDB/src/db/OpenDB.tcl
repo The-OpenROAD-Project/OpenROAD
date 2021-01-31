@@ -374,3 +374,12 @@ proc report_group { group } {
     }
   }
 }
+
+# pre-logger compatibility for this file only
+namespace eval ord {
+
+proc error { args } {
+ utl::error ODB 0 [lindex $args 0]
+}
+
+}

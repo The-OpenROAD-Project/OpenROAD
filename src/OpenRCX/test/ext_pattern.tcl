@@ -2,7 +2,7 @@ source helpers.tcl
 
 set test_nets "3 48 92 193 200 243 400 521 671"
 
-read_lef sky130/sky130_tech.lef 
+read_lef sky130hs/sky130hs.tlef 
 
 read_def -order_wires generate_pattern.defok
 
