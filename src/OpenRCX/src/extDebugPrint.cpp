@@ -160,7 +160,7 @@ bool extMeasure::printTraceNet(const char* msg,
 
   if (init) {
     if (overSub + covered > 0)
-      fprintf(_debugFP, "SUB {} GS {} ", overSub, covered);
+      fprintf(_debugFP, "SUB %d GS %d ", overSub, covered);
 
     if (_netSrcId == _netId)
       printTraceNetInfo("", _netSrcId, _rsegSrcId);
@@ -171,9 +171,9 @@ bool extMeasure::printTraceNet(const char* msg,
     return true;
   }
 
-  fprintf(_debugFP, "{}   ", msg);
+  fprintf(_debugFP, "%d   ", msg);
   if (overSub + covered > 0)
-    fprintf(_debugFP, " L {} SUB {} GS {} ", _len, overSub, covered);
+    fprintf(_debugFP, " L %d SUB %d GS %d ", _len, overSub, covered);
 
   if (cc != NULL)
     fprintf(_debugFP, " {:g} ", cc->getCapacitance());

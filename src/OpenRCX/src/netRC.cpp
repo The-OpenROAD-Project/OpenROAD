@@ -2434,7 +2434,7 @@ void extMain::makeCornerNameMap()
     if (s == NULL)
       sprintf(buff, "%s %d", buff, ii);
     else
-      sprintf(buff, "%s %d", buff, s->_name);
+      sprintf(buff, "%s %s", buff, s->_name);
   }
   if (!_remote) {
     _block->setCornerCount(_cornerCnt);
@@ -2446,7 +2446,7 @@ void extMain::makeCornerNameMap()
   /*
           uint k;
           for (k= 0; k<cornerCnt; k++) {
-                  fprintf(stdout, "corner {} ---- corner name {}\n", k,
+                  fprintf(stdout, "corner %d ---- corner name {}\n", k,
      _block->getExtCornerName(k));
           }
           for (k= 0; k<cornerCnt; k++) {
@@ -2454,7 +2454,7 @@ void extMain::makeCornerNameMap()
                   if (s==NULL)
                           continue;
 
-                  fprintf(stdout, "corner name {} ---- corner index {}\n",
+                  fprintf(stdout, "corner name %s ---- corner index {}\n",
      s->_name, _block->getExtCornerIndex(s->_name));
           }
   */
