@@ -1,10 +1,10 @@
-[INFO ODB-0222] Reading LEF file: ../../../test/sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  ../../../test/sky130/sky130_tech.lef
-[INFO ODB-0222] Reading LEF file: ../../../test/sky130/sky130_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs_std_cell.lef
 [INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  ../../../test/sky130/sky130_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs_std_cell.lef
 [INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
