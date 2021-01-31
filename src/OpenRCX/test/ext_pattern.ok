@@ -1,7 +1,7 @@
-[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
 [INFO ODB-0130]     Created 138176 pins.
@@ -11,7 +11,7 @@
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0008] extracting parasitics of blk ...
 [INFO RCX-0035] Reading extraction model file ext_pattern.rules ...
-[INFO RCX-0036] Database dbFactor= 2.0  dbunit= 2000
+[INFO RCX-0036] Database dbFactor= 1.0  dbunit= 1000
 [INFO RCX-0037] RC segment generation blk (max_merge_res 0.0) ...
 [INFO RCX-0040] Final 69088 rc segments
 [INFO RCX-0041] Coupling Cap extraction blk ...

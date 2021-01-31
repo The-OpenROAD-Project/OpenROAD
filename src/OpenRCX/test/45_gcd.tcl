@@ -16,6 +16,4 @@ extract_parasitics -ext_model_file 45_patterns.rules \
 set spef_file [make_result_file 45_gcd.spef] 
 write_spef $spef_file -nets $test_nets
 
-exec rm gcd.totCap
-
 diff_files 45_gcd.spefok $spef_file

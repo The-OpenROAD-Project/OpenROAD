@@ -18,13 +18,15 @@ exec tclsh $0 ${1+"$@"}
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Usage: save_ok | test1 [test2...] | failures
+# Where test1 is all or the name of a tcl script in /test
+# Wildcard matching with '*' and '?' in test names is supported.
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 
-source [file join $test_dir "regression_vars.tcl"]
 source [file join $openroad_dir "test" "regression.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
 
 save_ok_main
 
