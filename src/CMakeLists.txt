@@ -23,7 +23,6 @@ set(FINALE_HOME ${PROJECT_SOURCE_DIR}/src/finale)
 set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
-set(CDL_HOME ${OPENROAD_HOME}/src/cdl)
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
@@ -50,7 +49,6 @@ set(OPENROAD_TCL_FILES
   OpenRoad.tcl
   ${ICEWALL_HOME}/src/ICeWall.tcl
   ${PDNGEN_HOME}/src/PdnGen.tcl
-  ${CDL_HOME}/src/cdl.tcl
   ${OPENDB_HOME}/src/db/OpenDB.tcl
   )
 

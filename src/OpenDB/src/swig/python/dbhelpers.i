@@ -4,13 +4,9 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
-#include "cdl.h"
 #include "utility/Logger.h"
 
-bool 
-dump_netlist(odb::dbBlock* block, const char* path, bool includeFillers){
-  return cdl::dumpNetLists(block, path, includeFillers); 
-}
+
 
 odb::dbLib*
 read_lef(odb::dbDatabase* db, const char* path)
@@ -99,9 +95,6 @@ odb::dbLib*
 read_lef(odb::dbDatabase* db, const char* path);
 odb::dbChip*
 read_def(odb::dbDatabase* db, std::string path);
-
-bool 
-dump_netlist(odb::dbBlock* block, const char* path, bool includeFillers);
 
 int
 write_def(odb::dbBlock* block, const char* path,
