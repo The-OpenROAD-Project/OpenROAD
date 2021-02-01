@@ -180,8 +180,7 @@ class dbOStream
     } 
     else { 
       *this << std::get<I>(tup); 
-      dbOStream s = *this;
-      return (s.operator<<<I+1>(tup)); 
+      return ((*this).operator<<<I+1>(tup)); 
     } 
   }
 
@@ -374,8 +373,7 @@ class dbIStream
     } 
     else { 
       *this >> std::get<I>(tup);
-      dbIStream s = *this;
-      return (s.operator>><I+1>(tup)); 
+      return ((*this).operator>><I+1>(tup)); 
     } 
   }
 
