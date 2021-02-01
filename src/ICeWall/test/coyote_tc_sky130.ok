@@ -1,0 +1,91 @@
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vccd_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vdda_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vddio_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssa_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssd_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_hvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__overlay_vssio_lvc.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpio_ovtv2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_gpiov2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_hvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_ground_lvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_hvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0222] Reading LEF file: coyote_tc/lef/sky130io_fill.lef
+[INFO ODB-0225]     Created 2 library cells
+[INFO ODB-0226] Finished LEF file:  coyote_tc/lef/sky130io_fill.lef
+Loading library IO cell meta-data
+Loaded library IO cell data
+[INFO IFP-0001] Added 1266 rows of 10417 sites.
+[WARNING PAD-0011] Expected instance u_en_i for padcell sig2 not found
+[WARNING PAD-0011] Expected instance u_TDI for padcell sig155 not found
+[WARNING PAD-0011] Expected instance u_TCK for padcell sig157 not found
+[WARNING PAD-0011] Expected instance u_TRST for padcell sig158 not found
+[WARNING PAD-0011] Expected instance u_TMS for padcell sig159 not found
+[WARNING PAD-0099] No padcell instance found for sig2
+[WARNING PAD-0099] No padcell instance found for sig155
+[WARNING PAD-0099] No padcell instance found for sig157
+[WARNING PAD-0099] No padcell instance found for sig158
+[WARNING PAD-0099] No padcell instance found for sig159
+[WARNING PAD-0099] No padcell instance found for sig160
+[WARNING PAD-0099] No padcell instance found for sig161
+[WARNING PAD-0099] No padcell instance found for sig162
+[WARNING PAD-0099] No padcell instance found for sig163
+No differences found.

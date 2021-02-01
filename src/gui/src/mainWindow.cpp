@@ -415,13 +415,15 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
       odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != SIGNAL)
+            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
         auto inst_term_dir = inst_term->getIoType().getValue();
 
-        if (output && (inst_term_dir == OUTPUT || inst_term_dir == INOUT))
+        if (output && (inst_term_dir == odb::dbIoType::OUTPUT
+                       || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet()));
-        if (input && (inst_term_dir == INPUT || inst_term_dir == INOUT))
+        if (input && (inst_term_dir == odb::dbIoType::INPUT
+                      || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet(), inst_term));
       }
     }

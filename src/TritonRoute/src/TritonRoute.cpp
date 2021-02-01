@@ -38,7 +38,6 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
-#include "openroad/Error.hh"
 
 using namespace std;
 using namespace fr;

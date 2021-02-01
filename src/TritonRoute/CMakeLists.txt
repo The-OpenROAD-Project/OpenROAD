@@ -72,6 +72,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/db/obj/frAccess.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frRPin.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frNode.cpp
+  ${FLEXROUTE_HOME}/src/db/obj/frInstTerm.cpp
   ${FLEXROUTE_HOME}/src/frRegionQuery.cpp
   ${FLEXROUTE_HOME}/src/io/io_pin.cpp
   ${FLEXROUTE_HOME}/src/io/io.cpp

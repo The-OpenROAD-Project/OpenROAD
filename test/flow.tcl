@@ -24,7 +24,7 @@ if { [have_macros] } {
 
   macro_placement -global_config $ip_global_cfg
 }
-
+write_def [make_result_file ${design}_${platform}_floorplan.def]
 ################################################################
 # Tapcell insertion
 eval tapcell $tapcell_args

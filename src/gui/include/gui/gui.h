@@ -85,8 +85,8 @@ class OpenDbDescriptor : public Descriptor
                  int highlight_group,
                  void* additional_data) const override;
 
-  bool isInst(void* object) const;
-  bool isNet(void* object) const;
+  bool isInst(void* object) const override;
+  bool isNet(void* object) const override;
 
   static OpenDbDescriptor* get();
 
