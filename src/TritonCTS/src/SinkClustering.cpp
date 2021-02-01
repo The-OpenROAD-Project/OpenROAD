@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SinkClustering.h"
+#include "pdrev/pdrev.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -229,7 +230,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   std::vector<std::vector<std::vector<unsigned>>> solutions;
 
   if (_useMaxCapLimit) {
-    debugPrint(_logger, CTS, "Stree", 1, "Clustering with max cap limit of {}", _options->getSinkBufferMaxCap());
+    debugPrint(_logger, CTS, "Stree", 1, "Clustering with max cap limit of {:.3e}", _options->getSinkBufferMaxCap());
   }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < _thetaIndexVector.size(); ++i) {
@@ -276,7 +277,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
         // or the distance is higher than _maxInternalDiameter
         //-> start another cluster and save the cost of the current one.
         if (isBoundaryViolated(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
-          debugPrint(_logger, CTS, "Stree", 3, "Created cluster of size {}, dia {}, cap {}",
+          debugPrint(_logger, CTS, "Stree", 4, "Created cluster of size {}, dia {:.3}, cap {:.3e}",
                        solutionPoints[j][clusters[j]].size(), distanceCost, capCost);
           // The cost is computed as the highest cost found on the current
           // cluster
@@ -346,7 +347,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
       }
 
       if (isBoundaryViolated(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
-        debugPrint(_logger, CTS, "Stree", 3, "Created cluster of size {}, dia {}, cap {}",
+        debugPrint(_logger, CTS, "Stree", 4, "Created cluster of size {}, dia {:.3}, cap {:.3e}",
                      solutionPoints[j][clusters[j]].size(), distanceCost, capCost);
         if (previousCosts[j] == 0) {
           previousCosts[j] = _maxInternalDiameter;
@@ -383,7 +384,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
       bestSolutionCost = costs[j];
     }
   }
-  debugPrint(_logger, CTS, "Stree", 1, "Best solution cost = {}", bestSolutionCost);
+  debugPrint(_logger, CTS, "Stree", 2, "Best solution cost = {:.3}", bestSolutionCost);
   // Save the solution for the Tree Builder.
   _bestSolution = solutions[bestSolution];
 }
@@ -428,18 +429,61 @@ void SinkClustering::writePlotFile(unsigned groupSize)
   colors.push_back("tab:cyan");
 
   unsigned clusterCounter = 0;
+  double totalWL = 0;
   for (std::vector<unsigned> clusters : _bestSolution) {
     unsigned color = clusterCounter % colors.size();
+    std::vector<Point<double>> clusterNodes;
     for (unsigned idx : clusters) {
       Point<double>& point = _points[idx];
+      clusterNodes.emplace_back(_points[idx]);
       file << "plt.scatter(" << point.getX() << ", " << point.getY() << ", c=\""
            << colors[color] << "\")\n";
     }
+    double wl = getWireLength(clusterNodes);
+    totalWL += wl;
     clusterCounter++;
   }
-
+  _logger->report("Total cluster WL = {:.3} for {} clusters.", totalWL, clusterCounter);
   file << "plt.show()\n";
   file.close();
 }
 
+double SinkClustering::getWireLength(std::vector<Point<double>> points)
+{
+  PD::PdRev* pd = new PD::PdRev(_logger);
+  std::vector<unsigned> vecX(points.size()+1);
+  std::vector<unsigned> vecY(points.size()+1);
+  double driverX = 0;
+  double driverY = 0;
+  for (auto point: points) {
+    driverX += point.getX();
+    driverY += point.getY();
+  }
+  driverX /= points.size();
+  driverY /= points.size();
+  vecX.emplace_back(driverX*1000);
+  vecY.emplace_back(driverY*1000);
+
+  for (auto point: points) {
+    vecX.emplace_back(point.getX()*1000);
+    vecY.emplace_back(point.getY()*1000);
+  }
+  pd->setAlphaPDII(0.8);
+  pd->addNet(points.size()+1, vecX, vecY);
+  pd->runPDII();
+  PD::Tree pdTree = pd->translateTree(0);
+  unsigned wl=0;
+  for (int i = 0; i < 2 * pdTree.deg - 2; i++) {
+    int x1 = (PD::DTYPE) pdTree.branch[i].x;
+    int y1 = (PD::DTYPE) pdTree.branch[i].y;
+    int n = pdTree.branch[i].n;
+    int x2 = (PD::DTYPE) pdTree.branch[n].x;
+    int y2 = (PD::DTYPE) pdTree.branch[n].y;
+
+    wl += (x1>x2 ? x1-x2 : x2-x1) + 
+          (y1>y2 ? y1-y2 : y2-y1);
+  }
+  delete pd;
+  return wl*1.0/1000.0;
+}
 }  // namespace cts
