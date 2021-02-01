@@ -39,7 +39,7 @@
 #include <algorithm>
 #include <iostream>
 
-using utl::PRT;
+using utl::PAR;
 
 namespace par {
 
@@ -72,7 +72,7 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
       _edgeWeightsNormalized.push_back(auxWeight);
     }
   } else {
-    logger->error(PRT, 23, "Number of edges equal to 0.");
+    logger->error(PAR, 23, "Number of edges equal to 0.");
   }
 }
 
@@ -109,7 +109,7 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight, Logger * logger)
     _vertexWeights.clear();
     _vertexWeights.shrink_to_fit();
   } else {
-    logger->error(PRT, 24, "Number of vertices equal to 0.");
+    logger->error(PAR, 24, "Number of vertices equal to 0.");
   }
 }
 
