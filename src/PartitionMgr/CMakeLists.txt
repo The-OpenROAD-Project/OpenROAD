@@ -14,9 +14,9 @@ endif (LOAD_PARTITIONERS)
 #include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
 find_package(SWIG REQUIRED)
 
-set(PARTITIONMGR_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
+set(PARTITIONMGR_WRAP ${CMAKE_CURRENT_BINARY_DIR}/PartitionMgrWrap.cpp)
 add_custom_command(OUTPUT ${PARTITIONMGR_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix PartitionMgr -tcl8 -c++ -o ${PARTITIONMGR_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/partitionmgr.i   
+        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix par -tcl8 -c++ -o ${PARTITIONMGR_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/partitionmgr.i   
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${OPENROAD_HOME}/src/Exception.i
 
