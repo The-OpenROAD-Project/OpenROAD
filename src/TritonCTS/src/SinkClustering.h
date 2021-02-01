@@ -86,6 +86,7 @@ class SinkClustering
     return _bestSolution;
   }
 
+  double getWireLength(std::vector<Point<double>> points);
  private:
   void normalizePoints(float maxDiameter = 10);
   void computeAllThetas();
