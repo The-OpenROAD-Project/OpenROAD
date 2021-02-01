@@ -115,6 +115,9 @@ class dbTechLayerCutClassRule;
 class dbTechLayerCutClassSubRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingSubRule;
+class dbTechLayerCutSpacingTableRule;
+class dbTechLayerCutSpacingTableOrthSubRule;
+class dbTechLayerCutSpacingTableDefSubRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6021,6 +6024,12 @@ class dbTechLayer : public dbObject
   // Get the collection of cutclass Rules for the object
   dbSet<dbTechLayerCutClassRule> getCutClassRules() const;
 
+  // Get the collection of lef58spacing Rules for the layer(cut)
+  dbSet<dbTechLayerCutSpacingRule> getCutSpacingRules() const;
+
+  // Get the collection of lef58 spacingtable Rules for the layer(cut)
+  dbSet<dbTechLayerCutSpacingTableRule> getCutSpacingTableRules() const;
+
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
   /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
@@ -7803,6 +7812,13 @@ class dbTechLayerCutSpacingRule : public dbObject
   dbSet<dbTechLayerCutSpacingSubRule> getTechLayerCutSpacingSubRules() const;
 
   // User Code Begin dbTechLayerCutSpacingRule
+  static dbTechLayerCutSpacingRule* getTechLayerCutSpacingRule(
+      dbTechLayer* inly,
+      uint         dbid);
+
+  static dbTechLayerCutSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerCutSpacingRule* rule);
   // User Code End dbTechLayerCutSpacingRule
 };
 
@@ -7812,13 +7828,18 @@ class dbTechLayerCutSpacingSubRule : public dbObject
   enum CutSpacingType
   {
     NONE                = 0,
-    LAYER               = 1,
-    ADJACENTCUTS        = 2,
-    PARALLELOVERLAP     = 3,
-    PARALLELWITHIN      = 4,
-    SAMEMETALSHAREDEDGE = 5,
-    AREA                = 6
+    MAXXY               = 1,
+    LAYER               = 2,
+    ADJACENTCUTS        = 3,
+    PARALLELOVERLAP     = 4,
+    PARALLELWITHIN      = 5,
+    SAMEMETALSHAREDEDGE = 6,
+    AREA                = 7
   };
+
+  void setCutSpacing(int _cut_spacing);
+
+  int getCutSpacing() const;
 
   char* getSecondLayerName() const;
 
@@ -7837,10 +7858,6 @@ class dbTechLayerCutSpacingSubRule : public dbObject
   void setCutArea(int _cut_area);
 
   int getCutArea() const;
-
-  void setMaxXY(bool _max_x_y);
-
-  bool isMaxXY() const;
 
   void setCenterToCenter(bool _center_to_center);
 
@@ -7903,7 +7920,258 @@ class dbTechLayerCutSpacingSubRule : public dbObject
   bool isExceptTwoEdges() const;
 
   // User Code Begin dbTechLayerCutSpacingSubRule
+  static dbTechLayerCutSpacingSubRule* getTechLayerCutSpacingSubRule(
+      dbTechLayerCutSpacingRule* parent,
+      uint                       dbid);
+
+  static dbTechLayerCutSpacingSubRule* create(
+      dbTechLayerCutSpacingRule* parent);
+
+  static void destroy(dbTechLayerCutSpacingSubRule* rule);
+
+  void setCutClassName(const char* name);
+
+  void setSecondLayerName(const char* name);
+
+  void setType(CutSpacingType _type);
+
+  CutSpacingType getType() const;
+
   // User Code End dbTechLayerCutSpacingSubRule
+};
+
+class dbTechLayerCutSpacingTableRule : public dbObject
+{
+ public:
+  dbSet<dbTechLayerCutSpacingTableOrthSubRule>
+  getTechLayerCutSpacingTableOrthSubRules() const;
+
+  dbSet<dbTechLayerCutSpacingTableDefSubRule>
+  getTechLayerCutSpacingTableDefSubRules() const;
+
+  // User Code Begin dbTechLayerCutSpacingTableRule
+  static dbTechLayerCutSpacingTableRule* getTechLayerCutSpacingTableRule(
+      dbTechLayer* parent,
+      uint         dbid);
+
+  static dbTechLayerCutSpacingTableRule* create(dbTechLayer* parent);
+
+  static void destroy(dbTechLayerCutSpacingTableRule* rule);
+  // User Code End dbTechLayerCutSpacingTableRule
+};
+
+class dbTechLayerCutSpacingTableOrthSubRule : public dbObject
+{
+ public:
+  void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
+
+  // User Code Begin dbTechLayerCutSpacingTableOrthSubRule
+  void setSpacingTable(std::vector<std::pair<int, int>> tbl);
+
+  static dbTechLayerCutSpacingTableOrthSubRule* create(
+      dbTechLayerCutSpacingTableRule* parent);
+
+  static dbTechLayerCutSpacingTableOrthSubRule*
+  getTechLayerCutSpacingTableOrthSubRule(dbTechLayerCutSpacingTableRule* parent,
+                                         uint                            dbid);
+
+  static void destroy(dbTechLayerCutSpacingTableOrthSubRule* rule);
+  // User Code End dbTechLayerCutSpacingTableOrthSubRule
+};
+
+class dbTechLayerCutSpacingTableDefSubRule : public dbObject
+{
+ public:
+  void setDefault(int _default);
+
+  int getDefault() const;
+
+  char* getSecondLayerName() const;
+
+  void setPrlForAlignedCutTable(
+      std::vector<std::pair<char*, char*>> _prl_for_aligned_cut_tbl);
+
+  void getPrlForAlignedCutTable(
+      std::vector<std::pair<char*, char*>>& tbl) const;
+
+  void setCenterToCenterTable(
+      std::vector<std::pair<char*, char*>> _center_to_center_tbl);
+
+  void getCenterToCenterTable(std::vector<std::pair<char*, char*>>& tbl) const;
+
+  void setCenterAndEdgeTable(
+      std::vector<std::pair<char*, char*>> _center_and_edge_tbl);
+
+  void getCenterAndEdgeTable(std::vector<std::pair<char*, char*>>& tbl) const;
+
+  void setPrl(int _prl);
+
+  int getPrl() const;
+
+  void setPrlTable(std::vector<std::tuple<char*, char*, int>> _prl_tbl);
+
+  void getPrlTable(std::vector<std::tuple<char*, char*, int>>& tbl) const;
+
+  void setExtension(int _extension);
+
+  int getExtension() const;
+
+  void setEndExtensionTable(
+      std::vector<std::pair<char*, int>> _end_extension_tbl);
+
+  void getEndExtensionTable(std::vector<std::pair<char*, int>>& tbl) const;
+
+  void setSideExtensionTable(
+      std::vector<std::pair<char*, int>> _side_extension_tbl);
+
+  void getSideExtensionTable(std::vector<std::pair<char*, int>>& tbl) const;
+
+  void setExactAlignedSpacingTable(
+      std::vector<std::pair<char*, int>> _exact_aligned_spacing_tbl);
+
+  void getExactAlignedSpacingTable(
+      std::vector<std::pair<char*, int>>& tbl) const;
+
+  void setNonOppEncSpacingTable(
+      std::vector<std::pair<char*, int>> _non_opp_enc_spacing_tbl);
+
+  void getNonOppEncSpacingTable(std::vector<std::pair<char*, int>>& tbl) const;
+
+  void setOppEncSpacingTable(
+      std::vector<std::tuple<char*, int, int, int>> _opp_enc_spacing_tbl);
+
+  void getOppEncSpacingTable(
+      std::vector<std::tuple<char*, int, int, int>>& tbl) const;
+
+  void setDefaultValid(bool _default_valid);
+
+  bool isDefaultValid() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setSameNet(bool _same_net);
+
+  bool isSameNet() const;
+
+  void setSameMetal(bool _same_metal);
+
+  bool isSameMetal() const;
+
+  void setSameVia(bool _same_via);
+
+  bool isSameVia() const;
+
+  void setLayerValid(bool _layer_valid);
+
+  bool isLayerValid() const;
+
+  void setNoStack(bool _no_stack);
+
+  bool isNoStack() const;
+
+  void setNonZeroEnclosure(bool _non_zero_enclosure);
+
+  bool isNonZeroEnclosure() const;
+
+  void setPrlForAlignedCut(bool _prl_for_aligned_cut);
+
+  bool isPrlForAlignedCut() const;
+
+  void setCenterToCenterValid(bool _center_to_center_valid);
+
+  bool isCenterToCenterValid() const;
+
+  void setCenterAndEdgeValid(bool _center_and_edge_valid);
+
+  bool isCenterAndEdgeValid() const;
+
+  void setNoPrl(bool _no_prl);
+
+  bool isNoPrl() const;
+
+  void setPrlValid(bool _prl_valid);
+
+  bool isPrlValid() const;
+
+  void setMaxXY(bool _max_x_y);
+
+  bool isMaxXY() const;
+
+  void setEndExtensionValid(bool _end_extension_valid);
+
+  bool isEndExtensionValid() const;
+
+  void setSideExtensionValid(bool _side_extension_valid);
+
+  bool isSideExtensionValid() const;
+
+  void setExactAlignedSpacingValid(bool _exact_aligned_spacing_valid);
+
+  bool isExactAlignedSpacingValid() const;
+
+  void setHorizontal(bool _horizontal);
+
+  bool isHorizontal() const;
+
+  void setVertical(bool _vertical);
+
+  bool isVertical() const;
+
+  void setNonOppositeEnclosureSpacingValid(
+      bool _non_opposite_enclosure_spacing_valid);
+
+  bool isNonOppositeEnclosureSpacingValid() const;
+
+  void setOppositeEnclosureResizeSpacingValid(
+      bool _opposite_enclosure_resize_spacing_valid);
+
+  bool isOppositeEnclosureResizeSpacingValid() const;
+
+  // User Code Begin dbTechLayerCutSpacingTableDefSubRule
+  void setSecondLayerName(const char* name);
+
+  void addCenterToCenter(const char* from, const char* to);
+
+  void addCenterAndEdge(const char* from, const char* to);
+
+  void addPrl(const char* from, const char* to, int ccPrl);
+
+  void addEndExtension(const char* class_name, int extension);
+
+  void addSideExtension(const char* class_name, int extension);
+
+  void addExactAlignedSpacing(const char* class_name, int spacing);
+
+  void addNonOppositeEnclosureSpacing(const char* class_name, int spacing);
+
+  void addOppositeEnclosureResizeSpacing(const char* class_name,
+                                         int         resize1,
+                                         int         resize2,
+                                         int         spacing);
+
+  void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
+                       std::map<std::string, uint>                   row_map,
+                       std::map<std::string, uint>                   col_map);
+  
+  void getSpacingTable(
+    std::vector<std::vector<std::pair<int, int>>>& table,
+    std::map<std::string, uint>&                   row_map,
+    std::map<std::string, uint>&                   col_map);
+
+  std::pair<int, int> getSpacing(const char* class1, bool SIDE1, const char* class2, bool SIDE2);
+
+
+  static dbTechLayerCutSpacingTableDefSubRule* create(
+      dbTechLayerCutSpacingTableRule* parent);
+
+  static dbTechLayerCutSpacingTableDefSubRule*
+  getTechLayerCutSpacingTableDefSubRule(dbTechLayerCutSpacingTableRule* parent,
+                                        uint                            dbid);
+
+  static void destroy(dbTechLayerCutSpacingTableDefSubRule* rule);
+  // User Code End dbTechLayerCutSpacingTableDefSubRule
 };
 
 class dbModule : public dbObject

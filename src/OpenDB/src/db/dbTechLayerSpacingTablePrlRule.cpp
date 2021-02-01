@@ -131,25 +131,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   stream >> obj._length_tbl;
   stream >> obj._width_tbl;
   stream >> obj._spacing_tbl;
+  stream >> obj._influence_tbl;
   // User Code Begin >>
-  uint sz;
-  stream >> sz;
-  obj._influence_tbl.reserve(sz);
-  for (uint i = 0; i < sz; i++) {
-    int first, second, third;
-    stream >> first;
-    stream >> second;
-    stream >> third;
-    obj._influence_tbl.push_back(std::make_tuple(first, second, third));
-  }
-  stream >> sz;
-  for (uint i = 0; i < sz; i++) {
-    int key, val1, val2;
-    stream >> key;
-    stream >> val1;
-    stream >> val2;
-    obj._within_tbl[key] = {val1, val2};
-  }
+  stream >> obj._within_tbl;
   // User Code End >>
   return stream;
 }
@@ -162,21 +146,9 @@ dbOStream& operator<<(dbOStream&                             stream,
   stream << obj._length_tbl;
   stream << obj._width_tbl;
   stream << obj._spacing_tbl;
+  stream << obj._influence_tbl;
   // User Code Begin <<
-  uint sz = obj._influence_tbl.size();
-  stream << sz;
-  for (uint i = 0; i < sz; i++) {
-    stream << std::get<0>(obj._influence_tbl[i]);
-    stream << std::get<1>(obj._influence_tbl[i]);
-    stream << std::get<2>(obj._influence_tbl[i]);
-  }
-  sz = obj._within_tbl.size();
-  stream << sz;
-  for (auto const& [key, val] : obj._within_tbl) {
-    stream << key;
-    stream << val.first;
-    stream << val.second;
-  }
+  stream << obj._within_tbl;
   // User Code End <<
   return stream;
 }

@@ -63,6 +63,26 @@ namespace odb{
         static dbTechLayerCutClassRule* parse(std::string, dbTechLayer*, lefin*);
     };
 
+    class lefTechLayerCutSpacingParser
+    {
+    
+    public:
+        odb::dbTechLayerCutSpacingSubRule* subRule;
+        lefTechLayerCutSpacingParser(){subRule = nullptr;};
+        ~lefTechLayerCutSpacingParser(){};
+        dbTechLayerCutSpacingRule* parse(std::string, dbTechLayer*, lefin*);
+    };
+
+    class lefTechLayerCutSpacingTableParser
+    {
+        
+    public:
+        odb::dbTechLayerCutSpacingTableDefSubRule* defRule;
+        lefTechLayerCutSpacingTableParser(){defRule = nullptr;};
+        ~lefTechLayerCutSpacingTableParser(){};
+        dbTechLayerCutSpacingTableRule* parse(std::string, dbTechLayer*, lefin*);
+    };
+
 
 }
 

@@ -4,15 +4,14 @@
   "fields": [
     {
       "type": "bool",
-      "name": "_max_x_y",
+      "name": "_center_to_center",
       "flags": [],
       "bits":1
     },
     {
-      "type": "bool",
-      "name": "_center_to_center",
-      "flags": [],
-      "bits":1
+      "type": "int",
+      "name": "_cut_spacing",
+      "flags": []
     },
     {
       "type": "bool",
@@ -139,6 +138,7 @@
       "name":"CutSpacingType",
       "values":[
         "NONE",
+        "MAXXY",
         "LAYER",
         "ADJACENTCUTS",
         "PARALLELOVERLAP",

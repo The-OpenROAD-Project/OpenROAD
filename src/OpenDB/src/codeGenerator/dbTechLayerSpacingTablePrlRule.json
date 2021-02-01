@@ -43,7 +43,7 @@
     {
       "type": "dbVector<std::tuple<int,int,int>>",
       "name": "_influence_tbl",
-      "flags":["no-set","no-get","no-template","no-serial"]
+      "flags":["no-set","no-get","no-template"]
     }
   ],
   "constructors": [],

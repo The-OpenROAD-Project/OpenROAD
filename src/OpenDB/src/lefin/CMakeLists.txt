@@ -10,6 +10,8 @@ add_library(lefin
     lefTechLayerRightWayOnGridOnlyParser.cpp
     lefTechLayerRectOnlyParser.cpp
     lefTechLayerCutClassParser.cpp
+    lefTechLayerCutSpacingParser.cpp
+    lefTechLayerCutSpacingTableParser.cpp
 )
 
 target_include_directories(lefin

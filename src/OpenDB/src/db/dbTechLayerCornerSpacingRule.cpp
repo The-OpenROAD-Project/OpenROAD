@@ -191,6 +191,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
   stream >> obj._jog_length;
   stream >> obj._min_length;
   // User Code Begin >>
+  stream >> obj._spacing_tbl;
   // User Code End >>
   return stream;
 }
@@ -204,6 +205,7 @@ dbOStream& operator<<(dbOStream&                           stream,
   stream << obj._jog_length;
   stream << obj._min_length;
   // User Code Begin <<
+  stream << obj._spacing_tbl;
   // User Code End <<
   return stream;
 }

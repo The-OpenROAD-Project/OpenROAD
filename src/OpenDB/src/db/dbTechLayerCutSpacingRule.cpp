@@ -157,6 +157,31 @@ dbTechLayerCutSpacingRule::getTechLayerCutSpacingSubRules() const
 }
 
 // User Code Begin dbTechLayerCutSpacingRulePublicMethods
+dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
+    dbTechLayer* _layer)
+{
+  _dbTechLayer*               layer   = (_dbTechLayer*) _layer;
+  _dbTechLayerCutSpacingRule* newrule = layer->_cut_spacing_rules_tbl->create();
+  return ((dbTechLayerCutSpacingRule*) newrule);
+}
+
+dbTechLayerCutSpacingRule*
+dbTechLayerCutSpacingRule::getTechLayerCutSpacingRule(dbTechLayer* inly,
+                                                      uint         dbid)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) inly;
+  return (dbTechLayerCutSpacingRule*) layer->_cut_spacing_rules_tbl->getPtr(
+      dbid);
+}
+void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* rule)
+{
+  for (auto subrule : rule->getTechLayerCutSpacingSubRules()) {
+    dbTechLayerCutSpacingSubRule::destroy(subrule);
+  }
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->_cut_spacing_rules_tbl->destroy((_dbTechLayerCutSpacingRule*) rule);
+}
 // User Code End dbTechLayerCutSpacingRulePublicMethods
 }  // namespace odb
    // Generator Code End 1

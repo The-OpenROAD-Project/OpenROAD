@@ -17,16 +17,25 @@ BOOST_AUTO_TEST_SUITE( test_suite )
 BOOST_AUTO_TEST_CASE( test_default )
 {
     utl::Logger* logger = new utl::Logger();
-    dbDatabase*  db   = dbDatabase::create();
-    db->setLogger(logger);
-    lefin lefParser(db, logger, false);
+    dbDatabase*  db1   = dbDatabase::create();
+    dbDatabase*  db2   = dbDatabase::create();
+    db1->setLogger(logger);
+    db2->setLogger(logger);
+    lefin lefParser(db1, logger, false);
     const char *libname = "gscl45nm.lef";
-    
+
     std::string path = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
 
     lefParser.createTechAndLib(libname, path.c_str());
+
+    FILE *write,*read;
+    path = std::string(std::getenv("BASE_DIR")) + "/results/TestLef58PropertiesDbRW";
+    write=fopen(path.c_str(),"w");
+    db1->write(write);
+    read=fopen(path.c_str(),"r");
+    db2->read(read);
     
-    auto dbTech = db->getTech();
+    auto dbTech = db2->getTech();
     double distFactor = 2000;
     auto layer = dbTech->findLayer("metal1");
     
@@ -111,6 +120,67 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(std::string(sub_rule->getClassName())=="VA");
     BOOST_TEST(sub_rule->getWidth()==0.15*distFactor);
 
+    auto cutSpacingRules = cutLayer->getCutSpacingRules();
+    BOOST_TEST(cutSpacingRules.size() == 1);
+    odb::dbTechLayerCutSpacingRule* cut_spacing_rule = (odb::dbTechLayerCutSpacingRule*) *cutSpacingRules.begin();
+    auto subSpacingRules = cut_spacing_rule->getTechLayerCutSpacingSubRules();
+    BOOST_TEST(subSpacingRules.size()==2);
+    int i = 0;
+    for(auto subRule:subSpacingRules)
+    {
+        if(i)
+        {
+            BOOST_TEST(subRule->getCutSpacing()==0.3*distFactor);
+            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingSubRule::CutSpacingType::LAYER);
+            BOOST_TEST(subRule->isSameMetal());
+            BOOST_TEST(subRule->isStack());
+            BOOST_TEST(std::string(subRule->getSecondLayerName())=="via2");
+        }else
+        {
+            BOOST_TEST(subRule->getCutSpacing()==0.12*distFactor);
+            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingSubRule::CutSpacingType::MAXXY);
+        }
+        i++;
+    }
+
+    auto cutTables = cutLayer->getCutSpacingTableRules();
+    BOOST_TEST(cutTables.size()==1);
+    odb::dbTechLayerCutSpacingTableRule* cutTable = (odb::dbTechLayerCutSpacingTableRule*) *cutTables.begin();
+    auto orths = cutTable->getTechLayerCutSpacingTableOrthSubRules();
+    auto defs = cutTable->getTechLayerCutSpacingTableDefSubRules();
+    BOOST_TEST(orths.size()==1);
+    BOOST_TEST(defs.size()==1);
+    odb::dbTechLayerCutSpacingTableOrthSubRule* orth = (odb::dbTechLayerCutSpacingTableOrthSubRule*) *orths.begin();
+    odb::dbTechLayerCutSpacingTableDefSubRule* def = (odb::dbTechLayerCutSpacingTableDefSubRule*) *defs.begin();
+    std::vector<std::pair<int,int>> table;
+    orth->getSpacingTable(table);
+    BOOST_TEST(table[0].first == 0.2*distFactor);
+    BOOST_TEST(table[0].second == 0.15*distFactor);
+    BOOST_TEST(table[1].first == 0.3*distFactor);
+    BOOST_TEST(table[1].second == 0.25*distFactor);
+
+    BOOST_TEST(def->getDefault()==0.12*distFactor);
+    BOOST_TEST(def->isDefaultValid());
+    BOOST_TEST(def->isSameMask());
+    BOOST_TEST(def->isSameNet());
+    BOOST_TEST(def->isLayerValid());
+    BOOST_TEST(def->isNoStack());
+    BOOST_TEST(std::string(def->getSecondLayerName())=="via2");
+    BOOST_TEST(!def->isSameMetal());
+    BOOST_TEST(def->isPrlForAlignedCut());
+    std::vector<std::pair<char*,char*>> prlFACtbl;
+    def->getPrlForAlignedCutTable(prlFACtbl);
+    BOOST_TEST(prlFACtbl.size()==2);
+    BOOST_TEST(std::string(prlFACtbl[0].first) == "cls1");
+    BOOST_TEST(std::string(prlFACtbl[0].second) == "cls2");
+    BOOST_TEST(std::string(prlFACtbl[1].first) == "cls3");
+    BOOST_TEST(std::string(prlFACtbl[1].second) == "cls4");
+    auto spacing1 = def->getSpacing("cls1",true,"cls3",false);
+    auto spacing2 = def->getSpacing("cls1",false,"cls4",false);
+    BOOST_TEST(spacing1.first==0.1*distFactor );
+    BOOST_TEST(spacing1.second==0.2*distFactor );
+    BOOST_TEST(spacing2.first==0.7*distFactor );
+    BOOST_TEST(spacing2.second==def->getDefault());
 
 }
 

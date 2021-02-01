@@ -45,69 +45,50 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class _dbTechLayerCutSpacingTableOrthSubRule;
+template <class T>
+class dbTable;
+class _dbTechLayerCutSpacingTableDefSubRule;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbTechLayerCutSpacingSubRuleFlags
-{
-  bool _center_to_center : 1;
-  bool _same_net : 1;
-  bool _same_metal : 1;
-  bool _same_vias : 1;
-  uint _cut_spacing_type : 3;
-  bool _stack : 1;
-  uint _adjacent_cuts : 2;
-  bool _exact_aligned : 1;
-  bool _except_same_pgnet : 1;
-  bool _cut_class_valid : 1;
-  bool _side_parallel_overlap : 1;
-  bool _except_same_net : 1;
-  bool _except_same_metal : 1;
-  bool _except_same_via : 1;
-  bool _above : 1;
-  bool _except_two_edges : 1;
-  uint _spare_bits : 13;
-};
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerCutSpacingSubRule : public _dbObject
+class _dbTechLayerCutSpacingTableRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerCutSpacingSubRuleFlags _flags;
-  int                               _cut_spacing;
-  char*                             _second_layer_name;
-  uint _num_cuts;  // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
-  int  _within;    // WITHIN cutWithin | PARALLELWITHIN within |
-                   // SAMEMETALSHAREDEDGE parwithin
-  char* _cut_class_name;
-  int   _cut_area;
+  dbTable<_dbTechLayerCutSpacingTableOrthSubRule>*
+      _techlayercutspacingtableorthsubrule_tbl;
+
+  dbTable<_dbTechLayerCutSpacingTableDefSubRule>*
+      _techlayercutspacingtabledefsubrule_tbl;
 
   // User Code Begin fields
   // User Code End fields
-  _dbTechLayerCutSpacingSubRule(_dbDatabase*,
-                                const _dbTechLayerCutSpacingSubRule& r);
-  _dbTechLayerCutSpacingSubRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingSubRule();
-  bool operator==(const _dbTechLayerCutSpacingSubRule& rhs) const;
-  bool operator!=(const _dbTechLayerCutSpacingSubRule& rhs) const
+  _dbTechLayerCutSpacingTableRule(_dbDatabase*,
+                                  const _dbTechLayerCutSpacingTableRule& r);
+  _dbTechLayerCutSpacingTableRule(_dbDatabase*);
+  ~_dbTechLayerCutSpacingTableRule();
+  bool operator==(const _dbTechLayerCutSpacingTableRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutSpacingTableRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbTechLayerCutSpacingSubRule& rhs) const;
-  void differences(dbDiff&                              diff,
-                   const char*                          field,
-                   const _dbTechLayerCutSpacingSubRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
+  bool           operator<(const _dbTechLayerCutSpacingTableRule& rhs) const;
+  void           differences(dbDiff&                                diff,
+                             const char*                            field,
+                             const _dbTechLayerCutSpacingTableRule& rhs) const;
+  void           out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);  // User Code Begin methods
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingSubRule& obj);
-dbOStream& operator<<(dbOStream&                           stream,
-                      const _dbTechLayerCutSpacingSubRule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingTableRule& obj);
+dbOStream& operator<<(dbOStream&                             stream,
+                      const _dbTechLayerCutSpacingTableRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb

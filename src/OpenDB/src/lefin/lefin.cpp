@@ -584,8 +584,16 @@ void lefin::layer(lefiLayer* layer)
         lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
     }else if(type.getValue() == dbTechLayerType::CUT)
     {
-      if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
+      if(!strcmp(layer->propName(iii), "LEF58_SPACING")){
+        lefTechLayerCutSpacingParser* parser = new lefTechLayerCutSpacingParser();
+        parser->parse(layer->propValue(iii), l, this);
+      }
+      else if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
+        lefTechLayerCutSpacingTableParser* parser2 = new lefTechLayerCutSpacingTableParser();
+        parser2->parse(layer->propValue(iii), l, this);
+      }
     }
   }
 

@@ -36,6 +36,9 @@
 
 #include "ZException.h"
 #include "odb.h"
+#include "tuple"
+#include "map"
+#include <string>
 
 namespace odb {
 
@@ -157,6 +160,46 @@ class dbOStream
         write_error();
     }
 
+    return *this;
+  }
+  
+  template <class T1, class T2>
+  dbOStream& operator<<(const std::pair<T1, T2>& p)
+  {
+    *this << p.first;
+    *this << p.second;
+    return *this;
+  }
+
+  template <size_t I = 0, typename... Ts> 
+  constexpr dbOStream& operator<<(const std::tuple<Ts...>& tup) 
+  {
+    if constexpr(I == sizeof...(Ts)) 
+    { 
+      return *this;
+    } 
+    else { 
+      *this << std::get<I>(tup); 
+      dbOStream s = *this;
+      return (s.operator<<<I+1>(tup)); 
+    } 
+  }
+
+  template <class T1, class T2>
+  dbOStream& operator<<(const std::map<T1, T2>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto const& [key, val] : m) {
+      *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
+  dbOStream& operator<<(std::string s)
+  {
+    *this<<strdup(s.c_str());
     return *this;
   }
 
@@ -297,6 +340,50 @@ class dbIStream
         read_error();
     }
 
+    return *this;
+  }
+
+  template <class T1, class T2>
+  dbIStream& operator>>(std::pair<T1, T2>& p)
+  {
+    *this >> p.first;
+    *this >> p.second;
+    return *this;
+  }
+  template <class T1, class T2>
+  dbIStream& operator>>(std::map<T1, T2>& m)
+  {
+    uint sz;
+    *this >> sz;
+    for (uint i = 0; i < sz; i++) {
+      T1 key;
+      T2 val;
+      *this >> key;
+      *this >> val;
+      m[key] = val;
+    }
+    return *this;
+  }
+
+  template <size_t I = 0, typename... Ts> 
+  constexpr dbIStream& operator>>(std::tuple<Ts...>& tup) 
+  {
+    if constexpr(I == sizeof...(Ts)) 
+    { 
+      return *this;
+    } 
+    else { 
+      *this >> std::get<I>(tup);
+      dbIStream s = *this;
+      return (s.operator>><I+1>(tup)); 
+    } 
+  }
+
+  dbIStream& operator>>(std::string& s)
+  {
+    char* tmp;
+    *this >> tmp;
+    s = std::string(tmp);
     return *this;
   }
 

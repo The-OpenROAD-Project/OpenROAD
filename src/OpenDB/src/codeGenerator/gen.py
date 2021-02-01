@@ -117,7 +117,7 @@ for klass in schema['classes']:
         field['refType'] = getRefType(field['type'])
         field['isHashTable'] = isHashTable(field['type'])
         field['hashTableType'] = getHashTableType(field['type'])
-
+        field['isDbVector'] = isDbVector(field['type'])
         if 'private' in field['flags']:
             field['flags'].append('no-set')
             field['flags'].append('no-get')
@@ -162,6 +162,8 @@ for klass in schema['classes']:
             field['getterFunctionName'] = "find"+ field['setterArgumentType'][3:-1]
         elif 'bits' in field and field['bits'] == 1:
             field['setterArgumentType'] = field['getterReturnType'] = 'bool'
+        elif field['isDbVector']:
+            field['setterArgumentType'] = field['getterReturnType'] = field['type'].replace('dbVector',"std::vector")
         else:
             field['setterArgumentType'] = field['getterReturnType'] = field['type']
 

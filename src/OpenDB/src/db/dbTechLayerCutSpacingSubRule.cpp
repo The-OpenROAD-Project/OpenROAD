@@ -50,9 +50,6 @@ template class dbTable<_dbTechLayerCutSpacingSubRule>;
 bool _dbTechLayerCutSpacingSubRule::operator==(
     const _dbTechLayerCutSpacingSubRule& rhs) const
 {
-  if (_flags._max_x_y != rhs._flags._max_x_y)
-    return false;
-
   if (_flags._center_to_center != rhs._flags._center_to_center)
     return false;
 
@@ -101,6 +98,9 @@ bool _dbTechLayerCutSpacingSubRule::operator==(
   if (_flags._except_two_edges != rhs._flags._except_two_edges)
     return false;
 
+  if (_cut_spacing != rhs._cut_spacing)
+    return false;
+
   if (_second_layer_name != rhs._second_layer_name)
     return false;
 
@@ -134,7 +134,6 @@ void _dbTechLayerCutSpacingSubRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._max_x_y);
   DIFF_FIELD(_flags._center_to_center);
   DIFF_FIELD(_flags._same_net);
   DIFF_FIELD(_flags._same_metal);
@@ -151,6 +150,7 @@ void _dbTechLayerCutSpacingSubRule::differences(
   DIFF_FIELD(_flags._except_same_via);
   DIFF_FIELD(_flags._above);
   DIFF_FIELD(_flags._except_two_edges);
+  DIFF_FIELD(_cut_spacing);
   DIFF_FIELD(_second_layer_name);
   DIFF_FIELD(_num_cuts);
   DIFF_FIELD(_within);
@@ -165,7 +165,6 @@ void _dbTechLayerCutSpacingSubRule::out(dbDiff&     diff,
                                         const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._max_x_y);
   DIFF_OUT_FIELD(_flags._center_to_center);
   DIFF_OUT_FIELD(_flags._same_net);
   DIFF_OUT_FIELD(_flags._same_metal);
@@ -182,6 +181,7 @@ void _dbTechLayerCutSpacingSubRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_flags._except_same_via);
   DIFF_OUT_FIELD(_flags._above);
   DIFF_OUT_FIELD(_flags._except_two_edges);
+  DIFF_OUT_FIELD(_cut_spacing);
   DIFF_OUT_FIELD(_second_layer_name);
   DIFF_OUT_FIELD(_num_cuts);
   DIFF_OUT_FIELD(_within);
@@ -203,7 +203,6 @@ _dbTechLayerCutSpacingSubRule::_dbTechLayerCutSpacingSubRule(
     _dbDatabase*                         db,
     const _dbTechLayerCutSpacingSubRule& r)
 {
-  _flags._max_x_y               = r._flags._max_x_y;
   _flags._center_to_center      = r._flags._center_to_center;
   _flags._same_net              = r._flags._same_net;
   _flags._same_metal            = r._flags._same_metal;
@@ -221,6 +220,7 @@ _dbTechLayerCutSpacingSubRule::_dbTechLayerCutSpacingSubRule(
   _flags._above                 = r._flags._above;
   _flags._except_two_edges      = r._flags._except_two_edges;
   _flags._spare_bits            = r._flags._spare_bits;
+  _cut_spacing                  = r._cut_spacing;
   _second_layer_name            = r._second_layer_name;
   _num_cuts                     = r._num_cuts;
   _within                       = r._within;
@@ -234,6 +234,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingSubRule& obj)
 {
   uint* _flags_bit_field = (uint*) &obj._flags;
   stream >> *_flags_bit_field;
+  stream >> obj._cut_spacing;
   stream >> obj._second_layer_name;
   stream >> obj._num_cuts;
   stream >> obj._within;
@@ -248,6 +249,7 @@ dbOStream& operator<<(dbOStream&                           stream,
 {
   uint* _flags_bit_field = (uint*) &obj._flags;
   stream << *_flags_bit_field;
+  stream << obj._cut_spacing;
   stream << obj._second_layer_name;
   stream << obj._num_cuts;
   stream << obj._within;
@@ -266,6 +268,19 @@ _dbTechLayerCutSpacingSubRule::~_dbTechLayerCutSpacingSubRule()
 // dbTechLayerCutSpacingSubRule - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbTechLayerCutSpacingSubRule::setCutSpacing(int _cut_spacing)
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+
+  obj->_cut_spacing = _cut_spacing;
+}
+
+int dbTechLayerCutSpacingSubRule::getCutSpacing() const
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+  return obj->_cut_spacing;
+}
 
 char* dbTechLayerCutSpacingSubRule::getSecondLayerName() const
 {
@@ -323,20 +338,6 @@ int dbTechLayerCutSpacingSubRule::getCutArea() const
 {
   _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
   return obj->_cut_area;
-}
-
-void dbTechLayerCutSpacingSubRule::setMaxXY(bool _max_x_y)
-{
-  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
-
-  obj->_flags._max_x_y = _max_x_y;
-}
-
-bool dbTechLayerCutSpacingSubRule::isMaxXY() const
-{
-  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
-
-  return obj->_flags._max_x_y;
 }
 
 void dbTechLayerCutSpacingSubRule::setCenterToCenter(bool _center_to_center)
@@ -551,6 +552,61 @@ bool dbTechLayerCutSpacingSubRule::isExceptTwoEdges() const
 }
 
 // User Code Begin dbTechLayerCutSpacingSubRulePublicMethods
+void dbTechLayerCutSpacingSubRule::setCutClassName(const char* name)
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+  obj->_cut_class_name               = strdup(name);
+}
+
+void dbTechLayerCutSpacingSubRule::setSecondLayerName(const char* name)
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+  obj->_second_layer_name            = strdup(name);
+}
+
+void dbTechLayerCutSpacingSubRule::setType(CutSpacingType _type)
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+
+  obj->_flags._cut_spacing_type = (uint) _type;
+}
+
+dbTechLayerCutSpacingSubRule::CutSpacingType
+dbTechLayerCutSpacingSubRule::getType() const
+{
+  _dbTechLayerCutSpacingSubRule* obj = (_dbTechLayerCutSpacingSubRule*) this;
+
+  return (dbTechLayerCutSpacingSubRule::CutSpacingType)
+      obj->_flags._cut_spacing_type;
+}
+
+dbTechLayerCutSpacingSubRule* dbTechLayerCutSpacingSubRule::create(
+    dbTechLayerCutSpacingRule* parent)
+{
+  _dbTechLayerCutSpacingRule*    _parent = (_dbTechLayerCutSpacingRule*) parent;
+  _dbTechLayerCutSpacingSubRule* newrule
+      = _parent->_techlayercutspacingsubrule_tbl->create();
+  return ((dbTechLayerCutSpacingSubRule*) newrule);
+}
+
+dbTechLayerCutSpacingSubRule*
+dbTechLayerCutSpacingSubRule::getTechLayerCutSpacingSubRule(
+    dbTechLayerCutSpacingRule* parent,
+    uint                       dbid)
+{
+  _dbTechLayerCutSpacingRule* _parent = (_dbTechLayerCutSpacingRule*) parent;
+  return (dbTechLayerCutSpacingSubRule*)
+      _parent->_techlayercutspacingsubrule_tbl->getPtr(dbid);
+}
+void dbTechLayerCutSpacingSubRule::destroy(dbTechLayerCutSpacingSubRule* rule)
+{
+  _dbTechLayerCutSpacingRule* _parent
+      = (_dbTechLayerCutSpacingRule*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  _parent->_techlayercutspacingsubrule_tbl->destroy(
+      (_dbTechLayerCutSpacingSubRule*) rule);
+}
+
 // User Code End dbTechLayerCutSpacingSubRulePublicMethods
 }  // namespace odb
    // Generator Code End 1

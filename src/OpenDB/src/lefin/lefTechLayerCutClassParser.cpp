@@ -58,10 +58,6 @@ namespace lefTechLayerCutClass {
             subrule->setNumCuts(cnt.value());
         }
     }
-    void print(std::string name)
-    {
-        std::cout<<name<<std::endl;
-    }
     template <typename Iterator>
     bool parse(Iterator first, Iterator last, odb::dbTechLayerCutClassRule* rule, odb::lefin* lefin)
     {   

@@ -105,7 +105,7 @@ def isBitFields(field,structs):
     
 def getFunctionalName(name):
     if name.islower():
-        return ''.join([n.capitalize() for n in name.split('_')])
+        return ''.join([n.capitalize() for n in name.replace("tbl","table").split('_')])
     else:
         return name
     
@@ -131,7 +131,9 @@ def getHashTableType(type_name):
         return None
 
     return type_name[12:-1] + "*"
-
+def isDbVector(type_name):
+    return type_name.strip().find("dbVector")==0
+    
 def isTemplateType(type_name):
     openBracket = type_name.find("<")
     if openBracket == -1:

@@ -341,6 +341,12 @@ namespace odb {
     _{{klass.name}}* obj = (_{{klass.name}}*)this;
     return dbSet<{{field.type}}>(obj, obj->{{field.name}});
   }
+  {%elif field.isDbVector%}
+  void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
+  {
+    _{{klass.name}}* obj = (_{{klass.name}}*)this;
+    tbl = obj->{{field.name}};
+  }
   {%else%}
   {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({%if field.isHashTable%}const char* name{%endif%}) const
   {
