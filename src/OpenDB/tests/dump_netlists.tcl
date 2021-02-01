@@ -6,8 +6,7 @@ read_def "data/gcd/gcd.def"
 set chip [$db getChip]
 set block [$chip getBlock]
 
-odb::dump_netlist $block "results/gcd.cdl" 0
-
+write_cdl "results/gcd.cdl"
 
 set isDiff [diff_files "results/gcd.cdl" "dump_netlists_cdl.ok"]
 
