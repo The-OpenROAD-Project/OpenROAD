@@ -65,15 +65,13 @@ RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter)
   _analysisPoint = _corner->findParasiticAnalysisPt(_min_max);
 
   _network = openroad->getDbNetwork();
-  _debug = false;
 }
 
 void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
                                       std::vector<Pin>& pins,
                                       std::vector<GSegment>& routes)
 {
-  if (_debug)
-    _logger->report("net {}", net->getConstName());
+  debugPrint(_logger, GRT, "est_rc", 1, "net {}", net->getConstName());
   _sta_net = _network->dbToSta(net);
   _node_id = 0;
   _node_map.clear();
@@ -122,26 +120,30 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
         = ensureParasiticNode(route.finalX, route.finalY, route.finalLayer);
     int wire_length_dbu
         = abs(route.initX - route.finalX) + abs(route.initY - route.finalY);
+    sta::Units* units = _sta->units();
     float res, cap;
     if (wire_length_dbu == 0) {
       // via
       int lower_layer = min(route.initLayer, route.finalLayer);
       _grouter->getCutLayerRes(lower_layer, res);
       cap = 0.0;
-    } else if (route.initLayer == route.finalLayer)
+      debugPrint(_logger, GRT, "est_rc", 1, "{} -> {} via r={}",
+                 _parasitics->name(n1),
+                 _parasitics->name(n2),
+                 units->resistanceUnit()->asString(res));
+    } else if (route.initLayer == route.finalLayer) {
       layerRC(wire_length_dbu, route.initLayer, res, cap);
-    else
-      _logger->warn(GRT, 25, "non wire or via route found on net {}.", net->getConstName());
-
-    if (_debug) {
-      sta::Units* units = _sta->units();
-      if (_debug)
-        _logger->report("{} -> {} r={} c={}\n",
-               _parasitics->name(n1),
-               _parasitics->name(n2),
-               units->resistanceUnit()->asString(res),
-               units->capacitanceUnit()->asString(cap));
+      debugPrint(_logger, GRT, "est_rc", 1, "{} -> {} {}u layer={} r={} c={}",
+                 _parasitics->name(n1),
+                 _parasitics->name(n2),
+                 static_cast<int>(_grouter->dbuToMeters(wire_length_dbu)*1e+6),
+                 route.initLayer,
+                 units->resistanceUnit()->asString(res),
+                 units->capacitanceUnit()->asString(cap));
     }
+    else
+      _logger->warn(GRT, 25, "non wire or via route found on net {}.",
+                    net->getConstName());
     _parasitics->incrCap(n1, cap / 2.0, _analysisPoint);
     _parasitics->makeResistor(nullptr, n1, n2, res, _analysisPoint);
     _parasitics->incrCap(n2, cap / 2.0, _analysisPoint);
