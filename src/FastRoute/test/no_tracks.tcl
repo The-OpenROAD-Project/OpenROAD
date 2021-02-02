@@ -1,3 +1,4 @@
+# design with no routing tracks
 read_lef Nangate45/Nangate45.lef
 read_lib Nangate45/Nangate45_typ.lib
 read_verilog ./no_tracks.v
