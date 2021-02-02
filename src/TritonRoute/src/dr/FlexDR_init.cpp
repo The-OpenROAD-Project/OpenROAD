@@ -441,7 +441,13 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(frNet *net, const frPo
   //bool enableOutput = true;
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  regionQuery->query(frBox(bp, bp), lNum, result);
+  // In PA we may have used NearbyGrid which puts a via outside the pin
+  // but still overlapping.  So we expand bp to a min-width square when
+  // searching for the pin shape.
+  auto half_min_width = getTech()->getLayer(lNum)->getMinWidth() / 2;
+  frBox query_box(bp.x() - half_min_width, bp.y() - half_min_width,
+                  bp.x() + half_min_width, bp.y() + half_min_width);
+  regionQuery->query(query_box, lNum, result);
   for (auto &[bx, rqObj]: result) {
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);

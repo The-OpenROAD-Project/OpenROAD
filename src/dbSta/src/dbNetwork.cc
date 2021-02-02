@@ -783,7 +783,15 @@ dbNetwork::visitConnectedPins(const Net *net,
 			      PinVisitor &visitor,
 			      ConstNetSet &visited_nets) const
 {
-  Network::visitConnectedPins(net, visitor, visited_nets);
+  dbNet *db_net = staToDb(net);
+  for (dbITerm *iterm : db_net->getITerms()) {
+    Pin *pin =  dbToSta(iterm);
+    visitor(pin);
+  }
+  for (dbBTerm *bterm : db_net->getBTerms()) {
+    Pin *pin =  dbToSta(bterm);
+    visitor(pin);
+  }
 }
 
 Net *
@@ -1050,14 +1058,15 @@ dbNetwork::connect(Instance *inst,
     dbBTerm *bterm = block_->findBTerm(port_name);
     if (bterm)
       bterm->connect(dnet);
-    else
+    else {
       bterm = dbBTerm::create(dnet, port_name);
-    PortDirection *dir = direction(port);
-    dbSigType sig_type;
-    dbIoType io_type;
-    staToDb(dir, sig_type, io_type);
-    bterm->setSigType(sig_type);
-    bterm->setIoType(io_type);
+      PortDirection *dir = direction(port);
+      dbSigType sig_type;
+      dbIoType io_type;
+      staToDb(dir, sig_type, io_type);
+      bterm->setSigType(sig_type);
+      bterm->setIoType(io_type);
+    }
     pin = dbToSta(bterm);
   }
   else {

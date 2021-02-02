@@ -173,6 +173,8 @@ public:
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);
+  
+  void writeCdl(const char *filename, bool includeFillers);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
@@ -232,9 +234,6 @@ private:
   par::PartitionMgr *partitionMgr_;
 
   std::set<Observer *> observers_;
-
-  // Singleton used by tcl command interpreter.
-  static OpenRoad *openroad_;
 };
 
 // Return the bounding box of the db rows.

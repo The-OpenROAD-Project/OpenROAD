@@ -4004,7 +4004,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (strcmp(macroClass, "ENDCAP BOTTOMLEFT") == 0) {
           tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
         } else {
-          logger->warn(utl::DRT,119,"unknown macroClass {}, skipped macroClass property", macroClass);
+          logger->warn(utl::DRT,137,"unknown macroClass {}, skipped macroClass property", macroClass);
         }
       }
       
@@ -4959,7 +4959,7 @@ void io::Parser::readTechDb1(odb::dbDatabase* db)
 {
   auto _tech = db->getTech();
   if(_tech==nullptr)
-    logger->error(utl::DRT,118,"load design first");
+    logger->error(utl::DRT,136,"load design first");
   tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
   USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
   tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));

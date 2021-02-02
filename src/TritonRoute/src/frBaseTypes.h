@@ -297,7 +297,8 @@ namespace fr {
         debugPA(false),
         gcellX(-1),
         gcellY(-1),
-        iter(0)
+        iter(0),
+        paMarkers(false)
     {
     }
 
@@ -313,6 +314,7 @@ namespace fr {
     int gcellX;
     int gcellY;
     int iter;
+    bool paMarkers;
   };
 }
 

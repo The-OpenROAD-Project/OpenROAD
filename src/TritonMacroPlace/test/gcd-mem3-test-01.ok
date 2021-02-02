@@ -13,100 +13,100 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 398 nets and 1184 connections.
 [INFO ODB-0134] Finished DEF file: nangate45-bench/design/gcd_mem3/gcd_mem3.def
-[PROC] End Parsing Global Config
-[PROC] Begin Extracting Macro Cells ...
-[PROC] End Extracting Macro Cells
-[INFO] NumMacros = 3
-[INFO] NumEdgeInSta = 2231
-[INFO] NumVertexInSta = 1259
-[INFO] NumEastPins = 13
-[INFO] NumWestPins = 18
-[INFO] NumNorthPins = 12
-[INFO] NumSouthPins = 32
-[PROC] Begin Generating Sequential Graph ...
-[PROC] End Generating Sequential Graph
-[INFO] NumVertexSeqGraph = 42
-[INFO] NumEdgeSeqGraph = 1280
-[PROC] Begin One Level Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 3
-[INFO] NumCutLines = 3
-[INFO] CutLine = 2
-[INFO] RoundUpCutLine = 2
-[INFO] CutLine = 25
-[INFO] RoundUpCutLine = 25
-[INFO] CutLine = 44
-[INFO] RoundUpCutLine = 44
-[PROC] End Partition
-[PROC] End One Level Partition
-[PROC] Begin Horizontal Partition ...
-[PROC] Begin East Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 0
-[INFO] NumCutLines = 0
-[PROC] End Partition
-[PROC] End East Partition
-[PROC] Begin West Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 3
-[INFO] NumCutLines = 1
-[INFO] CutLine = 11
-[INFO] RoundUpCutLine = 11
-[PROC] End Partition
-[PROC] End West Partition
-[PROC] End Horizontal Partition
-[PROC] Begin Horizontal Partition ...
-[PROC] Begin East Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 1
-[INFO] NumCutLines = 1
-[INFO] CutLine = 11
-[INFO] RoundUpCutLine = 11
-[PROC] End Partition
-[PROC] End East Partition
-[PROC] Begin West Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 2
-[INFO] NumCutLines = 1
-[INFO] CutLine = 12
-[INFO] RoundUpCutLine = 12
-[PROC] End Partition
-[PROC] End West Partition
-[PROC] End Horizontal Partition
-[PROC] Begin Horizontal Partition ...
-[PROC] Begin East Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 2
-[INFO] NumCutLines = 1
-[INFO] CutLine = 11
-[INFO] RoundUpCutLine = 11
-[PROC] End Partition
-[PROC] End East Partition
-[PROC] Begin West Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 1
-[INFO] NumCutLines = 1
-[INFO] CutLine = 12
-[INFO] RoundUpCutLine = 12
-[PROC] End Partition
-[PROC] End West Partition
-[PROC] End Horizontal Partition
-[INFO] NumExtractedSets = 3
-[PROC] Begin Parquet ...
-[PROC] End Parquet
-[INFO] SetId = 1
-[INFO] WeightedWL = 0.000000
-[PROC] Begin Parquet ...
-[PROC] End Parquet
-[PROC] Begin Parquet ...
-[PROC] End Parquet
-[INFO] SetId = 2
-[INFO] WeightedWL = 0.000000
-[PROC] Begin Parquet ...
-[PROC] End Parquet
-[PROC] Begin Parquet ...
-[PROC] End Parquet
-[INFO] SetId = 3
-[INFO] WeightedWL = 0.000000
-[INFO] NumFinalSols = 3
+End Parsing Global Config
+Begin Extracting Macro Cells
+End Extracting Macro Cells
+[INFO MPL-0005] NumMacros 3
+[INFO MPL-0006] NumEdgeInSta 2231
+[INFO MPL-0007] NumVertexInSta 1259
+[INFO MPL-0009] NumEastPins 13
+[INFO MPL-0010] NumWestPins 18
+[INFO MPL-0011] NumNorthPins 12
+[INFO MPL-0012] NumSouthPins 32
+Begin Generating Sequential Graph
+End Generating Sequential Graph
+[INFO MPL-0013] NumVertexSeqGraph 42
+[INFO MPL-0014] NumEdgeSeqGraph 1280
+Begin One Level Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 3
+[INFO MPL-0078] CutLine 2.06
+[INFO MPL-0079] RoundUpCutLine 2.09
+[INFO MPL-0078] CutLine 25.32
+[INFO MPL-0079] RoundUpCutLine 25.27
+[INFO MPL-0078] CutLine 44.30
+[INFO MPL-0079] RoundUpCutLine 44.27
+End Partition
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 0
+[INFO MPL-0077] NumCutLines 0
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 1
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 2
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 2
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 1
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
+End Partition
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] NumExtractedSets: 3
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 1
+[INFO MPL-0072] WeightedWL: 0
+Begin Parquet
+End Parquet
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 2
+[INFO MPL-0072] WeightedWL: 0
+Begin Parquet
+End Parquet
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 3
+[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0073] NumFinalSols: 3
 No differences found.

@@ -38,11 +38,14 @@
 #include <memory>
 #include <unordered_map>
 
+namespace utl {
+class Logger;
+}
+
 namespace mpl {
 
 class MacroCircuit;
 class Macro;
-class Logger;
 
 enum PartClass {
   S, N, W, E, NW, NE, SW, SE, ALL, None
@@ -62,9 +65,9 @@ class Partition {
     std::unordered_map<std::string, int> macroMap;
 
 
-    Partition();
+    Partition(utl::Logger* log);
     Partition(PartClass _partClass, double _lx, double _ly,
-        double _width, double _height );
+        double _width, double _height, utl::Logger* log);
 
     // destructor
     ~Partition();
@@ -82,7 +85,7 @@ class Partition {
     void Dump();
 
     // Call Parquet to have annealing solution
-    bool DoAnneal(std::shared_ptr<Logger>);
+    bool DoAnneal();
 
     // Update Macro location from MacroCircuit
     void UpdateMacroCoordi(MacroCircuit& mckt);
@@ -102,6 +105,7 @@ class Partition {
   private:
     void FillNetlistTableIncr();
     void FillNetlistTableDesc();
+    utl::Logger* log_;
 };
 
 struct PartClassHash {

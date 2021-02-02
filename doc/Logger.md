@@ -4,6 +4,8 @@ In order to ensure consistent messaging from the openroad application we have ad
 
 All output from OpenROAD tools should be directed through the logging API so that redirection, file logging and execution control flow is handled consistently.
 
+The logging infrastructure also supports generating a [JSON](https://www.json.org) file containing design metrics (e.g. area, slack).  This output is directed to a user specified file.  The openroad application take a "-metrics <filename>" command line argument to specify the file.
+
 ## Message Types
 
 ### Report
@@ -146,6 +148,23 @@ The argument types are as for the info/warn/error/ciritical messages.  The one a
 
 Debug messages are enabled with the tcl command: set_debug_level \<tool\> \<group\> \<level\>
 
+## Metrics
+
+The metrics logging uses a more restricted API since JSON only supports specific types.  There are a set of overloaded methods of the form:
+
+```
+metric(ToolId tool,
+       const std::string_view metric,
+       <type> value)
+```
+
+where \<type\> can be int, double, string, or bool.  This will result in the generated JSON:
+```
+  "<tool>-<metric>" : value
+```
+
+String values will be enclosed in double-quotes automatically.
+
 ## Converting to Logger
 
 The error functions in `include/openroad/Error.hh` should no longer be included or used.
@@ -186,7 +205,7 @@ target_link_libraries(<library_target>
 | OpenRCX | rcx	 |
 | *OpenROAD* | ord |
 | OpenSTA | sta |
-| PartClusManager | par	|
+| PartionMgr | par	|
 | pdngen | pdn |
 | PDNSim | psm |
 | replace | gpl |

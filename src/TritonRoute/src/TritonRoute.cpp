@@ -38,7 +38,6 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
-#include "openroad/Error.hh"
 
 using namespace std;
 using namespace fr;
@@ -97,6 +96,11 @@ void TritonRoute::setDebugGCell(int x, int y)
 void TritonRoute::setDebugIter(int iter)
 {
   debug_->iter = iter;
+}
+
+void TritonRoute::setDebugPaMarkers(bool on)
+{
+  debug_->paMarkers = on;
 }
 
 int TritonRoute::getNumDRVs() const

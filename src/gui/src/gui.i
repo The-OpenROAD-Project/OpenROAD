@@ -37,13 +37,11 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
 #include "utility/Logger.h"
 #include "gui/gui.h"
 %}
 
 %inline %{
-
 void
 selection_add_net(const char* name)
 {
@@ -70,6 +68,18 @@ selection_add_insts(const char* name)
 {
   auto gui = gui::Gui::get();
   gui->addSelectedInsts(name);
+}
+
+void highlight_inst(const char* name, int highlightGroup)
+{
+  auto gui = gui::Gui::get();
+  gui->addInstToHighlightSet(name, highlightGroup);
+}
+
+void highlight_net(const char* name, int highlightGroup=0)
+{
+  auto gui = gui::Gui::get();
+  gui->addNetToHighlightSet(name, highlightGroup);
 }
 
 // converts from microns to DBU

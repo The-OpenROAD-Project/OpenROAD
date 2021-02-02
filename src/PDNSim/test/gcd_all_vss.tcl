@@ -4,7 +4,6 @@ read_lef  Nangate45.lef
 read_def gcd.def
 read_liberty NangateOpenCellLibrary_typical.lib
 read_sdc gcd.sdc
-report_checks
 
 set voltage_file [make_result_file gcd_voltage_vss.rpt]
 set em_file [make_result_file gcd_em_vss.rpt]
