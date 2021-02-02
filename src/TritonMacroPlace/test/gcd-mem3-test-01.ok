@@ -31,11 +31,11 @@ Begin One Level Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 3
 [INFO MPL-0077] NumCutLines 3
-[INFO MPL-0078] CutLine 2.065
+[INFO MPL-0078] CutLine 2.06
 [INFO MPL-0079] RoundUpCutLine 2.09
-[INFO MPL-0078] CutLine 25.325
+[INFO MPL-0078] CutLine 25.32
 [INFO MPL-0079] RoundUpCutLine 25.27
-[INFO MPL-0078] CutLine 44.3
+[INFO MPL-0078] CutLine 44.30
 [INFO MPL-0079] RoundUpCutLine 44.27
 End Partition
 End One Level Partition
@@ -50,8 +50,8 @@ Begin West Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 3
 [INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 11.655
-[INFO MPL-0079] RoundUpCutLine 11.2
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
 End Partition
 End West Partition
 End Horizontal Partition
@@ -60,16 +60,16 @@ Begin East Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 1
 [INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 11.655
-[INFO MPL-0079] RoundUpCutLine 11.2
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
 End Partition
 End East Partition
 Begin West Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 2
 [INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 12.1
-[INFO MPL-0079] RoundUpCutLine 12.6
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
 End Partition
 End West Partition
 End Horizontal Partition
@@ -78,16 +78,16 @@ Begin East Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 2
 [INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 11.655
-[INFO MPL-0079] RoundUpCutLine 11.2
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
 End Partition
 End East Partition
 Begin West Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 1
 [INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 12.1
-[INFO MPL-0079] RoundUpCutLine 12.6
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
 End Partition
 End West Partition
 End Horizontal Partition
