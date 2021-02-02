@@ -39,7 +39,6 @@
 
 #include <cstdint>
 
-#include "sta/Error.hh"
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
 #include "sta/Delay.hh"

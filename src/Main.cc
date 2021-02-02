@@ -54,7 +54,6 @@
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
 #include "openroad/Version.hh"
-#include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
 #include "utility/Logger.h" 

@@ -95,7 +95,7 @@ std::string getNetName(dbBlock* block,
   return net->getName();
 }
 
-bool cdl::dumpNetLists(dbBlock* block,
+bool cdl::writeCdl(dbBlock* block,
                        const char* fileName,
                        bool includeFillers)
 {

@@ -10,50 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Startpoint: _870_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
-Path Group: core_clock
-Path Type: max
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _870_/CK (DFF_X1)
-   0.08    0.08 ^ _870_/Q (DFF_X1)
-   0.04    0.12 ^ _747_/Z (BUF_X1)
-   0.05    0.17 ^ _478_/ZN (XNOR2_X2)
-   0.06    0.23 ^ _480_/ZN (AND2_X1)
-   0.02    0.26 v _481_/ZN (NAND3_X1)
-   0.07    0.32 v _487_/ZN (OR3_X1)
-   0.02    0.34 ^ _502_/ZN (NAND3_X1)
-   0.01    0.35 v _518_/ZN (NAND2_X1)
-   0.04    0.39 v _532_/ZN (AND4_X1)
-   0.04    0.43 ^ _545_/ZN (AOI21_X2)
-   0.02    0.45 v _546_/ZN (NAND2_X2)
-   0.05    0.50 v _547_/ZN (OR2_X1)
-   0.03    0.54 v _548_/Z (BUF_X4)
-   0.03    0.57 v _549_/Z (BUF_X4)
-   0.03    0.60 ^ _641_/ZN (OAI21_X1)
-   0.02    0.62 v _649_/ZN (OAI21_X1)
-   0.02    0.63 ^ _650_/ZN (OAI21_X1)
-   0.03    0.67 ^ _802_/Z (CLKBUF_X1)
-   0.00    0.67 ^ _876_/D (DFF_X1)
-           0.67   data arrival time
-
-  10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ _876_/CK (DFF_X1)
-  -0.03    9.97   library setup time
-           9.97   data required time
----------------------------------------------------------
-           9.97   data required time
-          -0.67   data arrival time
----------------------------------------------------------
-           9.30   slack (MET)
-
-
 [WARNING PSM-0016] Voltage pad location (vsrc) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.

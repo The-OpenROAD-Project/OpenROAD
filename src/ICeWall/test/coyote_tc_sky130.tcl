@@ -1,8 +1,8 @@
 source "helpers.tcl"
 source ../src/ICeWall.tcl
 
-read_lef ../../../test/sky130/sky130_tech.lef
-read_lef ../../../test/sky130/sky130_std_cell.lef
+read_lef ../../../test/sky130hs/sky130hs.tlef
+read_lef ../../../test/sky130hs/sky130hs_std_cell.lef
 
 read_lef coyote_tc/lef/sky130_fd_io__corner_bus_overlay.lef
 read_lef coyote_tc/lef/sky130_fd_io__overlay_gpiov2.lef
@@ -27,7 +27,7 @@ read_lef coyote_tc/lef/sky130_fd_io__top_power_lvc_wpad.lef
 read_lef coyote_tc/lef/sky130_fd_io__top_xres4v2.lef
 read_lef coyote_tc/lef/sky130io_fill.lef
 
-read_liberty ../../../test/sky130/sky130_tt.lib
+read_liberty ../../../test/sky130hs/sky130hs_tt.lib
 read_liberty coyote_tc/lib/sky130_dummy_io.lib
 
 read_verilog coyote_tc/1_synth.v
