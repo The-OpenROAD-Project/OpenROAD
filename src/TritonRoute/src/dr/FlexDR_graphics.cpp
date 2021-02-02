@@ -29,9 +29,11 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <qt5/QtGui/qcolor.h>
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
+#include "openroad/OpenRoad.hh"
 
 namespace fr {
 
@@ -77,7 +79,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  {
+  if (gui_->areRoutingObjsVisible()){
     auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
     worker_->getRouteBox(box);
@@ -121,16 +123,17 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  // Draw guides
-  painter.setBrush(layer, /* alpha */ 50);
-  for (auto& rect : net_->getOrigGuides()) {
-    if (rect.getLayerNum() == layerNum) {
-      frBox box;
-      rect.getBBox(box);
-      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+  if (gui_->areRouteGuidesVisible()){
+    // Draw guides
+    painter.setBrush(layer, /* alpha */ 90);
+    for (auto& rect : net_->getOrigGuides()) {
+      if (rect.getLayerNum() == layerNum) {
+        frBox box;
+        rect.getBBox(box);
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      }
     }
   }
-
   painter.setPen(layer, /* cosmetic */ true);
   for (frPoint& pt : points_by_layer_[layerNum]) {
     painter.drawLine({pt.x() - 20, pt.y() - 20},
@@ -139,46 +142,44 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                      {pt.x() + 20, pt.y() - 20});
   }
 
-  // Draw grid graph
+  // Draw graphs
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
-    auto show = [&](frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
-                  return grid_graph_->hasEdge(x, y, z, dir)
-                    && (grid_graph_->isBlocked(x, y, z, dir)
-                        || grid_graph_->hasDRCCost(x, y, z, dir)
-                        || grid_graph_->hasShapeCost(x, y, z, dir)
-                        || grid_graph_->hasMarkerCost(x, y, z, dir)
-                        );
-                };
-
-    frMIdx x_dim, y_dim, z_dim;
-    grid_graph_->getDim(x_dim, y_dim, z_dim);
     frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    for (frMIdx x = 0; x < x_dim; ++x) {
-      for (frMIdx y = 0; y < y_dim; ++y) {
-        frPoint pt;
-        grid_graph_->getPoint(pt, x, y);
+    if (gui_->isGridGraphVisible()){
+        int of = 50;
+        bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
+        frMIdx x_dim, y_dim, z_dim;
+        grid_graph_->getDim(x_dim, y_dim, z_dim);
+        for (frMIdx x = 0; x < x_dim; ++x) {
+          for (frMIdx y = 0; y < y_dim; ++y) {
+            frPoint pt;
+            grid_graph_->getPoint(pt, x, y);
 
-        if (show(x, y, z, frDirEnum::E)) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x + 1, y);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
-        }
+            if (x != x_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::E) || */
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || !prefIsVert && grid_graph_->hasGridCostE(x, y, z))) {
+              frPoint pt2;
+              grid_graph_->getPoint(pt2, x + 1, y);
+              painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+            }
 
-        if (show(x, y, z, frDirEnum::N)) {
-          frPoint pt2;
-          grid_graph_->getPoint(pt2, x, y + 1);
-          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+            if (y != y_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::N) || */
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || prefIsVert && grid_graph_->hasGridCostN(x, y, z))) {
+              frPoint pt2;
+              grid_graph_->getPoint(pt2, x, y + 1);
+              painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+            }
+            if (grid_graph_->hasAnyPlanarCost(x, y, z))
+                painter.drawRect({grid_graph_->xCoord(x)-of, grid_graph_->yCoord(y)-of, grid_graph_->xCoord(x)+of, grid_graph_->yCoord(y)+of});
+          }
         }
-      }
     }
-  }
-
+   
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getMarkers()) {
-    if (marker.getLayerNum() == layerNum) {
+  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
+    if (marker->getLayerNum() == layerNum) {
       frBox box;
-      marker.getBBox(box);
+      marker->getBBox(box);
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       painter.drawLine({box.left(), box.bottom()},
                        {box.right(), box.top()});
@@ -186,8 +187,43 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                        {box.right(), box.bottom()});
     }
   }
+ }
 }
 
+//void FlexDRGraphics::drawInterval(gui::Painter& painter, Interval* i, int pos, bool vertical, int hwidth, int roundSize){
+//  if (vertical)
+//      painter.drawRect({grid_graph_->xCoord(pos)-hwidth, grid_graph_->yCoord(i->low())-hwidth, 
+//                      grid_graph_->xCoord(pos)+hwidth, grid_graph_->yCoord(i->high())+hwidth});
+//  else painter.drawRect({grid_graph_->xCoord(i->low())-hwidth, grid_graph_->yCoord(pos)-hwidth, 
+//                      grid_graph_->xCoord(i->high())+hwidth, grid_graph_->yCoord(pos)+hwidth});
+//}
+
+//void FlexDRGraphics::drawPath(gui::Painter& painter, vector<FlexMazeIdx>& path, frLayerNum ln){
+//      frMIdx z = grid_graph_->getMazeZIdx(ln);
+//      int of = 15;
+//      for (int i = 0; i < path.size(); i++){
+//          FlexMazeIdx& p = path[i];
+//          if (p.z() == z){
+//              if (i+1 < path.size()){
+//                  painter.drawRect({grid_graph_->xCoord(min(p.x(), path[i+1].x()))-of, grid_graph_->yCoord(min(p.y(), path[i+1].y()))-of,
+//                                    grid_graph_->xCoord(max(p.x(), path[i+1].x()))+of, grid_graph_->yCoord(max(p.y(), path[i+1].y()))+of});
+//              }else painter.drawRect({grid_graph_->xCoord(p.x())-of, grid_graph_->yCoord(p.y())-of,
+//                                    grid_graph_->xCoord(p.x())+of, grid_graph_->yCoord(p.y())+of,});
+//          }
+//      }
+//}
+  
+void FlexDRGraphics::update(){
+    if (settings_->draw) gui_->redraw();
+}
+  
+void FlexDRGraphics::pause(drNet* net){
+    if (!settings_->allowPause || net && !settings_->netName.empty() &&
+        net->getFrNet()->getName() != settings_->netName) {
+      return;
+    }
+    gui_->pause();
+}
 void FlexDRGraphics::drawObjects(gui::Painter& painter)
 {
   if (!worker_) {
@@ -252,7 +288,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     frBox box;
     worker_->getExtBox(box);
     gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-    gui_->pause();
+    if (settings_->allowPause) gui_->pause();
   }
 }
 
@@ -277,8 +313,8 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
   if (settings_->debugMaze
       && last_pt_layer_ != layer
       && last_pt_layer_ != -1) {
-    gui_->redraw();
-    gui_->pause();
+    if (settings_->draw) gui_->redraw();
+    if (settings_->allowPause) gui_->pause();
   }
 
   last_pt_layer_ = layer;
@@ -304,7 +340,7 @@ void FlexDRGraphics::startNet(drNet* net)
   frBox box;
   worker_->getExtBox(box);
   gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-  gui_->pause();
+  if (settings_->allowPause) gui_->pause();
 }
 
 void FlexDRGraphics::endNet(drNet* net)
@@ -322,8 +358,8 @@ void FlexDRGraphics::endNet(drNet* net)
   status("End net: " + net->getFrNet()->getName() + " searched "
          + std::to_string(point_cnt) + " points");
 
-  gui_->redraw();
-  gui_->pause();
+  if (settings_->draw) gui_->redraw();
+  if (settings_->allowPause) gui_->pause();
 
   for (auto& points : points_by_layer_) {
     points.clear();
@@ -335,7 +371,7 @@ void FlexDRGraphics::startIter(int iter)
   current_iter_ = iter;
   if (iter >= settings_->iter) {
     status("Start iter: " + std::to_string(iter));
-    gui_->pause();
+    if (settings_->allowPause) gui_->pause();
   }
 }
 

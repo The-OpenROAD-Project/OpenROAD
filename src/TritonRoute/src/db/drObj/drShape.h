@@ -78,13 +78,18 @@ namespace fr {
     drPathSeg(): drShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), 
                  beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {}
     drPathSeg(const drPathSeg &in): drShape(in), begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), 
-                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {}
+                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {
+    }
     drPathSeg(const frPathSeg &in);
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
       beginIn.set(begin_);
       endIn.set(end_);
     }
+//    void print(){
+//        std::cout << "uihasduihasdui\n";
+//    }
+    
     void getStyle(frSegStyle &styleIn) const {
       styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
       styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
@@ -94,11 +99,26 @@ namespace fr {
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
       begin_.set(beginIn);
       end_.set(endIn);
+//      if (end_.x() == 252000 && end_.y() == 2000*36.385){
+//            print();
+//        }
     }
     void setStyle(const frSegStyle &styleIn) {
       style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
       style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
       style_.setWidth(styleIn.getWidth());
+    }
+    frCoord getBeginX(){
+        return begin_.x();
+    }
+    frCoord getBeginY(){
+        return begin_.y();
+    }
+    frCoord getEndX(){
+        return end_.x();
+    }
+    frCoord getEndY(){
+        return end_.y();
     }
     // others
     frBlockObjectEnum typeId() const override {

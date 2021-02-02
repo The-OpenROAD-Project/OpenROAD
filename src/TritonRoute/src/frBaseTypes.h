@@ -294,6 +294,8 @@ namespace fr {
       : debugDR(false),
         debugMaze(false),
         debugPA(false),
+        draw(true),
+        allowPause(true),
         gcellX(-1),
         gcellY(-1),
         iter(0)
@@ -303,6 +305,8 @@ namespace fr {
     bool debugDR;
     bool debugMaze;
     bool debugPA;
+    bool draw;
+    bool allowPause;
     std::string netName;
     std::string pinName;
     int gcellX;

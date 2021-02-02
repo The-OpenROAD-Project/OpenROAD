@@ -105,7 +105,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           selectionBrowser_,
           SLOT(updateHighlightModel()));
-
+  
   connect(selectionBrowser_,
           &SelectHighlightWindow::clearAllSelections,
           this,

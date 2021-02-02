@@ -710,8 +710,8 @@ namespace fr {
     void modPathCost(drConnFig *connFig, int type);
     // minSpc
     void modMinSpacingCost(drNet* net, const frBox &box, frMIdx z, int type, bool isCurrPs);
-    void modMinSpacingCostPlanar(const frBox &box, frMIdx z, int type, bool isBlockage = false, bool isNonDef = false);
-    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false, bool isNonDef = false);
+    void modMinSpacingCostPlanar(const frBox &box, frMIdx z, int type, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
+    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
     frCoord pt2boxDistSquare(const frPoint &pt, const frBox &box);
     frCoord box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
     frCoord box2boxDistSquareNew(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
@@ -755,7 +755,10 @@ namespace fr {
                                          std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
                                          bool isFirstConn);
     void        routeNet_postAstarWritePath(drNet* net, std::vector<FlexMazeIdx> &points, const std::set<FlexMazeIdx> &apMazeIdx);
+    void        setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
+                                frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next);
     void        routeNet_postAstarPatchMinAreaVio(drNet* net, const std::vector<FlexMazeIdx> &path, const std::map<FlexMazeIdx, frCoord> &areaMap);
+    frCoord     getHalfViaEncArea(frMIdx z, bool isLayer1, drNet* net);
     void        routeNet_postAstarAddPatchMetal(drNet* net, const FlexMazeIdx &bpIdx, const FlexMazeIdx &epIdx, frCoord gapArea, frCoord patchWidth, bool bpPatchStyle = true, bool epPatchStyle = false);
     int         routeNet_postAstarAddPathMetal_isClean(const FlexMazeIdx &bpIdx, bool isPatchHorz, bool isPatchLeft, frCoord patchLength);
     void        routeNet_postAstarAddPatchMetal_addPWire(drNet* net, const FlexMazeIdx &bpIdx, bool isPatchHorz, bool isPatchLeft, frCoord patchLength, frCoord patchWidth);

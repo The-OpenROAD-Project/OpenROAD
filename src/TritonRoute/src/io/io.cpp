@@ -385,7 +385,7 @@ void io::Parser::setNDRs(odb::dbBlock* block)
     int z;
     for (auto ndr : block->getNonDefaultRules()) {
         fnd = nullptr;
-        for (auto& pt : *design->tech_->getNondefaultRules()){  //find NDR in tech
+        for (auto& pt : design->tech_->getNondefaultRules()){  //find NDR in tech
             if (pt->getName() ==  ndr->getName()){
                 fnd = pt.get();
                 break;
@@ -393,8 +393,8 @@ void io::Parser::setNDRs(odb::dbBlock* block)
         }
         if (!fnd){
             ptnd = make_unique<frNonDefaultRule>();
-            design->tech_->addNDR(std::move(ptnd));
             fnd = ptnd.get();
+            design->tech_->addNDR(std::move(ptnd));
         }
         fnd->setName(ndr->getName());
         fnd->setHardSpacing(ndr->getHardSpacing());
@@ -4642,7 +4642,8 @@ int io::Parser::Callbacks::getNonDefaultCbk(lefrCallbackType_e type, lefiNonDefa
     ndr->setHardSpacing(l->hasHardspacing());
     ndr->setName(l->name());
     for (int z = 0; z < l->numLayers(); z++){
-        layerI = parser->tech->name2layer.at(l->layerName(z))->getLayerNum()/2 -1;
+        auto lnum = parser->tech->name2layer.at(l->layerName(z))->getLayerNum();
+        layerI = lnum/2 -1;
 //        cout << "layer I " << layerI << " layer name " << l->layerName(z) << "\n";
         ndr->setWidth(parser->tech->getDBUPerUU()*l->layerWidth(z), layerI);
         ndr->setSpacing(parser->tech->getDBUPerUU()*l->layerSpacing(z), layerI);

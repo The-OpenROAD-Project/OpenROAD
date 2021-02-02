@@ -187,6 +187,9 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid &currGrid, const FlexMazeI
   //    ;
   //  }
   //}
+  if (currGrid.z() == 2 && yCoords_[currGrid.y()] == 73150 && xCoords_[currGrid.x()] == 88200){
+      cout << "a";
+    }
   // N
   if (isExpandable(currGrid, frDirEnum::N)) {
     expand(currGrid, frDirEnum::N, dstMazeIdx1, dstMazeIdx2, centerPt);
@@ -476,17 +479,20 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
     if (dir == frDirEnum::U || dir == frDirEnum::D) return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
     frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
     frCoord cost = el;
+    if (gridZ == 2 && dir == frDirEnum::D && yCoords_[gridY] == 73150 && xCoords_[gridX] == 88200){
+        gridZ=gridZ;
+    }
     cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
-    cost += (hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
-    
+    cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
     frMIdx startX, startY, endX, endY;
     frCoord r, x1, x2, y1, y2;
     frCoord sp, wext;
-    sp = max(ndr_->getSpacing(gridZ), getMinSpacingValue(layer, ndr_->getWidth(gridZ), layer->getMinWidth(), 0));
+    frCoord layerWidth = max((int)layer->getMinWidth(), ndr_->getWidth(gridZ));
+    sp = max(ndr_->getSpacing(gridZ), getMinSpacingValue(layer, layerWidth, layer->getMinWidth(), 0));
     wext = max(ndr_->getWireExtension(gridZ), (int)layer->getMinWidth()/2) - layer->getMinWidth()/2;
     
     //get iteration bounds
-    r = ndr_->getWidth(gridZ)/2 + sp + layer->getMinWidth()/2 -1;
+    r = layerWidth/2 + sp + layer->getMinWidth()/2 -1;
     if (dir == frDirEnum::N || dir == frDirEnum::S){
         startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
         endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
@@ -546,9 +552,9 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
     frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
     frCoord cost = el;
     cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
-    cost += (hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
+    cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
     
-    frMIdx startX, startY, endX, endY, startZ, endZ, top;
+    frMIdx startX, startY, endX, endY, startZ, endZ, top, initZ = gridZ;
     frCoord spx, spy;
     unique_ptr<frVia> via, defVia;
     frBox viaBox, cutBox, defViaBox, defViaCutBox;
@@ -602,8 +608,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
         //get costs
         for (frMIdx x = startX; x <= endX; x++){
             for (frMIdx y = startY; y <= endY; y++){
-                cost += (hasShapeCost(x, y, gridZ, dir) ? SHAPECOST*el : 0);
-                if (gridZ != endZ){
+                cost += (hasShapeCost(x, y, gridZ, frDirEnum::U) ? SHAPECOST*el : 0);
+                if (gridZ == initZ){
                     cost += (hasDRCCost(x, y, gridZ, dir) ? ggDRCCost_*el : 0);
                     cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_*el : 0);
                     cost += (isBlocked(x, y, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
@@ -822,7 +828,8 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
     }
-
+//    if (currNet->getFrNet()->getName() == "net1233")
+//        cout << "Expanding (" << xCoords_[currGrid.x()] << ", " << yCoords_[currGrid.y()] << ", " << currGrid.z() << ") cost: " << currGrid.getCost() << "(g " << currGrid.getPathCost() << ")\n";
     if (graphics_) {
       graphics_->searchNode(this, currGrid);
     }

@@ -45,12 +45,14 @@
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QToolTip>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
 
@@ -101,13 +103,20 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  void setPen(const Color& color, bool cosmetic) override
+  void setPen(const Color& color, bool cosmetic, int width) override
   {
     QPen pen(QColor(color.r, color.g, color.b, color.a));
     pen.setCosmetic(cosmetic);
+    pen.setWidth(width);
     painter_->setPen(pen);
   }
 
+  virtual void setPenWidth(int width){
+      QPen pen(painter_->pen().color());
+      pen.setCosmetic(painter_->pen().isCosmetic());
+      pen.setWidth(width);
+      painter_->setPen(pen);
+  }
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
     QColor color = options_->color(layer);
@@ -136,16 +145,28 @@ class GuiPainter : public Painter
       painter_->drawPolygon(qpoly);
     }
   }
-  void drawRect(const odb::Rect& rect) override
+  void drawRect(const odb::Rect& rect, int roundX, int roundY) override
   {
-    painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
+      if (roundX > 0 || roundY > 0)
+          painter_->drawRoundRect(QRect(QPoint(rect.xMin(), rect.yMin()),
+                             QPoint(rect.xMax(), rect.yMax())), roundX, roundY);
+      else painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
                              QPoint(rect.xMax(), rect.yMax())));
   }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
-
+  void setTransparentBrush(){
+      painter_->setBrush(Qt::transparent);
+  }
+  void drawCircle(int x, int y, int r){
+      painter_->drawEllipse(x-r/2, y-r/2, r, r);
+  }
+  
+  void drawString(int x, int y, int of, std::string& s){
+      painter_->drawText(x+of, y+of, s.data());
+  }
  private:
   QPainter* painter_;
   Options* options_;
@@ -225,7 +246,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu = std::min(viewport.width() / (double) rect_dbu.dx(),
-                                  viewport.height() / (double) rect_dbu.dy());
+                                viewport.height() / (double) rect_dbu.dy());
   setPixelsPerDBU(pixels_per_dbu);
 
   QRectF screen_rect = dbuToScreen(rect_dbu);
@@ -331,7 +352,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(event->pos());
-  qreal to_microns = block->getDbUnitsPerMicron();
+  qreal to_microns = 1;//block->getDbUnitsPerMicron();
   emit location(pt_dbu.x() / to_microns, pt_dbu.y() / to_microns);
 
   if (rubber_band_showing_) {
@@ -374,7 +395,7 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   if (block) {
     Rect bbox = getBounds(block);
     pixels_per_dbu_ = std::min(event->size().width() / (double) bbox.xMax(),
-                               event->size().height() / (double) bbox.yMax());
+                             event->size().height() / (double) bbox.yMax());
   }
 }
 
@@ -715,11 +736,11 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->setBrush(QBrush(color, brush_pattern));
     painter->setPen(QPen(color, 0));
     auto iter = search_.searchShapes(layer,
-                                     bounds.xMin(),
-                                     bounds.yMin(),
-                                     bounds.xMax(),
-                                     bounds.yMax(),
-                                     5 * pixel);
+                                      bounds.xMin(),
+                                      bounds.yMin(),
+                                      bounds.xMax(),
+                                      bounds.yMax(),
+                                      5 * pixel);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -748,11 +769,11 @@ void LayoutViewer::drawBlock(QPainter* painter,
       painter->setBrush(QBrush(color, brush_pattern));
       painter->setPen(QPen(color, 0));
       auto iter = search_.searchFills(layer,
-                                      bounds.xMin(),
-                                      bounds.yMin(),
-                                      bounds.xMax(),
-                                      bounds.yMax(),
-                                      5 * pixel);
+                                       bounds.xMin(),
+                                       bounds.yMin(),
+                                       bounds.xMax(),
+                                       bounds.yMax(),
+                                       5 * pixel);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -864,7 +885,7 @@ void LayoutViewer::fit()
 
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu = std::min(viewport.width() / (double) bbox.xMax(),
-                                  viewport.height() / (double) bbox.yMax());
+                                viewport.height() / (double) bbox.yMax());
   setPixelsPerDBU(pixels_per_dbu);
 }
 

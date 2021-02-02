@@ -50,7 +50,10 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
-  // Debug detailed routing
+     
+  frDebugSettings*          settings_;
+  
+  // Debug InitialPlace
   FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
 
   void startWorker(FlexDRWorker* worker);
@@ -73,18 +76,26 @@ class FlexDRGraphics : public gui::Renderer
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
-
+  
+  
+  void update();
+  
+  void pause(drNet* net);
+  
  private:
-  FlexDRWorker*    worker_;
-  drNet*           net_;
-  const FlexGridGraph* grid_graph_;
-  frDebugSettings* settings_;
-  int              current_iter_;
-  frLayerNum       last_pt_layer_;
-  gui::Gui*        gui_;
+  FlexDRWorker*             worker_;
+  drNet*                    net_;
+  const FlexGridGraph*      grid_graph_;
+  int                       current_iter_;
+  frLayerNum                last_pt_layer_;
+  gui::Gui*                 gui_;     
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
+  
+  
+//  void drawPath(gui::Painter& painter, std::vector<FlexMazeIdx>& path, frLayerNum ln);
+  
 };
 
-}  // namespace fr
+}  // namespace dr

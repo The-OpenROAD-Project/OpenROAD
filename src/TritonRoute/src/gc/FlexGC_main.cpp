@@ -115,6 +115,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum) 
       default:
         logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
     }
+    return max(maxSpcVal, getDesign()->getTech()->getMaxNondefaultSpacing(layerNum/2-1));
   }
   return maxSpcVal;
 }
@@ -322,15 +323,19 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
                                      frCoord prl, frCoord distX, frCoord distY) {
   bool enableOutput = printMarker_;
-
-  auto layerNum = rect1->getLayerNum();
-  auto net1 = rect1->getNet();
-  auto net2 = rect2->getNet();
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+  
   // no violation if fixed shapes
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
   }
+  auto layerNum = rect1->getLayerNum();
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
+  
+  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+  frCoord ndrSpc1 = net1->getFrNet() && net1->getFrNet()->getNondefaultRule() ? net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1) : 0;
+  frCoord ndrSpc2 = net2->getFrNet() && net2->getFrNet()->getNondefaultRule() ? net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1) : 0;
+  reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {
     return;
@@ -386,6 +391,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
     }
   }
   if (!hasRoute) {
+      if (net1->getFrNet() && net1->getFrNet()->getName() == "net1" && net2->getFrNet() && net2->getFrNet()->getName() == "net1" && layerNum == 6) //ondefaultRule() || net2->getFrNet() && net2->getFrNet()->getNondefaultRule())
+          cout << "2222222\n";
     return;
   }
 
@@ -660,7 +667,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2) {
   if (ptr1 == ptr2) {
     return;
   }
-
   gtl::rectangle_data<frCoord> markerRect(*ptr1);
   auto distX = gtl::euclidean_distance(markerRect, *ptr2, gtl::HORIZONTAL);
   auto distY = gtl::euclidean_distance(markerRect, *ptr2, gtl::VERTICAL);
@@ -692,6 +698,10 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect) {
   bool enableOutput = false;
 
   auto layerNum = rect->getLayerNum();
+//  if (gtl::xl(*rect) == 2000*169.15 && gtl::yl(*rect) == 2000*38.325 && gtl::xh(*rect) == 2000*171.9 && gtl::yh(*rect) == 2000*38.625 
+//          || gtl::xl(*rect) == 2000*168.7 && gtl::yl(*rect) == 2000*38.275 && gtl::xh(*rect) == 2000*169.1 && gtl::yh(*rect) == 2000*38.675 
+//          ) //ondefaultRule() || net2->getFrNet() && net2->getFrNet()->getNondefaultRule())
+//          cout << "AAAAAAAAAAAAAAAAAAAAAAAAA\n";
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum);
   box_t queryBox;
   myBloat(*rect, maxSpcVal, queryBox);

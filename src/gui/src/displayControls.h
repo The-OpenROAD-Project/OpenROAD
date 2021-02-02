@@ -140,6 +140,9 @@ class DisplayControls : public QDockWidget, public Options
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
+  bool isGridGraphVisible();
+  bool areRouteGuidesVisible();
+  bool areRoutingObjsVisible();
 
  signals:
   // The display options have changed and clients need to update
@@ -199,6 +202,10 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* nets_power_;
   QStandardItem* nets_ground_;
   QStandardItem* nets_clock_;
+  
+  QStandardItem* grid_graph_;
+  QStandardItem* route_guides_;
+  QStandardItem* routing_objs_;
 
   odb::dbDatabase* db_;
   bool tech_inited_;
@@ -211,7 +218,11 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_power_visible_;
   bool nets_ground_visible_;
   bool nets_clock_visible_;
-
+  
+  bool isGridGraphVisible_;
+  bool areRouteGuidesVisible_;
+  bool areRoutingObjsVisible_;
+  
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
   std::map<const odb::dbTechLayer*, bool> layer_visible_;

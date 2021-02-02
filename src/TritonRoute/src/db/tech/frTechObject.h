@@ -170,8 +170,8 @@ namespace fr {
         nonDefaultRules.push_back(std::move(n));
     }
     
-    std::vector<std::unique_ptr<frNonDefaultRule>>* getNondefaultRules(){
-        return &nonDefaultRules;
+    std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules(){
+        return nonDefaultRules;
     }
     
     frNonDefaultRule* getNondefaultRule(string name){
@@ -179,6 +179,13 @@ namespace fr {
             if (nd->getName() == name) return nd.get();
         }
         return nullptr;
+    }
+    frCoord getMaxNondefaultSpacing(int z){
+        frCoord spc = 0;
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getSpacing(z) > spc) spc = nd->getSpacing(z);
+        }
+        return spc;
     }
     // debug
     void printAllConstraints() {

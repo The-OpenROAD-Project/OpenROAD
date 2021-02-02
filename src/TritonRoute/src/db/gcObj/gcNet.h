@@ -129,6 +129,10 @@ namespace fr {
     frBlockObjectEnum typeId() const override {
       return gccNet;
     }
+    frNet* getFrNet(){
+        if (owner_->typeId() == frcNet) return static_cast<frNet*>(owner_);
+        return nullptr;
+    }
   protected:
     std::vector<gtl::polygon_90_set_data<frCoord> >          fixedPolygons_; // only routing layer
     std::vector<gtl::polygon_90_set_data<frCoord> >          routePolygons_; // only routing layer
