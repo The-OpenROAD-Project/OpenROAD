@@ -1,4 +1,4 @@
-#repair_antennas for design with filler cells. def file generated using the openroad-flow
+#repair_antennas for design w/ filler cells. def file generated from openroad-flow (gcd_sky130hs post filler insertion)
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
