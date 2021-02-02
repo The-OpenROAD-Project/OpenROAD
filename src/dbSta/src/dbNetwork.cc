@@ -1058,14 +1058,15 @@ dbNetwork::connect(Instance *inst,
     dbBTerm *bterm = block_->findBTerm(port_name);
     if (bterm)
       bterm->connect(dnet);
-    else
+    else {
       bterm = dbBTerm::create(dnet, port_name);
-    PortDirection *dir = direction(port);
-    dbSigType sig_type;
-    dbIoType io_type;
-    staToDb(dir, sig_type, io_type);
-    bterm->setSigType(sig_type);
-    bterm->setIoType(io_type);
+      PortDirection *dir = direction(port);
+      dbSigType sig_type;
+      dbIoType io_type;
+      staToDb(dir, sig_type, io_type);
+      bterm->setSigType(sig_type);
+      bterm->setIoType(io_type);
+    }
     pin = dbToSta(bterm);
   }
   else {
