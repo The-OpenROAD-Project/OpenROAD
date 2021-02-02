@@ -62,7 +62,7 @@ void Graphics::drawInitial(gui::Painter& painter)
     int ux = inst->ux();
     int uy = inst->uy();
 
-    gui::Painter::Color color = gui::Painter::dark_blue;
+    gui::Painter::Color color = gui::Painter::dark_green;
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({lx, ly, ux, uy});
@@ -99,7 +99,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
     gui::Painter::Color color;
     if (gCell->isInstance()) {
-      color = gui::Painter::dark_blue;
+      color = gui::Painter::dark_green;
     } else if (gCell->isFiller()) {
       color = gui::Painter::dark_magenta;
     }
