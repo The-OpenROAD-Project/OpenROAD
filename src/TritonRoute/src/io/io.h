@@ -72,25 +72,20 @@ namespace fr {
 
     protected:
       void readLef();
-      void readDb(odb::dbDatabase*);
-      void readTechDb1(odb::dbDatabase*);
-      void readTechDb2(odb::dbDatabase*);
-      void setMacros(odb::dbDatabase*);
-      void setTechVias(odb::dbTech*);
-      void setTechViaRules(odb::dbTech*);
-      void setDieArea(odb::dbBlock*);
-      void setTracks(odb::dbBlock*);
-      void setInsts(odb::dbBlock*);
-      void setObstructions(odb::dbBlock*);
-      void setBTerms(odb::dbBlock*);
-      void setVias(odb::dbBlock*);
-      void setNets(odb::dbBlock*);
-      void getSBoxCoords(odb::dbSBox*,
-                        frCoord&,
-                        frCoord&,
-                        frCoord&,
-                        frCoord&,
-                        frCoord&);
+      void readDb(odb::dbDatabase* db);
+      void setDieArea(odb::dbBlock* block);
+      void setTracks(odb::dbBlock* block);
+      void setInsts(odb::dbBlock* block);
+      void setObstructions(odb::dbBlock* block);
+      void setBTerms(odb::dbBlock* block);
+      void setVias(odb::dbBlock* block);
+      void setNets(odb::dbBlock* block);
+      void getSBoxCoords(odb::dbSBox* box,
+                        frCoord& beginX,
+                        frCoord& beginY,
+                        frCoord& endX,
+                        frCoord& endY,
+                        frCoord& width);
       frDesign*       design;
       frTechObject*   tech;
       utl::Logger*    logger;

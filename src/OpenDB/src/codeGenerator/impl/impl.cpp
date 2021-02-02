@@ -195,7 +195,14 @@ namespace odb {
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
   {
     {%for field in klass.fields%}
-    {%if field.table%}
+    {%if field.bitFields%}
+    {%if field.numBits == 32%}
+    uint* {{field.name}}_bit_field = (uint*) &{{field.name}};
+    {%else%}
+    long long* {{field.name}}_bit_field = (long long*) &{{field.name}};
+    {%endif%}
+    *{{field.name}}_bit_field = 0;
+    {%elif field.table%}
     {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
     ZALLOCATED({{field.name}});
     {%endif%}
@@ -235,7 +242,11 @@ namespace odb {
   {
     {%for field in klass.fields%}
     {%if field.bitFields%}
+    {%if field.numBits == 32%}
     uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+    {%else%}
+    long long* {{field.name}}_bit_field = (long long*) &obj.{{field.name}};
+    {%endif%}
     stream >> *{{field.name}}_bit_field;
     {%else%}
     {%if 'no-serial' not in field.flags%}
@@ -251,7 +262,11 @@ namespace odb {
   {
     {%for field in klass.fields%}
     {%if field.bitFields%}
+    {%if field.numBits == 32%}
     uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+    {%else%}
+    long long* {{field.name}}_bit_field = (long long*) &obj.{{field.name}};
+    {%endif%}
     stream << *{{field.name}}_bit_field;
     {%else%}
     {%if 'no-serial' not in field.flags%}
@@ -325,6 +340,12 @@ namespace odb {
   {
     _{{klass.name}}* obj = (_{{klass.name}}*)this;
     return dbSet<{{field.type}}>(obj, obj->{{field.name}});
+  }
+  {%elif field.isDbVector%}
+  void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
+  {
+    _{{klass.name}}* obj = (_{{klass.name}}*)this;
+    tbl = obj->{{field.name}};
   }
   {%else%}
   {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({%if field.isHashTable%}const char* name{%endif%}) const

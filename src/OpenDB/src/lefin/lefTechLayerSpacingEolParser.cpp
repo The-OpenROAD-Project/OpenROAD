@@ -1,4 +1,4 @@
-#include "lefTechLayerSpacingEolParser.h"
+#include "lefLayerPropParser.h"
 #include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -417,7 +417,7 @@ dbTechLayerSpacingEolRule* lefTechLayerSpacingEolParser::parse(std::string s, db
     else 
     {
         // should delete rule 
-        return NULL;
+        return nullptr;
     }
 
 } 

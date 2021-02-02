@@ -1,0 +1,15 @@
+{
+  "name": "dbTechLayerRectOnlyRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "_except_non_core_pins",
+      "flags": [],
+      "bits":1
+    }
+  ],
+  "constructors": [],
+  "enums":[],
+  "cpp_includes":["dbTechLayer.h"]
+}

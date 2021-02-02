@@ -49,7 +49,7 @@
 #include "lefrReader.hpp"
 #include "utility/Logger.h"
 #include "poly_decomp.h"
-#include "lefTechLayerSpacingEolParser.h"
+#include "lefLayerPropParser.h"
 
 namespace odb {
 
@@ -566,8 +566,36 @@ void lefin::layer(lefiLayer* layer)
   }
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
-    if(strcmp(layer->propName(iii), "LEF58_SPACING") == 0 && type.getValue() == dbTechLayerType::ROUTING){
-      lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+    if(type.getValue() == dbTechLayerType::ROUTING)
+    {
+      if(!strcmp(layer->propName(iii), "LEF58_SPACING"))
+        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_MINSTEP")){
+        lefTechLayerMinStepParser* minStepParser = new lefTechLayerMinStepParser();
+        minStepParser->parse(layer->propValue(iii), l, this);
+      }
+      else if(!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
+        lefTechLayerCornerSpacingParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
+        lefTechLayerSpacingTablePrlParser parser;
+        parser.parse(layer->propValue(iii), l, this);
+      }
+      else if(!strcmp(layer->propName(iii), "LEF58_RIGHTWAYONGRIDONLY"))
+        lefTechLayerRightWayOnGridOnlyParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_RECTONLY"))
+        lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+    }else if(type.getValue() == dbTechLayerType::CUT)
+    {
+      if(!strcmp(layer->propName(iii), "LEF58_SPACING")){
+        lefTechLayerCutSpacingParser* cutSpacingParser = new lefTechLayerCutSpacingParser();
+        cutSpacingParser->parse(layer->propValue(iii), l, this);
+      }
+      else if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
+        lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
+        lefTechLayerCutSpacingTableParser* cutSpacingTableParser = new lefTechLayerCutSpacingTableParser();
+        cutSpacingTableParser->parse(layer->propValue(iii), l, this);
+      }
     }
   }
 

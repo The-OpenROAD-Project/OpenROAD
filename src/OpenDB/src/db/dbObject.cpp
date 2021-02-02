@@ -322,6 +322,22 @@ void dbObject::getDbName(char name[max_name_length]) const
         *cptr++ = 'b';
         id      = impl->getOID();
         break;
+      case dbTechLayerMinStepSubRuleObj:
+      case dbTechLayerMinStepRuleObj:
+      case dbTechLayerCornerSpacingRuleObj:
+      case dbTechLayerRectOnlyRuleObj:
+      case dbTechLayerRightWayOnGridOnlyRuleObj:
+      case dbTechLayerSpacingTablePrlRuleObj:
+      case dbTechLayerCutClassRuleObj:
+      case dbTechLayerCutClassSubRuleObj:
+      case dbTechLayerCutSpacingRuleObj:
+      case dbTechLayerCutSpacingSubRuleObj:
+      case dbTechLayerCutSpacingTableRuleObj:
+      case dbTechLayerCutSpacingTableDefSubRuleObj:
+      case dbTechLayerCutSpacingTableOrthSubRuleObj:
+        *cptr++ = 'J';
+        id      = impl->getOID();
+        break;
 
       case dbNameObj:
         assert(0);
@@ -620,6 +636,10 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         oid = getOid(name);
         obj = dbGroup::getGroup((dbBlock*) obj, oid);
         break;
+      case 'J':
+        //SKIP
+        break;
+        
 
       case '/':
         break;
@@ -667,6 +687,19 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin 1
                                  "dbTechLayerSpacingEolRule",
+                                 "dbTechLayerMinStepRule",
+                                 "dbTechLayerMinStepSubRule",
+                                 "dbTechLayerCornerSpacingRule",
+                                 "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerRightWayOnGridOnlyRule",
+                                 "dbTechLayerRectOnlyRule",
+                                 "dbTechLayerCutClassRule",
+                                 "dbTechLayerCutClassSubRule",
+                                 "dbTechLayerCutSpacingRule",
+                                 "dbTechLayerCutSpacingSubRule",
+                                 "dbTechLayerCutSpacingTableRule",
+                                 "dbTechLayerCutSpacingTableOrthSubRule",
+                                 "dbTechLayerCutSpacingTableDefSubRule",
                                  "dbModule",
                                  "dbModInst",
                                  "dbGroup",

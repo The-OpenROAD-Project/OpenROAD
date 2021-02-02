@@ -27,6 +27,8 @@ class {{klass.name}} : public dbObject
   {%if 'no-get' not in field.flags%}
   {%if field.dbSetGetter%}
   dbSet<{{field.type}}> get{{field.functional_name}}() const;
+  {%elif field.isDbVector%}
+  void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
   {%else%}
   {{field.getterReturnType}} {{field.getterFunctionName}}() const;
   {%endif%}
