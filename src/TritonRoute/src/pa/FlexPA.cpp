@@ -62,7 +62,7 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugPA;
   graphics_ = on && FlexPAGraphics::guiActive() ?
-    std::make_unique<FlexPAGraphics>(settings, design_, db)
+    std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
     : nullptr;
 }
 
