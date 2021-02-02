@@ -57,6 +57,19 @@
     }
 }
 
+%typemap(out) std::pair< int, int > {
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewIntObj($1.first));
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewIntObj($1.second));
+}
+%typemap(out) std::pair< char*, char* > {
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewStringObj($1.first, strlen($1.first)));
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewStringObj($1.second, strlen($1.second)));
+}
+%typemap(out) std::pair< char*, int > {
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewStringObj($1.first, strlen($1.first)));
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewIntObj($1.second));
+}
+
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
