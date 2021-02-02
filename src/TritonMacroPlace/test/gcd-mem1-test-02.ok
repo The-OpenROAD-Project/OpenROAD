@@ -47,7 +47,7 @@ Begin Partition
 [INFO MPL-0076] NumMacros 1
 [INFO MPL-0077] NumCutLines 1
 [INFO MPL-0078] CutLine 3.47
-[INFO MPL-0079] RoundUpCutLine 2.8
+[INFO MPL-0079] RoundUpCutLine 2.80
 End Partition
 End West Partition
 End Horizontal Partition
