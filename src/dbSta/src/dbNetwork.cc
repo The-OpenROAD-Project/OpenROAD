@@ -783,7 +783,15 @@ dbNetwork::visitConnectedPins(const Net *net,
 			      PinVisitor &visitor,
 			      ConstNetSet &visited_nets) const
 {
-  Network::visitConnectedPins(net, visitor, visited_nets);
+  dbNet *db_net = staToDb(net);
+  for (dbITerm *iterm : db_net->getITerms()) {
+    Pin *pin =  dbToSta(iterm);
+    visitor(pin);
+  }
+  for (dbBTerm *bterm : db_net->getBTerms()) {
+    Pin *pin =  dbToSta(bterm);
+    visitor(pin);
+  }
 }
 
 Net *
