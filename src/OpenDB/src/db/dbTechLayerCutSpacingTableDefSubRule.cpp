@@ -981,28 +981,34 @@ void dbTechLayerCutSpacingTableDefSubRule::getSpacingTable(
   }
 }
 
-std::pair<int, int> dbTechLayerCutSpacingTableDefSubRule::getSpacing(const char* class1, bool SIDE1, const char* class2, bool SIDE2)
+std::pair<int, int> dbTechLayerCutSpacingTableDefSubRule::getSpacing(
+    const char* class1,
+    bool        SIDE1,
+    const char* class2,
+    bool        SIDE2)
 {
   _dbTechLayerCutSpacingTableDefSubRule* obj
       = (_dbTechLayerCutSpacingTableDefSubRule*) this;
   std::string c1 = class1;
   std::string c2 = class2;
-  if(SIDE1)
-    c1+="/SIDE";
+  if (SIDE1)
+    c1 += "/SIDE";
   else
-    c1+="/END";
-  
-  if(SIDE2)
-    c2+="/SIDE";
+    c1 += "/END";
+
+  if (SIDE2)
+    c2 += "/SIDE";
   else
-    c2+="/END";
-  
-  if(obj->_row_map.find(c1)!=obj->_row_map.end() && obj->_col_map.find(c2)!=obj->_col_map.end())
+    c2 += "/END";
+
+  if (obj->_row_map.find(c1) != obj->_row_map.end()
+      && obj->_col_map.find(c2) != obj->_col_map.end())
     return obj->_spacing_tbl[obj->_row_map[c1]][obj->_col_map[c2]];
-  else if(obj->_row_map.find(c2)!=obj->_row_map.end() && obj->_col_map.find(c1)!=obj->_col_map.end())
+  else if (obj->_row_map.find(c2) != obj->_row_map.end()
+           && obj->_col_map.find(c1) != obj->_col_map.end())
     return obj->_spacing_tbl[obj->_row_map[c2]][obj->_col_map[c1]];
   else
-    return {obj->_default,obj->_default};
+    return {obj->_default, obj->_default};
 }
 
 dbTechLayerCutSpacingTableDefSubRule*

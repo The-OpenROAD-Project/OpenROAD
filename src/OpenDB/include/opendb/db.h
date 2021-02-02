@@ -107,6 +107,7 @@ class dbBPin;
 // Generator Code Begin 2
 class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
+class dbTechLayerMinStepSubRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerRightWayOnGridOnlyRule;
@@ -7533,6 +7534,21 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
+  dbSet<dbTechLayerMinStepSubRule> getTechLayerMinStepSubRules() const;
+
+  // User Code Begin dbTechLayerMinStepRule
+  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
+
+  static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
+                                                         uint         dbid);
+
+  static void destroy(dbTechLayerMinStepRule* rule);
+  // User Code End dbTechLayerMinStepRule
+};
+
+class dbTechLayerMinStepSubRule : public dbObject
+{
+ public:
   void setMinStepLength(int _min_step_length);
 
   int getMinStepLength() const;
@@ -7577,14 +7593,16 @@ class dbTechLayerMinStepRule : public dbObject
 
   bool isExceptSameCorners() const;
 
-  // User Code Begin dbTechLayerMinStepRule
-  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
+  // User Code Begin dbTechLayerMinStepSubRule
 
-  static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
-                                                         uint         dbid);
+  static dbTechLayerMinStepSubRule* create(dbTechLayerMinStepRule* parent);
 
-  static void destroy(dbTechLayerMinStepRule* rule);
-  // User Code End dbTechLayerMinStepRule
+  static dbTechLayerMinStepSubRule* getTechLayerMinStepSubRule(dbTechLayerMinStepRule* parent,
+                                                               uint         dbid);
+
+  static void destroy(dbTechLayerMinStepSubRule* rule);
+
+  // User Code End dbTechLayerMinStepSubRule
 };
 
 class dbTechLayerCornerSpacingRule : public dbObject
@@ -8154,14 +8172,15 @@ class dbTechLayerCutSpacingTableDefSubRule : public dbObject
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint>                   row_map,
                        std::map<std::string, uint>                   col_map);
-  
-  void getSpacingTable(
-    std::vector<std::vector<std::pair<int, int>>>& table,
-    std::map<std::string, uint>&                   row_map,
-    std::map<std::string, uint>&                   col_map);
 
-  std::pair<int, int> getSpacing(const char* class1, bool SIDE1, const char* class2, bool SIDE2);
+  void getSpacingTable(std::vector<std::vector<std::pair<int, int>>>& table,
+                       std::map<std::string, uint>&                   row_map,
+                       std::map<std::string, uint>&                   col_map);
 
+  std::pair<int, int> getSpacing(const char* class1,
+                                 bool        SIDE1,
+                                 const char* class2,
+                                 bool        SIDE2);
 
   static dbTechLayerCutSpacingTableDefSubRule* create(
       dbTechLayerCutSpacingTableRule* parent);

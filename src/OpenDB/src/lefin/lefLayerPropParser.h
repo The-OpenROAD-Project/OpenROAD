@@ -19,7 +19,10 @@ namespace odb{
     {
         
     public:
-        static dbTechLayerMinStepRule* parse(std::string, dbTechLayer*, lefin*);
+        odb::dbTechLayerMinStepSubRule* minSubRule;
+        lefTechLayerMinStepParser(){minSubRule = nullptr;};
+        ~lefTechLayerMinStepParser(){};
+        dbTechLayerMinStepRule* parse(std::string, dbTechLayer*, lefin*);
     };
 
     class lefTechLayerCornerSpacingParser

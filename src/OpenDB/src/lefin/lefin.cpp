@@ -570,8 +570,10 @@ void lefin::layer(lefiLayer* layer)
     {
       if(!strcmp(layer->propName(iii), "LEF58_SPACING"))
         lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
-      else if(!strcmp(layer->propName(iii), "LEF58_MINSTEP"))
-        lefTechLayerMinStepParser::parse(layer->propValue(iii), l, this);
+      else if(!strcmp(layer->propName(iii), "LEF58_MINSTEP")){
+        lefTechLayerMinStepParser* minStepParser = new lefTechLayerMinStepParser();
+        minStepParser->parse(layer->propValue(iii), l, this);
+      }
       else if(!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
         lefTechLayerCornerSpacingParser::parse(layer->propValue(iii), l, this);
       else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
@@ -585,14 +587,14 @@ void lefin::layer(lefiLayer* layer)
     }else if(type.getValue() == dbTechLayerType::CUT)
     {
       if(!strcmp(layer->propName(iii), "LEF58_SPACING")){
-        lefTechLayerCutSpacingParser* parser = new lefTechLayerCutSpacingParser();
-        parser->parse(layer->propValue(iii), l, this);
+        lefTechLayerCutSpacingParser* cutSpacingParser = new lefTechLayerCutSpacingParser();
+        cutSpacingParser->parse(layer->propValue(iii), l, this);
       }
       else if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
       else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
-        lefTechLayerCutSpacingTableParser* parser2 = new lefTechLayerCutSpacingTableParser();
-        parser2->parse(layer->propValue(iii), l, this);
+        lefTechLayerCutSpacingTableParser* cutSpacingTableParser = new lefTechLayerCutSpacingTableParser();
+        cutSpacingTableParser->parse(layer->propValue(iii), l, this);
       }
     }
   }

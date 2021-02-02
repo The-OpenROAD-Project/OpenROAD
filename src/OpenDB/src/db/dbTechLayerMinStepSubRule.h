@@ -45,43 +45,55 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbTechLayerMinStepSubRule;
-template <class T>
-class dbTable;
 // User Code Begin Classes
 // User Code End Classes
 
+struct dbTechLayerMinStepSubRuleFlags
+{
+  bool _max_edges_valid : 1;
+  bool _min_adj_length1_valid : 1;
+  bool _min_adj_length2_valid : 1;
+  bool _convex_corner : 1;
+  bool _min_between_length_valid : 1;
+  bool _except_same_corners : 1;
+  uint _spare_bits : 26;
+};
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerMinStepRule : public _dbObject
+class _dbTechLayerMinStepSubRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTable<_dbTechLayerMinStepSubRule>* _techlayerminstepsubrule_tbl;
+  dbTechLayerMinStepSubRuleFlags _flags;
+  int                            _min_step_length;
+  uint                           _max_edges;
+  int                            _min_adj_length1;
+  int                            _min_adj_length2;
+  int                            _min_between_length;
 
   // User Code Begin fields
   // User Code End fields
-  _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
-  _dbTechLayerMinStepRule(_dbDatabase*);
-  ~_dbTechLayerMinStepRule();
-  bool operator==(const _dbTechLayerMinStepRule& rhs) const;
-  bool operator!=(const _dbTechLayerMinStepRule& rhs) const
+  _dbTechLayerMinStepSubRule(_dbDatabase*, const _dbTechLayerMinStepSubRule& r);
+  _dbTechLayerMinStepSubRule(_dbDatabase*);
+  ~_dbTechLayerMinStepSubRule();
+  bool operator==(const _dbTechLayerMinStepSubRule& rhs) const;
+  bool operator!=(const _dbTechLayerMinStepSubRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool           operator<(const _dbTechLayerMinStepRule& rhs) const;
-  void           differences(dbDiff&                        diff,
-                             const char*                    field,
-                             const _dbTechLayerMinStepRule& rhs) const;
-  void           out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);  // User Code Begin methods
+  bool operator<(const _dbTechLayerMinStepSubRule& rhs) const;
+  void differences(dbDiff&                           diff,
+                   const char*                       field,
+                   const _dbTechLayerMinStepSubRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin methods
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepSubRule& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepSubRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb

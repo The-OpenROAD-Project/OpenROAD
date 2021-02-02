@@ -99,6 +99,7 @@ add_library(opendb
     # Generator Code Begin cpp
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerMinStepRule.cpp
+    dbTechLayerMinStepSubRule.cpp
     dbTechLayerCornerSpacingRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerRightWayOnGridOnlyRule.cpp

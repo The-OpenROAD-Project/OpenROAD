@@ -424,7 +424,15 @@
       ]
     },
     {
-      "src":"dbTechLayerMinStepRule.json"
+      "name": "dbTechLayerMinStepRule",
+      "type": "dbObject",
+      "fields": [],
+      "constructors": [],
+      "enums":[],
+      "cpp_includes":["dbTechLayer.h"]
+    },
+    {
+      "src":"dbTechLayerMinStepSubRule.json"
     },
     {
       "src":"dbTechLayerCornerSpacingRule.json"
@@ -691,6 +699,11 @@
     }
   ],
   "relations":[
+    {
+      "first":"dbTechLayerMinStepRule",
+      "second":"dbTechLayerMinStepSubRule",
+      "type":"1_n"
+    },
     {
       "first":"dbTechLayerCutClassRule",
       "second":"dbTechLayerCutClassSubRule",

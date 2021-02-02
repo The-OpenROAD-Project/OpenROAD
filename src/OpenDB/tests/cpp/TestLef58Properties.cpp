@@ -60,9 +60,11 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST (rule->isTwoEdgesValid() == 1);
     BOOST_TEST (rule->isToConcaveCornerValid() == 0);
     
-    auto step_rules = layer->getMinStepRules();
-    BOOST_TEST(step_rules.size() == 1);
-    odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *step_rules.begin();
+    auto minStepRules = layer->getMinStepRules();
+    BOOST_TEST(minStepRules.size() == 1);
+    odb::dbTechLayerMinStepRule* minStepRule = (odb::dbTechLayerMinStepRule*) *minStepRules.begin();
+    BOOST_TEST(minStepRule->getTechLayerMinStepSubRules().size() == 1);
+    odb::dbTechLayerMinStepSubRule* step_rule = (odb::dbTechLayerMinStepSubRule*) *minStepRule->getTechLayerMinStepSubRules().begin();
     BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
     BOOST_TEST(step_rule->getMaxEdges() == 1);
     BOOST_TEST(step_rule->isMinAdjLength1Valid() == true);

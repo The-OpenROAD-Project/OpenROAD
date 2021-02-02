@@ -668,6 +668,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  // Generator Code Begin 1
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerMinStepRule",
+                                 "dbTechLayerMinStepSubRule",
                                  "dbTechLayerCornerSpacingRule",
                                  "dbTechLayerSpacingTablePrlRule",
                                  "dbTechLayerRightWayOnGridOnlyRule",
