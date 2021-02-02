@@ -171,7 +171,7 @@ void GlobalRouter::startFastRoute()
 
   _logger->report("Min routing layer: {}", _minRoutingLayer);
   _logger->report("Max routing layer: {}", _maxRoutingLayer);
-  _logger->report("Global adjustment: {}", _adjustment);
+  _logger->report("Global adjustment: {}%", int(_adjustment * 100));
   _logger->report("Unidirectional routing: {}", _unidirectionalRoute);
   _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
   for (int l = 1; l <= _maxRoutingLayer; l++) {
@@ -295,7 +295,7 @@ void GlobalRouter::routeClockNets()
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _logger->info(GRT, 10, "#Routed clock nets: {}.", _routes.size());
+  _logger->info(GRT, 10, "#Routed clock nets: {}", _routes.size());
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
@@ -682,8 +682,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
-  _logger->info(GRT, 1, "Minimum degree: {}.", minDegree);
-  _logger->info(GRT, 2, "Maximum degree: {}.", maxDegree);
+  _logger->info(GRT, 1, "Minimum degree: {}", minDegree);
+  _logger->info(GRT, 2, "Maximum degree: {}", maxDegree);
 
   _fastRoute->initEdges();
 }
@@ -1281,7 +1281,7 @@ void GlobalRouter::writeGuides(const char* fileName)
   int offsetX = _gridOrigin->x();
   int offsetY = _gridOrigin->y();
 
-  _logger->info(GRT, 14, "Num routed nets: {}.", _routes.size());
+  _logger->info(GRT, 14, "Num routed nets: {}", _routes.size());
   int finalLayer;
 
   // Sort nets so guide file net order is consistent.
@@ -1767,7 +1767,7 @@ void GlobalRouter::computeWirelength()
       }
     }
   }
-  _logger->info(GRT, 18, "Total wirelength: {} um.", totalWirelength / _block->getDefUnits());
+  _logger->info(GRT, 18, "Total wirelength: {} um", totalWirelength / _block->getDefUnits());
 }
 
 void GlobalRouter::mergeSegments()
@@ -2771,9 +2771,11 @@ void GlobalRouter::initObstacles()
   std::vector<int> layerExtensions;
 
   findLayerExtensions(layerExtensions);
-  findObstructions(dieArea);
-  findInstancesObstacles(dieArea, layerExtensions);
+  int obstructionsCnt = findObstructions(dieArea);
+  obstructionsCnt += findInstancesObstacles(dieArea, layerExtensions);
   findNetsObstacles(dieArea);
+
+  _logger->info(GRT, 4, "Obstructions: {}", obstructionsCnt);
 }
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
@@ -2829,7 +2831,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
   }
 }
 
-void GlobalRouter::findObstructions(odb::Rect& dieArea)
+int GlobalRouter::findObstructions(odb::Rect& dieArea)
 {
   int obstructionsCnt = 0;
   for (odb::dbObstruction* currObstruct : _block->getObstructions()) {
@@ -2843,16 +2845,16 @@ void GlobalRouter::findObstructions(odb::Rect& dieArea)
         = odb::Point(obstructBox->xMax(), obstructBox->yMax());
     odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
     if (!dieArea.contains(obstacleBox)) {
-      _logger->warn(GRT, 37, "Found obstacle outside die area.");
+      _logger->warn(GRT, 37, "Found obstruction outside die area.");
     }
     _grid->addObstacle(layer, obstacleBox);
     obstructionsCnt++;
   }
 
-  _logger->info(GRT, 4, "#DB Obstructions: {}.", obstructionsCnt);
+  return obstructionsCnt;
 }
 
-void GlobalRouter::findInstancesObstacles(
+int GlobalRouter::findInstancesObstacles(
     odb::Rect& dieArea,
     const std::vector<int>& layerExtensions)
 {
@@ -2932,8 +2934,8 @@ void GlobalRouter::findInstancesObstacles(
     }
   }
 
-  _logger->info(GRT, 5, "#DB Obstacles: {}.", obstaclesCnt);
-  _logger->info(GRT, 6, "#DB Macros: {}.", macrosCnt);
+  _logger->info(GRT, 3, "Macros: {}", macrosCnt);
+  return obstaclesCnt;
 }
 
 void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)

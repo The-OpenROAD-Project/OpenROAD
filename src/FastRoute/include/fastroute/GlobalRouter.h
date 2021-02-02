@@ -269,8 +269,8 @@ class GlobalRouter
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
-  void findObstructions(odb::Rect& dieArea);
-  void findInstancesObstacles(odb::Rect& dieArea,
+  int findObstructions(odb::Rect& dieArea);
+  int findInstancesObstacles(odb::Rect& dieArea,
                               const std::vector<int>& layerExtensions);
   void findNetsObstacles(odb::Rect& dieArea);
   int computeMaxRoutingLayer();

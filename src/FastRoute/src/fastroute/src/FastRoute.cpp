@@ -693,7 +693,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}.", cap, reducedCap);
+        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -720,7 +720,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}.", cap, reducedCap);
+        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -1406,9 +1406,9 @@ NetRouteMap FastRouteCore::run()
 
   clock_t t5 = clock();
   maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
-  logger->info(GRT, 110, "Final usage          : {}.", finallength);
-  logger->info(GRT, 111, "Final number of vias : {}.", numVia);
-  logger->info(GRT, 112, "Final usage 3D       : {}.", (finallength + 3 * numVia));
+  logger->info(GRT, 110, "Final usage: {}", finallength);
+  logger->info(GRT, 111, "Final number of vias: {}", numVia);
+  logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
   NetRouteMap routes = getRoutes();
 
