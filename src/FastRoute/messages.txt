@@ -1,7 +1,7 @@
 GRT 0001 GlobalRouter.cpp:685      Minimum degree: {}
 GRT 0002 GlobalRouter.cpp:686      Maximum degree: {}
 GRT 0003 GlobalRouter.cpp:2937     Macros: {}
-GRT 0004 GlobalRouter.cpp:2778     Obstructions: {}
+GRT 0004 GlobalRouter.cpp:2778     Blockages: {}
 GRT 0007 GlobalRouter.cpp:3078     Default via: {}.
 GRT 0008 GlobalRouter.cpp:3144     Default via: {}.
 GRT 0009 GlobalRouter.cpp:268      #Nets to reroute: {}.
@@ -28,8 +28,8 @@ GRT 0033 GlobalRouter.cpp:2072     Pin {} has invalid orientation.
 GRT 0034 GlobalRouter.cpp:2544     Net connected with instance of class COVER added for routing.
 GRT 0035 GlobalRouter.cpp:2584     Pin {} is outside die area.
 GRT 0036 GlobalRouter.cpp:2683     Pin {} is outside die area.
-GRT 0037 GlobalRouter.cpp:2848     Found obstruction outside die area.
-GRT 0038 GlobalRouter.cpp:2900     Found obstacle outside die area in instance {}.
+GRT 0037 GlobalRouter.cpp:2848     Found blockage outside die area.
+GRT 0038 GlobalRouter.cpp:2900     Found blockage outside die area in instance {}.
 GRT 0039 GlobalRouter.cpp:2929     Found pin outside die area in instance {}.
 GRT 0040 GlobalRouter.cpp:2972     Net {} has wires outside die area.
 GRT 0041 GlobalRouter.cpp:2999     Net {} has wires outside die area.

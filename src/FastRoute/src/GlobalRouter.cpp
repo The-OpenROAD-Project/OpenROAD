@@ -1090,7 +1090,7 @@ void GlobalRouter::computeObstructionsAdjustments()
 
       bool direction = routingLayer.getPreferredDirection();
 
-      _logger->info(GRT, 17+layer, "Processing {} obstructions on layer {}.", layerObstructions.size(), layer);
+      _logger->info(GRT, 17+layer, "Processing {} blockages on layer {}.", layerObstructions.size(), layer);
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
@@ -2775,7 +2775,7 @@ void GlobalRouter::initObstructions()
   obstructionsCnt += findInstancesObstructions(dieArea, layerExtensions);
   findNetsObstructions(dieArea);
 
-  _logger->info(GRT, 4, "Obstructions: {}", obstructionsCnt);
+  _logger->info(GRT, 4, "Blockages: {}", obstructionsCnt);
 }
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
@@ -2845,7 +2845,7 @@ int GlobalRouter::findObstructions(odb::Rect& dieArea)
         = odb::Point(obstructBox->xMax(), obstructBox->yMax());
     odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
     if (!dieArea.contains(obstructionBox)) {
-      _logger->warn(GRT, 37, "Found obstruction outside die area.");
+      _logger->warn(GRT, 37, "Found blockage outside die area.");
     }
     _grid->addObstruction(layer, obstructionBox);
     obstructionsCnt++;
@@ -2897,7 +2897,7 @@ int GlobalRouter::findInstancesObstructions(
                                          rect.yMax() + layerExtension);
       odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
       if (!dieArea.contains(obstructionBox)) {
-        _logger->warn(GRT, 38, "Found obstruction outside die area in instance {}.", currInst->getConstName());
+        _logger->warn(GRT, 38, "Found blockage outside die area in instance {}.", currInst->getConstName());
       }
       _grid->addObstruction(layer, obstructionBox);
       obstructionsCnt++;
