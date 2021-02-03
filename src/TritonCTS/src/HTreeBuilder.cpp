@@ -678,26 +678,18 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
       double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc) : branchPt1.computeDist(sinkLoc);
 
       if (clusterIdx == 0) {
-        // if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-        // } else {
-          // topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-          // movedSinks++;
-        // }
       } else {
-        // if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-        // } else {
-          // topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-          // movedSinks++;
-        // }
       }
+      if (dist>=distOther*errorFactor)
+        movedSinks++;
 
     }
   }
-
   if (movedSinks>0)
-    _logger->report(" Out of {} sinks, {} sinks moved to other cluster", sinks.size(), movedSinks);
+    _logger->report(" Out of {} sinks, {} sinks closer to other cluster", sinks.size(), movedSinks);
+
 
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
