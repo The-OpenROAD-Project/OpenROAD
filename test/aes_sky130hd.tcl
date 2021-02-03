@@ -1,4 +1,4 @@
-# aes flow pipe cleaner
+# aes sky130hd 23539 insts
 source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"

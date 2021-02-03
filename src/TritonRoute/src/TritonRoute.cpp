@@ -98,6 +98,11 @@ void TritonRoute::setDebugIter(int iter)
   debug_->iter = iter;
 }
 
+void TritonRoute::setDebugPaMarkers(bool on)
+{
+  debug_->paMarkers = on;
+}
+
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {

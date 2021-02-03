@@ -267,6 +267,15 @@ write_def_cmd(const char *filename,
   ord->writeDef(filename, version);
 }
 
+
+void 
+write_cdl_cmd(const char *filename,
+              bool includeFillers)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeCdl(filename, includeFillers);
+}
+
 void
 read_db_cmd(const char *filename)
 {

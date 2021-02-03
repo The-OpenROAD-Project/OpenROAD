@@ -45,6 +45,7 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
+#include "opendb/cdl.h"
 
 #include "sta/VerilogWriter.hh"
 #include "sta/StaMain.hh"
@@ -326,6 +327,19 @@ OpenRoad::writeDef(const char *filename,
       def_writer.writeBlock(block, filename);
     }
   }
+}
+
+void 
+OpenRoad::writeCdl(const char* filename, bool includeFillers)
+{
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      odb::cdl::writeCdl(block, filename, includeFillers);
+    }
+  }
+  
 }
 
 void

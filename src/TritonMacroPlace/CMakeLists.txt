@@ -44,7 +44,6 @@ add_library( TritonMacroPlace
   src/macroPlace.cpp
   src/MakeTritonMp.cpp
   src/hashUtil.cpp
-  src/logger.cpp
   ${MPLACE_WRAP}
   ${MPLACE_TCL_INIT}
 )
@@ -57,6 +56,7 @@ target_include_directories( TritonMacroPlace
 PUBLIC
   ${MPLACE_HOME}/src
   ${MPLACE_HOME}/include
+  utility 
 
 PRIVATE
   ${ABKCOMMON_HOME}
@@ -73,4 +73,5 @@ PRIVATE
 
 target_link_libraries( TritonMacroPlace
   Eigen3::Eigen
-)
+  utility
+  )
