@@ -558,7 +558,6 @@ void GlobalRouter::findPins(Net* net)
     std::vector<odb::Rect> pinBoxes = pin.getBoxes().at(topLayer);
     std::vector<odb::Point> pinPositionsOnGrid;
     odb::Point posOnGrid;
-    odb::Point trackPos;
 
     for (odb::Rect pinBox : pinBoxes) {
       posOnGrid = _grid->getPositionOnGrid(getRectMiddle(pinBox));
@@ -576,8 +575,8 @@ void GlobalRouter::findPins(Net* net)
       }
     }
 
-    if (pinOverlapsWithSingleTrack(pin, trackPos)) {
-      posOnGrid = _grid->getPositionOnGrid(trackPos);
+    if (pinOverlapsWithSingleTrack(pin, posOnGrid)) {
+      posOnGrid = _grid->getPositionOnGrid(posOnGrid);
       if (!(posOnGrid == pinPosition)
           && ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL
                && posOnGrid.y() != pinPosition.y())
@@ -1945,9 +1944,6 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
     maxY = (pinBox.yMax() >= maxY) ? pinBox.yMax() : maxY;
   }
 
-  odb::Point middle
-      = odb::Point((minX + (maxX - minX) / 2.0), (minY + (maxY - minY) / 2.0));
-
   bool horizontal = layer.getPreferredDirection() == RoutingLayer::HORIZONTAL;
   min = horizontal ? minY : minX;
   max = horizontal ? maxY : maxX;
@@ -1969,12 +1965,12 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
     }
 
     if (nearestTrack >= min && nearestTrack <= max) {
-      trackPosition = horizontal ? odb::Point(middle.x(), nearestTrack) :
-                      odb::Point(nearestTrack, middle.y());
+      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack) :
+                      odb::Point(nearestTrack, trackPosition.y());
       return true;
     } else if (nearestTrack2 >= min && nearestTrack2 <= max) {
-      trackPosition = horizontal ? odb::Point(middle.x(), nearestTrack2) :
-                      odb::Point(nearestTrack2, middle.y());
+      trackPosition = horizontal ? odb::Point(trackPosition.x(), nearestTrack2) :
+                      odb::Point(nearestTrack2, trackPosition.y());
       return true;
     } else {
       return false;
