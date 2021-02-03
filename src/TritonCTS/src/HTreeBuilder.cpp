@@ -678,19 +678,19 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
       double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc) : branchPt1.computeDist(sinkLoc);
 
       if (clusterIdx == 0) {
-        if (dist<=distOther*errorFactor) {
+        // if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-        } else {
-          topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-          movedSinks++;
-        }
+        // } else {
+          // topology.addSinkToBranch(branchPtIdx2, sinkLoc);
+          // movedSinks++;
+        // }
       } else {
-        if (dist<=distOther*errorFactor) {
+        // if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-        } else {
-          topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-          movedSinks++;
-        }
+        // } else {
+          // topology.addSinkToBranch(branchPtIdx1, sinkLoc);
+          // movedSinks++;
+        // }
       }
 
     }

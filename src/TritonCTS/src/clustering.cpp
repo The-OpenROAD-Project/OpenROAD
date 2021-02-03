@@ -220,6 +220,23 @@ float clustering::Kmeans(unsigned N,
       if (f->match_idx[IDX].first >= 0 && f->match_idx[IDX].first < N) {
         position = f->match_idx[IDX].first;
       }
+      else{
+        // Added to check wrong assignment
+        float minimum_dist = std::numeric_limits<float>::max();
+        int minimum_dist_cluster_index = -1;
+
+        for (long int j = 0; j < means.size(); ++j) {
+            float current_dist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+            if(current_dist < minimum_dist){
+              minimum_dist = current_dist;
+              minimum_dist_cluster_index = j;
+            }
+        }
+
+        // Assert to check correct implementation
+        assert (minimum_dist_cluster_index!=-1);
+        position = minimum_dist_cluster_index;
+      }
       clusters[position].push_back(f);
     }
 
