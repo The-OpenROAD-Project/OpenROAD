@@ -23,13 +23,13 @@ Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Obstructions: 105790
+[INFO GRT-0004] Blockages: 105790
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 25
-[INFO GRT-0018] Processing 25185 obstacles on layer 1.
-[INFO GRT-0019] Processing 27401 obstacles on layer 2.
-[INFO GRT-0022] Processing 10 obstacles on layer 5.
+[INFO GRT-0018] Processing 25185 blockages on layer 1.
+[INFO GRT-0019] Processing 27401 blockages on layer 2.
+[INFO GRT-0022] Processing 10 blockages on layer 5.
 [INFO GRT-0022] Reducing resources of layer 3 by 15%.
 [INFO GRT-0023] Reducing resources of layer 4 by 15%.
 [INFO GRT-0024] Reducing resources of layer 5 by 15%.
@@ -105,12 +105,12 @@ Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Obstructions: 17100
+[INFO GRT-0004] Blockages: 17100
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 13408 obstacles on layer 1.
-[INFO GRT-0019] Processing 3845 obstacles on layer 2.
-[INFO GRT-0022] Processing 10 obstacles on layer 5.
+[INFO GRT-0018] Processing 13408 blockages on layer 1.
+[INFO GRT-0019] Processing 3845 blockages on layer 2.
+[INFO GRT-0022] Processing 10 blockages on layer 5.
 [INFO GRT-0022] Reducing resources of layer 3 by 15%.
 [INFO GRT-0023] Reducing resources of layer 4 by 15%.
 [INFO GRT-0024] Reducing resources of layer 5 by 15%.

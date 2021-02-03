@@ -15,11 +15,11 @@ Global adjustment: 0%
 Unidirectional routing: true
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Obstructions: 2874
+[INFO GRT-0004] Blockages: 2874
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 obstacles on layer 1.
+[INFO GRT-0018] Processing 8469 blockages on layer 1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 3333

@@ -18,12 +18,12 @@ Global adjustment: 50%
 Unidirectional routing: true
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Obstructions: 6714
+[INFO GRT-0004] Blockages: 6714
 [INFO GRT-0017] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 5
-[INFO GRT-0018] Processing 5262 obstacles on layer 1.
-[INFO GRT-0019] Processing 706 obstacles on layer 2.
+[INFO GRT-0018] Processing 5262 blockages on layer 1.
+[INFO GRT-0019] Processing 706 blockages on layer 2.
 [INFO GRT-0021] Reducing resources of layer 2 by 80%.
 [INFO GRT-0022] Reducing resources of layer 3 by 70%.
 [INFO GRT-0023] Reducing resources of layer 4 by 50%.
@@ -51,11 +51,11 @@ Global adjustment: 50%
 Unidirectional routing: true
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Obstructions: 6714
+[INFO GRT-0004] Blockages: 6714
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 12
-[INFO GRT-0018] Processing 5262 obstacles on layer 1.
-[INFO GRT-0019] Processing 706 obstacles on layer 2.
+[INFO GRT-0018] Processing 5262 blockages on layer 1.
+[INFO GRT-0019] Processing 706 blockages on layer 2.
 [INFO GRT-0021] Reducing resources of layer 2 by 80%.
 [INFO GRT-0022] Reducing resources of layer 3 by 70%.
 [INFO GRT-0023] Reducing resources of layer 4 by 50%.
