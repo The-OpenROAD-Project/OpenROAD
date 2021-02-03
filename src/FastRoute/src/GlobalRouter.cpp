@@ -1939,23 +1939,16 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
   RoutingTracks tracks = getRoutingTracksByIndex(topLayer);
 
   for (odb::Rect pinBox : pinBoxes) {
-    if (pinBox.xMin() <= minX)
-      minX = pinBox.xMin();
-
-    if (pinBox.yMin() <= minY)
-      minY = pinBox.yMin();
-
-    if (pinBox.xMax() >= maxX)
-      maxX = pinBox.xMax();
-
-    if (pinBox.yMax() >= maxY)
-      maxY = pinBox.yMax();
+    minX = (pinBox.xMin() <= minX) ? pinBox.xMin() : minX;
+    minY = (pinBox.yMin() <= minY) ? pinBox.yMin() : minY;
+    maxX = (pinBox.xMax() >= maxX) ? pinBox.xMax() : maxX;
+    maxY = (pinBox.yMax() >= maxY) ? pinBox.yMax() : maxY;
   }
 
   odb::Point middle
       = odb::Point((minX + (maxX - minX) / 2.0), (minY + (maxY - minY) / 2.0));
+
   bool horizontal = layer.getPreferredDirection() == RoutingLayer::HORIZONTAL;
-  
   min = horizontal ? minY : minX;
   max = horizontal ? maxY : maxX;
 
