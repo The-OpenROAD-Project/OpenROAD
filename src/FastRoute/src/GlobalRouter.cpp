@@ -171,7 +171,7 @@ void GlobalRouter::startFastRoute()
 
   _logger->report("Min routing layer: {}", _minRoutingLayer);
   _logger->report("Max routing layer: {}", _maxRoutingLayer);
-  _logger->report("Global adjustment: {}", _adjustment);
+  _logger->report("Global adjustment: {}%", int(_adjustment * 100));
   _logger->report("Unidirectional routing: {}", _unidirectionalRoute);
   _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
   for (int l = 1; l <= _maxRoutingLayer; l++) {
@@ -192,7 +192,7 @@ void GlobalRouter::applyAdjustments()
 {
   computeGridAdjustments();
   computeTrackAdjustments();
-  computeObstaclesAdjustments();
+  computeObstructionsAdjustments();
   computeUserGlobalAdjustments();
   computeUserLayerAdjustments();
 
@@ -295,7 +295,7 @@ void GlobalRouter::routeClockNets()
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _logger->info(GRT, 10, "#Routed clock nets: {}.", _routes.size());
+  _logger->info(GRT, 10, "#Routed clock nets: {}", _routes.size());
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
@@ -334,7 +334,7 @@ void GlobalRouter::initCoreGrid()
 
   computeCapacities(_maxRoutingLayer, _layerPitches);
   computeSpacingsAndMinWidth(_maxRoutingLayer);
-  initObstacles();
+  initObstructions();
 
   _fastRoute->setLowerLeft(_grid->getLowerLeftX(), _grid->getLowerLeftY());
   _fastRoute->setTileSize(_grid->getTileWidth(), _grid->getTileHeight());
@@ -599,7 +599,7 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
     int topLayer = pin.getTopLayer();
     RoutingLayer layer = getRoutingLayerByIndex(topLayer);
     // If pin is connected to PAD, create a "fake" location in routing
-    // grid to avoid PAD obstacles
+    // grid to avoid PAD obstructions
     if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
       GSegment pinConnection = createFakePin(pin, pinPosition, layer);
       _padPinsConnections[net->getDbNet()].push_back(pinConnection);
@@ -681,8 +681,8 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
     }
   }
 
-  _logger->info(GRT, 1, "Minimum degree: {}.", minDegree);
-  _logger->info(GRT, 2, "Maximum degree: {}.", maxDegree);
+  _logger->info(GRT, 1, "Minimum degree: {}", minDegree);
+  _logger->info(GRT, 2, "Maximum degree: {}", maxDegree);
 
   _fastRoute->initEdges();
 }
@@ -1076,24 +1076,24 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
-void GlobalRouter::computeObstaclesAdjustments()
+void GlobalRouter::computeObstructionsAdjustments()
 {
-  std::map<int, std::vector<odb::Rect>> obstacles = _grid->getAllObstacles();
+  std::map<int, std::vector<odb::Rect>> obstructions = _grid->getAllObstructions();
 
   for (int layer = 1; layer <= _grid->getNumLayers(); layer++) {
-    std::vector<odb::Rect> layerObstacles = obstacles[layer];
-    if (!layerObstacles.empty()) {
+    std::vector<odb::Rect> layerObstructions = obstructions[layer];
+    if (!layerObstructions.empty()) {
       RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
 
       std::pair<Grid::TILE, Grid::TILE> blockedTiles;
 
       bool direction = routingLayer.getPreferredDirection();
 
-      _logger->info(GRT, 17+layer, "Processing {} obstacles on layer {}.", layerObstacles.size(), layer);
+      _logger->info(GRT, 17+layer, "Processing {} blockages on layer {}.", layerObstructions.size(), layer);
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
-      for (odb::Rect& obs : layerObstacles) {
+      for (odb::Rect& obs : layerObstructions) {
         odb::Rect firstTileBox;
         odb::Rect lastTileBox;
 
@@ -1280,7 +1280,7 @@ void GlobalRouter::writeGuides(const char* fileName)
   int offsetX = _gridOrigin->x();
   int offsetY = _gridOrigin->y();
 
-  _logger->info(GRT, 14, "Num routed nets: {}.", _routes.size());
+  _logger->info(GRT, 14, "Num routed nets: {}", _routes.size());
   int finalLayer;
 
   // Sort nets so guide file net order is consistent.
@@ -1766,7 +1766,7 @@ void GlobalRouter::computeWirelength()
       }
     }
   }
-  _logger->info(GRT, 18, "Total wirelength: {} um.", totalWirelength / _block->getDefUnits());
+  _logger->info(GRT, 18, "Total wirelength: {} um", totalWirelength / _block->getDefUnits());
 }
 
 void GlobalRouter::mergeSegments()
@@ -2722,7 +2722,7 @@ std::string getITermName(odb::dbITerm* iterm)
   return pin_name;
 }
 
-void GlobalRouter::initObstacles()
+void GlobalRouter::initObstructions()
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
                     _grid->getLowerLeftY(),
@@ -2731,9 +2731,11 @@ void GlobalRouter::initObstacles()
   std::vector<int> layerExtensions;
 
   findLayerExtensions(layerExtensions);
-  findObstructions(dieArea);
-  findInstancesObstacles(dieArea, layerExtensions);
-  findNetsObstacles(dieArea);
+  int obstructionsCnt = findObstructions(dieArea);
+  obstructionsCnt += findInstancesObstructions(dieArea, layerExtensions);
+  findNetsObstructions(dieArea);
+
+  _logger->info(GRT, 4, "Blockages: {}", obstructionsCnt);
 }
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
@@ -2789,7 +2791,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
   }
 }
 
-void GlobalRouter::findObstructions(odb::Rect& dieArea)
+int GlobalRouter::findObstructions(odb::Rect& dieArea)
 {
   int obstructionsCnt = 0;
   for (odb::dbObstruction* currObstruct : _block->getObstructions()) {
@@ -2801,23 +2803,23 @@ void GlobalRouter::findObstructions(odb::Rect& dieArea)
         = odb::Point(obstructBox->xMin(), obstructBox->yMin());
     odb::Point upperBound
         = odb::Point(obstructBox->xMax(), obstructBox->yMax());
-    odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-    if (!dieArea.contains(obstacleBox)) {
-      _logger->warn(GRT, 37, "Found obstacle outside die area.");
+    odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
+    if (!dieArea.contains(obstructionBox)) {
+      _logger->warn(GRT, 37, "Found blockage outside die area.");
     }
-    _grid->addObstacle(layer, obstacleBox);
+    _grid->addObstruction(layer, obstructionBox);
     obstructionsCnt++;
   }
 
-  _logger->info(GRT, 4, "#DB Obstructions: {}.", obstructionsCnt);
+  return obstructionsCnt;
 }
 
-void GlobalRouter::findInstancesObstacles(
+int GlobalRouter::findInstancesObstructions(
     odb::Rect& dieArea,
     const std::vector<int>& layerExtensions)
 {
   int macrosCnt = 0;
-  int obstaclesCnt = 0;
+  int obstructionsCnt = 0;
   for (odb::dbInst* currInst : _block->getInsts()) {
     int pX, pY;
 
@@ -2853,12 +2855,12 @@ void GlobalRouter::findInstancesObstacles(
                                          rect.yMin() - layerExtension);
       odb::Point upperBound = odb::Point(rect.xMax() + layerExtension,
                                          rect.yMax() + layerExtension);
-      odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-      if (!dieArea.contains(obstacleBox)) {
-        _logger->warn(GRT, 38, "Found obstacle outside die area in instance {}.", currInst->getConstName());
+      odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
+      if (!dieArea.contains(obstructionBox)) {
+        _logger->warn(GRT, 38, "Found blockage outside die area in instance {}.", currInst->getConstName());
       }
-      _grid->addObstacle(layer, obstacleBox);
-      obstaclesCnt++;
+      _grid->addObstruction(layer, obstructionBox);
+      obstructionsCnt++;
     }
 
     for (odb::dbMTerm* mTerm : master->getMTerms()) {
@@ -2886,17 +2888,17 @@ void GlobalRouter::findInstancesObstacles(
           if (!dieArea.contains(pinBox)) {
             _logger->warn(GRT, 39, "Found pin outside die area in instance {}.", currInst->getConstName());
           }
-          _grid->addObstacle(pinLayer, pinBox);
+          _grid->addObstruction(pinLayer, pinBox);
         }
       }
     }
   }
 
-  _logger->info(GRT, 5, "#DB Obstacles: {}.", obstaclesCnt);
-  _logger->info(GRT, 6, "#DB Macros: {}.", macrosCnt);
+  _logger->info(GRT, 3, "Macros: {}", macrosCnt);
+  return obstructionsCnt;
 }
 
-void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)
+void GlobalRouter::findNetsObstructions(odb::Rect& dieArea)
 {
   odb::dbSet<odb::dbNet> nets = _block->getNets();
 
@@ -2925,11 +2927,11 @@ void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)
                 = odb::Point(wireRect.xMin(), wireRect.yMin());
             odb::Point upperBound
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
-            odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-            if (!dieArea.contains(obstacleBox)) {
+            odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
+            if (!dieArea.contains(obstructionBox)) {
               _logger->warn(GRT, 40, "Net {} has wires outside die area.", db_net->getConstName());
             }
-            _grid->addObstacle(l, obstacleBox);
+            _grid->addObstruction(l, obstructionBox);
           }
         }
       }
@@ -2952,11 +2954,11 @@ void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)
                 = odb::Point(wireRect.xMin(), wireRect.yMin());
             odb::Point upperBound
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
-            odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-            if (!dieArea.contains(obstacleBox)) {
+            odb::Rect obstructionBox = odb::Rect(lowerBound, upperBound);
+            if (!dieArea.contains(obstructionBox)) {
               _logger->warn(GRT, 41, "Net {} has wires outside die area.", db_net->getConstName());
             }
-            _grid->addObstacle(l, obstacleBox);
+            _grid->addObstruction(l, obstructionBox);
           }
         }
       }

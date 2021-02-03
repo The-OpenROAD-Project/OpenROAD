@@ -214,7 +214,7 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
-  void computeObstaclesAdjustments();
+  void computeObstructionsAdjustments();
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
 
@@ -267,12 +267,12 @@ class GlobalRouter
   void addNets(std::set<odb::dbNet*>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
-  void initObstacles();
+  void initObstructions();
   void findLayerExtensions(std::vector<int>& layerExtensions);
-  void findObstructions(odb::Rect& dieArea);
-  void findInstancesObstacles(odb::Rect& dieArea,
+  int findObstructions(odb::Rect& dieArea);
+  int findInstancesObstructions(odb::Rect& dieArea,
                               const std::vector<int>& layerExtensions);
-  void findNetsObstacles(odb::Rect& dieArea);
+  void findNetsObstructions(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
@@ -339,7 +339,7 @@ class GlobalRouter
   // temporary for congestion driven replace
   int _numAdjusts = 0;
 
-  // Variables for PADs obstacles handling
+  // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables

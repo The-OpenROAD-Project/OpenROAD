@@ -125,7 +125,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     }
   }
 
-  _logger->info(GRT, 12, "#Antenna violations: {}.", _antennaViolations.size());
+  _logger->info(GRT, 12, "#Antenna violations: {}", _antennaViolations.size());
   return _antennaViolations.size();
 }
 
