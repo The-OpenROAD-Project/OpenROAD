@@ -238,9 +238,9 @@ public:
   using NetworkReader::makeCell;
 
 protected:
-  void visitConnectedPins(const Net *net,
-			  PinVisitor &visitor,
-			  ConstNetSet &visited_nets) const;
+  virtual void visitConnectedPins(const Net *net,
+                                  PinVisitor &visitor,
+                                  ConstNetSet &visited_nets) const;
 
   dbDatabase *db_;
   Logger *logger_;

@@ -1,3 +1,4 @@
+# multiple calls for global_route
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_def "multiple_calls.def"

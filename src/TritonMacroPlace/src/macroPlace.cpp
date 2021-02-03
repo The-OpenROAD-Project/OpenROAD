@@ -446,10 +446,10 @@ static vector<pair<Partition, Partition>> GetPart(
   int* chkArr = new int[partition.macroStor.size()];
   
   for(auto& cutLine : cutLineStor ) {
-    log->info(MPL, 78, "CutLine {}", cutLine);
+    log->info(MPL, 78, "CutLine {:.2f}", cutLine);
     CutRoundUp(layout, siteSizeX, siteSizeY, cutLine, isHorizontal);
     
-    log->info(MPL, 79, "RoundUpCutLine {}", cutLine);
+    log->info(MPL, 79, "RoundUpCutLine {:.2f}", cutLine);
 
    
     // chkArr initialize 

@@ -117,7 +117,6 @@ class RcTreeBuilder
   sta::Corner* _corner;
   sta::MinMax* _min_max;
   sta::ParasiticAnalysisPt* _analysisPoint;
-  bool _debug;
 
   // Net variables
   sta::Net* _sta_net;

@@ -866,6 +866,10 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   } else {
     typeGC = 2;
   }
+  if (graphics_) {
+    graphics_->setViaAP(ap, via, gcWorker.getMarkers());
+  }
+
   if (enableOutput) {
       prepPoint_pin_checkPoint_print_helper(ap, pin, instTerm, frDirEnum::U, typeGC, typeDRC, bp, ep, via->getViaDef());
       //if (typeGC == 2) {

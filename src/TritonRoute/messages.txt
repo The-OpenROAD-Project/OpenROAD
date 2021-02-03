@@ -1,5 +1,5 @@
-DRT 0001 TritonRoute.cpp:248       Error reading param file: {}
-DRT 0002 TritonRoute.cpp:105       Detailed routing has not been run yet.
+DRT 0001 TritonRoute.cpp:252       Error reading param file: {}
+DRT 0002 TritonRoute.cpp:109       Detailed routing has not been run yet.
 DRT 0003 io.cpp:5281               please load design first
 DRT 0004 io.cpp:5286               please load design first
 DRT 0005 frRegionQuery.cpp:99      Unsupported region query add
@@ -67,26 +67,26 @@ DRT 0067 FlexPA_prep.cpp:99        FlexPA mergePinShapes unsupported shape.
 DRT 0068 FlexPA_prep.cpp:314       prepPoint_pin_genPoints_rect cannot find secondLayerNum.
 DRT 0069 FlexPA_init.cpp:258       initPinAccess error.
 DRT 0070 FlexPA_prep.cpp:534       unexpected direction in getPlanarEP
-DRT 0071 FlexPA_prep.cpp:1004      prepPoint_pin_helper unique2paidx not found.
-DRT 0072 FlexPA_prep.cpp:1017      prepPoint_pin_helper unique2paidx not found
-DRT 0073 FlexPA_prep.cpp:1085      no ap for {}/{}
-DRT 0074 FlexPA_prep.cpp:1089      no ap for PIN/{}
-DRT 0075 FlexPA_prep.cpp:1101      prepPoint_pin unique2paidx not found.
-DRT 0076 FlexPA_prep.cpp:1163        complete {} pins
-DRT 0077 FlexPA_prep.cpp:1167        complete {} pins
-DRT 0078 FlexPA_prep.cpp:1200        complete {} pins
-DRT 0079 FlexPA_prep.cpp:1236        complete {} unique inst patterns
-DRT 0080 FlexPA_prep.cpp:1240        complete {} unique inst patterns
-DRT 0081 FlexPA_prep.cpp:1247        complete {} unique inst patterns
-DRT 0082 FlexPA_prep.cpp:1320        complete {} groups
-DRT 0083 FlexPA_prep.cpp:1324        complete {} groups
-DRT 0084 FlexPA_prep.cpp:1331        complete {} groups
-DRT 0085 FlexPA_prep.cpp:1517      valid access pattern combination not found.
-DRT 0086 FlexPA_prep.cpp:1754      pin does not have access point.
-DRT 0088 FlexPA_prep.cpp:1875      {}
-DRT 0089 FlexPA_prep.cpp:1941      genPattern_gc objs empty.
-DRT 0090 FlexPA_prep.cpp:2175      valid access pattern not found.
-DRT 0091 FlexPA_prep.cpp:2238      pin does not have valid ap.
+DRT 0071 FlexPA_prep.cpp:1008      prepPoint_pin_helper unique2paidx not found.
+DRT 0072 FlexPA_prep.cpp:1021      prepPoint_pin_helper unique2paidx not found
+DRT 0073 FlexPA_prep.cpp:1089      no ap for {}/{}
+DRT 0074 FlexPA_prep.cpp:1093      no ap for PIN/{}
+DRT 0075 FlexPA_prep.cpp:1105      prepPoint_pin unique2paidx not found.
+DRT 0076 FlexPA_prep.cpp:1167        complete {} pins
+DRT 0077 FlexPA_prep.cpp:1171        complete {} pins
+DRT 0078 FlexPA_prep.cpp:1204        complete {} pins
+DRT 0079 FlexPA_prep.cpp:1240        complete {} unique inst patterns
+DRT 0080 FlexPA_prep.cpp:1244        complete {} unique inst patterns
+DRT 0081 FlexPA_prep.cpp:1251        complete {} unique inst patterns
+DRT 0082 FlexPA_prep.cpp:1324        complete {} groups
+DRT 0083 FlexPA_prep.cpp:1328        complete {} groups
+DRT 0084 FlexPA_prep.cpp:1335        complete {} groups
+DRT 0085 FlexPA_prep.cpp:1521      valid access pattern combination not found.
+DRT 0086 FlexPA_prep.cpp:1758      pin does not have access point.
+DRT 0088 FlexPA_prep.cpp:1879      {}
+DRT 0089 FlexPA_prep.cpp:1945      genPattern_gc objs empty.
+DRT 0090 FlexPA_prep.cpp:2179      valid access pattern not found.
+DRT 0091 FlexPA_prep.cpp:2242      pin does not have valid ap.
 DRT 0092 FlexRP_prep.cpp:754       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
 DRT 0093 FlexRP_prep.cpp:766       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
 DRT 0096 io.cpp:166                same cell name: {}
@@ -100,7 +100,8 @@ DRT 0108 io.cpp:669                unsupported via in db
 DRT 0109 io.cpp:729                unsupported via in db
 DRT 0110 io.cpp:759                unsupported NET USE in def
 DRT 0111 io.cpp:788                unsupported PIN USE in db
-DRT 0115 TritonRoute.cpp:243       Setting MAX_THREADS=1 for use with the GUI.
+DRT 0115 TritonRoute.cpp:247       Setting MAX_THREADS=1 for use with the GUI.
 DRT 0116 io.cpp:845                please load design first
 DRT 0117 io.cpp:848                please load design first
-DRT 0118 TritonRoute.tcl:93        -gcell is a list of 2 coordinates.
+DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
+DRT 0119 FlexPA_graphics.cpp:199   marker {} at ({}, {}) ({}, {})
