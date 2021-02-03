@@ -1954,66 +1954,37 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
 
   odb::Point middle
       = odb::Point((minX + (maxX - minX) / 2.0), (minY + (maxY - minY) / 2.0));
-  if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
-    min = minY;
-    max = maxY;
+  bool horizontal = layer.getPreferredDirection() == RoutingLayer::HORIZONTAL;
+  
+  min = horizontal ? minY : minX;
+  max = horizontal ? maxY : maxX;
 
-    if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
-      int nearestTrack = std::floor((float) (max - tracks.getLocation())
-                                    / tracks.getTrackPitch())
-                             * tracks.getTrackPitch()
-                         + tracks.getLocation();
-      int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
-                                         / tracks.getTrackPitch()
-                                     - 1)
-                              * tracks.getTrackPitch()
-                          + tracks.getLocation();
+  if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
+    int nearestTrack = std::floor((float) (max - tracks.getLocation())
+                                  / tracks.getTrackPitch())
+                           * tracks.getTrackPitch()
+                       + tracks.getLocation();
+    int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
+                                       / tracks.getTrackPitch()
+                                   - 1)
+                            * tracks.getTrackPitch()
+                        + tracks.getLocation();
 
-      if ((nearestTrack >= min && nearestTrack <= max)
-          && (nearestTrack2 >= min && nearestTrack2 <= max)) {
-        return false;
-      }
-
-      if (nearestTrack >= min && nearestTrack <= max) {
-        trackPosition = odb::Point(middle.x(), nearestTrack);
-        return true;
-      } else if (nearestTrack2 >= min && nearestTrack2 <= max) {
-        trackPosition = odb::Point(middle.x(), nearestTrack2);
-        return true;
-      } else {
-        return false;
-      }
+    if ((nearestTrack >= min && nearestTrack <= max)
+        && (nearestTrack2 >= min && nearestTrack2 <= max)) {
+      return false;
     }
-  } else {
-    min = minX;
-    max = maxX;
 
-    if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
-      // begging for subexpression factoring -cherry
-      int nearestTrack = std::floor((float) (max - tracks.getLocation())
-                                    / tracks.getTrackPitch())
-                             * tracks.getTrackPitch()
-                         + tracks.getLocation();
-      int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
-                                         / tracks.getTrackPitch()
-                                     - 1)
-                              * tracks.getTrackPitch()
-                          + tracks.getLocation();
-
-      if ((nearestTrack >= min && nearestTrack <= max)
-          && (nearestTrack2 >= min && nearestTrack2 <= max)) {
-        return false;
-      }
-
-      if (nearestTrack >= min && nearestTrack <= max) {
-        trackPosition = odb::Point(nearestTrack, middle.y());
-        return true;
-      } else if (nearestTrack2 >= min && nearestTrack2 <= max) {
-        trackPosition = odb::Point(nearestTrack2, middle.y());
-        return true;
-      } else {
-        return false;
-      }
+    if (nearestTrack >= min && nearestTrack <= max) {
+      trackPosition = horizontal ? odb::Point(middle.x(), nearestTrack) :
+                      odb::Point(nearestTrack, middle.y());
+      return true;
+    } else if (nearestTrack2 >= min && nearestTrack2 <= max) {
+      trackPosition = horizontal ? odb::Point(middle.x(), nearestTrack2) :
+                      odb::Point(nearestTrack2, middle.y());
+      return true;
+    } else {
+      return false;
     }
   }
 
