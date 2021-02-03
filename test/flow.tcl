@@ -106,7 +106,7 @@ foreach layer_adjustment $global_routing_layer_adjustments {
   lassign $layer_adjustment layer adjustment
   set_global_routing_layer_adjustment $layer $adjustment
 }
-fastroute -guide_file $route_guide \
+global_route -guide_file $route_guide \
   -layers $global_routing_layers \
   -clock_layers $global_routing_clock_layers \
   -unidirectional_routing \

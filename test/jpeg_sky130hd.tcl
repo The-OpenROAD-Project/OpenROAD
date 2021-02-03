@@ -1,4 +1,4 @@
-# jpeg sky130
+# jpeg sky130hs 96017 insts
 source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"
