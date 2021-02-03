@@ -55,6 +55,7 @@ record_tests {
   repair_wire5
   repair_wire6
   gcd_resize
+  gcd_resize_redo
 }
 # injured reserve
 #  repair_slew3

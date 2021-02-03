@@ -70,6 +70,10 @@ struct _dbBTermFlags
 class _dbBTerm : public _dbObject
 {
  public:
+  enum Field  // dbJournalField name
+  {
+    FLAGS
+  };
   // PERSISTANT-MEMBERS
   _dbBTermFlags  _flags;
   uint           _ext_id;

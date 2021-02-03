@@ -40,6 +40,7 @@
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
+#include "dbCommon.h"
 #include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbITerm.h"
@@ -49,6 +50,8 @@
 #include "dbTable.hpp"
 #include "dbTransform.h"
 #include "dbBlockCallBackObj.h"
+#include "dbJournal.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -297,7 +300,15 @@ bool dbBTerm::rename(const char* name)
 void dbBTerm::setSigType(dbSigType type)
 {
   _dbBTerm* bterm         = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+  uint prev_flags = flagsToUInt(bterm);
+  
   bterm->_flags._sig_type = type.getValue();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: setSigType {}", type.getValue());
+    block->_journal->updateField(this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+  }
 }
 
 dbSigType dbBTerm::getSigType()
@@ -308,8 +319,16 @@ dbSigType dbBTerm::getSigType()
 
 void dbBTerm::setIoType(dbIoType type)
 {
-  _dbBTerm* bterm        = (_dbBTerm*) this;
+  _dbBTerm* bterm         = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+  uint prev_flags = flagsToUInt(bterm);
+  
   bterm->_flags._io_type = type.getValue();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: setIoType {}", type.getValue());
+    block->_journal->updateField(this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+  }
 }
 
 dbIoType dbBTerm::getIoType()
@@ -375,6 +394,19 @@ void dbBTerm::connect(dbNet* net_)
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet*   net   = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),utl::ODB, "DB_ECO", 1,
+          "ECO: connect Bterm {} to net {}",
+          bterm->getId(),
+          net_->getId());
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    block->_journal->pushParam(net_->getId());
+    block->_journal->endAction();
+  }
+
   if (bterm->_net)
     bterm->disconnectNet(bterm, block);
   bterm->connectNet(net, block);
@@ -385,6 +417,15 @@ void dbBTerm::disconnect()
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_net) {
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: disconnect Iterm {}", bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      block->_journal->endAction();
+    }
+
     bterm->disconnectNet(bterm, block);
   }
 }
@@ -529,6 +570,15 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   if (block->_bterm_hash.hasMember(name))
     return NULL;
 
+   if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbBTerm:create");
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(net->getId());
+    block->_journal->pushParam(name);
+    block->_journal->endAction();
+  }
+
   _dbBTerm* bterm = block->_bterm_tbl->create();
   bterm->_name    = strdup(name);
   ZALLOCATED(bterm->_name);
@@ -576,6 +626,14 @@ void dbBTerm::destroy(dbBTerm* bterm_)
     callback->inDbBTermDestroy(bterm_); 
   // remove from hash-table
   
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: dbBTerm:destroy");
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbInstObj);
+    block->_journal->pushParam(bterm_->getId());
+    block->_journal->endAction();
+  }
+
   block->_bterm_hash.remove(bterm);
   dbProperty::destroyProperties(bterm);
   block->_bterm_tbl->destroy(bterm);

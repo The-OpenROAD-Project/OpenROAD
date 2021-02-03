@@ -1,3 +1,4 @@
+## THIS TEST REQUIRES TEST "gcd_resize" TO RUN FIRST!
 # gcd full meal deal
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -19,24 +20,11 @@ set block [$chip getBlock]
 #End Common
 
 
-#Journaling
-odb::dbDatabase_beginEco $block
-# #
-#Begin Updates
-
-buffer_ports
-repair_design
-repair_tie_fanout LOGIC0_X1/Z
-repair_tie_fanout LOGIC1_X1/Z
-repair_timing -setup
-repair_timing -hold -slack_margin .2
-
-# End Updates
-# # 
-odb::dbDatabase_endEco $block
-odb::writeEco $block results/gcd_resize.journal
-#End Journaling
-
+#Redo Journal
+odb::readEco $block results/gcd_resize.journal
+odb::dbDatabase_commitEco $block
+estimate_parasitics -placement
+#End Redo Journal
 
 report_checks -path_delay min_max 
 report_check_types -max_slew -max_fanout -max_capacitance

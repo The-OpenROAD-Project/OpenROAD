@@ -756,11 +756,10 @@ void dbNet::setFixedBump(bool value)
 void dbNet::setWireType(dbWireType wire_type)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._wire_type = wire_type.getValue();
 
-#ifdef FULL_ECO
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
           "ECO: net {}, setWireType: {}",
@@ -768,7 +767,7 @@ void dbNet::setWireType(dbWireType wire_type)
           wire_type.getValue());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 dbWireType dbNet::getWireType()
@@ -786,13 +785,10 @@ dbSigType dbNet::getSigType()
 void dbNet::setSigType(dbSigType sig_type)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block      = (_dbBlock*) getOwner();
+  _dbBlock* block      = (_dbBlock*) net->getOwner();
   uint      prev_flags = flagsToUInt(net);
-#endif
   net->_flags._sig_type = sig_type.getValue();
 
-#ifdef FULL_ECO
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1,
           "ECO: net {}, setSigType: {}",
@@ -800,7 +796,6 @@ void dbNet::setSigType(dbSigType sig_type)
           sig_type.getValue());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
 }
 
 float dbNet::getGndcCalibFactor()
@@ -1129,16 +1124,14 @@ bool dbNet::isSpef()
 void dbNet::setSpef(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._spef = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpef: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
 }
 
 bool dbNet::isSelect()
@@ -1150,16 +1143,14 @@ bool dbNet::isSelect()
 void dbNet::setSelect(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._select = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSelect: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
 }
 
 bool dbNet::isEnclosed(Rect* bbox)  // assuming no intersection
@@ -1200,16 +1191,16 @@ bool dbNet::isMarked()
 void dbNet::setMark(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._mark = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isMark_1ed()
@@ -1221,16 +1212,16 @@ bool dbNet::isMark_1ed()
 void dbNet::setMark_1(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._mark_1 = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setMark_1: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 uint dbNet::wireEqual(dbNet* target)
@@ -1320,18 +1311,18 @@ bool dbNet::isWireOrdered()
 void dbNet::setWireOrdered(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block      = (_dbBlock*) getOwner();
-  uint      prev_flags = flagsToUInt(net);
-#endif
+
+   _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
+
   net->_flags._wire_ordered = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireOrdered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isBuffered()
@@ -1343,18 +1334,18 @@ bool dbNet::isBuffered()
 void dbNet::setBuffered(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block      = (_dbBlock*) getOwner();
-  uint      prev_flags = flagsToUInt(net);
-#endif
+
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
+
   net->_flags._buffered = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setBuffered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isDisconnected()
@@ -1366,37 +1357,39 @@ bool dbNet::isDisconnected()
 void dbNet::setDisconnected(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
 // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._disconnected = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setDisconnected: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 void dbNet::setWireAltered(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
 // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._wire_altered = (value == true) ? 1 : 0;
   if (value)
     net->_flags._wire_ordered = 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWireAltered: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isWireAltered()
@@ -1408,18 +1401,19 @@ bool dbNet::isWireAltered()
 void dbNet::setExtracted(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
 // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._extracted = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setExtracted: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isExtracted()
@@ -1431,18 +1425,18 @@ bool dbNet::isExtracted()
 void dbNet::setRCgraph(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-//_dbBlock * block = (_dbBlock *) getOwner();
-// dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
-#endif
+
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
+
   net->_flags._rc_graph = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setRCgraph: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isRCgraph()
@@ -1454,16 +1448,16 @@ bool dbNet::isRCgraph()
 void dbNet::setReduced(bool value)
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._reduced = (value == true) ? 1 : 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setReduced: {}", getId(), value);
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isReduced()
@@ -1602,8 +1596,8 @@ dbWire* dbNet::getGlobalWire()
 bool dbNet::setIOflag()
 {
   _dbNet* net = (_dbNet*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode //uint prev_flags = flagsToUInt(net);
+  _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   net->_flags._set_io   = 1;
   net->_flags._io       = 0;
   dbSet<dbBTerm> bterms = getBTerms();
@@ -1612,22 +1606,22 @@ bool dbNet::setIOflag()
   if (n > 0) {
     net->_flags._io = 1;
 
-#ifdef FULL_ECO
+
     if (block->_journal) {
       debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
       block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
     }
-#endif
+
 
     return true;
   }
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setIOFlag", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 
   return false;
 }
@@ -1674,35 +1668,37 @@ bool dbNet::isSpecial()
 void dbNet::setSpecial()
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._special = 1;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setSpecial", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 void dbNet::clearSpecial()
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._special = 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearSpecial", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 bool dbNet::isWildConnected()
@@ -1714,34 +1710,36 @@ bool dbNet::isWildConnected()
 void dbNet::setWildConnected()
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   // uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._wild_connect = 1;
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, setWildConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 void dbNet::clearWildConnected()
 {
   _dbNet* net = (_dbNet*) this;
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
+
+    _dbBlock * block = (_dbBlock *) net->getOwner();
+  uint prev_flags = flagsToUInt(net);
   // uint prev_flags = flagsToUInt(net);
-#endif
+
   net->_flags._wild_connect = 0;
 
-#ifdef FULL_ECO
+
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(), utl::ODB, "DB_ECO", 1, "ECO: net {}, clearWildConnected", getId());
     block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
-#endif
+
 }
 
 void dbNet::printRSeg(char* type)
