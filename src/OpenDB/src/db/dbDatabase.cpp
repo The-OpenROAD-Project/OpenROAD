@@ -661,9 +661,17 @@ int dbDatabase::checkEco(dbBlock* block_)
   }
 }
 
-void dbDatabase::readEco(dbBlock* block_, FILE* file)
+void dbDatabase::readEco(dbBlock* block_, const char* filename)
 {
   _dbBlock*  block = (_dbBlock*) block_;
+
+  FILE *file = fopen(filename, "r");
+  if (!file) {
+    int errnum = errno;
+    block->getImpl()->getLogger()->error(utl::ODB,8,"Error opening file {}",strerror(errnum));
+    return;
+  }
+
   dbIStream  stream(block->getDatabase(), file);
   dbJournal* eco = new dbJournal(block_);
   assert(eco);
@@ -673,16 +681,27 @@ void dbDatabase::readEco(dbBlock* block_, FILE* file)
     delete block->_journal_pending;
 
   block->_journal_pending = eco;
+
+   fclose(file);
 }
 
-void dbDatabase::writeEco(dbBlock* block_, FILE* file)
+void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
   _dbBlock* block = (_dbBlock*) block_;
+
+  FILE *file = fopen(filename, "w");
+  if (!file) {
+    int errnum = errno;
+    block->getImpl()->getLogger()->error(utl::ODB,8,"Error opening file {}",strerror(errnum));
+    return;
+  }
 
   if (block->_journal_pending) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
+
+  fclose(file);
 }
 
 void dbDatabase::commitEco(dbBlock* block_)

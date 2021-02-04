@@ -857,9 +857,6 @@ void dbJournal::redo_updateBTermField(){
             *flags);
       break;
     }
-
-    default:
-      break;
   }
 }
 void dbJournal::redo_updateITermField()
