@@ -186,8 +186,7 @@ void Replace::doInitialPlace() {
   ip_->doBicgstabPlace();
 }
 
-void Replace::doNesterovPlace() {
-  
+void Replace::initNesterovPlace() {
   log_->setDebugLevel(GPL, "replace", verbose_);
 
   if( !pb_ ) {
