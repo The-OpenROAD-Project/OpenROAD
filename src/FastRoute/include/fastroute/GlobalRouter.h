@@ -233,8 +233,7 @@ class GlobalRouter
                        const GSegment& seg1,
                        GSegment& newSeg,
                        const std::map<RoutePt, int>& segsAtPoint);
-  void mergeSegments();
-  void mergeSegments(GRoute& route);
+  void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);

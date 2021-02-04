@@ -304,8 +304,9 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
   addRemainingGuides(routes, nets);
   connectPadPins(routes);
   for (auto& net_route : routes) {
+    std::vector<Pin>& pins = _db_net_map[net_route.first]->getPins();
     GRoute& route = net_route.second;
-    mergeSegments(route);
+    mergeSegments(pins, route);
   }
 
   return routes;
@@ -1769,27 +1770,25 @@ void GlobalRouter::computeWirelength()
   _logger->info(GRT, 18, "Total wirelength: {} um", totalWirelength / _block->getDefUnits());
 }
 
-void GlobalRouter::mergeSegments()
-{
-  for (auto& net_route : _routes) {
-    GRoute& route = net_route.second;
-    mergeSegments(route);
-  }
-}
-
 // This needs to be rewritten to shift down undeleted elements instead
 // of using erase.
-void GlobalRouter::mergeSegments(GRoute& route)
+void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
 {
   if (!route.empty()) {
-    // vector copy - bad bad -cherry
-    GRoute segments = route;
+    GRoute &segments = route;
     std::map<RoutePt, int> segsAtPoint;
     for (const GSegment& seg : segments) {
       RoutePt pt0 = RoutePt(seg.initX, seg.initY, seg.initLayer);
       RoutePt pt1 = RoutePt(seg.finalX, seg.finalY, seg.finalLayer);
       segsAtPoint[pt0] += 1;
       segsAtPoint[pt1] += 1;
+    }
+
+    for (const Pin &pin : pins) {
+      RoutePt pinPt = RoutePt(pin.getOnGridPosition().x(),
+                              pin.getOnGridPosition().y(),
+                              pin.getTopLayer());
+      segsAtPoint[pinPt] += 1;
     }
 
     uint i = 0;
@@ -1815,7 +1814,6 @@ void GlobalRouter::mergeSegments(GRoute& route)
         i++;
       }
     }
-    route = segments;
   }
 }
 
