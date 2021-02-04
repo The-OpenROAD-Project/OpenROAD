@@ -1805,8 +1805,10 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
         GSegment& newSeg = segments[i];
         if (segmentsConnect(segment0, segment1, newSeg, segsAtPoint)) {
           segments[i] = newSeg;
-          // N^2 again -cherry
-          segments.erase(segments.begin() + i + 1);
+          for (int idx = i + 1; idx < segments.size() - 1; idx++) {
+            segments[idx] = segments[idx + 1];
+          }
+          segments.pop_back();
         } else {
           i++;
         }
