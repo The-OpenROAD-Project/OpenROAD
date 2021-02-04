@@ -207,7 +207,7 @@ class Logger
                            const std::string_view metric,
                            const Value& value)
     {
-      metrics_logger_->info("  {}\"{}-{}\" : {}",
+      metrics_logger_->info("  {}\"{}::{}\" : {}",
                             first_metric_ ? "  " : ", ",
                             tool_names_[tool],
                             metric,
