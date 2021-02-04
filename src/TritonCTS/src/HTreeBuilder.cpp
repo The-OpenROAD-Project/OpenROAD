@@ -178,7 +178,8 @@ void HTreeBuilder::run()
   _logger->info(CTS, 28, "    Tot. number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
-                  _options->getSizeSinkClustering(), _options->getMaxDiameter());
+                  _options->getSizeSinkClustering(),
+                  static_cast<int>(_options->getMaxDiameter()));
   }
   _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
 
