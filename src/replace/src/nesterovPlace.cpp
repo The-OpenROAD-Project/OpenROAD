@@ -233,9 +233,7 @@ void NesterovPlace::init() {
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
   if( isnan(stepLength_) ) {
-    string msg = "RePlAce diverged at initial iteration.\n";
-    msg += "        Please tune the parameters again";
-    log_->error(GPL, 304, msg);
+    log_->error(GPL, 304, "RePlAce diverged on initial iteration.");
     isDiverged_ = true;
   }
 }
@@ -379,7 +377,7 @@ NesterovPlace::doNesterovPlace() {
   // if replace diverged in init() function, 
   // replace must be skipped.
   if( isDiverged_ ) {
-    string msg = "RePlAce diverged. Please tune the parameters again";
+    string msg = "RePlAce diverged.";
     log_->error(GPL, 200, msg);
     return;
   }
@@ -494,8 +492,7 @@ NesterovPlace::doNesterovPlace() {
       debugPrint(log_, GPL, "replace", 3, "np:  NewStepLength: {:g}", newStepLength);
 
       if( isnan(newStepLength) ) {
-        divergeMsg = "RePlAce divergence detected. \n";
-        divergeMsg += "        Please tune the parameters again";
+        divergeMsg = "RePlAce divergence detected.";
         divergeCode = 305;
         isDiverged_ = true;
         break;
@@ -596,8 +593,8 @@ NesterovPlace::doNesterovPlace() {
     if( sumOverflow_ < 0.3f 
         && sumOverflow_ - minSumOverflow >= 0.02f
         && hpwlWithMinSumOverflow * 1.2f < prevHpwl_ ) {
-      divergeMsg = "RePlAce divergence detected. \n";
-      divergeMsg += "        Please decrease max_phi_cof value";
+      divergeMsg = "RePlAce divergence detected.\n";
+      divergeMsg += "        Re-run with a smaller max_phi_cof value.";
       divergeCode = 307;
       isDiverged_ = true;
 

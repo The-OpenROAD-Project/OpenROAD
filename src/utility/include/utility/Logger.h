@@ -156,16 +156,20 @@ class Logger
   // For logging to the metrics file.  This is a much more restricted
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
+  template <typename T,
+            std::enable_if_t<std::is_integral<T>::value, bool> = true>
   inline void metric(ToolId tool,
                      const std::string_view metric,
-                     int value)
+                     T value)
   {
     log_metric(tool, metric, value);
   }
 
+  template <typename T,
+            std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
   inline void metric(ToolId tool,
                      const std::string_view metric,
-                     double value)
+                     T value)
   {
     log_metric(tool, metric, value);
   }
@@ -180,7 +184,7 @@ class Logger
   // Only true bools and not things that can be converted to bool like
   // char*
   template <typename Bool,
-            typename T = std::enable_if_t<std::is_same<Bool, bool>{}>>
+            typename = std::enable_if_t<std::is_same<Bool, bool>{}>>
   inline void metric(ToolId tool,
                      const std::string_view metric,
                      Bool value)

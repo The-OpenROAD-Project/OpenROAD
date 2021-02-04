@@ -1189,8 +1189,8 @@ NesterovBase::initFillerGCells() {
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
     log_->error(GPL, 302, 
-        "Please put higher target density or "
-        "re-floorplan to have enough coreArea.\n"
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
         "Given target density: {:.2f}\n"
         "Suggested target density: {:.2f}", 
         targetDensity_, 
@@ -1466,8 +1466,8 @@ NesterovBase::updateAreas() {
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
     log_->error(GPL, 303, 
-        "Please put higher target density or "
-        "re-floorplan to have enough coreArea.\n"
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
         "Given target density: {:.2f}\n"
         "Suggested target density: {:.2f}", 
         targetDensity_, 

@@ -164,9 +164,7 @@ void Replace::setLogger(utl::Logger* logger) {
 }
 void Replace::doInitialPlace() {
 
-  if( log_ ) {
-    log_->setDebugLevel(GPL, "replace", verbose_);
-  }
+  log_->setDebugLevel(GPL, "replace", verbose_);
 
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
@@ -188,11 +186,9 @@ void Replace::doInitialPlace() {
   ip_->doBicgstabPlace();
 }
 
-void
-Replace::initNesterovPlace() {
-  if( log_ ) {
-    log_->setDebugLevel(GPL, "replace", verbose_);
-  }
+void Replace::doNesterovPlace() {
+  
+  log_->setDebugLevel(GPL, "replace", verbose_);
 
   if( !pb_ ) {
     PlacerBaseVars pbVars;
