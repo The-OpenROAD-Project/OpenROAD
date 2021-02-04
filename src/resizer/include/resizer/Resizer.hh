@@ -251,13 +251,14 @@ public:
   //  repair design
   //  save slacks
   //  remove inserted buffers
+  //  restore resized gates
   // Preamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
   void findResizeSlacks();
   // Return 10% of nets with worst slack.
   NetSeq &resizeWorstSlackNets();
   // Return net slack.
-  Slack resizeNetSlack(const Net *neet);
+  Slack resizeNetSlack(const Net *net);
   // db flavor
   vector<dbNet*> resizeWorstSlackDbNets();
   Slack resizeNetSlack(const dbNet *db_net);
