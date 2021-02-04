@@ -31,41 +31,52 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
-#include "sta/StaMain.hh"
-#include "openroad/OpenRoad.hh"
-#include "replace/MakeReplace.h"
-#include "replace/Replace.h"
+#pragma once
 
-namespace sta {
-extern const char *replace_tcl_inits[];
+#include <vector>
+
+namespace rsz {
+  class Resizer;
 }
 
-extern "C" {
-extern int Replace_Init(Tcl_Interp* interp);
+namespace utl {
+  class Logger;
 }
 
-namespace ord {
+namespace gpl {
 
-gpl::Replace* 
-makeReplace() {
-  return new gpl::Replace();
-}
+class NesterovBase;
+class GNet;
 
-void
-initReplace(OpenRoad* openroad) {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Replace_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::replace_tcl_inits);
-  openroad->getReplace()->setDb(openroad->getDb());
-  openroad->getReplace()->setLogger(openroad->getLogger());
-  openroad->getReplace()->setFastRoute(openroad->getFastRoute());
-  openroad->getReplace()->setResizer(openroad->getResizer());
-}
+class TimingBase {
+  public:
+    TimingBase();
+    TimingBase(std::shared_ptr<NesterovBase> nb,
+        rsz::Resizer* rs,
+        utl::Logger* log);
 
-void
-deleteReplace(gpl::Replace *replace) {
-  delete replace;
-}
+    // check whether overflow reached the timingIter
+    bool isTimingUpdateIter(float overflow);
+    void addTimingUpdateIter(int overflow);
+    void deleteTimingUpdateIter(int overflow);
+    void clearTimingUpdateIter();
+    size_t getTimingUpdateIterSize() const;
 
-}
+    // updateNetWeight.
+    // True: successfully reweighted gnets
+    // False: no slacks found
+    bool updateGNetWeights(float overflow);
+
+  private:
+    rsz::Resizer* rs_;
+    utl::Logger* log_;
+    std::shared_ptr<NesterovBase> nb_;
+
+    std::vector<int> timingUpdateIter_;
+    std::vector<int> timingIterChk_;
+    float net_weight_max_;
+    void initTimingIterChk();
+};
+
+} // namespace
+

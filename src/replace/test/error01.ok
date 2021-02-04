@@ -29,8 +29,6 @@
 [INFO GPL-0019] Util(%): 59.73
 [INFO GPL-0020] StdInstsArea: 2279088000
 [INFO GPL-0021] MacroInstsArea: 0
-Begin InitialPlace
-End InitialPlace
 [ERROR GPL-0302] Please put higher target density or re-floorplan to have enough coreArea.
 Given target density: 0.00
 Suggested target density: 0.60

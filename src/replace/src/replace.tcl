@@ -91,7 +91,11 @@ proc global_placement { args } {
   # flow control for timing-driven 
   if { [info exists flags(-disable_timing_driven)] } { 
     set_replace_disable_timing_driven_mode_cmd
-  }
+  } else {
+    if { [get_libs -quiet "*"] == {} } {
+      utl::error GPL 115 "No liberty libraries found."
+    }
+  }  
 
   # flow control for routability-driven 
   if { [info exists flags(-disable_routability_driven)] } {
@@ -165,7 +169,7 @@ proc global_placement { args } {
     sta::check_positive_float "-overflow" $overflow
     set_replace_overflow_cmd $overflow
   }
-  
+
   # routability check overflow
   if { [info exists keys(-routability_check_overflow)] } {
     set routability_check_overflow $keys(-routability_check_overflow)
@@ -224,7 +228,6 @@ proc global_placement { args } {
     set k4 [lindex $rc_coefficients 3]
     set_replace_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
-
 
   if { [info exists keys(-verbose_level)] } {
     set verbose_level $keys(-verbose_level)

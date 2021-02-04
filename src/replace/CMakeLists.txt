@@ -44,6 +44,7 @@ set (REPLACE_SRC
   src/point.cpp
   src/plot.cpp
   src/routeBase.cpp
+  src/timingBase.cpp
   src/graphics.cpp
   )
 
@@ -77,17 +78,18 @@ target_include_directories( replace
   PRIVATE
   ${REPLACE_HOME}/src
 
-  ${FLUTE_HOME}
-
-  ${OPENSTA_HOME}/include
-
   ${OPENDB_HOME}/include
   ${OPENROAD_HOME}/include
   ${FASTROUTE_HOME}/include
   ${FASTROUTE_HOME}/src/fastroute/include
+  ${OPENSTA_HOME}/include
+  ${DBSTA_HOME}/include
+  ${OPENROAD_HOME}/src/flute3
+  ${RESIZER_HOME}/include
   ${TCL_INCLUDE_PATH}
   flute3
   gui
+  utility
 )
 
 target_link_libraries( replace

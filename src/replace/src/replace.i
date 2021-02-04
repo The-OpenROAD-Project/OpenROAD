@@ -10,11 +10,13 @@ getOpenRoad();
 
 gpl::Replace*
 getReplace();
+
 }
 
 using ord::getOpenRoad;
 using ord::getReplace;
 using gpl::Replace;
+
 %}
 
 %include "../../Exception.i"
@@ -28,8 +30,8 @@ replace_reset_cmd()
   replace->reset();
   replace->setDb(getOpenRoad()->getDb());
   replace->setLogger(getOpenRoad()->getLogger());
-  replace->setSta(getOpenRoad()->getSta());
   replace->setFastRoute(getOpenRoad()->getFastRoute());
+  replace->setResizer(getOpenRoad()->getResizer());
 }
 
 void 
@@ -239,6 +241,5 @@ set_replace_debug_cmd(int pause_iterations,
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
                     initial);
 }
-
 
 %} // inline

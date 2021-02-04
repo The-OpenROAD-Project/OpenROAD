@@ -276,7 +276,7 @@ GCell::isStdInstance() const {
 
 GNet::GNet()
   : lx_(0), ly_(0), ux_(0), uy_(0),
-  customWeight_(1), weight_(1),
+  timingWeight_(1), customWeight_(1),
   waExpMinSumX_(0), waXExpMinSumX_(0),
   waExpMaxSumX_(0), waXExpMaxSumX_(0),
   waExpMinSumY_(0), waYExpMinSumY_(0),
@@ -299,6 +299,11 @@ GNet::~GNet() {
 Net* 
 GNet::net() const { 
   return *nets_.begin();
+}
+
+void
+GNet::setTimingWeight(float timingWeight) {
+  timingWeight_ = timingWeight;
 }
 
 void
@@ -1634,6 +1639,11 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
 
   for(auto& gPin : gCell->gPins()) {
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+    
+    // apply timing/custom net weight
+    tmpPair.x *= gPin->gNet()->totalWeight();
+    tmpPair.y *= gPin->gNet()->totalWeight();
+    
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
   }
