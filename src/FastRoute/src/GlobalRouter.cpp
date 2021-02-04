@@ -1924,11 +1924,6 @@ void GlobalRouter::mergeResults(NetRouteMap& routes)
 bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
                                               odb::Point& trackPosition)
 {
-  int minX = std::numeric_limits<int>::max();
-  int minY = std::numeric_limits<int>::max();
-  int maxX = std::numeric_limits<int>::min();
-  int maxY = std::numeric_limits<int>::min();
-
   int min, max;
 
   int topLayer = pin.getTopLayer();
@@ -1937,16 +1932,15 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
   RoutingLayer layer = getRoutingLayerByIndex(topLayer);
   RoutingTracks tracks = getRoutingTracksByIndex(topLayer);
 
+  odb::Rect pinRect;
+  pinRect.mergeInit();
   for (odb::Rect pinBox : pinBoxes) {
-    minX = (pinBox.xMin() <= minX) ? pinBox.xMin() : minX;
-    minY = (pinBox.yMin() <= minY) ? pinBox.yMin() : minY;
-    maxX = (pinBox.xMax() >= maxX) ? pinBox.xMax() : maxX;
-    maxY = (pinBox.yMax() >= maxY) ? pinBox.yMax() : maxY;
+    pinRect.merge(pinBox);
   }
 
   bool horizontal = layer.getPreferredDirection() == RoutingLayer::HORIZONTAL;
-  min = horizontal ? minY : minX;
-  max = horizontal ? maxY : maxX;
+  min = horizontal ? pinRect.yMin() : pinRect.xMin();
+  max = horizontal ? pinRect.yMax() : pinRect.xMax();
 
   if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
     int nearestTrack = std::floor((float) (max - tracks.getLocation())
