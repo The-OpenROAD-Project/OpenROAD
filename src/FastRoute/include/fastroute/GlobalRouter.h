@@ -77,7 +77,6 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 class RoutePt;
-struct NET;
 
 struct RegionAdjustment
 {
@@ -370,6 +369,5 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
-Net* getNet(NET* net);
 
 }  // namespace grt
