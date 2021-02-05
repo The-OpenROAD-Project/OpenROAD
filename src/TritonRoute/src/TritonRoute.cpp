@@ -252,3 +252,14 @@ void TritonRoute::readParams(const string &fileName)
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
   }
 }
+
+bool fr::isPad(MacroClassEnum e)
+{
+  return e == MacroClassEnum::PAD   ||
+    e == MacroClassEnum::PAD_INPUT  ||
+    e == MacroClassEnum::PAD_OUTPUT ||
+    e == MacroClassEnum::PAD_INOUT  ||
+    e == MacroClassEnum::PAD_POWER  ||
+    e == MacroClassEnum::PAD_SPACER ||
+    e == MacroClassEnum::PAD_AREAIO;
+}

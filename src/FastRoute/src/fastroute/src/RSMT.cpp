@@ -957,9 +957,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   }  // loop i
 
   if (verbose > 1) {
-    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}.", wl, wl1);
-    logger->info(GRT, 192, "NumSeg  : {}.", totalNumSeg);
-    logger->info(GRT, 193, "NumShift: {}.", numShift);
+    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
+    logger->info(GRT, 192, "NumSeg  : {}", totalNumSeg);
+    logger->info(GRT, 193, "NumShift: {}", numShift);
   }
 }
 

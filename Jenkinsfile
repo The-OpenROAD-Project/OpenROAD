@@ -21,10 +21,11 @@ pipeline {
                       'aes_nangate45': { sh './test/regression aes_nangate45' },
                       'gcd_nangate45': { sh './test/regression gcd_nangate45' },
                       'tinyRocket_nangate45': { sh './test/regression tinyRocket_nangate45' },
-                      'aes_sky130': { sh './test/regression aes_sky130' },
-                      'gcd_sky130': { sh './test/regression gcd_sky130' },
-                      'ibex_sky130': { sh './test/regression ibex_sky130' },
-                      )
+                      'aes_sky130hd': { sh './test/regression aes_sky130hd' },
+                      'gcd_sky130hs': { sh './test/regression gcd_sky130hs' },
+                      'gcd_sky130hd': { sh './test/regression gcd_sky130hd' },
+                      'ibex_sky130hs': { sh './test/regression ibex_sky130hs' },
+                  )
                 }
               }
             }

@@ -186,7 +186,7 @@ void getlen()
         totlen += treeedge->route.routelen;
     }
   }
-  logger->info(GRT, 196, "Routed len: {}.", totlen);
+  logger->info(GRT, 196, "Routed len: {}", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -429,8 +429,8 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-   logger->info(GRT, 197, "Via related to pin nodes: {}.", numVIAT1);
-   logger->info(GRT, 198, "Via related stiner nodes: {}.", numVIAT2);
+   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
+   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
    logger->info(GRT, 199, "Via filling finished.");
   }
 }
