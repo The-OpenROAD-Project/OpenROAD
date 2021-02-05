@@ -3130,6 +3130,8 @@ RegionAdjustment::RegionAdjustment(int minX,
   adjustment = adjst;
 }
 
+// Called from src/fastroute/FastRoute.cpp to so DB headers
+// do not have to be included in the core code.
 const char* getNetName(odb::dbNet* db_net)
 {
   return db_net->getConstName();
