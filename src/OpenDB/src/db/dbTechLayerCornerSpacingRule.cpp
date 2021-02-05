@@ -212,6 +212,8 @@ dbOStream& operator<<(dbOStream&                           stream,
 
 _dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

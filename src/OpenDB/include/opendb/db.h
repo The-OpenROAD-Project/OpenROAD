@@ -105,6 +105,7 @@ class dbBlockCallBackObj;
 class dbRegion;
 class dbBPin;
 // Generator Code Begin 2
+class dbTechLayer;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerMinStepSubRule;
@@ -136,7 +137,6 @@ class dbTarget;
 
 // Tech objects
 class dbTech;
-class dbTechLayer;
 class dbTechVia;
 class dbTechViaRule;
 class dbTechViaLayerRule;
@@ -5942,314 +5942,6 @@ class dbTech : public dbObject
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// A TechLayer is the element that represents a specific process layer in
-/// a technolgy.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbTechLayer : public dbObject
-{
- public:
-  ///
-  /// Get the layer name.
-  ///
-  std::string getName() const;
-
-  ///
-  /// Get the layer name.
-  ///
-  const char* getConstName() const;
-
-  ///
-  /// Returns true if this layer has an alias.
-  ///
-  bool hasAlias();
-
-  ///
-  /// Get the layer alias.
-  ///
-  std::string getAlias();
-
-  ///
-  /// Set the layer alias.
-  ///
-  void setAlias(const char* alias);
-
-  ///
-  /// Get the minimum path-width.
-  ///
-  uint getWidth() const;
-  void setWidth(int width);
-
-  ///
-  /// Get the minimum object-to-object spacing.
-  ///
-  int  getSpacing();
-  void setSpacing(int spacing);
-
-  ///
-  /// Get the minimum spacing to a wide line.
-  ///
-  int getSpacing(int width, int length = 0);
-
-  ///
-  /// Get the low end of the uppermost range for wide wire design rules.
-  ///
-  void getMaxWideDRCRange(int& owidth, int& olength);
-  void getMinWideDRCRange(int& owidth, int& olength);
-
-  /// Get the collection of spacing rules for the object, assuming
-  /// coding in LEF 5.4 format.
-  /// Return false if rules not encoded in this format.
-  /// Contents of sp_rules are undefined if function returns false.
-  ///
-  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
-
-  // Get the collection of Eol Spacing Rules for the object
-  dbSet<dbTechLayerSpacingEolRule> getEolSpacingRules() const;
-
-  // Get the collection of minstep Rules for the object
-  dbSet<dbTechLayerMinStepRule> getMinStepRules() const;
-
-  // Get the collection of cornerspacing Rules for the object
-  dbSet<dbTechLayerCornerSpacingRule> getCornerSpacingRules() const;
-
-  // Get the collection of spacing table parallel length Rules for the object
-  dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
-
-  // Get the collection of rightwayongridonly Rules for the object
-  dbSet<dbTechLayerRightWayOnGridOnlyRule> getRightWayOnGridOnlyRules() const;
-
-  // Get the collection of rectonly Rules for the object
-  dbSet<dbTechLayerRectOnlyRule> getRectOnlyRules() const;
-
-  // Get the collection of cutclass Rules for the object
-  dbSet<dbTechLayerCutClassRule> getCutClassRules() const;
-
-  // Get the collection of lef58spacing Rules for the layer(cut)
-  dbSet<dbTechLayerCutSpacingRule> getCutSpacingRules() const;
-
-  // Get the collection of lef58 spacingtable Rules for the layer(cut)
-  dbSet<dbTechLayerCutSpacingTableRule> getCutSpacingTableRules() const;
-
-  ///
-  /// API for version 5.5 spacing rules, expressed as a 2D matrix with
-  /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
-  /// this is not enforced here.
-  /// V5.4 and V5.5 spacing rules are optional -- in this case there is a
-  /// single spacing value for all length/width combinations.
-  ///
-  bool hasV55SpacingRules() const;
-  void printV55SpacingRules(lefout& writer) const;
-  bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
-
-  void initV55LengthIndex(uint numelems);
-  void addV55LengthEntry(uint length);
-  void initV55WidthIndex(uint numelems);
-  void addV55WidthEntry(uint width);
-  void initV55SpacingTable(uint numrows, uint numcols);
-  void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
-
-  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
-  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
-
-  ///
-  /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix
-  /// with index tables
-  ///
-  bool hasTwoWidthsSpacingRules() const;
-  void printTwoWidthsSpacingRules(lefout& writer) const;
-  bool getTwoWidthsSpacingTable(std::vector<std::vector<uint>>& sptbl) const;
-  uint getTwoWidthsSpacingTableNumWidths() const;
-  uint getTwoWidthsSpacingTableWidth(uint row) const;
-  bool getTwoWidthsSpacingTableHasPRL(uint row) const;
-  uint getTwoWidthsSpacingTablePRL(uint row) const;
-  uint getTwoWidthsSpacingTableEntry(uint row, uint col) const;
-
-  void initTwoWidths(uint num_widths);
-  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1);
-  void addTwoWidthsSpacingTableEntry(uint inrow, uint incol, uint spacing);
-  ///
-  ///  create container for layer specific antenna rules
-  ///  currently only oxide1 (default) and oxide2 models supported.
-  ///
-  dbTechLayerAntennaRule* createDefaultAntennaRule();
-  dbTechLayerAntennaRule* createOxide2AntennaRule();
-
-  ///
-  /// Access and write antenna rule models -- get functions will return NULL
-  /// if model not created.
-  ///
-  bool                    hasDefaultAntennaRule() const;
-  bool                    hasOxide2AntennaRule() const;
-  dbTechLayerAntennaRule* getDefaultAntennaRule() const;
-  dbTechLayerAntennaRule* getOxide2AntennaRule() const;
-  void                    writeAntennaRulesLef(lefout& writer) const;
-
-  ///
-  ///
-  /// Get collection of minimum cuts, minimum enclosure rules, if exist
-  ///
-  bool getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules);
-  bool getMinEnclosureRules(std::vector<dbTechMinEncRule*>& enc_rules);
-
-  dbSet<dbTechMinCutRule> getMinCutRules();
-  dbSet<dbTechMinEncRule> getMinEncRules();
-
-  ///
-  /// Get/Set the minimum feature size (pitch).
-  ///
-  int  getPitch();
-  int  getPitchX();
-  int  getPitchY();
-  void setPitch(int pitch);
-  void setPitchXY(int pitch_x, int pitch_y);
-  bool hasXYPitch();
-
-  int  getOffset();
-  int  getOffsetX();
-  int  getOffsetY();
-  void setOffset(int pitch);
-  void setOffsetXY(int pitch_x, int pitch_y);
-  bool hasXYOffset();
-
-  ///
-  ///  Get THICKNESS in DB units, and return indicator of existence.
-  ///  Do not trust value of output parm if return value is false.
-  ///
-  bool getThickness(uint& inthk) const;
-  void setThickness(uint thickness);
-
-  ///
-  ///  Get/set AREA parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool   hasArea() const;
-  double getArea() const;
-  void   setArea(double area);
-
-  ///
-  ///  Get/set MAXWIDTH parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasMaxWidth() const;
-  uint getMaxWidth() const;
-  void setMaxWidth(uint max_width);
-
-  ///
-  ///  Get/set min width parameter.
-  ///
-  uint getMinWidth() const;
-  void setMinWidth(uint max_width);
-
-  ///
-  ///  Get/set MINSTEP parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasMinStep() const;
-  uint getMinStep() const;
-  void setMinStep(uint min_step);
-
-  dbTechLayerMinStepType getMinStepType() const;
-  void                   setMinStepType(dbTechLayerMinStepType type);
-
-  bool hasMinStepMaxLength() const;
-  uint getMinStepMaxLength() const;
-  void setMinStepMaxLength(uint length);
-
-  bool hasMinStepMaxEdges() const;
-  uint getMinStepMaxEdges() const;
-  void setMinStepMaxEdges(uint edges);
-
-  ///
-  ///  Get/set PROTRUSIONWIDTH parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasProtrusion() const;
-  uint getProtrusionWidth() const;
-  uint getProtrusionLength() const;
-  uint getProtrusionFromWidth() const;
-  void setProtrusion(uint pt_width, uint pt_length, uint pt_from_width);
-
-  /// Get the layer-type
-  ///
-  dbTechLayerType getType();
-
-  ///
-  /// Get/Set the layer-direction
-  ///
-  dbTechLayerDir getDirection();
-  void           setDirection(dbTechLayerDir direction);
-
-  ///
-  /// Get/Set the resistance (ohms per square for routing layers;
-  ///                         ohms per cut on via layers)
-  ///
-  double getResistance();
-  void   setResistance(double res);
-
-  ///
-  /// Get/Set the capacitance (pF per square micron)
-  ///
-  double getCapacitance();
-  void   setCapacitance(double cap);
-
-  ///
-  /// Get/Set the edge capacitance (pF per micron)
-  ///
-  double getEdgeCapacitance();
-  void   setEdgeCapacitance(double cap);
-
-  ///
-  /// Get/Set the wire extension
-  ///
-  uint getWireExtension();
-  void setWireExtension(uint ext);
-
-  ///
-  /// Get mask-order number of this layer.
-  ///
-  int getNumber() const;
-
-  ///
-  /// Get routing-level of this routing layer. The routing level
-  /// is from [1-num_layers]. This function returns 0, if this
-  /// layer is not a routing layer.
-  ///
-  int getRoutingLevel();
-
-  ///
-  /// Get the layer below this layer.
-  /// Returns NULL if at bottom of layer stack.
-  ///
-  dbTechLayer* getLowerLayer();
-
-  ///
-  /// Get the layer above this layer.
-  /// Returns NULL if at top of layer stack.
-  ///
-  dbTechLayer* getUpperLayer();
-
-  ///
-  /// Get the technology this layer belongs too.
-  ///
-  dbTech* getTech();
-
-  ///
-  /// Create a new layer. The mask order is implicit in the create order.
-  /// Returns NULL if a layer with this name already exists
-  ///
-  static dbTechLayer* create(dbTech*         tech,
-                             const char*     name,
-                             dbTechLayerType type);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbTechLayer* getTechLayer(dbTech* tech, uint oid);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
 /// A TechVia is the element that represents a specific process VIA in
 /// a technolgy.
 ///
@@ -7224,6 +6916,310 @@ class dbViaParams : private _dbViaParams
 
 // Generator Code Begin 5
 
+class dbTechLayer : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayer
+  ///
+  /// Get the layer name.
+  ///
+  std::string getName() const;
+
+  ///
+  /// Get the layer name.
+  ///
+  const char* getConstName() const;
+
+  ///
+  /// Returns true if this layer has an alias.
+  ///
+  bool hasAlias();
+
+  ///
+  /// Get the layer alias.
+  ///
+  std::string getAlias();
+
+  ///
+  /// Set the layer alias.
+  ///
+  void setAlias(const char* alias);
+
+  ///
+  /// Get the minimum path-width.
+  ///
+  uint getWidth() const;
+  void setWidth(int width);
+
+  ///
+  /// Get the minimum object-to-object spacing.
+  ///
+  int  getSpacing();
+  void setSpacing(int spacing);
+
+  ///
+  /// Get the minimum spacing to a wide line.
+  ///
+  int getSpacing(int width, int length = 0);
+
+  ///
+  /// Get the low end of the uppermost range for wide wire design rules.
+  ///
+  void getMaxWideDRCRange(int& owidth, int& olength);
+  void getMinWideDRCRange(int& owidth, int& olength);
+
+  /// Get the collection of spacing rules for the object, assuming
+  /// coding in LEF 5.4 format.
+  /// Return false if rules not encoded in this format.
+  /// Contents of sp_rules are undefined if function returns false.
+  ///
+  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
+
+  // Get the collection of Eol Spacing Rules for the object
+  dbSet<dbTechLayerSpacingEolRule> getEolSpacingRules() const;
+
+  // Get the collection of minstep Rules for the object
+  dbSet<dbTechLayerMinStepRule> getMinStepRules() const;
+
+  // Get the collection of cornerspacing Rules for the object
+  dbSet<dbTechLayerCornerSpacingRule> getCornerSpacingRules() const;
+
+  // Get the collection of spacing table parallel length Rules for the object
+  dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
+
+  // Get the collection of rightwayongridonly Rules for the object
+  dbSet<dbTechLayerRightWayOnGridOnlyRule> getRightWayOnGridOnlyRules() const;
+
+  // Get the collection of rectonly Rules for the object
+  dbSet<dbTechLayerRectOnlyRule> getRectOnlyRules() const;
+
+  // Get the collection of cutclass Rules for the object
+  dbSet<dbTechLayerCutClassRule> getCutClassRules() const;
+
+  // Get the collection of lef58spacing Rules for the layer(cut)
+  dbSet<dbTechLayerCutSpacingRule> getCutSpacingRules() const;
+
+  // Get the collection of lef58 spacingtable Rules for the layer(cut)
+  dbSet<dbTechLayerCutSpacingTableRule> getCutSpacingTableRules() const;
+
+  ///
+  /// API for version 5.5 spacing rules, expressed as a 2D matrix with
+  /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
+  /// this is not enforced here.
+  /// V5.4 and V5.5 spacing rules are optional -- in this case there is a
+  /// single spacing value for all length/width combinations.
+  ///
+  bool hasV55SpacingRules() const;
+  void printV55SpacingRules(lefout& writer) const;
+  bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
+
+  void initV55LengthIndex(uint numelems);
+  void addV55LengthEntry(uint length);
+  void initV55WidthIndex(uint numelems);
+  void addV55WidthEntry(uint width);
+  void initV55SpacingTable(uint numrows, uint numcols);
+  void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
+
+  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
+  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
+
+  ///
+  /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix
+  /// with index tables
+  ///
+  bool hasTwoWidthsSpacingRules() const;
+  void printTwoWidthsSpacingRules(lefout& writer) const;
+  bool getTwoWidthsSpacingTable(std::vector<std::vector<uint>>& sptbl) const;
+  uint getTwoWidthsSpacingTableNumWidths() const;
+  uint getTwoWidthsSpacingTableWidth(uint row) const;
+  bool getTwoWidthsSpacingTableHasPRL(uint row) const;
+  uint getTwoWidthsSpacingTablePRL(uint row) const;
+  uint getTwoWidthsSpacingTableEntry(uint row, uint col) const;
+
+  void initTwoWidths(uint num_widths);
+  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1);
+  void addTwoWidthsSpacingTableEntry(uint inrow, uint incol, uint spacing);
+  ///
+  ///  create container for layer specific antenna rules
+  ///  currently only oxide1 (default) and oxide2 models supported.
+  ///
+  dbTechLayerAntennaRule* createDefaultAntennaRule();
+  dbTechLayerAntennaRule* createOxide2AntennaRule();
+
+  ///
+  /// Access and write antenna rule models -- get functions will return NULL
+  /// if model not created.
+  ///
+  bool                    hasDefaultAntennaRule() const;
+  bool                    hasOxide2AntennaRule() const;
+  dbTechLayerAntennaRule* getDefaultAntennaRule() const;
+  dbTechLayerAntennaRule* getOxide2AntennaRule() const;
+  void                    writeAntennaRulesLef(lefout& writer) const;
+
+  ///
+  ///
+  /// Get collection of minimum cuts, minimum enclosure rules, if exist
+  ///
+  bool getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules);
+  bool getMinEnclosureRules(std::vector<dbTechMinEncRule*>& enc_rules);
+
+  dbSet<dbTechMinCutRule> getMinCutRules();
+  dbSet<dbTechMinEncRule> getMinEncRules();
+
+  ///
+  /// Get/Set the minimum feature size (pitch).
+  ///
+  int  getPitch();
+  int  getPitchX();
+  int  getPitchY();
+  void setPitch(int pitch);
+  void setPitchXY(int pitch_x, int pitch_y);
+  bool hasXYPitch();
+
+  int  getOffset();
+  int  getOffsetX();
+  int  getOffsetY();
+  void setOffset(int pitch);
+  void setOffsetXY(int pitch_x, int pitch_y);
+  bool hasXYOffset();
+
+  ///
+  ///  Get THICKNESS in DB units, and return indicator of existence.
+  ///  Do not trust value of output parm if return value is false.
+  ///
+  bool getThickness(uint& inthk) const;
+  void setThickness(uint thickness);
+
+  ///
+  ///  Get/set AREA parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool   hasArea() const;
+  double getArea() const;
+  void   setArea(double area);
+
+  ///
+  ///  Get/set MAXWIDTH parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasMaxWidth() const;
+  uint getMaxWidth() const;
+  void setMaxWidth(uint max_width);
+
+  ///
+  ///  Get/set min width parameter.
+  ///
+  uint getMinWidth() const;
+  void setMinWidth(uint max_width);
+
+  ///
+  ///  Get/set MINSTEP parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasMinStep() const;
+  uint getMinStep() const;
+  void setMinStep(uint min_step);
+
+  dbTechLayerMinStepType getMinStepType() const;
+  void                   setMinStepType(dbTechLayerMinStepType type);
+
+  bool hasMinStepMaxLength() const;
+  uint getMinStepMaxLength() const;
+  void setMinStepMaxLength(uint length);
+
+  bool hasMinStepMaxEdges() const;
+  uint getMinStepMaxEdges() const;
+  void setMinStepMaxEdges(uint edges);
+
+  ///
+  ///  Get/set PROTRUSIONWIDTH parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasProtrusion() const;
+  uint getProtrusionWidth() const;
+  uint getProtrusionLength() const;
+  uint getProtrusionFromWidth() const;
+  void setProtrusion(uint pt_width, uint pt_length, uint pt_from_width);
+
+  /// Get the layer-type
+  ///
+  dbTechLayerType getType();
+
+  ///
+  /// Get/Set the layer-direction
+  ///
+  dbTechLayerDir getDirection();
+  void           setDirection(dbTechLayerDir direction);
+
+  ///
+  /// Get/Set the resistance (ohms per square for routing layers;
+  ///                         ohms per cut on via layers)
+  ///
+  double getResistance();
+  void   setResistance(double res);
+
+  ///
+  /// Get/Set the capacitance (pF per square micron)
+  ///
+  double getCapacitance();
+  void   setCapacitance(double cap);
+
+  ///
+  /// Get/Set the edge capacitance (pF per micron)
+  ///
+  double getEdgeCapacitance();
+  void   setEdgeCapacitance(double cap);
+
+  ///
+  /// Get/Set the wire extension
+  ///
+  uint getWireExtension();
+  void setWireExtension(uint ext);
+
+  ///
+  /// Get mask-order number of this layer.
+  ///
+  int getNumber() const;
+
+  ///
+  /// Get routing-level of this routing layer. The routing level
+  /// is from [1-num_layers]. This function returns 0, if this
+  /// layer is not a routing layer.
+  ///
+  int getRoutingLevel();
+
+  ///
+  /// Get the layer below this layer.
+  /// Returns NULL if at bottom of layer stack.
+  ///
+  dbTechLayer* getLowerLayer();
+
+  ///
+  /// Get the layer above this layer.
+  /// Returns NULL if at top of layer stack.
+  ///
+  dbTechLayer* getUpperLayer();
+
+  ///
+  /// Get the technology this layer belongs too.
+  ///
+  dbTech* getTech();
+
+  ///
+  /// Create a new layer. The mask order is implicit in the create order.
+  /// Returns NULL if a layer with this name already exists
+  ///
+  static dbTechLayer* create(dbTech*         tech,
+                             const char*     name,
+                             dbTechLayerType type);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbTechLayer* getTechLayer(dbTech* tech, uint oid);
+  // User Code End dbTechLayer
+};
+
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
@@ -7597,8 +7593,9 @@ class dbTechLayerMinStepSubRule : public dbObject
 
   static dbTechLayerMinStepSubRule* create(dbTechLayerMinStepRule* parent);
 
-  static dbTechLayerMinStepSubRule* getTechLayerMinStepSubRule(dbTechLayerMinStepRule* parent,
-                                                               uint         dbid);
+  static dbTechLayerMinStepSubRule* getTechLayerMinStepSubRule(
+      dbTechLayerMinStepRule* parent,
+      uint                    dbid);
 
   static void destroy(dbTechLayerMinStepSubRule* rule);
 

@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin 1
 #pragma once
 
 #include "dbCore.h"
@@ -37,13 +38,18 @@
 #include "dbTypes.h"
 #include "dbVector.h"
 #include "odb.h"
+// User Code Begin includes
+// User Code End includes
 
 namespace odb {
 
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
+// User Code Begin Classes
 template <class T>
 class dbTable;
-
-class _dbDatabase;
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
 class _dbTechMinEncRule;
@@ -58,15 +64,18 @@ class _dbTechLayerRightWayOnGridOnlyRule;
 class _dbTechLayerRectOnlyRule;
 class _dbTechLayerCutClassRule;
 class _dbTechLayerCutSpacingTableRule;
-class dbIStream;
-class dbOStream;
-class dbDiff;
+// User Code End Classes
+
+// User Code Begin structs
+// User Code End structs
 
 class _dbTechLayer : public _dbObject
 {
  public:
-  // PERSISTENT-MEMBERS
+  // User Code Begin enums
+  // User Code End enums
 
+  // User Code Begin fields
   struct _LyFlags
   {
     dbTechLayerType::Value        _type : 4;
@@ -108,26 +117,26 @@ class _dbTechLayer : public _dbObject
     uint _length;
     uint _from_width;
   } _pt;
-  char*                              _name;
-  char*                              _alias;
-  dbId<_dbTechLayer>                 _upper;
-  dbId<_dbTechLayer>                 _lower;
-  dbTable<_dbTechLayerSpacingRule>*  _spacing_rules_tbl;
-  dbTable<_dbTechLayerSpacingEolRule>*  _spacing_eol_rules_tbl;
-  dbTable<_dbTechLayerCutSpacingRule>*  _cut_spacing_rules_tbl;
-  dbTable<_dbTechLayerMinStepRule>*  _minstep_rules_tbl;
-  dbTable<_dbTechLayerCornerSpacingRule>*  _corner_spacing_rules_tbl;
-  dbTable<_dbTechLayerSpacingTablePrlRule>*  _spacing_table_prl_rules_tbl;
-  dbTable<_dbTechLayerRightWayOnGridOnlyRule>*  _rwogo_rules_tbl;
-  dbTable<_dbTechLayerRectOnlyRule>*  _rect_only_rules_tbl;
-  dbTable<_dbTechLayerCutClassRule>*  _cut_class_rules_tbl;
-  dbTable<_dbTechLayerCutSpacingTableRule>*  _cut_spacing_table_rules_tbl;
-  dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
-  dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
-  dbVector<uint>                     _v55sp_length_idx;
-  dbVector<uint>                     _v55sp_width_idx;
-  dbMatrix<uint>                     _v55sp_spacing;
+  char*                                        _name;
+  char*                                        _alias;
+  dbId<_dbTechLayer>                           _upper;
+  dbId<_dbTechLayer>                           _lower;
+  dbTable<_dbTechLayerSpacingRule>*            _spacing_rules_tbl;
+  dbTable<_dbTechLayerSpacingEolRule>*         _spacing_eol_rules_tbl;
+  dbTable<_dbTechLayerCutSpacingRule>*         _cut_spacing_rules_tbl;
+  dbTable<_dbTechLayerMinStepRule>*            _minstep_rules_tbl;
+  dbTable<_dbTechLayerCornerSpacingRule>*      _corner_spacing_rules_tbl;
+  dbTable<_dbTechLayerSpacingTablePrlRule>*    _spacing_table_prl_rules_tbl;
+  dbTable<_dbTechLayerRightWayOnGridOnlyRule>* _rwogo_rules_tbl;
+  dbTable<_dbTechLayerRectOnlyRule>*           _rect_only_rules_tbl;
+  dbTable<_dbTechLayerCutClassRule>*           _cut_class_rules_tbl;
+  dbTable<_dbTechLayerCutSpacingTableRule>*    _cut_spacing_table_rules_tbl;
+  dbTable<_dbTechMinCutRule>*                  _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule>*                  _min_enc_rules_tbl;
+  dbTable<_dbTechV55InfluenceEntry>*           _v55inf_tbl;
+  dbVector<uint>                               _v55sp_length_idx;
+  dbVector<uint>                               _v55sp_width_idx;
+  dbMatrix<uint>                               _v55sp_spacing;
 
   dbVector<uint> _two_widths_sp_idx;
   dbVector<int>  _two_widths_sp_prl;
@@ -135,27 +144,24 @@ class _dbTechLayer : public _dbObject
 
   dbId<_dbTechLayerAntennaRule> _oxide1;
   dbId<_dbTechLayerAntennaRule> _oxide2;
-
-  _dbTechLayer(_dbDatabase* db);
-  _dbTechLayer(_dbDatabase* db, const _dbTechLayer& l);
+  // User Code End fields
+  _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
+  _dbTechLayer(_dbDatabase*);
   ~_dbTechLayer();
-
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbTechLayer& rhs) const;
   void differences(dbDiff&             diff,
                    const char*         field,
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
-  bool operator<(const _dbTechLayer& rhs) const
-  {
-    return _number < rhs._number;
-  }
-
+  // User Code Begin methods
   dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code End methods
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& layer);
-dbIStream& operator>>(dbIStream& stream, _dbTechLayer& layer);
-
+dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj);
+// User Code Begin general
+// User Code End general
 }  // namespace odb
+   // Generator Code End 1

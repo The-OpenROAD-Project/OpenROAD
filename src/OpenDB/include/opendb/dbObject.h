@@ -90,6 +90,7 @@ enum dbObjectType
   dbHierObj,
   dbBPinObj,
   // Generator Code Begin 1
+  dbTechLayerObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerMinStepRuleObj,
   dbTechLayerMinStepSubRuleObj,
@@ -120,7 +121,6 @@ enum dbObjectType
 
   // Tech Objects
   dbTechObj,
-  dbTechLayerObj,
   dbTechViaObj,
   dbTechNonDefaultRuleObj,  // also a design object
   dbTechLayerRuleObj,       // also a design object

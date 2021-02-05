@@ -262,6 +262,8 @@ dbOStream& operator<<(dbOStream&                           stream,
 
 _dbTechLayerCutSpacingSubRule::~_dbTechLayerCutSpacingSubRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

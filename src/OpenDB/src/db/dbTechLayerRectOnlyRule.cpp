@@ -123,6 +123,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRectOnlyRule& obj)
 
 _dbTechLayerRectOnlyRule::~_dbTechLayerRectOnlyRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

@@ -141,6 +141,8 @@ dbObjectTable* _dbTechLayerCutSpacingRule::getObjectTable(dbObjectType type)
 _dbTechLayerCutSpacingRule::~_dbTechLayerCutSpacingRule()
 {
   delete _techlayercutspacingsubrule_tbl;
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

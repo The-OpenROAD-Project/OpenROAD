@@ -170,6 +170,8 @@ _dbTechLayerCutSpacingTableRule::~_dbTechLayerCutSpacingTableRule()
 {
   delete _techlayercutspacingtableorthsubrule_tbl;
   delete _techlayercutspacingtabledefsubrule_tbl;
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

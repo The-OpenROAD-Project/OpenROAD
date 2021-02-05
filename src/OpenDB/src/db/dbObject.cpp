@@ -637,9 +637,8 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         obj = dbGroup::getGroup((dbBlock*) obj, oid);
         break;
       case 'J':
-        //SKIP
+        // SKIP
         break;
-        
 
       case '/':
         break;
@@ -686,6 +685,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbHier",
                                  "dbBPin",
                                  // Generator Code Begin 1
+                                 "dbTechLayer",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerMinStepRule",
                                  "dbTechLayerMinStepSubRule",
@@ -716,7 +716,6 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Tech Objects
                                  "dbTech",
-                                 "dbTechLayer",
                                  "dbTechVia",
                                  "dbTechNonDefaultRule",
                                  "dbTechLayerRule",

@@ -1,0 +1,13 @@
+{
+    "name": "dbTechLayer",
+    "type": "dbObject",
+    "fields": [],
+    "constructors": [],
+    "enums":[],
+    "h_includes": [
+      "dbMatrix.h",
+      "dbTypes.h",
+      "dbVector.h"
+    ],
+    "cpp_includes":[]
+}

@@ -308,6 +308,8 @@ dbOStream& operator<<(dbOStream&                                   stream,
 
 _dbTechLayerCutSpacingTableDefSubRule::~_dbTechLayerCutSpacingTableDefSubRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

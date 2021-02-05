@@ -30,33 +30,40 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin 1
 #include "dbTechLayer.h"
 
 #include "db.h"
 #include "dbDatabase.h"
+#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
+
+// User Code Begin includes
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTechLayerSpacingRule.h"
-#include "dbTechLayerSpacingEolRule.h"
-#include "dbTechLayerCutSpacingRule.h"
-#include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
-#include "dbTechLayerSpacingTablePrlRule.h"
-#include "dbTechLayerRightWayOnGridOnlyRule.h"
-#include "dbTechLayerRectOnlyRule.h"
 #include "dbTechLayerCutClassRule.h"
+#include "dbTechLayerCutSpacingRule.h"
 #include "dbTechLayerCutSpacingTableRule.h"
+#include "dbTechLayerMinStepRule.h"
+#include "dbTechLayerRectOnlyRule.h"
+#include "dbTechLayerRightWayOnGridOnlyRule.h"
+#include "dbTechLayerSpacingEolRule.h"
+#include "dbTechLayerSpacingRule.h"
+#include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechMinCutOrAreaRule.h"
 #include "lefout.h"
-
+// User Code End includes
 namespace odb {
 
+// User Code Begin definitions
+// User Code End definitions
 template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
+  // User Code Begin ==
   if (_flags._type != rhs._flags._type)
     return false;
 
@@ -233,15 +240,24 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   if (_oxide2 != rhs._oxide2)
     return false;
-
+  // User Code End ==
   return true;
 }
-
+bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
+{
+  // User Code Begin <
+  if (_number >= rhs._number)
+    return false;
+  // User Code End <
+  return true;
+}
 void _dbTechLayer::differences(dbDiff&             diff,
                                const char*         field,
                                const _dbTechLayer& rhs) const
 {
   DIFF_BEGIN
+
+  // User Code Begin differences
   DIFF_FIELD(_flags._type);
   DIFF_FIELD(_flags._direction);
   DIFF_FIELD(_flags._minstep_type);
@@ -298,12 +314,14 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_MATRIX(_two_widths_sp_spacing);
   DIFF_FIELD(_oxide1);
   DIFF_FIELD(_oxide2);
+  // User Code End differences
   DIFF_END
 }
-
 void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
+
+  // User Code Begin out
   DIFF_OUT_FIELD(_flags._type);
   DIFF_OUT_FIELD(_flags._direction);
   DIFF_OUT_FIELD(_flags._minstep_type);
@@ -360,17 +378,12 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_MATRIX(_two_widths_sp_spacing);
   DIFF_OUT_FIELD(_oxide1);
   DIFF_OUT_FIELD(_oxide2);
+  // User Code End out
   DIFF_END
 }
-
-////////////////////////////////////////////////////////////////////
-//
-// _dbTechLayer - Methods
-//
-////////////////////////////////////////////////////////////////////
-
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
+  // User Code Begin constructor
   _flags._type           = dbTechLayerType::ROUTING;
   _flags._direction      = dbTechLayerDir::NONE;
   _flags._minstep_type   = dbTechLayerMinStepType();
@@ -437,42 +450,42 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerMinStepRuleObj);
   ZALLOCATED(_minstep_rules_tbl);
-  
+
   _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCornerSpacingRuleObj);
   ZALLOCATED(_corner_spacing_rules_tbl);
-  
+
   _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerSpacingTablePrlRuleObj);
   ZALLOCATED(_spacing_table_prl_rules_tbl);
-  
+
   _rwogo_rules_tbl = new dbTable<_dbTechLayerRightWayOnGridOnlyRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerRightWayOnGridOnlyRuleObj);
   ZALLOCATED(_rwogo_rules_tbl);
-  
+
   _rect_only_rules_tbl = new dbTable<_dbTechLayerRectOnlyRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerRectOnlyRuleObj);
   ZALLOCATED(_rect_only_rules_tbl);
-  
+
   _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutClassRuleObj);
   ZALLOCATED(_cut_class_rules_tbl);
-  
+
   _cut_spacing_table_rules_tbl = new dbTable<_dbTechLayerCutSpacingTableRule>(
       db,
       this,
@@ -506,108 +519,222 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       8,
       3);
   ZALLOCATED(_v55inf_tbl);
+  // User Code End constructor
 }
-
-_dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& l)
-    : _flags(l._flags),
-      _pitch_x(l._pitch_x),
-      _pitch_y(l._pitch_y),
-      _offset_x(l._offset_x),
-      _offset_y(l._offset_y),
-      _width(l._width),
-      _spacing(l._spacing),
-      _resistance(l._resistance),
-      _capacitance(l._capacitance),
-      _edge_capacitance(l._edge_capacitance),
-      _wire_extension(l._wire_extension),
-      _number(l._number),
-      _rlevel(l._rlevel),
-      _area(l._area),
-      _thickness(l._thickness),
-      _max_width(l._max_width),
-      _min_width(l._min_width),
-      _min_step(l._min_step),
-      _min_step_max_length(l._min_step_max_length),
-      _min_step_max_edges(l._min_step_max_edges),
-      _pt(l._pt),
-      _name(NULL),
-      _alias(NULL),
-      _upper(l._upper),
-      _lower(l._lower),
-      _v55sp_length_idx(l._v55sp_length_idx),
-      _v55sp_width_idx(l._v55sp_width_idx),
-      _v55sp_spacing(l._v55sp_spacing),
-      _two_widths_sp_idx(l._two_widths_sp_idx),
-      _two_widths_sp_prl(l._two_widths_sp_prl),
-      _two_widths_sp_spacing(l._two_widths_sp_spacing),
-      _oxide1(l._oxide1),
-      _oxide2(l._oxide2)
+_dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
-  if (l._name) {
-    _name = strdup(l._name);
+  // User Code Begin CopyConstructor
+  _flags                 = r._flags;
+  _pitch_x               = r._pitch_x;
+  _pitch_y               = r._pitch_y;
+  _offset_x              = r._offset_x;
+  _offset_y              = r._offset_y;
+  _width                 = r._width;
+  _spacing               = r._spacing;
+  _resistance            = r._resistance;
+  _capacitance           = r._capacitance;
+  _edge_capacitance      = r._edge_capacitance;
+  _wire_extension        = r._wire_extension;
+  _number                = r._number;
+  _rlevel                = r._rlevel;
+  _area                  = r._area;
+  _thickness             = r._thickness;
+  _max_width             = r._max_width;
+  _min_width             = r._min_width;
+  _min_step              = r._min_step;
+  _min_step_max_length   = r._min_step_max_length;
+  _min_step_max_edges    = r._min_step_max_edges;
+  _pt                    = r._pt;
+  _name                  = NULL;
+  _alias                 = NULL;
+  _upper                 = r._upper;
+  _lower                 = r._lower;
+  _v55sp_length_idx      = r._v55sp_length_idx;
+  _v55sp_width_idx       = r._v55sp_width_idx;
+  _v55sp_spacing         = r._v55sp_spacing;
+  _two_widths_sp_idx     = r._two_widths_sp_idx;
+  _two_widths_sp_prl     = r._two_widths_sp_prl;
+  _two_widths_sp_spacing = r._two_widths_sp_spacing;
+  _oxide1                = r._oxide1;
+  _oxide2                = r._oxide2;
+
+  if (r._name) {
+    _name = strdup(r._name);
     ZALLOCATED(_name);
   }
 
-  if (l._alias) {
-    _alias = strdup(l._alias);
+  if (r._alias) {
+    _alias = strdup(r._alias);
     ZALLOCATED(_alias);
   }
 
   _spacing_rules_tbl
-      = new dbTable<_dbTechLayerSpacingRule>(db, this, *l._spacing_rules_tbl);
+      = new dbTable<_dbTechLayerSpacingRule>(db, this, *r._spacing_rules_tbl);
   ZALLOCATED(_spacing_rules_tbl);
 
-  _spacing_eol_rules_tbl
-      = new dbTable<_dbTechLayerSpacingEolRule>(db, this, *l._spacing_eol_rules_tbl);
+  _spacing_eol_rules_tbl = new dbTable<_dbTechLayerSpacingEolRule>(
+      db, this, *r._spacing_eol_rules_tbl);
   ZALLOCATED(_spacing_eol_rules_tbl);
 
-  _cut_spacing_rules_tbl
-      = new dbTable<_dbTechLayerCutSpacingRule>(db, this, *l._cut_spacing_rules_tbl);
+  _cut_spacing_rules_tbl = new dbTable<_dbTechLayerCutSpacingRule>(
+      db, this, *r._cut_spacing_rules_tbl);
   ZALLOCATED(_cut_spacing_rules_tbl);
 
   _minstep_rules_tbl
-      = new dbTable<_dbTechLayerMinStepRule>(db, this, *l._minstep_rules_tbl);
+      = new dbTable<_dbTechLayerMinStepRule>(db, this, *r._minstep_rules_tbl);
   ZALLOCATED(_minstep_rules_tbl);
 
-  _corner_spacing_rules_tbl
-      = new dbTable<_dbTechLayerCornerSpacingRule>(db, this, *l._corner_spacing_rules_tbl);
+  _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
+      db, this, *r._corner_spacing_rules_tbl);
   ZALLOCATED(_corner_spacing_rules_tbl);
 
-  _spacing_table_prl_rules_tbl
-      = new dbTable<_dbTechLayerSpacingTablePrlRule>(db, this, *l._spacing_table_prl_rules_tbl);
+  _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
+      db, this, *r._spacing_table_prl_rules_tbl);
   ZALLOCATED(_spacing_table_prl_rules_tbl);
 
-  _rwogo_rules_tbl
-      = new dbTable<_dbTechLayerRightWayOnGridOnlyRule>(db, this, *l._rwogo_rules_tbl);
+  _rwogo_rules_tbl = new dbTable<_dbTechLayerRightWayOnGridOnlyRule>(
+      db, this, *r._rwogo_rules_tbl);
   ZALLOCATED(_rwogo_rules_tbl);
 
-  _rect_only_rules_tbl
-      = new dbTable<_dbTechLayerRectOnlyRule>(db, this, *l._rect_only_rules_tbl);
+  _rect_only_rules_tbl = new dbTable<_dbTechLayerRectOnlyRule>(
+      db, this, *r._rect_only_rules_tbl);
   ZALLOCATED(_rect_only_rules_tbl);
 
-  _cut_class_rules_tbl
-      = new dbTable<_dbTechLayerCutClassRule>(db, this, *l._cut_class_rules_tbl);
+  _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
+      db, this, *r._cut_class_rules_tbl);
   ZALLOCATED(_cut_class_rules_tbl);
 
-  _cut_spacing_table_rules_tbl
-      = new dbTable<_dbTechLayerCutSpacingTableRule>(db, this, *l._cut_spacing_table_rules_tbl);
+  _cut_spacing_table_rules_tbl = new dbTable<_dbTechLayerCutSpacingTableRule>(
+      db, this, *r._cut_spacing_table_rules_tbl);
   ZALLOCATED(_cut_spacing_table_rules_tbl);
 
-
   _min_cut_rules_tbl
-      = new dbTable<_dbTechMinCutRule>(db, this, *l._min_cut_rules_tbl);
+      = new dbTable<_dbTechMinCutRule>(db, this, *r._min_cut_rules_tbl);
   ZALLOCATED(_min_cut_rules_tbl);
 
   _min_enc_rules_tbl
-      = new dbTable<_dbTechMinEncRule>(db, this, *l._min_enc_rules_tbl);
+      = new dbTable<_dbTechMinEncRule>(db, this, *r._min_enc_rules_tbl);
   ZALLOCATED(_min_enc_rules_tbl);
 
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(db, this, *l._v55inf_tbl);
+  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(db, this, *r._v55inf_tbl);
   ZALLOCATED(_v55inf_tbl);
+  // User Code End CopyConstructor
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
+{
+  // User Code Begin >>
+  uint* bit_field = (uint*) &obj._flags;
+  stream >> *bit_field;
+  stream >> obj._pitch_x;
+  stream >> obj._pitch_y;
+  stream >> obj._offset_x;
+  stream >> obj._offset_y;
+  stream >> obj._width;
+  stream >> obj._spacing;
+  stream >> obj._resistance;
+  stream >> obj._capacitance;
+  stream >> obj._edge_capacitance;
+  stream >> obj._wire_extension;
+  stream >> obj._number;
+  stream >> obj._rlevel;
+  stream >> obj._area;
+  stream >> obj._thickness;
+  stream >> obj._min_step;
+  stream >> obj._min_step_max_length;
+  stream >> obj._min_step_max_edges;
+  stream >> obj._max_width;
+  stream >> obj._min_width;
+  stream >> obj._pt._width;
+  stream >> obj._pt._length;
+  stream >> obj._pt._from_width;
+  stream >> obj._name;
+  stream >> obj._alias;
+  stream >> obj._lower;
+  stream >> obj._upper;
+  stream >> *obj._spacing_rules_tbl;
+  stream >> *obj._spacing_eol_rules_tbl;
+  stream >> *obj._cut_spacing_rules_tbl;
+  stream >> *obj._minstep_rules_tbl;
+  stream >> *obj._corner_spacing_rules_tbl;
+  stream >> *obj._spacing_table_prl_rules_tbl;
+  stream >> *obj._rwogo_rules_tbl;
+  stream >> *obj._rect_only_rules_tbl;
+  stream >> *obj._cut_class_rules_tbl;
+  stream >> *obj._cut_spacing_table_rules_tbl;
+  stream >> *obj._min_cut_rules_tbl;
+  stream >> *obj._min_enc_rules_tbl;
+  stream >> *obj._v55inf_tbl;
+  stream >> obj._v55sp_length_idx;
+  stream >> obj._v55sp_width_idx;
+  stream >> obj._v55sp_spacing;
+  stream >> obj._two_widths_sp_idx;
+  stream >> obj._two_widths_sp_prl;
+  stream >> obj._two_widths_sp_spacing;
+  stream >> obj._oxide1;
+  stream >> obj._oxide2;
+  // User Code End >>
+  return stream;
+}
+dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
+{
+  // User Code Begin <<
+  uint* bit_field = (uint*) &obj._flags;
+  stream << *bit_field;
+  stream << obj._pitch_x;
+  stream << obj._pitch_y;
+  stream << obj._offset_x;
+  stream << obj._offset_y;
+  stream << obj._width;
+  stream << obj._spacing;
+  stream << obj._resistance;
+  stream << obj._capacitance;
+  stream << obj._edge_capacitance;
+  stream << obj._wire_extension;
+  stream << obj._number;
+  stream << obj._rlevel;
+  stream << obj._area;
+  stream << obj._thickness;
+  stream << obj._min_step;
+  stream << obj._min_step_max_length;
+  stream << obj._min_step_max_edges;
+  stream << obj._max_width;
+  stream << obj._min_width;
+  stream << obj._pt._width;
+  stream << obj._pt._length;
+  stream << obj._pt._from_width;
+  stream << obj._name;
+  stream << obj._alias;
+  stream << obj._lower;
+  stream << obj._upper;
+  stream << *obj._spacing_rules_tbl;
+  stream << *obj._spacing_eol_rules_tbl;
+  stream << *obj._cut_spacing_rules_tbl;
+  stream << *obj._minstep_rules_tbl;
+  stream << *obj._corner_spacing_rules_tbl;
+  stream << *obj._spacing_table_prl_rules_tbl;
+  stream << *obj._rwogo_rules_tbl;
+  stream << *obj._rect_only_rules_tbl;
+  stream << *obj._cut_class_rules_tbl;
+  stream << *obj._cut_spacing_table_rules_tbl;
+  stream << *obj._min_cut_rules_tbl;
+  stream << *obj._min_enc_rules_tbl;
+  stream << *obj._v55inf_tbl;
+  stream << obj._v55sp_length_idx;
+  stream << obj._v55sp_width_idx;
+  stream << obj._v55sp_spacing;
+  stream << obj._two_widths_sp_idx;
+  stream << obj._two_widths_sp_prl;
+  stream << obj._two_widths_sp_spacing;
+  stream << obj._oxide1;
+  stream << obj._oxide2;
+  // User Code End <<
+  return stream;
 }
 
 _dbTechLayer::~_dbTechLayer()
 {
+  // User Code Begin Destructor
   if (_name)
     free((void*) _name);
 
@@ -649,121 +776,15 @@ _dbTechLayer::~_dbTechLayer()
 
   if (_v55inf_tbl)
     delete _v55inf_tbl;
+  // User Code End Destructor
 }
+////////////////////////////////////////////////////////////////////
+//
+// dbTechLayer - Methods
+//
+////////////////////////////////////////////////////////////////////
 
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& layer)
-{
-  uint* bit_field = (uint*) &layer._flags;
-  stream << *bit_field;
-  stream << layer._pitch_x;
-  stream << layer._pitch_y;
-  stream << layer._offset_x;
-  stream << layer._offset_y;
-  stream << layer._width;
-  stream << layer._spacing;
-  stream << layer._resistance;
-  stream << layer._capacitance;
-  stream << layer._edge_capacitance;
-  stream << layer._wire_extension;
-  stream << layer._number;
-  stream << layer._rlevel;
-  stream << layer._area;
-  stream << layer._thickness;
-  stream << layer._min_step;
-  stream << layer._min_step_max_length;
-  stream << layer._min_step_max_edges;
-  stream << layer._max_width;
-  stream << layer._min_width;
-  stream << layer._pt._width;
-  stream << layer._pt._length;
-  stream << layer._pt._from_width;
-  stream << layer._name;
-  stream << layer._alias;
-  stream << layer._lower;
-  stream << layer._upper;
-  stream << *layer._spacing_rules_tbl;
-  stream << *layer._spacing_eol_rules_tbl;
-  stream << *layer._cut_spacing_rules_tbl;
-  stream << *layer._minstep_rules_tbl;
-  stream << *layer._corner_spacing_rules_tbl;
-  stream << *layer._spacing_table_prl_rules_tbl;
-  stream << *layer._rwogo_rules_tbl;
-  stream << *layer._rect_only_rules_tbl;
-  stream << *layer._cut_class_rules_tbl;
-  stream << *layer._cut_spacing_table_rules_tbl;
-  stream << *layer._min_cut_rules_tbl;
-  stream << *layer._min_enc_rules_tbl;
-  stream << *layer._v55inf_tbl;
-  stream << layer._v55sp_length_idx;
-  stream << layer._v55sp_width_idx;
-  stream << layer._v55sp_spacing;
-  stream << layer._two_widths_sp_idx;
-  stream << layer._two_widths_sp_prl;
-  stream << layer._two_widths_sp_spacing;
-  stream << layer._oxide1;
-  stream << layer._oxide2;
-
-  return stream;
-}
-
-//  NOTE: Must pre-allocate pointer members that are in tables.
-//  Will change this when partial specialization of templates is supported
-//  in Windows.
-dbIStream& operator>>(dbIStream& stream, _dbTechLayer& layer)
-{
-  // uint tparea;
-  uint* bit_field = (uint*) &layer._flags;
-  stream >> *bit_field;
-  stream >> layer._pitch_x;
-  stream >> layer._pitch_y;
-  stream >> layer._offset_x;
-  stream >> layer._offset_y;
-  stream >> layer._width;
-  stream >> layer._spacing;
-  stream >> layer._resistance;
-  stream >> layer._capacitance;
-  stream >> layer._edge_capacitance;
-  stream >> layer._wire_extension;
-  stream >> layer._number;
-  stream >> layer._rlevel;
-  stream >> layer._area;
-  stream >> layer._thickness;
-  stream >> layer._min_step;
-  stream >> layer._min_step_max_length;
-  stream >> layer._min_step_max_edges;
-  stream >> layer._max_width;
-  stream >> layer._min_width;
-  stream >> layer._pt._width;
-  stream >> layer._pt._length;
-  stream >> layer._pt._from_width;
-  stream >> layer._name;
-  stream >> layer._alias;
-  stream >> layer._lower;
-  stream >> layer._upper;
-  stream >> *layer._spacing_rules_tbl;
-  stream >> *layer._spacing_eol_rules_tbl;
-  stream >> *layer._cut_spacing_rules_tbl;
-  stream >> *layer._minstep_rules_tbl;
-  stream >> *layer._corner_spacing_rules_tbl;
-  stream >> *layer._spacing_table_prl_rules_tbl;
-  stream >> *layer._rwogo_rules_tbl;
-  stream >> *layer._rect_only_rules_tbl;
-  stream >> *layer._cut_class_rules_tbl;
-  stream >> *layer._cut_spacing_table_rules_tbl;
-  stream >> *layer._min_cut_rules_tbl;
-  stream >> *layer._min_enc_rules_tbl;
-  stream >> *layer._v55inf_tbl;
-  stream >> layer._v55sp_length_idx;
-  stream >> layer._v55sp_width_idx;
-  stream >> layer._v55sp_spacing;
-  stream >> layer._two_widths_sp_idx;
-  stream >> layer._two_widths_sp_prl;
-  stream >> layer._two_widths_sp_spacing;
-  stream >> layer._oxide1;
-  stream >> layer._oxide2;
-  return stream;
-}
-
+// User Code Begin dbTechLayerPublicMethods
 dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
 {
   switch (type) {
@@ -797,7 +818,6 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
     case dbTechLayerCutSpacingTableRuleObj:
       return _cut_spacing_table_rules_tbl;
 
-
     case dbTechMinCutRuleObj:
       return _min_cut_rules_tbl;
 
@@ -812,12 +832,6 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
 
   return getTable()->getObjectTable(type);
 }
-
-////////////////////////////////////////////////////////////////////
-//
-// dbTechLayer - Methods
-//
-////////////////////////////////////////////////////////////////////
 
 std::string dbTechLayer::getName() const
 {
@@ -1036,7 +1050,6 @@ bool dbTechLayer::getV54SpacingRules(
   return true;
 }
 
-
 dbSet<dbTechLayerSpacingEolRule> dbTechLayer::getEolSpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -1062,21 +1075,26 @@ dbSet<dbTechLayerCornerSpacingRule> dbTechLayer::getCornerSpacingRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  return dbSet<dbTechLayerCornerSpacingRule>(layer, layer->_corner_spacing_rules_tbl);
+  return dbSet<dbTechLayerCornerSpacingRule>(layer,
+                                             layer->_corner_spacing_rules_tbl);
 }
 
-dbSet<dbTechLayerSpacingTablePrlRule> dbTechLayer::getSpacingTablePrlRules() const
+dbSet<dbTechLayerSpacingTablePrlRule> dbTechLayer::getSpacingTablePrlRules()
+    const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  return dbSet<dbTechLayerSpacingTablePrlRule>(layer, layer->_spacing_table_prl_rules_tbl);
+  return dbSet<dbTechLayerSpacingTablePrlRule>(
+      layer, layer->_spacing_table_prl_rules_tbl);
 }
 
-dbSet<dbTechLayerRightWayOnGridOnlyRule> dbTechLayer::getRightWayOnGridOnlyRules() const
+dbSet<dbTechLayerRightWayOnGridOnlyRule>
+dbTechLayer::getRightWayOnGridOnlyRules() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  return dbSet<dbTechLayerRightWayOnGridOnlyRule>(layer, layer->_rwogo_rules_tbl);
+  return dbSet<dbTechLayerRightWayOnGridOnlyRule>(layer,
+                                                  layer->_rwogo_rules_tbl);
 }
 
 dbSet<dbTechLayerRectOnlyRule> dbTechLayer::getRectOnlyRules() const
@@ -1093,11 +1111,13 @@ dbSet<dbTechLayerCutClassRule> dbTechLayer::getCutClassRules() const
   return dbSet<dbTechLayerCutClassRule>(layer, layer->_cut_class_rules_tbl);
 }
 
-dbSet<dbTechLayerCutSpacingTableRule> dbTechLayer::getCutSpacingTableRules() const
+dbSet<dbTechLayerCutSpacingTableRule> dbTechLayer::getCutSpacingTableRules()
+    const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  return dbSet<dbTechLayerCutSpacingTableRule>(layer, layer->_cut_spacing_table_rules_tbl);
+  return dbSet<dbTechLayerCutSpacingTableRule>(
+      layer, layer->_cut_spacing_table_rules_tbl);
 }
 
 bool dbTechLayer::hasV55SpacingRules() const
@@ -1856,21 +1876,6 @@ dbTechLayer* dbTechLayer::getTechLayer(dbTech* tech_, uint dbid_)
   return (dbTechLayer*) tech->_layer_tbl->getPtr(dbid_);
 }
 
-/* Sample code to access properties
-void dbProperty::GetProperties(dbTechLayer *layer)
-{
-    dbSet<dbProperty> props = dbProperty::getProperties(object);
-    dbSet<dbProperty>::iterator itr;
-
-    for( itr = props.begin(); itr != props.end(); ++itr )
-    {
-        dbProperty * prop = *itr;
-        std::string name = prop->getName();
-        std::string value = prop->getName();
-        dbStringProperty * p = (dbStringProperty *) prop;
-        std::string v = p->getValue();
-
-        fprintf(out, "PROPERTY %s ", name.c_str() );
-*/
-
+// User Code End dbTechLayerPublicMethods
 }  // namespace odb
+   // Generator Code End 1

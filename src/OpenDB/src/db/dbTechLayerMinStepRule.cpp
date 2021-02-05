@@ -141,6 +141,8 @@ dbObjectTable* _dbTechLayerMinStepRule::getObjectTable(dbObjectType type)
 _dbTechLayerMinStepRule::~_dbTechLayerMinStepRule()
 {
   delete _techlayerminstepsubrule_tbl;
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //
@@ -174,7 +176,7 @@ dbTechLayerMinStepRule* dbTechLayerMinStepRule::getTechLayerMinStepRule(
 void dbTechLayerMinStepRule::destroy(dbTechLayerMinStepRule* rule)
 {
   _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  for(auto subRule : rule->getTechLayerMinStepSubRules())
+  for (auto subRule : rule->getTechLayerMinStepSubRules())
     dbTechLayerMinStepSubRule::destroy(subRule);
   dbProperty::destroyProperties(rule);
   layer->_minstep_rules_tbl->destroy((_dbTechLayerMinStepRule*) rule);

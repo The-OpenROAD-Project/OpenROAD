@@ -162,6 +162,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassSubRule& obj)
 
 _dbTechLayerCutClassSubRule::~_dbTechLayerCutClassSubRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

@@ -225,6 +225,8 @@ _dbGroup::~_dbGroup()
 {
   if (_name)
     free((void*) _name);
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

@@ -308,6 +308,8 @@ namespace odb {
     delete {{field.name}};
     {%endif%}
     {%endfor%}
+    //User Code Begin Destructor
+    //User Code End Destructor
     
   }
   ////////////////////////////////////////////////////////////////////

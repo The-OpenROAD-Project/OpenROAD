@@ -141,6 +141,8 @@ dbObjectTable* _dbTechLayerCutClassRule::getObjectTable(dbObjectType type)
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
   delete _techlayercutclasssubrule_tbl;
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

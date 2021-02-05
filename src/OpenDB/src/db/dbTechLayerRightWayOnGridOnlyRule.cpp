@@ -126,6 +126,8 @@ dbOStream& operator<<(dbOStream&                                stream,
 
 _dbTechLayerRightWayOnGridOnlyRule::~_dbTechLayerRightWayOnGridOnlyRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

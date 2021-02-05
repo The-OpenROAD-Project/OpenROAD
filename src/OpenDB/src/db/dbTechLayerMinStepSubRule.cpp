@@ -194,6 +194,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepSubRule& obj)
 
 _dbTechLayerMinStepSubRule::~_dbTechLayerMinStepSubRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //
@@ -367,7 +369,7 @@ dbTechLayerMinStepSubRule* dbTechLayerMinStepSubRule::create(
 dbTechLayerMinStepSubRule*
 dbTechLayerMinStepSubRule::getTechLayerMinStepSubRule(
     dbTechLayerMinStepRule* parent,
-    uint                       dbid)
+    uint                    dbid)
 {
   _dbTechLayerMinStepRule* _parent = (_dbTechLayerMinStepRule*) parent;
   return (dbTechLayerMinStepSubRule*)

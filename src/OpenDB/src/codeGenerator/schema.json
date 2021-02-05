@@ -1,6 +1,9 @@
 {
   "classes": [
     {
+      "src":"dbTechLayer.json"
+    },
+    {
       "name": "dbTechLayerSpacingEolRule",
       "type": "dbObject",
       "fields": [
