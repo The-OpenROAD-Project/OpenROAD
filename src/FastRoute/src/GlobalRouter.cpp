@@ -59,6 +59,7 @@
 #include "opendb/wOrder.h"
 #include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -71,6 +72,8 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
   _logger = openroad->getLogger();
+  // Broken gui api missing openroad accessor.
+  _gui = gui::Gui::get();
   init();
 }
 
@@ -3143,6 +3146,76 @@ void GlobalRouter::print(GRoute& route)
            segment.finalX,
            segment.finalY,
            segment.finalLayer);
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+class GrouteRenderer : public gui::Renderer
+{
+public:
+  GrouteRenderer(GlobalRouter *groute,
+                 odb::dbTech* tech);
+  void highlight(const odb::dbNet *net);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  GlobalRouter *groute_;
+  odb::dbTech *tech_;
+  const odb::dbNet *net_;
+};
+
+// Highlight guide in the gui.
+void
+GlobalRouter::highlightRoute(const odb::dbNet *net)
+{
+  if (_gui) {
+    if (_groute_renderer == nullptr) {
+      _groute_renderer = new GrouteRenderer(this, _db->getTech());
+      _gui->registerRenderer(_groute_renderer);
+    }
+    _groute_renderer->highlight(net);
+  }
+}
+
+GrouteRenderer::GrouteRenderer(GlobalRouter *groute,
+                               odb::dbTech* tech) :
+  groute_(groute),
+  tech_(tech),
+  net_(nullptr)
+{
+}
+
+void
+GrouteRenderer::highlight(const odb::dbNet *net)
+{
+  net_ = net;
+}
+
+void
+GrouteRenderer::drawObjects(gui::Painter &painter)
+{
+  if (net_) {
+    NetRouteMap& routes = groute_->getRoutes();
+    GRoute &groute = routes[const_cast<odb::dbNet*>(net_)];
+    for (GSegment &seg : groute) {
+      int layer1 = seg.initLayer;
+      int layer2 = seg.finalLayer;
+      if (layer1 == layer2) {
+        odb::dbTechLayer *layer = tech_->findRoutingLayer(layer1);
+        // Draw rect because drawLine does not have a way to set the pen thickness.
+        odb::Rect rect;
+        int thickness = 20; // dbu
+        if (seg.initX == seg.finalX)
+          // vertical
+          rect = odb::Rect(seg.initX, seg.initY, seg.initX + thickness, seg.finalY);
+        else
+          // horizontal
+          rect = odb::Rect(seg.initX, seg.initY, seg.finalX, seg.initY + thickness);
+        painter.setBrush(layer);
+        painter.drawRect(rect);
+      }
+    }
   }
 }
 

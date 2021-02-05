@@ -217,4 +217,10 @@ report_congestion(char* congest_file)
   getFastRoute()->setReportCongestion(congest_file);
 }
 
+void
+highlight_net_route(const odb::dbNet *net)
+{
+  getFastRoute()->highlightRoute(net);
+}
+
 %} // inline
