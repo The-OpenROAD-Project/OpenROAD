@@ -437,7 +437,9 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 proc highlight_route { net_name } {
   set block [ord::get_db_block]
   set net [$block findNet $net_name]
-  highlight_net_route $net
+  if { $net != "NULL" } {
+    highlight_net_route $net
+  }
 }
 
 # grt namespace end
