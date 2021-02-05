@@ -450,15 +450,7 @@
       "src": "dbTechLayerRectOnlyRule.json"
     },
     {
-      "name": "dbTechLayerCutClassRule",
-      "type": "dbObject",
-      "fields": [],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
-    },
-    {
-      "src":"dbTechLayerCutClassSubRule.json"
+      "src":"dbTechLayerCutClassRule.json"
     },
     {
       "name": "dbTechLayerCutSpacingRule",
@@ -708,9 +700,11 @@
       "type":"1_n"
     },
     {
-      "first":"dbTechLayerCutClassRule",
-      "second":"dbTechLayerCutClassSubRule",
-      "type":"1_n"
+      "first":"dbTechLayer",
+      "second":"dbTechLayerCutClassRule",
+      "type":"1_n",
+      "tbl_name":"_cut_class_rules_tbl",
+      "hash":true
     },
     {
       "first":"dbTechLayerCutSpacingRule",

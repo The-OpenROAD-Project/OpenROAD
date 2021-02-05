@@ -38,28 +38,28 @@ namespace lefTechLayerCutClass {
     // using qi::_1;
     using ascii::space;
     using phoenix::ref;
-    void addCutClassSubRule(boost::fusion::vector<std::string, double, boost::optional<double>, boost::optional<int>>& params,
-                            odb::dbTechLayerCutClassRule* rule, 
+    void addCutClassRule(boost::fusion::vector<std::string, double, boost::optional<double>, boost::optional<int>>& params,
+                            odb::dbTechLayer* layer, 
                             odb::lefin* lefin) 
     {
         std::string name = at_c<0>(params);
-        auto subrule = odb::dbTechLayerCutClassSubRule::create(rule, name.c_str());
-        subrule->setWidth(lefin->dbdist(at_c<1>(params)));
+        auto rule = odb::dbTechLayerCutClassRule::create(layer, name.c_str());
+        rule->setWidth(lefin->dbdist(at_c<1>(params)));
         auto length = at_c<2>(params);
         auto cnt = at_c<3>(params);
         if(length.is_initialized())
         {
-            subrule->setLengthValid(true);
-            subrule->setLength(lefin->dbdist(length.value()));
+            rule->setLengthValid(true);
+            rule->setLength(lefin->dbdist(length.value()));
         }
         if(cnt.is_initialized())
         {
-            subrule->setCutsValid(true);
-            subrule->setNumCuts(cnt.value());
+            rule->setCutsValid(true);
+            rule->setNumCuts(cnt.value());
         }
     }
     template <typename Iterator>
-    bool parse(Iterator first, Iterator last, odb::dbTechLayerCutClassRule* rule, odb::lefin* lefin)
+    bool parse(Iterator first, Iterator last, odb::dbTechLayer* layer, odb::lefin* lefin)
     {   
 
         qi::rule<Iterator, std::string(), ascii::space_type> _string;
@@ -73,7 +73,7 @@ namespace lefTechLayerCutClass {
                >> -(lit("LENGTH") >> double_) 
                >> -(lit("CUTS") >> int_)
                >> lit(";")
-            )[boost::bind(&addCutClassSubRule,_1,rule,lefin)]
+            )[boost::bind(&addCutClassRule,_1,layer,lefin)]
         );
 
         bool r = qi::phrase_parse(first, last, cutClassRule, space);
@@ -89,16 +89,9 @@ namespace lefTechLayerCutClass {
 namespace odb{
 
 
-dbTechLayerCutClassRule* lefTechLayerCutClassParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
+void lefTechLayerCutClassParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
 {
-    dbTechLayerCutClassRule* rule = dbTechLayerCutClassRule::create(layer);
-    if(lefTechLayerCutClass::parse(s.begin(), s.end(), rule, l) )
-        return rule;
-    else 
-    {
-        odb::dbTechLayerCutClassRule::destroy(rule);
-        return nullptr;
-    }
+    lefTechLayerCutClass::parse(s.begin(), s.end(), layer, l);
 } 
 
 

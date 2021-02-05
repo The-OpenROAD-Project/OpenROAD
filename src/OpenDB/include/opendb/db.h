@@ -114,7 +114,6 @@ class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerRightWayOnGridOnlyRule;
 class dbTechLayerRectOnlyRule;
 class dbTechLayerCutClassRule;
-class dbTechLayerCutClassSubRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingSubRule;
 class dbTechLayerCutSpacingTableRule;
@@ -6919,6 +6918,10 @@ class dbViaParams : private _dbViaParams
 class dbTechLayer : public dbObject
 {
  public:
+  dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
+
+  dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
+
   // User Code Begin dbTechLayer
   ///
   /// Get the layer name.
@@ -7772,22 +7775,7 @@ class dbTechLayerRectOnlyRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
-  dbSet<dbTechLayerCutClassSubRule> getTechLayerCutClassSubRules() const;
-
-  // User Code Begin dbTechLayerCutClassRule
-  static dbTechLayerCutClassRule* getTechLayerCutClassRule(dbTechLayer* inly,
-                                                           uint         dbid);
-
-  static dbTechLayerCutClassRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerCutClassRule* rule);
-  // User Code End dbTechLayerCutClassRule
-};
-
-class dbTechLayerCutClassSubRule : public dbObject
-{
- public:
-  char* getClassName() const;
+  char* getName() const;
 
   void setWidth(int _width);
 
@@ -7809,16 +7797,14 @@ class dbTechLayerCutClassSubRule : public dbObject
 
   bool isCutsValid() const;
 
-  // User Code Begin dbTechLayerCutClassSubRule
-  static dbTechLayerCutClassSubRule* getTechLayerCutClassSubRule(
-      dbTechLayerCutClassRule* parent,
-      uint                     dbid);
+  // User Code Begin dbTechLayerCutClassRule
+  static dbTechLayerCutClassRule* getTechLayerCutClassRule(dbTechLayer* inly,
+                                                           uint         dbid);
 
-  static dbTechLayerCutClassSubRule* create(dbTechLayerCutClassRule* parent,
-                                            const char*              name);
+  static dbTechLayerCutClassRule* create(dbTechLayer* _layer, const char* name);
 
-  static void destroy(dbTechLayerCutClassSubRule* rule);
-  // User Code End dbTechLayerCutClassSubRule
+  static void destroy(dbTechLayerCutClassRule* rule);
+  // User Code End dbTechLayerCutClassRule
 };
 
 class dbTechLayerCutSpacingRule : public dbObject

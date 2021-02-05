@@ -29,6 +29,8 @@ class {{klass.name}} : public dbObject
   dbSet<{{field.type}}> get{{field.functional_name}}() const;
   {%elif field.isDbVector%}
   void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
+  {%elif field.isHashTable%}
+  {{field.getterReturnType}} {{field.getterFunctionName}}(const char* name) const;
   {%else%}
   {{field.getterReturnType}} {{field.getterFunctionName}}() const;
   {%endif%}

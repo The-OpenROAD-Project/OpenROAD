@@ -1,9 +1,9 @@
 {
-  "name":"dbTechLayerCutClassSubRule",
+  "name":"dbTechLayerCutClassRule",
   "type":"dbObject",
   "fields":[
     {
-      "name":"_class_name",
+      "name":"_name",
       "type":"char *",
       "flags":["no-set"]
     },
@@ -34,5 +34,6 @@
       "flags":[],
       "bits":1
     }
-  ]
+  ],
+  "cpp_includes":["dbTechLayer.h","dbHashTable.h"]
 }

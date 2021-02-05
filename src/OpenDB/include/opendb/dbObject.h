@@ -99,7 +99,6 @@ enum dbObjectType
   dbTechLayerRightWayOnGridOnlyRuleObj,
   dbTechLayerRectOnlyRuleObj,
   dbTechLayerCutClassRuleObj,
-  dbTechLayerCutClassSubRuleObj,
   dbTechLayerCutSpacingRuleObj,
   dbTechLayerCutSpacingSubRuleObj,
   dbTechLayerCutSpacingTableRuleObj,

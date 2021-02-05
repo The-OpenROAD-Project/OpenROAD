@@ -36,9 +36,10 @@
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
+#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-
+#include "dbTechLayerCutClassRule.h"
 // User Code Begin includes
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -63,6 +64,12 @@ template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
+  if (*_cut_class_rules_tbl != *rhs._cut_class_rules_tbl)
+    return false;
+
+  if (_cut_class_rules_hash != rhs._cut_class_rules_hash)
+    return false;
+
   // User Code Begin ==
   if (_flags._type != rhs._flags._type)
     return false;
@@ -257,6 +264,8 @@ void _dbTechLayer::differences(dbDiff&             diff,
 {
   DIFF_BEGIN
 
+  DIFF_TABLE(_cut_class_rules_tbl);
+  DIFF_HASH_TABLE(_cut_class_rules_hash);
   // User Code Begin differences
   DIFF_FIELD(_flags._type);
   DIFF_FIELD(_flags._direction);
@@ -320,6 +329,8 @@ void _dbTechLayer::differences(dbDiff&             diff,
 void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
+  DIFF_OUT_TABLE(_cut_class_rules_tbl);
+  DIFF_OUT_HASH_TABLE(_cut_class_rules_hash);
 
   // User Code Begin out
   DIFF_OUT_FIELD(_flags._type);
@@ -383,6 +394,13 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
+  _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerCutClassRuleObj);
+  ZALLOCATED(_cut_class_rules_tbl);
+  _cut_class_rules_hash.setTable(_cut_class_rules_tbl);
   // User Code Begin constructor
   _flags._type           = dbTechLayerType::ROUTING;
   _flags._direction      = dbTechLayerDir::NONE;
@@ -523,6 +541,10 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
+  _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
+      db, this, *r._cut_class_rules_tbl);
+  ZALLOCATED(_cut_class_rules_tbl);
+  _cut_class_rules_hash.setTable(_cut_class_rules_tbl);
   // User Code Begin CopyConstructor
   _flags                 = r._flags;
   _pitch_x               = r._pitch_x;
@@ -623,6 +645,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
+  stream >> *obj._cut_class_rules_tbl;
+  stream >> obj._cut_class_rules_hash;
   // User Code Begin >>
   uint* bit_field = (uint*) &obj._flags;
   stream >> *bit_field;
@@ -678,6 +702,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
+  stream << *obj._cut_class_rules_tbl;
+  stream << obj._cut_class_rules_hash;
   // User Code Begin <<
   uint* bit_field = (uint*) &obj._flags;
   stream << *bit_field;
@@ -732,8 +758,56 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   return stream;
 }
 
+dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbTechLayerCutClassRuleObj:
+      return _cut_class_rules_tbl;
+    // User Code Begin getObjectTable
+    case dbTechLayerSpacingRuleObj:
+      return _spacing_rules_tbl;
+
+    case dbTechLayerSpacingEolRuleObj:
+      return _spacing_eol_rules_tbl;
+
+    case dbTechLayerCutSpacingRuleObj:
+      return _cut_spacing_rules_tbl;
+
+    case dbTechLayerMinStepRuleObj:
+      return _minstep_rules_tbl;
+
+    case dbTechLayerCornerSpacingRuleObj:
+      return _corner_spacing_rules_tbl;
+
+    case dbTechLayerSpacingTablePrlRuleObj:
+      return _spacing_table_prl_rules_tbl;
+
+    case dbTechLayerRightWayOnGridOnlyRuleObj:
+      return _rwogo_rules_tbl;
+
+    case dbTechLayerRectOnlyRuleObj:
+      return _rect_only_rules_tbl;
+
+    case dbTechLayerCutSpacingTableRuleObj:
+      return _cut_spacing_table_rules_tbl;
+
+    case dbTechMinCutRuleObj:
+      return _min_cut_rules_tbl;
+
+    case dbTechMinEncRuleObj:
+      return _min_enc_rules_tbl;
+
+    case dbTechV55InfluenceEntryObj:
+      return _v55inf_tbl;
+    // User Code End getObjectTable
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
+}
 _dbTechLayer::~_dbTechLayer()
 {
+  delete _cut_class_rules_tbl;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -784,54 +858,20 @@ _dbTechLayer::~_dbTechLayer()
 //
 ////////////////////////////////////////////////////////////////////
 
-// User Code Begin dbTechLayerPublicMethods
-dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
+dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
 {
-  switch (type) {
-    case dbTechLayerSpacingRuleObj:
-      return _spacing_rules_tbl;
-
-    case dbTechLayerSpacingEolRuleObj:
-      return _spacing_eol_rules_tbl;
-
-    case dbTechLayerCutSpacingRuleObj:
-      return _cut_spacing_rules_tbl;
-
-    case dbTechLayerMinStepRuleObj:
-      return _minstep_rules_tbl;
-
-    case dbTechLayerCornerSpacingRuleObj:
-      return _corner_spacing_rules_tbl;
-
-    case dbTechLayerSpacingTablePrlRuleObj:
-      return _spacing_table_prl_rules_tbl;
-
-    case dbTechLayerRightWayOnGridOnlyRuleObj:
-      return _rwogo_rules_tbl;
-
-    case dbTechLayerRectOnlyRuleObj:
-      return _rect_only_rules_tbl;
-
-    case dbTechLayerCutClassRuleObj:
-      return _cut_class_rules_tbl;
-
-    case dbTechLayerCutSpacingTableRuleObj:
-      return _cut_spacing_table_rules_tbl;
-
-    case dbTechMinCutRuleObj:
-      return _min_cut_rules_tbl;
-
-    case dbTechMinEncRuleObj:
-      return _min_enc_rules_tbl;
-
-    case dbTechV55InfluenceEntryObj:
-      return _v55inf_tbl;
-    default:
-      break;  // Wall
-  }
-
-  return getTable()->getObjectTable(type);
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerCutClassRule>(obj, obj->_cut_class_rules_tbl);
 }
+
+dbTechLayerCutClassRule* dbTechLayer::findTechLayerCutClassRule(
+    const char* name) const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return (dbTechLayerCutClassRule*) obj->_cut_class_rules_hash.find(name);
+}
+
+// User Code Begin dbTechLayerPublicMethods
 
 std::string dbTechLayer::getName() const
 {
@@ -955,8 +995,8 @@ int dbTechLayer::getSpacing(int w, int l)
     }
   }
 
-  std::vector<std::vector<uint> > v55rules;
-  uint                            i, j;
+  std::vector<std::vector<uint>> v55rules;
+  uint                           i, j;
   if (getV55SpacingTable(v55rules)) {
     for (i = 1; (i < layer->_v55sp_width_idx.size())
                 && (width > layer->_v55sp_width_idx[i]);
@@ -1157,7 +1197,7 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 }
 
 bool dbTechLayer::getV55SpacingTable(
-    std::vector<std::vector<uint> >& sptbl) const
+    std::vector<std::vector<uint>>& sptbl) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
@@ -1291,7 +1331,7 @@ uint dbTechLayer::getTwoWidthsSpacingTablePRL(uint row) const
 }
 
 bool dbTechLayer::getTwoWidthsSpacingTable(
-    std::vector<std::vector<uint> >& sptbl) const
+    std::vector<std::vector<uint>>& sptbl) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 

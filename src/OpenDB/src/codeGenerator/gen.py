@@ -76,13 +76,15 @@ if "relations" in schema:
         if child == -1:
             raise NameError('Class {} in relations is not found'.format(relation['second']))
         inParentField = {}
-        inParentField['name'] = getTableName(relation['second'])
+        if 'tbl_name' in relation:
+            inParentField['name'] = relation["tbl_name"]
+        else:
+            inParentField['name'] = getTableName(relation['second'])
         inParentField['type'] = relation['second']
         inParentField['table'] = True
         inParentField['dbSetGetter'] = True
         inParentField['components'] = [inParentField['name']]
         inParentField['flags'] = ["cmp","serial", "diff", "no-set", "get"]
-        
         schema['classes'][parent]['fields'].append(inParentField)
         schema['classes'][parent]['cpp_includes'].extend([
             '{}.h'.format(relation['second']),
@@ -96,6 +98,21 @@ if "relations" in schema:
 
         if 'dbTable' not in schema['classes'][parent]['classes']:
             schema['classes'][parent]['classes'].append('dbTable')
+        if 'hash' in relation:
+            inParentHashField = {}
+            
+            inParentHashField['name'] = inParentField['name'][:-3]+"hash"
+            inParentHashField['type'] = "dbHashTable<_"+relation['second']+">"
+            inParentHashField['components'] = [inParentHashField['name']]
+            inParentHashField['table_name'] = inParentField['name']
+            inParentHashField['flags'] = ["cmp","serial", "diff", "no-set", "get"]
+            schema['classes'][parent]['fields'].append(inParentHashField)
+            if 'dbHashTable.h' not in schema['classes'][parent]['h_includes']:
+                schema['classes'][parent]['h_includes'].append("dbHashTable.h")
+            inChildNextEntry = {"name":"_next_entry"}
+            inChildNextEntry['type'] = "dbId<_"+relation['second']+">"
+            inChildNextEntry['flags'] = ["cmp","serial", "diff", "private","no-deep"]
+            schema['classes'][child]['fields'].append(inChildNextEntry)
 
   
         
@@ -146,6 +163,8 @@ for klass in schema['classes']:
             else:
                 field['functional_name'] = '{}s'.format(field['type'])
             field['components'] = [field['name']]
+        elif field['isHashTable']:
+            field['functional_name'] = '{}s'.format(field['type'][2:])
         else:
             field['functional_name'] = getFunctionalName(field['name'])
             field['components'] = components(klass['structs'], field['name'], field['type'])
@@ -158,8 +177,8 @@ for klass in schema['classes']:
         elif field['isHashTable']:
             if 'no-set' not in field['flags']:
                 field.append('no-set')
-            field['setterArgumentType'] = field['getterReturnType'] = field['hashTableType']
-            field['getterFunctionName'] = "find"+ field['setterArgumentType'][3:-1]
+            field['setterArgumentType'] = field['getterReturnType'] = field['hashTableType'].replace("_","")
+            field['getterFunctionName'] = "find"+ field['setterArgumentType'][2:-1]
         elif 'bits' in field and field['bits'] == 1:
             field['setterArgumentType'] = field['getterReturnType'] = 'bool'
         elif field['isDbVector']:
@@ -200,6 +219,9 @@ for klass in schema['classes']:
         template = env.get_template(template_file)
         text = template.render(klass = klass, schema = schema)
         fileType = template_file.split('.')
+        # for field in klass['fields']:
+        #     if field['isHashTable']:
+        #         print(field)
         out_file = '{}.{}'.format(klass['name'], template_file.split('.')[1])
         toBeMerged.append(out_file)
         out_file = os.path.join('generated', out_file)

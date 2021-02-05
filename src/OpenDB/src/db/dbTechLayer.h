@@ -34,6 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbHashTable.h"
 #include "dbMatrix.h"
 #include "dbTypes.h"
 #include "dbVector.h"
@@ -47,9 +48,10 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
+class _dbTechLayerCutClassRule;
 template <class T>
 class dbTable;
+// User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
 class _dbTechMinEncRule;
@@ -62,7 +64,6 @@ class _dbTechLayerCornerSpacingRule;
 class _dbTechLayerSpacingTablePrlRule;
 class _dbTechLayerRightWayOnGridOnlyRule;
 class _dbTechLayerRectOnlyRule;
-class _dbTechLayerCutClassRule;
 class _dbTechLayerCutSpacingTableRule;
 // User Code End Classes
 
@@ -74,6 +75,9 @@ class _dbTechLayer : public _dbObject
  public:
   // User Code Begin enums
   // User Code End enums
+
+  dbTable<_dbTechLayerCutClassRule>*    _cut_class_rules_tbl;
+  dbHashTable<_dbTechLayerCutClassRule> _cut_class_rules_hash;
 
   // User Code Begin fields
   struct _LyFlags
@@ -129,7 +133,6 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerSpacingTablePrlRule>*    _spacing_table_prl_rules_tbl;
   dbTable<_dbTechLayerRightWayOnGridOnlyRule>* _rwogo_rules_tbl;
   dbTable<_dbTechLayerRectOnlyRule>*           _rect_only_rules_tbl;
-  dbTable<_dbTechLayerCutClassRule>*           _cut_class_rules_tbl;
   dbTable<_dbTechLayerCutSpacingTableRule>*    _cut_spacing_table_rules_tbl;
   dbTable<_dbTechMinCutRule>*                  _min_cut_rules_tbl;
   dbTable<_dbTechMinEncRule>*                  _min_enc_rules_tbl;
@@ -155,8 +158,7 @@ class _dbTechLayer : public _dbObject
                    const char*         field,
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  dbObjectTable* getObjectTable(dbObjectType type);
+  dbObjectTable* getObjectTable(dbObjectType type);  // User Code Begin methods
   // User Code End methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);

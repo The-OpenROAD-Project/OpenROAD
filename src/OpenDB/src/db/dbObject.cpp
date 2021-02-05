@@ -329,7 +329,6 @@ void dbObject::getDbName(char name[max_name_length]) const
       case dbTechLayerRightWayOnGridOnlyRuleObj:
       case dbTechLayerSpacingTablePrlRuleObj:
       case dbTechLayerCutClassRuleObj:
-      case dbTechLayerCutClassSubRuleObj:
       case dbTechLayerCutSpacingRuleObj:
       case dbTechLayerCutSpacingSubRuleObj:
       case dbTechLayerCutSpacingTableRuleObj:
@@ -694,7 +693,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerRightWayOnGridOnlyRule",
                                  "dbTechLayerRectOnlyRule",
                                  "dbTechLayerCutClassRule",
-                                 "dbTechLayerCutClassSubRule",
                                  "dbTechLayerCutSpacingRule",
                                  "dbTechLayerCutSpacingSubRule",
                                  "dbTechLayerCutSpacingTableRule",

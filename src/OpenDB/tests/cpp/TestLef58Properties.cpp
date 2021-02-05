@@ -113,14 +113,14 @@ BOOST_AUTO_TEST_CASE( test_default )
 
     auto cutLayer = dbTech->findLayer("via1");
 
-    auto cutRules = cutLayer->getCutClassRules();
-    BOOST_TEST(cutRules.size() == 1);
-    odb::dbTechLayerCutClassRule* cut_rule = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
-    auto subRules = cut_rule->getTechLayerCutClassSubRules();
-    BOOST_TEST(subRules.size() == 1);
-    odb::dbTechLayerCutClassSubRule* sub_rule = (odb::dbTechLayerCutClassSubRule*) *subRules.begin();
-    BOOST_TEST(std::string(sub_rule->getClassName())=="VA");
-    BOOST_TEST(sub_rule->getWidth()==0.15*distFactor);
+    // auto cutRules = cutLayer->getCutClassRules();
+    // BOOST_TEST(cutRules.size() == 1);
+    // odb::dbTechLayerCutClassRule* cut_rule = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
+    // auto subRules = cut_rule->getTechLayerCutClassSubRules();
+    // BOOST_TEST(subRules.size() == 1);
+    // odb::dbTechLayerCutClassSubRule* sub_rule = (odb::dbTechLayerCutClassSubRule*) *subRules.begin();
+    // BOOST_TEST(std::string(sub_rule->getClassName())=="VA");
+    // BOOST_TEST(sub_rule->getWidth()==0.15*distFactor);
 
     auto cutSpacingRules = cutLayer->getCutSpacingRules();
     BOOST_TEST(cutSpacingRules.size() == 1);

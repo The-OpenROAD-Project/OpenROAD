@@ -105,7 +105,6 @@ add_library(opendb
     dbTechLayerRightWayOnGridOnlyRule.cpp
     dbTechLayerRectOnlyRule.cpp
     dbTechLayerCutClassRule.cpp
-    dbTechLayerCutClassSubRule.cpp
     dbTechLayerCutSpacingRule.cpp
     dbTechLayerCutSpacingSubRule.cpp
     dbTechLayerCutSpacingTableRule.cpp
