@@ -303,15 +303,15 @@ class GlobalRouter
   ord::OpenRoad* _openroad;
   utl::Logger *_logger;
   // Objects variables
-  FastRouteCore* _fastRoute = nullptr;
-  odb::Point* _gridOrigin = nullptr;
+  FastRouteCore* _fastRoute;
+  odb::Point* _gridOrigin;
   NetRouteMap _routes;
 
   std::vector<Net>* _nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
-  Grid* _grid = nullptr;
-  std::vector<RoutingLayer>* _routingLayers = nullptr;
-  std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
+  Grid* _grid;
+  std::vector<RoutingLayer>* _routingLayers;
+  std::vector<RoutingTracks>* _allRoutingTracks;
 
   // Flow variables
   std::string _congestFile;
@@ -362,7 +362,7 @@ class GlobalRouter
   // db variables
   sta::dbSta* _sta;
   int selectedMetal = 3;
-  odb::dbDatabase* _db = nullptr;
+  odb::dbDatabase* _db;
   odb::dbBlock* _block;
 
   std::set<odb::dbNet*> _dirtyNets;
