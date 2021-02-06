@@ -114,13 +114,12 @@ def getTableName(name):
 
 
 def isRef(type_name):
-    return True if type_name.startswith("dbId<") and type_name[-1] == '>' \
-        else False
+    return type_name.startswith("dbId<") and type_name[-1] == '>'
 
 
 def isHashTable(type_name):
-    return True if type_name.startswith("dbHashTable<") and \
-        type_name[-1] == '>' else False
+    return type_name.startswith("dbHashTable<") and \
+        type_name[-1] == '>'
 
 
 def getHashTableType(type_name):
@@ -137,8 +136,7 @@ def isTemplateType(type_name):
 
     closedBracket = type_name.find(">")
 
-    return False if closedBracket == -1 or closedBracket < openBracket \
-        else True
+    return closedBracket != -1 and closedBracket > openBracket
 
 
 def getTemplateType(type_name):
