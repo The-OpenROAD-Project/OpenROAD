@@ -19,5 +19,5 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 u5/A                                    0.07    0.16   -0.09 (VIOLATED)
 
-[INFO RSZ-0058] using max wire length 853u.
+[INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0039] Resized 2 instances.
