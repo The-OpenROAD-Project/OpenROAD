@@ -55,9 +55,9 @@ def components(structs, name, _type):
         for field in struct['fields']:
             target = components(structs, field['name'], field['type'])
             if _type.find('*') == -1:
-                ret.extend([name+'.'+str(elem) for elem in target])
+                ret.extend([name + '.' + str(elem) for elem in target])
             else:
-                ret.extend([name+'->'+str(elem) for elem in target])
+                ret.extend([name + '->' + str(elem) for elem in target])
         return ret
     return []
 
