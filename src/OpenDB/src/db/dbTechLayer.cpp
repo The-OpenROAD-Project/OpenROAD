@@ -1108,6 +1108,17 @@ bool dbTechLayer::hasV55SpacingRules() const
           && (layer->_v55sp_spacing.numElems() > 0));
 }
 
+bool dbTechLayer::getV55SpacingWidthsAndLengths(std::vector<uint>& width_idx,
+                                                std::vector<uint>& length_idx) const
+{
+  if(!hasV55SpacingRules())
+    return false;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  width_idx  = layer->_v55sp_width_idx;
+  length_idx = layer->_v55sp_length_idx;
+  return true;
+}
+
 void dbTechLayer::printV55SpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;

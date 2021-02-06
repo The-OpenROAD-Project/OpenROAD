@@ -6039,6 +6039,8 @@ class dbTechLayer : public dbObject
   /// single spacing value for all length/width combinations.
   ///
   bool hasV55SpacingRules() const;
+  bool getV55SpacingWidthsAndLengths(std::vector<uint>& width_idx, 
+                                     std::vector<uint>& length_idx) const;
   void printV55SpacingRules(lefout& writer) const;
   bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
 
@@ -6654,6 +6656,12 @@ class dbTechLayerSpacingRule : public dbObject
   bool getLengthThreshold(uint& threshold) const;
   bool getLengthThresholdRange(uint& rmin, uint& rmax) const;
   bool getRange(uint& rmin, uint& rmax) const;
+  void setSpacingNotchLengthValid(bool val);
+  void setSpacingEndOfNotchWidthValid(bool val);
+  bool hasSpacingNotchLength() const;
+  bool hasSpacingEndOfNotchWidth() const;
+  bool hasRange() const;
+  bool hasLengthThreshold() const;
   bool hasUseLengthThreshold() const;
   bool getInfluence(uint& influence) const;
   bool getInfluenceRange(uint& rmin, uint& rmax) const;
@@ -6670,6 +6678,8 @@ class dbTechLayerSpacingRule : public dbObject
   uint getCutArea() const;
   void writeLef(lefout& writer) const;
 
+  void setSameNetPgOnly(bool pgonly);
+  bool getSameNetPgOnly();
   void setLengthThreshold(uint threshold);
   void setSpacing(uint spacing);
   void setLengthThresholdRange(uint rmin, uint rmax);

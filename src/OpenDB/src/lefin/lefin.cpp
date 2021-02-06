@@ -627,8 +627,11 @@ void lefin::layer(lefiLayer* layer)
       cur_rule->setCutStacking(layer->hasSpacingLayerStack(j));
       cur_rule->setCutCenterToCenter(layer->hasSpacingCenterToCenter(j));
       cur_rule->setCutSameNet(layer->hasSpacingSamenet(j));
+      cur_rule->setSameNetPgOnly(layer->hasSpacingSamenetPGonly(j));
       cur_rule->setCutParallelOverlap(layer->hasSpacingParallelOverlap(j));
-      cur_rule->setCutParallelOverlap(layer->hasSpacingParallelOverlap(j));
+      cur_rule->setSpacingEndOfNotchWidthValid(layer->hasSpacingEndOfNotchWidth(j));
+      cur_rule->setSpacingNotchLengthValid(layer->hasSpacingNotchLength(j));
+
       if (layer->hasSpacingArea(j)) {
         cur_rule->setCutArea(dbdist(layer->spacingArea(j)));
       }
