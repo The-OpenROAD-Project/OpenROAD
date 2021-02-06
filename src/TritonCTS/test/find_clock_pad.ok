@@ -13,6 +13,7 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 6 nets and 10 connections.
 [INFO ODB-0134] Finished DEF file: find_clock_pad.def
+[INFO RSZ-0061] Clock wire resistance 0.0015 kohm/um capacitance 0.0067 fF/um.
  *****************
  * TritonCTS 2.0 *
  *****************

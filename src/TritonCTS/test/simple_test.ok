@@ -9,6 +9,7 @@
 [INFO ODB-0131]     Created 16 components and 96 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 16 connections.
 [INFO ODB-0134] Finished DEF file: 16sinks.def
+[INFO RSZ-0061] Clock wire resistance 0.0036 kohm/um capacitance 0.0523 fF/um.
  *****************
  * TritonCTS 2.0 *
  *****************

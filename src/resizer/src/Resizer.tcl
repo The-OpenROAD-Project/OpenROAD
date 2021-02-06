@@ -61,6 +61,7 @@ proc set_wire_rc { args } {
     }
     set layer_name $keys(-layer)
     lassign [rsz::layer_wire_rc $layer_name] wire_res wire_cap
+    set report_rc 1
   } elseif { [info exists keys(-layers)] } {
     set layers $keys(-layers)
     set res_sum 0.0
@@ -75,6 +76,7 @@ proc set_wire_rc { args } {
     }
     set wire_res [expr $res_sum / $weigth_sum]
     set wire_cap [expr $cap_sum / $weigth_sum]
+    set report_rc 1
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
@@ -88,6 +90,7 @@ proc set_wire_rc { args } {
       sta::check_positive_float "-capacitance" $cap
       set wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
     }
+    set report_rc 0
   }
   
   set corner [sta::cmd_corner]
@@ -111,7 +114,9 @@ proc set_wire_rc { args } {
     set signal_clk "Clock"
   }
 
-  utl::info RSZ 61 "$signal_clk wire resistance [format %.3f [expr $wire_res * 1e-6]] ohms/um capacitance [format %.3f [expr $wire_cap * 1e-6 * 1e+15]] ff/um."
+  if { $report_rc } {
+    utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 4] [sta::unit_scale_abreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 4] [sta::unit_scale_abreviation capacitance][sta::unit_suffix capacitance]/um."
+  }
 
   if { $wire_res == 0.0 } {
     utl::warn RSZ 10 "$signal_clk wire resistance is 0."

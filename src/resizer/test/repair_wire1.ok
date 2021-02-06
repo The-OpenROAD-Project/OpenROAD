@@ -10,7 +10,7 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: repair_wire1.def
-[INFO RSZ-0061] Signal/clock wire resistance 3.571 ohms/um capacitance 0.052 ff/um.
+[INFO RSZ-0061] Signal/clock wire resistance 0.0036 kohm/um capacitance 0.0523 fF/um.
 Max slew 0.199ns
 Max wire length 1249u
 Startpoint: in1 (input port)
