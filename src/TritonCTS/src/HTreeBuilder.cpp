@@ -141,11 +141,15 @@ void HTreeBuilder::initSinkRegion()
   if (_options->isSimpleSegmentEnabled()) {
     int remainingLength
         = _options->getBufferDistance() / (wireSegmentUnitInMicron * 2);
-    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um)", remainingLength, _options->getBufferDistance());
+    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um)",
+                  remainingLength,
+                  static_cast<int>(_options->getBufferDistance()));
     if (_options->isVertexBuffersEnabled()) {
       int vertexBufferLength
           = _options->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
-      _logger->info(CTS, 22, " Branch Length for Vertex Buffer: {} units ({} um)", vertexBufferLength, _options->getVertexBufferDistance());
+      _logger->info(CTS, 22, " Branch Length for Vertex Buffer: {} units ({} um)",
+                    vertexBufferLength,
+                    static_cast<int>(_options->getVertexBufferDistance()));
     }
   }
 

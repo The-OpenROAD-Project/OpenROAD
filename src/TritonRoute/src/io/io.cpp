@@ -3911,6 +3911,14 @@ int io::Parser::Callbacks::getLefMacros(lefrCallbackType_e type, lefiMacro* macr
       parser->tmpBlock->setMacroClass(MacroClassEnum::RING);
     } else if (strcmp(macro->macroClass(), "PAD POWER") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+    } else if (strcmp(macro->macroClass(), "PAD INPUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
+    } else if (strcmp(macro->macroClass(), "PAD OUTPUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
+    } else if (strcmp(macro->macroClass(), "PAD INOUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
+    } else if (strcmp(macro->macroClass(), "PAD AREAIO") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
     } else if (strcmp(macro->macroClass(), "PAD SPACER") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
     } else if (strcmp(macro->macroClass(), "ENDCAP BOTTOMLEFT") == 0) {

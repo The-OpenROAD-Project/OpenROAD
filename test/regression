@@ -130,6 +130,7 @@ if { $argv == {} } {
 
     if { !$matched } {
       puts "$arg is not an openroad test or tool name."
+      incr tool_errors
     }
   }
 }
