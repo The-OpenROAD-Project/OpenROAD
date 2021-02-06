@@ -322,18 +322,13 @@ void dbObject::getDbName(char name[max_name_length]) const
         *cptr++ = 'b';
         id      = impl->getOID();
         break;
-      case dbTechLayerMinStepSubRuleObj:
       case dbTechLayerMinStepRuleObj:
       case dbTechLayerCornerSpacingRuleObj:
-      case dbTechLayerRectOnlyRuleObj:
-      case dbTechLayerRightWayOnGridOnlyRuleObj:
       case dbTechLayerSpacingTablePrlRuleObj:
       case dbTechLayerCutClassRuleObj:
       case dbTechLayerCutSpacingRuleObj:
-      case dbTechLayerCutSpacingSubRuleObj:
-      case dbTechLayerCutSpacingTableRuleObj:
-      case dbTechLayerCutSpacingTableDefSubRuleObj:
-      case dbTechLayerCutSpacingTableOrthSubRuleObj:
+      case dbTechLayerCutSpacingTableDefRuleObj:
+      case dbTechLayerCutSpacingTableOrthRuleObj:
         *cptr++ = 'J';
         id      = impl->getOID();
         break;
@@ -687,17 +682,12 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayer",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerMinStepRule",
-                                 "dbTechLayerMinStepSubRule",
                                  "dbTechLayerCornerSpacingRule",
                                  "dbTechLayerSpacingTablePrlRule",
-                                 "dbTechLayerRightWayOnGridOnlyRule",
-                                 "dbTechLayerRectOnlyRule",
                                  "dbTechLayerCutClassRule",
                                  "dbTechLayerCutSpacingRule",
-                                 "dbTechLayerCutSpacingSubRule",
-                                 "dbTechLayerCutSpacingTableRule",
-                                 "dbTechLayerCutSpacingTableOrthSubRule",
-                                 "dbTechLayerCutSpacingTableDefSubRule",
+                                 "dbTechLayerCutSpacingTableOrthRule",
+                                 "dbTechLayerCutSpacingTableDefRule",
                                  "dbModule",
                                  "dbModInst",
                                  "dbGroup",

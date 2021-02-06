@@ -593,8 +593,8 @@ void lefin::layer(lefiLayer* layer)
       else if(!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
       else if(!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")){
-        lefTechLayerCutSpacingTableParser* cutSpacingTableParser = new lefTechLayerCutSpacingTableParser();
-        cutSpacingTableParser->parse(layer->propValue(iii), l, this);
+        lefTechLayerCutSpacingTableParser* cutSpacingTableParser = new lefTechLayerCutSpacingTableParser(l);
+        cutSpacingTableParser->parse(layer->propValue(iii), this);
       }
     }
   }

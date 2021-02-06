@@ -1,5 +1,5 @@
 {
-  "name": "dbTechLayerCutSpacingSubRule",
+  "name": "dbTechLayerCutSpacingRule",
   "type": "dbObject",
   "fields": [
     {
@@ -38,9 +38,10 @@
       "bits":3
     },
     {
-      "type": "char *",
-      "name": "_second_layer_name",
-      "flags": ["no-set"]
+      "type": "dbId<_dbTechLayer>",
+      "name": "_second_layer",
+      "flags": ["no-get"],
+      "parent": "dbTechLayer"
     },
     {
       "type": "bool",
@@ -79,15 +80,10 @@
       "bits":1
     },
     {
-      "type": "bool",
-      "name": "_cut_class_valid",
-      "flags": [],
-      "bits":1
-    },
-    {
-      "type": "char *",
-      "name": "_cut_class_name",
-      "flags": []
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "_cut_class",
+      "flags": ["no-get"],
+      "parent": "dbTechLayer"
     },
     {
       "type": "bool",
@@ -149,5 +145,5 @@
       "public":true
     }
   ],
-  "cpp_includes":["dbTechLayerCutSpacingRule.h"]
+  "cpp_includes":["dbTechLayer.h"]
 }

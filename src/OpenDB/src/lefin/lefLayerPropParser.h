@@ -19,10 +19,8 @@ namespace odb{
     {
         
     public:
-        odb::dbTechLayerMinStepSubRule* minSubRule;
-        lefTechLayerMinStepParser(){minSubRule = nullptr;};
-        ~lefTechLayerMinStepParser(){};
-        dbTechLayerMinStepRule* parse(std::string, dbTechLayer*, lefin*);
+        odb::dbTechLayerMinStepRule* curRule;
+        void parse(std::string, dbTechLayer*, lefin*);
     };
 
     class lefTechLayerCornerSpacingParser
@@ -49,14 +47,14 @@ namespace odb{
     {
         
     public:
-        static dbTechLayerRightWayOnGridOnlyRule* parse(std::string, dbTechLayer*, lefin*);
+        static void parse(std::string, dbTechLayer*, lefin*);
     };
     
     class lefTechLayerRectOnlyParser
     {
         
     public:
-        static dbTechLayerRectOnlyRule* parse(std::string, dbTechLayer*, lefin*);
+        static void parse(std::string, dbTechLayer*, lefin*);
     };
 
     class lefTechLayerCutClassParser
@@ -70,20 +68,18 @@ namespace odb{
     {
     
     public:
-        odb::dbTechLayerCutSpacingSubRule* subRule;
-        lefTechLayerCutSpacingParser(){subRule = nullptr;};
-        ~lefTechLayerCutSpacingParser(){};
-        dbTechLayerCutSpacingRule* parse(std::string, dbTechLayer*, lefin*);
+        odb::dbTechLayerCutSpacingRule* curRule;
+        void parse(std::string, dbTechLayer*, lefin*);
     };
 
     class lefTechLayerCutSpacingTableParser
     {
         
     public:
-        odb::dbTechLayerCutSpacingTableDefSubRule* defRule;
-        lefTechLayerCutSpacingTableParser(){defRule = nullptr;};
-        ~lefTechLayerCutSpacingTableParser(){};
-        dbTechLayerCutSpacingTableRule* parse(std::string, dbTechLayer*, lefin*);
+        odb::dbTechLayerCutSpacingTableDefRule* curRule;
+        odb::dbTechLayer* layer;
+        lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly){layer = inly;};
+        void parse(std::string, lefin*);
     };
 
 

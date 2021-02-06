@@ -62,9 +62,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     
     auto minStepRules = layer->getMinStepRules();
     BOOST_TEST(minStepRules.size() == 1);
-    odb::dbTechLayerMinStepRule* minStepRule = (odb::dbTechLayerMinStepRule*) *minStepRules.begin();
-    BOOST_TEST(minStepRule->getTechLayerMinStepSubRules().size() == 1);
-    odb::dbTechLayerMinStepSubRule* step_rule = (odb::dbTechLayerMinStepSubRule*) *minStepRule->getTechLayerMinStepSubRules().begin();
+    odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *minStepRules.begin();
     BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
     BOOST_TEST(step_rule->getMaxEdges() == 1);
     BOOST_TEST(step_rule->isMinAdjLength1Valid() == true);
@@ -101,59 +99,47 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(within.size()==1);
     BOOST_TEST(spacing_tbl_rule->getSpacing(0,0)==0.05*distFactor);
 
-    auto rwogoRules = layer->getRightWayOnGridOnlyRules();
-    BOOST_TEST(rwogoRules.size() == 1);
-    odb::dbTechLayerRightWayOnGridOnlyRule* rwogo_rule = (odb::dbTechLayerRightWayOnGridOnlyRule*) *rwogoRules.begin();
-    BOOST_TEST(rwogo_rule->isCheckMask()==true);
+    BOOST_TEST(layer->isRightWayOnGridOnly()==true);
+    BOOST_TEST(layer->isCheckMask()==true);
 
-    auto rectOnlyRules = layer->getRectOnlyRules();
-    BOOST_TEST(rectOnlyRules.size() == 1);
-    odb::dbTechLayerRectOnlyRule* rect_only_rule = (odb::dbTechLayerRectOnlyRule*) *rectOnlyRules.begin();
-    BOOST_TEST(rect_only_rule->isExceptNonCorePins()==true);
+    BOOST_TEST(layer->isRectOnly()==true);
+    BOOST_TEST(layer->isExceptNonCorePins()==true);
 
     auto cutLayer = dbTech->findLayer("via1");
 
-    // auto cutRules = cutLayer->getCutClassRules();
-    // BOOST_TEST(cutRules.size() == 1);
-    // odb::dbTechLayerCutClassRule* cut_rule = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
-    // auto subRules = cut_rule->getTechLayerCutClassSubRules();
-    // BOOST_TEST(subRules.size() == 1);
-    // odb::dbTechLayerCutClassSubRule* sub_rule = (odb::dbTechLayerCutClassSubRule*) *subRules.begin();
-    // BOOST_TEST(std::string(sub_rule->getClassName())=="VA");
-    // BOOST_TEST(sub_rule->getWidth()==0.15*distFactor);
+    auto cutRules = cutLayer->getTechLayerCutClassRules();
+    BOOST_TEST(cutRules.size() == 5);
+    odb::dbTechLayerCutClassRule* cut_rule = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
+    BOOST_TEST(std::string(cut_rule->getName())=="VA");
+    BOOST_TEST(cut_rule->getWidth()==0.15*distFactor);
+    BOOST_TEST((cutLayer->findTechLayerCutClassRule("VA")==cut_rule));
 
     auto cutSpacingRules = cutLayer->getCutSpacingRules();
-    BOOST_TEST(cutSpacingRules.size() == 1);
-    odb::dbTechLayerCutSpacingRule* cut_spacing_rule = (odb::dbTechLayerCutSpacingRule*) *cutSpacingRules.begin();
-    auto subSpacingRules = cut_spacing_rule->getTechLayerCutSpacingSubRules();
-    BOOST_TEST(subSpacingRules.size()==2);
+    BOOST_TEST(cutSpacingRules.size() == 2);
     int i = 0;
-    for(auto subRule:subSpacingRules)
+    for(odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules)
     {
         if(i)
         {
             BOOST_TEST(subRule->getCutSpacing()==0.3*distFactor);
-            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingSubRule::CutSpacingType::LAYER);
+            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
             BOOST_TEST(subRule->isSameMetal());
             BOOST_TEST(subRule->isStack());
-            BOOST_TEST(std::string(subRule->getSecondLayerName())=="via2");
+            BOOST_TEST(std::string(subRule->getSecondLayer()->getName())=="metal1");
         }else
         {
             BOOST_TEST(subRule->getCutSpacing()==0.12*distFactor);
-            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingSubRule::CutSpacingType::MAXXY);
+            BOOST_TEST(subRule->getType()==odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY);
         }
         i++;
     }
 
-    auto cutTables = cutLayer->getCutSpacingTableRules();
-    BOOST_TEST(cutTables.size()==1);
-    odb::dbTechLayerCutSpacingTableRule* cutTable = (odb::dbTechLayerCutSpacingTableRule*) *cutTables.begin();
-    auto orths = cutTable->getTechLayerCutSpacingTableOrthSubRules();
-    auto defs = cutTable->getTechLayerCutSpacingTableDefSubRules();
+    auto orths = cutLayer->getTechLayerCutSpacingTableOrthRules();
+    auto defs = cutLayer->getTechLayerCutSpacingTableDefRules();
     BOOST_TEST(orths.size()==1);
     BOOST_TEST(defs.size()==1);
-    odb::dbTechLayerCutSpacingTableOrthSubRule* orth = (odb::dbTechLayerCutSpacingTableOrthSubRule*) *orths.begin();
-    odb::dbTechLayerCutSpacingTableDefSubRule* def = (odb::dbTechLayerCutSpacingTableDefSubRule*) *defs.begin();
+    odb::dbTechLayerCutSpacingTableOrthRule* orth = (odb::dbTechLayerCutSpacingTableOrthRule*) *orths.begin();
+    odb::dbTechLayerCutSpacingTableDefRule* def = (odb::dbTechLayerCutSpacingTableDefRule*) *defs.begin();
     std::vector<std::pair<int,int>> table;
     orth->getSpacingTable(table);
     BOOST_TEST(table[0].first == 0.2*distFactor);
@@ -167,16 +153,15 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(def->isSameNet());
     BOOST_TEST(def->isLayerValid());
     BOOST_TEST(def->isNoStack());
-    BOOST_TEST(std::string(def->getSecondLayerName())=="via2");
+    BOOST_TEST(std::string(def->getSecondLayer()->getName())=="metal1");
     BOOST_TEST(!def->isSameMetal());
     BOOST_TEST(def->isPrlForAlignedCut());
-    std::vector<std::pair<char*,char*>> prlFACtbl;
-    def->getPrlForAlignedCutTable(prlFACtbl);
+    auto prlFACtbl = def->getPrlForAlignedCutTable();
     BOOST_TEST(prlFACtbl.size()==2);
-    BOOST_TEST(std::string(prlFACtbl[0].first) == "cls1");
-    BOOST_TEST(std::string(prlFACtbl[0].second) == "cls2");
-    BOOST_TEST(std::string(prlFACtbl[1].first) == "cls3");
-    BOOST_TEST(std::string(prlFACtbl[1].second) == "cls4");
+    BOOST_TEST(std::string(prlFACtbl[0].first->getName()) == "cls1");
+    BOOST_TEST(std::string(prlFACtbl[0].second->getName()) == "cls2");
+    BOOST_TEST(std::string(prlFACtbl[1].first->getName()) == "cls3");
+    BOOST_TEST(std::string(prlFACtbl[1].second->getName()) == "cls4");
     auto spacing1 = def->getSpacing("cls1",true,"cls3",false);
     auto spacing2 = def->getSpacing("cls1",false,"cls4",false);
     BOOST_TEST(spacing1.first==0.1*distFactor );

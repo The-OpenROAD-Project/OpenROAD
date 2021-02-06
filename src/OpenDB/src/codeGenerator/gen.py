@@ -98,7 +98,7 @@ if "relations" in schema:
 
         if 'dbTable' not in schema['classes'][parent]['classes']:
             schema['classes'][parent]['classes'].append('dbTable')
-        if 'hash' in relation:
+        if relation.get('hash',False):
             inParentHashField = {}
             
             inParentHashField['name'] = inParentField['name'][:-3]+"hash"

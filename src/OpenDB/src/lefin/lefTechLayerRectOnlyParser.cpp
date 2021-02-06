@@ -39,11 +39,11 @@ namespace lefTechLayerRectOnly {
     using phoenix::ref;
     
     template <typename Iterator>
-    bool parse(Iterator first, Iterator last, odb::dbTechLayerRectOnlyRule* rule, odb::lefin* lefin)
+    bool parse(Iterator first, Iterator last, odb::dbTechLayer* layer, odb::lefin* lefin)
     {   
         qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule = (
-            lit("RECTONLY")
-            >> -lit("EXCEPTNONCOREPINS")[boost::bind(&odb::dbTechLayerRectOnlyRule::setExceptNonCorePins,rule,true)]
+            lit("RECTONLY")[boost::bind(&odb::dbTechLayer::setRectOnly,layer,true)]
+            >> -lit("EXCEPTNONCOREPINS")[boost::bind(&odb::dbTechLayer::setExceptNonCorePins,layer,true)]
             >> lit(";") 
         );
 
@@ -60,16 +60,9 @@ namespace lefTechLayerRectOnly {
 namespace odb{
 
 
-dbTechLayerRectOnlyRule* lefTechLayerRectOnlyParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
+void lefTechLayerRectOnlyParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
 {
-    dbTechLayerRectOnlyRule* rule = dbTechLayerRectOnlyRule::create(layer);
-    if(lefTechLayerRectOnly::parse(s.begin(), s.end(), rule, l) )
-        return rule;
-    else 
-    {
-        odb::dbTechLayerRectOnlyRule::destroy(rule);
-        return nullptr;
-    }
+    lefTechLayerRectOnly::parse(s.begin(), s.end(), layer, l);
 } 
 
 

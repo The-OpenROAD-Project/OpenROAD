@@ -1,7 +1,94 @@
 {
     "name": "dbTechLayer",
     "type": "dbObject",
-    "fields": [],
+    "fields": [
+      {
+        "name":"_type",
+        "type":"dbTechLayerType::Value",
+        "flags":["no-set","no-get"],
+        "bits":4
+      },
+      {
+        "name":"_direction",
+        "type":"dbTechLayerDir::Value",
+        "flags":["no-set","no-get"],
+        "bits":4
+      },
+      {
+        "name":"_minstep_type",
+        "type":"dbTechLayerMinStepType::Value",
+        "flags":["no-set","no-get"],
+        "bits":2
+      },
+      {
+        "name":"_has_max_width",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_thickness",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_area",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_protrusion",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_alias",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_xy_pitch",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_has_xy_offset",
+        "type":"uint",
+        "flags":["no-set","no-get"],
+        "bits":1
+      },
+      {
+        "name":"_rect_only",
+        "type":"bool",
+        "flags":[],
+        "bits":1
+      },
+      {
+        "name":"_right_way_on_grid_only",
+        "type":"bool",
+        "flags":[],
+        "bits":1
+      },
+      {
+        "name":"_check_mask",
+        "type":"bool",
+        "comment":"//LEF58_RIGHTWAYONGRIDONLY check mask",
+        "flags":[],
+        "bits":1
+      },
+      {
+        "type": "bool",
+        "name": "_except_non_core_pins",
+        "comment":"//LEF58_RECTONLY check mask",
+        "flags":[],
+        "bits":1
+      }
+    ],
     "constructors": [],
     "enums":[],
     "h_includes": [

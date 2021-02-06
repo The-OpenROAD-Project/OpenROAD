@@ -1,5 +1,5 @@
 {
-  "name": "dbTechLayerMinStepSubRule",
+  "name": "dbTechLayerMinStepRule",
   "type": "dbObject",
   "fields": [
     {
@@ -66,8 +66,5 @@
   ],
   "constructors": [],
   "enums": [],
-  "includes": [
-    "dbObject.h"
-  ],
   "cpp_includes":["dbTechLayer.h"]
 }

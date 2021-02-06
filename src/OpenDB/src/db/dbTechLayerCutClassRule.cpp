@@ -41,6 +41,7 @@
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 // User Code Begin includes
+#include "dbHashTable.hpp"
 // User Code End includes
 namespace odb {
 
@@ -278,7 +279,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
 void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 {
   _dbTechLayerCutClassRule* _rule = (_dbTechLayerCutClassRule*) rule;
-  _dbTechLayer* layer = (_dbTechLayer*) _rule->getOwner();
+  _dbTechLayer*             layer = (_dbTechLayer*) _rule->getOwner();
   layer->_cut_class_rules_hash.remove(_rule);
   dbProperty::destroyProperties(rule);
   layer->_cut_class_rules_tbl->destroy((_dbTechLayerCutClassRule*) rule);

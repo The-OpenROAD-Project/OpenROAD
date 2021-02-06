@@ -1,5 +1,5 @@
 {
-  "name": "dbTechLayerCutSpacingTableDefSubRule",
+  "name": "dbTechLayerCutSpacingTableDefRule",
   "type": "dbObject",
   "fields": [
     {
@@ -134,24 +134,25 @@
       "flags":[]
     },
     {
-      "name":"_second_layer_name",
-      "type":"char*",
-      "flags":["no-set"]
+      "type": "dbId<_dbTechLayer>",
+      "name": "_second_layer",
+      "flags": ["no-get"],
+      "parent": "dbTechLayer"
     },
     {
       "name":"_prl_for_aligned_cut_tbl",
-      "type":"dbVector<std::pair<char*,char*>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_center_to_center_tbl",
-      "type":"dbVector<std::pair<char*,char*>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_center_and_edge_tbl",
-      "type":"dbVector<std::pair<char*,char*>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_prl",
@@ -160,8 +161,8 @@
     },
     {
       "name":"_prl_tbl",
-      "type":"dbVector<std::tuple<char*,char*,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_extension",
@@ -170,28 +171,28 @@
     },
     {
       "name":"_end_extension_tbl",
-      "type":"dbVector<std::pair<char*,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_side_extension_tbl",
-      "type":"dbVector<std::pair<char*,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_exact_aligned_spacing_tbl",
-      "type":"dbVector<std::pair<char*,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_non_opp_enc_spacing_tbl",
-      "type":"dbVector<std::pair<char*,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_opp_enc_spacing_tbl",
-      "type":"dbVector<std::tuple<char*,int,int,int>>",
-      "flags":["no-template"]
+      "type":"dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,int,int,int>>",
+      "flags":["no-template","no-get","no-set"]
     },
     {
       "name":"_spacing_tbl",

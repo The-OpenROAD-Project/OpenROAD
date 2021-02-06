@@ -427,15 +427,7 @@
       ]
     },
     {
-      "name": "dbTechLayerMinStepRule",
-      "type": "dbObject",
-      "fields": [],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
-    },
-    {
-      "src":"dbTechLayerMinStepSubRule.json"
+      "src":"dbTechLayerMinStepRule.json"
     },
     {
       "src":"dbTechLayerCornerSpacingRule.json"
@@ -444,38 +436,16 @@
       "src": "dbTechLayerSpacingTablePrlRule.json"
     },
     {
-      "src": "dbTechLayerRightWayOnGridOnlyRule.json"
-    },
-    {
-      "src": "dbTechLayerRectOnlyRule.json"
-    },
-    {
       "src":"dbTechLayerCutClassRule.json"
     },
     {
-      "name": "dbTechLayerCutSpacingRule",
-      "type": "dbObject",
-      "fields": [],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
+      "src":"dbTechLayerCutSpacingRule.json"
     },
     {
-      "src":"dbTechLayerCutSpacingSubRule.json"
+      "src":"dbTechLayerCutSpacingTableOrthRule.json"
     },
     {
-      "name": "dbTechLayerCutSpacingTableRule",
-      "type": "dbObject",
-      "fields": [],
-      "constructors": [],
-      "enums":[],
-      "cpp_includes":["dbTechLayer.h"]
-    },
-    {
-      "src":"dbTechLayerCutSpacingTableOrthSubRule.json"
-    },
-    {
-      "src":"dbTechLayerCutSpacingTableDefSubRule.json"
+      "src":"dbTechLayerCutSpacingTableDefRule.json"
     },
     {
       "name":"dbModule",
@@ -695,11 +665,6 @@
   ],
   "relations":[
     {
-      "first":"dbTechLayerMinStepRule",
-      "second":"dbTechLayerMinStepSubRule",
-      "type":"1_n"
-    },
-    {
       "first":"dbTechLayer",
       "second":"dbTechLayerCutClassRule",
       "type":"1_n",
@@ -707,19 +672,16 @@
       "hash":true
     },
     {
-      "first":"dbTechLayerCutSpacingRule",
-      "second":"dbTechLayerCutSpacingSubRule",
-      "type":"1_n"
+      "first":"dbTechLayer",
+      "second":"dbTechLayerCutSpacingTableOrthRule",
+      "type":"1_n",
+      "tbl_name":"_cut_spacing_table_orth_tbl"
     },
     {
-      "first":"dbTechLayerCutSpacingTableRule",
-      "second":"dbTechLayerCutSpacingTableOrthSubRule",
-      "type":"1_n"
-    },
-    {
-      "first":"dbTechLayerCutSpacingTableRule",
-      "second":"dbTechLayerCutSpacingTableDefSubRule",
-      "type":"1_n"
+      "first":"dbTechLayer",
+      "second":"dbTechLayerCutSpacingTableDefRule",
+      "type":"1_n",
+      "tbl_name":"_cut_spacing_table_def_tbl"
     }
   ]
 }

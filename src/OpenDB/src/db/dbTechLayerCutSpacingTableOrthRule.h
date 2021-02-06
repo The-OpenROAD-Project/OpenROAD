@@ -34,8 +34,8 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbVector.h"
 #include "odb.h"
-
 // User Code Begin includes
 // User Code End includes
 
@@ -48,42 +48,41 @@ class _dbDatabase;
 // User Code Begin Classes
 // User Code End Classes
 
-struct dbTechLayerRectOnlyRuleFlags
-{
-  bool _except_non_core_pins : 1;
-  uint _spare_bits : 31;
-};
 // User Code Begin structs
 // User Code End structs
 
-class _dbTechLayerRectOnlyRule : public _dbObject
+class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
 {
  public:
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerRectOnlyRuleFlags _flags;
+  dbVector<std::pair<int, int>> _spacing_tbl;  //{cutWithin, orthoSpacing}
 
   // User Code Begin fields
   // User Code End fields
-  _dbTechLayerRectOnlyRule(_dbDatabase*, const _dbTechLayerRectOnlyRule& r);
-  _dbTechLayerRectOnlyRule(_dbDatabase*);
-  ~_dbTechLayerRectOnlyRule();
-  bool operator==(const _dbTechLayerRectOnlyRule& rhs) const;
-  bool operator!=(const _dbTechLayerRectOnlyRule& rhs) const
+  _dbTechLayerCutSpacingTableOrthRule(
+      _dbDatabase*,
+      const _dbTechLayerCutSpacingTableOrthRule& r);
+  _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
+  ~_dbTechLayerCutSpacingTableOrthRule();
+  bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbTechLayerRectOnlyRule& rhs) const;
-  void differences(dbDiff&                         diff,
-                   const char*                     field,
-                   const _dbTechLayerRectOnlyRule& rhs) const;
+  bool operator<(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
+  void differences(dbDiff&                                    diff,
+                   const char*                                field,
+                   const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin methods
   // User Code End methods
 };
-dbIStream& operator>>(dbIStream& stream, _dbTechLayerRectOnlyRule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRectOnlyRule& obj);
+dbIStream& operator>>(dbIStream&                           stream,
+                      _dbTechLayerCutSpacingTableOrthRule& obj);
+dbOStream& operator<<(dbOStream&                                 stream,
+                      const _dbTechLayerCutSpacingTableOrthRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb
