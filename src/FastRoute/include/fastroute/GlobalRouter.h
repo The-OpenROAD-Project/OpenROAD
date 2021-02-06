@@ -187,13 +187,16 @@ class GlobalRouter
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
-  float dbuToMeters(unsigned dbu);
+  double dbuToMeters(int dbu);
+  double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
   void routeClockNets();
 
   // Highlight route in the gui.
   void highlightRoute(const odb::dbNet *net);
+  // Report the wire length on each layer.
+  void reportLayerWireLengths();
 
  protected:
   // Net functions

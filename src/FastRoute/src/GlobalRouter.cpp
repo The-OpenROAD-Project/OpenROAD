@@ -3004,13 +3004,18 @@ void GlobalRouter::getLayerRC(unsigned layerId, float& r, float& c)
   float capPfPerMicron = layerWidth * techLayer->getCapacitance()
                          + 2 * techLayer->getEdgeCapacitance();
 
-  r = 1E+6 * resOhmPerMicron;         // Meters
-  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/m
+  r = 1E+6 * resOhmPerMicron;         // ohm/meter
+  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/meter
 }
 
-float GlobalRouter::dbuToMeters(unsigned dbu)
+double GlobalRouter::dbuToMeters(int dbu)
 {
-  return (float) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
+  return (double) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
+}
+
+double GlobalRouter::dbuToMicrons(int64_t dbu)
+{
+  return (double) dbu / (_block->getDbUnitsPerMicron());
 }
 
 std::set<int> GlobalRouter::findTransitionLayers(int maxRoutingLayer)
@@ -3148,6 +3153,39 @@ void GlobalRouter::print(GRoute& route)
            segment.finalX,
            segment.finalY,
            segment.finalLayer);
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+void GlobalRouter::reportLayerWireLengths()
+{
+  std::vector<int64_t> lengths;
+  lengths.resize(_db->getTech()->getRoutingLayerCount() + 1);
+  int64_t total_length = 0;
+  for (auto& net_route : _routes) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute& route = net_route.second;
+    for (GSegment &seg : route) {
+      int layer1 = seg.initLayer;
+      int layer2 = seg.finalLayer;
+      if (layer1 == layer2) {
+        int seg_length = abs(seg.initX - seg.finalX) + abs(seg.initY - seg.finalY);
+        lengths[layer1] += seg_length;
+        total_length += seg_length;
+      }
+    }
+  }
+  odb::dbTech *tech = _db->getTech();
+  for (int i = 0; i < lengths.size(); i++) {
+    int64_t length = lengths[i];
+    if (length > 0) {
+      odb::dbTechLayer *layer = tech->findRoutingLayer(i);
+      _logger->report("{:5s} {:8d}um {:3d}%",
+                      layer->getName(),
+                      static_cast<int64_t>(dbuToMicrons(length)),
+                      static_cast<int>((100.0 * length) / total_length));
+    }
   }
 }
 
