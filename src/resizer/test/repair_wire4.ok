@@ -10,6 +10,7 @@
 [INFO ODB-0132]     Created 2 special nets and 8 connections.
 [INFO ODB-0133]     Created 5 nets and 8 connections.
 [INFO ODB-0134] Finished DEF file: repair_wire4.def
+[INFO RSZ-0061] Signal/clock wire resistance 3.571 ohms/um capacitance 0.052 ff/um.
 Driver    length delay
 u2/Z manhtn 1500.4 steiner 1500.4 0.21
 u3/Z manhtn 1.1 steiner 1.1 0.00

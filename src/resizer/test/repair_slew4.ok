@@ -13,11 +13,12 @@
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 3 nets and 7 connections.
 [INFO ODB-0134] Finished DEF file: repair_slew4.def
+[INFO RSZ-0061] Signal/clock wire resistance 3.571 ohms/um capacitance 0.052 ff/um.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 u5/A                                    0.07    0.16   -0.09 (VIOLATED)
 
-[INFO RSZ-0058] using max wire length 853u.
+[INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0039] Resized 2 instances.
