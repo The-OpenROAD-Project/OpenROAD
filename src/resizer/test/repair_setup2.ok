@@ -12,8 +12,8 @@
 [INFO ODB-0134] Finished DEF file: repair_setup2.def
 worst slack -0.19
 [INFO RSZ-0058] Using max wire length 853um.
-[INFO RSZ-0037] Found 2 long wires.
-[INFO RSZ-0038] Inserted 2 buffers in 2 nets.
+[INFO RSZ-0037] Found 3 long wires.
+[INFO RSZ-0038] Inserted 3 buffers in 3 nets.
 [INFO RSZ-0039] Resized 2 instances.
 [INFO RSZ-0041] Resized 2 instances.
 worst slack -0.11

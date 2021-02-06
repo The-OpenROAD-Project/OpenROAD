@@ -632,7 +632,9 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
-    Net *net = network_->net(drvr_pin);
+    Net *net = network_->isTopLevelPort(drvr_pin)
+      ? network_->net(network_->term(drvr_pin))
+      : network_->net(drvr_pin);
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
