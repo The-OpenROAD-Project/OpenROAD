@@ -50,7 +50,7 @@ namespace odb {
   class dbDiff;
   class _dbDatabase;
   {% for _class in klass.classes %}
-  {%if _class=="dbTable"%}
+  {%if _class in ["dbTable","dbHashTable"]%}
   template <class T>
   {%endif%}
   class {{ _class }};

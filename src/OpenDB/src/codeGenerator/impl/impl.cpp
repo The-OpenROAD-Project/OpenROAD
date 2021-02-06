@@ -135,11 +135,7 @@ namespace odb {
     {%for innerField in klass.structs[0].fields%}
     {%for component in innerField.components%}
     {%if 'no-diff' not in innerField.flags%}
-    {%if innerField.table%}
-    DIFF_TABLE({{field.name}}->{{component}});
-    {%else%}
     DIFF_FIELD({{field.name}}.{{component}});
-    {%endif%}
     {%endif%}
     {%endfor%}
     {%endfor%}
@@ -147,9 +143,11 @@ namespace odb {
     {%for component in field.components%}
     {%if 'no-diff' not in field.flags%}
     {%if field.table%}
-    DIFF_TABLE({{component}});
+    DIFF_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
+    {%elif 'isHashTable' in field and field.isHashTable%}
+    DIFF_HASH_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
     {%else%}
-    DIFF_FIELD({{component}});
+    DIFF_FIELD{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
     {%endif%}
     {%endif%}
     {%endfor%}
@@ -167,11 +165,7 @@ namespace odb {
     {%for innerField in klass.structs[0].fields%}
     {%for component in innerField.components%}
     {%if 'no-diff' not in innerField.flags%}
-    {%if innerField.table%}
-    DIFF_OUT_TABLE({{field.name}}->{{component}});
-    {%else%}
     DIFF_OUT_FIELD({{field.name}}.{{component}});
-    {%endif%}
     {%endif%}
     {%endfor%}
     {%endfor%}
@@ -179,9 +173,11 @@ namespace odb {
     {%for component in field.components%}
     {%if 'no-diff' not in field.flags%}
     {%if field.table%}
-    DIFF_OUT_TABLE({{component}});
+    DIFF_OUT_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
+    {%elif field.isHashTable%}
+    DIFF_OUT_HASH_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
     {%else%}
-    DIFF_OUT_FIELD({{component}});
+    DIFF_OUT_FIELD{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
     {%endif%}
     {%endif%}
     {%endfor%}
@@ -205,6 +201,8 @@ namespace odb {
     {%elif field.table%}
     {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
     ZALLOCATED({{field.name}});
+    {%elif field.isHashTable%}
+    {{field.name}}.setTable({{field.table_name}});
     {%endif%}
     {%endfor%}
     //User Code Begin constructor
@@ -217,6 +215,8 @@ namespace odb {
     {%if field.table%}
     {{field.name}} = new dbTable<_{{field.type}}>(db, this, *r.{{field.name}});
     ZALLOCATED({{field.name}});
+    {%elif field.isHashTable%}
+    {{field.name}}.setTable({{field.table_name}});
     {%else%}
     {{component}}=r.{{component}};
     {%endif%}
@@ -308,6 +308,8 @@ namespace odb {
     delete {{field.name}};
     {%endif%}
     {%endfor%}
+    //User Code Begin Destructor
+    //User Code End Destructor
     
   }
   ////////////////////////////////////////////////////////////////////
@@ -346,6 +348,12 @@ namespace odb {
   {
     _{{klass.name}}* obj = (_{{klass.name}}*)this;
     tbl = obj->{{field.name}};
+  }
+  {%elif field.isHashTable%}
+  {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}(const char* name) const
+  {
+    _{{klass.name}}* obj = (_{{klass.name}}*)this;
+    return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
   }
   {%else%}
   {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({%if field.isHashTable%}const char* name{%endif%}) const

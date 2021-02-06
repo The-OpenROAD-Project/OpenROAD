@@ -155,6 +155,8 @@ dbOStream& operator<<(dbOStream&                             stream,
 
 _dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

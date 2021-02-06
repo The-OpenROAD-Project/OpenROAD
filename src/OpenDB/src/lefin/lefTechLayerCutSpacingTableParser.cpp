@@ -43,56 +43,66 @@ namespace lefTechLayerCutSpacingTable {
     // using qi::_1;
     using ascii::space;
     using phoenix::ref;
-    void createOrthongonalSubRule(std::vector<boost::fusion::vector<double,double>> params, 
-                                  odb::dbTechLayerCutSpacingTableRule* rule, 
+    void createOrthongonalSubRule(std::vector<boost::fusion::vector<double,double>> params,
+                                  odb::lefTechLayerCutSpacingTableParser* parser, 
                                   odb::lefin* lefin)
     {
-        odb::dbTechLayerCutSpacingTableOrthSubRule* subRule = odb::dbTechLayerCutSpacingTableOrthSubRule::create(rule);
+        odb::dbTechLayerCutSpacingTableOrthRule* rule = odb::dbTechLayerCutSpacingTableOrthRule::create(parser->layer);
         std::vector<std::pair<int,int>> table;
         for(auto item: params)
             table.push_back({lefin->dbdist(at_c<0>(item)),lefin->dbdist(at_c<1>(item))});
-        subRule->setSpacingTable(table);
+        rule->setSpacingTable(table);
     }
-    void createDefSubRule( odb::lefTechLayerCutSpacingTableParser* parser, odb::dbTechLayerCutSpacingTableRule* rule)
+    void createDefSubRule( odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule = odb::dbTechLayerCutSpacingTableDefSubRule::create(rule);
+        parser->curRule = odb::dbTechLayerCutSpacingTableDefRule::create(parser->layer);
     }
     void setDefault(double value,odb::lefTechLayerCutSpacingTableParser* parser,odb::lefin* lefin)
     {
-        parser->defRule->setDefaultValid(true);
-        parser->defRule->setDefault(lefin->dbdist(value));
+        parser->curRule->setDefaultValid(true);
+        parser->curRule->setDefault(lefin->dbdist(value));
     }
     void setLayer(std::string value,odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setLayerValid(true);
-        parser->defRule->setSecondLayerName(value.c_str());
+        odb::dbTech* tech = parser->layer->getTech();
+        auto secondLayer = tech->findLayer(value.c_str());
+        if(secondLayer==nullptr)
+            return;
+        parser->curRule->setLayerValid(true);
+        parser->curRule->setSecondLayer(secondLayer);
     }
     void setPrlForAlignedCut(std::vector<boost::fusion::vector<std::string,std::string>> params,
                              odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setPrlForAlignedCut(true);
-        std::vector<std::pair<char*,char*>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),strdup(at_c<1>(item).c_str())});
-        parser->defRule->setPrlForAlignedCutTable(table);
+        parser->curRule->setPrlForAlignedCut(true);
+        for(auto item : params) {
+            auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
+            if(from!=nullptr && to!=nullptr)
+                parser->curRule->addPrlForAlignedCutEntry(from,to);
+        }
     }
     void setCenterToCenter(std::vector<boost::fusion::vector<std::string,std::string>> params,
                              odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setCenterToCenterValid(true);
-        std::vector<std::pair<char*,char*>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),strdup(at_c<1>(item).c_str())});
-        parser->defRule->setCenterToCenterTable(table);
+        parser->curRule->setCenterToCenterValid(true);
+        for(auto item : params){
+            auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
+            if(from!=nullptr && to!=nullptr)
+                parser->curRule->addCenterToCenterEntry(from,to);
+        }
     }
     void setCenterAndEdge(std::vector<boost::fusion::vector<std::string,std::string>> params,
                              odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setCenterAndEdgeValid(true);
-        std::vector<std::pair<char*,char*>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),strdup(at_c<1>(item).c_str())});
-        parser->defRule->setCenterAndEdgeTable(table);
+        parser->curRule->setCenterAndEdgeValid(true);
+        for(auto item : params){
+            auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
+            if(from!=nullptr && to!=nullptr)
+                parser->curRule->addCenterAndEdgeEntry(from,to);
+        }
     }
     void setPRL(boost::fusion::vector<double,
                                       boost::optional<std::string>,
@@ -100,18 +110,21 @@ namespace lefTechLayerCutSpacingTable {
                              odb::lefTechLayerCutSpacingTableParser* parser,
                              odb::lefin* lefin)
     {
-        parser->defRule->setPrlValid(true);
+        parser->curRule->setPrlValid(true);
         auto prl = at_c<0>(params);
         auto maxxy = at_c<1>(params);
         auto items = at_c<2>(params);
-        parser->defRule->setPrl(lefin->dbdist(prl));
+        parser->curRule->setPrl(lefin->dbdist(prl));
         if(maxxy.is_initialized())
-            parser->defRule->setMaxXY(true);
+            parser->curRule->setMaxXY(true);
         
-        std::vector<std::tuple<char*,char*,int>> table;
-        for(auto item : items)
-            table.push_back({strdup(at_c<0>(item).c_str()),strdup(at_c<1>(item).c_str()),lefin->dbdist(at_c<2>(item))});
-        parser->defRule->setPrlTable(table);
+        for(auto item : items){
+            auto from = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto to = parser->layer->findTechLayerCutClassRule(at_c<1>(item).c_str());
+            auto ccPrl = lefin->dbdist(at_c<2>(item));
+            if(from!=nullptr && to!=nullptr)
+                parser->curRule->addPrlEntry(from,to,ccPrl);
+        }
     }
     void setExactAlignedSpacing(boost::fusion::vector<
                                       boost::optional<std::string>,
@@ -119,43 +132,51 @@ namespace lefTechLayerCutSpacingTable {
                              odb::lefTechLayerCutSpacingTableParser* parser,
                              odb::lefin* lefin)
     {
-        parser->defRule->setExactAlignedSpacingValid(true);
+        parser->curRule->setExactAlignedSpacingValid(true);
         auto dir = at_c<0>(params);
         auto items = at_c<1>(params);
         if(dir.is_initialized()){
             if(dir.value()=="HORIZONTAL")
-                parser->defRule->setHorizontal(true);
+                parser->curRule->setHorizontal(true);
             else
-                parser->defRule->setVertical(true);
+                parser->curRule->setVertical(true);
         }
         
-        std::vector<std::pair<char*,int>> table;
-        for(auto item : items)
-            table.push_back({strdup(at_c<0>(item).c_str()),lefin->dbdist(at_c<1>(item))});
-        
-        parser->defRule->setExactAlignedSpacingTable(table);
+        for(auto item : items){
+            auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto ext = lefin->dbdist(at_c<1>(item));
+            if(cls!=nullptr)
+                parser->curRule->addExactElignedEntry(cls, ext);
+        }
     }
 
     void setNonOppositeEnclosureSpacing(std::vector<boost::fusion::vector<std::string,double>> params,
                              odb::lefTechLayerCutSpacingTableParser* parser,
                              odb::lefin* lefin)
     {
-        parser->defRule->setNonOppositeEnclosureSpacingValid(true);
-        std::vector<std::pair<char*,int>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),lefin->dbdist(at_c<1>(item))});
-        parser->defRule->setNonOppEncSpacingTable(table);
+        parser->curRule->setNonOppositeEnclosureSpacingValid(true);
+        for(auto item : params){
+            auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto ext = lefin->dbdist(at_c<1>(item));
+            if(cls!=nullptr)
+                parser->curRule->addExactElignedEntry(cls, ext);
+        }
     }
 
     void setOppositeEnclosureResizeSpacing(std::vector<boost::fusion::vector<std::string,double,double,double>> params,
                              odb::lefTechLayerCutSpacingTableParser* parser,
                              odb::lefin* lefin)
     {
-        parser->defRule->setOppositeEnclosureResizeSpacingValid(true);
+        parser->curRule->setOppositeEnclosureResizeSpacingValid(true);
         std::vector<std::tuple<char*,int,int,int>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),lefin->dbdist(at_c<1>(item)),lefin->dbdist(at_c<2>(item)),lefin->dbdist(at_c<3>(item))});
-        parser->defRule->setOppEncSpacingTable(table);
+        for(auto item : params){
+            auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto rsz1 = lefin->dbdist(at_c<1>(item));
+            auto rsz2 = lefin->dbdist(at_c<2>(item));
+            auto spacing = lefin->dbdist(at_c<3>(item));
+            if(cls!=nullptr)
+                parser->curRule->addOppEncSpacingEntry(cls, rsz1, rsz2, spacing);
+        }
     }
 
     void setEndExtension(boost::fusion::vector<double,
@@ -163,53 +184,57 @@ namespace lefTechLayerCutSpacingTable {
                              odb::lefTechLayerCutSpacingTableParser* parser,
                              odb::lefin* lefin)
     {
-        parser->defRule->setEndExtensionValid(true);
+        parser->curRule->setEndExtensionValid(true);
         auto ext = at_c<0>(params);
         auto items = at_c<1>(params);
-        parser->defRule->setExtension(lefin->dbdist(ext));        
-        std::vector<std::pair<char*,int>> table;
-        for(auto item : items)
-            table.push_back({strdup(at_c<0>(item).c_str()),lefin->dbdist(at_c<1>(item))});
-        parser->defRule->setEndExtensionTable(table);
+        parser->curRule->setExtension(lefin->dbdist(ext));        
+        for(auto item : items){
+            auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto ext = lefin->dbdist(at_c<1>(item));
+            if(cls!=nullptr)
+                parser->curRule->addEndExtensionEntry(cls, ext);
+        }
     }
     void setSideExtension(std::vector<boost::fusion::vector<std::string,double>> params,
                           odb::lefTechLayerCutSpacingTableParser* parser,
                           odb::lefin* lefin)
     {
-        parser->defRule->setSideExtensionValid(true);
-        std::vector<std::pair<char*,int>> table;
-        for(auto item : params)
-            table.push_back({strdup(at_c<0>(item).c_str()),lefin->dbdist(at_c<1>(item))});
-        parser->defRule->setSideExtensionTable(table);
+        parser->curRule->setSideExtensionValid(true);
+        for(auto item : params){
+            auto cls = parser->layer->findTechLayerCutClassRule(at_c<0>(item).c_str());
+            auto ext = lefin->dbdist(at_c<1>(item));
+            if(cls!=nullptr)
+                parser->curRule->addSideExtensionEntry(cls, ext);
+        }
     }
     
     void setSameMask(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setSameMask(true);
+        parser->curRule->setSameMask(true);
     }
     void setSameNet(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setSameNet(true);
+        parser->curRule->setSameNet(true);
     }
     void setSameMetal(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setSameMetal(true);
+        parser->curRule->setSameMetal(true);
     }
     void setSameVia(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setSameVia(true);
+        parser->curRule->setSameVia(true);
     }
     void setNoStack(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setNoStack(true);
+        parser->curRule->setNoStack(true);
     }
     void setNonZeroEnclosure(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setNonZeroEnclosure(true);
+        parser->curRule->setNonZeroEnclosure(true);
     }
     void setNoPrl(odb::lefTechLayerCutSpacingTableParser* parser)
     {
-        parser->defRule->setNoPrl(true);
+        parser->curRule->setNoPrl(true);
     }
 
     void setCutClass(boost::fusion::vector<
@@ -287,11 +312,11 @@ namespace lefTechLayerCutSpacingTable {
                 auto spacing2 = at_c<1>(item);
                 int sp1,sp2;
                 if(spacing1.which()==0)
-                    sp1 = parser->defRule->getDefault();
+                    sp1 = parser->curRule->getDefault();
                 else
                     sp1 = lefin->dbdist(boost::get<double>(spacing1));
                 if(spacing2.which()==0)
-                    sp2 = parser->defRule->getDefault();
+                    sp2 = parser->curRule->getDefault();
                 else
                     sp2 = lefin->dbdist(boost::get<double>(spacing2));
                 table[i][j] = {sp1,sp2};
@@ -340,7 +365,7 @@ namespace lefTechLayerCutSpacingTable {
             }else
                 ++it;
         }
-        parser->defRule->setSpacingTable(table,rows,cols);
+        parser->curRule->setSpacingTable(table,rows,cols);
     }
     void print(std::string str)
     {
@@ -348,7 +373,7 @@ namespace lefTechLayerCutSpacingTable {
     }
 
     template <typename Iterator>
-    bool parse(Iterator first, Iterator last, odb::lefTechLayerCutSpacingTableParser* parser, odb::dbTechLayerCutSpacingTableRule* rule, odb::lefin* lefin)
+    bool parse(Iterator first, Iterator last, odb::lefTechLayerCutSpacingTableParser* parser, odb::lefin* lefin)
     {   
         qi::rule<Iterator, std::string(), ascii::space_type> _string;
         _string %= lexeme[(alpha >> *(char_ - ' ' -'\n'))];
@@ -358,7 +383,7 @@ namespace lefTechLayerCutSpacingTable {
             >> lit("ORTHOGONAL")
             >> +( lit("WITHIN") >> double_ >> lit("SPACING") >> double_)
             >> lit(";")
-        )[boost::bind(&createOrthongonalSubRule,_1,rule,lefin)];
+        )[boost::bind(&createOrthongonalSubRule,_1, parser, lefin)];
         
         qi::rule<std::string::iterator, space_type> LAYER = (
             lit("LAYER")
@@ -436,7 +461,7 @@ namespace lefTechLayerCutSpacingTable {
         )[boost::bind(&setCutClass,_1,parser,lefin)]; 
 
         qi::rule<std::string::iterator, space_type> DEFAULT = (
-            lit("SPACINGTABLE")[boost::bind(&createDefSubRule,parser,rule)]
+            lit("SPACINGTABLE")[boost::bind(&createDefSubRule,parser)]
             >> -(
                 lit("DEFAULT")
                 >> double_[boost::bind(&setDefault,_1,parser,lefin)]
@@ -464,7 +489,11 @@ namespace lefTechLayerCutSpacingTable {
         );
         bool r = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space);
         if (first != last) // fail if we did not get a full match
+        {
+            if(parser->curRule!=nullptr)
+                odb::dbTechLayerCutSpacingTableDefRule::destroy(parser->curRule);
             return false;
+        }
         return r;
     }
 }
@@ -473,16 +502,9 @@ namespace lefTechLayerCutSpacingTable {
 namespace odb{
 
 
-dbTechLayerCutSpacingTableRule* lefTechLayerCutSpacingTableParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
+void lefTechLayerCutSpacingTableParser::parse(std::string s, odb::lefin* l)
 {
-    odb::dbTechLayerCutSpacingTableRule* rule = odb::dbTechLayerCutSpacingTableRule::create(layer);
-    if(lefTechLayerCutSpacingTable::parse(s.begin(), s.end(), this, rule, l) )
-        return rule;
-    else 
-    {
-        odb::dbTechLayerCutSpacingTableRule::destroy(rule);
-        return nullptr;
-    }
+    lefTechLayerCutSpacingTable::parse(s.begin(), s.end(), this, l);
 } 
 
 

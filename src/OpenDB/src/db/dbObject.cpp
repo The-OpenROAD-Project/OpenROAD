@@ -322,19 +322,13 @@ void dbObject::getDbName(char name[max_name_length]) const
         *cptr++ = 'b';
         id      = impl->getOID();
         break;
-      case dbTechLayerMinStepSubRuleObj:
       case dbTechLayerMinStepRuleObj:
       case dbTechLayerCornerSpacingRuleObj:
-      case dbTechLayerRectOnlyRuleObj:
-      case dbTechLayerRightWayOnGridOnlyRuleObj:
       case dbTechLayerSpacingTablePrlRuleObj:
       case dbTechLayerCutClassRuleObj:
-      case dbTechLayerCutClassSubRuleObj:
       case dbTechLayerCutSpacingRuleObj:
-      case dbTechLayerCutSpacingSubRuleObj:
-      case dbTechLayerCutSpacingTableRuleObj:
-      case dbTechLayerCutSpacingTableDefSubRuleObj:
-      case dbTechLayerCutSpacingTableOrthSubRuleObj:
+      case dbTechLayerCutSpacingTableDefRuleObj:
+      case dbTechLayerCutSpacingTableOrthRuleObj:
         *cptr++ = 'J';
         id      = impl->getOID();
         break;
@@ -637,9 +631,8 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         obj = dbGroup::getGroup((dbBlock*) obj, oid);
         break;
       case 'J':
-        //SKIP
+        // SKIP
         break;
-        
 
       case '/':
         break;
@@ -686,20 +679,15 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbHier",
                                  "dbBPin",
                                  // Generator Code Begin 1
+                                 "dbTechLayer",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerMinStepRule",
-                                 "dbTechLayerMinStepSubRule",
                                  "dbTechLayerCornerSpacingRule",
                                  "dbTechLayerSpacingTablePrlRule",
-                                 "dbTechLayerRightWayOnGridOnlyRule",
-                                 "dbTechLayerRectOnlyRule",
                                  "dbTechLayerCutClassRule",
-                                 "dbTechLayerCutClassSubRule",
                                  "dbTechLayerCutSpacingRule",
-                                 "dbTechLayerCutSpacingSubRule",
-                                 "dbTechLayerCutSpacingTableRule",
-                                 "dbTechLayerCutSpacingTableOrthSubRule",
-                                 "dbTechLayerCutSpacingTableDefSubRule",
+                                 "dbTechLayerCutSpacingTableOrthRule",
+                                 "dbTechLayerCutSpacingTableDefRule",
                                  "dbModule",
                                  "dbModInst",
                                  "dbGroup",
@@ -716,7 +704,6 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Tech Objects
                                  "dbTech",
-                                 "dbTechLayer",
                                  "dbTechVia",
                                  "dbTechNonDefaultRule",
                                  "dbTechLayerRule",

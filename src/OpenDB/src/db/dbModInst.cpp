@@ -172,6 +172,8 @@ _dbModInst::~_dbModInst()
 {
   if (_name)
     free((void*) _name);
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

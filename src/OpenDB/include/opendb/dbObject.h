@@ -90,20 +90,15 @@ enum dbObjectType
   dbHierObj,
   dbBPinObj,
   // Generator Code Begin 1
+  dbTechLayerObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerMinStepRuleObj,
-  dbTechLayerMinStepSubRuleObj,
   dbTechLayerCornerSpacingRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
-  dbTechLayerRightWayOnGridOnlyRuleObj,
-  dbTechLayerRectOnlyRuleObj,
   dbTechLayerCutClassRuleObj,
-  dbTechLayerCutClassSubRuleObj,
   dbTechLayerCutSpacingRuleObj,
-  dbTechLayerCutSpacingSubRuleObj,
-  dbTechLayerCutSpacingTableRuleObj,
-  dbTechLayerCutSpacingTableOrthSubRuleObj,
-  dbTechLayerCutSpacingTableDefSubRuleObj,
+  dbTechLayerCutSpacingTableOrthRuleObj,
+  dbTechLayerCutSpacingTableDefRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,
@@ -120,7 +115,6 @@ enum dbObjectType
 
   // Tech Objects
   dbTechObj,
-  dbTechLayerObj,
   dbTechViaObj,
   dbTechNonDefaultRuleObj,  // also a design object
   dbTechLayerRuleObj,       // also a design object

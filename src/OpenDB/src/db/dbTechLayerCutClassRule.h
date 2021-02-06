@@ -45,12 +45,15 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbTechLayerCutClassSubRule;
-template <class T>
-class dbTable;
 // User Code Begin Classes
 // User Code End Classes
 
+struct dbTechLayerCutClassRuleFlags
+{
+  bool _length_valid : 1;
+  bool _cuts_valid : 1;
+  uint _spare_bits : 30;
+};
 // User Code Begin structs
 // User Code End structs
 
@@ -60,7 +63,12 @@ class _dbTechLayerCutClassRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTable<_dbTechLayerCutClassSubRule>* _techlayercutclasssubrule_tbl;
+  dbTechLayerCutClassRuleFlags   _flags;
+  char*                          _name;
+  int                            _width;
+  int                            _length;
+  int                            _num_cuts;
+  dbId<_dbTechLayerCutClassRule> _next_entry;
 
   // User Code Begin fields
   // User Code End fields
@@ -72,12 +80,12 @@ class _dbTechLayerCutClassRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  bool           operator<(const _dbTechLayerCutClassRule& rhs) const;
-  void           differences(dbDiff&                         diff,
-                             const char*                     field,
-                             const _dbTechLayerCutClassRule& rhs) const;
-  void           out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);  // User Code Begin methods
+  bool operator<(const _dbTechLayerCutClassRule& rhs) const;
+  void differences(dbDiff&                         diff,
+                   const char*                     field,
+                   const _dbTechLayerCutClassRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin methods
   // User Code End methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);

@@ -36,12 +36,12 @@
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
+#include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-#include "dbTechLayerCutClassSubRule.h"
 // User Code Begin includes
+#include "dbHashTable.hpp"
 // User Code End includes
 namespace odb {
 
@@ -52,7 +52,25 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (*_techlayercutclasssubrule_tbl != *rhs._techlayercutclasssubrule_tbl)
+  if (_flags._length_valid != rhs._flags._length_valid)
+    return false;
+
+  if (_flags._cuts_valid != rhs._flags._cuts_valid)
+    return false;
+
+  if (_name != rhs._name)
+    return false;
+
+  if (_width != rhs._width)
+    return false;
+
+  if (_length != rhs._length)
+    return false;
+
+  if (_num_cuts != rhs._num_cuts)
+    return false;
+
+  if (_next_entry != rhs._next_entry)
     return false;
 
   // User Code Begin ==
@@ -73,7 +91,13 @@ void _dbTechLayerCutClassRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_TABLE(_techlayercutclasssubrule_tbl);
+  DIFF_FIELD(_flags._length_valid);
+  DIFF_FIELD(_flags._cuts_valid);
+  DIFF_FIELD(_name);
+  DIFF_FIELD(_width);
+  DIFF_FIELD(_length);
+  DIFF_FIELD(_num_cuts);
+  DIFF_FIELD_NO_DEEP(_next_entry);
   // User Code Begin differences
   // User Code End differences
   DIFF_END
@@ -83,7 +107,13 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
                                    const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_TABLE(_techlayercutclasssubrule_tbl);
+  DIFF_OUT_FIELD(_flags._length_valid);
+  DIFF_OUT_FIELD(_flags._cuts_valid);
+  DIFF_OUT_FIELD(_name);
+  DIFF_OUT_FIELD(_width);
+  DIFF_OUT_FIELD(_length);
+  DIFF_OUT_FIELD(_num_cuts);
+  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
 
   // User Code Begin out
   // User Code End out
@@ -91,12 +121,8 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
-  _techlayercutclasssubrule_tbl = new dbTable<_dbTechLayerCutClassSubRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayerCutClassRule::getObjectTable,
-      dbTechLayerCutClassSubRuleObj);
-  ZALLOCATED(_techlayercutclasssubrule_tbl);
+  uint* _flags_bit_field = (uint*) &_flags;
+  *_flags_bit_field      = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -104,43 +130,51 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
     _dbDatabase*                    db,
     const _dbTechLayerCutClassRule& r)
 {
-  _techlayercutclasssubrule_tbl = new dbTable<_dbTechLayerCutClassSubRule>(
-      db, this, *r._techlayercutclasssubrule_tbl);
-  ZALLOCATED(_techlayercutclasssubrule_tbl);
+  _flags._length_valid = r._flags._length_valid;
+  _flags._cuts_valid   = r._flags._cuts_valid;
+  _flags._spare_bits   = r._flags._spare_bits;
+  _name                = r._name;
+  _width               = r._width;
+  _length              = r._length;
+  _num_cuts            = r._num_cuts;
+  _next_entry          = r._next_entry;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
-  stream >> *obj._techlayercutclasssubrule_tbl;
+  uint* _flags_bit_field = (uint*) &obj._flags;
+  stream >> *_flags_bit_field;
+  stream >> obj._name;
+  stream >> obj._width;
+  stream >> obj._length;
+  stream >> obj._num_cuts;
+  stream >> obj._next_entry;
   // User Code Begin >>
   // User Code End >>
   return stream;
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
-  stream << *obj._techlayercutclasssubrule_tbl;
+  uint* _flags_bit_field = (uint*) &obj._flags;
+  stream << *_flags_bit_field;
+  stream << obj._name;
+  stream << obj._width;
+  stream << obj._length;
+  stream << obj._num_cuts;
+  stream << obj._next_entry;
   // User Code Begin <<
   // User Code End <<
   return stream;
 }
 
-dbObjectTable* _dbTechLayerCutClassRule::getObjectTable(dbObjectType type)
-{
-  switch (type) {
-    case dbTechLayerCutClassSubRuleObj:
-      return _techlayercutclasssubrule_tbl;
-      // User Code Begin getObjectTable
-    // User Code End getObjectTable
-    default:
-      break;
-  }
-  return getTable()->getObjectTable(type);
-}
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
-  delete _techlayercutclasssubrule_tbl;
+  if (_name)
+    free((void*) _name);
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //
@@ -148,19 +182,90 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 //
 ////////////////////////////////////////////////////////////////////
 
-dbSet<dbTechLayerCutClassSubRule>
-dbTechLayerCutClassRule::getTechLayerCutClassSubRules() const
+char* dbTechLayerCutClassRule::getName() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return dbSet<dbTechLayerCutClassSubRule>(obj,
-                                           obj->_techlayercutclasssubrule_tbl);
+  return obj->_name;
+}
+
+void dbTechLayerCutClassRule::setWidth(int _width)
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  obj->_width = _width;
+}
+
+int dbTechLayerCutClassRule::getWidth() const
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  return obj->_width;
+}
+
+void dbTechLayerCutClassRule::setLength(int _length)
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  obj->_length = _length;
+}
+
+int dbTechLayerCutClassRule::getLength() const
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  return obj->_length;
+}
+
+void dbTechLayerCutClassRule::setNumCuts(int _num_cuts)
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  obj->_num_cuts = _num_cuts;
+}
+
+int dbTechLayerCutClassRule::getNumCuts() const
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  return obj->_num_cuts;
+}
+
+void dbTechLayerCutClassRule::setLengthValid(bool _length_valid)
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  obj->_flags._length_valid = _length_valid;
+}
+
+bool dbTechLayerCutClassRule::isLengthValid() const
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  return obj->_flags._length_valid;
+}
+
+void dbTechLayerCutClassRule::setCutsValid(bool _cuts_valid)
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  obj->_flags._cuts_valid = _cuts_valid;
+}
+
+bool dbTechLayerCutClassRule::isCutsValid() const
+{
+  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+
+  return obj->_flags._cuts_valid;
 }
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods
-dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer)
+dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
+                                                         const char*  name)
 {
+  if (_layer->findTechLayerCutClassRule(name) != nullptr)
+    return nullptr;
   _dbTechLayer*             layer   = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->_cut_class_rules_tbl->create();
+  newrule->_name                    = strdup(name);
+  ZALLOCATED(newrule->_name);
+  layer->_cut_class_rules_hash.insert(newrule);
   return ((dbTechLayerCutClassRule*) newrule);
 }
 
@@ -173,10 +278,9 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
 }
 void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 {
-  for (auto subrule : rule->getTechLayerCutClassSubRules()) {
-    dbTechLayerCutClassSubRule::destroy(subrule);
-  }
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  _dbTechLayerCutClassRule* _rule = (_dbTechLayerCutClassRule*) rule;
+  _dbTechLayer*             layer = (_dbTechLayer*) _rule->getOwner();
+  layer->_cut_class_rules_hash.remove(_rule);
   dbProperty::destroyProperties(rule);
   layer->_cut_class_rules_tbl->destroy((_dbTechLayerCutClassRule*) rule);
 }

@@ -38,47 +38,47 @@ namespace lefTechLayerMinStep {
     using ascii::space;
     using phoenix::ref;
 
-    void createSubRule(odb::lefTechLayerMinStepParser* parser, odb::dbTechLayerMinStepRule* rule)
+    void createSubRule(odb::lefTechLayerMinStepParser* parser, odb::dbTechLayer* layer)
     {
-        parser->minSubRule = odb::dbTechLayerMinStepSubRule::create(rule);
+        parser->curRule = odb::dbTechLayerMinStepRule::create(layer);
     }
     void setMinAdjacentLength1(double length, odb::lefTechLayerMinStepParser* parser, odb::lefin* l)
     {
-        parser->minSubRule->setMinAdjLength1(l->dbdist(length));
-        parser->minSubRule->setMinAdjLength1Valid(true);
+        parser->curRule->setMinAdjLength1(l->dbdist(length));
+        parser->curRule->setMinAdjLength1Valid(true);
     }
     void setMinAdjacentLength2(double length, odb::lefTechLayerMinStepParser* parser, odb::lefin* l)
     {
-        parser->minSubRule->setMinAdjLength2(l->dbdist(length));
-        parser->minSubRule->setMinAdjLength2Valid(true);
+        parser->curRule->setMinAdjLength2(l->dbdist(length));
+        parser->curRule->setMinAdjLength2Valid(true);
     }
     void minBetweenLngthParser(double length, odb::lefTechLayerMinStepParser* parser, odb::lefin* l)
     {
-        parser->minSubRule->setMinBetweenLength(l->dbdist(length));
-        parser->minSubRule->setMinBetweenLengthValid(true);
+        parser->curRule->setMinBetweenLength(l->dbdist(length));
+        parser->curRule->setMinBetweenLengthValid(true);
     }
     void minStepLengthParser(double length, odb::lefTechLayerMinStepParser* parser, odb::lefin* l)
     {
-        parser->minSubRule->setMinStepLength(l->dbdist(length));
+        parser->curRule->setMinStepLength(l->dbdist(length));
     }
     void maxEdgesParser(int edges, odb::lefTechLayerMinStepParser* parser, odb::lefin* l)
     {
-        parser->minSubRule->setMaxEdges(edges);
-        parser->minSubRule->setMaxEdgesValid(true);
+        parser->curRule->setMaxEdges(edges);
+        parser->curRule->setMaxEdgesValid(true);
     }
 
     void setConvexCorner(odb::lefTechLayerMinStepParser* parser)
     {
-        parser->minSubRule->setConvexCorner(true);
+        parser->curRule->setConvexCorner(true);
     }
     
     void setExceptSameCorners(odb::lefTechLayerMinStepParser* parser)
     {
-        parser->minSubRule->setExceptSameCorners(true);
+        parser->curRule->setExceptSameCorners(true);
     }
 
     template <typename Iterator>
-    bool parse(Iterator first, Iterator last, odb::lefTechLayerMinStepParser* parser, odb::dbTechLayerMinStepRule* rule, odb::lefin* l)
+    bool parse(Iterator first, Iterator last, odb::lefTechLayerMinStepParser* parser, odb::dbTechLayer* layer, odb::lefin* l)
     {
 
         qi::rule<std::string::iterator, space_type> minAdjacentRule = (
@@ -94,7 +94,7 @@ namespace lefTechLayerMinStep {
                                                                         >> -(lit("EXCEPTSAMECORNERS") [boost::bind(&setExceptSameCorners, parser)])
                                                                         );
         qi::rule<std::string::iterator, space_type> minstepRule = ( +(
-                                                                        lit("MINSTEP") [boost::bind(&createSubRule, parser, rule)]
+                                                                        lit("MINSTEP") [boost::bind(&createSubRule, parser, layer)]
                                                                         >> double_ [boost::bind(&minStepLengthParser, _1, parser, l)]
                                                                         >> -(lit("MAXEDGES") >> int_ [boost::bind(&maxEdgesParser, _1, parser, l)] )
                                                                         >> -( minAdjacentRule | minBetweenLngthRule ) 
@@ -106,7 +106,11 @@ namespace lefTechLayerMinStep {
         
 
         if (first != last) // fail if we did not get a full match
+        {
+            if(parser->curRule!=nullptr)
+                odb::dbTechLayerMinStepRule::destroy(parser->curRule);
             return false;
+        }
         return r;
     }
 }
@@ -115,16 +119,9 @@ namespace lefTechLayerMinStep {
 namespace odb{
 
 
-dbTechLayerMinStepRule* lefTechLayerMinStepParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
+void lefTechLayerMinStepParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
 {
-    dbTechLayerMinStepRule* rule = dbTechLayerMinStepRule::create(layer);
-    if(lefTechLayerMinStep::parse(s.begin(), s.end(), this, rule, l) )
-        return rule;
-    else 
-    {
-        odb::dbTechLayerMinStepRule::destroy(rule);
-        return nullptr;
-    }
+    lefTechLayerMinStep::parse(s.begin(), s.end(), this, layer, l);
 } 
 
 

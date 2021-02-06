@@ -20,8 +20,7 @@ add_library(opendb
     dbMaster.cpp 
     dbNet.cpp 
     dbSearch.cpp
-    dbTech.cpp 
-    dbTechLayer.cpp 
+    dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
     dbTechLayerAntennaRule.cpp 
     dbTechMinCutOrAreaRule.cpp 
@@ -97,20 +96,15 @@ add_library(opendb
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
+    dbTechLayer.cpp
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerMinStepRule.cpp
-    dbTechLayerMinStepSubRule.cpp
     dbTechLayerCornerSpacingRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
-    dbTechLayerRightWayOnGridOnlyRule.cpp
-    dbTechLayerRectOnlyRule.cpp
     dbTechLayerCutClassRule.cpp
-    dbTechLayerCutClassSubRule.cpp
     dbTechLayerCutSpacingRule.cpp
-    dbTechLayerCutSpacingSubRule.cpp
-    dbTechLayerCutSpacingTableRule.cpp
-    dbTechLayerCutSpacingTableOrthSubRule.cpp
-    dbTechLayerCutSpacingTableDefSubRule.cpp
+    dbTechLayerCutSpacingTableOrthRule.cpp
+    dbTechLayerCutSpacingTableDefRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp

@@ -39,11 +39,11 @@ namespace lefTechLayerRightWayOnGridOnly {
     using phoenix::ref;
     
     template <typename Iterator>
-    bool parse(Iterator first, Iterator last, odb::dbTechLayerRightWayOnGridOnlyRule* rule, odb::lefin* lefin)
+    bool parse(Iterator first, Iterator last, odb::dbTechLayer* layer, odb::lefin* lefin)
     {   
         qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule = (
-            lit("RIGHTWAYONGRIDONLY")
-            >> -lit("CHECKMASK")[boost::bind(&odb::dbTechLayerRightWayOnGridOnlyRule::setCheckMask,rule,true)]
+            lit("RIGHTWAYONGRIDONLY")[boost::bind(&odb::dbTechLayer::setRightWayOnGridOnly,layer,true)]
+            >> -lit("CHECKMASK")[boost::bind(&odb::dbTechLayer::setCheckMask,layer,true)]
             >> lit(";") 
         );
 
@@ -60,16 +60,9 @@ namespace lefTechLayerRightWayOnGridOnly {
 namespace odb{
 
 
-dbTechLayerRightWayOnGridOnlyRule* lefTechLayerRightWayOnGridOnlyParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
+void lefTechLayerRightWayOnGridOnlyParser::parse(std::string s, dbTechLayer* layer, odb::lefin* l)
 {
-    dbTechLayerRightWayOnGridOnlyRule* rule = dbTechLayerRightWayOnGridOnlyRule::create(layer);
-    if(lefTechLayerRightWayOnGridOnly::parse(s.begin(), s.end(), rule, l) )
-        return rule;
-    else 
-    {
-        odb::dbTechLayerRightWayOnGridOnlyRule::destroy(rule);
-        return nullptr;
-    }
+    lefTechLayerRightWayOnGridOnly::parse(s.begin(), s.end(), layer, l);
 } 
 
 

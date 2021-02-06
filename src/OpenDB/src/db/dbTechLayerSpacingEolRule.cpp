@@ -667,6 +667,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 
 _dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //
