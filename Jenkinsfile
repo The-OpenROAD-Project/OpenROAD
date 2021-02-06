@@ -8,12 +8,12 @@ pipeline {
       parallel {
         stage('Local centos7 gcc8') {
           stages {
-            stage('Build') {
+            stage('Build centos7 gcc8') {
               steps {
                 sh './jenkins/build.sh'
               }
             }
-            stage('Test') {
+            stage('Test centos7 gcc8') {
               steps {
                 script {
                   parallel (
@@ -33,12 +33,12 @@ pipeline {
         }
         stage('Docker centos7 clang7') {
           stages{
-            stage('Build') {
+            stage('Build centos7 clang7') {
               steps {
                 sh './jenkins/docker/build.sh centos7 clang7'
               }
             }
-            stage('Test') {
+            stage('Test centos7 clang7') {
               steps {
                 sh './jenkins/docker/test.sh centos7 clang7'
               }
@@ -47,12 +47,12 @@ pipeline {
         }
         stage('Docker ubuntu20 gcc8') {
           stages{
-            stage('Build') {
+            stage('Build ubuntu20 gcc8') {
               steps {
                 sh './jenkins/docker/build.sh ubuntu20 gcc8'
               }
             }
-            stage('Test') {
+            stage('Test ubuntu20 gcc8') {
               steps {
                 sh './jenkins/docker/test.sh ubuntu20 gcc8'
               }
