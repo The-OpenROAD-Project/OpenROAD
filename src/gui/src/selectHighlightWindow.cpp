@@ -204,7 +204,7 @@ bool HighlightModel::setData(const QModelIndex& index,
                              const QVariant& value,
                              int role)
 {
-  int rowIndex = index.row();
+  int row_index = index.row();
   return false;
 }
 
