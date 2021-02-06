@@ -753,8 +753,7 @@ void io::Parser::initRPin_rpin() {
         // MACRO does not go through PA
         if (prefAp == nullptr) {
           if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+              isPad(inst->getRefBlock()->getMacroClass()) ||
               inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints())[0].get();
           }

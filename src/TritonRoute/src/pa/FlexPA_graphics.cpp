@@ -37,12 +37,17 @@ namespace fr {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
-                               odb::dbDatabase* db)
-  : settings_(settings),
+                               odb::dbDatabase* db,
+                               Logger* logger)
+  : logger_(logger),
+    settings_(settings),
     gui_(gui::Gui::get()),
     pin_(nullptr),
     inst_term_(nullptr),
-    top_block_(design->getTopBlock())
+    top_block_(design->getTopBlock()),
+    pa_ap_(nullptr),
+    pa_via_(nullptr),
+    pa_markers_(nullptr)
 {
   assert(MAX_THREADS == 1);
 
@@ -70,6 +75,38 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
+  }
+
+  if (pa_via_) {
+    auto* via_def = pa_via_->getViaDef();
+    frBox bbox;
+    bool skip = false;
+    if (via_def->getLayer1Num() == layerNum) {
+      pa_via_->getLayer1BBox(bbox);
+    } else if (via_def->getLayer2Num() == layerNum) {
+      pa_via_->getLayer2BBox(bbox);
+    } else {
+      skip = true;
+    }
+    if (!skip) {
+      painter.setPen(layer, /* cosmetic */ true);
+      painter.setBrush(layer);
+      painter.drawRect({bbox.left(), bbox.bottom(),
+                        bbox.right(), bbox.top()});
+    }
+  }
+
+  if (pa_markers_) {
+    painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+    painter.setBrush(gui::Painter::transparent);
+    for (auto& marker : *pa_markers_) {
+      if (marker->getLayerNum() == layerNum) {
+        frBox bbox;
+        marker->getBBox(bbox);
+        painter.drawRect({bbox.left(), bbox.bottom(),
+                          bbox.right(), bbox.top()});
+      }
+    }
   }
 
   for (const auto& ap : aps_) {
@@ -143,6 +180,34 @@ void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& a
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
+}
+
+void FlexPAGraphics::setViaAP(const frAccessPoint* ap,
+                              const frVia* via,
+                              const std::vector<std::unique_ptr<frMarker>>& markers)
+{
+  if (!pin_ || !settings_->paMarkers) {
+    return;
+  }
+
+  pa_ap_ = ap;
+  pa_via_ = via;
+  pa_markers_ = &markers;
+  for (auto& marker : markers) {
+    frBox bbox;
+    marker->getBBox(bbox);
+    logger_->info(DRT, 119, "marker {} at ({}, {}) ({}, {})",
+                  marker->getConstraint()->typeId(),
+                  bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+  }
+
+  gui_->redraw();
+  gui_->pause();
+
+  // These are going away once we return
+  pa_ap_ = nullptr;
+  pa_via_ = nullptr;
+  pa_markers_ = nullptr;
 }
 
 void FlexPAGraphics::status(const std::string& message)

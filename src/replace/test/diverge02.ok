@@ -45,6 +45,5 @@ End InitialPlace
 [INFO GPL-0030] NumBins: 256
 Begin NesterovInit
 End NesterovInit
-[ERROR GPL-0305] RePlAce divergence detected. 
-        Please tune the parameters again
+[ERROR GPL-0305] RePlAce divergence detected.
 GPL-0305

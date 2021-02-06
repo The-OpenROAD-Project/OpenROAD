@@ -65,7 +65,6 @@ namespace utl {
     X(PAR) \
     X(PDN) \
     X(PPL) \
-    X(PRT) \
     X(PSM) \
     X(PSN) \
     X(RCX) \
@@ -157,16 +156,11 @@ class Logger
   // For logging to the metrics file.  This is a much more restricted
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
+  template <typename T,
+            typename = std::enable_if_t<std::is_arithmetic_v<T>>>
   inline void metric(ToolId tool,
                      const std::string_view metric,
-                     int value)
-  {
-    log_metric(tool, metric, value);
-  }
-
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
-                     double value)
+                     T value)
   {
     log_metric(tool, metric, value);
   }
@@ -176,17 +170,6 @@ class Logger
                      const std::string& value)
   {
     log_metric(tool, metric, '"' +  value + '"');
-  }
-
-  // Only true bools and not things that can be converted to bool like
-  // char*
-  template <typename Bool,
-            typename T = std::enable_if_t<std::is_same<Bool, bool>{}>>
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
-                     Bool value)
-  {
-    log_metric(tool, metric, value ? "true" : "false");
   }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
@@ -224,7 +207,7 @@ class Logger
                            const std::string_view metric,
                            const Value& value)
     {
-      metrics_logger_->info("  {}\"{}-{}\" : {}",
+      metrics_logger_->info("  {}\"{}::{}\" : {}",
                             first_metric_ ? "  " : ", ",
                             tool_names_[tool],
                             metric,

@@ -81,23 +81,23 @@ proc partition_netlist { args } {
 # Tool
   set tools "chaco gpmetis mlpart"
     if { ![info exists keys(-tool)] } {
-      utl::error PRT 25 "missing mandatory argument -tool" 
+      utl::error PAR 25 "missing mandatory argument -tool" 
     } elseif { !($keys(-tool) in $tools) } {
-      utl::error PRT 26 "invalid tool. Use one of the following: $tools"
+      utl::error PAR 26 "invalid tool. Use one of the following: $tools"
     } else {
-      PartitionMgr::set_tool $keys(-tool)
+      par::set_tool $keys(-tool)
     }
 
 # Clique threshold
   if { [info exists keys(-clique_threshold)] } {
     if { !([string is integer $keys(-clique_threshold)] && \
         $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
-      utl::error PRT 27 "argument -clique_threshold should be an integer in the range \[3, 32768\]"
+      utl::error PAR 27 "argument -clique_threshold should be an integer in the range \[3, 32768\]"
     } else {
-      PartitionMgr::set_clique_threshold $keys(-clique_threshold)
+      par::set_clique_threshold $keys(-clique_threshold)
     }
   } else {
-    PartitionMgr::set_clique_threshold 50
+    par::set_clique_threshold 50
   }
 
 # Graph model
@@ -105,56 +105,56 @@ proc partition_netlist { args } {
     if { [info exists keys(-graph_model)] } {
       if { $keys(-graph_model) in $graph_models } {
       } else {
-        utl::error PRT 28 "invalid graph model. Use one of the following: $graph_models"
+        utl::error PAR 28 "invalid graph model. Use one of the following: $graph_models"
       }
-      PartitionMgr::set_graph_model $keys(-graph_model)
+      par::set_graph_model $keys(-graph_model)
     } else {
-      PartitionMgr::set_graph_model "star"
+      par::set_graph_model "star"
     }
 
 # Weight model
   if { [info exists keys(-weight_model)] } {
     if { !([string is integer $keys(-weight_model)] && \
         $keys(-weight_model) >= 1 && $keys(-weight_model) <= 7) } {
-      utl::error PRT 29 "argument -weight_model should be an integer in the range \[1, 7\]"
+      utl::error PAR 29 "argument -weight_model should be an integer in the range \[1, 7\]"
     } else {
-      PartitionMgr::set_weight_model $keys(-weight_model)
+      par::set_weight_model $keys(-weight_model)
     }     
   } else {
-    PartitionMgr::set_weight_model 1
+    par::set_weight_model 1
   }
 
 # Max edge weight
   if { [info exists keys(-max_edge_weight)] } {
     if { !([string is integer $keys(-max_edge_weight)] && \
         $keys(-max_edge_weight) >= 1 && $keys(-max_edge_weight) <= 32768) } {
-      utl::error PRT 30 "argument -max_edge_weight should be an integer in the range \[1, 32768\]"
+      utl::error PAR 30 "argument -max_edge_weight should be an integer in the range \[1, 32768\]"
     } else {
-      PartitionMgr::set_max_edge_weight $keys(-max_edge_weight)
+      par::set_max_edge_weight $keys(-max_edge_weight)
     }       
   } else {
-    PartitionMgr::set_max_edge_weight 100
+    par::set_max_edge_weight 100
   }
 
 # Max vertex weight
   if { [info exists keys(-max_vertex_weight)] } {
     if { !([string is integer $keys(-max_vertex_weight)] && \
         $keys(-max_vertex_weight) >= 1 && $keys(-max_vertex_weight) <= 32768) } {
-      utl::error PRT 31 "argument -max_vertex_weight should be an integer in the range \[1, 32768\]"
+      utl::error PAR 31 "argument -max_vertex_weight should be an integer in the range \[1, 32768\]"
     } else {
-      PartitionMgr::set_max_vertex_weight $keys(-max_vertex_weight)
+      par::set_max_vertex_weight $keys(-max_vertex_weight)
     }       
   } else {
-    PartitionMgr::set_max_vertex_weight 100
+    par::set_max_vertex_weight 100
   }
 
 # Num starts
   if { [info exists keys(-num_starts)] } {
     if { !([string is integer $keys(-num_starts)] && \
         $keys(-num_starts) >= 1 && $keys(-num_starts) <= 32768) } {
-      utl::error PRT 32 "argument -num_starts should be an integer in the range \[1, 32768\]"
+      utl::error PAR 32 "argument -num_starts should be an integer in the range \[1, 32768\]"
     } else {
-      PartitionMgr::set_num_starts $keys(-num_starts)
+      par::set_num_starts $keys(-num_starts)
     }       
   }
 
@@ -162,120 +162,120 @@ proc partition_netlist { args } {
   if { [info exists keys(-balance_constraint)] } {
     if { !([string is integer $keys(-balance_constraint)] && \
         $keys(-balance_constraint) >= 0 && $keys(-balance_constraint) <= 50) } {
-      utl::error PRT 33 "argument -balance_constraint should be an integer in the range \[0, 50\]"
+      utl::error PAR 33 "argument -balance_constraint should be an integer in the range \[0, 50\]"
     } else {
-      PartitionMgr::set_balance_constraint $keys(-balance_constraint)
+      par::set_balance_constraint $keys(-balance_constraint)
     }       
   } else {
-    PartitionMgr::set_balance_constraint 2
+    par::set_balance_constraint 2
   }
 
 # Coarsening ratio 
   if { [info exists keys(-coarsening_ratio)] } {
     if { !([string is double $keys(-coarsening_ratio)] && \
         $keys(-coarsening_ratio) >= 0.5 && $keys(-coarsening_ratio) <= 1.0) } {
-      utl::error PRT 34 "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
+      utl::error PAR 34 "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-      PartitionMgr::set_coarsening_ratio $keys(-coarsening_ratio)
+      par::set_coarsening_ratio $keys(-coarsening_ratio)
     }       
   } else {
-    PartitionMgr::set_coarsening_ratio 0.7
+    par::set_coarsening_ratio 0.7
   }
 
 # Coarsening vertices
   if { [info exists keys(-coarsening_vertices)] } {
     if { !([string is integer $keys(-coarsening_vertices)]) } {
-      utl::error PRT 35 "argument -coarsening_vertices should be an integer"
+      utl::error PAR 35 "argument -coarsening_vertices should be an integer"
     } else {
-      PartitionMgr::set_coarsening_vertices $keys(-coarsening_vertices)
+      par::set_coarsening_vertices $keys(-coarsening_vertices)
     }
   } else {
-    PartitionMgr::set_coarsening_vertices 2500
+    par::set_coarsening_vertices 2500
   }
 
 # Terminal propagation 
   if { [info exists keys(-enable_term_prop)] } {
     if { !([string is integer $keys(-enable_term_prop)] && \
         $keys(-enable_term_prop) >= 0 && $keys(-enable_term_prop) <= 1) } {
-      utl::error PRT 36 "argument -enable_term_prop should be 0 or 1"
+      utl::error PAR 36 "argument -enable_term_prop should be 0 or 1"
     } else {
-      PartitionMgr::set_enable_term_prop $keys(-enable_term_prop)
+      par::set_enable_term_prop $keys(-enable_term_prop)
     }
   } else {
-    PartitionMgr::set_enable_term_prop 0
+    par::set_enable_term_prop 0
   }
 
 # Cut hop ratio 
   if { [info exists keys(-cut_hop_ratio)] } {
     if { !([string is double $keys(-cut_hop_ratio)] && \
         $keys(-cut_hop_ratio) >= 0.5 && $keys(-cut_hop_ratio) <= 1.0) } {
-      utk::error PRT 37 "argument -cut_hop_ratio should be a floating number in the range \[0.5, 1.0\]"
+      utk::error PAR 37 "argument -cut_hop_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-      PartitionMgr::set_cut_hop_ratio $keys(-cut_hop_ratio)
+      par::set_cut_hop_ratio $keys(-cut_hop_ratio)
     }       
   } else {
-    PartitionMgr::set_cut_hop_ratio 1.0
+    par::set_cut_hop_ratio 1.0
   }
 
 # Architecture
   if { [info exists keys(-architecture)] } {
-    PartitionMgr::set_architecture $keys(-architecture)
+    par::set_architecture $keys(-architecture)
   } else {
-    PartitionMgr::clear_architecture
+    par::clear_architecture
   }
 
 # Refinement
   if { [info exists keys(-refinement)] } {
     if { !([string is integer $keys(-refinement)] && \
         $keys(-refinement) >= 0 && $keys(-refinement) <= 32768) } {
-      utl::error PRT 38 "argument -refinement should be an integer in the range \[0, 32768\]"
+      utl::error PAR 38 "argument -refinement should be an integer in the range \[0, 32768\]"
     } else {
-      PartitionMgr::set_refinement $keys(-refinement)
+      par::set_refinement $keys(-refinement)
     }
   } else {
-    PartitionMgr::set_refinement 0
+    par::set_refinement 0
   }
 
 # Seeds
   if { [info exists keys(-seeds)] } {
-    PartitionMgr::set_seeds $keys(-seeds)
+    par::set_seeds $keys(-seeds)
   } else {
     if {! [info exists keys(-num_starts)]} {
-      utl::error PRT 39 "missing argument -seeds or -num_starts."
+      utl::error PAR 39 "missing argument -seeds or -num_starts."
     }
-    PartitionMgr::generate_seeds $keys(-num_starts)
+    par::generate_seeds $keys(-num_starts)
   }
 
 
 # Number of partitions
   if { ![info exists keys(-num_partitions)] } {
-    utl::error PRT 40 "missing mandatory argument \"-num_partitions \[2, 32768\]\""
+    utl::error PAR 40 "missing mandatory argument \"-num_partitions \[2, 32768\]\""
   } elseif { !([string is integer $keys(-num_partitions)] && \
       $keys(-num_partitions) >= 2 && $keys(-num_partitions) <= 32768)} {
-    utl::error PRT 41 "argument -num_partitions should be an integer in the range \[2, 32768\]"
+    utl::error PAR 41 "argument -num_partitions should be an integer in the range \[2, 32768\]"
   } else {
-    PartitionMgr::set_target_partitions $keys(-num_partitions) 
+    par::set_target_partitions $keys(-num_partitions) 
       if {[expr !(($keys(-num_partitions) & ($keys(-num_partitions) - 1)) == 0)]} {
-        PartitionMgr::set_architecture "1 $keys(-num_partitions)"
+        par::set_architecture "1 $keys(-num_partitions)"
       }
   }
 
 # Partition Id (for exisisting partitions)
   if { [info exists keys(-partition_id)] } {
     if { !([string is integer $keys(-partition_id)]) } {
-      utl::error PRT 42 "argument -partition_id should be an integer"
+      utl::error PAR 42 "argument -partition_id should be an integer"
     } else {
-      PartitionMgr::set_existing_id $keys(-partition_id)
+      par::set_existing_id $keys(-partition_id)
     }
   } else {
-    PartitionMgr::set_existing_id -1
+    par::set_existing_id -1
   }
 
   if { [info exists keys(-force_graph)] } {
-    PartitionMgr::set_force_graph $keys(-force_graph)
+    par::set_force_graph $keys(-force_graph)
   }
 
-  set currentId [PartitionMgr::run_partitioning]
+  set currentId [par::run_partitioning]
 
     return $currentId
 }
@@ -295,21 +295,21 @@ proc evaluate_partitioning { args } {
 
 # Partition IDs
   if { [info exists keys(-partition_ids)] } {
-    PartitionMgr::set_partition_ids_to_test $keys(-partition_ids)
+    par::set_partition_ids_to_test $keys(-partition_ids)
   } else {
-    utl::error PRT 43 "missing argument -partition_ids."
+    utl::error PAR 43 "missing argument -partition_ids."
   }
 
 # Evaluation Function
   set functions "terminals hyperedges size area runtime hops"
     if { [info exists keys(-evaluation_function)] } {
       if { !($keys(-evaluation_function) in $functions) } {
-        utl::error PRT 44 "invalid function. Use one of the following: $functions"
+        utl::error PAR 44 "invalid function. Use one of the following: $functions"
       }
-      PartitionMgr::set_evaluation_function $keys(-evaluation_function)
+      par::set_evaluation_function $keys(-evaluation_function)
     }
 
-  set bestId [PartitionMgr::evaluate_partitioning]
+  set bestId [par::evaluate_partitioning]
 
     return $bestId
 }
@@ -330,15 +330,15 @@ proc write_partitioning_to_db { args } {
 
   set partitioning_id 0
     if { ![info exists keys(-partitioning_id)] } {
-      utl::error PRT 45 "missing mandatory argument -partitioning_id"
+      utl::error PAR 45 "missing mandatory argument -partitioning_id"
     } else {
       set partition_id $keys(-partitioning_id)
     } 
 
-  PartitionMgr::write_partitioning_to_db $partitioning_id
+  par::write_partitioning_to_db $partitioning_id
 
     if { [info exists keys(-dump_to_file)] } {
-      PartitionMgr::dump_part_id_to_file $keys(-dump_to_file)
+      par::dump_part_id_to_file $keys(-dump_to_file)
     } 
 }
 
@@ -362,38 +362,38 @@ proc cluster_netlist { args } {
 # Tool
   set tools "chaco gpmetis mlpart"
     if { ![info exists keys(-tool)] } {
-      utl::error PRT 46 "missing mandatory argument -tool"
+      utl::error PAR 46 "missing mandatory argument -tool"
     } elseif { !($keys(-tool) in $tools) } {
-      utl::error PRT 47 "invalid tool. Use one of the following: $tools"
+      utl::error PAR 47 "invalid tool. Use one of the following: $tools"
     } else {
-      PartitionMgr::set_tool $keys(-tool)
+      par::set_tool $keys(-tool)
     }
 
 # Coarsening ratio 
   if { [info exists keys(-coarsening_ratio)] } {
     if { !([string is double $keys(-coarsening_ratio)] && \
         $keys(-coarsening_ratio) >= 0.5 && $keys(-coarsening_ratio) <= 1.0) } {
-      utl::error PRT 48 "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
+      utl::error PAR 48 "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-      PartitionMgr::set_coarsening_ratio $keys(-coarsening_ratio)
+      par::set_coarsening_ratio $keys(-coarsening_ratio)
     }       
   }
 
 # Coarsening vertices
   if { [info exists keys(-coarsening_vertices)] } {
-    PartitionMgr::set_coarsening_vertices $keys(-coarsening_vertices)
+    par::set_coarsening_vertices $keys(-coarsening_vertices)
   }
 
 # Levels
   if { [info exists keys(-level)] } {
-    PartitionMgr::set_level $keys(-level)
+    par::set_level $keys(-level)
   } else {
-    PartitionMgr::set_level 1
+    par::set_level 1
   }
 
-  PartitionMgr::generate_seeds 1
+  par::generate_seeds 1
 
-    set currentId [PartitionMgr::run_3party_clustering]
+    set currentId [par::run_3party_clustering]
 
     return $currentId
 }
@@ -414,15 +414,15 @@ proc write_clustering_to_db { args } {
 
   set clustering_id 0
     if { ![info exists keys(-clustering_id)] } {
-      utl::error PRT 49 "missing mandatory argument -clustering_id"
+      utl::error PAR 49 "missing mandatory argument -clustering_id"
     } else {
       set clustering_id $keys(-clustering_id)
     } 
 
-  PartitionMgr::write_clustering_to_db $clustering_id
+  par::write_clustering_to_db $clustering_id
 
     if { [info exists keys(-dump_to_file)] } {
-      PartitionMgr::dump_clus_id_to_file $keys(-dump_to_file)
+      par::dump_clus_id_to_file $keys(-dump_to_file)
     } 
 }
 
@@ -440,12 +440,12 @@ proc report_netlist_partitions { args } {
 
   set partitioning_id 0
     if { ![info exists keys(-partitioning_id)] } {
-      utl::error PRT 50 "missing mandatory argument -partitioning_id"
+      utl::error PAR 50 "missing mandatory argument -partitioning_id"
     } else {
       set partitioning_id $keys(-partitioning_id)
     } 
 
-  PartitionMgr::report_netlist_partitions $partitioning_id
+  par::report_netlist_partitions $partitioning_id
 }
 
 sta::define_cmd_args "read_partitioning" { [-read_file name] \
@@ -458,16 +458,16 @@ proc read_partitioning { args } {
       -final_partitions \
     } flags { }
 
-  PartitionMgr::set_final_partitions $keys(-final_partitions) 
+  par::set_final_partitions $keys(-final_partitions) 
     if { ![info exists keys(-read_file)] } {
-      utl::error PRT 51 "missing mandatory argument -read_file"
+      utl::error PAR 51 "missing mandatory argument -read_file"
     } else {
-      PartitionMgr::read_file $keys(-read_file)
+      par::read_file $keys(-read_file)
     } 
 
 
   if { ![info exists keys(-final_partitions)] } {
-    utl::error PRT 52 "missing mandatory argument \"-final_partitions \[2, 32768\]\""
+    utl::error PAR 52 "missing mandatory argument \"-final_partitions \[2, 32768\]\""
   } else {
   }
 }
@@ -483,13 +483,13 @@ proc run_clustering { args } {
 # Tool
   set schemes "hem scheme2 scheme3"
     if { ![info exists keys(-scheme)] } {
-      utl::error PRT 53 "missing mandatory argument -scheme"
+      utl::error PAR 53 "missing mandatory argument -scheme"
     } elseif { !($keys(-scheme) in $schemes) } {
-      utl::error PRT 54 "invalid scheme. Use one of the following: $schemes"
+      utl::error PAR 54 "invalid scheme. Use one of the following: $schemes"
     } else {
-      PartitionMgr::set_clustering_scheme $keys(-scheme)
+      par::set_clustering_scheme $keys(-scheme)
     }
-  PartitionMgr::run_clustering
+  par::run_clustering
 }
 
 sta::define_cmd_args "report_partition_graph" { [-graph_model name
@@ -506,22 +506,22 @@ proc report_partition_graph { args } {
     if { [info exists keys(-graph_model)] } {
       if { $keys(-graph_model) in $graph_models } {
       } else {
-        utl::error PRT 66 "invalid graph model. Use one of the following: $graph_models"
+        utl::error PAR 66 "invalid graph model. Use one of the following: $graph_models"
       }
-      PartitionMgr::set_graph_model $keys(-graph_model)
+      par::set_graph_model $keys(-graph_model)
     } 
 
   if { [info exists keys(-clique_threshold)] } {
     if { !([string is integer $keys(-clique_threshold)] && \
         $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
-      utl::error PRT 69 "argument -clique_threshold should be an integer in the range \[3, 32768\]"
+      utl::error PAR 69 "argument -clique_threshold should be an integer in the range \[3, 32768\]"
     } else {
-      PartitionMgr::set_clique_threshold $keys(-clique_threshold)
+      par::set_clique_threshold $keys(-clique_threshold)
     }
   } else {
-    PartitionMgr::set_clique_threshold 50
+    par::set_clique_threshold 50
   }
 
 
-  PartitionMgr::report_graph
+  par::report_graph
 }

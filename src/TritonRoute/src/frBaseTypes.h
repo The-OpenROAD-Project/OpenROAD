@@ -264,10 +264,17 @@ namespace fr {
     BLOCK,
     RING, // ispd19
     PAD, // ispd19
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
     PAD_POWER, // ispd19
     PAD_SPACER,
+    PAD_AREAIO,
     ENDCAP_BOTTOMLEFT // ispd19
   };
+
+  // This will go away when we move to OpenDB's types
+  bool isPad(MacroClassEnum e);
 
   // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
@@ -297,7 +304,8 @@ namespace fr {
         debugPA(false),
         gcellX(-1),
         gcellY(-1),
-        iter(0)
+        iter(0),
+        paMarkers(false)
     {
     }
 
@@ -313,6 +321,7 @@ namespace fr {
     int gcellX;
     int gcellY;
     int iter;
+    bool paMarkers;
   };
 }
 

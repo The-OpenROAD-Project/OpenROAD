@@ -32,10 +32,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "macro.h"
+#include "openroad/OpenRoad.hh"
 #include <iostream>
 
 namespace mpl {
-
 
 Macro::Macro( std::string _name, std::string _type, 
         double _lx, double _ly, 
@@ -53,12 +53,11 @@ Macro::Macro( std::string _name, std::string _type,
       dbInstPtr(_dbInstPtr) {}
 
 void Macro::Dump() {
-  std::cout << "MACRO " << name << " " 
-    << type << " " 
-    << lx << " " << ly << " " 
-    << w << " " << h << std::endl;
-  std::cout << haloX << " " << haloY << " " 
-    << channelX << " " << channelY << std::endl;
+  // debugPrint(log_, MPL, "tritonmp", 5, "MACRO {} {} {} {} {} {}",
+  //     name, type, lx, ly, w, h);
+  // debugPrint(log_, MPL, "tritonmp", 5, "{} {} {} {}", 
+  //     haloX, haloY, 
+  //    channelX, channelY); 
 }
 
 }

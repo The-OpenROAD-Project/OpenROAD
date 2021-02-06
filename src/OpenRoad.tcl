@@ -100,6 +100,19 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
+
+sta::define_cmd_args "write_cdl" {[-include_fillers] filename}
+
+proc write_cdl { args } {
+
+  sta::parse_key_args "write_cdl" args keys {} flags {-include_fillers}
+  set fillers [info exists flags(-include_fillers)]
+  sta::check_argc_eq1 "write_cdl" $args
+  set filename [file nativename [lindex $args 0]]
+  ord::write_cdl_cmd $filename $fillers
+}
+
+
 sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {

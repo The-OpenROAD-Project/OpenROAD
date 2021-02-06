@@ -99,9 +99,6 @@ check_placement
 set filler_def [make_result_file ${design}_${platform}_filler.def]
 write_def $filler_def
 
-# missing mysterious vsrc file
-#analyze_power_grid
-
 ################################################################
 # Global routing
 set route_guide [make_result_file ${design}_${platform}.route_guide]
@@ -109,7 +106,7 @@ foreach layer_adjustment $global_routing_layer_adjustments {
   lassign $layer_adjustment layer adjustment
   set_global_routing_layer_adjustment $layer $adjustment
 }
-fastroute -guide_file $route_guide \
+global_route -guide_file $route_guide \
   -layers $global_routing_layers \
   -clock_layers $global_routing_clock_layers \
   -unidirectional_routing \
@@ -131,6 +128,10 @@ report_power
 
 report_floating_nets -verbose
 report_design_area
+
+# not really useful without pad locations
+#set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
+#analyze_power_grid -net $vdd_net_name
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file

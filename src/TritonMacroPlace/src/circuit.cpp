@@ -40,7 +40,6 @@
 #include <unordered_set> 
 
 #include "circuit.h"
-#include "logger.h"
 
 #include "sta/Graph.hh"
 #include "sta/Sta.hh"
@@ -56,6 +55,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "utility/Logger.h"
 
 namespace mpl {
 
@@ -66,8 +66,9 @@ using std::pair;
 using std::make_pair;
 using std::string;
 using std::to_string;
-using std::cout;
 using std::endl;
+
+using utl::MPL;
 
 // None of these are necessary because they are included in circuit.h -cherry
 using Eigen::VectorXf;
@@ -122,11 +123,13 @@ MacroCircuit::MacroCircuit()
 
 MacroCircuit::MacroCircuit(
     odb::dbDatabase* db,
-    sta::dbSta* sta)
+    sta::dbSta* sta,
+    utl::Logger* log)
   : MacroCircuit() {
 
   db_ = db;
   sta_ = sta;
+  log_ = log;
   init();
 }
 
@@ -147,13 +150,10 @@ MacroCircuit::reset() {
 }
 
 void 
-MacroCircuit::setDb(odb::dbDatabase* db) {
+MacroCircuit::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log) {
   db_ = db; 
-}
-
-void
-MacroCircuit::setSta(sta::dbSta* sta) {
-  sta_ = sta; 
+  sta_ = sta;
+  log_ = log;
 }
 
 void
@@ -186,14 +186,11 @@ MacroCircuit::setFenceRegion(double lx, double ly, double ux, double uy) {
 }
 
 void MacroCircuit::init() {
-  log_ = std::make_shared<Logger>("MAPL", verbose_);
-
   dbBlock* block = db_->getChip()->getBlock();
 
   dbSet<dbRow> rows = block->getRows();
   if( rows.size() == 0 ) { 
-    log_->error("DEF must contain ROW", 1);
-    exit(1);
+    log_->error(MPL, 1, "Cannot find rows in design");
   }
 
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
@@ -240,9 +237,7 @@ void MacroCircuit::init() {
     FillMacroConnection();
   }
   else {
-    string msg = "Missing Liberty Detected.\n";
-    msg += "       TritonMP will place macros without timing information";
-    log_->warn(msg, 1); 
+    log_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without timing information");
 
     UpdateVertexToMacroStor();
   }
@@ -254,7 +249,7 @@ isMacroType(odb::dbMasterType mType) {
 }
 
 void MacroCircuit::FillMacroStor() {
-  log_->procBegin("Extracting Macro Cells");
+  log_->report("Begin Extracting Macro Cells");
 
   dbTech* tech = db_->getTech();
   dbBlock* block = db_->getChip()->getBlock();
@@ -282,11 +277,7 @@ void MacroCircuit::FillMacroStor() {
     dbPlacementStatus dps = inst->getPlacementStatus();
     if( dps == dbPlacementStatus::NONE ||
         dps == dbPlacementStatus::UNPLACED ) {
-      string msg = "  Macro : " + string(inst->getConstName()) + " is Unplaced.\n";
-      msg += "        Please use TD-MS-RePlAce to get a initial solution\n";
-      msg += "        before executing TritonMacroPlace\n";
-      log_->error(msg, 2);
-      exit(1); 
+      log_->error(MPL, 3, "Macro ({}) is Unplaced. Please use TD-MS-RePlAce to get a initial solution before executing TritonMP", inst->getConstName());
     }
     
     double curHaloX =0, curHaloY = 0, curChannelX = 0, curChannelY = 0;
@@ -324,12 +315,11 @@ void MacroCircuit::FillMacroStor() {
   }
 
   if( macroStor.size() == 0 ) {
-    log_->error("Cannot find any macros in this design.\n", 3);
-    exit(1);
+    log_->error(MPL, 4, "Cannot find any macros in this design");
   }
 
-  log_->procEnd("Extracting Macro Cells");
-  log_->infoInt("NumMacros", macroStor.size());
+  log_->report("End Extracting Macro Cells");
+  log_->info(MPL, 5, "NumMacros {}", macroStor.size());
 }
 
 static bool 
@@ -343,8 +333,8 @@ MacroCircuit::FillPinGroup(){
   dbTech* tech = db_->getTech(); 
   const double dbu = tech->getDbUnitsPerMicron();
 
-  log_->infoInt("NumEdgeInSta", sta_->graph()->edgeCount());
-  log_->infoInt("NumVertexInSta", sta_->graph()->vertexCount());
+  log_->info(MPL, 6, "NumEdgeInSta {}", sta_->graph()->edgeCount());
+  log_->info(MPL, 7, "NumVertexInSta {}", sta_->graph()->vertexCount());
 
   int dbuCoreLx = static_cast<int>(round(lx_ * dbu));
   int dbuCoreLy = static_cast<int>(round(ly_ * dbu));
@@ -380,11 +370,9 @@ MacroCircuit::FillPinGroup(){
     // unplaced BTerms 
     if( ppStatus == dbPlacementStatus::UNPLACED ||
         ppStatus == dbPlacementStatus::NONE ) {
-      string msg = string(bTerm->getConstName()) 
-        + " toplevel port is not placed!\n";
-      msg += "       TritonMP will regard " 
-        + string(bTerm->getConstName()) + " is placed on West side"; 
-      log_->warn(msg, 1);
+      log_->warn(MPL, 8, "{} toplevel port is not placed! "
+          "TritonMP will regard {} is placed on West side", 
+          bTerm->getConstName(), bTerm->getConstName());
           
       // update pinGroups on West 
       sta::Pin* pin = sta_->getDbNetwork()->dbToSta(bTerm);
@@ -444,14 +432,14 @@ MacroCircuit::FillPinGroup(){
     }
   }
 
-  log_->infoInt("NumEastPins", pinGroupStor[static_cast<int>(East)].pins().size());
-  log_->infoInt("NumWestPins", pinGroupStor[static_cast<int>(West)].pins().size());
-  log_->infoInt("NumNorthPins", pinGroupStor[static_cast<int>(North)].pins().size());
-  log_->infoInt("NumSouthPins", pinGroupStor[static_cast<int>(South)].pins().size());
+  log_->info(MPL, 9, "NumEastPins {}", pinGroupStor[static_cast<int>(East)].pins().size());
+  log_->info(MPL, 10, "NumWestPins {}", pinGroupStor[static_cast<int>(West)].pins().size());
+  log_->info(MPL, 11, "NumNorthPins {}", pinGroupStor[static_cast<int>(North)].pins().size());
+  log_->info(MPL, 12, "NumSouthPins {}", pinGroupStor[static_cast<int>(South)].pins().size());
 }
 
 void MacroCircuit::FillVertexEdge() {
-  log_->procBegin("Generating Sequential Graph"); 
+  log_->report("Begin Generating Sequential Graph"); 
 
   Eigen::setNbThreads(8);
   unordered_set<sta::Instance*> instMap;
@@ -708,9 +696,9 @@ void MacroCircuit::FillVertexEdge() {
 
   adjMatrix.setFromTriplets( tripletList.begin(), tripletList.end() );
   
-  log_->procEnd("Generating Sequential Graph"); 
-  log_->infoInt("NumVertexSeqGraph", vertexStor.size());
-  log_->infoInt("NumEdgeSeqGraph", adjMatrix.nonZeros());
+  log_->report("End Generating Sequential Graph"); 
+  log_->info(MPL, 13, "NumVertexSeqGraph {}", vertexStor.size());
+  log_->info(MPL, 14, "NumEdgeSeqGraph {}", adjMatrix.nonZeros());
 }
 
 void MacroCircuit::CheckGraphInfo() {
@@ -769,7 +757,7 @@ void MacroCircuit::CheckGraphInfo() {
   }
 
   for(int i=0; i<=CHECK_LEVEL_MAX; i++) {
-    cout << "level " << i << " " << sumArr[i] << endl;
+    debugPrint(log_, MPL, "tritonmp", 5, "level {} {}", i, sumArr[i]);
   }
 }
 
@@ -944,8 +932,7 @@ void MacroCircuit::UpdateVertexToMacroStor() {
     sta::Instance* staInst = (sta::Instance*) curVertex.ptr();
     auto mPtr = macroInstMap.find( staInst );
     if( mPtr == macroInstMap.end() ) {
-      cout << "**ERROR: The Macro Name must be in macro NameMap" <<  endl;
-      exit(1);
+      log_->error(MPL, 15, "The Macro Name must be in macro NameMap");
     } 
 
     macroStor[mPtr->second].ptr = &curVertex;
@@ -971,8 +958,7 @@ MacroCircuit::GetPtrClassPair( sta::Pin* pin ) {
   if( isTopPin ) {
     auto pgPtr = staToPinGroup.find( pin );
     if( pgPtr == staToPinGroup.end()) {
-      cout << "ERROR: " << sta_->network()->pathName(pin) << " not exists in PinGroupMap" << endl;
-      exit(1);
+      log_->error(MPL, 16, "{} not exists in PinGroupMap", sta_->network()->pathName(pin));
     }
 
     // pinGroupPointer
@@ -1004,7 +990,7 @@ MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
   vector< vector<mpl::Vertex*> > result;
 
   int pathDepth = 1;
-  cout << "Depth: " << 1 << endl;
+  debugPrint(log_, MPL, "tritonmp", 5, "Depth: 1");
 
   while(!q.empty()) {
     path = q.front();
@@ -1012,7 +998,7 @@ MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
     mpl::Vertex* last = path[path.size()-1];
 
     if( pathDepth < (int)path.size() ){
-      cout << "Depth: " << path.size() << endl;
+      debugPrint(log_, MPL, "tritonmp", 5, "Depth: {}", path.size());
       pathDepth = path.size();
     }
 
@@ -1053,21 +1039,20 @@ MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
         vPtr = vertexPairEdgeMap.find( make_pair(curPath[i+1], curPath[i]));
       }
       if( vPtr == vertexPairEdgeMap.end() ) {
-        cout << "**ERROR: vertex Pair Edge Map is wrong!" << endl;
-        exit(1);
+        log_->error(MPL, 17, "vertex pair edge map is wrong");
       }
       ret += edgeStor[vPtr->second].weight();
     }
-    cout << " " ;
+
+    debugPrint(log_, MPL, "tritonmp", 5, " ");
     for(auto& curVert: curPath) {
       mpl::PinGroup* ptr = (mpl::PinGroup*) curVert->ptr();
 
       string name = (curVert->vertexType() == VertexType::PinGroupType)?
         ptr->name() :
         sta_->network()->pathName((sta::Instance*)curVert->ptr());
-      cout << name << " -> ";
+      debugPrint(log_, MPL, "tritonmp", 5, "{} -> ", name);
     }
-    cout << endl;
   }
   return ret;
 }
@@ -1077,13 +1062,13 @@ int MacroCircuit::GetPathWeightMatrix(
 
   auto vpPtr = vertexPtrMap.find(from);
   if( vpPtr == vertexPtrMap.end()) {
-    exit(1);
+    log_->error(MPL, 18, "error occured in vertexPtrMap");
   }
   int idx1 = vpPtr->second;
   
   auto vpPtr2 = vertexPtrMap.find(to);
   if( vpPtr2 == vertexPtrMap.end()) {
-    exit(1);
+    log_->error(MPL, 19, "error occured in vertexPtrMap");
   }
   int idx2 = vpPtr2->second;
 
@@ -1095,7 +1080,7 @@ int MacroCircuit::GetPathWeightMatrix(
 
   auto vpPtr = vertexPtrMap.find(from);
   if( vpPtr == vertexPtrMap.end()) {
-    exit(1);
+    log_->error(MPL, 20, "error occured in vertexPtrMap");
   }
   int idx1 = vpPtr->second;
   return mat.coeff(idx1, toIdx);
@@ -1118,8 +1103,7 @@ void MacroCircuit::UpdateMacroCoordi( mpl::Partition& part) {
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer( 4 );
   if( !fourLayer ) {
-    cout << "WARNING: Metal 4 not exist! " << endl;
-    cout << "         Macro snapping will not be applied on Metal4 pitch" << endl;
+    log_->warn(MPL, 21, "Metal 4 not exist! Macro snapping will not be applied on Metal4 pitch");
   }
 
   const float pitchX = static_cast<float>(fourLayer->getPitchX()) 
@@ -1130,8 +1114,7 @@ void MacroCircuit::UpdateMacroCoordi( mpl::Partition& part) {
   for(auto& curMacro : part.macroStor) {
     auto mnPtr = macroNameMap.find(curMacro.name);
     if( mnPtr == macroNameMap.end() ) {
-      cout << "ERROR: Macro not exists in MacroCircuit " << curMacro.name << endl;
-      exit(1);
+      log_->error(MPL, 22, "{} is not in MacroCircuit", curMacro.name);
     }
 
     // update macro coordi
@@ -1147,7 +1130,7 @@ void MacroCircuit::UpdateMacroCoordi( mpl::Partition& part) {
 
 // Legalizer for macro locations
 void MacroCircuit::StubPlacer(double snapGrid) {
-  cout << "Macro Stub Placement process... ";
+  log_->report("Begin Macro Stub Placement"); 
 
   snapGrid *= 10;
 
@@ -1173,12 +1156,10 @@ void MacroCircuit::StubPlacer(double snapGrid) {
       if( curMacro.ly + curMacro.h > uy_ ) curMacro.ly = uy_ - curMacro.h;
 
       if( curMacro.lx < lx_ || curMacro.lx + curMacro.w > ux_ ) {
-        cout << "ERROR: Macro Legalizer detects width is not enough" << endl;
-        exit(1);
+        log_->error(MPL, 23, "Macro Legalizer detects width is not enough");
       }
       if( curMacro.ly < lx_ || curMacro.ly + curMacro.h > uy_ ) {
-        cout << "ERROR: Macro Legalizer detects height is not enough" << endl;
-        exit(1);
+        log_->error(MPL, 24, "Macro Legalizer detects height is not enough");
       }
 
       // do random placement
@@ -1209,10 +1190,6 @@ void MacroCircuit::StubPlacer(double snapGrid) {
       for(int i= macroGridLx ; i <= macroGridLx + macroWidthGrid; i++) {
         for(int j= macroGridLy ; j <= macroGridLy + macroHeightGrid; j++) {
           if( checker[i][j] != -1 ) {
-            cout << i << " " << j << " prev: " << checker[i][j] 
-              << " cur: " << &curMacro - &macroStor[0] << endl;
-      
-
             isOverlap = true; 
             break;
           }
@@ -1228,18 +1205,12 @@ void MacroCircuit::StubPlacer(double snapGrid) {
       }
     }
 
-    if( isOverlap) {
-      cout << "overlap!!" << endl;
-    }
-
     for(int i=0; i<sizeX; i++) {
       for(int j=0; j<sizeY; j++) {
         checker[i][j] = -1;
       }
     }
   } while( isOverlap );
-
-  cout << "Done" << endl;
 }
 
 
@@ -1248,8 +1219,7 @@ void MacroCircuit::StubPlacer(double snapGrid) {
 void MacroCircuit::ParseGlobalConfig(string fileName) {
   std::ifstream gConfFile (fileName);
   if( !gConfFile.is_open() ) {
-    cout << "ERROR: Cannot open file: " << fileName << endl;
-    exit(1);
+    log_->error(MPL, 25, "Cannot open file {}", fileName);
   } 
 
   string lineStr = "";
@@ -1269,8 +1239,7 @@ void MacroCircuit::ParseGlobalConfig(string fileName) {
       continue;
     }
     if( buf1 != "set" ) {
-      cout << "ERROR: Cannot parse : " << buf1 << endl;
-      exit(1);
+      log_->error(MPL, 26, "Cannot parse {}", buf1);
     }
     
     oStream >> varName >> val;
@@ -1301,18 +1270,16 @@ void MacroCircuit::ParseGlobalConfig(string fileName) {
       channelX_ = val;
     }
     else {
-      cout << "ERROR: Cannot parse : " << varName << endl;
-      exit(1);
+      log_->error(MPL, 27, "Cannot parse {}", varName);
     }
   }
-  log_->procEnd("Parsing Global Config");
+  log_->report("End Parsing Global Config");
 }
 
 void MacroCircuit::ParseLocalConfig(string fileName) {
   std::ifstream gConfFile (fileName);
   if( !gConfFile.is_open() ) {
-    cout << "ERROR: Cannot open file: " << fileName << endl;
-    exit(1);
+    log_->error(MPL, 28, "Cannot open file {}", fileName);
   } 
 
   string lineStr = "";
@@ -1336,8 +1303,7 @@ void MacroCircuit::ParseLocalConfig(string fileName) {
       continue;
     }
     if( buf1 != "set" ) {
-      cout << "ERROR: Cannot parse : " << buf1 << endl;
-      exit(1);
+      log_->error(MPL, 29, "Cannot parse {}", buf1);
     }
     
     oStream >> varName >> masterName >> val;
@@ -1360,22 +1326,20 @@ void MacroCircuit::ParseLocalConfig(string fileName) {
       macroLocalMap[ masterName ].putChannelX(val);
     }
     else {
-      cout << "ERROR: Cannot parse : " << varName << endl;
-      exit(1);
+      log_->error(MPL, 30, "Cannot parse {}", varName);
     }
   }
-  log_->procEnd("Parsing Local Config");
+  log_->report("End Parsing Local Config");
 }
 
 void 
 MacroCircuit::
 Plot(string fileName, vector<mpl::Partition>& set) {
 
-  cout<<"OutPut Plot file is "<<fileName<<endl;
+  log_->report("OutPut Plot file: {}", fileName); 
   std::ofstream gpOut(fileName);
   if (!gpOut.good()) {
-    cout << "Warning: output file " << fileName
-      << " can't be opened" << endl;
+    log_->warn(MPL, 31, "cannot open file: {}", fileName); 
   }
   gpOut <<"set terminal png size 1024,768" << endl;
 
@@ -1520,8 +1484,8 @@ MacroCircuit::GetVertex( sta::Pin *pin ) {
   pair<void*, VertexType> vertInfo = GetPtrClassPair( pin);
   auto vertPtr = pinInstVertexMap.find(vertInfo.first);
   if( vertPtr == pinInstVertexMap.end() )  {
-    cout << "WARNING: " << sta_->network()->pathName(pin) 
-      << " not exists in pinInstVertexMap" << endl;
+    log_->warn(MPL, 32, "{} not exists in pinInstVertexMap",
+        sta_->network()->pathName(pin));
     return nullptr;
   }
   return &vertexStor[vertPtr->second];
