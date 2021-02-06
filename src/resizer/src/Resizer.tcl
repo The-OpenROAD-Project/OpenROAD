@@ -68,7 +68,6 @@ proc set_wire_rc { args } {
     set weigth_sum 0.0
     foreach {layer_name weight} $layers {
       lassign [rsz::layer_wire_rc $layer_name] layer_res layer_cap
-      puts "$layer_name $layer_res $layer_cap"
       sta::check_positive_float "layer weight" $weight
       set res_sum [expr $res_sum + $layer_res * $weight]
       set cap_sum [expr $cap_sum + $layer_cap * $weight]
