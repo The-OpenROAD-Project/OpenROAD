@@ -50,10 +50,10 @@ using utl::MPL;
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
 static vector<pair<Partition, Partition>> GetPart(
-    Layout &layout,  
+    const Layout &layout,
     const double siteSizeX,
     const double siteSizeY,
-    Partition& partition, 
+    const Partition& partition,
     bool isHorizontal,
     utl::Logger* log);
 
@@ -63,13 +63,6 @@ static void UpdateMacroPartMap(
     unordered_map<mpl::PartClass, vector<int>, 
     PartClassHash, PartClassEqual> &macroPartMap,
     utl::Logger* log);
-
-
-static void 
-CutRoundUp( Layout& layout, 
-    const double siteSizeX, 
-    const double siteSizeY, 
-    double& cutLine, bool isHorizontal );
 
 static void 
 PrintAllSets(FILE* fp, Layout& layout, 
@@ -306,7 +299,7 @@ UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt) {
 
 static void 
 CutRoundUp( 
-    Layout& layout,
+    const Layout& layout,
     const double siteSizeX, 
     const double siteSizeY,  
     double& cutLine, bool isHorizontal ) {
@@ -374,12 +367,13 @@ SortMacroPair(const std::pair<int, double> &p1,
 // 
 // cutLine is sweeping from lower to upper coordinates in x / y
 static vector<pair<Partition, Partition>> GetPart(
-    Layout &layout,  
+    const Layout &layout,
     const double siteSizeX,
     const double siteSizeY,
-    Partition& partition, 
+    const Partition& partition,
     bool isHorizontal,
-    utl::Logger* log) {
+    utl::Logger* log)
+{
   log->report("Begin Partition");
   log->info(MPL, 76, "NumMacros {}", partition.macroStor.size());
 
