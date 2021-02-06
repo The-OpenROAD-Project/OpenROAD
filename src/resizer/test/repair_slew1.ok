@@ -11,7 +11,7 @@
 [INFO ODB-0133]     Created 2 nets and 62 connections.
 [INFO ODB-0134] Finished DEF file: ./results/repair_slew1.def
 Found 31 violations
-[INFO RSZ-0058] using max wire length 853u.
+[INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.

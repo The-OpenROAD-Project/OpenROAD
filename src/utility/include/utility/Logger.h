@@ -157,16 +157,7 @@ class Logger
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
-            std::enable_if_t<std::is_integral<T>::value, bool> = true>
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
-                     T value)
-  {
-    log_metric(tool, metric, value);
-  }
-
-  template <typename T,
-            std::enable_if_t<std::is_floating_point<T>::value, bool> = true>
+            typename = std::enable_if_t<std::is_arithmetic_v<T>>>
   inline void metric(ToolId tool,
                      const std::string_view metric,
                      T value)
@@ -179,17 +170,6 @@ class Logger
                      const std::string& value)
   {
     log_metric(tool, metric, '"' +  value + '"');
-  }
-
-  // Only true bools and not things that can be converted to bool like
-  // char*
-  template <typename Bool,
-            typename = std::enable_if_t<std::is_same<Bool, bool>{}>>
-  inline void metric(ToolId tool,
-                     const std::string_view metric,
-                     Bool value)
-  {
-    log_metric(tool, metric, value ? "true" : "false");
   }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
@@ -227,7 +207,7 @@ class Logger
                            const std::string_view metric,
                            const Value& value)
     {
-      metrics_logger_->info("  {}\"{}-{}\" : {}",
+      metrics_logger_->info("  {}\"{}::{}\" : {}",
                             first_metric_ ? "  " : ", ",
                             tool_names_[tool],
                             metric,
