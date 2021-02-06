@@ -804,8 +804,6 @@ int extMeasure::readAB(extMain* extMain,
   dbTech* tech = db->getTech();
 
   uint netCnt = 0;
-  uint totWireCnt = 0;
-  bool layerSectionFlag = false;
 
   Ath__parser parser1;
   parser1.openFile((char*) filename);

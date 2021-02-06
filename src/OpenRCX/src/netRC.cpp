@@ -2443,21 +2443,6 @@ void extMain::makeCornerNameMap()
 
   delete[] map;
   updatePrevControl();
-  /*
-          uint k;
-          for (k= 0; k<cornerCnt; k++) {
-                  fprintf(stdout, "corner %d ---- corner name %d\n", k,
-     _block->getExtCornerName(k));
-          }
-          for (k= 0; k<cornerCnt; k++) {
-                  extCorner *s= map[k];
-                  if (s==NULL)
-                          continue;
-
-                  fprintf(stdout, "corner name %s ---- corner index %d\n",
-     s->_name, _block->getExtCornerIndex(s->_name));
-          }
-  */
 }
 bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
 {

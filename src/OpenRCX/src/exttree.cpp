@@ -480,12 +480,12 @@ void extRcTree::printTree(FILE* fp, uint netId, uint tnodeCnt)
     fprintf(fp, "node %5d : ", ii);
 
     extTnode* node = _tnodeTable[ii];
-    if (_printChildN) {
-      for (uint jj = 0; jj < node->_childCnt; jj++) {
-        fprintf(fp, "   %p ", node->_child[jj]);
-      }
-    }
-    fprintf(fp, "\n");
+    //if (_printChildN) {
+    //  for (uint jj = 0; jj < node->_childCnt; jj++) {
+    //    fprintf(fp, "   %p ", node->_child[jj]);
+    //  }
+    //}
+    //fprintf(fp, "\n");
     for (uint jj = 0; jj < _cornerCnt; jj++)
       fprintf(fp, "\t\t\t\t\tR= %5g  C= %5g\n", node->_res[jj], node->_cap[jj]);
     fprintf(fp, "\t\t\t\t\tX= %d Y= %d\n", node->_x, node->_y);

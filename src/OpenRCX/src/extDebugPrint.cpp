@@ -85,7 +85,6 @@ void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
 
   int x, y;
   rseg->getCoords(x, y);
-  uint w;
   debugPrint(logger_,
              RCX,
              "debug_net",
@@ -171,12 +170,12 @@ bool extMeasure::printTraceNet(const char* msg,
     return true;
   }
 
-  fprintf(_debugFP, "%d   ", msg);
+  fprintf(_debugFP, "%s   ", msg);
   if (overSub + covered > 0)
     fprintf(_debugFP, " L %d SUB %d GS %d ", _len, overSub, covered);
 
   if (cc != NULL)
-    fprintf(_debugFP, " {:g} ", cc->getCapacitance());
+    fprintf(_debugFP, " %g ", cc->getCapacitance());
 
   printTraceNetInfo("", _netSrcId, _rsegSrcId);
   printTraceNetInfo(" ", _netTgtId, _rsegTgtId);
