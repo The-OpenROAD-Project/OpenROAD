@@ -7026,6 +7026,8 @@ class dbTechLayer : public dbObject
   /// single spacing value for all length/width combinations.
   ///
   bool hasV55SpacingRules() const;
+  bool getV55SpacingWidthsAndLengths(std::vector<uint>& width_idx,
+                                                std::vector<uint>& length_idx) const;
   void printV55SpacingRules(lefout& writer) const;
   bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
 

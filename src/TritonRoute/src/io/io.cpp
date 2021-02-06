@@ -4795,8 +4795,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   for(auto rule : sp_rules)
   {
     frCoord minSpacing = rule->getSpacing();
-    frUInt4 _eolWidth, _eolWithin, _parSpace, _parWithin;
-    bool hasSpacingParellelEdge, hasSpacingTwoEdges;
+    frUInt4 _eolWidth = 0, _eolWithin = 0, _parSpace = 0, _parWithin = 0;
+    bool hasSpacingParellelEdge = false;
+    bool hasSpacingTwoEdges = false;
     bool hasSpacingEndOfLine = rule->getEol(_eolWidth,_eolWithin, hasSpacingParellelEdge, _parSpace, _parWithin, hasSpacingTwoEdges);
     frCoord eolWidth(_eolWidth), eolWithin(_eolWithin), parSpace(_parSpace), parWithin(_parWithin);
     if(rule->hasRange())
