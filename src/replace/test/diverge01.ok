@@ -1951,6 +1951,5 @@ End NesterovInit
 [WARNING GPL-0075] Backtracking limit reached so a small step will be taken
 [WARNING GPL-0075] Backtracking limit reached so a small step will be taken
 [WARNING GPL-0075] Backtracking limit reached so a small step will be taken
-[ERROR GPL-0305] RePlAce divergence detected. 
-        Please tune the parameters again
+[ERROR GPL-0305] RePlAce divergence detected.
 GPL-0305

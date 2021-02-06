@@ -2227,8 +2227,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost) {
       // macro cell or stdcell
       if (term->typeId() == frcInstTerm) {
         if (static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-            static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-            static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+            isPad(static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass()) ||
             static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
           isStdCellPin = false;
           //cout <<"curr dPin is macro pin" <<endl;
@@ -3782,8 +3781,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             }
             // temporary solution, only add cost around macro pins
             if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                isPad(inst->getRefBlock()->getMacroClass()) ||
                 inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
@@ -3869,8 +3867,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost) {
       frInstTerm *instTerm = static_cast<frInstTerm*>(dPinTerm);
       frInst *inst = instTerm->getInst();
       if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK || 
-          inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-          inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+          isPad(inst->getRefBlock()->getMacroClass()) ||
           inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
         continue;
       }
