@@ -9,7 +9,6 @@
 [INFO ODB-0131]     Created 300 components and 1800 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 300 connections.
 [INFO ODB-0134] Finished DEF file: ./results/clustered_test.def
-[INFO RSZ-0061] Clock wire resistance 0.0015 kohm/um capacitance 0.0067 fF/um.
  *****************
  * TritonCTS 2.0 *
  *****************

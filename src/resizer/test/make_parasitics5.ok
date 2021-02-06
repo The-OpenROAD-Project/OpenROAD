@@ -13,7 +13,6 @@
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: make_parasitics5.def
-[INFO RSZ-0061] Signal/clock wire resistance 0.0036 kohm/um capacitance 0.0523 fF/um.
 Net in1
  Pin capacitance: 2.20
  Wire capacitance: 0.00

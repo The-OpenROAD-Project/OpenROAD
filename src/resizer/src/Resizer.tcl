@@ -114,6 +114,9 @@ proc set_wire_rc { args } {
     set signal_clk "Clock"
   }
 
+  # Unfortunately this does not work very well with technologies like sky130
+  # that use inappropriate kohm/pf units.
+  set report_rc 0
   if { $report_rc } {
     utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 4] [sta::unit_scale_abreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 4] [sta::unit_scale_abreviation capacitance][sta::unit_suffix capacitance]/um."
   }

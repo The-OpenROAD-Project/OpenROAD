@@ -10,8 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 7 nets and 9 connections.
 [INFO ODB-0134] Finished DEF file: repair_setup2.def
-[INFO RSZ-0061] Signal wire resistance 0.0036 kohm/um capacitance 0.0523 fF/um.
-[INFO RSZ-0061] Clock wire resistance 0.0015 kohm/um capacitance 0.0067 fF/um.
 worst slack -0.19
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0037] Found 2 long wires.

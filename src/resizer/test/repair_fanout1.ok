@@ -10,7 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 72 connections.
 [INFO ODB-0133]     Created 2 nets and 72 connections.
 [INFO ODB-0134] Finished DEF file: ./results/repair_fanout1.def
-[INFO RSZ-0061] Signal/clock wire resistance 0.0054 kohm/um capacitance 0.0601 fF/um.
 max fanout
 
 Pin                                   Limit Fanout  Slack

@@ -10,7 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [INFO ODB-0134] Finished DEF file: reg3.def
-[INFO RSZ-0061] Signal/clock wire resistance 0.0036 kohm/um capacitance 0.0532 fF/um.
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

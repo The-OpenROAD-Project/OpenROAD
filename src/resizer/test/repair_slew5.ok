@@ -12,7 +12,6 @@
 [INFO ODB-0132]     Created 2 special nets and 26 connections.
 [INFO ODB-0133]     Created 10 nets and 20 connections.
 [INFO ODB-0134] Finished DEF file: repair_slew5.def
-[INFO RSZ-0061] Signal/clock wire resistance 0.0036 kohm/um capacitance 0.0523 fF/um.
 Net u1zn
  Pin capacitance: r 9.92 f 9.02
  Wire capacitance: r 0.29 f 0.29

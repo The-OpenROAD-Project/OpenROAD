@@ -10,7 +10,6 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO ODB-0134] Finished DEF file: repair_wire1.def
-[INFO RSZ-0061] Signal/clock wire resistance 0.0000 kohm/um capacitance 0.0000 fF/um.
 [WARNING RSZ-0010] Signal/clock wire resistance is 0.
 [WARNING RSZ-0011] Signal/clock wire capacitance is 0.
 [WARNING RSZ-0014] wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance.
