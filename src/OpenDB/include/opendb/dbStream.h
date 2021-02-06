@@ -198,7 +198,9 @@ class dbOStream
 
   dbOStream& operator<<(std::string s)
   {
-    *this<<strdup(s.c_str());
+    char* tmp = strdup(s.c_str());
+    *this << tmp;
+    free((void*) tmp);
     return *this;
   }
 
@@ -382,6 +384,7 @@ class dbIStream
     char* tmp;
     *this >> tmp;
     s = std::string(tmp);
+    free((void*) tmp);
     return *this;
   }
 
