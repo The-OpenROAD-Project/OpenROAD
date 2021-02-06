@@ -7006,7 +7006,7 @@ class dbTechLayer : public dbObject
 
   // Get the collection of spacing table parallel length Rules for the object
   dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
-  
+
   // Get the collection of lef58spacing Rules for the layer(cut)
   dbSet<dbTechLayerCutSpacingRule> getCutSpacingRules() const;
 

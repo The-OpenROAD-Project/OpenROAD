@@ -832,7 +832,7 @@ dbTechLayerCutSpacingTableDefRule::getPrlTable() const
     res.push_back(
         {(dbTechLayerCutClassRule*) layer->_cut_class_rules_tbl->getPtr(from),
          (dbTechLayerCutClassRule*) layer->_cut_class_rules_tbl->getPtr(to),
-        ccPrl});
+         ccPrl});
   }
   return res;
 }
