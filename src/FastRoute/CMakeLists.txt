@@ -82,6 +82,7 @@ target_include_directories(FastRoute
   ${DBSTA_HOME}/include
   ${OPENSTA_HOME}/include
   ${FASTROUTE_HOME}/src
+  ${GUI_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${ANTENNACHECKER_HOME}/include
   ${OPENDP_HOME}/include
