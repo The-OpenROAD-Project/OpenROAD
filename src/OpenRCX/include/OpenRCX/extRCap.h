@@ -1475,9 +1475,7 @@ class extWindow
 
   uint* _pitchTable;
   uint* _widthTable;
-  ;
   uint _layerCnt;
-  ;
 
   uint _maxPitch;
   uint _maxWidth;

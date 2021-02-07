@@ -100,9 +100,9 @@ void extDistRC::debugRC(const char* debugWord,
   char tmp[32];
   sprintf(tmp, " ");
   if (level > 0)
-    sprintf(tmp, "%2d", level);
+    sprintf(tmp, "%d", level);
   if (width > 0)
-    sprintf(tmp, "%s %5d", tmp, width);
+    sprintf(tmp, "%s %d", tmp, width);
 
   // debug(debugWord, "C", "%s: %s, tC %g  CC %g F %g D %g   R %g  Sep %d\n",
   //		from, tmp, _coupling+_fringe+_diag, _coupling,  _fringe, _diag,
@@ -135,8 +135,6 @@ uint extMain::calcMinMaxRC()
 
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
       uint modelIndex = _modelMap.get(jj);
-      extMetRCTable* rcModel
-          = _currentModel->getMetRCTable(modelIndex);  // NOT NEEDED
       resetMinMaxRC(met, jj);
 
       extDistRC* rcMin = _currentModel->getMinRC(met, width);
@@ -171,8 +169,6 @@ uint extMain::getExtStats(odb::dbNet* net,
   wlen = 0;
   uint cnt = 0;
   sprintf(_tmpLenStats, "");
-
-  bool USE_DB_UNITS = false;
 
   odb::dbWire* wire = net->getWire();
   if (wire == NULL)
