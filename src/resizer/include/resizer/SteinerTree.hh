@@ -136,9 +136,6 @@ public:
   void setTree(stt::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
-  void writeSVG(const char *filename,
-                const Network *network,
-                Logger *logger);
   stt::Tree &fluteTree() { return tree_; }
 
   static SteinerPt null_pt;

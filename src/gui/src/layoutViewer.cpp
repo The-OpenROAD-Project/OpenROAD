@@ -583,11 +583,11 @@ void LayoutViewer::drawSelected(Painter& painter)
 
 void LayoutViewer::drawHighlighted(Painter& painter)
 {
-  int highlightGroup = 0;
-  for (auto& highlightSet : highlighted_) {
-    for (auto& highlighted : highlightSet)
-      highlighted.highlight(painter, false /* selectFlag*/, highlightGroup);
-    highlightGroup++;
+  int highlight_group = 0;
+  for (auto& highlight_set : highlighted_) {
+    for (auto& highlighted : highlight_set)
+      highlighted.highlight(painter, false /* select_flag*/, highlight_group);
+    highlight_group++;
   }
 }
 
@@ -877,16 +877,16 @@ void LayoutViewer::fit()
   setPixelsPerDBU(pixels_per_dbu);
 }
 
-void LayoutViewer::selectHighlightConnectedInst(bool selectFlag)
+void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
 {
-  Gui::get()->selectHighlightConnectedInsts(selectFlag);
+  Gui::get()->selectHighlightConnectedInsts(select_flag);
 }
 
-void LayoutViewer::selectHighlightConnectedNets(bool selectFlag,
+void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
                                                 bool output,
                                                 bool input)
 {
-  Gui::get()->selectHighlightConnectedNets(selectFlag, output, input);
+  Gui::get()->selectHighlightConnectedNets(select_flag, output, input);
 }
 
 void LayoutViewer::updateContextMenuItems()
@@ -941,40 +941,40 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 void LayoutViewer::addMenuAndActions()
 {
   // Create Top Level Menu for the context Menu
-  auto selectMenu = layoutContextMenu_->addMenu(tr("Select"));
-  auto highlightMenu = layoutContextMenu_->addMenu(tr("Highlight"));
-  auto viewMenu = layoutContextMenu_->addMenu(tr("View"));
-  auto clearMenu = layoutContextMenu_->addMenu(tr("Clear"));
+  auto select_menu = layoutContextMenu_->addMenu(tr("Select"));
+  auto highlight_menu = layoutContextMenu_->addMenu(tr("Highlight"));
+  auto view_menu = layoutContextMenu_->addMenu(tr("View"));
+  auto clear_menu = layoutContextMenu_->addMenu(tr("Clear"));
 
   // Create Actions
 
   // Select Actions
   menuActions_[SELECT_CONNECTED_INST_ACT]
-      = selectMenu->addAction(tr("Connected Insts"));
+      = select_menu->addAction(tr("Connected Insts"));
   menuActions_[SELECT_OUTPUT_NETS_ACT]
-      = selectMenu->addAction(tr("Output Nets"));
-  menuActions_[SELECT_INPUT_NETS_ACT] = selectMenu->addAction(tr("Input Nets"));
-  menuActions_[SELECT_ALL_NETS_ACT] = selectMenu->addAction(tr("All Nets"));
+      = select_menu->addAction(tr("Output Nets"));
+  menuActions_[SELECT_INPUT_NETS_ACT] = select_menu->addAction(tr("Input Nets"));
+  menuActions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
 
   // Highlight Actions
   menuActions_[HIGHLIGHT_CONNECTED_INST_ACT]
-      = highlightMenu->addAction(tr("Connected Insts"));
+      = highlight_menu->addAction(tr("Connected Insts"));
   menuActions_[HIGHLIGHT_OUTPUT_NETS_ACT]
-      = highlightMenu->addAction(tr("Output Nets"));
+      = highlight_menu->addAction(tr("Output Nets"));
   menuActions_[HIGHLIGHT_INPUT_NETS_ACT]
-      = highlightMenu->addAction(tr("Input Nets"));
+      = highlight_menu->addAction(tr("Input Nets"));
   menuActions_[HIGHLIGHT_ALL_NETS_ACT]
-      = highlightMenu->addAction(tr("All Nets"));
+      = highlight_menu->addAction(tr("All Nets"));
 
   // View Actions
-  menuActions_[VIEW_ZOOMIN_ACT] = viewMenu->addAction(tr("Zoom In"));
-  menuActions_[VIEW_ZOOMOUT_ACT] = viewMenu->addAction(tr("Zoom Out"));
-  menuActions_[VIEW_ZOOMFIT_ACT] = viewMenu->addAction(tr("Fit"));
+  menuActions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
+  menuActions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
+  menuActions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
 
   // Clear Actions
-  menuActions_[CLEAR_SELECTIONS_ACT] = clearMenu->addAction(tr("Selections"));
-  menuActions_[CLEAR_HIGHLIGHTS_ACT] = clearMenu->addAction(tr("Highlights"));
-  menuActions_[CLEAR_ALL_ACT] = clearMenu->addAction(tr("All"));
+  menuActions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
+  menuActions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
+  menuActions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
   connect(menuActions_[SELECT_CONNECTED_INST_ACT],

@@ -42,12 +42,13 @@ proc remove_buffers { args } {
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
                                       [-layer layer_name]\
+                                      [-layers {layer_name weight ...}]\
                                       [-resistance res ][-capacitance cap]\
                                       [-corner corner_name]}
 
 proc set_wire_rc { args } {
    sta::parse_key_args "set_wire_rc" args \
-     keys {-layer -resistance -capacitance -corner} \
+     keys {-layer -layers -resistance -capacitance -corner} \
      flags {-clock -signal -data}
 
   set wire_res 0.0
@@ -59,29 +60,23 @@ proc set_wire_rc { args } {
       utl::error RSZ 1 "Use -layer or -resistance/-capacitance but not both."
     }
     set layer_name $keys(-layer)
-    set layer [[[ord::get_db] getTech] findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error RSZ 2 "layer $layer_name not found."
+    lassign [rsz::layer_wire_rc $layer_name] wire_res wire_cap
+    set report_rc 1
+  } elseif { [info exists keys(-layers)] } {
+    set layers $keys(-layers)
+    set res_sum 0.0
+    set cap_sum 0.0
+    set weigth_sum 0.0
+    foreach {layer_name weight} $layers {
+      lassign [rsz::layer_wire_rc $layer_name] layer_res layer_cap
+      sta::check_positive_float "layer weight" $weight
+      set res_sum [expr $res_sum + $layer_res * $weight]
+      set cap_sum [expr $cap_sum + $layer_cap * $weight]
+      set weigth_sum [expr $weigth_sum + $weight]
     }
-    set layer_width_dbu [$layer getWidth]
-    set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
-    set res_ohm_per_sq [$layer getResistance]
-    set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
-    set cap_area_pf_per_sq_micron [$layer getCapacitance]
-    set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
-    set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
-                             + $cap_edge_pf_per_micron * 2]
-    # ohms/meter
-    set wire_res [expr $res_ohm_per_micron * 1e+6]
-    # farads/meter
-    set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
-    
-    if { $wire_res == 0.0 } {
-      utl::warn RSZ 10 "layer resistance is 0.0"
-    }
-    if { $wire_cap == 0.0 } {
-      utl::warn RSZ 11 "layer capacitance is 0.0"
-    }
+    set wire_res [expr $res_sum / $weigth_sum]
+    set wire_cap [expr $cap_sum / $weigth_sum]
+    set report_rc 1
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
@@ -95,6 +90,7 @@ proc set_wire_rc { args } {
       sta::check_positive_float "-capacitance" $cap
       set wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
     }
+    set report_rc 0
   }
   
   set corner [sta::cmd_corner]
@@ -104,15 +100,34 @@ proc set_wire_rc { args } {
   sta::check_argc_eq0 "set_wire_rc" $args
   
   set signal [info exists flags(-signal)]
-  if { [info exists flags(-data)] } {
-    utl::warn RSZ 13 "set_wire_rc -data is deprecated. Use -signal."
-    set signal 1
-  }
   set clk [info exists flags(-clock)]
   if { !$signal && !$clk } {
     set signal 1
     set clk 1
   }
+
+  if { $signal && $clk } {
+    set signal_clk "Signal/clock"
+  } elseif { $signal } {
+    set signal_clk "Signal"
+  } elseif { $clk } {
+    set signal_clk "Clock"
+  }
+
+  # Unfortunately this does not work very well with technologies like sky130
+  # that use inappropriate kohm/pf units.
+  set report_rc 0
+  if { $report_rc } {
+    utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 4] [sta::unit_scale_abreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 4] [sta::unit_scale_abreviation capacitance][sta::unit_suffix capacitance]/um."
+  }
+
+  if { $wire_res == 0.0 } {
+    utl::warn RSZ 10 "$signal_clk wire resistance is 0."
+  }
+  if { $wire_cap == 0.0 } {
+    utl::warn RSZ 11 "$signal_clk wire capacitance is 0."
+  }
+
   if { $signal } {
     rsz::set_wire_rc_cmd $wire_res $wire_cap $corner
   }
@@ -441,10 +456,30 @@ proc check_max_wire_length { max_wire_length } {
     } else {
       # Must follow preamble so buffers are known.
       set max_wire_length $min_delay_max_wire_length
-      utl::info RSZ 58 "using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]u."
+      utl::info RSZ 58 "Using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]um."
     }
   }
   return $max_wire_length
+}
+
+proc layer_wire_rc { layer_name } {
+  set layer [[ord::get_db_tech] findLayer $layer_name]
+  if { $layer == "NULL" } {
+    utl::error RSZ 2 "layer $layer_name not found."
+  }
+  set layer_width_dbu [$layer getWidth]
+  set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
+  set res_ohm_per_sq [$layer getResistance]
+  set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
+  set cap_area_pf_per_sq_micron [$layer getCapacitance]
+  set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
+  set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
+                           + $cap_edge_pf_per_micron * 2]
+  # ohms/meter
+  set wire_res [expr $res_ohm_per_micron * 1e+6]
+  # farads/meter
+  set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
+  return [list $wire_res $wire_cap]
 }
 
 # namespace
