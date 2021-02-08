@@ -69,12 +69,22 @@ using std::vector;
 
 using utl::MPL;
 
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbBlock;
+using odb::dbRow;
+using odb::dbSet;
+using odb::dbSite;
+using odb::Rect;
+using odb::dbInst;
+using odb::dbPlacementStatus;
+using odb::dbSigType;
+using odb::dbBTerm;
+using odb::dbBPin;
+
 using Eigen::VectorXf;
 typedef Eigen::SparseMatrix<int, Eigen::RowMajor> SMatrix;
 typedef Eigen::Triplet<int> Triplet;
-
-// Really bad to use a namespace -cherry
-using namespace odb;
 
 using sta::VertexIterator;
 
