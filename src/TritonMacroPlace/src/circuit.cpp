@@ -187,14 +187,12 @@ void MacroCircuit::init()
   dbBlock* block = db_->getChip()->getBlock();
 
   dbSet<dbRow> rows = block->getRows();
-  if (rows.size() == 0) {
-    log_->error(MPL, 1, "Cannot find rows in design");
+  if (rows.empty()) {
+    log_->error(MPL, 1, "no rows found.");
   }
 
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
-
   dbSite* site = rows.begin()->getSite();
-
   siteSizeX_ = site->getWidth() / dbu;
   siteSizeY_ = site->getHeight() / dbu;
 
@@ -218,14 +216,11 @@ void MacroCircuit::init()
     ParseLocalConfig(localConfig_);
   }
 
-  sta_->updateTiming(0);
-
   FillMacroStor();
   FillPinGroup();
   UpdateInstanceToMacroStor();
 
-  // Timing-related feature will be skipped
-  // if there is some of liberty is missing.
+  // Timing-driven will be skipped if some instances are missing liberty cells.
   isTiming_ = !isMissingLiberty(sta_, macroStor);
 
   if (isTiming_) {
@@ -234,9 +229,7 @@ void MacroCircuit::init()
     FillMacroPinAdjMatrix();
     FillMacroConnection();
   } else {
-    log_->warn(MPL,
-               2,
-               "Missing Liberty Detected. TritonMP will place macros without "
+    log_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
                "timing information");
 
     UpdateVertexToMacroStor();
@@ -335,9 +328,6 @@ void MacroCircuit::FillPinGroup()
 {
   dbTech* tech = db_->getTech();
   const double dbu = tech->getDbUnitsPerMicron();
-
-  log_->info(MPL, 6, "NumEdgeInSta {}", sta_->graph()->edgeCount());
-  log_->info(MPL, 7, "NumVertexInSta {}", sta_->graph()->vertexCount());
 
   int dbuCoreLx = static_cast<int>(round(lx_ * dbu));
   int dbuCoreLy = static_cast<int>(round(ly_ * dbu));
@@ -456,8 +446,8 @@ void MacroCircuit::FillPinGroup()
 void MacroCircuit::FillVertexEdge()
 {
   log_->report("Begin Generating Sequential Graph");
+  sta::Network *network = sta_->network();
 
-  Eigen::setNbThreads(8);
   unordered_set<sta::Instance*> instMap;
 
   // Fill Vertex for Four IO cases.
@@ -467,6 +457,7 @@ void MacroCircuit::FillVertexEdge()
     vertexStor.push_back(mpl::Vertex(&pinGroupStor[i]));
   }
 
+  sta_->ensureGraph();
   // Fill Vertex for FF/Macro cells
   VertexIterator vIter1(sta_->graph());
 
@@ -570,6 +561,9 @@ void MacroCircuit::FillVertexEdge()
         }
 
         triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
+        debugPrint(log_, MPL, "adj", 1, "fanout {}:{} -> {}:{}",
+                   curVertex->name(network), index(curVertex),
+                   adjVertex->name(network), index(adjVertex));
       }
       delete fanout;
     } else {
@@ -599,6 +593,9 @@ void MacroCircuit::FillVertexEdge()
         }
 
         triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
+        debugPrint(log_, MPL, "adj", 1, "fanin {}:{} -> {}:{}",
+                   curVertex->name(network), index(curVertex),
+                   adjVertex->name(network), index(adjVertex));
       }
       delete fanin;
     }
@@ -704,6 +701,9 @@ void MacroCircuit::FillVertexEdge()
       }
 
       triplets.push_back(Triplet(index(startVertPtr), index(endVertPtr), 1));
+      debugPrint(log_, MPL, "adj", 1, "path {}:{} -> {}:{}",
+                 startVertPtr->name(network), index(startVertPtr),
+                 endVertPtr->name(network), index(endVertPtr));
     }
   }
 

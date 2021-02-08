@@ -40,7 +40,8 @@
 namespace sta {
 class Pin;
 class Instance;
-}  // namespace sta
+class Network;
+}
 
 namespace mpl {
 
@@ -84,6 +85,7 @@ class Vertex
 
   // need to specify between macro or other
   Vertex(sta::Instance* inst, VertexType vertexType);
+  std::string name(sta::Network *network);
 
   // Will be removed soon
   Vertex(void* ptr, VertexType vertexType);
@@ -98,9 +100,6 @@ class Vertex
 
   bool isPinGroup() const;
   bool isInstance() const;
-
-  void setPinGroup(PinGroup* pinGroup);
-  void setInstance(sta::Instance* inst);
 
  private:
   VertexType vertexType_;

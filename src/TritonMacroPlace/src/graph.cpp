@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "graph.h"
+#include "sta/Network.hh"
 
 namespace mpl {
 
@@ -69,15 +70,23 @@ Vertex::Vertex() : vertexType_(VertexType::Uninitialized), ptr_(nullptr)
 {
 }
 
-Vertex::Vertex(PinGroup* pinGroup) : Vertex()
+std::string Vertex::name(sta::Network *network)
 {
-  setPinGroup(pinGroup);
+  if (isInstance())
+    return network->pathName(static_cast<sta::Instance*>(ptr_));
+  else
+    return static_cast<PinGroup*>(ptr_)->name();
+}
+
+Vertex::Vertex(PinGroup* pinGroup)
+{
+  ptr_ = static_cast<void*>(pinGroup);
   vertexType_ = VertexType::PinGroupType;
 }
 
-Vertex::Vertex(sta::Instance* inst, VertexType vertexType) : Vertex()
+Vertex::Vertex(sta::Instance* inst, VertexType vertexType)
 {
-  setInstance(inst);
+  ptr_ = static_cast<void*>(inst);
   vertexType_ = vertexType;
 }
 
@@ -126,37 +135,12 @@ sta::Instance* Vertex::instance() const
 
 bool Vertex::isPinGroup() const
 {
-  switch (vertexType_) {
-    case VertexType::PinGroupType:
-      return true;
-      break;
-    default:
-      return false;
-  }
-  return false;
+  return vertexType_ == VertexType::PinGroupType;
 }
 
 bool Vertex::isInstance() const
 {
-  switch (vertexType_) {
-    case VertexType::MacroInstType:
-    case VertexType::OtherInstType:
-      return true;
-      break;
-    default:
-      return false;
-  }
-  return false;
-}
-
-void Vertex::setPinGroup(PinGroup* pinGroup)
-{
-  ptr_ = static_cast<void*>(pinGroup);
-}
-
-void Vertex::setInstance(sta::Instance* inst)
-{
-  ptr_ = static_cast<void*>(inst);
+  return vertexType_ != VertexType::PinGroupType;
 }
 
 ////////////////////////////////////////////////
