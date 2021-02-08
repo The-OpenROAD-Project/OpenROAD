@@ -70,10 +70,9 @@ using std::endl;
 
 using utl::MPL;
 
-// None of these are necessary because they are included in circuit.h -cherry
 using Eigen::VectorXf;
 typedef Eigen::SparseMatrix<int, Eigen::RowMajor> SMatrix;
-typedef Eigen::Triplet<int> T;
+typedef Eigen::Triplet<int> Triplet;
 
 // Really bad to use a namespace -cherry
 using namespace odb;
@@ -499,7 +498,7 @@ void MacroCircuit::FillVertexEdge() {
   }
   
   adjMatrix.resize( vertexStor.size(), vertexStor.size() ); 
-  vector< T > tripletList;
+  vector<Triplet> triplets;
 
   // Query Get_FanIn/ Get_FanOut
   VertexIterator vIter2(sta_->graph());
@@ -562,7 +561,8 @@ void MacroCircuit::FillVertexEdge() {
           continue;
         }
 
-        tripletList.push_back(T(vertexPtrMap[curVertex], vertexPtrMap[adjVertex], 1));
+        triplets.push_back(Triplet(vertexPtrMap[curVertex],
+                                      vertexPtrMap[adjVertex],1));
       }
       delete fanout;
     }
@@ -591,7 +591,8 @@ void MacroCircuit::FillVertexEdge() {
           continue;
         }
 
-        tripletList.push_back(T(vertexPtrMap[curVertex], vertexPtrMap[adjVertex], 1));
+        triplets.push_back(Triplet(vertexPtrMap[curVertex],
+                                      vertexPtrMap[adjVertex], 1));
       }
       delete fanin;
     }
@@ -648,17 +649,7 @@ void MacroCircuit::FillVertexEdge() {
         true, true, // recovery, removal
         true, true); // clk gating setup, hold
 
-    if (ends->empty()) {
-      continue;
-    }
-
-    sta::PathEndSeq::Iterator tmpIter(ends), pathEndIter(ends), pathEndIter2(ends);
-    int edgeCnt = 0;
-    while( tmpIter.hasNext() ) {
-      tmpIter.next();
-      edgeCnt ++; 
-    }
-
+    sta::PathEndSeq::Iterator pathEndIter(ends), pathEndIter2(ends);
     while( pathEndIter.hasNext()) {
       sta::PathEnd *end = pathEndIter.next();
       //TimingPathPrint( sta_, end );
@@ -690,11 +681,12 @@ void MacroCircuit::FillVertexEdge() {
         continue;
       }
 
-      tripletList.push_back(T(vertexPtrMap[startVertPtr], vertexPtrMap[endVertPtr], 1));
+      triplets.push_back(Triplet(vertexPtrMap[startVertPtr],
+                                    vertexPtrMap[endVertPtr], 1));
     }
   }
 
-  adjMatrix.setFromTriplets( tripletList.begin(), tripletList.end() );
+  adjMatrix.setFromTriplets( triplets.begin(), triplets.end() );
   
   log_->report("End Generating Sequential Graph"); 
   log_->info(MPL, 13, "NumVertexSeqGraph {}", vertexStor.size());
@@ -797,7 +789,7 @@ void MacroCircuit::FillMacroPinAdjMatrix() {
   const int EmptyVert = -1, SearchVert = -2;
 
   // return adjMatrix triplet candidates.
-  vector< T > tripletList;
+  vector<Triplet> triplets;
 
   // for each macro/pin vertex 
   for(auto& startVertIdx: searchVertIdx) {
@@ -857,19 +849,17 @@ void MacroCircuit::FillMacroPinAdjMatrix() {
     }
     
     for(auto& curCandiVert: searchVertIdx) {
-      if( curCandiVert == startVertIdx ) {
-        continue;
+      if( curCandiVert != startVertIdx ) {
+        triplets.push_back(Triplet(macroPinAdjMatrixMap[startVertIdx], 
+                                      macroPinAdjMatrixMap[curCandiVert], 
+                                      vertexWeight[curCandiVert]));
       }
-      tripletList.push_back( 
-          T(macroPinAdjMatrixMap[startVertIdx], 
-            macroPinAdjMatrixMap[curCandiVert], 
-            vertexWeight[curCandiVert]));
     }
-  } 
+  }
 
   // Fill in all of vertex weights into compacted adjMatrix
   macroPinAdjMatrix.resize( searchVertIdx.size(), searchVertIdx.size() );
-  macroPinAdjMatrix.setFromTriplets(tripletList.begin(), tripletList.end());
+  macroPinAdjMatrix.setFromTriplets(triplets.begin(), triplets.end());
 }
 
 void MacroCircuit::FillMacroConnection() {
@@ -925,17 +915,15 @@ void MacroCircuit::FillMacroConnection() {
 // macroStor Update
 void MacroCircuit::UpdateVertexToMacroStor() {
   for(auto& curVertex: vertexStor) {
-    if( curVertex.vertexType() != VertexType::MacroInstType ) {
-      continue;
+    if( curVertex.vertexType() == VertexType::MacroInstType ) {
+      sta::Instance* staInst = (sta::Instance*) curVertex.ptr();
+      auto mPtr = macroInstMap.find( staInst );
+      if( mPtr == macroInstMap.end() ) {
+        log_->error(MPL, 15, "The Macro Name must be in macro NameMap");
+      } 
+
+      macroStor[mPtr->second].ptr = &curVertex;
     }
-
-    sta::Instance* staInst = (sta::Instance*) curVertex.ptr();
-    auto mPtr = macroInstMap.find( staInst );
-    if( mPtr == macroInstMap.end() ) {
-      log_->error(MPL, 15, "The Macro Name must be in macro NameMap");
-    } 
-
-    macroStor[mPtr->second].ptr = &curVertex;
   }
 }
 
@@ -977,6 +965,7 @@ MacroCircuit::GetPtrClassPair( sta::Pin* pin ) {
 }
 
 
+// not used -cherry
 int 
 MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
 
@@ -1092,8 +1081,7 @@ int MacroCircuit::GetPathWeightMatrix(
 }
 
 static float getRoundUpFloat( float x, float unit ) { 
-  int roundVal = static_cast<int>(x / unit + 0.5f);
-  return static_cast<float>(roundVal) * unit;
+  return std::round(x / unit) * unit;
 }
 
 // 
@@ -1471,8 +1459,8 @@ double MacroCircuit::GetWeightedWL() {
       }
 
       wwl += edgeWeight *
-        sqrt( (pointX1-pointX2)*(pointX1-pointX2) + 
-            (pointY1-pointY2)*(pointY1-pointY2) );
+        std::sqrt( (pointX1-pointX2)*(pointX1-pointX2) + 
+                   (pointY1-pointY2)*(pointY1-pointY2) );
     }
   }
 

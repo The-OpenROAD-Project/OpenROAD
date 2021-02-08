@@ -193,6 +193,7 @@ class MacroCircuit {
     std::unordered_map< std::pair<mpl::Vertex*, mpl::Vertex*>,
       int, PointerPairHash, PointerPairEqual > vertexPairEdgeMap;
 
+    // not used -cherry
     int GetPathWeight( mpl::Vertex* from,
         mpl::Vertex* to, int limit );
 

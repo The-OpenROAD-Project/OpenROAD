@@ -44,7 +44,6 @@ using std::string;
 using std::vector;
 using std::pair;
 using std::unordered_map;
-using std::unordered_set;
 using utl::MPL;
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
@@ -76,14 +75,6 @@ MacroCircuit::PlaceMacros(int& solCount) {
   init();
   Layout layout(lx_, ly_, ux_, uy_);
 
-
-  //  RandomPlace for special needs. 
-  //  Really not recommended to execute this functioning 
-  //if( mckt.isRandomPlace() == true ) {
-  //  double snapGrid = 0.02f;
-  //  mckt.StubPlacer(snapGrid);
-  //}
-
   bool isHorizontal = true;
 
   Partition topLayout(PartClass::ALL, 
@@ -92,8 +83,8 @@ MacroCircuit::PlaceMacros(int& solCount) {
 
   log_->report("Begin One Level Partition");
 
-  TwoPartitions oneLevelPart 
-    = GetPart(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal, log_);
+  TwoPartitions oneLevelPart = GetPart(layout, siteSizeX_, siteSizeY_,
+                                       topLayout, isHorizontal, log_);
   
   log_->report ("End One Level Partition");
   TwoPartitions eastStor, westStor;
@@ -282,7 +273,6 @@ MacroCircuit::PlaceMacros(int& solCount) {
 }
 
 
-// 
 // update opendb dataset from mckt.
 static void 
 UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt) {
@@ -297,24 +287,22 @@ UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt) {
   }
 }
 
-static void 
-CutRoundUp( 
-    const Layout& layout,
-    const double siteSizeX, 
-    const double siteSizeY,  
-    double& cutLine, bool isHorizontal ) {
+static void
+CutRoundUp(const Layout& layout,
+           const double siteSizeX, 
+           const double siteSizeY,  
+           double& cutLine,
+           bool isHorizontal) {
 
   if( isHorizontal ) {
-    int integer = static_cast<int>( round( static_cast<float>(cutLine) / siteSizeX) );
-    cutLine = integer * siteSizeX;
-    cutLine = fmin(cutLine, layout.ux());
-    cutLine = fmax(cutLine, layout.lx());
+    cutLine = std::round(cutLine / siteSizeX) * siteSizeX;
+    cutLine = std::min(cutLine, layout.ux());
+    cutLine = std::max(cutLine, layout.lx());
   }
   else {
-    int integer = static_cast<int>( round( static_cast<float>(cutLine) / siteSizeY) );
-    cutLine = integer * siteSizeY;
-    cutLine = fmin(cutLine, layout.uy());
-    cutLine = fmax(cutLine, layout.ly());
+    cutLine = round(cutLine / siteSizeY) * siteSizeY;
+    cutLine = std::min(cutLine, layout.uy());
+    cutLine = std::max(cutLine, layout.ly());
   }
 }
 
@@ -394,8 +382,8 @@ static vector<pair<Partition, Partition>> GetPart(
         std::make_pair( &curMacro - &partition.macroStor[0], 
           (isHorizontal)? curMacro.lx : curMacro.ly ));
     
-    maxWidth = std::fmax( maxWidth, curMacro.w );
-    maxHeight = std::fmax( maxHeight, curMacro.h );
+    maxWidth = std::max( maxWidth, curMacro.w );
+    maxHeight = std::max( maxHeight, curMacro.h );
   }
 
   double cutLineLimit = (isHorizontal)? maxWidth * 0.25 : maxHeight * 0.25;
@@ -423,7 +411,7 @@ static vector<pair<Partition, Partition>> GetPart(
   }
   // more than 4
   else {
-    int hardLimit = int( sqrt( 1.0*partition.macroStor.size()/3.0 ) + 0.5f);
+    int hardLimit = std::round(std::sqrt( partition.macroStor.size()/3.0 ));
     for(int i=0; i<=hardLimit; i++) {
       cutLineStor.push_back( (isHorizontal)? 
           layout.lx() + (layout.ux() - layout.lx())/hardLimit * i :
@@ -615,4 +603,3 @@ static vector<pair<Partition, Partition>> GetPart(
 }
 
 }
-
