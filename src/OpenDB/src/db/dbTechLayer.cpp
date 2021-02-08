@@ -39,20 +39,19 @@
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
+#include "dbTechLayerCutSpacingRule.h"
 #include "dbTechLayerCutSpacingTableDefRule.h"
 #include "dbTechLayerCutSpacingTableOrthRule.h"
+#include "dbTechLayerMinStepRule.h"
+#include "dbTechLayerSpacingEolRule.h"
+#include "dbTechLayerSpacingTablePrlRule.h"
 // User Code Begin includes
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTechLayerCornerSpacingRule.h"
-#include "dbTechLayerCutClassRule.h"
-#include "dbTechLayerCutSpacingRule.h"
-#include "dbTechLayerMinStepRule.h"
-#include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingRule.h"
-#include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechMinCutOrAreaRule.h"
 #include "lefout.h"
 // User Code End includes
@@ -107,6 +106,21 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
 
   if (_cut_class_rules_hash != rhs._cut_class_rules_hash)
+    return false;
+
+  if (*_spacing_eol_rules_tbl != *rhs._spacing_eol_rules_tbl)
+    return false;
+
+  if (*_cut_spacing_rules_tbl != *rhs._cut_spacing_rules_tbl)
+    return false;
+
+  if (*_minstep_rules_tbl != *rhs._minstep_rules_tbl)
+    return false;
+
+  if (*_corner_spacing_rules_tbl != *rhs._corner_spacing_rules_tbl)
+    return false;
+
+  if (*_spacing_table_prl_rules_tbl != *rhs._spacing_table_prl_rules_tbl)
     return false;
 
   if (*_cut_spacing_table_orth_tbl != *rhs._cut_spacing_table_orth_tbl)
@@ -212,24 +226,6 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (*_spacing_rules_tbl != *rhs._spacing_rules_tbl)
     return false;
 
-  if (*_spacing_eol_rules_tbl != *rhs._spacing_eol_rules_tbl)
-    return false;
-
-  if (*_cut_spacing_rules_tbl != *rhs._cut_spacing_rules_tbl)
-    return false;
-
-  if (*_minstep_rules_tbl != *rhs._minstep_rules_tbl)
-    return false;
-
-  if (*_corner_spacing_rules_tbl != *rhs._corner_spacing_rules_tbl)
-    return false;
-
-  if (*_spacing_table_prl_rules_tbl != *rhs._spacing_table_prl_rules_tbl)
-    return false;
-
-  if (*_cut_class_rules_tbl != *rhs._cut_class_rules_tbl)
-    return false;
-
   if (*_min_cut_rules_tbl != *rhs._min_cut_rules_tbl)
     return false;
 
@@ -294,6 +290,11 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_FIELD(_flags._p_well);
   DIFF_TABLE(_cut_class_rules_tbl);
   DIFF_HASH_TABLE(_cut_class_rules_hash);
+  DIFF_TABLE(_spacing_eol_rules_tbl);
+  DIFF_TABLE(_cut_spacing_rules_tbl);
+  DIFF_TABLE(_minstep_rules_tbl);
+  DIFF_TABLE(_corner_spacing_rules_tbl);
+  DIFF_TABLE(_spacing_table_prl_rules_tbl);
   DIFF_TABLE(_cut_spacing_table_orth_tbl);
   DIFF_TABLE(_cut_spacing_table_def_tbl);
   // User Code Begin differences
@@ -326,12 +327,6 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_FIELD(_upper);
   DIFF_FIELD(_lower);
   DIFF_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_spacing_eol_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_cut_spacing_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_minstep_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_corner_spacing_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_spacing_table_prl_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_cut_class_rules_tbl);
   DIFF_TABLE_NO_DEEP(_min_cut_rules_tbl);
   DIFF_TABLE_NO_DEEP(_min_enc_rules_tbl);
   DIFF_TABLE_NO_DEEP(_v55inf_tbl);
@@ -364,6 +359,11 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._p_well);
   DIFF_OUT_TABLE(_cut_class_rules_tbl);
   DIFF_OUT_HASH_TABLE(_cut_class_rules_hash);
+  DIFF_OUT_TABLE(_spacing_eol_rules_tbl);
+  DIFF_OUT_TABLE(_cut_spacing_rules_tbl);
+  DIFF_OUT_TABLE(_minstep_rules_tbl);
+  DIFF_OUT_TABLE(_corner_spacing_rules_tbl);
+  DIFF_OUT_TABLE(_spacing_table_prl_rules_tbl);
   DIFF_OUT_TABLE(_cut_spacing_table_orth_tbl);
   DIFF_OUT_TABLE(_cut_spacing_table_def_tbl);
 
@@ -397,12 +397,6 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_upper);
   DIFF_OUT_FIELD(_lower);
   DIFF_OUT_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_spacing_eol_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_cut_spacing_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_minstep_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_corner_spacing_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_spacing_table_prl_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_cut_class_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_min_cut_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_min_enc_rules_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_v55inf_tbl);
@@ -428,6 +422,36 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechLayerCutClassRuleObj);
   ZALLOCATED(_cut_class_rules_tbl);
   _cut_class_rules_hash.setTable(_cut_class_rules_tbl);
+  _spacing_eol_rules_tbl = new dbTable<_dbTechLayerSpacingEolRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerSpacingEolRuleObj);
+  ZALLOCATED(_spacing_eol_rules_tbl);
+  _cut_spacing_rules_tbl = new dbTable<_dbTechLayerCutSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerCutSpacingRuleObj);
+  ZALLOCATED(_cut_spacing_rules_tbl);
+  _minstep_rules_tbl = new dbTable<_dbTechLayerMinStepRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerMinStepRuleObj);
+  ZALLOCATED(_minstep_rules_tbl);
+  _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerCornerSpacingRuleObj);
+  ZALLOCATED(_corner_spacing_rules_tbl);
+  _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerSpacingTablePrlRuleObj);
+  ZALLOCATED(_spacing_table_prl_rules_tbl);
   _cut_spacing_table_orth_tbl
       = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
           db,
@@ -480,41 +504,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechLayerSpacingRuleObj);
   ZALLOCATED(_spacing_rules_tbl);
 
-  _spacing_eol_rules_tbl = new dbTable<_dbTechLayerSpacingEolRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerSpacingEolRuleObj);
-  ZALLOCATED(_spacing_eol_rules_tbl);
-
-  _cut_spacing_rules_tbl = new dbTable<_dbTechLayerCutSpacingRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerCutSpacingRuleObj);
-  ZALLOCATED(_cut_spacing_rules_tbl);
-
-  _minstep_rules_tbl = new dbTable<_dbTechLayerMinStepRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerMinStepRuleObj);
-  ZALLOCATED(_minstep_rules_tbl);
-
-  _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerCornerSpacingRuleObj);
-  ZALLOCATED(_corner_spacing_rules_tbl);
-
-  _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerSpacingTablePrlRuleObj);
-  ZALLOCATED(_spacing_table_prl_rules_tbl);
-
   _min_cut_rules_tbl = new dbTable<_dbTechMinCutRule>(
       db,
       this,
@@ -563,6 +552,21 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r._cut_class_rules_tbl);
   ZALLOCATED(_cut_class_rules_tbl);
   _cut_class_rules_hash.setTable(_cut_class_rules_tbl);
+  _spacing_eol_rules_tbl = new dbTable<_dbTechLayerSpacingEolRule>(
+      db, this, *r._spacing_eol_rules_tbl);
+  ZALLOCATED(_spacing_eol_rules_tbl);
+  _cut_spacing_rules_tbl = new dbTable<_dbTechLayerCutSpacingRule>(
+      db, this, *r._cut_spacing_rules_tbl);
+  ZALLOCATED(_cut_spacing_rules_tbl);
+  _minstep_rules_tbl
+      = new dbTable<_dbTechLayerMinStepRule>(db, this, *r._minstep_rules_tbl);
+  ZALLOCATED(_minstep_rules_tbl);
+  _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
+      db, this, *r._corner_spacing_rules_tbl);
+  ZALLOCATED(_corner_spacing_rules_tbl);
+  _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
+      db, this, *r._spacing_table_prl_rules_tbl);
+  ZALLOCATED(_spacing_table_prl_rules_tbl);
   _cut_spacing_table_orth_tbl
       = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
           db, this, *r._cut_spacing_table_orth_tbl);
@@ -619,26 +623,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerSpacingRule>(db, this, *r._spacing_rules_tbl);
   ZALLOCATED(_spacing_rules_tbl);
 
-  _spacing_eol_rules_tbl = new dbTable<_dbTechLayerSpacingEolRule>(
-      db, this, *r._spacing_eol_rules_tbl);
-  ZALLOCATED(_spacing_eol_rules_tbl);
-
-  _cut_spacing_rules_tbl = new dbTable<_dbTechLayerCutSpacingRule>(
-      db, this, *r._cut_spacing_rules_tbl);
-  ZALLOCATED(_cut_spacing_rules_tbl);
-
-  _minstep_rules_tbl
-      = new dbTable<_dbTechLayerMinStepRule>(db, this, *r._minstep_rules_tbl);
-  ZALLOCATED(_minstep_rules_tbl);
-
-  _corner_spacing_rules_tbl = new dbTable<_dbTechLayerCornerSpacingRule>(
-      db, this, *r._corner_spacing_rules_tbl);
-  ZALLOCATED(_corner_spacing_rules_tbl);
-
-  _spacing_table_prl_rules_tbl = new dbTable<_dbTechLayerSpacingTablePrlRule>(
-      db, this, *r._spacing_table_prl_rules_tbl);
-  ZALLOCATED(_spacing_table_prl_rules_tbl);
-
   _min_cut_rules_tbl
       = new dbTable<_dbTechMinCutRule>(db, this, *r._min_cut_rules_tbl);
   ZALLOCATED(_min_cut_rules_tbl);
@@ -658,6 +642,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *_flags_bit_field;
   stream >> *obj._cut_class_rules_tbl;
   stream >> obj._cut_class_rules_hash;
+  stream >> *obj._spacing_eol_rules_tbl;
+  stream >> *obj._cut_spacing_rules_tbl;
+  stream >> *obj._minstep_rules_tbl;
+  stream >> *obj._corner_spacing_rules_tbl;
+  stream >> *obj._spacing_table_prl_rules_tbl;
   stream >> *obj._cut_spacing_table_orth_tbl;
   stream >> *obj._cut_spacing_table_def_tbl;
   // User Code Begin >>
@@ -688,11 +677,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._lower;
   stream >> obj._upper;
   stream >> *obj._spacing_rules_tbl;
-  stream >> *obj._spacing_eol_rules_tbl;
-  stream >> *obj._cut_spacing_rules_tbl;
-  stream >> *obj._minstep_rules_tbl;
-  stream >> *obj._corner_spacing_rules_tbl;
-  stream >> *obj._spacing_table_prl_rules_tbl;
   stream >> *obj._min_cut_rules_tbl;
   stream >> *obj._min_enc_rules_tbl;
   stream >> *obj._v55inf_tbl;
@@ -713,6 +697,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *_flags_bit_field;
   stream << *obj._cut_class_rules_tbl;
   stream << obj._cut_class_rules_hash;
+  stream << *obj._spacing_eol_rules_tbl;
+  stream << *obj._cut_spacing_rules_tbl;
+  stream << *obj._minstep_rules_tbl;
+  stream << *obj._corner_spacing_rules_tbl;
+  stream << *obj._spacing_table_prl_rules_tbl;
   stream << *obj._cut_spacing_table_orth_tbl;
   stream << *obj._cut_spacing_table_def_tbl;
   // User Code Begin <<
@@ -743,11 +732,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._lower;
   stream << obj._upper;
   stream << *obj._spacing_rules_tbl;
-  stream << *obj._spacing_eol_rules_tbl;
-  stream << *obj._cut_spacing_rules_tbl;
-  stream << *obj._minstep_rules_tbl;
-  stream << *obj._corner_spacing_rules_tbl;
-  stream << *obj._spacing_table_prl_rules_tbl;
   stream << *obj._min_cut_rules_tbl;
   stream << *obj._min_enc_rules_tbl;
   stream << *obj._v55inf_tbl;
@@ -768,6 +752,16 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
   switch (type) {
     case dbTechLayerCutClassRuleObj:
       return _cut_class_rules_tbl;
+    case dbTechLayerSpacingEolRuleObj:
+      return _spacing_eol_rules_tbl;
+    case dbTechLayerCutSpacingRuleObj:
+      return _cut_spacing_rules_tbl;
+    case dbTechLayerMinStepRuleObj:
+      return _minstep_rules_tbl;
+    case dbTechLayerCornerSpacingRuleObj:
+      return _corner_spacing_rules_tbl;
+    case dbTechLayerSpacingTablePrlRuleObj:
+      return _spacing_table_prl_rules_tbl;
     case dbTechLayerCutSpacingTableOrthRuleObj:
       return _cut_spacing_table_orth_tbl;
     case dbTechLayerCutSpacingTableDefRuleObj:
@@ -775,21 +769,6 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
-
-    case dbTechLayerSpacingEolRuleObj:
-      return _spacing_eol_rules_tbl;
-
-    case dbTechLayerCutSpacingRuleObj:
-      return _cut_spacing_rules_tbl;
-
-    case dbTechLayerMinStepRuleObj:
-      return _minstep_rules_tbl;
-
-    case dbTechLayerCornerSpacingRuleObj:
-      return _corner_spacing_rules_tbl;
-
-    case dbTechLayerSpacingTablePrlRuleObj:
-      return _spacing_table_prl_rules_tbl;
 
     case dbTechMinCutRuleObj:
       return _min_cut_rules_tbl;
@@ -808,6 +787,11 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
 _dbTechLayer::~_dbTechLayer()
 {
   delete _cut_class_rules_tbl;
+  delete _spacing_eol_rules_tbl;
+  delete _cut_spacing_rules_tbl;
+  delete _minstep_rules_tbl;
+  delete _corner_spacing_rules_tbl;
+  delete _spacing_table_prl_rules_tbl;
   delete _cut_spacing_table_orth_tbl;
   delete _cut_spacing_table_def_tbl;
   // User Code Begin Destructor
@@ -816,21 +800,6 @@ _dbTechLayer::~_dbTechLayer()
 
   if (_spacing_rules_tbl)
     delete _spacing_rules_tbl;
-
-  if (_spacing_eol_rules_tbl)
-    delete _spacing_eol_rules_tbl;
-
-  if (_cut_spacing_rules_tbl)
-    delete _cut_spacing_rules_tbl;
-
-  if (_minstep_rules_tbl)
-    delete _minstep_rules_tbl;
-
-  if (_corner_spacing_rules_tbl)
-    delete _corner_spacing_rules_tbl;
-
-  if (_spacing_table_prl_rules_tbl)
-    delete _spacing_table_prl_rules_tbl;
 
   if (_min_cut_rules_tbl)
     delete _min_cut_rules_tbl;
@@ -859,6 +828,42 @@ dbTechLayerCutClassRule* dbTechLayer::findTechLayerCutClassRule(
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return (dbTechLayerCutClassRule*) obj->_cut_class_rules_hash.find(name);
+}
+
+dbSet<dbTechLayerSpacingEolRule> dbTechLayer::getTechLayerSpacingEolRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerSpacingEolRule>(obj, obj->_spacing_eol_rules_tbl);
+}
+
+dbSet<dbTechLayerCutSpacingRule> dbTechLayer::getTechLayerCutSpacingRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerCutSpacingRule>(obj, obj->_cut_spacing_rules_tbl);
+}
+
+dbSet<dbTechLayerMinStepRule> dbTechLayer::getTechLayerMinStepRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerMinStepRule>(obj, obj->_minstep_rules_tbl);
+}
+
+dbSet<dbTechLayerCornerSpacingRule>
+dbTechLayer::getTechLayerCornerSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerCornerSpacingRule>(obj,
+                                             obj->_corner_spacing_rules_tbl);
+}
+
+dbSet<dbTechLayerSpacingTablePrlRule>
+dbTechLayer::getTechLayerSpacingTablePrlRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerSpacingTablePrlRule>(
+      obj, obj->_spacing_table_prl_rules_tbl);
 }
 
 dbSet<dbTechLayerCutSpacingTableOrthRule>
@@ -1178,44 +1183,6 @@ bool dbTechLayer::getV54SpacingRules(
 
   sp_rules = dbSet<dbTechLayerSpacingRule>(layer, layer->_spacing_rules_tbl);
   return true;
-}
-
-dbSet<dbTechLayerSpacingEolRule> dbTechLayer::getEolSpacingRules() const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  return dbSet<dbTechLayerSpacingEolRule>(layer, layer->_spacing_eol_rules_tbl);
-}
-
-dbSet<dbTechLayerCutSpacingRule> dbTechLayer::getCutSpacingRules() const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  return dbSet<dbTechLayerCutSpacingRule>(layer, layer->_cut_spacing_rules_tbl);
-}
-
-dbSet<dbTechLayerMinStepRule> dbTechLayer::getMinStepRules() const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  return dbSet<dbTechLayerMinStepRule>(layer, layer->_minstep_rules_tbl);
-}
-
-dbSet<dbTechLayerCornerSpacingRule> dbTechLayer::getCornerSpacingRules() const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  return dbSet<dbTechLayerCornerSpacingRule>(layer,
-                                             layer->_corner_spacing_rules_tbl);
-}
-
-dbSet<dbTechLayerSpacingTablePrlRule> dbTechLayer::getSpacingTablePrlRules()
-    const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  return dbSet<dbTechLayerSpacingTablePrlRule>(
-      layer, layer->_spacing_table_prl_rules_tbl);
 }
 
 bool dbTechLayer::hasV55SpacingRules() const

@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     double distFactor = 2000;
     auto layer = dbTech->findLayer("metal1");
     
-    auto rules = layer->getEolSpacingRules();
+    auto rules = layer->getTechLayerSpacingEolRules();
     BOOST_TEST (rules.size() == 1);
     odb::dbTechLayerSpacingEolRule* rule = (odb::dbTechLayerSpacingEolRule*) *rules.begin();
     BOOST_TEST (rule->getEolSpace() == 1.3 * distFactor);
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST (rule->isTwoEdgesValid() == 1);
     BOOST_TEST (rule->isToConcaveCornerValid() == 0);
     
-    auto minStepRules = layer->getMinStepRules();
+    auto minStepRules = layer->getTechLayerMinStepRules();
     BOOST_TEST(minStepRules.size() == 1);
     odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *minStepRules.begin();
     BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(step_rule->isMinAdjLength2Valid() == false);
     BOOST_TEST(step_rule->getMinAdjLength1() == 1.0 * distFactor);
 
-    auto corner_rules = layer->getCornerSpacingRules();
+    auto corner_rules = layer->getTechLayerCornerSpacingRules();
     BOOST_TEST(corner_rules.size() == 1);
     odb::dbTechLayerCornerSpacingRule* corner_rule = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
     BOOST_TEST(corner_rule->getType() == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(spacing[0].first == 0);
     BOOST_TEST(spacing[0].second == 0.110 * distFactor);
 
-    auto spacingTables = layer->getSpacingTablePrlRules();
+    auto spacingTables = layer->getTechLayerSpacingTablePrlRules();
     BOOST_TEST(spacingTables.size() == 1);
     odb::dbTechLayerSpacingTablePrlRule* spacing_tbl_rule = (odb::dbTechLayerSpacingTablePrlRule*) *spacingTables.begin();
     BOOST_TEST(spacing_tbl_rule->isWrongDirection()==true);
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(cut_rule->getWidth()==0.15*distFactor);
     BOOST_TEST((cutLayer->findTechLayerCutClassRule("VA")==cut_rule));
 
-    auto cutSpacingRules = cutLayer->getCutSpacingRules();
+    auto cutSpacingRules = cutLayer->getTechLayerCutSpacingRules();
     BOOST_TEST(cutSpacingRules.size() == 2);
     int i = 0;
     for(odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules)

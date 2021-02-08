@@ -51,6 +51,11 @@ class _dbDatabase;
 class _dbTechLayerCutClassRule;
 template <class T>
 class dbTable;
+class _dbTechLayerSpacingEolRule;
+class _dbTechLayerCutSpacingRule;
+class _dbTechLayerMinStepRule;
+class _dbTechLayerCornerSpacingRule;
+class _dbTechLayerSpacingTablePrlRule;
 class _dbTechLayerCutSpacingTableOrthRule;
 class _dbTechLayerCutSpacingTableDefRule;
 // User Code Begin Classes
@@ -59,11 +64,6 @@ class _dbTechMinCutRule;
 class _dbTechMinEncRule;
 class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
-class _dbTechLayerSpacingEolRule;
-class _dbTechLayerCutSpacingRule;
-class _dbTechLayerMinStepRule;
-class _dbTechLayerCornerSpacingRule;
-class _dbTechLayerSpacingTablePrlRule;
 // User Code End Classes
 
 struct dbTechLayerFlags
@@ -100,6 +100,16 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerCutClassRule>*    _cut_class_rules_tbl;
   dbHashTable<_dbTechLayerCutClassRule> _cut_class_rules_hash;
 
+  dbTable<_dbTechLayerSpacingEolRule>* _spacing_eol_rules_tbl;
+
+  dbTable<_dbTechLayerCutSpacingRule>* _cut_spacing_rules_tbl;
+
+  dbTable<_dbTechLayerMinStepRule>* _minstep_rules_tbl;
+
+  dbTable<_dbTechLayerCornerSpacingRule>* _corner_spacing_rules_tbl;
+
+  dbTable<_dbTechLayerSpacingTablePrlRule>* _spacing_table_prl_rules_tbl;
+
   dbTable<_dbTechLayerCutSpacingTableOrthRule>* _cut_spacing_table_orth_tbl;
 
   dbTable<_dbTechLayerCutSpacingTableDefRule>* _cut_spacing_table_def_tbl;
@@ -132,22 +142,18 @@ class _dbTechLayer : public _dbObject
     uint _length;
     uint _from_width;
   } _pt;
-  char*                                     _name;
-  char*                                     _alias;
-  dbId<_dbTechLayer>                        _upper;
-  dbId<_dbTechLayer>                        _lower;
-  dbTable<_dbTechLayerSpacingRule>*         _spacing_rules_tbl;
-  dbTable<_dbTechLayerSpacingEolRule>*      _spacing_eol_rules_tbl;
-  dbTable<_dbTechLayerCutSpacingRule>*      _cut_spacing_rules_tbl;
-  dbTable<_dbTechLayerMinStepRule>*         _minstep_rules_tbl;
-  dbTable<_dbTechLayerCornerSpacingRule>*   _corner_spacing_rules_tbl;
-  dbTable<_dbTechLayerSpacingTablePrlRule>* _spacing_table_prl_rules_tbl;
-  dbTable<_dbTechMinCutRule>*               _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>*               _min_enc_rules_tbl;
-  dbTable<_dbTechV55InfluenceEntry>*        _v55inf_tbl;
-  dbVector<uint>                            _v55sp_length_idx;
-  dbVector<uint>                            _v55sp_width_idx;
-  dbMatrix<uint>                            _v55sp_spacing;
+  char*                             _name;
+  char*                             _alias;
+  dbId<_dbTechLayer>                _upper;
+  dbId<_dbTechLayer>                _lower;
+  dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
+
+  dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
+  dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
+  dbVector<uint>                     _v55sp_length_idx;
+  dbVector<uint>                     _v55sp_width_idx;
+  dbMatrix<uint>                     _v55sp_spacing;
 
   dbVector<uint> _two_widths_sp_idx;
   dbVector<int>  _two_widths_sp_prl;

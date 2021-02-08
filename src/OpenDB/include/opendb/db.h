@@ -6917,6 +6917,17 @@ class dbTechLayer : public dbObject
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
 
+  dbSet<dbTechLayerSpacingEolRule> getTechLayerSpacingEolRules() const;
+
+  dbSet<dbTechLayerCutSpacingRule> getTechLayerCutSpacingRules() const;
+
+  dbSet<dbTechLayerMinStepRule> getTechLayerMinStepRules() const;
+
+  dbSet<dbTechLayerCornerSpacingRule> getTechLayerCornerSpacingRules() const;
+
+  dbSet<dbTechLayerSpacingTablePrlRule> getTechLayerSpacingTablePrlRules()
+      const;
+
   dbSet<dbTechLayerCutSpacingTableOrthRule>
   getTechLayerCutSpacingTableOrthRules() const;
 
@@ -7002,21 +7013,6 @@ class dbTechLayer : public dbObject
   /// Contents of sp_rules are undefined if function returns false.
   ///
   bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
-
-  // Get the collection of Eol Spacing Rules for the object
-  dbSet<dbTechLayerSpacingEolRule> getEolSpacingRules() const;
-
-  // Get the collection of minstep Rules for the object
-  dbSet<dbTechLayerMinStepRule> getMinStepRules() const;
-
-  // Get the collection of cornerspacing Rules for the object
-  dbSet<dbTechLayerCornerSpacingRule> getCornerSpacingRules() const;
-
-  // Get the collection of spacing table parallel length Rules for the object
-  dbSet<dbTechLayerSpacingTablePrlRule> getSpacingTablePrlRules() const;
-
-  // Get the collection of lef58spacing Rules for the layer(cut)
-  dbSet<dbTechLayerCutSpacingRule> getCutSpacingRules() const;
 
   ///
   /// API for version 5.5 spacing rules, expressed as a 2D matrix with
