@@ -729,4 +729,4 @@ To install TritonRoute:
 
 ::
 
-   $ ./TritonRoute -lef <LEF_FILE> -def <DEF_FILE> -guide <GUIDE_FILE> -output <OUTPUT_DEF>
+   $ ./TritonRoute -def <DEF_FILE> -guide <GUIDE_FILE> -output <OUTPUT_DEF>

@@ -57,7 +57,7 @@ namespace fr {
                                   tmpGuides(), tmpGRPins(), trackOffsetMap(), prefTrackPatterns(), numRefBlocks(0),
                                   numInsts(0), numTerms(0), numNets(0), numBlockages(0) {}
       // others
-      void readLefDb(odb::dbDatabase* db);
+      void readDb(odb::dbDatabase* db);
       void readGuide();
       void postProcess();
       void postProcessGuide();
@@ -72,10 +72,8 @@ namespace fr {
       }
 
     protected:
-      void readLef();
-      void readDb(odb::dbDatabase*);
-      void readTechDb1(odb::dbDatabase*);
-      void readTechDb2(odb::dbDatabase*);
+      void readDesign(odb::dbDatabase*);
+      void readTechAndLibs(odb::dbDatabase*);
       void setMacros(odb::dbDatabase*);
       void setTechVias(odb::dbTech*);
       void setTechViaRules(odb::dbTech*);
