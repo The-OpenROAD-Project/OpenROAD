@@ -46,6 +46,7 @@ class dbInst;
 namespace mpl {
 
 class Vertex;
+
 class Macro
 {
  public:
@@ -72,13 +73,8 @@ class Macro
   void Dump();
 };
 
-}  // namespace mpl
-
 class MacroLocalInfo
 {
- private:
-  double haloX_, haloY_, channelX_, channelY_;
-
  public:
   MacroLocalInfo();
   void putHaloX(double haloX) { haloX_ = haloX; }
@@ -89,4 +85,9 @@ class MacroLocalInfo
   double GetHaloY() { return haloY_; }
   double GetChannelX() { return channelX_; }
   double GetChannelY() { return channelY_; }
+
+ private:
+  double haloX_, haloY_, channelX_, channelY_;
 };
+
+}  // namespace mpl

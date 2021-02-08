@@ -82,9 +82,9 @@ void Macro::Dump()
   //    channelX, channelY);
 }
 
-}  // namespace mpl
-
 MacroLocalInfo::MacroLocalInfo()
     : haloX_(0), haloY_(0), channelX_(0), channelY_(0)
 {
 }
+
+}  // namespace mpl
