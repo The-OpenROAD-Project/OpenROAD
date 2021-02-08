@@ -20,7 +20,7 @@
 #include "lefLayerPropParser.h"
 #include "lefin.h"
 
-namespace lefTechLayerRightWayOnGridOnly {
+namespace lefTechLayerType {
 namespace qi      = boost::spirit::qi;
 namespace ascii   = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
@@ -30,11 +30,10 @@ using boost::spirit::ascii::space_type;
 using boost::spirit::ascii::string;
 using boost::spirit::qi::lit;
 
-using qi::double_;
-using qi::int_;
-// using qi::_1;
 using ascii::space;
 using phoenix::ref;
+using qi::double_;
+using qi::int_;
 
 template <typename Iterator>
 bool parse(Iterator          first,
@@ -42,25 +41,26 @@ bool parse(Iterator          first,
            odb::dbTechLayer* layer,
            odb::lefin*       lefin)
 {
-  qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule
-      = (lit("RIGHTWAYONGRIDONLY")[boost::bind(
-             &odb::dbTechLayer::setRightWayOnGridOnly, layer, true)]
-         >> -lit("CHECKMASK")[boost::bind(
-             &odb::dbTechLayer::setCheckMask, layer, true)]
+  qi::rule<std::string::iterator, space_type> TypeRule
+      = (lit("TYPE")
+         >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setNWell, layer, true)]
+             | lit("PWELL")[boost::bind(
+                 &odb::dbTechLayer::setPWell, layer, true)])
          >> lit(";"));
 
-  bool valid = qi::phrase_parse(first, last, rightWayOnGridOnlyRule, space);
+  bool valid = qi::phrase_parse(first, last, TypeRule, space);
+
   return valid && first == last;
 }
-}  // namespace lefTechLayerRightWayOnGridOnly
+}  // namespace lefTechLayerType
 
 namespace odb {
 
-bool lefTechLayerRightWayOnGridOnlyParser::parse(std::string  s,
-                                                 dbTechLayer* layer,
-                                                 odb::lefin*  l)
+bool lefTechLayerTypeParser::parse(std::string  s,
+                                   dbTechLayer* layer,
+                                   odb::lefin*  l)
 {
-  return lefTechLayerRightWayOnGridOnly::parse(s.begin(), s.end(), layer, l);
+  return lefTechLayerType::parse(s.begin(), s.end(), layer, l);
 }
 
 }  // namespace odb

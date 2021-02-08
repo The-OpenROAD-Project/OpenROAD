@@ -97,6 +97,12 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (_flags._except_non_core_pins != rhs._flags._except_non_core_pins)
     return false;
 
+  if (_flags._n_well != rhs._flags._n_well)
+    return false;
+
+  if (_flags._p_well != rhs._flags._p_well)
+    return false;
+
   if (*_cut_class_rules_tbl != *rhs._cut_class_rules_tbl)
     return false;
 
@@ -284,6 +290,8 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_FIELD(_flags._right_way_on_grid_only);
   DIFF_FIELD(_flags._check_mask);
   DIFF_FIELD(_flags._except_non_core_pins);
+  DIFF_FIELD(_flags._n_well);
+  DIFF_FIELD(_flags._p_well);
   DIFF_TABLE(_cut_class_rules_tbl);
   DIFF_HASH_TABLE(_cut_class_rules_hash);
   DIFF_TABLE(_cut_spacing_table_orth_tbl);
@@ -352,6 +360,8 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._right_way_on_grid_only);
   DIFF_OUT_FIELD(_flags._check_mask);
   DIFF_OUT_FIELD(_flags._except_non_core_pins);
+  DIFF_OUT_FIELD(_flags._n_well);
+  DIFF_OUT_FIELD(_flags._p_well);
   DIFF_OUT_TABLE(_cut_class_rules_tbl);
   DIFF_OUT_HASH_TABLE(_cut_class_rules_hash);
   DIFF_OUT_TABLE(_cut_spacing_table_orth_tbl);
@@ -546,6 +556,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _flags._right_way_on_grid_only = r._flags._right_way_on_grid_only;
   _flags._check_mask             = r._flags._check_mask;
   _flags._except_non_core_pins   = r._flags._except_non_core_pins;
+  _flags._n_well                 = r._flags._n_well;
+  _flags._p_well                 = r._flags._p_well;
   _flags._spare_bits             = r._flags._spare_bits;
   _cut_class_rules_tbl           = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r._cut_class_rules_tbl);
@@ -919,6 +931,34 @@ bool dbTechLayer::isExceptNonCorePins() const
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
   return obj->_flags._except_non_core_pins;
+}
+
+void dbTechLayer::setNWell(bool _n_well)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->_flags._n_well = _n_well;
+}
+
+bool dbTechLayer::isNWell() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  return obj->_flags._n_well;
+}
+
+void dbTechLayer::setPWell(bool _p_well)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->_flags._p_well = _p_well;
+}
+
+bool dbTechLayer::isPWell() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  return obj->_flags._p_well;
 }
 
 // User Code Begin dbTechLayerPublicMethods

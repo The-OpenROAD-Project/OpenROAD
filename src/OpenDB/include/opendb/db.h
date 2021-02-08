@@ -6939,6 +6939,14 @@ class dbTechLayer : public dbObject
 
   bool isExceptNonCorePins() const;
 
+  void setNWell(bool _n_well);
+
+  bool isNWell() const;
+
+  void setPWell(bool _p_well);
+
+  bool isPWell() const;
+
   // User Code Begin dbTechLayer
   ///
   /// Get the layer name.
@@ -7529,9 +7537,12 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   // User Code Begin dbTechLayerSpacingEolRule
   static dbTechLayerSpacingEolRule* create(dbTechLayer* layer);
+
   static dbTechLayerSpacingEolRule* getTechLayerSpacingEolRule(
       dbTechLayer* inly,
       uint         dbid);
+
+  static void destroy(dbTechLayerSpacingEolRule* rule);
   // User Code End dbTechLayerSpacingEolRule
 };
 
