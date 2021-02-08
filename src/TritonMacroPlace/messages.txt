@@ -1,57 +1,32 @@
-MPL 0001 circuit.cpp:201           Cannot find rows in design
-MPL 0002 circuit.cpp:248           Missing Liberty Detected. TritonMP will place macros without timing information
-MPL 0003 circuit.cpp:288           Macro ({}) is Unplaced. Please use TD-MS-RePlAce to get a initial solution before executing TritonMP
-MPL 0004 circuit.cpp:326           Cannot find any macros in this design
-MPL 0005 circuit.cpp:330           NumMacros {}
-MPL 0006 circuit.cpp:344           NumEdgeInSta {}
-MPL 0007 circuit.cpp:345           NumVertexInSta {}
-MPL 0008 circuit.cpp:381           {} toplevel port is not placed! 
-MPL 0009 circuit.cpp:443           NumEastPins {}
-MPL 0010 circuit.cpp:444           NumWestPins {}
-MPL 0011 circuit.cpp:445           NumNorthPins {}
-MPL 0012 circuit.cpp:446           NumSouthPins {}
-MPL 0013 circuit.cpp:708           NumVertexSeqGraph {}
-MPL 0014 circuit.cpp:709           NumEdgeSeqGraph {}
-MPL 0015 circuit.cpp:943           The Macro Name must be in macro NameMap
-MPL 0016 circuit.cpp:969           {} not exists in PinGroupMap
-MPL 0017 circuit.cpp:1050          vertex pair edge map is wrong
-MPL 0018 circuit.cpp:1073          error occured in vertexPtrMap
-MPL 0019 circuit.cpp:1079          error occured in vertexPtrMap
-MPL 0020 circuit.cpp:1091          error occured in vertexPtrMap
-MPL 0021 circuit.cpp:1114          Metal 4 not exist! Macro snapping will not be applied on Metal4 pitch
-MPL 0022 circuit.cpp:1125          {} is not in MacroCircuit
-MPL 0023 circuit.cpp:1167          Macro Legalizer detects width is not enough
-MPL 0024 circuit.cpp:1170          Macro Legalizer detects height is not enough
-MPL 0025 circuit.cpp:1230          Cannot open file {}
-MPL 0026 circuit.cpp:1250          Cannot parse {}
-MPL 0027 circuit.cpp:1281          Cannot parse {}
-MPL 0028 circuit.cpp:1290          Cannot open file {}
-MPL 0029 circuit.cpp:1314          Cannot parse {}
-MPL 0030 circuit.cpp:1337          Cannot parse {}
-MPL 0031 circuit.cpp:1350          cannot open file: {}
-MPL 0032 circuit.cpp:1495          {} not exists in pinInstVertexMap
-MPL 0050 partition.cpp:170         Cannot Open BlkFile to write : {}
-MPL 0051 partition.cpp:239         Cannot Open NetFile to write : {}
-MPL 0052 partition.cpp:270         Cannot Open WtsFile to write : {}
-MPL 0053 partition.cpp:296         Cannot Open PlFIle to write : {}
-MPL 0054 partition.cpp:336         Partition: {} not exists MacroCell (macroPartMap)
-MPL 0055 partition.cpp:361         Cannot find macros {} in macroNameMap
-MPL 0056 partition.cpp:369         Cannot find macros {} in macroNameMap
-MPL 0057 partition.cpp:474         Cannot find macros {} in macroNameMap
-MPL 0058 partition.cpp:486         Cannot find macros {} in macroNameMap
-MPL 0059 partition.cpp:498         Cannot find macros {} in macroNameMap
-MPL 0060 partition.cpp:510         Cannot find macros {} in macroNameMap
-MPL 0061 partition.cpp:701         Parquet BBOX exceed the given area
-MPL 0062 partition.cpp:702         ParquetSolLayout {:g} {:g}
-MPL 0063 partition.cpp:703         TargetLayout {:g} {:g}
-MPL 0070 macroPlace.cpp:237        NumExtractedSets: {}
-MPL 0071 macroPlace.cpp:269        SetId: {}
-MPL 0072 macroPlace.cpp:270        WeightedWL: {:g}
-MPL 0073 macroPlace.cpp:279        NumFinalSols: {}
-MPL 0074 macroPlace.cpp:350        macro {} not exists in macroInstMap
-MPL 0075 macroPlace.cpp:358        Partition- {} already updated (UpdateMacroPartMap)
-MPL 0076 macroPlace.cpp:384        NumMacros {}
-MPL 0077 macroPlace.cpp:439        NumCutLines {}
-MPL 0078 macroPlace.cpp:449        CutLine {}
-MPL 0079 macroPlace.cpp:452        RoundUpCutLine {}
-MPL 0080 macroPlace.cpp:610        Impossible partiton found. Continue
+MPL 0001 circuit.cpp:191           no rows found.
+MPL 0002 circuit.cpp:232           Missing Liberty Detected. TritonMP will place macros without 
+MPL 0004 circuit.cpp:315           Cannot find any macros in this design
+MPL 0005 circuit.cpp:319           NumMacros {}
+MPL 0013 circuit.cpp:710           NumVertexSeqGraph {}
+MPL 0014 circuit.cpp:711           NumEdgeSeqGraph {}
+MPL 0015 circuit.cpp:950           The Macro Name must be in macro NameMap
+MPL 0022 circuit.cpp:1048          {} is not in MacroCircuit
+MPL 0023 circuit.cpp:1096          Macro Legalizer detects width is not enough
+MPL 0024 circuit.cpp:1099          Macro Legalizer detects height is not enough
+MPL 0025 circuit.cpp:1161          Cannot open file {}
+MPL 0026 circuit.cpp:1183          Cannot parse {}
+MPL 0027 circuit.cpp:1206          Cannot parse {}
+MPL 0028 circuit.cpp:1216          Cannot open file {}
+MPL 0029 circuit.cpp:1242          Cannot parse {}
+MPL 0030 circuit.cpp:1259          Cannot parse {}
+MPL 0031 circuit.cpp:1270          cannot open file: {}
+MPL 0050 partition.cpp:184         Cannot Open BlkFile to write : {}
+MPL 0051 partition.cpp:252         Cannot Open NetFile to write : {}
+MPL 0052 partition.cpp:282         Cannot Open WtsFile to write : {}
+MPL 0053 partition.cpp:307         Cannot Open PlFIle to write : {}
+MPL 0061 partition.cpp:737         Parquet BBOX exceed the given area
+MPL 0063 partition.cpp:743         TargetLayout {:g} {:g}
+MPL 0070 macroPlace.cpp:219        NumExtractedSets: {}
+MPL 0071 macroPlace.cpp:251        SetId: {}
+MPL 0072 macroPlace.cpp:252        WeightedWL: {:g}
+MPL 0073 macroPlace.cpp:261        NumFinalSols: {}
+MPL 0076 macroPlace.cpp:357        NumMacros {}
+MPL 0077 macroPlace.cpp:412        NumCutLines {}
+MPL 0078 macroPlace.cpp:422        CutLine {:.2f}
+MPL 0079 macroPlace.cpp:425        RoundUpCutLine {:.2f}
+MPL 0080 macroPlace.cpp:592        Impossible partiton found. Continue

@@ -1149,6 +1149,11 @@ void MacroCircuit::StubPlacer(double snapGrid)
   } while (isOverlap);
 }
 
+static bool stringExists(std::string varname, std::string str)
+{
+  return varname.find(str) != std::string::npos;
+}
+
 void MacroCircuit::ParseGlobalConfig(string fileName)
 {
   std::ifstream gConfFile(fileName);
@@ -1180,24 +1185,22 @@ void MacroCircuit::ParseGlobalConfig(string fileName)
 
     oStream >> varName >> val;
 
-#define IS_STRING_EXIST(varname, str) \
-  ((varName).find((str)) != std::string::npos)
-    if (IS_STRING_EXIST(varName, "FIN_PITCH")) {
+    if (stringExists(varName, "FIN_PITCH")) {
       // TODO
       // ?
-    } else if (IS_STRING_EXIST(varName, "ROW_HEIGHT")) {
+    } else if (stringExists(varName, "ROW_HEIGHT")) {
       // TODO
       // No Need
-    } else if (IS_STRING_EXIST(varName, "SITE_WIDTH")) {
+    } else if (stringExists(varName, "SITE_WIDTH")) {
       // TODO
       // No Need
-    } else if (IS_STRING_EXIST(varName, "HALO_WIDTH_V")) {
+    } else if (stringExists(varName, "HALO_WIDTH_V")) {
       haloY_ = val;
-    } else if (IS_STRING_EXIST(varName, "HALO_WIDTH_H")) {
+    } else if (stringExists(varName, "HALO_WIDTH_H")) {
       haloX_ = val;
-    } else if (IS_STRING_EXIST(varName, "CHANNEL_WIDTH_V")) {
+    } else if (stringExists(varName, "CHANNEL_WIDTH_V")) {
       channelY_ = val;
-    } else if (IS_STRING_EXIST(varName, "CHANNEL_WIDTH_H")) {
+    } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
       channelX_ = val;
     } else {
       log_->error(MPL, 27, "Cannot parse {}", varName);
@@ -1241,18 +1244,16 @@ void MacroCircuit::ParseLocalConfig(string fileName)
 
     oStream >> varName >> masterName >> val;
 
-#define IS_STRING_EXIST(varname, str) \
-  ((varName).find((str)) != std::string::npos)
-    if (IS_STRING_EXIST(varName, "ROW_HEIGHT")) {
+    if (stringExists(varName, "ROW_HEIGHT")) {
       // TODO
       // No Need
-    } else if (IS_STRING_EXIST(varName, "HALO_WIDTH_V")) {
+    } else if (stringExists(varName, "HALO_WIDTH_V")) {
       macroLocalMap[masterName].putHaloY(val);
-    } else if (IS_STRING_EXIST(varName, "HALO_WIDTH_H")) {
+    } else if (stringExists(varName, "HALO_WIDTH_H")) {
       macroLocalMap[masterName].putHaloX(val);
-    } else if (IS_STRING_EXIST(varName, "CHANNEL_WIDTH_V")) {
+    } else if (stringExists(varName, "CHANNEL_WIDTH_V")) {
       macroLocalMap[masterName].putChannelY(val);
-    } else if (IS_STRING_EXIST(varName, "CHANNEL_WIDTH_H")) {
+    } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
       macroLocalMap[masterName].putChannelX(val);
     } else {
       log_->error(MPL, 30, "Cannot parse {}", varName);
@@ -1399,7 +1400,7 @@ Vertex* MacroCircuit::GetVertex(sta::Pin* pin)
   if (vertPtr == pinInstVertexMap.end()) {
     log_->warn(MPL,
                32,
-               "{} not exists in pinInstVertexMap",
+               "pinInstVertexMap missing {}",
                sta_->network()->pathName(pin));
     return nullptr;
   }
