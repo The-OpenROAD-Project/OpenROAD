@@ -90,9 +90,7 @@ class MacroCircuit {
     std::vector< std::vector<int> > macroWeight;
 
     std::string GetEdgeName(mpl::Edge* edge);
-
     std::string GetVertexName(mpl::Vertex* vertex);
-
 
     // sta::Instance* --> macroStor's index stor
     std::unordered_map<sta::Instance*, int> macroInstMap;
@@ -177,8 +175,6 @@ class MacroCircuit {
 
     // either Pin*, Inst* -> vertexStor's index.
     std::unordered_map<void*, int> pinInstVertexMap;
-    std::unordered_map<mpl::Vertex*, int> vertexPtrMap;
-
 
     // adjacency matrix for whole(macro/pins/FFs) graph
     Eigen::SparseMatrix<int, Eigen::RowMajor> adjMatrix;
@@ -192,6 +188,8 @@ class MacroCircuit {
     // pair of <StartVertex*, EndVertex*> --> edgeStor's index
     std::unordered_map< std::pair<mpl::Vertex*, mpl::Vertex*>,
       int, PointerPairHash, PointerPairEqual > vertexPairEdgeMap;
+
+    int index(mpl::Vertex* vertex);
 
     // not used -cherry
     int GetPathWeight( mpl::Vertex* from,

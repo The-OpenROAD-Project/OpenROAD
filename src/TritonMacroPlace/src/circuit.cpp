@@ -492,11 +492,6 @@ void MacroCircuit::FillVertexEdge() {
     }
   }
   
-  // VertexPtrMap Initialize
-  for(auto& curVertex: vertexStor) {
-    vertexPtrMap[&curVertex] = &curVertex - &vertexStor[0];
-  }
-  
   adjMatrix.resize( vertexStor.size(), vertexStor.size() ); 
   vector<Triplet> triplets;
 
@@ -561,8 +556,7 @@ void MacroCircuit::FillVertexEdge() {
           continue;
         }
 
-        triplets.push_back(Triplet(vertexPtrMap[curVertex],
-                                      vertexPtrMap[adjVertex],1));
+        triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
       }
       delete fanout;
     }
@@ -591,8 +585,7 @@ void MacroCircuit::FillVertexEdge() {
           continue;
         }
 
-        triplets.push_back(Triplet(vertexPtrMap[curVertex],
-                                      vertexPtrMap[adjVertex], 1));
+        triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
       }
       delete fanin;
     }
@@ -681,8 +674,7 @@ void MacroCircuit::FillVertexEdge() {
         continue;
       }
 
-      triplets.push_back(Triplet(vertexPtrMap[startVertPtr],
-                                    vertexPtrMap[endVertPtr], 1));
+      triplets.push_back(Triplet(index(startVertPtr), index(endVertPtr), 1));
     }
   }
 
@@ -691,6 +683,12 @@ void MacroCircuit::FillVertexEdge() {
   log_->report("End Generating Sequential Graph"); 
   log_->info(MPL, 13, "NumVertexSeqGraph {}", vertexStor.size());
   log_->info(MPL, 14, "NumEdgeSeqGraph {}", adjMatrix.nonZeros());
+}
+
+int
+MacroCircuit::index(mpl::Vertex* vertex)
+{
+  return vertex - &vertexStor[0];
 }
 
 void MacroCircuit::CheckGraphInfo() {
@@ -713,8 +711,7 @@ void MacroCircuit::CheckGraphInfo() {
     vertexCover[i] = 0;
   }
   for(auto& curMacro: macroStor) {
-    auto vpPtr = vertexPtrMap.find(curMacro.ptr);
-    vertexCover[vpPtr->second] = 0;
+    vertexCover[index(curMacro.ptr)] = 0;
   }
 
 
@@ -777,8 +774,7 @@ void MacroCircuit::FillMacroPinAdjMatrix() {
   // to have macroIdx --> updated macroPinAdjMatrix's index.
   //
   for(auto& curMacro: macroStor) {
-    auto vpPtr = vertexPtrMap.find(curMacro.ptr);
-    int macroVertIdx = vpPtr->second;
+    int macroVertIdx = index(curMacro.ptr);
     searchVertIdx.push_back( macroVertIdx );
     macroPinAdjMatrixMap[macroVertIdx] = macroPinAdjIdx++;
   }
@@ -870,8 +866,7 @@ void MacroCircuit::FillMacroConnection() {
   }
 
   for(auto& curMacro: macroStor) {
-    auto vpPtr = vertexPtrMap.find(curMacro.ptr);
-    int macroVertIdx = vpPtr->second;
+    int macroVertIdx = index(curMacro.ptr);
     searchVertIdx.push_back( macroVertIdx );
   }
 
@@ -1049,17 +1044,8 @@ MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
 int MacroCircuit::GetPathWeightMatrix(
     SMatrix& mat, mpl::Vertex* from, mpl::Vertex* to) {
 
-  auto vpPtr = vertexPtrMap.find(from);
-  if( vpPtr == vertexPtrMap.end()) {
-    log_->error(MPL, 18, "error occured in vertexPtrMap");
-  }
-  int idx1 = vpPtr->second;
-  
-  auto vpPtr2 = vertexPtrMap.find(to);
-  if( vpPtr2 == vertexPtrMap.end()) {
-    log_->error(MPL, 19, "error occured in vertexPtrMap");
-  }
-  int idx2 = vpPtr2->second;
+  int idx1 = index(from);
+  int idx2 = index(to);
 
   return mat.coeff(idx1, idx2);
 }
@@ -1067,11 +1053,7 @@ int MacroCircuit::GetPathWeightMatrix(
 int MacroCircuit::GetPathWeightMatrix(
     SMatrix& mat, mpl::Vertex* from, int toIdx) {
 
-  auto vpPtr = vertexPtrMap.find(from);
-  if( vpPtr == vertexPtrMap.end()) {
-    log_->error(MPL, 20, "error occured in vertexPtrMap");
-  }
-  int idx1 = vpPtr->second;
+  int idx1 = index(from);
   return mat.coeff(idx1, toIdx);
 }
 
