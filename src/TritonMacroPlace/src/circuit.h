@@ -190,9 +190,6 @@ class MacroCircuit
 
   int index(mpl::Vertex* vertex);
 
-  // not used -cherry
-  int GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit);
-
   // Matrix version
   int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
                           mpl::Vertex* from,
