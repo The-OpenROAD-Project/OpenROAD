@@ -181,7 +181,7 @@ void Partition::WriteBlkFile( string blkName ) {
   feed << "NumTerminals : 4" << endl << endl;
 
   for(auto& curMacro : macroStor) {
-    feed << curMacro.name << " hardrectilinear 4 ";
+    feed << curMacro.name() << " hardrectilinear 4 ";
     feed << "(" << curMacro.lx << ", " << curMacro.ly << ") ";
     feed << "(" << curMacro.lx << ", " << curMacro.ly + curMacro.h << ") ";
     feed << "(" << curMacro.lx + curMacro.w << ", " << curMacro.ly + curMacro.h << ") ";
@@ -212,7 +212,7 @@ void Partition::WriteBlkFile( string blkName ) {
 
 string Partition::GetName(int macroIdx ) {
   if( macroIdx < macroStor.size()) {
-      return macroStor[macroIdx].name;
+    return macroStor[macroIdx].name();
   }
   else {
     if( macroIdx == EAST_IDX ) {
@@ -303,7 +303,7 @@ void Partition::WritePlFile( string plName ) {
   feed << "# Platform" << endl << endl;
 
   for(auto& curMacro : macroStor) {
-    feed << curMacro.name << " 0 0" << endl;
+    feed << curMacro.name() << " 0 0" << endl;
   }
 
   feed << "East " << lx + width << " " << ly + height/2.0 << endl;
@@ -356,17 +356,19 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
 
       // from: macro case
       if ( i < macroStor.size() ) {
-        auto mPtr = mckt.macroNameMap.find( macroStor[i].name );
+        auto mPtr = mckt.macroNameMap.find( macroStor[i].name() );
         if( mPtr == mckt.macroNameMap.end()) {
-          log_->error(MPL, 55, "Cannot find macros {} in macroNameMap", macroStor[i].name);
+          log_->error(MPL, 55, "Cannot find macros {} in macroNameMap",
+                      macroStor[i].name());
         }
         int globalIdx1 = mPtr->second;
 
         // to macro case
         if( j < macroStor.size() ) {
-          auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
+          auto mPtr = mckt.macroNameMap.find( macroStor[j].name() );
           if( mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL, 56, "Cannot find macros {} in macroNameMap", macroStor[j].name);
+            log_->error(MPL, 56, "Cannot find macros {} in macroNameMap",
+                        macroStor[j].name());
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j ] = mckt.macroWeight[globalIdx1][globalIdx2];
@@ -379,7 +381,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::NW );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 westSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -388,7 +390,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::SW );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 westSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -402,7 +404,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::NE );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -411,7 +413,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::SE );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -425,7 +427,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::NE );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 northSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -434,7 +436,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::NW );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 northSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -448,7 +450,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::SE );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 southSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -457,7 +459,7 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
             auto mpPtr = macroPartMap.find( PartClass::SW );
             if( mpPtr != macroPartMap.end() ) {
               for(auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name];
+                int curGlobalIdx = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
                 southSum += mckt.macroWeight[globalIdx1][curGlobalIdx]; 
               }
             }
@@ -469,9 +471,10 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
       else if( i == WEST_IDX ){
         // to Macro
         if( j < macroStor.size() ) {
-          auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
+          auto mPtr = mckt.macroNameMap.find( macroStor[j].name() );
           if( mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL, 57, "Cannot find macros {} in macroNameMap", macroStor[j].name);
+            log_->error(MPL, 57, "Cannot find macros {} in macroNameMap",
+                        macroStor[j].name());
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -481,9 +484,10 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
       else if( i == EAST_IDX) {
         // to Macro
         if( j < macroStor.size() ) {
-          auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
+          auto mPtr = mckt.macroNameMap.find( macroStor[j].name() );
           if( mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL, 58, "Cannot find macros {} in macroNameMap", macroStor[j].name);
+            log_->error(MPL, 58, "Cannot find macros {} in macroNameMap", \
+                        macroStor[j].name());
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -493,9 +497,10 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
       else if(i == NORTH_IDX) {
         // to Macro
         if( j < macroStor.size() ) {
-          auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
+          auto mPtr = mckt.macroNameMap.find( macroStor[j].name() );
           if( mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL, 59, "Cannot find macros {} in macroNameMap", macroStor[j].name);
+            log_->error(MPL, 59, "Cannot find macros {} in macroNameMap",
+                        macroStor[j].name());
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -505,9 +510,10 @@ void Partition::FillNetlistTable(MacroCircuit& mckt,
       else if(i == SOUTH_IDX ) {
         // to Macro
         if( j < macroStor.size() ) {
-          auto mPtr = mckt.macroNameMap.find( macroStor[j].name );
+          auto mPtr = mckt.macroNameMap.find( macroStor[j].name() );
           if( mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL, 60, "Cannot find macros {} in macroNameMap", macroStor[j].name);
+            log_->error(MPL, 60, "Cannot find macros {} in macroNameMap",
+                        macroStor[j].name());
           }
           int globalIdx2 = mPtr->second;
           netTable[ i*(macroStor.size()+4) + j] = 
@@ -555,7 +561,7 @@ void Partition::FillNetlistTableDesc() {
 
 void Partition::UpdateMacroCoordi(MacroCircuit& mckt) {
   for(auto& curPartMacro : macroStor) {
-    auto mPtr = mckt.macroNameMap.find(curPartMacro.name);
+    auto mPtr = mckt.macroNameMap.find(curPartMacro.name());
     int macroIdx = mPtr->second;
     curPartMacro.lx = mckt.macroStor[macroIdx].lx;
     curPartMacro.ly = mckt.macroStor[macroIdx].ly;
@@ -620,9 +626,10 @@ bool Partition::DoAnneal() {
     double padMacroWidth = curMacro.w + 2*(curMacro.haloX + curMacro.channelX);
     double padMacroHeight = curMacro.h + 2*(curMacro.haloY + curMacro.channelY);
 
-    Node tmpMacro ( std::string(curMacro.name.c_str()) , padMacroWidth * padMacroHeight, 
-        padMacroWidth/padMacroHeight, padMacroWidth/padMacroHeight,
-        &curMacro - &macroStor[0], false);
+    Node tmpMacro ( std::string(curMacro.name().c_str()),
+                    padMacroWidth * padMacroHeight, 
+                    padMacroWidth/padMacroHeight, padMacroWidth/padMacroHeight,
+                    &curMacro - &macroStor[0], false);
 
     tmpMacro.addSubBlockIndex(&curMacro - &macroStor[0]);
 
@@ -791,8 +798,8 @@ void Partition::PrintSetFormat(FILE* fp) {
   fprintf(fp,"    HEIGHT %f ;\n", height);
   for(auto& curMacro : macroStor) {
     fprintf(fp,"    MACRO %s %s %f %f %f %f ;\n", 
-        curMacro.name.c_str(), curMacro.type.c_str(), 
-        curMacro.lx, curMacro.ly, curMacro.w, curMacro.h);
+            curMacro.name().c_str(), curMacro.type().c_str(), 
+            curMacro.lx, curMacro.ly, curMacro.w, curMacro.h);
   }
 
   if( netTable ) {

@@ -48,8 +48,6 @@ namespace mpl {
 class Vertex;
 class Macro {
   public:
-    std::string name;
-    std::string type;  
     double lx, ly;
     double w, h;
     double haloX, haloY; 
@@ -57,13 +55,14 @@ class Macro {
     Vertex* ptr;
     sta::Instance* staInstPtr;
     odb::dbInst* dbInstPtr;
-    Macro( std::string _name, std::string _type, 
-        double _lx, double _ly, 
+    Macro(double _lx, double _ly, 
         double _w, double _h,
         double _haloX, double _haloY, 
         double _channelX, double _channelY,
         Vertex* _ptr, sta::Instance* _staInstPtr,
         odb::dbInst* _dbInstPtr);
+    std::string name();
+    std::string type();
     void Dump(); 
 };
 

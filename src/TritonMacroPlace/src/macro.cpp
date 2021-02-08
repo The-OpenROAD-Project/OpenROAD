@@ -33,24 +33,30 @@
 
 #include "macro.h"
 #include "openroad/OpenRoad.hh"
-#include <iostream>
+#include "opendb/db.h"
 
 namespace mpl {
 
-Macro::Macro( std::string _name, std::string _type, 
-        double _lx, double _ly, 
+Macro::Macro(double _lx, double _ly, 
         double _w, double _h,
         double _haloX, double _haloY, 
         double _channelX, double _channelY,
         Vertex* _ptr, sta::Instance* _staInstPtr,
         odb::dbInst* _dbInstPtr) 
-      : name(_name), type(_type), 
-      lx(_lx), ly(_ly), 
+      : lx(_lx), ly(_ly), 
       w(_w), h(_h),
       haloX(_haloX), haloY(_haloY),
       channelX(_channelX), channelY(_channelY), 
       ptr(_ptr), staInstPtr(_staInstPtr),
       dbInstPtr(_dbInstPtr) {}
+
+std::string Macro::name() {
+  return dbInstPtr->getName();
+}
+
+std::string Macro::type() {
+  return dbInstPtr->getMaster()->getName();
+}
 
 void Macro::Dump() {
   // debugPrint(log_, MPL, "tritonmp", 5, "MACRO {} {} {} {} {} {}",

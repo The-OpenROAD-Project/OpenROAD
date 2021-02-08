@@ -301,15 +301,13 @@ void MacroCircuit::FillMacroStor() {
     inst->getLocation( placeX, placeY );
      
     mpl::Macro 
-      tmpMacro( inst->getConstName(), 
-          inst->getMaster()->getConstName(), 
-          1.0*placeX/dbu, 
-          1.0*placeY/dbu,
-          1.0*inst->getBBox()->getDX()/dbu, 
-          1.0*inst->getBBox()->getDY()/dbu, 
-          curHaloX, curHaloY, 
-          curChannelX, curChannelY,  
-          nullptr, nullptr, inst );
+      tmpMacro(1.0*placeX/dbu, 
+               1.0*placeY/dbu,
+               1.0*inst->getBBox()->getDX()/dbu, 
+               1.0*inst->getBBox()->getDY()/dbu, 
+               curHaloX, curHaloY, 
+               curChannelX, curChannelY,  
+               nullptr, nullptr, inst );
     macroStor.push_back( tmpMacro ); 
   }
 
@@ -1082,9 +1080,9 @@ void MacroCircuit::UpdateMacroCoordi( mpl::Partition& part) {
     / static_cast<float>(tech->getDbUnitsPerMicron());
 
   for(auto& curMacro : part.macroStor) {
-    auto mnPtr = macroNameMap.find(curMacro.name);
+    auto mnPtr = macroNameMap.find(curMacro.name());
     if( mnPtr == macroNameMap.end() ) {
-      log_->error(MPL, 22, "{} is not in MacroCircuit", curMacro.name);
+      log_->error(MPL, 22, "{} is not in MacroCircuit", curMacro.name());
     }
 
     // update macro coordi
@@ -1333,7 +1331,7 @@ Plot(string fileName, vector<mpl::Partition>& set) {
       << " fc rgb \"gold\"" << endl;
 
     // name
-    gpOut<<"set label '"<< curMacro.name 
+    gpOut<<"set label '"<< curMacro.name() 
       << "(" << &curMacro - &macroStor[0] << ")"
       << "'noenhanced at "
       << curMacro.lx + curMacro.w/5<<" , "

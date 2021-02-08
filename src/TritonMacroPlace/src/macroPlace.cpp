@@ -329,7 +329,7 @@ static void UpdateMacroPartMap(
       auto miPtr = mckt.macroInstMap.find( curMacro.staInstPtr );
       if( miPtr == mckt.macroInstMap.end() ) {
         log->error(MPL, 74, "macro {} not exists in macroInstMap", 
-            curMacro.name);
+                   curMacro.name());
       }
       curMacroStor.push_back( miPtr->second) ;
     }
@@ -523,19 +523,16 @@ static vector<pair<Partition, Partition>> GetPart(
     for(auto& curMacro : partition.macroStor) {
       int i=&curMacro - &partition.macroStor[0];
       if( chkArr[i] == 1 ) {
-        lowerPart.macroStor.push_back( 
-            Macro( curMacro.name, curMacro.type,
-              curMacro.lx, curMacro.ly,
-              curMacro.w, curMacro.h,
-              curMacro.haloX, curMacro.haloY,
-              curMacro.channelX, curMacro.channelY, 
-              curMacro.ptr, curMacro.staInstPtr,
-              curMacro.dbInstPtr )) ; 
+        lowerPart.macroStor.push_back(Macro(curMacro.lx, curMacro.ly,
+                                            curMacro.w, curMacro.h,
+                                            curMacro.haloX, curMacro.haloY,
+                                            curMacro.channelX, curMacro.channelY, 
+                                            curMacro.ptr, curMacro.staInstPtr,
+                                            curMacro.dbInstPtr )) ; 
       }
       else if( chkArr[i] == 2 ) {
         upperPart.macroStor.push_back(
-            Macro( curMacro.name, curMacro.type,
-              (isHorizontal)? curMacro.lx-cutLine : curMacro.lx, 
+            Macro((isHorizontal)? curMacro.lx-cutLine : curMacro.lx, 
               (isHorizontal)? curMacro.ly : curMacro.ly-cutLine,
               curMacro.w, curMacro.h,
               curMacro.haloX, curMacro.haloY,
@@ -551,8 +548,7 @@ static vector<pair<Partition, Partition>> GetPart(
 
         if( centerPoint < cutLine ) {
           lowerPart.macroStor.push_back( 
-              Macro( curMacro.name, curMacro.type,
-                curMacro.lx, curMacro.ly,
+              Macro(curMacro.lx, curMacro.ly,
                 curMacro.w, curMacro.h,
                 curMacro.haloX, curMacro.haloY,
                 curMacro.channelX, curMacro.channelY, 
@@ -562,8 +558,7 @@ static vector<pair<Partition, Partition>> GetPart(
         }
         else {
           upperPart.macroStor.push_back(
-              Macro( curMacro.name, curMacro.type,
-                (isHorizontal)? curMacro.lx-cutLine : curMacro.lx, 
+              Macro((isHorizontal)? curMacro.lx-cutLine : curMacro.lx, 
                 (isHorizontal)? curMacro.ly : curMacro.ly-cutLine,
                 curMacro.w, curMacro.h,
                 curMacro.haloX, curMacro.haloY,
