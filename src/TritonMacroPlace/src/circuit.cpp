@@ -78,13 +78,13 @@ using namespace odb;
 
 using sta::VertexIterator;
 
-static bool isNotVisited(mpl::Vertex* vert, vector<mpl::Vertex*>& path);
+static bool isNotVisited(Vertex* vert, vector<Vertex*>& path);
 
-static bool isTerminal(mpl::Vertex* vert, mpl::Vertex* target);
+static bool isTerminal(Vertex* vert, Vertex* target);
 
 static size_t TrimWhiteSpace(char* out, size_t len, const char* str);
 
-static mpl::PinGroupLocation getPinGroupLocation(int cx,
+static PinGroupLocation getPinGroupLocation(int cx,
                                                  int cy,
                                                  int dieLx,
                                                  int dieLy,
@@ -297,7 +297,7 @@ void MacroCircuit::FillMacroStor()
     int placeX, placeY;
     inst->getLocation(placeX, placeY);
 
-    mpl::Macro tmpMacro(1.0 * placeX / dbu,
+    Macro tmpMacro(1.0 * placeX / dbu,
                         1.0 * placeY / dbu,
                         1.0 * inst->getBBox()->getDX() / dbu,
                         1.0 * inst->getBBox()->getDY() / dbu,
@@ -334,10 +334,7 @@ void MacroCircuit::FillPinGroup()
   int dbuCoreUx = static_cast<int>(round(ux_ * dbu));
   int dbuCoreUy = static_cast<int>(round(uy_ * dbu));
 
-  // never makes sense to 'using' inside a function -cherry
-  using mpl::PinGroupLocation;
-
-  // this is always four array.
+  // Four sides north/south/east/west.
   pinGroupStor.resize(4);
 
   // save PG-Class info in below
@@ -454,7 +451,7 @@ void MacroCircuit::FillVertexEdge()
   for (int i = 0; i < 4; i++) {
     pinInstVertexMap[(void*) &pinGroupStor[i]] = vertexStor.size();
 
-    vertexStor.push_back(mpl::Vertex(&pinGroupStor[i]));
+    vertexStor.push_back(Vertex(&pinGroupStor[i]));
   }
 
   sta_->ensureGraph();
@@ -491,7 +488,7 @@ void MacroCircuit::FillVertexEdge()
 
     if (vertPtr == pinInstVertexMap.end()) {
       pinInstVertexMap[vertex.first] = vertexStor.size();
-      vertexStor.push_back(mpl::Vertex(vertex.first, vertex.second));
+      vertexStor.push_back(Vertex(vertex.first, vertex.second));
     }
   }
 
@@ -531,7 +528,7 @@ void MacroCircuit::FillVertexEdge()
     pinStor.push_back(pin);
 
     sta::PortDirection* dir = sta_->network()->direction(pin);
-    mpl::Vertex* curVertex = GetVertex(pin);
+    Vertex* curVertex = GetVertex(pin);
 
     // Query for get_fanin/get_fanout
     if (dir->isAnyOutput()) {
@@ -548,7 +545,7 @@ void MacroCircuit::FillVertexEdge()
           }
         }
 
-        mpl::Vertex* adjVertex = GetVertex(adjPin);
+        Vertex* adjVertex = GetVertex(adjPin);
 
         if (adjVertex == curVertex) {
           continue;
@@ -561,9 +558,9 @@ void MacroCircuit::FillVertexEdge()
         }
 
         triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
-        debugPrint(log_, MPL, "adj", 1, "fanout {}:{} -> {}:{}",
-                   curVertex->name(network), index(curVertex),
-                   adjVertex->name(network), index(adjVertex));
+        debugPrint(log_, MPL, "adj", 1, "fanout {} -> {}",
+                   curVertex->name(network),
+                   adjVertex->name(network));
       }
       delete fanout;
     } else {
@@ -580,7 +577,7 @@ void MacroCircuit::FillVertexEdge()
           }
         }
 
-        mpl::Vertex* adjVertex = GetVertex(adjPin);
+        Vertex* adjVertex = GetVertex(adjPin);
 
         if (adjVertex == curVertex) {
           continue;
@@ -593,9 +590,9 @@ void MacroCircuit::FillVertexEdge()
         }
 
         triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
-        debugPrint(log_, MPL, "adj", 1, "fanin {}:{} -> {}:{}",
-                   curVertex->name(network), index(curVertex),
-                   adjVertex->name(network), index(adjVertex));
+        debugPrint(log_, MPL, "adj", 1, "fanin {} -> {}",
+                   curVertex->name(network),
+                   adjVertex->name(network));
       }
       delete fanin;
     }
@@ -689,8 +686,8 @@ void MacroCircuit::FillVertexEdge()
       sta::Pin* startPin = startVert->pin();
       sta::Pin* endPin = endVert->pin();
 
-      mpl::Vertex* startVertPtr = GetVertex(startPin);
-      mpl::Vertex* endVertPtr = GetVertex(endPin);
+      Vertex* startVertPtr = GetVertex(startPin);
+      Vertex* endVertPtr = GetVertex(endPin);
 
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
       // OpenSTA could return Null Vertex:
@@ -701,9 +698,9 @@ void MacroCircuit::FillVertexEdge()
       }
 
       triplets.push_back(Triplet(index(startVertPtr), index(endVertPtr), 1));
-      debugPrint(log_, MPL, "adj", 1, "path {}:{} -> {}:{}",
-                 startVertPtr->name(network), index(startVertPtr),
-                 endVertPtr->name(network), index(endVertPtr));
+      debugPrint(log_, MPL, "adj", 1, "path {} -> {}",
+                 startVertPtr->name(network),
+                 endVertPtr->name(network));
     }
   }
 
@@ -714,14 +711,14 @@ void MacroCircuit::FillVertexEdge()
   log_->info(MPL, 14, "NumEdgeSeqGraph {}", adjMatrix.nonZeros());
 }
 
-int MacroCircuit::index(mpl::Vertex* vertex)
+int MacroCircuit::index(Vertex* vertex)
 {
   return vertex - &vertexStor[0];
 }
 
 void MacroCircuit::CheckGraphInfo()
 {
-  vector<mpl::Vertex*> searchVert;
+  vector<Vertex*> searchVert;
 
   for (auto& curMacro : macroStor) {
     searchVert.push_back(curMacro.ptr);
@@ -742,7 +739,7 @@ void MacroCircuit::CheckGraphInfo()
   }
 
   for (int level = 1; level <= CHECK_LEVEL_MAX; level++) {
-    vector<mpl::Vertex*> newVertex;
+    vector<Vertex*> newVertex;
 
     for (auto& curVertex1 : searchVert) {
       // for all other vertex
@@ -814,6 +811,7 @@ void MacroCircuit::FillMacroPinAdjMatrix()
 
   // return adjMatrix triplet candidates.
   vector<Triplet> triplets;
+  sta::Network *network = sta_->network();
 
   // for each macro/pin vertex
   for (auto& startVertIdx : searchVertIdx) {
@@ -875,6 +873,11 @@ void MacroCircuit::FillMacroPinAdjMatrix()
         triplets.push_back(Triplet(macroPinAdjMatrixMap[startVertIdx],
                                    macroPinAdjMatrixMap[curCandiVert],
                                    vertexWeight[curCandiVert]));
+        // Matrix is symmetric so only print top entries.
+        if (startVertIdx < curCandiVert)
+          debugPrint(log_, MPL, "pin_adj", 1, "pin adj {} -> {}",
+                     vertexStor[startVertIdx].name(network),
+                     vertexStor[curCandiVert].name(network));
       }
     }
   }
@@ -993,8 +996,8 @@ pair<void*, VertexType> MacroCircuit::GetPtrClassPair(sta::Pin* pin)
 }
 
 int MacroCircuit::GetPathWeightMatrix(SMatrix& mat,
-                                      mpl::Vertex* from,
-                                      mpl::Vertex* to)
+                                      Vertex* from,
+                                      Vertex* to)
 {
   int idx1 = index(from);
   int idx2 = index(to);
@@ -1003,7 +1006,7 @@ int MacroCircuit::GetPathWeightMatrix(SMatrix& mat,
 }
 
 int MacroCircuit::GetPathWeightMatrix(SMatrix& mat,
-                                      mpl::Vertex* from,
+                                      Vertex* from,
                                       int toIdx)
 {
   int idx1 = index(from);
@@ -1023,7 +1026,7 @@ static float getRoundUpFloat(float x, float unit)
 //
 // Update Macro Location
 // from partition
-void MacroCircuit::UpdateMacroCoordi(mpl::Partition& part)
+void MacroCircuit::UpdateMacroCoordi(Partition& part)
 {
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer(4);
@@ -1258,7 +1261,7 @@ void MacroCircuit::ParseLocalConfig(string fileName)
   log_->report("End Parsing Local Config");
 }
 
-void MacroCircuit::Plot(string fileName, vector<mpl::Partition>& set)
+void MacroCircuit::Plot(string fileName, vector<Partition>& set)
 {
   log_->report("OutPut Plot file: {}", fileName);
   std::ofstream gpOut(fileName);
@@ -1303,7 +1306,7 @@ void MacroCircuit::Plot(string fileName, vector<mpl::Partition>& set)
   gpOut.close();
 }
 
-void MacroCircuit::UpdateNetlist(mpl::Partition& layout)
+void MacroCircuit::UpdateNetlist(Partition& layout)
 {
   if (netTable_) {
     delete[] netTable_;
@@ -1389,7 +1392,7 @@ double MacroCircuit::GetWeightedWL()
   return wwl;
 }
 
-mpl::Vertex* MacroCircuit::GetVertex(sta::Pin* pin)
+Vertex* MacroCircuit::GetVertex(sta::Pin* pin)
 {
   pair<void*, VertexType> vertInfo = GetPtrClassPair(pin);
   auto vertPtr = pinInstVertexMap.find(vertInfo.first);
@@ -1412,7 +1415,7 @@ Layout::Layout(double lx, double ly, double ux, double uy)
 {
 }
 
-Layout::Layout(Layout& orig, mpl::Partition& part)
+Layout::Layout(Layout& orig, Partition& part)
     : lx_(part.lx),
       ly_(part.ly),
       ux_(part.lx + part.width),
@@ -1443,7 +1446,7 @@ void Layout::setUy(double uy)
 ///////////////////////////////////////////////////
 //  static funcs
 
-static bool isNotVisited(mpl::Vertex* vert, vector<mpl::Vertex*>& path)
+static bool isNotVisited(Vertex* vert, vector<Vertex*>& path)
 {
   for (auto& curVert : path) {
     if (curVert == vert) {
@@ -1453,7 +1456,7 @@ static bool isNotVisited(mpl::Vertex* vert, vector<mpl::Vertex*>& path)
   return true;
 }
 
-static bool isTerminal(mpl::Vertex* vert, mpl::Vertex* target)
+static bool isTerminal(Vertex* vert, Vertex* target)
 {
   return (vert != target
           && (vert->vertexType() == VertexType::PinGroupType
@@ -1501,12 +1504,12 @@ static size_t TrimWhiteSpace(char* out, size_t len, const char* str)
   return out_size;
 }
 
-static mpl::PinGroupLocation getPinGroupLocation(int cx,
-                                                 int cy,
-                                                 int dieLx,
-                                                 int dieLy,
-                                                 int dieUx,
-                                                 int dieUy)
+static PinGroupLocation getPinGroupLocation(int cx,
+                                            int cy,
+                                            int dieLx,
+                                            int dieLy,
+                                            int dieUx,
+                                            int dieUy)
 {
   int lxDx = abs(cx - dieLx);
   int uxDx = abs(cx - dieUx);

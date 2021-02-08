@@ -58,8 +58,8 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 
 static void UpdateMacroPartMap(
     MacroCircuit& mckt,
-    mpl::Partition& part,
-    unordered_map<mpl::PartClass, vector<int>, PartClassHash, PartClassEqual>&
+    Partition& part,
+    unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap,
     utl::Logger* log);
 
@@ -261,7 +261,7 @@ void MacroCircuit::PlaceMacros(int& solCount)
   log_->info(MPL, 73, "NumFinalSols: {}", solCount);
 
   // bestset DEF writing
-  std::vector<mpl::Partition> bestSet = allSets[bestSetIdx];
+  std::vector<Partition> bestSet = allSets[bestSetIdx];
 
   for (auto& curBestPart : bestSet) {
     UpdateMacroCoordi(curBestPart);
@@ -308,8 +308,8 @@ static void CutRoundUp(const Layout& layout,
 // second: macro candidates.
 static void UpdateMacroPartMap(
     MacroCircuit& mckt,
-    mpl::Partition& part,
-    unordered_map<mpl::PartClass, vector<int>, PartClassHash, PartClassEqual>&
+    Partition& part,
+    unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap,
     utl::Logger* log)
 {
@@ -469,7 +469,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 
     // Fill in the Partitioning information
     PartClass lClass = None, uClass = None;
-    if (partition.partClass == mpl::PartClass::ALL) {
+    if (partition.partClass == PartClass::ALL) {
       lClass = (isHorizontal) ? W : S;
       uClass = (isHorizontal) ? E : N;
     }

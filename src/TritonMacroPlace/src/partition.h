@@ -127,12 +127,12 @@ class Partition
 
 struct PartClassHash
 {
-  std::size_t operator()(const mpl::PartClass& k) const { return k; }
+  std::size_t operator()(const PartClass& k) const { return k; }
 };
 
 struct PartClassEqual
 {
-  bool operator()(const mpl::PartClass& p1, const mpl::PartClass& p2) const
+  bool operator()(const PartClass& p1, const PartClass& p2) const
   {
     return p1 == p2;
   }
