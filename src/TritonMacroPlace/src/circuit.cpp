@@ -339,10 +339,10 @@ void MacroCircuit::FillPinGroup()
   dbTech* tech = db_->getTech();
   const double dbu = tech->getDbUnitsPerMicron();
 
-  int dbuCoreLx = static_cast<int>(round(lx_ * dbu));
-  int dbuCoreLy = static_cast<int>(round(ly_ * dbu));
-  int dbuCoreUx = static_cast<int>(round(ux_ * dbu));
-  int dbuCoreUy = static_cast<int>(round(uy_ * dbu));
+  int dbuCoreLx = round(lx_ * dbu);
+  int dbuCoreLy = round(ly_ * dbu);
+  int dbuCoreUx = round(ux_ * dbu);
+  int dbuCoreUy = round(uy_ * dbu);
 
   // Four sides north/south/east/west.
   pinGroupStor.resize(4);
@@ -368,11 +368,7 @@ void MacroCircuit::FillPinGroup()
     // unplaced BTerms
     if (ppStatus == dbPlacementStatus::UNPLACED
         || ppStatus == dbPlacementStatus::NONE) {
-      log_->warn(MPL,
-                 8,
-                 "{} toplevel port is not placed! "
-                 "TritonMP will regard {} is placed on West side",
-                 bTerm->getConstName(),
+      log_->warn(MPL, 8, "pin {} is not placed. Using west.",
                  bTerm->getConstName());
 
       // update pinGroups on West
@@ -392,6 +388,8 @@ void MacroCircuit::FillPinGroup()
         int boxUx = pin_bbox.xMax();
         int boxUy = pin_bbox.yMax();
 
+        // This is broken. It assumes the pins are on the core boundary.
+        // It should look for the nearest edge to the pin center. -cherry
         if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
           pgLoc = West;
           isAxisFound = true;
