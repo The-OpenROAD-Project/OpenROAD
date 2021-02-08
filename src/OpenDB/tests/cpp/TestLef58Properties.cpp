@@ -169,6 +169,10 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(spacing2.first==0.7*distFactor );
     BOOST_TEST(spacing2.second==def->getDefault());
 
+    auto poly = dbTech->findLayer("poly");
+    BOOST_TEST(poly->isNWell());
+    BOOST_TEST(!poly->isPWell());
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
