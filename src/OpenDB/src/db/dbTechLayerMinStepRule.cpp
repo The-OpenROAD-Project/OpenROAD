@@ -56,6 +56,9 @@ bool _dbTechLayerMinStepRule::operator==(
   if (_flags._min_adj_length1_valid != rhs._flags._min_adj_length1_valid)
     return false;
 
+  if (_flags._no_between_eol != rhs._flags._no_between_eol)
+    return false;
+
   if (_flags._min_adj_length2_valid != rhs._flags._min_adj_length2_valid)
     return false;
 
@@ -78,6 +81,9 @@ bool _dbTechLayerMinStepRule::operator==(
     return false;
 
   if (_min_adj_length2 != rhs._min_adj_length2)
+    return false;
+
+  if (_eol_width != rhs._eol_width)
     return false;
 
   if (_min_between_length != rhs._min_between_length)
@@ -103,6 +109,7 @@ void _dbTechLayerMinStepRule::differences(
 
   DIFF_FIELD(_flags._max_edges_valid);
   DIFF_FIELD(_flags._min_adj_length1_valid);
+  DIFF_FIELD(_flags._no_between_eol);
   DIFF_FIELD(_flags._min_adj_length2_valid);
   DIFF_FIELD(_flags._convex_corner);
   DIFF_FIELD(_flags._min_between_length_valid);
@@ -111,6 +118,7 @@ void _dbTechLayerMinStepRule::differences(
   DIFF_FIELD(_max_edges);
   DIFF_FIELD(_min_adj_length1);
   DIFF_FIELD(_min_adj_length2);
+  DIFF_FIELD(_eol_width);
   DIFF_FIELD(_min_between_length);
   // User Code Begin differences
   // User Code End differences
@@ -123,6 +131,7 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._max_edges_valid);
   DIFF_OUT_FIELD(_flags._min_adj_length1_valid);
+  DIFF_OUT_FIELD(_flags._no_between_eol);
   DIFF_OUT_FIELD(_flags._min_adj_length2_valid);
   DIFF_OUT_FIELD(_flags._convex_corner);
   DIFF_OUT_FIELD(_flags._min_between_length_valid);
@@ -131,6 +140,7 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_max_edges);
   DIFF_OUT_FIELD(_min_adj_length1);
   DIFF_OUT_FIELD(_min_adj_length2);
+  DIFF_OUT_FIELD(_eol_width);
   DIFF_OUT_FIELD(_min_between_length);
 
   // User Code Begin out
@@ -150,6 +160,7 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
 {
   _flags._max_edges_valid          = r._flags._max_edges_valid;
   _flags._min_adj_length1_valid    = r._flags._min_adj_length1_valid;
+  _flags._no_between_eol           = r._flags._no_between_eol;
   _flags._min_adj_length2_valid    = r._flags._min_adj_length2_valid;
   _flags._convex_corner            = r._flags._convex_corner;
   _flags._min_between_length_valid = r._flags._min_between_length_valid;
@@ -159,6 +170,7 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
   _max_edges                       = r._max_edges;
   _min_adj_length1                 = r._min_adj_length1;
   _min_adj_length2                 = r._min_adj_length2;
+  _eol_width                       = r._eol_width;
   _min_between_length              = r._min_between_length;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
@@ -172,6 +184,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
   stream >> obj._max_edges;
   stream >> obj._min_adj_length1;
   stream >> obj._min_adj_length2;
+  stream >> obj._eol_width;
   stream >> obj._min_between_length;
   // User Code Begin >>
   // User Code End >>
@@ -185,6 +198,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj._max_edges;
   stream << obj._min_adj_length1;
   stream << obj._min_adj_length2;
+  stream << obj._eol_width;
   stream << obj._min_between_length;
   // User Code Begin <<
   // User Code End <<
@@ -254,6 +268,19 @@ int dbTechLayerMinStepRule::getMinAdjLength2() const
   return obj->_min_adj_length2;
 }
 
+void dbTechLayerMinStepRule::setEolWidth(int _eol_width)
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  obj->_eol_width = _eol_width;
+}
+
+int dbTechLayerMinStepRule::getEolWidth() const
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+  return obj->_eol_width;
+}
+
 void dbTechLayerMinStepRule::setMinBetweenLength(int _min_between_length)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
@@ -293,6 +320,20 @@ bool dbTechLayerMinStepRule::isMinAdjLength1Valid() const
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
   return obj->_flags._min_adj_length1_valid;
+}
+
+void dbTechLayerMinStepRule::setNoBetweenEol(bool _no_between_eol)
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  obj->_flags._no_between_eol = _no_between_eol;
+}
+
+bool dbTechLayerMinStepRule::isNoBetweenEol() const
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  return obj->_flags._no_between_eol;
 }
 
 void dbTechLayerMinStepRule::setMinAdjLength2Valid(bool _min_adj_length2_valid)

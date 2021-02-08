@@ -62,6 +62,13 @@ void minBetweenLngthParser(double                          length,
   parser->curRule->setMinBetweenLength(l->dbdist(length));
   parser->curRule->setMinBetweenLengthValid(true);
 }
+void noBetweenEolParser(double                          width,
+                        odb::lefTechLayerMinStepParser* parser,
+                        odb::lefin*                     l)
+{
+  parser->curRule->setEolWidth(l->dbdist(width));
+  parser->curRule->setNoBetweenEol(true);
+}
 void minStepLengthParser(double                          length,
                          odb::lefTechLayerMinStepParser* parser,
                          odb::lefin*                     l)
@@ -104,11 +111,16 @@ bool parse(Iterator                        first,
          >> (double_[boost::bind(&minBetweenLngthParser, _1, parser, l)])
          >> -(lit(
              "EXCEPTSAMECORNERS")[boost::bind(&setExceptSameCorners, parser)]));
+  qi::rule<std::string::iterator, space_type> noBetweenEolRule
+      = (
+        lit("NOBETWEENEOL")
+         >> double_
+        )[boost::bind(&noBetweenEolParser, _1, parser, l)];
   qi::rule<std::string::iterator, space_type> minstepRule = (+(
       lit("MINSTEP")[boost::bind(&createSubRule, parser, layer)]
       >> double_[boost::bind(&minStepLengthParser, _1, parser, l)]
       >> -(lit("MAXEDGES") >> int_[boost::bind(&maxEdgesParser, _1, parser, l)])
-      >> -(minAdjacentRule | minBetweenLngthRule) >> lit(";")));
+      >> -(minAdjacentRule | minBetweenLngthRule | noBetweenEolRule) >> lit(";")));
 
   bool valid = qi::phrase_parse(first, last, minstepRule, space);
 

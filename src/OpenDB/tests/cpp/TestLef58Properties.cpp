@@ -61,13 +61,29 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST (rule->isToConcaveCornerValid() == 0);
     
     auto minStepRules = layer->getTechLayerMinStepRules();
-    BOOST_TEST(minStepRules.size() == 1);
-    odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *minStepRules.begin();
+    BOOST_TEST(minStepRules.size() == 4);
+    auto itr = minStepRules.begin();
+    odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *itr;
     BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
     BOOST_TEST(step_rule->getMaxEdges() == 1);
     BOOST_TEST(step_rule->isMinAdjLength1Valid() == true);
     BOOST_TEST(step_rule->isMinAdjLength2Valid() == false);
     BOOST_TEST(step_rule->getMinAdjLength1() == 1.0 * distFactor);
+    BOOST_TEST(step_rule->isConvexCorner());
+    itr++;
+    step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+    BOOST_TEST(step_rule->isMinAdjLength2Valid());
+    BOOST_TEST(step_rule->getMinAdjLength2() == 0.15 * distFactor);
+    itr++;
+    step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+    BOOST_TEST(step_rule->isMinBetweenLengthValid());
+    BOOST_TEST(step_rule->isExceptSameCorners());
+    BOOST_TEST(step_rule->getMinBetweenLength() == 0.13 * distFactor);
+    itr++;
+    step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+    BOOST_TEST(step_rule->isNoBetweenEol());
+    BOOST_TEST(step_rule->getEolWidth() == 0.5 * distFactor);
+
 
     auto corner_rules = layer->getTechLayerCornerSpacingRules();
     BOOST_TEST(corner_rules.size() == 1);

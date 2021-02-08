@@ -144,6 +144,15 @@ def isTemplateType(type_name):
     return False if closedBracket == -1 or closedBracket < openBracket \
         else True
 
+def _isTemplateType(type_name):
+    openBracket = type_name.find("<")
+    if openBracket == -1:
+        return False
+
+    closedBracket = type_name.find(">")
+
+    return False if closedBracket == -1 or closedBracket < openBracket \
+        else True
 
 def getTemplateType(type_name):
     if not _isTemplateType(type_name):
