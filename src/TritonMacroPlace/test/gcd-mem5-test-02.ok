@@ -17,8 +17,6 @@ End Parsing Global Config
 Begin Extracting Macro Cells
 End Extracting Macro Cells
 [INFO MPL-0005] NumMacros 5
-[INFO MPL-0006] NumEdgeInSta 2393
-[INFO MPL-0007] NumVertexInSta 1333
 [INFO MPL-0009] NumEastPins 23
 [INFO MPL-0010] NumWestPins 20
 [INFO MPL-0011] NumNorthPins 0
