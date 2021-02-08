@@ -35,44 +35,52 @@
 
 #include <string>
 
-namespace sta { 
-class Instance; 
+namespace sta {
+class Instance;
 }
 
 namespace odb {
 class dbInst;
 }
 
-namespace mpl { 
+namespace mpl {
 
 class Vertex;
-class Macro {
-  public:
-    double lx, ly;
-    double w, h;
-    double haloX, haloY; 
-    double channelX, channelY;
-    Vertex* ptr;
-    sta::Instance* staInstPtr;
-    odb::dbInst* dbInstPtr;
-    Macro(double _lx, double _ly, 
-        double _w, double _h,
-        double _haloX, double _haloY, 
-        double _channelX, double _channelY,
-        Vertex* _ptr, sta::Instance* _staInstPtr,
+class Macro
+{
+ public:
+  double lx, ly;
+  double w, h;
+  double haloX, haloY;
+  double channelX, channelY;
+  Vertex* ptr;
+  sta::Instance* staInstPtr;
+  odb::dbInst* dbInstPtr;
+  Macro(double _lx,
+        double _ly,
+        double _w,
+        double _h,
+        double _haloX,
+        double _haloY,
+        double _channelX,
+        double _channelY,
+        Vertex* _ptr,
+        sta::Instance* _staInstPtr,
         odb::dbInst* _dbInstPtr);
-    std::string name();
-    std::string type();
-    void Dump(); 
+  std::string name();
+  std::string type();
+  void Dump();
 };
 
-}
+}  // namespace mpl
 
-class MacroLocalInfo {
-private:
+class MacroLocalInfo
+{
+ private:
   double haloX_, haloY_, channelX_, channelY_;
-public:
-  MacroLocalInfo(); 
+
+ public:
+  MacroLocalInfo();
   void putHaloX(double haloX) { haloX_ = haloX; }
   void putHaloY(double haloY) { haloY_ = haloY; }
   void putChannelX(double channelX) { channelX_ = channelX; }
@@ -82,4 +90,3 @@ public:
   double GetChannelX() { return channelX_; }
   double GetChannelY() { return channelY_; }
 };
-

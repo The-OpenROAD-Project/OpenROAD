@@ -32,42 +32,59 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "macro.h"
-#include "openroad/OpenRoad.hh"
+
 #include "opendb/db.h"
+#include "openroad/OpenRoad.hh"
 
 namespace mpl {
 
-Macro::Macro(double _lx, double _ly, 
-        double _w, double _h,
-        double _haloX, double _haloY, 
-        double _channelX, double _channelY,
-        Vertex* _ptr, sta::Instance* _staInstPtr,
-        odb::dbInst* _dbInstPtr) 
-      : lx(_lx), ly(_ly), 
-      w(_w), h(_h),
-      haloX(_haloX), haloY(_haloY),
-      channelX(_channelX), channelY(_channelY), 
-      ptr(_ptr), staInstPtr(_staInstPtr),
-      dbInstPtr(_dbInstPtr) {}
+Macro::Macro(double _lx,
+             double _ly,
+             double _w,
+             double _h,
+             double _haloX,
+             double _haloY,
+             double _channelX,
+             double _channelY,
+             Vertex* _ptr,
+             sta::Instance* _staInstPtr,
+             odb::dbInst* _dbInstPtr)
+    : lx(_lx),
+      ly(_ly),
+      w(_w),
+      h(_h),
+      haloX(_haloX),
+      haloY(_haloY),
+      channelX(_channelX),
+      channelY(_channelY),
+      ptr(_ptr),
+      staInstPtr(_staInstPtr),
+      dbInstPtr(_dbInstPtr)
+{
+}
 
-std::string Macro::name() {
+std::string Macro::name()
+{
   return dbInstPtr->getName();
 }
 
-std::string Macro::type() {
+std::string Macro::type()
+{
   return dbInstPtr->getMaster()->getName();
 }
 
-void Macro::Dump() {
+void Macro::Dump()
+{
   // debugPrint(log_, MPL, "tritonmp", 5, "MACRO {} {} {} {} {} {}",
   //     name, type, lx, ly, w, h);
-  // debugPrint(log_, MPL, "tritonmp", 5, "{} {} {} {}", 
-  //     haloX, haloY, 
-  //    channelX, channelY); 
+  // debugPrint(log_, MPL, "tritonmp", 5, "{} {} {} {}",
+  //     haloX, haloY,
+  //    channelX, channelY);
 }
 
-}
+}  // namespace mpl
 
-MacroLocalInfo::MacroLocalInfo() : 
-    haloX_(0), haloY_(0), 
-    channelX_(0), channelY_(0) {}
+MacroLocalInfo::MacroLocalInfo()
+    : haloX_(0), haloY_(0), channelX_(0), channelY_(0)
+{
+}

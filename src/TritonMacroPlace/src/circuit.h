@@ -31,20 +31,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_PLACER_CIRCUIT__
-#define __MACRO_PLACER_CIRCUIT__ 
-
-#include <unordered_map>
-#include <vector>
-#include <memory>
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "graph.h"
-#include "partition.h"
-#include "macro.h"
 #include "hashUtil.h"
+#include "macro.h"
+#include "partition.h"
 
 namespace sta {
 class dbSta;
@@ -63,203 +61,201 @@ namespace mpl {
 class Layout;
 class Logger;
 
-class MacroCircuit {
-  public:
-    MacroCircuit();
-    MacroCircuit(odb::dbDatabase* db, 
-        sta::dbSta* sta,
-        utl::Logger* log);
+class MacroCircuit
+{
+ public:
+  MacroCircuit();
+  MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
-    std::vector<mpl::Vertex> vertexStor;
-    std::vector<mpl::Edge> edgeStor;
+  std::vector<mpl::Vertex> vertexStor;
+  std::vector<mpl::Edge> edgeStor;
 
-    // macro Information
-    std::vector<mpl::Macro> macroStor;
+  // macro Information
+  std::vector<mpl::Macro> macroStor;
 
-    // pin Group Information
-    std::vector<mpl::PinGroup> pinGroupStor;
+  // pin Group Information
+  std::vector<mpl::PinGroup> pinGroupStor;
 
-    // pin Group Map;
-    // Pin* --> pinGroupStor's index.
-    std::unordered_map<sta::Pin*, int> staToPinGroup;
+  // pin Group Map;
+  // Pin* --> pinGroupStor's index.
+  std::unordered_map<sta::Pin*, int> staToPinGroup;
 
-    // macro name -> macroStor's index.
-    std::unordered_map<std::string, int> macroNameMap;
+  // macro name -> macroStor's index.
+  std::unordered_map<std::string, int> macroNameMap;
 
-    // macro idx/idx pair -> give each
-    std::vector< std::vector<int> > macroWeight;
+  // macro idx/idx pair -> give each
+  std::vector<std::vector<int>> macroWeight;
 
-    std::string GetEdgeName(mpl::Edge* edge);
-    std::string GetVertexName(mpl::Vertex* vertex);
+  std::string GetEdgeName(mpl::Edge* edge);
+  std::string GetVertexName(mpl::Vertex* vertex);
 
-    // sta::Instance* --> macroStor's index stor
-    std::unordered_map<sta::Instance*, int> macroInstMap;
+  // sta::Instance* --> macroStor's index stor
+  std::unordered_map<sta::Instance*, int> macroInstMap;
 
-    // Update Macro Location from Partition info
-    void UpdateMacroCoordi(mpl::Partition& part);
+  // Update Macro Location from Partition info
+  void UpdateMacroCoordi(mpl::Partition& part);
 
-    // parsing function
-    void ParseGlobalConfig(std::string fileName);
-    void ParseLocalConfig(std::string fileName);
+  // parsing function
+  void ParseGlobalConfig(std::string fileName);
+  void ParseLocalConfig(std::string fileName);
 
-    // save LocalCfg into this structure
-    std::unordered_map< std::string, MacroLocalInfo > macroLocalMap;
+  // save LocalCfg into this structure
+  std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
 
-    // plotting
-    void Plot(std::string outputFile, std::vector<mpl::Partition>& set);
+  // plotting
+  void Plot(std::string outputFile, std::vector<mpl::Partition>& set);
 
-    // netlist
-    void UpdateNetlist(mpl::Partition& layout);
+  // netlist
+  void UpdateNetlist(mpl::Partition& layout);
 
-    // return weighted wire-length to get best solution
-    double GetWeightedWL();
+  // return weighted wire-length to get best solution
+  double GetWeightedWL();
 
+  void StubPlacer(double snapGrid);
 
-    void StubPlacer(double snapGrid);
+  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
-    void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
+  void setGlobalConfig(const char* globalConfig);
+  void setLocalConfig(const char* localConfig);
+  void setPlotEnable(bool mode);
 
-    void setGlobalConfig(const char* globalConfig);
-    void setLocalConfig(const char* localConfig);
-    void setPlotEnable(bool mode);
+  void setVerboseLevel(int verbose);
+  void setFenceRegion(double lx, double ly, double ux, double uy);
 
-    void setVerboseLevel(int verbose);
-    void setFenceRegion(double lx, double ly, double ux, double uy);
+  void PlaceMacros(int& solCount);
 
-    void PlaceMacros(int& solCount);
+  const bool isTiming() const { return isTiming_; }
 
-    const bool isTiming() const { return isTiming_; }
+ private:
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* log_;
 
-  private:
-    odb::dbDatabase* db_;
-    sta::dbSta* sta_;
-    utl::Logger* log_;
+  std::string globalConfig_;
+  std::string localConfig_;
 
-    std::string globalConfig_;
-    std::string localConfig_;
+  bool isTiming_;
+  bool isPlot_;
 
-    bool isTiming_;
-    bool isPlot_;
+  // layout
+  double lx_, ly_, ux_, uy_;
 
-    // layout
-    double lx_, ly_, ux_, uy_;
+  double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
 
-    double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
+  double siteSizeX_, siteSizeY_;
 
-    double siteSizeX_, siteSizeY_;
+  // haloX, haloY
+  double haloX_, haloY_;
 
-    // haloX, haloY
-    double haloX_, haloY_;
+  // channelX, channelY (TODO)
+  double channelX_, channelY_;
 
-    // channelX, channelY (TODO)
-    double channelX_, channelY_;
+  // netlistTable
+  double* netTable_;
 
-    // netlistTable
-    double* netTable_;
+  // verboseLevel
+  int verbose_;
 
-    // verboseLevel
-    int verbose_;
+  // fenceRegionMode
+  bool fenceRegionMode_;
 
-    // fenceRegionMode 
-    bool fenceRegionMode_;
+  void FillMacroStor();
+  void FillPinGroup();
+  void FillVertexEdge();
+  void CheckGraphInfo();
+  void FillMacroPinAdjMatrix();
+  void FillMacroConnection();
 
-    void FillMacroStor();
-    void FillPinGroup();
-    void FillVertexEdge();
-    void CheckGraphInfo();
-    void FillMacroPinAdjMatrix();
-    void FillMacroConnection();
+  void UpdateVertexToMacroStor();
+  void UpdateInstanceToMacroStor();
 
-    void UpdateVertexToMacroStor();
-    void UpdateInstanceToMacroStor();
+  // either Pin*, Inst* -> vertexStor's index.
+  std::unordered_map<void*, int> pinInstVertexMap;
 
-    // either Pin*, Inst* -> vertexStor's index.
-    std::unordered_map<void*, int> pinInstVertexMap;
+  // adjacency matrix for whole(macro/pins/FFs) graph
+  Eigen::SparseMatrix<int, Eigen::RowMajor> adjMatrix;
 
-    // adjacency matrix for whole(macro/pins/FFs) graph
-    Eigen::SparseMatrix<int, Eigen::RowMajor> adjMatrix;
+  // vertex idx --> macroPinAdjMatrix idx.
+  std::vector<int> macroPinAdjMatrixMap;
 
-    // vertex idx --> macroPinAdjMatrix idx.
-    std::vector< int > macroPinAdjMatrixMap;
+  // adjacency matrix for macro/pins graph
+  Eigen::SparseMatrix<int, Eigen::RowMajor> macroPinAdjMatrix;
 
-    // adjacency matrix for macro/pins graph
-    Eigen::SparseMatrix<int, Eigen::RowMajor> macroPinAdjMatrix;
+  // pair of <StartVertex*, EndVertex*> --> edgeStor's index
+  std::unordered_map<std::pair<mpl::Vertex*, mpl::Vertex*>,
+                     int,
+                     PointerPairHash,
+                     PointerPairEqual>
+      vertexPairEdgeMap;
 
-    // pair of <StartVertex*, EndVertex*> --> edgeStor's index
-    std::unordered_map< std::pair<mpl::Vertex*, mpl::Vertex*>,
-      int, PointerPairHash, PointerPairEqual > vertexPairEdgeMap;
+  int index(mpl::Vertex* vertex);
 
-    int index(mpl::Vertex* vertex);
+  // not used -cherry
+  int GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit);
 
-    // not used -cherry
-    int GetPathWeight( mpl::Vertex* from,
-        mpl::Vertex* to, int limit );
+  // Matrix version
+  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
+                          mpl::Vertex* from,
+                          mpl::Vertex* to);
 
-    // Matrix version
-    int GetPathWeightMatrix ( Eigen::SparseMatrix<int, Eigen::RowMajor> & mat,
-        mpl::Vertex* from,
-        mpl::Vertex* to );
+  // Matrix version
+  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
+                          mpl::Vertex* from,
+                          int toIdx);
 
-    // Matrix version
-    int GetPathWeightMatrix ( Eigen::SparseMatrix<int, Eigen::RowMajor> & mat,
-        mpl::Vertex* from,
-        int toIdx );
+  // Matrix version
+  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
+                          int fromIdx,
+                          int toIdx);
 
-    // Matrix version
-    int GetPathWeightMatrix ( Eigen::SparseMatrix<int, Eigen::RowMajor> & mat,
-        int fromIdx, int toIdx );
+  mpl::Vertex* GetVertex(sta::Pin* pin);
 
-    mpl::Vertex*
-      GetVertex( sta::Pin *pin );
+  std::pair<void*, VertexType> GetPtrClassPair(sta::Pin* pin);
 
-    std::pair<void*, VertexType>
-      GetPtrClassPair( sta::Pin* pin );
-
-    void init();
-    void reset();
+  void init();
+  void reset();
 };
 
-class Layout {
-  public:
-    Layout();
-    Layout( double lx, double ly, double ux, double uy );
-    Layout( Layout& orig, mpl::Partition& part );
+class Layout
+{
+ public:
+  Layout();
+  Layout(double lx, double ly, double ux, double uy);
+  Layout(Layout& orig, mpl::Partition& part);
 
-    double lx() const;
-    double ly() const;
-    double ux() const;
-    double uy() const;
+  double lx() const;
+  double ly() const;
+  double ux() const;
+  double uy() const;
 
-    void setLx(double lx);
-    void setLy(double ly);
-    void setUx(double ux);
-    void setUy(double uy);
+  void setLx(double lx);
+  void setLy(double ly);
+  void setUx(double ux);
+  void setUy(double uy);
 
-  private:
-    double lx_, ly_, ux_, uy_;
+ private:
+  double lx_, ly_, ux_, uy_;
 };
 
-inline double
-Layout::lx() const {
+inline double Layout::lx() const
+{
   return lx_;
 }
 
-inline double
-Layout::ly() const {
+inline double Layout::ly() const
+{
   return ly_;
 }
 
-inline double
-Layout::ux() const {
+inline double Layout::ux() const
+{
   return ux_;
 }
 
-inline double
-Layout::uy() const {
+inline double Layout::uy() const
+{
   return uy_;
 }
 
-}
-
-#endif
+}  // namespace mpl
 

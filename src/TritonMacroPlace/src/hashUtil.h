@@ -34,18 +34,20 @@
 #pragma once
 
 #include <cstdlib>
-#include <utility>
 #include <functional>
+#include <utility>
 
 namespace mpl {
 
-struct PointerPairHash {
-  std::size_t operator()(const std::pair<void*, void*> &k) const;
+struct PointerPairHash
+{
+  std::size_t operator()(const std::pair<void*, void*>& k) const;
 };
 
-struct PointerPairEqual {
-  bool operator()(const std::pair<void*, void*> &p1, 
-                  const std::pair<void*, void*> &p2) const;
+struct PointerPairEqual
+{
+  bool operator()(const std::pair<void*, void*>& p1,
+                  const std::pair<void*, void*>& p2) const;
 };
 
-};
+};  // namespace mpl

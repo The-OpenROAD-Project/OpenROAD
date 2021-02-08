@@ -31,14 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <tcl.h>
-#include "sta/StaMain.hh"
-#include "openroad/OpenRoad.hh"
 #include "tritonmp/MakeTritonMp.h"
+
+#include <tcl.h>
+
+#include "openroad/OpenRoad.hh"
+#include "sta/StaMain.hh"
 #include "tritonmp/TritonMacroPlace.h"
 
 namespace sta {
-extern const char *tritonmp_tcl_inits[];
+extern const char* tritonmp_tcl_inits[];
 }
 
 extern "C" {
@@ -47,26 +49,23 @@ extern int Mpl_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-mpl::TritonMacroPlace * 
-makeTritonMp() 
+mpl::TritonMacroPlace* makeTritonMp()
 {
-  return new mpl::TritonMacroPlace; 
+  return new mpl::TritonMacroPlace;
 }
 
-void 
-initTritonMp(OpenRoad *openroad) 
+void initTritonMp(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::tritonmp_tcl_inits);
-  openroad->getTritonMp()->init(openroad->getDb(), openroad->getSta(),
-                                openroad->getLogger());
+  openroad->getTritonMp()->init(
+      openroad->getDb(), openroad->getSta(), openroad->getLogger());
 }
 
-void
-deleteTritonMp(mpl::TritonMacroPlace *tritonmp)
+void deleteTritonMp(mpl::TritonMacroPlace* tritonmp)
 {
   delete tritonmp;
 }
 
-}
+}  // namespace ord

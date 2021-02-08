@@ -33,10 +33,10 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace utl {
 class Logger;
@@ -47,78 +47,95 @@ namespace mpl {
 class MacroCircuit;
 class Macro;
 
-enum PartClass {
-  S, N, W, E, NW, NE, SW, SE, ALL, None
+enum PartClass
+{
+  S,
+  N,
+  W,
+  E,
+  NW,
+  NE,
+  SW,
+  SE,
+  ALL,
+  None
 };
 
 struct PartClassHash;
 struct PartClassEqual;
 
-class Partition {
-  public:
-    PartClass partClass;
-    double lx, ly;
-    double width, height;
-    std::vector<Macro> macroStor;
-    double* netTable;
-    int tableCnt;
-    std::unordered_map<std::string, int> macroMap;
+class Partition
+{
+ public:
+  PartClass partClass;
+  double lx, ly;
+  double width, height;
+  std::vector<Macro> macroStor;
+  double* netTable;
+  int tableCnt;
+  std::unordered_map<std::string, int> macroMap;
 
+  Partition(utl::Logger* log);
+  Partition(PartClass _partClass,
+            double _lx,
+            double _ly,
+            double _width,
+            double _height,
+            utl::Logger* log);
 
-    Partition(utl::Logger* log);
-    Partition(PartClass _partClass, double _lx, double _ly,
-        double _width, double _height, utl::Logger* log);
+  // destructor
+  ~Partition();
 
-    // destructor
-    ~Partition();
+  // copy constructor
+  Partition(const Partition& prev);
 
-    // copy constructor
-    Partition(const Partition& prev);
+  // assign operator overloading
+  Partition& operator=(const Partition& prev);
 
-    // assign operator overloading
-    Partition& operator= (const Partition& prev);
+  void FillNetlistTable(MacroCircuit& mckt,
+                        std::unordered_map<PartClass,
+                                           std::vector<int>,
+                                           PartClassHash,
+                                           PartClassEqual>& macroPartMap);
 
-    void FillNetlistTable(MacroCircuit& mckt,
-        std::unordered_map<PartClass, std::vector<int>,
-        PartClassHash, PartClassEqual>& macroPartMap);
+  void Dump();
 
-    void Dump();
+  // Call Parquet to have annealing solution
+  bool DoAnneal();
 
-    // Call Parquet to have annealing solution
-    bool DoAnneal();
+  // Update Macro location from MacroCircuit
+  void UpdateMacroCoordi(MacroCircuit& mckt);
 
-    // Update Macro location from MacroCircuit
-    void UpdateMacroCoordi(MacroCircuit& mckt);
+  // Writing functions
+  void PrintSetFormat(FILE* fp);
 
-    // Writing functions
-    void PrintSetFormat(FILE* fp);
+  // Parquet print functions
+  void PrintParquetFormat(std::string origName);
+  void WriteBlkFile(std::string blkName);
+  void WriteNetFile(std::vector<std::pair<int, int>>& netStor,
+                    std::string netName);
+  void WriteWtsFile(std::vector<int>& costStor, std::string wtsName);
+  void WritePlFile(std::string plName);
 
-    // Parquet print functions
-    void PrintParquetFormat(std::string origName);
-    void WriteBlkFile(std::string blkName);
-    void WriteNetFile(std::vector< std::pair<int, int>> & netStor, std::string netName);
-    void WriteWtsFile(std::vector<int>& costStor, std::string wtsName );
-    void WritePlFile(std::string plName);
+  std::string GetName(int macroIdx);
 
-    std::string GetName(int macroIdx);
-
-  private:
-    void FillNetlistTableIncr();
-    void FillNetlistTableDesc();
-    utl::Logger* log_;
+ private:
+  void FillNetlistTableIncr();
+  void FillNetlistTableDesc();
+  utl::Logger* log_;
 };
 
-struct PartClassHash {
-  std::size_t operator()(const mpl::PartClass &k) const {
-    return k;
-  }
+struct PartClassHash
+{
+  std::size_t operator()(const mpl::PartClass& k) const { return k; }
 };
 
-struct PartClassEqual {
-  bool operator()(const mpl::PartClass &p1,
-      const mpl::PartClass &p2) const {
+struct PartClassEqual
+{
+  bool operator()(const mpl::PartClass& p1, const mpl::PartClass& p2) const
+  {
     return p1 == p2;
   }
 };
 
-}
+}  // namespace mpl
