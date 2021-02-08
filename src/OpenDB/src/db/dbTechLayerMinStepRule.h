@@ -52,11 +52,12 @@ struct dbTechLayerMinStepRuleFlags
 {
   bool _max_edges_valid : 1;
   bool _min_adj_length1_valid : 1;
+  bool _no_between_eol : 1;
   bool _min_adj_length2_valid : 1;
   bool _convex_corner : 1;
   bool _min_between_length_valid : 1;
   bool _except_same_corners : 1;
-  uint _spare_bits : 26;
+  uint _spare_bits : 25;
 };
 // User Code Begin structs
 // User Code End structs
@@ -72,6 +73,7 @@ class _dbTechLayerMinStepRule : public _dbObject
   uint                        _max_edges;
   int                         _min_adj_length1;
   int                         _min_adj_length2;
+  int                         _eol_width;
   int                         _min_between_length;
 
   // User Code Begin fields

@@ -7571,6 +7571,10 @@ class dbTechLayerMinStepRule : public dbObject
 
   int getMinAdjLength2() const;
 
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
   void setMinBetweenLength(int _min_between_length);
 
   int getMinBetweenLength() const;
@@ -7582,6 +7586,10 @@ class dbTechLayerMinStepRule : public dbObject
   void setMinAdjLength1Valid(bool _min_adj_length1_valid);
 
   bool isMinAdjLength1Valid() const;
+
+  void setNoBetweenEol(bool _no_between_eol);
+
+  bool isNoBetweenEol() const;
 
   void setMinAdjLength2Valid(bool _min_adj_length2_valid);
 
