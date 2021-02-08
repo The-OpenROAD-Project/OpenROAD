@@ -121,21 +121,21 @@ COMPONENTS 12 ;
     - _g2_ NOR2X1 ;
 END COMPONENTS
 PINS 13 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
     - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( -5 -10 ) ( 5 10 )
         + FIXED ( 55 60 ) N ;
     - inp1 + NET inp1 + DIRECTION INPUT + USE SIGNAL ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
-    - out[8] + NET out[8] + SPECIAL + DIRECTION INPUT + USE SIGNAL ;
-    - out[7] + NET out[7] + DIRECTION INPUT + SUPPLYSENSITIVITY clk + USE SIGNAL ;
-    - out[6] + NET out[6] + DIRECTION INPUT + GROUNDSENSITIVITY inp0 + USE SIGNAL ;
-    - out[5] + NET out[5] + DIRECTION INPUT + USE ANALOG ;
-    - out[4] + NET out[4] + DIRECTION INPUT + USE SIGNAL ;
-    - out[3] + NET out[3] + DIRECTION OUTPUT + USE SIGNAL ;
-    - out[2] + NET out[2] + DIRECTION OUTPUT + USE SIGNAL ;
-    - out[1] + NET out[1] + DIRECTION OUTPUT + USE SIGNAL ;
     - out[0] + NET out[0] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[1] + NET out[1] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[2] + NET out[2] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[3] + NET out[3] + DIRECTION OUTPUT + USE SIGNAL ;
+    - out[4] + NET out[4] + DIRECTION INPUT + USE SIGNAL ;
+    - out[5] + NET out[5] + DIRECTION INPUT + USE ANALOG ;
+    - out[6] + NET out[6] + DIRECTION INPUT + GROUNDSENSITIVITY inp0 + USE SIGNAL ;
+    - out[7] + NET out[7] + DIRECTION INPUT + SUPPLYSENSITIVITY clk + USE SIGNAL ;
+    - out[8] + NET out[8] + SPECIAL + DIRECTION INPUT + USE SIGNAL ;
     - vdd + NET VDD + SPECIAL + DIRECTION INPUT + USE SIGNAL ;
 END PINS
 PINPROPERTIES 2 ;
@@ -165,19 +165,6 @@ SPECIALNETS 2 ;
       + ROUTED metal1 10 ( 5 0 ) ( 5 20 ) + SOURCE NETLIST + FIXEDBUMP + WEIGHT 99 ;
 END SPECIALNETS
 NETS 24 ;
-    - inp0 ( PIN inp0 ) ( _g2_ A ) ( _g1_ A ) ( _g0_ A ) + USE SIGNAL ;
-    - inp1 ( PIN inp1 ) ( _g2_ B ) ( _g0_ B ) ( _g1_ B ) + USE SIGNAL ;
-    - clk ( PIN clk ) ( _d5_ CLK ) ( _d3_ CLK ) ( _d6_ CLK ) ( _d4_ CLK ) ( _d1_ CLK ) ( _d8_ CLK )
-      ( _d0_ CLK ) ( _d2_ CLK ) ( _d7_ CLK ) + USE SIGNAL ;
-    - out[8] ( PIN out[8] ) ( _d8_ Q ) + USE SIGNAL ;
-    - out[7] ( PIN out[7] ) ( _d7_ Q ) + USE SIGNAL ;
-    - out[6] ( PIN out[6] ) ( _d6_ Q ) + USE SIGNAL ;
-    - out[5] ( PIN out[5] ) ( _d5_ Q ) + USE SIGNAL ;
-    - out[4] ( PIN out[4] ) ( _d4_ Q ) + USE SIGNAL ;
-    - out[3] ( PIN out[3] ) ( _d3_ Q ) + USE SIGNAL ;
-    - out[2] ( PIN out[2] ) ( _d2_ Q ) + USE SIGNAL ;
-    - out[1] ( PIN out[1] ) ( _d1_ Q ) + USE SIGNAL ;
-    - out[0] ( PIN out[0] ) ( _d0_ Q ) + USE SIGNAL ;
     - _w0_ ( _g0_ Y ) ( _d1_ D ) ( _d0_ D ) ( _d2_ D ) + USE SIGNAL
       + ROUTED metal3 ( 1 2 ) ( 3 * ) VIA1
       NEW metal3 ( 4 5 ) ( 6 * ) ;
@@ -194,6 +181,19 @@ NETS 24 ;
     - _xout6 + USE SIGNAL ;
     - _xout7 + USE SIGNAL ;
     - _xout8 + USE SIGNAL ;
+    - clk ( PIN clk ) ( _d5_ CLK ) ( _d3_ CLK ) ( _d6_ CLK ) ( _d4_ CLK ) ( _d1_ CLK ) ( _d8_ CLK )
+      ( _d0_ CLK ) ( _d2_ CLK ) ( _d7_ CLK ) + USE SIGNAL ;
+    - inp0 ( PIN inp0 ) ( _g2_ A ) ( _g1_ A ) ( _g0_ A ) + USE SIGNAL ;
+    - inp1 ( PIN inp1 ) ( _g2_ B ) ( _g0_ B ) ( _g1_ B ) + USE SIGNAL ;
+    - out[0] ( PIN out[0] ) ( _d0_ Q ) + USE SIGNAL ;
+    - out[1] ( PIN out[1] ) ( _d1_ Q ) + USE SIGNAL ;
+    - out[2] ( PIN out[2] ) ( _d2_ Q ) + USE SIGNAL ;
+    - out[3] ( PIN out[3] ) ( _d3_ Q ) + USE SIGNAL ;
+    - out[4] ( PIN out[4] ) ( _d4_ Q ) + USE SIGNAL ;
+    - out[5] ( PIN out[5] ) ( _d5_ Q ) + USE SIGNAL ;
+    - out[6] ( PIN out[6] ) ( _d6_ Q ) + USE SIGNAL ;
+    - out[7] ( PIN out[7] ) ( _d7_ Q ) + USE SIGNAL ;
+    - out[8] ( PIN out[8] ) ( _d8_ Q ) + USE SIGNAL ;
 END NETS
 GROUPS 1 ;
     - group1 _d0_ _g0_ + REGION region1 + PROPERTY strprop "aString" intprop 1 realprop 1.1 intrangeprop 25 realrangeprop 25.25  ;

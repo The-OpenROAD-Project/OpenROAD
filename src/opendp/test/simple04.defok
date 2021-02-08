@@ -34,16 +34,16 @@ VIAS 3 ;
     - via6_960x2800 + VIARULE Via6Array-0 + CUTSIZE 280 280  + LAYERS metal6 metal7 via6  + CUTSPACING 320 320  + ENCLOSURE 340 360 340 360  + ROWCOL 4 1  ;
 END VIAS
 COMPONENTS 10 ;
-    - _285_ NOR2_X1 + PLACED ( 3800 5600 ) N ;
-    - _284_ NOR2_X1 + PLACED ( 4940 5600 ) N ;
-    - _283_ INV_X1 + PLACED ( 7220 5600 ) N ;
-    - _282_ NOR2_X1 + PLACED ( 8360 2800 ) FS ;
-    - _281_ INV_X1 + PLACED ( 9500 2800 ) FS ;
-    - _280_ INV_X1 + PLACED ( 10260 2800 ) FS ;
-    - _279_ NOR2_X1 + PLACED ( 6080 5600 ) N ;
-    - _278_ INV_X1 + PLACED ( 11020 2800 ) FS ;
-    - _277_ BUF_X4 + PLACED ( 3800 2800 ) FS ;
     - _276_ NOR2_X2 + PLACED ( 6460 2800 ) FS ;
+    - _277_ BUF_X4 + PLACED ( 3800 2800 ) FS ;
+    - _278_ INV_X1 + PLACED ( 11020 2800 ) FS ;
+    - _279_ NOR2_X1 + PLACED ( 6080 5600 ) N ;
+    - _280_ INV_X1 + PLACED ( 10260 2800 ) FS ;
+    - _281_ INV_X1 + PLACED ( 9500 2800 ) FS ;
+    - _282_ NOR2_X1 + PLACED ( 8360 2800 ) FS ;
+    - _283_ INV_X1 + PLACED ( 7220 5600 ) N ;
+    - _284_ NOR2_X1 + PLACED ( 4940 5600 ) N ;
+    - _285_ NOR2_X1 + PLACED ( 3800 5600 ) N ;
 END COMPONENTS
 PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL
@@ -91,7 +91,6 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 NETS 11 ;
     - input ( PIN input ) ( _285_ A1 ) + USE SIGNAL ;
-    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
     - net1 ( _277_ A ) ( _284_ A2 ) ( _276_ ZN ) + USE SIGNAL ;
     - net2 ( _276_ A1 ) ( _282_ A2 ) ( _278_ ZN ) + USE SIGNAL ;
     - net3 ( _276_ A2 ) ( _283_ A ) ( _279_ ZN ) + USE SIGNAL ;
@@ -101,5 +100,6 @@ NETS 11 ;
     - net7 ( _284_ A1 ) ( _283_ ZN ) + USE SIGNAL ;
     - net8 ( _285_ A2 ) ( _284_ ZN ) + USE SIGNAL ;
     - net9 ( _282_ A1 ) ( _285_ ZN ) + USE SIGNAL ;
+    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
 END NETS
 END DESIGN
