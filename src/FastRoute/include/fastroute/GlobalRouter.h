@@ -49,6 +49,10 @@ namespace ord {
 class OpenRoad;
 }
 
+namespace gui {
+class Gui;
+}
+
 namespace utl {
 class Logger;
 }
@@ -77,6 +81,8 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 class RoutePt;
+class GrouteRenderer;
+
 
 struct RegionAdjustment
 {
@@ -200,10 +206,16 @@ class GlobalRouter
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
-  float dbuToMeters(unsigned dbu);
+  double dbuToMeters(int dbu);
+  double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
   void routeClockNets();
+
+  // Highlight route in the gui.
+  void highlightRoute(const odb::dbNet *net);
+  // Report the wire length on each layer.
+  void reportLayerWireLengths();
 
  protected:
   // Net functions
@@ -302,9 +314,11 @@ class GlobalRouter
 
   ord::OpenRoad* _openroad;
   utl::Logger *_logger;
+  gui::Gui *_gui;
   // Objects variables
   FastRouteCore* _fastRoute;
   odb::Point* _gridOrigin;
+  GrouteRenderer *_groute_renderer;
   NetRouteMap _routes;
 
   std::vector<Net>* _nets;

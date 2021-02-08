@@ -3894,7 +3894,7 @@ PINS 160 ;
         + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
         + FIXED ( 2557115 63757 ) N ;
 END PINS
-SPECIALNETS 155 ;
+SPECIALNETS 167 ;
     - TDO ( PIN TDO ) ( u_tdo.u_io PAD ) + USE SIGNAL ;
     - clk_i ( PIN clk_i ) ( u_clk.u_in PAD ) + USE SIGNAL ;
     - fsb_node_data_i[0] ( PIN fsb_node_data_i[0] ) ( u_fsb_node_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
@@ -4050,6 +4050,330 @@ SPECIALNETS 155 ;
     - rocc_resp_data_i[7] ( PIN rocc_resp_data_i[7] ) ( u_rocc_resp_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
     - rocc_resp_ready_o ( PIN rocc_resp_ready_o ) ( u_rocc_resp_ready.u_io PAD ) + USE SIGNAL ;
     - rocc_resp_v_i ( PIN rocc_resp_v_i ) ( u_rocc_resp_v.u_in PAD ) + USE SIGNAL ;
+    - VSSIO_0 ( u_v18_20 VSSIO ) ( u_vzz_20 VSSIO ) ( u_vss_8 VSSIO ) ( u_vdd_8 VSSIO ) ( u_tdo.u_io VSSIO ) ( u_rocc_ctrl_o_host_id.u_io VSSIO ) ( u_rocc_ctrl_o_exception.u_io VSSIO )
+      ( u_rocc_ctrl_o_s.u_io VSSIO ) ( u_v18_19 VSSIO ) ( u_vzz_19 VSSIO ) ( u_rocc_ctrl_i_interrupt.u_in VSSIO ) ( u_rocc_ctrl_i_busy.u_in VSSIO ) ( u_fsb_node_yumi.u_in VSSIO ) ( u_fsb_node_data_o_7_.u_io VSSIO ) ( u_fsb_node_data_o_6_.u_io VSSIO )
+      ( u_fsb_node_data_o_5_.u_io VSSIO ) ( u_fsb_node_data_o_4_.u_io VSSIO ) ( u_fsb_node_data_o_3_.u_io VSSIO ) ( u_v18_18 VSSIO ) ( u_vzz_18 VSSIO ) ( u_fsb_node_data_o_2_.u_io VSSIO ) ( u_fsb_node_data_o_1_.u_io VSSIO ) ( u_vdd_7 VSSIO )
+      ( u_vss_7 VSSIO ) ( u_fsb_node_data_o_0_.u_io VSSIO ) ( u_fsb_node_v_o.u_io VSSIO ) ( u_fsb_node_ready.u_io VSSIO ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSIO ) ( u_v18_17 VSSIO )
+      ( u_vzz_17 VSSIO ) ( u_fsb_node_data_i.u_io\[4\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[3\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[2\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[1\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[0\].u_in VSSIO ) ( u_fsb_node_v_i.u_in VSSIO ) ( u_rocc_mem_resp_data_o_63_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_62_.u_io VSSIO ) ( u_v18_16 VSSIO ) ( u_vzz_16 VSSIO ) ( u_rocc_mem_resp_data_o_61_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_60_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_59_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_58_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_57_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_56_.u_io VSSIO ) ( u_vss_6 VSSIO ) ( u_vdd_6 VSSIO ) ( u_rocc_mem_resp_data_o_55_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_54_.u_io VSSIO ) ( u_v18_15 VSSIO ) ( u_vzz_15 VSSIO ) ( u_rocc_mem_resp_data_o_53_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_52_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_51_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_50_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_49_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_48_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_47_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_46_.u_io VSSIO ) ( u_v18_14 VSSIO )
+      ( u_vzz_14 VSSIO ) ( u_rocc_mem_resp_data_o_45_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_44_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_43_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_42_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_41_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_40_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_39_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_38_.u_io VSSIO ) ( u_vdd_5 VSSIO ) ( u_vss_5 VSSIO ) ( u_v18_13 VSSIO ) ( u_vzz_13 VSSIO ) ( u_rocc_mem_resp_data_o_37_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_36_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_35_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_34_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_33_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_32_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_31_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_30_.u_io VSSIO ) ( u_v18_12 VSSIO ) ( u_vzz_12 VSSIO ) ( u_rocc_mem_resp_data_o_29_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_28_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_27_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_26_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_25_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_24_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_23_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_22_.u_io VSSIO ) ( u_v18_11 VSSIO )
+      ( u_vzz_11 VSSIO ) ( u_rocc_mem_resp_data_o_21_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_20_.u_io VSSIO ) ( u_vdd_4 VSSIO ) ( u_vss_4 VSSIO ) ( u_rocc_mem_resp_data_o_19_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_18_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_17_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_16_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_15_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_14_.u_io VSSIO ) ( u_v18_10 VSSIO ) ( u_vzz_10 VSSIO ) ( u_rocc_mem_resp_data_o_13_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_12_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_11_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_10_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_9_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_8_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_7_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_6_.u_io VSSIO ) ( u_v18_9 VSSIO ) ( u_vzz_9 VSSIO ) ( u_rocc_mem_resp_data_o_5_.u_io VSSIO )
+      ( u_rocc_mem_resp_data_o_4_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_3_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_2_.u_io VSSIO ) ( u_rocc_mem_resp_data_o_1_.u_io VSSIO ) ( u_vdd_3 VSSIO ) ( u_vss_3 VSSIO ) ( u_rocc_mem_resp_data_o_0_.u_io VSSIO ) ( u_rocc_mem_resp_v.u_io VSSIO )
+      ( u_rocc_mem_req_ready.u_io VSSIO ) ( u_v18_8 VSSIO ) ( u_vzz_8 VSSIO ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VSSIO )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VSSIO ) ( u_v18_7 VSSIO ) ( u_vzz_7 VSSIO ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VSSIO )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VSSIO ) ( u_vdd_2 VSSIO ) ( u_vss_2 VSSIO ) ( u_v18_6 VSSIO )
+      ( u_vzz_6 VSSIO ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VSSIO ) ( u_v18_5 VSSIO )
+      ( u_vzz_5 VSSIO ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VSSIO )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VSSIO ) ( u_v18_4 VSSIO ) ( u_vzz_4 VSSIO ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VSSIO ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VSSIO ) ( u_rocc_mem_req_v.u_in VSSIO ) ( u_vdd_1 VSSIO ) ( u_vss_1 VSSIO )
+      ( u_rocc_resp_ready.u_io VSSIO ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSSIO ) ( u_v18_3 VSSIO ) ( u_vzz_3 VSSIO ) ( u_rocc_resp_data_i.u_io\[3\].u_in VSSIO )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[1\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[0\].u_in VSSIO ) ( u_rocc_resp_v.u_in VSSIO ) ( u_rocc_cmd_ready.u_in VSSIO ) ( u_rocc_cmd_data_o_15_.u_io VSSIO ) ( u_rocc_cmd_data_o_14_.u_io VSSIO ) ( u_v18_2 VSSIO )
+      ( u_vzz_2 VSSIO ) ( u_rocc_cmd_data_o_13_.u_io VSSIO ) ( u_rocc_cmd_data_o_12_.u_io VSSIO ) ( u_rocc_cmd_data_o_11_.u_io VSSIO ) ( u_rocc_cmd_data_o_10_.u_io VSSIO ) ( u_rocc_cmd_data_o_9_.u_io VSSIO ) ( u_vdd_0 VSSIO ) ( u_vss_0 VSSIO )
+      ( u_rocc_cmd_data_o_8_.u_io VSSIO ) ( u_rocc_cmd_data_o_7_.u_io VSSIO ) ( u_rocc_cmd_data_o_6_.u_io VSSIO ) ( u_v18_1 VSSIO ) ( u_vzz_1 VSSIO ) ( u_rocc_cmd_data_o_5_.u_io VSSIO ) ( u_rocc_cmd_data_o_4_.u_io VSSIO ) ( u_rocc_cmd_data_o_3_.u_io VSSIO )
+      ( u_rocc_cmd_data_o_2_.u_io VSSIO ) ( u_rocc_cmd_data_o_1_.u_io VSSIO ) ( u_rocc_cmd_data_o_0_.u_io VSSIO ) ( u_rocc_cmd_v.u_io VSSIO ) ( u_v18_0 VSSIO ) ( u_vzz_0 VSSIO ) ( u_reset.u_in VSSIO ) ( u_clk.u_in VSSIO ) + USE SIGNAL ;
+    - VSSA_0 ( u_v18_20 VSSA ) ( u_vzz_20 VSSA ) ( u_vss_8 VSSA ) ( u_vdd_8 VSSA ) ( u_tdo.u_io VSSA ) ( u_rocc_ctrl_o_host_id.u_io VSSA ) ( u_rocc_ctrl_o_exception.u_io VSSA )
+      ( u_rocc_ctrl_o_s.u_io VSSA ) ( u_v18_19 VSSA ) ( u_vzz_19 VSSA ) ( u_rocc_ctrl_i_interrupt.u_in VSSA ) ( u_rocc_ctrl_i_busy.u_in VSSA ) ( u_fsb_node_yumi.u_in VSSA ) ( u_fsb_node_data_o_7_.u_io VSSA ) ( u_fsb_node_data_o_6_.u_io VSSA )
+      ( u_fsb_node_data_o_5_.u_io VSSA ) ( u_fsb_node_data_o_4_.u_io VSSA ) ( u_fsb_node_data_o_3_.u_io VSSA ) ( u_v18_18 VSSA ) ( u_vzz_18 VSSA ) ( u_fsb_node_data_o_2_.u_io VSSA ) ( u_fsb_node_data_o_1_.u_io VSSA ) ( u_vdd_7 VSSA )
+      ( u_vss_7 VSSA ) ( u_fsb_node_data_o_0_.u_io VSSA ) ( u_fsb_node_v_o.u_io VSSA ) ( u_fsb_node_ready.u_io VSSA ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSA ) ( u_v18_17 VSSA )
+      ( u_vzz_17 VSSA ) ( u_fsb_node_data_i.u_io\[4\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[3\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[2\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[1\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[0\].u_in VSSA ) ( u_fsb_node_v_i.u_in VSSA ) ( u_rocc_mem_resp_data_o_63_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_62_.u_io VSSA ) ( u_v18_16 VSSA ) ( u_vzz_16 VSSA ) ( u_rocc_mem_resp_data_o_61_.u_io VSSA ) ( u_rocc_mem_resp_data_o_60_.u_io VSSA ) ( u_rocc_mem_resp_data_o_59_.u_io VSSA ) ( u_rocc_mem_resp_data_o_58_.u_io VSSA ) ( u_rocc_mem_resp_data_o_57_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_56_.u_io VSSA ) ( u_vss_6 VSSA ) ( u_vdd_6 VSSA ) ( u_rocc_mem_resp_data_o_55_.u_io VSSA ) ( u_rocc_mem_resp_data_o_54_.u_io VSSA ) ( u_v18_15 VSSA ) ( u_vzz_15 VSSA ) ( u_rocc_mem_resp_data_o_53_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_52_.u_io VSSA ) ( u_rocc_mem_resp_data_o_51_.u_io VSSA ) ( u_rocc_mem_resp_data_o_50_.u_io VSSA ) ( u_rocc_mem_resp_data_o_49_.u_io VSSA ) ( u_rocc_mem_resp_data_o_48_.u_io VSSA ) ( u_rocc_mem_resp_data_o_47_.u_io VSSA ) ( u_rocc_mem_resp_data_o_46_.u_io VSSA ) ( u_v18_14 VSSA )
+      ( u_vzz_14 VSSA ) ( u_rocc_mem_resp_data_o_45_.u_io VSSA ) ( u_rocc_mem_resp_data_o_44_.u_io VSSA ) ( u_rocc_mem_resp_data_o_43_.u_io VSSA ) ( u_rocc_mem_resp_data_o_42_.u_io VSSA ) ( u_rocc_mem_resp_data_o_41_.u_io VSSA ) ( u_rocc_mem_resp_data_o_40_.u_io VSSA ) ( u_rocc_mem_resp_data_o_39_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_38_.u_io VSSA ) ( u_vdd_5 VSSA ) ( u_vss_5 VSSA ) ( u_v18_13 VSSA ) ( u_vzz_13 VSSA ) ( u_rocc_mem_resp_data_o_37_.u_io VSSA ) ( u_rocc_mem_resp_data_o_36_.u_io VSSA ) ( u_rocc_mem_resp_data_o_35_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_34_.u_io VSSA ) ( u_rocc_mem_resp_data_o_33_.u_io VSSA ) ( u_rocc_mem_resp_data_o_32_.u_io VSSA ) ( u_rocc_mem_resp_data_o_31_.u_io VSSA ) ( u_rocc_mem_resp_data_o_30_.u_io VSSA ) ( u_v18_12 VSSA ) ( u_vzz_12 VSSA ) ( u_rocc_mem_resp_data_o_29_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_28_.u_io VSSA ) ( u_rocc_mem_resp_data_o_27_.u_io VSSA ) ( u_rocc_mem_resp_data_o_26_.u_io VSSA ) ( u_rocc_mem_resp_data_o_25_.u_io VSSA ) ( u_rocc_mem_resp_data_o_24_.u_io VSSA ) ( u_rocc_mem_resp_data_o_23_.u_io VSSA ) ( u_rocc_mem_resp_data_o_22_.u_io VSSA ) ( u_v18_11 VSSA )
+      ( u_vzz_11 VSSA ) ( u_rocc_mem_resp_data_o_21_.u_io VSSA ) ( u_rocc_mem_resp_data_o_20_.u_io VSSA ) ( u_vdd_4 VSSA ) ( u_vss_4 VSSA ) ( u_rocc_mem_resp_data_o_19_.u_io VSSA ) ( u_rocc_mem_resp_data_o_18_.u_io VSSA ) ( u_rocc_mem_resp_data_o_17_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_16_.u_io VSSA ) ( u_rocc_mem_resp_data_o_15_.u_io VSSA ) ( u_rocc_mem_resp_data_o_14_.u_io VSSA ) ( u_v18_10 VSSA ) ( u_vzz_10 VSSA ) ( u_rocc_mem_resp_data_o_13_.u_io VSSA ) ( u_rocc_mem_resp_data_o_12_.u_io VSSA ) ( u_rocc_mem_resp_data_o_11_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_10_.u_io VSSA ) ( u_rocc_mem_resp_data_o_9_.u_io VSSA ) ( u_rocc_mem_resp_data_o_8_.u_io VSSA ) ( u_rocc_mem_resp_data_o_7_.u_io VSSA ) ( u_rocc_mem_resp_data_o_6_.u_io VSSA ) ( u_v18_9 VSSA ) ( u_vzz_9 VSSA ) ( u_rocc_mem_resp_data_o_5_.u_io VSSA )
+      ( u_rocc_mem_resp_data_o_4_.u_io VSSA ) ( u_rocc_mem_resp_data_o_3_.u_io VSSA ) ( u_rocc_mem_resp_data_o_2_.u_io VSSA ) ( u_rocc_mem_resp_data_o_1_.u_io VSSA ) ( u_vdd_3 VSSA ) ( u_vss_3 VSSA ) ( u_rocc_mem_resp_data_o_0_.u_io VSSA ) ( u_rocc_mem_resp_v.u_io VSSA )
+      ( u_rocc_mem_req_ready.u_io VSSA ) ( u_v18_8 VSSA ) ( u_vzz_8 VSSA ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VSSA )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VSSA ) ( u_v18_7 VSSA ) ( u_vzz_7 VSSA ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VSSA )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VSSA ) ( u_vdd_2 VSSA ) ( u_vss_2 VSSA ) ( u_v18_6 VSSA )
+      ( u_vzz_6 VSSA ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VSSA ) ( u_v18_5 VSSA )
+      ( u_vzz_5 VSSA ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VSSA )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VSSA ) ( u_v18_4 VSSA ) ( u_vzz_4 VSSA ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VSSA ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VSSA ) ( u_rocc_mem_req_v.u_in VSSA ) ( u_vdd_1 VSSA ) ( u_vss_1 VSSA )
+      ( u_rocc_resp_ready.u_io VSSA ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSSA ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSSA ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSSA ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSSA ) ( u_v18_3 VSSA ) ( u_vzz_3 VSSA ) ( u_rocc_resp_data_i.u_io\[3\].u_in VSSA )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VSSA ) ( u_rocc_resp_data_i.u_io\[1\].u_in VSSA ) ( u_rocc_resp_data_i.u_io\[0\].u_in VSSA ) ( u_rocc_resp_v.u_in VSSA ) ( u_rocc_cmd_ready.u_in VSSA ) ( u_rocc_cmd_data_o_15_.u_io VSSA ) ( u_rocc_cmd_data_o_14_.u_io VSSA ) ( u_v18_2 VSSA )
+      ( u_vzz_2 VSSA ) ( u_rocc_cmd_data_o_13_.u_io VSSA ) ( u_rocc_cmd_data_o_12_.u_io VSSA ) ( u_rocc_cmd_data_o_11_.u_io VSSA ) ( u_rocc_cmd_data_o_10_.u_io VSSA ) ( u_rocc_cmd_data_o_9_.u_io VSSA ) ( u_vdd_0 VSSA ) ( u_vss_0 VSSA )
+      ( u_rocc_cmd_data_o_8_.u_io VSSA ) ( u_rocc_cmd_data_o_7_.u_io VSSA ) ( u_rocc_cmd_data_o_6_.u_io VSSA ) ( u_v18_1 VSSA ) ( u_vzz_1 VSSA ) ( u_rocc_cmd_data_o_5_.u_io VSSA ) ( u_rocc_cmd_data_o_4_.u_io VSSA ) ( u_rocc_cmd_data_o_3_.u_io VSSA )
+      ( u_rocc_cmd_data_o_2_.u_io VSSA ) ( u_rocc_cmd_data_o_1_.u_io VSSA ) ( u_rocc_cmd_data_o_0_.u_io VSSA ) ( u_rocc_cmd_v.u_io VSSA ) ( u_v18_0 VSSA ) ( u_vzz_0 VSSA ) ( u_reset.u_in VSSA ) ( u_clk.u_in VSSA ) + USE SIGNAL ;
+    - VDDIO_Q_0 ( u_v18_20 VDDIO_Q ) ( u_vzz_20 VDDIO_Q ) ( u_vss_8 VDDIO_Q ) ( u_vdd_8 VDDIO_Q ) ( u_tdo.u_io VDDIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VDDIO_Q ) ( u_rocc_ctrl_o_exception.u_io VDDIO_Q )
+      ( u_rocc_ctrl_o_s.u_io VDDIO_Q ) ( u_v18_19 VDDIO_Q ) ( u_vzz_19 VDDIO_Q ) ( u_rocc_ctrl_i_interrupt.u_in VDDIO_Q ) ( u_rocc_ctrl_i_busy.u_in VDDIO_Q ) ( u_fsb_node_yumi.u_in VDDIO_Q ) ( u_fsb_node_data_o_7_.u_io VDDIO_Q ) ( u_fsb_node_data_o_6_.u_io VDDIO_Q )
+      ( u_fsb_node_data_o_5_.u_io VDDIO_Q ) ( u_fsb_node_data_o_4_.u_io VDDIO_Q ) ( u_fsb_node_data_o_3_.u_io VDDIO_Q ) ( u_v18_18 VDDIO_Q ) ( u_vzz_18 VDDIO_Q ) ( u_fsb_node_data_o_2_.u_io VDDIO_Q ) ( u_fsb_node_data_o_1_.u_io VDDIO_Q ) ( u_vdd_7 VDDIO_Q )
+      ( u_vss_7 VDDIO_Q ) ( u_fsb_node_data_o_0_.u_io VDDIO_Q ) ( u_fsb_node_v_o.u_io VDDIO_Q ) ( u_fsb_node_ready.u_io VDDIO_Q ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDIO_Q ) ( u_v18_17 VDDIO_Q )
+      ( u_vzz_17 VDDIO_Q ) ( u_fsb_node_data_i.u_io\[4\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[3\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[2\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[1\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[0\].u_in VDDIO_Q ) ( u_fsb_node_v_i.u_in VDDIO_Q ) ( u_rocc_mem_resp_data_o_63_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_62_.u_io VDDIO_Q ) ( u_v18_16 VDDIO_Q ) ( u_vzz_16 VDDIO_Q ) ( u_rocc_mem_resp_data_o_61_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_60_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_59_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_58_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_57_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_56_.u_io VDDIO_Q ) ( u_vss_6 VDDIO_Q ) ( u_vdd_6 VDDIO_Q ) ( u_rocc_mem_resp_data_o_55_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_54_.u_io VDDIO_Q ) ( u_v18_15 VDDIO_Q ) ( u_vzz_15 VDDIO_Q ) ( u_rocc_mem_resp_data_o_53_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_52_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_51_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_50_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_49_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_48_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_47_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_46_.u_io VDDIO_Q ) ( u_v18_14 VDDIO_Q )
+      ( u_vzz_14 VDDIO_Q ) ( u_rocc_mem_resp_data_o_45_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_44_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_43_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_42_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_41_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_40_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_39_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_38_.u_io VDDIO_Q ) ( u_vdd_5 VDDIO_Q ) ( u_vss_5 VDDIO_Q ) ( u_v18_13 VDDIO_Q ) ( u_vzz_13 VDDIO_Q ) ( u_rocc_mem_resp_data_o_37_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_36_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_35_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_34_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_33_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_32_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_31_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_30_.u_io VDDIO_Q ) ( u_v18_12 VDDIO_Q ) ( u_vzz_12 VDDIO_Q ) ( u_rocc_mem_resp_data_o_29_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_28_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_27_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_26_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_25_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_24_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_23_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_22_.u_io VDDIO_Q ) ( u_v18_11 VDDIO_Q )
+      ( u_vzz_11 VDDIO_Q ) ( u_rocc_mem_resp_data_o_21_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_20_.u_io VDDIO_Q ) ( u_vdd_4 VDDIO_Q ) ( u_vss_4 VDDIO_Q ) ( u_rocc_mem_resp_data_o_19_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_18_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_17_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_16_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_15_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_14_.u_io VDDIO_Q ) ( u_v18_10 VDDIO_Q ) ( u_vzz_10 VDDIO_Q ) ( u_rocc_mem_resp_data_o_13_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_12_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_11_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_10_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_9_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_8_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_7_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_6_.u_io VDDIO_Q ) ( u_v18_9 VDDIO_Q ) ( u_vzz_9 VDDIO_Q ) ( u_rocc_mem_resp_data_o_5_.u_io VDDIO_Q )
+      ( u_rocc_mem_resp_data_o_4_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_3_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_2_.u_io VDDIO_Q ) ( u_rocc_mem_resp_data_o_1_.u_io VDDIO_Q ) ( u_vdd_3 VDDIO_Q ) ( u_vss_3 VDDIO_Q ) ( u_rocc_mem_resp_data_o_0_.u_io VDDIO_Q ) ( u_rocc_mem_resp_v.u_io VDDIO_Q )
+      ( u_rocc_mem_req_ready.u_io VDDIO_Q ) ( u_v18_8 VDDIO_Q ) ( u_vzz_8 VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VDDIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VDDIO_Q ) ( u_v18_7 VDDIO_Q ) ( u_vzz_7 VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VDDIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VDDIO_Q ) ( u_vdd_2 VDDIO_Q ) ( u_vss_2 VDDIO_Q ) ( u_v18_6 VDDIO_Q )
+      ( u_vzz_6 VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VDDIO_Q ) ( u_v18_5 VDDIO_Q )
+      ( u_vzz_5 VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VDDIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VDDIO_Q ) ( u_v18_4 VDDIO_Q ) ( u_vzz_4 VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VDDIO_Q ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VDDIO_Q ) ( u_rocc_mem_req_v.u_in VDDIO_Q ) ( u_vdd_1 VDDIO_Q ) ( u_vss_1 VDDIO_Q )
+      ( u_rocc_resp_ready.u_io VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[7\].u_in VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[6\].u_in VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[5\].u_in VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[4\].u_in VDDIO_Q ) ( u_v18_3 VDDIO_Q ) ( u_vzz_3 VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[3\].u_in VDDIO_Q )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[1\].u_in VDDIO_Q ) ( u_rocc_resp_data_i.u_io\[0\].u_in VDDIO_Q ) ( u_rocc_resp_v.u_in VDDIO_Q ) ( u_rocc_cmd_ready.u_in VDDIO_Q ) ( u_rocc_cmd_data_o_15_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_14_.u_io VDDIO_Q ) ( u_v18_2 VDDIO_Q )
+      ( u_vzz_2 VDDIO_Q ) ( u_rocc_cmd_data_o_13_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_12_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_11_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_10_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_9_.u_io VDDIO_Q ) ( u_vdd_0 VDDIO_Q ) ( u_vss_0 VDDIO_Q )
+      ( u_rocc_cmd_data_o_8_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_7_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_6_.u_io VDDIO_Q ) ( u_v18_1 VDDIO_Q ) ( u_vzz_1 VDDIO_Q ) ( u_rocc_cmd_data_o_5_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_4_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_3_.u_io VDDIO_Q )
+      ( u_rocc_cmd_data_o_2_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_1_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_0_.u_io VDDIO_Q ) ( u_rocc_cmd_v.u_io VDDIO_Q ) ( u_v18_0 VDDIO_Q ) ( u_vzz_0 VDDIO_Q ) ( u_reset.u_in VDDIO_Q ) ( u_clk.u_in VDDIO_Q ) + USE SIGNAL ;
+    - VCCD_0 ( u_v18_20 VCCD ) ( u_vzz_20 VCCD ) ( u_vss_8 VCCD ) ( u_vdd_8 VCCD ) ( u_tdo.u_io VCCD ) ( u_rocc_ctrl_o_host_id.u_io VCCD ) ( u_rocc_ctrl_o_exception.u_io VCCD )
+      ( u_rocc_ctrl_o_s.u_io VCCD ) ( u_v18_19 VCCD ) ( u_vzz_19 VCCD ) ( u_rocc_ctrl_i_interrupt.u_in VCCD ) ( u_rocc_ctrl_i_busy.u_in VCCD ) ( u_fsb_node_yumi.u_in VCCD ) ( u_fsb_node_data_o_7_.u_io VCCD ) ( u_fsb_node_data_o_6_.u_io VCCD )
+      ( u_fsb_node_data_o_5_.u_io VCCD ) ( u_fsb_node_data_o_4_.u_io VCCD ) ( u_fsb_node_data_o_3_.u_io VCCD ) ( u_v18_18 VCCD ) ( u_vzz_18 VCCD ) ( u_fsb_node_data_o_2_.u_io VCCD ) ( u_fsb_node_data_o_1_.u_io VCCD ) ( u_vdd_7 VCCD )
+      ( u_vss_7 VCCD ) ( u_fsb_node_data_o_0_.u_io VCCD ) ( u_fsb_node_v_o.u_io VCCD ) ( u_fsb_node_ready.u_io VCCD ) ( u_fsb_node_data_i.u_io\[7\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[6\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[5\].u_in VCCD ) ( u_v18_17 VCCD )
+      ( u_vzz_17 VCCD ) ( u_fsb_node_data_i.u_io\[4\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[3\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[2\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[1\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[0\].u_in VCCD ) ( u_fsb_node_v_i.u_in VCCD ) ( u_rocc_mem_resp_data_o_63_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_62_.u_io VCCD ) ( u_v18_16 VCCD ) ( u_vzz_16 VCCD ) ( u_rocc_mem_resp_data_o_61_.u_io VCCD ) ( u_rocc_mem_resp_data_o_60_.u_io VCCD ) ( u_rocc_mem_resp_data_o_59_.u_io VCCD ) ( u_rocc_mem_resp_data_o_58_.u_io VCCD ) ( u_rocc_mem_resp_data_o_57_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_56_.u_io VCCD ) ( u_vss_6 VCCD ) ( u_vdd_6 VCCD ) ( u_rocc_mem_resp_data_o_55_.u_io VCCD ) ( u_rocc_mem_resp_data_o_54_.u_io VCCD ) ( u_v18_15 VCCD ) ( u_vzz_15 VCCD ) ( u_rocc_mem_resp_data_o_53_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_52_.u_io VCCD ) ( u_rocc_mem_resp_data_o_51_.u_io VCCD ) ( u_rocc_mem_resp_data_o_50_.u_io VCCD ) ( u_rocc_mem_resp_data_o_49_.u_io VCCD ) ( u_rocc_mem_resp_data_o_48_.u_io VCCD ) ( u_rocc_mem_resp_data_o_47_.u_io VCCD ) ( u_rocc_mem_resp_data_o_46_.u_io VCCD ) ( u_v18_14 VCCD )
+      ( u_vzz_14 VCCD ) ( u_rocc_mem_resp_data_o_45_.u_io VCCD ) ( u_rocc_mem_resp_data_o_44_.u_io VCCD ) ( u_rocc_mem_resp_data_o_43_.u_io VCCD ) ( u_rocc_mem_resp_data_o_42_.u_io VCCD ) ( u_rocc_mem_resp_data_o_41_.u_io VCCD ) ( u_rocc_mem_resp_data_o_40_.u_io VCCD ) ( u_rocc_mem_resp_data_o_39_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_38_.u_io VCCD ) ( u_vdd_5 VCCD ) ( u_vss_5 VCCD ) ( u_v18_13 VCCD ) ( u_vzz_13 VCCD ) ( u_rocc_mem_resp_data_o_37_.u_io VCCD ) ( u_rocc_mem_resp_data_o_36_.u_io VCCD ) ( u_rocc_mem_resp_data_o_35_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_34_.u_io VCCD ) ( u_rocc_mem_resp_data_o_33_.u_io VCCD ) ( u_rocc_mem_resp_data_o_32_.u_io VCCD ) ( u_rocc_mem_resp_data_o_31_.u_io VCCD ) ( u_rocc_mem_resp_data_o_30_.u_io VCCD ) ( u_v18_12 VCCD ) ( u_vzz_12 VCCD ) ( u_rocc_mem_resp_data_o_29_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_28_.u_io VCCD ) ( u_rocc_mem_resp_data_o_27_.u_io VCCD ) ( u_rocc_mem_resp_data_o_26_.u_io VCCD ) ( u_rocc_mem_resp_data_o_25_.u_io VCCD ) ( u_rocc_mem_resp_data_o_24_.u_io VCCD ) ( u_rocc_mem_resp_data_o_23_.u_io VCCD ) ( u_rocc_mem_resp_data_o_22_.u_io VCCD ) ( u_v18_11 VCCD )
+      ( u_vzz_11 VCCD ) ( u_rocc_mem_resp_data_o_21_.u_io VCCD ) ( u_rocc_mem_resp_data_o_20_.u_io VCCD ) ( u_vdd_4 VCCD ) ( u_vss_4 VCCD ) ( u_rocc_mem_resp_data_o_19_.u_io VCCD ) ( u_rocc_mem_resp_data_o_18_.u_io VCCD ) ( u_rocc_mem_resp_data_o_17_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_16_.u_io VCCD ) ( u_rocc_mem_resp_data_o_15_.u_io VCCD ) ( u_rocc_mem_resp_data_o_14_.u_io VCCD ) ( u_v18_10 VCCD ) ( u_vzz_10 VCCD ) ( u_rocc_mem_resp_data_o_13_.u_io VCCD ) ( u_rocc_mem_resp_data_o_12_.u_io VCCD ) ( u_rocc_mem_resp_data_o_11_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_10_.u_io VCCD ) ( u_rocc_mem_resp_data_o_9_.u_io VCCD ) ( u_rocc_mem_resp_data_o_8_.u_io VCCD ) ( u_rocc_mem_resp_data_o_7_.u_io VCCD ) ( u_rocc_mem_resp_data_o_6_.u_io VCCD ) ( u_v18_9 VCCD ) ( u_vzz_9 VCCD ) ( u_rocc_mem_resp_data_o_5_.u_io VCCD )
+      ( u_rocc_mem_resp_data_o_4_.u_io VCCD ) ( u_rocc_mem_resp_data_o_3_.u_io VCCD ) ( u_rocc_mem_resp_data_o_2_.u_io VCCD ) ( u_rocc_mem_resp_data_o_1_.u_io VCCD ) ( u_vdd_3 VCCD ) ( u_vss_3 VCCD ) ( u_rocc_mem_resp_data_o_0_.u_io VCCD ) ( u_rocc_mem_resp_v.u_io VCCD )
+      ( u_rocc_mem_req_ready.u_io VCCD ) ( u_v18_8 VCCD ) ( u_vzz_8 VCCD ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VCCD )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VCCD ) ( u_v18_7 VCCD ) ( u_vzz_7 VCCD ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VCCD )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VCCD ) ( u_vdd_2 VCCD ) ( u_vss_2 VCCD ) ( u_v18_6 VCCD )
+      ( u_vzz_6 VCCD ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VCCD ) ( u_v18_5 VCCD )
+      ( u_vzz_5 VCCD ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VCCD )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VCCD ) ( u_v18_4 VCCD ) ( u_vzz_4 VCCD ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VCCD ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VCCD ) ( u_rocc_mem_req_v.u_in VCCD ) ( u_vdd_1 VCCD ) ( u_vss_1 VCCD )
+      ( u_rocc_resp_ready.u_io VCCD ) ( u_rocc_resp_data_i.u_io\[7\].u_in VCCD ) ( u_rocc_resp_data_i.u_io\[6\].u_in VCCD ) ( u_rocc_resp_data_i.u_io\[5\].u_in VCCD ) ( u_rocc_resp_data_i.u_io\[4\].u_in VCCD ) ( u_v18_3 VCCD ) ( u_vzz_3 VCCD ) ( u_rocc_resp_data_i.u_io\[3\].u_in VCCD )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VCCD ) ( u_rocc_resp_data_i.u_io\[1\].u_in VCCD ) ( u_rocc_resp_data_i.u_io\[0\].u_in VCCD ) ( u_rocc_resp_v.u_in VCCD ) ( u_rocc_cmd_ready.u_in VCCD ) ( u_rocc_cmd_data_o_15_.u_io VCCD ) ( u_rocc_cmd_data_o_14_.u_io VCCD ) ( u_v18_2 VCCD )
+      ( u_vzz_2 VCCD ) ( u_rocc_cmd_data_o_13_.u_io VCCD ) ( u_rocc_cmd_data_o_12_.u_io VCCD ) ( u_rocc_cmd_data_o_11_.u_io VCCD ) ( u_rocc_cmd_data_o_10_.u_io VCCD ) ( u_rocc_cmd_data_o_9_.u_io VCCD ) ( u_vdd_0 VCCD ) ( u_vss_0 VCCD )
+      ( u_rocc_cmd_data_o_8_.u_io VCCD ) ( u_rocc_cmd_data_o_7_.u_io VCCD ) ( u_rocc_cmd_data_o_6_.u_io VCCD ) ( u_v18_1 VCCD ) ( u_vzz_1 VCCD ) ( u_rocc_cmd_data_o_5_.u_io VCCD ) ( u_rocc_cmd_data_o_4_.u_io VCCD ) ( u_rocc_cmd_data_o_3_.u_io VCCD )
+      ( u_rocc_cmd_data_o_2_.u_io VCCD ) ( u_rocc_cmd_data_o_1_.u_io VCCD ) ( u_rocc_cmd_data_o_0_.u_io VCCD ) ( u_rocc_cmd_v.u_io VCCD ) ( u_v18_0 VCCD ) ( u_vzz_0 VCCD ) ( u_reset.u_in VCCD ) ( u_clk.u_in VCCD ) + USE SIGNAL ;
+    - VSSD_0 ( u_v18_20 VSSD ) ( u_vzz_20 VSSD ) ( u_vss_8 VSSD ) ( u_vdd_8 VSSD ) ( u_tdo.u_io VSSD ) ( u_rocc_ctrl_o_host_id.u_io VSSD ) ( u_rocc_ctrl_o_exception.u_io VSSD )
+      ( u_rocc_ctrl_o_s.u_io VSSD ) ( u_v18_19 VSSD ) ( u_vzz_19 VSSD ) ( u_rocc_ctrl_i_interrupt.u_in VSSD ) ( u_rocc_ctrl_i_busy.u_in VSSD ) ( u_fsb_node_yumi.u_in VSSD ) ( u_fsb_node_data_o_7_.u_io VSSD ) ( u_fsb_node_data_o_6_.u_io VSSD )
+      ( u_fsb_node_data_o_5_.u_io VSSD ) ( u_fsb_node_data_o_4_.u_io VSSD ) ( u_fsb_node_data_o_3_.u_io VSSD ) ( u_v18_18 VSSD ) ( u_vzz_18 VSSD ) ( u_fsb_node_data_o_2_.u_io VSSD ) ( u_fsb_node_data_o_1_.u_io VSSD ) ( u_vdd_7 VSSD )
+      ( u_vss_7 VSSD ) ( u_fsb_node_data_o_0_.u_io VSSD ) ( u_fsb_node_v_o.u_io VSSD ) ( u_fsb_node_ready.u_io VSSD ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSD ) ( u_v18_17 VSSD )
+      ( u_vzz_17 VSSD ) ( u_fsb_node_data_i.u_io\[4\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[3\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[2\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[1\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[0\].u_in VSSD ) ( u_fsb_node_v_i.u_in VSSD ) ( u_rocc_mem_resp_data_o_63_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_62_.u_io VSSD ) ( u_v18_16 VSSD ) ( u_vzz_16 VSSD ) ( u_rocc_mem_resp_data_o_61_.u_io VSSD ) ( u_rocc_mem_resp_data_o_60_.u_io VSSD ) ( u_rocc_mem_resp_data_o_59_.u_io VSSD ) ( u_rocc_mem_resp_data_o_58_.u_io VSSD ) ( u_rocc_mem_resp_data_o_57_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_56_.u_io VSSD ) ( u_vss_6 VSSD ) ( u_vdd_6 VSSD ) ( u_rocc_mem_resp_data_o_55_.u_io VSSD ) ( u_rocc_mem_resp_data_o_54_.u_io VSSD ) ( u_v18_15 VSSD ) ( u_vzz_15 VSSD ) ( u_rocc_mem_resp_data_o_53_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_52_.u_io VSSD ) ( u_rocc_mem_resp_data_o_51_.u_io VSSD ) ( u_rocc_mem_resp_data_o_50_.u_io VSSD ) ( u_rocc_mem_resp_data_o_49_.u_io VSSD ) ( u_rocc_mem_resp_data_o_48_.u_io VSSD ) ( u_rocc_mem_resp_data_o_47_.u_io VSSD ) ( u_rocc_mem_resp_data_o_46_.u_io VSSD ) ( u_v18_14 VSSD )
+      ( u_vzz_14 VSSD ) ( u_rocc_mem_resp_data_o_45_.u_io VSSD ) ( u_rocc_mem_resp_data_o_44_.u_io VSSD ) ( u_rocc_mem_resp_data_o_43_.u_io VSSD ) ( u_rocc_mem_resp_data_o_42_.u_io VSSD ) ( u_rocc_mem_resp_data_o_41_.u_io VSSD ) ( u_rocc_mem_resp_data_o_40_.u_io VSSD ) ( u_rocc_mem_resp_data_o_39_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_38_.u_io VSSD ) ( u_vdd_5 VSSD ) ( u_vss_5 VSSD ) ( u_v18_13 VSSD ) ( u_vzz_13 VSSD ) ( u_rocc_mem_resp_data_o_37_.u_io VSSD ) ( u_rocc_mem_resp_data_o_36_.u_io VSSD ) ( u_rocc_mem_resp_data_o_35_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_34_.u_io VSSD ) ( u_rocc_mem_resp_data_o_33_.u_io VSSD ) ( u_rocc_mem_resp_data_o_32_.u_io VSSD ) ( u_rocc_mem_resp_data_o_31_.u_io VSSD ) ( u_rocc_mem_resp_data_o_30_.u_io VSSD ) ( u_v18_12 VSSD ) ( u_vzz_12 VSSD ) ( u_rocc_mem_resp_data_o_29_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_28_.u_io VSSD ) ( u_rocc_mem_resp_data_o_27_.u_io VSSD ) ( u_rocc_mem_resp_data_o_26_.u_io VSSD ) ( u_rocc_mem_resp_data_o_25_.u_io VSSD ) ( u_rocc_mem_resp_data_o_24_.u_io VSSD ) ( u_rocc_mem_resp_data_o_23_.u_io VSSD ) ( u_rocc_mem_resp_data_o_22_.u_io VSSD ) ( u_v18_11 VSSD )
+      ( u_vzz_11 VSSD ) ( u_rocc_mem_resp_data_o_21_.u_io VSSD ) ( u_rocc_mem_resp_data_o_20_.u_io VSSD ) ( u_vdd_4 VSSD ) ( u_vss_4 VSSD ) ( u_rocc_mem_resp_data_o_19_.u_io VSSD ) ( u_rocc_mem_resp_data_o_18_.u_io VSSD ) ( u_rocc_mem_resp_data_o_17_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_16_.u_io VSSD ) ( u_rocc_mem_resp_data_o_15_.u_io VSSD ) ( u_rocc_mem_resp_data_o_14_.u_io VSSD ) ( u_v18_10 VSSD ) ( u_vzz_10 VSSD ) ( u_rocc_mem_resp_data_o_13_.u_io VSSD ) ( u_rocc_mem_resp_data_o_12_.u_io VSSD ) ( u_rocc_mem_resp_data_o_11_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_10_.u_io VSSD ) ( u_rocc_mem_resp_data_o_9_.u_io VSSD ) ( u_rocc_mem_resp_data_o_8_.u_io VSSD ) ( u_rocc_mem_resp_data_o_7_.u_io VSSD ) ( u_rocc_mem_resp_data_o_6_.u_io VSSD ) ( u_v18_9 VSSD ) ( u_vzz_9 VSSD ) ( u_rocc_mem_resp_data_o_5_.u_io VSSD )
+      ( u_rocc_mem_resp_data_o_4_.u_io VSSD ) ( u_rocc_mem_resp_data_o_3_.u_io VSSD ) ( u_rocc_mem_resp_data_o_2_.u_io VSSD ) ( u_rocc_mem_resp_data_o_1_.u_io VSSD ) ( u_vdd_3 VSSD ) ( u_vss_3 VSSD ) ( u_rocc_mem_resp_data_o_0_.u_io VSSD ) ( u_rocc_mem_resp_v.u_io VSSD )
+      ( u_rocc_mem_req_ready.u_io VSSD ) ( u_v18_8 VSSD ) ( u_vzz_8 VSSD ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VSSD )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VSSD ) ( u_v18_7 VSSD ) ( u_vzz_7 VSSD ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VSSD )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VSSD ) ( u_vdd_2 VSSD ) ( u_vss_2 VSSD ) ( u_v18_6 VSSD )
+      ( u_vzz_6 VSSD ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VSSD ) ( u_v18_5 VSSD )
+      ( u_vzz_5 VSSD ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VSSD )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VSSD ) ( u_v18_4 VSSD ) ( u_vzz_4 VSSD ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VSSD ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VSSD ) ( u_rocc_mem_req_v.u_in VSSD ) ( u_vdd_1 VSSD ) ( u_vss_1 VSSD )
+      ( u_rocc_resp_ready.u_io VSSD ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSSD ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSSD ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSSD ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSSD ) ( u_v18_3 VSSD ) ( u_vzz_3 VSSD ) ( u_rocc_resp_data_i.u_io\[3\].u_in VSSD )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VSSD ) ( u_rocc_resp_data_i.u_io\[1\].u_in VSSD ) ( u_rocc_resp_data_i.u_io\[0\].u_in VSSD ) ( u_rocc_resp_v.u_in VSSD ) ( u_rocc_cmd_ready.u_in VSSD ) ( u_rocc_cmd_data_o_15_.u_io VSSD ) ( u_rocc_cmd_data_o_14_.u_io VSSD ) ( u_v18_2 VSSD )
+      ( u_vzz_2 VSSD ) ( u_rocc_cmd_data_o_13_.u_io VSSD ) ( u_rocc_cmd_data_o_12_.u_io VSSD ) ( u_rocc_cmd_data_o_11_.u_io VSSD ) ( u_rocc_cmd_data_o_10_.u_io VSSD ) ( u_rocc_cmd_data_o_9_.u_io VSSD ) ( u_vdd_0 VSSD ) ( u_vss_0 VSSD )
+      ( u_rocc_cmd_data_o_8_.u_io VSSD ) ( u_rocc_cmd_data_o_7_.u_io VSSD ) ( u_rocc_cmd_data_o_6_.u_io VSSD ) ( u_v18_1 VSSD ) ( u_vzz_1 VSSD ) ( u_rocc_cmd_data_o_5_.u_io VSSD ) ( u_rocc_cmd_data_o_4_.u_io VSSD ) ( u_rocc_cmd_data_o_3_.u_io VSSD )
+      ( u_rocc_cmd_data_o_2_.u_io VSSD ) ( u_rocc_cmd_data_o_1_.u_io VSSD ) ( u_rocc_cmd_data_o_0_.u_io VSSD ) ( u_rocc_cmd_v.u_io VSSD ) ( u_v18_0 VSSD ) ( u_vzz_0 VSSD ) ( u_reset.u_in VSSD ) ( u_clk.u_in VSSD ) + USE SIGNAL ;
+    - VSSIO_Q_0 ( u_v18_20 VSSIO_Q ) ( u_vzz_20 VSSIO_Q ) ( u_vss_8 VSSIO_Q ) ( u_vdd_8 VSSIO_Q ) ( u_tdo.u_io VSSIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VSSIO_Q ) ( u_rocc_ctrl_o_exception.u_io VSSIO_Q )
+      ( u_rocc_ctrl_o_s.u_io VSSIO_Q ) ( u_v18_19 VSSIO_Q ) ( u_vzz_19 VSSIO_Q ) ( u_rocc_ctrl_i_interrupt.u_in VSSIO_Q ) ( u_rocc_ctrl_i_busy.u_in VSSIO_Q ) ( u_fsb_node_yumi.u_in VSSIO_Q ) ( u_fsb_node_data_o_7_.u_io VSSIO_Q ) ( u_fsb_node_data_o_6_.u_io VSSIO_Q )
+      ( u_fsb_node_data_o_5_.u_io VSSIO_Q ) ( u_fsb_node_data_o_4_.u_io VSSIO_Q ) ( u_fsb_node_data_o_3_.u_io VSSIO_Q ) ( u_v18_18 VSSIO_Q ) ( u_vzz_18 VSSIO_Q ) ( u_fsb_node_data_o_2_.u_io VSSIO_Q ) ( u_fsb_node_data_o_1_.u_io VSSIO_Q ) ( u_vdd_7 VSSIO_Q )
+      ( u_vss_7 VSSIO_Q ) ( u_fsb_node_data_o_0_.u_io VSSIO_Q ) ( u_fsb_node_v_o.u_io VSSIO_Q ) ( u_fsb_node_ready.u_io VSSIO_Q ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSIO_Q ) ( u_v18_17 VSSIO_Q )
+      ( u_vzz_17 VSSIO_Q ) ( u_fsb_node_data_i.u_io\[4\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[3\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[2\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[1\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[0\].u_in VSSIO_Q ) ( u_fsb_node_v_i.u_in VSSIO_Q ) ( u_rocc_mem_resp_data_o_63_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_62_.u_io VSSIO_Q ) ( u_v18_16 VSSIO_Q ) ( u_vzz_16 VSSIO_Q ) ( u_rocc_mem_resp_data_o_61_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_60_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_59_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_58_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_57_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_56_.u_io VSSIO_Q ) ( u_vss_6 VSSIO_Q ) ( u_vdd_6 VSSIO_Q ) ( u_rocc_mem_resp_data_o_55_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_54_.u_io VSSIO_Q ) ( u_v18_15 VSSIO_Q ) ( u_vzz_15 VSSIO_Q ) ( u_rocc_mem_resp_data_o_53_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_52_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_51_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_50_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_49_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_48_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_47_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_46_.u_io VSSIO_Q ) ( u_v18_14 VSSIO_Q )
+      ( u_vzz_14 VSSIO_Q ) ( u_rocc_mem_resp_data_o_45_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_44_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_43_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_42_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_41_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_40_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_39_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_38_.u_io VSSIO_Q ) ( u_vdd_5 VSSIO_Q ) ( u_vss_5 VSSIO_Q ) ( u_v18_13 VSSIO_Q ) ( u_vzz_13 VSSIO_Q ) ( u_rocc_mem_resp_data_o_37_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_36_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_35_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_34_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_33_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_32_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_31_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_30_.u_io VSSIO_Q ) ( u_v18_12 VSSIO_Q ) ( u_vzz_12 VSSIO_Q ) ( u_rocc_mem_resp_data_o_29_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_28_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_27_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_26_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_25_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_24_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_23_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_22_.u_io VSSIO_Q ) ( u_v18_11 VSSIO_Q )
+      ( u_vzz_11 VSSIO_Q ) ( u_rocc_mem_resp_data_o_21_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_20_.u_io VSSIO_Q ) ( u_vdd_4 VSSIO_Q ) ( u_vss_4 VSSIO_Q ) ( u_rocc_mem_resp_data_o_19_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_18_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_17_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_16_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_15_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_14_.u_io VSSIO_Q ) ( u_v18_10 VSSIO_Q ) ( u_vzz_10 VSSIO_Q ) ( u_rocc_mem_resp_data_o_13_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_12_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_11_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_10_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_9_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_8_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_7_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_6_.u_io VSSIO_Q ) ( u_v18_9 VSSIO_Q ) ( u_vzz_9 VSSIO_Q ) ( u_rocc_mem_resp_data_o_5_.u_io VSSIO_Q )
+      ( u_rocc_mem_resp_data_o_4_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_3_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_2_.u_io VSSIO_Q ) ( u_rocc_mem_resp_data_o_1_.u_io VSSIO_Q ) ( u_vdd_3 VSSIO_Q ) ( u_vss_3 VSSIO_Q ) ( u_rocc_mem_resp_data_o_0_.u_io VSSIO_Q ) ( u_rocc_mem_resp_v.u_io VSSIO_Q )
+      ( u_rocc_mem_req_ready.u_io VSSIO_Q ) ( u_v18_8 VSSIO_Q ) ( u_vzz_8 VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VSSIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VSSIO_Q ) ( u_v18_7 VSSIO_Q ) ( u_vzz_7 VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VSSIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VSSIO_Q ) ( u_vdd_2 VSSIO_Q ) ( u_vss_2 VSSIO_Q ) ( u_v18_6 VSSIO_Q )
+      ( u_vzz_6 VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VSSIO_Q ) ( u_v18_5 VSSIO_Q )
+      ( u_vzz_5 VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VSSIO_Q )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VSSIO_Q ) ( u_v18_4 VSSIO_Q ) ( u_vzz_4 VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VSSIO_Q ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VSSIO_Q ) ( u_rocc_mem_req_v.u_in VSSIO_Q ) ( u_vdd_1 VSSIO_Q ) ( u_vss_1 VSSIO_Q )
+      ( u_rocc_resp_ready.u_io VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSSIO_Q ) ( u_v18_3 VSSIO_Q ) ( u_vzz_3 VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[3\].u_in VSSIO_Q )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[1\].u_in VSSIO_Q ) ( u_rocc_resp_data_i.u_io\[0\].u_in VSSIO_Q ) ( u_rocc_resp_v.u_in VSSIO_Q ) ( u_rocc_cmd_ready.u_in VSSIO_Q ) ( u_rocc_cmd_data_o_15_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_14_.u_io VSSIO_Q ) ( u_v18_2 VSSIO_Q )
+      ( u_vzz_2 VSSIO_Q ) ( u_rocc_cmd_data_o_13_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_12_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_11_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_10_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_9_.u_io VSSIO_Q ) ( u_vdd_0 VSSIO_Q ) ( u_vss_0 VSSIO_Q )
+      ( u_rocc_cmd_data_o_8_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_7_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_6_.u_io VSSIO_Q ) ( u_v18_1 VSSIO_Q ) ( u_vzz_1 VSSIO_Q ) ( u_rocc_cmd_data_o_5_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_4_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_3_.u_io VSSIO_Q )
+      ( u_rocc_cmd_data_o_2_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_1_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_0_.u_io VSSIO_Q ) ( u_rocc_cmd_v.u_io VSSIO_Q ) ( u_v18_0 VSSIO_Q ) ( u_vzz_0 VSSIO_Q ) ( u_reset.u_in VSSIO_Q ) ( u_clk.u_in VSSIO_Q ) + USE SIGNAL ;
+    - AMUXBUS_A_0 ( u_v18_20 AMUXBUS_A ) ( u_vzz_20 AMUXBUS_A ) ( u_vss_8 AMUXBUS_A ) ( u_vdd_8 AMUXBUS_A ) ( u_tdo.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_A )
+      ( u_rocc_ctrl_o_s.u_io AMUXBUS_A ) ( u_v18_19 AMUXBUS_A ) ( u_vzz_19 AMUXBUS_A ) ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_A ) ( u_rocc_ctrl_i_busy.u_in AMUXBUS_A ) ( u_fsb_node_yumi.u_in AMUXBUS_A ) ( u_fsb_node_data_o_7_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_6_.u_io AMUXBUS_A )
+      ( u_fsb_node_data_o_5_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_4_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_3_.u_io AMUXBUS_A ) ( u_v18_18 AMUXBUS_A ) ( u_vzz_18 AMUXBUS_A ) ( u_fsb_node_data_o_2_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_1_.u_io AMUXBUS_A ) ( u_vdd_7 AMUXBUS_A )
+      ( u_vss_7 AMUXBUS_A ) ( u_fsb_node_data_o_0_.u_io AMUXBUS_A ) ( u_fsb_node_v_o.u_io AMUXBUS_A ) ( u_fsb_node_ready.u_io AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_v18_17 AMUXBUS_A )
+      ( u_vzz_17 AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[3\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[1\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[0\].u_in AMUXBUS_A ) ( u_fsb_node_v_i.u_in AMUXBUS_A ) ( u_rocc_mem_resp_data_o_63_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_62_.u_io AMUXBUS_A ) ( u_v18_16 AMUXBUS_A ) ( u_vzz_16 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_61_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_60_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_59_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_58_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_57_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_56_.u_io AMUXBUS_A ) ( u_vss_6 AMUXBUS_A ) ( u_vdd_6 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_55_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_54_.u_io AMUXBUS_A ) ( u_v18_15 AMUXBUS_A ) ( u_vzz_15 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_53_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_52_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_51_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_50_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_49_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_48_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_47_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_46_.u_io AMUXBUS_A ) ( u_v18_14 AMUXBUS_A )
+      ( u_vzz_14 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_45_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_44_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_43_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_42_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_41_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_40_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_39_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_38_.u_io AMUXBUS_A ) ( u_vdd_5 AMUXBUS_A ) ( u_vss_5 AMUXBUS_A ) ( u_v18_13 AMUXBUS_A ) ( u_vzz_13 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_37_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_36_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_35_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_34_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_33_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_32_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_31_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_30_.u_io AMUXBUS_A ) ( u_v18_12 AMUXBUS_A ) ( u_vzz_12 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_29_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_28_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_27_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_26_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_25_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_24_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_23_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_22_.u_io AMUXBUS_A ) ( u_v18_11 AMUXBUS_A )
+      ( u_vzz_11 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_21_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_20_.u_io AMUXBUS_A ) ( u_vdd_4 AMUXBUS_A ) ( u_vss_4 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_19_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_18_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_17_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_16_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_15_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_14_.u_io AMUXBUS_A ) ( u_v18_10 AMUXBUS_A ) ( u_vzz_10 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_13_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_12_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_11_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_10_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_9_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_8_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_7_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_6_.u_io AMUXBUS_A ) ( u_v18_9 AMUXBUS_A ) ( u_vzz_9 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_5_.u_io AMUXBUS_A )
+      ( u_rocc_mem_resp_data_o_4_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_3_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_2_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_data_o_1_.u_io AMUXBUS_A ) ( u_vdd_3 AMUXBUS_A ) ( u_vss_3 AMUXBUS_A ) ( u_rocc_mem_resp_data_o_0_.u_io AMUXBUS_A ) ( u_rocc_mem_resp_v.u_io AMUXBUS_A )
+      ( u_rocc_mem_req_ready.u_io AMUXBUS_A ) ( u_v18_8 AMUXBUS_A ) ( u_vzz_8 AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in AMUXBUS_A )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in AMUXBUS_A ) ( u_v18_7 AMUXBUS_A ) ( u_vzz_7 AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in AMUXBUS_A )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in AMUXBUS_A ) ( u_vdd_2 AMUXBUS_A ) ( u_vss_2 AMUXBUS_A ) ( u_v18_6 AMUXBUS_A )
+      ( u_vzz_6 AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in AMUXBUS_A ) ( u_v18_5 AMUXBUS_A )
+      ( u_vzz_5 AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in AMUXBUS_A )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_v18_4 AMUXBUS_A ) ( u_vzz_4 AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in AMUXBUS_A ) ( u_rocc_mem_req_v.u_in AMUXBUS_A ) ( u_vdd_1 AMUXBUS_A ) ( u_vss_1 AMUXBUS_A )
+      ( u_rocc_resp_ready.u_io AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_v18_3 AMUXBUS_A ) ( u_vzz_3 AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[3\].u_in AMUXBUS_A )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[1\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[0\].u_in AMUXBUS_A ) ( u_rocc_resp_v.u_in AMUXBUS_A ) ( u_rocc_cmd_ready.u_in AMUXBUS_A ) ( u_rocc_cmd_data_o_15_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_14_.u_io AMUXBUS_A ) ( u_v18_2 AMUXBUS_A )
+      ( u_vzz_2 AMUXBUS_A ) ( u_rocc_cmd_data_o_13_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_12_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_11_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_10_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_9_.u_io AMUXBUS_A ) ( u_vdd_0 AMUXBUS_A ) ( u_vss_0 AMUXBUS_A )
+      ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_A ) ( u_v18_1 AMUXBUS_A ) ( u_vzz_1 AMUXBUS_A ) ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_A )
+      ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_A ) ( u_rocc_cmd_v.u_io AMUXBUS_A ) ( u_v18_0 AMUXBUS_A ) ( u_vzz_0 AMUXBUS_A ) ( u_reset.u_in AMUXBUS_A ) ( u_clk.u_in AMUXBUS_A ) + USE SIGNAL ;
+    - AMUXBUS_B_0 ( u_v18_20 AMUXBUS_B ) ( u_vzz_20 AMUXBUS_B ) ( u_vss_8 AMUXBUS_B ) ( u_vdd_8 AMUXBUS_B ) ( u_tdo.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_B )
+      ( u_rocc_ctrl_o_s.u_io AMUXBUS_B ) ( u_v18_19 AMUXBUS_B ) ( u_vzz_19 AMUXBUS_B ) ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_B ) ( u_rocc_ctrl_i_busy.u_in AMUXBUS_B ) ( u_fsb_node_yumi.u_in AMUXBUS_B ) ( u_fsb_node_data_o_7_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_6_.u_io AMUXBUS_B )
+      ( u_fsb_node_data_o_5_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_4_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_3_.u_io AMUXBUS_B ) ( u_v18_18 AMUXBUS_B ) ( u_vzz_18 AMUXBUS_B ) ( u_fsb_node_data_o_2_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_1_.u_io AMUXBUS_B ) ( u_vdd_7 AMUXBUS_B )
+      ( u_vss_7 AMUXBUS_B ) ( u_fsb_node_data_o_0_.u_io AMUXBUS_B ) ( u_fsb_node_v_o.u_io AMUXBUS_B ) ( u_fsb_node_ready.u_io AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_v18_17 AMUXBUS_B )
+      ( u_vzz_17 AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[3\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[1\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[0\].u_in AMUXBUS_B ) ( u_fsb_node_v_i.u_in AMUXBUS_B ) ( u_rocc_mem_resp_data_o_63_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_62_.u_io AMUXBUS_B ) ( u_v18_16 AMUXBUS_B ) ( u_vzz_16 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_61_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_60_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_59_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_58_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_57_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_56_.u_io AMUXBUS_B ) ( u_vss_6 AMUXBUS_B ) ( u_vdd_6 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_55_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_54_.u_io AMUXBUS_B ) ( u_v18_15 AMUXBUS_B ) ( u_vzz_15 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_53_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_52_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_51_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_50_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_49_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_48_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_47_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_46_.u_io AMUXBUS_B ) ( u_v18_14 AMUXBUS_B )
+      ( u_vzz_14 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_45_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_44_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_43_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_42_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_41_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_40_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_39_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_38_.u_io AMUXBUS_B ) ( u_vdd_5 AMUXBUS_B ) ( u_vss_5 AMUXBUS_B ) ( u_v18_13 AMUXBUS_B ) ( u_vzz_13 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_37_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_36_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_35_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_34_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_33_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_32_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_31_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_30_.u_io AMUXBUS_B ) ( u_v18_12 AMUXBUS_B ) ( u_vzz_12 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_29_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_28_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_27_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_26_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_25_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_24_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_23_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_22_.u_io AMUXBUS_B ) ( u_v18_11 AMUXBUS_B )
+      ( u_vzz_11 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_21_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_20_.u_io AMUXBUS_B ) ( u_vdd_4 AMUXBUS_B ) ( u_vss_4 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_19_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_18_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_17_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_16_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_15_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_14_.u_io AMUXBUS_B ) ( u_v18_10 AMUXBUS_B ) ( u_vzz_10 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_13_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_12_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_11_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_10_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_9_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_8_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_7_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_6_.u_io AMUXBUS_B ) ( u_v18_9 AMUXBUS_B ) ( u_vzz_9 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_5_.u_io AMUXBUS_B )
+      ( u_rocc_mem_resp_data_o_4_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_3_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_2_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_data_o_1_.u_io AMUXBUS_B ) ( u_vdd_3 AMUXBUS_B ) ( u_vss_3 AMUXBUS_B ) ( u_rocc_mem_resp_data_o_0_.u_io AMUXBUS_B ) ( u_rocc_mem_resp_v.u_io AMUXBUS_B )
+      ( u_rocc_mem_req_ready.u_io AMUXBUS_B ) ( u_v18_8 AMUXBUS_B ) ( u_vzz_8 AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in AMUXBUS_B )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in AMUXBUS_B ) ( u_v18_7 AMUXBUS_B ) ( u_vzz_7 AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in AMUXBUS_B )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in AMUXBUS_B ) ( u_vdd_2 AMUXBUS_B ) ( u_vss_2 AMUXBUS_B ) ( u_v18_6 AMUXBUS_B )
+      ( u_vzz_6 AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in AMUXBUS_B ) ( u_v18_5 AMUXBUS_B )
+      ( u_vzz_5 AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in AMUXBUS_B )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_v18_4 AMUXBUS_B ) ( u_vzz_4 AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in AMUXBUS_B ) ( u_rocc_mem_req_v.u_in AMUXBUS_B ) ( u_vdd_1 AMUXBUS_B ) ( u_vss_1 AMUXBUS_B )
+      ( u_rocc_resp_ready.u_io AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_v18_3 AMUXBUS_B ) ( u_vzz_3 AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[3\].u_in AMUXBUS_B )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[1\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[0\].u_in AMUXBUS_B ) ( u_rocc_resp_v.u_in AMUXBUS_B ) ( u_rocc_cmd_ready.u_in AMUXBUS_B ) ( u_rocc_cmd_data_o_15_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_14_.u_io AMUXBUS_B ) ( u_v18_2 AMUXBUS_B )
+      ( u_vzz_2 AMUXBUS_B ) ( u_rocc_cmd_data_o_13_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_12_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_11_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_10_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_9_.u_io AMUXBUS_B ) ( u_vdd_0 AMUXBUS_B ) ( u_vss_0 AMUXBUS_B )
+      ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_B ) ( u_v18_1 AMUXBUS_B ) ( u_vzz_1 AMUXBUS_B ) ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_B )
+      ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_B ) ( u_rocc_cmd_v.u_io AMUXBUS_B ) ( u_v18_0 AMUXBUS_B ) ( u_vzz_0 AMUXBUS_B ) ( u_reset.u_in AMUXBUS_B ) ( u_clk.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - VDDIO_0 ( u_v18_20 VDDIO ) ( u_vzz_20 VDDIO ) ( u_vss_8 VDDIO ) ( u_vdd_8 VDDIO ) ( u_tdo.u_io VDDIO ) ( u_rocc_ctrl_o_host_id.u_io VDDIO ) ( u_rocc_ctrl_o_exception.u_io VDDIO )
+      ( u_rocc_ctrl_o_s.u_io VDDIO ) ( u_v18_19 VDDIO ) ( u_vzz_19 VDDIO ) ( u_rocc_ctrl_i_interrupt.u_in VDDIO ) ( u_rocc_ctrl_i_busy.u_in VDDIO ) ( u_fsb_node_yumi.u_in VDDIO ) ( u_fsb_node_data_o_7_.u_io VDDIO ) ( u_fsb_node_data_o_6_.u_io VDDIO )
+      ( u_fsb_node_data_o_5_.u_io VDDIO ) ( u_fsb_node_data_o_4_.u_io VDDIO ) ( u_fsb_node_data_o_3_.u_io VDDIO ) ( u_v18_18 VDDIO ) ( u_vzz_18 VDDIO ) ( u_fsb_node_data_o_2_.u_io VDDIO ) ( u_fsb_node_data_o_1_.u_io VDDIO ) ( u_vdd_7 VDDIO )
+      ( u_vss_7 VDDIO ) ( u_fsb_node_data_o_0_.u_io VDDIO ) ( u_fsb_node_v_o.u_io VDDIO ) ( u_fsb_node_ready.u_io VDDIO ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDIO ) ( u_v18_17 VDDIO )
+      ( u_vzz_17 VDDIO ) ( u_fsb_node_data_i.u_io\[4\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[3\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[2\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[1\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[0\].u_in VDDIO ) ( u_fsb_node_v_i.u_in VDDIO ) ( u_rocc_mem_resp_data_o_63_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_62_.u_io VDDIO ) ( u_v18_16 VDDIO ) ( u_vzz_16 VDDIO ) ( u_rocc_mem_resp_data_o_61_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_60_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_59_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_58_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_57_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_56_.u_io VDDIO ) ( u_vss_6 VDDIO ) ( u_vdd_6 VDDIO ) ( u_rocc_mem_resp_data_o_55_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_54_.u_io VDDIO ) ( u_v18_15 VDDIO ) ( u_vzz_15 VDDIO ) ( u_rocc_mem_resp_data_o_53_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_52_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_51_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_50_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_49_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_48_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_47_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_46_.u_io VDDIO ) ( u_v18_14 VDDIO )
+      ( u_vzz_14 VDDIO ) ( u_rocc_mem_resp_data_o_45_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_44_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_43_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_42_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_41_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_40_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_39_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_38_.u_io VDDIO ) ( u_vdd_5 VDDIO ) ( u_vss_5 VDDIO ) ( u_v18_13 VDDIO ) ( u_vzz_13 VDDIO ) ( u_rocc_mem_resp_data_o_37_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_36_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_35_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_34_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_33_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_32_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_31_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_30_.u_io VDDIO ) ( u_v18_12 VDDIO ) ( u_vzz_12 VDDIO ) ( u_rocc_mem_resp_data_o_29_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_28_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_27_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_26_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_25_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_24_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_23_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_22_.u_io VDDIO ) ( u_v18_11 VDDIO )
+      ( u_vzz_11 VDDIO ) ( u_rocc_mem_resp_data_o_21_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_20_.u_io VDDIO ) ( u_vdd_4 VDDIO ) ( u_vss_4 VDDIO ) ( u_rocc_mem_resp_data_o_19_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_18_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_17_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_16_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_15_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_14_.u_io VDDIO ) ( u_v18_10 VDDIO ) ( u_vzz_10 VDDIO ) ( u_rocc_mem_resp_data_o_13_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_12_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_11_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_10_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_9_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_8_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_7_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_6_.u_io VDDIO ) ( u_v18_9 VDDIO ) ( u_vzz_9 VDDIO ) ( u_rocc_mem_resp_data_o_5_.u_io VDDIO )
+      ( u_rocc_mem_resp_data_o_4_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_3_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_2_.u_io VDDIO ) ( u_rocc_mem_resp_data_o_1_.u_io VDDIO ) ( u_vdd_3 VDDIO ) ( u_vss_3 VDDIO ) ( u_rocc_mem_resp_data_o_0_.u_io VDDIO ) ( u_rocc_mem_resp_v.u_io VDDIO )
+      ( u_rocc_mem_req_ready.u_io VDDIO ) ( u_v18_8 VDDIO ) ( u_vzz_8 VDDIO ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VDDIO )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VDDIO ) ( u_v18_7 VDDIO ) ( u_vzz_7 VDDIO ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VDDIO )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VDDIO ) ( u_vdd_2 VDDIO ) ( u_vss_2 VDDIO ) ( u_v18_6 VDDIO )
+      ( u_vzz_6 VDDIO ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VDDIO ) ( u_v18_5 VDDIO )
+      ( u_vzz_5 VDDIO ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VDDIO )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VDDIO ) ( u_v18_4 VDDIO ) ( u_vzz_4 VDDIO ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VDDIO ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VDDIO ) ( u_rocc_mem_req_v.u_in VDDIO ) ( u_vdd_1 VDDIO ) ( u_vss_1 VDDIO )
+      ( u_rocc_resp_ready.u_io VDDIO ) ( u_rocc_resp_data_i.u_io\[7\].u_in VDDIO ) ( u_rocc_resp_data_i.u_io\[6\].u_in VDDIO ) ( u_rocc_resp_data_i.u_io\[5\].u_in VDDIO ) ( u_rocc_resp_data_i.u_io\[4\].u_in VDDIO ) ( u_v18_3 VDDIO ) ( u_vzz_3 VDDIO ) ( u_rocc_resp_data_i.u_io\[3\].u_in VDDIO )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VDDIO ) ( u_rocc_resp_data_i.u_io\[1\].u_in VDDIO ) ( u_rocc_resp_data_i.u_io\[0\].u_in VDDIO ) ( u_rocc_resp_v.u_in VDDIO ) ( u_rocc_cmd_ready.u_in VDDIO ) ( u_rocc_cmd_data_o_15_.u_io VDDIO ) ( u_rocc_cmd_data_o_14_.u_io VDDIO ) ( u_v18_2 VDDIO )
+      ( u_vzz_2 VDDIO ) ( u_rocc_cmd_data_o_13_.u_io VDDIO ) ( u_rocc_cmd_data_o_12_.u_io VDDIO ) ( u_rocc_cmd_data_o_11_.u_io VDDIO ) ( u_rocc_cmd_data_o_10_.u_io VDDIO ) ( u_rocc_cmd_data_o_9_.u_io VDDIO ) ( u_vdd_0 VDDIO ) ( u_vss_0 VDDIO )
+      ( u_rocc_cmd_data_o_8_.u_io VDDIO ) ( u_rocc_cmd_data_o_7_.u_io VDDIO ) ( u_rocc_cmd_data_o_6_.u_io VDDIO ) ( u_v18_1 VDDIO ) ( u_vzz_1 VDDIO ) ( u_rocc_cmd_data_o_5_.u_io VDDIO ) ( u_rocc_cmd_data_o_4_.u_io VDDIO ) ( u_rocc_cmd_data_o_3_.u_io VDDIO )
+      ( u_rocc_cmd_data_o_2_.u_io VDDIO ) ( u_rocc_cmd_data_o_1_.u_io VDDIO ) ( u_rocc_cmd_data_o_0_.u_io VDDIO ) ( u_rocc_cmd_v.u_io VDDIO ) ( u_v18_0 VDDIO ) ( u_vzz_0 VDDIO ) ( u_reset.u_in VDDIO ) ( u_clk.u_in VDDIO ) + USE SIGNAL ;
+    - VDDA_0 ( u_v18_20 VDDA ) ( u_vzz_20 VDDA ) ( u_vss_8 VDDA ) ( u_vdd_8 VDDA ) ( u_tdo.u_io VDDA ) ( u_rocc_ctrl_o_host_id.u_io VDDA ) ( u_rocc_ctrl_o_exception.u_io VDDA )
+      ( u_rocc_ctrl_o_s.u_io VDDA ) ( u_v18_19 VDDA ) ( u_vzz_19 VDDA ) ( u_rocc_ctrl_i_interrupt.u_in VDDA ) ( u_rocc_ctrl_i_busy.u_in VDDA ) ( u_fsb_node_yumi.u_in VDDA ) ( u_fsb_node_data_o_7_.u_io VDDA ) ( u_fsb_node_data_o_6_.u_io VDDA )
+      ( u_fsb_node_data_o_5_.u_io VDDA ) ( u_fsb_node_data_o_4_.u_io VDDA ) ( u_fsb_node_data_o_3_.u_io VDDA ) ( u_v18_18 VDDA ) ( u_vzz_18 VDDA ) ( u_fsb_node_data_o_2_.u_io VDDA ) ( u_fsb_node_data_o_1_.u_io VDDA ) ( u_vdd_7 VDDA )
+      ( u_vss_7 VDDA ) ( u_fsb_node_data_o_0_.u_io VDDA ) ( u_fsb_node_v_o.u_io VDDA ) ( u_fsb_node_ready.u_io VDDA ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDA ) ( u_v18_17 VDDA )
+      ( u_vzz_17 VDDA ) ( u_fsb_node_data_i.u_io\[4\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[3\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[2\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[1\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[0\].u_in VDDA ) ( u_fsb_node_v_i.u_in VDDA ) ( u_rocc_mem_resp_data_o_63_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_62_.u_io VDDA ) ( u_v18_16 VDDA ) ( u_vzz_16 VDDA ) ( u_rocc_mem_resp_data_o_61_.u_io VDDA ) ( u_rocc_mem_resp_data_o_60_.u_io VDDA ) ( u_rocc_mem_resp_data_o_59_.u_io VDDA ) ( u_rocc_mem_resp_data_o_58_.u_io VDDA ) ( u_rocc_mem_resp_data_o_57_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_56_.u_io VDDA ) ( u_vss_6 VDDA ) ( u_vdd_6 VDDA ) ( u_rocc_mem_resp_data_o_55_.u_io VDDA ) ( u_rocc_mem_resp_data_o_54_.u_io VDDA ) ( u_v18_15 VDDA ) ( u_vzz_15 VDDA ) ( u_rocc_mem_resp_data_o_53_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_52_.u_io VDDA ) ( u_rocc_mem_resp_data_o_51_.u_io VDDA ) ( u_rocc_mem_resp_data_o_50_.u_io VDDA ) ( u_rocc_mem_resp_data_o_49_.u_io VDDA ) ( u_rocc_mem_resp_data_o_48_.u_io VDDA ) ( u_rocc_mem_resp_data_o_47_.u_io VDDA ) ( u_rocc_mem_resp_data_o_46_.u_io VDDA ) ( u_v18_14 VDDA )
+      ( u_vzz_14 VDDA ) ( u_rocc_mem_resp_data_o_45_.u_io VDDA ) ( u_rocc_mem_resp_data_o_44_.u_io VDDA ) ( u_rocc_mem_resp_data_o_43_.u_io VDDA ) ( u_rocc_mem_resp_data_o_42_.u_io VDDA ) ( u_rocc_mem_resp_data_o_41_.u_io VDDA ) ( u_rocc_mem_resp_data_o_40_.u_io VDDA ) ( u_rocc_mem_resp_data_o_39_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_38_.u_io VDDA ) ( u_vdd_5 VDDA ) ( u_vss_5 VDDA ) ( u_v18_13 VDDA ) ( u_vzz_13 VDDA ) ( u_rocc_mem_resp_data_o_37_.u_io VDDA ) ( u_rocc_mem_resp_data_o_36_.u_io VDDA ) ( u_rocc_mem_resp_data_o_35_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_34_.u_io VDDA ) ( u_rocc_mem_resp_data_o_33_.u_io VDDA ) ( u_rocc_mem_resp_data_o_32_.u_io VDDA ) ( u_rocc_mem_resp_data_o_31_.u_io VDDA ) ( u_rocc_mem_resp_data_o_30_.u_io VDDA ) ( u_v18_12 VDDA ) ( u_vzz_12 VDDA ) ( u_rocc_mem_resp_data_o_29_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_28_.u_io VDDA ) ( u_rocc_mem_resp_data_o_27_.u_io VDDA ) ( u_rocc_mem_resp_data_o_26_.u_io VDDA ) ( u_rocc_mem_resp_data_o_25_.u_io VDDA ) ( u_rocc_mem_resp_data_o_24_.u_io VDDA ) ( u_rocc_mem_resp_data_o_23_.u_io VDDA ) ( u_rocc_mem_resp_data_o_22_.u_io VDDA ) ( u_v18_11 VDDA )
+      ( u_vzz_11 VDDA ) ( u_rocc_mem_resp_data_o_21_.u_io VDDA ) ( u_rocc_mem_resp_data_o_20_.u_io VDDA ) ( u_vdd_4 VDDA ) ( u_vss_4 VDDA ) ( u_rocc_mem_resp_data_o_19_.u_io VDDA ) ( u_rocc_mem_resp_data_o_18_.u_io VDDA ) ( u_rocc_mem_resp_data_o_17_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_16_.u_io VDDA ) ( u_rocc_mem_resp_data_o_15_.u_io VDDA ) ( u_rocc_mem_resp_data_o_14_.u_io VDDA ) ( u_v18_10 VDDA ) ( u_vzz_10 VDDA ) ( u_rocc_mem_resp_data_o_13_.u_io VDDA ) ( u_rocc_mem_resp_data_o_12_.u_io VDDA ) ( u_rocc_mem_resp_data_o_11_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_10_.u_io VDDA ) ( u_rocc_mem_resp_data_o_9_.u_io VDDA ) ( u_rocc_mem_resp_data_o_8_.u_io VDDA ) ( u_rocc_mem_resp_data_o_7_.u_io VDDA ) ( u_rocc_mem_resp_data_o_6_.u_io VDDA ) ( u_v18_9 VDDA ) ( u_vzz_9 VDDA ) ( u_rocc_mem_resp_data_o_5_.u_io VDDA )
+      ( u_rocc_mem_resp_data_o_4_.u_io VDDA ) ( u_rocc_mem_resp_data_o_3_.u_io VDDA ) ( u_rocc_mem_resp_data_o_2_.u_io VDDA ) ( u_rocc_mem_resp_data_o_1_.u_io VDDA ) ( u_vdd_3 VDDA ) ( u_vss_3 VDDA ) ( u_rocc_mem_resp_data_o_0_.u_io VDDA ) ( u_rocc_mem_resp_v.u_io VDDA )
+      ( u_rocc_mem_req_ready.u_io VDDA ) ( u_v18_8 VDDA ) ( u_vzz_8 VDDA ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VDDA )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VDDA ) ( u_v18_7 VDDA ) ( u_vzz_7 VDDA ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VDDA )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VDDA ) ( u_vdd_2 VDDA ) ( u_vss_2 VDDA ) ( u_v18_6 VDDA )
+      ( u_vzz_6 VDDA ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VDDA ) ( u_v18_5 VDDA )
+      ( u_vzz_5 VDDA ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VDDA )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VDDA ) ( u_v18_4 VDDA ) ( u_vzz_4 VDDA ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VDDA ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VDDA ) ( u_rocc_mem_req_v.u_in VDDA ) ( u_vdd_1 VDDA ) ( u_vss_1 VDDA )
+      ( u_rocc_resp_ready.u_io VDDA ) ( u_rocc_resp_data_i.u_io\[7\].u_in VDDA ) ( u_rocc_resp_data_i.u_io\[6\].u_in VDDA ) ( u_rocc_resp_data_i.u_io\[5\].u_in VDDA ) ( u_rocc_resp_data_i.u_io\[4\].u_in VDDA ) ( u_v18_3 VDDA ) ( u_vzz_3 VDDA ) ( u_rocc_resp_data_i.u_io\[3\].u_in VDDA )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VDDA ) ( u_rocc_resp_data_i.u_io\[1\].u_in VDDA ) ( u_rocc_resp_data_i.u_io\[0\].u_in VDDA ) ( u_rocc_resp_v.u_in VDDA ) ( u_rocc_cmd_ready.u_in VDDA ) ( u_rocc_cmd_data_o_15_.u_io VDDA ) ( u_rocc_cmd_data_o_14_.u_io VDDA ) ( u_v18_2 VDDA )
+      ( u_vzz_2 VDDA ) ( u_rocc_cmd_data_o_13_.u_io VDDA ) ( u_rocc_cmd_data_o_12_.u_io VDDA ) ( u_rocc_cmd_data_o_11_.u_io VDDA ) ( u_rocc_cmd_data_o_10_.u_io VDDA ) ( u_rocc_cmd_data_o_9_.u_io VDDA ) ( u_vdd_0 VDDA ) ( u_vss_0 VDDA )
+      ( u_rocc_cmd_data_o_8_.u_io VDDA ) ( u_rocc_cmd_data_o_7_.u_io VDDA ) ( u_rocc_cmd_data_o_6_.u_io VDDA ) ( u_v18_1 VDDA ) ( u_vzz_1 VDDA ) ( u_rocc_cmd_data_o_5_.u_io VDDA ) ( u_rocc_cmd_data_o_4_.u_io VDDA ) ( u_rocc_cmd_data_o_3_.u_io VDDA )
+      ( u_rocc_cmd_data_o_2_.u_io VDDA ) ( u_rocc_cmd_data_o_1_.u_io VDDA ) ( u_rocc_cmd_data_o_0_.u_io VDDA ) ( u_rocc_cmd_v.u_io VDDA ) ( u_v18_0 VDDA ) ( u_vzz_0 VDDA ) ( u_reset.u_in VDDA ) ( u_clk.u_in VDDA ) + USE SIGNAL ;
+    - VCCHIB_0 ( u_v18_20 VCCHIB ) ( u_vzz_20 VCCHIB ) ( u_vss_8 VCCHIB ) ( u_vdd_8 VCCHIB ) ( u_tdo.u_io VCCHIB ) ( u_rocc_ctrl_o_host_id.u_io VCCHIB ) ( u_rocc_ctrl_o_exception.u_io VCCHIB )
+      ( u_rocc_ctrl_o_s.u_io VCCHIB ) ( u_v18_19 VCCHIB ) ( u_vzz_19 VCCHIB ) ( u_rocc_ctrl_i_interrupt.u_in VCCHIB ) ( u_rocc_ctrl_i_busy.u_in VCCHIB ) ( u_fsb_node_yumi.u_in VCCHIB ) ( u_fsb_node_data_o_7_.u_io VCCHIB ) ( u_fsb_node_data_o_6_.u_io VCCHIB )
+      ( u_fsb_node_data_o_5_.u_io VCCHIB ) ( u_fsb_node_data_o_4_.u_io VCCHIB ) ( u_fsb_node_data_o_3_.u_io VCCHIB ) ( u_v18_18 VCCHIB ) ( u_vzz_18 VCCHIB ) ( u_fsb_node_data_o_2_.u_io VCCHIB ) ( u_fsb_node_data_o_1_.u_io VCCHIB ) ( u_vdd_7 VCCHIB )
+      ( u_vss_7 VCCHIB ) ( u_fsb_node_data_o_0_.u_io VCCHIB ) ( u_fsb_node_v_o.u_io VCCHIB ) ( u_fsb_node_ready.u_io VCCHIB ) ( u_fsb_node_data_i.u_io\[7\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[6\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[5\].u_in VCCHIB ) ( u_v18_17 VCCHIB )
+      ( u_vzz_17 VCCHIB ) ( u_fsb_node_data_i.u_io\[4\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[3\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[2\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[1\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[0\].u_in VCCHIB ) ( u_fsb_node_v_i.u_in VCCHIB ) ( u_rocc_mem_resp_data_o_63_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_62_.u_io VCCHIB ) ( u_v18_16 VCCHIB ) ( u_vzz_16 VCCHIB ) ( u_rocc_mem_resp_data_o_61_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_60_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_59_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_58_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_57_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_56_.u_io VCCHIB ) ( u_vss_6 VCCHIB ) ( u_vdd_6 VCCHIB ) ( u_rocc_mem_resp_data_o_55_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_54_.u_io VCCHIB ) ( u_v18_15 VCCHIB ) ( u_vzz_15 VCCHIB ) ( u_rocc_mem_resp_data_o_53_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_52_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_51_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_50_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_49_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_48_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_47_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_46_.u_io VCCHIB ) ( u_v18_14 VCCHIB )
+      ( u_vzz_14 VCCHIB ) ( u_rocc_mem_resp_data_o_45_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_44_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_43_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_42_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_41_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_40_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_39_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_38_.u_io VCCHIB ) ( u_vdd_5 VCCHIB ) ( u_vss_5 VCCHIB ) ( u_v18_13 VCCHIB ) ( u_vzz_13 VCCHIB ) ( u_rocc_mem_resp_data_o_37_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_36_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_35_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_34_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_33_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_32_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_31_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_30_.u_io VCCHIB ) ( u_v18_12 VCCHIB ) ( u_vzz_12 VCCHIB ) ( u_rocc_mem_resp_data_o_29_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_28_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_27_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_26_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_25_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_24_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_23_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_22_.u_io VCCHIB ) ( u_v18_11 VCCHIB )
+      ( u_vzz_11 VCCHIB ) ( u_rocc_mem_resp_data_o_21_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_20_.u_io VCCHIB ) ( u_vdd_4 VCCHIB ) ( u_vss_4 VCCHIB ) ( u_rocc_mem_resp_data_o_19_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_18_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_17_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_16_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_15_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_14_.u_io VCCHIB ) ( u_v18_10 VCCHIB ) ( u_vzz_10 VCCHIB ) ( u_rocc_mem_resp_data_o_13_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_12_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_11_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_10_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_9_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_8_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_7_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_6_.u_io VCCHIB ) ( u_v18_9 VCCHIB ) ( u_vzz_9 VCCHIB ) ( u_rocc_mem_resp_data_o_5_.u_io VCCHIB )
+      ( u_rocc_mem_resp_data_o_4_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_3_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_2_.u_io VCCHIB ) ( u_rocc_mem_resp_data_o_1_.u_io VCCHIB ) ( u_vdd_3 VCCHIB ) ( u_vss_3 VCCHIB ) ( u_rocc_mem_resp_data_o_0_.u_io VCCHIB ) ( u_rocc_mem_resp_v.u_io VCCHIB )
+      ( u_rocc_mem_req_ready.u_io VCCHIB ) ( u_v18_8 VCCHIB ) ( u_vzz_8 VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VCCHIB )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VCCHIB ) ( u_v18_7 VCCHIB ) ( u_vzz_7 VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VCCHIB )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VCCHIB ) ( u_vdd_2 VCCHIB ) ( u_vss_2 VCCHIB ) ( u_v18_6 VCCHIB )
+      ( u_vzz_6 VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VCCHIB ) ( u_v18_5 VCCHIB )
+      ( u_vzz_5 VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VCCHIB )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VCCHIB ) ( u_v18_4 VCCHIB ) ( u_vzz_4 VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VCCHIB ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VCCHIB ) ( u_rocc_mem_req_v.u_in VCCHIB ) ( u_vdd_1 VCCHIB ) ( u_vss_1 VCCHIB )
+      ( u_rocc_resp_ready.u_io VCCHIB ) ( u_rocc_resp_data_i.u_io\[7\].u_in VCCHIB ) ( u_rocc_resp_data_i.u_io\[6\].u_in VCCHIB ) ( u_rocc_resp_data_i.u_io\[5\].u_in VCCHIB ) ( u_rocc_resp_data_i.u_io\[4\].u_in VCCHIB ) ( u_v18_3 VCCHIB ) ( u_vzz_3 VCCHIB ) ( u_rocc_resp_data_i.u_io\[3\].u_in VCCHIB )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VCCHIB ) ( u_rocc_resp_data_i.u_io\[1\].u_in VCCHIB ) ( u_rocc_resp_data_i.u_io\[0\].u_in VCCHIB ) ( u_rocc_resp_v.u_in VCCHIB ) ( u_rocc_cmd_ready.u_in VCCHIB ) ( u_rocc_cmd_data_o_15_.u_io VCCHIB ) ( u_rocc_cmd_data_o_14_.u_io VCCHIB ) ( u_v18_2 VCCHIB )
+      ( u_vzz_2 VCCHIB ) ( u_rocc_cmd_data_o_13_.u_io VCCHIB ) ( u_rocc_cmd_data_o_12_.u_io VCCHIB ) ( u_rocc_cmd_data_o_11_.u_io VCCHIB ) ( u_rocc_cmd_data_o_10_.u_io VCCHIB ) ( u_rocc_cmd_data_o_9_.u_io VCCHIB ) ( u_vdd_0 VCCHIB ) ( u_vss_0 VCCHIB )
+      ( u_rocc_cmd_data_o_8_.u_io VCCHIB ) ( u_rocc_cmd_data_o_7_.u_io VCCHIB ) ( u_rocc_cmd_data_o_6_.u_io VCCHIB ) ( u_v18_1 VCCHIB ) ( u_vzz_1 VCCHIB ) ( u_rocc_cmd_data_o_5_.u_io VCCHIB ) ( u_rocc_cmd_data_o_4_.u_io VCCHIB ) ( u_rocc_cmd_data_o_3_.u_io VCCHIB )
+      ( u_rocc_cmd_data_o_2_.u_io VCCHIB ) ( u_rocc_cmd_data_o_1_.u_io VCCHIB ) ( u_rocc_cmd_data_o_0_.u_io VCCHIB ) ( u_rocc_cmd_v.u_io VCCHIB ) ( u_v18_0 VCCHIB ) ( u_vzz_0 VCCHIB ) ( u_reset.u_in VCCHIB ) ( u_clk.u_in VCCHIB ) + USE SIGNAL ;
+    - VSWITCH_0 ( u_v18_20 VSWITCH ) ( u_vzz_20 VSWITCH ) ( u_vss_8 VSWITCH ) ( u_vdd_8 VSWITCH ) ( u_tdo.u_io VSWITCH ) ( u_rocc_ctrl_o_host_id.u_io VSWITCH ) ( u_rocc_ctrl_o_exception.u_io VSWITCH )
+      ( u_rocc_ctrl_o_s.u_io VSWITCH ) ( u_v18_19 VSWITCH ) ( u_vzz_19 VSWITCH ) ( u_rocc_ctrl_i_interrupt.u_in VSWITCH ) ( u_rocc_ctrl_i_busy.u_in VSWITCH ) ( u_fsb_node_yumi.u_in VSWITCH ) ( u_fsb_node_data_o_7_.u_io VSWITCH ) ( u_fsb_node_data_o_6_.u_io VSWITCH )
+      ( u_fsb_node_data_o_5_.u_io VSWITCH ) ( u_fsb_node_data_o_4_.u_io VSWITCH ) ( u_fsb_node_data_o_3_.u_io VSWITCH ) ( u_v18_18 VSWITCH ) ( u_vzz_18 VSWITCH ) ( u_fsb_node_data_o_2_.u_io VSWITCH ) ( u_fsb_node_data_o_1_.u_io VSWITCH ) ( u_vdd_7 VSWITCH )
+      ( u_vss_7 VSWITCH ) ( u_fsb_node_data_o_0_.u_io VSWITCH ) ( u_fsb_node_v_o.u_io VSWITCH ) ( u_fsb_node_ready.u_io VSWITCH ) ( u_fsb_node_data_i.u_io\[7\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[6\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[5\].u_in VSWITCH ) ( u_v18_17 VSWITCH )
+      ( u_vzz_17 VSWITCH ) ( u_fsb_node_data_i.u_io\[4\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[3\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[2\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[1\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[0\].u_in VSWITCH ) ( u_fsb_node_v_i.u_in VSWITCH ) ( u_rocc_mem_resp_data_o_63_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_62_.u_io VSWITCH ) ( u_v18_16 VSWITCH ) ( u_vzz_16 VSWITCH ) ( u_rocc_mem_resp_data_o_61_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_60_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_59_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_58_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_57_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_56_.u_io VSWITCH ) ( u_vss_6 VSWITCH ) ( u_vdd_6 VSWITCH ) ( u_rocc_mem_resp_data_o_55_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_54_.u_io VSWITCH ) ( u_v18_15 VSWITCH ) ( u_vzz_15 VSWITCH ) ( u_rocc_mem_resp_data_o_53_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_52_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_51_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_50_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_49_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_48_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_47_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_46_.u_io VSWITCH ) ( u_v18_14 VSWITCH )
+      ( u_vzz_14 VSWITCH ) ( u_rocc_mem_resp_data_o_45_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_44_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_43_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_42_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_41_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_40_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_39_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_38_.u_io VSWITCH ) ( u_vdd_5 VSWITCH ) ( u_vss_5 VSWITCH ) ( u_v18_13 VSWITCH ) ( u_vzz_13 VSWITCH ) ( u_rocc_mem_resp_data_o_37_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_36_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_35_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_34_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_33_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_32_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_31_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_30_.u_io VSWITCH ) ( u_v18_12 VSWITCH ) ( u_vzz_12 VSWITCH ) ( u_rocc_mem_resp_data_o_29_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_28_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_27_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_26_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_25_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_24_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_23_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_22_.u_io VSWITCH ) ( u_v18_11 VSWITCH )
+      ( u_vzz_11 VSWITCH ) ( u_rocc_mem_resp_data_o_21_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_20_.u_io VSWITCH ) ( u_vdd_4 VSWITCH ) ( u_vss_4 VSWITCH ) ( u_rocc_mem_resp_data_o_19_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_18_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_17_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_16_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_15_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_14_.u_io VSWITCH ) ( u_v18_10 VSWITCH ) ( u_vzz_10 VSWITCH ) ( u_rocc_mem_resp_data_o_13_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_12_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_11_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_10_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_9_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_8_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_7_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_6_.u_io VSWITCH ) ( u_v18_9 VSWITCH ) ( u_vzz_9 VSWITCH ) ( u_rocc_mem_resp_data_o_5_.u_io VSWITCH )
+      ( u_rocc_mem_resp_data_o_4_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_3_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_2_.u_io VSWITCH ) ( u_rocc_mem_resp_data_o_1_.u_io VSWITCH ) ( u_vdd_3 VSWITCH ) ( u_vss_3 VSWITCH ) ( u_rocc_mem_resp_data_o_0_.u_io VSWITCH ) ( u_rocc_mem_resp_v.u_io VSWITCH )
+      ( u_rocc_mem_req_ready.u_io VSWITCH ) ( u_v18_8 VSWITCH ) ( u_vzz_8 VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in VSWITCH )
+      ( u_rocc_mem_req_data_i.u_io\[26\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in VSWITCH ) ( u_v18_7 VSWITCH ) ( u_vzz_7 VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in VSWITCH )
+      ( u_rocc_mem_req_data_i.u_io\[20\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in VSWITCH ) ( u_vdd_2 VSWITCH ) ( u_vss_2 VSWITCH ) ( u_v18_6 VSWITCH )
+      ( u_vzz_6 VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in VSWITCH ) ( u_v18_5 VSWITCH )
+      ( u_vzz_5 VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in VSWITCH )
+      ( u_rocc_mem_req_data_i.u_io\[2\].u_in VSWITCH ) ( u_v18_4 VSWITCH ) ( u_vzz_4 VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in VSWITCH ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in VSWITCH ) ( u_rocc_mem_req_v.u_in VSWITCH ) ( u_vdd_1 VSWITCH ) ( u_vss_1 VSWITCH )
+      ( u_rocc_resp_ready.u_io VSWITCH ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSWITCH ) ( u_v18_3 VSWITCH ) ( u_vzz_3 VSWITCH ) ( u_rocc_resp_data_i.u_io\[3\].u_in VSWITCH )
+      ( u_rocc_resp_data_i.u_io\[2\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[1\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[0\].u_in VSWITCH ) ( u_rocc_resp_v.u_in VSWITCH ) ( u_rocc_cmd_ready.u_in VSWITCH ) ( u_rocc_cmd_data_o_15_.u_io VSWITCH ) ( u_rocc_cmd_data_o_14_.u_io VSWITCH ) ( u_v18_2 VSWITCH )
+      ( u_vzz_2 VSWITCH ) ( u_rocc_cmd_data_o_13_.u_io VSWITCH ) ( u_rocc_cmd_data_o_12_.u_io VSWITCH ) ( u_rocc_cmd_data_o_11_.u_io VSWITCH ) ( u_rocc_cmd_data_o_10_.u_io VSWITCH ) ( u_rocc_cmd_data_o_9_.u_io VSWITCH ) ( u_vdd_0 VSWITCH ) ( u_vss_0 VSWITCH )
+      ( u_rocc_cmd_data_o_8_.u_io VSWITCH ) ( u_rocc_cmd_data_o_7_.u_io VSWITCH ) ( u_rocc_cmd_data_o_6_.u_io VSWITCH ) ( u_v18_1 VSWITCH ) ( u_vzz_1 VSWITCH ) ( u_rocc_cmd_data_o_5_.u_io VSWITCH ) ( u_rocc_cmd_data_o_4_.u_io VSWITCH ) ( u_rocc_cmd_data_o_3_.u_io VSWITCH )
+      ( u_rocc_cmd_data_o_2_.u_io VSWITCH ) ( u_rocc_cmd_data_o_1_.u_io VSWITCH ) ( u_rocc_cmd_data_o_0_.u_io VSWITCH ) ( u_rocc_cmd_v.u_io VSWITCH ) ( u_v18_0 VSWITCH ) ( u_vzz_0 VSWITCH ) ( u_reset.u_in VSWITCH ) ( u_clk.u_in VSWITCH ) + USE SIGNAL ;
 END SPECIALNETS
 NETS 602 ;
     - TCK ( PIN TCK ) + USE SIGNAL ;
@@ -4424,14 +4748,12 @@ NETS 602 ;
     - rocc_resp_data ( u_rocc_resp_data_i.u_io\[0\].u_in IN ) + USE SIGNAL ;
     - rocc_resp_ready ( u_rocc_resp_ready.u_io OUT ) + USE SIGNAL ;
     - rocc_resp_v ( u_rocc_resp_v.u_in IN ) + USE SIGNAL ;
-    - u_clk.AMUXBUS_A ( u_clk.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_clk.AMUXBUS_B ( u_clk.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_clk.AMUXBUS_A + USE SIGNAL ;
+    - u_clk.AMUXBUS_B + USE SIGNAL ;
     - u_clk.tie_hi_esd ( u_clk.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_clk.tie_lo_esd ( u_clk.u_in TIE_LO_ESD ) ( u_clk.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_i.AMUXBUS_A ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[3\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[1\].u_in AMUXBUS_A )
-      ( u_fsb_node_data_i.u_io\[0\].u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_i.AMUXBUS_B ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[3\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[1\].u_in AMUXBUS_B )
-      ( u_fsb_node_data_i.u_io\[0\].u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_i.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_i.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[0\].tie_hi_esd ( u_fsb_node_data_i.u_io\[0\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[0\].tie_lo_esd ( u_fsb_node_data_i.u_io\[0\].u_in TIE_LO_ESD ) ( u_fsb_node_data_i.u_io\[0\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[0\].y ( u_fsb_node_data_i.u_io\[0\].u_in IN ) + USE SIGNAL ;
@@ -4456,160 +4778,152 @@ NETS 602 ;
     - u_fsb_node_data_i.u_io\[7\].tie_hi_esd ( u_fsb_node_data_i.u_io\[7\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[7\].tie_lo_esd ( u_fsb_node_data_i.u_io\[7\].u_in TIE_LO_ESD ) ( u_fsb_node_data_i.u_io\[7\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[7\].y ( u_fsb_node_data_i.u_io\[7\].u_in IN ) + USE SIGNAL ;
-    - u_fsb_node_data_o_0_.AMUXBUS_A ( u_fsb_node_data_o_0_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_0_.AMUXBUS_B ( u_fsb_node_data_o_0_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_0_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_0_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_0_.tie_hi_esd ( u_fsb_node_data_o_0_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_0_.tie_lo_esd ( u_fsb_node_data_o_0_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_0_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_1_.AMUXBUS_A ( u_fsb_node_data_o_1_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_1_.AMUXBUS_B ( u_fsb_node_data_o_1_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_1_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_1_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_1_.tie_hi_esd ( u_fsb_node_data_o_1_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_1_.tie_lo_esd ( u_fsb_node_data_o_1_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_1_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_2_.AMUXBUS_A ( u_fsb_node_data_o_2_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_2_.AMUXBUS_B ( u_fsb_node_data_o_2_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_2_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_2_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_2_.tie_hi_esd ( u_fsb_node_data_o_2_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_2_.tie_lo_esd ( u_fsb_node_data_o_2_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_2_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_3_.AMUXBUS_A ( u_fsb_node_data_o_3_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_3_.AMUXBUS_B ( u_fsb_node_data_o_3_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_3_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_3_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_3_.tie_hi_esd ( u_fsb_node_data_o_3_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_3_.tie_lo_esd ( u_fsb_node_data_o_3_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_3_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_4_.AMUXBUS_A ( u_fsb_node_data_o_4_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_4_.AMUXBUS_B ( u_fsb_node_data_o_4_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_4_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_4_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_4_.tie_hi_esd ( u_fsb_node_data_o_4_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_4_.tie_lo_esd ( u_fsb_node_data_o_4_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_4_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_5_.AMUXBUS_A ( u_fsb_node_data_o_5_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_5_.AMUXBUS_B ( u_fsb_node_data_o_5_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_5_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_5_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_5_.tie_hi_esd ( u_fsb_node_data_o_5_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_5_.tie_lo_esd ( u_fsb_node_data_o_5_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_5_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_6_.AMUXBUS_A ( u_fsb_node_data_o_6_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_6_.AMUXBUS_B ( u_fsb_node_data_o_6_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_6_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_6_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_6_.tie_hi_esd ( u_fsb_node_data_o_6_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_6_.tie_lo_esd ( u_fsb_node_data_o_6_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_6_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_data_o_7_.AMUXBUS_A ( u_fsb_node_data_o_7_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_data_o_7_.AMUXBUS_B ( u_fsb_node_data_o_7_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_data_o_7_.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_data_o_7_.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_data_o_7_.tie_hi_esd ( u_fsb_node_data_o_7_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_data_o_7_.tie_lo_esd ( u_fsb_node_data_o_7_.u_io TIE_LO_ESD ) ( u_fsb_node_data_o_7_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_ready.AMUXBUS_A ( u_fsb_node_ready.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_ready.AMUXBUS_B ( u_fsb_node_ready.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_ready.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_ready.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_ready.tie_hi_esd ( u_fsb_node_ready.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_ready.tie_lo_esd ( u_fsb_node_ready.u_io TIE_LO_ESD ) ( u_fsb_node_ready.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_v_i.AMUXBUS_A ( u_fsb_node_v_i.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_v_i.AMUXBUS_B ( u_fsb_node_v_i.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_v_i.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_v_i.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_v_i.tie_hi_esd ( u_fsb_node_v_i.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_v_i.tie_lo_esd ( u_fsb_node_v_i.u_in TIE_LO_ESD ) ( u_fsb_node_v_i.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_v_o.AMUXBUS_A ( u_fsb_node_v_o.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_v_o.AMUXBUS_B ( u_fsb_node_v_o.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_v_o.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_v_o.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_v_o.tie_hi_esd ( u_fsb_node_v_o.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_v_o.tie_lo_esd ( u_fsb_node_v_o.u_io TIE_LO_ESD ) ( u_fsb_node_v_o.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_fsb_node_yumi.AMUXBUS_A ( u_fsb_node_yumi.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_fsb_node_yumi.AMUXBUS_B ( u_fsb_node_yumi.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_fsb_node_yumi.AMUXBUS_A + USE SIGNAL ;
+    - u_fsb_node_yumi.AMUXBUS_B + USE SIGNAL ;
     - u_fsb_node_yumi.tie_hi_esd ( u_fsb_node_yumi.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_fsb_node_yumi.tie_lo_esd ( u_fsb_node_yumi.u_in TIE_LO_ESD ) ( u_fsb_node_yumi.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_reset.AMUXBUS_A ( u_reset.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_reset.AMUXBUS_B ( u_reset.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_reset.AMUXBUS_A + USE SIGNAL ;
+    - u_reset.AMUXBUS_B + USE SIGNAL ;
     - u_reset.tie_hi_esd ( u_reset.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_reset.tie_lo_esd ( u_reset.u_in TIE_LO_ESD ) ( u_reset.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_0_.AMUXBUS_A ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_0_.AMUXBUS_B ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_0_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_0_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_0_.tie_hi_esd ( u_rocc_cmd_data_o_0_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_0_.tie_lo_esd ( u_rocc_cmd_data_o_0_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_0_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_10_.AMUXBUS_A ( u_rocc_cmd_data_o_10_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_10_.AMUXBUS_B ( u_rocc_cmd_data_o_10_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_10_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_10_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_10_.tie_hi_esd ( u_rocc_cmd_data_o_10_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_10_.tie_lo_esd ( u_rocc_cmd_data_o_10_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_10_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_11_.AMUXBUS_A ( u_rocc_cmd_data_o_11_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_11_.AMUXBUS_B ( u_rocc_cmd_data_o_11_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_11_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_11_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_11_.tie_hi_esd ( u_rocc_cmd_data_o_11_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_11_.tie_lo_esd ( u_rocc_cmd_data_o_11_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_11_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_12_.AMUXBUS_A ( u_rocc_cmd_data_o_12_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_12_.AMUXBUS_B ( u_rocc_cmd_data_o_12_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_12_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_12_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_12_.tie_hi_esd ( u_rocc_cmd_data_o_12_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_12_.tie_lo_esd ( u_rocc_cmd_data_o_12_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_12_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_13_.AMUXBUS_A ( u_rocc_cmd_data_o_13_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_13_.AMUXBUS_B ( u_rocc_cmd_data_o_13_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_13_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_13_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_13_.tie_hi_esd ( u_rocc_cmd_data_o_13_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_13_.tie_lo_esd ( u_rocc_cmd_data_o_13_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_13_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_14_.AMUXBUS_A ( u_rocc_cmd_data_o_14_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_14_.AMUXBUS_B ( u_rocc_cmd_data_o_14_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_14_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_14_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_14_.tie_hi_esd ( u_rocc_cmd_data_o_14_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_14_.tie_lo_esd ( u_rocc_cmd_data_o_14_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_14_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_15_.AMUXBUS_A ( u_rocc_cmd_data_o_15_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_15_.AMUXBUS_B ( u_rocc_cmd_data_o_15_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_15_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_15_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_15_.tie_hi_esd ( u_rocc_cmd_data_o_15_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_15_.tie_lo_esd ( u_rocc_cmd_data_o_15_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_15_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_1_.AMUXBUS_A ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_1_.AMUXBUS_B ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_1_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_1_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_1_.tie_hi_esd ( u_rocc_cmd_data_o_1_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_1_.tie_lo_esd ( u_rocc_cmd_data_o_1_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_1_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_2_.AMUXBUS_A ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_2_.AMUXBUS_B ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_2_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_2_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_2_.tie_hi_esd ( u_rocc_cmd_data_o_2_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_2_.tie_lo_esd ( u_rocc_cmd_data_o_2_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_2_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_3_.AMUXBUS_A ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_3_.AMUXBUS_B ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_3_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_3_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_3_.tie_hi_esd ( u_rocc_cmd_data_o_3_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_3_.tie_lo_esd ( u_rocc_cmd_data_o_3_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_3_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_4_.AMUXBUS_A ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_4_.AMUXBUS_B ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_4_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_4_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_4_.tie_hi_esd ( u_rocc_cmd_data_o_4_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_4_.tie_lo_esd ( u_rocc_cmd_data_o_4_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_4_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_5_.AMUXBUS_A ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_5_.AMUXBUS_B ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_5_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_5_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_5_.tie_hi_esd ( u_rocc_cmd_data_o_5_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_5_.tie_lo_esd ( u_rocc_cmd_data_o_5_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_5_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_6_.AMUXBUS_A ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_6_.AMUXBUS_B ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_6_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_6_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_6_.tie_hi_esd ( u_rocc_cmd_data_o_6_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_6_.tie_lo_esd ( u_rocc_cmd_data_o_6_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_6_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_7_.AMUXBUS_A ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_7_.AMUXBUS_B ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_7_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_7_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_7_.tie_hi_esd ( u_rocc_cmd_data_o_7_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_7_.tie_lo_esd ( u_rocc_cmd_data_o_7_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_7_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_8_.AMUXBUS_A ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_8_.AMUXBUS_B ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_8_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_8_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_8_.tie_hi_esd ( u_rocc_cmd_data_o_8_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_8_.tie_lo_esd ( u_rocc_cmd_data_o_8_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_8_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_9_.AMUXBUS_A ( u_rocc_cmd_data_o_9_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_data_o_9_.AMUXBUS_B ( u_rocc_cmd_data_o_9_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_data_o_9_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_data_o_9_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_data_o_9_.tie_hi_esd ( u_rocc_cmd_data_o_9_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_data_o_9_.tie_lo_esd ( u_rocc_cmd_data_o_9_.u_io TIE_LO_ESD ) ( u_rocc_cmd_data_o_9_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_ready.AMUXBUS_A ( u_rocc_cmd_ready.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_ready.AMUXBUS_B ( u_rocc_cmd_ready.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_ready.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_ready.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_ready.tie_hi_esd ( u_rocc_cmd_ready.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_ready.tie_lo_esd ( u_rocc_cmd_ready.u_in TIE_LO_ESD ) ( u_rocc_cmd_ready.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_cmd_v.AMUXBUS_A ( u_rocc_cmd_v.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_cmd_v.AMUXBUS_B ( u_rocc_cmd_v.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_cmd_v.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_cmd_v.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_cmd_v.tie_hi_esd ( u_rocc_cmd_v.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_cmd_v.tie_lo_esd ( u_rocc_cmd_v.u_io TIE_LO_ESD ) ( u_rocc_cmd_v.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_ctrl_i_busy.AMUXBUS_A ( u_rocc_ctrl_i_busy.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_ctrl_i_busy.AMUXBUS_B ( u_rocc_ctrl_i_busy.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_ctrl_i_busy.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_ctrl_i_busy.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_ctrl_i_busy.tie_hi_esd ( u_rocc_ctrl_i_busy.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_ctrl_i_busy.tie_lo_esd ( u_rocc_ctrl_i_busy.u_in TIE_LO_ESD ) ( u_rocc_ctrl_i_busy.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_ctrl_i_interrupt.AMUXBUS_A ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_ctrl_i_interrupt.AMUXBUS_B ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_ctrl_i_interrupt.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_ctrl_i_interrupt.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_ctrl_i_interrupt.tie_hi_esd ( u_rocc_ctrl_i_interrupt.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_ctrl_i_interrupt.tie_lo_esd ( u_rocc_ctrl_i_interrupt.u_in TIE_LO_ESD ) ( u_rocc_ctrl_i_interrupt.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_exception.AMUXBUS_A ( u_rocc_ctrl_o_exception.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_exception.AMUXBUS_B ( u_rocc_ctrl_o_exception.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_ctrl_o_exception.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_ctrl_o_exception.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_ctrl_o_exception.tie_hi_esd ( u_rocc_ctrl_o_exception.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_ctrl_o_exception.tie_lo_esd ( u_rocc_ctrl_o_exception.u_io TIE_LO_ESD ) ( u_rocc_ctrl_o_exception.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_host_id.AMUXBUS_A ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_host_id.AMUXBUS_B ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_ctrl_o_host_id.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_ctrl_o_host_id.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_ctrl_o_host_id.tie_hi_esd ( u_rocc_ctrl_o_host_id.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_ctrl_o_host_id.tie_lo_esd ( u_rocc_ctrl_o_host_id.u_io TIE_LO_ESD ) ( u_rocc_ctrl_o_host_id.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_s.AMUXBUS_A ( u_rocc_ctrl_o_s.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_ctrl_o_s.AMUXBUS_B ( u_rocc_ctrl_o_s.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_ctrl_o_s.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_ctrl_o_s.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_ctrl_o_s.tie_hi_esd ( u_rocc_ctrl_o_s.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_ctrl_o_s.tie_lo_esd ( u_rocc_ctrl_o_s.u_io TIE_LO_ESD ) ( u_rocc_ctrl_o_s.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_req_data_i.AMUXBUS_A ( u_rocc_mem_req_data_i.u_io\[9\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in AMUXBUS_A )
-      ( u_rocc_mem_req_data_i.u_io\[31\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[26\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in AMUXBUS_A )
-      ( u_rocc_mem_req_data_i.u_io\[24\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[20\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in AMUXBUS_A )
-      ( u_rocc_mem_req_data_i.u_io\[17\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in AMUXBUS_A ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in AMUXBUS_A )
-      ( u_rocc_mem_req_data_i.u_io\[0\].u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_req_data_i.AMUXBUS_B ( u_rocc_mem_req_data_i.u_io\[9\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in AMUXBUS_B )
-      ( u_rocc_mem_req_data_i.u_io\[31\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[26\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in AMUXBUS_B )
-      ( u_rocc_mem_req_data_i.u_io\[24\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[20\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in AMUXBUS_B )
-      ( u_rocc_mem_req_data_i.u_io\[17\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in AMUXBUS_B ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in AMUXBUS_B )
-      ( u_rocc_mem_req_data_i.u_io\[0\].u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_req_data_i.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_req_data_i.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_req_data_i.u_io\[0\].tie_hi_esd ( u_rocc_mem_req_data_i.u_io\[0\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_req_data_i.u_io\[0\].tie_lo_esd ( u_rocc_mem_req_data_i.u_io\[0\].u_in TIE_LO_ESD ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_rocc_mem_req_data_i.u_io\[0\].y ( u_rocc_mem_req_data_i.u_io\[0\].u_in IN ) + USE SIGNAL ;
@@ -4706,278 +5020,276 @@ NETS 602 ;
     - u_rocc_mem_req_data_i.u_io\[9\].tie_hi_esd ( u_rocc_mem_req_data_i.u_io\[9\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_req_data_i.u_io\[9\].tie_lo_esd ( u_rocc_mem_req_data_i.u_io\[9\].u_in TIE_LO_ESD ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_rocc_mem_req_data_i.u_io\[9\].y ( u_rocc_mem_req_data_i.u_io\[9\].u_in IN ) + USE SIGNAL ;
-    - u_rocc_mem_req_ready.AMUXBUS_A ( u_rocc_mem_req_ready.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_req_ready.AMUXBUS_B ( u_rocc_mem_req_ready.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_req_ready.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_req_ready.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_req_ready.tie_hi_esd ( u_rocc_mem_req_ready.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_req_ready.tie_lo_esd ( u_rocc_mem_req_ready.u_io TIE_LO_ESD ) ( u_rocc_mem_req_ready.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_req_v.AMUXBUS_A ( u_rocc_mem_req_v.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_req_v.AMUXBUS_B ( u_rocc_mem_req_v.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_req_v.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_req_v.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_req_v.tie_hi_esd ( u_rocc_mem_req_v.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_req_v.tie_lo_esd ( u_rocc_mem_req_v.u_in TIE_LO_ESD ) ( u_rocc_mem_req_v.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_0_.AMUXBUS_A ( u_rocc_mem_resp_data_o_0_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_0_.AMUXBUS_B ( u_rocc_mem_resp_data_o_0_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_0_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_0_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_0_.tie_hi_esd ( u_rocc_mem_resp_data_o_0_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_0_.tie_lo_esd ( u_rocc_mem_resp_data_o_0_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_0_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_10_.AMUXBUS_A ( u_rocc_mem_resp_data_o_10_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_10_.AMUXBUS_B ( u_rocc_mem_resp_data_o_10_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_10_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_10_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_10_.tie_hi_esd ( u_rocc_mem_resp_data_o_10_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_10_.tie_lo_esd ( u_rocc_mem_resp_data_o_10_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_10_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_11_.AMUXBUS_A ( u_rocc_mem_resp_data_o_11_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_11_.AMUXBUS_B ( u_rocc_mem_resp_data_o_11_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_11_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_11_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_11_.tie_hi_esd ( u_rocc_mem_resp_data_o_11_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_11_.tie_lo_esd ( u_rocc_mem_resp_data_o_11_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_11_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_12_.AMUXBUS_A ( u_rocc_mem_resp_data_o_12_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_12_.AMUXBUS_B ( u_rocc_mem_resp_data_o_12_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_12_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_12_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_12_.tie_hi_esd ( u_rocc_mem_resp_data_o_12_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_12_.tie_lo_esd ( u_rocc_mem_resp_data_o_12_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_12_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_13_.AMUXBUS_A ( u_rocc_mem_resp_data_o_13_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_13_.AMUXBUS_B ( u_rocc_mem_resp_data_o_13_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_13_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_13_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_13_.tie_hi_esd ( u_rocc_mem_resp_data_o_13_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_13_.tie_lo_esd ( u_rocc_mem_resp_data_o_13_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_13_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_14_.AMUXBUS_A ( u_rocc_mem_resp_data_o_14_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_14_.AMUXBUS_B ( u_rocc_mem_resp_data_o_14_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_14_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_14_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_14_.tie_hi_esd ( u_rocc_mem_resp_data_o_14_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_14_.tie_lo_esd ( u_rocc_mem_resp_data_o_14_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_14_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_15_.AMUXBUS_A ( u_rocc_mem_resp_data_o_15_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_15_.AMUXBUS_B ( u_rocc_mem_resp_data_o_15_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_15_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_15_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_15_.tie_hi_esd ( u_rocc_mem_resp_data_o_15_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_15_.tie_lo_esd ( u_rocc_mem_resp_data_o_15_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_15_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_16_.AMUXBUS_A ( u_rocc_mem_resp_data_o_16_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_16_.AMUXBUS_B ( u_rocc_mem_resp_data_o_16_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_16_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_16_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_16_.tie_hi_esd ( u_rocc_mem_resp_data_o_16_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_16_.tie_lo_esd ( u_rocc_mem_resp_data_o_16_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_16_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_17_.AMUXBUS_A ( u_rocc_mem_resp_data_o_17_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_17_.AMUXBUS_B ( u_rocc_mem_resp_data_o_17_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_17_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_17_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_17_.tie_hi_esd ( u_rocc_mem_resp_data_o_17_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_17_.tie_lo_esd ( u_rocc_mem_resp_data_o_17_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_17_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_18_.AMUXBUS_A ( u_rocc_mem_resp_data_o_18_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_18_.AMUXBUS_B ( u_rocc_mem_resp_data_o_18_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_18_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_18_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_18_.tie_hi_esd ( u_rocc_mem_resp_data_o_18_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_18_.tie_lo_esd ( u_rocc_mem_resp_data_o_18_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_18_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_19_.AMUXBUS_A ( u_rocc_mem_resp_data_o_19_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_19_.AMUXBUS_B ( u_rocc_mem_resp_data_o_19_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_19_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_19_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_19_.tie_hi_esd ( u_rocc_mem_resp_data_o_19_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_19_.tie_lo_esd ( u_rocc_mem_resp_data_o_19_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_19_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_1_.AMUXBUS_A ( u_rocc_mem_resp_data_o_1_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_1_.AMUXBUS_B ( u_rocc_mem_resp_data_o_1_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_1_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_1_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_1_.tie_hi_esd ( u_rocc_mem_resp_data_o_1_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_1_.tie_lo_esd ( u_rocc_mem_resp_data_o_1_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_1_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_20_.AMUXBUS_A ( u_rocc_mem_resp_data_o_20_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_20_.AMUXBUS_B ( u_rocc_mem_resp_data_o_20_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_20_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_20_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_20_.tie_hi_esd ( u_rocc_mem_resp_data_o_20_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_20_.tie_lo_esd ( u_rocc_mem_resp_data_o_20_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_20_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_21_.AMUXBUS_A ( u_rocc_mem_resp_data_o_21_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_21_.AMUXBUS_B ( u_rocc_mem_resp_data_o_21_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_21_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_21_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_21_.tie_hi_esd ( u_rocc_mem_resp_data_o_21_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_21_.tie_lo_esd ( u_rocc_mem_resp_data_o_21_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_21_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_22_.AMUXBUS_A ( u_rocc_mem_resp_data_o_22_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_22_.AMUXBUS_B ( u_rocc_mem_resp_data_o_22_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_22_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_22_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_22_.tie_hi_esd ( u_rocc_mem_resp_data_o_22_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_22_.tie_lo_esd ( u_rocc_mem_resp_data_o_22_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_22_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_23_.AMUXBUS_A ( u_rocc_mem_resp_data_o_23_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_23_.AMUXBUS_B ( u_rocc_mem_resp_data_o_23_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_23_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_23_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_23_.tie_hi_esd ( u_rocc_mem_resp_data_o_23_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_23_.tie_lo_esd ( u_rocc_mem_resp_data_o_23_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_23_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_24_.AMUXBUS_A ( u_rocc_mem_resp_data_o_24_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_24_.AMUXBUS_B ( u_rocc_mem_resp_data_o_24_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_24_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_24_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_24_.tie_hi_esd ( u_rocc_mem_resp_data_o_24_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_24_.tie_lo_esd ( u_rocc_mem_resp_data_o_24_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_24_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_25_.AMUXBUS_A ( u_rocc_mem_resp_data_o_25_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_25_.AMUXBUS_B ( u_rocc_mem_resp_data_o_25_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_25_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_25_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_25_.tie_hi_esd ( u_rocc_mem_resp_data_o_25_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_25_.tie_lo_esd ( u_rocc_mem_resp_data_o_25_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_25_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_26_.AMUXBUS_A ( u_rocc_mem_resp_data_o_26_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_26_.AMUXBUS_B ( u_rocc_mem_resp_data_o_26_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_26_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_26_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_26_.tie_hi_esd ( u_rocc_mem_resp_data_o_26_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_26_.tie_lo_esd ( u_rocc_mem_resp_data_o_26_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_26_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_27_.AMUXBUS_A ( u_rocc_mem_resp_data_o_27_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_27_.AMUXBUS_B ( u_rocc_mem_resp_data_o_27_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_27_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_27_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_27_.tie_hi_esd ( u_rocc_mem_resp_data_o_27_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_27_.tie_lo_esd ( u_rocc_mem_resp_data_o_27_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_27_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_28_.AMUXBUS_A ( u_rocc_mem_resp_data_o_28_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_28_.AMUXBUS_B ( u_rocc_mem_resp_data_o_28_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_28_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_28_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_28_.tie_hi_esd ( u_rocc_mem_resp_data_o_28_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_28_.tie_lo_esd ( u_rocc_mem_resp_data_o_28_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_28_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_29_.AMUXBUS_A ( u_rocc_mem_resp_data_o_29_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_29_.AMUXBUS_B ( u_rocc_mem_resp_data_o_29_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_29_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_29_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_29_.tie_hi_esd ( u_rocc_mem_resp_data_o_29_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_29_.tie_lo_esd ( u_rocc_mem_resp_data_o_29_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_29_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_2_.AMUXBUS_A ( u_rocc_mem_resp_data_o_2_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_2_.AMUXBUS_B ( u_rocc_mem_resp_data_o_2_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_2_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_2_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_2_.tie_hi_esd ( u_rocc_mem_resp_data_o_2_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_2_.tie_lo_esd ( u_rocc_mem_resp_data_o_2_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_2_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_30_.AMUXBUS_A ( u_rocc_mem_resp_data_o_30_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_30_.AMUXBUS_B ( u_rocc_mem_resp_data_o_30_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_30_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_30_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_30_.tie_hi_esd ( u_rocc_mem_resp_data_o_30_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_30_.tie_lo_esd ( u_rocc_mem_resp_data_o_30_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_30_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_31_.AMUXBUS_A ( u_rocc_mem_resp_data_o_31_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_31_.AMUXBUS_B ( u_rocc_mem_resp_data_o_31_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_31_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_31_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_31_.tie_hi_esd ( u_rocc_mem_resp_data_o_31_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_31_.tie_lo_esd ( u_rocc_mem_resp_data_o_31_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_31_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_32_.AMUXBUS_A ( u_rocc_mem_resp_data_o_32_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_32_.AMUXBUS_B ( u_rocc_mem_resp_data_o_32_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_32_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_32_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_32_.tie_hi_esd ( u_rocc_mem_resp_data_o_32_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_32_.tie_lo_esd ( u_rocc_mem_resp_data_o_32_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_32_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_33_.AMUXBUS_A ( u_rocc_mem_resp_data_o_33_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_33_.AMUXBUS_B ( u_rocc_mem_resp_data_o_33_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_33_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_33_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_33_.tie_hi_esd ( u_rocc_mem_resp_data_o_33_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_33_.tie_lo_esd ( u_rocc_mem_resp_data_o_33_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_33_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_34_.AMUXBUS_A ( u_rocc_mem_resp_data_o_34_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_34_.AMUXBUS_B ( u_rocc_mem_resp_data_o_34_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_34_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_34_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_34_.tie_hi_esd ( u_rocc_mem_resp_data_o_34_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_34_.tie_lo_esd ( u_rocc_mem_resp_data_o_34_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_34_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_35_.AMUXBUS_A ( u_rocc_mem_resp_data_o_35_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_35_.AMUXBUS_B ( u_rocc_mem_resp_data_o_35_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_35_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_35_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_35_.tie_hi_esd ( u_rocc_mem_resp_data_o_35_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_35_.tie_lo_esd ( u_rocc_mem_resp_data_o_35_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_35_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_36_.AMUXBUS_A ( u_rocc_mem_resp_data_o_36_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_36_.AMUXBUS_B ( u_rocc_mem_resp_data_o_36_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_36_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_36_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_36_.tie_hi_esd ( u_rocc_mem_resp_data_o_36_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_36_.tie_lo_esd ( u_rocc_mem_resp_data_o_36_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_36_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_37_.AMUXBUS_A ( u_rocc_mem_resp_data_o_37_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_37_.AMUXBUS_B ( u_rocc_mem_resp_data_o_37_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_37_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_37_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_37_.tie_hi_esd ( u_rocc_mem_resp_data_o_37_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_37_.tie_lo_esd ( u_rocc_mem_resp_data_o_37_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_37_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_38_.AMUXBUS_A ( u_rocc_mem_resp_data_o_38_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_38_.AMUXBUS_B ( u_rocc_mem_resp_data_o_38_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_38_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_38_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_38_.tie_hi_esd ( u_rocc_mem_resp_data_o_38_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_38_.tie_lo_esd ( u_rocc_mem_resp_data_o_38_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_38_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_39_.AMUXBUS_A ( u_rocc_mem_resp_data_o_39_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_39_.AMUXBUS_B ( u_rocc_mem_resp_data_o_39_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_39_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_39_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_39_.tie_hi_esd ( u_rocc_mem_resp_data_o_39_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_39_.tie_lo_esd ( u_rocc_mem_resp_data_o_39_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_39_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_3_.AMUXBUS_A ( u_rocc_mem_resp_data_o_3_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_3_.AMUXBUS_B ( u_rocc_mem_resp_data_o_3_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_3_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_3_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_3_.tie_hi_esd ( u_rocc_mem_resp_data_o_3_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_3_.tie_lo_esd ( u_rocc_mem_resp_data_o_3_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_3_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_40_.AMUXBUS_A ( u_rocc_mem_resp_data_o_40_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_40_.AMUXBUS_B ( u_rocc_mem_resp_data_o_40_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_40_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_40_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_40_.tie_hi_esd ( u_rocc_mem_resp_data_o_40_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_40_.tie_lo_esd ( u_rocc_mem_resp_data_o_40_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_40_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_41_.AMUXBUS_A ( u_rocc_mem_resp_data_o_41_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_41_.AMUXBUS_B ( u_rocc_mem_resp_data_o_41_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_41_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_41_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_41_.tie_hi_esd ( u_rocc_mem_resp_data_o_41_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_41_.tie_lo_esd ( u_rocc_mem_resp_data_o_41_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_41_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_42_.AMUXBUS_A ( u_rocc_mem_resp_data_o_42_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_42_.AMUXBUS_B ( u_rocc_mem_resp_data_o_42_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_42_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_42_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_42_.tie_hi_esd ( u_rocc_mem_resp_data_o_42_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_42_.tie_lo_esd ( u_rocc_mem_resp_data_o_42_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_42_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_43_.AMUXBUS_A ( u_rocc_mem_resp_data_o_43_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_43_.AMUXBUS_B ( u_rocc_mem_resp_data_o_43_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_43_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_43_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_43_.tie_hi_esd ( u_rocc_mem_resp_data_o_43_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_43_.tie_lo_esd ( u_rocc_mem_resp_data_o_43_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_43_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_44_.AMUXBUS_A ( u_rocc_mem_resp_data_o_44_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_44_.AMUXBUS_B ( u_rocc_mem_resp_data_o_44_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_44_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_44_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_44_.tie_hi_esd ( u_rocc_mem_resp_data_o_44_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_44_.tie_lo_esd ( u_rocc_mem_resp_data_o_44_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_44_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_45_.AMUXBUS_A ( u_rocc_mem_resp_data_o_45_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_45_.AMUXBUS_B ( u_rocc_mem_resp_data_o_45_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_45_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_45_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_45_.tie_hi_esd ( u_rocc_mem_resp_data_o_45_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_45_.tie_lo_esd ( u_rocc_mem_resp_data_o_45_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_45_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_46_.AMUXBUS_A ( u_rocc_mem_resp_data_o_46_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_46_.AMUXBUS_B ( u_rocc_mem_resp_data_o_46_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_46_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_46_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_46_.tie_hi_esd ( u_rocc_mem_resp_data_o_46_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_46_.tie_lo_esd ( u_rocc_mem_resp_data_o_46_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_46_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_47_.AMUXBUS_A ( u_rocc_mem_resp_data_o_47_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_47_.AMUXBUS_B ( u_rocc_mem_resp_data_o_47_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_47_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_47_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_47_.tie_hi_esd ( u_rocc_mem_resp_data_o_47_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_47_.tie_lo_esd ( u_rocc_mem_resp_data_o_47_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_47_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_48_.AMUXBUS_A ( u_rocc_mem_resp_data_o_48_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_48_.AMUXBUS_B ( u_rocc_mem_resp_data_o_48_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_48_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_48_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_48_.tie_hi_esd ( u_rocc_mem_resp_data_o_48_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_48_.tie_lo_esd ( u_rocc_mem_resp_data_o_48_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_48_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_49_.AMUXBUS_A ( u_rocc_mem_resp_data_o_49_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_49_.AMUXBUS_B ( u_rocc_mem_resp_data_o_49_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_49_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_49_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_49_.tie_hi_esd ( u_rocc_mem_resp_data_o_49_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_49_.tie_lo_esd ( u_rocc_mem_resp_data_o_49_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_49_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_4_.AMUXBUS_A ( u_rocc_mem_resp_data_o_4_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_4_.AMUXBUS_B ( u_rocc_mem_resp_data_o_4_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_4_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_4_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_4_.tie_hi_esd ( u_rocc_mem_resp_data_o_4_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_4_.tie_lo_esd ( u_rocc_mem_resp_data_o_4_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_4_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_50_.AMUXBUS_A ( u_rocc_mem_resp_data_o_50_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_50_.AMUXBUS_B ( u_rocc_mem_resp_data_o_50_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_50_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_50_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_50_.tie_hi_esd ( u_rocc_mem_resp_data_o_50_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_50_.tie_lo_esd ( u_rocc_mem_resp_data_o_50_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_50_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_51_.AMUXBUS_A ( u_rocc_mem_resp_data_o_51_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_51_.AMUXBUS_B ( u_rocc_mem_resp_data_o_51_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_51_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_51_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_51_.tie_hi_esd ( u_rocc_mem_resp_data_o_51_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_51_.tie_lo_esd ( u_rocc_mem_resp_data_o_51_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_51_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_52_.AMUXBUS_A ( u_rocc_mem_resp_data_o_52_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_52_.AMUXBUS_B ( u_rocc_mem_resp_data_o_52_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_52_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_52_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_52_.tie_hi_esd ( u_rocc_mem_resp_data_o_52_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_52_.tie_lo_esd ( u_rocc_mem_resp_data_o_52_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_52_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_53_.AMUXBUS_A ( u_rocc_mem_resp_data_o_53_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_53_.AMUXBUS_B ( u_rocc_mem_resp_data_o_53_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_53_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_53_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_53_.tie_hi_esd ( u_rocc_mem_resp_data_o_53_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_53_.tie_lo_esd ( u_rocc_mem_resp_data_o_53_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_53_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_54_.AMUXBUS_A ( u_rocc_mem_resp_data_o_54_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_54_.AMUXBUS_B ( u_rocc_mem_resp_data_o_54_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_54_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_54_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_54_.tie_hi_esd ( u_rocc_mem_resp_data_o_54_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_54_.tie_lo_esd ( u_rocc_mem_resp_data_o_54_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_54_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_55_.AMUXBUS_A ( u_rocc_mem_resp_data_o_55_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_55_.AMUXBUS_B ( u_rocc_mem_resp_data_o_55_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_55_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_55_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_55_.tie_hi_esd ( u_rocc_mem_resp_data_o_55_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_55_.tie_lo_esd ( u_rocc_mem_resp_data_o_55_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_55_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_56_.AMUXBUS_A ( u_rocc_mem_resp_data_o_56_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_56_.AMUXBUS_B ( u_rocc_mem_resp_data_o_56_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_56_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_56_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_56_.tie_hi_esd ( u_rocc_mem_resp_data_o_56_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_56_.tie_lo_esd ( u_rocc_mem_resp_data_o_56_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_56_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_57_.AMUXBUS_A ( u_rocc_mem_resp_data_o_57_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_57_.AMUXBUS_B ( u_rocc_mem_resp_data_o_57_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_57_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_57_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_57_.tie_hi_esd ( u_rocc_mem_resp_data_o_57_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_57_.tie_lo_esd ( u_rocc_mem_resp_data_o_57_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_57_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_58_.AMUXBUS_A ( u_rocc_mem_resp_data_o_58_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_58_.AMUXBUS_B ( u_rocc_mem_resp_data_o_58_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_58_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_58_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_58_.tie_hi_esd ( u_rocc_mem_resp_data_o_58_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_58_.tie_lo_esd ( u_rocc_mem_resp_data_o_58_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_58_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_59_.AMUXBUS_A ( u_rocc_mem_resp_data_o_59_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_59_.AMUXBUS_B ( u_rocc_mem_resp_data_o_59_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_59_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_59_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_59_.tie_hi_esd ( u_rocc_mem_resp_data_o_59_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_59_.tie_lo_esd ( u_rocc_mem_resp_data_o_59_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_59_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_5_.AMUXBUS_A ( u_rocc_mem_resp_data_o_5_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_5_.AMUXBUS_B ( u_rocc_mem_resp_data_o_5_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_5_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_5_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_5_.tie_hi_esd ( u_rocc_mem_resp_data_o_5_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_5_.tie_lo_esd ( u_rocc_mem_resp_data_o_5_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_5_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_60_.AMUXBUS_A ( u_rocc_mem_resp_data_o_60_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_60_.AMUXBUS_B ( u_rocc_mem_resp_data_o_60_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_60_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_60_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_60_.tie_hi_esd ( u_rocc_mem_resp_data_o_60_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_60_.tie_lo_esd ( u_rocc_mem_resp_data_o_60_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_60_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_61_.AMUXBUS_A ( u_rocc_mem_resp_data_o_61_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_61_.AMUXBUS_B ( u_rocc_mem_resp_data_o_61_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_61_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_61_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_61_.tie_hi_esd ( u_rocc_mem_resp_data_o_61_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_61_.tie_lo_esd ( u_rocc_mem_resp_data_o_61_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_61_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_62_.AMUXBUS_A ( u_rocc_mem_resp_data_o_62_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_62_.AMUXBUS_B ( u_rocc_mem_resp_data_o_62_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_62_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_62_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_62_.tie_hi_esd ( u_rocc_mem_resp_data_o_62_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_62_.tie_lo_esd ( u_rocc_mem_resp_data_o_62_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_62_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_63_.AMUXBUS_A ( u_rocc_mem_resp_data_o_63_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_63_.AMUXBUS_B ( u_rocc_mem_resp_data_o_63_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_63_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_63_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_63_.tie_hi_esd ( u_rocc_mem_resp_data_o_63_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_63_.tie_lo_esd ( u_rocc_mem_resp_data_o_63_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_63_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_6_.AMUXBUS_A ( u_rocc_mem_resp_data_o_6_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_6_.AMUXBUS_B ( u_rocc_mem_resp_data_o_6_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_6_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_6_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_6_.tie_hi_esd ( u_rocc_mem_resp_data_o_6_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_6_.tie_lo_esd ( u_rocc_mem_resp_data_o_6_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_6_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_7_.AMUXBUS_A ( u_rocc_mem_resp_data_o_7_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_7_.AMUXBUS_B ( u_rocc_mem_resp_data_o_7_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_7_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_7_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_7_.tie_hi_esd ( u_rocc_mem_resp_data_o_7_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_7_.tie_lo_esd ( u_rocc_mem_resp_data_o_7_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_7_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_8_.AMUXBUS_A ( u_rocc_mem_resp_data_o_8_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_8_.AMUXBUS_B ( u_rocc_mem_resp_data_o_8_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_8_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_8_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_8_.tie_hi_esd ( u_rocc_mem_resp_data_o_8_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_8_.tie_lo_esd ( u_rocc_mem_resp_data_o_8_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_8_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_9_.AMUXBUS_A ( u_rocc_mem_resp_data_o_9_.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_data_o_9_.AMUXBUS_B ( u_rocc_mem_resp_data_o_9_.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_9_.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_data_o_9_.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_9_.tie_hi_esd ( u_rocc_mem_resp_data_o_9_.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_data_o_9_.tie_lo_esd ( u_rocc_mem_resp_data_o_9_.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_data_o_9_.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_mem_resp_v.AMUXBUS_A ( u_rocc_mem_resp_v.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_mem_resp_v.AMUXBUS_B ( u_rocc_mem_resp_v.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_mem_resp_v.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_mem_resp_v.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_mem_resp_v.tie_hi_esd ( u_rocc_mem_resp_v.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_mem_resp_v.tie_lo_esd ( u_rocc_mem_resp_v.u_io TIE_LO_ESD ) ( u_rocc_mem_resp_v.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_resp_data_i.AMUXBUS_A ( u_rocc_resp_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[3\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[2\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[1\].u_in AMUXBUS_A )
-      ( u_rocc_resp_data_i.u_io\[0\].u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_resp_data_i.AMUXBUS_B ( u_rocc_resp_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[3\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_rocc_resp_data_i.u_io\[1\].u_in AMUXBUS_B )
-      ( u_rocc_resp_data_i.u_io\[0\].u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_resp_data_i.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_resp_data_i.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_resp_data_i.u_io\[0\].tie_hi_esd ( u_rocc_resp_data_i.u_io\[0\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_resp_data_i.u_io\[0\].tie_lo_esd ( u_rocc_resp_data_i.u_io\[0\].u_in TIE_LO_ESD ) ( u_rocc_resp_data_i.u_io\[0\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_rocc_resp_data_i.u_io\[1\].tie_hi_esd ( u_rocc_resp_data_i.u_io\[1\].u_in TIE_HI_ESD ) + USE SIGNAL ;
@@ -5001,16 +5313,16 @@ NETS 602 ;
     - u_rocc_resp_data_i.u_io\[7\].tie_hi_esd ( u_rocc_resp_data_i.u_io\[7\].u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_resp_data_i.u_io\[7\].tie_lo_esd ( u_rocc_resp_data_i.u_io\[7\].u_in TIE_LO_ESD ) ( u_rocc_resp_data_i.u_io\[7\].u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_rocc_resp_data_i.u_io\[7\].y ( u_rocc_resp_data_i.u_io\[7\].u_in IN ) + USE SIGNAL ;
-    - u_rocc_resp_ready.AMUXBUS_A ( u_rocc_resp_ready.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_resp_ready.AMUXBUS_B ( u_rocc_resp_ready.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_resp_ready.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_resp_ready.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_resp_ready.tie_hi_esd ( u_rocc_resp_ready.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_resp_ready.tie_lo_esd ( u_rocc_resp_ready.u_io TIE_LO_ESD ) ( u_rocc_resp_ready.u_io ENABLE_INP_H ) + USE SIGNAL ;
-    - u_rocc_resp_v.AMUXBUS_A ( u_rocc_resp_v.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - u_rocc_resp_v.AMUXBUS_B ( u_rocc_resp_v.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - u_rocc_resp_v.AMUXBUS_A + USE SIGNAL ;
+    - u_rocc_resp_v.AMUXBUS_B + USE SIGNAL ;
     - u_rocc_resp_v.tie_hi_esd ( u_rocc_resp_v.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_rocc_resp_v.tie_lo_esd ( u_rocc_resp_v.u_in TIE_LO_ESD ) ( u_rocc_resp_v.u_in ENABLE_INP_H ) + USE SIGNAL ;
-    - u_tdo.AMUXBUS_A ( u_tdo.u_io AMUXBUS_A ) + USE SIGNAL ;
-    - u_tdo.AMUXBUS_B ( u_tdo.u_io AMUXBUS_B ) + USE SIGNAL ;
+    - u_tdo.AMUXBUS_A + USE SIGNAL ;
+    - u_tdo.AMUXBUS_B + USE SIGNAL ;
     - u_tdo.tie_hi_esd ( u_tdo.u_io TIE_HI_ESD ) + USE SIGNAL ;
     - u_tdo.tie_lo_esd ( u_tdo.u_io TIE_LO_ESD ) ( u_tdo.u_io ENABLE_INP_H ) + USE SIGNAL ;
 END NETS
