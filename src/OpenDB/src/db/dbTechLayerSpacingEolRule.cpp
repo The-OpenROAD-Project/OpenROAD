@@ -1716,6 +1716,13 @@ dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
       dbid);
 }
 
+void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->_spacing_eol_rules_tbl->destroy((_dbTechLayerSpacingEolRule*) rule);
+}
+
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
    // Generator Code End 1

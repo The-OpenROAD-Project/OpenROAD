@@ -3734,8 +3734,6 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
         } else if (strcmp(macroClass, "COVER") == 0) {
           tmpBlock->setMacroClass(MacroClassEnum::COVER);
-        } else if (strcmp(macroClass, "ENDCAP PRE") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
         } else if (strcmp(macroClass, "BLOCK") == 0) {
           tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
         } else if (strcmp(macroClass, "PAD") == 0) {
@@ -3746,9 +3744,22 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
         } else if (strcmp(macroClass, "PAD SPACER") == 0) {
           tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+        } else if (strcmp(macroClass, "ENDCAP") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
+        } else if (strcmp(macroClass, "ENDCAP PRE") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+        } else if (strcmp(macroClass, "ENDCAP POST") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
+        } else if (strcmp(macroClass, "ENDCAP TOPLEFT") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
+        } else if (strcmp(macroClass, "ENDCAP TOPRIGHT") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
         } else if (strcmp(macroClass, "ENDCAP BOTTOMLEFT") == 0) {
           tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
-        } else {
+        } else if (strcmp(macroClass, "ENDCAP BOTTOMRIGHT") == 0) {
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
+        } 
+        else {
           logger->warn(utl::DRT,
                        137,
                        "unknown macroClass {}, skipped macroClass property",

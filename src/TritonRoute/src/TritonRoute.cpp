@@ -263,3 +263,14 @@ bool fr::isPad(MacroClassEnum e)
     e == MacroClassEnum::PAD_SPACER ||
     e == MacroClassEnum::PAD_AREAIO;
 }
+
+bool fr::isEndcap(MacroClassEnum e)
+{
+  return e == MacroClassEnum::ENDCAP       ||
+    e == MacroClassEnum::ENDCAP_PRE        ||
+    e == MacroClassEnum::ENDCAP_POST       ||
+    e == MacroClassEnum::ENDCAP_TOPLEFT    ||
+    e == MacroClassEnum::ENDCAP_TOPRIGHT   ||
+    e == MacroClassEnum::ENDCAP_BOTTOMLEFT ||
+    e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
+}

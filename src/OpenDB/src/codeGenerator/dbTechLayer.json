@@ -77,16 +77,30 @@
       {
         "name":"_check_mask",
         "type":"bool",
-        "comment":"//LEF58_RIGHTWAYONGRIDONLY check mask",
+        "comment":"//LEF58_RIGHTWAYONGRIDONLY CHECKMASK",
         "flags":[],
         "bits":1
       },
       {
         "type": "bool",
         "name": "_except_non_core_pins",
-        "comment":"//LEF58_RECTONLY check mask",
+        "comment":"//LEF58_RECTONLY EXCEPTNONCOREPINS",
         "flags":[],
         "bits":1
+      },
+      {
+        "type": "bool",
+        "name": "_n_well",
+        "comment":"//LEF58_TYPE NWELL Layer(MasterSlice)",
+        "bits":1,
+        "flags":[]
+      },
+      {
+        "type": "bool",
+        "name": "_p_well",
+        "comment":"//LEF58_TYPE PWELL Layer(MasterSlice)",
+        "bits":1,
+        "flags":[]
       }
     ],
     "constructors": [],

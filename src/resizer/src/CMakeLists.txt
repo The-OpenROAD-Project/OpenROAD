@@ -68,6 +68,7 @@ target_include_directories(resizer
   ${OPENSTA_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENROAD_HOME}/src/flute3
+  ${GUI_HOME}/include
   ${TCL_INCLUDE_PATH}
   )
 

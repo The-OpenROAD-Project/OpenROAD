@@ -12,6 +12,7 @@ add_library(lefin
     lefTechLayerCutClassParser.cpp
     lefTechLayerCutSpacingParser.cpp
     lefTechLayerCutSpacingTableParser.cpp
+    lefTechLayerTypeParser.cpp
 )
 
 target_include_directories(lefin
