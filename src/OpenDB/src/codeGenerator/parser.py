@@ -1,5 +1,4 @@
 import re
-import json
 
 
 def findIndex(_list, _object, startIndex=0):
@@ -52,7 +51,6 @@ class Parser:
         self.generatorCodeTag = '{}GeneratorCodeBegin'.format(comment)
 
     def parseUserCode(self):
-        i = 0
         self.userCode = {}
         status = getSections(self.lines, self.userCodeTag, self.userCode)
         return status

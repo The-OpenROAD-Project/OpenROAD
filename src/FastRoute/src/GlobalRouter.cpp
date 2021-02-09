@@ -59,6 +59,7 @@
 #include "opendb/wOrder.h"
 #include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 #include "sta/Clock.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Set.hh"
@@ -71,6 +72,8 @@ void GlobalRouter::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
   _logger = openroad->getLogger();
+  // Broken gui api missing openroad accessor.
+  _gui = gui::Gui::get();
   init();
 }
 
@@ -3001,13 +3004,18 @@ void GlobalRouter::getLayerRC(unsigned layerId, float& r, float& c)
   float capPfPerMicron = layerWidth * techLayer->getCapacitance()
                          + 2 * techLayer->getEdgeCapacitance();
 
-  r = 1E+6 * resOhmPerMicron;         // Meters
-  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/m
+  r = 1E+6 * resOhmPerMicron;         // ohm/meter
+  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/meter
 }
 
-float GlobalRouter::dbuToMeters(unsigned dbu)
+double GlobalRouter::dbuToMeters(int dbu)
 {
-  return (float) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
+  return (double) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
+}
+
+double GlobalRouter::dbuToMicrons(int64_t dbu)
+{
+  return (double) dbu / (_block->getDbUnitsPerMicron());
 }
 
 std::set<int> GlobalRouter::findTransitionLayers(int maxRoutingLayer)
@@ -3127,6 +3135,8 @@ RegionAdjustment::RegionAdjustment(int minX,
   adjustment = adjst;
 }
 
+// Called from src/fastroute/FastRoute.cpp to so DB headers
+// do not have to be included in the core code.
 const char* getNetName(odb::dbNet* db_net)
 {
   return db_net->getConstName();
@@ -3143,6 +3153,120 @@ void GlobalRouter::print(GRoute& route)
            segment.finalX,
            segment.finalY,
            segment.finalLayer);
+  }
+}
+
+void GlobalRouter::reportLayerWireLengths()
+{
+  std::vector<int64_t> lengths;
+  lengths.resize(_db->getTech()->getRoutingLayerCount() + 1);
+  int64_t total_length = 0;
+  for (auto& net_route : _routes) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute& route = net_route.second;
+    for (GSegment &seg : route) {
+      int layer1 = seg.initLayer;
+      int layer2 = seg.finalLayer;
+      if (layer1 == layer2) {
+        int seg_length = abs(seg.initX - seg.finalX) + abs(seg.initY - seg.finalY);
+        lengths[layer1] += seg_length;
+        total_length += seg_length;
+      }
+    }
+  }
+  odb::dbTech *tech = _db->getTech();
+  for (int i = 0; i < lengths.size(); i++) {
+    int64_t length = lengths[i];
+    if (length > 0) {
+      odb::dbTechLayer *layer = tech->findRoutingLayer(i);
+      _logger->report("{:5s} {:8d}um {:3d}%",
+                      layer->getName(),
+                      static_cast<int64_t>(dbuToMicrons(length)),
+                      static_cast<int>((100.0 * length) / total_length));
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
+{
+}
+
+bool operator<(const RoutePt& p1, const RoutePt& p2)
+{
+  return (p1._x < p2._x) || (p1._x == p2._x && p1._y < p2._y)
+         || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
+}
+
+class GrouteRenderer : public gui::Renderer
+{
+public:
+  GrouteRenderer(GlobalRouter *groute,
+                 odb::dbTech* tech);
+  void highlight(const odb::dbNet *net);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  GlobalRouter *groute_;
+  odb::dbTech *tech_;
+  const odb::dbNet *net_;
+};
+
+// Highlight guide in the gui.
+void
+GlobalRouter::highlightRoute(const odb::dbNet *net)
+{
+  if (_gui) {
+    if (_groute_renderer == nullptr) {
+      _groute_renderer = new GrouteRenderer(this, _db->getTech());
+      _gui->registerRenderer(_groute_renderer);
+    }
+    _groute_renderer->highlight(net);
+  }
+}
+
+GrouteRenderer::GrouteRenderer(GlobalRouter *groute,
+                               odb::dbTech* tech) :
+  groute_(groute),
+  tech_(tech),
+  net_(nullptr)
+{
+}
+
+void
+GrouteRenderer::highlight(const odb::dbNet *net)
+{
+  net_ = net;
+}
+
+void
+GrouteRenderer::drawObjects(gui::Painter &painter)
+{
+  if (net_) {
+    NetRouteMap& routes = groute_->getRoutes();
+    GRoute &groute = routes[const_cast<odb::dbNet*>(net_)];
+    for (GSegment &seg : groute) {
+      int layer1 = seg.initLayer;
+      int layer2 = seg.finalLayer;
+      if (layer1 == layer2) {
+        odb::dbTechLayer *layer = tech_->findRoutingLayer(layer1);
+        // Draw rect because drawLine does not have a way to set the pen thickness.
+        odb::Rect rect;
+        // gui clips visiblity of rect when zoomed out so layer width doesn't work
+        // very well.
+        int thickness = layer->getWidth() * 20;
+        if (seg.initX == seg.finalX)
+          // vertical
+          rect = odb::Rect(seg.initX, seg.initY, seg.initX + thickness, seg.finalY);
+        else
+          // horizontal
+          rect = odb::Rect(seg.initX, seg.initY, seg.finalX, seg.initY + thickness);
+        painter.setPen(layer);
+        painter.setBrush(layer);
+        painter.drawRect(rect);
+      }
+    }
   }
 }
 

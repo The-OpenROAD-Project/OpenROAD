@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 
-from jinja2 import Template, Environment, FileSystemLoader
-import subprocess
-from subprocess import call, run
+from jinja2 import Environment, FileSystemLoader
+from subprocess import call
 import argparse
 from helper import *
 from parser import Parser
 import os
 import shutil
+import json
 
 parser = argparse.ArgumentParser(description='Code generator')
 parser.add_argument('--json', action='store', required=True)
