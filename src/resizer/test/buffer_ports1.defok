@@ -5,24 +5,16 @@ DESIGN top ;
 UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( 0 0 ) ( 1000 1000 ) ;
 COMPONENTS 8 ;
+    - input1 BUF_X1 + PLACED ( 0 0 ) N ;
+    - input2 BUF_X1 + PLACED ( 333 1000 ) N ;
+    - output3 BUF_X1 + PLACED ( 1000 335 ) N ;
     - r1 DFF_X1 ;
     - r2 DFF_X1 ;
     - r3 DFF_X1 ;
     - u1 BUF_X1 ;
     - u2 AND2_X1 ;
-    - input1 BUF_X1 + PLACED ( 0 0 ) N ;
-    - input2 BUF_X1 + PLACED ( 333 1000 ) N ;
-    - output3 BUF_X1 + PLACED ( 1000 335 ) N ;
 END COMPONENTS
 PINS 6 ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 0 0 ) N ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 333 1000 ) N ;
     - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
@@ -35,28 +27,36 @@ PINS 6 ;
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
         + FIXED ( 332 1000 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 0 0 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 333 1000 ) N ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
         + FIXED ( 1000 335 ) N ;
 END PINS
 SPECIALNETS 2 ;
-    - VSS ( * VSS ) + USE GROUND ;
     - VDD ( * VDD ) + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
 NETS 13 ;
-    - in1 ( PIN in1 ) ( input1 A ) + USE SIGNAL ;
-    - in2 ( PIN in2 ) ( input2 A ) + USE SIGNAL ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;
     - clk2 ( PIN clk2 ) ( r2 CK ) + USE SIGNAL ;
     - clk3 ( PIN clk3 ) ( r3 CK ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( input1 A ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( input2 A ) + USE SIGNAL ;
+    - net1 ( input1 Z ) ( r1 D ) + USE SIGNAL ;
+    - net2 ( input2 Z ) ( r2 D ) + USE SIGNAL ;
+    - net3 ( output3 A ) ( r3 Q ) + USE SIGNAL ;
     - out ( PIN out ) ( output3 Z ) + USE SIGNAL ;
     - r1q ( r1 Q ) ( u2 A1 ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
     - u1z ( u1 Z ) ( u2 A2 ) + USE SIGNAL ;
     - u2z ( u2 ZN ) ( r3 D ) + USE SIGNAL ;
-    - net1 ( input1 Z ) ( r1 D ) + USE SIGNAL ;
-    - net2 ( input2 Z ) ( r2 D ) + USE SIGNAL ;
-    - net3 ( output3 A ) ( r3 Q ) + USE SIGNAL ;
 END NETS
 END DESIGN

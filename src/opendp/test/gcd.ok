@@ -19,6 +19,4 @@ original HPWL            6950.8 u
 legalized HPWL           7709.2 u
 delta HPWL                   11 %
 
-Differences found at line 113.
-    - _276_ NOR2_X2 + PLACED ( 163280 176400 ) N ;
-    - _276_ NOR2_X2 + PLACED ( 166700 173600 ) FS ;
+No differences found.
