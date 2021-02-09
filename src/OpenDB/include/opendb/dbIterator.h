@@ -33,6 +33,7 @@
 #pragma once
 
 #include "odb.h"
+#include <iterator>
 
 namespace odb {
 
