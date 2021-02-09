@@ -38,6 +38,11 @@
 
 #include "DataType.h"
 #include "flute.h"
+#include "utility/Logger.h"
+
+namespace utl {
+class Logger;
+}
 
 namespace grt {
 
@@ -134,6 +139,8 @@ multi_array<short, 2> parentX1, parentY1, parentX3, parentY3;
 float **heap2, **heap1;
 
 Bool* pop_heap2;
+
+utl::Logger* logger;
 
 void init_usage()
 {

@@ -44,20 +44,26 @@ class dbNet;
 class Rect;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}
+using utl::Logger;
+
 namespace par {
 
 enum GraphType : uint8_t
 {
   CLIQUE,
   HYBRID,
-  STAR
+  STAR,
+  HYPERGRAPH
 };
 
 class HypergraphDecomposition
 {
  public:
   HypergraphDecomposition() {}
-  void init(int dbId);
+  void init(int dbId, Logger * logger);
   void constructMap(Hypergraph& hypergraph, unsigned maxVertexWeight);
   void createHypergraph(Hypergraph& hypergraph,
                         std::vector<unsigned long> clusters,
@@ -78,6 +84,7 @@ class HypergraphDecomposition
   odb::dbBlock* _block;
   odb::dbDatabase* _db;
   odb::dbChip* _chip;
+  Logger * _logger;
 
   int _weightingOption;
   std::vector<std::map<int, float>> adjMatrix;

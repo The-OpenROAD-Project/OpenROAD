@@ -29,15 +29,12 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "extRCap.h"
-//#include "logger.h"
-#include <dbLogger.h>
-//#include "dbRtTree.h"
 #include <dbRtTree.h>
 
 #include "dbUtil.h"
+#include "extRCap.h"
+#include "utility/Logger.h"
 
-//#define DIAG_FIRST
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
@@ -46,6 +43,8 @@
 //#define MIN_FOR_LOOPS
 
 namespace rcx {
+
+using utl::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -68,33 +67,30 @@ using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
-using odb::debug;
 using odb::gs;
-using odb::notice;
 using odb::Rect;
 using odb::SEQ;
-using odb::warning;
 
 bool extMeasure::getFirstShape(dbNet* net, dbShape& s)
 {
-  dbWirePath      path;
+  dbWirePath path;
   dbWirePathShape pshape;
 
   dbWirePathItr pitr;
-  dbWire*       wire = net->getWire();
+  dbWire* wire = net->getWire();
 
   bool status = false;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
     pitr.getNextShape(pshape);
-    s      = pshape.shape;
+    s = pshape.shape;
     status = true;
     break;
   }
   return status;
 }
 bool extMeasure::parse_setLayer(Ath__parser* parser1,
-                                uint&        layerNum,
-                                bool         print)
+                                uint& layerNum,
+                                bool print)
 {
   if (parser1->isKeyword(0, "(setLayer")) {
     if (print)
@@ -113,11 +109,11 @@ bool extMeasure::parse_setLayer(Ath__parser* parser1,
 }
 #ifdef OLD_READ_QCAP
 
-int extMeasure::readQcap(extMain*    extMain,
+int extMeasure::readQcap(extMain* extMain,
                          const char* filename,
                          const char* design,
                          const char* capFile,
-                         bool        skipBterms,
+                         bool skipBterms,
                          dbDatabase* db)
 {
   bool debug = false;
@@ -131,14 +127,14 @@ int extMeasure::readQcap(extMain*    extMain,
   _block->setBusDelimeters('[', ']');
   _block->setDefUnits(nm);
 
-  _extMain         = extMain;
+  _extMain = extMain;
   _extMain->_block = _block;
   _create_net_util.setBlock(_block);
 
   dbTech* tech = db->getTech();
 
-  uint netCnt           = 0;
-  uint totWireCnt       = 0;
+  uint netCnt = 0;
+  uint totWireCnt = 0;
   bool layerSectionFlag = false;
 
   Ath__parser parser1;
@@ -157,7 +153,7 @@ int extMeasure::readQcap(extMain*    extMain,
   while (parser1.parseNextLine() > 0) {
     if (parser1.isKeyword(0, "layer")) {
       if (!layerSectionFlag) {
-        notice(0, "\nReading layer section of file %s\n\n", filename);
+        logger_->info(RCX, 63, "Reading layer section of file {}", filename);
         layerSectionFlag = true;
       }
       char* layerName = parser1.get(1);
@@ -185,12 +181,14 @@ int extMeasure::readQcap(extMain*    extMain,
 
       dbTechLayer* techLayer = tech->findLayer(layerName);
       if (techLayer == NULL) {
-        warning(0,
-                "Layer %s in line number %d in file %s has not beed defined in "
-                "LEF file, \nwill skip all attached geometries\n",
-                layerName,
-                parser1.getLineNum(),
-                filename);
+        logger_->warn(
+            RCX,
+            64,
+            "Layer {} in line number {} in file {} has not beed defined in "
+            "LEF file, will skip all attached geometries",
+            layerName,
+            parser1.getLineNum(),
+            filename);
         continue;
       }
 
@@ -201,12 +199,14 @@ int extMeasure::readQcap(extMain*    extMain,
 
       _idTable[layerNum] = techLayer->getRoutingLevel();
 
-      notice(0,
-             "Read layer name %s with number %d that corresponds to routing "
-             "level %d\n",
-             layerName,
-             layerNum,
-             _idTable[layerNum]);
+      logger_->info(
+          RCX,
+          65,
+          "Read layer name {} with number {} that corresponds to routing "
+          "level {}",
+          layerName,
+          layerNum,
+          _idTable[layerNum]);
 
       continue;
     }
@@ -233,7 +233,7 @@ int extMeasure::readQcap(extMain*    extMain,
           continue;  // empty nets, TODO warning
 
         dbRtTree rtTree;
-        dbNet*   net = NULL;
+        dbNet* net = NULL;
 
         uint wireCnt = 0;
         while (parser1.parseNextLine() > 0) {
@@ -253,10 +253,11 @@ int extMeasure::readQcap(extMain*    extMain,
 
           uint level = _idTable[layerNum];
           if (level == 0) {
-            notice(0,
-                   "Skipping net %s, layer num %d not defined in LEF\n",
-                   netName,
-                   layerNum);
+            logger_->info(RCX,
+                          66,
+                          "Skipping net {}, layer num {} not defined in LEF",
+                          netName,
+                          layerNum);
           } else if (wireCnt == 0) {
             dbNet* mainNet = NULL;
             if (!subNetFlag) {
@@ -279,13 +280,14 @@ int extMeasure::readQcap(extMain*    extMain,
             dbShape s;
             if ((net != NULL) && getFirstShape(net, s)) {
               if (debug) {
-                notice(0,
-                       "\t\tCreated net %s : %d %d   %d %d\n",
-                       net->getConstName(),
-                       s.xMin(),
-                       s.yMin(),
-                       s.xMax(),
-                       s.yMax());
+                logger_->info(RCX,
+                              67,
+                              "\t\tCreated net {} : {} {}   {} {}",
+                              net->getConstName(),
+                              s.xMin(),
+                              s.yMin(),
+                              s.xMax(),
+                              s.yMax());
               }
               if (!subNetFlag) {
                 dbWire* w1 = net->getWire();
@@ -326,16 +328,17 @@ int extMeasure::readQcap(extMain*    extMain,
             dbShape s;
             if ((net1 != NULL) && getFirstShape(net1, s)) {
               if (debug) {
-                notice(0,
-                       "\t\tCreated net %s : %d %d   %d %d\n",
-                       net1->getConstName(),
-                       s.xMin(),
-                       s.yMin(),
-                       s.xMax(),
-                       s.yMax());
+                logger_->info(RCX,
+                              256,
+                              "\t\tCreated net {} : {} {}   {} {}",
+                              net1->getConstName(),
+                              s.xMin(),
+                              s.yMin(),
+                              s.xMax(),
+                              s.yMax());
               }
 
-              dbWire*  wire = net1->getWire();
+              dbWire* wire = net1->getWire();
               dbRtTree T;
               T.decode(wire);
               rtTree.move(&T);
@@ -349,7 +352,11 @@ int extMeasure::readQcap(extMain*    extMain,
             }
             totWireCnt += wireCnt + 1;
             if (netCnt % 1000 == 0)
-              notice(0, "Have read %d nets and %d wires\n", netCnt, totWireCnt);
+              logger_->info(RCX,
+                            68,
+                            "Have read {} nets and {} wires",
+                            netCnt,
+                            totWireCnt);
 
             break;
           }
@@ -362,42 +369,43 @@ int extMeasure::readQcap(extMain*    extMain,
   }
   if (netCnt > 0) {
     dbBox* bb = _block->getBBox();
-    Rect   r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
+    Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    notice(0, "Have read %d nets from file %s\n", netCnt, filename);
+    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    warning(0, "No nets were read from file %s\n", filename);
+    logger_->warn(RCX, 70, "No nets were read from file {}", filename);
   }
-  uint ccCnt  = 0;
-  int  gndCnt = 0;
+  uint ccCnt = 0;
+  int gndCnt = 0;
   if (capFile != NULL) {
     _extMain->_noModelRC = true;
     _extMain->_cornerCnt = 1;
-    _extMain->_extDbCnt  = 1;
+    _extMain->_extDbCnt = 1;
     _block->setCornerCount(_extMain->_cornerCnt);
     _extMain->setupMapping(0);
 
-    dbSet<dbNet>           nets = _block->getNets();
+    dbSet<dbNet> nets = _block->getNets();
     dbSet<dbNet>::iterator net_itr;
-    dbNet*                 net;
+    dbNet* net;
     for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
       net = *net_itr;
       _extMain->makeNetRCsegs(net);
     }
     gndCnt = readCapFile(capFile, ccCnt);
   }
-  notice(0, "Have created %d gnd caps and %d cc caps\n", gndCnt, ccCnt);
+  logger_->info(
+      RCX, 71, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
 
   return netCnt;
 }
 #endif
 dbNet* extMeasure::createSingleWireNet(char* name,
-                                       uint  level,
-                                       bool  viaFlag,
-                                       bool  debug,
-                                       bool  skipVias,
-                                       bool  skipBterms)
+                                       uint level,
+                                       bool viaFlag,
+                                       bool debug,
+                                       bool skipVias,
+                                       bool skipBterms)
 {
   if (viaFlag) {
     if (skipVias)
@@ -411,36 +419,38 @@ dbNet* extMeasure::createSingleWireNet(char* name,
 
   dbShape s;
   if ((net == NULL) || !getFirstShape(net, s)) {
-    warning(0,
-            "\t\tCannot create wire: %d %d   %d %d for name %s \n",
-            s.xMin(),
-            s.yMin(),
-            s.xMax(),
-            s.yMax(),
-            name);
+    logger_->warn(RCX,
+                  72,
+                  "\t\tCannot create wire: {} {}   {} {} for name {}",
+                  s.xMin(),
+                  s.yMin(),
+                  s.xMax(),
+                  s.yMax(),
+                  name);
     return NULL;
   }
   if (debug) {
-    notice(0,
-           "\t\tCreated net %s : %d %d   %d %d\n",
-           net->getConstName(),
-           s.xMin(),
-           s.yMin(),
-           s.xMax(),
-           s.yMax());
+    logger_->info(RCX,
+                  67,
+                  "\t\tCreated net {} : {} {}   {} {}",
+                  net->getConstName(),
+                  s.xMin(),
+                  s.yMin(),
+                  s.xMax(),
+                  s.yMax());
   }
   return net;
 }
 
-int extMeasure::readQcap(extMain*    extMain,
+int extMeasure::readQcap(extMain* extMain,
                          const char* filename,
                          const char* design,
                          const char* capFile,
-                         bool        skipBterms,
+                         bool skipBterms,
                          dbDatabase* db)
 {
   bool skipVias = true;
-  bool debug    = false;
+  bool debug = false;
 
   uint nm = 1000;
 
@@ -451,23 +461,23 @@ int extMeasure::readQcap(extMain*    extMain,
   _block->setBusDelimeters('[', ']');
   _block->setDefUnits(nm);
 
-  _extMain         = extMain;
+  _extMain = extMain;
   _extMain->_block = _block;
   _create_net_util.setBlock(_block);
 
   dbTech* tech = db->getTech();
 
   bool viaTable[1000];
-  int  loHeightTable[1000];
-  int  hiHeightTable[1000];
+  int loHeightTable[1000];
+  int hiHeightTable[1000];
   for (uint ii = 0; ii < 1000; ii++) {
     loHeightTable[ii] = 0;
     hiHeightTable[ii] = 0;
-    viaTable[ii]      = false;
+    viaTable[ii] = false;
   }
 
-  uint netCnt           = 0;
-  uint totWireCnt       = 0;
+  uint netCnt = 0;
+  uint totWireCnt = 0;
   bool layerSectionFlag = false;
 
   Ath__parser parser1;
@@ -486,7 +496,7 @@ int extMeasure::readQcap(extMain*    extMain,
   while (parser1.parseNextLine() > 0) {
     if (parser1.isKeyword(0, "layer")) {
       if (!layerSectionFlag) {
-        notice(0, "\nReading layer section of file %s\n\n", filename);
+        logger_->info(RCX, 63, "Reading layer section of file {}", filename);
         layerSectionFlag = true;
       }
       char* layerName = parser1.get(1);
@@ -495,7 +505,7 @@ int extMeasure::readQcap(extMain*    extMain,
       if (typeWord == NULL)
         continue;
 
-      bool viaFlag         = false;
+      bool viaFlag = false;
       bool intercoonetFlag = false;
 
       parserWord.mkWords(typeWord);
@@ -507,10 +517,11 @@ int extMeasure::readQcap(extMain*    extMain,
       char* layerNumWord = parser1.get(4, "ID=");
 
       if (layerNumWord == NULL) {
-        warning(0,
-                "Cannot read layer number for layer name %s at line: %d\n",
-                layerName,
-                parser1.getLineNum());
+        logger_->warn(RCX,
+                      73,
+                      "Cannot read layer number for layer name {} at line: {}",
+                      layerName,
+                      parser1.getLineNum());
         continue;
       }
       parserWord.mkWords(layerNumWord);
@@ -527,10 +538,11 @@ int extMeasure::readQcap(extMain*    extMain,
       if (intercoonetFlag) {
         dbTechLayer* techLayer = tech->findLayer(layerName);
         if (techLayer == NULL) {
-          warning(
-              0,
-              "Layer %s in line number %d in file %s has not beed defined in "
-              "LEF file, \nwill skip all attached geometries\n",
+          logger_->warn(
+              RCX,
+              64,
+              "Layer {} in line number {} in file {} has not beed defined in "
+              "LEF file, will skip all attached geometries",
               layerName,
               parser1.getLineNum(),
               filename);
@@ -544,22 +556,23 @@ int extMeasure::readQcap(extMain*    extMain,
 
         _idTable[layerNum] = techLayer->getRoutingLevel();
 
-        notice(0,
-               "Read layer name %s with number %d that corresponds to "
-               "routing level %d\n",
-               layerName,
-               layerNum,
-               _idTable[layerNum]);
+        logger_->info(RCX,
+                      65,
+                      "Read layer name {} with number {} that corresponds to "
+                      "routing level {}",
+                      layerName,
+                      layerNum,
+                      _idTable[layerNum]);
 
         loHeightTable[n1] = layerNum;
         hiHeightTable[n2] = layerNum;
       } else if (viaFlag) {
         int topLayer = loHeightTable[n2];
-        int level1   = _idTable[topLayer];
+        int level1 = _idTable[topLayer];
 
         if (level1 > 0) {
           int botLayer = hiHeightTable[n1];
-          int level2   = _idTable[botLayer];
+          int level2 = _idTable[botLayer];
 
           if (level2 > 0) {
             _idTable[layerNum] = level2;
@@ -592,7 +605,7 @@ int extMeasure::readQcap(extMain*    extMain,
           continue;  // empty nets, TODO warning
 
         dbRtTree rtTree;
-        dbNet*   net = NULL;
+        dbNet* net = NULL;
 
         uint wireCnt = 0;
         while (parser1.parseNextLine() > 0) {
@@ -612,10 +625,11 @@ int extMeasure::readQcap(extMain*    extMain,
 
           uint level = _idTable[layerNum];
           if (level == 0) {
-            notice(0,
-                   "Skipping net %s, layer num %d not defined in LEF\n",
-                   netName,
-                   layerNum);
+            logger_->info(RCX,
+                          66,
+                          "Skipping net {}, layer num {} not defined in LEF",
+                          netName,
+                          layerNum);
           } else if (wireCnt == 0) {
             dbNet* mainNet = NULL;
 
@@ -663,10 +677,6 @@ int extMeasure::readQcap(extMain*    extMain,
             }
             /*
 if (net!=NULL) {
-                    if (debug) {
-                            notice(0, "\t\tCreated net %s : %d %d   %d
-%d\n", net->getConstName(), s.xMin(), s.yMin(), s.xMax(), s.yMax());
-                    }
                     if (!subNetFlag) {
                             dbWire *w1= net->getWire();
                             rtTree.decode(w1);
@@ -707,7 +717,7 @@ if (net!=NULL) {
             // _ll[0], _ll[1], _ur[0], _ur[1], level, true/*skipBterms*/);
 
             if (net1 != NULL) {
-              dbWire*  wire = net1->getWire();
+              dbWire* wire = net1->getWire();
               dbRtTree T;
               T.decode(wire);
               rtTree.move(&T);
@@ -721,7 +731,11 @@ if (net!=NULL) {
             }
             totWireCnt += wireCnt + 1;
             if (netCnt % 1000 == 0)
-              notice(0, "Have read %d nets and %d wires\n", netCnt, totWireCnt);
+              logger_->info(RCX,
+                            68,
+                            "Have read {} nets and {} wires",
+                            netCnt,
+                            totWireCnt);
 
             break;
           }
@@ -734,44 +748,45 @@ if (net!=NULL) {
   }
   if (netCnt > 0) {
     dbBox* bb = _block->getBBox();
-    Rect   r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
+    Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    notice(0, "Have read %d nets from file %s\n", netCnt, filename);
+    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    warning(0, "No nets were read from file %s\n", filename);
+    logger_->warn(RCX, 70, "No nets were read from file {}", filename);
   }
-  uint ccCnt  = 0;
-  int  gndCnt = 0;
+  uint ccCnt = 0;
+  int gndCnt = 0;
   if (capFile != NULL) {
     _extMain->_noModelRC = true;
     _extMain->_cornerCnt = 1;
-    _extMain->_extDbCnt  = 1;
+    _extMain->_extDbCnt = 1;
     _block->setCornerCount(_extMain->_cornerCnt);
     _extMain->setupMapping(0);
 
-    dbSet<dbNet>           nets = _block->getNets();
+    dbSet<dbNet> nets = _block->getNets();
     dbSet<dbNet>::iterator net_itr;
-    dbNet*                 net;
+    dbNet* net;
     for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
       net = *net_itr;
       _extMain->makeNetRCsegs(net);
     }
     gndCnt = readCapFile(capFile, ccCnt);
   }
-  notice(0, "Have created %d gnd caps and %d cc caps\n", gndCnt, ccCnt);
+  logger_->info(
+      RCX, 71, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
 
   return netCnt;
 }
-int extMeasure::readAB(extMain*    extMain,
+int extMeasure::readAB(extMain* extMain,
                        const char* filename,
                        const char* design,
                        const char* capFile,
-                       bool        skipBterms,
+                       bool skipBterms,
                        dbDatabase* db)
 {
   bool skipVias = true;
-  bool debug    = false;
+  bool debug = false;
 
   uint nm = 1000;
 
@@ -782,29 +797,29 @@ int extMeasure::readAB(extMain*    extMain,
   _block->setBusDelimeters('[', ']');
   _block->setDefUnits(nm);
 
-  _extMain         = extMain;
+  _extMain = extMain;
   _extMain->_block = _block;
   _create_net_util.setBlock(_block);
 
   dbTech* tech = db->getTech();
 
-  uint netCnt           = 0;
-  uint totWireCnt       = 0;
-  bool layerSectionFlag = false;
+  uint netCnt = 0;
 
   Ath__parser parser1;
   parser1.openFile((char*) filename);
   while (parser1.parseNextLine() > 0) {
     netCnt++;
-    char*        layerName = parser1.get(1);
+    char* layerName = parser1.get(1);
     dbTechLayer* techLayer = tech->findLayer(layerName);
     if (techLayer == NULL) {
-      warning(0,
-              "Layer %s in line number %d in file %s has not beed defined "
-              "in LEF file, \nwill skip all attached geometries\n",
-              layerName,
-              parser1.getLineNum(),
-              filename);
+      logger_->warn(
+          RCX,
+          64,
+          "Layer {} in line number {} in file {} has not beed defined "
+          "in LEF file, will skip all attached geometries",
+          layerName,
+          parser1.getLineNum(),
+          filename);
       continue;
     }
     dbTechLayerType type = techLayer->getType();
@@ -819,7 +834,7 @@ int extMeasure::readAB(extMain*    extMain,
     _ur[0] = Ath__double2int(parser1.getDouble(4) * nm);
     _ur[1] = Ath__double2int(parser1.getDouble(5) * nm);
 
-    uint   level = techLayer->getRoutingLevel();
+    uint level = techLayer->getRoutingLevel();
     dbNet* net
         = createSingleWireNet(netName, level, false, debug, skipVias, true);
 
@@ -827,36 +842,37 @@ int extMeasure::readAB(extMain*    extMain,
       net->setSigType(dbSigType::ANALOG);
 
     if (netCnt % 10000 == 0)
-      notice(0, "Have read %d nets \n", netCnt);
+      logger_->info(RCX, 68, "Have read {} nets ", netCnt);
   }
   if (netCnt > 0) {
     dbBox* bb = _block->getBBox();
-    Rect   r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
+    Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
 
-    notice(0, "Have read %d nets from file %s\n", netCnt, filename);
+    logger_->info(RCX, 69, "Have read {} nets from file {}", netCnt, filename);
   } else {
-    warning(0, "No nets were read from file %s\n", filename);
+    logger_->warn(RCX, 70, "No nets were read from file {}", filename);
   }
-  uint ccCnt  = 0;
-  int  gndCnt = 0;
+  uint ccCnt = 0;
+  int gndCnt = 0;
   if (capFile != NULL) {
     _extMain->_noModelRC = true;
     _extMain->_cornerCnt = 1;
-    _extMain->_extDbCnt  = 1;
+    _extMain->_extDbCnt = 1;
     _block->setCornerCount(_extMain->_cornerCnt);
     _extMain->setupMapping(0);
 
-    dbSet<dbNet>           nets = _block->getNets();
+    dbSet<dbNet> nets = _block->getNets();
     dbSet<dbNet>::iterator net_itr;
-    dbNet*                 net;
+    dbNet* net;
     for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
       net = *net_itr;
       _extMain->makeNetRCsegs(net);
     }
     gndCnt = readCapFile(capFile, ccCnt);
   }
-  notice(0, "Have created %d gnd caps and %d cc caps\n", gndCnt, ccCnt);
+  logger_->info(
+      RCX, 71, "Have created {} gnd caps and {} cc caps", gndCnt, ccCnt);
 
   return netCnt;
 }
@@ -867,27 +883,29 @@ dbRSeg* extMeasure::getRseg(const char* netname,
 {
   dbNet* net = _block->findNet(netname);
   if (net == NULL) {
-    warning(0,
-            "Cannot find net %s from the %s table entry %s\n",
-            netname,
-            capMsg,
-            tableEntryName);
+    logger_->warn(RCX,
+                  74,
+                  "Cannot find net {} from the {} table entry {}",
+                  netname,
+                  capMsg,
+                  tableEntryName);
     return NULL;
   }
   dbRSeg* r = getFirstDbRseg(net->getId());
   if (r == NULL) {
-    warning(0,
-            "Cannot find dbRseg for net %s from the %s table entry %s\n",
-            netname,
-            capMsg,
-            tableEntryName);
+    logger_->warn(RCX,
+                  75,
+                  "Cannot find dbRseg for net {} from the {} table entry {}",
+                  netname,
+                  capMsg,
+                  tableEntryName);
   }
   return r;
 }
 int extMeasure::readCapFile(const char* filename, uint& ccCnt)
 {
-  uint        totCnt = 0;
-  double      units  = 1.0;
+  uint totCnt = 0;
+  double units = 1.0;
   Ath__parser parser;
   parser.openFile((char*) filename);
   parser.resetSeparator(" \t\n\r");
@@ -896,7 +914,7 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
   parserWord.resetSeparator("-");
 
   bool totalFlag = false;
-  bool ccFlag    = false;
+  bool ccFlag = false;
   while (parser.parseNextLine() > 0) {
     parser.printWords(stdout);
     if (parser.isKeyword(0, "[pF]")) {
@@ -906,12 +924,12 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
     if ((parser.isKeyword(0, "Cross-coupled"))
         || (parser.isKeyword(0, "Cross-Coupled"))) {
       totalFlag = false;
-      ccFlag    = true;
+      ccFlag = true;
       continue;
     }
     if (parser.isKeyword(0, "Total") || parser.isKeyword(1, "total")) {
       totalFlag = true;
-      ccFlag    = false;
+      ccFlag = false;
       continue;
     }
     if (!((totalFlag || ccFlag) && (parser.getWordCnt() >= 4)))
@@ -923,7 +941,7 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
     double cap = parser.getDouble(indexCapword) * units;
 
     char* netname = parser.get(0);
-    char  bufNetName[512];
+    char bufNetName[512];
     strcpy(bufNetName, netname);
 
     if (ccFlag) {  // coupling cap
@@ -944,11 +962,12 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
           true);
       ccap->addCapacitance(cap);
 
-      notice(0,
-             "Created coupling Cap %e for nets %s and %s\n",
-             cap,
-             netname1,
-             netname2);
+      logger_->info(RCX,
+                    76,
+                    "Created coupling Cap {} for nets {} and {}",
+                    cap,
+                    netname1,
+                    netname2);
 
       ccCnt++;
     } else if (totalFlag) {  // total cap
@@ -958,15 +977,15 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
 
       rseg1->setCapacitance(cap);
 
-      notice(0, "Created gnd Cap %e for net %s\n", cap, netname);
+      logger_->info(RCX, 257, "Created gnd Cap {} for net {}", cap, netname);
 
       totCnt++;
     }
     continue;
   }
-  dbSet<dbNet>           nets = _block->getNets();
+  dbSet<dbNet> nets = _block->getNets();
   dbSet<dbNet>::iterator net_itr;
-  dbNet*                 net;
+  dbNet* net;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     net = *net_itr;
 
@@ -975,7 +994,7 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
       continue;
 
     double totCap = r->getCapacitance();
-    double totCC  = net->getTotalCouplingCap();
+    double totCC = net->getTotalCouplingCap();
     r->setCapacitance(totCap - totCC);
   }
 
@@ -983,16 +1002,16 @@ int extMeasure::readCapFile(const char* filename, uint& ccCnt)
 }
 void extMeasure::getMinWidth(dbTech* tech)
 {
-  dbSet<dbTechLayer>           layers = tech->getLayers();
+  dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator litr;
-  dbTechLayer*                 layer;
+  dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
     if (layer->getType() != dbTechLayerType::ROUTING)
       continue;
 
-    uint level    = layer->getRoutingLevel();
-    uint pitch    = layer->getPitch();
+    uint level = layer->getRoutingLevel();
+    uint pitch = layer->getPitch();
     uint minWidth = layer->getWidth();
     //		uint minSpacing= layer->getSpacing();
     //_minSpaceTable[level]= minSpacing;
@@ -1011,14 +1030,14 @@ void extMeasure::updateBox(uint w_layout, uint s_layout, int dir)
   // printBox(stdout);
 }
 uint extMeasure::createNetSingleWire(char* dirName,
-                                     uint  idCnt,
-                                     uint  w_layout,
-                                     uint  s_layout,
-                                     int   dir)
+                                     uint idCnt,
+                                     uint w_layout,
+                                     uint s_layout,
+                                     int dir)
 {
   if (w_layout == 0) {
     dbTechLayer* layer = _create_net_util.getRoutingLayer()[_met];
-    w_layout           = layer->getWidth();
+    w_layout = layer->getWidth();
   }
   if (s_layout == 0) {
     uint d = _dir;
@@ -1075,13 +1094,13 @@ uint extMeasure::createNetSingleWire(char* dirName,
 
   return netId;
 }
-uint extMeasure::createNetSingleWire_cntx(int   met,
+uint extMeasure::createNetSingleWire_cntx(int met,
                                           char* dirName,
-                                          uint  idCnt,
-                                          int   d,
-                                          int   ll[2],
-                                          int   ur[2],
-                                          int   s_layout)
+                                          uint idCnt,
+                                          int d,
+                                          int ll[2],
+                                          int ur[2],
+                                          int s_layout)
 {
   char netName[1024];
 
@@ -1099,17 +1118,17 @@ uint extMeasure::createNetSingleWire_cntx(int   met,
   return net->getId();
 }
 uint extMeasure::createDiagNetSingleWire(char* dirName,
-                                         uint  idCnt,
-                                         int   begin,
-                                         int   w_layout,
-                                         int   s_layout,
-                                         int   dir)
+                                         uint idCnt,
+                                         int begin,
+                                         int w_layout,
+                                         int s_layout,
+                                         int dir)
 {
   int ll[2], ur[2];
   ll[!_dir] = _ll[!_dir];
-  ll[_dir]  = begin;
+  ll[_dir] = begin;
   ur[!_dir] = _ur[!_dir];
-  ur[_dir]  = begin + w_layout;
+  ur[_dir] = begin + w_layout;
 
   int met;
   if (_overMet > 0)
@@ -1135,12 +1154,12 @@ uint extMeasure::createDiagNetSingleWire(char* dirName,
   return net->getId();
 }
 ext2dBox* extMeasure::addNew2dBox(dbNet* net,
-                                  int*   ll,
-                                  int*   ur,
-                                  uint   m,
-                                  uint   d,
-                                  uint   id,
-                                  bool   cntx)
+                                  int* ll,
+                                  int* ur,
+                                  uint m,
+                                  uint d,
+                                  uint id,
+                                  bool cntx)
 {
   ext2dBox* bb = _2dBoxPool->alloc();
 
@@ -1159,7 +1178,7 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
 
   bb->_met = m;
   bb->_dir = d;
-  bb->_id  = id;
+  bb->_id = id;
   bb->_map = 0;
 
   if (cntx)  // context net
@@ -1171,14 +1190,14 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
 }
 void ext2dBox::rotate()
 {
-  int x  = _ur[0];
+  int x = _ur[0];
   _ur[0] = _ur[1];
   _ur[1] = x;
 
-  x      = _ll[0];
+  x = _ll[0];
   _ll[0] = _ll[1];
   _ll[1] = x;
-  _dir   = !_dir;
+  _dir = !_dir;
 }
 uint ext2dBox::length()
 {
@@ -1246,7 +1265,7 @@ uint extMeasure::getBoxLength(uint ii, int met, bool cntx)
   //	return bb->length();
   return bb->width();
 }
-void extMeasure::getBox(int  met,
+void extMeasure::getBox(int met,
                         bool cntx,
                         int& xlo,
                         int& ylo,
@@ -1274,27 +1293,27 @@ void extMeasure::writeRaphaelPointXY(FILE* fp, double X, double Y)
   fprintf(fp, "  %6.3f,%6.3f ; ", X, Y);
 }
 
-void extMeasure::writeBoxRaphael3D(FILE*     fp,
+void extMeasure::writeBoxRaphael3D(FILE* fp,
                                    ext2dBox* bb,
-                                   int*      base_ll,
-                                   int*      base_ur,
-                                   double    y1,
-                                   double    th,
-                                   double    volt)
+                                   int* base_ll,
+                                   int* base_ur,
+                                   double y1,
+                                   double th,
+                                   double volt)
 {
   /* this function assumes the boxes bb, base_ll, and base_ur, are generated
    * from a vertical wire. Any box that is generated from a horizontal wire must
    * be rotat before passing into this function.
    */
 
-  double len   = ((double) bb->length()) / 1000;
+  double len = ((double) bb->length()) / 1000;
   double width = ((double) bb->width()) / 1000;
 
   double middle = 0.001 * (base_ur[0] + base_ll[0]) * 0.5;
   double x;
   if (!bb->_dir) {
-    x     = len;
-    len   = width;
+    x = len;
+    len = width;
     width = x;
   }
   //	double x=len*0.5;
@@ -1318,9 +1337,9 @@ void extMeasure::writeBoxRaphael3D(FILE*     fp,
   fprintf(fp, " V1=0,0,%g; HEIGHT=%g;", l, len);
   fprintf(fp, " VOLT=%g ;\n", volt);
 }
-uint extMeasure::writeRaphael3D(FILE*  fp,
-                                int    met,
-                                bool   cntx,
+uint extMeasure::writeRaphael3D(FILE* fp,
+                                int met,
+                                bool cntx,
                                 double x1,
                                 double y1,
                                 double th)
@@ -1328,17 +1347,17 @@ uint extMeasure::writeRaphael3D(FILE*  fp,
   if (met <= 0 || !_3dFlag)
     return 0;
 
-  uint   cnt = 0;
+  uint cnt = 0;
   double l, width, len, x;
   for (uint ii = 0; ii < _2dBoxTable[cntx][met].getCnt(); ii++) {
     ext2dBox* bb = _2dBoxTable[cntx][met].get(ii);
-    len          = ((double) bb->length()) / 1000;
-    width        = ((double) bb->width()) / 1000;
+    len = ((double) bb->length()) / 1000;
+    width = ((double) bb->width()) / 1000;
     double tt;
-    tt    = len;
-    len   = width;
+    tt = len;
+    len = width;
     width = tt;
-    x     = len * 0.5;
+    x = len * 0.5;
     if (!bb->_dir)
       l = ((double) (bb->loX() - x1)) / 1000;
     else
@@ -1357,9 +1376,9 @@ uint extMeasure::writeRaphael3D(FILE*  fp,
   }
   return cnt;
 }
-uint extMeasure::writeDiagRaphael3D(FILE*  fp,
-                                    int    met,
-                                    bool   cntx,
+uint extMeasure::writeDiagRaphael3D(FILE* fp,
+                                    int met,
+                                    bool cntx,
                                     double x1,
                                     double y1,
                                     double th)
@@ -1367,12 +1386,12 @@ uint extMeasure::writeDiagRaphael3D(FILE*  fp,
   if (met <= 0 || !_3dFlag)
     return 0;
 
-  uint   cnt = 0;
+  uint cnt = 0;
   double l, width, len;
   for (uint ii = 0; ii < _2dBoxTable[cntx][met].getCnt(); ii++) {
     ext2dBox* bb = _2dBoxTable[cntx][met].get(ii);
-    width        = ((double) bb->length()) / 1000;
-    len          = ((double) bb->width()) / 1000;
+    width = ((double) bb->length()) / 1000;
+    len = ((double) bb->width()) / 1000;
     if (!bb->_dir)
       l = ((double) (bb->loX() - x1)) / 1000;
     else
@@ -1391,10 +1410,10 @@ uint extMeasure::writeDiagRaphael3D(FILE*  fp,
   }
   return cnt;
 }
-uint extMeasure::createContextNets(char*  dirName,
-                                   int    bboxLL[2],
-                                   int    bboxUR[2],
-                                   int    met,
+uint extMeasure::createContextNets(char* dirName,
+                                   int bboxLL[2],
+                                   int bboxUR[2],
+                                   int met,
                                    double pitchMult)
 {
   if (met <= 0)
@@ -1403,11 +1422,11 @@ uint extMeasure::createContextNets(char*  dirName,
   // char left, right;
   // _block->getBusDelimeters(left, right);
 
-  dbTechLayer* layer    = _tech->findRoutingLayer(met);
-  dbTechLayer* mlayer   = _tech->findRoutingLayer(_met);
-  uint         minWidth = layer->getWidth();
-  uint         minSpace = layer->getSpacing();
-  int          pitch
+  dbTechLayer* layer = _tech->findRoutingLayer(met);
+  dbTechLayer* mlayer = _tech->findRoutingLayer(_met);
+  uint minWidth = layer->getWidth();
+  uint minSpace = layer->getSpacing();
+  int pitch
       = Ath__double2int(1000 * ((minWidth + minSpace) * pitchMult) / 1000);
 
   int ll[2];
@@ -1428,7 +1447,7 @@ uint extMeasure::createContextNets(char*  dirName,
   uint cnt = 1;
 
   uint not_dir = !_dir;
-  int  start   = bboxLL[not_dir] + offset;
+  int start = bboxLL[not_dir] + offset;
   //	int end= bboxUR[not_dir]-offset;
   int end = bboxUR[not_dir];
   for (int lenXY = (int) (start + minWidth); (int) (lenXY + minWidth) <= end;
@@ -1470,7 +1489,7 @@ dbRSeg* extMeasure::getFirstDbRseg(uint netId)
 {
   dbNet* net = dbNet::getNet(_block, netId);
 
-  dbSet<dbRSeg>           rSet = net->getRSegs();
+  dbSet<dbRSeg> rSet = net->getRSegs();
   dbSet<dbRSeg>::iterator rc_itr;
 
   //	double cap= 0.0;
@@ -1504,13 +1523,13 @@ double extMeasure::getCCfringe(uint lastNode, uint n, uint start, uint end)
 double extMeasure::getCCfringe3D(uint lastNode, uint n, uint start, uint end)
 {
   double ccFr = 0.0;
-  uint   End;
+  uint End;
   if (_diag)
     End = lastNode - n;
   else
     End = end;
   for (uint ii = start; ii <= End; ii++) {
-    int  d = n - ii;
+    int d = n - ii;
     uint u = n + ii;
     /*
                     if (n+ii>lastNode)
@@ -1530,9 +1549,9 @@ void extMeasure::printBox(FILE* fp)
 uint extMeasure::initWS_box(extMainOptions* opt, uint gridCnt)
 {
   dbTechLayer* layer = opt->_tech->findRoutingLayer(_met);
-  _minWidth          = layer->getWidth();
-  _pitch             = layer->getPitch();
-  _minSpace          = _pitch - _minWidth;
+  _minWidth = layer->getWidth();
+  _pitch = layer->getPitch();
+  _minSpace = _pitch - _minWidth;
   _dir = layer->getDirection() == dbTechLayerDir::HORIZONTAL ? 1 : 0;
 
   uint patternSep = gridCnt * (_minWidth + _minSpace);
@@ -1552,29 +1571,29 @@ uint extMeasure::initWS_box(extMainOptions* opt, uint gridCnt)
 void extMeasure::updateForBench(extMainOptions* opt, extMain* extMain)
 {
   _benchFlag = true;
-  _len       = opt->_len;
-  _wireCnt   = opt->_wireCnt;
-  _block     = opt->_block;
-  _tech      = opt->_tech;
-  _extMain   = extMain;
-  _3dFlag    = opt->_3dFlag;
+  _len = opt->_len;
+  _wireCnt = opt->_wireCnt;
+  _block = opt->_block;
+  _tech = opt->_tech;
+  _extMain = extMain;
+  _3dFlag = opt->_3dFlag;
   _create_net_util.setBlock(_block, false);
   _dbunit = _block->getDbUnitsPerMicron();
 }
 uint extMeasure::defineBox(int* options)
 {
   _no_debug = false;
-  _met      = options[0];
+  _met = options[0];
 
-  _len  = options[3];
+  _len = options[3];
   _dist = options[4];
   _s_nm = options[4];
 
   int xy = options[5];
-  _dir   = options[6];
+  _dir = options[6];
 
   _width = options[7];
-  _w_nm  = options[7];
+  _w_nm = options[7];
   /*
           if (_dist>0) {
                   if (options[8]>_width) {
@@ -1602,13 +1621,13 @@ uint extMeasure::defineBox(int* options)
   }
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     _rc[ii]->_coupling = 0.0;
-    _rc[ii]->_fringe   = 0.0;
-    _rc[ii]->_diag     = 0.0;
-    _rc[ii]->_res      = 0.0;
-    _rc[ii]->_sep      = 0;
+    _rc[ii]->_fringe = 0.0;
+    _rc[ii]->_diag = 0.0;
+    _rc[ii]->_res = 0.0;
+    _rc[ii]->_sep = 0;
   }
   dbTechLayer* layer = _extMain->_tech->findRoutingLayer(_met);
-  _minWidth          = layer->getWidth();
+  _minWidth = layer->getWidth();
 #ifdef HI_ACC_1
   _toHi = (options[11] > 0) ? true : false;
 #else
@@ -1630,7 +1649,7 @@ void extMeasure::tableCopyP(Ath__array1D<SEQ*>* src, Ath__array1D<SEQ*>* dst)
 }
 void extMeasure::tableCopy(Ath__array1D<SEQ*>* src,
                            Ath__array1D<SEQ*>* dst,
-                           gs*                 pixelTable)
+                           gs* pixelTable)
 {
   for (uint ii = 0; ii < src->getCnt(); ii++)
     copySeq(src->get(ii), dst, pixelTable);
@@ -1671,10 +1690,10 @@ int extMeasure::calcDist(int* ll, int* ur)
   */
   return 0;
 }
-void extMeasure::addSeq(int*                ll,
-                        int*                ur,
+void extMeasure::addSeq(int* ll,
+                        int* ur,
                         Ath__array1D<SEQ*>* seqTable,
-                        gs*                 pixelTable)
+                        gs* pixelTable)
 {
   if (pixelTable == NULL)
     pixelTable = _pixelTable;
@@ -1734,12 +1753,13 @@ uint extMeasure::getOverUnderIndex()  // TO_TEST
                     fprintf(stdout, "getOverUnderIndex: out of range n= %d m=%d
        u= %d o= %d\n", n, _met, _underMet, _overMet);
     */
-    notice(0,
-           "getOverUnderIndex: out of range n= %d   m=%d u= %d o= %d\n",
-           n,
-           _met,
-           _underMet,
-           _overMet);
+    logger_->info(RCX,
+                  77,
+                  "getOverUnderIndex: out of range n= {}   m={} u= {} o= {}",
+                  n,
+                  _met,
+                  _underMet,
+                  _overMet);
   }
 
   return n;
@@ -1767,26 +1787,26 @@ extDistRC* extMeasure::getFringe(uint len, double* valTable)
 void extLenOU::addOverOrUnderLen(int met, bool over, uint len)
 {
   _overUnder = false;
-  _under     = false;
+  _under = false;
   if (over) {
-    _overMet  = -1;
+    _overMet = -1;
     _underMet = met;
-    _over     = true;
+    _over = true;
   } else {
-    _overMet  = met;
+    _overMet = met;
     _underMet = -1;
-    _over     = false;
-    _under    = true;
+    _over = false;
+    _under = true;
   }
   _len = len;
 }
 void extLenOU::addOULen(int underMet, int overMet, uint len)
 {
   _overUnder = true;
-  _under     = false;
-  _over      = false;
+  _under = false;
+  _over = false;
 
-  _overMet  = overMet;
+  _overMet = overMet;
   _underMet = underMet;
 
   _len = len;
@@ -1822,7 +1842,7 @@ extDistRC* extMeasure::computeOverFringe(uint overMet,
     rcUnit = rcModel->_capOver[overMet]->getRC(_met, overWidth, dist);
 
     if (IsDebugNet())
-      rcUnit->printDebugRC(_met, overMet, 0, _width, dist, len);
+      rcUnit->printDebugRC(_met, overMet, 0, _width, dist, len, logger_);
 
     if (rcUnit != NULL) {
       _rc[ii]->_fringe += rcUnit->_fringe * len;
@@ -1847,7 +1867,7 @@ extDistRC* extMeasure::computeUnderFringe(uint underMet,
 
     rcUnit = rcModel->_capUnder[underMet]->getRC(n, underWidth, dist);
     if (IsDebugNet())
-      rcUnit->printDebugRC(_met, 0, underMet, _width, dist, len);
+      rcUnit->printDebugRC(_met, 0, underMet, _width, dist, len, logger_);
 
     if (rcUnit != NULL) {
       _rc[ii]->_fringe += rcUnit->_fringe * len;
@@ -1858,16 +1878,16 @@ extDistRC* extMeasure::computeUnderFringe(uint underMet,
 }
 void extMeasure::swap_coords(SEQ* s)
 {
-  int xy    = s->_ll[1];
+  int xy = s->_ll[1];
   s->_ll[1] = s->_ll[0];
   s->_ll[0] = xy;
 
-  xy        = s->_ur[1];
+  xy = s->_ur[1];
   s->_ur[1] = s->_ur[0];
   s->_ur[0] = xy;
 }
-uint extMeasure::swap_coords(uint                initCnt,
-                             uint                endCnt,
+uint extMeasure::swap_coords(uint initCnt,
+                             uint endCnt,
                              Ath__array1D<SEQ*>* resTable)
 {
   for (uint ii = initCnt; ii < endCnt; ii++)
@@ -1906,14 +1926,15 @@ uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
     return len1;
   } else {
 #ifdef DEBUG_gs
-    notice(0, "pixelTable gave len %d, bigger than expected %d\n", len1, _len);
+    logger_->info(
+        RCX, 78, "pixelTable gave len {}, bigger than expected {}", len1, _len);
 #endif
     return 0;
   }
 }
-uint extMeasure::getOverlapSeq(uint                met,
-                               int*                ll,
-                               int*                ur,
+uint extMeasure::getOverlapSeq(uint met,
+                               int* ll,
+                               int* ur,
                                Ath__array1D<SEQ*>* resTable)
 {
   uint len1 = 0;
@@ -1944,16 +1965,17 @@ uint extMeasure::getOverlapSeq(uint                met,
     return len1;
   } else {
 #ifdef DEBUG_gs
-    notice(0, "pixelTable gave len %d, bigger than expected %d\n", len1, _len);
+    logger_->info(
+        RCX, 78, "pixelTable gave len {}, bigger than expected {}", len1, _len);
 #endif
     return 0;
   }
 }
 
 uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
-                                       uint                met,
+                                       uint met,
                                        Ath__array1D<SEQ*>* resTable,
-                                       bool                over)
+                                       bool over)
 {
   uint len = 0;
   for (uint ii = 0; ii < seqTable->getCnt(); ii++) {
@@ -1974,7 +1996,7 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
 
 #ifdef FRINGE_UP_DOWN
     uint startIndex = resTable->getCnt();
-    int  maxDist    = 1000;  // TO_TEST
+    int maxDist = 1000;  // TO_TEST
 
     if (blackCount(startIndex, resTable) > 0) {
       for (uint jj = startIndex; jj < resTable->getCnt(); jj++) {
@@ -2017,8 +2039,8 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
 
   return len;
 }
-uint extMeasure::computeOUwith2planes(int*                ll,
-                                      int*                ur,
+uint extMeasure::computeOUwith2planes(int* ll,
+                                      int* ur,
                                       Ath__array1D<SEQ*>* resTable)
 {
   Ath__array1D<SEQ*> met1Table(16);
@@ -2069,15 +2091,15 @@ void extMeasure::calcOU(uint len)
 #endif
 }
 
-uint extMeasure::computeOverUnder(int*                ll,
-                                  int*                ur,
+uint extMeasure::computeOverUnder(int* ll,
+                                  int* ur,
                                   Ath__array1D<SEQ*>* resTable)
 {
   uint ouLen = 0;
 
   if (_ouPixelTableIndexMap != NULL) {
     uint ou_plane = _ouPixelTableIndexMap[_underMet][_overMet];
-    ouLen         = _pixelTable->get_seq(ll, ur, _dir, ou_plane, resTable);
+    ouLen = _pixelTable->get_seq(ll, ur, _dir, ou_plane, resTable);
   } else {
     ouLen = computeOUwith2planes(ll, ur, resTable);
   }
@@ -2085,7 +2107,11 @@ uint extMeasure::computeOverUnder(int*                ll,
   if ((ouLen < 0) || (ouLen > _len)) {
     //		fprintf(stdout, "pixelTable gave len %d, bigger than expected
     //%d\n", ouLen, _len);
-    notice(0, "pixelTable gave len %d, bigger than expected %d\n", ouLen, _len);
+    logger_->info(RCX,
+                  78,
+                  "pixelTable gave len {}, bigger than expected {}",
+                  ouLen,
+                  _len);
     return 0;
   }
   if (ouLen > 0)
@@ -2095,9 +2121,9 @@ uint extMeasure::computeOverUnder(int*                ll,
 }
 
 uint extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
-                                       uint               met,
+                                       uint met,
                                        Ath__array1D<int>* resTable,
-                                       bool               over)
+                                       bool over)
 {
   if (seqTable->getCnt() <= 0)
     return 0;
@@ -2127,8 +2153,11 @@ uint extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
     else
       //			fprintf(stdout, "pixelTable gave len %d, bigger
       // than expected %d\n", len1, _len);
-      notice(
-          0, "pixelTable gave len %d, bigger than expected %d\n", len1, _len);
+      logger_->info(RCX,
+                    78,
+                    "pixelTable gave len {}, bigger than expected {}",
+                    len1,
+                    _len);
 #endif
   }
   if (len > _len)
@@ -2152,7 +2181,11 @@ uint extMeasure::computeOverUnder(int xy1, int xy2, Ath__array1D<int>* resTable)
   if ((ouLen < 0) || (ouLen > _len)) {
     //		fprintf(stdout, "pixelTable gave len %d, bigger than expected
     //%d\n", ouLen, _len);
-    notice(0, "pixelTable gave len %d, bigger than expected %d\n", ouLen, _len);
+    logger_->info(RCX,
+                  78,
+                  "pixelTable gave len {}, bigger than expected {}",
+                  ouLen,
+                  _len);
     return 0;
   }
   if (ouLen > 0)
@@ -2162,7 +2195,7 @@ uint extMeasure::computeOverUnder(int xy1, int xy2, Ath__array1D<int>* resTable)
 }
 
 uint extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
-                                   int                minS,
+                                   int minS,
                                    Ath__array1D<int>* tgtContext)
 {
   tgtContext->resetCnt(0);
@@ -2171,9 +2204,9 @@ uint extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
     return 0;
   uint contextLength = 0;
   tgtContext->add(srcContext->get(0));
-  int  p1 = srcContext->get(1);
-  int  p2 = srcContext->get(2);
-  int  n1, n2;
+  int p1 = srcContext->get(1);
+  int p2 = srcContext->get(2);
+  int n1, n2;
   uint jj = 3;
   while (jj < ssize - 2) {
     n1 = srcContext->get(jj++);
@@ -2196,9 +2229,9 @@ uint extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
 }
 
 uint extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
-                                   int                minS,
-                                   int                pmin,
-                                   int                pmax,
+                                   int minS,
+                                   int pmin,
+                                   int pmax,
                                    Ath__array1D<int>* tgtContext)
 {
   tgtContext->resetCnt(0);
@@ -2207,7 +2240,7 @@ uint extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
     return 0;
   tgtContext->add(pmin);
   uint contextLength = 0;
-  int  p1, p2, n1, n2;
+  int p1, p2, n1, n2;
   uint jj;
   for (jj = 2; jj < ssize - 1; jj += 2)
     if (srcContext->get(jj) > pmin)
@@ -2273,10 +2306,10 @@ uint extMeasure::makeMergedContextArray(int pmin, int pmax, uint met)
                            _ccMergedContextArray[met]);
 }
 
-uint extMeasure::intersectContextArray(int                pmin,
-                                       int                pmax,
-                                       uint               met1,
-                                       uint               met2,
+uint extMeasure::intersectContextArray(int pmin,
+                                       int pmax,
+                                       uint met1,
+                                       uint met2,
                                        Ath__array1D<int>* tgtContext)
 {
   int minS1 = _minSpaceTable[met1];
@@ -2295,25 +2328,25 @@ uint extMeasure::intersectContextArray(int                pmin,
     tgtContext->add(pmax);
     return 0;
   }
-  uint readc1         = 1;
-  uint readc2         = 1;
-  uint jj1            = 1;
-  uint jj2            = 1;
+  uint readc1 = 1;
+  uint readc2 = 1;
+  uint jj1 = 1;
+  uint jj2 = 1;
   uint icontextLength = 0;
-  int  p1min, p1max, p2min, p2max, ptmin, ptmax;
+  int p1min, p1max, p2min, p2max, ptmin, ptmax;
   while (1) {
     if (readc1) {
       if (jj1 + 2 >= tsize1)
         break;
-      p1min  = t1Context.get(jj1++);
-      p1max  = t1Context.get(jj1++);
+      p1min = t1Context.get(jj1++);
+      p1max = t1Context.get(jj1++);
       readc1 = 0;
     }
     if (readc2) {
       if (jj2 + 2 >= tsize2)
         break;
-      p2min  = t2Context.get(jj2++);
-      p2max  = t2Context.get(jj2++);
+      p2min = t2Context.get(jj2++);
+      p2max = t2Context.get(jj2++);
       readc2 = 0;
     }
     if (p1min >= p2max) {
@@ -2344,32 +2377,32 @@ uint extMeasure::measureOverUnderCap()
 {
   int ll[2] = {_ll[0], _ll[1]};
   int ur[2] = {_ur[0], _ur[1]};
-  ur[_dir]  = ll[_dir];
+  ur[_dir] = ll[_dir];
 
   _tmpTable->resetCnt();
   _ouTable->resetCnt();
   _overTable->resetCnt();
   _underTable->resetCnt();
 
-  uint ouLen    = 0;
+  uint ouLen = 0;
   uint underLen = 0;
-  uint overLen  = 0;
+  uint overLen = 0;
 
   if ((_met > 1) && (_met < (int) _layerCnt - 1)) {
     _underMet = _met - 1;
-    _overMet  = _met + 1;
+    _overMet = _met + 1;
 
     ouLen = computeOverUnder(ll, ur, _tmpTable);
   } else {
     addSeq(_tmpTable, _pixelTable);
     _underMet = _met;
-    _overMet  = _met;
+    _overMet = _met;
   }
   uint totUnderLen = underLen;
-  uint totOverLen  = overLen;
+  uint totOverLen = overLen;
 
   _underMet = _met;
-  _overMet  = _met;
+  _overMet = _met;
 
   int remainderLength = _len - ouLen;
 
@@ -2378,7 +2411,7 @@ uint extMeasure::measureOverUnderCap()
     _overMet++;
 
     underLen = 0;
-    overLen  = 0;
+    overLen = 0;
     if (_underMet > 0) {
       // cap over _underMet
       underLen = computeOverOrUnderSeq(_tmpTable, _underMet, _underTable, true);
@@ -2429,7 +2462,7 @@ bool extMeasure::updateLengthAndExit(int& remainder, int& totCovered, int len)
   return false;
 }
 int extMeasure::getDgPlaneAndTrackIndex(uint tgt_met,
-                                        int  trackDist,
+                                        int trackDist,
                                         int& loTrack,
                                         int& hiTrack)
 {
@@ -2467,11 +2500,11 @@ void extMeasure::seq_release(Ath__array1D<SEQ*>* table)
   table->resetCnt();
 }
 
-uint extMeasure::computeDiag(SEQ*                s,
-                             uint                targetMet,
-                             uint                dir,
-                             uint                planeIndex,
-                             uint                trackn,
+uint extMeasure::computeDiag(SEQ* s,
+                             uint targetMet,
+                             uint dir,
+                             uint planeIndex,
+                             uint trackn,
                              Ath__array1D<SEQ*>* residueSeq)
 {
   Ath__array1D<SEQ*>* dgContext = _dgContextArray[planeIndex][trackn];
@@ -2483,36 +2516,12 @@ uint extMeasure::computeDiag(SEQ*                s,
 
   uint len = 0;
   for (uint jj = 0; jj < overlapSeq.getCnt(); jj++) {
-    SEQ* tgt      = overlapSeq.get(jj);
+    SEQ* tgt = overlapSeq.get(jj);
     uint diagDist = calcDist(tgt->_ll, tgt->_ur);
-    uint tgWidth  = tgt->_ur[_dir] - tgt->_ll[_dir];
-    uint len1     = getLength(tgt, !_dir);
+    uint tgWidth = tgt->_ur[_dir] - tgt->_ll[_dir];
+    uint len1 = getLength(tgt, !_dir);
 
-    if (IsDebugNet()) {
-      debug("DIAG_EXT",
-            "C",
-            "computeDiag: M%d to M%d L%d D%d  %d %d  %d %d\n",
-            _met,
-            targetMet,
-            len1,
-            diagDist,
-            tgt->_ll[0],
-            tgt->_ll[1],
-            tgt->_ur[0],
-            tgt->_ur[1]);
-      debug("DIAG_EXT",
-            "C",
-            "computeDiag: M%d to M%d L%.3f D%.3f  %.3f %.3f  %.3f %.3f\n",
-            _met,
-            targetMet,
-            GetDBcoords(len1),
-            GetDBcoords(diagDist),
-            GetDBcoords(tgt->_ll[0]),
-            GetDBcoords(tgt->_ll[1]),
-            GetDBcoords(tgt->_ur[0]),
-            GetDBcoords(tgt->_ur[1]));
-    }
-
+    DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
 
@@ -2556,10 +2565,10 @@ uint extMeasure::computeDiag(SEQ*                s,
   return len;
 }
 
-int extMeasure::computeDiagOU(SEQ*                s,
-                              uint                trackMin,
-                              uint                trackMax,
-                              uint                targetMet,
+int extMeasure::computeDiagOU(SEQ* s,
+                              uint trackMin,
+                              uint trackMax,
+                              uint targetMet,
                               Ath__array1D<SEQ*>* diagTable)
 {
 #ifdef HI_ACC_1
@@ -2582,7 +2591,7 @@ int extMeasure::computeDiagOU(SEQ*                s,
 
   Ath__array1D<SEQ*> residueTable(16);
 
-  int  trackTable[200];
+  int trackTable[200];
   uint cnt = 0;
   for (int kk = (int) trackMin; kk <= (int) trackMax;
        kk++)  // skip overlapping track
@@ -2640,12 +2649,12 @@ int extMeasure::compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
                                         Ath__array1D<SEQ*>* resTable)
 {
   bool overUnder = true;
-  int  met1      = _underMet;
-  int  met2      = _overMet;
+  int met1 = _underMet;
+  int met2 = _overMet;
 
   if (_met - _underMet > _overMet - _met) {
-    met2      = _underMet;
-    met1      = _overMet;
+    met2 = _underMet;
+    met1 = _overMet;
     overUnder = false;
   }
 
@@ -2656,8 +2665,8 @@ int extMeasure::compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
     if (s->type > 0)  // Black
       continue;
 
-    uint len       = s->_ur[!_dir] - s->_ll[!_dir];
-    int  remainder = len;
+    uint len = s->_ur[!_dir] - s->_ll[!_dir];
+    int remainder = len;
 
     if (_diagFlow) {
       if (_overMet < (int) _layerCnt)
@@ -2693,8 +2702,8 @@ int extMeasure::compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
   return totCovered;
 }
 int extMeasure::compute_Diag_OverOrUnder(Ath__array1D<SEQ*>* seqTable,
-                                         bool                over,
-                                         uint                met,
+                                         bool over,
+                                         uint met,
                                          Ath__array1D<SEQ*>* resTable)
 {
   int totCovered = 0;
@@ -2705,8 +2714,8 @@ int extMeasure::compute_Diag_OverOrUnder(Ath__array1D<SEQ*>* seqTable,
     if (s->type > 0)  // Black
       continue;
 
-    uint len       = s->_ur[!_dir] - s->_ll[!_dir];
-    int  remainder = len;
+    uint len = s->_ur[!_dir] - s->_ll[!_dir];
+    int remainder = len;
 
     //		uint diagLen= 0;
 
@@ -2738,11 +2747,11 @@ int extMeasure::compute_Diag_OverOrUnder(Ath__array1D<SEQ*>* seqTable,
 }
 uint extMeasure::measureUnderOnly(bool diagFlag)
 {
-  int totCovered   = 0;
+  int totCovered = 0;
   int remainderLen = _len;
 
   uint overLen = 0;
-  _underMet    = 0;
+  _underMet = 0;
   for (_overMet = _met + 1; _overMet < (int) _layerCnt; _overMet++) {
     overLen
         = compute_Diag_OverOrUnder(_tmpSrcTable, false, _overMet, _tmpDstTable);
@@ -2762,7 +2771,7 @@ uint extMeasure::measureUnderOnly(bool diagFlag)
 uint extMeasure::measureOverOnly(bool diagFlag)
 {
   int totCovered = 0;
-  int remainder  = _len;
+  int remainder = _len;
 
   _overMet = -1;
   for (_underMet = _met - 1; _underMet > 0; _underMet--) {
@@ -2784,7 +2793,7 @@ uint extMeasure::measureOverOnly(bool diagFlag)
 uint extMeasure::ouFlowStep(Ath__array1D<SEQ*>* overTable)
 {
   Ath__array1D<SEQ*> tmpTable(32);
-  uint               len = 0;
+  uint len = 0;
   for (uint ii = 0; ii < overTable->getCnt(); ii++) {
     SEQ* s = overTable->get(ii);
 
@@ -2835,8 +2844,8 @@ int extMeasure::underFlowStep(Ath__array1D<SEQ*>* srcTable,
       if (diagLen > 0) {
         diagTotBeforeUnder += diagLen;
         for (uint jj = 0; jj < diagTable.getCnt(); jj++) {
-          SEQ* s2   = diagTable.get(jj);
-          int  oLen = getOverlapSeq(_overMet, s2, &table1);
+          SEQ* s2 = diagTable.get(jj);
+          int oLen = getOverlapSeq(_overMet, s2, &table1);
           if (oLen > 0)
             totLen += oLen;
         }
@@ -2926,7 +2935,7 @@ uint extMeasure::measureDiagFullOU()
 
   int ll[2] = {_ll[0], _ll[1]};
   int ur[2] = {_ur[0], _ur[1]};
-  ur[_dir]  = ll[_dir];
+  ur[_dir] = ll[_dir];
   //	ur[_dir]= (ll[_dir]+ur[_dir])/2;
   //	ll[_dir]= ur[_dir];
 
@@ -2947,12 +2956,12 @@ uint extMeasure::measureDiagFullOU()
   _diagTable->resetCnt();
 
   int totCovered = 0;
-  int remainder  = _len;
+  int remainder = _len;
 
   // uint maxDist    = 10;
-  uint maxDist    = _extMain->_ccContextDepth;
-  int  upperLimit = _met + maxDist >= _layerCnt ? _layerCnt : _met + maxDist;
-  int  lowerLimit = _met - maxDist;
+  uint maxDist = _extMain->_ccContextDepth;
+  int upperLimit = _met + maxDist >= _layerCnt ? _layerCnt : _met + maxDist;
+  int lowerLimit = _met - maxDist;
   if (lowerLimit < 0)
     lowerLimit = 0;
 
@@ -2964,8 +2973,8 @@ uint extMeasure::measureDiagFullOU()
       continue;
     }
 
-    int  underLen            = totUnderLen;
-    int  totOUCovered        = 0;
+    int underLen = totUnderLen;
+    int totOUCovered = 0;
     bool skipUnderMetOverSub = false;
     for (_underMet = _met - 1; _underMet > lowerLimit; _underMet--) {
       uint overLen = ouFlowStep(_overTable);
@@ -3014,7 +3023,7 @@ uint extMeasure::measureDiagOU(uint ouLevelLimit, uint diagLevelLimit)
 
   int ll[2] = {_ll[0], _ll[1]};
   int ur[2] = {_ur[0], _ur[1]};
-  ur[_dir]  = ll[_dir];
+  ur[_dir] = ll[_dir];
 
   addSeq(ll, ur, _tmpSrcTable);
 
@@ -3031,15 +3040,15 @@ uint extMeasure::measureDiagOU(uint ouLevelLimit, uint diagLevelLimit)
   _diagTable->resetCnt();
 
   int totCovered = 0;
-  int remainder  = _len;
+  int remainder = _len;
 
   uint downDist = 1;
-  uint upDist   = 1;
+  uint upDist = 1;
 
   _underMet = _met;
-  downDist  = 0;
-  _overMet  = _met;
-  upDist    = 0;
+  downDist = 0;
+  _overMet = _met;
+  upDist = 0;
   //	bool upDownFlag= false;
   while (true) {
     if (_underMet > 0) {
@@ -3075,7 +3084,7 @@ uint extMeasure::measureDiagOU(uint ouLevelLimit, uint diagLevelLimit)
       _tmpSrcTable->resetCnt();
     }
 
-    uint underLen     = 0;
+    uint underLen = 0;
     uint overUnderLen = 0;
 
     if (_underMet > 0)
@@ -3099,15 +3108,12 @@ uint extMeasure::measureDiagOU(uint ouLevelLimit, uint diagLevelLimit)
 void extMeasure::ccReportProgress()
 {
   uint repChunk = 1000000;
-  if ((_totCCcnt > 0) && (_totCCcnt % repChunk == 0)) {
-    notice(0,
-           "Have processed %d CC caps, and stored %d CC caps\n",
-           _totCCcnt,
-           _totBigCCcnt);
-    // notice(0, "Have processed %d total segments, %d signal segments, %d
-    // CC caps, and stored %d CC caps\n", _totSegCnt, _totSignalSegCnt,
-    // _totCCcnt, _totBigCCcnt);
-  }
+  if ((_totCCcnt > 0) && (_totCCcnt % repChunk == 0))
+    logger_->info(RCX,
+                  79,
+                  "Have processed {} CC caps, and stored {} CC caps",
+                  _totCCcnt,
+                  _totBigCCcnt);
 }
 void extMeasure::printNet(dbRSeg* rseg, uint netId)
 {
@@ -3118,13 +3124,9 @@ void extMeasure::printNet(dbRSeg* rseg, uint netId)
 
   if (netId == net->getId()) {
     _netId = netId;
-    //		dbCapNode *cap1= dbCapNode::getCapNode(_block,
-    // rseg->getSourceNode()); 		uint node1= cap1->getNode();
-    dbCapNode* cap2     = dbCapNode::getCapNode(_block, rseg->getTargetNode());
-    uint       node2    = cap2->getNode();
-    uint       shapeId2 = cap2->getShapeId();
-    // if (_met>6)
-    // net->printNetName(stdout);
+    dbCapNode* cap2 = dbCapNode::getCapNode(_block, rseg->getTargetNode());
+    uint node2 = cap2->getNode();
+    uint shapeId2 = cap2->getShapeId();
   }
 }
 bool extMain::updateCoupCap(dbRSeg* rseg1, dbRSeg* rseg2, int jj, double v)
@@ -3268,8 +3270,8 @@ void extMeasure::addCCcap(dbCCSeg* ccap, double v, uint model)
 }
 void extMeasure::addFringe(dbRSeg* rseg1,
                            dbRSeg* rseg2,
-                           double  frCap,
-                           uint    model)
+                           double frCap,
+                           uint model)
 {
   if (_gndcModify)
     frCap *= _gndcFactor;
@@ -3281,7 +3283,7 @@ void extMeasure::addFringe(dbRSeg* rseg1,
     _extMain->updateTotalCap(rseg2, frCap, model);
 }
 
-void extMeasure::calcDiagRC(int  rsegId1,
+void extMeasure::calcDiagRC(int rsegId1,
                             uint rsegId2,
                             uint len,
                             uint diagWidth,
@@ -3289,7 +3291,7 @@ void extMeasure::calcDiagRC(int  rsegId1,
                             uint tgtMet)
 {
   double capTable[10];
-  uint   modelCnt = _metRCTable.getCnt();
+  uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
@@ -3362,13 +3364,13 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
 void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
 {
   double capTable[10];
-  uint   modelCnt = _metRCTable.getCnt();
+  uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
-    double         area    = 1.0 * _width;
+    double area = 1.0 * _width;
     area *= len;
     extDistRC* rc = getUnderLastWidthDistRC(rcModel, tgtMet);
-    capTable[ii]  = 2 * area * rc->_fringe;  //_fringe always 1/2 of rulesGen
+    capTable[ii] = 2 * area * rc->_fringe;  //_fringe always 1/2 of rulesGen
 
 #ifdef HI_ACC_1
     dbRSeg* rseg2 = NULL;
@@ -3376,10 +3378,10 @@ void extMeasure::areaCap(int rsegId1, uint rsegId2, uint len, uint tgtMet)
       rseg2 = dbRSeg::getRSeg(_block, rsegId2);
 
     if (rseg2 != NULL) {
-      uint met              = _met;
-      _met                  = tgtMet;
-      extDistRC* area_rc    = areaCapOverSub(ii, rcModel);
-      _met                  = met;
+      uint met = _met;
+      _met = tgtMet;
+      extDistRC* area_rc = areaCapOverSub(ii, rcModel);
+      _met = met;
       double areaCapOverSub = 2 * area * area_rc->_fringe;
       _extMain->updateTotalCap(rseg2, 0.0, 0.0, areaCapOverSub, ii);
     }
@@ -3399,7 +3401,7 @@ extDistRC* extMeasure::areaCapOverSub(uint modelNum, extMetRCTable* rcModel)
 
   return rc;
 }
-bool extMeasure::verticalCap(int  rsegId1,
+bool extMeasure::verticalCap(int rsegId1,
                              uint rsegId2,
                              uint len,
                              uint tgtWidth,
@@ -3414,7 +3416,7 @@ bool extMeasure::verticalCap(int  rsegId1,
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
 
   double capTable[10];
-  uint   modelCnt = _metRCTable.getCnt();
+  uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
@@ -3440,7 +3442,7 @@ bool extMeasure::verticalCap(int  rsegId1,
     if (diagDist > tgtWidth) {
       //			double scale= 0.25*diagDist/_width;
       double scale = 0.25 * diagDist / tgtWidth;
-      scale        = 1.0 / scale;
+      scale = 1.0 / scale;
       if (scale > 0.5)
         scale = 0.5;
       // if (tgtMet==_layerCnt-1)
@@ -3457,38 +3459,27 @@ bool extMeasure::verticalCap(int  rsegId1,
   return true;
 }
 
-void extMeasure::calcDiagRC(int  rsegId1,
+void extMeasure::calcDiagRC(int rsegId1,
                             uint rsegId2,
                             uint len,
                             uint dist,
                             uint tgtMet)
 {
-  int    DOUBLE_DIAG = 1;
+  int DOUBLE_DIAG = 1;
   double capTable[10];
-  uint   modelCnt = _metRCTable.getCnt();
+  uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
 #ifdef HI_ACC_1
     if (dist != 1000000) {
-      double cap     = getDiagUnderCC(rcModel, dist, tgtMet);
+      double cap = getDiagUnderCC(rcModel, dist, tgtMet);
       double diagCap = DOUBLE_DIAG * len * cap;
-      capTable[ii]   = diagCap;
+      capTable[ii] = diagCap;
       _rc[ii]->_diag += diagCap;
 
-      if (IsDebugNet()) {
-        debug("DIAG_EXT",
-              "C",
-              "    calcDiagRC: M%d-%d   L%d D%d  DD%d  %g d2 %g -- %g\n",
-              _met,
-              tgtMet,
-              len,
-              dist,
-              DOUBLE_DIAG,
-              cap,
-              cap * 2,
-              diagCap);
-      }
+      const char* msg = "calcDiagRC";
+      Debug_DiagValues(0.0, diagCap, msg);
     } else
       capTable[ii] = 2 * len * getUnderRC(rcModel)->_fringe;
 #else
@@ -3514,7 +3505,7 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       for (uint ii = 0; ii < _lenOUtable->getCnt(); ii++) {
         extLenOU* ou = _lenOUtable->get(ii);
 
-        _overMet  = ou->_overMet;
+        _overMet = ou->_overMet;
         _underMet = ou->_underMet;
 
         extDistRC* ouRC = NULL;
@@ -3548,12 +3539,12 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       if (rcOverSub != NULL)
         res = rcOverSub->_res * _len;
 
-      double     deltaFr   = 0.0;
-      double     deltaRes  = 0.0;
+      double deltaFr = 0.0;
+      double deltaRes = 0.0;
       extDistRC* rcMaxDist = rcModel->getOverFringeRC(this);
 
       if (rcMaxDist != NULL) {
-        deltaFr  = rcMaxDist->getFringe() * _len;
+        deltaFr = rcMaxDist->getFringe() * _len;
         deltaRes = rcMaxDist->_res * _len;
         res -= deltaRes;
       }
@@ -3564,8 +3555,8 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
       if (rseg2 != NULL)
         _extMain->updateRes(rseg2, res, model);
 
-      dbCCSeg* ccap            = NULL;
-      bool     includeCoupling = true;
+      dbCCSeg* ccap = NULL;
+      bool includeCoupling = true;
       if ((rseg1 != NULL) && (rseg2 != NULL)) {  // signal nets
 
         _totCCcnt++;  // TO_TEST
@@ -3611,305 +3602,13 @@ void extMeasure::calcRC(dbRSeg* rseg1, dbRSeg* rseg2, uint totLenCovered)
   _lenOUtable->resetCnt();
 }
 
-// fprintf(_debugFP, "M%d D%d L%d SUB%d GS%d
-
-void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
-{
-  if (rsegId <= 0) {
-    return;
-  }
-  dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
-
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
-
-  int x, y;
-  rseg->getCoords(x, y);
-  uint w;
-  debug("Trace",
-        "C",
-        "         %d %d   %d_S%d__%d %s  %g\n",
-        x,
-        y,
-        netId,
-        shapeId,
-        rsegId,
-        msg,
-        rseg->getCapacitance(0, 1.0));
-}
-
-double extMeasure::GetDBcoords(uint coord)
-{
-  int db_factor = _extMain->_block->getDbUnitsPerMicron();
-  return 1.0 * coord / db_factor;
-}
-
-double extMeasure::GetDBcoords(int coord)
-{
-  int db_factor = _extMain->_block->getDbUnitsPerMicron();
-  return 1.0 * coord / db_factor;
-}
-
-bool extMeasure::IsDebugNet()
-{
-  if (_no_debug)
-    return false;
-
-  if (_netSrcId == _extMain->_debug_net_id
-      || _netTgtId == _extMain->_debug_net_id)
-    return true;
-  else
-    return false;
-}
-void extMeasure::printNetCaps()
-{
-  if (_netId <= 0)
-    return;
-  dbNet* net     = dbNet::getNet(_block, _netId);
-  double gndCap  = net->getTotalCapacitance(0, false);
-  double ccCap   = net->getTotalCouplingCap(0);
-  double totaCap = gndCap + ccCap;
-  debug("Trace",
-        "C",
-        " netCap  %g CC %g %g R %g  %s\n",
-        totaCap,
-        ccCap,
-        gndCap,
-        net->getTotalResistance(),
-        net->getConstName());
-}
-bool extMeasure::printTraceNet(const char* msg,
-                               bool        init,
-                               dbCCSeg*    cc,
-                               uint        overSub,
-                               uint        covered)
-{
-  if (!IsDebugNet())
-    return false;
-
-  if (init) {
-    /*
-    fprintf(_debugFP,
-            "%s %d - %d %d  %d %d M%d D%d %d ",
-            msg,
-            _netId,
-            _ll[0],
-            _ll[1],
-            _ur[0],
-            _ur[1],
-            _met,
-            _dist,
-            _len);
-    */
-    if (overSub + covered > 0)
-      fprintf(_debugFP, "SUB %d GS %d ", overSub, covered);
-
-    if (_netSrcId == _netId)
-      printTraceNetInfo("", _netSrcId, _rsegSrcId);
-    else
-      printTraceNetInfo("", _netTgtId, _rsegTgtId);
-    //   fprintf(_debugFP, "\n");
-
-    return true;
-  }
-
-  fprintf(_debugFP, "%s   ", msg);
-  if (overSub + covered > 0)
-    fprintf(_debugFP, " L %d SUB %d GS %d ", _len, overSub, covered);
-
-  if (cc != NULL)
-    fprintf(_debugFP, " %g ", cc->getCapacitance());
-
-  printTraceNetInfo("", _netSrcId, _rsegSrcId);
-  printTraceNetInfo(" ", _netTgtId, _rsegTgtId);
-  fprintf(_debugFP, "\n");
-  return true;
-}
-
-// ----------------------------------------------------------------- DF 1020
-void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
-{
-  if (rsegId <= 0) {
-    return;
-  }
-  dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
-
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
-
-  const char* wire
-      = rseg != NULL
-                && extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())
-                       > 0
-            ? "Via "
-            : "Wire";
-
-  int x, y;
-  rseg->getCoords(x, y);
-  uint w;
-  debug("Trace",
-        "C",
-        " ------  RC Segment --- %s \n\t%s: %s\n\txHi   : %d\n\tyHi   : "
-        "%d\n\tnetId : %d\n\tshapId: %d\n\trsegId: %d\n\tCap   : %.5f\n\tRes   "
-        ": %.5f\n",
-        msg,
-        wire,
-        wire,
-        x,
-        y,
-        netId,
-        shapeId,
-        rsegId,
-        rseg->getCapacitance(0, 1.0),
-        rseg->getResistance(0));
-}
-void extMeasure::rcNetInfo()
-{
-  if (_netId <= 0)
-    return;
-  if (!IsDebugNet())
-    return;
-  dbNet* net     = dbNet::getNet(_block, _netId);
-  double gndCap  = net->getTotalCapacitance(0, false);
-  double ccCap   = net->getTotalCouplingCap(0);
-  double totaCap = gndCap + ccCap;
-  debug("Trace",
-        "C",
-        " ---- Net RC Values \n\tNetId  : %d\n\tNetName: %s\n\tCCap   : "
-        "%g\n\tGndCap : %g\n\tnetCap : %g\n\tNetRes : %g\n\n",
-        _netId,
-        net->getConstName(),
-        ccCap,
-        gndCap,
-        totaCap,
-        net->getTotalResistance());
-}
-bool extMeasure::rcSegInfo()
-{
-  if (!IsDebugNet())
-    return false;
-
-  rcNetInfo();
-
-  if (_netSrcId == _netId)
-    segInfo("SRC", _netSrcId, _rsegSrcId);
-  else
-    segInfo("DST", _netTgtId, _rsegTgtId);
-
-  return true;
-}
-
-bool extMeasure::ouCovered_debug(int covered)
-{
-  if (!IsDebugNet())
-    return false;
-  int sub = (int) _len - covered;
-  debug(
-      "Trace",
-      "C",
-      " ------ OverUnder Geom Measurement\n\tLevel : M%d\n\tWidth : %d\n\tDist "
-      " : %d\n\tLen   : %d\n\tOU_len: %d\n\tSubLen: %d\n\tDiag  : %d\n",
-      _met,
-      _width,
-      _dist,
-      _len,
-      covered,
-      sub,
-      _diag);
-
-  return true;
-}
-bool extMeasure::isVia(uint rsegId)
-{
-  dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
-
-  bool rvia1
-      = rseg1 != NULL
-                && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId())
-                       > 0
-            ? true
-            : false;
-  return rvia1;
-}
-bool extMeasure::ouRCvalues(const char* msg, uint jj)
-{
-  if (!IsDebugNet())
-    return false;
-
-  debug("Trace",
-        "C",
-        " --- OverUnder Cap/Res Values\n\t%s: %s\n\tfrCap :%g\n\tcCap  : "
-        "%g\n\tdgCap : %g\n\tRes  : %g\n\n",
-        msg,
-        msg,
-        _rc[jj]->_fringe,
-        _rc[jj]->_coupling,
-        _rc[jj]->_diag,
-        _rc[jj]->_res);
-
-  return true;
-}
-bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
-{
-  if (!IsDebugNet())
-    return false;
-
-  debug("Trace",
-        "C",
-        " ------------------------- Wire Measurement:  END ---- \n\n");
-  rc->printDebugRC("OvrSUB");
-  debug("Trace",
-        "C",
-        " --- Over Sub Lengths For: \n\tCap  : %d\n\tRes  : %d\n\n",
-        lenOverSub,
-        lenOverSub_res);
-  rcSegInfo();
-
-  return true;
-}
-bool extMeasure::DebugStart()
-{
-  if (!IsDebugNet())
-    return false;
-  debug("DistRC",
-        "C",
-        "\n --- measureRC: --------------------------------- BEGIN\n\tSRC:  "
-        "%d-%d\n\tTGT:   %d-%d\n",
-        _netSrcId,
-        _rsegSrcId,
-        _netTgtId,
-        _rsegTgtId);
-  debug("DistRC",
-        "C",
-        "measureRC:\n\tM%d  Dist= %d Len= %d \n\tloX : %9d %.3f \n\thiX : %9d "
-        "%.3f \n\tloY : %9d %.3f \n\thiY : %9d %.3f \n\tDX  : %9d %.3f \n\tDY  "
-        ": %9d %.3f \n",
-        _met,
-        _dist,
-        _len,
-        _ll[0],
-        GetDBcoords(_ll[0]),
-        _ur[0],
-        GetDBcoords(_ur[0]),
-        _ll[1],
-        GetDBcoords(_ll[1]),
-        _ur[1],
-        GetDBcoords(_ur[1]),
-
-        _ur[0] - _ll[0],
-        GetDBcoords(_ur[0]) - GetDBcoords(_ll[0]),
-        _ur[1] - _ll[1],
-        GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
-  return true;
-}
-
-// ----------------------------------------------------------------- DF 1020
-
 void extMeasure::OverSubRC(dbRSeg* rseg1,
                            dbRSeg* rseg2,
-                           int     ouCovered,
-                           int     diagCovered,
-                           int     srcCovered)
+                           int ouCovered,
+                           int diagCovered,
+                           int srcCovered)
 {
-  int res_lenOverSub   = _len - ouCovered;
+  int res_lenOverSub = _len - ouCovered;
   int DIAG_SUB_DIVIDER = 1;
   /*
           if (ouCovered==0) {
@@ -3928,7 +3627,10 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
 
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
 
-  // if (lenOverSub>=0) {
+  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+    return;
+  }
+
   _underMet = 0;
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
     extDistRC* rc = _metRCTable.get(jj)->getOverFringeRC(this);
@@ -3949,27 +3651,20 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
         _extMain->updateRes(rseg1, res, jj);
       }
     }
-    OverSubDebug(rc, lenOverSub, res_lenOverSub);
-    /*
-                      if (IsDebugNet()) {
-                              debug("Trace", "C", "OverSub: M%d  W=%d BOT=%d
-       DIAG=%d  L%d %g netcap %g -- %g totRes %g\n", _met, _width, srcCovered,
-       diagCovered,lenOverSub, cap, rseg1->getNet()->getTotalCapacitance(jj),
-       res, rseg1->getNet()->getTotalResistance(jj)); rc->printDebugRC(" SUB:");
-                      } */
+    const char* msg = "OverSubRC (No Neighbor)";
+    OverSubDebug(rc, lenOverSub, res_lenOverSub, res, cap, msg);
   }
   // }
 }
-
 void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
                                 dbRSeg* rseg2,
-                                int     ouCovered,
-                                int     diagCovered,
-                                int     srcCovered)
+                                int ouCovered,
+                                int diagCovered,
+                                int srcCovered)
 {
-  double SUB_MULT     = 1.0;
-  double SUB_MULT_RES = 1.0;
-  int    lenOverSub   = _len - ouCovered;
+  double SUB_MULT = 1.0;
+  double SUB_MULT_RES = 1;
+  int lenOverSub = _len - ouCovered;
 
   int lenOverSub_bot = _len - srcCovered;
   if (lenOverSub_bot > 0)
@@ -3981,18 +3676,20 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
   bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
 
-  // if (lenOverSub>0) {
+  if (!(lenOverSub > 0)) {
+    return;
+  }
   _underMet = 0;
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
     extMetRCTable* rcModel = _metRCTable.get(jj);
-    extDistRC*     rc      = getOverRC(rcModel);
+    extDistRC* rc = getOverRC(rcModel);
 
     extDistRC* rc_last = rcModel->getOverFringeRC_last(_met, _width);
-    double     delta   = rc->_res - rc_last->_res;
+    double delta = rc->_res - rc_last->_res;
     if (delta < 0)
       delta = -delta;
-    if (delta < 0.000001)
-      SUB_MULT_RES = 0.5;  // resitance should account by 1/4 -- 11/15 DF
+    // if (delta < 0.000001)
+    //  SUB_MULT_RES = 0.5;  // resitance should account by 1/4 -- 11/15 DF
 
     if (rc == NULL)
       continue;
@@ -4007,48 +3704,26 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
     }
 
     double tot = 0;
-    double fr  = 0;
-    double cc  = 0;
+    double fr = 0;
+    double cc = 0;
     if (lenOverSub > 0) {
       if (_sameNetFlag) {  // TO OPTIMIZE
-        fr  = SUB_MULT * rc->getFringe() * lenOverSub;
+        fr = SUB_MULT * rc->getFringe() * lenOverSub;
         tot = _extMain->updateTotalCap(rseg1, fr, jj);
       } else {
         double fr = SUB_MULT * rc->getFringe() * lenOverSub;
-        tot       = _extMain->updateTotalCap(rseg1, fr, jj);
+        tot = _extMain->updateTotalCap(rseg1, fr, jj);
         _extMain->updateTotalCap(rseg2, fr, jj);
 
         if (_dist > 0) {  // dist based
           cc = SUB_MULT * rc->getCoupling() * lenOverSub;
           _extMain->updateCoupCap(rseg1, rseg2, jj, cc);
-          // dbCCSeg *ccap= dbCCSeg::create(
-          //	dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-          //	dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
-          //	true);
-          // ccap->addCapacitance(cc, jj);
           tot += cc;
         }
       }
     }
-    if (IsDebugNet()) {
-      if (rseg1 != NULL) {
-        debug("Trace",
-              "C",
-              "OverSub: SRC M%d  W=%d BOT=%d DIAG=%d  L%d Fr %g CC %g netcap "
-              "%g -- %g totRes %g \n",
-              _met,
-              _width,
-              srcCovered,
-              diagCovered,
-              lenOverSub,
-              fr,
-              cc,
-              rseg1->getNet()->getTotalCapacitance(jj),
-              res,
-              rseg1->getNet()->getTotalResistance(jj));
-        rc->printDebugRC(" Over SUB:");
-      }
-    }
+    const char* msg = "OverSubRC_dist (With Neighbor)";
+    OverSubDebug(rc, lenOverSub, lenOverSub, res, fr + cc, msg);
   }
 }
 
@@ -4056,8 +3731,8 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 {
   // Copy from computeAndStoreRC_720
   bool SUBTRACT_DIAG = false;
-  bool no_ou         = true;
-  bool USE_DB_UBITS  = false;
+  bool no_ou = true;
+  bool USE_DB_UBITS = false;
   if (rseg1 == NULL && rseg2 == NULL)
     return 0;
 
@@ -4065,12 +3740,20 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
   bool watchFlag = IsDebugNet();
 
   rcSegInfo();
+  if (IsDebugNet())
+    debugPrint(logger_,
+               RCX,
+               "debug_net",
+               1,
+               "measureRC:"
+               "C"
+               "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
 
   // if (_netId>0)
   //	traceFlag= printTraceNet("\nBEGIN", true, NULL, 0, 0);
 
-  uint modelCnt      = _metRCTable.getCnt();
-  int  totLenCovered = 0;
+  uint modelCnt = _metRCTable.getCnt();
+  int totLenCovered = 0;
   _lenOUtable->resetCnt();
   if (_extMain->_usingMetalPlanes && (_extMain->_geoThickTable == NULL)) {
     _diagLen = 0;
@@ -4087,8 +3770,8 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 
   if (USE_DB_UBITS) {
     totLenCovered = _extMain->GetDBcoords2(totLenCovered);
-    _len          = _extMain->GetDBcoords2(_len);
-    _diagLen      = _extMain->GetDBcoords2(_diagLen);
+    _len = _extMain->GetDBcoords2(_len);
+    _diagLen = _extMain->GetDBcoords2(_diagLen);
   }
   int lenOverSub = _len - totLenCovered;
 
@@ -4101,12 +3784,15 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
   double deltaFr[10];
   double deltaRes[10];
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-    deltaFr[jj]  = 0.0;
+    deltaFr[jj] = 0.0;
     deltaRes[jj] = 0.0;
   }
-  double SUB_MULT         = 1.0;
-  bool   COMPUTE_OVER_SUB = true;
-  if (_dist < 0) {  // dist is infinit
+  double SUB_MULT = 1.0;
+  bool COMPUTE_OVER_SUB = true;
+
+  // Case where the geometric search returns no neighbor found
+  // _dist is infinit
+  if (_dist < 0) {
     if (totLenCovered < 0)
       totLenCovered = 0;
 
@@ -4120,16 +3806,31 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 
     bool rvia1 = isVia(rseg1->getId());
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      bool ou = false;
       if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
+        ou = true;
         if (!rvia1)
           _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
+        else
+          _rc[jj]->_res = 0;
       }
       if (_rc[jj]->_fringe > 0) {
+        ou = true;
         double tot = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
-        ouRCvalues("OU_src", jj);
-        rcSegInfo();
       }
+      if (ou && IsDebugNet())
+        _rc[jj]->printDebugRC_values("OverUnder Total Open");
     }
+    if (IsDebugNet())
+      debugPrint(logger_,
+                 RCX,
+                 "debug_net",
+                 1,
+                 "measureRC:"
+                 "C",
+                 "\t[END-OUD] ----- OverUnder/Diagonal ----- END");
+    rcSegInfo();
+
     if (COMPUTE_OVER_SUB) {
       OverSubRC(rseg1, NULL, totLenCovered, _diagLen, _len);
       return totLenCovered;
@@ -4148,73 +3849,45 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
     bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
 
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      bool ou = false;
       double totR1 = 0;
       double totR2 = 0;
       if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
         if (!rvia1) {
+          ou = true;
           totR1 = _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
         }
-        if (!rvia2)
+        if (!rvia2) {
+          ou = true;
           totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
+        }
       }
       double tot1 = 0;
       double tot2 = 0;
       if (_rc[jj]->_fringe > 0) {
+        ou = true;
         tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
         tot2 = _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
       }
       if (_rc[jj]->_coupling > 0) {
+        ou = true;
         _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
       }
       tot1 += _rc[jj]->_coupling;
       tot2 += _rc[jj]->_coupling;
-
-      ouRCvalues("OU   ", jj);
-      rcSegInfo();
-
-      if (IsDebugNet()) {
-        if (rseg1 != NULL)
-          debug("Trace",
-                "C",
-                "SRC: OU%d  M%d  W%d D%d L%d   Fr %g cc %g dg %d %g netcap %g "
-                "-- netRes %g %g %u-%u %s\n",
-                totLenCovered,
-                _met,
-                _width,
-                _dist,
-                _len,
-                _rc[jj]->_fringe,
-                _rc[jj]->_coupling,
-                _diag,
-                _rc[jj]->_diag,
-                rseg1->getNet()->getTotalCapacitance(jj, true),
-                _rc[jj]->_res,
-                rseg1->getNet()->getTotalResistance(jj),
-                rseg1->getNet()->getId(),
-                rseg1->getId(),
-                rseg1->getNet()->getConstName());
-        if (rseg2 != NULL)
-          debug("Trace",
-                "C",
-                "TGT: OU%d  M%d  W%d D%d L%d   Fr %g cc %g dg %d %g netcap %g "
-                "-- %g netRes %g %d-%d %s\n",
-                totLenCovered,
-                _met,
-                _width,
-                _dist,
-                _len,
-                _rc[jj]->_fringe,
-                _rc[jj]->_coupling,
-                _diag,
-                _rc[jj]->_diag,
-                rseg2->getNet()->getTotalCapacitance(jj, true),
-                _rc[jj]->_res,
-                rseg2->getNet()->getTotalResistance(jj),
-                rseg2->getNet()->getId(),
-                rseg2->getId(),
-                rseg2->getNet()->getConstName());
-      }
+      if (ou && IsDebugNet())
+        _rc[jj]->printDebugRC_values("OverUnder Total Dist");
     }
+    rcSegInfo();
+    if (IsDebugNet())
+      debugPrint(logger_,
+                 RCX,
+                 "debug_net",
+                 1,
+                 "measureRC:"
+                 "C"
+                 "\t[END-OUD] ------ OverUnder/Diagonal RC ------ END");
+
     if (COMPUTE_OVER_SUB) {
       // OverSubRC(rseg1, NULL, totLenCovered, _diagLen, srcCovered);
       OverSubRC_dist(rseg1, rseg2, totLenCovered, _diagLen, _len);
@@ -4222,9 +3895,6 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
     }
   }
   return totLenCovered;
-  // printCapDebug(netId, rseg1_id, rseg2,_id _len, totLenCovered, ccCap,
-  // gndCC);
-  // to print
 }
 
 void extMeasure::measureRC(int* options)
@@ -4252,24 +3922,25 @@ void extMeasure::measureRC(int* options)
   uint debugNetId = DEBUG_NET;
 #endif
 
-  dbRSeg* rseg1  = NULL;
-  dbNet*  srcNet = NULL;
-  uint    netId1 = 0;
+  dbRSeg* rseg1 = NULL;
+  dbNet* srcNet = NULL;
+  uint netId1 = 0;
   if (rsegId1 > 0) {
-    rseg1  = dbRSeg::getRSeg(_block, rsegId1);
+    rseg1 = dbRSeg::getRSeg(_block, rsegId1);
     srcNet = rseg1->getNet();
     netId1 = srcNet->getId();
 #ifdef DEBUG_NET
     printNet(rseg1, debugNetId);
 #endif
   }
+  // fprintf(stdout, "net: %d %s\n", netId1, srcNet->getConstName());
   _netSrcId = netId1;
 
-  dbRSeg* rseg2  = NULL;
-  dbNet*  tgtNet = NULL;
-  uint    netId2 = 0;
+  dbRSeg* rseg2 = NULL;
+  dbNet* tgtNet = NULL;
+  uint netId2 = 0;
   if (rsegId2 > 0) {
-    rseg2  = dbRSeg::getRSeg(_block, rsegId2);
+    rseg2 = dbRSeg::getRSeg(_block, rsegId2);
     tgtNet = rseg2->getNet();
     netId2 = tgtNet->getId();
 #ifdef DEBUG_NET
@@ -4310,7 +3981,7 @@ void extMeasure::measureRC(int* options)
       _metRCTable.set(0, _extMain->getRCmodel(0)->getMetRCTable(0));
     } else {
       uint n = _extMain->getRCmodel(0)->findBiggestDatarateIndex(diff);
-      n      = _extMain->getRCmodel(0)->findClosestDataRate(n, diff);
+      n = _extMain->getRCmodel(0)->findClosestDataRate(n, diff);
       _metRCTable.set(0, _extMain->getRCmodel(0)->getMetRCTable(n));
     }
 
@@ -4338,9 +4009,9 @@ void extMeasure::measureRC(int* options)
     */
   }
   //	uint modelCnt= _metRCTable.getCnt();
-  _verticalDiag   = _currentModel->getVerticalDiagFlag();
+  _verticalDiag = _currentModel->getVerticalDiagFlag();
   int prevCovered = options[20];
-  prevCovered     = 0;
+  prevCovered = 0;
 
   // -------------------------------- db units -------------
   bool USE_DB_UNITS = false;
@@ -4357,9 +4028,13 @@ void extMeasure::measureRC(int* options)
   DebugStart();
   int totCovered = computeAndStoreRC(rseg1, rseg2, prevCovered);
   if (IsDebugNet())
-    debug("DistRC",
-          "C",
-          "\n --- measureRC: ------------------------------------- END\n");
+    debugPrint(logger_,
+               RCX,
+               "debug_net",
+               1,
+               "[END-DistRC:C]"
+               "\tDistRC:C"
+               " ----- measureRC: ----- END\n");
   options[20] = totCovered;
 
   // ccReportProgress();
@@ -4367,27 +4042,25 @@ void extMeasure::measureRC(int* options)
 
 int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
                                       dbRSeg* rseg2,
-                                      int     srcCovered)
+                                      int srcCovered)
 {
   bool SUBTRACT_DIAG = false;
-  bool no_ou         = true;
-  bool USE_DB_UBITS  = false;
+  bool no_ou = true;
+  bool USE_DB_UBITS = false;
   if (rseg1 == NULL && rseg2 == NULL)
     return 0;
 
   bool traceFlag = false;
   bool watchFlag = IsDebugNet();
-  _netId         = _extMain->_debug_net_id;
+  _netId = _extMain->_debug_net_id;
   if (_netId > 0)
     traceFlag = printTraceNet("\nBEGIN", true, NULL, 0, 0);
 
-  uint modelCnt      = _metRCTable.getCnt();
-  int  totLenCovered = 0;
+  uint modelCnt = _metRCTable.getCnt();
+  int totLenCovered = 0;
   _lenOUtable->resetCnt();
   if (_extMain->_usingMetalPlanes && (_extMain->_geoThickTable == NULL)) {
     _diagLen = 0;
-    // if (_extMain->_usingMetalPlanes) {
-    // notice(0, "OU flow\n");
     if (_extMain->_ccContextDepth > 0) {
       if (!_diagFlow)
         totLenCovered = measureOverUnderCap();
@@ -4406,13 +4079,13 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
   double deltaFr[10];
   double deltaRes[10];
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
-    deltaFr[jj]  = 0.0;
+    deltaFr[jj] = 0.0;
     deltaRes[jj] = 0.0;
   }
   if (USE_DB_UBITS) {
     totLenCovered = _extMain->GetDBcoords2(totLenCovered);
-    _len          = _extMain->GetDBcoords2(_len);
-    _diagLen      = _extMain->GetDBcoords2(_diagLen);
+    _len = _extMain->GetDBcoords2(_len);
+    _diagLen = _extMain->GetDBcoords2(_diagLen);
   }
   int lenOverSub = _len - totLenCovered;
 
@@ -4423,21 +4096,25 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
     lenOverSub = 0;
 
   if (traceFlag) {
-    debug("Trace",
-          "C",
-          "            OU %d  SUB %d  DIAG %d  PREV_COVERED %d",
-          totLenCovered,
-          lenOverSub,
-          _diagLen,
-          srcCovered);
+    debugPrint(logger_,
+               RCX,
+               "debug_net",
+               2,
+               "Trace:"
+               "C"
+               "            OU {}  SUB {}  DIAG {}  PREV_COVERED {}",
+               totLenCovered,
+               lenOverSub,
+               _diagLen,
+               srcCovered);
     printNetCaps();
   }
   //	printTraceNet("OU", false, NULL, lenOverSub, totLenCovered);
 
   //	int mUnder= _underMet; // will be replaced
 
-  double SUB_MULT         = 1.0;
-  bool   COMPUTE_OVER_SUB = true;
+  double SUB_MULT = 1.0;
+  bool COMPUTE_OVER_SUB = true;
   if (_dist < 0) {  // dist is infinit
     if (totLenCovered < 0)
       totLenCovered = 0;
@@ -4450,7 +4127,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
       for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
         extDistRC* rc = _metRCTable.get(jj)->getOverFringeRC(this);
         if (rc != NULL) {
-          deltaFr[jj]  = SUB_MULT * rc->getFringe() * totLenCovered;
+          deltaFr[jj] = SUB_MULT * rc->getFringe() * totLenCovered;
           deltaRes[jj] = rc->getRes() * totLenCovered;
         }
       }
@@ -4533,7 +4210,7 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
           true);
 
       double cap;
-      int    extDbIndex, sci, scDbIndex;
+      int extDbIndex, sci, scDbIndex;
       for (uint jj = 0; jj < modelCnt; jj++) {
         cap = _ccModify ? _rc[jj]->_coupling * _ccFactor : _rc[jj]->_coupling;
         extDbIndex = _extMain->getProcessCornerDbIndex(jj);
@@ -4546,14 +4223,18 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
         int net1 = rseg1->getNet()->getId();
         int net2 = rseg2->getNet()->getId();
         if (_netId == net1 || _netId == net2) {
-          debug("Trace",
-                "C",
-                "addCapacitance-CC:  %d-%d %d-%d %g\n",
-                net1,
-                rseg1->getId(),
-                net2,
-                rseg2->getId(),
-                cap);
+          debugPrint(logger_,
+                     RCX,
+                     "debug_net",
+                     2,
+                     "Trace:"
+                     "C"
+                     "\taddCapacitance-CC:  {}-{} {}-{} {}",
+                     net1,
+                     rseg1->getId(),
+                     net2,
+                     rseg2->getId(),
+                     cap);
         }
       }
       // --------------------------- to test it was include_coupling= false
@@ -4585,28 +4266,25 @@ int extMeasure::computeAndStoreRC_720(dbRSeg* rseg1,
     }
   }
   return totLenCovered;
-  // printCapDebug(netId, rseg1_id, rseg2,_id _len, totLenCovered, ccCap,
-  // gndCC);
-  // to print
 }
 
-void extMeasure::getDgOverlap(SEQ*                sseq,
-                              uint                dir,
+void extMeasure::getDgOverlap(SEQ* sseq,
+                              uint dir,
                               Ath__array1D<SEQ*>* dgContext,
                               Ath__array1D<SEQ*>* overlapSeq,
                               Ath__array1D<SEQ*>* residueSeq)
 {
-  int  idx = dgContext->get(0)->_ll[0];
-  uint lp  = dir ? 0 : 1;  // x : y
-  uint wp  = dir ? 1 : 0;  // y : x
+  int idx = dgContext->get(0)->_ll[0];
+  uint lp = dir ? 0 : 1;  // x : y
+  uint wp = dir ? 1 : 0;  // y : x
   SEQ* rseq;
   SEQ* tseq;
   SEQ* wseq;
-  int  covered = sseq->_ll[lp];
+  int covered = sseq->_ll[lp];
 
 #ifdef HI_ACC_1
   if (idx == dgContext->getCnt()) {
-    rseq          = _seqPool->alloc();
+    rseq = _seqPool->alloc();
     rseq->_ll[wp] = sseq->_ll[wp];
     rseq->_ur[wp] = sseq->_ur[wp];
     rseq->_ll[lp] = sseq->_ll[lp];
@@ -4624,7 +4302,7 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
     if (tseq->_ur[lp] <= covered)
       continue;
     if (tseq->_ll[lp] >= sseq->_ur[lp]) {
-      rseq          = _seqPool->alloc();
+      rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];
       rseq->_ll[lp] = covered;
@@ -4641,7 +4319,7 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
         && (trseg->getNet() == srseg->getNet())) {
       if ((tseq->_ur[lp] >= sseq->_ur[lp])
           || (idx == (int) dgContext->getCnt() - 1)) {
-        rseq          = _seqPool->alloc();
+        rseq = _seqPool->alloc();
         rseq->_ll[wp] = sseq->_ll[wp];
         rseq->_ur[wp] = sseq->_ur[wp];
         rseq->_ll[lp] = covered;
@@ -4653,8 +4331,8 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
         continue;
     }
 #endif
-    wseq          = _seqPool->alloc();
-    wseq->type    = tseq->type;
+    wseq = _seqPool->alloc();
+    wseq->type = tseq->type;
     wseq->_ll[wp] = tseq->_ll[wp];
     wseq->_ur[wp] = tseq->_ur[wp];
     if (tseq->_ur[lp] <= sseq->_ur[lp])
@@ -4665,7 +4343,7 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
       wseq->_ll[lp] = covered;
     else {
       wseq->_ll[lp] = tseq->_ll[lp];
-      rseq          = _seqPool->alloc();
+      rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];
       rseq->_ll[lp] = covered;
@@ -4679,7 +4357,7 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
     if (tseq->_ur[lp] >= sseq->_ur[lp])
       break;
     if (idx == (int) dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
-      rseq          = _seqPool->alloc();
+      rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];
       rseq->_ll[lp] = covered;
@@ -4694,7 +4372,7 @@ void extMeasure::getDgOverlap(SEQ*                sseq,
 void extMeasure::getDgOverlap(int* options)
 {
   int ttttprintOverlap = 0;
-  int srcseqcnt        = 0;
+  int srcseqcnt = 0;
   if (ttttprintOverlap && !_dgContextFile) {
     _dgContextFile = fopen("overlapSeq.1", "w");
     fprintf(_dgContextFile, "wire overlapping context:\n");
@@ -4704,12 +4382,12 @@ void extMeasure::getDgOverlap(int* options)
   srcseqcnt++;
   SEQ* seq = _seqPool->alloc();
   SEQ* pseq;
-  int  dir  = options[6];
+  int dir = options[6];
   uint xidx = 0;
   uint yidx = 1;
   uint lidx, bidx;
-  lidx           = dir == 1 ? xidx : yidx;
-  bidx           = dir == 1 ? yidx : xidx;
+  lidx = dir == 1 ? xidx : yidx;
+  bidx = dir == 1 ? yidx : xidx;
   seq->_ll[lidx] = options[1];
   seq->_ll[bidx] = options[3];
   seq->_ur[lidx] = options[2];
@@ -4724,14 +4402,14 @@ void extMeasure::getDgOverlap(int* options)
             seq->_ur[1],
             met,
             dir);
-  Ath__array1D<SEQ*>  overlapSeq(16);
-  Ath__array1D<SEQ*>  residueSeq(16);
+  Ath__array1D<SEQ*> overlapSeq(16);
+  Ath__array1D<SEQ*> residueSeq(16);
   Ath__array1D<SEQ*>* dgContext = NULL;
   for (int jj = 1; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;
     for (int kk = 0; kk <= _dgContextHiTrack[gridn]; kk++) {
       int trackn = *_dgContextTracks / 2 + kk;
-      dgContext  = _dgContextArray[gridn][trackn];
+      dgContext = _dgContextArray[gridn][trackn];
       overlapSeq.resetCnt();
       residueSeq.resetCnt();
       getDgOverlap(seq, dir, dgContext, &overlapSeq, &residueSeq);
@@ -4773,14 +4451,14 @@ void extMeasure::getDgOverlap(int* options)
 void extMeasure::initTargetSeq()
 {
   Ath__array1D<SEQ*>* dgContext = NULL;
-  SEQ*                seq;
+  SEQ* seq;
   for (int jj = 1; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;
     for (int kk = _dgContextLowTrack[gridn]; kk <= _dgContextHiTrack[gridn];
          kk++) {
-      int trackn  = *_dgContextTracks / 2 + kk;
-      dgContext   = _dgContextArray[gridn][trackn];
-      seq         = dgContext->get(0);
+      int trackn = *_dgContextTracks / 2 + kk;
+      dgContext = _dgContextArray[gridn][trackn];
+      seq = dgContext->get(0);
       seq->_ll[0] = 1;
     }
   }
@@ -4798,7 +4476,7 @@ void extMeasure::printDgContext()
           _dgContextCnt,
           *_dgContextBaseLvl);
   Ath__array1D<SEQ*>* dgContext = NULL;
-  SEQ*                seq       = NULL;
+  SEQ* seq = NULL;
   for (int jj = *_dgContextLowLvl; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;
     fprintf(_dgContextFile,
@@ -4807,10 +4485,10 @@ void extMeasure::printDgContext()
             gridn,
             _dgContextBaseTrack[gridn]);
     int lowTrack = _dgContextLowTrack[gridn];
-    int hiTrack  = _dgContextHiTrack[gridn];
+    int hiTrack = _dgContextHiTrack[gridn];
     for (int kk = lowTrack; kk <= hiTrack; kk++) {
       int trackn = *_dgContextTracks / 2 + kk;
-      dgContext  = _dgContextArray[gridn][trackn];
+      dgContext = _dgContextArray[gridn][trackn];
       fprintf(_dgContextFile,
               "    track %d (%d), %d seqs\n",
               _dgContextBaseTrack[gridn] + kk,

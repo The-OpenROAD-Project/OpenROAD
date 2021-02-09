@@ -33,15 +33,19 @@
 #ifndef ADS_EXTRCTREE_H
 #define ADS_EXTRCTREE_H
 
-#include "odb.h"
-
+#include "ZObject.h"
 #include "db.h"
 #include "dbShape.h"
+#include "odb.h"
 #include "util.h"
 
-#include "ZObject.h"
+namespace utl {
+class Logger;
+}
 
 namespace rcx {
+
+using utl::Logger;
 
 class extRCnode
 {
@@ -52,14 +56,14 @@ class extRCnode
   double _gndcap[ADS_MAX_CORNER];
   double _cap[ADS_MAX_CORNER];
   double _res[ADS_MAX_CORNER];
-  int    _x;
-  int    _y;
-  uint   _firstChild;
-  int    _termMap;
-  uint   _netId;
-  uint   _junctionId;
-  uint   _capndId;
-  uint   _splitCnt;
+  int _x;
+  int _y;
+  uint _firstChild;
+  int _termMap;
+  uint _netId;
+  uint _junctionId;
+  uint _capndId;
+  uint _splitCnt;
 
  public:
   void reset(uint cornerCnt);
@@ -67,17 +71,17 @@ class extRCnode
 class extTnode
 {
  public:
-  double     _gndcap[ADS_MAX_CORNER];
-  double     _cap[ADS_MAX_CORNER];
-  double     _res[ADS_MAX_CORNER];
-  int        _x;
-  int        _y;
-  int        _termMap;
-  uint       _netId;
-  uint       _junctionId;
-  uint       _capndId;
-  uint       _splitCnt;
-  uint       _childCnt;
+  double _gndcap[ADS_MAX_CORNER];
+  double _cap[ADS_MAX_CORNER];
+  double _res[ADS_MAX_CORNER];
+  int _x;
+  int _y;
+  int _termMap;
+  uint _netId;
+  uint _junctionId;
+  uint _capndId;
+  uint _splitCnt;
+  uint _childCnt;
   extTnode** _child;
 
   extTnode(extRCnode* m, uint cornerCnt);
@@ -87,104 +91,107 @@ class extTnode
 
 class extRcTree
 {
+ protected:
+  Logger* logger_;
+
  public:
-  extRcTree(odb::dbBlock* blk);
+  extRcTree(odb::dbBlock* blk, Logger* logger);
   ~extRcTree();
-  extTnode*  makeTree(odb::dbNet* net,
-                      double      max_cap,
-                      uint        test,
-                      bool        resetFlag,
-                      bool        addDummyJunctions,
-                      uint&       tnodeCnt,
-                      double      mcf           = 1.0,
-                      bool        for_buffering = false,
-                      uint        extCorner     = 0,
-                      bool        is_rise       = false,
-                      bool        is_min        = false);
+  extTnode* makeTree(odb::dbNet* net,
+                     double max_cap,
+                     uint test,
+                     bool resetFlag,
+                     bool addDummyJunctions,
+                     uint& tnodeCnt,
+                     double mcf = 1.0,
+                     bool for_buffering = false,
+                     uint extCorner = 0,
+                     bool is_rise = false,
+                     bool is_min = false);
   extRCnode* makeTree2(odb::dbNet* net,
-                       double      max_cap,
-                       uint        test,
-                       bool        resetFlag,
-                       bool        addDummyJunctions = true,
-                       double      mcf               = 1.0);
-  extRCnode* makeTree(odb::dbNet*         net,
-                      double              max_cap,
-                      uint                test,
-                      bool                resetFlag,
-                      bool                addDummyJunctions = true,
-                      double              mcf               = 1.0,
-                      odb::dbBlockSearch* blk               = NULL,
-                      bool                for_buffering     = false,
-                      uint                extCorner         = 0,
-                      bool                is_rise           = false,
-                      bool                is_min            = false);
-  extTnode*  makeTree(uint   netId,
+                       double max_cap,
+                       uint test,
+                       bool resetFlag,
+                       bool addDummyJunctions = true,
+                       double mcf = 1.0);
+  extRCnode* makeTree(odb::dbNet* net,
                       double max_cap,
-                      uint   test,
-                      bool   resetFlag,
-                      bool   addDummyJunctions,
-                      uint&  tnodeCnt,
-                      double mcf           = 1.0,
-                      char*  printTag      = NULL,
-                      bool   for_buffering = false);
-  void       makeTree(double max_cap, uint test, bool for_buffering = false);
-  uint       getDriverITermId();
-  uint       getDriverBTermId();
-  uint       getChildrenCnt(uint firstChild);
-  extTnode*  makeTnode(uint nodeId, uint& n);
-  uint       makeGraph(uint netId);
+                      uint test,
+                      bool resetFlag,
+                      bool addDummyJunctions = true,
+                      double mcf = 1.0,
+                      odb::dbBlockSearch* blk = NULL,
+                      bool for_buffering = false,
+                      uint extCorner = 0,
+                      bool is_rise = false,
+                      bool is_min = false);
+  extTnode* makeTree(uint netId,
+                     double max_cap,
+                     uint test,
+                     bool resetFlag,
+                     bool addDummyJunctions,
+                     uint& tnodeCnt,
+                     double mcf = 1.0,
+                     char* printTag = NULL,
+                     bool for_buffering = false);
+  void makeTree(double max_cap, uint test, bool for_buffering = false);
+  uint getDriverITermId();
+  uint getDriverBTermId();
+  uint getChildrenCnt(uint firstChild);
+  extTnode* makeTnode(uint nodeId, uint& n);
+  uint makeGraph(uint netId);
 
  private:
-  void       initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet);
-  uint       netLocalCn(uint capNodeNum);
-  extRCnode* init(odb::dbRSeg*             zrc,
-                  odb::dbRSeg*             rc,
+  void initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet);
+  uint netLocalCn(uint capNodeNum);
+  extRCnode* init(odb::dbRSeg* zrc,
+                  odb::dbRSeg* rc,
                   odb::dbSet<odb::dbRSeg>& rSet,
-                  bool                     recycleFlag,
-                  uint*                    id);
-  void       getCoords(odb::dbNet* net,
-                       uint        shapeId,
-                       int*        x1,
-                       int*        y1,
-                       int*        x2,
-                       int*        y2);
-  extRCnode* allocNode(uint  childrenCnt,
+                  bool recycleFlag,
+                  uint* id);
+  void getCoords(odb::dbNet* net,
+                 uint shapeId,
+                 int* x1,
+                 int* y1,
+                 int* x2,
+                 int* y2);
+  extRCnode* allocNode(uint childrenCnt,
                        uint* id,
-                       bool  allocateChildren = true);
-  uint       addChild(extRCnode* node, uint child);
-  uint       printTree(FILE* fp, uint netId, const char* msg);
-  bool       isTree(odb::dbNet* net);
-  int        dfs(uint i, int* vis, odb::dbNet* net, uint l);
-  uint       makeChildren(extRCnode* node, uint childrenCnt);
-  uint       insertZeroJunctions();
-  void       duplicateJunction(extRCnode* jnode, uint cnt);
-  uint       getChildrenCnt(extRCnode* jnode);
-  void       setDriverXY();
-  extRCnode* makeFirstNode(odb::dbRSeg*    zrc,
-                           odb::dbRSeg*    rc,
+                       bool allocateChildren = true);
+  uint addChild(extRCnode* node, uint child);
+  uint printTree(FILE* fp, uint netId, const char* msg);
+  bool isTree(odb::dbNet* net);
+  int dfs(uint i, int* vis, odb::dbNet* net, uint l);
+  uint makeChildren(extRCnode* node, uint childrenCnt);
+  uint insertZeroJunctions();
+  void duplicateJunction(extRCnode* jnode, uint cnt);
+  uint getChildrenCnt(extRCnode* jnode);
+  void setDriverXY();
+  extRCnode* makeFirstNode(odb::dbRSeg* zrc,
+                           odb::dbRSeg* rc,
                            odb::dbCapNode* capNode,
-                           uint            index);
-  void       printTree(FILE* fp, uint netId, uint tnodeCnt);
+                           uint index);
+  void printTree(FILE* fp, uint netId, uint tnodeCnt);
   bool getCoords(odb::dbNet* net, uint shapeId, int* ll, int* ur, uint& length);
-  extRCnode*   makeNode(uint            startingNodeId,
-                        uint            endingNodeId,
-                        odb::dbCapNode* tgtNode,
-                        bool            fractionFlag,
-                        int             x,
-                        int             y,
-                        double*         res,
-                        double*         gndcap,
-                        double*         totalcap,
-                        extRCnode*      prevNode,
-                        FILE*           dbgFP = NULL);
-  uint         checkAndInit(odb::dbNet*              net,
-                            bool                     resetFlag,
-                            odb::dbSet<odb::dbRSeg>& rSet);
-  bool         isDangling(odb::dbCapNode* node);
-  void         printTest2(FILE*           dbgFP,
-                          odb::dbCapNode* tgtNode,
-                          extRCnode*      node,
-                          uint            nodeId);
+  extRCnode* makeNode(uint startingNodeId,
+                      uint endingNodeId,
+                      odb::dbCapNode* tgtNode,
+                      bool fractionFlag,
+                      int x,
+                      int y,
+                      double* res,
+                      double* gndcap,
+                      double* totalcap,
+                      extRCnode* prevNode,
+                      FILE* dbgFP = NULL);
+  uint checkAndInit(odb::dbNet* net,
+                    bool resetFlag,
+                    odb::dbSet<odb::dbRSeg>& rSet);
+  bool isDangling(odb::dbCapNode* node);
+  void printTest2(FILE* dbgFP,
+                  odb::dbCapNode* tgtNode,
+                  extRCnode* node,
+                  uint nodeId);
   odb::dbRSeg* getFirstRC(odb::dbSet<odb::dbRSeg>& rSet);
   FILE* openFile(odb::dbNet* net, const char* postfix, const char* permissions);
 
@@ -197,18 +204,18 @@ class extRcTree
   Ath__array1D<int>* _itermIndexTable;  // keeps indices to iterm leaf nodes
   Ath__array1D<int>* _btermIndexTable;  // keeps indices to bterm leaf nodes
   Ath__array1D<int>* _map;
-  extTnode**         _tnodeTable;
-  uint               _tnodeCnt;
+  extTnode** _tnodeTable;
+  uint _tnodeCnt;
 
-  odb::dbNet*   _net;
-  odb::dbNet*   _cornerNet;
-  uint          _cornerCnt;
-  uint          _extCorner;
-  uint          _blockCornerIndex;
+  odb::dbNet* _net;
+  odb::dbNet* _cornerNet;
+  uint _cornerCnt;
+  uint _extCorner;
+  uint _blockCornerIndex;
   odb::dbBlock* _block;
   odb::dbBlock* _cornerBlock;
-  uint          _btermId;
-  uint          _itermId;
+  uint _btermId;
+  uint _itermId;
 
   uint _firstBTermIndex;
   uint _firstITermIndex;

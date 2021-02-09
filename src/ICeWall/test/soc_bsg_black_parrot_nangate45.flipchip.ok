@@ -7,5 +7,5 @@
 [INFO ODB-0225]     Created 24 library cells
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
-[INFO] [PDNG-0015] Writing to database
+[INFO PDN-0015] Writing to database
 No differences found.

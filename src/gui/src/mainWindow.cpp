@@ -332,19 +332,19 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty())
     return;
-  odb::Rect itemsBBox;
-  itemsBBox.mergeInit();
-  int mergeCnt = 0;
+  odb::Rect items_bbox;
+  items_bbox.mergeInit();
+  int merge_cnt = 0;
   for (auto& item : items) {
-    odb::Rect itemBBox;
-    if (item->getBBox(itemBBox)) {
-      mergeCnt++;
-      itemsBBox.merge(itemBBox);
+    odb::Rect item_bbox;
+    if (item->getBBox(item_bbox)) {
+      merge_cnt++;
+      items_bbox.merge(item_bbox);
     }
   }
-  if (mergeCnt == 0)
+  if (merge_cnt == 0)
     return;
-  zoomTo(itemsBBox);
+  zoomTo(items_bbox);
 }
 
 void MainWindow::status(const std::string& message)
@@ -386,9 +386,9 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
                                                int highlight_group)
 {
   SelectionSet connected_insts;
-  for (auto& selObj : selected_) {
-    if (selObj.isNet()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+  for (auto& sel_obj : selected_) {
+    if (sel_obj.isNet()) {
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
       odb::dbNet* net_obj = static_cast<odb::dbNet*>(db_obj);
       for (auto inst_term : net_obj->getITerms()) {
         connected_insts.insert(Selected(inst_term));
@@ -409,13 +409,13 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto selObj : selected_) {
-    if (selObj.isInst()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+  for (auto sel_obj : selected_) {
+    if (sel_obj.isInst()) {
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
       odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != SIGNAL)
+            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
         auto inst_term_dir = inst_term->getIoType().getValue();
 

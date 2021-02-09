@@ -3901,8 +3901,6 @@ int io::Parser::Callbacks::getLefMacros(lefrCallbackType_e type, lefiMacro* macr
       parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
     } else if (strcmp(macro->macroClass(), "COVER") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::COVER);
-    } else if (strcmp(macro->macroClass(), "ENDCAP PRE") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
     } else if (strcmp(macro->macroClass(), "BLOCK") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
     } else if (strcmp(macro->macroClass(), "PAD") == 0) {
@@ -3911,10 +3909,30 @@ int io::Parser::Callbacks::getLefMacros(lefrCallbackType_e type, lefiMacro* macr
       parser->tmpBlock->setMacroClass(MacroClassEnum::RING);
     } else if (strcmp(macro->macroClass(), "PAD POWER") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+    } else if (strcmp(macro->macroClass(), "PAD INPUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
+    } else if (strcmp(macro->macroClass(), "PAD OUTPUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
+    } else if (strcmp(macro->macroClass(), "PAD INOUT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
+    } else if (strcmp(macro->macroClass(), "PAD AREAIO") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
     } else if (strcmp(macro->macroClass(), "PAD SPACER") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+    } else if (strcmp(macro->macroClass(), "ENDCAP") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
+    } else if (strcmp(macro->macroClass(), "ENDCAP PRE") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+    } else if (strcmp(macro->macroClass(), "ENDCAP POST") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
+    } else if (strcmp(macro->macroClass(), "ENDCAP TOPLEFT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
+    } else if (strcmp(macro->macroClass(), "ENDCAP TOPRIGHT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
     } else if (strcmp(macro->macroClass(), "ENDCAP BOTTOMLEFT") == 0) {
       parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
+    } else if (strcmp(macro->macroClass(), "ENDCAP BOTTOMRIGHT") == 0) {
+      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
     } else {
       cout << "Warning: unknown macroClass " << macro->macroClass() << ", skipped macroClass property\n"; 
     }

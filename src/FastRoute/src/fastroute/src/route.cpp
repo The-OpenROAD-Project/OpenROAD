@@ -44,10 +44,13 @@
 #include "DataType.h"
 #include "RipUp.h"
 #include "flute.h"
+#include "utility/Logger.h"
 
 #define HCOST 5000
 
 namespace grt {
+
+using utl::GRT;
 
 float* costHVH;  // Horizontal first Z
 float* costVHV;  // Vertical first Z
@@ -168,8 +171,6 @@ void routeSegL(Segment* seg)
       if (tmp > 0)
         costL2 += tmp;
     }
-
-    printf("costL1 is %f, costL2 is %f\n", costL1, costL2);
 
     if (costL1 < costL2) {
       // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
@@ -382,7 +383,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
             costL1 = 0;
             costL2 = viacost;
           } else {
-            printf("wrong node status %d", treenodes[n1].status);
+            logger->warn(GRT, 179, "Wrong node status {}.", treenodes[n1].status);
           }
           if (treenodes[n2].status == 2) {
             costL2 += viacost;
@@ -615,7 +616,7 @@ void newrouteZ_edge(int netID, int edgeID)
         treeedge->route.HVH = HVH;
         treeedge->route.Zpoint = bestZ;
       } else {
-        printf("warning, in the maze edge, not HVH results is produced");
+        logger->warn(GRT, 180, "In the maze edge, not HVH results is produced.");
       }
     }  // else Z route
 
@@ -1061,8 +1062,6 @@ void routeMonotonic(int netID, int edgeID, int threshold)
         cnt = 0;
 
         while (curX != xl || curY != yl) {
-          // printf("xl is %d, yl is %d, curX is %d, curY is
-          // %d\n",xl,yl,curX,curY); printf("%d\n", sttrees[netID].deg);
           gridsX[cnt] = curX;
           gridsY[cnt] = curY;
           cnt++;
@@ -1200,7 +1199,6 @@ void routeMonotonicAll(int threshold)
           threshold);  // ripup previous route and do Monotonic routing
     }
   }
-  printf("MonotonicAll OK\n");
 }
 
 void spiralRoute(int netID, int edgeID)
@@ -1285,7 +1283,7 @@ void spiralRoute(int netID, int edgeID)
         costL1 = 0;
         costL2 = viacost;
       } else {
-        printf("wrong node status %d", treenodes[n1].status);
+        logger->warn(GRT, 181, "Wrong node status {}.", treenodes[n1].status);
       }
       if (treenodes[n2].status == 2) {
         costL2 += viacost;
@@ -1303,9 +1301,6 @@ void spiralRoute(int netID, int edgeID)
               + v_edges[grid + x2].red;
         if (tmp > 0)
           costL2 += tmp;
-        // costL1 += simpleCost (v_edges[grid+x1].est_usage,
-        // v_edges[grid+x1].cap); costL2 += simpleCost (
-        // v_edges[grid+x2].est_usage,  v_edges[grid+x2].cap);
       }
       grid = y2 * (xGrid - 1);
       grid1 = y1 * (xGrid - 1);
@@ -1318,9 +1313,6 @@ void spiralRoute(int netID, int edgeID)
               + h_edges[grid1 + j].red;
         if (tmp > 0)
           costL2 += tmp;
-        // costL1 += simpleCost (h_edges[grid+j].est_usage,
-        // h_edges[grid+j].cap); costL2 += simpleCost
-        // (h_edges[grid1+j].est_usage, h_edges[grid1+j].cap);
       }
 
       if (costL1 < costL2) {
@@ -1842,7 +1834,7 @@ void routeLVAll(int threshold, int expand)
   int netID, edgeID, numEdges, i, forange;
 
   if (verbose > 1)
-    printf("[INFO] %d threshold, %d expand\n", threshold, expand);
+    logger->info(GRT, 182, "{} threshold, {} expand.", threshold, expand);
 
   h_costTable = new float[10 * hCapacity];
 
@@ -1862,7 +1854,6 @@ void routeLVAll(int threshold, int expand)
     }
   }
   delete[] h_costTable;
-  // printf("LV routing OK\n");
 }
 
 void newrouteLInMaze(int netID)
@@ -1926,9 +1917,6 @@ void newrouteLInMaze(int netID)
                 + v_edges[grid + x2].red;
           if (tmp > 0)
             costL2 += tmp;
-          // costL1 += simpleCost (v_edges[grid+x1].est_usage,
-          // v_edges[grid+x1].cap); costL2 += simpleCost (
-          // v_edges[grid+x2].est_usage,  v_edges[grid+x2].cap);
         }
         grid = y2 * (xGrid - 1);
         grid1 = y1 * (xGrid - 1);

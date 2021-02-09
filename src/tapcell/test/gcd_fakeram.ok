@@ -11,12 +11,9 @@
 [INFO ODB-0130]     Created 61 pins.
 [INFO ODB-0131]     Created 1 components and 32 component-terminals.
 [INFO ODB-0134] Finished DEF file: gcd_fakeram.def
-Step 1: Cut rows...
 [INFO TAP-0001] Macro blocks found: 1
-[INFO TAP-0002] #Original rows: 30
-[INFO TAP-0003] #Cut rows: 27
-Step 2: Insert endcaps...
-[INFO TAP-0004] #Endcaps inserted: 60
-Step 3: Insert tapcells...
-[INFO TAP-0005] #Tapcells inserted: 19
+[INFO TAP-0002] Original rows: 30
+[INFO TAP-0003] Cut rows: 27
+[INFO TAP-0004] Endcaps inserted: 60
+[INFO TAP-0005] Tapcells inserted: 19
 No differences found.

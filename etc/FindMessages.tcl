@@ -78,7 +78,7 @@ set files_tcl {}
 foreach subdir $subdirs {
   set files_tcl [concat $files_tcl [glob -nocomplain [file join $subdir "*.tcl"]]]
 }
-set warn_regexp_tcl {(info|warn|error) ([A-Z][A-Z][A-Z]) ([0-9]+) (".+")}
+set warn_regexp_tcl {(info|warn|error) ("[A-Z][A-Z][A-Z]"|[A-Z][A-Z][A-Z]) ([0-9]+) (".+")}
 
 proc scan_files {files warn_regexp } {
   foreach file $files {

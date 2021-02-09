@@ -46,8 +46,11 @@
 #include "pdrev/pdrev.h"
 #include "route.h"
 #include "utility.h"
+#include "utility/Logger.h"
 
 namespace grt {
+
+using utl::GRT;
 
 #define PARENT(i) (i - 1) / 2
 //#define PARENT(i) ((i-1)>>1)
@@ -103,7 +106,7 @@ static void updateHeap3D(int** array, int arrayLen, int i)
 static void extractMin3D(int** array, int arrayLen)
 {
   if (arrayLen < 1)
-    printf("Error: heap underflow\n");
+    logger->error(GRT, 183, "Heap underflow.");
   array[0] = array[arrayLen - 1];
   heapify3D(array, arrayLen - 1, 0);
 }
@@ -141,7 +144,6 @@ void setupHeap3D(int netID,
 
   if (d == 2)  // 2-pin net
   {
-    //    printf("2pinnet l1 %d, l2 %d\n", l1, l2);
     d13D[0][y1][x1] = 0;
     directions3D[0][y1][x1] = ORIGIN;
     heap13D[0] = &d13D[0][y1][x1];
@@ -504,8 +506,7 @@ void updateRouteType13D(int netID,
                          gridsL_n1A2);
 
   if (cnt_n1A1 == 1) {
-    printf("in 3D maze routing, type 1 node shift, cnt_n1A1 is 1\n");
-    exit(0);
+    logger->error(GRT, 187, "In 3D maze routing, type 1 node shift, cnt_n1A1 is 1.");
   }
 
   E1_pos1 = -1;
@@ -518,7 +519,7 @@ void updateRouteType13D(int netID,
   }
 
   if (E1_pos1 == -1) {
-    exit(1);
+    logger->error(GRT, 171, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   for (i = cnt_n1A1 - 1; i >= 0; i--) {
@@ -815,7 +816,7 @@ void updateRouteType23D(int netID,
   }
 
   if (cnt_C1C2 == 1) {
-    printf("shift to 0 length edge, type2\n");
+    logger->warn(GRT, 184, "Shift to 0 length edge, type2.");
   }
 
   // find the index of E1 in (C1, C2)
@@ -836,7 +837,7 @@ void updateRouteType23D(int netID,
   }
 
   if (E1_pos2 == -1) {
-    exit(1);
+    logger->error(GRT, 172, "Invalid index for position ({}, {}).", E1x, E1y);
   }
 
   // allocate memory for gridsX[] and gridsY[] of edge_n1C1 and edge_n1C2
@@ -876,7 +877,6 @@ void updateRouteType23D(int netID,
     treeedges[edge_n1C1].route.gridsL[i] = gridsL_C1C2[i];
     cnt++;
   }
-  /// if(cnt!=len_n1C1) {printf("len_n1C1 wrong!\n");exit(1);}
 
   cnt = 0;
   for (i = E1_pos2; i < cnt_C1C2; i++) {
@@ -1205,8 +1205,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               tmp = d13D[curL][curY][curX] + viacost;
               tmpL = curL - 1;  // the bottom neighbor
 
-              // printf("down, new value %f, old value
-              // %f\n",tmp,d13D[tmpL][curY][curX]);
               if (d13D[tmpL][curY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into heap13D
               {
@@ -1291,8 +1289,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
             recoverEdge(netID, edgeID);
             break;
           }
-          // printf("the initial value %f LYX [%d %d
-          // %d]\n",d13D[curL][curY][curX],curL, curY, curX);
 
           std::vector<int> tmp_gridsX, tmp_gridsY, tmp_gridsL;
 
@@ -1311,8 +1307,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
             cnt++;
           }
 
-          // printf("the end value %f\n",d13D[curL][curY][curX]);
-          // reverse the grids on the path
           std::vector<int> gridsX(tmp_gridsX.rbegin(), tmp_gridsX.rend());
           std::vector<int> gridsY(tmp_gridsY.rbegin(), tmp_gridsY.rend());
           std::vector<int> gridsL(tmp_gridsL.rbegin(), tmp_gridsL.rend());
@@ -1546,7 +1540,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
                 edge_n2B1 = edge_n2B2;
                 edge_n2B2 = tmpi;
               }
-              // printf(" type1\n");
 
               // update route for edge (n2, B1), (n2, B2)
               updateRouteType13D(netID,
@@ -1568,7 +1561,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               D1 = endpt1;
               D2 = endpt2;
               edge_D1D2 = corrEdge3D[origL][E2y][E2x];
-              // printf(" type2\n");
 
               // update route for edge (n2, d13D), (n2, d23D) and (B1, B2)
               updateRouteType23D(netID,
@@ -1654,7 +1646,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
             free(treeedges[edge_n1n2].route.gridsL);
           }
 
-          // printf("size alloc: %d\n", newcnt_n1n2);
           treeedges[edge_n1n2].route.gridsX
               = (short*) calloc(newcnt_n1n2, sizeof(short));
           treeedges[edge_n1n2].route.gridsY
@@ -1785,8 +1776,6 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
               }  // edge len > 0
 
             }  // eunmerating edges
-
-            //      printf("edge %d shifted post processing finished\n",edgeID);
           }  // if shift1 and shift2
         }
       }
@@ -1839,10 +1828,10 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
       }
     }
     if (nlID == -1) {
-      exit(1);
+      logger->error(GRT, 173, "Invalid lower neighbour for node {}.", n1);
     }
     if (nhID == -1) {
-      exit(1);
+      logger->error(GRT, 174, "Invalid upper neighbour for node {}.", n1);
     }
     if (n1 < deg) {
       nbtL = 0;
@@ -1853,15 +1842,14 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
     treenodes[n1].lID = nlID;
   } else {
     if (treenodes[n1].botL > 0) {
-      printf("bottom layer acutally %d\n", treenodes[n1].botL);
+      logger->warn(GRT, 185, "Bottom layer acutally {}.", treenodes[n1].botL);
     }
     treenodes[n1].topL = 0;
     treenodes[n1].botL = 0;
     treenodes[n1].hID = BIG_INT;
     treenodes[n1].lID = BIG_INT;
     if (n1 >= deg) {
-      printf("steiner nodes only have one connection\n");
-      exit(0);
+      logger->error(GRT, 186, "Steiner nodes only have one connection.");
     }
   }
 }

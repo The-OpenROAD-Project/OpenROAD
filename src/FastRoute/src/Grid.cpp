@@ -54,7 +54,7 @@ void Grid::init(const long lowerLeftX,
                 const std::vector<int>& minWidths,
                 const std::vector<int>& horizontalCapacities,
                 const std::vector<int>& verticalCapacities,
-                const std::map<int, std::vector<odb::Rect>>& obstacles)
+                const std::map<int, std::vector<odb::Rect>>& obstructions)
 {
   _lowerLeftX = lowerLeftX;
   _lowerLeftY = lowerLeftY;
@@ -71,7 +71,7 @@ void Grid::init(const long lowerLeftX,
   _minWidths = minWidths;
   _horizontalEdgesCapacities = horizontalCapacities;
   _verticalEdgesCapacities = verticalCapacities;
-  _obstacles = obstacles;
+  _obstructions = obstructions;
 }
 
 void Grid::clear()
@@ -80,7 +80,7 @@ void Grid::clear()
   _minWidths.clear();
   _horizontalEdgesCapacities.clear();
   _verticalEdgesCapacities.clear();
-  _obstacles.clear();
+  _obstructions.clear();
 }
 
 odb::Point Grid::getPositionOnGrid(const odb::Point& position)
@@ -105,7 +105,7 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
 }
 
 std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
-    const odb::Rect& obstacle,
+    const odb::Rect& obstruction,
     odb::Rect& firstTileBds,
     odb::Rect& lastTileBds)
 {
@@ -113,12 +113,12 @@ std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
   TILE firstTile;
   TILE lastTile;
 
-  odb::Point lower = obstacle.ll();  // lower bound of obstacle
-  odb::Point upper = obstacle.ur();  // upper bound of obstacle
+  odb::Point lower = obstruction.ll();  // lower bound of obstruction
+  odb::Point upper = obstruction.ur();  // upper bound of obstruction
 
-  lower = getPositionOnGrid(lower);  // translate lower bound of obstacle to the
+  lower = getPositionOnGrid(lower);  // translate lower bound of obstruction to the
                                      // center of the tile where it is inside
-  upper = getPositionOnGrid(upper);  // translate upper bound of obstacle to the
+  upper = getPositionOnGrid(upper);  // translate upper bound of obstruction to the
                                      // center of the tile where it is inside
 
   // Get x and y indices of first blocked tile

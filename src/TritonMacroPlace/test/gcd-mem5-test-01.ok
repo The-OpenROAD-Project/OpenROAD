@@ -13,82 +13,82 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 412 nets and 1244 connections.
 [INFO ODB-0134] Finished DEF file: nangate45-bench/design/gcd_mem5/gcd_mem5.def
-[PROC] End Parsing Global Config
-[PROC] Begin Extracting Macro Cells ...
-[PROC] End Extracting Macro Cells
-[INFO] NumMacros = 5
-[INFO] NumEdgeInSta = 2393
-[INFO] NumVertexInSta = 1333
-[INFO] NumEastPins = 23
-[INFO] NumWestPins = 20
-[INFO] NumNorthPins = 0
-[INFO] NumSouthPins = 46
-[PROC] Begin Generating Sequential Graph ...
-[PROC] End Generating Sequential Graph
-[INFO] NumVertexSeqGraph = 44
-[INFO] NumEdgeSeqGraph = 1306
-[PROC] Begin One Level Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 5
-[INFO] NumCutLines = 2
-[INFO] CutLine = 0
-[INFO] RoundUpCutLine = 0
-[INFO] CutLine = 69
-[INFO] RoundUpCutLine = 69
-[PROC] End Partition
-[PROC] End One Level Partition
-[PROC] Begin Horizontal Partition ...
-[PROC] Begin East Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 0
-[INFO] NumCutLines = 0
-[PROC] End Partition
-[PROC] End East Partition
-[PROC] Begin West Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 5
-[INFO] NumCutLines = 2
-[INFO] CutLine = 0
-[INFO] RoundUpCutLine = 0
-[INFO] CutLine = 67
-[INFO] RoundUpCutLine = 67
-[PROC] End Partition
-[PROC] End West Partition
-[PROC] End Horizontal Partition
-[PROC] Begin Horizontal Partition ...
-[PROC] Begin East Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 5
-[INFO] NumCutLines = 2
-[INFO] CutLine = 0
-[INFO] RoundUpCutLine = 0
-[INFO] CutLine = 67
-[INFO] RoundUpCutLine = 67
-[PROC] End Partition
-[PROC] End East Partition
-[PROC] Begin West Partition ...
-[PROC] Begin Partition ...
-[INFO] NumMacros = 0
-[INFO] NumCutLines = 0
-[PROC] End Partition
-[PROC] End West Partition
-[PROC] End Horizontal Partition
-[INFO] NumExtractedSets = 4
-[PROC] Begin Parquet ...
-[INFO] Parquet BBOX exceed the given area
-[INFO] ParquetSolLayout = (51.12, 72)
-[INFO] TargetLayout = (69.35, 67.2)
-[PROC] Begin Parquet ...
-[INFO] Parquet BBOX exceed the given area
-[INFO] ParquetSolLayout = (51.12, 72)
-[INFO] TargetLayout = (69.35, 67.2)
-[PROC] Begin Parquet ...
-[INFO] Parquet BBOX exceed the given area
-[INFO] ParquetSolLayout = (51.12, 72)
-[INFO] TargetLayout = (69.35, 67.2)
-[PROC] Begin Parquet ...
-[INFO] Parquet BBOX exceed the given area
-[INFO] ParquetSolLayout = (51.12, 72)
-[INFO] TargetLayout = (69.35, 67.2)
-[INFO] NumFinalSols = 0
+End Parsing Global Config
+Begin Extracting Macro Cells
+End Extracting Macro Cells
+[INFO MPL-0005] NumMacros 5
+[INFO MPL-0006] NumEdgeInSta 2393
+[INFO MPL-0007] NumVertexInSta 1333
+[INFO MPL-0009] NumEastPins 23
+[INFO MPL-0010] NumWestPins 20
+[INFO MPL-0011] NumNorthPins 0
+[INFO MPL-0012] NumSouthPins 46
+Begin Generating Sequential Graph
+End Generating Sequential Graph
+[INFO MPL-0013] NumVertexSeqGraph 44
+[INFO MPL-0014] NumEdgeSeqGraph 1306
+Begin One Level Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 5
+[INFO MPL-0077] NumCutLines 2
+[INFO MPL-0078] CutLine 0.00
+[INFO MPL-0079] RoundUpCutLine 0.00
+[INFO MPL-0078] CutLine 69.35
+[INFO MPL-0079] RoundUpCutLine 69.35
+End Partition
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 0
+[INFO MPL-0077] NumCutLines 0
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 5
+[INFO MPL-0077] NumCutLines 2
+[INFO MPL-0078] CutLine 0.00
+[INFO MPL-0079] RoundUpCutLine 0.00
+[INFO MPL-0078] CutLine 67.20
+[INFO MPL-0079] RoundUpCutLine 67.20
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 5
+[INFO MPL-0077] NumCutLines 2
+[INFO MPL-0078] CutLine 0.00
+[INFO MPL-0079] RoundUpCutLine 0.00
+[INFO MPL-0078] CutLine 67.20
+[INFO MPL-0079] RoundUpCutLine 67.20
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 0
+[INFO MPL-0077] NumCutLines 0
+End Partition
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] NumExtractedSets: 4
+Begin Parquet
+[INFO MPL-0061] Parquet BBOX exceed the given area
+[INFO MPL-0062] ParquetSolLayout 51.12 72
+[INFO MPL-0063] TargetLayout 69.35 67.2
+Begin Parquet
+[INFO MPL-0061] Parquet BBOX exceed the given area
+[INFO MPL-0062] ParquetSolLayout 51.12 72
+[INFO MPL-0063] TargetLayout 69.35 67.2
+Begin Parquet
+[INFO MPL-0061] Parquet BBOX exceed the given area
+[INFO MPL-0062] ParquetSolLayout 51.12 72
+[INFO MPL-0063] TargetLayout 69.35 67.2
+Begin Parquet
+[INFO MPL-0061] Parquet BBOX exceed the given area
+[INFO MPL-0062] ParquetSolLayout 51.12 72
+[INFO MPL-0063] TargetLayout 69.35 67.2
+[INFO MPL-0073] NumFinalSols: 0
 No differences found.

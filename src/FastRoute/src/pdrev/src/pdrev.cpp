@@ -205,9 +205,9 @@ void PdRev::printTree(Tree fluteTree)
 {
   int i;
   for (i = 0; i < 2 * fluteTree.deg - 2; i++) {
-    printf("%d \n", i);
-    printf("%d %d\n", fluteTree.branch[i].x, fluteTree.branch[i].y);
-    printf("%d %d\n\n",
+    _logger->report("{} ", i);
+    _logger->report("{} {}", fluteTree.branch[i].x, fluteTree.branch[i].y);
+    _logger->report("{} {}",
            fluteTree.branch[fluteTree.branch[i].n].x,
            fluteTree.branch[fluteTree.branch[i].n].y);
   }

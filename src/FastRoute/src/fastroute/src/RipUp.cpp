@@ -43,8 +43,11 @@
 #include "pdrev/pdrev.h"
 #include "route.h"
 #include "utility.h"
+#include "utility/Logger.h"
 
 namespace grt {
+
+using utl::GRT;
 
 // rip-up a L segment
 void ripupSegL(Segment* seg)
@@ -217,8 +220,7 @@ void newRipup(TreeEdge* treeedge,
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
       } else {
-        printf("MAZE RIPUP WRONG in newRipup\n");
-        exit(1);
+        logger->error(GRT, 119, "MAZE RIPUP WRONG in newRipup.");
       }
     }
   }
@@ -314,19 +316,8 @@ Bool newRipupType2(TreeEdge* treeedge,
     return (needRipup);
 
   } else {
-    printf("type2 ripup not type L\n");
-    exit(0);
+    logger->error(GRT, 120, "type2 ripup not type L.");
   }
-}
-
-void printEdgeVEC(TreeEdge* treeedge)
-{
-  int i;
-
-  for (i = 0; i <= treeedge->route.routelen; i++) {
-    printf("(%d, %d) ", treeedge->route.gridsX[i], treeedge->route.gridsY[i]);
-  }
-  printf("\n");
 }
 
 Bool newRipupCheck(TreeEdge* treeedge,
@@ -388,11 +379,8 @@ Bool newRipupCheck(TreeEdge* treeedge,
       return (FALSE);
     }
   } else {
-    printf("route type is not maze, netID %d\n", netID);
-    fflush(stdout);
     printEdge(netID, edgeID);
-
-    exit(0);
+    logger->error(GRT, 121, "route type is not maze, netID {}.", netID);
   }
 }
 
@@ -518,9 +506,7 @@ Bool newRipup3DType3(int netID, int edgeID)
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
         h_edges3D[grid].usage -= 1;
       } else {
-        printf("MAZE RIPUP WRONG\n");
-        return (FALSE);
-        // exit(1);
+        logger->error(GRT, 122, "Maze RipUp wrong.");
       }
     }
   }
@@ -620,9 +606,8 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
           } else {
-            printf("MAZE RIPUP WRONG in newRipupNet for net %s\n",
-                   netName(nets[netID]));
-            exit(1);
+            logger->error(GRT, 123, "MAZE RIPUP WRONG in newRipupNet for net {}.",
+                          netName(nets[netID]));
           }
         }
       }

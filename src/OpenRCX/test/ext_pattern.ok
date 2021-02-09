@@ -1,81 +1,31 @@
-[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0127] Reading DEF file: generate_pattern.defok
 [INFO ODB-0128] Design: blk
 [INFO ODB-0130]     Created 138176 pins.
 [INFO ODB-0133]     Created 69088 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: generate_pattern.defok
-Notice 0: Defined process_corner X with ext_model_index 0
-Notice 0: Defined Extraction corner X
-Notice 0: extracting blk ...
-Notice 0: Reading extraction model file ext_pattern.rules ...
-Notice 0: dbFactor= 2  dbunit= 2000 
-Notice 0: RC segment generation blk (max_merge_res 0) ...
-Warning 0: Net 1 O6_M1oM0_W170W170_S170S170_1 does not start from an iterm or a bterm
-Warning 0: Net 2 O6_M1oM0_W170W170_S170S170_2 does not start from an iterm or a bterm
-Warning 0: Net 3 O6_M1oM0_W170W170_S170S170_3 does not start from an iterm or a bterm
-Warning 0: Net 4 O6_M1oM0_W170W170_S170S170_4 does not start from an iterm or a bterm
-Warning 0: Net 5 O6_M1oM0_W170W170_S170S170_5 does not start from an iterm or a bterm
-Warning 0: Net 6 O6_M1oM0_W170W170_S340S340_1 does not start from an iterm or a bterm
-Warning 0: Net 7 O6_M1oM0_W170W170_S340S340_2 does not start from an iterm or a bterm
-Warning 0: Net 8 O6_M1oM0_W170W170_S340S340_3 does not start from an iterm or a bterm
-Warning 0: Net 9 O6_M1oM0_W170W170_S340S340_4 does not start from an iterm or a bterm
-Warning 0: Net 10 O6_M1oM0_W170W170_S340S340_5 does not start from an iterm or a bterm
-Warning 0: Net 11 O6_M1oM0_W170W170_S425S425_1 does not start from an iterm or a bterm
-Warning 0: Net 12 O6_M1oM0_W170W170_S425S425_2 does not start from an iterm or a bterm
-Warning 0: Net 13 O6_M1oM0_W170W170_S425S425_3 does not start from an iterm or a bterm
-Warning 0: Net 14 O6_M1oM0_W170W170_S425S425_4 does not start from an iterm or a bterm
-Warning 0: Net 15 O6_M1oM0_W170W170_S425S425_5 does not start from an iterm or a bterm
-Warning 0: Net 16 O6_M1oM0_W170W170_S510S510_1 does not start from an iterm or a bterm
-Warning 0: Net 17 O6_M1oM0_W170W170_S510S510_2 does not start from an iterm or a bterm
-Warning 0: Net 18 O6_M1oM0_W170W170_S510S510_3 does not start from an iterm or a bterm
-Warning 0: Net 19 O6_M1oM0_W170W170_S510S510_4 does not start from an iterm or a bterm
-Warning 0: Net 20 O6_M1oM0_W170W170_S510S510_5 does not start from an iterm or a bterm
-Warning 0: Net 21 O6_M1oM0_W170W170_S595S595_1 does not start from an iterm or a bterm
-Warning 0: Net 22 O6_M1oM0_W170W170_S595S595_2 does not start from an iterm or a bterm
-Warning 0: Net 23 O6_M1oM0_W170W170_S595S595_3 does not start from an iterm or a bterm
-Warning 0: Net 24 O6_M1oM0_W170W170_S595S595_4 does not start from an iterm or a bterm
-Warning 0: Net 25 O6_M1oM0_W170W170_S595S595_5 does not start from an iterm or a bterm
-Warning 0: Net 26 O6_M1oM0_W170W170_S680S680_1 does not start from an iterm or a bterm
-Warning 0: Net 27 O6_M1oM0_W170W170_S680S680_2 does not start from an iterm or a bterm
-Warning 0: Net 28 O6_M1oM0_W170W170_S680S680_3 does not start from an iterm or a bterm
-Warning 0: Net 29 O6_M1oM0_W170W170_S680S680_4 does not start from an iterm or a bterm
-Warning 0: Net 30 O6_M1oM0_W170W170_S680S680_5 does not start from an iterm or a bterm
-Warning 0: Net 31 O6_M1oM0_W170W170_S765S765_1 does not start from an iterm or a bterm
-Warning 0: Net 32 O6_M1oM0_W170W170_S765S765_2 does not start from an iterm or a bterm
-Warning 0: Net 33 O6_M1oM0_W170W170_S765S765_3 does not start from an iterm or a bterm
-Warning 0: Net 34 O6_M1oM0_W170W170_S765S765_4 does not start from an iterm or a bterm
-Warning 0: Net 35 O6_M1oM0_W170W170_S765S765_5 does not start from an iterm or a bterm
-Warning 0: Net 36 O6_M1oM0_W170W170_S850S850_1 does not start from an iterm or a bterm
-Warning 0: Net 37 O6_M1oM0_W170W170_S850S850_2 does not start from an iterm or a bterm
-Warning 0: Net 38 O6_M1oM0_W170W170_S850S850_3 does not start from an iterm or a bterm
-Warning 0: Net 39 O6_M1oM0_W170W170_S850S850_4 does not start from an iterm or a bterm
-Warning 0: Net 40 O6_M1oM0_W170W170_S850S850_5 does not start from an iterm or a bterm
-Warning 0: Net 41 O6_M1oM0_W170W170_S1020S1020_1 does not start from an iterm or a bterm
-Warning 0: Net 42 O6_M1oM0_W170W170_S1020S1020_2 does not start from an iterm or a bterm
-Warning 0: Net 43 O6_M1oM0_W170W170_S1020S1020_3 does not start from an iterm or a bterm
-Warning 0: Net 44 O6_M1oM0_W170W170_S1020S1020_4 does not start from an iterm or a bterm
-Warning 0: Net 45 O6_M1oM0_W170W170_S1020S1020_5 does not start from an iterm or a bterm
-Warning 0: Net 46 O6_M1oM0_W170W170_S1360S1360_1 does not start from an iterm or a bterm
-Warning 0: Net 47 O6_M1oM0_W170W170_S1360S1360_2 does not start from an iterm or a bterm
-Warning 0: Net 48 O6_M1oM0_W170W170_S1360S1360_3 does not start from an iterm or a bterm
-Warning 0: Net 49 O6_M1oM0_W170W170_S1360S1360_4 does not start from an iterm or a bterm
-Warning 0: Net 50 O6_M1oM0_W170W170_S1360S1360_5 does not start from an iterm or a bterm
-Notice 0: Final 69088 rc segments
-Notice 0: Coupling Cap extraction blk ...
-Notice 0: Coupling threshhold is 0.100000 FF, coupling capacitance less than 0.100000 FF will be grounded.
-Notice 0: 69088 wires to be extracted
-Notice 0: %28 completion -- 19907 wires have been extracted
-Notice 0: %36 completion -- 25213 wires have been extracted
-Notice 0: %76 completion -- 52512 wires have been extracted
-Notice 0: %80 completion -- 55854 wires have been extracted
-Notice 0: %87 completion -- 60360 wires have been extracted
-Notice 0: %95 completion -- 66083 wires have been extracted
-Notice 0: Extract 69086 nets, 138176 rsegs, 138176 caps, 67067 ccs
-Notice 0: Finished extracting blk.
-Notice 0: Writing SPEF ...
-Notice 0: 9 nets finished
-Notice 0: Finished writing SPEF ...
+[INFO RCX-0033] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[INFO RCX-0008] extracting parasitics of blk ...
+[INFO RCX-0035] Reading extraction model file ext_pattern.rules ...
+[INFO RCX-0036] Database dbFactor= 1.0  dbunit= 1000
+[INFO RCX-0037] RC segment generation blk (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 69088 rc segments
+[INFO RCX-0041] Coupling Cap extraction blk ...
+[INFO RCX-0042] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0043] 69088 wires to be extracted
+[INFO RCX-0044] 28% completion -- 19907 wires have been extracted
+[INFO RCX-0044] 36% completion -- 25213 wires have been extracted
+[INFO RCX-0044] 76% completion -- 52512 wires have been extracted
+[INFO RCX-0044] 80% completion -- 55854 wires have been extracted
+[INFO RCX-0044] 87% completion -- 60360 wires have been extracted
+[INFO RCX-0044] 95% completion -- 66083 wires have been extracted
+[INFO RCX-0045] Extract 69086 nets, 138176 rsegs, 138176 caps, 67067 ccs
+[INFO RCX-0015] Finished extracting blk.
+[INFO RCX-0016] Writing SPEF ...
+[INFO RCX-0047] 9 nets finished
+[INFO RCX-0017] Finished writing SPEF ...
 No differences found.

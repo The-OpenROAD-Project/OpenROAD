@@ -100,6 +100,19 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
+
+sta::define_cmd_args "write_cdl" {[-include_fillers] filename}
+
+proc write_cdl { args } {
+
+  sta::parse_key_args "write_cdl" args keys {} flags {-include_fillers}
+  set fillers [info exists flags(-include_fillers)]
+  sta::check_argc_eq1 "write_cdl" $args
+  set filename [file nativename [lindex $args 0]]
+  ord::write_cdl_cmd $filename $fillers
+}
+
+
 sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {
@@ -207,32 +220,6 @@ proc set_debug_level {args} {
 ################################################################
 
 namespace eval ord {
-  
-# deprecated - use utl::error
-proc error { args } {
-  if { [llength $args] == 1 } {
-    # pre-logger compatibility
-    utl::error UKN 0 [lindex $args 0]
-  } elseif { [llength $args] == 3 } {
-    lassign $args tool_id id msg
-    utl::error $tool_id $id $msg
-  } else {
-    utl::error UKN 0 "ill-formed error arguments $args"
-  }
-}
-
-# deprecated - use utl::warn
-proc warn { args } {
-  if { [llength $args] == 1 } {
-    # pre-logger compatibility
-    utl::warn UKN 0 [lindex $args 0]
-  } elseif { [llength $args] == 3 } {
-    lassign $args tool_id id msg
-    utl::warn $tool_id $id $msg
-  } else {
-    utl::warn UKN 14 "ill-formed warn arguments $args"
-  }
-}
 
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {

@@ -51,7 +51,7 @@ namespace grt {
 class FastRouteCore
 {
  public:
-  FastRouteCore(utl::Logger* logger);
+  FastRouteCore(utl::Logger* log);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -118,7 +118,6 @@ class FastRouteCore
   void setAllowOverflow(bool allow);
 
  private:
-  utl::Logger *_logger;
   NetRouteMap getRoutes();
   int maxNetDegree;
 };
