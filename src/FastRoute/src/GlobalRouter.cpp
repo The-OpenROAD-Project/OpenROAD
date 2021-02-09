@@ -3205,6 +3205,23 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
          || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
 }
 
+GCellCongestion::GCellCongestion(int min_x, int min_y,
+                                 int max_x, int max_y,
+                                 int layer, short cap, short usage) {
+  gcell_rect_->init(min_x, min_y, max_x, max_y);
+  layer_ = layer;
+  capacity_ = cap;
+  usage_ = usage;
+};
+
+GCellCongestion::GCellCongestion(odb::Rect *rect, int layer,
+                                 short cap, short usage) {
+  gcell_rect_ = rect;
+  layer_ = layer;
+  capacity_ = cap;
+  usage_ = usage;
+};
+
 class GrouteRenderer : public gui::Renderer
 {
 public:

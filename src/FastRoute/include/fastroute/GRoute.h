@@ -61,25 +61,25 @@ struct GSegment
   }
 };
 
-struct GCellCongestion
+class GCellCongestion
 {
-  int minX;
-  int minY;
-  int maxX;
-  int maxY;
-  int layer;
-  short capacity;
-  short usage;
-  GCellCongestion(int x0, int y0, int x1, int y1, int l, short cap, short usage)
-      : minX(x0),
-        minY(y0),
-        maxX(x1),
-        maxY(y1),
-        layer(l),
-        capacity(cap),
-        usage(usage)
-  {
-  }
+ public:
+  GCellCongestion(int min_x, int min_y,
+                  int max_x, int max_y,
+                  int layer, short cap, short usage);
+  GCellCongestion(odb::Rect *rect, int layer,
+                  short cap, short usage);
+  
+  odb::Rect* getGCellRect() { return gcell_rect_; }
+  int getLayer() { return layer_; }
+  short getCapacity() { return capacity_; }
+  short getUsage() { return usage_; }
+
+ private:
+  odb::Rect* gcell_rect_;
+  int layer_;
+  short capacity_;
+  short usage_;
 };
 
 // class Route is defined in fastroute core.
