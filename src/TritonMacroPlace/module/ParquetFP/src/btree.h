@@ -196,17 +196,18 @@ inline BTree::BTree(const BTree& newBtree)
      in_totalArea(newBtree.in_totalArea),
      in_totalWidth(newBtree.in_totalWidth),
      in_totalHeight(newBtree.in_totalHeight),
+     in_totalContourArea(newBtree.in_totalContourArea),
 
      TOLERANCE(newBtree.TOLERANCE),
 
-	 pack_origin(newBtree.pack_origin)
+     pack_origin(newBtree.pack_origin)
 {
      in_obstacles.xloc = newBtree.in_obstacles.xloc;
      in_obstacles.yloc = newBtree.in_obstacles.yloc;
      in_obstacles.width = newBtree.in_obstacles.width;
      in_obstacles.height = newBtree.in_obstacles.height;
-	 in_obstacleframe[0] = newBtree.in_obstacleframe[0];
-	 in_obstacleframe[1] = newBtree.in_obstacleframe[1];
+     in_obstacleframe[0] = newBtree.in_obstacleframe[0];
+     in_obstacleframe[1] = newBtree.in_obstacleframe[1];
 }
 // --------------------------------------------------------
 inline bool BTree::operator =(const BTree& newBtree)
@@ -225,13 +226,14 @@ inline bool BTree::operator =(const BTree& newBtree)
       in_totalArea = newBtree.in_totalArea;
       in_totalWidth = newBtree.in_totalWidth;
       in_totalHeight = newBtree.in_totalHeight;
+      in_totalContourArea = newBtree.in_totalContourArea;
 
-	  in_obstacles.xloc = newBtree.in_obstacles.xloc;
-	  in_obstacles.yloc = newBtree.in_obstacles.yloc;
-	  in_obstacles.width = newBtree.in_obstacles.width;
-	  in_obstacles.height = newBtree.in_obstacles.height;
-	  in_obstacleframe[0] = newBtree.in_obstacleframe[0];
-	  in_obstacleframe[1] = newBtree.in_obstacleframe[1];
+      in_obstacles.xloc = newBtree.in_obstacles.xloc;
+      in_obstacles.yloc = newBtree.in_obstacles.yloc;
+      in_obstacles.width = newBtree.in_obstacles.width;
+      in_obstacles.height = newBtree.in_obstacles.height;
+      in_obstacleframe[0] = newBtree.in_obstacleframe[0];
+      in_obstacleframe[1] = newBtree.in_obstacleframe[1];
 
       pack_origin = newBtree.pack_origin;
       
