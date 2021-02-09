@@ -3207,19 +3207,25 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
 
 GCellCongestion::GCellCongestion(int min_x, int min_y,
                                  int max_x, int max_y,
-                                 int layer, short cap, short usage) {
-  gcell_rect_->init(min_x, min_y, max_x, max_y);
+                                 int layer, short h_cap, short v_cap,
+                                 short h_usage, short v_usage) {
+  gcell_rect_ = new odb::Rect(min_x, min_y, max_x, max_y);
   layer_ = layer;
-  capacity_ = cap;
-  usage_ = usage;
+  hor_capacity_ = h_cap;
+  ver_capacity_ = v_cap;
+  hor_usage_ = h_usage;
+  ver_usage_ = v_usage;
 };
 
 GCellCongestion::GCellCongestion(odb::Rect *rect, int layer,
-                                 short cap, short usage) {
+                                 short h_cap, short v_cap,
+                                 short h_usage, short v_usage) {
   gcell_rect_ = rect;
   layer_ = layer;
-  capacity_ = cap;
-  usage_ = usage;
+  hor_capacity_ = h_cap;
+  ver_capacity_ = v_cap;
+  hor_usage_ = h_usage;
+  ver_usage_ = v_usage;
 };
 
 class GrouteRenderer : public gui::Renderer
