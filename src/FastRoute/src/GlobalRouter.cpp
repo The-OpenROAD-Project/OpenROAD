@@ -3156,8 +3156,6 @@ void GlobalRouter::print(GRoute& route)
   }
 }
 
-////////////////////////////////////////////////////////////////
-
 void GlobalRouter::reportLayerWireLengths()
 {
   std::vector<int64_t> lengths;
@@ -3190,6 +3188,16 @@ void GlobalRouter::reportLayerWireLengths()
 }
 
 ////////////////////////////////////////////////////////////////
+
+RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
+{
+}
+
+bool operator<(const RoutePt& p1, const RoutePt& p2)
+{
+  return (p1._x < p2._x) || (p1._x == p2._x && p1._y < p2._y)
+         || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
+}
 
 class GrouteRenderer : public gui::Renderer
 {

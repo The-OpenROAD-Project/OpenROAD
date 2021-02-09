@@ -65,6 +65,7 @@ void IOPlacer::clear()
   excluded_intervals_.clear();
   constraints_.clear();
   netlist_.clear();
+  *parms_ = Parameters();
 }
 
 void IOPlacer::initNetlistAndCore(std::set<int> hor_layer_idx,
@@ -734,7 +735,7 @@ void IOPlacer::run(bool random_mode)
     init_hpwl = returnIONetsHPWL(netlist_);
   }
 
-  if (!cells_placed_ || random_mode) {
+  if (random_mode) {
     logger_->report("Random pin placement");
     randomPlacement(RandomMode::even);
   } else {
@@ -791,6 +792,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   commitIOPlacementToDB(assignment_);
+  clear();
 }
 
 // db functions
