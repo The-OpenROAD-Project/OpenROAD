@@ -34,8 +34,6 @@
 
 #pragma once
 
-// #include "opendb/db.h"
-
 namespace odb {
 class dbNet;
 class Rect;
@@ -73,6 +71,7 @@ class GCellCongestion
   GCellCongestion(odb::Rect *rect, int layer,
                   short h_cap, short v_cap,
                   short h_usage, short v_usage);
+  ~GCellCongestion();
 
   odb::Rect* getGCellRect() { return gcell_rect_; }
   int getLayer() { return layer_; }

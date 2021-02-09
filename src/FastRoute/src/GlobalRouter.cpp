@@ -3228,6 +3228,10 @@ GCellCongestion::GCellCongestion(odb::Rect *rect, int layer,
   ver_usage_ = v_usage;
 };
 
+GCellCongestion::~GCellCongestion() {
+  delete gcell_rect_;
+}
+
 class GrouteRenderer : public gui::Renderer
 {
 public:
