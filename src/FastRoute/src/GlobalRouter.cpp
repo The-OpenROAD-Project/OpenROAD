@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "fastroute/GlobalRouter.h"
+#include "fastroute/GRoute.h"
 
 #include <algorithm>
 #include <cmath>
@@ -3209,7 +3210,7 @@ GCellCongestion::GCellCongestion(int min_x, int min_y,
                                  int max_x, int max_y,
                                  int layer, short h_cap, short v_cap,
                                  short h_usage, short v_usage) {
-  gcell_rect_ = new odb::Rect(min_x, min_y, max_x, max_y);
+  gcell_rect_ = odb::Rect(min_x, min_y, max_x, max_y);
   layer_ = layer;
   hor_capacity_ = h_cap;
   ver_capacity_ = v_cap;
@@ -3217,7 +3218,7 @@ GCellCongestion::GCellCongestion(int min_x, int min_y,
   ver_usage_ = v_usage;
 };
 
-GCellCongestion::GCellCongestion(odb::Rect *rect, int layer,
+GCellCongestion::GCellCongestion(odb::Rect rect, int layer,
                                  short h_cap, short v_cap,
                                  short h_usage, short v_usage) {
   gcell_rect_ = rect;
@@ -3227,10 +3228,6 @@ GCellCongestion::GCellCongestion(odb::Rect *rect, int layer,
   hor_usage_ = h_usage;
   ver_usage_ = v_usage;
 };
-
-GCellCongestion::~GCellCongestion() {
-  delete gcell_rect_;
-}
 
 class GrouteRenderer : public gui::Renderer
 {

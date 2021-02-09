@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include "opendb/geom.h"
+
 namespace odb {
 class dbNet;
 class Rect;
@@ -68,12 +70,12 @@ class GCellCongestion
                   int max_x, int max_y,
                   int layer, short h_cap, short v_cap,
                   short h_usage, short v_usage);
-  GCellCongestion(odb::Rect *rect, int layer,
+  GCellCongestion(odb::Rect rect, int layer,
                   short h_cap, short v_cap,
                   short h_usage, short v_usage);
-  ~GCellCongestion();
+  ~GCellCongestion() = default;
 
-  odb::Rect* getGCellRect() { return gcell_rect_; }
+  odb::Rect getGCellRect() { return gcell_rect_; }
   int getLayer() { return layer_; }
   short getHorCapacity() { return hor_capacity_; }
   short getVerCapacity() { return ver_capacity_; }
@@ -81,7 +83,7 @@ class GCellCongestion
   short getVerUsage() { return ver_usage_; }
 
  private:
-  odb::Rect* gcell_rect_;
+  odb::Rect gcell_rect_;
   int layer_;
   short hor_capacity_;
   short ver_capacity_;
