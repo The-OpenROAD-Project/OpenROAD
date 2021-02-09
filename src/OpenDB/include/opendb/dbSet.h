@@ -50,8 +50,14 @@ class dbSetIterator
   dbSetIterator(dbIterator* itr, uint id);
 
  public:
+  typedef T*                      value_type;
+  typedef std::ptrdiff_t          difference_type;
+  typedef T**                     pointer;
+  typedef T*&                     reference;
+  typedef std::input_iterator_tag iterator_category;
+
   dbSetIterator();
-  dbSetIterator(const dbSetIterator& it);
+  dbSetIterator(const dbSetIterator& it) = default;
 
   bool operator==(const dbSetIterator<T>& it);
   bool operator!=(const dbSetIterator<T>& it);
@@ -171,13 +177,6 @@ inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint id)
 {
   _itr = itr;
   _cur = id;
-}
-
-template <class T>
-inline dbSetIterator<T>::dbSetIterator(const dbSetIterator& it)
-{
-  _itr = it._itr;
-  _cur = it._cur;
 }
 
 template <class T>

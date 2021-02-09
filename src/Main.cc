@@ -235,7 +235,7 @@ showSplash()
   string sha = OPENROAD_GIT_SHA1;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,
-                 sha.substr(0, 10).c_str());
+                 sha.c_str());
   logger->report("This program is licensed under the BSD-3 license. See the LICENSE file for details.");
   logger->report("Components of this program may be licensed under more restrictive licenses which must be honored.");
 }
