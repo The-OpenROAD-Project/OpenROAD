@@ -111,6 +111,8 @@ void FlexGCWorker::Impl::initObj(const frBox &box, frLayerNum layerNum, frBlockO
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj) {
   if (targetObj_) {
     if (targetObj_->typeId() == frcInst) {
+//        if (obj->typeId() == frcInstTerm && static_cast<frInstTerm*>(obj)->getNet() && static_cast<frInstTerm*>(obj)->getNet()->getNondefaultRule())
+//            return false;
       if (obj->typeId() == frcInstTerm &&
           static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
@@ -121,6 +123,8 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj) {
         return true;
       }
     } else if (targetObj_->typeId() == frcTerm) {
+//      if (obj->typeId() == frcTerm && static_cast<frTerm*>(obj)->getNet() && static_cast<frTerm*>(obj)->getNet()->getNondefaultRule())
+//          return false;
       if (obj->typeId() == frcTerm && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_)) {
         return false;
       } else {

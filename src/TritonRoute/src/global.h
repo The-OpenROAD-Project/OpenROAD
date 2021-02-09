@@ -84,6 +84,7 @@ extern int MINNUMACCESSPOINT_STDCELLPIN;
 extern int ACCESS_PATTERN_END_ITERATION_NUM;
 
 extern int END_ITERATION;
+extern int NDR_RIPUP_THRESH;
 
 extern fr::frUInt4 TAVIACOST;
 extern fr::frUInt4 TAPINCOST;

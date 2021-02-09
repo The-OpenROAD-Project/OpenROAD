@@ -187,6 +187,9 @@ namespace fr {
         }
         return spc;
     }
+    bool hasNondefaultRules(){
+        return !nonDefaultRules.empty();
+    }
     // debug
     void printAllConstraints() {
       std::cout << "List of Constraints:\n";

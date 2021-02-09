@@ -41,6 +41,9 @@ using namespace fr;
 
 int gcCallCnt = 0;
 
+void print(){
+    cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n";
+}
 void FlexPA::prepPoint_pin_mergePinShapes(vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, frPin* pin, frInstTerm* instTerm, bool isShrink) {
   frInst* inst = nullptr;
   if (instTerm) {
@@ -786,6 +789,9 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   frPoint bp, ep;
   ap->getPoint(bp);
 
+//    if (instTerm->getInst()->getName() == "inst3270" && ap->getPoint().x() == 343400 && ap->getPoint().y() == 76190){
+//        print();
+//    }
   if (instTerm && instTerm->hasNet()) {
     via->addToNet(instTerm->getNet());
   } else {
@@ -801,11 +807,11 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
-  if (instTerm) {
-    gcWorker.setTargetObj(instTerm->getInst());
-  } else {
-    gcWorker.setTargetObj(pin->getTerm());
-  }
+//  if (instTerm) {
+//    gcWorker.setTargetObj(instTerm->getInst());
+//  } else {
+//    gcWorker.setTargetObj(pin->getTerm());
+//  }
 
   gcWorker.initPA0();
   if (instTerm) {
@@ -817,6 +823,17 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   } else {
     gcWorker.addPAObj(via, pin->getTerm());
   }
+//  auto &extBox = gcWorker.getExtBox();
+//  box_t queryBox(point_t(extBox.left(), extBox.bottom()), point_t(extBox.right(), extBox.top()));
+//  auto regionQuery = gcWorker.getDesign()->getRegionQuery();
+//  frRegionQuery::Objects<frBlockObject> queryResult;
+//  for (auto i = 0; i <= design_->getTech()->getTopLayerNum(); i++) {
+//    queryResult.clear();
+//    regionQuery->query(queryBox, i, queryResult);
+//    for (auto &[box, obj]: queryResult) {
+//        gcWorker.w
+//    }
+//  }
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();

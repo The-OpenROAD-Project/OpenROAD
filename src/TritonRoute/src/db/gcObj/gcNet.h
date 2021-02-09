@@ -99,6 +99,14 @@ namespace fr {
         return routePolygons_[layerNum];
       }
     }
+    void getRouteRectangles(frLayerNum layerNum, std::vector<gcRect>& result) {
+        std::vector<gtl::rectangle_data<frCoord>> result1;
+        routePolygons_[layerNum].get_rectangles(result1);
+        for (auto& r : result1){
+            gcRect rc(r, layerNum, nullptr, this, false);
+            result.push_back(std::move(rc));
+        }
+    }
     const std::vector<std::vector<gtl::rectangle_data<frCoord> > >& getRectangles(bool isFixed = false) const {
       if (isFixed) {
         return fixedRectangles_;
@@ -132,6 +140,9 @@ namespace fr {
     frNet* getFrNet(){
         if (owner_->typeId() == frcNet) return static_cast<frNet*>(owner_);
         return nullptr;
+    }
+    bool isNondefault(){
+        return getFrNet() && getFrNet()->getNondefaultRule();
     }
   protected:
     std::vector<gtl::polygon_90_set_data<frCoord> >          fixedPolygons_; // only routing layer

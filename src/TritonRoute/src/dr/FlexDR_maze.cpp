@@ -2731,6 +2731,9 @@ void FlexDRWorker::routeNet_postAstarUpdate(vector<FlexMazeIdx> &path, vector<Fl
   }
 }
 
+//void print(){
+//    cout << "AAAAAAAAAAAAAAAAAAAAAA\n\n";
+//}
 void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &points,
                                                const set<FlexMazeIdx> &apMazeIdx) {
   //bool enableOutput = true;
@@ -2760,7 +2763,20 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
     }
     auto startX = start.x(), startY = start.y(), startZ = start.z();
     auto endX = end.x(), endY = end.y(), endZ = end.z();
-    
+//    if (net->getFrNet()->getName() == "net1" &&
+//            (gridGraph_.xCoord(startX) == 2000*126 && gridGraph_.yCoord(startY) == 2000*36.385 ||
+//               gridGraph_.xCoord(endX) == 2000*126 && gridGraph_.yCoord(endY) == 2000*36.385)){
+//        print();
+//        std::vector<drConnFig*> res;
+//        frBox tbox(2000*126, 2000*36.385, 2000*126, 2000*36.385);
+//        workerRegionQuery.query(tbox, gridGraph_.getLayerNum(2), res);
+//        if (res.size() > 0)
+//            cout << "tem coisa";
+//    }
+//    if (net->getFrNet()->getName() == "net1" && startZ == endZ && startZ == 2 && 
+//            (gridGraph_.xCoord(startX) == 2000*122.5 && gridGraph_.yCoord(startY) == 2000*36.385 
+//               ))
+//        print();
     // horizontal wire
     if (startX != endX && startY == endY && startZ == endZ) {
       frPoint startLoc, endLoc;
