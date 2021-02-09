@@ -1019,7 +1019,7 @@ void FastRouteCore::findCongestionInformation(std::vector<GCellCongestion>& cong
         int urY = yReal + (hTile / 2);
 
         congestionInfo.push_back(
-              GCellCongestion(llX, llY, urX, urY, layer,
+              GCellCongestion(llX, llY, urX, urY, layer+1,
                               capH, capV, usageH, usageV));
       }
     }
