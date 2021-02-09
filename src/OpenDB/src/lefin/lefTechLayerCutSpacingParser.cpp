@@ -242,7 +242,7 @@ bool parse(Iterator                           first,
                  >> -(lit("SAMENET")[boost::bind(&setSameNet, parser)]
                       | lit("SAMEMETAL")[boost::bind(&setSameMetal, parser)]
                       | lit("SAMEVIA")[boost::bind(&setSameVia, parser)])
-                 >> -(LAYER))
+                 >> -(LAYER | ADJACENTCUTS | PARALLELOVERLAP | PARALLELWITHIN | SAMEMETALSHAREDEDGE | AREA))
       >> lit(";")));
 
   bool valid = qi::phrase_parse(first, last, LEF58_SPACING, space);
