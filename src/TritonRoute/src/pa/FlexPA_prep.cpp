@@ -41,9 +41,9 @@ using namespace fr;
 
 int gcCallCnt = 0;
 
-void print(){
-    cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n";
-}
+//void print(){
+//    cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n";
+//}
 void FlexPA::prepPoint_pin_mergePinShapes(vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, frPin* pin, frInstTerm* instTerm, bool isShrink) {
   frInst* inst = nullptr;
   if (instTerm) {
@@ -807,11 +807,13 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   frBox extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
-//  if (instTerm) {
-//    gcWorker.setTargetObj(instTerm->getInst());
-//  } else {
-//    gcWorker.setTargetObj(pin->getTerm());
-//  }
+  if (instTerm) {
+      if (!instTerm->getNet() || !instTerm->getNet()->getNondefaultRule())
+        gcWorker.setTargetObj(instTerm->getInst());
+  } else {
+      if (!pin->getTerm()->getNet() || !pin->getTerm()->getNet()->getNondefaultRule())
+        gcWorker.setTargetObj(pin->getTerm());
+  }
 
   gcWorker.initPA0();
   if (instTerm) {
