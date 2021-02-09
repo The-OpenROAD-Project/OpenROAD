@@ -57,6 +57,13 @@ void setJogLength(double                             value,
   rule->setExceptJogLength(true);
   rule->setJogLength(lefin->dbdist(value));
 }
+void setEdgeLength(double                             value,
+                  odb::dbTechLayerCornerSpacingRule* rule,
+                  odb::lefin*                        lefin)
+{
+  rule->setEdgeLengthValid(true);
+  rule->setEdgeLength(lefin->dbdist(value));
+}
 void setMinLength(double                             value,
                   odb::dbTechLayerCornerSpacingRule* rule,
                   odb::lefin*                        lefin)
@@ -64,13 +71,25 @@ void setMinLength(double                             value,
   rule->setMinLengthValid(true);
   rule->setMinLength(lefin->dbdist(value));
 }
-void addSpacing(boost::fusion::vector<double, double>& params,
+void setExceptNotchLength(double                             value,
+                  odb::dbTechLayerCornerSpacingRule* rule,
+                  odb::lefin*                        lefin)
+{
+  rule->setExceptNotchLengthValid(true);
+  rule->setExceptNotchLength(lefin->dbdist(value));
+}
+void addSpacing(boost::fusion::vector<double, double, boost::optional<double>>& params,
                 odb::dbTechLayerCornerSpacingRule*     rule,
                 odb::lefin*                            lefin)
 {
   auto width   = lefin->dbdist(at_c<0>(params));
-  auto spacing = lefin->dbdist(at_c<1>(params));
-  rule->addSpacing(width, spacing);
+  auto spacing1 = lefin->dbdist(at_c<1>(params));
+  auto spacing2 = at_c<2>(params);
+  if(spacing2.is_initialized()){
+    rule->setSameXY(false);
+    rule->addSpacing(width, spacing1, lefin->dbdist(spacing2.value()));
+  } else
+    rule->addSpacing(width, spacing1, spacing1);
 }
 template <typename Iterator>
 bool parse(Iterator          first,
@@ -80,6 +99,7 @@ bool parse(Iterator          first,
 {
   odb::dbTechLayerCornerSpacingRule* rule
       = odb::dbTechLayerCornerSpacingRule::create(layer);
+  rule->setSameXY(true);
   qi::rule<std::string::iterator, space_type> convexCornerRule
       = (lit("CONVEXCORNER")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setType,
@@ -93,6 +113,10 @@ bool parse(Iterator          first,
               >> double_[boost::bind(&setEolWidth, _1, rule, lefin)]
               >> -(lit("EXCEPTJOGLENGTH")
                    >> double_[boost::bind(&setJogLength, _1, rule, lefin)]
+                   >> -(
+                     lit("EDGELENGTH")
+                     >> double_[boost::bind(&setEdgeLength, _1, rule, lefin)]
+                   )
                    >> -(lit("INCLUDELSHAPE")[boost::bind(
                        &odb::dbTechLayerCornerSpacingRule::setIncludeShape,
                        rule,
@@ -104,10 +128,11 @@ bool parse(Iterator          first,
              odb::dbTechLayerCornerSpacingRule::CONCAVECORNER)]
          >> -(lit("MINLENGTH")
               >> double_[boost::bind(&setMinLength, _1, rule, lefin)]
-              >> -(lit("EXCEPTNOTCH")[boost::bind(
-                  &odb::dbTechLayerCornerSpacingRule::setExceptNotch,
-                  rule,
-                  true)])));
+              >> -(lit("EXCEPTNOTCH")[boost::bind(&odb::dbTechLayerCornerSpacingRule::setExceptNotch, rule, true)]
+                   >> -double_[boost::bind(&setExceptNotchLength, _1, rule, lefin)]
+                  )
+              )
+        );
   qi::rule<std::string::iterator, space_type> exceptSameRule
       = (lit("EXCEPTSAMENET")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setExceptSameNet, rule, true)]
@@ -118,7 +143,7 @@ bool parse(Iterator          first,
 
   qi::rule<std::string::iterator, space_type> spacingRule
       = (lit("WIDTH") >> double_ >> lit("SPACING")
-         >> double_)[boost::bind(&addSpacing, _1, rule, lefin)];
+         >> double_ >> -double_)[boost::bind(&addSpacing, _1, rule, lefin)];
 
   qi::rule<std::string::iterator, space_type> cornerSpacingRule
       = (lit("CORNERSPACING") >> (convexCornerRule | concaveCornerRule)

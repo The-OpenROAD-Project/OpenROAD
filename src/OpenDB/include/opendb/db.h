@@ -7638,13 +7638,25 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   int getJogLength() const;
 
+  void setEdgeLength(int _edge_length);
+
+  int getEdgeLength() const;
+
   void setMinLength(int _min_length);
 
   int getMinLength() const;
 
+  void setExceptNotchLength(int _except_notch_length);
+
+  int getExceptNotchLength() const;
+
   void setSameMask(bool _same_mask);
 
   bool isSameMask() const;
+
+  void setSameXY(bool _same_x_y);
+
+  bool isSameXY() const;
 
   void setCornerOnly(bool _corner_only);
 
@@ -7658,6 +7670,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isExceptJogLength() const;
 
+  void setEdgeLengthValid(bool _edge_length_valid);
+
+  bool isEdgeLengthValid() const;
+
   void setIncludeShape(bool _include_shape);
 
   bool isIncludeShape() const;
@@ -7669,6 +7685,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setExceptNotch(bool _except_notch);
 
   bool isExceptNotch() const;
+
+  void setExceptNotchLengthValid(bool _except_notch_length_valid);
+
+  bool isExceptNotchLengthValid() const;
 
   void setExceptSameNet(bool _except_same_net);
 
@@ -7683,9 +7703,11 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   CornerType getType() const;
 
-  void addSpacing(uint width, uint spacing);
+  void addSpacing(uint width, uint spacing1, uint spacing2 = 0);
 
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl);
+
+  void getWidthTable(std::vector<int>& tbl);
 
   static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
 

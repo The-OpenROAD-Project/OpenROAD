@@ -56,6 +56,9 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (_flags._same_mask != rhs._flags._same_mask)
     return false;
 
+  if (_flags._same_x_y != rhs._flags._same_x_y)
+    return false;
+
   if (_flags._corner_only != rhs._flags._corner_only)
     return false;
 
@@ -65,6 +68,9 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (_flags._except_jog_length != rhs._flags._except_jog_length)
     return false;
 
+  if (_flags._edge_length_valid != rhs._flags._edge_length_valid)
+    return false;
+
   if (_flags._include_shape != rhs._flags._include_shape)
     return false;
 
@@ -72,6 +78,10 @@ bool _dbTechLayerCornerSpacingRule::operator==(
     return false;
 
   if (_flags._except_notch != rhs._flags._except_notch)
+    return false;
+
+  if (_flags._except_notch_length_valid
+      != rhs._flags._except_notch_length_valid)
     return false;
 
   if (_flags._except_same_net != rhs._flags._except_same_net)
@@ -89,7 +99,13 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (_jog_length != rhs._jog_length)
     return false;
 
+  if (_edge_length != rhs._edge_length)
+    return false;
+
   if (_min_length != rhs._min_length)
+    return false;
+
+  if (_except_notch_length != rhs._except_notch_length)
     return false;
 
   // User Code Begin ==
@@ -112,18 +128,23 @@ void _dbTechLayerCornerSpacingRule::differences(
 
   DIFF_FIELD(_flags._corner_type);
   DIFF_FIELD(_flags._same_mask);
+  DIFF_FIELD(_flags._same_x_y);
   DIFF_FIELD(_flags._corner_only);
   DIFF_FIELD(_flags._except_eol);
   DIFF_FIELD(_flags._except_jog_length);
+  DIFF_FIELD(_flags._edge_length_valid);
   DIFF_FIELD(_flags._include_shape);
   DIFF_FIELD(_flags._min_length_valid);
   DIFF_FIELD(_flags._except_notch);
+  DIFF_FIELD(_flags._except_notch_length_valid);
   DIFF_FIELD(_flags._except_same_net);
   DIFF_FIELD(_flags._except_same_metal);
   DIFF_FIELD(_within);
   DIFF_FIELD(_eol_width);
   DIFF_FIELD(_jog_length);
+  DIFF_FIELD(_edge_length);
   DIFF_FIELD(_min_length);
+  DIFF_FIELD(_except_notch_length);
   // User Code Begin differences
   // User Code End differences
   DIFF_END
@@ -135,18 +156,23 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._corner_type);
   DIFF_OUT_FIELD(_flags._same_mask);
+  DIFF_OUT_FIELD(_flags._same_x_y);
   DIFF_OUT_FIELD(_flags._corner_only);
   DIFF_OUT_FIELD(_flags._except_eol);
   DIFF_OUT_FIELD(_flags._except_jog_length);
+  DIFF_OUT_FIELD(_flags._edge_length_valid);
   DIFF_OUT_FIELD(_flags._include_shape);
   DIFF_OUT_FIELD(_flags._min_length_valid);
   DIFF_OUT_FIELD(_flags._except_notch);
+  DIFF_OUT_FIELD(_flags._except_notch_length_valid);
   DIFF_OUT_FIELD(_flags._except_same_net);
   DIFF_OUT_FIELD(_flags._except_same_metal);
   DIFF_OUT_FIELD(_within);
   DIFF_OUT_FIELD(_eol_width);
   DIFF_OUT_FIELD(_jog_length);
+  DIFF_OUT_FIELD(_edge_length);
   DIFF_OUT_FIELD(_min_length);
+  DIFF_OUT_FIELD(_except_notch_length);
 
   // User Code Begin out
   // User Code End out
@@ -163,22 +189,29 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
     _dbDatabase*                         db,
     const _dbTechLayerCornerSpacingRule& r)
 {
-  _flags._corner_type       = r._flags._corner_type;
-  _flags._same_mask         = r._flags._same_mask;
-  _flags._corner_only       = r._flags._corner_only;
-  _flags._except_eol        = r._flags._except_eol;
-  _flags._except_jog_length = r._flags._except_jog_length;
-  _flags._include_shape     = r._flags._include_shape;
-  _flags._min_length_valid  = r._flags._min_length_valid;
-  _flags._except_notch      = r._flags._except_notch;
-  _flags._except_same_net   = r._flags._except_same_net;
-  _flags._except_same_metal = r._flags._except_same_metal;
-  _flags._spare_bits        = r._flags._spare_bits;
-  _within                   = r._within;
-  _eol_width                = r._eol_width;
-  _jog_length               = r._jog_length;
-  _min_length               = r._min_length;
+  _flags._corner_type               = r._flags._corner_type;
+  _flags._same_mask                 = r._flags._same_mask;
+  _flags._same_x_y                  = r._flags._same_x_y;
+  _flags._corner_only               = r._flags._corner_only;
+  _flags._except_eol                = r._flags._except_eol;
+  _flags._except_jog_length         = r._flags._except_jog_length;
+  _flags._edge_length_valid         = r._flags._edge_length_valid;
+  _flags._include_shape             = r._flags._include_shape;
+  _flags._min_length_valid          = r._flags._min_length_valid;
+  _flags._except_notch              = r._flags._except_notch;
+  _flags._except_notch_length_valid = r._flags._except_notch_length_valid;
+  _flags._except_same_net           = r._flags._except_same_net;
+  _flags._except_same_metal         = r._flags._except_same_metal;
+  _flags._spare_bits                = r._flags._spare_bits;
+  _within                           = r._within;
+  _eol_width                        = r._eol_width;
+  _jog_length                       = r._jog_length;
+  _edge_length                      = r._edge_length;
+  _min_length                       = r._min_length;
+  _except_notch_length              = r._except_notch_length;
   // User Code Begin CopyConstructor
+  _width_tbl   = r._width_tbl;
+  _spacing_tbl = r._spacing_tbl;
   // User Code End CopyConstructor
 }
 
@@ -189,8 +222,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
   stream >> obj._within;
   stream >> obj._eol_width;
   stream >> obj._jog_length;
+  stream >> obj._edge_length;
   stream >> obj._min_length;
+  stream >> obj._except_notch_length;
   // User Code Begin >>
+  stream >> obj._width_tbl;
   stream >> obj._spacing_tbl;
   // User Code End >>
   return stream;
@@ -203,8 +239,11 @@ dbOStream& operator<<(dbOStream&                           stream,
   stream << obj._within;
   stream << obj._eol_width;
   stream << obj._jog_length;
+  stream << obj._edge_length;
   stream << obj._min_length;
+  stream << obj._except_notch_length;
   // User Code Begin <<
+  stream << obj._width_tbl;
   stream << obj._spacing_tbl;
   // User Code End <<
   return stream;
@@ -260,6 +299,19 @@ int dbTechLayerCornerSpacingRule::getJogLength() const
   return obj->_jog_length;
 }
 
+void dbTechLayerCornerSpacingRule::setEdgeLength(int _edge_length)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->_edge_length = _edge_length;
+}
+
+int dbTechLayerCornerSpacingRule::getEdgeLength() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+  return obj->_edge_length;
+}
+
 void dbTechLayerCornerSpacingRule::setMinLength(int _min_length)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
@@ -271,6 +323,20 @@ int dbTechLayerCornerSpacingRule::getMinLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
   return obj->_min_length;
+}
+
+void dbTechLayerCornerSpacingRule::setExceptNotchLength(
+    int _except_notch_length)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->_except_notch_length = _except_notch_length;
+}
+
+int dbTechLayerCornerSpacingRule::getExceptNotchLength() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+  return obj->_except_notch_length;
 }
 
 void dbTechLayerCornerSpacingRule::setSameMask(bool _same_mask)
@@ -285,6 +351,20 @@ bool dbTechLayerCornerSpacingRule::isSameMask() const
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
   return obj->_flags._same_mask;
+}
+
+void dbTechLayerCornerSpacingRule::setSameXY(bool _same_x_y)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->_flags._same_x_y = _same_x_y;
+}
+
+bool dbTechLayerCornerSpacingRule::isSameXY() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  return obj->_flags._same_x_y;
 }
 
 void dbTechLayerCornerSpacingRule::setCornerOnly(bool _corner_only)
@@ -329,6 +409,20 @@ bool dbTechLayerCornerSpacingRule::isExceptJogLength() const
   return obj->_flags._except_jog_length;
 }
 
+void dbTechLayerCornerSpacingRule::setEdgeLengthValid(bool _edge_length_valid)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->_flags._edge_length_valid = _edge_length_valid;
+}
+
+bool dbTechLayerCornerSpacingRule::isEdgeLengthValid() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  return obj->_flags._edge_length_valid;
+}
+
 void dbTechLayerCornerSpacingRule::setIncludeShape(bool _include_shape)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
@@ -371,6 +465,21 @@ bool dbTechLayerCornerSpacingRule::isExceptNotch() const
   return obj->_flags._except_notch;
 }
 
+void dbTechLayerCornerSpacingRule::setExceptNotchLengthValid(
+    bool _except_notch_length_valid)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  obj->_flags._except_notch_length_valid = _except_notch_length_valid;
+}
+
+bool dbTechLayerCornerSpacingRule::isExceptNotchLengthValid() const
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+
+  return obj->_flags._except_notch_length_valid;
+}
+
 void dbTechLayerCornerSpacingRule::setExceptSameNet(bool _except_same_net)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
@@ -400,10 +509,13 @@ bool dbTechLayerCornerSpacingRule::isExceptSameMetal() const
 }
 
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods
-void dbTechLayerCornerSpacingRule::addSpacing(uint width, uint spacing)
+void dbTechLayerCornerSpacingRule::addSpacing(uint width,
+                                              uint spacing1,
+                                              uint spacing2)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  obj->_spacing_tbl.push_back(std::make_pair(width, spacing));
+  obj->_width_tbl.push_back(width);
+  obj->_spacing_tbl.push_back(std::make_pair(spacing1, spacing2));
 }
 
 void dbTechLayerCornerSpacingRule::getSpacingTable(
@@ -411,6 +523,12 @@ void dbTechLayerCornerSpacingRule::getSpacingTable(
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
   tbl                                = obj->_spacing_tbl;
+}
+
+void dbTechLayerCornerSpacingRule::getWidthTable(std::vector<int>& tbl)
+{
+  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
+  tbl                                = obj->_width_tbl;
 }
 
 void dbTechLayerCornerSpacingRule::setType(CornerType _type)
