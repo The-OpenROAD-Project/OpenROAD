@@ -61,9 +61,10 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool _include_shape : 1;
   bool _min_length_valid : 1;
   bool _except_notch : 1;
+  bool _except_notch_length_valid : 1;
   bool _except_same_net : 1;
   bool _except_same_metal : 1;
-  uint _spare_bits : 20;
+  uint _spare_bits : 19;
 };
 // User Code Begin structs
 // User Code End structs
@@ -80,6 +81,7 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   int                               _jog_length;
   int                               _edge_length;
   int                               _min_length;
+  int                               _except_notch_length;
 
   // User Code Begin fields
   dbVector<int>                 _width_tbl;
