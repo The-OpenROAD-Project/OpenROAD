@@ -334,7 +334,7 @@ void IRSolver::ReadC4Data()
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
-      m_bump_pitch_x = m_bump_pitch_default;
+      m_bump_pitch_x = m_bump_pitch_default*unit_micron;
       m_logger->warn(
           utl::PSM,
           17,
@@ -342,7 +342,7 @@ void IRSolver::ReadC4Data()
           m_bump_pitch_default);
     }
     if (m_bump_pitch_y == 0) {
-      m_bump_pitch_y = m_bump_pitch_default;
+      m_bump_pitch_y = m_bump_pitch_default*unit_micron;
       m_logger->warn(
           utl::PSM,
           18,
@@ -385,11 +385,10 @@ void IRSolver::ReadC4Data()
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
     for (int i = 0; i < num_b_y; i++) {
-      for (int j = 0; j < num_b_y; j++) {
-        x_cor = (m_bump_pitch_x * j + ((2 * i) % 6) * m_bump_pitch_x)
-                    * unit_micron
+      for (int j = 0; j < num_b_x; j=j+6) {
+        x_cor = (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) 
                 + offset_x;
-        y_cor = (m_bump_pitch_y * i) * unit_micron + offset_y;
+        y_cor = (m_bump_pitch_y * i) + offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
           m_C4Bumps.push_back(make_tuple(
               x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
