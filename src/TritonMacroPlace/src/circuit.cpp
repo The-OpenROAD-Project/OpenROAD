@@ -52,8 +52,11 @@
 #include "sta/PathRef.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "sta/Bfs.hh"
+#include "sta/Sequential.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/SearchPred.hh"
 #include "utility/Logger.h"
 
 namespace mpl {
@@ -81,6 +84,7 @@ using odb::dbPlacementStatus;
 using odb::dbSigType;
 using odb::dbBTerm;
 using odb::dbBPin;
+using odb::dbITerm;
 
 using Eigen::VectorXf;
 typedef Eigen::SparseMatrix<int, Eigen::RowMajor> SMatrix;
@@ -234,6 +238,8 @@ void MacroCircuit::init()
   isTiming_ = !isMissingLiberty(sta_, macroStor);
 
   if (isTiming_) {
+    //findAdjacencies();
+
     FillVertexEdge();
     UpdateVertexToMacroStor();
     FillMacroPinAdjMatrix();
@@ -253,26 +259,23 @@ static bool isMacroType(odb::dbMasterType mType)
 
 void MacroCircuit::FillMacroStor()
 {
-  log_->report("Begin Extracting Macro Cells");
-
-  dbTech* tech = db_->getTech();
   dbBlock* block = db_->getChip()->getBlock();
-
   dbSet<dbRow> rows = block->getRows();
 
   Rect dieBox;
   rows.begin()->getBBox(dieBox);
 
+  // This should be looking at site height. -cherry
   int cellHeight = dieBox.dy();
-  const int dbu = tech->getDbUnitsPerMicron();
+  const int dbu = db_->getTech()->getDbUnitsPerMicron();
 
   for (dbInst* inst : block->getInsts()) {
+    // This is broken - it should be looking at master class. -cherry
     // Skip for standard cells
     if ((int) inst->getBBox()->getDY() <= cellHeight) {
       continue;
     }
 
-    // only concerns about macroType cells.
     if (!isMacroType(inst->getMaster()->getType())) {
       continue;
     }
@@ -282,8 +285,7 @@ void MacroCircuit::FillMacroStor()
     if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
       log_->error(MPL,
                   3,
-                  "Macro ({}) is Unplaced. Please use TD-MS-RePlAce to get a "
-                  "initial solution before executing TritonMP",
+                  "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
                   inst->getConstName());
     }
 
@@ -307,25 +309,23 @@ void MacroCircuit::FillMacroStor()
     int placeX, placeY;
     inst->getLocation(placeX, placeY);
 
-    Macro tmpMacro(1.0 * placeX / dbu,
-                        1.0 * placeY / dbu,
-                        1.0 * inst->getBBox()->getDX() / dbu,
-                        1.0 * inst->getBBox()->getDY() / dbu,
-                        curHaloX,
-                        curHaloY,
-                        curChannelX,
-                        curChannelY,
-                        nullptr,
-                        nullptr,
-                        inst);
-    macroStor.push_back(tmpMacro);
+    macroStor.push_back(Macro(1.0 * placeX / dbu,
+                              1.0 * placeY / dbu,
+                              1.0 * inst->getBBox()->getDX() / dbu,
+                              1.0 * inst->getBBox()->getDY() / dbu,
+                              curHaloX,
+                              curHaloY,
+                              curChannelX,
+                              curChannelY,
+                              nullptr,
+                              nullptr,
+                              inst));
   }
 
   if (macroStor.size() == 0) {
     log_->error(MPL, 4, "Cannot find any macros in this design");
   }
 
-  log_->report("End Extracting Macro Cells");
   log_->info(MPL, 5, "NumMacros {}", macroStor.size());
 }
 
@@ -336,8 +336,7 @@ static bool isWithIn(int val, int min, int max)
 
 void MacroCircuit::FillPinGroup()
 {
-  dbTech* tech = db_->getTech();
-  const double dbu = tech->getDbUnitsPerMicron();
+  const double dbu = db_->getTech()->getDbUnitsPerMicron();
 
   int dbuCoreLx = round(lx_ * dbu);
   int dbuCoreLy = round(ly_ * dbu);
@@ -375,6 +374,9 @@ void MacroCircuit::FillPinGroup()
       sta::Pin* pin = sta_->getDbNetwork()->dbToSta(bTerm);
       pinGroupStor[static_cast<int>(West)].addPin(pin);
       staToPinGroup[pin] = static_cast<int>(West);
+
+      if (findNearestEdge(bTerm) != West)
+        log_->error(MPL, 0, "pin edge mismatch");
     } else {
       int placeX = 0, placeY = 0;
       bTerm->getFirstPinLocation(placeX, placeY);
@@ -427,6 +429,9 @@ void MacroCircuit::FillPinGroup()
       sta::Pin* pin = sta_->getDbNetwork()->dbToSta(bTerm);
       pinGroupStor[static_cast<int>(pgLoc)].addPin(pin);
       staToPinGroup[pin] = static_cast<int>(pgLoc);
+
+      if (findNearestEdge(bTerm) != pgLoc)
+        log_->error(MPL, 0, "pin edge mismatch");
     }
   }
 
@@ -683,7 +688,7 @@ void MacroCircuit::FillVertexEdge()
       int startIdx = 0;
       sta::PathRef* startPath = expanded.path(startIdx);
       while (startIdx < (int) expanded.size() - 1
-             && startPath->isClock(sta_->search())) {
+             && startPath->isClock(sta_)) {
         startPath = expanded.path(++startIdx);
       }
 
@@ -724,6 +729,10 @@ int MacroCircuit::index(Vertex* vertex)
   return vertex - &vertexStor[0];
 }
 
+// Do BFS search by LEVEL 3
+#define MPLACE_BFS_MAX_LEVEL 3
+
+// unused -cherry
 void MacroCircuit::CheckGraphInfo()
 {
   vector<Vertex*> searchVert;
@@ -736,8 +745,6 @@ void MacroCircuit::CheckGraphInfo()
     searchVert.push_back(&vertexStor[i]);
   }
 
-#define CHECK_LEVEL_MAX 3
-
   vector<int> vertexCover(vertexStor.size(), -1);
   for (int i = 0; i < 4; i++) {
     vertexCover[i] = 0;
@@ -746,7 +753,7 @@ void MacroCircuit::CheckGraphInfo()
     vertexCover[index(curMacro.ptr)] = 0;
   }
 
-  for (int level = 1; level <= CHECK_LEVEL_MAX; level++) {
+  for (int level = 1; level <= MPLACE_BFS_MAX_LEVEL; level++) {
     vector<Vertex*> newVertex;
 
     for (auto& curVertex1 : searchVert) {
@@ -769,7 +776,7 @@ void MacroCircuit::CheckGraphInfo()
     newVertex.swap(searchVert);
   }
 
-  int sumArr[CHECK_LEVEL_MAX + 1] = {
+  int sumArr[MPLACE_BFS_MAX_LEVEL + 1] = {
       0,
   };
   for (size_t i = 0; i < vertexStor.size(); i++) {
@@ -778,7 +785,7 @@ void MacroCircuit::CheckGraphInfo()
     }
   }
 
-  for (int i = 0; i <= CHECK_LEVEL_MAX; i++) {
+  for (int i = 0; i <= MPLACE_BFS_MAX_LEVEL; i++) {
     debugPrint(log_, MPL, "tritonmp", 5, "level {} {}", i, sumArr[i]);
   }
 }
@@ -811,9 +818,6 @@ void MacroCircuit::FillMacroPinAdjMatrix()
     searchVertIdx.push_back(macroVertIdx);
     macroPinAdjMatrixMap[macroVertIdx] = macroPinAdjIdx++;
   }
-
-  // Do BFS search by LEVEL 3
-#define MPLACE_BFS_MAX_LEVEL 3
 
   const int EmptyVert = -1, SearchVert = -2;
 
@@ -915,34 +919,18 @@ void MacroCircuit::FillMacroConnection()
 
   for (auto& curVertex1 : searchVertIdx) {
     for (auto& curVertex2 : searchVertIdx) {
-      if (curVertex1 == curVertex2) {
-        continue;
-      }
-
       VertexType class1 = vertexStor[curVertex1].vertexType();
       VertexType class2 = vertexStor[curVertex2].vertexType();
-
-      // no need to fill in PIN -> PIN connections
-      if (class1 == VertexType::PinGroupType
-          && class2 == VertexType::PinGroupType) {
-        continue;
-      }
-
-      void* ptr1 = vertexStor[curVertex1].ptr();
-      void* ptr2 = vertexStor[curVertex2].ptr();
-
-      string name1 = (class1 == VertexType::PinGroupType)
-                         ? ((PinGroup*) ptr1)->name()
-                         : sta_->network()->pathName((sta::Instance*) ptr1);
-      string name2 = (class2 == VertexType::PinGroupType)
-                         ? ((PinGroup*) ptr2)->name()
-                         : sta_->network()->pathName((sta::Instance*) ptr2);
-
-      macroWeight[macroPinAdjMatrixMap[curVertex1]]
-                 [macroPinAdjMatrixMap[curVertex2]]
+      if (curVertex1 != curVertex2
+          // no need to fill in PIN -> PIN connections
+          && !(class1 == VertexType::PinGroupType
+               && class2 == VertexType::PinGroupType)) {
+        macroWeight[macroPinAdjMatrixMap[curVertex1]]
+          [macroPinAdjMatrixMap[curVertex2]]
           = GetPathWeightMatrix(macroPinAdjMatrix,
                                 macroPinAdjMatrixMap[curVertex1],
                                 macroPinAdjMatrixMap[curVertex2]);
+      }
     }
   }
 }
@@ -1573,6 +1561,269 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
     }
   }
   return false;
+}
+
+////////////////////////////////////////////////////////////////
+
+void MacroCircuit::findAdjacencies()
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::Graph *graph = sta_->ensureGraph();
+  sta_->ensureLevelized();
+  sta_->ensureClkNetwork();
+  VertexFaninMap vertex_fanins;
+  sta::SearchPred2 srch_pred(sta_);
+  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
+  // Seed the BFS with macro output pins.
+  for (Macro& macro : macroStor) {
+    for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
+      sta::Pin *pin = network->dbToSta(iterm);
+      if (network->direction(pin)->isAnyOutput()
+          && !sta_->isClock(pin)) {
+        sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+        vertex_fanins[vertex].insert(&macro);
+        bfs.enqueueAdjacentVertices(vertex);
+      }
+    }
+  }
+  // Seed top level ports.
+  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
+    sta::Pin *pin = network->dbToSta(bterm);
+    if (network->direction(pin)->isAnyInput()
+        && !sta_->isClock(pin)) {
+      sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+      PinGroupLocation edge = findNearestEdge(bterm);
+      vertex_fanins[vertex].insert(reinterpret_cast<Macro*>(edge));
+      bfs.enqueueAdjacentVertices(vertex);
+    }
+  }
+  findAdjacencies(bfs, vertex_fanins, network, graph);
+  constexpr int reg_adjacency_depth = 3;
+  for (int i = 0; i < reg_adjacency_depth; i++) {
+    copyAdjacenciesAcrossRegisters(bfs, vertex_fanins, network, graph);
+    findAdjacencies(bfs, vertex_fanins, network, graph);
+  }
+
+  std::map<Macro*, MacroSet> adj_map;
+  // Find adjacencies from macro fanins.
+  for (Macro& macro : macroStor) {
+    for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
+      sta::Pin *pin = network->dbToSta(iterm);
+      if (network->direction(pin)->isAnyInput()) {
+        sta::Vertex *vertex = graph->pinLoadVertex(pin);
+        MacroSet &pin_fanins = vertex_fanins[vertex];
+        for (Macro *pin_fanin : pin_fanins) {
+          // Adjacencies are symmetric so only fill in one side.
+          if (pin_fanin < &macro) {
+            MacroSet &adj = adj_map[pin_fanin];
+            adj.insert(&macro);
+          }
+          else if (&macro < pin_fanin) {
+            MacroSet &adj = adj_map[&macro];
+            adj.insert(pin_fanin);
+          }
+        }
+      }
+    }
+  }
+  // Find adjacencies from edge fanins.
+  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
+    sta::Pin *pin = network->dbToSta(bterm);
+    if (network->direction(pin)->isAnyOutput()
+        && !sta_->isClock(pin)) {
+      sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+      PinGroupLocation edge = findNearestEdge(bterm);
+      int edge_index = static_cast<int>(edge);
+      Macro *macro = reinterpret_cast<Macro*>(edge_index);
+      MacroSet &edge_fanins = vertex_fanins[vertex];
+      for (Macro *edge_fanin : edge_fanins) {
+        // Adjacencies are symmetric so only fill in one side.
+        if (edge_fanin < macro) {
+          MacroSet &adj = adj_map[edge_fanin];
+          adj.insert(macro);
+        }
+        else if (macro < edge_fanin) {
+          MacroSet &adj = adj_map[macro];
+          adj.insert(edge_fanin);
+        }
+      }
+    }
+  }
+
+  printf("Adjacent macros\n");
+  for (auto macro_adjs : adj_map) {
+    Macro* macro = macro_adjs.first;
+    MacroSet &adjacents = macro_adjs.second;
+    for (Macro *adj : adjacents) {
+      printf("%s -> %s\n",
+             faninName(macro).c_str(),
+             faninName(adj).c_str());
+    }
+  }
+}
+
+std::string MacroCircuit::faninName(Macro *macro)
+{
+  intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
+  if (edge_index == static_cast<intptr_t>(West))
+    return "West";
+  else if (edge_index == static_cast<intptr_t>(East))
+    return "East";
+  else if (edge_index == static_cast<intptr_t>(North))
+    return "North";
+  else if (edge_index == static_cast<intptr_t>(South))
+    return "South";
+  else
+    return macro->name();
+}
+
+// BFS search forward from macro output union-ing fanins.
+// BFS stops at register inputs because there are no timing arcs
+// from register D->Q.
+void MacroCircuit::findAdjacencies(sta::BfsFwdIterator &bfs,
+                                   VertexFaninMap &vertex_fanins,
+                                   sta::dbNetwork *network,
+                                   sta::Graph *graph)
+{
+  while (bfs.hasNext()) {
+    sta::Vertex *vertex = bfs.next();
+    MacroSet &fanins = vertex_fanins[vertex];
+    sta::VertexInEdgeIterator fanin_iter(vertex, graph);
+    while (fanin_iter.hasNext()) {
+      sta::Edge *edge = fanin_iter.next();
+      sta::Vertex *fanin = edge->from(graph);
+      // Union fanins sets of fanin vertices.
+      for (Macro *fanin : vertex_fanins[fanin]) {
+        fanins.insert(fanin);
+        //printf("%s + %s\n", vertex->name(network), faninName(fanin).c_str());
+      }
+    }
+    bfs.enqueueAdjacentVertices(vertex);
+  }
+}
+
+void MacroCircuit::copyAdjacenciesAcrossRegisters(sta::BfsFwdIterator &bfs,
+                                                  VertexFaninMap &vertex_fanins,
+                                                  sta::dbNetwork *network,
+                                                  sta::Graph *graph)
+{
+  sta::Instance *top_inst = network->topInstance();
+  sta::LeafInstanceIterator *leaf_iter = network->leafInstanceIterator(top_inst);
+  while (leaf_iter->hasNext()) {
+    sta::Instance *inst = leaf_iter->next();
+    sta::LibertyCell *lib_cell = network->libertyCell(inst);
+    if (lib_cell->hasSequentials()
+        && !lib_cell->isMacro()) {
+      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
+      while (seq_iter.hasNext()) {
+        sta::Sequential *seq = seq_iter.next();
+        sta::FuncExpr *data_expr = seq->data();
+        sta::FuncExprPortIterator data_port_iter(data_expr);
+        while (data_port_iter.hasNext()) {
+          sta::LibertyPort *data_port = data_port_iter.next();
+          sta::Pin *data_pin = network->findPin(inst, data_port);
+          sta::LibertyPort *out_port = seq->output();
+          sta::Pin *out_pin = findSeqOutPin(inst, out_port, network);
+          if (data_pin && out_pin) {
+            sta::Vertex *data_vertex = graph->pinLoadVertex(data_pin);
+            sta::Vertex *out_vertex = graph->pinDrvrVertex(out_pin);
+            // Copy fanins from D to Q on register.
+            vertex_fanins[out_vertex] = vertex_fanins[data_vertex];
+            bfs.enqueueAdjacentVertices(out_vertex);
+          }
+        }
+      }
+    }
+  }
+  delete leaf_iter;
+}
+
+// Sequential outputs are generally to internal pins that are not physically
+// part of the instance. Find the output port with a function that uses
+// the internal port.
+sta::Pin *MacroCircuit::findSeqOutPin(sta::Instance *inst,
+                                      sta::LibertyPort *out_port,
+                                      sta::Network *network)
+{
+  if (out_port->direction()->isInternal()) {
+    sta::InstancePinIterator *pin_iter = network->pinIterator(inst);
+    while (pin_iter->hasNext()) {
+      sta::Pin *pin = pin_iter->next();
+      sta::LibertyPort *lib_port = network->libertyPort(pin);
+      if (lib_port->direction()->isAnyOutput()) {
+        sta::FuncExpr *func = lib_port->function();
+        if (func->hasPort(out_port)) {
+          sta::Pin *out_pin = network->findPin(inst, lib_port);
+          if (out_pin) {
+            delete pin_iter;
+            return out_pin;
+          }
+        }
+      }
+    }
+    delete pin_iter;
+    return nullptr;
+  }
+  else
+    return network->findPin(inst, out_port);
+}
+
+// This is completely broken but I want to match FillPinGroup()
+// until it is flushed.
+PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
+{
+  dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
+  if (status == dbPlacementStatus::UNPLACED
+      || status == dbPlacementStatus::NONE) {
+    log_->warn(MPL, 8, "pin {} is not placed. Using west.",
+               bTerm->getConstName());
+    return West;
+  } else {
+    const double dbu = db_->getTech()->getDbUnitsPerMicron();
+
+    int dbuCoreLx = round(lx_ * dbu);
+    int dbuCoreLy = round(ly_ * dbu);
+    int dbuCoreUx = round(ux_ * dbu);
+    int dbuCoreUy = round(uy_ * dbu);
+
+    int placeX = 0, placeY = 0;
+    bool isAxisFound = false;
+    bTerm->getFirstPinLocation(placeX, placeY);
+    for (dbBPin* bPin : bTerm->getBPins()) {
+      Rect pin_bbox = bPin->getBBox();
+      int boxLx = pin_bbox.xMin();
+      int boxLy = pin_bbox.yMin();
+      int boxUx = pin_bbox.xMax();
+      int boxUy = pin_bbox.yMax();
+
+      // This is broken. It assumes the pins are on the core boundary.
+      // It should look for the nearest edge to the pin center. -cherry
+      if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
+        return West;
+      } else if (isWithIn(dbuCoreUx, boxLx, boxUx)) {
+        return East;
+      } else if (isWithIn(dbuCoreLy, boxLy, boxUy)) {
+        return South;
+      } else if (isWithIn(dbuCoreUy, boxLy, boxUy)) {
+        return North;
+      }
+    }
+    if (!isAxisFound) {
+      dbBPin* bPin = *(bTerm->getBPins().begin());
+      Rect pin_bbox = bPin->getBBox();
+      int boxLx = pin_bbox.xMin();
+      int boxLy = pin_bbox.yMin();
+      int boxUx = pin_bbox.xMax();
+      int boxUy = pin_bbox.yMax();
+      return getPinGroupLocation((boxLx + boxUx) / 2,
+                                 (boxLy + boxUy) / 2,
+                                 dbuCoreLx,
+                                 dbuCoreLy,
+                                 dbuCoreUx,
+                                 dbuCoreUy);
+    }
+  }
+  return West;
 }
 
 }  // namespace mpl

@@ -167,7 +167,7 @@ const std::string PinGroup::name() const
   } else if (pinGroupLocation_ == PinGroupLocation::South) {
     return "South";
   }
-  return "";
+  return "??";
 }
 
 void PinGroup::setPinGroupLocation(PinGroupLocation pgl)

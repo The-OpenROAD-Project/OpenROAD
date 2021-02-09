@@ -14,8 +14,6 @@
 [INFO ODB-0133]     Created 398 nets and 1184 connections.
 [INFO ODB-0134] Finished DEF file: nangate45-bench/design/gcd_mem3/gcd_mem3.def
 End Parsing Global Config
-Begin Extracting Macro Cells
-End Extracting Macro Cells
 [INFO MPL-0005] NumMacros 3
 [INFO MPL-0009] NumEastPins 13
 [INFO MPL-0010] NumWestPins 18

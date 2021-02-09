@@ -38,6 +38,8 @@
 
 namespace mpl {
 
+// Most of what is in this class is the dbInst and should be functions
+// instead of class variables. -cherry
 Macro::Macro(double _lx,
              double _ly,
              double _w,

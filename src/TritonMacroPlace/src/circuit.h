@@ -38,18 +38,26 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <map>
+#include <set>
 
 #include "graph.h"
 #include "hashUtil.h"
 #include "macro.h"
 #include "partition.h"
 
+#include "sta/GraphClass.hh"
+
 namespace sta {
 class dbSta;
+class BfsFwdIterator;
+class dbNetwork;
+class LibertyPort;
 }
 
 namespace odb {
 class dbDatabase;
+class dbBTerm;
 }
 
 namespace utl {
@@ -59,11 +67,23 @@ class Logger;
 namespace mpl {
 
 class Layout;
-class Logger;
+
+typedef std::set<Macro*> MacroSet;
+// vertex -> fanin macro set
+typedef std::map<sta::Vertex*, MacroSet> VertexFaninMap;
+
+enum class BoundaryEdge
+{
+  West,
+  East,
+  North,
+  South,
+  Unknown
+};
 
 class MacroCircuit
 {
- public:
+public:
   MacroCircuit();
   MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
@@ -126,39 +146,7 @@ class MacroCircuit
 
   const bool isTiming() const { return isTiming_; }
 
- private:
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* log_;
-
-  std::string globalConfig_;
-  std::string localConfig_;
-
-  bool isTiming_;
-  bool isPlot_;
-
-  // layout
-  double lx_, ly_, ux_, uy_;
-
-  double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
-
-  double siteSizeX_, siteSizeY_;
-
-  // haloX, haloY
-  double haloX_, haloY_;
-
-  // channelX, channelY (TODO)
-  double channelX_, channelY_;
-
-  // netlistTable
-  double* netTable_;
-
-  // verboseLevel
-  int verbose_;
-
-  // fenceRegionMode
-  bool fenceRegionMode_;
-
+private:
   void FillMacroStor();
   void FillPinGroup();
   void FillVertexEdge();
@@ -186,7 +174,7 @@ class MacroCircuit
                      int,
                      PointerPairHash,
                      PointerPairEqual>
-      vertexPairEdgeMap;
+  vertexPairEdgeMap;
 
   int index(Vertex* vertex);
 
@@ -211,6 +199,45 @@ class MacroCircuit
 
   void init();
   void reset();
+
+  // graph based adjacencies
+  void findAdjacencies();
+  void findAdjacencies(sta::BfsFwdIterator &bfs,
+                       VertexFaninMap &vertex_fanins,
+                       sta::dbNetwork *network,
+                       sta::Graph *graph);
+  void copyAdjacenciesAcrossRegisters(sta::BfsFwdIterator &bfs,
+                                      VertexFaninMap &vertex_fanins,
+                                      sta::dbNetwork *network,
+                                      sta::Graph *graph);
+  sta::Pin *findSeqOutPin(sta::Instance *inst,
+                          sta::LibertyPort *out_port,
+                          sta::Network *network);
+  PinGroupLocation findNearestEdge(odb::dbBTerm* bTerm);
+  std::string faninName(Macro *macro);
+
+  ////////////////////////////////////////////////////////////////
+    
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* log_;
+
+  // config filenames
+  std::string globalConfig_;
+  std::string localConfig_;
+
+  bool isTiming_;
+  bool isPlot_;
+
+  // layout
+  double lx_, ly_, ux_, uy_;
+  double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
+  double siteSizeX_, siteSizeY_;
+  double haloX_, haloY_;
+  double channelX_, channelY_;
+  double* netTable_;
+  int verbose_;
+  bool fenceRegionMode_;
 };
 
 class Layout
