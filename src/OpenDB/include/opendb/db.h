@@ -7640,6 +7640,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isSameMask() const;
 
+  void setSameXY(bool _same_x_y);
+
+  bool isSameXY() const;
+
   void setCornerOnly(bool _corner_only);
 
   bool isCornerOnly() const;
@@ -7681,9 +7685,11 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   CornerType getType() const;
 
-  void addSpacing(uint width, uint spacing);
+  void addSpacing(uint width, uint spacing1, uint spacing2 = 0);
 
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl);
+
+  void getWidthTable(std::vector<int>& tbl);
 
   static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
 

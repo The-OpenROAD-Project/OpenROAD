@@ -53,6 +53,7 @@ struct dbTechLayerCornerSpacingRuleFlags
 {
   uint _corner_type : 1;
   bool _same_mask : 1;
+  bool _same_x_y : 1;
   bool _corner_only : 1;
   bool _except_eol : 1;
   bool _except_jog_length : 1;
@@ -62,7 +63,7 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool _except_notch : 1;
   bool _except_same_net : 1;
   bool _except_same_metal : 1;
-  uint _spare_bits : 21;
+  uint _spare_bits : 20;
 };
 // User Code Begin structs
 // User Code End structs
@@ -81,6 +82,7 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   int                               _min_length;
 
   // User Code Begin fields
+  dbVector<int>                 _width_tbl;
   dbVector<std::pair<int, int>> _spacing_tbl;
   // User Code End fields
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
