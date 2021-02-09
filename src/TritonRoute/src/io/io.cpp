@@ -3323,8 +3323,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           getLef58Spacing(this, tmpLayer, strProp->getValue());
         } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACINGTABLE")) {
           getLef58SpacingTable(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(),
-                           "LEF58_RIGHTWAYONGRIDONLY")) {
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_RIGHTWAYONGRIDONLY")) {
           getLef58RightWayOnGridOnly(this, tmpLayer, strProp->getValue());
         } else if (!strcmp(strProp->getName().c_str(), "LEF58_RECTONLY")) {
           getLef58RectOnly(this, tmpLayer, strProp->getValue());
@@ -3813,13 +3812,15 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
             string layer = box->getTechLayer()->getName();
-            if (tech->name2layer.find(layer) == tech->name2layer.end())
+            if (tech->name2layer.find(layer) == tech->name2layer.end()){
               logger->warn(utl::DRT,
                            122,
                            "layer {} is skipped for {}/{}",
                            layer,
                            tmpBlock->getName(),
                            _term->getName());
+              continue;
+            }
             else
               layerNum = tech->name2layer.at(layer)->getLayerNum();
 
