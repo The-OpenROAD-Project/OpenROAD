@@ -7638,6 +7638,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   int getJogLength() const;
 
+  void setEdgeLength(int _edge_length);
+
+  int getEdgeLength() const;
+
   void setMinLength(int _min_length);
 
   int getMinLength() const;
@@ -7657,6 +7661,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setExceptJogLength(bool _except_jog_length);
 
   bool isExceptJogLength() const;
+
+  void setEdgeLengthValid(bool _edge_length_valid);
+
+  bool isEdgeLengthValid() const;
 
   void setIncludeShape(bool _include_shape);
 

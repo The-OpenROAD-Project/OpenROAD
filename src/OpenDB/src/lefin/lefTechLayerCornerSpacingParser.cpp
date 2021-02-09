@@ -57,6 +57,13 @@ void setJogLength(double                             value,
   rule->setExceptJogLength(true);
   rule->setJogLength(lefin->dbdist(value));
 }
+void setEdgeLength(double                             value,
+                  odb::dbTechLayerCornerSpacingRule* rule,
+                  odb::lefin*                        lefin)
+{
+  rule->setEdgeLengthValid(true);
+  rule->setEdgeLength(lefin->dbdist(value));
+}
 void setMinLength(double                             value,
                   odb::dbTechLayerCornerSpacingRule* rule,
                   odb::lefin*                        lefin)
@@ -93,6 +100,10 @@ bool parse(Iterator          first,
               >> double_[boost::bind(&setEolWidth, _1, rule, lefin)]
               >> -(lit("EXCEPTJOGLENGTH")
                    >> double_[boost::bind(&setJogLength, _1, rule, lefin)]
+                   >> -(
+                     lit("EDGELENGTH")
+                     >> double_[boost::bind(&setEdgeLength, _1, rule, lefin)]
+                   )
                    >> -(lit("INCLUDELSHAPE")[boost::bind(
                        &odb::dbTechLayerCornerSpacingRule::setIncludeShape,
                        rule,

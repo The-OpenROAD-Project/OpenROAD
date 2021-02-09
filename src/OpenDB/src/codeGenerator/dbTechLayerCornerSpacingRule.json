@@ -49,6 +49,17 @@
     },
     {
       "type": "bool",
+      "name":"_edge_length_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type" : "int",
+      "name" : "_edge_length",
+      "flags" : []
+    },
+    {
+      "type": "bool",
       "name": "_include_shape",
       "flags": [],
       "bits":1
