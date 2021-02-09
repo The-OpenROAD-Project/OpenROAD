@@ -71,6 +71,13 @@ void setMinLength(double                             value,
   rule->setMinLengthValid(true);
   rule->setMinLength(lefin->dbdist(value));
 }
+void setExceptNotchLength(double                             value,
+                  odb::dbTechLayerCornerSpacingRule* rule,
+                  odb::lefin*                        lefin)
+{
+  rule->setExceptNotchLengthValid(true);
+  rule->setExceptNotchLength(lefin->dbdist(value));
+}
 void addSpacing(boost::fusion::vector<double, double, boost::optional<double>>& params,
                 odb::dbTechLayerCornerSpacingRule*     rule,
                 odb::lefin*                            lefin)
@@ -121,10 +128,11 @@ bool parse(Iterator          first,
              odb::dbTechLayerCornerSpacingRule::CONCAVECORNER)]
          >> -(lit("MINLENGTH")
               >> double_[boost::bind(&setMinLength, _1, rule, lefin)]
-              >> -(lit("EXCEPTNOTCH")[boost::bind(
-                  &odb::dbTechLayerCornerSpacingRule::setExceptNotch,
-                  rule,
-                  true)])));
+              >> -(lit("EXCEPTNOTCH")[boost::bind(&odb::dbTechLayerCornerSpacingRule::setExceptNotch, rule, true)]
+                   >> -double_[boost::bind(&setExceptNotchLength, _1, rule, lefin)]
+                  )
+              )
+        );
   qi::rule<std::string::iterator, space_type> exceptSameRule
       = (lit("EXCEPTSAMENET")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setExceptSameNet, rule, true)]

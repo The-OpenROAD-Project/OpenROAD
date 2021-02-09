@@ -89,6 +89,17 @@
     },
     {
       "type": "bool",
+      "name":"_except_notch_length_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_except_notch_length",
+      "flags": []
+    },
+    {
+      "type": "bool",
       "name":"_except_same_net",
       "flags":[],
       "bits":1

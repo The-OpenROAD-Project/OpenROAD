@@ -7646,6 +7646,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   int getMinLength() const;
 
+  void setExceptNotchLength(int _except_notch_length);
+
+  int getExceptNotchLength() const;
+
   void setSameMask(bool _same_mask);
 
   bool isSameMask() const;
@@ -7681,6 +7685,10 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setExceptNotch(bool _except_notch);
 
   bool isExceptNotch() const;
+
+  void setExceptNotchLengthValid(bool _except_notch_length_valid);
+
+  bool isExceptNotchLengthValid() const;
 
   void setExceptSameNet(bool _except_same_net);
 
