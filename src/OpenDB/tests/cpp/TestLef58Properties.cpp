@@ -90,12 +90,16 @@ BOOST_AUTO_TEST_CASE( test_default )
     odb::dbTechLayerCornerSpacingRule* corner_rule = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
     BOOST_TEST(corner_rule->getType() == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
     BOOST_TEST(corner_rule->isExceptEol() == true);
+    BOOST_TEST(corner_rule->isSameXY());
     BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
     vector<pair<int,int>> spacing;
+    vector<int> corner_width;
     corner_rule->getSpacingTable(spacing);
+    corner_rule->getWidthTable(corner_width);
     BOOST_TEST(spacing.size() == 1 );
-    BOOST_TEST(spacing[0].first == 0);
-    BOOST_TEST(spacing[0].second == 0.110 * distFactor);
+    BOOST_TEST(spacing[0].first == 0.110 * distFactor);
+    BOOST_TEST(spacing[0].second == 0.110 * distFactor );
+    BOOST_TEST(corner_width[0] == 0 );
 
     auto spacingTables = layer->getTechLayerSpacingTablePrlRules();
     BOOST_TEST(spacingTables.size() == 1);
