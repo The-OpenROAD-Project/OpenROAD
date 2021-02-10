@@ -320,35 +320,37 @@ void GMat::GenerateStripeConductance(int                        t_l,
     }
   } else {
     // int                       x_loc = (t_x_min + t_x_max) / 2;
-    map<int, Node*> y_map;
+
+    map<pair<int,int>, Node*> y_map;
     for (auto x_itr = layer_map.lower_bound(t_x_min);
          x_itr != layer_map.upper_bound(t_x_max);
          ++x_itr) {
       map<int, Node*> y_itr_map = x_itr->second;
-      y_map.insert(y_itr_map.lower_bound(t_y_min),
-                   y_itr_map.upper_bound(t_y_max));
+      map<int, Node*>::iterator y_map_itr;
+      for (y_map_itr = y_itr_map.lower_bound(t_y_min);
+         y_map_itr->first <= t_y_max && y_map_itr != y_itr_map.end();
+         ++y_map_itr)
+        y_map.insert(make_pair(make_pair(y_map_itr->first,x_itr->first),y_map_itr->second));
     }
 
     // map<int, Node*>           y_map = layer_map.at(x_loc);
-    map<int, Node*>::iterator y_itr;
-    map<int, Node*>::iterator y_prev;
+    map<pair<int,int>, Node*>::iterator y_itr;
+    map<pair<int,int>, Node*>::iterator y_prev;
     int                       i = 0;
-    // if(x_loc == 1202200){
-    //    cout<<"generate conductance: "<<endl;
-    //}
-    for (y_itr = y_map.lower_bound(t_y_min);
-         y_itr->first <= t_y_max && y_itr != y_map.end();
+    for (y_itr = y_map.begin();
+         y_itr != y_map.end();
          ++y_itr) {
       if (i == 0) {
         i = 1;
       } else {
-        // if(x_loc == 1202200){
-        //    cout<<"y "<<y_prev->first<<" "<<y_itr->first<<endl;
-        //}
         Node*  node1  = y_itr->second;
         Node*  node2  = y_prev->second;
+        NodeLoc node_loc1      = node1->GetLoc();
+        NodeLoc node_loc2      = node2->GetLoc();
         int    width  = t_x_max - t_x_min;
-        int    length = y_itr->first - y_prev->first;
+        int    length = (y_itr->first).first - (y_prev->first).first;
+        if(length == 0)
+            length = (y_itr->first).second - (y_prev->first).second;
         double cond   = GetConductivity(width, length, t_rho);
         SetConductance(node1, node2, cond);
       }
@@ -403,21 +405,32 @@ vector<Node*> GMat::GetRDLNodes(int                        t_l,
       RDLNodes.push_back(node2);
     }
   } else {
-    int x_loc            = (t_x_min + t_x_max) / 2;
-    node1                = GetNode(x_loc, t_y_min, t_l, true);
-    node_loc             = node1->GetLoc();
-    int y1               = node_loc.second;
-    node2                = GetNode(x_loc, t_y_max, t_l, true);
-    node_loc             = node2->GetLoc();
-    int               y2 = node_loc.second;
+    //std::cout << "Vertical " << std::endl;
+    int x_loc  = (t_x_min + t_x_max) / 2;
+    node1      = GetNode(x_loc, t_y_min, t_l, true);
+    node_loc   = node1->GetLoc();
+    int y1     = node_loc.second;
+    //std::cout <<"N1 " << node_loc.first << " "<<node_loc.second << std::endl;
+    node2      = GetNode(x_loc, t_y_max, t_l, true);
+    node_loc   = node2->GetLoc();
+    int y2     = node_loc.second;
     NodeMap::iterator x_itr;
     for (x_itr = layer_map.lower_bound(t_x_min);
          x_itr->first <= t_x_max && x_itr != layer_map.end();
          ++x_itr) {
-      node1 = (x_itr->second).at(y1);
-      node2 = (x_itr->second).at(y2);
-      RDLNodes.push_back(node1);
-      RDLNodes.push_back(node2);
+      map<int, Node*>::iterator y_iter;
+      y_iter = (x_itr->second).find(y1);
+      if(y_iter != (x_itr->second).end()) {
+        RDLNodes.push_back(y_iter->second);
+      }
+      y_iter = (x_itr->second).find(y2);
+      if(y_iter != (x_itr->second).end()) {
+        RDLNodes.push_back(y_iter->second);
+      }
+      //node1 = (x_itr->second).at(y1);
+      //node2 = (x_itr->second).at(y2);
+      //RDLNodes.push_back(node1);
+      //RDLNodes.push_back(node2);
     }
   }
   return RDLNodes;
