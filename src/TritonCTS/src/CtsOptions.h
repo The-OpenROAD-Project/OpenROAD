@@ -195,7 +195,7 @@ class CtsOptions
   unsigned _wireSegmentUnit = 0;
   bool _plotSolution = false;
   bool _simpleCts = false;
-  bool _sinkClusteringEnable = false;
+  bool _sinkClusteringEnable = true;
   bool _sinkClusteringUseMaxCap = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
