@@ -202,14 +202,14 @@ private:
 
   // graph based adjacencies
   void findAdjacencies();
-  void findAdjacencies(sta::BfsFwdIterator &bfs,
-                       VertexFaninMap &vertex_fanins,
-                       sta::dbNetwork *network,
-                       sta::Graph *graph);
-  void copyAdjacenciesAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                      VertexFaninMap &vertex_fanins,
-                                      sta::dbNetwork *network,
-                                      sta::Graph *graph);
+  void findFanins(sta::BfsFwdIterator &bfs,
+                  VertexFaninMap &vertex_fanins,
+                  sta::dbNetwork *network,
+                  sta::Graph *graph);
+  void copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
+                                 VertexFaninMap &vertex_fanins,
+                                 sta::dbNetwork *network,
+                                 sta::Graph *graph);
   sta::Pin *findSeqOutPin(sta::Instance *inst,
                           sta::LibertyPort *out_port,
                           sta::Network *network);

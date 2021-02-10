@@ -546,7 +546,7 @@ void MacroCircuit::FillVertexEdge()
     // Query for get_fanin/get_fanout
     if (dir->isAnyOutput()) {
       sta::PinSet* fanout
-          = sta_->findFanoutPins(&pinStor, false, true, 500, 700, false, false);
+          = sta_->findFanoutPins(&pinStor, false, true, 0, 0, false, false);
       for (auto& adjPin : *fanout) {
         // Skip For Non-FF Pin
         if (!sta_->network()->isTopLevelPort(adjPin)) {
@@ -578,7 +578,7 @@ void MacroCircuit::FillVertexEdge()
       delete fanout;
     } else {
       sta::PinSet* fanin
-          = sta_->findFaninPins(&pinStor, false, true, 500, 700, false, false);
+          = sta_->findFaninPins(&pinStor, false, true, 0, 0, false, false);
       for (auto& adjPin : *fanin) {
         // Skip For Non-FF Pin
         if (!sta_->network()->isTopLevelPort(adjPin)) {
@@ -719,6 +719,26 @@ void MacroCircuit::FillVertexEdge()
 
   adjMatrix.setFromTriplets(triplets.begin(), triplets.end());
 
+  if (log_->debugCheck(MPL, "adj_weights", 1)) {
+    log_->report("Adjacency weights");
+    for (auto& v1 : vertexStor) {
+      for (auto& v2 : vertexStor) {
+        int weight = GetPathWeightMatrix(adjMatrix, index(&v1), index(&v2));
+        if (weight >= 1) {
+          if (weight >= 1
+              && (!v1.isInstance()
+                  || network->libertyCell(v1.instance())->isMacro())
+              && (!v2.isInstance()
+                  || network->libertyCell(v2.instance())->isMacro()))
+            log_->report("{} -> {} {}",
+                         v1.name(network),
+                         v2.name(network),
+                         weight);
+        }
+      }
+    }
+  }
+
   log_->report("End Generating Sequential Graph");
   log_->info(MPL, 13, "NumVertexSeqGraph {}", vertexStor.size());
   log_->info(MPL, 14, "NumEdgeSeqGraph {}", adjMatrix.nonZeros());
@@ -750,6 +770,7 @@ void MacroCircuit::CheckGraphInfo()
     vertexCover[i] = 0;
   }
   for (auto& curMacro : macroStor) {
+    // This clobbers the first 4 entries -cherry
     vertexCover[index(curMacro.ptr)] = 0;
   }
 
@@ -767,6 +788,7 @@ void MacroCircuit::CheckGraphInfo()
         }
 
         if (vertexCover[idx2] == -1
+            // weight = 1 -> adjacency
             && GetPathWeightMatrix(adjMatrix, curVertex1, idx2)) {
           vertexCover[idx2] = level;
           newVertex.push_back(&vertexStor[idx2]);
@@ -885,11 +907,12 @@ void MacroCircuit::FillMacroPinAdjMatrix()
         triplets.push_back(Triplet(macroPinAdjMatrixMap[startVertIdx],
                                    macroPinAdjMatrixMap[curCandiVert],
                                    vertexWeight[curCandiVert]));
-        // Matrix is symmetric so only print top entries.
-        if (startVertIdx < curCandiVert)
-          debugPrint(log_, MPL, "pin_adj", 1, "pin adj {} -> {}",
+
+        if (vertexWeight[curCandiVert] > 0)
+          debugPrint(log_, MPL, "pin_adj", 1, "pin adj {} -> {} {}",
                      vertexStor[startVertIdx].name(network),
-                     vertexStor[curCandiVert].name(network));
+                     vertexStor[curCandiVert].name(network),
+                     vertexWeight[curCandiVert]);
       }
     }
   }
@@ -1565,6 +1588,8 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
 
 ////////////////////////////////////////////////////////////////
 
+typedef std::pair<Macro*, Macro*> MacroPair;
+
 void MacroCircuit::findAdjacencies()
 {
   sta::dbNetwork *network = sta_->getDbNetwork();
@@ -1586,7 +1611,7 @@ void MacroCircuit::findAdjacencies()
       }
     }
   }
-  // Seed top level ports.
+  // Seed top level ports input ports.
   for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
     sta::Pin *pin = network->dbToSta(bterm);
     if (network->direction(pin)->isAnyInput()
@@ -1597,15 +1622,20 @@ void MacroCircuit::findAdjacencies()
       bfs.enqueueAdjacentVertices(vertex);
     }
   }
-  findAdjacencies(bfs, vertex_fanins, network, graph);
-  constexpr int reg_adjacency_depth = 3;
+  findFanins(bfs, vertex_fanins, network, graph);
+  // Propagate adjacencies through 3 levels of register D->Q.
+  constexpr int reg_adjacency_depth = 0;
   for (int i = 0; i < reg_adjacency_depth; i++) {
-    copyAdjacenciesAcrossRegisters(bfs, vertex_fanins, network, graph);
-    findAdjacencies(bfs, vertex_fanins, network, graph);
+    copyFaninsAcrossRegisters(bfs, vertex_fanins, network, graph);
+    findFanins(bfs, vertex_fanins, network, graph);
   }
 
-  std::map<Macro*, MacroSet> adj_map;
-  // Find adjacencies from macro fanins.
+  ////////////////////////////////////////////////////////////////
+
+  // from/to -> weight
+  // weight = from/pin -> to/pin count
+  std::map<MacroPair, int> adj_map;
+  // Find adjacencies from macro input pin fanins.
   for (Macro& macro : macroStor) {
     for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
       sta::Pin *pin = network->dbToSta(iterm);
@@ -1614,51 +1644,51 @@ void MacroCircuit::findAdjacencies()
         MacroSet &pin_fanins = vertex_fanins[vertex];
         for (Macro *pin_fanin : pin_fanins) {
           // Adjacencies are symmetric so only fill in one side.
-          if (pin_fanin < &macro) {
-            MacroSet &adj = adj_map[pin_fanin];
-            adj.insert(&macro);
-          }
-          else if (&macro < pin_fanin) {
-            MacroSet &adj = adj_map[&macro];
-            adj.insert(pin_fanin);
+          if (pin_fanin != &macro) {
+            MacroPair from_to = (pin_fanin > &macro)
+              ? MacroPair(pin_fanin, &macro)
+              : MacroPair(&macro, pin_fanin);
+            adj_map[from_to]++;
           }
         }
       }
     }
   }
-  // Find adjacencies from edge fanins.
+  // Find adjacencies from output pin fanins.
   for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
     sta::Pin *pin = network->dbToSta(bterm);
     if (network->direction(pin)->isAnyOutput()
         && !sta_->isClock(pin)) {
       sta::Vertex *vertex = graph->pinDrvrVertex(pin);
       PinGroupLocation edge = findNearestEdge(bterm);
+      debugPrint(log_, MPL, "pin_edge", 1, "pin edge {} {}",
+                 bterm->getConstName(),
+                 getPinGroupLocationString(edge));
       int edge_index = static_cast<int>(edge);
       Macro *macro = reinterpret_cast<Macro*>(edge_index);
       MacroSet &edge_fanins = vertex_fanins[vertex];
       for (Macro *edge_fanin : edge_fanins) {
-        // Adjacencies are symmetric so only fill in one side.
-        if (edge_fanin < macro) {
-          MacroSet &adj = adj_map[edge_fanin];
-          adj.insert(macro);
-        }
-        else if (macro < edge_fanin) {
-          MacroSet &adj = adj_map[macro];
-          adj.insert(edge_fanin);
+        if (edge_fanin != macro) {
+          // Adjacencies are symmetric so only fill in one side.
+          MacroPair from_to = (edge_fanin > macro)
+            ? MacroPair(edge_fanin, macro)
+            : MacroPair(macro, edge_fanin);
+          adj_map[from_to]++;
         }
       }
     }
   }
 
   printf("Adjacent macros\n");
-  for (auto macro_adjs : adj_map) {
-    Macro* macro = macro_adjs.first;
-    MacroSet &adjacents = macro_adjs.second;
-    for (Macro *adj : adjacents) {
-      printf("%s -> %s\n",
-             faninName(macro).c_str(),
-             faninName(adj).c_str());
-    }
+  for (auto pair_weight : adj_map) {
+    const MacroPair &from_to = pair_weight.first;
+    Macro *from = from_to.first;
+    Macro *to = from_to.second;
+    float weight = pair_weight.second;
+    log_->report("{} -> {} {}",
+                 faninName(from),
+                 faninName(to),
+                 weight);
   }
 }
 
@@ -1677,13 +1707,13 @@ std::string MacroCircuit::faninName(Macro *macro)
     return macro->name();
 }
 
-// BFS search forward from macro output union-ing fanins.
+// BFS search forward union-ing fanins.
 // BFS stops at register inputs because there are no timing arcs
 // from register D->Q.
-void MacroCircuit::findAdjacencies(sta::BfsFwdIterator &bfs,
-                                   VertexFaninMap &vertex_fanins,
-                                   sta::dbNetwork *network,
-                                   sta::Graph *graph)
+void MacroCircuit::findFanins(sta::BfsFwdIterator &bfs,
+                              VertexFaninMap &vertex_fanins,
+                              sta::dbNetwork *network,
+                              sta::Graph *graph)
 {
   while (bfs.hasNext()) {
     sta::Vertex *vertex = bfs.next();
@@ -1695,17 +1725,19 @@ void MacroCircuit::findAdjacencies(sta::BfsFwdIterator &bfs,
       // Union fanins sets of fanin vertices.
       for (Macro *fanin : vertex_fanins[fanin]) {
         fanins.insert(fanin);
-        //printf("%s + %s\n", vertex->name(network), faninName(fanin).c_str());
+        debugPrint(log_, MPL, "find_fanins", 1, "{} + {}",
+                   vertex->name(network),
+                   faninName(fanin));
       }
     }
     bfs.enqueueAdjacentVertices(vertex);
   }
 }
 
-void MacroCircuit::copyAdjacenciesAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                                  VertexFaninMap &vertex_fanins,
-                                                  sta::dbNetwork *network,
-                                                  sta::Graph *graph)
+void MacroCircuit::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
+                                             VertexFaninMap &vertex_fanins,
+                                             sta::dbNetwork *network,
+                                             sta::Graph *graph)
 {
   sta::Instance *top_inst = network->topInstance();
   sta::LeafInstanceIterator *leaf_iter = network->leafInstanceIterator(top_inst);
