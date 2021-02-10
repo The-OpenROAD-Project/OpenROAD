@@ -1,8 +1,4 @@
-import re
-import json
-
-
-comparable = [
+_comparable = [
     'int',
     'uint',
     'unint_32t',
@@ -21,18 +17,17 @@ comparable = [
     'Rect'
 ]
 
-removable = [
+_removable = [
     'unsigned',
     'static',
     'const'
 ]
 
-
 def _stem(s):
     src = s.split(' ')
     target = []
     for item in src:
-        if item not in removable:
+        if item not in _removable:
             target.append(item)
     return ' '.join([str(elem) for elem in target])
 
@@ -45,11 +40,9 @@ def getStruct(name, structs):
 
 
 def components(structs, name, _type):
-    if _stem(_type) in comparable or isRef(_type):
+    if(_stem(_type) in _comparable or isRef(_type)):
         return [name]
-    idx = 0
-    absType = _type.rstrip(' *')
-    struct = getStruct(_type.rstrip(' *'), structs)
+    struct = getStruct(_type.rstrip(' *'),structs)
     if struct is not None:
         ret = []
         for field in struct['fields']:
@@ -60,17 +53,6 @@ def components(structs, name, _type):
                 ret.extend([name + '->' + str(elem) for elem in target])
         return ret
     return []
-
-
-def addOnceToList(src, target):
-    if isinstance(src, list):
-        for obj in src:
-            if obj not in target:
-                target.insert(0, obj)
-    elif src not in target:
-        target.add(0, src)
-    return target
-
 
 def addOnceToDict(src, target):
     if isinstance(src, list):
@@ -128,8 +110,7 @@ def getHashTableType(type_name):
 
     return type_name[12:-1] + "*"
 
-
-def isTemplateType(type_name):
+def _isTemplateType(type_name):
     openBracket = type_name.find("<")
     if openBracket == -1:
         return False
@@ -140,7 +121,7 @@ def isTemplateType(type_name):
 
 
 def getTemplateType(type_name):
-    if not isTemplateType(type_name):
+    if not _isTemplateType(type_name):
         return None
     numBrackets = 1
 

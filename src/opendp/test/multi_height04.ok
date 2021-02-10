@@ -28,6 +28,4 @@ delta HPWL                    3 %
  _281_
 [WARNING DPL-0007] Power line check failed (1).
  _281_
-Differences found at line 12.
-    - _283_ in01f01 + PLACED ( 30800 32000 ) N ;
-    - _283_ in01f01 + PLACED ( 31200 32000 ) N ;
+No differences found.
