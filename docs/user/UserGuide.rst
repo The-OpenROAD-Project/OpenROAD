@@ -7,11 +7,9 @@ flow is divided into four stages:
 
 1. Logic Synthesis: is performed by
    `yosys <https://github.com/The-OpenROAD-Project/yosys>`__.
-2. Floorplanning through Global Routing: are performed by `OpenROAD
+2. Floorplanning through Detailed Routing: are performed by `OpenROAD
    App <https://github.com/The-OpenROAD-Project/OpenROAD>`__.
-3. Detailed Routing: is performed by
-   `TritonRoute <https://github.com/The-OpenROAD-Project/TritonRoute>`__.
-4. KLayout: GDS merge, DRC and LVS (public PDKs)
+3. KLayout: GDS merge, DRC and LVS (public PDKs)
 
 To Run OpenROAD flow, we provide scripts to automate the RTL-to-GDS
 stages. Alternatively, you can run the individual steps manually.
@@ -46,7 +44,6 @@ The flow has the following dependencies:
 
 -  OpenROAD
 -  KLayout
--  TritonRoute
 -  Yosys
 
 The dependencies can either be obtained from a pre-compiled build export
@@ -111,7 +108,6 @@ Option 3: Building the tools locally*\*
 
       OpenROAD-flow/tools/OpenROAD/Dockerfile
       OpenROAD-flow/tools/yosys/Dockerfile
-      OpenROAD-flow/tools/TritonRoute/Dockerfile
 
 See the `KLayout <https://www.klayout.de/>`__ instructions for
 installing KLayout from source.
@@ -701,32 +697,14 @@ Options description:
 Detailed Routing
 ~~~~~~~~~~~~~~~~
 
-GitHub: https://github.com/The-OpenROAD-Project/TritonRoute
-
-**Build**
-
-TritonRoute is tested in 64-bit CentOS 6/7 environments with the
-following prerequisites:
-
--  A compatible C++ compiler supporting C++17 (GCC 7 and above)
--  Boost >= 1.68.0
--  Bison >= 3.0.4
--  zlib >= 1.2.7
--  CMake >= 3.1
-
-To install TritonRoute:
-
-::
-
-   $ git clone https://github.com/The-OpenROAD-Project/TritonRoute.git
-   $ cd TritonRoute
-   $ mkdir build
-   $ cd build
-   $ cmake -DBOOST_ROOT=<BOOST_ROOT> ../
-   $ make
-
 **Run**
 
 ::
 
-   $ ./TritonRoute -lef <LEF_FILE> -def <DEF_FILE> -guide <GUIDE_FILE> -output <OUTPUT_DEF>
+   detailed_route -param <param_file>
+
+Options description:
+
+-  **param_file**: This file contains the parameters used to
+   control the detailed router)
+
