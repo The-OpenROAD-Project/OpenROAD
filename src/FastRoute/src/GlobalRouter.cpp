@@ -673,11 +673,14 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
+        int edgeCostForNet = (isClock) ? _clockCost : 1;
+
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
                                        pinsOnGrid.size(),
                                        netAlpha,
-                                       isClock);
+                                       isClock,
+                                       edgeCostForNet);
         for (RoutePt& pinPos : pinsOnGrid) {
           _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
         }
@@ -1233,6 +1236,11 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
 {
   std::string name(netName);
   _netsAlpha[name] = alpha;
+}
+
+void GlobalRouter::setClockCost(int cost)
+{
+  _clockCost = cost;
 }
 
 void GlobalRouter::setVerbose(const int v)
