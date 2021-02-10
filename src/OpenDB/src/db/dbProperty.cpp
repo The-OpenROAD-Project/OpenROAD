@@ -557,10 +557,14 @@ dbStringProperty* dbStringProperty::create(dbObject*   object,
                                            const char* name,
                                            const char* value)
 {
-  if (find(object, name))
-    return NULL;
+  _dbProperty* prop = (_dbProperty*) find(object, name);
+  if (prop){
+    strcat (prop->_value._str_val, "\n");
+    strcat (prop->_value._str_val, value);
+    return prop;
+  }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
+  prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
   prop->_value._str_val = strdup(value);
   ZALLOCATED(prop->_value._str_val);
   return (dbStringProperty*) prop;
