@@ -559,8 +559,9 @@ dbStringProperty* dbStringProperty::create(dbObject*   object,
 {
   _dbProperty* prop = (_dbProperty*) find(object, name);
   if (prop){
-    strcat (prop->_value._str_val, " ");
-    strcat (prop->_value._str_val, value);
+    std::string val = std::string(prop->_value._str_val) + value;
+    prop->_value._str_val = strdup(val.c_str());
+    ZALLOCATED(prop->_value._str_val);
     return (dbStringProperty*) prop;
   }
 
