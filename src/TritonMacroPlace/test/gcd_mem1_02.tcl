@@ -1,8 +1,7 @@
 source helpers.tcl
-set design gcd_mem5 
+set design gcd_mem1 
 set tech_dir nangate45-bench/tech
-set design_dir nangate45-bench/design/${design}
-set test_name "gcd-mem5-test-02"
+set test_name "gcd_mem1_02"
 
 read_liberty ${tech_dir}/NangateOpenCellLibrary_typical.lib
 read_liberty ${tech_dir}/fakeram45_64x7.lib
@@ -10,10 +9,10 @@ read_liberty ${tech_dir}/fakeram45_64x7.lib
 read_lef ${tech_dir}/NangateOpenCellLibrary.lef
 read_lef ${tech_dir}/fakeram45_64x7.lef
 
-read_def ${design_dir}/${design}.def
-read_sdc ${design_dir}/${design}.sdc
+read_def gcd_mem1.def
+read_sdc gcd.sdc
 
-macro_placement -global_config ${design_dir}/halo_1.0.cfg
+macro_placement -global_config halo_1.0.cfg
 
 set def_file [make_result_file $test_name.def]
 write_def $def_file

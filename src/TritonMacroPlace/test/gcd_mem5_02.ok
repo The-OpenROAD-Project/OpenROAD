@@ -6,13 +6,13 @@
 [INFO ODB-0222] Reading LEF file: nangate45-bench/tech/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: nangate45-bench/design/gcd_mem5/gcd_mem5.def
+[INFO ODB-0127] Reading DEF file: gcd_mem5.def
 [INFO ODB-0128] Design: gcd_mem5
 [INFO ODB-0130]     Created 89 pins.
 [INFO ODB-0131]     Created 311 components and 1866 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 412 nets and 1244 connections.
-[INFO ODB-0134] Finished DEF file: nangate45-bench/design/gcd_mem5/gcd_mem5.def
+[INFO ODB-0134] Finished DEF file: gcd_mem5.def
 End Parsing Global Config
 [INFO MPL-0005] NumMacros 5
 [INFO MPL-0009] NumEastPins 23
