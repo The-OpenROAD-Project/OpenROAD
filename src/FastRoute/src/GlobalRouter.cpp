@@ -1339,15 +1339,13 @@ void GlobalRouter::writeGuides(const char* fileName)
           } else {
             RoutingLayer phLayerI;
             if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-              phLayerI = getRoutingLayerByIndex(
-                  segment.initLayer + _minRoutingLayer - segment.initLayer);
+              phLayerI = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerI = getRoutingLayerByIndex(segment.initLayer);
             }
             if (segment.finalLayer < _minRoutingLayer
                 && !_unidirectionalRoute) {
-              phLayerF = getRoutingLayerByIndex(
-                  segment.finalLayer + _minRoutingLayer - segment.finalLayer);
+              phLayerF = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerF = getRoutingLayerByIndex(segment.finalLayer);
             }
