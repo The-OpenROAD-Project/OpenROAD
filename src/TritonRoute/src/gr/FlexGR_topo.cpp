@@ -51,18 +51,6 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*> &pinGCellNodes, vector<frNode*>
   int accuracy = 3;
   auto fluteTree = stt::flute(degree, xs.data(), ys.data(), accuracy);
 
-  // if (net->getName() == "net3138") {
-  //   cout << "@@@ debug\n";
-  //   cout << "degree = " << degree << endl;
-  //   for (int i = 0; i < (int)pinGCellNodes.size(); i++) {
-  //     auto gcellNode = pinGCellNodes[i];
-  //     gcellNode->getLoc(loc);
-  //     cout << "  loc: (" << loc.x() << ", " << loc.y() << ")\n";
-  //   }
-  //   cout << "@@@ fluteTree @@@\n";
-  //   flute::printtree(fluteTree);
-  // }
-
   map<frPoint, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
   map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp> adjacencyList;
 
@@ -130,72 +118,6 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*> &pinGCellNodes, vector<frNode*>
 
       adjacencyList[bpNode].insert(epNode);
       adjacencyList[epNode].insert(bpNode);
-    // } else {
-    //   frPoint mp(bp.x(), ep.y());
-    //   frNode *bpNode = nullptr;
-    //   frNode *mpNode = nullptr;
-    //   frNode *epNode = nullptr;
-
-    //   if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
-    //     if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
-    //       // add steiner
-    //       auto steinerNode = make_unique<frNode>();
-    //       bpNode = steinerNode.get();
-    //       steinerNode->setType(frNodeTypeEnum::frcSteiner);
-    //       steinerNode->setLoc(bp);
-    //       steinerGCell2Nodes[bp] = steinerNode.get();
-    //       steinerNodes.push_back(steinerNode.get());
-    //       net->addNode(steinerNode);
-    //     } else {
-    //       bpNode = steinerGCell2Nodes[bp];
-    //     }
-    //   } else {
-    //     bpNode = pinGCell2Nodes[bp];
-    //   }
-
-    //   if (pinGCell2Nodes.find(mp) == pinGCell2Nodes.end()) {
-    //     if (steinerGCell2Nodes.find(mp) == steinerGCell2Nodes.end()) {
-    //       // add steiner
-    //       auto steinerNode = make_unique<frNode>();
-    //       mpNode = steinerNode.get();
-    //       steinerNode->setType(frNodeTypeEnum::frcSteiner);
-    //       steinerNode->setLoc(mp);
-    //       steinerGCell2Nodes[mp] = steinerNode.get();
-    //       steinerNodes.push_back(steinerNode.get());
-    //       net->addNode(steinerNode);
-    //     } else {
-    //       mpNode = steinerGCell2Nodes[mp];
-    //     }
-    //   } else {
-    //     mpNode = pinGCell2Nodes[mp];
-    //   }
-
-    //   if (pinGCell2Nodes.find(ep) == pinGCell2Nodes.end()) {
-    //     if (steinerGCell2Nodes.find(ep) == steinerGCell2Nodes.end()) {
-    //       // add steiner
-    //       auto steinerNode = make_unique<frNode>();
-    //       epNode = steinerNode.get();
-    //       steinerNode->setType(frNodeTypeEnum::frcSteiner);
-    //       steinerNode->setLoc(ep);
-    //       steinerGCell2Nodes[ep] = steinerNode.get();
-    //       steinerNodes.push_back(steinerNode.get());
-    //       net->addNode(steinerNode);
-    //     } else {
-    //       epNode = steinerGCell2Nodes[ep];
-    //     }
-    //   } else {
-    //     epNode = pinGCell2Nodes[ep];
-    //   }
-
-    //   if (bpNode == nullptr || epNode == nullptr || mpNode == nullptr) {
-    //     cout << "Error: bpNode or mpNode or epNode is void\n";
-    //   }
-
-    //   adjacencyList[bpNode].insert(mpNode);
-    //   adjacencyList[mpNode].insert(bpNode);
-    //   adjacencyList[mpNode].insert(epNode);
-    //   adjacencyList[epNode].insert(mpNode);
-    // }
   }
 
   stt::free_tree(fluteTree);
@@ -310,16 +232,9 @@ void FlexGR::genSTTopology_HVW(vector<frNode*> &nodes, vector<frNode*> &steinerN
   // recursively get L/U
   if (overlapL[0] >= overlapU[0]) {
     genSTTopology_HVW_commit(nodes[0], false, nodes, /*overlapL, overlapU,*/ bestCombL, bestCombU, isU);
-    // cout << "  overlap = " << overlapL[0] << "\n";
   } else {
     genSTTopology_HVW_commit(nodes[0], true,  nodes, /*overlapL, overlapU,*/ bestCombL, bestCombU, isU);
-    // cout << "  overlap = " << overlapU[0] << "\n";
   }
-  // cout << "  isU = ";
-  // for (int i = 0; i < (int)isU.size(); i++) {
-  //   cout << isU[i];
-  // }
-  // cout << "\n";
 
   // additional steiner nodes needed for tree construction 
   genSTTopology_build_tree(nodes, isU, steinerNodes);
@@ -374,16 +289,6 @@ void FlexGR::genSTTopology_HVW_compute(frNode *currNode,
   // commit for current level
   overlapL[currNodeIdx] = currMaxOverlap;
   bestCombL[currNodeIdx] = bestComb;
-  // unsigned combIdx = 0;
-  // for (auto child: currNode->getChildren()) {
-  //   int nodeIdx = distance(nodes[0]->getIter(), child->getIter());
-  //   if ((bestComb >> combIdx) & 1) {
-  //     isU[nodeIdx] = true;
-  //   } else {
-  //     isU[nodeIdx] = false;
-  //   }
-  //   combIdx++;
-  // }
 
   currMaxOverlap = 0;
   // curr overlapU = min(comb(children) + R)
@@ -407,16 +312,6 @@ void FlexGR::genSTTopology_HVW_compute(frNode *currNode,
   // commit for current level
   overlapU[currNodeIdx] = currMaxOverlap;
   bestCombU[currNodeIdx] = bestComb;
-  // combIdx = 0;
-  // for (auto child: currNode->getChildren()) {
-  //   int nodeIdx = distance(nodes[0]->getIter(), child->getIter());
-  //   if ((bestComb >> combIdx) & 1) {
-  //     isU[nodeIdx] = true;
-  //   } else {
-  //     isU[nodeIdx] = false;
-  //   }
-  //   combIdx++;
-  // }
 }
 
 unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode *currNode,
@@ -558,29 +453,11 @@ void FlexGR::genSTTopology_build_tree(vector<frNode*> &pinNodes,
     pinGCell2Nodes[pinGCellLoc] = pinNode;
   }
 
-  // for (auto &[trackIdx, intvs]: horzIntvs) {
-  //   for (auto it = intvs.begin(); it != intvs.end(); it++) {
-  //     auto beginIdx = it->lower();
-  //     auto endIdx = it->upper();
-  //     cout << "horz intv: (" << beginIdx << ", " << trackIdx << ") - (" << endIdx << ", " << trackIdx << ")\n";
-  //   }
-  // }
-  // for (auto &[trackIdx, intvs]: vertIntvs) {
-  //   for (auto it = intvs.begin(); it != intvs.end(); it++) {
-  //     auto beginIdx = it->lower();
-  //     auto endIdx = it->upper();
-  //     cout << "vert intv: (" << trackIdx << ", " << beginIdx << ") - (" << trackIdx << ", " << endIdx << ")\n";
-  //   }
-  // }
-
   // split seg and build tree
   genSTTopology_build_tree_splitSeg(pinNodes, pinGCell2Nodes, horzIntvs, vertIntvs, steinerGCell2Nodes, steinerNodes);
 
   // sanity check
   for (int i = 0; i < (int)pinNodes.size(); i++) {
-    // frPoint loc;
-    // pinNodes[i]->getLoc(loc);
-    // cout << "pin node " << i << ": (" << loc.x() << ", " << loc.y() << ")\n";
     if (i != 0) {
       if (pinNodes[i]->getParent() == nullptr) {
         cout << "Error: non-root pin node does not have parent\n";
@@ -588,9 +465,6 @@ void FlexGR::genSTTopology_build_tree(vector<frNode*> &pinNodes,
     }
   }
   for (int i = 0; i < (int)steinerNodes.size(); i++) {
-    // frPoint loc;
-    // steinerNodes[i]->getLoc(loc);
-    // cout << "steiner node " << i << ": (" << loc.x() << ", " << loc.y() << ")\n";
     if (steinerNodes[i]->getParent() == nullptr) {
       cout << "Error: non-root steiner node does not have parent\n";
     }
@@ -836,28 +710,6 @@ void FlexGR::genSTTopology_build_tree_splitSeg(vector<frNode*> &pinNodes,
   for (auto &[loc, node]: pinGCell2Nodes) {
     node->reset();
   }
-
-  // build node based tree
-  /*
-  set<frNode*> visitedNodes;
-  deque<frNode*> nodeQueue;
-
-  nodeQueue.push_front(root);
-
-  while (!nodeQueue.empty()) {
-    auto currNode = nodeQueue.back();
-    visitedNodes.insert(currNode);
-    nodeQueue.pop_back();
-
-    for (auto adjNode: adjacencyList[currNode]) {
-      if (visitedNodes.find(adjNode) == visitedNodes.end()) {
-        currNode->addChild2(adjNode);
-        adjNode->setParent(currNode);
-        nodeQueue.push_front(adjNode);
-      }
-    }
-  }
-  */
 
   set<frNode*, frBlockObjectComp> visitedNodes;
   deque<frNode*> nodeQueue;
