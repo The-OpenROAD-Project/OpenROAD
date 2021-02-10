@@ -90,6 +90,7 @@ typedef struct
   std::vector<int> pinL;  // array of L coordinates of pins
   float alpha;              // alpha for pdrev when routing clock nets
   bool isClock;             // flag that indicates if net is a clock net
+  int edgeCost;
 } FrNet;                    // A Net is a set of connected MazePoints
 
 const char* netName(FrNet* net);
