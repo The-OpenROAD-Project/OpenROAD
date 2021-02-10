@@ -3163,15 +3163,15 @@ void extWindow::printBoundaries(FILE* fp, bool flag)
                   _minExtracted,
                   _deallocLimit);
   } else {
-    fprintf(fp, "\n%15s= {}\n", "_currentDir", _currentDir);
-    fprintf(fp, "%15s= {}\n", "_hiXY", _hiXY);
-    fprintf(fp, "%15s= {}\n", "_lo_gs", _lo_gs[_currentDir]);
-    fprintf(fp, "%15s= {}\n", "_hi_gs", _hi_gs[_currentDir]);
-    fprintf(fp, "%15s= {}\n", "_lo_sdb", _lo_sdb[_currentDir]);
-    fprintf(fp, "%15s= {}\n", "_hi_sdb", _hi_sdb[_currentDir]);
-    fprintf(fp, "%15s= {}\n", "_gs_limit", _gs_limit);
-    fprintf(fp, "%15s= {}\n", "_minExtracted", _minExtracted);
-    fprintf(fp, "%15s= {}\n\n", "_deallocLimit", _deallocLimit);
+    fprintf(fp, "\n%15s= %d\n", "_currentDir", _currentDir);
+    fprintf(fp, "%15s= %d\n", "_hiXY", _hiXY);
+    fprintf(fp, "%15s= %d\n", "_lo_gs", _lo_gs[_currentDir]);
+    fprintf(fp, "%15s= %d\n", "_hi_gs", _hi_gs[_currentDir]);
+    fprintf(fp, "%15s= %d\n", "_lo_sdb", _lo_sdb[_currentDir]);
+    fprintf(fp, "%15s= %d\n", "_hi_sdb", _hi_sdb[_currentDir]);
+    fprintf(fp, "%15s= %d\n", "_gs_limit", _gs_limit);
+    fprintf(fp, "%15s= %d\n", "_minExtracted", _minExtracted);
+    fprintf(fp, "%15s= %d\n\n", "_deallocLimit", _deallocLimit);
   }
 }
 

@@ -13,7 +13,7 @@
 worst slack 1.36
 [INFO RSZ-0027] Inserted 35 input buffers.
 [INFO RSZ-0028] Inserted 18 output buffers.
-[INFO RSZ-0058] using max wire length 853u.
+[INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0039] Resized 42 instances.
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
