@@ -90,6 +90,7 @@ library(fakeram45_64x7) {
 cell(fakeram45_64x7) {
     area : 412.300;
     interface_timing : true;
+    is_macro : true;
     memory() {
         type : ram;
         address_width : 6;
