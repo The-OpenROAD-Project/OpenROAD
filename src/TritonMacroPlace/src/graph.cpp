@@ -37,33 +37,6 @@
 namespace mpl {
 
 ////////////////////////////////////////////////
-// Edge
-
-Edge::Edge() : from_(nullptr), to_(nullptr), weight_(0)
-{
-}
-
-Edge::Edge(Vertex* from, Vertex* to, int weight)
-    : from_(from), to_(to), weight_(weight)
-{
-}
-
-Vertex* Edge::from() const
-{
-  return from_;
-}
-
-Vertex* Edge::to() const
-{
-  return to_;
-}
-
-int Edge::weight() const
-{
-  return weight_;
-}
-
-////////////////////////////////////////////////
 // Vertex
 
 Vertex::Vertex() : vertexType_(VertexType::Uninitialized), ptr_(nullptr)
@@ -105,16 +78,6 @@ void* Vertex::ptr() const
 VertexType Vertex::vertexType() const
 {
   return vertexType_;
-}
-
-const std::vector<int>& Vertex::from()
-{
-  return from_;
-}
-
-const std::vector<int>& Vertex::to()
-{
-  return to_;
 }
 
 PinGroup* Vertex::pinGroup() const

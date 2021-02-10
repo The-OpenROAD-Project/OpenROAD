@@ -88,7 +88,6 @@ public:
   MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
   std::vector<Vertex> vertexStor;
-  std::vector<Edge> edgeStor;
 
   // macro Information
   std::vector<Macro> macroStor;
@@ -106,7 +105,6 @@ public:
   // macro idx/idx pair -> give each
   std::vector<std::vector<int>> macroWeight;
 
-  std::string GetEdgeName(Edge* edge);
   std::string GetVertexName(Vertex* vertex);
 
   // sta::Instance* --> macroStor's index stor

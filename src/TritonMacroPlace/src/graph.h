@@ -46,23 +46,6 @@ class Network;
 namespace mpl {
 
 class MacroCircuit;
-class Vertex;
-
-class Edge
-{
- public:
-  Vertex* from() const;
-  Vertex* to() const;
-  int weight() const;
-
-  Edge();
-  Edge(Vertex* from, Vertex* to, int weight);
-
- private:
-  Vertex* from_;
-  Vertex* to_;
-  int weight_;
-};
 
 class PinGroup;
 
@@ -92,8 +75,6 @@ class Vertex
   void* ptr() const;
 
   VertexType vertexType() const;
-  const std::vector<int>& from();
-  const std::vector<int>& to();
 
   PinGroup* pinGroup() const;
   sta::Instance* instance() const;
@@ -103,9 +84,6 @@ class Vertex
 
  private:
   VertexType vertexType_;
-  std::vector<int> from_;
-  std::vector<int> to_;
-
   // This can be either PinGroup / sta::Instance*,
   // based on vertexType
   void* ptr_;

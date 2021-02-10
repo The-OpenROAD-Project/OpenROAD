@@ -322,7 +322,7 @@ void MacroCircuit::FillMacroStor()
                               inst));
   }
 
-  if (macroStor.size() == 0) {
+  if (macroStor.empty()) {
     log_->error(MPL, 4, "Cannot find any macros in this design");
   }
 
@@ -948,11 +948,11 @@ void MacroCircuit::FillMacroConnection()
           // no need to fill in PIN -> PIN connections
           && !(class1 == VertexType::PinGroupType
                && class2 == VertexType::PinGroupType)) {
+        int weight = GetPathWeightMatrix(macroPinAdjMatrix,
+                                         macroPinAdjMatrixMap[curVertex1],
+                                         macroPinAdjMatrixMap[curVertex2]);
         macroWeight[macroPinAdjMatrixMap[curVertex1]]
-          [macroPinAdjMatrixMap[curVertex2]]
-          = GetPathWeightMatrix(macroPinAdjMatrix,
-                                macroPinAdjMatrixMap[curVertex1],
-                                macroPinAdjMatrixMap[curVertex2]);
+          [macroPinAdjMatrixMap[curVertex2]] = weight; // > 0 ? 1 : 0;
       }
     }
   }
