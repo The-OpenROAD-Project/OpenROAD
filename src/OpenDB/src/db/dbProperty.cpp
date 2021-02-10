@@ -561,7 +561,7 @@ dbStringProperty* dbStringProperty::create(dbObject*   object,
   if (prop){
     strcat (prop->_value._str_val, "\n");
     strcat (prop->_value._str_val, value);
-    return prop;
+    return (dbStringProperty*) prop;
   }
 
   prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
