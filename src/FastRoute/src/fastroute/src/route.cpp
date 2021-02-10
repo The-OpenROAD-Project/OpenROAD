@@ -346,7 +346,7 @@ void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
 
       // ripup the original routing
       if (ripuptype > NOROUTE)  // it's been routed
-        newRipup(treeedge, treenodes, x1, y1, x2, y2);
+        newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
       treeedge->route.type = LROUTE;
       if (x1 == x2)  // V-routing
@@ -505,7 +505,7 @@ void newrouteZ_edge(int netID, int edgeID)
                                // no need to reroute)
     {
       // ripup the original routing
-      newRipup(treeedge, treenodes, x1, y1, x2, y2);
+      newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
       treeedge->route.type = ZROUTE;
 
@@ -657,7 +657,7 @@ void newrouteZ(int netID, int threshold)
       if (x1 != x2 && y1 != y2)  // not H or V edge, do Z-routing
       {
         // ripup the original routing
-        if (newRipupType2(treeedge, treenodes, x1, y1, x2, y2, d)) {
+        if (newRipupType2(treeedge, treenodes, x1, y1, x2, y2, d, netID)) {
           n1a = treenodes[n1].stackAlias;
           n2a = treenodes[n2].stackAlias;
           status1 = treenodes[n1a].status;
@@ -986,7 +986,7 @@ void routeMonotonic(int netID, int edgeID, int threshold)
                                // no need to reroute)
     {
       // ripup the original routing
-      newRipup(treeedge, treenodes, x1, y1, x2, y2);
+      newRipup(treeedge, treenodes, x1, y1, x2, y2, netID);
 
       segWidth = ADIFF(x1, x2);
       segHeight = ADIFF(y1, y2);
