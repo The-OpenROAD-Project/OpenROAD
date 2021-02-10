@@ -382,6 +382,19 @@ void IRSolver::ReadC4Data()
       }
     }
     int x_cor, y_cor;
+    if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
+        //float pitch_micro_x = m_bump_pitch_x/unit_micron;
+        //float pitch_micro_y = m_bump_pitch_y/unit_micron;
+        //m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less", pitch_micro, pitch_micro);
+        m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
+           "{:4.3f}. Changing bump location to a center of the die at {:4.3f}, {:4.3f}",
+           float(m_bump_pitch_x/unit_micron), float(m_bump_pitch_y/unit_micron), 
+           float(coreW/unit_micron), float(coreL/unit_micron), float(coreW/(2*unit_micron)), float(coreL/(2*unit_micron)));
+        x_cor = coreW/2;
+        y_cor = coreL/2;
+        m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size*unit_micron, supply_voltage_src));
+    }
+
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
     for (int i = 0; i < num_b_y; i++) {
@@ -782,7 +795,6 @@ bool IRSolver::CreateGmat(bool connection_only)
           R        = R / (num_via_rows * num_via_cols);
           if (R == 0.0) {
             err_flag_via = 0;
-            R            = 4;
             // R = get<2>(m_layer_res[l]); /// Must figure out via resistance
             // value cout << "Via Resistance" << R << endl;
           }
