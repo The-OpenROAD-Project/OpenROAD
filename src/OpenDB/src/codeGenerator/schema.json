@@ -600,7 +600,7 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbModule.h", "dbInst.h", "dbTable.h"]
+      "includes": ["dbModule.h"]
     },
     {
       "name": "dbModuleModInstItr",
@@ -609,7 +609,7 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbModule.h", "dbModInst.h", "dbTable.h"]
+      "includes": ["dbModule.h"]
     },
     {
       "name": "dbGroupModInstItr",
@@ -618,7 +618,7 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbGroup.h", "dbModInst.h", "dbTable.h"]
+      "includes": ["dbGroup.h"]
     },
     {
       "name": "dbGroupItr",
@@ -626,8 +626,7 @@
       "tableName": "group_tbl",
       "reversible": "true",
       "orderReversed": "true",
-      "sequential": 0,
-      "includes": ["dbGroup.h",  "dbTable.h"]
+      "sequential": 0
     },
     {
       "name": "dbGroupInstItr",
@@ -636,7 +635,7 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbGroup.h", "dbInst.h", "dbTable.h"]
+      "includes": ["dbGroup.h"]
     }
   ]
 }
