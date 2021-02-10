@@ -203,6 +203,9 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
+  // gui functions
+  std::vector<GCellCongestion> getCongestion();
+
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);

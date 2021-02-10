@@ -602,14 +602,14 @@ void FastRouteCore::initEdges()
   // 3D edge initialization
   for (int k = 0; k < numLayers; k++) {
     for (int i = 0; i < yGrid; i++) {
-      for (int j = 0; j < xGrid - 1; j++) {
+      for (int j = 0; j < xGrid; j++) {
         int grid = i * (xGrid - 1) + j + k * (xGrid - 1) * yGrid;
         h_edges3D[grid].cap = hCapacity3D[k];
         h_edges3D[grid].usage = 0;
         h_edges3D[grid].red = 0;
       }
     }
-    for (int i = 0; i < yGrid - 1; i++) {
+    for (int i = 0; i < yGrid; i++) {
       for (int j = 0; j < xGrid; j++) {
         int grid = i * xGrid + j + k * xGrid * (yGrid - 1);
         v_edges3D[grid].cap = vCapacity3D[k];
@@ -992,6 +992,38 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   }
 
   congestFile.close();
+}
+
+void FastRouteCore::findCongestionInformation(std::vector<GCellCongestion>& congestionInfo)
+{
+  congestionInfo.reserve(numLayers * yGrid * xGrid);
+  for (int layer = 0; layer < numLayers; layer++) {
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int gridH = i * (xGrid - 1) + j + layer * (xGrid - 1) * yGrid;
+        int gridV = i * xGrid + j + layer * xGrid * (yGrid - 1);
+
+        unsigned short capH = h_edges3D[gridH].cap;
+        unsigned short usageH = h_edges3D[gridH].usage;
+
+        unsigned short capV = v_edges3D[gridV].cap;
+        unsigned short usageV = v_edges3D[gridV].usage;
+
+        int xReal = wTile * (j + 0.5) + xcorner;
+        int yReal = hTile * (i + 0.5) + ycorner;
+
+        int llX = xReal - (wTile / 2);
+        int llY = yReal - (hTile / 2);
+
+        int urX = xReal + (wTile / 2);
+        int urY = yReal + (hTile / 2);
+
+        congestionInfo.push_back(
+              GCellCongestion(llX, llY, urX, urY, layer+1,
+                              capH, capV, usageH, usageV));
+      }
+    }
+  }
 }
 
 NetRouteMap FastRouteCore::run()
