@@ -461,8 +461,8 @@ void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
-  long long* _flags_bit_field = (long long*) &_flags;
-  *_flags_bit_field           = 0;
+  uint64_t* _flags_bit_field = (uint64_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   _eol_space            = 0;
   _eol_width            = 0;
@@ -584,7 +584,7 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  long long* _flags_bit_field = (long long*) &obj._flags;
+  uint64_t* _flags_bit_field = (uint64_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._eol_space;
   stream >> obj._eol_width;
@@ -625,7 +625,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  long long* _flags_bit_field = (long long*) &obj._flags;
+  uint64_t* _flags_bit_field = (uint64_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._eol_space;
   stream << obj._eol_width;

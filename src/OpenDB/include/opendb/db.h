@@ -6913,6 +6913,17 @@ class dbViaParams : private _dbViaParams
 class dbTechLayer : public dbObject
 {
  public:
+  enum LEF58_TYPE
+  {
+    NONE,
+    NWELL,
+    PWELL,
+    ABOVEDIEEDGE,
+    BELOWDIEEDGE,
+    DIFFUSION,
+    TRIMPOLY
+  };
+
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
@@ -6950,15 +6961,16 @@ class dbTechLayer : public dbObject
 
   bool isExceptNonCorePins() const;
 
-  void setNWell(bool _n_well);
-
-  bool isNWell() const;
-
   void setPWell(bool _p_well);
 
   bool isPWell() const;
 
   // User Code Begin dbTechLayer
+
+  void setLef58Type(LEF58_TYPE type);
+
+  LEF58_TYPE getLef58Type() const;
+
   ///
   /// Get the layer name.
   ///
@@ -7612,8 +7624,8 @@ class dbTechLayerCornerSpacingRule : public dbObject
  public:
   enum CornerType
   {
-    CONVEXCORNER  = 0,
-    CONCAVECORNER = 1
+    CONVEXCORNER,
+    CONCAVECORNER
   };
 
   void setWithin(int _within);
@@ -7797,15 +7809,15 @@ class dbTechLayerCutSpacingRule : public dbObject
  public:
   enum CutSpacingType
   {
-    NONE                = 0,
-    MAXXY               = 1,
-    SAMEMASK            = 2,
-    LAYER               = 3,
-    ADJACENTCUTS        = 4,
-    PARALLELOVERLAP     = 5,
-    PARALLELWITHIN      = 6,
-    SAMEMETALSHAREDEDGE = 7,
-    AREA                = 8
+    NONE,
+    MAXXY,
+    SAMEMASK,
+    LAYER,
+    ADJACENTCUTS,
+    PARALLELOVERLAP,
+    PARALLELWITHIN,
+    SAMEMETALSHAREDEDGE,
+    AREA
   };
 
   void setCutSpacing(int _cut_spacing);
@@ -8316,8 +8328,8 @@ class dbGroup : public dbObject
  public:
   enum dbGroupType
   {
-    PHYSICAL_CLUSTER = 0,
-    VOLTAGE_DOMAIN   = 1
+    PHYSICAL_CLUSTER,
+    VOLTAGE_DOMAIN
   };
 
   char* getName() const;

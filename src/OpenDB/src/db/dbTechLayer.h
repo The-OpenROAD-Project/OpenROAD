@@ -82,9 +82,9 @@ struct dbTechLayerFlags
   bool                          _right_way_on_grid_only : 1;
   bool                          _check_mask : 1;  // LEF58_RIGHTWAYONGRIDONLY CHECKMASK
   bool                          _except_non_core_pins : 1;  // LEF58_RECTONLY EXCEPTNONCOREPINS
-  bool                          _n_well : 1;  // LEF58_TYPE NWELL Layer(MasterSlice)
+  uint                          _lef58_type : 3;
   bool                          _p_well : 1;  // LEF58_TYPE PWELL Layer(MasterSlice)
-  uint                          _spare_bits : 9;
+  uint                          _spare_bits : 7;
 };
 // User Code Begin structs
 // User Code End structs

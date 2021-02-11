@@ -193,9 +193,9 @@ namespace odb {
     {%for field in klass.fields%}
     {%if field.bitFields%}
     {%if field.numBits == 32%}
-    uint* {{field.name}}_bit_field = (uint*) &{{field.name}};
+    uint32_t* {{field.name}}_bit_field = (uint32_t*) &{{field.name}};
     {%else%}
-    long long* {{field.name}}_bit_field = (long long*) &{{field.name}};
+    uint64_t* {{field.name}}_bit_field = (uint64_t*) &{{field.name}};
     {%endif%}
     *{{field.name}}_bit_field = 0;
     {%elif field.table%}
@@ -243,9 +243,9 @@ namespace odb {
     {%for field in klass.fields%}
     {%if field.bitFields%}
     {%if field.numBits == 32%}
-    uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+    uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
     {%else%}
-    long long* {{field.name}}_bit_field = (long long*) &obj.{{field.name}};
+    uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
     {%endif%}
     stream >> *{{field.name}}_bit_field;
     {%else%}
@@ -263,9 +263,9 @@ namespace odb {
     {%for field in klass.fields%}
     {%if field.bitFields%}
     {%if field.numBits == 32%}
-    uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+    uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
     {%else%}
-    long long* {{field.name}}_bit_field = (long long*) &obj.{{field.name}};
+    uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
     {%endif%}
     stream << *{{field.name}}_bit_field;
     {%else%}

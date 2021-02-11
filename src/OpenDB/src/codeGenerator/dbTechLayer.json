@@ -89,11 +89,10 @@
         "bits":1
       },
       {
-        "type": "bool",
-        "name": "_n_well",
-        "comment":"//LEF58_TYPE NWELL Layer(MasterSlice)",
-        "bits":1,
-        "flags":[]
+        "type": "uint",
+        "name": "_lef58_type",
+        "bits":3,
+        "flags":["no-set","no-get"]
       },
       {
         "type": "bool",
@@ -104,7 +103,21 @@
       }
     ],
     "constructors": [],
-    "enums":[],
+    "enums":[
+      {
+        "name":"LEF58_TYPE",
+        "values":[
+          "NONE",
+          "NWELL",
+          "PWELL",
+          "ABOVEDIEEDGE",
+          "BELOWDIEEDGE",
+          "DIFFUSION",
+          "TRIMPOLY"
+        ],
+        "public":true
+      }
+    ],
     "h_includes": [
       "dbMatrix.h",
       "dbTypes.h",

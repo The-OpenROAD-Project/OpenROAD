@@ -105,8 +105,8 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -125,7 +125,7 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._eol_width;
   stream >> obj._length_tbl;
@@ -140,7 +140,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 dbOStream& operator<<(dbOStream&                             stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._eol_width;
   stream << obj._length_tbl;
