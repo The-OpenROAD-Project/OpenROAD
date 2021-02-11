@@ -8,7 +8,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from helper import addOnceToDict, getClassIndex, getTableName, isBitFields, \
     getStruct, isRef, getRefType, isHashTable, getHashTableType, \
-    getTemplateType, components, getFunctionalName
+    getTemplateType, components, getFunctionalName, isDbVector
 from parser import Parser
 
 parser = argparse.ArgumentParser(description='Code generator')
