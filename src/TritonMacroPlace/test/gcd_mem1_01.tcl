@@ -1,3 +1,4 @@
+# gcd 1 macro halo=.5
 source helpers.tcl
 set design gcd_mem1 
 set tech_dir nangate45-bench/tech

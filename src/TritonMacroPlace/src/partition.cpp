@@ -358,196 +358,196 @@ void Partition::FillNetlistTable(
             = (double) mckt.macroWeight[i][j];
       }
     }
-    return;
   }
-
-  // row
-  for (size_t i = 0; i < macroStor.size() + 4; i++) {
-    // column
-    for (size_t j = 0; j < macroStor.size() + 4; j++) {
-      if (i == j) {
-        continue;
-      }
-
-      // from: macro case
-      if (i < macroStor.size()) {
-        auto mPtr = mckt.macroNameMap.find(macroStor[i].name());
-        if (mPtr == mckt.macroNameMap.end()) {
-          log_->error(MPL,
-                      55,
-                      "Cannot find macros {} in macroNameMap",
-                      macroStor[i].name());
+  else {
+    // row
+    for (size_t i = 0; i < macroStor.size() + 4; i++) {
+      // column
+      for (size_t j = 0; j < macroStor.size() + 4; j++) {
+        if (i == j) {
+          continue;
         }
-        int globalIdx1 = mPtr->second;
 
-        // to macro case
-        if (j < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+        // from: macro case
+        if (i < macroStor.size()) {
+          auto mPtr = mckt.macroNameMap.find(macroStor[i].name());
           if (mPtr == mckt.macroNameMap.end()) {
             log_->error(MPL,
-                        56,
+                        55,
                         "Cannot find macros {} in macroNameMap",
-                        macroStor[j].name());
+                        macroStor[i].name());
           }
-          int globalIdx2 = mPtr->second;
-          netTable[i * (macroStor.size() + 4) + j]
+          int globalIdx1 = mPtr->second;
+
+          // to macro case
+          if (j < macroStor.size()) {
+            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+            if (mPtr == mckt.macroNameMap.end()) {
+              log_->error(MPL,
+                          56,
+                          "Cannot find macros {} in macroNameMap",
+                          macroStor[j].name());
+            }
+            int globalIdx2 = mPtr->second;
+            netTable[i * (macroStor.size() + 4) + j]
               = mckt.macroWeight[globalIdx1][globalIdx2];
+          }
+          // to IO-west case
+          else if (j == WEST_IDX) {
+            int westSum = mckt.macroWeight[globalIdx1][GLOBAL_WEST_IDX];
+
+            if (partClass == PartClass::NE) {
+              auto mpPtr = macroPartMap.find(PartClass::NW);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            if (partClass == PartClass::SE) {
+              auto mpPtr = macroPartMap.find(PartClass::SW);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            netTable[i * (macroStor.size() + 4) + j] = westSum;
+          } else if (j == EAST_IDX) {
+            int eastSum = mckt.macroWeight[globalIdx1][GLOBAL_EAST_IDX];
+
+            if (partClass == PartClass::NW) {
+              auto mpPtr = macroPartMap.find(PartClass::NE);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            if (partClass == PartClass::SW) {
+              auto mpPtr = macroPartMap.find(PartClass::SE);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            netTable[i * (macroStor.size() + 4) + j] = eastSum;
+          } else if (j == NORTH_IDX) {
+            int northSum = mckt.macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
+
+            if (partClass == PartClass::SE) {
+              auto mpPtr = macroPartMap.find(PartClass::NE);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            if (partClass == PartClass::SW) {
+              auto mpPtr = macroPartMap.find(PartClass::NW);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            netTable[i * (macroStor.size() + 4) + j] = northSum;
+          } else if (j == SOUTH_IDX) {
+            int southSum = mckt.macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
+
+            if (partClass == PartClass::NE) {
+              auto mpPtr = macroPartMap.find(PartClass::SE);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            if (partClass == PartClass::NW) {
+              auto mpPtr = macroPartMap.find(PartClass::SW);
+              if (mpPtr != macroPartMap.end()) {
+                for (auto& curMacroIdx : mpPtr->second) {
+                  int curGlobalIdx
+                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                  southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
+                }
+              }
+            }
+            netTable[i * (macroStor.size() + 4) + j] = southSum;
+          }
         }
-        // to IO-west case
-        else if (j == WEST_IDX) {
-          int westSum = mckt.macroWeight[globalIdx1][GLOBAL_WEST_IDX];
-
-          if (partClass == PartClass::NE) {
-            auto mpPtr = macroPartMap.find(PartClass::NW);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
+        // from IO
+        else if (i == WEST_IDX) {
+          // to Macro
+          if (j < macroStor.size()) {
+            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+            if (mPtr == mckt.macroNameMap.end()) {
+              log_->error(MPL,
+                          57,
+                          "Cannot find macros {} in macroNameMap",
+                          macroStor[j].name());
             }
-          }
-          if (partClass == PartClass::SE) {
-            auto mpPtr = macroPartMap.find(PartClass::SW);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          netTable[i * (macroStor.size() + 4) + j] = westSum;
-        } else if (j == EAST_IDX) {
-          int eastSum = mckt.macroWeight[globalIdx1][GLOBAL_EAST_IDX];
-
-          if (partClass == PartClass::NW) {
-            auto mpPtr = macroPartMap.find(PartClass::NE);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          if (partClass == PartClass::SW) {
-            auto mpPtr = macroPartMap.find(PartClass::SE);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          netTable[i * (macroStor.size() + 4) + j] = eastSum;
-        } else if (j == NORTH_IDX) {
-          int northSum = mckt.macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
-
-          if (partClass == PartClass::SE) {
-            auto mpPtr = macroPartMap.find(PartClass::NE);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          if (partClass == PartClass::SW) {
-            auto mpPtr = macroPartMap.find(PartClass::NW);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          netTable[i * (macroStor.size() + 4) + j] = northSum;
-        } else if (j == SOUTH_IDX) {
-          int southSum = mckt.macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
-
-          if (partClass == PartClass::NE) {
-            auto mpPtr = macroPartMap.find(PartClass::SE);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          if (partClass == PartClass::NW) {
-            auto mpPtr = macroPartMap.find(PartClass::SW);
-            if (mpPtr != macroPartMap.end()) {
-              for (auto& curMacroIdx : mpPtr->second) {
-                int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
-                southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
-              }
-            }
-          }
-          netTable[i * (macroStor.size() + 4) + j] = southSum;
-        }
-      }
-      // from IO
-      else if (i == WEST_IDX) {
-        // to Macro
-        if (j < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-          if (mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL,
-                        57,
-                        "Cannot find macros {} in macroNameMap",
-                        macroStor[j].name());
-          }
-          int globalIdx2 = mPtr->second;
-          netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mPtr->second;
+            netTable[i * (macroStor.size() + 4) + j]
               = mckt.macroWeight[GLOBAL_WEST_IDX][globalIdx2];
-        }
-      } else if (i == EAST_IDX) {
-        // to Macro
-        if (j < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-          if (mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL,
-                        58,
-                        "Cannot find macros {} in macroNameMap",
-                        macroStor[j].name());
           }
-          int globalIdx2 = mPtr->second;
-          netTable[i * (macroStor.size() + 4) + j]
+        } else if (i == EAST_IDX) {
+          // to Macro
+          if (j < macroStor.size()) {
+            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+            if (mPtr == mckt.macroNameMap.end()) {
+              log_->error(MPL,
+                          58,
+                          "Cannot find macros {} in macroNameMap",
+                          macroStor[j].name());
+            }
+            int globalIdx2 = mPtr->second;
+            netTable[i * (macroStor.size() + 4) + j]
               = mckt.macroWeight[GLOBAL_EAST_IDX][globalIdx2];
-        }
-      } else if (i == NORTH_IDX) {
-        // to Macro
-        if (j < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-          if (mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL,
-                        59,
-                        "Cannot find macros {} in macroNameMap",
-                        macroStor[j].name());
           }
-          int globalIdx2 = mPtr->second;
-          netTable[i * (macroStor.size() + 4) + j]
+        } else if (i == NORTH_IDX) {
+          // to Macro
+          if (j < macroStor.size()) {
+            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+            if (mPtr == mckt.macroNameMap.end()) {
+              log_->error(MPL,
+                          59,
+                          "Cannot find macros {} in macroNameMap",
+                          macroStor[j].name());
+            }
+            int globalIdx2 = mPtr->second;
+            netTable[i * (macroStor.size() + 4) + j]
               = mckt.macroWeight[GLOBAL_NORTH_IDX][globalIdx2];
-        }
-      } else if (i == SOUTH_IDX) {
-        // to Macro
-        if (j < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-          if (mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL,
-                        60,
-                        "Cannot find macros {} in macroNameMap",
-                        macroStor[j].name());
           }
-          int globalIdx2 = mPtr->second;
-          netTable[i * (macroStor.size() + 4) + j]
+        } else if (i == SOUTH_IDX) {
+          // to Macro
+          if (j < macroStor.size()) {
+            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
+            if (mPtr == mckt.macroNameMap.end()) {
+              log_->error(MPL,
+                          60,
+                          "Cannot find macros {} in macroNameMap",
+                          macroStor[j].name());
+            }
+            int globalIdx2 = mPtr->second;
+            netTable[i * (macroStor.size() + 4) + j]
               = mckt.macroWeight[GLOBAL_SOUTH_IDX][globalIdx2];
+          }
         }
       }
     }

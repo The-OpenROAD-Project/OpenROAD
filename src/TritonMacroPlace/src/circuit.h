@@ -167,13 +167,6 @@ private:
   // adjacency matrix for macro/pins graph
   Eigen::SparseMatrix<int, Eigen::RowMajor> macroPinAdjMatrix;
 
-  // pair of <StartVertex*, EndVertex*> --> edgeStor's index
-  std::unordered_map<std::pair<Vertex*, Vertex*>,
-                     int,
-                     PointerPairHash,
-                     PointerPairEqual>
-  vertexPairEdgeMap;
-
   int index(Vertex* vertex);
 
   // Matrix version
@@ -213,6 +206,8 @@ private:
                           sta::Network *network);
   PinGroupLocation findNearestEdge(odb::dbBTerm* bTerm);
   std::string faninName(Macro *macro);
+  int macroIndex(Macro *macro);
+  bool macroIndexIsEdge(Macro *macro);
 
   ////////////////////////////////////////////////////////////////
     

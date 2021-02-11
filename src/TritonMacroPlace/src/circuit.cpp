@@ -239,9 +239,22 @@ void MacroCircuit::init()
 
   if (isTiming_) {
     //findAdjacencies();
-
+    // Make sequential graph (adjMatrix)
+    // fill vertexStor
+    // foreach sta::vertex
+    //   if not top port (mistake)
+    //     if input find fanins from seq -> adjMatrix
+    //     if output find fanouts to seq -> adjMatrix
+    // foreach sta vertex (pointless)
+    //     if input find find timing paths to -> adjMatrix
+    //     if output find find timing paths from -> adjMatrix
     FillVertexEdge();
+    // foreach mpl::vertex
+    //   macro(vertex)->ptr = vertex
     UpdateVertexToMacroStor();
+    // searchVertIdx[i] = i
+    // searchVertIdx vector of vertex nsew,macro indices
+    // macroPinAdjMatrixMap[i] = i for i < macro_count + 4, -1 otherwise
     FillMacroPinAdjMatrix();
     FillMacroConnection();
   } else {
@@ -720,7 +733,7 @@ void MacroCircuit::FillVertexEdge()
   adjMatrix.setFromTriplets(triplets.begin(), triplets.end());
 
   if (log_->debugCheck(MPL, "adj_weights", 1)) {
-    log_->report("Adjacency weights");
+    log_->report("Seqential graph weights");
     for (auto& v1 : vertexStor) {
       for (auto& v2 : vertexStor) {
         int weight = GetPathWeightMatrix(adjMatrix, index(&v1), index(&v2));
@@ -824,6 +837,7 @@ void MacroCircuit::FillMacroPinAdjMatrix()
   // macroPinAdjMatrix's 0, 1, 2, 3 is equal to original adjMatrix' index.
   // e.g. pin index is the exactly same.
   //
+  // searchVertIdx[i] == i, so it is worthless -cherry
   for (int i = 0; i < 4; i++) {
     searchVertIdx.push_back(i);
     macroPinAdjMatrixMap[i] = macroPinAdjIdx++;
@@ -884,6 +898,12 @@ void MacroCircuit::FillMacroPinAdjMatrix()
             if (pathWeight == 0) {
               continue;
             }
+            debugPrint(log_, MPL, "path_weights", 1, "() {} += {} * {} {}",
+                       vertexStor[startVertIdx].name(network).c_str(),
+                       vertexWeight[idx2],
+                       pathWeight,
+                       vertexWeight[idx1],
+                       curVertex2.name(network).c_str());
             vertexWeight[idx2] += pathWeight * vertexWeight[idx1];
 
             // update vertexCover only when vertex is FFs.
@@ -940,6 +960,7 @@ void MacroCircuit::FillMacroConnection()
     macroWeight[i] = vector<int>(searchVertIdx.size(), 0);
   }
 
+  sta::dbNetwork *network = sta_->getDbNetwork();
   for (auto& curVertex1 : searchVertIdx) {
     for (auto& curVertex2 : searchVertIdx) {
       VertexType class1 = vertexStor[curVertex1].vertexType();
@@ -953,6 +974,11 @@ void MacroCircuit::FillMacroConnection()
                                          macroPinAdjMatrixMap[curVertex2]);
         macroWeight[macroPinAdjMatrixMap[curVertex1]]
           [macroPinAdjMatrixMap[curVertex2]] = weight; // > 0 ? 1 : 0;
+        if (weight > 0)
+          debugPrint(log_, MPL, "weights", 1, "{} -> {} {}",
+                     vertexStor[curVertex1].name(network),
+                     vertexStor[curVertex2].name(network),
+                     weight);
       }
     }
   }
@@ -1623,8 +1649,8 @@ void MacroCircuit::findAdjacencies()
     }
   }
   findFanins(bfs, vertex_fanins, network, graph);
-  // Propagate adjacencies through 3 levels of register D->Q.
-  constexpr int reg_adjacency_depth = 0;
+  // Propagate fanins through 3 levels of register D->Q.
+  constexpr int reg_adjacency_depth = 3;
   for (int i = 0; i < reg_adjacency_depth; i++) {
     copyFaninsAcrossRegisters(bfs, vertex_fanins, network, graph);
     findFanins(bfs, vertex_fanins, network, graph);
@@ -1679,16 +1705,27 @@ void MacroCircuit::findAdjacencies()
     }
   }
 
-  printf("Adjacent macros\n");
+  // Fill macroWeight array.
+  size_t weight_size = macroStor.size() + 4;
+  macroWeight.resize(weight_size);
+  for (size_t i = 0; i < weight_size; i++) {
+    macroWeight[i].resize(weight_size);
+    macroWeight[i] = {0};
+  }
+
   for (auto pair_weight : adj_map) {
     const MacroPair &from_to = pair_weight.first;
     Macro *from = from_to.first;
     Macro *to = from_to.second;
     float weight = pair_weight.second;
-    log_->report("{} -> {} {}",
-                 faninName(from),
-                 faninName(to),
-                 weight);
+    if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
+      macroWeight[macroIndex(from)][macroIndex(to)] = weight;
+      if (weight > 0)
+        debugPrint(log_, MPL, "weights", 1, "{} -> {} {}",
+                   faninName(from),
+                   faninName(to),
+                   weight);
+    }
   }
 }
 
@@ -1705,6 +1742,21 @@ std::string MacroCircuit::faninName(Macro *macro)
     return "South";
   else
     return macro->name();
+}
+
+int MacroCircuit::macroIndex(Macro *macro)
+{
+  intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
+  if (edge_index < 4)
+    return edge_index;
+  else
+    return macro - &macroStor[0] + 4;
+}
+
+bool MacroCircuit::macroIndexIsEdge(Macro *macro)
+{
+  intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
+  return edge_index < 4;
 }
 
 // BFS search forward union-ing fanins.
