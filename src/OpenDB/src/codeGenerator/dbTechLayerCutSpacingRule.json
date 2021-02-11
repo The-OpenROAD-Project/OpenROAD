@@ -320,6 +320,12 @@
     },
     {
       "type": "bool",
+      "name": "_prl_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
       "name": "_below",
       "flags": [],
       "bits":1
@@ -333,6 +339,11 @@
     {
       "type": "uint",
       "name": "_two_cuts",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "_prl",
       "flags": []
     },
     {

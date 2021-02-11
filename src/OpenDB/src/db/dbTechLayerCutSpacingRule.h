@@ -88,9 +88,10 @@ struct dbTechLayerCutSpacingRuleFlags
   bool _two_cuts_valid : 1;
   bool _same_cut : 1;
   bool _long_edge_only : 1;
+  bool _prl_valid : 1;
   bool _below : 1;
   bool _par_within_enclosure_valid : 1;
-  uint _spare_bits : 23;
+  uint _spare_bits : 22;
 };
 // User Code Begin structs
 // User Code End structs
@@ -123,6 +124,7 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   int                            _second_within;  // WITHIN cutWithin cutWithin2
   dbId<_dbTechLayerCutClassRule> _cut_class;
   uint                           _two_cuts;
+  uint                           _prl;
   uint                           _par_length;
   int                            _cut_area;
 

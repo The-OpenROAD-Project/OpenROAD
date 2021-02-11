@@ -234,6 +234,13 @@ void setConcaveCornerParallel(boost::fusion::vector< double, double, double>& pa
   parser->curRule->setParWithin(lefin->dbdist(at_c<1>(params)));
   parser->curRule->setEnclosure(lefin->dbdist(at_c<2>(params)));
 }
+void setPrl(double value,
+            odb::lefTechLayerCutSpacingParser* parser,
+            odb::lefin* lefin)
+{
+  parser->curRule->setPrlValid(true);
+  parser->curRule->setPrl(lefin->dbdist(value));
+}
 
 void setConcaveCornerEdgeLength(boost::fusion::vector< double, double, double>& params,
                            odb::lefTechLayerCutSpacingParser* parser,
@@ -314,6 +321,7 @@ bool parse(Iterator                           first,
     >> _string [boost::bind(&setCutClass, _1, parser, layer)]
     >> -(
       lit("SHORTEDGEONLY")[boost::bind(&setBool, parser, &odb::dbTechLayerCutSpacingRule::setShortEdgeOnly, true)]
+      >> -(lit("PRL") >> double_)[boost::bind(&setPrl, _1, parser, lefin)]
       |
       lit("CONCAVECORNER")[boost::bind(&setBool, parser, &odb::dbTechLayerCutSpacingRule::setConcaveCorner, true)] 
       >> -(
