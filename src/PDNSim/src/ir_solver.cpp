@@ -383,9 +383,6 @@ void IRSolver::ReadC4Data()
     }
     int x_cor, y_cor;
     if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
-        //float pitch_micro_x = m_bump_pitch_x/unit_micron;
-        //float pitch_micro_y = m_bump_pitch_y/unit_micron;
-        //m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less", pitch_micro, pitch_micro);
         m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
            "{:4.3f}. Changing bump location to a center of the die at {:4.3f}, {:4.3f}",
            float(m_bump_pitch_x/unit_micron), float(m_bump_pitch_y/unit_micron), 
@@ -394,7 +391,6 @@ void IRSolver::ReadC4Data()
         y_cor = coreL/2;
         m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size*unit_micron, supply_voltage_src));
     }
-
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
     for (int i = 0; i < num_b_y; i++) {
@@ -847,8 +843,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           dbTechLayerDir::Value layer_dir = via_layer->getDirection();
           l                               = via_layer->getRoutingLevel();
           if (l != m_bottom_layer) {
-            double rho = via_layer->getResistance()
-                         * double(via_layer->getWidth()) / double(unit_micron);
+            double rho = via_layer->getResistance();
             if (rho <= 1e-12) {
               rho            = 0;
               err_flag_layer = 0;
@@ -877,8 +872,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           layer_dir = via_layer->getDirection();
           l         = via_layer->getRoutingLevel();
           if (l != m_top_layer) {
-            double rho = via_layer->getResistance()
-                         * double(via_layer->getWidth()) / double(unit_micron);
+            double rho = via_layer->getResistance();
             if (rho <= 1e-12) {
               rho            = 0;
               err_flag_layer = 0;
@@ -907,8 +901,7 @@ bool IRSolver::CreateGmat(bool connection_only)
         } else {
           dbTechLayer* wire_layer = curWire->getTechLayer();
           int          l          = wire_layer->getRoutingLevel();
-          double       rho        = wire_layer->getResistance()
-                       * double(wire_layer->getWidth()) / double(unit_micron);
+          double       rho        = wire_layer->getResistance();
           if (rho <= 1e-12) {
             rho            = 0;
             err_flag_layer = 0;
