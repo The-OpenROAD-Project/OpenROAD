@@ -1,0 +1,176 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via4Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via5Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via6Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO IFP-0001] Added 40 rows of 306 sites.
+[WARNING PPL-0015] Macro mem0 is not placed
+[WARNING PPL-0015] Macro mem1 is not placed
+[WARNING PPL-0015] Macro mem2 is not placed
+#Macro blocks found: 0
+Using 5u default boundaries offset
+Using 2 tracks default min distance between IO pins
+Random pin placement
+RandomMode Even
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 116280 112000
+[INFO GPL-0006] NumInstances: 24
+[INFO GPL-0007] NumPlaceInstances: 24
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 139
+[INFO GPL-0011] NumPins: 228
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 116280 112000
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 116280 112000
+[INFO GPL-0016] CoreArea: 13023360000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 5327448000
+[INFO GPL-0019] Util(%): 40.91
+[INFO GPL-0020] StdInstsArea: 379848000
+[INFO GPL-0021] MacroInstsArea: 4947600000
+Begin InitialPlace
+[InitialPlace]  Iter: 1 CG Error: 0.00000008 HPWL: 7928720
+[InitialPlace]  Iter: 2 CG Error: 0.00000009 HPWL: 8024390
+[InitialPlace]  Iter: 3 CG Error: 0.00000006 HPWL: 8064871
+[InitialPlace]  Iter: 4 CG Error: 0.00000005 HPWL: 8077825
+[InitialPlace]  Iter: 5 CG Error: 0.00000010 HPWL: 8081325
+End InitialPlace
+[INFO GPL-0031] FillerInit: NumGCells: 144
+[INFO GPL-0032] FillerInit: NumGNets: 139
+[INFO GPL-0033] FillerInit: NumGPins: 228
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 221977000
+[INFO GPL-0025] IdealBinArea: 317109984
+[INFO GPL-0026] IdealBinCnt: 41
+[INFO GPL-0027] TotalBinArea: 13023360000
+[INFO GPL-0028] BinCnt: 4 4
+[INFO GPL-0029] BinSize: 29070 28000
+[INFO GPL-0030] NumBins: 16
+Begin NesterovInit
+End NesterovInit
+[NesterovSolve] Iter: 1 overflow: 0.188273 HPWL: 1938458
+[NesterovSolve] Iter: 10 overflow: 0.194734 HPWL: 1960514
+[NesterovSolve] Iter: 20 overflow: 0.210134 HPWL: 1979864
+[NesterovSolve] Iter: 30 overflow: 0.207005 HPWL: 1978696
+[NesterovSolve] Iter: 40 overflow: 0.205892 HPWL: 1978200
+[NesterovSolve] Iter: 50 overflow: 0.207262 HPWL: 1979755
+[NesterovSolve] Iter: 60 overflow: 0.206718 HPWL: 1979884
+[NesterovSolve] Iter: 70 overflow: 0.206541 HPWL: 1980155
+[NesterovSolve] Iter: 80 overflow: 0.206812 HPWL: 1981236
+[NesterovSolve] Iter: 90 overflow: 0.206621 HPWL: 1982346
+[NesterovSolve] Iter: 100 overflow: 0.206532 HPWL: 1983981
+[NesterovSolve] Iter: 110 overflow: 0.206546 HPWL: 1986362
+[NesterovSolve] Iter: 120 overflow: 0.206387 HPWL: 1989547
+[NesterovSolve] Iter: 130 overflow: 0.206318 HPWL: 1994319
+[NesterovSolve] Iter: 140 overflow: 0.206248 HPWL: 1999762
+[NesterovSolve] Iter: 150 overflow: 0.206182 HPWL: 2006270
+[NesterovSolve] Iter: 160 overflow: 0.206197 HPWL: 2013912
+[NesterovSolve] Iter: 170 overflow: 0.20621 HPWL: 2013306
+[NesterovSolve] Iter: 180 overflow: 0.206652 HPWL: 2016533
+[NesterovSolve] Iter: 190 overflow: 0.207033 HPWL: 2008501
+[NesterovSolve] Iter: 200 overflow: 0.207209 HPWL: 2012770
+[NesterovSolve] Iter: 210 overflow: 0.207541 HPWL: 2015557
+[NesterovSolve] Iter: 220 overflow: 0.207231 HPWL: 2002840
+[NesterovSolve] Iter: 230 overflow: 0.204578 HPWL: 1995778
+[NesterovSolve] Iter: 240 overflow: 0.199577 HPWL: 1986334
+[NesterovSolve] Iter: 250 overflow: 0.189188 HPWL: 1988145
+[NesterovSolve] Iter: 260 overflow: 0.175685 HPWL: 1985035
+[NesterovSolve] Iter: 270 overflow: 0.158431 HPWL: 1978941
+[NesterovSolve] Iter: 280 overflow: 0.136638 HPWL: 1985777
+[NesterovSolve] Iter: 290 overflow: 0.111382 HPWL: 1994806
+[NesterovSolve] Finished with Overflow: 0.099070
+End Parsing Global Config
+[INFO MPL-0005] NumMacros 3
+[INFO MPL-0009] NumEastPins 22
+[INFO MPL-0010] NumWestPins 21
+[INFO MPL-0011] NumNorthPins 16
+[INFO MPL-0012] NumSouthPins 16
+Begin Generating Sequential Graph
+End Generating Sequential Graph
+[INFO MPL-0013] NumVertexSeqGraph 28
+[INFO MPL-0014] NumEdgeSeqGraph 39
+Begin One Level Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 2
+[INFO MPL-0078] CutLine 22.18
+[INFO MPL-0079] RoundUpCutLine 22.23
+[INFO MPL-0078] CutLine 37.95
+[INFO MPL-0079] RoundUpCutLine 38.00
+End Partition
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 0
+[INFO MPL-0077] NumCutLines 0
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 5.92
+[INFO MPL-0079] RoundUpCutLine 5.60
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 2
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 5.92
+[INFO MPL-0079] RoundUpCutLine 5.60
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 1
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.44
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] NumExtractedSets: 2
+Begin Parquet
+[INFO MPL-0061] Parquet BBOX exceed the given area
+[INFO MPL-0062] ParquetSolLayout 38.34 36
+[INFO MPL-0063] TargetLayout 35.91 50.4
+Begin Parquet
+End Parquet
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 2
+[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0073] NumFinalSols: 1
+No differences found.
