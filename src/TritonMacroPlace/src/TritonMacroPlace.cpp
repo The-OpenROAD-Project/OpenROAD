@@ -64,11 +64,6 @@ void TritonMacroPlace::setLocalConfig(const char* localConfig)
   mckt_->setLocalConfig(localConfig);
 }
 
-void TritonMacroPlace::setPlotEnable(bool mode)
-{
-  mckt_->setPlotEnable(mode);
-}
-
 void TritonMacroPlace::setFenceRegion(double lx,
                                       double ly,
                                       double ux,

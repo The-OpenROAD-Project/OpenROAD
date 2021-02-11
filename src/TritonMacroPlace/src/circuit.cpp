@@ -86,15 +86,7 @@ using odb::dbBTerm;
 using odb::dbBPin;
 using odb::dbITerm;
 
-using Eigen::VectorXf;
-typedef Eigen::SparseMatrix<int, Eigen::RowMajor> SMatrix;
-typedef Eigen::Triplet<int> Triplet;
-
-using sta::VertexIterator;
-
-static bool isNotVisited(Vertex* vert, vector<Vertex*>& path);
-
-static bool isTerminal(Vertex* vert, Vertex* target);
+constexpr int edge_count = 4;
 
 static size_t TrimWhiteSpace(char* out, size_t len, const char* str);
 
@@ -116,7 +108,6 @@ MacroCircuit::MacroCircuit()
       sta_(nullptr),
       log_(nullptr),
       isTiming_(false),
-      isPlot_(false),
       lx_(0),
       ly_(0),
       ux_(0),
@@ -149,7 +140,6 @@ void MacroCircuit::reset()
   db_ = nullptr;
   sta_ = nullptr;
   isTiming_ = false;
-  isPlot_ = false;
   lx_ = ly_ = ux_ = uy_ = 0;
   siteSizeX_ = siteSizeY_ = 0;
   haloX_ = haloY_ = 0;
@@ -175,11 +165,6 @@ void MacroCircuit::setGlobalConfig(const char* globalConfig)
 void MacroCircuit::setLocalConfig(const char* localConfig)
 {
   localConfig_ = localConfig;
-}
-
-void MacroCircuit::setPlotEnable(bool mode)
-{
-  isPlot_ = true;
 }
 
 void MacroCircuit::setVerboseLevel(int verbose)
@@ -231,37 +216,17 @@ void MacroCircuit::init()
   }
 
   FillMacroStor();
-  FillPinGroup();
   UpdateInstanceToMacroStor();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.
   isTiming_ = !isMissingLiberty(sta_, macroStor);
 
   if (isTiming_) {
-    //findAdjacencies();
-    // Make sequential graph (adjMatrix)
-    // fill vertexStor
-    // foreach sta::vertex
-    //   if not top port (mistake)
-    //     if input find fanins from seq -> adjMatrix
-    //     if output find fanouts to seq -> adjMatrix
-    // foreach sta vertex (pointless)
-    //     if input find find timing paths to -> adjMatrix
-    //     if output find find timing paths from -> adjMatrix
-    FillVertexEdge();
-    // foreach mpl::vertex
-    //   macro(vertex)->ptr = vertex
-    UpdateVertexToMacroStor();
-    // searchVertIdx[i] = i
-    // searchVertIdx vector of vertex nsew,macro indices
-    // macroPinAdjMatrixMap[i] = i for i < macro_count + 4, -1 otherwise
-    FillMacroPinAdjMatrix();
-    FillMacroConnection();
+    reportEdgePinCounts();
+    findAdjacencies();
   } else {
     log_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
                "timing information");
-
-    UpdateVertexToMacroStor();
   }
 }
 
@@ -342,664 +307,6 @@ void MacroCircuit::FillMacroStor()
   log_->info(MPL, 5, "NumMacros {}", macroStor.size());
 }
 
-static bool isWithIn(int val, int min, int max)
-{
-  return ((min <= val) && (val <= max));
-}
-
-void MacroCircuit::FillPinGroup()
-{
-  const double dbu = db_->getTech()->getDbUnitsPerMicron();
-
-  int dbuCoreLx = round(lx_ * dbu);
-  int dbuCoreLy = round(ly_ * dbu);
-  int dbuCoreUx = round(ux_ * dbu);
-  int dbuCoreUy = round(uy_ * dbu);
-
-  // Four sides north/south/east/west.
-  pinGroupStor.resize(4);
-
-  // save PG-Class info in below
-  pinGroupStor[static_cast<int>(East)].setPinGroupLocation(East);
-  pinGroupStor[static_cast<int>(West)].setPinGroupLocation(West);
-  pinGroupStor[static_cast<int>(North)].setPinGroupLocation(North);
-  pinGroupStor[static_cast<int>(South)].setPinGroupLocation(South);
-
-  dbBlock* block = db_->getChip()->getBlock();
-
-  for (dbBTerm* bTerm : block->getBTerms()) {
-    // pin signal type
-    dbSigType psType = bTerm->getSigType();
-    if (psType == dbSigType::GROUND || psType == dbSigType::POWER) {
-      continue;
-    }
-
-    // pin placement status
-    dbPlacementStatus ppStatus = bTerm->getFirstPinPlacementStatus();
-
-    // unplaced BTerms
-    if (ppStatus == dbPlacementStatus::UNPLACED
-        || ppStatus == dbPlacementStatus::NONE) {
-      log_->warn(MPL, 8, "pin {} is not placed. Using west.",
-                 bTerm->getConstName());
-
-      // update pinGroups on West
-      sta::Pin* pin = sta_->getDbNetwork()->dbToSta(bTerm);
-      pinGroupStor[static_cast<int>(West)].addPin(pin);
-      staToPinGroup[pin] = static_cast<int>(West);
-
-      if (findNearestEdge(bTerm) != West)
-        log_->error(MPL, 9, "pin edge mismatch");
-    } else {
-      int placeX = 0, placeY = 0;
-      bTerm->getFirstPinLocation(placeX, placeY);
-      PinGroupLocation pgLoc;
-
-      bool isAxisFound = false;
-      for (dbBPin* bPin : bTerm->getBPins()) {
-        Rect pin_bbox = bPin->getBBox();
-        int boxLx = pin_bbox.xMin();
-        int boxLy = pin_bbox.yMin();
-        int boxUx = pin_bbox.xMax();
-        int boxUy = pin_bbox.yMax();
-
-        // This is broken. It assumes the pins are on the core boundary.
-        // It should look for the nearest edge to the pin center. -cherry
-        if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
-          pgLoc = West;
-          isAxisFound = true;
-          break;
-        } else if (isWithIn(dbuCoreUx, boxLx, boxUx)) {
-          pgLoc = East;
-          isAxisFound = true;
-          break;
-        } else if (isWithIn(dbuCoreLy, boxLy, boxUy)) {
-          pgLoc = South;
-          isAxisFound = true;
-          break;
-        } else if (isWithIn(dbuCoreUy, boxLy, boxUy)) {
-          pgLoc = North;
-          isAxisFound = true;
-          break;
-        }
-      }
-      if (!isAxisFound) {
-        dbBPin* bPin = *(bTerm->getBPins().begin());
-        Rect pin_bbox = bPin->getBBox();
-        int boxLx = pin_bbox.xMin();
-        int boxLy = pin_bbox.yMin();
-        int boxUx = pin_bbox.xMax();
-        int boxUy = pin_bbox.yMax();
-        pgLoc = getPinGroupLocation((boxLx + boxUx) / 2,
-                                    (boxLy + boxUy) / 2,
-                                    dbuCoreLx,
-                                    dbuCoreLy,
-                                    dbuCoreUx,
-                                    dbuCoreUy);
-      }
-
-      // update pinGroups
-      sta::Pin* pin = sta_->getDbNetwork()->dbToSta(bTerm);
-      pinGroupStor[static_cast<int>(pgLoc)].addPin(pin);
-      staToPinGroup[pin] = static_cast<int>(pgLoc);
-
-      if (findNearestEdge(bTerm) != pgLoc)
-        log_->error(MPL, 10, "pin edge mismatch");
-    }
-  }
-
-  log_->info(MPL,
-             9,
-             "NumEastPins {}",
-             pinGroupStor[static_cast<int>(East)].pins().size());
-  log_->info(MPL,
-             10,
-             "NumWestPins {}",
-             pinGroupStor[static_cast<int>(West)].pins().size());
-  log_->info(MPL,
-             11,
-             "NumNorthPins {}",
-             pinGroupStor[static_cast<int>(North)].pins().size());
-  log_->info(MPL,
-             12,
-             "NumSouthPins {}",
-             pinGroupStor[static_cast<int>(South)].pins().size());
-}
-
-void MacroCircuit::FillVertexEdge()
-{
-  log_->report("Begin Generating Sequential Graph");
-  sta::Network *network = sta_->network();
-
-  unordered_set<sta::Instance*> instMap;
-
-  // Fill Vertex for Four IO cases.
-  for (int i = 0; i < 4; i++) {
-    pinInstVertexMap[(void*) &pinGroupStor[i]] = vertexStor.size();
-
-    vertexStor.push_back(Vertex(&pinGroupStor[i]));
-  }
-
-  sta_->ensureGraph();
-  // Fill Vertex for FF/Macro cells
-  VertexIterator vIter1(sta_->graph());
-
-  while (vIter1.hasNext()) {
-    sta::Vertex* staVertex = vIter1.next();
-    sta::Pin* pin = staVertex->pin();
-
-    // skip for top-level port
-    bool isTopPin = sta_->network()->isTopLevelPort(pin);
-    if (isTopPin) {
-      continue;
-    }
-
-    // skip for below two cases; non-FF cells
-    sta::Instance* inst = sta_->network()->instance(pin);
-    sta::LibertyCell* libCell = sta_->network()->libertyCell(inst);
-
-    if (!libCell->hasSequentials()
-        && macroInstMap.find(inst) == macroInstMap.end()) {
-      continue;
-    }
-
-    // skip for below two cases; non visited
-    if (instMap.find(inst) != instMap.end()) {
-      continue;
-    }
-    instMap.insert(inst);
-
-    pair<void*, VertexType> vertex = GetPtrClassPair(pin);
-    auto vertPtr = pinInstVertexMap.find(vertex.first);
-
-    if (vertPtr == pinInstVertexMap.end()) {
-      pinInstVertexMap[vertex.first] = vertexStor.size();
-      vertexStor.push_back(Vertex(vertex.first, vertex.second));
-    }
-  }
-
-  adjMatrix.resize(vertexStor.size(), vertexStor.size());
-  vector<Triplet> triplets;
-
-  // Query Get_FanIn/ Get_FanOut
-  VertexIterator vIter2(sta_->graph());
-
-  while (vIter2.hasNext()) {
-    sta::Vertex* staVertex = vIter2.next();
-    sta::Pin* pin = staVertex->pin();
-
-    bool isTopPin = sta_->network()->isTopLevelPort(pin);
-    // !!!!!!!!!!!!!!!!
-    // Future support of OpenSTA
-    if (isTopPin) {
-      continue;
-    }
-
-    // Skip For Non-FF Cells
-    if (!isTopPin) {
-      sta::Instance* inst = sta_->network()->instance(pin);
-      sta::LibertyCell* libCell = sta_->network()->libertyCell(inst);
-      if (!libCell->hasSequentials()
-          && macroInstMap.find(inst) == macroInstMap.end()) {
-        continue;
-      }
-    }
-
-    // skip for clock pin
-    if (sta_->network()->isCheckClk(pin) || sta_->sdc()->isClock(pin)) {
-      continue;
-    }
-
-    sta::PinSeq pinStor;
-    pinStor.push_back(pin);
-
-    sta::PortDirection* dir = sta_->network()->direction(pin);
-    Vertex* curVertex = GetVertex(pin);
-
-    // Query for get_fanin/get_fanout
-    if (dir->isAnyOutput()) {
-      sta::PinSet* fanout
-          = sta_->findFanoutPins(&pinStor, false, true, 0, 0, false, false);
-      for (auto& adjPin : *fanout) {
-        // Skip For Non-FF Pin
-        if (!sta_->network()->isTopLevelPort(adjPin)) {
-          sta::Instance* inst = sta_->network()->instance(adjPin);
-          sta::LibertyCell* libCell = sta_->network()->libertyCell(inst);
-          if (!libCell->hasSequentials()
-              && macroInstMap.find(inst) == macroInstMap.end()) {
-            continue;
-          }
-        }
-
-        Vertex* adjVertex = GetVertex(adjPin);
-
-        if (adjVertex == curVertex) {
-          continue;
-        }
-
-        // skip for clock pin
-        if (sta_->network()->isCheckClk(adjPin)
-            || sta_->sdc()->isClock(adjPin)) {
-          continue;
-        }
-
-        triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
-        debugPrint(log_, MPL, "adj", 1, "fanout {} -> {}",
-                   curVertex->name(network),
-                   adjVertex->name(network));
-      }
-      delete fanout;
-    } else {
-      sta::PinSet* fanin
-          = sta_->findFaninPins(&pinStor, false, true, 0, 0, false, false);
-      for (auto& adjPin : *fanin) {
-        // Skip For Non-FF Pin
-        if (!sta_->network()->isTopLevelPort(adjPin)) {
-          sta::Instance* inst = sta_->network()->instance(adjPin);
-          sta::LibertyCell* libCell = sta_->network()->libertyCell(inst);
-          if (!libCell->hasSequentials()
-              && macroInstMap.find(inst) == macroInstMap.end()) {
-            continue;
-          }
-        }
-
-        Vertex* adjVertex = GetVertex(adjPin);
-
-        if (adjVertex == curVertex) {
-          continue;
-        }
-
-        // skip for clock pin
-        if (sta_->network()->isCheckClk(adjPin)
-            || sta_->sdc()->isClock(adjPin)) {
-          continue;
-        }
-
-        triplets.push_back(Triplet(index(curVertex), index(adjVertex), 1));
-        debugPrint(log_, MPL, "adj", 1, "fanin {} -> {}",
-                   curVertex->name(network),
-                   adjVertex->name(network));
-      }
-      delete fanin;
-    }
-  }
-  // Query find_timing_paths
-  VertexIterator vIter3(sta_->graph());
-
-  while (vIter3.hasNext()) {
-    sta::Vertex* staVertex = vIter3.next();
-    sta::Pin* pin = staVertex->pin();
-
-    bool isTopPin = sta_->network()->isTopLevelPort(pin);
-    // only query for IO/Pins
-    if (!isTopPin) {
-      continue;
-    }
-
-    // Survived
-    // FF/Macro with non-clock output pins
-    // topLevelPort(I). i.e. input top-level-port.
-
-    // skip for clock pin
-    if (sta_->network()->isCheckClk(pin) || sta_->sdc()->isClock(pin)) {
-      continue;
-    }
-    if (string(sta_->network()->pathName(pin)) == "reset_i") {
-      continue;
-    }
-
-    sta::Corner* corner = sta_->corners()->findCorner(0);
-
-    sta::PinSet* pSet = new sta::PinSet;
-    pSet->insert(pin);
-
-    // Get Pin direction
-    sta::PortDirection* dir = sta_->network()->direction(pin);
-
-    sta::ExceptionFrom* from
-        = (!dir->isAnyOutput()) ? sta_->sdc()->makeExceptionFrom(
-              pSet, nullptr, nullptr, sta::RiseFallBoth::riseFall())
-                                : nullptr;
-
-    sta::ExceptionTo* to = (dir->isAnyOutput()) ? sta_->sdc()->makeExceptionTo(
-                               pSet,
-                               nullptr,
-                               nullptr,
-                               sta::RiseFallBoth::riseFall(),
-                               sta::RiseFallBoth::riseFall())
-                                                : nullptr;
-
-    sta::PathEndSeq* ends
-        = sta_->findPathEnds(from,
-                             nullptr,
-                             to,  // from, thru, to
-                             false,
-                             corner,
-                             sta::MinMaxAll::max(),  // corner, delay_min_max
-                             INT_MAX,
-                             1,
-                             false,  // group_count, endpoint_count, unique_pins
-                             -sta::INF,
-                             sta::INF,  // slack_min, slack_max
-                             false,
-                             nullptr,  // sort_by_slack, group_name
-                             true,
-                             true,  // setup, hold
-                             true,
-                             true,  // recovery, removal
-                             true,
-                             true);  // clk gating setup, hold
-
-    sta::PathEndSeq::Iterator pathEndIter(ends), pathEndIter2(ends);
-    while (pathEndIter.hasNext()) {
-      sta::PathEnd* end = pathEndIter.next();
-      // TimingPathPrint( sta_, end );
-
-      sta::PathExpanded expanded(end->path(), sta_);
-
-      // get Un-clockpin
-      int startIdx = 0;
-      sta::PathRef* startPath = expanded.path(startIdx);
-      while (startIdx < (int) expanded.size() - 1
-             && startPath->isClock(sta_)) {
-        startPath = expanded.path(++startIdx);
-      }
-
-      sta::PathRef* endPath = expanded.path(expanded.size() - 1);
-      sta::Vertex* startVert = startPath->vertex(sta_);
-      sta::Vertex* endVert = endPath->vertex(sta_);
-
-      sta::Pin* startPin = startVert->pin();
-      sta::Pin* endPin = endVert->pin();
-
-      Vertex* startVertPtr = GetVertex(startPin);
-      Vertex* endVertPtr = GetVertex(endPin);
-
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // OpenSTA could return Null Vertex:
-      // This means that non-Timing cells would be returned by findPathEnds
-      // command...
-      if (startVertPtr == nullptr || endVertPtr == nullptr) {
-        continue;
-      }
-
-      triplets.push_back(Triplet(index(startVertPtr), index(endVertPtr), 1));
-      debugPrint(log_, MPL, "adj", 1, "path {} -> {}",
-                 startVertPtr->name(network),
-                 endVertPtr->name(network));
-    }
-  }
-
-  adjMatrix.setFromTriplets(triplets.begin(), triplets.end());
-
-  if (log_->debugCheck(MPL, "adj_weights", 1)) {
-    log_->report("Seqential graph weights");
-    for (auto& v1 : vertexStor) {
-      for (auto& v2 : vertexStor) {
-        int weight = GetPathWeightMatrix(adjMatrix, index(&v1), index(&v2));
-        if (weight >= 1) {
-          if (weight >= 1
-              && (!v1.isInstance()
-                  || network->libertyCell(v1.instance())->isMacro())
-              && (!v2.isInstance()
-                  || network->libertyCell(v2.instance())->isMacro()))
-            log_->report("{} -> {} {}",
-                         v1.name(network),
-                         v2.name(network),
-                         weight);
-        }
-      }
-    }
-  }
-
-  log_->report("End Generating Sequential Graph");
-  log_->info(MPL, 13, "NumVertexSeqGraph {}", vertexStor.size());
-  log_->info(MPL, 14, "NumEdgeSeqGraph {}", adjMatrix.nonZeros());
-}
-
-int MacroCircuit::index(Vertex* vertex)
-{
-  return vertex - &vertexStor[0];
-}
-
-// Do BFS search by LEVEL 3
-#define MPLACE_BFS_MAX_LEVEL 3
-
-// unused -cherry
-void MacroCircuit::CheckGraphInfo()
-{
-  vector<Vertex*> searchVert;
-
-  for (auto& curMacro : macroStor) {
-    searchVert.push_back(curMacro.ptr);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    searchVert.push_back(&vertexStor[i]);
-  }
-
-  vector<int> vertexCover(vertexStor.size(), -1);
-  for (int i = 0; i < 4; i++) {
-    vertexCover[i] = 0;
-  }
-  for (auto& curMacro : macroStor) {
-    // This clobbers the first 4 entries -cherry
-    vertexCover[index(curMacro.ptr)] = 0;
-  }
-
-  for (int level = 1; level <= MPLACE_BFS_MAX_LEVEL; level++) {
-    vector<Vertex*> newVertex;
-
-    for (auto& curVertex1 : searchVert) {
-      // for all other vertex
-      for (auto& curVertex2 : vertexStor) {
-        int idx2 = &curVertex2 - &vertexStor[0];
-
-        // skip for same pointer
-        if (curVertex1->ptr() == &curVertex2) {
-          continue;
-        }
-
-        if (vertexCover[idx2] == -1
-            // weight = 1 -> adjacency
-            && GetPathWeightMatrix(adjMatrix, curVertex1, idx2)) {
-          vertexCover[idx2] = level;
-          newVertex.push_back(&vertexStor[idx2]);
-        }
-      }
-    }
-    newVertex.swap(searchVert);
-  }
-
-  int sumArr[MPLACE_BFS_MAX_LEVEL + 1] = {
-      0,
-  };
-  for (size_t i = 0; i < vertexStor.size(); i++) {
-    if (vertexCover[i] != -1) {
-      sumArr[vertexCover[i]]++;
-    }
-  }
-
-  for (int i = 0; i <= MPLACE_BFS_MAX_LEVEL; i++) {
-    debugPrint(log_, MPL, "tritonmp", 5, "level {} {}", i, sumArr[i]);
-  }
-}
-
-void MacroCircuit::FillMacroPinAdjMatrix()
-{
-  macroPinAdjMatrixMap.resize(vertexStor.size(), -1);
-  int macroPinAdjIdx = 0;
-
-  vector<int> searchVertIdx;
-  //
-  // for each pin vertex
-  //
-  // macroPinAdjMatrix's 0, 1, 2, 3 is equal to original adjMatrix' index.
-  // e.g. pin index is the exactly same.
-  //
-  // searchVertIdx[i] == i, so it is worthless -cherry
-  for (int i = 0; i < 4; i++) {
-    searchVertIdx.push_back(i);
-    macroPinAdjMatrixMap[i] = macroPinAdjIdx++;
-  }
-
-  //
-  // for each macro vertex
-  //
-  // Update macroPinAdjMatrixMap
-  // to have macroIdx --> updated macroPinAdjMatrix's index.
-  //
-  for (auto& curMacro : macroStor) {
-    int macroVertIdx = index(curMacro.ptr);
-    searchVertIdx.push_back(macroVertIdx);
-    macroPinAdjMatrixMap[macroVertIdx] = macroPinAdjIdx++;
-  }
-
-  const int EmptyVert = -1, SearchVert = -2;
-
-  // return adjMatrix triplet candidates.
-  vector<Triplet> triplets;
-  sta::Network *network = sta_->network();
-
-  // for each macro/pin vertex
-  for (auto& startVertIdx : searchVertIdx) {
-    // initial starting points
-    vector<int> candiVert;
-    candiVert.push_back(startVertIdx);
-
-    // initialize vertexWeight and vertexCover.
-    vector<int> vertexWeight(vertexStor.size(), 0);
-    vector<int> vertexCover(vertexStor.size(), EmptyVert);
-
-    for (auto& curVertIdx : searchVertIdx) {
-      vertexCover[curVertIdx] = SearchVert;
-    }
-    vertexWeight[startVertIdx] = 1;
-
-    // BFS search up to MPLACE_BFS_MAX_LEVEL
-    for (int level = 1; level <= MPLACE_BFS_MAX_LEVEL; level++) {
-      vector<int> nextCandiVert;
-
-      for (auto& idx1 : candiVert) {
-        // for all other vertex
-        for (auto& curVertex2 : vertexStor) {
-          int idx2 = &curVertex2 - &vertexStor[0];
-
-          // skip for same vertex
-          if (idx1 == idx2) {
-            continue;
-          }
-
-          // if( vertexCover[idx2] == -1 &&
-          // GetPathWeightMatrix(adjMatrix, idx1, idx2) )
-          if (vertexCover[idx2] == EmptyVert
-              || vertexCover[idx2] == SearchVert) {
-            int pathWeight = GetPathWeightMatrix(adjMatrix, idx1, idx2);
-            if (pathWeight == 0) {
-              continue;
-            }
-            debugPrint(log_, MPL, "path_weights", 1, "() {} += {} * {} {}",
-                       vertexStor[startVertIdx].name(network).c_str(),
-                       vertexWeight[idx2],
-                       pathWeight,
-                       vertexWeight[idx1],
-                       curVertex2.name(network).c_str());
-            vertexWeight[idx2] += pathWeight * vertexWeight[idx1];
-
-            // update vertexCover only when vertex is FFs.
-            if (vertexCover[idx2] == EmptyVert) {
-              vertexCover[idx2] = level;
-            }
-
-            // prevent multi-search for vertex itself
-            if (vertexCover[idx2] != SearchVert) {
-              nextCandiVert.push_back(idx2);
-            }
-          }
-        }
-      }
-      // for next level search,
-      nextCandiVert.swap(candiVert);
-    }
-
-    for (auto& curCandiVert : searchVertIdx) {
-      if (curCandiVert != startVertIdx) {
-        triplets.push_back(Triplet(macroPinAdjMatrixMap[startVertIdx],
-                                   macroPinAdjMatrixMap[curCandiVert],
-                                   vertexWeight[curCandiVert]));
-
-        if (vertexWeight[curCandiVert] > 0)
-          debugPrint(log_, MPL, "pin_adj", 1, "pin adj {} -> {} {}",
-                     vertexStor[startVertIdx].name(network),
-                     vertexStor[curCandiVert].name(network),
-                     vertexWeight[curCandiVert]);
-      }
-    }
-  }
-
-  // Fill in all of vertex weights into compacted adjMatrix
-  macroPinAdjMatrix.resize(searchVertIdx.size(), searchVertIdx.size());
-  macroPinAdjMatrix.setFromTriplets(triplets.begin(), triplets.end());
-}
-
-void MacroCircuit::FillMacroConnection()
-{
-  vector<int> searchVertIdx;
-  for (int i = 0; i < 4; i++) {
-    searchVertIdx.push_back(i);
-  }
-
-  for (auto& curMacro : macroStor) {
-    int macroVertIdx = index(curMacro.ptr);
-    searchVertIdx.push_back(macroVertIdx);
-  }
-
-  // macroNetlistWeight Initialize
-  macroWeight.resize(searchVertIdx.size());
-  for (size_t i = 0; i < searchVertIdx.size(); i++) {
-    macroWeight[i] = vector<int>(searchVertIdx.size(), 0);
-  }
-
-  sta::dbNetwork *network = sta_->getDbNetwork();
-  for (auto& curVertex1 : searchVertIdx) {
-    for (auto& curVertex2 : searchVertIdx) {
-      VertexType class1 = vertexStor[curVertex1].vertexType();
-      VertexType class2 = vertexStor[curVertex2].vertexType();
-      if (curVertex1 != curVertex2
-          // no need to fill in PIN -> PIN connections
-          && !(class1 == VertexType::PinGroupType
-               && class2 == VertexType::PinGroupType)) {
-        int weight = GetPathWeightMatrix(macroPinAdjMatrix,
-                                         macroPinAdjMatrixMap[curVertex1],
-                                         macroPinAdjMatrixMap[curVertex2]);
-        macroWeight[macroPinAdjMatrixMap[curVertex1]]
-          [macroPinAdjMatrixMap[curVertex2]] = weight; // > 0 ? 1 : 0;
-        if (weight > 0)
-          debugPrint(log_, MPL, "weights", 1, "{} -> {} {}",
-                     vertexStor[curVertex1].name(network),
-                     vertexStor[curVertex2].name(network),
-                     weight);
-      }
-    }
-  }
-}
-
-// macroStor Update
-void MacroCircuit::UpdateVertexToMacroStor()
-{
-  for (auto& curVertex : vertexStor) {
-    if (curVertex.vertexType() == VertexType::MacroInstType) {
-      sta::Instance* staInst = (sta::Instance*) curVertex.ptr();
-      auto mPtr = macroInstMap.find(staInst);
-      if (mPtr == macroInstMap.end()) {
-        log_->error(MPL, 15, "The Macro Name must be in macro NameMap");
-      }
-
-      macroStor[mPtr->second].ptr = &curVertex;
-    }
-  }
-}
-
 // macroStr & macroInstMap update
 void MacroCircuit::UpdateInstanceToMacroStor()
 {
@@ -1010,57 +317,9 @@ void MacroCircuit::UpdateInstanceToMacroStor()
   }
 }
 
-pair<void*, VertexType> MacroCircuit::GetPtrClassPair(sta::Pin* pin)
+static bool isWithIn(int val, int min, int max)
 {
-  pair<void*, VertexType> ret;
-  bool isTopPin = sta_->network()->isTopLevelPort(pin);
-
-  // toplevel pin
-  if (isTopPin) {
-    auto pgPtr = staToPinGroup.find(pin);
-    if (pgPtr == staToPinGroup.end()) {
-      log_->error(MPL,
-                  16,
-                  "{} not exists in PinGroupMap",
-                  sta_->network()->pathName(pin));
-    }
-
-    // pinGroupPointer
-    ret.first = (void*) &pinGroupStor[pgPtr->second];
-    ret.second = VertexType::PinGroupType;
-  } else {
-    sta::Instance* inst = sta_->network()->instance(pin);
-    string instName = sta_->network()->pathName(inst);
-
-    ret.first = (void*) inst;
-    ret.second = (macroNameMap.find(instName) != macroNameMap.end())
-                     ? VertexType::MacroInstType
-                     : VertexType::OtherInstType;
-  }
-  return ret;
-}
-
-int MacroCircuit::GetPathWeightMatrix(SMatrix& mat,
-                                      Vertex* from,
-                                      Vertex* to)
-{
-  int idx1 = index(from);
-  int idx2 = index(to);
-
-  return mat.coeff(idx1, idx2);
-}
-
-int MacroCircuit::GetPathWeightMatrix(SMatrix& mat,
-                                      Vertex* from,
-                                      int toIdx)
-{
-  int idx1 = index(from);
-  return mat.coeff(idx1, toIdx);
-}
-
-int MacroCircuit::GetPathWeightMatrix(SMatrix& mat, int fromIdx, int toIdx)
-{
-  return mat.coeff(fromIdx, toIdx);
+  return ((min <= val) && (val <= max));
 }
 
 static float getRoundUpFloat(float x, float unit)
@@ -1068,9 +327,6 @@ static float getRoundUpFloat(float x, float unit)
   return std::round(x / unit) * unit;
 }
 
-//
-// Update Macro Location
-// from partition
 void MacroCircuit::UpdateMacroCoordi(Partition& part)
 {
   dbTech* tech = db_->getTech();
@@ -1083,9 +339,9 @@ void MacroCircuit::UpdateMacroCoordi(Partition& part)
   }
 
   const float pitchX = static_cast<float>(fourLayer->getPitchX())
-                       / static_cast<float>(tech->getDbUnitsPerMicron());
+    / static_cast<float>(tech->getDbUnitsPerMicron());
   const float pitchY = static_cast<float>(fourLayer->getPitchY())
-                       / static_cast<float>(tech->getDbUnitsPerMicron());
+    / static_cast<float>(tech->getDbUnitsPerMicron());
 
   for (auto& curMacro : part.macroStor) {
     auto mnPtr = macroNameMap.find(curMacro.name());
@@ -1095,103 +351,15 @@ void MacroCircuit::UpdateMacroCoordi(Partition& part)
 
     // update macro coordi
     float macroX
-        = (fourLayer) ? getRoundUpFloat(curMacro.lx, pitchX) : curMacro.lx;
+      = (fourLayer) ? getRoundUpFloat(curMacro.lx, pitchX) : curMacro.lx;
     float macroY
-        = (fourLayer) ? getRoundUpFloat(curMacro.ly, pitchY) : curMacro.ly;
+      = (fourLayer) ? getRoundUpFloat(curMacro.ly, pitchY) : curMacro.ly;
 
     // Update Macro Location
     int macroIdx = mnPtr->second;
     macroStor[macroIdx].lx = macroX;
     macroStor[macroIdx].ly = macroY;
   }
-}
-
-// Legalizer for macro locations
-void MacroCircuit::StubPlacer(double snapGrid)
-{
-  log_->report("Begin Macro Stub Placement");
-
-  snapGrid *= 10;
-
-  int sizeX = (int) ((ux_ - lx_) / snapGrid + 0.5f);
-  int sizeY = (int) ((uy_ - ly_) / snapGrid + 0.5f);
-
-  int** checker = new int*[sizeX];
-  for (int i = 0; i < sizeX; i++) {
-    checker[i] = new int[sizeY];
-    for (int j = 0; j < sizeY; j++) {
-      checker[i][j] = -1;  // uninitialize
-    }
-  }
-
-  bool isOverlap = true;
-  do {
-    for (auto& curMacro : macroStor) {
-      // Macro Projection in (llx, lly, urx, ury)
-      if (curMacro.lx < lx_)
-        curMacro.lx = lx_;
-      if (curMacro.ly < ly_)
-        curMacro.ly = ly_;
-      if (curMacro.lx + curMacro.w > ux_)
-        curMacro.lx = ux_ - curMacro.w;
-      if (curMacro.ly + curMacro.h > uy_)
-        curMacro.ly = uy_ - curMacro.h;
-
-      if (curMacro.lx < lx_ || curMacro.lx + curMacro.w > ux_) {
-        log_->error(MPL, 23, "Macro Legalizer detects width is not enough");
-      }
-      if (curMacro.ly < lx_ || curMacro.ly + curMacro.h > uy_) {
-        log_->error(MPL, 24, "Macro Legalizer detects height is not enough");
-      }
-
-      // do random placement
-      int macroWidthGrid = int(curMacro.w / snapGrid + 0.5f);
-      int macroHeightGrid = int(curMacro.h / snapGrid + 0.5f);
-
-      // possible range
-      int macroRangeX = sizeX - macroWidthGrid;
-      int macroRangeY = sizeY - macroHeightGrid;
-
-      // extract random lx, ly location
-      int macroGridLx = rand() % macroRangeX;
-      int macroGridLy = rand() % macroRangeY;
-
-      curMacro.lx = int(macroGridLx * snapGrid + 0.5f);
-      curMacro.ly = int(macroGridLy * snapGrid + 0.5f);
-
-      // follow initial placement
-      // curMacro.lx = int( curMacro.lx / snapGrid + 0.5f) * snapGrid;
-      // curMacro.ly = int( curMacro.ly / snapGrid + 0.5f) * snapGrid;
-
-      // Do someth to avoid overlap
-      // ...
-      //    curMacro.Dump();
-
-      isOverlap = false;
-      for (int i = macroGridLx; i <= macroGridLx + macroWidthGrid; i++) {
-        for (int j = macroGridLy; j <= macroGridLy + macroHeightGrid; j++) {
-          if (checker[i][j] != -1) {
-            isOverlap = true;
-            break;
-          }
-          // insert a macro placer
-          checker[i][j] = &curMacro - &macroStor[0];
-        }
-        if (isOverlap) {
-          break;
-        }
-      }
-      if (isOverlap) {
-        break;
-      }
-    }
-
-    for (int i = 0; i < sizeX; i++) {
-      for (int j = 0; j < sizeY; j++) {
-        checker[i][j] = -1;
-      }
-    }
-  } while (isOverlap);
 }
 
 static bool stringExists(std::string varname, std::string str)
@@ -1307,51 +475,6 @@ void MacroCircuit::ParseLocalConfig(string fileName)
   log_->report("End Parsing Local Config");
 }
 
-void MacroCircuit::Plot(string fileName, vector<Partition>& set)
-{
-  log_->report("OutPut Plot file: {}", fileName);
-  std::ofstream gpOut(fileName);
-  if (!gpOut.good()) {
-    log_->warn(MPL, 31, "cannot open file: {}", fileName);
-  }
-  gpOut << "set terminal png size 1024,768" << endl;
-
-  gpOut << "#Use this file as a script for gnuplot" << endl;
-  gpOut << "#(See http://www.gnuplot.info/ for details)" << endl;
-  gpOut << "set nokey" << endl;
-
-  gpOut << "set size ratio -1" << endl;
-  gpOut << "set title '' " << endl;
-
-  gpOut << "set xrange[" << lx_ << ":" << ux_ << "]" << endl;
-  gpOut << "set yrange[" << ly_ << ":" << uy_ << "]" << endl;
-
-  int objCnt = 0;
-  for (auto& curMacro : macroStor) {
-    // rect box
-    gpOut << "set object " << ++objCnt << " rect from " << curMacro.lx << ","
-          << curMacro.ly << " to " << curMacro.lx + curMacro.w << ","
-          << curMacro.ly + curMacro.h << " fc rgb \"gold\"" << endl;
-
-    // name
-    gpOut << "set label '" << curMacro.name() << "("
-          << &curMacro - &macroStor[0] << ")"
-          << "'noenhanced at " << curMacro.lx + curMacro.w / 5 << " , "
-          << curMacro.ly + curMacro.h / 4 << endl;
-  }
-
-  // just print boundary for each sets
-  for (auto& curSet : set) {
-    gpOut << "set object " << ++objCnt << " rect from " << curSet.lx << ","
-          << curSet.ly << " to " << curSet.lx + curSet.width << ","
-          << curSet.ly + curSet.height << " fc rgb \"#FFFFFF\"" << endl;
-  }
-
-  gpOut << "plot '-' w l" << endl;
-  gpOut << "EOF" << endl;
-  gpOut.close();
-}
-
 void MacroCircuit::UpdateNetlist(Partition& layout)
 {
   if (netTable_) {
@@ -1438,20 +561,6 @@ double MacroCircuit::GetWeightedWL()
   return wwl;
 }
 
-Vertex* MacroCircuit::GetVertex(sta::Pin* pin)
-{
-  pair<void*, VertexType> vertInfo = GetPtrClassPair(pin);
-  auto vertPtr = pinInstVertexMap.find(vertInfo.first);
-  if (vertPtr == pinInstVertexMap.end()) {
-    log_->warn(MPL,
-               32,
-               "pinInstVertexMap missing {}",
-               sta_->network()->pathName(pin));
-    return nullptr;
-  }
-  return &vertexStor[vertPtr->second];
-}
-
 Layout::Layout() : lx_(0), ly_(0), ux_(0), uy_(0)
 {
 }
@@ -1491,23 +600,6 @@ void Layout::setUy(double uy)
 
 ///////////////////////////////////////////////////
 //  static funcs
-
-static bool isNotVisited(Vertex* vert, vector<Vertex*>& path)
-{
-  for (auto& curVert : path) {
-    if (curVert == vert) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool isTerminal(Vertex* vert, Vertex* target)
-{
-  return (vert != target
-          && (vert->vertexType() == VertexType::PinGroupType
-              || vert->vertexType() == VertexType::MacroInstType));
-}
 
 // Stores the trimmed input string into the given output buffer, which must be
 // large enough to store the result.  If it is too small, the output is
@@ -1747,10 +839,10 @@ std::string MacroCircuit::faninName(Macro *macro)
 int MacroCircuit::macroIndex(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
-  if (edge_index < 4)
+  if (edge_index < edge_count)
     return edge_index;
   else
-    return macro - &macroStor[0] + 4;
+    return macro - &macroStor[0] + edge_count;
 }
 
 bool MacroCircuit::macroIndexIsEdge(Macro *macro)
@@ -1908,6 +1000,22 @@ PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
     }
   }
   return West;
+}
+
+void MacroCircuit::reportEdgePinCounts()
+{
+  int counts[edge_count] = {0};
+  for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
+    PinGroupLocation edge = findNearestEdge(bterm);
+    counts[edge]++;
+  }
+  for (int i = 0; i < edge_count; i++) {
+    PinGroupLocation edge = static_cast<PinGroupLocation>(i);
+    
+      log_->info(MPL, 9, "{} pins {}",
+                 getPinGroupLocationString(edge),
+                 counts[i]);
+  }
 }
 
 }  // namespace mpl

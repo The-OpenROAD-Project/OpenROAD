@@ -33,18 +33,15 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <Eigen/SparseCore>
-#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <map>
 #include <set>
 
-#include "graph.h"
 #include "macro.h"
 #include "partition.h"
 
+#include "sta/NetworkClass.hh"
 #include "sta/GraphClass.hh"
 
 namespace sta {
@@ -80,23 +77,22 @@ enum class BoundaryEdge
   Unknown
 };
 
+enum PinGroupLocation
+{
+  West,
+  East,
+  North,
+  South
+};
+
 class MacroCircuit
 {
 public:
   MacroCircuit();
   MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
-  std::vector<Vertex> vertexStor;
-
   // macro Information
   std::vector<Macro> macroStor;
-
-  // pin Group Information
-  std::vector<PinGroup> pinGroupStor;
-
-  // pin Group Map;
-  // Pin* --> pinGroupStor's index.
-  std::unordered_map<sta::Pin*, int> staToPinGroup;
 
   // macro name -> macroStor's index.
   std::unordered_map<std::string, int> macroNameMap;
@@ -104,13 +100,8 @@ public:
   // macro idx/idx pair -> give each
   std::vector<std::vector<int>> macroWeight;
 
-  std::string GetVertexName(Vertex* vertex);
-
   // sta::Instance* --> macroStor's index stor
   std::unordered_map<sta::Instance*, int> macroInstMap;
-
-  // Update Macro Location from Partition info
-  void UpdateMacroCoordi(Partition& part);
 
   // parsing function
   void ParseGlobalConfig(std::string fileName);
@@ -119,22 +110,15 @@ public:
   // save LocalCfg into this structure
   std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
 
-  // plotting
-  void Plot(std::string outputFile, std::vector<Partition>& set);
-
-  // netlist
   void UpdateNetlist(Partition& layout);
 
   // return weighted wire-length to get best solution
   double GetWeightedWL();
 
-  void StubPlacer(double snapGrid);
-
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
   void setGlobalConfig(const char* globalConfig);
   void setLocalConfig(const char* localConfig);
-  void setPlotEnable(bool mode);
 
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
@@ -145,50 +129,12 @@ public:
 
 private:
   void FillMacroStor();
-  void FillPinGroup();
-  void FillVertexEdge();
-  void CheckGraphInfo();
-  void FillMacroPinAdjMatrix();
-  void FillMacroConnection();
-
-  void UpdateVertexToMacroStor();
   void UpdateInstanceToMacroStor();
-
-  // either Pin*, Inst* -> vertexStor's index.
-  std::unordered_map<void*, int> pinInstVertexMap;
-
-  // adjacency matrix for whole(macro/pins/FFs) graph
-  Eigen::SparseMatrix<int, Eigen::RowMajor> adjMatrix;
-
-  // vertex idx --> macroPinAdjMatrix idx.
-  std::vector<int> macroPinAdjMatrixMap;
-
-  // adjacency matrix for macro/pins graph
-  Eigen::SparseMatrix<int, Eigen::RowMajor> macroPinAdjMatrix;
-
-  int index(Vertex* vertex);
-
-  // Matrix version
-  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
-                          Vertex* from,
-                          Vertex* to);
-
-  // Matrix version
-  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
-                          Vertex* from,
-                          int toIdx);
-
-  // Matrix version
-  int GetPathWeightMatrix(Eigen::SparseMatrix<int, Eigen::RowMajor>& mat,
-                          int fromIdx,
-                          int toIdx);
-
-  Vertex* GetVertex(sta::Pin* pin);
-
-  std::pair<void*, VertexType> GetPtrClassPair(sta::Pin* pin);
 
   void init();
   void reset();
+  // Update Macro Location from Partition info
+  void UpdateMacroCoordi(Partition& part);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -208,6 +154,8 @@ private:
   int macroIndex(Macro *macro);
   bool macroIndexIsEdge(Macro *macro);
 
+  void reportEdgePinCounts();
+
   ////////////////////////////////////////////////////////////////
     
   odb::dbDatabase* db_;
@@ -219,7 +167,6 @@ private:
   std::string localConfig_;
 
   bool isTiming_;
-  bool isPlot_;
 
   // layout
   double lx_, ly_, ux_, uy_;

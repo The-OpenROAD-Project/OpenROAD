@@ -15,14 +15,10 @@
 [INFO ODB-0134] Finished DEF file: gcd_mem3.def
 End Parsing Global Config
 [INFO MPL-0005] NumMacros 3
-[INFO MPL-0009] NumEastPins 13
-[INFO MPL-0010] NumWestPins 18
-[INFO MPL-0011] NumNorthPins 12
-[INFO MPL-0012] NumSouthPins 32
-Begin Generating Sequential Graph
-End Generating Sequential Graph
-[INFO MPL-0013] NumVertexSeqGraph 42
-[INFO MPL-0014] NumEdgeSeqGraph 1280
+[INFO MPL-0009] West pins 18
+[INFO MPL-0009] East pins 13
+[INFO MPL-0009] North pins 12
+[INFO MPL-0009] South pins 32
 Begin One Level Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 3

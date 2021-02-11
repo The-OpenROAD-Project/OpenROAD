@@ -109,14 +109,10 @@ End NesterovInit
 [NesterovSolve] Finished with Overflow: 0.099070
 End Parsing Global Config
 [INFO MPL-0005] NumMacros 3
-[INFO MPL-0009] NumEastPins 22
-[INFO MPL-0010] NumWestPins 21
-[INFO MPL-0011] NumNorthPins 16
-[INFO MPL-0012] NumSouthPins 16
-Begin Generating Sequential Graph
-End Generating Sequential Graph
-[INFO MPL-0013] NumVertexSeqGraph 28
-[INFO MPL-0014] NumEdgeSeqGraph 39
+[INFO MPL-0009] West pins 21
+[INFO MPL-0009] East pins 22
+[INFO MPL-0009] North pins 16
+[INFO MPL-0009] South pins 16
 Begin One Level Partition
 Begin Partition
 [INFO MPL-0076] NumMacros 3

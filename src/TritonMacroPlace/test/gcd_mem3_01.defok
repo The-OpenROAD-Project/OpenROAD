@@ -384,8 +384,8 @@ COMPONENTS 309 ;
     - _890_ DFF_X1 + PLACED ( 28500 70000 ) N ;
     - _891_ DFF_X1 + PLACED ( 28880 64400 ) N ;
     - _892_ DFF_X1 + PLACED ( 36100 61600 ) FS ;
-    - mem0 fakeram45_64x7 + FIXED ( 40880 40880 ) N ;
-    - mem1 fakeram45_64x7 + FIXED ( 66080 40880 ) FN ;
+    - mem0 fakeram45_64x7 + FIXED ( 66080 40880 ) N ;
+    - mem1 fakeram45_64x7 + FIXED ( 40880 40880 ) FN ;
     - mem2 fakeram45_64x7 + FIXED ( 91840 40880 ) N ;
 END COMPONENTS
 PINS 75 ;
