@@ -2356,12 +2356,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
         con->setAdjacentCuts(rule->getNumCuts());
         if(rule->isExactAligned())
         con->setExactAlignedCut(rule->getNumCuts());
-        con->setTwoCuts(rule->isTw);
-        con->setTwoCutsSpacing(twoCutsSpacing);
-        con->setSameCut(isSameCut);
-        con->setCutWithin(cutWithin2);
-        con->setExceptSamePGNet(isExceptSamePGNet);
-        con->setExceptAllWithin(exceptAllWithin);
+        con->setTwoCuts(rule->isTwoCutsValid());
+        con->setTwoCutsSpacing(rule->getTwoCuts());
+        con->setSameCut(rule->isSameCut());
+        con->setCutWithin(rule->getWithin());
+        con->setExceptSamePGNet(rule->isExceptSamePgnet());
+        con->setExceptAllWithin(rule->isExcept);
         con->setAbove(isAbove);
         con->setBelow(isBelow);
         con->setEnclosure(enclosure);
@@ -2377,6 +2377,33 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
         break;
       
       default:
+        if(rule->getSecondLayer() == nullptr)
+          continue;
+        auto con = make_unique<frLef58CutSpacingConstraint>();
+        con->setCutSpacing(rule->getCutSpacing());
+        con->setCenterToCenter(rule->isCenterToCenter());
+        con->setSameNet(rule->isSameNet());
+        con->setSameMetal(rule->isSameMetal());
+        con->setSameVia(rule->isSameVia());
+        con->setSecondLayerName(rule->getSecondLayer()->getName());
+        con->setStack(rule->isStack());
+        if(rule->isOrthogonalSpacingValid())
+        {
+          con->setOrthogonalSpacing(rule->getOrthogonalSpacing());
+        }
+        if(rule->getCutClass()!=nullptr)
+        {
+          std::string className = rule->getCutClass()->getName();
+          con->setCutClassName(className);
+          auto cutClassIdx = tmpLayer->getCutClassIdx(className);
+          if (cutClassIdx != -1)
+              con->setCutClassIdx(cutClassIdx);
+          else
+            continue;
+          con->setShortEdgeOnly(rule->isShortEdgeOnly());
+          con->
+        }
+
         break;
       }
     }
