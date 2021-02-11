@@ -221,21 +221,40 @@ float clustering::Kmeans(unsigned N,
         position = f->match_idx[IDX].first;
       }
       else{
-        // Added to check wrong assignment
-        float minimum_dist = std::numeric_limits<float>::max();
-        int minimum_dist_cluster_index = -1;
 
+        // Added to check wrong assignment
+
+        float minimumDist;
+        int minimumDistClusterIndex = -1;
+
+        // Initialize minimumDist and minimumDistClusterIndex with a cluster with size < CAP
         for (long int j = 0; j < means.size(); ++j) {
-            float current_dist = calcDist(std::make_pair(means[j].first, means[j].second), f);
-            if(current_dist < minimum_dist){
-              minimum_dist = current_dist;
-              minimum_dist_cluster_index = j;
-            }
+          if(clusters[j].size() < CAP){
+            minimumDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+            minimumDistClusterIndex = j;
+            break;
+          }
         }
 
-        // Assert to check correct implementation
-        assert (minimum_dist_cluster_index!=-1);
-        position = minimum_dist_cluster_index;
+        if (minimumDistClusterIndex == -1) {
+          // No cluster with size < CAP
+          minimumDistClusterIndex = 0;
+        }
+        else {
+          // Nearest Cluster with size < CAP
+          for (long int j = 0; j < means.size(); ++j) {
+            if(clusters[j].size() < CAP) {
+              float currentDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+              if(currentDist < minimumDist){
+                minimumDist = currentDist;
+                minimumDistClusterIndex = j;
+              }
+            }
+          }
+        }
+
+        position = minimumDistClusterIndex;
+      
       }
       clusters[position].push_back(f);
     }
