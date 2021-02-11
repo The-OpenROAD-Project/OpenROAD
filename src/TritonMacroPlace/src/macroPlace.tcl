@@ -8,14 +8,14 @@ proc macro_placement { args } {
     keys {-global_config -local_config -fence_region} flags {-die_area}
 
   if { ![info exists keys(-global_config)] } {
-    puts "Error: -global_config must exist."
+    utl::error "MPL" 81 "missing -global_config argument."
     return
   } else {
     set global_config_file $keys(-global_config)
     if { [file readable $global_config_file] } {
       mpl::set_macro_place_global_config_cmd $global_config_file
     } else {
-      puts "Warning: cannot read $global_config_file"
+      utl::warn "MPL" 82 "cannot read $global_config_file"
     }
   }
 
@@ -24,14 +24,13 @@ proc macro_placement { args } {
     if { [file readable $local_config_file] } {
       mpl::set_macro_place_local_config_cmd $local_config_file
     } else {
-      puts "Warning: cannot read $local_config_file"
+      utl::warn "MPL" 83 "cannot read $local_config_file"
     }
   }
 
   if { [info exists flags(-die_area)] } {
     if { [info exists flags(-fence_region)] } {
-      puts "Warning: flag -die_area and -fence_region set."
-      puts "         TritonMP will ignore -fence_region flag."
+      utl::warn "MPL" 84 "both -die_area and -fence_region arguments, using -die_area."
     }
 
     # get dieArea from odb and set fence region 
@@ -58,10 +57,7 @@ proc macro_placement { args } {
     set die_area [$block getDieArea]
     set dbu [$block getDbUnitsPerMicron]
 
-    set lx [lindex $fence_region 0] 
-    set ly [lindex $fence_region 1]
-    set ux [lindex $fence_region 2]
-    set uy [lindex $fence_region 3]
+    lassign $fence_region lx ly ux uy 
     
     # note that unit is micron
     set dieLx [expr double([$die_area xMin]) / $dbu]
@@ -70,23 +66,19 @@ proc macro_placement { args } {
     set dieUy [expr double([$die_area yMax]) / $dbu]
 
     if { $lx < $dieLx } {
-      puts "Warning: fence_region lx is lower than dieLx."
-      puts "         modify lx as $dieLx"
+      utl::warn "MPL" 85 "fence_region left x is less than die left x."
       set lx $dieLx
     }
     if { $ly < $dieLy } {
-      puts "Warning: fence_region ly is lower than dieLy."
-      puts "         modify ly as $dieLy"
+      utl::warn "MPL" 86 "fence_region bottom y is less than die bottom y."
       set ly $dieLy
     }
     if { $ux > $dieUx } {
-      puts "Warning: fence_region ux exceeds dieUx."
-      puts "         modify ux as $dieUx"
+      utl::warn "MPL" 87 "fence_region right x is greater than die right x."
       set ux $dieUx
     }
     if { $uy > $dieUy } {
-      puts "Warning: fence_region uy exceeds dieUy."
-      puts "         modify uy as $dieUy"
+      utl::warn "MPL" 88 "fence_region top y is greater than die top y."
       set uy $dieUy
     }
 
@@ -96,6 +88,6 @@ proc macro_placement { args } {
   if { [ord::db_has_rows] } {
     mpl::place_macros_cmd
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
   }
 }

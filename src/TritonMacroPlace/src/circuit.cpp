@@ -389,7 +389,7 @@ void MacroCircuit::FillPinGroup()
       staToPinGroup[pin] = static_cast<int>(West);
 
       if (findNearestEdge(bTerm) != West)
-        log_->error(MPL, 0, "pin edge mismatch");
+        log_->error(MPL, 9, "pin edge mismatch");
     } else {
       int placeX = 0, placeY = 0;
       bTerm->getFirstPinLocation(placeX, placeY);
@@ -444,7 +444,7 @@ void MacroCircuit::FillPinGroup()
       staToPinGroup[pin] = static_cast<int>(pgLoc);
 
       if (findNearestEdge(bTerm) != pgLoc)
-        log_->error(MPL, 0, "pin edge mismatch");
+        log_->error(MPL, 10, "pin edge mismatch");
     }
   }
 
@@ -1859,7 +1859,7 @@ PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
-    log_->warn(MPL, 8, "pin {} is not placed. Using west.",
+    log_->warn(MPL, 11, "pin {} is not placed. Using west.",
                bTerm->getConstName());
     return West;
   } else {
