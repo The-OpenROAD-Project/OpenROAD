@@ -7809,12 +7809,13 @@ class dbTechLayerCutSpacingRule : public dbObject
   {
     NONE                = 0,
     MAXXY               = 1,
-    LAYER               = 2,
-    ADJACENTCUTS        = 3,
-    PARALLELOVERLAP     = 4,
-    PARALLELWITHIN      = 5,
-    SAMEMETALSHAREDEDGE = 6,
-    AREA                = 7
+    SAMEMASK            = 2,
+    LAYER               = 3,
+    ADJACENTCUTS        = 4,
+    PARALLELOVERLAP     = 5,
+    PARALLELWITHIN      = 6,
+    SAMEMETALSHAREDEDGE = 7,
+    AREA                = 8
   };
 
   void setCutSpacing(int _cut_spacing);
@@ -7822,6 +7823,58 @@ class dbTechLayerCutSpacingRule : public dbObject
   int getCutSpacing() const;
 
   void setSecondLayer(dbTechLayer* _second_layer);
+
+  void setOrthogonalSpacing(int _orthogonal_spacing);
+
+  int getOrthogonalSpacing() const;
+
+  void setWidth(int _width);
+
+  int getWidth() const;
+
+  void setEnclosure(int _enclosure);
+
+  int getEnclosure() const;
+
+  void setEdgeLength(int _edge_length);
+
+  int getEdgeLength() const;
+
+  void setParWithin(int _par_within);
+
+  int getParWithin() const;
+
+  void setParEnclosure(int _par_enclosure);
+
+  int getParEnclosure() const;
+
+  void setEdgeEnclosure(int _edge_enclosure);
+
+  int getEdgeEnclosure() const;
+
+  void setAdjEnclosure(int _adj_enclosure);
+
+  int getAdjEnclosure() const;
+
+  void setAboveEnclosure(int _above_enclosure);
+
+  int getAboveEnclosure() const;
+
+  void setAboveWidth(int _above_width);
+
+  int getAboveWidth() const;
+
+  void setMinLength(int _min_length);
+
+  int getMinLength() const;
+
+  void setExtension(int _extension);
+
+  int getExtension() const;
+
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
 
   void setNumCuts(uint _num_cuts);
 
@@ -7831,7 +7884,19 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   int getWithin() const;
 
+  void setSecondWithin(int _second_within);
+
+  int getSecondWithin() const;
+
   void setCutClass(dbTechLayerCutClassRule* _cut_class);
+
+  void setTwoCuts(uint _two_cuts);
+
+  uint getTwoCuts() const;
+
+  void setParLength(uint _par_length);
+
+  uint getParLength() const;
 
   void setCutArea(int _cut_area);
 
@@ -7849,13 +7914,69 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   bool isSameMetal() const;
 
-  void setSameVias(bool _same_vias);
+  void setSameVia(bool _same_via);
 
-  bool isSameVias() const;
+  bool isSameVia() const;
 
   void setStack(bool _stack);
 
   bool isStack() const;
+
+  void setOrthogonalSpacingValid(bool _orthogonal_spacing_valid);
+
+  bool isOrthogonalSpacingValid() const;
+
+  void setAboveWidthEnclosureValid(bool _above_width_enclosure_valid);
+
+  bool isAboveWidthEnclosureValid() const;
+
+  void setShortEdgeOnly(bool _short_edge_only);
+
+  bool isShortEdgeOnly() const;
+
+  void setConcaveCornerWidth(bool _concave_corner_width);
+
+  bool isConcaveCornerWidth() const;
+
+  void setConcaveCornerParallel(bool _concave_corner_parallel);
+
+  bool isConcaveCornerParallel() const;
+
+  void setConcaveCornerEdgeLength(bool _concave_corner_edge_length);
+
+  bool isConcaveCornerEdgeLength() const;
+
+  void setConcaveCorner(bool _concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExtensionValid(bool _extension_valid);
+
+  bool isExtensionValid() const;
+
+  void setNonEolConvexCorner(bool _non_eol_convex_corner);
+
+  bool isNonEolConvexCorner() const;
+
+  void setEolWidthValid(bool _eol_width_valid);
+
+  bool isEolWidthValid() const;
+
+  void setMinLengthValid(bool _min_length_valid);
+
+  bool isMinLengthValid() const;
+
+  void setAboveWidthValid(bool _above_width_valid);
+
+  bool isAboveWidthValid() const;
+
+  void setMaskOverlap(bool _mask_overlap);
+
+  bool isMaskOverlap() const;
+
+  void setWrongDirection(bool _wrong_direction);
+
+  bool isWrongDirection() const;
 
   void setAdjacentCuts(uint _adjacent_cuts);
 
@@ -7864,6 +7985,18 @@ class dbTechLayerCutSpacingRule : public dbObject
   void setExactAligned(bool _exact_aligned);
 
   bool isExactAligned() const;
+
+  void setCutClassToAll(bool _cut_class_to_all);
+
+  bool isCutClassToAll() const;
+
+  void setNoPrl(bool _no_prl);
+
+  bool isNoPrl() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
 
   void setExceptSamePgnet(bool _except_same_pgnet);
 
@@ -7881,6 +8014,10 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   bool isExceptSameMetal() const;
 
+  void setExceptSameMetalOverlap(bool _except_same_metal_overlap);
+
+  bool isExceptSameMetalOverlap() const;
+
   void setExceptSameVia(bool _except_same_via);
 
   bool isExceptSameVia() const;
@@ -7892,6 +8029,26 @@ class dbTechLayerCutSpacingRule : public dbObject
   void setExceptTwoEdges(bool _except_two_edges);
 
   bool isExceptTwoEdges() const;
+
+  void setTwoCutsValid(bool _two_cuts_valid);
+
+  bool isTwoCutsValid() const;
+
+  void setSameCut(bool _same_cut);
+
+  bool isSameCut() const;
+
+  void setLongEdgeOnly(bool _long_edge_only);
+
+  bool isLongEdgeOnly() const;
+
+  void setBelow(bool _below);
+
+  bool isBelow() const;
+
+  void setParWithinEnclosureValid(bool _par_within_enclosure_valid);
+
+  bool isParWithinEnclosureValid() const;
 
   // User Code Begin dbTechLayerCutSpacingRule
   dbTechLayerCutClassRule* getCutClass() const;
