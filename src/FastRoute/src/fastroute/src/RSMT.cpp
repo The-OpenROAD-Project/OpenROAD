@@ -857,7 +857,7 @@ void gen_brk_RSMT(Bool congestionDriven,
             y1 = treenodes[n1].y;
             x2 = treenodes[n2].x;
             y2 = treenodes[n2].y;
-            newRipup(treeedge, treenodes, x1, y1, x2, y2);
+            newRipup(treeedge, treenodes, x1, y1, x2, y2, i);
           }
         }
       } else {

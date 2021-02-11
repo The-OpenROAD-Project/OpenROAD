@@ -52,6 +52,7 @@ using utl::GRT;
 // rip-up a L segment
 void ripupSegL(Segment* seg)
 {
+  int edgeCost = nets[seg->netID]->edgeCost;
   int i, grid;
   int ymin, ymax;
 
@@ -67,15 +68,15 @@ void ripupSegL(Segment* seg)
   if (seg->xFirst) {
     grid = seg->y1 * (xGrid - 1);
     for (i = seg->x1; i < seg->x2; i++)
-      h_edges[grid + i].est_usage -= 1;
+      h_edges[grid + i].est_usage -= edgeCost;
     for (i = ymin; i < ymax; i++)
-      v_edges[i * xGrid + seg->x2].est_usage -= 1;
+      v_edges[i * xGrid + seg->x2].est_usage -= edgeCost;
   } else {
     for (i = ymin; i < ymax; i++)
-      v_edges[i * xGrid + seg->x1].est_usage -= 1;
+      v_edges[i * xGrid + seg->x1].est_usage -= edgeCost;
     grid = seg->y2 * (xGrid - 1);
     for (i = seg->x1; i < seg->x2; i++)
-      h_edges[grid + i].est_usage -= 1;
+      h_edges[grid + i].est_usage -= edgeCost;
   }
 }
 
@@ -83,6 +84,8 @@ void ripupSegZ(Segment* seg)
 {
   int i, grid;
   int ymin, ymax;
+
+  int edgeCost = nets[seg->netID]->edgeCost;
 
   if (seg->y1 < seg->y2) {
     ymin = seg->y1;
@@ -95,37 +98,37 @@ void ripupSegZ(Segment* seg)
   if (seg->x1 == seg->x2) {
     // remove V routing
     for (i = ymin; i < ymax; i++)
-      v_edges[i * xGrid + seg->x1].est_usage -= 1;
+      v_edges[i * xGrid + seg->x1].est_usage -= edgeCost;
   } else if (seg->y1 == seg->y2) {
     // remove H routing
     grid = seg->y1 * (xGrid - 1);
     for (i = seg->x1; i < seg->x2; i++)
-      h_edges[grid + i].est_usage -= 1;
+      h_edges[grid + i].est_usage -= edgeCost;
   } else {
     // remove Z routing
     if (seg->HVH) {
       grid = seg->y1 * (xGrid - 1);
       for (i = seg->x1; i < seg->Zpoint; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
       grid = seg->y2 * (xGrid - 1);
       for (i = seg->Zpoint; i < seg->x2; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
       for (i = ymin; i < ymax; i++)
-        v_edges[i * xGrid + seg->Zpoint].est_usage -= 1;
+        v_edges[i * xGrid + seg->Zpoint].est_usage -= edgeCost;
     } else {
       if (seg->y1 < seg->y2) {
         for (i = seg->y1; i < seg->Zpoint; i++)
-          v_edges[i * xGrid + seg->x1].est_usage -= 1;
+          v_edges[i * xGrid + seg->x1].est_usage -= edgeCost;
         for (i = seg->Zpoint; i < seg->y2; i++)
-          v_edges[i * xGrid + seg->x2].est_usage -= 1;
+          v_edges[i * xGrid + seg->x2].est_usage -= edgeCost;
         grid = seg->Zpoint * (xGrid - 1);
         for (i = seg->x1; i < seg->x2; i++)
           h_edges[grid + i].est_usage -= 1;
       } else {
         for (i = seg->y2; i < seg->Zpoint; i++)
-          v_edges[i * xGrid + seg->x2].est_usage -= 1;
+          v_edges[i * xGrid + seg->x2].est_usage -= edgeCost;
         for (i = seg->Zpoint; i < seg->y1; i++)
-          v_edges[i * xGrid + seg->x1].est_usage -= 1;
+          v_edges[i * xGrid + seg->x1].est_usage -= edgeCost;
         grid = seg->Zpoint * (xGrid - 1);
         for (i = seg->x1; i < seg->x2; i++)
           h_edges[grid + i].est_usage -= 1;
@@ -139,11 +142,14 @@ void newRipup(TreeEdge* treeedge,
               int x1,
               int y1,
               int x2,
-              int y2)
+              int y2,
+              int netID)
 {
   short *gridsX, *gridsY;
   int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
   RouteType ripuptype;
+
+  int edgeCost = nets[netID]->edgeCost;
 
   if (treeedge->len == 0) {
     return;  // not ripup for degraded edge
@@ -166,15 +172,15 @@ void newRipup(TreeEdge* treeedge,
     if (treeedge->route.xFirst) {
       grid = y1 * (xGrid - 1);
       for (i = x1; i < x2; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
       for (i = ymin; i < ymax; i++)
-        v_edges[i * xGrid + x2].est_usage -= 1;
+        v_edges[i * xGrid + x2].est_usage -= edgeCost;
     } else {
       for (i = ymin; i < ymax; i++)
-        v_edges[i * xGrid + x1].est_usage -= 1;
+        v_edges[i * xGrid + x1].est_usage -= edgeCost;
       grid = y2 * (xGrid - 1);
       for (i = x1; i < x2; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
     }
   } else if (ripuptype == ZROUTE) {
     // remove Z routing
@@ -182,29 +188,29 @@ void newRipup(TreeEdge* treeedge,
     if (treeedge->route.HVH) {
       grid = y1 * (xGrid - 1);
       for (i = x1; i < Zpoint; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
       grid = y2 * (xGrid - 1);
       for (i = Zpoint; i < x2; i++)
-        h_edges[grid + i].est_usage -= 1;
+        h_edges[grid + i].est_usage -= edgeCost;
       for (i = ymin; i < ymax; i++)
-        v_edges[i * xGrid + Zpoint].est_usage -= 1;
+        v_edges[i * xGrid + Zpoint].est_usage -= edgeCost;
     } else {
       if (y1 < y2) {
         for (i = y1; i < Zpoint; i++)
-          v_edges[i * xGrid + x1].est_usage -= 1;
+          v_edges[i * xGrid + x1].est_usage -= edgeCost;
         for (i = Zpoint; i < y2; i++)
-          v_edges[i * xGrid + x2].est_usage -= 1;
+          v_edges[i * xGrid + x2].est_usage -= edgeCost;
         grid = Zpoint * (xGrid - 1);
         for (i = x1; i < x2; i++)
-          h_edges[grid + i].est_usage -= 1;
+          h_edges[grid + i].est_usage -= edgeCost;
       } else {
         for (i = y2; i < Zpoint; i++)
-          v_edges[i * xGrid + x2].est_usage -= 1;
+          v_edges[i * xGrid + x2].est_usage -= edgeCost;
         for (i = Zpoint; i < y1; i++)
-          v_edges[i * xGrid + x1].est_usage -= 1;
+          v_edges[i * xGrid + x1].est_usage -= edgeCost;
         grid = Zpoint * (xGrid - 1);
         for (i = x1; i < x2; i++)
-          h_edges[grid + i].est_usage -= 1;
+          h_edges[grid + i].est_usage -= edgeCost;
       }
     }
   } else if (ripuptype == MAZEROUTE) {
@@ -214,11 +220,11 @@ void newRipup(TreeEdge* treeedge,
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
-        v_edges[ymin * xGrid + gridsX[i]].est_usage -= 1;
+        v_edges[ymin * xGrid + gridsX[i]].est_usage -= edgeCost;
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
-        h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
+        h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
       } else {
         logger->error(GRT, 119, "MAZE RIPUP WRONG in newRipup.");
       }
@@ -232,12 +238,15 @@ Bool newRipupType2(TreeEdge* treeedge,
                    int y1,
                    int x2,
                    int y2,
-                   int deg)
+                   int deg,
+                   int netID)
 {
   int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
   int *gridsX, *gridsY;
   RouteType ripuptype;
   Bool needRipup = FALSE;
+
+  int edgeCost = nets[netID]->edgeCost;
 
   if (treeedge->len == 0) {
     return (FALSE);  // not ripup for degraded edge
@@ -297,9 +306,9 @@ Bool newRipupType2(TreeEdge* treeedge,
 
         grid = y1 * (xGrid - 1);
         for (i = x1; i < x2; i++)
-          h_edges[grid + i].est_usage -= 1;
+          h_edges[grid + i].est_usage -= edgeCost;
         for (i = ymin; i < ymax; i++)
-          v_edges[i * xGrid + x2].est_usage -= 1;
+          v_edges[i * xGrid + x2].est_usage -= edgeCost;
       } else {
         if (n2 >= deg) {
           treenodes[n2].status -= 2;
@@ -307,10 +316,10 @@ Bool newRipupType2(TreeEdge* treeedge,
         treenodes[n1].status -= 1;
 
         for (i = ymin; i < ymax; i++)
-          v_edges[i * xGrid + x1].est_usage -= 1;
+          v_edges[i * xGrid + x1].est_usage -= edgeCost;
         grid = y2 * (xGrid - 1);
         for (i = x1; i < x2; i++)
-          h_edges[grid + i].est_usage -= 1;
+          h_edges[grid + i].est_usage -= edgeCost;
       }
     }
     return (needRipup);
@@ -332,6 +341,8 @@ Bool newRipupCheck(TreeEdge* treeedge,
   short *gridsX, *gridsY;
   int i, grid, Zpoint, ymin, xmin, max_usageH, max_usageV;
   Bool needRipup = FALSE;
+
+  int edgeCost = nets[netID]->edgeCost;
 
   if (treeedge->len == 0) {
     return (FALSE);
@@ -367,11 +378,11 @@ Bool newRipupCheck(TreeEdge* treeedge,
         if (gridsX[i] == gridsX[i + 1])  // a vertical edge
         {
           ymin = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges[ymin * xGrid + gridsX[i]].usage -= 1;
+          v_edges[ymin * xGrid + gridsX[i]].usage -= edgeCost;
         } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
         {
           xmin = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges[gridsY[i] * (xGrid - 1) + xmin].usage -= 1;
+          h_edges[gridsY[i] * (xGrid - 1) + xmin].usage -= edgeCost;
         }
       }
       return (TRUE);
@@ -389,6 +400,7 @@ Bool newRipup3DType3(int netID, int edgeID)
   short *gridsX, *gridsY, *gridsL;
   int i, k, grid, Zpoint, ymin, ymax, xmin, lv, lh, n1a, n2a, hl, bl, hid, bid,
       deg;
+  int edgeCost = nets[netID]->edgeCost;
 
   RouteType ripuptype;
   TreeEdge *treeedges, *treeedge;
@@ -499,12 +511,12 @@ Bool newRipup3DType3(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage -= 1;
+        v_edges3D[grid].usage -= edgeCost;
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage -= 1;
+        h_edges3D[grid].usage -= edgeCost;
       } else {
         logger->error(GRT, 122, "Maze RipUp wrong.");
       }
@@ -518,6 +530,8 @@ void newRipupNet(int netID)
 {
   short *gridsX, *gridsY;
   int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;
+
+  int edgeCost = nets[netID]->edgeCost;
 
   RouteType ripuptype;
   TreeEdge *treeedges, *treeedge;
@@ -552,15 +566,15 @@ void newRipupNet(int netID)
         if (treeedge->route.xFirst) {
           grid = y1 * (xGrid - 1);
           for (i = x1; i < x2; i++)
-            h_edges[grid + i].est_usage -= 1;
+            h_edges[grid + i].est_usage -= edgeCost;
           for (i = ymin; i < ymax; i++)
-            v_edges[i * xGrid + x2].est_usage -= 1;
+            v_edges[i * xGrid + x2].est_usage -= edgeCost;
         } else {
           for (i = ymin; i < ymax; i++)
-            v_edges[i * xGrid + x1].est_usage -= 1;
+            v_edges[i * xGrid + x1].est_usage -= edgeCost;
           grid = y2 * (xGrid - 1);
           for (i = x1; i < x2; i++)
-            h_edges[grid + i].est_usage -= 1;
+            h_edges[grid + i].est_usage -= edgeCost;
         }
       } else if (ripuptype == ZROUTE) {
         // remove Z routing
@@ -568,29 +582,29 @@ void newRipupNet(int netID)
         if (treeedge->route.HVH) {
           grid = y1 * (xGrid - 1);
           for (i = x1; i < Zpoint; i++)
-            h_edges[grid + i].est_usage -= 1;
+            h_edges[grid + i].est_usage -= edgeCost;
           grid = y2 * (xGrid - 1);
           for (i = Zpoint; i < x2; i++)
-            h_edges[grid + i].est_usage -= 1;
+            h_edges[grid + i].est_usage -= edgeCost;
           for (i = ymin; i < ymax; i++)
-            v_edges[i * xGrid + Zpoint].est_usage -= 1;
+            v_edges[i * xGrid + Zpoint].est_usage -= edgeCost;
         } else {
           if (y1 < y2) {
             for (i = y1; i < Zpoint; i++)
-              v_edges[i * xGrid + x1].est_usage -= 1;
+              v_edges[i * xGrid + x1].est_usage -= edgeCost;
             for (i = Zpoint; i < y2; i++)
-              v_edges[i * xGrid + x2].est_usage -= 1;
+              v_edges[i * xGrid + x2].est_usage -= edgeCost;
             grid = Zpoint * (xGrid - 1);
             for (i = x1; i < x2; i++)
-              h_edges[grid + i].est_usage -= 1;
+              h_edges[grid + i].est_usage -= edgeCost;
           } else {
             for (i = y2; i < Zpoint; i++)
-              v_edges[i * xGrid + x2].est_usage -= 1;
+              v_edges[i * xGrid + x2].est_usage -= edgeCost;
             for (i = Zpoint; i < y1; i++)
-              v_edges[i * xGrid + x1].est_usage -= 1;
+              v_edges[i * xGrid + x1].est_usage -= edgeCost;
             grid = Zpoint * (xGrid - 1);
             for (i = x1; i < x2; i++)
-              h_edges[grid + i].est_usage -= 1;
+              h_edges[grid + i].est_usage -= edgeCost;
           }
         }
       } else if (ripuptype == MAZEROUTE) {
@@ -600,11 +614,11 @@ void newRipupNet(int netID)
           if (gridsX[i] == gridsX[i + 1])  // a vertical edge
           {
             ymin = std::min(gridsY[i], gridsY[i + 1]);
-            v_edges[ymin * xGrid + gridsX[i]].est_usage -= 1;
+            v_edges[ymin * xGrid + gridsX[i]].est_usage -= edgeCost;
           } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
           {
             xmin = std::min(gridsX[i], gridsX[i + 1]);
-            h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
+            h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= edgeCost;
           } else {
             logger->error(GRT, 123, "MAZE RIPUP WRONG in newRipupNet for net {}.",
                           netName(nets[netID]));

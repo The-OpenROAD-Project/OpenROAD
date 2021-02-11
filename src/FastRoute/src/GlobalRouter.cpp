@@ -674,11 +674,14 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
+        int edgeCostForNet = (isClock) ? _clockCost : 1;
+
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
                                        pinsOnGrid.size(),
                                        netAlpha,
-                                       isClock);
+                                       isClock,
+                                       edgeCostForNet);
         for (RoutePt& pinPos : pinsOnGrid) {
           _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
         }
@@ -1236,6 +1239,11 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
   _netsAlpha[name] = alpha;
 }
 
+void GlobalRouter::setClockCost(int cost)
+{
+  _clockCost = cost;
+}
+
 void GlobalRouter::setVerbose(const int v)
 {
   _verbose = v;
@@ -1340,15 +1348,13 @@ void GlobalRouter::writeGuides(const char* fileName)
           } else {
             RoutingLayer phLayerI;
             if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-              phLayerI = getRoutingLayerByIndex(
-                  segment.initLayer + _minRoutingLayer - segment.initLayer);
+              phLayerI = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerI = getRoutingLayerByIndex(segment.initLayer);
             }
             if (segment.finalLayer < _minRoutingLayer
                 && !_unidirectionalRoute) {
-              phLayerF = getRoutingLayerByIndex(
-                  segment.finalLayer + _minRoutingLayer - segment.finalLayer);
+              phLayerF = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerF = getRoutingLayerByIndex(segment.finalLayer);
             }

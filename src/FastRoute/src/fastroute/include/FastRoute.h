@@ -71,7 +71,8 @@ class FastRouteCore
              int nPins,
              int validPins,
              float alpha,
-             bool isClock);
+             bool isClock,
+             int cost);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,
