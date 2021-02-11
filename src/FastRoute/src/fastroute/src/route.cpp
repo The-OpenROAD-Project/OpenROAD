@@ -93,12 +93,12 @@ void estimateOneSeg(Segment* seg)
   } else  // a diagonal segment
   {
     for (i = ymin; i < ymax; i++) {
-      v_edges[i * xGrid + seg->x1].est_usage += (float)edgeCost/2;
-      v_edges[i * xGrid + seg->x2].est_usage += (float)edgeCost/2;
+      v_edges[i * xGrid + seg->x1].est_usage += edgeCost/2.0f;
+      v_edges[i * xGrid + seg->x2].est_usage += edgeCost/2.0f;
     }
     for (i = seg->x1; i < seg->x2; i++) {
-      h_edges[seg->y1 * (xGrid - 1) + i].est_usage += (float)edgeCost/2;
-      h_edges[seg->y2 * (xGrid - 1) + i].est_usage += (float)edgeCost/2;
+      h_edges[seg->y1 * (xGrid - 1) + i].est_usage += edgeCost/2.0f;
+      h_edges[seg->y2 * (xGrid - 1) + i].est_usage += edgeCost/2.0f;
     }
   }
 }
@@ -254,30 +254,30 @@ void routeSegLFirstTime(Segment* seg)
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
     for (i = ymin; i < ymax; i++) {
       vedge = i * xGrid + seg->x1;
-      v_edges[vedge].est_usage += (float)edgeCost/2;
+      v_edges[vedge].est_usage += edgeCost/2.0f;
       vedge += seg->x2 - seg->x1;
-      v_edges[vedge].est_usage -= (float)edgeCost/2;
+      v_edges[vedge].est_usage -= edgeCost/2.0f;
     }
     for (i = seg->x1; i < seg->x2; i++) {
       hedge = seg->y2 * (xGrid - 1) + i;
-      h_edges[hedge].est_usage += (float)edgeCost/2;
+      h_edges[hedge].est_usage += edgeCost/2.0f;
       hedge = seg->y1 * (xGrid - 1) + i;
-      h_edges[hedge].est_usage -= (float)edgeCost/2;
+      h_edges[hedge].est_usage -= edgeCost/2.0f;
     }
     seg->xFirst = FALSE;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
     for (i = seg->x1; i < seg->x2; i++) {
       hedge = seg->y1 * (xGrid - 1) + i;
-      h_edges[hedge].est_usage += (float)edgeCost/2;
+      h_edges[hedge].est_usage += edgeCost/2.0f;
       hedge = seg->y2 * (xGrid - 1) + i;
-      h_edges[hedge].est_usage -= (float)edgeCost/2;
+      h_edges[hedge].est_usage -= edgeCost/2.0f;
     }
     for (i = ymin; i < ymax; i++) {
       vedge = i * xGrid + seg->x2;
-      v_edges[vedge].est_usage += (float)edgeCost/2;
+      v_edges[vedge].est_usage += edgeCost/2.0f;
       vedge += seg->x1 - seg->x2;
-      v_edges[vedge].est_usage -= (float)edgeCost/2;
+      v_edges[vedge].est_usage -= edgeCost/2.0f;
     }
     seg->xFirst = TRUE;
   }
