@@ -149,8 +149,8 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -178,7 +178,7 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._min_step_length;
   stream >> obj._max_edges;
@@ -192,7 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._min_step_length;
   stream << obj._max_edges;

@@ -190,9 +190,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(spacing2.second==def->getDefault());
 
     auto poly = dbTech->findLayer("poly");
-    BOOST_TEST(poly->isNWell());
-    BOOST_TEST(!poly->isPWell());
-
+    BOOST_TEST(poly->getLef58Type() == odb::dbTechLayer::NWELL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -979,6 +979,10 @@ void lefin::layer(lefiLayer* layer)
   if (layer->hasWireExtension())
     l->setWireExtension(dbdist(layer->wireExtension()));
 
+  dbSet<dbProperty> props = dbProperty::getProperties(l);
+  if (!props.empty() && props.orderReversed())
+    props.reverse();
+  
   _layer_cnt++;
 }
 

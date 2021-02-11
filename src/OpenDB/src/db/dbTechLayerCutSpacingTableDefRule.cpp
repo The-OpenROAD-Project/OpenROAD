@@ -215,8 +215,8 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff&     diff,
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -259,7 +259,7 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
 dbIStream& operator>>(dbIStream&                          stream,
                       _dbTechLayerCutSpacingTableDefRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._default;
   stream >> obj._second_layer;
@@ -284,7 +284,7 @@ dbIStream& operator>>(dbIStream&                          stream,
 dbOStream& operator<<(dbOStream&                                stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._default;
   stream << obj._second_layer;

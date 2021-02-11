@@ -14,7 +14,7 @@ class {{klass.name}} : public dbObject
   enum {{ _enum.name }}
   {
     {% for value in _enum["values"]%}
-    {% if not loop.first %},{%endif%}{{value}} = {{loop.index0}}
+    {% if not loop.first %},{%endif%}{{value}}
     {% endfor %}
   };
   {% endif %}

@@ -121,8 +121,8 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -144,7 +144,7 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._name;
   stream >> obj._width;
@@ -157,7 +157,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._name;
   stream << obj._width;
