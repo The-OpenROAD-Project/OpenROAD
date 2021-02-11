@@ -7896,6 +7896,10 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   uint getTwoCuts() const;
 
+  void setPrl(uint _prl);
+
+  uint getPrl() const;
+
   void setParLength(uint _par_length);
 
   uint getParLength() const;
@@ -8043,6 +8047,10 @@ class dbTechLayerCutSpacingRule : public dbObject
   void setLongEdgeOnly(bool _long_edge_only);
 
   bool isLongEdgeOnly() const;
+
+  void setPrlValid(bool _prl_valid);
+
+  bool isPrlValid() const;
 
   void setBelow(bool _below);
 

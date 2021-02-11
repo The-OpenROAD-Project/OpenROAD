@@ -163,6 +163,9 @@ bool _dbTechLayerCutSpacingRule::operator==(
   if (_flags._long_edge_only != rhs._flags._long_edge_only)
     return false;
 
+  if (_flags._prl_valid != rhs._flags._prl_valid)
+    return false;
+
   if (_flags._below != rhs._flags._below)
     return false;
 
@@ -230,6 +233,9 @@ bool _dbTechLayerCutSpacingRule::operator==(
   if (_two_cuts != rhs._two_cuts)
     return false;
 
+  if (_prl != rhs._prl)
+    return false;
+
   if (_par_length != rhs._par_length)
     return false;
 
@@ -290,6 +296,7 @@ void _dbTechLayerCutSpacingRule::differences(
   DIFF_FIELD(_flags._two_cuts_valid);
   DIFF_FIELD(_flags._same_cut);
   DIFF_FIELD(_flags._long_edge_only);
+  DIFF_FIELD(_flags._prl_valid);
   DIFF_FIELD(_flags._below);
   DIFF_FIELD(_flags._par_within_enclosure_valid);
   DIFF_FIELD(_cut_spacing);
@@ -312,6 +319,7 @@ void _dbTechLayerCutSpacingRule::differences(
   DIFF_FIELD(_second_within);
   DIFF_FIELD(_cut_class);
   DIFF_FIELD(_two_cuts);
+  DIFF_FIELD(_prl);
   DIFF_FIELD(_par_length);
   DIFF_FIELD(_cut_area);
   // User Code Begin differences
@@ -359,6 +367,7 @@ void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_flags._two_cuts_valid);
   DIFF_OUT_FIELD(_flags._same_cut);
   DIFF_OUT_FIELD(_flags._long_edge_only);
+  DIFF_OUT_FIELD(_flags._prl_valid);
   DIFF_OUT_FIELD(_flags._below);
   DIFF_OUT_FIELD(_flags._par_within_enclosure_valid);
   DIFF_OUT_FIELD(_cut_spacing);
@@ -381,6 +390,7 @@ void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_second_within);
   DIFF_OUT_FIELD(_cut_class);
   DIFF_OUT_FIELD(_two_cuts);
+  DIFF_OUT_FIELD(_prl);
   DIFF_OUT_FIELD(_par_length);
   DIFF_OUT_FIELD(_cut_area);
 
@@ -435,6 +445,7 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
   _flags._two_cuts_valid              = r._flags._two_cuts_valid;
   _flags._same_cut                    = r._flags._same_cut;
   _flags._long_edge_only              = r._flags._long_edge_only;
+  _flags._prl_valid                   = r._flags._prl_valid;
   _flags._below                       = r._flags._below;
   _flags._par_within_enclosure_valid  = r._flags._par_within_enclosure_valid;
   _flags._spare_bits                  = r._flags._spare_bits;
@@ -458,6 +469,7 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
   _second_within                      = r._second_within;
   _cut_class                          = r._cut_class;
   _two_cuts                           = r._two_cuts;
+  _prl                                = r._prl;
   _par_length                         = r._par_length;
   _cut_area                           = r._cut_area;
   // User Code Begin CopyConstructor
@@ -488,6 +500,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
   stream >> obj._second_within;
   stream >> obj._cut_class;
   stream >> obj._two_cuts;
+  stream >> obj._prl;
   stream >> obj._par_length;
   stream >> obj._cut_area;
   // User Code Begin >>
@@ -518,6 +531,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
   stream << obj._second_within;
   stream << obj._cut_class;
   stream << obj._two_cuts;
+  stream << obj._prl;
   stream << obj._par_length;
   stream << obj._cut_area;
   // User Code Begin <<
@@ -782,6 +796,19 @@ uint dbTechLayerCutSpacingRule::getTwoCuts() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->_two_cuts;
+}
+
+void dbTechLayerCutSpacingRule::setPrl(uint _prl)
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+
+  obj->_prl = _prl;
+}
+
+uint dbTechLayerCutSpacingRule::getPrl() const
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  return obj->_prl;
 }
 
 void dbTechLayerCutSpacingRule::setParLength(uint _par_length)
@@ -1306,6 +1333,20 @@ bool dbTechLayerCutSpacingRule::isLongEdgeOnly() const
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   return obj->_flags._long_edge_only;
+}
+
+void dbTechLayerCutSpacingRule::setPrlValid(bool _prl_valid)
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+
+  obj->_flags._prl_valid = _prl_valid;
+}
+
+bool dbTechLayerCutSpacingRule::isPrlValid() const
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+
+  return obj->_flags._prl_valid;
 }
 
 void dbTechLayerCutSpacingRule::setBelow(bool _below)
