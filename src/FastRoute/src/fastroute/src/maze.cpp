@@ -1812,16 +1812,18 @@ void mazeRouteMSMD(int iter,
             treeedges[edge_n1n2].route.gridsY[i] = gridsY[i];
           }
 
+          int edgeCost = nets[netID]->edgeCost;
+
           // update edge usage
           for (i = 0; i < cnt_n1n2 - 1; i++) {
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
-              v_edges[min_y * xGrid + gridsX[i]].usage += 1;
+              v_edges[min_y * xGrid + gridsX[i]].usage += edgeCost;
             } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
             {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
-              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += 1;
+              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += edgeCost;
             }
           }
 
