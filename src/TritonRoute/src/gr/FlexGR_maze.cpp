@@ -31,32 +31,6 @@
 using namespace std;
 using namespace fr;
 
-// void FlexGRWorker::route_queue() {
-//   bool enableOutput = true;
-
-//   if (enableOutput) {
-//     cout << "start Maze route #nets = " << nets.size() << endl;
-//   }
-
-//   deque<pair<grNet*, pair<bool, int> > > rerouteQueue; // <grNet*, <isRoute, #reroute cnt> >
-  
-//   // init net status
-//   route_queue_resetRipup();
-//   // init reroute queue
-//   route_queue_init_queue(rerouteQueue);
-// }
-
-// void FlexGRWorker::route_queue_resetRipup() {
-//   for (auto &net: nets) {
-//     net->resetNumReroutes();
-//   }
-// }
-
-// void FlexGRWorker::route_queue_init_queue(deque<pair<grNet*, pair<bool, int> > > &rerouteQueue) {
-
-// }
-
-
 void FlexGRWorker::route() {
   bool enableOutput = false;
   if (enableOutput) {
@@ -91,8 +65,6 @@ void FlexGRWorker::route_addHistCost() {
   frMIdx zDim = 0;
 
   gridGraph_.getDim(xDim, yDim, zDim);
-
-  // vector<grConnFig*> result;
 
   for (int zIdx = 0; zIdx < zDim; zIdx++) {
     // frLayerNum lNum = (zIdx + 1) * 2;
@@ -232,9 +204,6 @@ void FlexGRWorker::mazeNetInit(grNet* net) {
   if (enableOutput) {
     cout << "mazeInit subnet of " << net->getFrNet()->getName() << endl;
   }
-  // if (net->getFrNet()->getName() == string("net282")) {
-  //   routeNet_printNet(net);
-  // }
 
   gridGraph_.resetStatus();
   if (ripupMode_ == 0) {
@@ -496,7 +465,6 @@ void FlexGRWorker::routeNet_prep(grNet* net, set<grNode*, frBlockObjectComp> &un
       } else {
         cout << "Warning: overlapping leaf pinGCellNode\n";
       }
-      // routeNet_printNet(net);
     }
     mazeIdx2unConnPinGCellNode[mi] = pinGCellNode;
     if (enableOutput) {
@@ -635,21 +603,14 @@ grNode* FlexGRWorker::routeNet_getNextDst(FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &
       gridGraph_.getPoint(mazeIdx.x(), mazeIdx.y(), pt);
       if (enableOutput) {
         cout << "  mazeIdx2unConnPinGCellNode at mazeIdx = (" << mazeIdx.x() << ", " << mazeIdx.y() << ", " << mazeIdx.z() << ")\n";
-        // cout << "    absolute location = (" << pt.x() << ", " << pt.y() << ")\n" << flush;
       }
       frCoord dx = max(max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
       frCoord dy = max(max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
       frCoord dz = max(max(gridGraph_.getZHeight(ccMazeIdx1.z()) - gridGraph_.getZHeight(mazeIdx.z()), 
                            gridGraph_.getZHeight(mazeIdx.z()) - gridGraph_.getZHeight(ccMazeIdx2.z())), 0);
-      // if (enableOutput) {
-      //   cout << "    dx = " << dx << ", dy = " << dy << ", dz = " << dz << endl << flush;
-      // }
       if (dx + dy + dz < currDist) {
         currDist = dx + dy + dz;
         nextDst = node;
-        // if (enableOutput) {
-        //   cout << "    set new nextDst node " << nextDst <<"\n" << flush;
-        // }
       }
       if (currDist == 0) {
         break;
@@ -698,21 +659,18 @@ grNode* FlexGRWorker::routeNet_postAstarUpdate(vector<FlexMazeIdx> &path, vector
       for (auto currX = std::min(startX, endX); currX <= std::max(startX, endX); ++currX) {
         localConnComps.insert(FlexMazeIdx(currX, startY, startZ));
         gridGraph_.setSrc(currX, startY, startZ);
-        //gridGraph_.resetDst(currX, startY, startZ);
       }
     // vertical wire
     } else if (startX == endX && startY != endY && startZ == endZ) {
       for (auto currY = std::min(startY, endY); currY <= std::max(startY, endY); ++currY) {
         localConnComps.insert(FlexMazeIdx(startX, currY, startZ));
         gridGraph_.setSrc(startX, currY, startZ);
-        //gridGraph_.resetDst(startX, currY, startZ);
       }
     // via
     } else if (startX == endX && startY == endY && startZ != endZ) {
       for (auto currZ = std::min(startZ, endZ); currZ <= std::max(startZ, endZ); ++currZ) {
         localConnComps.insert(FlexMazeIdx(startX, startY, currZ));
         gridGraph_.setSrc(startX, startY, currZ);
-        //gridGraph_.resetDst(startX, startY, currZ);
       }
     // zero length
     } else if (startX == endX && startY == endY && startZ == endZ) {
@@ -787,7 +745,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(grNet* net, vector<FlexMazeIdx> &
     }
     // if need to genParent, need to break pathSeg in case the source is not a pin (i.e., branch from pathSeg)
     if (needGenParent && i == (int)points.size() - 2) {
-      // cout << "    root need split pathSeg\n";
       frPoint srcLoc;
       gridGraph_.getPoint(points.back().x(), points.back().y(), srcLoc);
       frLayerNum srcLNum = (points.back().z() + 1) * 2;
@@ -808,7 +765,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(grNet* net, vector<FlexMazeIdx> &
 
     // create parent node if no existing done
     if (parent == nullptr) {
-      // cout << "    create new parent node at mazeIdx (" << points[i+1].x() << ", " << points[i+1].y() << ", " << points[i+1].z() << ")\n";
       frPoint parentLoc;
       frLayerNum parentLNum = (points[i+1].z() + 1) * 2;
       gridGraph_.getPoint(points[i+1].x(), points[i+1].y(), parentLoc);
@@ -822,8 +778,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(grNet* net, vector<FlexMazeIdx> &
 
       net->addNode(uParent);
       mazeIdx2endPointNode[points[i+1]] = parent;
-    } else {
-      // cout << "    has existing parent at mazeIdx (" << points[i+1].x() << ", " << points[i+1].y() << ", " << points[i+1].z() << ")\n";
     }
 
     // child and parent are all set 

@@ -44,23 +44,6 @@ void FlexGRWorker::end() {
                 <<extBox_.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
-  // if (enableOutput) {
-  //   stringstream ss;
-  //   ss <<endl <<"end GR worker (BOX) "
-  //               <<"( " <<extBox.left() <<" "
-  //               <<extBox.bottom()  <<" ) ( "
-  //               <<extBox.right()   <<" "
-  //               <<extBox.top()     <<" )" <<endl
-  //               << " ( " <<routeBox.left() <<" "
-  //               <<routeBox.bottom()  <<" ) ( "
-  //               <<routeBox.right()   <<" "
-  //               <<routeBox.top()     <<" )" <<endl
-  //               << " ( " <<routeGCellIdxLL.x() <<" "
-  //               <<routeGCellIdxLL.y()  <<" ) ( "
-  //               <<routeGCellIdxUR.x()   <<" "
-  //               <<routeGCellIdxUR.y()     <<" )" <<endl;
-  //   cout <<ss.str() <<flush;
-  // }
 
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
@@ -182,161 +165,6 @@ void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet) {
   }
 
 }
-
-// void FlexGRWorker::endRemoveNets(set<frNet*, frBlockObjectComp> &modNets) {
-//   set<frNode*> routeNodes;
-//   // remove pathSeg and via (all nets based)
-//   vector<grBlockObject*> result;
-//   getRegionQuery()->queryGRObj(getRouteBox(), result);
-//   for (auto rptr: result) {
-//     if (rptr->typeId() == grcPathSeg) {
-//       auto cptr = static_cast<grPathSeg*>(rptr);
-//       if (cptr->hasNet()) {
-//         if (modNets.find(cptr->getNet()) != modNets.end()) {
-//           routeNodes.insert(cptr->getChild());
-//           routeNodes.insert(cptr->getParent());
-//           endRemoveNets_pathSeg(cptr);
-//         }
-//       } else {
-//         cout <<"Error: endRemoveNet hasNet() empty" <<endl;
-//       }
-//     } else if (rptr->typeId() == grcVia) {
-//       auto cptr = static_cast<grVia*>(rptr);
-//       if (cptr->hasNet()) {
-//         if (modNets.find(cptr->getNet()) != modNets.end()) {
-//           routeNodes.insert(cptr->getChild());
-//           routeNodes.insert(cptr->getParent());
-//           endRemoveNets_via(cptr);
-//         }
-//       } else {
-//         cout <<"Error: endRemoveNet hasNet() empty" <<endl;
-//       }
-//     } else {
-//       cout <<"Error: endRemoveNets unsupported type" <<endl;
-//     }
-//   }
-//   // remove nodes (all nets based)
-//   for (auto routeNode: routeNodes) {
-//     endRemoveNets_node(routeNode);
-//   }
-// }
-
-// void FlexGRWorker::endRemoveNet_breakBound(frNet* net) {
-//   for (auto &[locLayerPair, grNodes]: owner2extBoundPtNodes[net]) {
-//     auto loc = locLayerPair.first;
-//     auto lNum = locLayerPair.second;
-
-//     vector<frBlockObject*> result;
-//     frBox queryBox(loc.x(), loc.y(), loc.x(), loc.y());
-//     getRegionQuery()->queryGRObj(queryBox, lNum, result);
-//     for (auto rptr: result) {
-//       if (rptr->typeId() == grcPathSeg) {
-//         auto cptr = static_cast<frPathSeg*>(rptr);
-//         // break the pathSeg at boundary point
-//         if (cptr->hasNet() && cptr->getNet() == net) {
-//           endRemoveNet_breakBound_pathSeg(cptr, loc);
-//         }
-//       }
-//     }
-//   }
-// }
-
-// void FlexGRWorker::endRemoveNet_breakBound_pathSeg(grPathSeg* pathSeg, const frPoint &breakPt) {
-//   // frNet
-//   auto net = pathSeg->getNet();
-//   auto lNum = pathSeg->getLayerNum();
-//   frPoint bp, ep;
-//   pathSeg->getPoints(bp, ep);
-//   frNode *childNode = pathSeg->getChild();
-//   frNode *parentNode = pathSeg->getParent();
-//   frPoint childLoc = childNode->getLoc();
-//   bool isChildBP = (childLoc == bp);
-
-//   auto uBreakNode = make_unique<frNode>();
-//   auto breakNode = uBreakNode.get();
-//   breakNode->addToNet(net);
-//   breakNode->setLoc(breakPt);
-//   breakNode->setLayerNum(lNum);
-//   breakNode->setType(frNodeTypeEnum::frcBoundaryPin);
-
-//   // update connectivity
-//   parentNode->removeChild(childNode);
-//   childNode->setParent(breakNode);
-//   breakNode->addChild(childNode);
-//   breakNode->setParent(parentNode);
-//   parentNode->addChild(breakNode);
-
-//   net->addNode(uBreakNode);
-
-//   // create new pathSegs
-//   // child - breakPt
-//   auto uPathSeg1 = make_unique<grPathSeg>();
-//   auto pathSeg1 = uPathSeg1.get();
-//   pathSeg1->setChild(childNode);
-//   childNode->setConnFig(pathSeg1);
-//   pathSeg1->setParent(breakNode);
-//   pathSeg1->addToNet(net);
-//   if (isChildBP) {
-//     pathSeg1->setPoints(bp, breakPt);
-//   } else {
-//     pathSeg1->setPoints(breakPt, ep);
-//   }
-//   pathSeg1->setLayerNum(lNum);
-
-//   // breakPt - parent
-//   auto uPathSeg2 = make_unique<grPathSeg>();
-//   auto pathSeg2 = uPathSeg2.get();
-//   pathSeg2->setChild(breakNode);
-//   breakNode->setConnFig(pathSeg2);
-//   pathSeg2->setParent(parentNode);
-//   pathSeg2->addToNet(net);
-//   if (isChildBP) {
-//     pathSeg2->setPoints(breakPt, ep);
-//   } else {
-//     pathSeg2->setPoints(bp, breakPt);
-//   }
-//   pathSeg2->setLayerNum(lNum);
-
-//   // update region query
-//   getRegionQuery()->removeGRObj(pathSeg);
-//   getRegionQuery()->addGRObj(pathSeg1);
-//   getRegionQuery()->addGRObj(pathSeg2);
-
-//   // update net ownership
-//   unique_ptr<grConnFig> uGRConnFig1(std::move(uPathSeg1));
-//   unique_ptr<grConnFig> uGRConnFig2(std::move(uPathSeg2));
-
-//   net->addGRShape(uGRConnFig1);
-//   net->addGRShape(uGRConnFig2);
-
-//   net->removeGRObj(pathSeg);
-
-// }
-
-
-
-// void FlexGRWorker::endRemoveNets_node(frNode* node) {
-//   if (node->getType() == frNodeTypeEnum::frcBoundaryPin) {
-//     frPoint parentLoc = node->getParent()->getLoc();
-//     frLayerNum parentLNum = node->getParent()->getLayerNum();
-//     owner2pinNodes[node->getNet()][make_pair(parentLoc, parentLNum)].push_back(node);
-//   } else if (node->getType() == frNodeTypeEnum::frcPin) {
-//     frPoint parentLoc = node->getParent()->getLoc();
-//     frLayerNum parentLNum = node->getParent()->getLayerNum();
-//     owner2pinNodes[node->getNet()][make_pair(parentLoc, parentLNum)].push_back(node);
-//   }
-
-//   if (node->getType() == frNodeTypeEnum::frcBoundaryPin || node->getType() == frNodeTypeEnum::frcPin) {
-//     return;
-//   }
-
-//   // remove the node
-//   auto loc = node->getLoc();
-//   auto lNum = node->getLayerNum();
-//   auto net = node->getNet();
-
-//   net->removeNode(node);
-// }
 
 void FlexGRWorker::endAddNets(set<frNet*, frBlockObjectComp> &modNets) {
   for (auto fnet: modNets) {
@@ -511,7 +339,6 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net) {
   for (auto &pinNodePair: pinNodePairs) {
     // frNode
     auto node = pinNodePair.first;
-    // auto gNode = pinNodePair.second;
 
     if (node->getType() != frNodeTypeEnum::frcBoundaryPin) {
       continue;
@@ -605,7 +432,6 @@ void FlexGRWorker::endWriteBackCMap() {
         int cmapYIdx = yIdx + idxLLY;
         // copy history cost
         cmap->setHistoryCost(cmapXIdx, cmapYIdx, zIdx, gridGraph_.getHistoryCost(xIdx, yIdx, zIdx));
-        // gridGraph.setHistoryCost(xIdx, yIdx, zIdx, cmap->getHistoryCost(cmapXIdx, cmapYIdx, zIdx));
 
         // debug
         if (gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E) != cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E) ||
@@ -616,12 +442,6 @@ void FlexGRWorker::endWriteBackCMap() {
         // copy raw demand
         cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E, gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E));
         cmap->setRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N, gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N));
-        // gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
-        // gridGraph.setRawDemand(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
-
-        // copy supply (raw supply is only used when comparing to raw demand and supply is always integer)
-        // gridGraph.setSupply(xIdx, yIdx, zIdx, frDirEnum::E, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E));
-        // gridGraph.setSupply(xIdx, yIdx, zIdx, frDirEnum::N, cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
       }
     }
   }
