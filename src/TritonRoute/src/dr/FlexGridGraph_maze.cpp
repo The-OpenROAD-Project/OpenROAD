@@ -479,9 +479,6 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
     if (dir == frDirEnum::U || dir == frDirEnum::D) return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
     frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
     frCoord cost = el;
-    if (gridZ == 2 && dir == frDirEnum::D && yCoords_[gridY] == 73150 && xCoords_[gridX] == 88200){
-        gridZ=gridZ;
-    }
     cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
     cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
     frMIdx startX, startY, endX, endY;
@@ -548,12 +545,14 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
 }
 
 frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const{
-    if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr /*&& ndr_->getSpacing(dir == frDirEnum::U ? gridZ : gridZ-1) == 0*/) 
+    if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr 
+            /*&& ndr_->getSpacing(dir == frDirEnum::U ? gridZ : gridZ-1) == 0*/) 
         return getCosts(gridX, gridY, gridZ, dir, layer);
     frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
     frCoord cost = el;
     cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
     cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
+    cost += (isBlocked(gridX, gridY, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
     
     frMIdx startX, startY, endX, endY, bottomZ;
     frCoord sp;
@@ -624,7 +623,6 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
 //                if (gridZ == initZ){
                     cost += (hasDRCCost(x, y, bottomZ, frDirEnum::U) ? ggDRCCost_*el : 0);
                     cost += (hasMarkerCost(x, y, bottomZ, frDirEnum::U) ? ggMarkerCost_*el : 0);
-                    cost += (isBlocked(x, y, bottomZ, frDirEnum::U) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
 //                }
             }
         }

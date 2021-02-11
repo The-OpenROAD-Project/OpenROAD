@@ -222,6 +222,12 @@ void FlexDRWorker::modBlockedVia(const frBox &box, frMIdx z, bool setBlock) {
   frBox bx(box.left()   - bloatDist - halfwidth2 + 1, box.bottom() - bloatDist - halfwidth2 + 1,
            box.right()  + bloatDist + halfwidth2 - 1, box.top()    + bloatDist + halfwidth2 - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
+  if (ndr){
+      if (gridGraph_.xCoord(mIdx1.x()) < bx.left()) mIdx1.setX(mIdx1.x()+1);
+      if (gridGraph_.xCoord(mIdx2.x()) > bx.right()) mIdx2.setX(mIdx2.x()-1);
+      if (gridGraph_.yCoord(mIdx1.y()) < bx.bottom()) mIdx1.setY(mIdx1.y()+1);
+      if (gridGraph_.yCoord(mIdx2.y()) > bx.top()) mIdx2.setY(mIdx2.y()-1);
+  }
   //if (!isInitDR()) {
   //  cout <<" box " <<box <<" bloatDist " <<bloatDist <<" bx " <<bx <<endl;
   //  cout <<" midx1/2 (" <<mIdx1.x() <<", " <<mIdx1.y() <<") ("
@@ -241,7 +247,7 @@ void FlexDRWorker::modBlockedVia(const frBox &box, frMIdx z, bool setBlock) {
       distSquare = min(pt2boxDistSquare(pt1, box), pt2boxDistSquare(pt2, box));
       distSquare = min(pt2boxDistSquare(pt3, box), distSquare);
       distSquare = min(pt2boxDistSquare(pt4, box), distSquare);
-      if (distSquare < bloatDistSquare) {
+      if (ndr || distSquare < bloatDistSquare) {
         switch(type) {
           case 0:
             gridGraph_.subDRCCostPlanar(i, j, z); // safe access
@@ -821,7 +827,12 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bo
            box.right()  + max(bloatDist, bloatDistEolX) + (0 - viaBox.left())  - 1, 
              box.top()    + max(bloatDist, bloatDistEolY) + (0 - viaBox.bottom()) - 1);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
-
+  if (ndr){
+      if (gridGraph_.xCoord(mIdx1.x()) < bx.left()) mIdx1.setX(mIdx1.x()+1);
+      if (gridGraph_.xCoord(mIdx2.x()) > bx.right()) mIdx2.setX(mIdx2.x()-1);
+      if (gridGraph_.yCoord(mIdx1.y()) < bx.bottom()) mIdx1.setY(mIdx1.y()+1);
+      if (gridGraph_.yCoord(mIdx2.y()) > bx.top()) mIdx2.setY(mIdx2.y()-1);
+  }
   frPoint pt;
   frBox tmpBx;
   frCoord distSquare = 0;
@@ -874,7 +885,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bo
         reqDist = (isBlockage && USEMINSPACING_OBS && !isFatVia) ? static_cast<frSpacingTableTwConstraint*>(con)->findMin() :
                                static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
       }
-      if (distSquare < reqDist * reqDist) {
+      if (ndr || distSquare < reqDist * reqDist) {
         if (isUpperVia) {
           switch(type) {
             case 0:

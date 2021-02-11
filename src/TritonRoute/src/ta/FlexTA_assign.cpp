@@ -68,6 +68,8 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox &box, frLayerNum lNum, ta
     cout <<"Warning: no min spacing rule" <<endl;
     return;
   }
+  if (fig->getNet()->getNondefaultRule())
+      bloatDist = max(bloatDist, fig->getNet()->getNondefaultRule()->getSpacing(lNum/2 -1));
   frCoord bloatDistSquare = bloatDist * bloatDist;
 
   bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
@@ -200,7 +202,8 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox &box, frLayerNum lNum, taPin
     cout <<"Warning: no min spacing rule" <<endl;
     return;
   }
-
+  if (fig->getNet()->getNondefaultRule())
+      bloatDist = max(bloatDist, fig->getNet()->getNondefaultRule()->getSpacing(lNum/2 -1));
   int idx1, idx2;
   if (isH) {
     getTrackIdx(box.bottom() - bloatDist - (viaBox.top() - 0) + 1, 
@@ -269,7 +272,9 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox &box, frLayerNum lNum, taPin
     } else if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
       reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
     }
-
+    if (fig->getNet()->getNondefaultRule())
+      reqDist = max(reqDist, fig->getNet()->getNondefaultRule()->getSpacing(lNum/2 -1));
+    
     if (isH) {
       if (dy >= reqDist) {
         continue;
@@ -657,10 +662,15 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc) {
   return sol;
 }
 
-frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute, const frBox &box, frLayerNum lNum) {
+frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute, frBox &box, frLayerNum lNum) {
   auto &workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*> > > result;
   int overlap = 0;
+  if (iroute->getGuide()->getNet()->getNondefaultRule()){
+      int r = iroute->getGuide()->getNet()->getNondefaultRule()->getWidth(lNum/2 -1)/2;
+      r += iroute->getGuide()->getNet()->getNondefaultRule()->getSpacing(lNum/2 -1);
+      box.bloat(r, box);
+  }
   workerRegionQuery.queryCost(box, lNum, result);
   bool isCut = false;
   for (auto &[bounds, pr]: result) {
@@ -726,7 +736,8 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc) {
         bp.set(trackLoc, bp.y());
         ep.set(trackLoc, ep.y());
       }
-      frUInt4 wireCost = assignIroute_getDRCCost_helper(iroute, frBox(bp, ep), obj->getLayerNum());
+      frBox bbox(bp, ep);
+      frUInt4 wireCost = assignIroute_getDRCCost_helper(iroute, bbox, obj->getLayerNum());
       cost += wireCost;
     } else if (uPinFig->typeId() == tacVia) {
       auto obj = static_cast<taVia*>(uPinFig.get());
@@ -736,7 +747,8 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc) {
       } else {
         bp.set(trackLoc, bp.y());
       }
-      frUInt4 viaCost = assignIroute_getDRCCost_helper(iroute, frBox(bp, bp), obj->getViaDef()->getCutLayerNum());
+      frBox bbox(bp, bp);
+      frUInt4 viaCost = assignIroute_getDRCCost_helper(iroute, bbox, obj->getViaDef()->getCutLayerNum());
       cost += viaCost;
     } else {
       cout <<"Error: assignIroute_updateIroute unsupported pinFig" <<endl;

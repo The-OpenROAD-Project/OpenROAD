@@ -187,9 +187,21 @@ namespace fr {
         }
         return spc;
     }
+    frCoord getMaxNondefaultWidth(int z){
+        frCoord spc = 0;
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getWidth(z) > spc) spc = nd->getWidth(z);
+        }
+        return spc;
+    }
     bool hasNondefaultRules(){
         return !nonDefaultRules.empty();
     }
+//    frViaDef* getPrefVia(frLayerNum l, frNet* n){
+//        if (n && n->getNondefaultRule() && n->getNondefaultRule()->getPrefVia(l/2 -1))
+//            return n->getNondefaultRule()->getPrefVia(l/2 -1);
+//        return getLayer(l)->getDefaultViaDef();
+//    }
     // debug
     void printAllConstraints() {
       std::cout << "List of Constraints:\n";

@@ -232,7 +232,7 @@ namespace fr {
     frUInt4 assignIroute_getPinCost(taPin* iroute, frCoord trackLoc);
     frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
     frUInt4 assignIroute_getDRCCost(taPin *iroute, frCoord trackLoc);
-    frUInt4 assignIroute_getDRCCost_helper(taPin* iroute, const frBox &box, frLayerNum lNum);
+    frUInt4 assignIroute_getDRCCost_helper(taPin* iroute, frBox &box, frLayerNum lNum);
     void assignIroute_updateIroute(taPin* iroute, frCoord bestTrackLoc, std::set<taPin*, frBlockObjectComp> *pinS);
     void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp> &pinS);
 
