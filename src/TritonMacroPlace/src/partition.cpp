@@ -144,78 +144,6 @@ void Partition::Dump()
   }
 }
 
-void Partition::PrintParquetFormat(string origName)
-{
-  string blkName = origName + ".blocks";
-  string netName = origName + ".nets";
-  string wtsName = origName + ".wts";
-  string plName = origName + ".pl";
-
-  // For *.nets and *.wts writing
-  vector<pair<int, int>> netStor;
-  vector<int> costStor;
-
-  netStor.reserve((macroStor.size() + 4) * (macroStor.size() + 3) / 2);
-  costStor.reserve((macroStor.size() + 4) * (macroStor.size() + 3) / 2);
-  for (size_t i = 0; i < macroStor.size() + 4; i++) {
-    for (size_t j = i + 1; j < macroStor.size() + 4; j++) {
-      int cost = 0;
-      if (netTable) {
-        cost = netTable[i * (macroStor.size() + 4) + j]
-               + netTable[j * (macroStor.size() + 4) + i];
-      }
-      if (cost != 0) {
-        netStor.push_back(std::make_pair(std::min(i, j), std::max(i, j)));
-        costStor.push_back(cost);
-      }
-    }
-  }
-
-  WriteBlkFile(blkName);
-  WriteNetFile(netStor, netName);
-  WriteWtsFile(costStor, wtsName);
-  WritePlFile(plName);
-}
-
-void Partition::WriteBlkFile(string blkName)
-{
-  std::ofstream blkFile(blkName);
-  if (!blkFile.good()) {
-    log_->error(MPL, 50, "Cannot Open BlkFile to write : {}", blkName);
-  }
-
-  std::stringstream feed;
-  feed << "UCSC blocks 1.0" << endl;
-  feed << "# Created" << endl;
-  feed << "# User" << endl;
-  feed << "# Platform" << endl << endl;
-
-  feed << "NumSoftRectangularBlocks : 0" << endl;
-  feed << "NumHardRectilinearBlocks : " << macroStor.size() << endl;
-  feed << "NumTerminals : 4" << endl << endl;
-
-  for (auto& curMacro : macroStor) {
-    feed << curMacro.name() << " hardrectilinear 4 ";
-    feed << "(" << curMacro.lx << ", " << curMacro.ly << ") ";
-    feed << "(" << curMacro.lx << ", " << curMacro.ly + curMacro.h << ") ";
-    feed << "(" << curMacro.lx + curMacro.w << ", " << curMacro.ly + curMacro.h
-         << ") ";
-    feed << "(" << curMacro.lx + curMacro.w << ", " << curMacro.ly << ") "
-         << endl;
-  }
-
-  feed << endl;
-
-  feed << "West terminal" << endl;
-  feed << "East terminal" << endl;
-  feed << "North terminal" << endl;
-  feed << "South terminal" << endl;
-
-  blkFile << feed.str();
-  blkFile.close();
-  feed.clear();
-}
-
 #define EAST_IDX (macroStor.size())
 #define WEST_IDX (macroStor.size() + 1)
 #define NORTH_IDX (macroStor.size() + 2)
@@ -245,90 +173,6 @@ string Partition::GetName(int macroIdx)
   }
 }
 
-void Partition::WriteNetFile(vector<pair<int, int>>& netStor, string netName)
-{
-  std::ofstream netFile(netName);
-  if (!netFile.good()) {
-    log_->error(MPL, 51, "Cannot Open NetFile to write : {}", netName);
-  }
-
-  std::stringstream feed;
-  feed << "UCLA nets 1.0" << endl;
-  feed << "# Created" << endl;
-  feed << "# User" << endl;
-  feed << "# Platform" << endl << endl;
-
-  feed << "NumNets : " << netStor.size() << endl;
-  feed << "NumPins : " << 2 * netStor.size() << endl;
-
-  for (auto& curNet : netStor) {
-    int idx = &curNet - &netStor[0];
-    feed << "NetDegree : 2  n" << std::to_string(idx) << endl;
-    feed << GetName(curNet.first) << " B : %0.0 %0.0" << endl;
-    feed << GetName(curNet.second) << " B : %0.0 %0.0" << endl;
-  }
-
-  feed << endl;
-
-  netFile << feed.str();
-  netFile.close();
-  feed.clear();
-}
-
-void Partition::WriteWtsFile(vector<int>& costStor, string wtsName)
-{
-  std::ofstream wtsFile(wtsName);
-  if (!wtsFile.good()) {
-    log_->error(MPL, 52, "Cannot Open WtsFile to write : {}", wtsName);
-  }
-
-  std::stringstream feed;
-  feed << "UCLA wts 1.0" << endl;
-  feed << "# Created" << endl;
-  feed << "# User" << endl;
-  feed << "# Platform" << endl << endl;
-
-  for (auto& curWts : costStor) {
-    int idx = &curWts - &costStor[0];
-    feed << "n" << std::to_string(idx) << " " << curWts << endl;
-  }
-
-  feed << endl;
-
-  wtsFile << feed.str();
-  wtsFile.close();
-  feed.clear();
-}
-
-void Partition::WritePlFile(string plName)
-{
-  std::ofstream plFile(plName);
-  if (!plFile.good()) {
-    log_->error(MPL, 53, "Cannot Open PlFIle to write : {}", plName);
-  }
-
-  std::stringstream feed;
-  feed << "UCLA pl 1.0" << endl;
-  feed << "# Created" << endl;
-  feed << "# User" << endl;
-  feed << "# Platform" << endl << endl;
-
-  for (auto& curMacro : macroStor) {
-    feed << curMacro.name() << " 0 0" << endl;
-  }
-
-  feed << "East " << lx + width << " " << ly + height / 2.0 << endl;
-  feed << "West " << lx << " " << ly + height / 2.0 << endl;
-  feed << "North " << lx + width / 2.0 << " " << ly + height << endl;
-  feed << "South " << lx + width / 2.0 << " " << ly << endl;
-
-  feed << endl;
-
-  plFile << feed.str();
-  plFile.close();
-  feed.clear();
-}
-
 void Partition::FillNetlistTable(
     MacroCircuit& mckt,
     unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
@@ -339,8 +183,6 @@ void Partition::FillNetlistTable(
   for (int i = 0; i < tableCnt; i++) {
     netTable[i] = 0.0f;
   }
-  // FillNetlistTableIncr();
-  // FillNetlistTableDesc();
 
   auto mpPtr = macroPartMap.find(partClass);
   if (mpPtr == macroPartMap.end()) {
@@ -554,40 +396,6 @@ void Partition::FillNetlistTable(
   }
 }
 
-void Partition::FillNetlistTableIncr()
-{
-  //      if( macroStor.size() <= 1 ) {
-  //        return;
-  //      }
-
-  for (size_t i = 0; i < macroStor.size() + 4; i++) {
-    for (size_t j = 0; j < macroStor.size() + 4; j++) {
-      double val = (i + j + 1) * 100;
-      if (i == j || (i >= macroStor.size() && j >= macroStor.size())) {
-        val = 0;
-      }
-      netTable[i * (macroStor.size() + 4) + j] = val;
-    }
-  }
-}
-
-void Partition::FillNetlistTableDesc()
-{
-  //      if( macroStor.size() <= 1 ) {
-  //        return;
-  //      }
-
-  for (size_t i = 0; i < macroStor.size() + 4; i++) {
-    for (size_t j = 0; j < macroStor.size() + 4; j++) {
-      double val = (2 * macroStor.size() + 8 - (i + j)) * 100;
-      if (i == j || (i >= macroStor.size() && j >= macroStor.size())) {
-        val = 0;
-      }
-      netTable[i * (macroStor.size() + 4) + j] = val;
-    }
-  }
-}
-
 void Partition::UpdateMacroCoordi(MacroCircuit& mckt)
 {
   for (auto& curPartMacro : macroStor) {
@@ -791,65 +599,6 @@ bool Partition::DoAnneal()
 
   log_->report("End Parquet");
   return true;
-}
-
-void Partition::PrintSetFormat(FILE* fp)
-{
-  string sliceStr = "";
-  if (partClass == ALL) {
-    sliceStr = "ALL";
-  } else if (partClass == NW) {
-    sliceStr = "NW";
-  } else if (partClass == NE) {
-    sliceStr = "NE";
-  } else if (partClass == SW) {
-    sliceStr = "SW";
-  } else if (partClass == SE) {
-    sliceStr = "SE";
-  } else if (partClass == E) {
-    sliceStr = "E";
-  } else if (partClass == W) {
-    sliceStr = "W";
-  } else if (partClass == S) {
-    sliceStr = "S";
-  } else if (partClass == N) {
-    sliceStr = "N";
-  }
-
-  fprintf(fp, "  BEGIN SLICE %s %ld ;\n", sliceStr.c_str(), macroStor.size());
-  fprintf(fp, "    LX %f ;\n", lx);
-  fprintf(fp, "    LY %f ;\n", ly);
-  fprintf(fp, "    WIDTH %f ;\n", width);
-  fprintf(fp, "    HEIGHT %f ;\n", height);
-  for (auto& curMacro : macroStor) {
-    fprintf(fp,
-            "    MACRO %s %s %f %f %f %f ;\n",
-            curMacro.name().c_str(),
-            curMacro.type().c_str(),
-            curMacro.lx,
-            curMacro.ly,
-            curMacro.w,
-            curMacro.h);
-  }
-
-  if (netTable) {
-    fprintf(fp, "    NETLISTTABLE \n    ");
-    for (size_t i = 0; i < macroStor.size() + 4; i++) {
-      for (size_t j = 0; j < macroStor.size() + 4; j++) {
-        fprintf(fp, "%.3f ", netTable[(macroStor.size() + 4) * i + j]);
-      }
-      if (i == macroStor.size() + 3) {
-        fprintf(fp, "; \n");
-      } else {
-        fprintf(fp, "\n    ");
-      }
-    }
-  } else {
-    fprintf(fp, "    NETLISTTABLE ;\n");
-  }
-
-  fprintf(fp, "  END SLICE ;\n");
-  fflush(fp);
 }
 
 }  // namespace mpl

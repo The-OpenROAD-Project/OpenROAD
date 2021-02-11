@@ -106,22 +106,9 @@ class Partition
   // Update Macro location from MacroCircuit
   void UpdateMacroCoordi(MacroCircuit& mckt);
 
-  // Writing functions
-  void PrintSetFormat(FILE* fp);
-
-  // Parquet print functions
-  void PrintParquetFormat(std::string origName);
-  void WriteBlkFile(std::string blkName);
-  void WriteNetFile(std::vector<std::pair<int, int>>& netStor,
-                    std::string netName);
-  void WriteWtsFile(std::vector<int>& costStor, std::string wtsName);
-  void WritePlFile(std::string plName);
-
   std::string GetName(int macroIdx);
 
  private:
-  void FillNetlistTableIncr();
-  void FillNetlistTableDesc();
   utl::Logger* log_;
 };
 
