@@ -88,7 +88,7 @@ bool parse(Iterator                                first,
 {
   odb::dbTechLayerSpacingTablePrlRule* rule
       = odb::dbTechLayerSpacingTablePrlRule::create(layer);
-  qi::rule<std::string::iterator, space_type> influenceRule
+  qi::rule<std::string::iterator, space_type> SPACINGTABLE
       = (lit("SPACINGTABLE") >> lit("INFLUENCE")
          >> +(lit("WIDTH") >> double_ >> lit("WITHIN") >> double_
               >> lit("SPACING")
@@ -113,7 +113,7 @@ bool parse(Iterator                                first,
               >> -(lit("EXCEPTWITHIN") >> double_
                    >> double_)[boost::bind(&addExcluded, _1, parser, lefin)]
               >> +double_[boost::bind(&addSpacing, _1, parser, lefin)])
-         >> -influenceRule >> lit(";"));
+         >> -SPACINGTABLE >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, spacingTableRule, space);
 

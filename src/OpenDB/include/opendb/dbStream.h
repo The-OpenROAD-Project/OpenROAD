@@ -108,7 +108,7 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(long long c)
+  dbOStream& operator<<(uint64_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
     if (n != 1)
@@ -287,7 +287,7 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(long long& c)
+  dbIStream& operator>>(uint64_t& c)
   {
     int n = fread(&c, sizeof(c), 1, _f);
     if (n != 1)

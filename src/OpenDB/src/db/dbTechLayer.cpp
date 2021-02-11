@@ -96,7 +96,7 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (_flags._except_non_core_pins != rhs._flags._except_non_core_pins)
     return false;
 
-  if (_flags._n_well != rhs._flags._n_well)
+  if (_flags._lef58_type != rhs._flags._lef58_type)
     return false;
 
   if (_flags._p_well != rhs._flags._p_well)
@@ -286,7 +286,7 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_FIELD(_flags._right_way_on_grid_only);
   DIFF_FIELD(_flags._check_mask);
   DIFF_FIELD(_flags._except_non_core_pins);
-  DIFF_FIELD(_flags._n_well);
+  DIFF_FIELD(_flags._lef58_type);
   DIFF_FIELD(_flags._p_well);
   DIFF_TABLE(_cut_class_rules_tbl);
   DIFF_HASH_TABLE(_cut_class_rules_hash);
@@ -355,7 +355,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._right_way_on_grid_only);
   DIFF_OUT_FIELD(_flags._check_mask);
   DIFF_OUT_FIELD(_flags._except_non_core_pins);
-  DIFF_OUT_FIELD(_flags._n_well);
+  DIFF_OUT_FIELD(_flags._lef58_type);
   DIFF_OUT_FIELD(_flags._p_well);
   DIFF_OUT_TABLE(_cut_class_rules_tbl);
   DIFF_OUT_HASH_TABLE(_cut_class_rules_hash);
@@ -413,9 +413,9 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
-  _cut_class_rules_tbl   = new dbTable<_dbTechLayerCutClassRule>(
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
+  _cut_class_rules_tbl       = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
@@ -545,7 +545,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _flags._right_way_on_grid_only = r._flags._right_way_on_grid_only;
   _flags._check_mask             = r._flags._check_mask;
   _flags._except_non_core_pins   = r._flags._except_non_core_pins;
-  _flags._n_well                 = r._flags._n_well;
+  _flags._lef58_type             = r._flags._lef58_type;
   _flags._p_well                 = r._flags._p_well;
   _flags._spare_bits             = r._flags._spare_bits;
   _cut_class_rules_tbl           = new dbTable<_dbTechLayerCutClassRule>(
@@ -638,7 +638,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> *obj._cut_class_rules_tbl;
   stream >> obj._cut_class_rules_hash;
@@ -693,7 +693,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << *obj._cut_class_rules_tbl;
   stream << obj._cut_class_rules_hash;
@@ -938,20 +938,6 @@ bool dbTechLayer::isExceptNonCorePins() const
   return obj->_flags._except_non_core_pins;
 }
 
-void dbTechLayer::setNWell(bool _n_well)
-{
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-
-  obj->_flags._n_well = _n_well;
-}
-
-bool dbTechLayer::isNWell() const
-{
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-
-  return obj->_flags._n_well;
-}
-
 void dbTechLayer::setPWell(bool _p_well)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
@@ -967,6 +953,18 @@ bool dbTechLayer::isPWell() const
 }
 
 // User Code Begin dbTechLayerPublicMethods
+
+void dbTechLayer::setLef58Type(LEF58_TYPE type)
+{
+  _dbTechLayer* layer       = (_dbTechLayer*) this;
+  layer->_flags._lef58_type = (uint) type;
+}
+
+dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return (dbTechLayer::LEF58_TYPE) layer->_flags._lef58_type;
+}
 
 std::string dbTechLayer::getName() const
 {

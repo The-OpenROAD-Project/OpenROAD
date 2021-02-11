@@ -43,10 +43,15 @@ bool parse(Iterator          first,
 {
   qi::rule<std::string::iterator, space_type> TypeRule
       = (lit("TYPE")
-         >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setNWell, layer, true)]
-             | lit("PWELL")[boost::bind(
-                 &odb::dbTechLayer::setPWell, layer, true)])
-         >> lit(";"));
+         >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::NWELL)]
+             | lit("PWELL")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::PWELL)]
+             | lit("ABOVEDIEEDGE")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::ABOVEDIEEDGE)]
+             | lit("BELOWDIEEDGE")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::BELOWDIEEDGE)]
+             | lit("DIFFUSION")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::DIFFUSION)]
+             | lit("TRIMPOLY")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::TRIMPOLY)]
+        )
+        >> lit(";")
+      );
 
   bool valid = qi::phrase_parse(first, last, TypeRule, space);
 

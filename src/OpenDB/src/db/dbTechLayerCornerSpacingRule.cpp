@@ -180,8 +180,8 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
-  uint* _flags_bit_field = (uint*) &_flags;
-  *_flags_bit_field      = 0;
+  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -217,7 +217,7 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._within;
   stream >> obj._eol_width;
@@ -234,7 +234,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 dbOStream& operator<<(dbOStream&                           stream,
                       const _dbTechLayerCornerSpacingRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._within;
   stream << obj._eol_width;
