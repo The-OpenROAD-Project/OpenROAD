@@ -3662,9 +3662,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
 void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
 {
-  bool hasWell = false;
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL &&
-      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL &&)
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL)
     masterSliceLayerName = string(layer->getName());
 }
 
