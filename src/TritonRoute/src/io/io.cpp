@@ -3663,17 +3663,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
 {
   bool hasWell = false;
-  for (auto prop : odb::dbProperty::getProperties(layer))
-    if (prop->getType() == odb::dbProperty::Type::STRING_PROP) {
-      odb::dbStringProperty* strProp = (odb::dbStringProperty*) prop;
-      if (strProp->getName() == string("LEF58_TYPE"))
-        if (strProp->getValue() == string("TYPE PWELL")
-            || strProp->getValue() == string("TYPE NWELL")) {
-          hasWell = true;
-          break;
-        }
-    }
-  if (!hasWell)
+  if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL &&
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL &&)
     masterSliceLayerName = string(layer->getName());
 }
 
