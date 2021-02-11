@@ -63,10 +63,6 @@ static void UpdateMacroPartMap(
         macroPartMap,
     utl::Logger* log);
 
-static void PrintAllSets(FILE* fp,
-                         Layout& layout,
-                         vector<vector<Partition>>& allSets);
-
 static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt);
 
 void MacroCircuit::PlaceMacros(int& solCount)
@@ -276,8 +272,8 @@ static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt)
   const int dbu = tech->getDbUnitsPerMicron();
 
   for (auto& curMacro : mckt.macroStor) {
-    curMacro.dbInstPtr->setLocation(static_cast<int>(round(curMacro.lx * dbu)),
-                                    static_cast<int>(round(curMacro.ly * dbu)));
+    curMacro.dbInstPtr->setLocation(round(curMacro.lx * dbu),
+                                    round(curMacro.ly * dbu));
     curMacro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }

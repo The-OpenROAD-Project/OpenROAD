@@ -42,7 +42,6 @@
 #include <set>
 
 #include "graph.h"
-#include "hashUtil.h"
 #include "macro.h"
 #include "partition.h"
 
