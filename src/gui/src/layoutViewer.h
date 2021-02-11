@@ -42,6 +42,8 @@
 #include <map>
 #include <vector>
 
+#include "congestionSetupDialog.h"
+#include "fastroute/GlobalRouter.h"
 #include "gui/gui.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -85,6 +87,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     HIGHLIGHT_INPUT_NETS_ACT,
     HIGHLIGHT_ALL_NETS_ACT,
 
+    SHOW_CONGESTION_MAP,
+    CONGESTION_SETUP,
+
     VIEW_ZOOMIN_ACT,
     VIEW_ZOOMOUT_ACT,
     VIEW_ZOOMFIT_ACT,
@@ -113,10 +118,13 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;
 
+  void viewCongestionMap(bool show);
+
  signals:
   void location(qreal x, qreal y);
   void selected(const Selected& selected, bool showConnectivity = false);
   void addSelected(const Selected& selected);
+  void congestionDisplayed(bool val);
 
  public slots:
   void zoomIn();
@@ -130,6 +138,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
+  void updateCongestionView();
 
  private:
   struct Boxes
@@ -162,6 +171,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
+  void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
@@ -169,6 +179,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
   void addMenuAndActions();
+  QColor getCongestionColorForPercentage(float percent, int alpha = 100);
+
+  void populateCongestionData();
 
   odb::dbDatabase* db_;
   Options* options_;
@@ -184,8 +197,16 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
 
-  QMenu* layoutContextMenu_;
-  QMap<CONTEXT_MENU_ACTIONS, QAction*> menuActions_;
+  std::map<odb::Rect, std::tuple<int, int, int, int>>
+      gcell_congestion_data_;  // Key   : Rect : GCell BBox
+                               // Value : Total Horizontal Capaicty,
+                               //         Total Horizontal Usage,
+                               //         Total Vertical Capacity,
+                               //         Total Vertical Usage
+  CongestionSetupDialog* congestion_dialog_;
+
+  QMenu* layout_context_menu_;
+  QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

@@ -32,13 +32,20 @@
 
 #include "mainWindow.h"
 
+#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <vector>
 
 #include "displayControls.h"
+#include "fastroute/GlobalRouter.h"
 #include "layoutViewer.h"
+#include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 
@@ -94,6 +101,11 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
+  connect(viewer_,
+          SIGNAL(congestionDisplayed(bool)),
+          this,
+          SLOT(updateCongestion(bool)));
+
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
 
@@ -130,9 +142,9 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
   connect(selection_browser_,
-          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
+          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&, int)),
           this,
-          SLOT(updateHighlightedSet(const QList<const Selected*>&)));
+          SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -179,6 +191,10 @@ void MainWindow::createActions()
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
 
+  congestion_ = new QAction("Congestion Map", this);
+  congestion_->setShortcut(QString("Ctrl+M"));
+  congestion_->setCheckable(true);
+
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
@@ -190,6 +206,9 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(congestion_, SIGNAL(triggered()), this, SLOT(showCongestionMap()));
+
+  congestion_->setEnabled(false);
 }
 
 void MainWindow::createMenus()
@@ -200,6 +219,7 @@ void MainWindow::createMenus()
   view_menu_ = menuBar()->addMenu("&View");
   view_menu_->addAction(fit_);
   view_menu_->addAction(find_);
+  view_menu_->addAction(congestion_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
 
@@ -215,6 +235,7 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("View");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
+  view_tool_bar_->addAction(congestion_);
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
@@ -359,6 +380,12 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
+void MainWindow::showCongestionMap()
+{
+  viewer_->viewCongestionMap(congestion_->isChecked());
+  return;
+}
+
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set == true) {
@@ -419,11 +446,13 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
           continue;
         auto inst_term_dir = inst_term->getIoType().getValue();
 
-        if (output && (inst_term_dir == odb::dbIoType::OUTPUT
-                       || inst_term_dir == odb::dbIoType::INOUT))
+        if (output
+            && (inst_term_dir == odb::dbIoType::OUTPUT
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet()));
-        if (input && (inst_term_dir == odb::dbIoType::INPUT
-                      || inst_term_dir == odb::dbIoType::INOUT))
+        if (input
+            && (inst_term_dir == odb::dbIoType::INPUT
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet(), inst_term));
       }
     }
@@ -453,6 +482,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
+  congestion_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -467,6 +497,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
+  congestion_->setEnabled(true);
   emit designLoaded(block);
 }
 

@@ -45,12 +45,16 @@
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QToolTip>
+#include <fstream>
+#include <iostream>
+#include <random>
 #include <tuple>
 #include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+#include "highlightGroupDialog.h"
 #include "mainWindow.h"
 #include "search.h"
 
@@ -66,6 +70,8 @@
 //
 // The pixelsPerDBU_ field stores pixels per DBU.  This adds additional
 // trickiness to the coordinates.
+
+static const char* DUMP_GCELL_INFO = std::getenv("DUMP_GCELL_INFO");
 
 namespace gui {
 
@@ -166,12 +172,22 @@ LayoutViewer::LayoutViewer(Options* options,
       max_depth_(99),
       search_init_(false),
       rubber_band_showing_(false),
-      layoutContextMenu_(new QMenu(tr("Layout Menu"), this))
+      layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
+
+  congestion_dialog_ = new CongestionSetupDialog(this);
+  connect(congestion_dialog_->applyButton,
+          SIGNAL(released()),
+          this,
+          SLOT(update()));
+  connect(congestion_dialog_,
+          SIGNAL(congestionSetupChanged()),
+          this,
+          SLOT(updateCongestionView()));
 }
 
 void LayoutViewer::setDb(dbDatabase* db)
@@ -591,6 +607,47 @@ void LayoutViewer::drawHighlighted(Painter& painter)
   }
 }
 
+void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
+{
+  if (!menu_actions_[SHOW_CONGESTION_MAP]->isChecked()
+      || gcell_congestion_data_.empty()) {
+    return;
+  }
+  for (auto& gcell_data : gcell_congestion_data_) {
+    auto gcell_rect = gcell_data.first;
+    if (!gcell_rect.intersects(bounds))
+      continue;
+    auto& cong_data = gcell_data.second;
+
+    auto hor_capacity = std::get<0>(cong_data);
+    auto hor_usage = std::get<1>(cong_data);
+    auto ver_capacity = std::get<2>(cong_data);
+    auto ver_usage = std::get<3>(cong_data);
+
+    float hor_congestion
+        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : 0;
+    float ver_congestion
+        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : 0;
+
+    float congestion = ver_congestion;
+    if (congestion_dialog_->bothCongDir->isChecked())
+      congestion = std::max(hor_congestion, ver_congestion);
+    else if (congestion_dialog_->horCongDir->isChecked())
+      congestion = hor_congestion;
+    if (congestion < (congestion_dialog_->showCongestionFrom()
+                      + congestion_dialog_->startCongestionSpinBox->value()))
+      continue;
+
+    auto gcell_color
+        = congestion_dialog_->getCongestionColorForPercentage(congestion);
+    Painter::Color color(
+        gcell_color.red(), gcell_color.green(), gcell_color.blue(), 100);
+    painter.setPen(color, true);
+    painter.setBrush(color);
+    painter.drawRect(gcell_rect);
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -784,6 +841,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
   }
 
+  drawCongestionMap(gui_painter, bounds);
+
   drawSelected(gui_painter);
   // Always last so on top
   drawHighlighted(gui_painter);
@@ -879,14 +938,27 @@ void LayoutViewer::fit()
 
 void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
 {
-  Gui::get()->selectHighlightConnectedInsts(select_flag);
+  int highlight_group = 0;
+  if (!select_flag) {
+    HighlightGroupDialog dlg;
+    dlg.exec();
+    highlight_group = dlg.getSelectedHighlightGroup();
+  }
+  Gui::get()->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 
 void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
                                                 bool output,
                                                 bool input)
 {
-  Gui::get()->selectHighlightConnectedNets(select_flag, output, input);
+  int highlight_group = 0;
+  if (!select_flag) {
+    HighlightGroupDialog dlg;
+    dlg.exec();
+    highlight_group = dlg.getSelectedHighlightGroup();
+  }
+  Gui::get()->selectHighlightConnectedNets(
+      select_flag, output, input, highlight_group);
 }
 
 void LayoutViewer::updateContextMenuItems()
@@ -894,43 +966,52 @@ void LayoutViewer::updateContextMenuItems()
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
       == false)  // No Instance in selected set
   {
-    menuActions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menuActions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
-    menuActions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
 
-    menuActions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
-    menuActions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
-    menuActions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
   } else {
-    menuActions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menuActions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
-    menuActions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
 
-    menuActions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
-    menuActions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
-    menuActions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
       == false) {  // No Net in selected set
-    menuActions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
-    menuActions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);
+    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);
   } else {
-    menuActions_[SELECT_CONNECTED_INST_ACT]->setDisabled(false);
-    menuActions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(false);
+    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(false);
   }
 }
 
 void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 {
   updateContextMenuItems();
-  layoutContextMenu_->popup(this->mapToGlobal(pos));
+  layout_context_menu_->popup(this->mapToGlobal(pos));
+}
+
+void LayoutViewer::updateCongestionView()
+{
+  if (menu_actions_[SHOW_CONGESTION_MAP]->isChecked())
+    update();
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
   addOwner(block);  // register as a callback object
   fit();
+  menu_actions_[SHOW_CONGESTION_MAP]->setEnabled(true);
+  menu_actions_[CONGESTION_SETUP]->setEnabled(true);
+  congestion_dialog_->designLoaded(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)
@@ -941,95 +1022,115 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
 void LayoutViewer::addMenuAndActions()
 {
   // Create Top Level Menu for the context Menu
-  auto select_menu = layoutContextMenu_->addMenu(tr("Select"));
-  auto highlight_menu = layoutContextMenu_->addMenu(tr("Highlight"));
-  auto view_menu = layoutContextMenu_->addMenu(tr("View"));
-  auto clear_menu = layoutContextMenu_->addMenu(tr("Clear"));
-
+  auto select_menu = layout_context_menu_->addMenu(tr("Select"));
+  auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
+  auto congestion_menu = layout_context_menu_->addMenu(tr("Congestion"));
+  auto view_menu = layout_context_menu_->addMenu(tr("View"));
+  auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
   // Create Actions
 
   // Select Actions
-  menuActions_[SELECT_CONNECTED_INST_ACT]
+  menu_actions_[SELECT_CONNECTED_INST_ACT]
       = select_menu->addAction(tr("Connected Insts"));
-  menuActions_[SELECT_OUTPUT_NETS_ACT]
+  menu_actions_[SELECT_OUTPUT_NETS_ACT]
       = select_menu->addAction(tr("Output Nets"));
-  menuActions_[SELECT_INPUT_NETS_ACT] = select_menu->addAction(tr("Input Nets"));
-  menuActions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
+  menu_actions_[SELECT_INPUT_NETS_ACT]
+      = select_menu->addAction(tr("Input Nets"));
+  menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
 
   // Highlight Actions
-  menuActions_[HIGHLIGHT_CONNECTED_INST_ACT]
+  menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
       = highlight_menu->addAction(tr("Connected Insts"));
-  menuActions_[HIGHLIGHT_OUTPUT_NETS_ACT]
+  menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]
       = highlight_menu->addAction(tr("Output Nets"));
-  menuActions_[HIGHLIGHT_INPUT_NETS_ACT]
+  menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]
       = highlight_menu->addAction(tr("Input Nets"));
-  menuActions_[HIGHLIGHT_ALL_NETS_ACT]
+  menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
       = highlight_menu->addAction(tr("All Nets"));
 
+  // Congestion Actions
+  menu_actions_[SHOW_CONGESTION_MAP]
+      = congestion_menu->addAction(tr("Show Congestion"));
+  menu_actions_[CONGESTION_SETUP]
+      = congestion_menu->addAction(tr("Congestion Setup..."));
+  menu_actions_[SHOW_CONGESTION_MAP]->setCheckable(true);
+  menu_actions_[SHOW_CONGESTION_MAP]->setEnabled(false);
+  menu_actions_[CONGESTION_SETUP]->setEnabled(false);
+
   // View Actions
-  menuActions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
-  menuActions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
-  menuActions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+  menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
+  menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
+  menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
 
   // Clear Actions
-  menuActions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
-  menuActions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
-  menuActions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
+  menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
+  menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
+  menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
-  connect(menuActions_[SELECT_CONNECTED_INST_ACT],
+  connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedInst(true); });
-  connect(menuActions_[SELECT_OUTPUT_NETS_ACT],
+  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedNets(true, true, false); });
+  connect(menu_actions_[SELECT_INPUT_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(true, false, true); });
   connect(
-      menuActions_[SELECT_INPUT_NETS_ACT], &QAction::triggered, this, [this]() {
-        this->selectHighlightConnectedNets(true, false, true);
-      });
-  connect(
-      menuActions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
+      menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
         this->selectHighlightConnectedNets(true, true, true);
       });
 
-  connect(menuActions_[HIGHLIGHT_CONNECTED_INST_ACT],
+  connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedInst(false); });
-  connect(menuActions_[HIGHLIGHT_OUTPUT_NETS_ACT],
+  connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedNets(false, true, false); });
-  connect(menuActions_[HIGHLIGHT_INPUT_NETS_ACT],
+  connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedNets(false, false, true); });
-  connect(menuActions_[HIGHLIGHT_ALL_NETS_ACT],
+  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT],
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedNets(false, true, true); });
 
-  connect(menuActions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
+  connect(
+      menu_actions_[SHOW_CONGESTION_MAP], &QAction::triggered, this, [this]() {
+        this->viewCongestionMap(
+            menu_actions_[SHOW_CONGESTION_MAP]->isChecked());
+      });
+
+  connect(menu_actions_[CONGESTION_SETUP], &QAction::triggered, this, [this]() {
+    this->congestion_dialog_->show();
+  });
+
+  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
     this->zoomIn();
   });
-  connect(menuActions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, this, [this]() {
     this->zoomOut();
   });
-  connect(menuActions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
     this->fit();
   });
 
   connect(
-      menuActions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, [this]() {
+      menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, [this]() {
         Gui::get()->clearSelections();
       });
   connect(
-      menuActions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, [this]() {
+      menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, [this]() {
         Gui::get()->clearHighlights(-1);
       });
-  connect(menuActions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     Gui::get()->clearSelections();
     Gui::get()->clearHighlights(-1);
   });
@@ -1114,6 +1215,42 @@ void LayoutViewer::inDbFillCreate(dbFill* fill)
     search_.clear();
     search_init_ = false;
   }
+  update();
+}
+
+void LayoutViewer::populateCongestionData()
+{
+  auto* openroad = ord::OpenRoad::openRoad();
+  auto fast_route = openroad->getFastRoute();
+  if (!fast_route)
+    return;
+  auto g_cells = fast_route->getCongestion();
+  if (g_cells.empty())
+    return;
+  for (auto& g_cell : g_cells) {
+    odb::Rect gcell_rect = g_cell.getGCellRect();
+    auto itr = gcell_congestion_data_.find(gcell_rect);
+    if (itr == gcell_congestion_data_.end()) {
+      gcell_congestion_data_[gcell_rect]
+          = std::tuple<int, int, int, int>(0, 0, 0, 0);
+      itr = gcell_congestion_data_.find(gcell_rect);
+    }
+
+    std::get<0>(itr->second) += g_cell.getHorCapacity();
+    std::get<1>(itr->second) += g_cell.getHorUsage();
+
+    std::get<2>(itr->second) += g_cell.getVerCapacity();
+    std::get<3>(itr->second) += g_cell.getVerUsage();
+  }
+}
+
+void LayoutViewer::viewCongestionMap(bool show)
+{
+  if (gcell_congestion_data_.empty())
+    populateCongestionData();
+
+  menu_actions_[SHOW_CONGESTION_MAP]->setChecked(show);
+  emit congestionDisplayed(show);
   update();
 }
 

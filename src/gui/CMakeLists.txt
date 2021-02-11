@@ -32,11 +32,13 @@ if (Qt5_FOUND)
     src/gui.cpp
     src/search.cpp 
     src/findDialog.cpp
+    src/congestionSetupDialog.cpp
+    src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
     ${GUI_WRAP}
   )
 
-# qt5_wrap_ui(findDlg.ui selHltWidget.ui selectedWidget.ui)
+#qt5_wrap_ui(findDlg.ui selHltWidget.ui selectedWidget.ui congestionSetup.ui)
 
   target_link_libraries(gui
     opendb
@@ -55,6 +57,8 @@ target_include_directories(gui
     ${OPENDB_HOME}/include
   PRIVATE
     ${OPENROAD_HOME}/include
+    ${OPENSTA_HOME}/include
+    ${FASTROUTE_HOME}/include
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_BINARY_DIR}
     ${AUTOGEN_BUILD_DIR}/include
