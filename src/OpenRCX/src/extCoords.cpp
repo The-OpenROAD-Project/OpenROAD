@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <dbLogger.h>
 #include <math.h>
 
 #include "extSpef.h"
@@ -44,21 +43,21 @@ void extSpef::initSearchForNets()
   uint W[16];
   uint S[16];
   uint P[16];
-  int  X1[16];
-  int  Y1[16];
+  int X1[16];
+  int Y1[16];
 
-  dbSet<dbTechLayer>           layers = _tech->getLayers();
+  dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
-  dbTrackGrid*                 tg = NULL;
+  dbTrackGrid* tg = NULL;
 
   Rect maxRect;
   _block->getDieArea(maxRect);
 
   std::vector<int> trackXY(32000);
-  uint             n = 0;
+  uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer*    layer = *itr;
-    dbTechLayerType type  = layer->getType();
+    dbTechLayer* layer = *itr;
+    dbTechLayerType type = layer->getType();
 
     if (type.getValue() != dbTechLayerType::ROUTING)
       continue;
@@ -94,8 +93,8 @@ uint extSpef::addNetShapesOnSearch(uint netId)
 {
   dbNet* net = dbNet::getNet(_block, netId);
 
-  dbWire* wire  = net->getWire();
-  uint    wtype = 9;
+  dbWire* wire = net->getWire();
+  uint wtype = 9;
 
   if (wire == NULL)
     return 0;
@@ -103,14 +102,14 @@ uint extSpef::addNetShapesOnSearch(uint netId)
   uint cnt = 0;
   //	uint wireId= wire->getId();
 
-  int             minx = MAX_INT;
-  int             miny = MAX_INT;
-  int             maxx = -MAX_INT;
-  int             maxy = -MAX_INT;
-  dbWireShapeItr  shapes;
-  odb::dbShape    s;
-  uint            level1, level2;
-  odb::dbVia*     vv;
+  int minx = MAX_INT;
+  int miny = MAX_INT;
+  int maxx = -MAX_INT;
+  int maxy = -MAX_INT;
+  dbWireShapeItr shapes;
+  odb::dbShape s;
+  uint level1, level2;
+  odb::dbVia* vv;
   odb::dbTechVia* tv;
   for (shapes.begin(wire); shapes.next(s);) {
     int shapeId = shapes.getShapeId();
@@ -157,10 +156,10 @@ uint extSpef::addNetShapesOnSearch(uint netId)
   return cnt;
 }
 uint extSpef::findShapeId(uint netId,
-                          int  x1,
-                          int  y1,
-                          int  x2,
-                          int  y2,
+                          int x1,
+                          int y1,
+                          int x2,
+                          int y2,
                           uint level)
 {
   _idTable->resetCnt(0);
@@ -186,7 +185,7 @@ uint extSpef::findShapeId(uint netId,
     return 0;
   }
 
-  int  loX, loY, hiX, hiY;
+  int loX, loY, hiX, hiY;
   uint l, id1, id2, wtype;
 
   uint id = _idTable->get(0);
@@ -198,13 +197,13 @@ uint extSpef::findShapeId(uint netId,
   return id2;
 }
 
-uint extSpef::findShapeId(uint  netId,
-                          int   x1,
-                          int   y1,
-                          int   x2,
-                          int   y2,
+uint extSpef::findShapeId(uint netId,
+                          int x1,
+                          int y1,
+                          int x2,
+                          int y2,
                           char* layer,
-                          bool  matchLayer)
+                          bool matchLayer)
 {
   _idTable->resetCnt(0);
 
@@ -222,14 +221,14 @@ uint extSpef::findShapeId(uint  netId,
 void extSpef::initNodeCoordTables(uint memChunk)
 {
   _capNodeTable = new Ath__array1D<uint>(memChunk);
-  _xCoordTable  = new Ath__array1D<double>(memChunk);
-  _yCoordTable  = new Ath__array1D<double>(memChunk);
+  _xCoordTable = new Ath__array1D<double>(memChunk);
+  _yCoordTable = new Ath__array1D<double>(memChunk);
   _x1CoordTable = new Ath__array1D<int>(memChunk);
   _x2CoordTable = new Ath__array1D<int>(memChunk);
   _y1CoordTable = new Ath__array1D<int>(memChunk);
   _y2CoordTable = new Ath__array1D<int>(memChunk);
-  _levelTable   = new Ath__array1D<uint>(memChunk);
-  _idTable      = new Ath__array1D<uint>(16);
+  _levelTable = new Ath__array1D<uint>(memChunk);
+  _idTable = new Ath__array1D<uint>(16);
   initSearchForNets();  // search DB
 }
 void extSpef::resetNodeCoordTables()
@@ -297,10 +296,10 @@ bool extSpef::readNodeCoords(uint cpos)
     if (id1 != _tmpNetSpefId)
       return false;
   }
-  uint   netId  = 0;
-  uint   nodeId = getCapNodeId(_parser->get(1), NULL, &netId);
-  double x      = _parser->getDouble(cpos + 1);
-  double y      = _parser->getDouble(cpos + 2);
+  uint netId = 0;
+  uint nodeId = getCapNodeId(_parser->get(1), NULL, &netId);
+  double x = _parser->getDouble(cpos + 1);
+  double y = _parser->getDouble(cpos + 2);
 
   _capNodeTable->add(nodeId);
   _xCoordTable->add(x);
@@ -430,13 +429,13 @@ uint extSpef::getBTermShapeId(dbBTerm* bterm)
 uint extSpef::getShapeIdFromNodeCoords(uint targetCapNodeId)
 {
   uint shapeId;
-  int  ii = findNodeIndexFromNodeCoords(targetCapNodeId);
+  int ii = findNodeIndexFromNodeCoords(targetCapNodeId);
   if (ii < 0)
     return 0;
 
-  int  halo  = 20;
-  int  x1    = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ii));
-  int  y1    = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ii));
+  int halo = 20;
+  int x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ii));
+  int y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ii));
   uint level = _levelTable->get(ii);
   x1 -= halo;
   y1 -= halo;
@@ -516,7 +515,7 @@ void Ath__grid::dealloc()
       continue;
 
     Ath__track* track = NULL;
-    bool        tohi  = true;
+    bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->dealloc(_wirePoolPtr);
       _trackPoolPtr->free(track);

@@ -1183,10 +1183,13 @@ NesterovBase::initFillerGCells() {
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
-    string msg = "Filler area is negative!!\n";
-    msg += "       Please put higher target density or \n";
-    msg += "       Re-floorplan to have enough coreArea\n";
-    log_->error(GPL, 302,  msg);
+    log_->error(GPL, 302, 
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
+        "Given target density: {:.2f}\n"
+        "Suggested target density: {:.2f}", 
+        targetDensity_, 
+        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
   }
 
   int fillerCnt = 
@@ -1457,10 +1460,13 @@ NesterovBase::updateAreas() {
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
-    string msg = "Filler area is negative!!\n";
-    msg += "       Please put higher target density or \n";
-    msg += "       Re-floorplan to have enough coreArea\n";
-    log_->error(GPL, 303, msg);
+    log_->error(GPL, 303, 
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
+        "Given target density: {:.2f}\n"
+        "Suggested target density: {:.2f}", 
+        targetDensity_, 
+        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
   }
 }
 

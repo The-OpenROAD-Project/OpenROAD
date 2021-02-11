@@ -11,31 +11,29 @@
 [INFO ODB-0134] Finished DEF file: gcd.def
 Min routing layer: 2
 Max routing layer: 10
-Global adjustment: 0.0
+Global adjustment: 0%
 Unidirectional routing: true
 Grid origin: (0, 0)
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 2874
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 obstacles on layer 1
+[INFO GRT-0018] Processing 8469 blockages on layer 1.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 3333
+[INFO GRT-0157] Total Capacity: 117668
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
 
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 3333
-[Overflow Report] Total Capacity: 117668
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
-[INFO GRT-0110] Final usage          : 3333
-[INFO GRT-0111] Final number of vias : 2597
-[INFO GRT-0112] Final usage 3D       : 11124
+[INFO GRT-0110] Final usage: 3333
+[INFO GRT-0111] Final number of vias: 2597
+[INFO GRT-0112] Final usage 3D: 11124
 [INFO GRT-0018] Total wirelength: 10292 um
 Net clk
  Pin capacitance: r 33.238 f 29.975

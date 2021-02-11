@@ -31,8 +31,7 @@
 [INFO GPL-0021] MacroInstsArea: 0
 Begin InitialPlace
 End InitialPlace
-[ERROR GPL-0302] Filler area is negative!!
-       Please put higher target density or 
-       Re-floorplan to have enough coreArea
-
+[ERROR GPL-0302] Use a higher -density or re-floorplan with a larger core area.
+Given target density: 0.00
+Suggested target density: 0.60
 GPL-0302

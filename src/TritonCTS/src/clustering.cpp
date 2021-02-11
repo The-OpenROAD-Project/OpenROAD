@@ -37,7 +37,7 @@
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include <lemon/network_simplex.h>
-#include <limits.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/timeb.h>
@@ -220,6 +220,42 @@ float clustering::Kmeans(unsigned N,
       if (f->match_idx[IDX].first >= 0 && f->match_idx[IDX].first < N) {
         position = f->match_idx[IDX].first;
       }
+      else{
+
+        // Added to check wrong assignment
+
+        float minimumDist;
+        int minimumDistClusterIndex = -1;
+
+        // Initialize minimumDist and minimumDistClusterIndex with a cluster with size < CAP
+        for (long int j = 0; j < means.size(); ++j) {
+          if(clusters[j].size() < CAP){
+            minimumDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+            minimumDistClusterIndex = j;
+            break;
+          }
+        }
+
+        if (minimumDistClusterIndex == -1) {
+          // No cluster with size < CAP
+          minimumDistClusterIndex = 0;
+        }
+        else {
+          // Nearest Cluster with size < CAP
+          for (long int j = 0; j < means.size(); ++j) {
+            if(clusters[j].size() < CAP) {
+              float currentDist = calcDist(std::make_pair(means[j].first, means[j].second), f);
+              if(currentDist < minimumDist){
+                minimumDist = currentDist;
+                minimumDistClusterIndex = j;
+              }
+            }
+          }
+        }
+
+        position = minimumDistClusterIndex;
+      
+      }
       clusters[position].push_back(f);
     }
 
@@ -266,7 +302,7 @@ float clustering::calcSilh(const std::vector<std::pair<float, float>>& means,
   float sum_silh = 0;
   for (long int i = 0; i < flops.size(); ++i) {
     flop* f = &flops[i];
-    float in_d = 0, out_d = INT_MAX;
+    float in_d = 0, out_d = FLT_MAX;
     for (long int j = 0; j < means.size(); ++j) {
       float _x = means[j].first;
       float _y = means[j].second;

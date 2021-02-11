@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE example
+#define BOOST_TEST_MODULE TestModule
 #include <boost/test/included/unit_test.hpp>
 #include <iostream>
 #include "db.h"
@@ -27,31 +27,31 @@ struct F_DEFAULT {
 BOOST_FIXTURE_TEST_CASE(test_default,F_DEFAULT)
 {
   //dbModule::create() Succeed
-  BOOST_ASSERT(dbModule::create(block,"parent_mod")!=nullptr);
+  BOOST_TEST(dbModule::create(block,"parent_mod")!=nullptr);
   dbModule* master_mod = dbModule::create(block,"master_mod");
   //dbModule::create() rejected
-  BOOST_ASSERT(dbModule::create(block,"parent_mod")==nullptr);
+  BOOST_TEST(dbModule::create(block,"parent_mod")==nullptr);
   //dbBlock::findModule()
   dbModule* parent_mod = block->findModule("parent_mod");
-  BOOST_ASSERT(parent_mod!=nullptr);
+  BOOST_TEST(parent_mod!=nullptr);
   //dbModule::getName()
-  BOOST_ASSERT(string(parent_mod->getName())=="parent_mod");
+  BOOST_TEST(string(parent_mod->getName())=="parent_mod");
   //dbModInst::create() Succeed
-  BOOST_ASSERT(dbModInst::create(parent_mod,master_mod,"i1")!=nullptr);
+  BOOST_TEST(dbModInst::create(parent_mod,master_mod,"i1")!=nullptr);
   //dbModInst::create() rejected duplicate name
-  BOOST_ASSERT(dbModInst::create(parent_mod,master_mod,"i1")==nullptr);
+  BOOST_TEST(dbModInst::create(parent_mod,master_mod,"i1")==nullptr);
   //dbModInst::create() rejected master already has a modinst
-  BOOST_ASSERT(dbModInst::create(parent_mod,master_mod,"i2")==nullptr);
+  BOOST_TEST(dbModInst::create(parent_mod,master_mod,"i2")==nullptr);
   //dbModule::findModInst()1
   dbModInst* modInst = parent_mod->findModInst("i1");
   //dbModule getModInst()
-  BOOST_ASSERT(master_mod->getModInst()==modInst);
+  BOOST_TEST(master_mod->getModInst()==modInst);
   //dbModInst::getName()
-  BOOST_ASSERT(string(modInst->getName())=="i1");
+  BOOST_TEST(string(modInst->getName())=="i1");
   //dbModule::getChildren()
-  BOOST_ASSERT(parent_mod->getChildren().size()==1);
+  BOOST_TEST(parent_mod->getChildren().size()==1);
   //dbBlock::getModInsts()
-  BOOST_ASSERT(block->getModInsts().size()==1);
+  BOOST_TEST(block->getModInsts().size()==1);
   //dbInst <--> dbModule
   auto inst1 = dbInst::create(block,lib->findMaster("and2"),"inst1");
   auto inst2 = dbInst::create(block,lib->findMaster("and2"),"inst2");
@@ -59,16 +59,16 @@ BOOST_FIXTURE_TEST_CASE(test_default,F_DEFAULT)
   parent_mod->addInst(inst1);
   parent_mod->addInst(inst2);
   //dbModule::getInsts()
-  BOOST_ASSERT(parent_mod->getInsts().size()==2);
+  BOOST_TEST(parent_mod->getInsts().size()==2);
   //dbInst::getModule()
-  BOOST_ASSERT(std::string(inst1->getModule()->getName())=="parent_mod");
+  BOOST_TEST(std::string(inst1->getModule()->getName())=="parent_mod");
   //dbModule::removeInst()
   parent_mod->removeInst(inst2);
-  BOOST_ASSERT(parent_mod->getInsts().size()==1);
-  BOOST_ASSERT(inst2->getModule()==nullptr);
+  BOOST_TEST(parent_mod->getInsts().size()==1);
+  BOOST_TEST(inst2->getModule()==nullptr);
   //dbInst::destroy -> dbModule insts
   dbInst::destroy(inst1);
-  BOOST_ASSERT(parent_mod->getInsts().size()==0);
+  BOOST_TEST(parent_mod->getInsts().size()==0);
 }
 struct F_DETAILED {
   F_DETAILED()
@@ -110,27 +110,27 @@ struct F_DETAILED {
 };
 BOOST_FIXTURE_TEST_CASE(test_destroy,F_DETAILED)
 {
-  BOOST_ASSERT(block->getModInsts().size()==3);
+  BOOST_TEST(block->getModInsts().size()==3);
   //dbModInst::destroy()
   dbModInst::destroy(i1);
-  BOOST_ASSERT(parent_mod->findModInst("i1")==nullptr);
-  BOOST_ASSERT(block->getModInsts().size()==2);
+  BOOST_TEST(parent_mod->findModInst("i1")==nullptr);
+  BOOST_TEST(block->getModInsts().size()==2);
   //dbModule::destroy() master
   dbModule::destroy(master_mod2);
-  BOOST_ASSERT(parent_mod->findModInst("i2")==nullptr);
-  BOOST_ASSERT(block->getModInsts().size()==1);
+  BOOST_TEST(parent_mod->findModInst("i2")==nullptr);
+  BOOST_TEST(block->getModInsts().size()==1);
   //dbModule::destroy() parent
   dbModule::destroy(parent_mod);
-  BOOST_ASSERT(block->findModule("parent_mod")==nullptr);
-  BOOST_ASSERT(block->getModInsts().size()==0);
+  BOOST_TEST(block->findModule("parent_mod")==nullptr);
+  BOOST_TEST(block->getModInsts().size()==0);
 }
 BOOST_FIXTURE_TEST_CASE(test_iterators,F_DETAILED)
 {
   int i;
   dbSet<dbModInst> children = parent_mod->getChildren();
   dbSet<dbModInst>::iterator modinst_itr;
-  BOOST_ASSERT(children.size()==3);
-  BOOST_ASSERT(children.reversible());
+  BOOST_TEST(children.size()==3);
+  BOOST_TEST(children.reversible());
   for(int j = 0; j<2 ; j++)
   {
     if(j==1)
@@ -139,24 +139,24 @@ BOOST_FIXTURE_TEST_CASE(test_iterators,F_DETAILED)
       switch (i)
       {
       case 1:
-        BOOST_ASSERT(*modinst_itr==i1);
+        BOOST_TEST(*modinst_itr==i1);
         break;
       case 2:
-        BOOST_ASSERT(*modinst_itr==i2);
+        BOOST_TEST(*modinst_itr==i2);
         break;
       case 3:
-        BOOST_ASSERT(*modinst_itr==i3);
+        BOOST_TEST(*modinst_itr==i3);
         break;
       default:
-        BOOST_ASSERT(false);
+        BOOST_TEST(false);
         break;
       }
   }
   
   dbSet<dbInst> insts = parent_mod->getInsts();
   dbSet<dbInst>::iterator inst_itr;
-  BOOST_ASSERT(insts.size()==3);
-  BOOST_ASSERT(insts.reversible());
+  BOOST_TEST(insts.size()==3);
+  BOOST_TEST(insts.reversible());
   for(int j = 0; j<2 ; j++)
   {
     if(j==1)
@@ -165,16 +165,16 @@ BOOST_FIXTURE_TEST_CASE(test_iterators,F_DETAILED)
       switch (i)
       {
       case 1:
-        BOOST_ASSERT(*inst_itr==inst1);
+        BOOST_TEST(*inst_itr==inst1);
         break;
       case 2:
-        BOOST_ASSERT(*inst_itr==inst2);
+        BOOST_TEST(*inst_itr==inst2);
         break;
       case 3:
-        BOOST_ASSERT(*inst_itr==inst3);
+        BOOST_TEST(*inst_itr==inst3);
         break;
       default:
-        BOOST_ASSERT(false);
+        BOOST_TEST(false);
         break;
       }
   }

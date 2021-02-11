@@ -31,7 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "darr.h"
 #include "db.h"
-#include "dbLogger.h"
 #include "extRCap.h"
 #include "extSpef.h"
 #include "exttree.h"
@@ -61,10 +60,10 @@ extDistRC* extRCModel::getMinRC(int met, int width)
     return NULL;
 
   extMeasure m;
-  m._met      = met;
+  m._met = met;
   m._underMet = 0;
-  m._overMet  = 0;
-  m._width    = width;
+  m._overMet = 0;
+  m._width = width;
 
   return getOverFringeRC(&m);
 }
@@ -74,20 +73,20 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
     return NULL;
 
   extMeasure m;
-  m._met   = met;
+  m._met = met;
   m._width = width;
-  m._dist  = dist;
+  m._dist = dist;
 
   m._underMet = met - 1;
-  m._overMet  = met + 1;
+  m._overMet = met + 1;
 
   extDistRC* rc = NULL;
   if (met == _layerCnt - 1) {  // over
     m._overMet = 0;
-    rc         = getOverFringeRC(&m);
+    rc = getOverFringeRC(&m);
   } else if (met == 1) {  // over
     m._overMet = 2;
-    rc         = getUnderRC(&m);
+    rc = getUnderRC(&m);
   } else {
     rc = getOverUnderRC(&m);
   }
@@ -95,15 +94,15 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
 }
 void extDistRC::debugRC(const char* debugWord,
                         const char* from,
-                        int         width,
-                        int         level)
+                        int width,
+                        int level)
 {
   char tmp[32];
   sprintf(tmp, " ");
   if (level > 0)
-    sprintf(tmp, "%2d", level);
+    sprintf(tmp, "%d", level);
   if (width > 0)
-    sprintf(tmp, "%s %5d", tmp, width);
+    sprintf(tmp, "%s %d", tmp, width);
 
   // debug(debugWord, "C", "%s: %s, tC %g  CC %g F %g D %g   R %g  Sep %d\n",
   //		from, tmp, _coupling+_fringe+_diag, _coupling,  _fringe, _diag,
@@ -117,27 +116,25 @@ uint extMain::calcMinMaxRC()
 
   _currentModel = getRCmodel(0);
 
-  odb::dbSet<odb::dbTechLayer>           layers = _tech->getLayers();
+  odb::dbSet<odb::dbTechLayer> layers = _tech->getLayers();
   odb::dbSet<odb::dbTechLayer>::iterator itr;
 
   uint cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    odb::dbTechLayer*    layer = *itr;
-    odb::dbTechLayerType type  = layer->getType();
+    odb::dbTechLayer* layer = *itr;
+    odb::dbTechLayerType type = layer->getType();
 
     if (type.getValue() != odb::dbTechLayerType::ROUTING)
       continue;
 
-    int met   = layer->getRoutingLevel();
+    int met = layer->getRoutingLevel();
     int width = layer->getWidth();
-    int dist  = layer->getSpacing();
+    int dist = layer->getSpacing();
     if (dist == 0)
       dist = layer->getPitch() - layer->getWidth();
 
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-      uint           modelIndex = _modelMap.get(jj);
-      extMetRCTable* rcModel
-          = _currentModel->getMetRCTable(modelIndex);  // NOT NEEDED
+      uint modelIndex = _modelMap.get(jj);
       resetMinMaxRC(met, jj);
 
       extDistRC* rcMin = _currentModel->getMinRC(met, width);
@@ -154,33 +151,31 @@ uint extMain::calcMinMaxRC()
   return cnt;
 }
 uint extMain::getExtStats(odb::dbNet* net,
-                          uint        corner,
-                          int&        wlen,
-                          double&     min_cap,
-                          double&     max_cap,
-                          double&     min_res,
-                          double&     max_res,
-                          double&     via_res,
-                          uint&       via_cnt)
+                          uint corner,
+                          int& wlen,
+                          double& min_cap,
+                          double& max_cap,
+                          double& min_res,
+                          double& max_res,
+                          double& via_res,
+                          uint& via_cnt)
 {
-  min_cap  = 0;
-  max_cap  = 0;
-  min_res  = 0;
-  max_res  = 0;
-  via_cnt  = 0;
-  via_res  = 0;
-  wlen     = 0;
+  min_cap = 0;
+  max_cap = 0;
+  min_res = 0;
+  max_res = 0;
+  via_cnt = 0;
+  via_res = 0;
+  wlen = 0;
   uint cnt = 0;
   sprintf(_tmpLenStats, "");
-
-  bool USE_DB_UNITS = false;
 
   odb::dbWire* wire = net->getWire();
   if (wire == NULL)
     return 0;
 
   odb::dbWireShapeItr shapes;
-  odb::dbShape        s;
+  odb::dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     //		uint level= 0;
 
@@ -204,8 +199,8 @@ uint extMain::getExtStats(odb::dbNet* net,
       continue;
     }
     cnt++;
-    uint met   = s.getTechLayer()->getRoutingLevel();
-    int  width = s.getTechLayer()->getWidth();
+    uint met = s.getTechLayer()->getRoutingLevel();
+    int width = s.getTechLayer()->getWidth();
 
     odb::Rect r;
     s.getBox(r);

@@ -32,7 +32,6 @@ proc define_tool_script { tool script } {
   dict set tool_scripts [string tolower $tool] $script
 }
 
-define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
 define_tool_script "init_fp" "src/init_fp/test/regression"
 define_tool_script "dbSta" "src/dbSta/test/regression"
 define_tool_script "IoPlacer" "src/ioPlacer/test/regression"
@@ -49,7 +48,8 @@ define_tool_script "PDNSim" "src/PDNSim/test/regression"
 define_tool_script "antenna_checker" "src/antenna_checker/test/regression"
 define_tool_script "OpenDB" "src/OpenDB/tests/regression"
 define_tool_script "OpenRCX" "src/OpenRCX/test/regression"
-
+define_tool_script "PartitionMgr" "src/PartitionMgr/test/regression"
+define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
@@ -130,6 +130,7 @@ if { $argv == {} } {
 
     if { !$matched } {
       puts "$arg is not an openroad test or tool name."
+      incr tool_errors
     }
   }
 }

@@ -169,6 +169,11 @@ set_clock_layer_range(int minLayer, int maxLayer)
   getFastRoute()->setMaxRoutingLayer(maxLayer);
 }
 
+void set_clock_cost(int cost)
+{
+  getFastRoute()->setClockCost(cost);
+}
+
 void
 set_macro_extension(int macroExtension)
 {
@@ -215,6 +220,18 @@ void
 report_congestion(char* congest_file)
 {
   getFastRoute()->setReportCongestion(congest_file);
+}
+
+void
+highlight_net_route(const odb::dbNet *net)
+{
+  getFastRoute()->highlightRoute(net);
+}
+
+void
+report_layer_wire_lengths()
+{
+  getFastRoute()->reportLayerWireLengths();
 }
 
 %} // inline

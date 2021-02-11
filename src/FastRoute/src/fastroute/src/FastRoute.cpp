@@ -72,7 +72,7 @@ int vCapacity;
 int hCapacity;
 int MD;
 
-FastRouteCore::FastRouteCore(utl::Logger* logger)
+FastRouteCore::FastRouteCore(utl::Logger* log)
 {
   newnetID = 0;
   segcount = 0;
@@ -83,7 +83,7 @@ FastRouteCore::FastRouteCore(utl::Logger* logger)
   MD = 0;
   numNets = 0;
   invalidNets = 0;
-  _logger = logger;
+  logger = log;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -98,16 +98,16 @@ void FastRouteCore::clear()
 
 void FastRouteCore::deleteComponents()
 {
-  for (int i = 0; i < numNets; i++) {
-    if (nets[i])
-      delete nets[i];
-    nets[i] = nullptr;
-  }
-
-  if (nets)
+  if (nets) {
+    for (int i = 0; i < numNets; i++) {
+      if (nets[i])
+        delete nets[i];
+      nets[i] = nullptr;
+    }
+  
     delete[] nets;
-
-  nets = nullptr;
+    nets = nullptr;
+  }
 
   if (h_edges)
     delete[] h_edges;
@@ -161,61 +161,42 @@ void FastRouteCore::deleteComponents()
     delete[] trees;
   trees = nullptr;
 
-  for (int i = 0; i < numValidNets; i++) {
-    int deg = sttrees[i].deg;
-    int numEdges = 2 * deg - 3;
-    for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-      TreeEdge* treeedge = &(sttrees[i].edges[edgeID]);
-      if (treeedge->len > 0) {
-        if (treeedge->route.gridsX)
-          free(treeedge->route.gridsX);
-        if (treeedge->route.gridsY)
-          free(treeedge->route.gridsY);
-        if (treeedge->route.gridsL)
-          free(treeedge->route.gridsL);
-        treeedge->route.gridsX = nullptr;
-        treeedge->route.gridsY = nullptr;
-        treeedge->route.gridsL = nullptr;
+  if (sttrees) {
+    for (int i = 0; i < numValidNets; i++) {
+      int deg = sttrees[i].deg;
+      int numEdges = 2 * deg - 3;
+      for (int edgeID = 0; edgeID < numEdges; edgeID++) {
+        TreeEdge* treeedge = &(sttrees[i].edges[edgeID]);
+        if (treeedge->len > 0) {
+          if (treeedge->route.gridsX)
+            free(treeedge->route.gridsX);
+          if (treeedge->route.gridsY)
+            free(treeedge->route.gridsY);
+          if (treeedge->route.gridsL)
+            free(treeedge->route.gridsL);
+          treeedge->route.gridsX = nullptr;
+          treeedge->route.gridsY = nullptr;
+          treeedge->route.gridsL = nullptr;
+        }
       }
+
+      if (sttrees[i].nodes)
+        delete[] sttrees[i].nodes;
+      sttrees[i].nodes = nullptr;
+
+      if (sttrees[i].edges)
+        delete[] sttrees[i].edges;
+      sttrees[i].edges = nullptr;
     }
-
-    if (sttrees[i].nodes)
-      delete[] sttrees[i].nodes;
-    sttrees[i].nodes = nullptr;
-
-    if (sttrees[i].edges)
-      delete[] sttrees[i].edges;
-    sttrees[i].edges = nullptr;
-  }
-
-  if (sttrees)
     delete[] sttrees;
-  sttrees = nullptr;
-
-  for (int i = 0; i < yGrid; i++) {
-    if (parentX1[i])
-      delete[] parentX1[i];
-    if (parentY1[i])
-      delete[] parentY1[i];
-    if (parentX3[i])
-      delete[] parentX3[i];
-    if (parentY3[i])
-      delete[] parentY3[i];
-
-    parentX1[i] = nullptr;
-    parentY1[i] = nullptr;
-    parentX3[i] = nullptr;
-    parentY3[i] = nullptr;
+    sttrees = nullptr;
   }
+  
+  parentX1.resize(boost::extents[0][0]);
+  parentY1.resize(boost::extents[0][0]);
+  parentX3.resize(boost::extents[0][0]);
+  parentY3.resize(boost::extents[0][0]);
 
-  if (parentX1)
-    delete[] parentX1;
-  if (parentY1)
-    delete[] parentY1;
-  if (parentX3)
-    delete[] parentX3;
-  if (parentY3)
-    delete[] parentY3;
   if (pop_heap2)
     delete[] pop_heap2;
   if (heap1)
@@ -223,10 +204,6 @@ void FastRouteCore::deleteComponents()
   if (heap2)
     delete[] heap2;
 
-  parentX1 = nullptr;
-  parentY1 = nullptr;
-  parentX3 = nullptr;
-  parentY3 = nullptr;
   pop_heap2 = nullptr;
   heap1 = nullptr;
   heap2 = nullptr;
@@ -245,55 +222,60 @@ void FastRouteCore::deleteComponents()
   dcor = nullptr;
   netEO = nullptr;
 
-  for (int i = 0; i < YRANGE; i++) {
-    if (HV[i])
-      delete[] HV[i];
-    HV[i] = nullptr;
-  }
+  if (HV) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (HV[i])
+        delete[] HV[i];
+      HV[i] = nullptr;
+    }
 
-  if (HV)
     delete[] HV;
-  HV = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (hyperV[i])
-      delete[] hyperV[i];
-    hyperV[i] = nullptr;
+    HV = nullptr;
   }
 
-  if (hyperV)
+  if (hyperV) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (hyperV[i])
+        delete[] hyperV[i];
+      hyperV[i] = nullptr;
+    }
+
     delete[] hyperV;
-  hyperV = nullptr;
-
-  for (int i = 0; i < XRANGE; i++) {
-    if (hyperH[i])
-      delete[] hyperH[i];
-    hyperH[i] = nullptr;
+    hyperV = nullptr;
   }
 
-  if (hyperH)
+  if (hyperH) {
+    for (int i = 0; i < XRANGE; i++) {
+      if (hyperH[i])
+        delete[] hyperH[i];
+      hyperH[i] = nullptr;
+    }
+
     delete[] hyperH;
-  hyperH = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (inRegion[i])
-      delete[] inRegion[i];
-    inRegion[i] = nullptr;
+    hyperH = nullptr;
   }
 
-  if (inRegion)
+  if (inRegion) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (inRegion[i])
+        delete[] inRegion[i];
+      inRegion[i] = nullptr;
+    }
+
     delete[] inRegion;
-  inRegion = nullptr;
-
-  for (int i = 0; i < YRANGE; i++) {
-    if (corrEdge[i])
-      delete[] corrEdge[i];
-    corrEdge[i] = nullptr;
+    inRegion = nullptr;
   }
 
-  if (corrEdge)
+  if (corrEdge) {
+    for (int i = 0; i < YRANGE; i++) {
+      if (corrEdge[i])
+        delete[] corrEdge[i];
+      corrEdge[i] = nullptr;
+    }
+
     delete[] corrEdge;
-  corrEdge = nullptr;
+    corrEdge = nullptr;
+  }
 
   d13D.resize(boost::extents[0][0][0]);
   d23D.resize(boost::extents[0][0][0]);
@@ -327,35 +309,38 @@ void FastRouteCore::deleteComponents()
   gridHs = nullptr;
   gridVs = nullptr;
 
-  for (int i = 0; i < numLayers; i++) {
-    if (layerGrid[i])
-      delete[] layerGrid[i];
-    layerGrid[i] = nullptr;
-  }
+  if (layerGrid) {
+    for (int i = 0; i < numLayers; i++) {
+      if (layerGrid[i])
+        delete[] layerGrid[i];
+      layerGrid[i] = nullptr;
+    }
 
-  if (layerGrid)
     delete[] layerGrid;
-  layerGrid = nullptr;
-
-  for (int i = 0; i < numLayers; i++) {
-    if (gridD[i])
-      delete[] gridD[i];
-    gridD[i] = nullptr;
+    layerGrid = nullptr;
   }
 
-  if (gridD)
+  if (gridD) {
+    for (int i = 0; i < numLayers; i++) {
+      if (gridD[i])
+        delete[] gridD[i];
+      gridD[i] = nullptr;
+    }
+
     delete[] gridD;
-  gridD = nullptr;
-
-  for (int i = 0; i < numLayers; i++) {
-    if (viaLink[i])
-      delete[] viaLink[i];
-    viaLink[i] = nullptr;
+    gridD = nullptr;
   }
 
-  if (viaLink)
+  if (viaLink) {
+    for (int i = 0; i < numLayers; i++) {
+      if (viaLink[i])
+        delete[] viaLink[i];
+      viaLink[i] = nullptr;
+    }
+
     delete[] viaLink;
-  viaLink = nullptr;
+    viaLink = nullptr;
+  }
 
   if (costHVH)
     delete[] costHVH;
@@ -546,7 +531,8 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
                           int nPins,
                           int validPins,
                           float alpha,
-                          bool isClock)
+                          bool isClock,
+                          int cost)
 {
   int netID = newnetID;
   pinInd = validPins;
@@ -556,6 +542,7 @@ int FastRouteCore::addNet(odb::dbNet* db_net,
   nets[newnetID]->deg = pinInd;
   nets[newnetID]->alpha = alpha;
   nets[newnetID]->isClock = isClock;
+  nets[newnetID]->edgeCost = cost;
 
   seglistIndex[newnetID] = segcount;
   newnetID++;
@@ -617,14 +604,14 @@ void FastRouteCore::initEdges()
   // 3D edge initialization
   for (int k = 0; k < numLayers; k++) {
     for (int i = 0; i < yGrid; i++) {
-      for (int j = 0; j < xGrid - 1; j++) {
+      for (int j = 0; j < xGrid; j++) {
         int grid = i * (xGrid - 1) + j + k * (xGrid - 1) * yGrid;
         h_edges3D[grid].cap = hCapacity3D[k];
         h_edges3D[grid].usage = 0;
         h_edges3D[grid].red = 0;
       }
     }
-    for (int i = 0; i < yGrid - 1; i++) {
+    for (int i = 0; i < yGrid; i++) {
       for (int j = 0; j < xGrid; j++) {
         int grid = i * xGrid + j + k * xGrid * (yGrid - 1);
         v_edges3D[grid].cap = vCapacity3D[k];
@@ -708,7 +695,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        _logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT, 113, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -735,7 +722,7 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        _logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
+        logger->warn(GRT, 114, "Underflow in reduce: cap, reducedCap: {}, {}", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -865,17 +852,10 @@ void FastRouteCore::initAuxVar()
 
   MaxDegree = MD;
 
-  parentX1 = new short*[yGrid];
-  parentY1 = new short*[yGrid];
-  parentX3 = new short*[yGrid];
-  parentY3 = new short*[yGrid];
-
-  for (int i = 0; i < yGrid; i++) {
-    parentX1[i] = new short[xGrid];
-    parentY1[i] = new short[xGrid];
-    parentX3[i] = new short[xGrid];
-    parentY3[i] = new short[xGrid];
-  }
+  parentX1.resize(boost::extents[yGrid][xGrid]);
+  parentY1.resize(boost::extents[yGrid][xGrid]);
+  parentX3.resize(boost::extents[yGrid][xGrid]);
+  parentY3.resize(boost::extents[yGrid][xGrid]);
 
   pop_heap2 = new Bool[yGrid * XRANGE];
 
@@ -931,7 +911,7 @@ void FastRouteCore::writeCongestionReport2D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    _logger->error(GRT, 116, "Congestion report file could not be opened");
+    logger->error(GRT, 116, "Congestion report file could not be opened.");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -975,7 +955,7 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    _logger->error(GRT, 117, "Congestion report file could not be opened");
+    logger->error(GRT, 117, "Congestion report file could not be opened.");
   }
   congestFile << "FastRoute congestion report\n\n";
 
@@ -1014,6 +994,38 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   }
 
   congestFile.close();
+}
+
+void FastRouteCore::findCongestionInformation(std::vector<GCellCongestion>& congestionInfo)
+{
+  congestionInfo.reserve(numLayers * yGrid * xGrid);
+  for (int layer = 0; layer < numLayers; layer++) {
+    for (int i = 0; i < yGrid; i++) {
+      for (int j = 0; j < xGrid; j++) {
+        int gridH = i * (xGrid - 1) + j + layer * (xGrid - 1) * yGrid;
+        int gridV = i * xGrid + j + layer * xGrid * (yGrid - 1);
+
+        unsigned short capH = h_edges3D[gridH].cap;
+        unsigned short usageH = h_edges3D[gridH].usage;
+
+        unsigned short capV = v_edges3D[gridV].cap;
+        unsigned short usageV = v_edges3D[gridV].usage;
+
+        int xReal = wTile * (j + 0.5) + xcorner;
+        int yReal = hTile * (i + 0.5) + ycorner;
+
+        int llX = xReal - (wTile / 2);
+        int llY = yReal - (hTile / 2);
+
+        int urX = xReal + (wTile / 2);
+        int urY = yReal + (hTile / 2);
+
+        congestionInfo.push_back(
+              GCellCongestion(llX, llY, urX, urY, layer+1,
+                              capH, capV, usageH, usageV));
+      }
+    }
+  }
 }
 
 NetRouteMap FastRouteCore::run()
@@ -1072,20 +1084,20 @@ NetRouteMap FastRouteCore::run()
   VIA = 2;
   // viacost = VIA;
   viacost = 0;
-  gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ, _logger);
+  gen_brk_RSMT(FALSE, FALSE, FALSE, FALSE, noADJ, logger);
   if (verbose > 1)
-    _logger->info(GRT, 97, "First L Route");
+    logger->info(GRT, 97, "First L Route.");
   routeLAll(TRUE);
-  gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ, _logger);
+  gen_brk_RSMT(TRUE, TRUE, TRUE, FALSE, noADJ, logger);
   getOverflow2D(&maxOverflow);
   if (verbose > 1)
-    _logger->info(GRT, 98, "Second L Route");
+    logger->info(GRT, 98, "Second L Route.");
   newrouteLAll(FALSE, TRUE);
   getOverflow2D(&maxOverflow);
   spiralRouteAll();
   newrouteZAll(10);
   if (verbose > 1)
-    _logger->info(GRT, 99, "First Z Route");
+    logger->info(GRT, 99, "First Z Route.");
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
@@ -1110,7 +1122,7 @@ NetRouteMap FastRouteCore::run()
     LOGIS_COF = std::max<float>(2.0 / (1 + log(maxOverflow)), LOGIS_COF);
     LOGIS_COF = 2.0 / (1 + log(maxOverflow));
     if (verbose > 1)
-      _logger->info(GRT, 100, "LV routing round {}, enlarge {}", i, enlarge);
+      logger->info(GRT, 100, "LV routing round {}, enlarge {}.", i, enlarge);
     routeLVAll(newTH, enlarge);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1141,7 +1153,7 @@ NetRouteMap FastRouteCore::run()
 
   InitLastUsage(upType);
   if (totalOverflow > 0) {
-    _logger->info(GRT, 101, "Running extra iterations to remove overflow...");
+    logger->info(GRT, 101, "Running extra iterations to remove overflow.");
   }
 
   while (totalOverflow > 0 && i <= overflowIterations) {
@@ -1221,10 +1233,10 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
-    _logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
-                  " threshold {} via cost {} \n"
+    logger->info(GRT, 102, "iteration {}, enlarge {}, costheight {},"
+                  " threshold {} via cost {}. \n"
                   "log_coef {}, healingTrigger {} cost_step {} L {} cost_type"
-                  " {} updatetype {}",
+                  " {} updatetype {}.",
         i,
         enlarge,
         costheight,
@@ -1264,7 +1276,7 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        _logger->info(GRT, 103, "Extra Run for hard benchmark");
+        logger->info(GRT, 103, "Extra Run for hard benchmark.");
         L = 0;
         upType = 3;
         stopDEC = TRUE;
@@ -1361,15 +1373,15 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
-    _logger->error(GRT, 118, "Routing congestion too high");
+    logger->error(GRT, 118, "Routing congestion too high.");
   }
 
   if (allowOverflow && totalOverflow > 0) {
-    _logger->warn(GRT, 115, "Global routing finished with overflow");
+    logger->warn(GRT, 115, "Global routing finished with overflow.");
   }
 
   if (minofl > 0) {
-    _logger->info(GRT, 104, "minimal ofl {}, occuring at round {}", minofl, minoflrnd);
+    logger->info(GRT, 104, "minimal ofl {}, occuring at round {}.", minofl, minoflrnd);
     copyBR();
   }
 
@@ -1378,21 +1390,21 @@ NetRouteMap FastRouteCore::run()
   checkUsage();
 
   if (verbose > 1)
-    _logger->info(GRT, 105, "Maze routing finished");
+    logger->info(GRT, 105, "Maze routing finished.");
 
   clock_t t4 = clock();
   float maze_Time = (float) (t4 - t3) / CLOCKS_PER_SEC;
 
   if (verbose > 1) {
-    _logger->report("Final 2D results:");
+    logger->report("Final 2D results:");
   }
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   if (verbose > 1)
-    _logger->info(GRT, 106, "Layer Assignment Begins");
+    logger->info(GRT, 106, "Layer Assignment Begins.");
   newLA();
   if (verbose > 1)
-    _logger->info(GRT, 107, "Layer assignment finished");
+    logger->info(GRT, 107, "Layer assignment finished.");
 
   clock_t t2 = clock();
   float gen_brk_Time = (float) (t2 - t1) / CLOCKS_PER_SEC;
@@ -1410,7 +1422,7 @@ NetRouteMap FastRouteCore::run()
 
   if (goingLV && past_cong == 0) {
     if (verbose > 1)
-      _logger->info(GRT, 108, "Post Processing Begins");
+      logger->info(GRT, 108, "Post Processing Begins.");
     mazeRouteMSMDOrder3D(enlarge, 0, ripupTH3D);
 
     //  mazeRouteMSMDOrder3D(enlarge, 0, 10 );
@@ -1418,7 +1430,7 @@ NetRouteMap FastRouteCore::run()
       mazeRouteMSMDOrder3D(enlarge, 0, 12);
     }
     if (verbose > 1)
-      _logger->info(GRT, 109, "Post Processsing finished\n Starting via filling");
+      logger->info(GRT, 109, "Post Processsing finished.\n Starting via filling.");
   }
 
   fillVIA();
@@ -1428,9 +1440,9 @@ NetRouteMap FastRouteCore::run()
 
   clock_t t5 = clock();
   maze_Time = (float) (t5 - t1) / CLOCKS_PER_SEC;
-  _logger->info(GRT, 110, "Final usage          : {}", finallength);
-  _logger->info(GRT, 111, "Final number of vias : {}", numVia);
-  _logger->info(GRT, 112, "Final usage 3D       : {}", (finallength + 3 * numVia));
+  logger->info(GRT, 110, "Final usage: {}", finallength);
+  logger->info(GRT, 111, "Final number of vias: {}", numVia);
+  logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
   NetRouteMap routes = getRoutes();
 

@@ -60,18 +60,20 @@ sta::define_cmd_args "detailed_route_debug" {
     [-pin name]
     [-gcell x y]
     [-iter iter]
+    [-pa_markers]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -gcell -iter -pin} \
-      flags {-dr -maze -pa}
+      flags {-dr -maze -pa -pa_markers}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
   set dr [info exists flags(-dr)]
   set maze [info exists flags(-maze)]
   set pa [info exists flags(-pa)]
+  set pa_markers [info exists flags(-pa_markers)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -90,7 +92,7 @@ proc detailed_route_debug { args } {
   if [info exists keys(-gcell)] {
     set gcell $keys(-gcell)
     if { [llength $gcell] != 2 } {
-      ord::error "-gcell is a list of 2 coordinates."
+      ord::error DRT 118 "-gcell is a list of 2 coordinates."
     }
     lassign $gcell gcell_x gcell_y
     sta::check_positive_integer "-gcell" $gcell_x
@@ -103,5 +105,6 @@ proc detailed_route_debug { args } {
     set iter 0
   }
 
-  tr::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze $gcell_x $gcell_y $iter
+  tr::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
+      $gcell_x $gcell_y $iter $pa_markers
 }

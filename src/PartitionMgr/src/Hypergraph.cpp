@@ -34,13 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Hypergraph.h"
+#include "utility/Logger.h"
 
 #include <algorithm>
 #include <iostream>
 
+using utl::PAR;
+
 namespace par {
 
-void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
+void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight, Logger * logger)
 {
   std::vector<float> edgeWeight = _edgeWeights;
   double percentile = 0.99;  // Exclude possible outliers
@@ -69,11 +72,11 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
       _edgeWeightsNormalized.push_back(auxWeight);
     }
   } else {
-    std::cout << "[ERROR] Number of edges equal to 0\n";
+    logger->error(PAR, 23, "Number of edges equal to 0.");
   }
 }
 
-void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
+void Hypergraph::computeVertexWeightRange(int maxVertexWeight, Logger * logger)
 {
   std::vector<int64_t> vertexWeight = _vertexWeights;
   double percentile = 0.99;  // Exclude possible outliers
@@ -106,7 +109,7 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
     _vertexWeights.clear();
     _vertexWeights.shrink_to_fit();
   } else {
-    std::cout << "[ERROR] Number of vertices equal to 0\n";
+    logger->error(PAR, 24, "Number of vertices equal to 0.");
   }
 }
 

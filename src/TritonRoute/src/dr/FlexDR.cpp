@@ -1728,7 +1728,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
   end();
 }
 
-void FlexDR::end() {
+void FlexDR::end(bool writeMetrics) {
   vector<unsigned long long> wlen(getTech()->getLayers().size(), 0);
   vector<unsigned long long> sCut(getTech()->getLayers().size(), 0);
   vector<unsigned long long> mCut(getTech()->getLayers().size(), 0);
@@ -1758,6 +1758,13 @@ void FlexDR::end() {
       }
     }
   }
+
+  if (writeMetrics) {
+    logger_->metric(DRT, "wire length::total",
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+    logger_->metric(DRT, "vias::total", totSCut + totMCut);
+  }
+
   if (VERBOSE > 0) {
     boost::io::ios_all_saver guard(std::cout);
     cout <<endl <<"total wire length = " <<totWlen / getDesign()->getTopBlock()->getDBUPerUU() <<" um" <<endl;
@@ -2034,7 +2041,7 @@ int FlexDR::main() {
   }
   if (VERBOSE > 0) {
     cout <<endl <<"complete detail routing";
-    end();
+    end(/* writeMetrics */ true);
   }
   if (VERBOSE > 0) {
     t.print();

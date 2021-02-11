@@ -64,7 +64,7 @@ class Grid
   std::vector<int> _minWidths;
   std::vector<int> _horizontalEdgesCapacities;
   std::vector<int> _verticalEdgesCapacities;
-  std::map<int, std::vector<odb::Rect>> _obstacles;
+  std::map<int, std::vector<odb::Rect>> _obstructions;
 
  public:
   Grid() = default;
@@ -85,7 +85,7 @@ class Grid
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstacles);
+            const std::map<int, std::vector<odb::Rect>>& obstructions);
 
   typedef struct
   {
@@ -154,18 +154,18 @@ class Grid
     _verticalEdgesCapacities[layer] = reduction;
   };
 
-  const std::map<int, std::vector<odb::Rect>>& getAllObstacles() const
+  const std::map<int, std::vector<odb::Rect>>& getAllObstructions() const
   {
-    return _obstacles;
+    return _obstructions;
   }
-  void addObstacle(int layer, odb::Rect obstacle)
+  void addObstruction(int layer, odb::Rect obstruction)
   {
-    _obstacles[layer].push_back(obstacle);
+    _obstructions[layer].push_back(obstruction);
   }
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstacle,
+  std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstruction,
                                         odb::Rect& firstTileBds,
                                         odb::Rect& lastTileBds);
 

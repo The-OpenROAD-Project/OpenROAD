@@ -43,6 +43,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace utl {
+class Logger;
+}
+
 namespace mpl {
 
 class MacroCircuit;
@@ -53,8 +57,7 @@ public:
   TritonMacroPlace ();
   ~TritonMacroPlace ();
 
-  void setDb(odb::dbDatabase* db);
-  void setSta(sta::dbSta* sta);
+  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
   void setGlobalConfig(const char* globalConfig);
   void setLocalConfig(const char* localConfig);
 

@@ -64,25 +64,6 @@ class Logger;
 
 namespace grt {
 
-class RoutePt
-{
- public:
-  RoutePt() = default;
-  RoutePt(int x, int y, int layer);
-  int x() { return _x; };
-  int y() { return _y; };
-  int layer() { return _layer; };
-
-  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
-
- private:
-  int _x;
-  int _y;
-  int _layer;
-};
-
-bool operator<(const RoutePt& p1, const RoutePt& p2);
-
 typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 
 class RcTreeBuilder
@@ -117,7 +98,6 @@ class RcTreeBuilder
   sta::Corner* _corner;
   sta::MinMax* _min_max;
   sta::ParasiticAnalysisPt* _analysisPoint;
-  bool _debug;
 
   // Net variables
   sta::Net* _sta_net;

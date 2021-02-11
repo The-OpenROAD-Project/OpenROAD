@@ -140,11 +140,15 @@ void HTreeBuilder::initSinkRegion()
   if (_options->isSimpleSegmentEnabled()) {
     int remainingLength
         = _options->getBufferDistance() / (wireSegmentUnitInMicron * 2);
-    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um)", remainingLength, _options->getBufferDistance());
+    _logger->info(CTS, 21, " Distance between buffers: {} units ({} um)",
+                  remainingLength,
+                  static_cast<int>(_options->getBufferDistance()));
     if (_options->isVertexBuffersEnabled()) {
       int vertexBufferLength
           = _options->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
-      _logger->info(CTS, 22, " Branch Length for Vertex Buffer: {} units ({} um)", vertexBufferLength, _options->getVertexBufferDistance());
+      _logger->info(CTS, 22, " Branch Length for Vertex Buffer: {} units ({} um)",
+                    vertexBufferLength,
+                    static_cast<int>(_options->getVertexBufferDistance()));
     }
   }
 
@@ -174,7 +178,8 @@ void HTreeBuilder::run()
   _logger->info(CTS, 28, "    Tot. number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
     _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
-                  _options->getSizeSinkClustering(), _options->getMaxDiameter());
+                  _options->getSizeSinkClustering(),
+                  static_cast<int>(_options->getMaxDiameter()));
   }
   _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
 
@@ -678,26 +683,18 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
       double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc) : branchPt1.computeDist(sinkLoc);
 
       if (clusterIdx == 0) {
-        if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-        } else {
-          topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-          movedSinks++;
-        }
       } else {
-        if (dist<=distOther*errorFactor) {
           topology.addSinkToBranch(branchPtIdx2, sinkLoc);
-        } else {
-          topology.addSinkToBranch(branchPtIdx1, sinkLoc);
-          movedSinks++;
-        }
       }
+      if (dist>=distOther*errorFactor)
+        movedSinks++;
 
     }
   }
-
   if (movedSinks>0)
-    _logger->report(" Out of {} sinks, {} sinks moved to other cluster", sinks.size(), movedSinks);
+    _logger->report(" Out of {} sinks, {} sinks closer to other cluster", sinks.size(), movedSinks);
+
 
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);

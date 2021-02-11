@@ -37,7 +37,6 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
 #include "utility/Logger.h"
 #include "gui/gui.h"
 %}

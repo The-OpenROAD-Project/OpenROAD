@@ -45,18 +45,26 @@ class frPin;
 class frInstTerm;
 class frBlock;
 class frAccessPoint;
+class frVia;
+class frMarker;
 
 // This class draws debugging graphics on the layout
 class FlexPAGraphics : public gui::Renderer
 {
  public:
   // Debug pin acess
-  FlexPAGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
+  FlexPAGraphics(frDebugSettings* settings,
+                 frDesign* design,
+                 odb::dbDatabase* db,
+                 Logger* logger);
 
   void startPin(frPin* pin, frInstTerm* inst_term);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type, frAccessPointEnum upper_type);
+
+  void setViaAP(const frAccessPoint* ap, const frVia* via,
+                const std::vector<std::unique_ptr<frMarker>>& markers);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -68,6 +76,7 @@ class FlexPAGraphics : public gui::Renderer
   static bool guiActive();
 
  private:
+  Logger*          logger_;
   frDebugSettings* settings_;
   gui::Gui*        gui_;
   frPin*           pin_;
@@ -76,6 +85,9 @@ class FlexPAGraphics : public gui::Renderer
   std::vector<frAccessPoint> aps_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
+  const frAccessPoint* pa_ap_;
+  const frVia* pa_via_;
+  const std::vector<std::unique_ptr<frMarker>>* pa_markers_;
 };
 
 }  // namespace fr

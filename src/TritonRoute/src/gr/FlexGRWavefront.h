@@ -62,7 +62,6 @@ namespace fr {
             return this->zIdx_ < b.zIdx_; // prefer upper layer
           } else {
             return this->pathCost_ < b.pathCost_; //prefer larger pathcost, DFS-style
-            //return this->pathCost < b.pathCost; //prefer smaller pathcost, BFS-style, test1 shows better results
           }
         }
       }

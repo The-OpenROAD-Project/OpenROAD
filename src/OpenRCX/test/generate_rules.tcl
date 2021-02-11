@@ -1,6 +1,6 @@
 source helpers.tcl
 
-read_lef sky130/sky130_tech.lef 
+read_lef sky130hs/sky130hs.tlef 
 
 read_def generate_pattern.defok
 bench_read_spef generate_pattern.spefok

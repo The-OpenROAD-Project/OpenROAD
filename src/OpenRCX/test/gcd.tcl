@@ -2,8 +2,8 @@ source helpers.tcl
 
 set test_nets ""
 
-read_lef sky130/sky130_tech.lef 
-read_lef sky130/sky130_std_cell.lef
+read_lef sky130hs/sky130hs.tlef 
+read_lef sky130hs/sky130hs_std_cell.lef
 
 read_def -order_wires gcd.def
 

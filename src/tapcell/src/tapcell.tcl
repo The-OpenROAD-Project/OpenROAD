@@ -195,8 +195,6 @@ proc tapcell { args } {
 
 namespace eval tap {
     proc cut_rows {db endcap_master blockages halo_x halo_y} {
-        utl::report "Step 1: Cut rows..."
-
         set block [[$db getChip] getBlock]
 
         set rows_count 0
@@ -267,14 +265,12 @@ namespace eval tap {
         }
 
         utl::info TAP 1 "Macro blocks found: $block_count"
-        utl::info TAP 2 "#Original rows: $rows_count"
-        utl::info TAP 3 "#Cut rows: $cut_rows_count"
+        utl::info TAP 2 "Original rows: $rows_count"
+        utl::info TAP 3 "Cut rows: $cut_rows_count"
     }
 
     proc insert_endcaps {db endcap_cpp endcap_master cnrcap_masters \
                          blockages halo_x halo_y no_cell_at_top_bottom add_boundary_cell} {
-        utl::report "Step 2: Insert endcaps..."
-
         set block [[$db getChip] getBlock]
         
         set rows [$block getRows]
@@ -420,14 +416,12 @@ namespace eval tap {
             incr cnt
             incr endcap_count
         }
-        utl::info TAP 4 "#Endcaps inserted: $endcap_count"
+        utl::info TAP 4 "Endcaps inserted: $endcap_count"
         return $cnt
     }
 
     proc insert_tapcells {db tapcell_master blockages dist endcap_cpp halo_x halo_y \
                           endcap_width cnt no_cell_at_top_bottom add_boundary_cell} {
-        utl::report "Step 3: Insert tapcells..."
-
         set block [[$db getChip] getBlock]
         
         set rows [$block getRows]
@@ -540,13 +534,11 @@ namespace eval tap {
             }
         }
 
-        utl::info TAP 5 "#Tapcells inserted: $tapcell_count"
+        utl::info TAP 5 "Tapcells inserted: $tapcell_count"
         return $cnt
     }
 
     proc insert_at_top_bottom {db masters blockages tbtie_cpp endcap_cpp cnt} {
-        utl::report "Step 4.1: Insert tapcells at top/bottom between cnr cell..."
-
         set block [[$db getChip] getBlock]
         set rows [$block getRows]
 
@@ -658,8 +650,6 @@ namespace eval tap {
     }
 
     proc insert_around_macros {db masters blockages cnt halo_x halo_y endcapwidth tbtie_cpp} {
-        utl::report "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
-
         set block [[$db getChip] getBlock]
         set rows [$block getRows]
 

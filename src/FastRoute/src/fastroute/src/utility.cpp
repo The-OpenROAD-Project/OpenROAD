@@ -40,8 +40,11 @@
 #include "DataType.h"
 #include "flute.h"
 #include "pdrev/pdrev.h"
+#include "utility/Logger.h"
 
 namespace grt {
+
+using utl::GRT;
 
 void printEdge(int netID, int edgeID)
 {
@@ -52,16 +55,18 @@ void printEdge(int netID, int edgeID)
   edge = sttrees[netID].edges[edgeID];
   nodes = sttrees[netID].nodes;
 
-  printf("edge %d: (%d, %d)->(%d, %d)\n",
+  logger->report("edge {}: ({}, {})->({}, {})",
          edgeID,
          nodes[edge.n1].x,
          nodes[edge.n1].y,
          nodes[edge.n2].x,
          nodes[edge.n2].y);
+  std::string routes_rpt;
   for (i = 0; i <= edge.route.routelen; i++) {
-    printf("(%d, %d) ", edge.route.gridsX[i], edge.route.gridsY[i]);
+    routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) +
+                 ", " + std::to_string(edge.route.gridsY[i]) + ") ";
   }
-  printf("\n");
+  logger->report("{}", routes_rpt);
 }
 
 void plotTree(int netID)
@@ -79,8 +84,7 @@ void plotTree(int netID)
 
   fp = fopen("plottree", "w");
   if (fp == NULL) {
-    printf("Error in opening file plottree\n");
-    exit(1);
+    logger->error(GRT, 194, "Fail when open file plottree.");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -177,12 +181,12 @@ void getlen()
     for (edgeID = 0; edgeID < 2 * sttrees[i].deg - 3; edgeID++) {
       treeedge = &(sttrees[i].edges[edgeID]);
       if (treeedge->route.type < MAZEROUTE)
-        printf("wrong\n");
+        logger->error(GRT, 195, "Invalid route type.");
       else
         totlen += treeedge->route.routelen;
     }
   }
-  printf("Routed len: %d\n", totlen);
+  logger->info(GRT, 196, "Routed len: {}", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -264,7 +268,7 @@ static int comparePVMINX(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    exit(1);
+    logger->error(GRT, 175, "Invalid PVMINX comparison.");
   } else {
     return ret;
   }
@@ -281,7 +285,7 @@ static int comparePVPV(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    exit(1);
+    logger->error(GRT, 176, "Invalid PVPV comparison.");
   } else {
     return ret;
   }
@@ -425,9 +429,9 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-    printf("[INFO] Via related to pin nodes %d\n", numVIAT1);
-    printf("[INFO] Via related stiner nodes %d\n", numVIAT2);
-    printf("Via filling finished\n");
+   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
+   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
+   logger->info(GRT, 199, "Via filling finished.");
   }
 }
 
@@ -512,7 +516,7 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
         gridD[l][0] = 0;
       }
     } else {
-      printf("warning, start point not assigned\n");
+      logger->warn(GRT, 200, "Start point not assigned.");
       fflush(stdout);
     }
 
@@ -613,18 +617,17 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       }
 
     } else {
-      // treenodes[n2a].assigned = TRUE;
       treenodes[n2a].topL
-          = gridsL[routelen];  // std::max(endLayer, gridsL[routelen]);
+          = gridsL[routelen];
       treenodes[n2a].botL
-          = gridsL[routelen];  // std::min(endLayer, gridsL[routelen]);
+          = gridsL[routelen];
       treenodes[n2a].lID = treenodes[n2a].hID = edgeID;
     }
 
     if (treenodes[n2a].assigned) {
       if (gridsL[routelen] > treenodes[n2a].topL
           || gridsL[routelen] < treenodes[n2a].botL) {
-        printf("target ending layer out of range\n");
+        logger->error(GRT, 202, "Target ending layer ({}) out of range.", gridsL[routelen]);
       }
     }
 
@@ -736,16 +739,18 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   }
   treeedge->assigned = TRUE;
 
+  int edgeCost = nets[netID]->edgeCost;
+
   for (k = 0; k < routelen; k++) {
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       grid = gridsL[k] * gridV + min_y * xGrid + gridsX[k];
 
       if (v_edges3D[grid].usage < v_edges3D[grid].cap) {
-        v_edges3D[grid].usage++;
+        v_edges3D[grid].usage += edgeCost;
 
       } else {
-        v_edges3D[grid].usage++;
+        v_edges3D[grid].usage += edgeCost;
       }
 
     } else {
@@ -753,9 +758,9 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       grid = gridsL[k] * gridH + gridsY[k] * (xGrid - 1) + min_x;
 
       if (h_edges3D[grid].usage < h_edges3D[grid].cap) {
-        h_edges3D[grid].usage++;
+        h_edges3D[grid].usage += edgeCost;
       } else {
-        h_edges3D[grid].usage++;
+        h_edges3D[grid].usage += edgeCost;
       }
     }
   }
@@ -993,7 +998,7 @@ void printEdge3D(int netID, int edgeID)
   edge = sttrees[netID].edges[edgeID];
   nodes = sttrees[netID].nodes;
 
-  printf("edge %d: n1 %d (%d, %d)-> n2 %d(%d, %d)\n",
+  logger->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {})",
          edgeID,
          edge.n1,
          nodes[edge.n1].x,
@@ -1002,13 +1007,13 @@ void printEdge3D(int netID, int edgeID)
          nodes[edge.n2].x,
          nodes[edge.n2].y);
   if (edge.len > 0) {
+    std::string edge_rpt;
     for (i = 0; i <= edge.route.routelen; i++) {
-      printf("(%d, %d,%d) ",
-             edge.route.gridsX[i],
-             edge.route.gridsY[i],
-             edge.route.gridsL[i]);
+      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", " +
+                 std::to_string(edge.route.gridsY[i]) + ", " +
+                 std::to_string(edge.route.gridsL[i]) + ") ";
     }
-    printf("\n");
+    logger->report("{}", edge_rpt);
   }
 }
 
@@ -1016,7 +1021,7 @@ void printTree3D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
-    printf("nodeID %d,  [%d, %d]\n",
+    logger->report("nodeID {},  [{}, {}]",
            nodeID,
            sttrees[netID].nodes[nodeID].y,
            sttrees[netID].nodes[nodeID].x);
@@ -1044,13 +1049,7 @@ void checkRoute3D()
     for (nodeID = 0; nodeID < 2 * deg - 2; nodeID++) {
       if (nodeID < deg) {
         if (treenodes[nodeID].botL != 0) {
-          printf("causing pin node floating\n");
-        }
-
-        if (treenodes[nodeID].botL > treenodes[nodeID].topL) {
-          // printf("pin node l %d h %d wrong lid %d hid %d\n",
-          // treenodes[nodeID].botL, treenodes[nodeID].topL,
-          // treenodes[nodeID].lID, treenodes[nodeID].hID);
+          logger->error(GRT, 203, "Causing pin node floating.");
         }
       }
     }
@@ -1073,7 +1072,7 @@ void checkRoute3D()
       gridFlag = FALSE;
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        printf("net[%d] edge[%d] start node wrong, net deg %d, n1 %d\n",
+        logger->report("net[{}] edge[{}] start node wrong, net deg {}, n1 {}",
                netID,
                edgeID,
                deg,
@@ -1081,7 +1080,7 @@ void checkRoute3D()
         printEdge3D(netID, edgeID);
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        printf("net[%d] edge[%d] end node wrong, net deg %d, n2 %d\n",
+        logger->report("net[{}] edge[{}] end node wrong, net deg {}, n2 {}",
                netID,
                edgeID,
                deg,
@@ -1094,12 +1093,12 @@ void checkRoute3D()
                    + ADIFF(gridsL[i + 1], gridsL[i]);
         if (distance > 1 || distance < 0) {
           gridFlag = TRUE;
-          printf("net %s edge[%d] maze route wrong, distance %d, i %d\n",
+          logger->report("net {} edge[{}] maze route wrong, distance {}, i {}",
                  netName(nets[netID]),
                  edgeID,
                  distance,
                  i);
-          printf("current [%d, %d, %d], next [%d, %d, %d]",
+          logger->report("current [{}, {}, {}], next [{}, {}, {}]",
                  gridsL[i],
                  gridsY[i],
                  gridsX[i],
@@ -1111,7 +1110,7 @@ void checkRoute3D()
 
       for (i = 0; i <= treeedge->route.routelen; i++) {
         if (gridsL[i] < 0) {
-          printf("gridsL less than 0, %d\n", gridsL[i]);
+          logger->error(GRT, 204, "Invalid layer value in gridsL, {}.", gridsL[i]);
         }
       }
       if (gridFlag) {
@@ -1131,8 +1130,7 @@ void write3D()
 
   fp = fopen("output.out", "w");
   if (fp == NULL) {
-    printf("Error in opening %s\n", "output.out");
-    exit(1);
+    logger->error(GRT, 205, "Error in opening output.out.");
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
@@ -1185,7 +1183,7 @@ static int compareTEL(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    exit(1);
+    logger->error(GRT, 177, "Invalid TEL comparison.");
   } else {
     return ret;
   }
@@ -1253,8 +1251,7 @@ void recoverEdge(int netID, int edgeID)
   routeLen = treeedge->route.routelen;
 
   if (treeedge->len == 0) {
-    printf("trying to recover an 0 length edge\n");
-    exit(0);
+    logger->error(GRT, 206, "trying to recover an 0 length edge.");
   }
 
   treenodes = sttrees[netID].nodes;
@@ -1297,18 +1294,20 @@ void recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = TRUE;
 
+  int edgeCost = nets[netID]->edgeCost;
+
   for (i = 0; i < treeedge->route.routelen; i++) {
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage += 1;
+        v_edges3D[grid].usage += edgeCost;
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage += 1;
+        h_edges3D[grid].usage += edgeCost;
       }
     }
   }
@@ -1326,6 +1325,8 @@ void checkUsage()
   for (netID = 0; netID < numValidNets; netID++) {
     treeedges = sttrees[netID].edges;
     deg = sttrees[netID].deg;
+
+    int edgeCost = nets[netID]->edgeCost;
 
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       edge = sttrees[netID].edges[edgeID];
@@ -1349,11 +1350,11 @@ void checkUsage()
                   if (gridsX[k] == gridsX[k + 1]) {
                     int min_y = std::min(gridsY[k], gridsY[k + 1]);
                     int grid = min_y * xGrid + gridsX[k];
-                    v_edges[grid].usage -= 1;
+                    v_edges[grid].usage -= edgeCost;
                   } else {
                     int min_x = std::min(gridsX[k], gridsX[k + 1]);
                     int grid = gridsY[k] * (xGrid - 1) + min_x;
-                    h_edges[grid].usage -= 1;
+                    h_edges[grid].usage -= edgeCost;
                   }
                 }
 
@@ -1367,7 +1368,6 @@ void checkUsage()
                 redsus = TRUE;
                 i = 0;
                 j = 0;
-                // printf("redundant edge component discovered\n");
               }
             }
           }
@@ -1376,7 +1376,7 @@ void checkUsage()
     }
   }
   if (verbose > 1) {
-    printf("Usage checked\n");
+    logger->report("Usage checked");
   }
 }
 
@@ -1391,7 +1391,7 @@ static int compareEdgeLen(const void* a, const void* b)
     ret = -1;
   }
   if (ret == -2) {
-    exit(-2);
+    logger->error(GRT, 178, "Invalid EdgeLen comparison.");
   } else {
     return ret;
   }
@@ -1421,7 +1421,7 @@ void printEdge2D(int netID, int edgeID)
   edge = sttrees[netID].edges[edgeID];
   nodes = sttrees[netID].nodes;
 
-  printf("edge %d: n1 %d (%d, %d)-> n2 %d(%d, %d), routeType %d\n",
+  logger->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {}), routeType {}",
          edgeID,
          edge.n1,
          nodes[edge.n1].x,
@@ -1431,10 +1431,12 @@ void printEdge2D(int netID, int edgeID)
          nodes[edge.n2].y,
          edge.route.type);
   if (edge.len > 0) {
+    std::string edge_rpt;
     for (i = 0; i <= edge.route.routelen; i++) {
-      printf("(%d, %d) ", edge.route.gridsX[i], edge.route.gridsY[i]);
+      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) +
+                 ", " + std::to_string(edge.route.gridsY[i]) + ") ";
     }
-    printf("\n");
+    logger->report("{}", edge_rpt);
   }
 }
 
@@ -1442,7 +1444,7 @@ void printTree2D(int netID)
 {
   int edgeID, nodeID;
   for (nodeID = 0; nodeID < 2 * sttrees[netID].deg - 2; nodeID++) {
-    printf("nodeID %d,  [%d, %d]\n",
+    logger->report("nodeID {},  [{}, {}]",
            nodeID,
            sttrees[netID].nodes[nodeID].y,
            sttrees[netID].nodes[nodeID].x);
@@ -1481,23 +1483,21 @@ Bool checkRoute2DTree(int netID)
     gridFlag = FALSE;
 
     if (treeedge->len < 0) {
-      printf("rip upped edge without edge len re assignment\n");
+      logger->warn(GRT, 207, "rip upped edge without edge len re assignment.");
       STHwrong = TRUE;
     }
 
     if (treeedge->len > 0) {
       if (treeedge->route.routelen < 1) {
-        printf(
-            ".routelen %d len  %d\n", treeedge->route.routelen, treeedge->len);
+        logger->warn(GRT, 208, ".routelen {} len {}.",
+          treeedge->route.routelen, treeedge->len);
         STHwrong = TRUE;
-        printf("checking failed %d\n", netID);
         return (TRUE);
       }
 
       if (gridsX[0] != x1 || gridsY[0] != y1) {
-        printf(
-            "initial grid wrong y1 x1 [%d %d] , net start [%d %d] routelen "
-            "%d\n ",
+        logger->warn(GRT, 164, "initial grid wrong y1 x1 [{} {}] , net start [{} {}] routelen "
+            "{}.",
             y1,
             x1,
             gridsY[0],
@@ -1506,8 +1506,7 @@ Bool checkRoute2DTree(int netID)
         STHwrong = TRUE;
       }
       if (gridsX[edgelength] != x2 || gridsY[edgelength] != y2) {
-        printf(
-            "end grid wrong y2 x2 [%d %d] , net start [%d %d] routelen %d\n ",
+        logger->warn(GRT, 165, "end grid wrong y2 x2 [{} {}] , net start [{} {}] routelen {}.",
             y1,
             x1,
             gridsY[edgelength],
@@ -1519,7 +1518,7 @@ Bool checkRoute2DTree(int netID)
         distance
             = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
         if (distance != 1) {
-          printf("net %s edge[%d] maze route wrong, distance %d, i %d\n",
+          logger->warn(GRT, 166, "net {} edge[{}] maze route wrong, distance {}, i {}.",
                  netName(nets[netID]),
                  edgeID,
                  distance,
@@ -1530,7 +1529,7 @@ Bool checkRoute2DTree(int netID)
       }
 
       if (STHwrong) {
-        printf("checking failed %d\n", netID);
+        logger->warn(GRT, 167, "checking failed {}.", netID);
         return (TRUE);
       }
     }
@@ -1549,8 +1548,7 @@ void writeRoute3D(char routingfile3D[])
 
   fp = fopen(routingfile3D, "w");
   if (fp == NULL) {
-    printf("Error in opening %s\n", routingfile3D);
-    exit(1);
+    logger->error(GRT, 168, "Error in opening {}.", routingfile3D);
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
@@ -1691,8 +1689,6 @@ void copyBR(void)
   int i, j, netID, edgeID, numEdges, numNodes, grid, min_y, min_x;
 
   if (sttreesBK != NULL) {
-    printf("copy BR working\n");
-
     for (netID = 0; netID < numValidNets; netID++) {
       numEdges = 2 * sttrees[netID].deg - 3;
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1752,10 +1748,7 @@ void copyBR(void)
                 = sttreesBK[netID].edges[edgeID].route.gridsX[i];
             sttrees[netID].edges[edgeID].route.gridsY[i]
                 = sttreesBK[netID].edges[edgeID].route.gridsY[i];
-            // printf("x %d y %d
-            // ",sttrees[netID].edges[edgeID].route.gridsX[i],sttrees[netID].edges[edgeID].route.gridsY[i]);
           }
-          // printf("\n");
         }
       }
     }
@@ -1774,6 +1767,8 @@ void copyBR(void)
     }
     for (netID = 0; netID < numValidNets; netID++) {
       numEdges = 2 * sttrees[netID].deg - 3;
+      int edgeCost = nets[netID]->edgeCost;
+
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees[netID].edges[edgeID].len > 0) {
           gridsX = sttrees[netID].edges[edgeID].route.gridsX;
@@ -1782,11 +1777,11 @@ void copyBR(void)
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
-              v_edges[min_y * xGrid + gridsX[i]].usage += 1;
+              v_edges[min_y * xGrid + gridsX[i]].usage += edgeCost;
             } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
             {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
-              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += 1;
+              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += edgeCost;
             }
           }
         }

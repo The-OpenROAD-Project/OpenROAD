@@ -38,7 +38,6 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
-#include "openroad/Error.hh"
 
 using namespace std;
 using namespace fr;
@@ -97,6 +96,11 @@ void TritonRoute::setDebugGCell(int x, int y)
 void TritonRoute::setDebugIter(int iter)
 {
   debug_->iter = iter;
+}
+
+void TritonRoute::setDebugPaMarkers(bool on)
+{
+  debug_->paMarkers = on;
 }
 
 int TritonRoute::getNumDRVs() const
@@ -247,4 +251,26 @@ void TritonRoute::readParams(const string &fileName)
   if (readParamCnt < 5) {
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
   }
+}
+
+bool fr::isPad(MacroClassEnum e)
+{
+  return e == MacroClassEnum::PAD   ||
+    e == MacroClassEnum::PAD_INPUT  ||
+    e == MacroClassEnum::PAD_OUTPUT ||
+    e == MacroClassEnum::PAD_INOUT  ||
+    e == MacroClassEnum::PAD_POWER  ||
+    e == MacroClassEnum::PAD_SPACER ||
+    e == MacroClassEnum::PAD_AREAIO;
+}
+
+bool fr::isEndcap(MacroClassEnum e)
+{
+  return e == MacroClassEnum::ENDCAP       ||
+    e == MacroClassEnum::ENDCAP_PRE        ||
+    e == MacroClassEnum::ENDCAP_POST       ||
+    e == MacroClassEnum::ENDCAP_TOPLEFT    ||
+    e == MacroClassEnum::ENDCAP_TOPRIGHT   ||
+    e == MacroClassEnum::ENDCAP_BOTTOMLEFT ||
+    e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
 }

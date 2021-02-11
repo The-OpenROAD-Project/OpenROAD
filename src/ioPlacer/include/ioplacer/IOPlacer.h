@@ -151,8 +151,6 @@ class IOPlacer
   SlotVector slots_;
   SectionVector sections_;
   std::vector<IOPin> zero_sink_ios_;
-  RandomMode random_mode_ = RandomMode::full;
-  bool cells_placed_ = true;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
 
@@ -160,7 +158,6 @@ class IOPlacer
   odb::dbDatabase* db_;
   odb::dbTech* tech_;
   odb::dbBlock* block_;
-  bool verbose_ = false;
 
   void initNetlistAndCore(std::set<int> hor_layer_idx,
                           std::set<int> ver_layer_idx);

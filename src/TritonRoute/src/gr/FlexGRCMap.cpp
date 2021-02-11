@@ -37,11 +37,9 @@ using namespace fr;
 void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
   // fake zMap
   zMap_[0] = frcNonePrefRoutingDir;
-  // numLayers = 1;
 
   // resize cmap
   unsigned size = xgp_->getCount() * ygp_->getCount();
-  // cout << "size = " << size << endl << flush;
   bits_.resize(size, 0);
 
   // init supply / demand (from 3D cmap)
@@ -54,17 +52,12 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
           // supply
           if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::E)) {
             auto supply2D = getSupply(xIdx, yIdx, 0, frDirEnum::E);
-            // auto supply3D = (zIdx != cmap3D->getZMap().size() - 1) ? cmap3D->getSupply(xIdx, yIdx, zIdx, frDirEnum::E) : 0;
             auto supply3D = cmap3D->getSupply(xIdx, yIdx, zIdx, frDirEnum::E);
             setSupply(xIdx, yIdx, 0, frDirEnum::E, supply2D + supply3D);
             // demand
             auto rawDemand2D = getRawDemand(xIdx, yIdx, 0, frDirEnum::E);
             auto rawDemand3D = cmap3D->getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E);
             setRawDemand(xIdx, yIdx, 0, frDirEnum::E, rawDemand2D + rawDemand3D);
-            // // block
-            // if (getDemand(xIdx, yIdx, 0, frDirEnum::E) >= getSupply(xIdx, yIdx, 0, frDirEnum::E)) {
-            //   setBlock(xIdx, yIdx, 0, frDirEnum::E, true);
-            // }
           }
         }
       }
@@ -74,17 +67,12 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
           // supply
           if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::N)) {
             auto supply2D = getSupply(xIdx, yIdx, 0, frDirEnum::N);
-            // auto supply3D = (zIdx != cmap3D->getZMap().size() - 1) ? cmap3D->getSupply(xIdx, yIdx, zIdx, frDirEnum::N) : 0;
             auto supply3D = cmap3D->getSupply(xIdx, yIdx, zIdx, frDirEnum::N);
             setSupply(xIdx, yIdx, 0, frDirEnum::N, supply2D + supply3D);
             // demand
             auto rawDemand2D = getRawDemand(xIdx, yIdx, 0, frDirEnum::N);
             auto rawDemand3D = cmap3D->getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N);
             setRawDemand(xIdx, yIdx, 0, frDirEnum::N, rawDemand2D + rawDemand3D);
-            // // block
-            // if (getDemand(xIdx, yIdx, 0, frDirEnum::N) >= getSupply(xIdx, yIdx, 0, frDirEnum::N)) {
-            //   setBlock(xIdx, yIdx, 0, frDirEnum::N, true);
-            // }
           }
         }
       }
@@ -93,30 +81,6 @@ void FlexGRCMap::initFrom3D(FlexGRCMap *cmap3D) {
     }
     zIdx++;
   }
-
-  // for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
-  //   for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-  //     bool isHAllBlocked = true;
-  //     bool isVAllBlocked = true;
-  //     zIdx = 0;
-  //     for (auto &[layerIdx, dir]: cmap3D->getZMap()) {
-  //       if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
-  //         if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::E)) {
-  //           isHAllBlocked = false;
-  //         }
-  //       } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
-  //         if (!cmap3D->hasBlock(xIdx, yIdx, zIdx, frDirEnum::N)) {
-  //           isVAllBlocked = false;
-  //         }
-  //       }
-  //       zIdx++;
-  //     }
-
-  //     // block
-  //     setBlock(xIdx, yIdx, 0, frDirEnum::E, isHAllBlocked);
-  //     setBlock(xIdx, yIdx, 0, frDirEnum::N, isVAllBlocked);
-  //   }
-  // }
 
   for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
     for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
@@ -152,10 +116,6 @@ void FlexGRCMap::init() {
   // init supply (only for pref routing direction)
   unsigned cmapLayerIdx = 0;
   for (auto &[layerIdx, dir]: zMap_) {
-    // // ignore top-most routing layer
-    // if (cmapLayerIdx == zMap.size() - 1) {
-    //   continue;
-    // }
     if (dir == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
       for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
         frBox startGCellBox;
@@ -228,10 +188,6 @@ void FlexGRCMap::init() {
           numBlkTracks = getNumBlkTracks(true, layerIdx, trackLocs, queryResult, width);
           
           addDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numBlkTracks);
-
-          // if (getDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E) >= getSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
-          //   setBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, true);
-          // }
         }
       }
     } else if (dir == frPrefRoutingDirEnum::frcVertPrefRoutingDir) {
@@ -253,9 +209,6 @@ void FlexGRCMap::init() {
           numBlkTracks = getNumBlkTracks(false, layerIdx, trackLocs, queryResult, width);
 
           addDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, numBlkTracks);
-          // if (getDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N) >= getSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
-          //   setBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, true);
-          // }
         }
       }
     }
@@ -505,7 +458,6 @@ unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern> > &tps
       }
     }
     if (startCoord != INT_MAX) {
-      // numTrack = 1;
       numTrack += (high - startCoord) / line2ViaPitch;
       if ((high - startCoord) % line2ViaPitch == 0) {
         numTrack--;
@@ -545,7 +497,6 @@ void FlexGRCMap::print(bool isAll) {
     cout << "#     Area              demand/supply tracks\n";
   }
 
-  // cout << "     Area              Density  demand/supply tracks\n";
   for (auto &[layerNum, dir]: zMap_) {
     if (congMap.is_open()) {
       congMap << "----------------------" << design_->getTech()->getLayer(layerNum)->getName() << "----------------------\n";

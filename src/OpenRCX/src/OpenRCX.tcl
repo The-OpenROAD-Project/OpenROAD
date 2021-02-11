@@ -101,7 +101,7 @@ proc extract_parasitics { args } {
 
   rcx::extract $ext_model_file $corner_cnt $max_res \
       $coupling_threshold $signal_table $cc_model \
-      $depth $debug_net_id $lef_res
+      $depth $debug_net_id $lef_res $no_merge_via_res
 }
 
 sta::define_cmd_args "write_spef" { 

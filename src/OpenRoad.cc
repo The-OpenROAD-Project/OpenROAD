@@ -45,6 +45,7 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
+#include "opendb/cdl.h"
 
 #include "sta/VerilogWriter.hh"
 #include "sta/StaMain.hh"
@@ -87,6 +88,7 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 
 // Main.cc set by main()
 extern const char* log_filename;
+extern const char* metrics_filename;
 
 namespace ord {
 
@@ -104,8 +106,6 @@ using odb::Point;
 using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
-
-OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
@@ -128,7 +128,6 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr), 
     partitionMgr_(nullptr) 
 {
-  openroad_ = this;
   db_ = dbDatabase::create();
 }
 
@@ -171,10 +170,9 @@ OpenRoad::getDbNetwork()
 /* static */
 OpenRoad *OpenRoad::openRoad()
 {
-  if (openroad_ == nullptr) {
-    openroad_ = new OpenRoad;    
-  }
-  return openroad_;
+  // This will be destroyed at application exit
+  static OpenRoad o;
+  return &o;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -191,7 +189,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = makeLogger(log_filename);
+  logger_ = makeLogger(log_filename, metrics_filename);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
@@ -329,6 +327,19 @@ OpenRoad::writeDef(const char *filename,
       def_writer.writeBlock(block, filename);
     }
   }
+}
+
+void 
+OpenRoad::writeCdl(const char* filename, bool includeFillers)
+{
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      odb::cdl::writeCdl(block, filename, includeFillers);
+    }
+  }
+  
 }
 
 void

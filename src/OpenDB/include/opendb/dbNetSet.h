@@ -55,6 +55,12 @@ class dbSetIterator<dbNet>
   }
 
  public:
+  typedef dbNet*                  value_type;
+  typedef std::ptrdiff_t          difference_type;
+  typedef dbNet**                 pointer;
+  typedef dbNet*&                 reference;
+  typedef std::input_iterator_tag iterator_category;
+
   dbSetIterator()
   {
     _itr    = NULL;
