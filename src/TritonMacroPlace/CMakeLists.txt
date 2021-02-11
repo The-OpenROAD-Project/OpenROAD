@@ -43,7 +43,6 @@ add_library( TritonMacroPlace
   src/TritonMacroPlace.cpp
   src/macroPlace.cpp
   src/MakeTritonMp.cpp
-  src/hashUtil.cpp
   ${MPLACE_WRAP}
   ${MPLACE_TCL_INIT}
 )

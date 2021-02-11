@@ -14,6 +14,8 @@ using ord::getTritonMp;
 
 %}
 
+%include "../../Exception.i"
+
 %inline %{
 
 namespace mpl {
