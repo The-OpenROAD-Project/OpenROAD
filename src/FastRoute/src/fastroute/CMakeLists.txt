@@ -60,6 +60,7 @@ target_include_directories(${LIB_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
   ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
   ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+  ${OPENDB_HOME}/include/
   ${OPENROAD_HOME}/include
   )
 

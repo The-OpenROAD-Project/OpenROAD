@@ -40,6 +40,7 @@ _removable = [
     'const'
 ]
 
+
 def _stem(s):
     src = s.split(' ')
     target = []
@@ -59,7 +60,7 @@ def getStruct(name, structs):
 def components(structs, name, _type):
     if(_stem(_type) in _comparable or isRef(_type)):
         return [name]
-    struct = getStruct(_type.rstrip(' *'),structs)
+    struct = getStruct(_type.rstrip(' *'), structs)
     if struct is not None:
         ret = []
         for field in struct['fields']:
@@ -70,6 +71,7 @@ def components(structs, name, _type):
                 ret.extend([name + '->' + str(elem) for elem in target])
         return ret
     return []
+
 
 def addOnceToDict(src, target):
     if isinstance(src, list):
@@ -86,8 +88,8 @@ def isBitFields(field, structs):
     struct = getStruct(field['type'], structs)
     if struct is None:
         return False
-    for field in struct['fields']:
-        if isBitFields(field, structs):
+    for struct_field in struct['fields']:
+        if isBitFields(struct_field, structs):
             return True
     return False
 
@@ -96,8 +98,7 @@ def getFunctionalName(name):
     if name.islower():
         return ''.join([n.capitalize()
                         for n in name.replace("tbl", "table").split('_')])
-    else:
-        return name
+    return name
 
 
 def getClassIndex(schema, name):
@@ -114,13 +115,12 @@ def getTableName(name):
 
 
 def isRef(type_name):
-    return True if type_name.startswith("dbId<") and type_name[-1] == '>' \
-        else False
+    return type_name.startswith("dbId<") and type_name[-1] == '>'
 
 
 def isHashTable(type_name):
-    return True if type_name.startswith("dbHashTable<") and \
-        type_name[-1] == '>' else False
+    return type_name.startswith("dbHashTable<") and \
+        type_name[-1] == '>'
 
 
 def getHashTableType(type_name):
@@ -134,15 +134,14 @@ def isDbVector(type_name):
     return type_name.strip().find("dbVector") == 0
 
 
-def isTemplateType(type_name):
+def _isTemplateType(type_name):
     openBracket = type_name.find("<")
     if openBracket == -1:
         return False
 
     closedBracket = type_name.find(">")
 
-    return False if closedBracket == -1 or closedBracket < openBracket \
-        else True
+    return closedBracket != -1 and closedBracket > openBracket
 
 def _isTemplateType(type_name):
     openBracket = type_name.find("<")

@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
-from jinja2 import Environment, FileSystemLoader
 from subprocess import call
 import argparse
-from helper import *
-from parser import Parser
 import os
 import shutil
 import json
+from jinja2 import Environment, FileSystemLoader
+from helper import addOnceToDict, getClassIndex, getTableName, isBitFields, \
+    getStruct, isRef, getRefType, isHashTable, getHashTableType, \
+    getTemplateType, components, getFunctionalName
+from parser import Parser
 
 parser = argparse.ArgumentParser(description='Code generator')
 parser.add_argument('--json', action='store', required=True)
@@ -33,7 +35,7 @@ env = Environment(
 
 # Creating Directory for generated files
 
-if(os.path.exists('generated')):
+if os.path.exists('generated'):
     shutil.rmtree('generated')
 os.mkdir('generated')
 
@@ -223,7 +225,7 @@ for klass in schema['classes']:
 
     if len(struct['fields']) > 0:
 
-        struct['in_class'] = True,
+        struct['in_class'] = True
         struct['in_class_name'] = '_flags'
         klass['structs'].insert(0, struct)
         klass['fields'].insert(0, {
@@ -282,10 +284,10 @@ for item in toBeMerged:
         p = Parser(os.path.join(dr, item))
         if item == 'CMakeLists.txt':
             p.setCommentStr('#')
-        assert(p.parseUserCode())
-        assert(p.cleanCode())
-        assert(p.parseSourceCode(os.path.join('generated', item)))
-        assert(p.writeInFile(os.path.join(dr, item)))
+        assert p.parseUserCode()
+        assert p.cleanCode()
+        assert p.parseSourceCode(os.path.join('generated', item))
+        assert p.writeInFile(os.path.join(dr, item))
     else:
         with open(os.path.join('generated', item), 'r') as read, \
                 open(os.path.join(dr, item), 'w') as out:
