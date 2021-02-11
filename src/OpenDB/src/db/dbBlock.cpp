@@ -387,8 +387,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _journal         = NULL;
   _journal_pending = NULL;
 
-  _printControl = new dbPrintControl();
-
   _bterm_pins = nullptr;
 }
 
