@@ -244,7 +244,7 @@ proc place_pins { args } {
   if { $pin_groups != {} } {
     set group_idx 0
     foreach group $pin_groups {
-      ord::info PPL 41 "Pin group $group_idx: \[$group\]"
+      utl::info PPL 41 "Pin group $group_idx: \[$group\]"
       ppl::set_pin_group $group
       incr group_idx
     }
