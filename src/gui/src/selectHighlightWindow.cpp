@@ -303,9 +303,6 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   ui->selTableView->setModel(sel_filter_proxy);
   ui->hltTableView->setModel(hlt_filter_proxy);
 
-  // HighlightGroupDelegate* delegate = new HighlightGroupDelegate(this);
-  // ui->hltTableView->setItemDelegateForColumn(3, delegate);
-
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
   });

@@ -32,13 +32,11 @@
 
 #include "mainWindow.h"
 
-#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
-#include <fstream>
-#include <iostream>
+
 #include <map>
 #include <vector>
 
@@ -388,11 +386,9 @@ void MainWindow::showCongestionMap()
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
-  if (selection_set == true) {
+  if (selection_set) {
     for (auto& selected_obj : selected_) {
-      if (selected_obj.isInst() && obj_type == odb::dbInstObj)
-        return true;
-      if (selected_obj.isNet() && obj_type == odb::dbNetObj)
+      if ((selected_obj.isInst() && obj_type == odb::dbInstObj) || (selected_obj.isNet() && obj_type == odb::dbNetObj))
         return true;
     }
     return false;
@@ -444,7 +440,7 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
         if (inst_term->getNet() == nullptr
             || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
-        auto inst_term_dir = inst_term->getIoType().getValue();
+        auto inst_term_dir = inst_term->getIoType();
 
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT

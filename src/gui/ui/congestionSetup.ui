@@ -81,35 +81,45 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
-         <widget class="QRadioButton" name="bothCongDir">
-          <property name="text">
-           <string>All</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QRadioButton" name="horCongDir">
-          <property name="text">
-           <string>Horizontal</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QRadioButton" name="verCongDir">
-          <property name="text">
-           <string>Vertical</string>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QRadioButton" name="bothCongDir">
+            <property name="text">
+             <string>All</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="horCongDir">
+            <property name="text">
+             <string>Horizontal</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="verCongDir">
+            <property name="text">
+             <string>Vertical</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
      </item>
      <item>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Start Congestion % :</string>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="spinBox">
+         <property name="minimum">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <number>5</number>
          </property>
         </widget>
        </item>
@@ -123,13 +133,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox">
-         <property name="minimum">
-          <number>2</number>
-         </property>
-         <property name="maximum">
-          <number>5</number>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Start Congestion % :</string>
          </property>
         </widget>
        </item>
@@ -165,8 +172,8 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>278</width>
-           <height>20</height>
+           <width>167</width>
+           <height>22</height>
           </size>
          </property>
         </spacer>

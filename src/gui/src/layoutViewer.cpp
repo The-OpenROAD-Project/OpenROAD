@@ -45,9 +45,6 @@
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QToolTip>
-#include <fstream>
-#include <iostream>
-#include <random>
 #include <tuple>
 #include <vector>
 
@@ -70,8 +67,6 @@
 //
 // The pixelsPerDBU_ field stores pixels per DBU.  This adds additional
 // trickiness to the coordinates.
-
-static const char* DUMP_GCELL_INFO = std::getenv("DUMP_GCELL_INFO");
 
 namespace gui {
 
