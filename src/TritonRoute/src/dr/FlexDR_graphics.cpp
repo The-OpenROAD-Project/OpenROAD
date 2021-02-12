@@ -33,6 +33,7 @@
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
+#include "../gc/FlexGC.h"
 #include "openroad/OpenRoad.hh"
 
 namespace fr {
@@ -176,10 +177,10 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
    
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker : worker_->getMarkers()) { //getDesign()->getTopBlock()->getMarkers()
-    if (marker.getLayerNum() == layerNum) {
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) { //getDesign()->getTopBlock()->getMarkers()
+    if (marker->getLayerNum() == layerNum) {
       frBox box;
-      marker.getBBox(box);
+      marker->getBBox(box);
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
       painter.drawLine({box.left(), box.bottom()},
                        {box.right(), box.top()});

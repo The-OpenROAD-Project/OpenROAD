@@ -702,7 +702,7 @@ namespace fr {
                                   std::queue<RouteQueueEntry> &rerouteQueue);
     void route_queue_update_queue(const std::vector<std::unique_ptr<frMarker> > &markers,
                                   std::queue<RouteQueueEntry> &rerouteQueue);
-
+    bool canRipup(drNet* n);
     // route
     void route();
     void addPathCost(drConnFig *connFig);

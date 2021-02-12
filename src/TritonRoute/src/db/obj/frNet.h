@@ -233,6 +233,9 @@ namespace fr {
     void setNondefaultRule(frNonDefaultRule* n) {
       ndr_ = n;
     }
+    bool isNDR(){
+        return getNondefaultRule() != nullptr;
+    }
   protected:
     frString                                  name_;
     std::vector<frInstTerm*>                  instTerms_;

@@ -2280,6 +2280,13 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry> &rerouteQueue) {
     if (didCheck) {
       route_queue_addMarkerCost(gcWorker_->getMarkers());
     }
+    
+    if (graphics_) {
+        if (obj->typeId() == drcNet && doRoute) {
+            auto net = static_cast<drNet*>(obj);
+            graphics_->endNet(net);
+        }
+    }
   }
 }
 
@@ -3079,9 +3086,6 @@ bool FlexDRWorker::routeNet(drNet* net) {
 
   if (searchSuccess) {
     routeNet_postRouteAddPathCost(net);
-  }
-  if (graphics_) {
-    graphics_->endNet(net);
   }
   return searchSuccess;
 }

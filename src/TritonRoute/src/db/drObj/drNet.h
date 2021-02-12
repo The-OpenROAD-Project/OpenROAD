@@ -208,7 +208,8 @@ namespace fr {
     void setNdrRipupThresh(int n){
       ndrRipupThresh_ = n;
     }
-
+    void incNdrRipupThresh();
+    bool isNDR();
     // others
     frBlockObjectEnum typeId() const override {
       return drcNet;

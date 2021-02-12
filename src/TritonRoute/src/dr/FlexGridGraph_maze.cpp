@@ -495,11 +495,12 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
         endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
         startY = endY = gridY;
         y1 = y2 = yCoords_[startY];
-        if (prevDir == frDirEnum::UNKNOWN/*isSrc(gridX, gridY, gridZ)*/){
+        if (prevDir == frDirEnum::UNKNOWN || prevDir != dir){
             if (dir == frDirEnum::N)
                 startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r-wext));
             else endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r+wext));
-        }else {
+        }
+        if (prevDir != frDirEnum::UNKNOWN){
             getNextGrid(gridX, gridY, gridZ, dir);
             if (isDst(gridX, gridY, gridZ)){
                 if (dir == frDirEnum::N)
@@ -513,11 +514,12 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
         endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
         startX = endX = gridX;
         x1 = x2 = xCoords_[startX];
-        if (prevDir == frDirEnum::UNKNOWN){
+        if (prevDir == frDirEnum::UNKNOWN || prevDir != dir){
             if (dir == frDirEnum::E)
                 startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r-wext));
             else endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r+wext));
-        }else {
+        }
+        if (prevDir != frDirEnum::UNKNOWN){
             getNextGrid(gridX, gridY, gridZ, dir);
             if (isDst(gridX, gridY, gridZ)){
                 if (dir == frDirEnum::E)
@@ -541,6 +543,49 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
             cost += (isBlocked(x, y, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
         }
     }
+    return cost;
+}
+frCoord FlexGridGraph::getViaCostsNDR2(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const{
+    if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr 
+            && ndr_->getSpacing(dir == frDirEnum::U ? gridZ : gridZ-1) == 0) 
+        return getCosts(gridX, gridY, gridZ, dir, layer);
+    frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
+    frCoord cost = getCosts(gridX, gridY, gridZ, dir, layer);
+    
+    frCoord sp;
+    int bottomZ;
+    unique_ptr<frVia> via;
+    frBox viaBox;
+    frLayer* cutLayer;
+    if (dir == frDirEnum::D){
+        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()-1);
+        bottomZ = gridZ - 1;
+    }else {
+        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()+1);
+        bottomZ = gridZ;
+    }
+    if (bottomZ != gridZ) layer = design_->getTech()->getLayer(layer->getLayerNum()-2);
+    via = make_unique<frVia>(ndr_->getPrefVia(bottomZ) ? ndr_->getPrefVia(bottomZ) : cutLayer->getDefaultViaDef());
+    via->getLayer1BBox(viaBox);
+    sp = max(ndr_->getSpacing(bottomZ), getMinSpacingValue(layer, min(viaBox.width(), viaBox.length()), min(viaBox.width(), viaBox.length()), 0));
+    viaBox.set(viaBox.left() - sp + 1, viaBox.bottom() - sp + 1, viaBox.right() + sp - 1, viaBox.top() + sp - 1);
+    viaBox.set(viaBox.left()+xCoords_[gridX], viaBox.bottom()+yCoords_[gridY], 
+                viaBox.right()+xCoords_[gridX], viaBox.top()+yCoords_[gridY]);
+    frRegionQuery::Objects<frBlockObject> res;
+    drWorker_->getRegionQuery()->query(viaBox, layer->getLayerNum(), res);
+    cost += (res.empty() ? 0 : SHAPECOST*el);
+    if (!res.empty()) return cost;
+    //TODO check cut layer if spacing and/or cuts diferent from default
+    layer = design_->getTech()->getLayer(layer->getLayerNum()+2);
+    via->getLayer2BBox(viaBox);
+    sp = max(ndr_->getSpacing(bottomZ+1), getMinSpacingValue(layer, min(viaBox.width(), viaBox.length()), min(viaBox.width(), viaBox.length()), 0));
+    viaBox.set(viaBox.left() - sp + 1, viaBox.bottom() - sp + 1, viaBox.right() + sp - 1, viaBox.top() + sp - 1);
+    viaBox.set(viaBox.left()+xCoords_[gridX], viaBox.bottom()+yCoords_[gridY], 
+                viaBox.right()+xCoords_[gridX], viaBox.top()+yCoords_[gridY]);
+    res.clear();
+    drWorker_->getRegionQuery()->query(viaBox, layer->getLayerNum(), res);
+    cost += (res.empty() ? 0 : SHAPECOST*el);
+    
     return cost;
 }
 
