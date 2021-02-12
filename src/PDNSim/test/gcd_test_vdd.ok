@@ -21,6 +21,7 @@
 [WARNING PSM-0030] Vsrc location at (40.090um, 39.900um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (40.500um, 53.115um).
 [INFO PSM-0031] Number of nodes on net VDD = 1527.
 [INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0064] Number of voltage sources = 1
 [INFO PSM-0040] Connection between all PDN nodes established in net VDD.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vdd.loc.
 [INFO PSM-0002] Output voltage file is specified as: ./results/gcd_voltage_vdd.rpt.
@@ -31,6 +32,7 @@
 [INFO PSM-0037] G matrix created sucessfully.
 [INFO PSM-0044] Executing STA for power calculation.
 [INFO PSM-0025] Created J vector.
+[INFO PSM-0064] Number of voltage sources = 1
 [INFO PSM-0040] Connection between all PDN nodes established in net VDD.
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.

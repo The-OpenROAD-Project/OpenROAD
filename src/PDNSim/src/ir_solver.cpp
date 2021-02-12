@@ -275,11 +275,14 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
+  m_logger->info(utl::PSM, 64, "Number of voltage sources attached = {}",m_C4Bumps.size());
   for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
+    Node*        c4_node = m_Gmat->GetNode(node_loc);
     m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
     m_J.push_back(voltage_value);     // push back first vdd
+    NodeLoc c4_node_loc = c4_node->GetLoc();
   }
   return true;
 }
@@ -554,8 +557,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  int progress_wires   = 0;
-  int progress_percent = 1;
   for (vIter = power_nets.begin(); vIter != power_nets.end(); ++vIter) {
     dbNet*                   curDnet = *vIter;
     dbSet<dbSWire>           swires  = curDnet->getSWires();
@@ -565,7 +566,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       dbSet<dbSBox>           wires    = curSWire->getWires();
       dbSet<dbSBox>::iterator wIter;
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        progress_wires++;
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
           dbVia* via                = curWire->getBlockVia();
@@ -684,8 +684,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  progress_wires   = 0;
-  progress_percent = 1;
   // insert c4 bumps as nodes
   int num_C4 = 0;
   for (unsigned int it = 0; it < m_C4Bumps.size(); ++it) {
@@ -734,7 +732,6 @@ bool IRSolver::CreateGmat(bool connection_only)
   }
   // All new nodes must be inserted by this point
   // initialize G Matrix
-
   m_logger->info(utl::PSM,
                  31,
                  "Number of nodes on net {} = {}.",
@@ -754,7 +751,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       dbSet<dbSBox>           wires    = curSWire->getWires();
       dbSet<dbSBox>::iterator wIter;
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        progress_wires++;
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
           dbVia* via                = curWire->getBlockVia();

@@ -21,6 +21,7 @@
 [INFO PSM-0037] G matrix created sucessfully.
 [INFO PSM-0044] Executing STA for power calculation.
 [INFO PSM-0025] Created J vector.
+[INFO PSM-0064] Number of voltage sources = 1
 [INFO PSM-0040] Connection between all PDN nodes established in net VDD.
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.

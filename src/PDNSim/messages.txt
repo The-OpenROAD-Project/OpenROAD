@@ -58,3 +58,4 @@
 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN." 
 62 "Argument -net or -voltage not specified. Please specifiy both -net and -voltage arguments."
 63 "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of {:4.3f}. Changing bump location to a center of the die at {:4.3f}, {:4.3f}"
+64 "Number of voltage sources = {}"
