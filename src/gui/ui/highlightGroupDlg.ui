@@ -16,12 +16,6 @@
     <height>230</height>
    </size>
   </property>
-  <property name="maximumSize">
-   <size>
-    <width>230</width>
-    <height>230</height>
-   </size>
-  </property>
   <property name="windowTitle">
    <string>Highlight Group</string>
   </property>
