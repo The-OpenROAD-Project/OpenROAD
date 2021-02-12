@@ -91,7 +91,8 @@ namespace odb {
       {% if field.table %} 
         dbTable<_{{field.type}}>* {{field.name}}; 
       {% else %}
-        {{field.type}} {{field.name}}{% if "comment" in field %}= {{field.comment}}{% endif %};
+      {{field.type}} {{field.name}};{% if "comment" in field %} {{field.comment}}{% endif %}
+
       {% endif %}
     {% endfor %}
 
