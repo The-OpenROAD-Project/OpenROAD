@@ -204,7 +204,7 @@ int TritonRoute::main() {
 void TritonRoute::readParams(const string &fileName)
 {
   int readParamCnt = 0;
-  fstream fin(fileName.c_str());
+  ifstream fin(fileName.c_str());
   string line;
   if (fin.is_open()){
     while (fin.good()){
