@@ -68,22 +68,15 @@ typedef std::set<Macro*> MacroSet;
 // vertex -> fanin macro set
 typedef std::map<sta::Vertex*, MacroSet> VertexFaninMap;
 
-enum class BoundaryEdge
+enum class CoreEdge
 {
   West,
   East,
   North,
   South,
-  Unknown
 };
 
-enum PinGroupLocation
-{
-  West,
-  East,
-  North,
-  South
-};
+constexpr int core_edge_count = 4;
 
 class MacroCircuit
 {
@@ -149,7 +142,7 @@ private:
   sta::Pin *findSeqOutPin(sta::Instance *inst,
                           sta::LibertyPort *out_port,
                           sta::Network *network);
-  PinGroupLocation findNearestEdge(odb::dbBTerm* bTerm);
+  CoreEdge findNearestEdge(odb::dbBTerm* bTerm);
   std::string faninName(Macro *macro);
   int macroIndex(Macro *macro);
   bool macroIndexIsEdge(Macro *macro);

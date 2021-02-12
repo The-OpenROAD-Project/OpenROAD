@@ -33,13 +33,10 @@
 
 #include "circuit.h"
 
-#include <chrono>
-#include <fstream>
-#include <iostream>
-#include <queue>
-#include <sstream>
 #include <string>
-#include <unordered_set>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -61,13 +58,7 @@
 
 namespace mpl {
 
-using std::endl;
-using std::make_pair;
-using std::pair;
 using std::string;
-using std::to_string;
-using std::unordered_map;
-using std::unordered_set;
 using std::vector;
 
 using utl::MPL;
@@ -86,18 +77,16 @@ using odb::dbBTerm;
 using odb::dbBPin;
 using odb::dbITerm;
 
-constexpr int edge_count = 4;
-
 static size_t TrimWhiteSpace(char* out, size_t len, const char* str);
 
-static PinGroupLocation getPinGroupLocation(int cx,
-                                                 int cy,
-                                                 int dieLx,
-                                                 int dieLy,
-                                                 int dieUx,
-                                                 int dieUy);
+static CoreEdge getCoreEdge(int cx,
+                            int cy,
+                            int dieLx,
+                            int dieLy,
+                            int dieUx,
+                            int dieUy);
 
-static std::string getPinGroupLocationString(PinGroupLocation pg);
+static const char *coreEdgeString(CoreEdge edge);
 
 static bool isMacroType(odb::dbMasterType mType);
 
@@ -483,7 +472,8 @@ void MacroCircuit::UpdateNetlist(Partition& layout)
   }
 
   assert(layout.macroStor.size() == macroStor.size());
-  size_t tableSize = (macroStor.size() + 4) * (macroStor.size() + 4);
+  size_t tableSize = (macroStor.size() + core_edge_count)
+    * (macroStor.size() + core_edge_count);
 
   netTable_ = new double[tableSize];
   for (size_t i = 0; i < tableSize; i++) {
@@ -642,12 +632,12 @@ static size_t TrimWhiteSpace(char* out, size_t len, const char* str)
   return out_size;
 }
 
-static PinGroupLocation getPinGroupLocation(int cx,
-                                            int cy,
-                                            int dieLx,
-                                            int dieLy,
-                                            int dieUx,
-                                            int dieUy)
+static CoreEdge getCoreEdge(int cx,
+                            int cy,
+                            int dieLx,
+                            int dieLy,
+                            int dieUx,
+                            int dieUy)
 {
   int lxDx = abs(cx - dieLx);
   int uxDx = abs(cx - dieUx);
@@ -657,29 +647,36 @@ static PinGroupLocation getPinGroupLocation(int cx,
 
   int minDiff = std::min(lxDx, std::min(uxDx, std::min(lyDy, uyDy)));
   if (minDiff == lxDx) {
-    return West;
+    return CoreEdge::West;
   } else if (minDiff == uxDx) {
-    return East;
+    return CoreEdge::East;
   } else if (minDiff == lyDy) {
-    return South;
+    return CoreEdge::South;
   } else if (minDiff == uyDy) {
-    return North;
+    return CoreEdge::North;
   }
-  return West;
+  return CoreEdge::West;
 }
 
-static std::string getPinGroupLocationString(PinGroupLocation pg)
+static const char *coreEdgeString(CoreEdge edge)
 {
-  if (pg == West) {
+  switch (edge) {
+  case CoreEdge::West:
     return "West";
-  } else if (pg == East) {
+  case CoreEdge::East:
     return "East";
-  } else if (pg == North) {
+  case CoreEdge::North:
     return "North";
-  } else if (pg == South) {
+  case CoreEdge::South:
     return "South";
-  } else
+  default:
     return "??";
+  }
+}
+
+static int coreEdgeIndex(CoreEdge edge)
+{
+  return static_cast<int>(edge);
 }
 
 static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
@@ -735,7 +732,7 @@ void MacroCircuit::findAdjacencies()
     if (network->direction(pin)->isAnyInput()
         && !sta_->isClock(pin)) {
       sta::Vertex *vertex = graph->pinDrvrVertex(pin);
-      PinGroupLocation edge = findNearestEdge(bterm);
+      CoreEdge edge = findNearestEdge(bterm);
       vertex_fanins[vertex].insert(reinterpret_cast<Macro*>(edge));
       bfs.enqueueAdjacentVertices(vertex);
     }
@@ -778,10 +775,10 @@ void MacroCircuit::findAdjacencies()
     if (network->direction(pin)->isAnyOutput()
         && !sta_->isClock(pin)) {
       sta::Vertex *vertex = graph->pinDrvrVertex(pin);
-      PinGroupLocation edge = findNearestEdge(bterm);
+      CoreEdge edge = findNearestEdge(bterm);
       debugPrint(log_, MPL, "pin_edge", 1, "pin edge {} {}",
                  bterm->getConstName(),
-                 getPinGroupLocationString(edge));
+                 coreEdgeString(edge));
       int edge_index = static_cast<int>(edge);
       Macro *macro = reinterpret_cast<Macro*>(edge_index);
       MacroSet &edge_fanins = vertex_fanins[vertex];
@@ -824,14 +821,8 @@ void MacroCircuit::findAdjacencies()
 std::string MacroCircuit::faninName(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
-  if (edge_index == static_cast<intptr_t>(West))
-    return "West";
-  else if (edge_index == static_cast<intptr_t>(East))
-    return "East";
-  else if (edge_index == static_cast<intptr_t>(North))
-    return "North";
-  else if (edge_index == static_cast<intptr_t>(South))
-    return "South";
+  if (edge_index < core_edge_count)
+    return coreEdgeString(static_cast<CoreEdge>(edge_index));
   else
     return macro->name();
 }
@@ -839,10 +830,10 @@ std::string MacroCircuit::faninName(Macro *macro)
 int MacroCircuit::macroIndex(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
-  if (edge_index < edge_count)
+  if (edge_index < core_edge_count)
     return edge_index;
   else
-    return macro - &macroStor[0] + edge_count;
+    return macro - &macroStor[0] + core_edge_count;
 }
 
 bool MacroCircuit::macroIndexIsEdge(Macro *macro)
@@ -946,14 +937,14 @@ sta::Pin *MacroCircuit::findSeqOutPin(sta::Instance *inst,
 
 // This is completely broken but I want to match FillPinGroup()
 // until it is flushed.
-PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
+CoreEdge MacroCircuit::findNearestEdge(dbBTerm* bTerm)
 {
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
     log_->warn(MPL, 11, "pin {} is not placed. Using west.",
                bTerm->getConstName());
-    return West;
+    return CoreEdge::West;
   } else {
     const double dbu = db_->getTech()->getDbUnitsPerMicron();
 
@@ -975,13 +966,13 @@ PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
       // This is broken. It assumes the pins are on the core boundary.
       // It should look for the nearest edge to the pin center. -cherry
       if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
-        return West;
+        return CoreEdge::West;
       } else if (isWithIn(dbuCoreUx, boxLx, boxUx)) {
-        return East;
+        return CoreEdge::East;
       } else if (isWithIn(dbuCoreLy, boxLy, boxUy)) {
-        return South;
+        return CoreEdge::South;
       } else if (isWithIn(dbuCoreUy, boxLy, boxUy)) {
-        return North;
+        return CoreEdge::North;
       }
     }
     if (!isAxisFound) {
@@ -991,29 +982,29 @@ PinGroupLocation MacroCircuit::findNearestEdge(dbBTerm* bTerm)
       int boxLy = pin_bbox.yMin();
       int boxUx = pin_bbox.xMax();
       int boxUy = pin_bbox.yMax();
-      return getPinGroupLocation((boxLx + boxUx) / 2,
-                                 (boxLy + boxUy) / 2,
-                                 dbuCoreLx,
-                                 dbuCoreLy,
-                                 dbuCoreUx,
-                                 dbuCoreUy);
+      return getCoreEdge((boxLx + boxUx) / 2,
+                         (boxLy + boxUy) / 2,
+                         dbuCoreLx,
+                         dbuCoreLy,
+                         dbuCoreUx,
+                         dbuCoreUy);
     }
   }
-  return West;
+  return CoreEdge::West;
 }
 
 void MacroCircuit::reportEdgePinCounts()
 {
-  int counts[edge_count] = {0};
+  int counts[core_edge_count] = {0};
   for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
-    PinGroupLocation edge = findNearestEdge(bterm);
-    counts[edge]++;
+    CoreEdge edge = findNearestEdge(bterm);
+    counts[coreEdgeIndex(edge)]++;
   }
-  for (int i = 0; i < edge_count; i++) {
-    PinGroupLocation edge = static_cast<PinGroupLocation>(i);
+  for (int i = 0; i < core_edge_count; i++) {
+    CoreEdge edge = static_cast<CoreEdge>(i);
     
       log_->info(MPL, 9, "{} pins {}",
-                 getPinGroupLocationString(edge),
+                 coreEdgeString(edge),
                  counts[i]);
   }
 }
