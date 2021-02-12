@@ -117,7 +117,6 @@ void FlexGR::initLayerPitch() {
       }
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOvlpDist;
-        // cout << layer->getName() << " line-2-via (down) pitch = " << minReqDist / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
         line2ViaPitchDown = minReqDist;
         if (line2ViaPitches_[zIdx] == -1 || minReqDist > line2ViaPitches_[zIdx]) {
           line2ViaPitches_[zIdx] = minReqDist;
@@ -156,7 +155,6 @@ void FlexGR::initLayerPitch() {
       }
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOvlpDist;
-        // cout << layer->getName() << " line-2-via (up) pitch = " << minReqDist / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
         line2ViaPitchUp = minReqDist;
         if (line2ViaPitches_[zIdx] == -1 || minReqDist > line2ViaPitches_[zIdx]) {
           line2ViaPitches_[zIdx] = minReqDist;
@@ -186,8 +184,6 @@ void FlexGR::initLayerPitch() {
     if (trackPitches_[zIdx] < minLine2ViaPitch) {
       cout << "Warning: Track pitch is too small compared with line-2-via pitch\n";
     }
-    // cout << "  layer pitch = " << fixed << setprecision(5) << layerPitches[zIdx] / (double)(design_->getTopBlock()->getDBUPerUU()) << endl;
-    // layerPitches[zIdx] = max(trackPitches_[zIdx], line2ViaPitches[zIdx]);
 
     if (zIdx == 0) {
       zHeights_[zIdx] = layerPitches_[zIdx];
@@ -212,7 +208,6 @@ void FlexGR::initGCell() {
     // set xgp
     xgp.setHorizontal(false);
     frCoord startCoordX = dieBox.left() - design_->getTech()->getManufacturingGrid();
-    // frCoord startCoordX = dieBox.left();
     xgp.setStartCoord(startCoordX);
     frCoord GCELLGRIDX = pitch * 15;
     xgp.setSpacing(GCELLGRIDX);
@@ -220,7 +215,6 @@ void FlexGR::initGCell() {
     // set ygp
     ygp.setHorizontal(true);
     frCoord startCoordY = dieBox.bottom() - design_->getTech()->getManufacturingGrid();
-    // frCoord startCoordY = dieBox.bottom();
     ygp.setStartCoord(startCoordY);
     frCoord GCELLGRIDY = pitch * 15;
     ygp.setSpacing(GCELLGRIDY);
@@ -299,10 +293,6 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg) {
     if (enableOutput) {
       cout << "  " << static_cast<frNet*>(parent->getNet())->getName() << " breaking at ("
            << breakPt1.x() << ", " << breakPt1.y() << ") on layerNum " << breakNode->getLayerNum() << "\n";
-      // cout << "    parent at (" << parent->getLoc().x() << ", " << parent->getLoc().y() << ")\n";
-      // for (auto node: parent->getChildren()) {
-      //   cout << "    parent's child at (" << node->getLoc().x() << ", " << node->getLoc().y() << ")\n";
-      // }
     }
     if (enableOutput) {
       cout << "  after split " << parent->getNet()->getName() << " has " << parent->getNet()->getNodes().size() << " nodes"
@@ -464,17 +454,11 @@ void FlexGRWorker::init() {
 
 void FlexGRWorker::initNets() {
   set<frNet*, frBlockObjectComp> nets;
-  // map<frNet*, vector<unique_ptr<grConnFig> >, frBlockObjectComp> netObjs;
   map<frNet*, vector<frNode*>, frBlockObjectComp> netRoots;
 
-  // initNetObjs(nets, netObjs);
   initNets_roots(nets, netRoots);
   initNets_searchRepair(nets, netRoots);
-  // initNets_printFNets(netRoots);
-
   initNets_regionQuery();
-  // initNets_numPinsIn();
-  // initNets_printNets();
 }
 
 // get all roots of subnets
@@ -542,104 +526,6 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(grPathSeg* pathSeg,
       }
     }
   }
-
-  // old
-  // vertical seg
-  // if (begin.x() == end.x()) {
-  //   // the pathSeg must go through extBox or at least one end is inside extBox
-  //   if (!(begin.y() > workerExtBox.top() || end.y() < workerExtBox.bottom())) {
-  //     // parent is frNode
-  //     auto parent = pathSeg->getParent();
-  //     auto parentLoc = parent->getLoc();
-  //     // parent is outside of extBox, which implies there is an outgoing edge (i.e., a subnet root)
-  //     if (!workerExtBox.contains(parentLoc)) {
-  //       auto uRootNode = make_unique<grNode>(*parent);
-  //       auto rootNode = uRootNode.get();
-  //       rootNode->setNet(nullptr);
-  //       rootNode->setParent(nullptr);
-  //       rootNode->setConnFig(nullptr);
-  //       rootNode->setType(frNodeTypeEnum::frcBoundaryPin);
-  //       rootNode->clearChildren();
-  //       frPoint rootLoc = rootNode->getLoc();
-  //       // move rootLoc to extBox boundary
-  //       if (rootLoc.y() > workerExtBox.top()) {
-  //         rootLoc.set(begin.x(), workerExtBox.top());
-  //       } else if (rootLoc.y() < workerExtBox.bottom()) {
-  //         rootLoc.set(begin.x(), workerExtBox.bottom());
-  //       } else {
-  //         cout << "Error: something went wrong in FlexGRWorker::initNetObjs_roots_pathSeg\n";
-  //       }
-  //       rootNode->setLoc(rootLoc);
-  //       netRoots[net].push_back(std::move(uRootNode));
-  //       netRootChilds[net].push_back(pathSeg->getChild());
-
-  //       // push loc to boundPt
-  //       owner2extBoundPtNodes[net][rootLoc].push_back(rootNode);
-  //     } else {
-  //       // check if parent node is frNet root (i.e., driver pin) when parent is inside extBox
-  //       if (parent->getParent() == net->getRoot()) {
-  //         auto uRootNode = make_unique<grNode>(*(parent->getParent()));
-  //         auto rootNode = uRootNode.get();
-  //         rootNode->setNet(nullptr);
-  //         rootNode->setParent(nullptr);
-  //         rootNode->setConnFig(nullptr);
-  //         rootNode->clearChildren();
-  //         netRoots[net].push_back(std::move(uRootNode));
-  //         netRootChilds[net].push_back(parent);
-  //       }
-  //     }
-  //   } else {
-  //     cout << "Error: pathSeg completely outside of extBox found\n";
-  //   }
-  // } else if (begin.y() == end.y()) {
-  //   // the pathSeg must go through extBox or at least one end is inside extBox
-  //   if (!(begin.x() >= routeBox.right() || end.x() <= routeBox.left())) {
-  //     // parent is frNode
-  //     auto parent = pathSeg->getParent();
-  //     auto parentLoc = parent->getLoc();
-  //     // parent is outside of extBox, which implies there is an outgoing edge (i.e., a subnet root)
-  //     if (!workerExtBox.contains(parentLoc)) {
-  //       auto uRootNode = make_unique<grNode>(*parent);
-  //       auto rootNode = uRootNode.get();
-  //       rootNode->setNet(nullptr);
-  //       rootNode->setParent(nullptr);
-  //       rootNode->setConnFig(nullptr);
-  //       rootNode->setType(frNodeTypeEnum::frcBoundaryPin);
-  //       rootNode->clearChildren();
-  //       frPoint rootLoc = rootNode->getLoc();
-  //       // move rootLoc to extBox boundary
-  //       if (rootLoc.x() > workerExtBox.right()) {
-  //         rootLoc.set(workerExtBox.right(), begin.y());
-  //       } else if (rootLoc.x() < workerExtBox.left()) {
-  //         rootLoc.set(workerExtBox.left(), begin.y());
-  //       } else {
-  //         cout << "Error: something went wrong in FlexGRWorker::initNetObjs_roots_pathSeg\n";
-  //       }
-  //       rootNode->setLoc(rootLoc);
-  //       netRoots[net].push_back(std::move(uRootNode));
-  //       netRootChilds[net].push_back(pathSeg->getChild());
-
-  //       // push loc to boundPt
-  //       owner2extBoundPtNodes[net][rootLoc].push_back(rootNode);
-  //     } else {
-  //       // check if parent node is frNet root (i.e., driver pin) when parent is inside extBox
-  //       if (parent->getParent() == net->getRoot()) {
-  //         auto uRootNode = make_unique<grNode>(*(parent->getParent()));
-  //         auto rootNode = uRootNode.get();
-  //         rootNode->setNet(nullptr);
-  //         rootNode->setParent(nullptr);
-  //         rootNode->setConnFig(nullptr);
-  //         rootNode->clearChildren();
-  //         netRoots[net].push_back(std::move(uRootNode));
-  //         netRootChilds[net].push_back(parent);
-  //       }
-  //     }
-  //   } else {
-  //     cout << "Error: pathSeg completely outside of extBox found\n";
-  //   }
-  // } else {
-  //   cout << "Error: jackpot in FlexGRWorker::initNetObjs_pathSeg\n";
-  // }  
 }
 
 // all vias from rq must be inside routeBox
@@ -655,22 +541,6 @@ void FlexGRWorker::initNetObjs_roots_via(grVia* via,
   if (parent->getParent() == net->getRoot()) {
     netRoots[net].push_back(parent->getParent());
   }
-
-  // old
-  // frPoint parentLoc = parent->getLoc();
-  // if (workerExtBox.contains(parentLoc)) {
-  //   if (parent->getParent() == net->getRoot()) {
-  //     auto rootNode = make_unique<grNode>(*(parent->getParent()));
-  //     rootNode->setNet(nullptr);
-  //     rootNode->setParent(nullptr);
-  //     rootNode->setConnFig(nullptr);
-  //     rootNode->clearChildren();
-  //     netRoots[net].push_back(std::move(rootNode));
-  //     netRootChilds[net].push_back(parent);
-  //   }
-  // } else {
-  //   cout << "Error: via outside of extBox should not be found in FlexGRWorker::initNetObjs_roots_via\n";
-  // }
 }
 
 void FlexGRWorker::initNets_searchRepair(set<frNet*, frBlockObjectComp> &nets,
@@ -701,26 +571,6 @@ void FlexGRWorker::initNet(frNet* net, const vector<frNode*> &netRoots) {
     gNet->setId(nets_.size());
     initNet_addNet(uGRNet);
   }
-
-  // old
-  // for (unsigned i = 0; i < netRoots.size(); i++) {
-  //   auto &fRoot = netRoots[i];
-  //   auto rootNode = uRoot.get();
-  //   auto rootChild = netRootChilds[i];
-
-  //   auto uGRNet = make_unique<grNet>();
-  //   auto gNet = uGRNet.get();
-  //   gNet->setFrNet(net);
-  //   gNet->setId(nets.size());
-  //   gNet->setRoot(uRoot.get());
-  //   gNet->addNode(uRoot);
-
-  //   initNet_initNodes(gNet, root, rootChild);
-
-  //   initNet_initObjs(gNet, root);
-
-  //   initNet_addNet(uGRNet);
-  // }
 }
 
 // bfs from root to deep copy nodes and find all pin nodes (either pin or boundary pin)
@@ -847,162 +697,6 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot) {
 
   net->setPinNodePairs(pinNodePairs);
   net->setGR2FrPinNode(gr2FrPinNode);
-
-
-  // old
-  // bfs from root to deep copy nodes
-  // while (!nodeQ.empty()) {
-  //   parent = node.front().first;
-  //   child = node.front().second;
-  //   nodeQ.pop_front();
-
-  //   bool isParentRoot = (parent == net->getRoot());
-  //   // if parent is root, need to create gcell node connecting to root (no matter boundary root or pin root)
-  //   // and set the newly created node to be parent
-  //   if (isParentRoot) {
-  //     auto &uGCellNode = make_unique<grNode>(child);
-  //     auto gcellNode = uGCellNode.get();
-  //     net->addNode(uGCellNode);
-
-  //     gcellNode->setNet(net);
-  //     // adjust location
-  //     if (parent->getType() == frNodeTypeEnum::frcBoundaryPin) {
-  //       frPoint gcellNodeLoc = parent->getLoc();
-  //       if (gcellNodeLoc.x() == workerExtBox.left()) {
-  //         gcellNodeLoc.set(workerRouteBox.left(), gcellNodeLoc.y());
-  //       } else if (gcellNodeLoc.x() == workerExtBox.right()) {
-  //         gcellNodeLoc.set(workerRouteBox.right(), gcellNodeLoc.y());
-  //       } else if (gcellNodeLoc.y() == workerExtBox.bottom()) {
-  //         gcellNodeLoc.set(gcellNodeLoc.x(), workerRouteBox.bottom());
-  //       } else if (gcellNodeLoc.y() == workerExtBox.top()) {
-  //         gcellNodeLoc.set(gcellNodeLoc.x(), workerRouteBox.top());
-  //       } else {
-  //         cout << "Error: boundary pin is not on boundary in FlexGRWorker::initNet_initPinNodes\n";
-  //       }
-  //       gcellNode->setLoc(gcellNodeLoc);
-  //     } else if (parent->getType() == frNodeTypeEnum::frcPin) {
-  //       frPoint gcellNodeLoc = child->getLoc();
-  //       gcellNode->setLoc(gcellNodeLoc);
-  //     } else {
-  //       cout << "Error: steiner should not be root in FlexGRWorker::initNet_initPinNodes\n";
-  //     }
-  //     gcellNode->setType(frNodeTypeEnum::frcSteiner);
-  //     // update connections
-  //     gcellNode->setParent(parent);
-  //     parent->addChild(gcellNode);
-  //     // add pair for post route add wire, etc.
-  //     net->addPinGCellNodePair(make_pair(parent, gcellNode));
-
-  //     loc2PinGCellNode[make_pair(gcellNodeLoc, gcellNode->getLayerNum())] = gcellNode;
-
-  //     // use the newly created node as parent
-  //     parent = gcellNode;
-  //   }
-
-  //   // if child is outside of extBox, need to create boundary pin node and gcell node
-  //   frPoint childLoc = child->getLoc();
-  //   if (!workerExtBox.contains(childLoc)) {
-  //     // first create gcell node (if it does not exist in loc2PinGCellNode)
-  //     frPoint gcellNodeLoc = childLoc;
-  //     frPoint boundPinNodeLoc = childLoc;
-  //     if (childLoc.x() > workerExtBox.left() && childLoc.x() < workerExtBox.right()) {
-  //       if (gcellNodeLoc.y() > workerExtBox.top()) {
-  //         gcellNodeLoc.set(gcellNodeLoc.x(), workerRouteBox.top());
-  //         boundPinNodeLoc.set(boundPinNodeLoc.x(), workerExtBox.top());
-  //       } else if (gcellNodeLoc.y() < workerExtBox.bottom()) {
-  //         gcellNodeLoc.set(gcellNodeLoc.x(), workerRouteBox.bottom());
-  //         boundPinNodeLoc.set(boundPinNodeLoc.x(), workerExtBox.bottom());
-  //       } else {
-  //         cout << "Error: contradiction found in FlexGRWorker::initNet_initPinNodes\n";
-  //       }
-  //     } else if (childLoc.y() > workerExtBox.bottom() && childLoc.y() < workerExtBox.top()) {
-  //       if (gcellNodeLoc.x() > workerExtBox.right()) {
-  //         gcellNodeLoc.set(workerRouteBox.right(), gcellNodeLoc.y());
-  //         boundPinNodeLoc.set(workerExtBox.right(), boundPinNodeLoc.y());
-  //       } else if (gcellNodeLoc.x() < workerExtBox.left()) {
-  //         gcellNodeLoc.set(workerRouteBox.left(), gcellNodeLoc.y());
-  //         boundPinNodeLoc.set(workerExtBox.left(), boundPinNodeLoc.y());
-  //       } else {
-  //         cout << "Error: contradiction found in FlexGRWorker::initNet_initPinNodes\n";
-  //       }
-  //     } else {
-  //       cout << "Error: child has positive prl on both direction in FlexGRWorker::initNet_initPinNodes\n";
-  //     }
-
-  //     grNode *gcellNode = nullptr;
-  //     if (loc2PinGCellNode.find(make_pair(gcellNodeLoc, child->getLayerNum())) == loc2PinGCellNode.end()) {
-  //       auto &uGCellNode = make_unique<grNode>(child);
-  //       gcellNode = uGCellNode.get();
-  //       net->addNode(uGCellNode);
-
-  //       gcellNode->setNet(net);
-  //       gcellNode->setLoc(gcellNodeLoc);
-  //       gcellNode->setType(frNodeTypeEnum::frcSteiner);
-  //       // update connections
-  //       gcellNode->setParent(parent);
-  //       parent->addChild(gcellNode);
-
-  //       loc2PinGCellNode[make_pair(gcellNodeLoc, gcellNode->getLayerNum())] = gcellNode;
-
-  //       // push to owner2routeBoundPtNodes
-  //       owner2routeBoundPtNodes[net->getFrNet()][gcellNodeLoc].push_back(gcellNode);
-  //     } else {
-  //       gcellNode = loc2PinGCellNode[make_pair(gcellNodeLoc, child->getLayerNum())];
-  //     }
-
-  //     // create boundary pin node and connect to gcell node
-  //     auto &uBoundPinNode = make_unique<grNode>(child);
-  //     auto boundPinNode = uBoundPinNode.get();
-  //     net->addNode(uBoundPinNode);
-
-  //     boundPinNode->setNet(net);
-  //     boundPinNode->setLoc(boundPinNodeLoc);
-  //     boundPinNode->setType(frNodeTypeEnum::frcBoundaryPin);
-  //     // update connections
-  //     boundPinNode->setParent(gcellNode);
-  //     gcellNode->addChild(boundPinNode);
-
-  //     // add pair for post route add wire, etc.
-  //     net->addPinGCellNodePair(make_pair(boundPinNode, gcellNode));
-
-  //     // push to owner2extBoundPtNodes
-  //     owner2extBoundPtNodes[net->getFrNet()][boundPinNodeLoc].push_back(boundPinNode);
-
-
-  //   } else {
-  //     // normal case: child is inside extBox and only need to deep copy child and connect to parent
-  //     // also the only case where children of child need to be pushed to queue
-  //     grNode* childNode = nullptr;
-  //     frPoint childNodeLoc = child->getLoc();
-  //     frlayerNum childNodeLNum = child->getLayerNum();
-
-  //     // deep copy child if it does not exist
-  //     if (loc2PinGCellNode.find(make_pair(childNodeLoc, childNodeLNum)) == loc2PinGCellNode.end()) {
-  //       auto &uChildNode = make_unique<grNode>(child);
-  //       childNode = uChildNode.get();
-  //       net->addNode(uChildNode)
-
-  //       childNode->setNet(net);
-
-  //       // update connection to parent
-  //       childNode->setParent(parent);
-  //       parent->addChild(childNode);
-  //     } else {
-  //       childNode = loc2PinGCellNode[make_pair(childNodeLoc, childNodeLNum)];
-  //     }
-
-  //     // push children connection to queue
-  //     for (auto grandChild: child->getChildren()) {
-  //       nodePairQ.push_back(make_pair(childNode, grandChild));
-
-  //       if (grandChild->getType() == frNodeTypeEnum::frcPin) {
-  //         if (loc2PinGCellNode.find(make_pair(childNodeLoc, childNodeLNum)) == loc2PinGCellNode.end()) {
-  //           loc2PinGCellNode[make_pair(childNodeLoc, childNodeLNum)] = childNode;
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
 }
 
 frPoint FlexGRWorker::getBoundaryPinGCellNodeLoc(const frPoint &boundaryPinLoc) {
@@ -1058,7 +752,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd) {
       }
     }
 
-    // upadte cmap for connections between steiner nodes
+    // update cmap for connections between steiner nodes
     if (node->getParent() && 
         node->getParent()->getType() == frNodeTypeEnum::frcSteiner && 
         node->getType() == frNodeTypeEnum::frcSteiner) {
@@ -1294,60 +988,7 @@ void FlexGRWorker::initNet_addNet(unique_ptr<grNet> &in) {
 void FlexGRWorker::initNets_regionQuery() {
   auto &workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.init(false/*not include ext*/);
-  // workerRegionQuery.report();
 }
-
-// get root gcell nodes (either child node of outgoing edge or root node of a net)
-// void FlexGRWorker::initNets_searchRepair_getRootNodes(frNet* net, 
-//                                                       vector<unique_ptr<grConnFig> > &netRouteObjs,
-//                                                       vector<unique_ptr<frNode> > &netRootGCellNodes) {
-//   frPoint bp, ep;
-//   frPoint nodeLoc;
-//   frNode* parent = nullptr;
-//   frNode* child = nullptr;
-//   set<pair<frPoint, frlayerNum> > rootGCellNodeLocs;
-//   for (auto &uPtr: netRouteObjs) {
-//     auto connFig = uPtr.get();
-//     if (connFig->typeId() == grcPathSeg) {
-//       auto obj = static_cast<grPathSeg*>(connFig);
-//       obj->getPoints(bp, ep);
-//       parent = obj->getParent();
-//       child = obj->getChild();
-//       auto lNum = obj->getLayerNum();
-//       // create root node if outgoing pathSeg intersects with boundary
-//       // vert
-//       if (bp.x() == ep.x()) {
-//         if (bp.y() == routeBox.bottom()) {
-//           nodeLoc = parent->getLoc();
-//           nodeLNum = parent->getLayerNum();
-//           // outgoing pathSeg shortened at routeBox, create new boundary node
-//           if (nodeLoc.y() < routeBox.bottom()) {
-//             frPoint rootGCellNodeLoc(bp.x(), gridBBox().bottom()); 
-//             if (rootGCellNodeLocs.find(make_pair(rootGCellNodeLoc, nodeLNum)) == rootGCellNodeLocs.end()) {
-//               auto rootNode = make_unique<frNode>(*parent);
-//               rootNode->setType(frNodeTypeEnum::frcBoundaryPin);
-//               rootNode->setLoc(rootGCellNodeLoc);
-
-//             }
-//           }
-//         }
-//         if (ep.y() == routeBox.top()) {
-
-//         }
-//       }
-//       // horz
-
-//       // create root node if the parent node of the parent node of the pathSeg is the global net root
-
-//     }
-//   }
-// }
-
-// void FlexGRWorker::initGridGraph() {
-
-//   gridGraph.setCost(workerCongCost, workerHistCost);
-//   gridGraph.init()
-// }
 
 void FlexGRWorker::initNets_printNets() {
   cout << endl << "printing grNets\n";
