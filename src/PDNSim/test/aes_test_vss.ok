@@ -25,7 +25,7 @@
 [INFO PSM-0011] Solving system of equations GV=J.
 [INFO PSM-0013] Solving system of equations GV=J complete.
 ########## IR report #################
-Worstcase voltage: 1.08e-03 V
-Average IR drop  : 8.91e-04 V
-Worstcase IR drop: 1.08e-03 V
+Worstcase voltage: 4.37e-03 V
+Average IR drop  : 3.15e-03 V
+Worstcase IR drop: 4.37e-03 V
 ######################################
