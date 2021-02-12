@@ -275,7 +275,7 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
-  m_logger->info(utl::PSM, 64, "Number of voltage sources attached = {}",m_C4Bumps.size());
+  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}",m_C4Bumps.size());
   for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
