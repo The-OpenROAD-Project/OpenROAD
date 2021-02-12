@@ -321,18 +321,18 @@ namespace odb {
     {% if 'no-set' not in field.flags %}
       void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
       {
-  
+    
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
-  
+    
         {% if field.isRef %}
-  
+    
           obj->{{field.name}}={{field.name}}->getImpl()->getOID();
-  
+    
         {% else %}
           obj->{{field.name}}={{field.name}};
-  
+    
         {% endif %}
-    }
+      }
     {% endif %}
   
     {% if 'no-get' not in field.flags %}
@@ -373,64 +373,33 @@ namespace odb {
     {% endif %}
   {% endfor %}
 
-  {% for _struct in klass.structs %}
-    {% if  _struct.in_class %}
-      {% for field in _struct.fields %}
-      
-        {% if 'no-get' not in field.flags %}
-          {% if field.dbSetGetter %}
-            dbSet<{{field.type}}> {{klass.name}}::get{{field.functional_name}}() const
-            {
-              _{{klass.name}}* obj = (_{{klass.name}}*)this;
-              return dbSet<{{field.type}}>(obj, obj->{{field.name}});
-            }
-          {% else %}
-            {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({% if field.isHashTable %}const char* name{% endif %}) const
-            {
-              _{{klass.name}}* obj = (_{{klass.name}}*)this;
-              {% if field.isRef %}
-                if(obj->{{field.name}} == 0)
-                  return NULL;
-                _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
-                return ({{field.refType}}) par->_{{field.refType[2:-1].lower()}}_tbl->getPtr(obj->{{field.name}});
-              {% elif field.isHashTable %}
-                return {{field.getterReturnType}} obj->{{field.name}}.find(name);
-              {% else %}
-                return obj->{{field.name}};
-              {% endif %}
-          }
-          {% endif %}
-        {% endif %}
-
-
-      {% endfor %}
-
 
 
   {% for _struct in klass.structs %}
-
-    {% if  _struct.in_class %}
+  
+    {%  if  _struct.in_class %}
       {% for field in _struct.fields %}
       
-        {% if 'no-set' not in field.flags %}
-          void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
-          {
-        
-            _{{klass.name}}* obj = (_{{klass.name}}*)this;
-        
-            obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
-        
-          }
-        {% endif %}
+      {% if 'no-set' not in field.flags %}
+        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+        {
       
-        {% if 'no-get' not in field.flags %}
-          {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}() const
-          {
-            _{{klass.name}}* obj = (_{{klass.name}}*)this;
-            
-            return obj->{{_struct.in_class_name}}.{{field.name}};
-          }
-        {% endif %}
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+      
+          obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
+      
+        }
+      {% endif %}
+    
+      {% if 'no-get' not in field.flags %}
+        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}() const
+        {
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          
+          return obj->{{_struct.in_class_name}}.{{field.name}};
+        }
+      {% endif %}
+    
     
       {% endfor %}
     {% endif %}
