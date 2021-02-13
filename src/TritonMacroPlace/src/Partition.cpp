@@ -173,7 +173,7 @@ string Partition::GetName(int macroIdx)
 }
 
 void Partition::FillNetlistTable(
-    MacroCircuit& mckt,
+    MacroPlacer& mckt,
     unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap)
 {
@@ -395,7 +395,7 @@ void Partition::FillNetlistTable(
   }
 }
 
-void Partition::UpdateMacroCoordi(MacroCircuit& mckt)
+void Partition::UpdateMacroCoordi(MacroPlacer& mckt)
 {
   for (auto& curPartMacro : macroStor) {
     auto mPtr = mckt.macroNameMap.find(curPartMacro.name());

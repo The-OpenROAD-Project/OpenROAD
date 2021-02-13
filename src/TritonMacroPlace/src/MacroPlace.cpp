@@ -44,9 +44,6 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
@@ -54,6 +51,7 @@
 #include "sta/Sequential.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/SearchPred.hh"
+
 #include "utility/Logger.h"
 
 namespace mpl {
@@ -102,20 +100,20 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                                                   utl::Logger* log);
 
 static void UpdateMacroPartMap(
-    MacroCircuit& mckt,
+    MacroPlacer& mckt,
     Partition& part,
     unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap,
     utl::Logger* log);
 
-static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt);
+static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroPlacer& mckt);
 
 static const char *coreEdgeString(CoreEdge edge);
 static int coreEdgeIndex(CoreEdge edge);
 
 ////////////////////////////////////////////////////////////////
 
-MacroCircuit::MacroCircuit()
+MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
       log_(nullptr),
@@ -136,10 +134,10 @@ MacroCircuit::MacroCircuit()
 {
 }
 
-MacroCircuit::MacroCircuit(odb::dbDatabase* db,
+MacroPlacer::MacroPlacer(odb::dbDatabase* db,
                            sta::dbSta* sta,
                            utl::Logger* log)
-    : MacroCircuit()
+    : MacroPlacer()
 {
   db_ = db;
   sta_ = sta;
@@ -147,7 +145,7 @@ MacroCircuit::MacroCircuit(odb::dbDatabase* db,
   init();
 }
 
-void MacroCircuit::reset()
+void MacroPlacer::reset()
 {
   db_ = nullptr;
   sta_ = nullptr;
@@ -162,29 +160,29 @@ void MacroCircuit::reset()
   fenceRegionMode_ = false;
 }
 
-void MacroCircuit::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
+void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
 {
   db_ = db;
   sta_ = sta;
   log_ = log;
 }
 
-void MacroCircuit::setGlobalConfig(const char* globalConfig)
+void MacroPlacer::setGlobalConfig(const char* globalConfig)
 {
   globalConfig_ = globalConfig;
 }
 
-void MacroCircuit::setLocalConfig(const char* localConfig)
+void MacroPlacer::setLocalConfig(const char* localConfig)
 {
   localConfig_ = localConfig;
 }
 
-void MacroCircuit::setVerboseLevel(int verbose)
+void MacroPlacer::setVerboseLevel(int verbose)
 {
   verbose_ = verbose;
 }
 
-void MacroCircuit::setFenceRegion(double lx, double ly, double ux, double uy)
+void MacroPlacer::setFenceRegion(double lx, double ly, double ux, double uy)
 {
   fenceRegionMode_ = true;
   lx_ = lx;
@@ -193,7 +191,7 @@ void MacroCircuit::setFenceRegion(double lx, double ly, double ux, double uy)
   uy_ = uy;
 }
 
-void MacroCircuit::init()
+void MacroPlacer::init()
 {
   dbBlock* block = db_->getChip()->getBlock();
 
@@ -242,7 +240,7 @@ void MacroCircuit::init()
   }
 }
 
-void MacroCircuit::reportEdgePinCounts()
+void MacroPlacer::reportEdgePinCounts()
 {
   int counts[core_edge_count] = {0};
   for (dbBTerm *bterm : db_->getChip()->getBlock()->getBTerms()) {
@@ -258,7 +256,7 @@ void MacroCircuit::reportEdgePinCounts()
   }
 }
 
-void MacroCircuit::PlaceMacros(int& solCount)
+void MacroPlacer::PlaceMacros(int& solCount)
 {
   init();
   Layout layout(lx_, ly_, ux_, uy_);
@@ -459,7 +457,7 @@ void MacroCircuit::PlaceMacros(int& solCount)
 }
 
 // update opendb dataset from mckt.
-static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt)
+static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroPlacer& mckt)
 {
   odb::dbTech* tech = db->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
@@ -496,7 +494,7 @@ static void CutRoundUp(const Layout& layout,
 // first: macro partition class info
 // second: macro candidates.
 static void UpdateMacroPartMap(
-    MacroCircuit& mckt,
+    MacroPlacer& mckt,
     Partition& part,
     unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap,
@@ -787,7 +785,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
   return ret;
 }
 
-void MacroCircuit::FillMacroStor()
+void MacroPlacer::FillMacroStor()
 {
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbRow> rows = block->getRows();
@@ -859,7 +857,7 @@ void MacroCircuit::FillMacroStor()
 }
 
 // macroStr & macroInstMap update
-void MacroCircuit::UpdateInstanceToMacroStor()
+void MacroPlacer::UpdateInstanceToMacroStor()
 {
   for (auto& macro : macroStor) {
     sta::Instance* staInst = sta_->getDbNetwork()->dbToSta(macro.dbInstPtr);
@@ -878,7 +876,7 @@ static float getRoundUpFloat(float x, float unit)
   return std::round(x / unit) * unit;
 }
 
-void MacroCircuit::UpdateMacroCoordi(Partition& part)
+void MacroPlacer::UpdateMacroCoordi(Partition& part)
 {
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer(4);
@@ -897,7 +895,7 @@ void MacroCircuit::UpdateMacroCoordi(Partition& part)
   for (auto& curMacro : part.macroStor) {
     auto mnPtr = macroNameMap.find(curMacro.name());
     if (mnPtr == macroNameMap.end()) {
-      log_->error(MPL, 22, "{} is not in MacroCircuit", curMacro.name());
+      log_->error(MPL, 22, "{} is not in MacroPlacer", curMacro.name());
     }
 
     // update macro coordi
@@ -918,7 +916,7 @@ static bool stringExists(std::string varname, std::string str)
   return varname.find(str) != std::string::npos;
 }
 
-void MacroCircuit::ParseGlobalConfig(string fileName)
+void MacroPlacer::ParseGlobalConfig(string fileName)
 {
   std::ifstream gConfFile(fileName);
   if (!gConfFile.is_open()) {
@@ -973,7 +971,7 @@ void MacroCircuit::ParseGlobalConfig(string fileName)
   log_->report("End Parsing Global Config");
 }
 
-void MacroCircuit::ParseLocalConfig(string fileName)
+void MacroPlacer::ParseLocalConfig(string fileName)
 {
   std::ifstream gConfFile(fileName);
   if (!gConfFile.is_open()) {
@@ -1026,7 +1024,7 @@ void MacroCircuit::ParseLocalConfig(string fileName)
   log_->report("End Parsing Local Config");
 }
 
-void MacroCircuit::UpdateNetlist(Partition& layout)
+void MacroPlacer::UpdateNetlist(Partition& layout)
 {
   if (netTable_) {
     delete[] netTable_;
@@ -1048,7 +1046,7 @@ void MacroCircuit::UpdateNetlist(Partition& layout)
 #define NORTH_IDX (macroStor.size() + 2)
 #define SOUTH_IDX (macroStor.size() + 3)
 
-double MacroCircuit::GetWeightedWL()
+double MacroPlacer::GetWeightedWL()
 {
   double wwl = 0.0f;
 
@@ -1246,7 +1244,7 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
 
 typedef std::pair<Macro*, Macro*> MacroPair;
 
-void MacroCircuit::findAdjacencies()
+void MacroPlacer::findAdjacencies()
 {
   sta::dbNetwork *network = sta_->getDbNetwork();
   sta::Graph *graph = sta_->ensureGraph();
@@ -1359,7 +1357,7 @@ void MacroCircuit::findAdjacencies()
   }
 }
 
-std::string MacroCircuit::faninName(Macro *macro)
+std::string MacroPlacer::faninName(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
@@ -1368,7 +1366,7 @@ std::string MacroCircuit::faninName(Macro *macro)
     return macro->name();
 }
 
-int MacroCircuit::macroIndex(Macro *macro)
+int MacroPlacer::macroIndex(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
@@ -1377,7 +1375,7 @@ int MacroCircuit::macroIndex(Macro *macro)
     return macro - &macroStor[0] + core_edge_count;
 }
 
-bool MacroCircuit::macroIndexIsEdge(Macro *macro)
+bool MacroPlacer::macroIndexIsEdge(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   return edge_index < 4;
@@ -1386,7 +1384,7 @@ bool MacroCircuit::macroIndexIsEdge(Macro *macro)
 // BFS search forward union-ing fanins.
 // BFS stops at register inputs because there are no timing arcs
 // from register D->Q.
-void MacroCircuit::findFanins(sta::BfsFwdIterator &bfs,
+void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
                               VertexFaninMap &vertex_fanins,
                               sta::dbNetwork *network,
                               sta::Graph *graph)
@@ -1410,7 +1408,7 @@ void MacroCircuit::findFanins(sta::BfsFwdIterator &bfs,
   }
 }
 
-void MacroCircuit::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
+void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
                                              VertexFaninMap &vertex_fanins,
                                              sta::dbNetwork *network,
                                              sta::Graph *graph)
@@ -1449,7 +1447,7 @@ void MacroCircuit::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
 // Sequential outputs are generally to internal pins that are not physically
 // part of the instance. Find the output port with a function that uses
 // the internal port.
-sta::Pin *MacroCircuit::findSeqOutPin(sta::Instance *inst,
+sta::Pin *MacroPlacer::findSeqOutPin(sta::Instance *inst,
                                       sta::LibertyPort *out_port,
                                       sta::Network *network)
 {
@@ -1478,7 +1476,7 @@ sta::Pin *MacroCircuit::findSeqOutPin(sta::Instance *inst,
 
 // This is completely broken but I want to match FillPinGroup()
 // until it is flushed.
-CoreEdge MacroCircuit::findNearestEdge(dbBTerm* bTerm)
+CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 {
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
   if (status == dbPlacementStatus::UNPLACED

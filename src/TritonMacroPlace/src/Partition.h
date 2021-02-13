@@ -44,7 +44,7 @@ class Logger;
 
 namespace mpl {
 
-class MacroCircuit;
+class MacroPlacer;
 class Macro;
 
 enum PartClass
@@ -92,7 +92,7 @@ class Partition
   // assign operator overloading
   Partition& operator=(const Partition& prev);
 
-  void FillNetlistTable(MacroCircuit& mckt,
+  void FillNetlistTable(MacroPlacer& mckt,
                         std::unordered_map<PartClass,
                                            std::vector<int>,
                                            PartClassHash,
@@ -103,8 +103,8 @@ class Partition
   // Call Parquet to have annealing solution
   bool DoAnneal();
 
-  // Update Macro location from MacroCircuit
-  void UpdateMacroCoordi(MacroCircuit& mckt);
+  // Update Macro location from MacroPlacer
+  void UpdateMacroCoordi(MacroPlacer& mckt);
 
   std::string GetName(int macroIdx);
 

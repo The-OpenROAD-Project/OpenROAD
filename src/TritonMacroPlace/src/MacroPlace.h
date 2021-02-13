@@ -119,11 +119,11 @@ class MacroLocalInfo
   double haloX_, haloY_, channelX_, channelY_;
 };
 
-class MacroCircuit
+class MacroPlacer
 {
 public:
-  MacroCircuit();
-  MacroCircuit(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
+  MacroPlacer();
+  MacroPlacer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
   // macro Information
   std::vector<Macro> macroStor;

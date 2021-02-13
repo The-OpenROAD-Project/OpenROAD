@@ -39,7 +39,7 @@ namespace mpl {
 
 TritonMacroPlace::TritonMacroPlace() : solCount_(0)
 {
-  std::unique_ptr<MacroCircuit> mckt(new MacroCircuit());
+  std::unique_ptr<MacroPlacer> mckt(new MacroPlacer());
   mckt_ = std::move(mckt);
 }
 

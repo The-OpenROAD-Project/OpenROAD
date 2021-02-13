@@ -49,9 +49,9 @@ class Logger;
 
 namespace mpl {
 
-class MacroCircuit;
+class MacroPlacer;
 
-// TODO merge TritonMacroPlace and MacroCircuit class
+// TODO merge TritonMacroPlace and MacroPlacer class
 class TritonMacroPlace {
 public:
   TritonMacroPlace ();
@@ -67,7 +67,7 @@ public:
   int getSolutionCount();
 
 private:
-  std::unique_ptr<MacroCircuit> mckt_;
+  std::unique_ptr<MacroPlacer> mckt_;
   int solCount_;
 }; 
 
