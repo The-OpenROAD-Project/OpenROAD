@@ -40,6 +40,7 @@
 #include "basepacking.h"
 #include "ABKCommon/abkcommon.h"
 #include <string>
+#include <random>
 
 // --------------------------------------------------------
 class BaseAnnealer
@@ -110,6 +111,8 @@ protected:
    const float _outlineArea;
    const float _outlineWidth;
    const float _outlineHeight;
+   std::random_device _rd;
+   std::mt19937 _random_gen;
 
    BaseAnnealer()
       : _db(NULL), _params(NULL), _analSolve(NULL),

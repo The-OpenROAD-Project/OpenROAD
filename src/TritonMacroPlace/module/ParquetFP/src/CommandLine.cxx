@@ -439,15 +439,6 @@ void Command_Line::printAnnealerParamsClassic() const
 
 void Command_Line::setSeed()
 {
-   int rseed;
-   if(getSeed)
-      rseed = int(time((time_t *)NULL));
-   else
-      rseed = seed;
-  
-   srand(rseed);        //seed for rand function
-   srand48(rseed);      //seed for random_shuffle function
-//   if(verb.forMajStats > 0)
-//      cout<<"The random seed for this run is: "<<rseed<<endl;
+   srand(seed);        //seed for rand function
 }
 
