@@ -146,8 +146,26 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     std::vector<QRect> obs;
     std::vector<QRect> mterms;
   };
+
+  struct GCellData
+  {
+    int hor_capacity_;
+    int hor_usage_;
+    int ver_capacity_;
+    int ver_usage_;
+
+    GCellData(int h_cap = 0, int h_usage = 0, int v_cap = 0, int v_usage = 0)
+        : hor_capacity_(h_cap),
+          hor_usage_(h_usage),
+          ver_capacity_(v_cap),
+          ver_usage_(v_usage)
+    {
+    }
+  };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
   using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
+  using GCellInfo
+      = std::map<odb::Rect, GCellData>;  // Key : GCell BBox, Value : GCellData
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
@@ -197,12 +215,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
 
-  std::map<odb::Rect, std::tuple<int, int, int, int>>
-      gcell_congestion_data_;  // Key   : Rect : GCell BBox
-                               // Value : Total Horizontal Capaicty,
-                               //         Total Horizontal Usage,
-                               //         Total Vertical Capacity,
-                               //         Total Vertical Usage
+  GCellInfo gcell_congestion_data_;
   CongestionSetupDialog* congestion_dialog_;
 
   QMenu* layout_context_menu_;

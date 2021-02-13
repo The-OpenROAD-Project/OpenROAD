@@ -47,19 +47,24 @@
 namespace gui {
 
 CongestionSetupDialog::ColorRangeMap CongestionSetupDialog::_color_ranges
-    = {{2, {{"blue", "0", 50}, {"red", "1", 100}}},
-       {3, {{"blue", "0", 33}, {"yellow", "0.5", 66}, {"red", "1", 100}}},
+    = {{2,
+        {CongestionBandInfo("blue", "0", 50),
+         CongestionBandInfo("red", "1", 100)}},
+       {3,
+        {CongestionBandInfo("blue", "0", 33),
+         CongestionBandInfo("yellow", "0.5", 66),
+         CongestionBandInfo("red", "1", 100)}},
        {4,
-        {{"blue", "0", 25},
-         {"green", "0.33", 50},
-         {"yellow", "0.66", 75},
-         {"red", "1", 100}}},
+        {CongestionBandInfo("blue", "0", 25),
+         CongestionBandInfo("green", "0.33", 50),
+         CongestionBandInfo("yellow", "0.66", 75),
+         CongestionBandInfo("red", "1", 100)}},
        {5,
-        {{"blue", "0", 20},
-         {"cyan", "0.25", 40},
-         {"green", "0.5", 60},
-         {"yellow", "0.75", 80},
-         {"red", "1", 100}}}};
+        {CongestionBandInfo("blue", "0", 20),
+         CongestionBandInfo("cyan", "0.25", 40),
+         CongestionBandInfo("green", "0.5", 60),
+         CongestionBandInfo("yellow", "0.75", 80),
+         CongestionBandInfo("red", "1", 100)}}};
 
 CongestionSetupDialog::CongestionSetupDialog(QWidget* parent) : QDialog(parent)
 {
@@ -97,6 +102,8 @@ CongestionSetupDialog::CongestionSetupDialog(QWidget* parent) : QDialog(parent)
           this,
           SLOT(congestionStartValueChanged(int)));
   connect(applyButton, SIGNAL(pressed()), this, SLOT(saveState()));
+  connect(
+      applyButton, SIGNAL(clicked()), this, SIGNAL(applyCongestionRequested()));
   min_congestion_ = 0;
   cong_dir_index_ = 0;
   colors_.push_back("blue");
@@ -141,8 +148,9 @@ void CongestionSetupDialog::reject()
     QListWidgetItem* item = new QListWidgetItem(color_labels[row]);
     item->setBackground(QBrush(QColor(colors_[row])));
     colorRangeListWidget->addItem(item);
-    color_sheet_value = color_sheet_value + "stop:" + std::get<1>(color_data)
-                        + " " + colors_[row++].toStdString() + ", ";
+    color_sheet_value = color_sheet_value
+                        + "stop:" + color_data.color_style_sheet_ + " "
+                        + colors_[row++].toStdString() + ", ";
   }
 
   color_sheet_value = color_sheet_value.substr(0, color_sheet_value.size() - 2);
@@ -182,10 +190,11 @@ void CongestionSetupDialog::colorIntervalChanged(int value)
   int row = 0;
   for (auto& color_data : CongestionSetupDialog::_color_ranges[value]) {
     QListWidgetItem* item = new QListWidgetItem(color_labels[row++]);
-    item->setBackground(QBrush(QColor(std::get<0>(color_data))));
+    item->setBackground(QBrush(QColor(color_data.band_color_)));
     colorRangeListWidget->addItem(item);
-    color_sheet_value = color_sheet_value + "stop:" + std::get<1>(color_data)
-                        + " " + std::get<0>(color_data).toStdString() + ", ";
+    color_sheet_value = color_sheet_value
+                        + "stop:" + color_data.color_style_sheet_ + " "
+                        + color_data.band_color_.toStdString() + ", ";
   }
 
   color_sheet_value = color_sheet_value.substr(0, color_sheet_value.size() - 2);
@@ -219,9 +228,9 @@ std::string CongestionSetupDialog::getCongestionButtonStyleSheetColors()
   int row = 0;
   for (auto& color_data : CongestionSetupDialog::_color_ranges[value]) {
     QListWidgetItem* item = colorRangeListWidget->item(row++);
-    color_sheet_value = color_sheet_value + "stop:" + std::get<1>(color_data)
-                        + " " + item->background().color().name().toStdString()
-                        + ", ";
+    color_sheet_value
+        = color_sheet_value + "stop:" + color_data.band_color_.toStdString()
+          + " " + item->background().color().name().toStdString() + ", ";
   }
 
   color_sheet_value = color_sheet_value.substr(0, color_sheet_value.size() - 2);
@@ -235,7 +244,7 @@ std::vector<QString> CongestionSetupDialog::getColorNames(int band_index)
   auto color_data = _color_ranges[spinBox->value()];
   int index = 0;
   int current_percent = startCongestionSpinBox->value();
-  int percent_step = std::get<2>(color_data[0]);
+  int percent_step = color_data[0].band_ulimit_;
   while (index < color_data.size() - 1) {
     label = QString::number(current_percent) + "% <= Usage < "
             + QString::number(current_percent + percent_step) + "%";
@@ -258,12 +267,12 @@ QColor CongestionSetupDialog::getCongestionColorForPercentage(
 {
   auto& color_data_vec = _color_ranges[colors_.size()];
   if (congestion_percent > 100)
-    return QColor(std::get<0>(*(color_data_vec.rbegin())));
+    return QColor(color_data_vec.rbegin()->band_color_);
 
   int index = 0;
   while (index < color_data_vec.size() - 1) {
-    if (congestion_percent <= (std::get<2>(color_data_vec[index])
-                               + startCongestionSpinBox->value()))
+    if (congestion_percent
+        <= (color_data_vec[index].band_ulimit_ + showStartCongestionValue()))
       break;
     index++;
   }
@@ -271,12 +280,12 @@ QColor CongestionSetupDialog::getCongestionColorForPercentage(
   QColor min_color(0, 0, 0);
   QColor max_color = QColor(colors_[index]);
   int max_percent
-      = std::get<2>(color_data_vec[index]) + startCongestionSpinBox->value();
+      = color_data_vec[index].band_ulimit_ + showStartCongestionValue();
   int min_percent = startCongestionSpinBox->value();
   if (index != 0) {
     min_color = QColor(colors_[index - 1]);
-    min_percent = std::get<2>(color_data_vec[index - 1])
-                  + startCongestionSpinBox->value();
+    min_percent
+        = color_data_vec[index - 1].band_ulimit_ + showStartCongestionValue();
   }
   float band_percent
       = (congestion_percent - min_percent) / (max_percent - min_percent);

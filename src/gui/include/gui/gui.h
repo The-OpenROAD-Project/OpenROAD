@@ -159,7 +159,7 @@ class Selected
 
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Descrete Highlight
+using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
                                                    // Color is supported for now
 
 // This is an API that the Renderer instances will use to do their
@@ -201,7 +201,7 @@ class Painter
   static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
-  static inline const std::array<Painter::Color, 9> highlightColors{
+  static inline const std::array<Painter::Color, 8> highlightColors{
       Painter::green,
       Painter::yellow,
       Painter::cyan,

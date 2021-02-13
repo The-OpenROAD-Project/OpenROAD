@@ -38,8 +38,6 @@ if (Qt5_FOUND)
     ${GUI_WRAP}
   )
 
-#qt5_wrap_ui(findDlg.ui selHltWidget.ui selectedWidget.ui congestionSetup.ui)
-
   target_link_libraries(gui
     opendb
     Qt5::Core

@@ -44,8 +44,9 @@ class HighlightGroupDialog : public QDialog, public Ui::HighlightGroupDlg
  public:
   HighlightGroupDialog(QWidget* parent = nullptr);
   int getSelectedHighlightGroup() const;
+
  public slots:
-  void accept();
+  void accept() override;
 
  private:
   void setButtonBackground(QRadioButton* button, Painter::Color color);

@@ -37,6 +37,7 @@
 #include <QString>
 #include <QVector>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -45,22 +46,19 @@
 #include "ui_congestionSetup.h"
 
 namespace gui {
-class CongestionSetupDialog : public QDialog, public Ui::CongestionSetup
+class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
 {
   Q_OBJECT
  public:
-  typedef std::map<int, std::vector<std::tuple<QString, std::string, int>>>
-      ColorRangeMap;  // Key   : Number Of Intervals
-                      // Value : Band Color, Style Sheet Band Value
-                      //         Band Percent
   CongestionSetupDialog(QWidget* parent = nullptr);
 
  signals:
   void congestionSetupChanged();
+  void applyCongestionRequested();
 
  public slots:
-  void accept();
-  void reject();
+  void accept() override;
+  void reject() override;
 
   void designLoaded(odb::dbBlock* block);
   void colorIntervalChanged(int value);
@@ -69,11 +67,37 @@ class CongestionSetupDialog : public QDialog, public Ui::CongestionSetup
   void congestionStartValueChanged(int value);
 
   void saveState();
-  int showCongestionFrom() const { return min_congestion_; }
+  bool showHorizontalCongestion() const { return horCongDir->isChecked(); }
+  bool showVerticalCongestion() const { return verCongDir->isChecked(); }
+  int showStartCongestionValue() const
+  {
+    return startCongestionSpinBox->value();
+  }
 
+  int showCongestionFrom() const { return min_congestion_; }
   QColor getCongestionColorForPercentage(float percent, int alpha = 100) const;
 
  private:
+  struct CongestionBandInfo
+  {
+    CongestionBandInfo(const QString band_color = "",
+                       const std::string style_sheet = "",
+                       int ulimit = 100)
+        : band_color_(band_color),
+          color_style_sheet_(style_sheet),
+          band_ulimit_(ulimit)
+    {
+    }
+    QString band_color_;
+    std::string color_style_sheet_;  // To be Used on Color Gradient Button
+    int band_ulimit_;
+  };
+  using ColorRangeMap
+      = std::map<int, std::vector<CongestionBandInfo>>;  // Key : Number Of
+                                                         //       Intervals,
+                                                         // Value :
+                                                         // CongestionBandInfo
+                                                         // Of Each Band
   void updateCongestionButtonStyleSheet(const std::string& color_values);
   std::string getCongestionButtonStyleSheetColors();
   std::vector<QString> getColorNames(int band_index);

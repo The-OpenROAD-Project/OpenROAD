@@ -175,8 +175,8 @@ LayoutViewer::LayoutViewer(Options* options,
   addMenuAndActions();
 
   congestion_dialog_ = new CongestionSetupDialog(this);
-  connect(congestion_dialog_->applyButton,
-          SIGNAL(released()),
+  connect(congestion_dialog_,
+          SIGNAL(applyCongestionRequested()),
           this,
           SLOT(update()));
   connect(congestion_dialog_,
@@ -614,23 +614,27 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
       continue;
     auto& cong_data = gcell_data.second;
 
-    auto hor_capacity = std::get<0>(cong_data);
-    auto hor_usage = std::get<1>(cong_data);
-    auto ver_capacity = std::get<2>(cong_data);
-    auto ver_usage = std::get<3>(cong_data);
+    auto hor_capacity = cong_data.hor_capacity_;
+    auto hor_usage = cong_data.hor_usage_;
+    auto ver_capacity = cong_data.ver_capacity_;
+    auto ver_usage = cong_data.ver_usage_;
 
+    //-1 indicates capacity is not well defined...
     float hor_congestion
-        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : 0;
+        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : -1;
     float ver_congestion
-        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : 0;
+        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : -1;
 
     float congestion = ver_congestion;
-    if (congestion_dialog_->bothCongDir->isChecked())
-      congestion = std::max(hor_congestion, ver_congestion);
-    else if (congestion_dialog_->horCongDir->isChecked())
+    if (congestion_dialog_->showHorizontalCongestion())
       congestion = hor_congestion;
-    if (congestion < (congestion_dialog_->showCongestionFrom()
-                      + congestion_dialog_->startCongestionSpinBox->value()))
+    else if (congestion_dialog_->showVerticalCongestion())
+      congestion = ver_congestion;
+    else
+      congestion = std::max(hor_congestion, ver_congestion);
+    if (congestion == -1
+        || congestion < (congestion_dialog_->showCongestionFrom()
+                         + congestion_dialog_->showStartCongestionValue()))
       continue;
 
     auto gcell_color
@@ -1226,16 +1230,15 @@ void LayoutViewer::populateCongestionData()
     odb::Rect gcell_rect = g_cell.getGCellRect();
     auto itr = gcell_congestion_data_.find(gcell_rect);
     if (itr == gcell_congestion_data_.end()) {
-      gcell_congestion_data_[gcell_rect]
-          = std::tuple<int, int, int, int>(0, 0, 0, 0);
+      gcell_congestion_data_[gcell_rect] = GCellData();
       itr = gcell_congestion_data_.find(gcell_rect);
     }
 
-    std::get<0>(itr->second) += g_cell.getHorCapacity();
-    std::get<1>(itr->second) += g_cell.getHorUsage();
+    itr->second.hor_capacity_ += g_cell.getHorCapacity();
+    itr->second.hor_usage_ += g_cell.getHorUsage();
 
-    std::get<2>(itr->second) += g_cell.getVerCapacity();
-    std::get<3>(itr->second) += g_cell.getVerUsage();
+    itr->second.ver_capacity_ += g_cell.getVerCapacity();
+    itr->second.ver_usage_ += g_cell.getVerUsage();
   }
 }
 
