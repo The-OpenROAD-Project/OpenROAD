@@ -40,7 +40,7 @@
 
 #include "Parquet.h"
 #include "btreeanneal.h"
-#include "circuit.h"
+#include "MacroPlace.h"
 #include "mixedpackingfromdb.h"
 #include "utility/Logger.h"
 
@@ -141,9 +141,6 @@ void Partition::Dump()
 {
   log_->report("partClass: {}", partClass);
   log_->report("{} {} {} {}", lx, ly, width, height);
-  for (auto& curMacro : macroStor) {
-    curMacro.Dump();
-  }
 }
 
 #define EAST_IDX (macroStor.size())

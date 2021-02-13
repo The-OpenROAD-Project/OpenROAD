@@ -33,7 +33,7 @@
 
 #include "mpl/TritonMacroPlace.h"
 
-#include "circuit.h"
+#include "MacroPlace.h"
 
 namespace mpl {
 

@@ -38,8 +38,9 @@
 #include <map>
 #include <set>
 
-#include "macro.h"
 #include "Partition.h"
+
+#include "opendb/db.h"
 
 #include "sta/NetworkClass.hh"
 #include "sta/GraphClass.hh"
@@ -77,6 +78,46 @@ enum class CoreEdge
 };
 
 constexpr int core_edge_count = 4;
+
+class Macro
+{
+ public:
+  double lx, ly;
+  double w, h;
+  double haloX, haloY;
+  double channelX, channelY;
+  sta::Instance* staInstPtr;
+  odb::dbInst* dbInstPtr;
+  Macro(double _lx,
+        double _ly,
+        double _w,
+        double _h,
+        double _haloX,
+        double _haloY,
+        double _channelX,
+        double _channelY,
+        sta::Instance* _staInstPtr,
+        odb::dbInst* _dbInstPtr);
+  std::string name();
+  std::string type();
+};
+
+class MacroLocalInfo
+{
+ public:
+  MacroLocalInfo();
+  void putHaloX(double haloX) { haloX_ = haloX; }
+  void putHaloY(double haloY) { haloY_ = haloY; }
+  void putChannelX(double channelX) { channelX_ = channelX; }
+  void putChannelY(double channelY) { channelY_ = channelY; }
+  double GetHaloX() { return haloX_; }
+  double GetHaloY() { return haloY_; }
+  double GetChannelX() { return channelX_; }
+  double GetChannelY() { return channelY_; }
+
+ private:
+  double haloX_, haloY_, channelX_, channelY_;
+};
 
 class MacroCircuit
 {

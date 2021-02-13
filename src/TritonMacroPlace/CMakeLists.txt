@@ -36,9 +36,7 @@ add_custom_command(OUTPUT ${MPLACE_TCL_INIT}
 # Create an library 
 ############################################################
 add_library( TritonMacroPlace 
-  src/circuit.cpp
   src/Partition.cpp
-  src/macro.cpp
   src/TritonMacroPlace.cpp
   src/MacroPlace.cpp
   src/MakeMacroPlace.cpp
