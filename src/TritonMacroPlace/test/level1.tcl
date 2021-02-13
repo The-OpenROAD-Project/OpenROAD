@@ -13,17 +13,10 @@ read_verilog level1.v
 link_design gcd_mem3
 read_sdc gcd.sdc
 
-if {1} {
 initialize_floorplan -die_area {0 0 58.14 56.0} \
   -core_area {0 0 58.14 56.0} \
   -site FreePDK45_38x28_10R_NP_162NW_34O \
   -tracks Nangate45/nangate45.tracks
-} else {
-initialize_floorplan -die_area {0 0 70 70} \
-  -core_area {0 0 60 60} \
-  -site FreePDK45_38x28_10R_NP_162NW_34O \
-  -tracks Nangate45/nangate45.tracks
-}
 
 place_pins -random -hor_layers 3 -ver_layers 2
 
