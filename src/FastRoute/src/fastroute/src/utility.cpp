@@ -186,7 +186,7 @@ void getlen()
         totlen += treeedge->route.routelen;
     }
   }
-  logger->info(GRT, 196, "Routed len: {}.", totlen);
+  logger->info(GRT, 196, "Routed len: {}", totlen);
 }
 
 void ConvertToFull3DType2()
@@ -429,8 +429,8 @@ void fillVIA()
   }
 
   if (verbose > 1) {
-   logger->info(GRT, 197, "Via related to pin nodes: {}.", numVIAT1);
-   logger->info(GRT, 198, "Via related stiner nodes: {}.", numVIAT2);
+   logger->info(GRT, 197, "Via related to pin nodes: {}", numVIAT1);
+   logger->info(GRT, 198, "Via related stiner nodes: {}", numVIAT2);
    logger->info(GRT, 199, "Via filling finished.");
   }
 }
@@ -739,16 +739,18 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
   }
   treeedge->assigned = TRUE;
 
+  int edgeCost = nets[netID]->edgeCost;
+
   for (k = 0; k < routelen; k++) {
     if (gridsX[k] == gridsX[k + 1]) {
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       grid = gridsL[k] * gridV + min_y * xGrid + gridsX[k];
 
       if (v_edges3D[grid].usage < v_edges3D[grid].cap) {
-        v_edges3D[grid].usage++;
+        v_edges3D[grid].usage += edgeCost;
 
       } else {
-        v_edges3D[grid].usage++;
+        v_edges3D[grid].usage += edgeCost;
       }
 
     } else {
@@ -756,9 +758,9 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       grid = gridsL[k] * gridH + gridsY[k] * (xGrid - 1) + min_x;
 
       if (h_edges3D[grid].usage < h_edges3D[grid].cap) {
-        h_edges3D[grid].usage++;
+        h_edges3D[grid].usage += edgeCost;
       } else {
-        h_edges3D[grid].usage++;
+        h_edges3D[grid].usage += edgeCost;
       }
     }
   }
@@ -1292,18 +1294,20 @@ void recoverEdge(int netID, int edgeID)
 
   treenodes[n2a].assigned = TRUE;
 
+  int edgeCost = nets[netID]->edgeCost;
+
   for (i = 0; i < treeedge->route.routelen; i++) {
     if (gridsL[i] == gridsL[i + 1]) {
       if (gridsX[i] == gridsX[i + 1])  // a vertical edge
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         grid = gridsL[i] * gridV + ymin * xGrid + gridsX[i];
-        v_edges3D[grid].usage += 1;
+        v_edges3D[grid].usage += edgeCost;
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         grid = gridsL[i] * gridH + gridsY[i] * (xGrid - 1) + xmin;
-        h_edges3D[grid].usage += 1;
+        h_edges3D[grid].usage += edgeCost;
       }
     }
   }
@@ -1321,6 +1325,8 @@ void checkUsage()
   for (netID = 0; netID < numValidNets; netID++) {
     treeedges = sttrees[netID].edges;
     deg = sttrees[netID].deg;
+
+    int edgeCost = nets[netID]->edgeCost;
 
     for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
       edge = sttrees[netID].edges[edgeID];
@@ -1344,11 +1350,11 @@ void checkUsage()
                   if (gridsX[k] == gridsX[k + 1]) {
                     int min_y = std::min(gridsY[k], gridsY[k + 1]);
                     int grid = min_y * xGrid + gridsX[k];
-                    v_edges[grid].usage -= 1;
+                    v_edges[grid].usage -= edgeCost;
                   } else {
                     int min_x = std::min(gridsX[k], gridsX[k + 1]);
                     int grid = gridsY[k] * (xGrid - 1) + min_x;
-                    h_edges[grid].usage -= 1;
+                    h_edges[grid].usage -= edgeCost;
                   }
                 }
 
@@ -1761,6 +1767,8 @@ void copyBR(void)
     }
     for (netID = 0; netID < numValidNets; netID++) {
       numEdges = 2 * sttrees[netID].deg - 3;
+      int edgeCost = nets[netID]->edgeCost;
+
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees[netID].edges[edgeID].len > 0) {
           gridsX = sttrees[netID].edges[edgeID].route.gridsX;
@@ -1769,11 +1777,11 @@ void copyBR(void)
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
-              v_edges[min_y * xGrid + gridsX[i]].usage += 1;
+              v_edges[min_y * xGrid + gridsX[i]].usage += edgeCost;
             } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
             {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
-              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += 1;
+              h_edges[gridsY[i] * (xGrid - 1) + min_x].usage += edgeCost;
             }
           }
         }

@@ -27,12 +27,14 @@
  */
 
 #include <iostream>
+#include <boost/polygon/polygon.hpp>
 #include "global.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
 #include "frRTree.h"
 using namespace std;
 using namespace fr;
+namespace gtl = boost::polygon;
 
 struct frRegionQuery::Impl
 {
@@ -330,8 +332,34 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk, ObjectsByLayer<frBlockObj
       frb.transform(xform);
       boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
       allShapes.at(static_cast<frShape*>(shape)->getLayerNum()).push_back(make_pair(boostb, instBlk));
+    } else if (shape->typeId() == frcPolygon) {
+      // Decompose the polygon to rectangles and store those
+      // Convert the frPolygon to a Boost polygon
+      vector<gtl::point_data<frCoord>> points;
+      for (auto pt: ((frPolygon *) shape)->getPoints()) {
+        pt.transform(xform);
+        points.push_back({pt.x(), pt.y()});
+      }
+      gtl::polygon_90_data<frCoord> poly;
+      poly.set(points.begin(), points.end());
+      // Add the polygon to a polygon set
+      gtl::polygon_90_set_data<frCoord> polySet;
+      {
+        using namespace boost::polygon::operators;
+        polySet += poly;
+      }
+      // Decompose the polygon set to rectanges
+      vector<gtl::rectangle_data<frCoord>> rects;
+      polySet.get_rectangles(rects);
+      // Store the rectangles with this blockage
+      for (auto& rect : rects) {
+        frBox box(xl(rect), yl(rect), xh(rect), yh(rect));
+        allShapes.at(static_cast<frShape*>(shape)->getLayerNum()).push_back(make_pair(box, instBlk));
+      }
     } else {
-      logger->error(DRT, 16, "Unsupported region query add");
+      logger->error(DRT, 16,
+                    "Unsupported region query add of blockage in instance {}",
+                    instBlk->getInst()->getName());
     }
   }
 }

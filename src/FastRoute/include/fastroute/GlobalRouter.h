@@ -49,6 +49,10 @@ namespace ord {
 class OpenRoad;
 }
 
+namespace gui {
+class Gui;
+}
+
 namespace utl {
 class Logger;
 }
@@ -77,7 +81,8 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 class RoutePt;
-struct NET;
+class GrouteRenderer;
+
 
 struct RegionAdjustment
 {
@@ -98,6 +103,25 @@ enum class NetType
   Antenna,
   All
 };
+
+class RoutePt
+{
+ public:
+  RoutePt() = default;
+  RoutePt(int x, int y, int layer);
+  int x() { return _x; };
+  int y() { return _y; };
+  int layer() { return _layer; };
+
+  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
+
+ private:
+  int _x;
+  int _y;
+  int _layer;
+};
+
+bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
 {
@@ -179,13 +203,23 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
+  // gui functions
+  std::vector<GCellCongestion> getCongestion();
+
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
-  float dbuToMeters(unsigned dbu);
+  double dbuToMeters(int dbu);
+  double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
+  void setClockCost(int cost);
   void routeClockNets();
+
+  // Highlight route in the gui.
+  void highlightRoute(const odb::dbNet *net);
+  // Report the wire length on each layer.
+  void reportLayerWireLengths();
 
  protected:
   // Net functions
@@ -214,7 +248,7 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
-  void computeObstaclesAdjustments();
+  void computeObstructionsAdjustments();
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
 
@@ -233,8 +267,7 @@ class GlobalRouter
                        const GSegment& seg1,
                        GSegment& newSeg,
                        const std::map<RoutePt, int>& segsAtPoint);
-  void mergeSegments();
-  void mergeSegments(GRoute& route);
+  void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
@@ -267,12 +300,12 @@ class GlobalRouter
   void addNets(std::set<odb::dbNet*>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
-  void initObstacles();
+  void initObstructions();
   void findLayerExtensions(std::vector<int>& layerExtensions);
-  void findObstructions(odb::Rect& dieArea);
-  void findInstancesObstacles(odb::Rect& dieArea,
+  int findObstructions(odb::Rect& dieArea);
+  int findInstancesObstructions(odb::Rect& dieArea,
                               const std::vector<int>& layerExtensions);
-  void findNetsObstacles(odb::Rect& dieArea);
+  void findNetsObstructions(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
@@ -285,16 +318,18 @@ class GlobalRouter
 
   ord::OpenRoad* _openroad;
   utl::Logger *_logger;
+  gui::Gui *_gui;
   // Objects variables
-  FastRouteCore* _fastRoute = nullptr;
-  odb::Point* _gridOrigin = nullptr;
+  FastRouteCore* _fastRoute;
+  odb::Point* _gridOrigin;
+  GrouteRenderer *_groute_renderer;
   NetRouteMap _routes;
 
   std::vector<Net>* _nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
-  Grid* _grid = nullptr;
-  std::vector<RoutingLayer>* _routingLayers = nullptr;
-  std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
+  Grid* _grid;
+  std::vector<RoutingLayer>* _routingLayers;
+  std::vector<RoutingTracks>* _allRoutingTracks;
 
   // Flow variables
   std::string _congestFile;
@@ -331,6 +366,7 @@ class GlobalRouter
   std::map<std::string, float> _netsAlpha;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
+  int _clockCost;
 
   // Antenna variables
   int*** oldHUsages;
@@ -339,19 +375,18 @@ class GlobalRouter
   // temporary for congestion driven replace
   int _numAdjusts = 0;
 
-  // Variables for PADs obstacles handling
+  // Variables for PADs obstructions handling
   std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _sta;
   int selectedMetal = 3;
-  odb::dbDatabase* _db = nullptr;
+  odb::dbDatabase* _db;
   odb::dbBlock* _block;
 
   std::set<odb::dbNet*> _dirtyNets;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
-Net* getNet(NET* net);
 
 }  // namespace grt

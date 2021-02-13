@@ -52,6 +52,7 @@ using std::vector;
 
 using ord::OpenRoad;
 using utl::Logger;
+using gui::Gui;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -100,6 +101,7 @@ using sta::PathRef;
 using sta::GateTimingModel;
 
 class BufferedNet;
+class SteinerRenderer;
 
 class NetHash
 {
@@ -123,6 +125,7 @@ public:
   void init(OpenRoad *openroad,
             Tcl_Interp *interp,
             Logger *logger,
+            Gui *gui,
             dbDatabase *db,
             dbSta *sta);
 
@@ -234,8 +237,6 @@ public:
                     const RiseFall *rf);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
-  void writeNetSVG(Net *net,
-                   const char *filename);
   dbNetwork *getDbNetwork() { return db_network_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -244,23 +245,27 @@ public:
   // Rebuffer net (for testing).
   // resizerPreamble() required.
   void rebuffer(Net *net);
+  void highlightSteiner(const Net *net);
 
+  ////////////////////////////////////////////////////////////////
   // Slack API for timing driven placement.
   // Each pass (findResizeSlacks)
   //  estiimate parasitics
   //  repair design
   //  save slacks
   //  remove inserted buffers
+  //  restore resized gates
   // Preamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
   void findResizeSlacks();
   // Return 10% of nets with worst slack.
   NetSeq &resizeWorstSlackNets();
   // Return net slack.
-  Slack resizeNetSlack(const Net *neet);
+  Slack resizeNetSlack(const Net *net);
   // db flavor
   vector<dbNet*> resizeWorstSlackDbNets();
   Slack resizeNetSlack(const dbNet *db_net);
+  ////////////////////////////////////////////////////////////////
 
 protected:
   void init();
@@ -526,6 +531,7 @@ protected:
 
   OpenRoad *openroad_;
   Logger *logger_;
+  Gui *gui_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;
@@ -555,6 +561,7 @@ protected:
   float max_wire_length_;
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
+  SteinerRenderer *steiner_renderer_;
 
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;

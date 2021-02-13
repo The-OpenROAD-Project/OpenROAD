@@ -265,9 +265,9 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   if (!net) {
     return;
   }
-  SelectionSet selNetSet;
-  selNetSet.insert(Selected(net, OpenDbDescriptor::get()));
-  main_window->addHighlighted(selNetSet, highlight_group);
+  SelectionSet selection_set;
+  selection_set.insert(Selected(net, OpenDbDescriptor::get()));
+  main_window->addHighlighted(selection_set, highlight_group);
 }
 
 void Gui::clearSelections()
@@ -322,13 +322,13 @@ std::string OpenDbDescriptor::getLocation(void* object) const
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
       auto wire = net->getWire();
-      odb::Rect wireBBox;
-      if (wire && wire->getBBox(wireBBox)) {
+      odb::Rect wire_bbox;
+      if (wire && wire->getBBox(wire_bbox)) {
         std::stringstream ss;
-        ss << "[(" << wireBBox.xMin() / to_microns << ","
-           << wireBBox.yMin() / to_microns << "), ("
-           << wireBBox.xMax() / to_microns << ","
-           << wireBBox.yMax() / to_microns << ")]";
+        ss << "[(" << wire_bbox.xMin() / to_microns << ","
+           << wire_bbox.yMin() / to_microns << "), ("
+           << wire_bbox.xMax() / to_microns << ","
+           << wire_bbox.yMax() / to_microns << ")]";
         return ss.str();
       }
       return std::string("NA");
@@ -423,18 +423,18 @@ void OpenDbDescriptor::highlight(void* object,
           odb::dbBox* bbox = inst_term_inst->getBBox();
           odb::Rect rect;
           bbox->getBox(rect);
-          odb::Point rectCenter((rect.xMax() + rect.xMin()) / 2.0,
+          odb::Point rect_center((rect.xMax() + rect.xMin()) / 2.0,
                                 (rect.yMax() + rect.yMin()) / 2.0);
           auto iotype = inst_term->getIoType();
           if (iotype == odb::dbIoType::INPUT
               || iotype == odb::dbIoType::INOUT) {
             if (sink_object != nullptr && sink_object != inst_term)
               continue;
-            sink_locs.insert(rectCenter);
+            sink_locs.insert(rect_center);
           }
           if (iotype == odb::dbIoType::INOUT
               || iotype == odb::dbIoType::OUTPUT)
-            driver_locs.insert(rectCenter);
+            driver_locs.insert(rect_center);
         }
         for (auto blk_term : net->getBTerms()) {
           auto blk_term_pins = blk_term->getBPins();

@@ -174,8 +174,9 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
+                                  [-clock_tracks_cost clock_tracks_cost] \
                                   [-macro_extension macro_extension] \
-                                  [-only_signal_nets]
+                                  [-only_signal_nets] \
                                   [-output_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
@@ -195,7 +196,7 @@ proc global_route { args } {
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -macro_extension \
+          -clock_tracks_cost -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
          } \
     flags {-unidirectional_routing -allow_overflow -only_signal_nets} \
@@ -272,6 +273,13 @@ proc global_route { args } {
     # aware of skew in the topology construction (see PDRev paper
     # for more reference)
     grt::set_alpha 0.3
+  }
+
+  if { [info exists keys(-clock_tracks_cost)] } {
+    set clock_tracks_cost $keys(-clock_tracks_cost)
+    grt::set_clock_cost $clock_tracks_cost
+  } else {
+    grt::set_clock_cost 1
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {
@@ -434,6 +442,13 @@ proc check_region { lower_x lower_y upper_x upper_y } {
   }
 }
 
-# grt namespace end
+proc highlight_route { net_name } {
+  set block [ord::get_db_block]
+  set net [$block findNet $net_name]
+  if { $net != "NULL" } {
+    highlight_net_route $net
+  }
 }
 
+# grt namespace end
+}

@@ -55,6 +55,12 @@ class dbSetIterator<dbBlock>
   }
 
  public:
+  typedef dbBlock*                value_type;
+  typedef std::ptrdiff_t          difference_type;
+  typedef dbBlock**               pointer;
+  typedef dbBlock*&               reference;
+  typedef std::input_iterator_tag iterator_category;
+
   dbSetIterator()
   {
     _itr    = NULL;

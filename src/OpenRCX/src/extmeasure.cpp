@@ -804,8 +804,6 @@ int extMeasure::readAB(extMain* extMain,
   dbTech* tech = db->getTech();
 
   uint netCnt = 0;
-  uint totWireCnt = 0;
-  bool layerSectionFlag = false;
 
   Ath__parser parser1;
   parser1.openFile((char*) filename);
@@ -3665,7 +3663,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
                                 int srcCovered)
 {
   double SUB_MULT = 1.0;
-  double SUB_MULT_RES = 1.0;
+  double SUB_MULT_RES = 1;
   int lenOverSub = _len - ouCovered;
 
   int lenOverSub_bot = _len - srcCovered;

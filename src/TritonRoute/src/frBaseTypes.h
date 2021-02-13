@@ -260,14 +260,27 @@ namespace fr {
     CORE_SPACER,
     CORE_ANTENNACELL,
     COVER,
-    ENDCAP_PRE,
     BLOCK,
-    RING, // ispd19
-    PAD, // ispd19
-    PAD_POWER, // ispd19
+    RING,
+    PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
     PAD_SPACER,
-    ENDCAP_BOTTOMLEFT // ispd19
+    PAD_AREAIO,
+    ENDCAP,
+    ENDCAP_PRE,
+    ENDCAP_POST,
+    ENDCAP_TOPLEFT,
+    ENDCAP_TOPRIGHT,
+    ENDCAP_BOTTOMLEFT,
+    ENDCAP_BOTTOMRIGHT
   };
+
+  // This will go away when we move to OpenDB's types
+  bool isPad(MacroClassEnum e);
+  bool isEndcap(MacroClassEnum e);
 
   // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
