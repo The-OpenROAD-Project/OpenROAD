@@ -31,9 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#ifndef MAKE_TRITONMP
-#define MAKE_TRITONMP
+#pragma once
 
 namespace mpl {
 class TritonMacroPlace;
@@ -44,14 +42,12 @@ namespace ord {
 class OpenRoad;
 
 mpl::TritonMacroPlace *
-makeTritonMp();
+makeMacroPlacer();
 
 void
-initTritonMp(OpenRoad *openroad);
+initMacroPlacer(OpenRoad *openroad);
 
 void
-deleteTritonMp(mpl::TritonMacroPlace *tritonmp);
+deleteMacroPlacer(mpl::TritonMacroPlace *macro_placer);
 
 }
-
-#endif

@@ -39,7 +39,7 @@
 #include <set>
 
 #include "macro.h"
-#include "partition.h"
+#include "Partition.h"
 
 #include "sta/NetworkClass.hh"
 #include "sta/GraphClass.hh"

@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "tritonmp/TritonMacroPlace.h"
+#include "mpl/TritonMacroPlace.h"
 
 #include "circuit.h"
 
