@@ -37,7 +37,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
-#include "mpl/TritonMacroPlace.h"
+#include "mpl/MacroPlace.h"
 
 namespace sta {
 extern const char* macro_placer_tcl_inits[];
@@ -51,7 +51,7 @@ namespace ord {
 
 mpl::TritonMacroPlace* makeMacroPlacer()
 {
-  return new mpl::TritonMacroPlace;
+  return new mpl::MacroPlace;
 }
 
 void initMacroPlacer(OpenRoad* openroad)
@@ -64,7 +64,7 @@ void initMacroPlacer(OpenRoad* openroad)
                                    openroad->getLogger());
 }
 
-void deleteMacroPlacer(mpl::TritonMacroPlace* macro_placer)
+void deleteMacroPlacer(mpl::MacroPlace* macro_placer)
 {
   delete macro_placer;
 }

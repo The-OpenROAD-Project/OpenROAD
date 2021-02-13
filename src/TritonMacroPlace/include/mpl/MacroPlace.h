@@ -124,25 +124,11 @@ class MacroPlacer
 public:
   MacroPlacer();
   MacroPlacer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
-
-  // macro Information
-  std::vector<Macro> macroStor;
-
-  // macro name -> macroStor's index.
-  std::unordered_map<std::string, int> macroNameMap;
-
-  // macro idx/idx pair -> give each
-  std::vector<std::vector<int>> macroWeight;
-
-  // sta::Instance* --> macroStor's index stor
-  std::unordered_map<sta::Instance*, int> macroInstMap;
+  int getSolutionCount();
 
   // parsing function
   void ParseGlobalConfig(std::string fileName);
   void ParseLocalConfig(std::string fileName);
-
-  // save LocalCfg into this structure
-  std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
 
   void UpdateNetlist(Partition& layout);
 
@@ -202,6 +188,21 @@ private:
 
   bool isTiming_;
 
+  // macro Information
+  std::vector<Macro> macroStor;
+
+  // macro name -> macroStor's index.
+  std::unordered_map<std::string, int> macroNameMap;
+
+  // macro idx/idx pair -> give each
+  std::vector<std::vector<int>> macroWeight;
+
+  // sta::Instance* --> macroStor's index stor
+  std::unordered_map<sta::Instance*, int> macroInstMap;
+
+  // save LocalCfg into this structure
+  std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
+
   // layout
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
@@ -211,7 +212,6 @@ private:
   double* netTable_;
   int verbose_;
   bool fenceRegionMode_;
-  int solCount_;
 };
 
 class Layout

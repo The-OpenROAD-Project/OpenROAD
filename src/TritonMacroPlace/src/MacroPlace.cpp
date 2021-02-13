@@ -130,7 +130,8 @@ MacroPlacer::MacroPlacer()
       channelY_(0),
       netTable_(nullptr),
       verbose_(1),
-      fenceRegionMode_(false)
+      fenceRegionMode_(false),
+      solCount_(0)
 {
 }
 
@@ -158,6 +159,7 @@ void MacroPlacer::reset()
   globalConfig_ = localConfig_ = "";
   verbose_ = 1;
   fenceRegionMode_ = false;
+  solCount_ = 0;
 }
 
 void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
@@ -189,6 +191,11 @@ void MacroPlacer::setFenceRegion(double lx, double ly, double ux, double uy)
   ly_ = ly;
   ux_ = ux;
   uy_ = uy;
+}
+
+int MacroPlacer::getSolutionCount()
+{
+  return solCount_;
 }
 
 void MacroPlacer::init()
