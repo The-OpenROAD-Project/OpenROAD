@@ -439,6 +439,6 @@ void Command_Line::printAnnealerParamsClassic() const
 
 void Command_Line::setSeed()
 {
-   srand(seed);        //seed for rand function
+  std::srand(seed);        //seed for rand function
 }
 
