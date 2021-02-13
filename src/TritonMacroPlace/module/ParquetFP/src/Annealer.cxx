@@ -54,7 +54,7 @@ using std::vector;
 Annealer::Annealer(const Command_Line *const params,
                    DB *const db, MaxMem *maxMem)
    : BaseAnnealer(params, db),
-     _sp(new SeqPair(_db->getNumNodes())),
+     _sp(new SeqPair(_db->getNumNodes(), _random_gen)),
      _spEval(new SPeval(_db->getNodes()->getNodeHeights(),
                         _db->getNodes()->getNodeWidths(),
                         _params->useFastSP)),
