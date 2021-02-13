@@ -38,7 +38,7 @@
 #include "ui_highlightGroupDlg.h"
 
 namespace gui {
-class HighlightGroupDialog : public QDialog, public Ui::HighlightGroupDlg
+class HighlightGroupDialog : public QDialog, private Ui::HighlightGroupDlg
 {
   Q_OBJECT
  public:

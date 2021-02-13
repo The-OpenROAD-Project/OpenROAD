@@ -154,7 +154,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       nets_clock_visible_(true)
 {
   setObjectName("layers");  // for settings
-  model_->setHorizontalHeaderLabels({"", "", "V", "S"});
+  model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
@@ -236,6 +236,7 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
+  setMinimumWidth(325);
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -327,6 +328,9 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           type == dbTechLayerType::CUT ? NULL : layer);
     }
   }
+
+  for (int i = 0; i < 4; i++)
+    view_->resizeColumnToContents(i);
   emit changed();
 }
 
