@@ -84,49 +84,17 @@ BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line *const params,
      
      _outlineHeight((_isFixedOutline)
                     ? sqrt(_outlineArea / _params->reqdAR)
-                    : basepacking_h::Dimension::Infty)
+                    : basepacking_h::Dimension::Infty),
+     _random_gen(_rd())
 {
    //compilerCheck();
 
    // set the random seed for each invokation of the Annealer
-   unsigned rseed;
-   if(_params->getSeed)
-   {
-      //rseed = int(time((time_t *)NULL));
-      Timer seedtm;
-      char buf[255];
-      #if defined(WIN32)
-        int procID=_getpid();
-        LARGE_INTEGER hiPrecTime;
-        ::QueryPerformanceCounter(&hiPrecTime);
-        LONGLONG hiP1=hiPrecTime.QuadPart;
-        sprintf(buf,"%g %d %I64d",seedtm.getUnixTime(),procID,hiP1);
-      #else
-        unsigned procID=getpid();
-        unsigned rndbuf;
-        FILE *rnd=fopen("/dev/urandom","r");
-        if(rnd)
-          {
-           if (fread(&rndbuf,sizeof(rndbuf),1,rnd) != 1) {
-             rndbuf = rand();
-           }
-           fclose(rnd);
-           sprintf(buf,"%g %d %d",seedtm.getUnixTime(),procID,rndbuf);
-          }
-        else
-          sprintf(buf,"%g %d",seedtm.getUnixTime(),procID);
-      #endif
-      MD5 hash(buf);
-      rseed = hash;
-   }
-   else
-      rseed = _params->seed;
+   unsigned seed = _params->seed;
    
-   srand(rseed);        //seed for rand function
-   srand48(rseed);      //seed for random_shuffle function
-   if(_params->verb.getForMajStats() > 0)
-      cout << "The random seed for this run is: " << rseed << endl;
-   
+   srand(seed);        //seed for rand function
+   _random_gen.seed(seed); // seed for shuffle
+
    _baseFileName = _params->inFileName;
    annealTime = 0.0;
 }

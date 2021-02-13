@@ -38,7 +38,6 @@
 #include "dbHashTable.h"
 #include "dbIntHashTable.h"
 #include "dbPagedVector.h"
-#include "dbPrintControl.h"
 #include "dbTransform.h"
 #include "dbTypes.h"
 #include "dbVector.h"
@@ -114,7 +113,6 @@ class dbCapNodeItr;  // DKF
 class dbRSegItr;     // DKF
 class dbCCSegItr;
 class dbExtControl;
-class dbPrintControl;
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -223,7 +221,6 @@ class _dbBlock : public _dbObject
   dbExtControl*                   _extControl;
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
-  dbPrintControl*     _printControl;
   dbNetBTermItr*      _net_bterm_itr;
   dbNetITermItr*      _net_iterm_itr;
   dbInstITermItr*     _inst_iterm_itr;

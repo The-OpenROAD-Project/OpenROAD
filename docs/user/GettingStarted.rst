@@ -22,10 +22,8 @@ flow is divided into three stages:
 
 1. Logic Synthesis: is performed by
    `yosys <https://github.com/The-OpenROAD-Project/yosys>`__.
-2. Floorplanning through Global Routing: are performed by `OpenROAD
+2. Floorplanning through Detailed Routing: are performed by `OpenROAD
    App <https://github.com/The-OpenROAD-Project/OpenROAD>`__.
-3. Detailed Routing: is performed by
-   `TritonRoute <https://github.com/The-OpenROAD-Project/TritonRoute>`__.
 
 In order to integrate the flow steps,
 `OpenROAD-flow <https://github.com/The-OpenROAD-Project/OpenROAD-flow>`__
@@ -38,8 +36,6 @@ Build dependencies are documented in the Dockerfile of each tool. 1. See
 Dockerfile <https://github.com/The-OpenROAD-Project/yosys/blob/master/Dockerfile>`__
 2. See `OpenROAD App
 Dockerfile <https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/Dockerfile>`__
-3. See `TritonRoute
-Dockerfile <https://github.com/The-OpenROAD-Project/TritonRoute/blob/master/Dockerfile>`__
 
 Before proceeding to the next step: 1. [recommended] Install
 `Docker <https://docs.docker.com/install/linux/docker-ce/centos/>`__ on
@@ -72,7 +68,6 @@ setting up the environment
 
 -  ``yosys -h``
 -  ``openroad -h``
--  ``TritonRoute -h``
 
 Setting up the Flow
 -------------------
