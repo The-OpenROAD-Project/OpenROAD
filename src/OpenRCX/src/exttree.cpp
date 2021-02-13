@@ -1473,12 +1473,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     if (net->isDisconnected())
       return NULL;
   }
-  uint pcnt;
-  char tag[16];
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt0_", pcnt);
-    net->printWnP(tag);
-  }
   if (makeTree(net,
                max_cap,
                test,
@@ -1494,10 +1488,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     return NULL;
 
   tnodeCnt = _tnodeCnt;
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt1_", pcnt);
-    _tnodeTable[0]->printTnodes(tag, _cornerCnt);
-  }
   return _tnodeTable[0];
 }
 
