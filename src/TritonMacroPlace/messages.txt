@@ -1,41 +1,37 @@
-MPL 0001 circuit.cpp:205           no rows found.
-MPL 0002 circuit.cpp:261           Missing Liberty Detected. TritonMP will place macros without 
-MPL 0004 circuit.cpp:339           Cannot find any macros in this design
-MPL 0005 circuit.cpp:342           NumMacros {}
-MPL 0008 circuit.cpp:383           pin {} is not placed. Using west.
-MPL 0009 circuit.cpp:392           pin edge mismatch
-MPL 0010 circuit.cpp:447           pin edge mismatch
-MPL 0011 circuit.cpp:1862          pin {} is not placed. Using west.
-MPL 0013 circuit.cpp:756           NumVertexSeqGraph {}
-MPL 0014 circuit.cpp:757           NumEdgeSeqGraph {}
-MPL 0015 circuit.cpp:995           The Macro Name must be in macro NameMap
-MPL 0022 circuit.cpp:1093          {} is not in MacroCircuit
-MPL 0023 circuit.cpp:1141          Macro Legalizer detects width is not enough
-MPL 0024 circuit.cpp:1144          Macro Legalizer detects height is not enough
-MPL 0025 circuit.cpp:1206          Cannot open file {}
-MPL 0026 circuit.cpp:1228          Cannot parse {}
-MPL 0027 circuit.cpp:1251          Cannot parse {}
-MPL 0028 circuit.cpp:1261          Cannot open file {}
-MPL 0029 circuit.cpp:1287          Cannot parse {}
-MPL 0030 circuit.cpp:1304          Cannot parse {}
-MPL 0031 circuit.cpp:1315          cannot open file: {}
-MPL 0061 partition.cpp:545         Parquet BBOX exceed the given area
-MPL 0063 partition.cpp:551         TargetLayout {:g} {:g}
-MPL 0070 macroPlace.cpp:215        NumExtractedSets: {}
-MPL 0071 macroPlace.cpp:247        SetId: {}
-MPL 0072 macroPlace.cpp:248        WeightedWL: {:g}
-MPL 0073 macroPlace.cpp:257        NumFinalSols: {}
-MPL 0076 macroPlace.cpp:353        NumMacros {}
-MPL 0077 macroPlace.cpp:408        NumCutLines {}
-MPL 0078 macroPlace.cpp:418        CutLine {:.2f}
-MPL 0079 macroPlace.cpp:421        RoundUpCutLine {:.2f}
-MPL 0080 macroPlace.cpp:588        Impossible partiton found. Continue
-MPL 0081 macroPlace.tcl:11         missing -global_config argument.
-MPL 0082 macroPlace.tcl:18         cannot read $global_config_file
-MPL 0083 macroPlace.tcl:27         cannot read $local_config_file
-MPL 0084 macroPlace.tcl:33         both -die_area and -fence_region arguments, using -die_area.
-MPL 0085 macroPlace.tcl:69         fence_region left x is less than die left x.
-MPL 0086 macroPlace.tcl:73         fence_region bottom y is less than die bottom y.
-MPL 0087 macroPlace.tcl:77         fence_region right x is greater than die right x.
-MPL 0088 macroPlace.tcl:81         fence_region top y is greater than die top y.
-MPL 0089 macroPlace.tcl:91         No rows found. Use initialize_floorplan to add rows.
+MPL 0001 MacroPlacer.cpp:210       no rows found.
+MPL 0002 MacroPlacer.cpp:249       Missing Liberty Detected. TritonMP will place macros without 
+MPL 0004 MacroPlacer.cpp:863       Cannot find any macros in this design
+MPL 0005 MacroPlacer.cpp:866       NumMacros {}
+MPL 0009 MacroPlacer.cpp:264       {} pins {}
+MPL 0011 MacroPlacer.cpp:1497      pin {} is not placed. Using west.
+MPL 0022 MacroPlacer.cpp:908       {} is not in MacroPlacer
+MPL 0025 MacroPlacer.cpp:933       Cannot open file {}
+MPL 0026 MacroPlacer.cpp:955       Cannot parse {}
+MPL 0027 MacroPlacer.cpp:978       Cannot parse {}
+MPL 0028 MacroPlacer.cpp:988       Cannot open file {}
+MPL 0029 MacroPlacer.cpp:1014      Cannot parse {}
+MPL 0030 MacroPlacer.cpp:1031      Cannot parse {}
+MPL 0061 Partition.cpp:544         Parquet BBOX exceed the given area
+MPL 0063 Partition.cpp:550         TargetLayout {:g} {:g}
+MPL 0070 MacroPlacer.cpp:417       NumExtractedSets: {}
+MPL 0071 MacroPlacer.cpp:449       SetId: {}
+MPL 0072 MacroPlacer.cpp:450       WeightedWL: {:g}
+MPL 0073 MacroPlacer.cpp:459       NumFinalSols: {}
+MPL 0074 MacroPlacer.cpp:523       macro {} not exists in macroInstMap
+MPL 0075 MacroPlacer.cpp:529       Partition- {} already updated (UpdateMacroPartMap)
+MPL 0076 MacroPlacer.cpp:554       NumMacros {}
+MPL 0077 MacroPlacer.cpp:609       NumCutLines {}
+MPL 0078 MacroPlacer.cpp:619       CutLine {:.2f}
+MPL 0079 MacroPlacer.cpp:622       RoundUpCutLine {:.2f}
+MPL 0080 MacroPlacer.cpp:785       Impossible partiton found. Continue
+MPL 0081 MacroPlacer.tcl:99        macro place -global_config deprecated. Use -channel, -halo arguments.
+MPL 0082 MacroPlacer.tcl:104       cannot read $global_config_file
+MPL 0083 MacroPlacer.tcl:114       cannot read $local_config_file
+MPL 0085 MacroPlacer.tcl:78        fence_region left x is less than die left x.
+MPL 0086 MacroPlacer.tcl:82        fence_region bottom y is less than die bottom y.
+MPL 0087 MacroPlacer.tcl:86        fence_region right x is greater than die right x.
+MPL 0088 MacroPlacer.tcl:90        fence_region top y is greater than die top y.
+MPL 0089 MacroPlacer.tcl:121       No rows found. Use initialize_floorplan to add rows.
+MPL 0090 MacroPlacer.tcl:109       macro place -local_config deprecated.
+MPL 0092 MacroPlacer.tcl:47        -halo is not a list of 2 values.
+MPL 0093 MacroPlacer.tcl:58        -channel is not a list of 2 values.

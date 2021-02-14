@@ -107,7 +107,7 @@ static int coreEdgeIndex(CoreEdge edge);
 MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
-      log_(nullptr),
+      logger_(nullptr),
       isTiming_(false),
       lx_(0),
       ly_(0),
@@ -126,38 +126,11 @@ MacroPlacer::MacroPlacer()
 {
 }
 
-MacroPlacer::MacroPlacer(odb::dbDatabase* db,
-                           sta::dbSta* sta,
-                           utl::Logger* log)
-    : MacroPlacer()
-{
-  db_ = db;
-  sta_ = sta;
-  log_ = log;
-  init();
-}
-
-void MacroPlacer::reset()
-{
-  db_ = nullptr;
-  sta_ = nullptr;
-  isTiming_ = false;
-  lx_ = ly_ = ux_ = uy_ = 0;
-  siteSizeX_ = siteSizeY_ = 0;
-  haloX_ = haloY_ = 0;
-  channelX_ = channelY_ = 0;
-  netTable_ = nullptr;
-  globalConfig_ = localConfig_ = "";
-  verbose_ = 1;
-  fenceRegionMode_ = false;
-  solCount_ = 0;
-}
-
 void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
 {
   db_ = db;
   sta_ = sta;
-  log_ = log;
+  logger_ = log;
 }
 
 void MacroPlacer::setHalo(double halo_x, double halo_y)
@@ -207,7 +180,7 @@ void MacroPlacer::init()
 
   dbSet<dbRow> rows = block->getRows();
   if (rows.empty()) {
-    log_->error(MPL, 1, "no rows found.");
+    logger_->error(MPL, 1, "no rows found.");
   }
 
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
@@ -246,7 +219,7 @@ void MacroPlacer::init()
     reportEdgePinCounts();
     findAdjacencies();
   } else {
-    log_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
+    logger_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
                "timing information");
   }
 }
@@ -261,7 +234,7 @@ void MacroPlacer::reportEdgePinCounts()
   for (int i = 0; i < core_edge_count; i++) {
     CoreEdge edge = static_cast<CoreEdge>(i);
     
-      log_->info(MPL, 9, "{} pins {}",
+      logger_->info(MPL, 9, "{} pins {}",
                  coreEdgeString(edge),
                  counts[i]);
   }
@@ -279,15 +252,15 @@ void MacroPlacer::placeMacros()
                       layout.ly(),
                       layout.ux() - layout.lx(),
                       layout.uy() - layout.ly(),
-                      log_);
+                      logger_);
   topLayout.macroStor = macroStor;
 
-  log_->report("Begin One Level Partition");
+  logger_->report("Begin One Level Partition");
 
   TwoPartitions oneLevelPart
-      = GetPart(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal, log_);
+      = GetPart(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal, logger_);
 
-  log_->report("End One Level Partition");
+  logger_->report("End One Level Partition");
   TwoPartitions eastStor, westStor;
 
   vector<vector<Partition>> allSets;
@@ -312,19 +285,19 @@ void MacroPlacer::placeMacros()
 
   for (auto& curSet : oneLevelPart) {
     if (isHorizontal) {
-      log_->report("Begin Horizontal Partition");
+      logger_->report("Begin Horizontal Partition");
       Layout eastInfo(layout, curSet.first);
       Layout westInfo(layout, curSet.second);
 
-      log_->report("Begin East Partition");
+      logger_->report("Begin East Partition");
       TwoPartitions eastStor = GetPart(
-          eastInfo, siteSizeX_, siteSizeY_, curSet.first, !isHorizontal, log_);
-      log_->report("End East Partition");
+          eastInfo, siteSizeX_, siteSizeY_, curSet.first, !isHorizontal, logger_);
+      logger_->report("End East Partition");
 
-      log_->report("Begin West Partition");
+      logger_->report("Begin West Partition");
       TwoPartitions westStor = GetPart(
-          westInfo, siteSizeX_, siteSizeY_, curSet.second, !isHorizontal, log_);
-      log_->report("End West Partition");
+          westInfo, siteSizeX_, siteSizeY_, curSet.second, !isHorizontal, logger_);
+      logger_->report("End West Partition");
 
       // Zero case handling when eastStor = 0
       if (eastStor.size() == 0 && westStor.size() != 0) {
@@ -407,14 +380,14 @@ void MacroPlacer::placeMacros()
           }
         }
       }
-      log_->report("End Horizontal Partition");
+      logger_->report("End Horizontal Partition");
     } else {
-      log_->report("Begin Vertical Partition");
+      logger_->report("Begin Vertical Partition");
       // TODO
-      log_->report("End Vertical Partition");
+      logger_->report("End Vertical Partition");
     }
   }
-  log_->info(MPL, 70, "NumExtractedSets: {}", allSets.size() - 1);
+  logger_->info(MPL, 70, "NumExtractedSets: {}", allSets.size() - 1);
 
   solCount_ = 0;
   int bestSetIdx = 0;
@@ -446,8 +419,8 @@ void MacroPlacer::placeMacros()
     }
 
     double curWwl = GetWeightedWL();
-    log_->info(MPL, 71, "SetId: {}", &curSet - &allSets[0]);
-    log_->info(MPL, 72, "WeightedWL: {:g}", curWwl);
+    logger_->info(MPL, 71, "SetId: {}", &curSet - &allSets[0]);
+    logger_->info(MPL, 72, "WeightedWL: {:g}", curWwl);
 
     if (curWwl > bestWwl) {
       bestWwl = curWwl;
@@ -456,7 +429,7 @@ void MacroPlacer::placeMacros()
     solCount_++;
   }
 
-  log_->info(MPL, 73, "NumFinalSols: {}", solCount_);
+  logger_->info(MPL, 73, "NumFinalSols: {}", solCount_);
 
   // bestset DEF writing
   std::vector<Partition> bestSet = allSets[bestSetIdx];
@@ -520,13 +493,13 @@ void MacroPlacer::UpdateMacroPartMap(Partition& part,
     for (auto& curMacro : part.macroStor) {
       auto miPtr = macroInstMap.find(curMacro.staInstPtr);
       if (miPtr == macroInstMap.end()) {
-        log_->error(MPL, 74, "macro {} not exists in macroInstMap", curMacro.name());
+        logger_->error(MPL, 74, "macro {} not exists in macroInstMap", curMacro.name());
       }
       curMacroStor.push_back(miPtr->second);
     }
     macroPartMap[part.partClass] = curMacroStor;
   } else {
-    log_->error(MPL, 75, "Partition- {} already updated (UpdateMacroPartMap)",
+    logger_->error(MPL, 75, "Partition- {} already updated (UpdateMacroPartMap)",
                 part.partClass);
   }
 }
@@ -821,7 +794,7 @@ void MacroPlacer::FillMacroStor()
     // for Macro cells
     dbPlacementStatus dps = inst->getPlacementStatus();
     if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
-      log_->error(MPL,
+      logger_->error(MPL,
                   3,
                   "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
                   inst->getConstName());
@@ -860,10 +833,10 @@ void MacroPlacer::FillMacroStor()
   }
 
   if (macroStor.empty()) {
-    log_->error(MPL, 4, "Cannot find any macros in this design");
+    logger_->error(MPL, 4, "Cannot find any macros in this design");
   }
 
-  log_->info(MPL, 5, "NumMacros {}", macroStor.size());
+  logger_->info(MPL, 5, "NumMacros {}", macroStor.size());
 }
 
 // macroStr & macroInstMap update
@@ -891,7 +864,7 @@ void MacroPlacer::UpdateMacroCoordi(Partition& part)
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer(4);
   if (!fourLayer) {
-    log_->warn(MPL,
+    logger_->warn(MPL,
                21,
                "Metal 4 not exist! Macro snapping will not be applied on "
                "Metal4 pitch");
@@ -905,7 +878,7 @@ void MacroPlacer::UpdateMacroCoordi(Partition& part)
   for (auto& curMacro : part.macroStor) {
     auto mnPtr = macroNameMap.find(curMacro.name());
     if (mnPtr == macroNameMap.end()) {
-      log_->error(MPL, 22, "{} is not in MacroPlacer", curMacro.name());
+      logger_->error(MPL, 22, "{} is not in MacroPlacer", curMacro.name());
     }
 
     // update macro coordi
@@ -930,7 +903,7 @@ void MacroPlacer::ParseGlobalConfig(string fileName)
 {
   std::ifstream gConfFile(fileName);
   if (!gConfFile.is_open()) {
-    log_->error(MPL, 25, "Cannot open file {}", fileName);
+    logger_->error(MPL, 25, "Cannot open file {}", fileName);
   }
 
   string lineStr = "";
@@ -952,7 +925,7 @@ void MacroPlacer::ParseGlobalConfig(string fileName)
       continue;
     }
     if (buf1 != "set") {
-      log_->error(MPL, 26, "Cannot parse {}", buf1);
+      logger_->error(MPL, 26, "Cannot parse {}", buf1);
     }
 
     oStream >> varName >> val;
@@ -975,17 +948,17 @@ void MacroPlacer::ParseGlobalConfig(string fileName)
     } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
       channelX_ = val;
     } else {
-      log_->error(MPL, 27, "Cannot parse {}", varName);
+      logger_->error(MPL, 27, "Cannot parse {}", varName);
     }
   }
-  log_->report("End Parsing Global Config");
+  logger_->report("End Parsing Global Config");
 }
 
 void MacroPlacer::ParseLocalConfig(string fileName)
 {
   std::ifstream gConfFile(fileName);
   if (!gConfFile.is_open()) {
-    log_->error(MPL, 28, "Cannot open file {}", fileName);
+    logger_->error(MPL, 28, "Cannot open file {}", fileName);
   }
 
   string lineStr = "";
@@ -1011,7 +984,7 @@ void MacroPlacer::ParseLocalConfig(string fileName)
       continue;
     }
     if (buf1 != "set") {
-      log_->error(MPL, 29, "Cannot parse {}", buf1);
+      logger_->error(MPL, 29, "Cannot parse {}", buf1);
     }
 
     oStream >> varName >> masterName >> val;
@@ -1028,10 +1001,10 @@ void MacroPlacer::ParseLocalConfig(string fileName)
     } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
       macroLocalMap[masterName].putChannelX(val);
     } else {
-      log_->error(MPL, 30, "Cannot parse {}", varName);
+      logger_->error(MPL, 30, "Cannot parse {}", varName);
     }
   }
-  log_->report("End Parsing Local Config");
+  logger_->report("End Parsing Local Config");
 }
 
 void MacroPlacer::UpdateNetlist(Partition& layout)
@@ -1328,7 +1301,7 @@ void MacroPlacer::findAdjacencies()
         && !sta_->isClock(pin)) {
       sta::Vertex *vertex = graph->pinDrvrVertex(pin);
       CoreEdge edge = findNearestEdge(bterm);
-      debugPrint(log_, MPL, "pin_edge", 1, "pin edge {} {}",
+      debugPrint(logger_, MPL, "pin_edge", 1, "pin edge {} {}",
                  bterm->getConstName(),
                  coreEdgeString(edge));
       int edge_index = static_cast<int>(edge);
@@ -1362,7 +1335,7 @@ void MacroPlacer::findAdjacencies()
     if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
       macroWeight[macroIndex(from)][macroIndex(to)] = weight;
       if (weight > 0)
-        debugPrint(log_, MPL, "weights", 1, "{} -> {} {}",
+        debugPrint(logger_, MPL, "weights", 1, "{} -> {} {}",
                    faninName(from),
                    faninName(to),
                    weight);
@@ -1412,7 +1385,7 @@ void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
       // Union fanins sets of fanin vertices.
       for (Macro *fanin : vertex_fanins[fanin]) {
         fanins.insert(fanin);
-        debugPrint(log_, MPL, "find_fanins", 1, "{} + {}",
+        debugPrint(logger_, MPL, "find_fanins", 1, "{} + {}",
                    vertex->name(network),
                    faninName(fanin));
       }
@@ -1494,7 +1467,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
-    log_->warn(MPL, 11, "pin {} is not placed. Using west.",
+    logger_->warn(MPL, 11, "pin {} is not placed. Using west.",
                bTerm->getConstName());
     return CoreEdge::West;
   } else {

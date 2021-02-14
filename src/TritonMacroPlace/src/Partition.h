@@ -109,7 +109,7 @@ class Partition
   std::string GetName(int macroIdx);
 
  private:
-  utl::Logger* log_;
+  utl::Logger* logger_;
 };
 
 struct PartClassHash

@@ -123,7 +123,6 @@ class MacroPlacer
 {
 public:
   MacroPlacer();
-  MacroPlacer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
   void setHalo(double halo_x, double halo_y);
@@ -159,7 +158,6 @@ private:
   const bool isTiming() const { return isTiming_; }
 
   void init();
-  void reset();
   // Update Macro Location from Partition info
   void UpdateMacroCoordi(Partition& part);
   void UpdateOpendbCoordi();
@@ -191,7 +189,7 @@ private:
     
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
-  utl::Logger* log_;
+  utl::Logger* logger_;
 
   // config filenames
   std::string globalConfig_;

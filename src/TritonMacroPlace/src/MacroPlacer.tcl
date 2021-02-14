@@ -42,14 +42,22 @@ proc macro_placement { args } {
     keys {-channel -halo -fence_region -global_config -local_config} flags {}
 
   if { [info exists keys(-halo)] } {
-    lassign $keys(-halo) halo_x halo_y
+    set halo $keys(-halo)
+    if { [llength $halo] != 2 } {
+      utl::error "MPL" 92 "-halo is not a list of 2 values."
+    }
+    lassign $halo halo_x halo_y
     sta::check_positive_float "-halo x" $halo_x
     sta::check_positive_float "-halo y" $halo_y
     mpl::set_halo $halo_x $halo_y
   }
 
   if { [info exists keys(-channel)] } {
-    lassign $keys(-channel) channel_x channel_y
+    set channel $keys(-channel)
+    if { [llength $channel] != 2 } {
+      utl::error "MPL" 93 "-channel is not a list of 2 values."
+    }
+    lassign $channel channel_x channel_y
     sta::check_positive_float "-channel x" $channel_x
     sta::check_positive_float "-channel y" $channel_y
     mpl::set_channel $channel_x $channel_y
@@ -64,7 +72,11 @@ proc macro_placement { args } {
   set dieUy [ord::dbu_to_microns [$die_area yMax]]
   
   if { [info exists keys(-fence_region)] } {
-    lassign $keys(-fence_region) lx ly ux uy 
+    set fence_region $keys(-fence_region)
+    if { [llength $fence_region] != 4 } {
+      utl::error "MPL" 94 "-fence_region is not a list of 4 values."
+    }
+    lassign $fence_region lx ly ux uy 
     
     if { $lx < $dieLx } {
       utl::warn "MPL" 85 "fence_region left x is less than die left x."

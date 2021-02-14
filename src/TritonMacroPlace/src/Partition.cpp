@@ -62,7 +62,7 @@ Partition::Partition(utl::Logger* log)
       height(FLT_MAX),
       netTable(0),
       tableCnt(0),
-      log_(log)
+      logger_(log)
 {
 }
 
@@ -79,7 +79,7 @@ Partition::Partition(PartClass _partClass,
       height(_height),
       netTable(0),
       tableCnt(0),
-      log_(log)
+      logger_(log)
 {
 }
 
@@ -90,7 +90,7 @@ Partition::~Partition()
     netTable = 0;
     tableCnt = 0;
   }
-  log_ = nullptr;
+  logger_ = nullptr;
 }
 
 Partition::Partition(const Partition& prev)
@@ -102,7 +102,7 @@ Partition::Partition(const Partition& prev)
       macroStor(prev.macroStor),
       tableCnt(prev.tableCnt),
       macroMap(prev.macroMap),
-      log_(prev.log_)
+      logger_(prev.logger_)
 {
   if (prev.netTable) {
     netTable = new double[tableCnt];
@@ -124,7 +124,7 @@ Partition& Partition::operator=(const Partition& prev)
   macroStor = prev.macroStor;
   tableCnt = prev.tableCnt;
   macroMap = prev.macroMap;
-  log_ = prev.log_;
+  logger_ = prev.logger_;
 
   if (prev.netTable) {
     netTable = new double[tableCnt];
@@ -139,8 +139,8 @@ Partition& Partition::operator=(const Partition& prev)
 
 void Partition::Dump()
 {
-  log_->report("partClass: {}", partClass);
-  log_->report("{} {} {} {}", lx, ly, width, height);
+  logger_->report("partClass: {}", partClass);
+  logger_->report("{} {} {} {}", lx, ly, width, height);
 }
 
 #define EAST_IDX (macroStor.size())
@@ -185,7 +185,7 @@ void Partition::FillNetlistTable(
 
   auto mpPtr = macroPartMap.find(partClass);
   if (mpPtr == macroPartMap.end()) {
-    log_->error(MPL,
+    logger_->error(MPL,
                 54,
                 "Partition: {} not exists MacroCell (macroPartMap)",
                 partClass);
@@ -213,7 +213,7 @@ void Partition::FillNetlistTable(
         if (i < macroStor.size()) {
           auto mPtr = mckt.macroNameMap.find(macroStor[i].name());
           if (mPtr == mckt.macroNameMap.end()) {
-            log_->error(MPL,
+            logger_->error(MPL,
                         55,
                         "Cannot find macros {} in macroNameMap",
                         macroStor[i].name());
@@ -224,7 +224,7 @@ void Partition::FillNetlistTable(
           if (j < macroStor.size()) {
             auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
             if (mPtr == mckt.macroNameMap.end()) {
-              log_->error(MPL,
+              logger_->error(MPL,
                           56,
                           "Cannot find macros {} in macroNameMap",
                           macroStor[j].name());
@@ -338,7 +338,7 @@ void Partition::FillNetlistTable(
           if (j < macroStor.size()) {
             auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
             if (mPtr == mckt.macroNameMap.end()) {
-              log_->error(MPL,
+              logger_->error(MPL,
                           57,
                           "Cannot find macros {} in macroNameMap",
                           macroStor[j].name());
@@ -352,7 +352,7 @@ void Partition::FillNetlistTable(
           if (j < macroStor.size()) {
             auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
             if (mPtr == mckt.macroNameMap.end()) {
-              log_->error(MPL,
+              logger_->error(MPL,
                           58,
                           "Cannot find macros {} in macroNameMap",
                           macroStor[j].name());
@@ -366,7 +366,7 @@ void Partition::FillNetlistTable(
           if (j < macroStor.size()) {
             auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
             if (mPtr == mckt.macroNameMap.end()) {
-              log_->error(MPL,
+              logger_->error(MPL,
                           59,
                           "Cannot find macros {} in macroNameMap",
                           macroStor[j].name());
@@ -380,7 +380,7 @@ void Partition::FillNetlistTable(
           if (j < macroStor.size()) {
             auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
             if (mPtr == mckt.macroNameMap.end()) {
-              log_->error(MPL,
+              logger_->error(MPL,
                           60,
                           "Cannot find macros {} in macroNameMap",
                           macroStor[j].name());
@@ -413,7 +413,7 @@ bool Partition::DoAnneal()
     return true;
   }
 
-  log_->report("Begin Parquet");
+  logger_->report("Begin Parquet");
 
   // Preprocessing in macroPlacer side
   // For nets and wts
@@ -541,13 +541,13 @@ bool Partition::DoAnneal()
   const BTree& sol = annealer->currSolution();
   // Failed annealing
   if (sol.totalWidth() > width || sol.totalHeight() > height) {
-    log_->info(MPL, 61, "Parquet BBOX exceed the given area");
-    log_->info(MPL,
+    logger_->info(MPL, 61, "Parquet BBOX exceed the given area");
+    logger_->info(MPL,
                62,
                "ParquetSolLayout {:g} {:g}",
                sol.totalWidth(),
                sol.totalHeight());
-    log_->info(MPL, 63, "TargetLayout {:g} {:g}", width, height);
+    logger_->info(MPL, 63, "TargetLayout {:g} {:g}", width, height);
     return false;
   }
   delete annealer;
@@ -596,7 +596,7 @@ bool Partition::DoAnneal()
   //      true,
   //      0, 0, width, height);
 
-  log_->report("End Parquet");
+  logger_->report("End Parquet");
   return true;
 }
 
