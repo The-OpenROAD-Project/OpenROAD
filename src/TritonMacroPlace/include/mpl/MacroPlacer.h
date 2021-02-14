@@ -86,7 +86,6 @@ class Macro
   double w, h;
   double haloX, haloY;
   double channelX, channelY;
-  sta::Instance* staInstPtr;
   odb::dbInst* dbInstPtr;
   Macro(double _lx,
         double _ly,
@@ -145,7 +144,6 @@ private:
   void ParseGlobalConfig(std::string fileName);
   void ParseLocalConfig(std::string fileName);
   void FillMacroStor();
-  void UpdateInstanceToMacroStor();
   const bool isTiming() const { return isTiming_; }
 
   void init();
@@ -194,9 +192,8 @@ private:
   std::vector<std::vector<int>> macroWeight;
   // macro Information
   std::vector<Macro> macroStor;
-
-  // sta::Instance* --> macroStor's index stor
-  std::unordered_map<sta::Instance*, int> macroInstMap;
+  // dbInst* --> macroStor's index
+  std::unordered_map<odb::dbInst*, int> macroInstMap;
 
   // save LocalCfg into this structure
   std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;

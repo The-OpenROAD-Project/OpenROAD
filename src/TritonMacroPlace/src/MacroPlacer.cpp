@@ -210,7 +210,6 @@ void MacroPlacer::init()
   }
 
   FillMacroStor();
-  UpdateInstanceToMacroStor();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.
   isTiming_ = !isMissingLiberty(sta_, macroStor);
@@ -475,7 +474,7 @@ static void CutRoundUp(const Layout& layout,
   }
 }
 
-// using mckt.macroInstMap and partition,
+// using partition,
 // fill in macroPartMap
 //
 // macroPartMap will contain
@@ -491,9 +490,9 @@ void MacroPlacer::UpdateMacroPartMap(Partition& part,
     vector<int> curMacroStor;
     // convert macro Information into macroIdx
     for (auto& curMacro : part.macroStor) {
-      auto miPtr = macroInstMap.find(curMacro.staInstPtr);
+      auto miPtr = macroInstMap.find(curMacro.dbInstPtr);
       if (miPtr == macroInstMap.end()) {
-        logger_->error(MPL, 74, "macro {} not exists in macroInstMap", curMacro.name());
+        logger_->error(MPL, 74, "macro {} missing from macroInstMap", curMacro.name());
       }
       curMacroStor.push_back(miPtr->second);
     }
@@ -816,15 +815,17 @@ void MacroPlacer::FillMacroStor()
     int placeX, placeY;
     inst->getLocation(placeX, placeY);
 
-    macroStor.push_back(Macro(1.0 * placeX / dbu,
-                              1.0 * placeY / dbu,
-                              1.0 * inst->getBBox()->getDX() / dbu,
-                              1.0 * inst->getBBox()->getDY() / dbu,
-                              curHaloX,
-                              curHaloY,
-                              curChannelX,
-                              curChannelY,
-                              inst));
+    macroInstMap[inst] = macroStor.size();
+    Macro macro(1.0 * placeX / dbu,
+                1.0 * placeY / dbu,
+                1.0 * inst->getBBox()->getDX() / dbu,
+                1.0 * inst->getBBox()->getDY() / dbu,
+                curHaloX,
+                curHaloY,
+                curChannelX,
+                curChannelY,
+                inst);
+    macroStor.push_back(macro);
   }
 
   if (macroStor.empty()) {
@@ -832,16 +833,6 @@ void MacroPlacer::FillMacroStor()
   }
 
   logger_->info(MPL, 5, "NumMacros {}", macroStor.size());
-}
-
-// macroStr & macroInstMap update
-void MacroPlacer::UpdateInstanceToMacroStor()
-{
-  for (auto& macro : macroStor) {
-    sta::Instance* staInst = sta_->getDbNetwork()->dbToSta(macro.dbInstPtr);
-    macro.staInstPtr = staInst;
-    macroInstMap[staInst] = &macro - &macroStor[0];
-  }
 }
 
 static bool isWithIn(int val, int min, int max)
@@ -1207,14 +1198,6 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
     }
   }
   delete instIter;
-
-  for (auto& macro : macroStor) {
-    sta::Instance* staInst = macro.staInstPtr;
-    sta::LibertyCell* libCell = sta->network()->libertyCell(staInst);
-    if (!libCell) {
-      return true;
-    }
-  }
   return false;
 }
 
