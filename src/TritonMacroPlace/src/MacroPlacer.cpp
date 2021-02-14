@@ -1203,8 +1203,6 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
 
 ////////////////////////////////////////////////////////////////
 
-typedef std::pair<Macro*, Macro*> MacroPair;
-
 // Use OpenSTA graph to find macro adjacencies.
 // No delay calculation or arrival search is required,
 // just gate connectivity in the levelized graph.
@@ -1217,6 +1215,28 @@ void MacroPlacer::findAdjacencies()
   VertexFaninMap vertex_fanins;
   sta::SearchPred2 srch_pred(sta_);
   sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, sta_);
+
+  seedFaninBfs(bfs, vertex_fanins);
+  findFanins(bfs, vertex_fanins);
+
+  // Propagate fanins through 3 levels of register D->Q.
+  constexpr int reg_adjacency_depth = 3;
+  for (int i = 0; i < reg_adjacency_depth; i++) {
+    copyFaninsAcrossRegisters(bfs, vertex_fanins);
+    findFanins(bfs, vertex_fanins);
+  }
+
+  AdjWeightMap adj_map;
+  findAdjWeights(vertex_fanins, adj_map);
+  
+  fillMacroWeights(adj_map);
+}
+
+void MacroPlacer::seedFaninBfs(sta::BfsFwdIterator &bfs,
+                               VertexFaninMap &vertex_fanins)
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::Graph *graph = sta_->ensureGraph();
   // Seed the BFS with macro output pins.
   for (Macro& macro : macroStor) {
     for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
@@ -1240,19 +1260,106 @@ void MacroPlacer::findAdjacencies()
       bfs.enqueueAdjacentVertices(vertex);
     }
   }
-  findFanins(bfs, vertex_fanins, network, graph);
-  // Propagate fanins through 3 levels of register D->Q.
-  constexpr int reg_adjacency_depth = 3;
-  for (int i = 0; i < reg_adjacency_depth; i++) {
-    copyFaninsAcrossRegisters(bfs, vertex_fanins, network, graph);
-    findFanins(bfs, vertex_fanins, network, graph);
+}
+
+// BFS search forward union-ing fanins.
+// BFS stops at register inputs because there are no timing arcs
+// from register D->Q.
+void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
+                             VertexFaninMap &vertex_fanins)
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::Graph *graph = sta_->ensureGraph();
+  while (bfs.hasNext()) {
+    sta::Vertex *vertex = bfs.next();
+    MacroSet &fanins = vertex_fanins[vertex];
+    sta::VertexInEdgeIterator fanin_iter(vertex, graph);
+    while (fanin_iter.hasNext()) {
+      sta::Edge *edge = fanin_iter.next();
+      sta::Vertex *fanin = edge->from(graph);
+      // Union fanins sets of fanin vertices.
+      for (Macro *fanin : vertex_fanins[fanin]) {
+        fanins.insert(fanin);
+        debugPrint(logger_, MPL, "find_fanins", 1, "{} + {}",
+                   vertex->name(network),
+                   faninName(fanin));
+      }
+    }
+    bfs.enqueueAdjacentVertices(vertex);
   }
+}
 
-  ////////////////////////////////////////////////////////////////
+void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
+                                             VertexFaninMap &vertex_fanins)
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::Graph *graph = sta_->ensureGraph();
+  sta::Instance *top_inst = network->topInstance();
+  sta::LeafInstanceIterator *leaf_iter = network->leafInstanceIterator(top_inst);
+  while (leaf_iter->hasNext()) {
+    sta::Instance *inst = leaf_iter->next();
+    sta::LibertyCell *lib_cell = network->libertyCell(inst);
+    if (lib_cell->hasSequentials()
+        && !lib_cell->isMacro()) {
+      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
+      while (seq_iter.hasNext()) {
+        sta::Sequential *seq = seq_iter.next();
+        sta::FuncExpr *data_expr = seq->data();
+        sta::FuncExprPortIterator data_port_iter(data_expr);
+        while (data_port_iter.hasNext()) {
+          sta::LibertyPort *data_port = data_port_iter.next();
+          sta::Pin *data_pin = network->findPin(inst, data_port);
+          sta::LibertyPort *out_port = seq->output();
+          sta::Pin *out_pin = findSeqOutPin(inst, out_port);
+          if (data_pin && out_pin) {
+            sta::Vertex *data_vertex = graph->pinLoadVertex(data_pin);
+            sta::Vertex *out_vertex = graph->pinDrvrVertex(out_pin);
+            // Copy fanins from D to Q on register.
+            vertex_fanins[out_vertex] = vertex_fanins[data_vertex];
+            bfs.enqueueAdjacentVertices(out_vertex);
+          }
+        }
+      }
+    }
+  }
+  delete leaf_iter;
+}
 
-  // from/to -> weight
-  // weight = from/pin -> to/pin count
-  std::map<MacroPair, int> adj_map;
+// Sequential outputs are generally to internal pins that are not physically
+// part of the instance. Find the output port with a function that uses
+// the internal port.
+sta::Pin *MacroPlacer::findSeqOutPin(sta::Instance *inst,
+                                     sta::LibertyPort *out_port)
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  if (out_port->direction()->isInternal()) {
+    sta::InstancePinIterator *pin_iter = network->pinIterator(inst);
+    while (pin_iter->hasNext()) {
+      sta::Pin *pin = pin_iter->next();
+      sta::LibertyPort *lib_port = network->libertyPort(pin);
+      if (lib_port->direction()->isAnyOutput()) {
+        sta::FuncExpr *func = lib_port->function();
+        if (func->hasPort(out_port)) {
+          sta::Pin *out_pin = network->findPin(inst, lib_port);
+          if (out_pin) {
+            delete pin_iter;
+            return out_pin;
+          }
+        }
+      }
+    }
+    delete pin_iter;
+    return nullptr;
+  }
+  else
+    return network->findPin(inst, out_port);
+}
+
+void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
+                                 AdjWeightMap &adj_map)
+{
+  sta::dbNetwork *network = sta_->getDbNetwork();
+  sta::Graph *graph = sta_->ensureGraph();
   // Find adjacencies from macro input pin fanins.
   for (Macro& macro : macroStor) {
     for (dbITerm *iterm : macro.dbInstPtr->getITerms()) {
@@ -1296,8 +1403,11 @@ void MacroPlacer::findAdjacencies()
       }
     }
   }
+}
 
-  // Fill macroWeight array.
+// Fill macroWeight array.
+void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
+{
   size_t weight_size = macroStor.size() + 4;
   macroWeight.resize(weight_size);
   for (size_t i = 0; i < weight_size; i++) {
@@ -1345,101 +1455,10 @@ bool MacroPlacer::macroIndexIsEdge(Macro *macro)
   return edge_index < 4;
 }
 
-// BFS search forward union-ing fanins.
-// BFS stops at register inputs because there are no timing arcs
-// from register D->Q.
-void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
-                              VertexFaninMap &vertex_fanins,
-                              sta::dbNetwork *network,
-                              sta::Graph *graph)
-{
-  while (bfs.hasNext()) {
-    sta::Vertex *vertex = bfs.next();
-    MacroSet &fanins = vertex_fanins[vertex];
-    sta::VertexInEdgeIterator fanin_iter(vertex, graph);
-    while (fanin_iter.hasNext()) {
-      sta::Edge *edge = fanin_iter.next();
-      sta::Vertex *fanin = edge->from(graph);
-      // Union fanins sets of fanin vertices.
-      for (Macro *fanin : vertex_fanins[fanin]) {
-        fanins.insert(fanin);
-        debugPrint(logger_, MPL, "find_fanins", 1, "{} + {}",
-                   vertex->name(network),
-                   faninName(fanin));
-      }
-    }
-    bfs.enqueueAdjacentVertices(vertex);
-  }
-}
-
-void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                             VertexFaninMap &vertex_fanins,
-                                             sta::dbNetwork *network,
-                                             sta::Graph *graph)
-{
-  sta::Instance *top_inst = network->topInstance();
-  sta::LeafInstanceIterator *leaf_iter = network->leafInstanceIterator(top_inst);
-  while (leaf_iter->hasNext()) {
-    sta::Instance *inst = leaf_iter->next();
-    sta::LibertyCell *lib_cell = network->libertyCell(inst);
-    if (lib_cell->hasSequentials()
-        && !lib_cell->isMacro()) {
-      sta::LibertyCellSequentialIterator seq_iter(lib_cell);
-      while (seq_iter.hasNext()) {
-        sta::Sequential *seq = seq_iter.next();
-        sta::FuncExpr *data_expr = seq->data();
-        sta::FuncExprPortIterator data_port_iter(data_expr);
-        while (data_port_iter.hasNext()) {
-          sta::LibertyPort *data_port = data_port_iter.next();
-          sta::Pin *data_pin = network->findPin(inst, data_port);
-          sta::LibertyPort *out_port = seq->output();
-          sta::Pin *out_pin = findSeqOutPin(inst, out_port, network);
-          if (data_pin && out_pin) {
-            sta::Vertex *data_vertex = graph->pinLoadVertex(data_pin);
-            sta::Vertex *out_vertex = graph->pinDrvrVertex(out_pin);
-            // Copy fanins from D to Q on register.
-            vertex_fanins[out_vertex] = vertex_fanins[data_vertex];
-            bfs.enqueueAdjacentVertices(out_vertex);
-          }
-        }
-      }
-    }
-  }
-  delete leaf_iter;
-}
-
-// Sequential outputs are generally to internal pins that are not physically
-// part of the instance. Find the output port with a function that uses
-// the internal port.
-sta::Pin *MacroPlacer::findSeqOutPin(sta::Instance *inst,
-                                      sta::LibertyPort *out_port,
-                                      sta::Network *network)
-{
-  if (out_port->direction()->isInternal()) {
-    sta::InstancePinIterator *pin_iter = network->pinIterator(inst);
-    while (pin_iter->hasNext()) {
-      sta::Pin *pin = pin_iter->next();
-      sta::LibertyPort *lib_port = network->libertyPort(pin);
-      if (lib_port->direction()->isAnyOutput()) {
-        sta::FuncExpr *func = lib_port->function();
-        if (func->hasPort(out_port)) {
-          sta::Pin *out_pin = network->findPin(inst, lib_port);
-          if (out_pin) {
-            delete pin_iter;
-            return out_pin;
-          }
-        }
-      }
-    }
-    delete pin_iter;
-    return nullptr;
-  }
-  else
-    return network->findPin(inst, out_port);
-}
-
 // This is completely broken but I want to match FillPinGroup()
 // until it is flushed.
+// It assumes the pins are on the core boundary.
+// It should look for the nearest edge to the pin center. -cherry
 CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 {
   dbPlacementStatus status = bTerm->getFirstPinPlacementStatus();
@@ -1466,8 +1485,6 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
       int boxUx = pin_bbox.xMax();
       int boxUy = pin_bbox.yMax();
 
-      // This is broken. It assumes the pins are on the core boundary.
-      // It should look for the nearest edge to the pin center. -cherry
       if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
         return CoreEdge::West;
       } else if (isWithIn(dbuCoreUx, boxLx, boxUx)) {

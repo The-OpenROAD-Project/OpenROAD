@@ -68,6 +68,10 @@ class Layout;
 typedef std::set<Macro*> MacroSet;
 // vertex -> fanin macro set
 typedef std::map<sta::Vertex*, MacroSet> VertexFaninMap;
+typedef std::pair<Macro*, Macro*> MacroPair;
+// from/to -> weight
+// weight = from/pin -> to/pin count
+typedef std::map<MacroPair, int> AdjWeightMap;
 
 enum class CoreEdge
 {
@@ -156,17 +160,17 @@ private:
 
   // graph based adjacencies
   void findAdjacencies();
+  void seedFaninBfs(sta::BfsFwdIterator &bfs,
+                    VertexFaninMap &vertex_fanins);
   void findFanins(sta::BfsFwdIterator &bfs,
-                  VertexFaninMap &vertex_fanins,
-                  sta::dbNetwork *network,
-                  sta::Graph *graph);
+                  VertexFaninMap &vertex_fanins);
   void copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                 VertexFaninMap &vertex_fanins,
-                                 sta::dbNetwork *network,
-                                 sta::Graph *graph);
+                                 VertexFaninMap &vertex_fanins);
+  void findAdjWeights(VertexFaninMap &vertex_fanins,
+                      AdjWeightMap &adj_map);
   sta::Pin *findSeqOutPin(sta::Instance *inst,
-                          sta::LibertyPort *out_port,
-                          sta::Network *network);
+                          sta::LibertyPort *out_port);
+  void fillMacroWeights(AdjWeightMap &adj_map);
   CoreEdge findNearestEdge(odb::dbBTerm* bTerm);
   std::string faninName(Macro *macro);
   int macroIndex(Macro *macro);
