@@ -96,6 +96,8 @@ namespace fr {
       void addRoutingLayer(odb::dbTechLayer*);
       void addCutLayer(odb::dbTechLayer*);
       void addMasterSliceLayer(odb::dbTechLayer*);
+      void setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
+      void setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
 
       frDesign*       design;
       frTechObject*   tech;
@@ -116,36 +118,6 @@ namespace fr {
       int numTerms;     // including instterm and term
       int numNets;      // including snet and net
       int numBlockages; // including instBlockage and blockage
-
-      // LEF/DEF parser helper
-      class Callbacks;
-      static int getLef58CornerSpacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58SpacingTable(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58SpacingTable_parallelRunLength(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58Spacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58Spacing_endOfLineWithin(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutClass(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_helper(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_parallelWithin(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_adjacentCuts(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_layer(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_helper(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_others(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_prl(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                             const std::shared_ptr<frLef58CutSpacingTableConstraint> &con);
-      static int getLef58CutSpacingTable_default(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                             const std::shared_ptr<frLef58CutSpacingTableConstraint> &con);
-      static int getLef58CutSpacingTable_layer(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                               const std::shared_ptr<frLef58CutSpacingTableConstraint> &con,
-                                               frLayerNum &secondLayerNum);
-      static int getLef58CutSpacingTable_cutClass(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                                  const std::shared_ptr<frLef58CutSpacingTableConstraint> &con,
-                                                  bool hasSecondLayer, frLayerNum secondLayerNum);
-      static int getLef58RightWayOnGridOnly(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58RectOnly(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58MinStep(void *data, frLayer* tmpLayer, const std::string &sIn);
 
       // postProcess functions
       void buildGCellPatterns();
