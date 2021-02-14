@@ -93,6 +93,14 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
     std::string color_style_sheet_;  // To be Used on Color Gradient Button
     int band_ulimit_;
   };
+
+  enum GCELL_DIRECTION
+  {
+    GCELL_HORIZONTAL_DIR = 0,
+    GCELL_VERTICAL_DIR,
+
+    GCELL_BOTH_DIR
+  };
   using ColorRangeMap
       = std::map<int, std::vector<CongestionBandInfo>>;  // Key : Number Of
                                                          //       Intervals,
@@ -106,7 +114,7 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   // Dialog State
   int min_congestion_;
   QVector<QColor> colors_;
-  int cong_dir_index_;
+  GCELL_DIRECTION cong_dir_index_;
 
   static ColorRangeMap _color_ranges;
 };  // namespace gui
