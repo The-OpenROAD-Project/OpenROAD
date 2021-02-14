@@ -37,7 +37,7 @@
 #include "dbCore.h"
 
 {% for include in klass.h_includes %}
-#include "{{ include }}"
+  #include "{{include}}"
 {% endfor %}
 //User Code Begin includes
 //User Code End includes
@@ -50,22 +50,22 @@ namespace odb {
   class dbDiff;
   class _dbDatabase;
   {% for _class in klass.classes %}
-  {%if _class in ["dbTable","dbHashTable"]%}
-  template <class T>
-  {%endif%}
-  class {{ _class }};
+    {%if _class in ["dbTable","dbHashTable"]%}
+      template <class T>
+    {%endif%}
+    class {{ _class }};
   {% endfor %}
   //User Code Begin Classes
   //User Code End Classes
 
   {% for _struct in klass.structs %}
-  struct {{ _struct.name }}
-  {
-    {% for field in _struct.fields %}
-    {{ field.type }} {{ field.name }}{% if "bits" in field %} : {{ field.bits }}{% endif %};{%if "comment" in field%} {{field.comment}}{%endif%}
+    struct {{ _struct.name }}
+    {
+      {% for field in _struct.fields %}
+        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
     
-    {% endfor %}
-  };
+      {% endfor %}
+    };
   {% endfor %}
   //User Code Begin structs
   //User Code End structs
@@ -75,41 +75,41 @@ namespace odb {
   {
     public:
     {% for _enum in klass.enums %}
-    {% if not _enum.public %}
-    enum {{ _enum.name }}
-    {
-      {% for value in _enum["values"]%}
-      {% if not loop.first %},{%endif%}{{value}}
-      {% endfor %}
-    };
-    {% endif %}
+      {% if not _enum.public %}
+        enum {{_enum.name}}
+        {
+          {% for value in _enum["values"] %}
+            {% if not loop.first %},{% endif %}{{value}}
+          {% endfor %}
+        };
+      {% endif %}
     {% endfor %}
     //User Code Begin enums
     //User Code End enums
-    
-    {%for field in klass.fields%}
-    {%if field.table%} 
-    dbTable<_{{field.type}}>* {{field.name}}; 
-    {%else%}
-    {{ field.type }} {{ field.name }};{%if "comment" in field%} {{field.comment}}{%endif%}
+        
+    {% for field in klass.fields %}
+      {% if field.table %} 
+        dbTable<_{{field.type}}>* {{field.name}}; 
+      {% else %}
+      {{field.type}} {{field.name}};{% if "comment" in field %} {{field.comment}}{% endif %}
 
-    {%endif%}
-    {%endfor%}
+      {% endif %}
+    {% endfor %}
 
     //User Code Begin fields
     //User Code End fields
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
-    {% for constructor in klass.constructors%}
-    _{{klass.name}}(_dbDatabase*{%for arg in constructor.args%},{{arg.type}}{%endfor%});
-    {%endfor%}
+    {% for constructor in klass.constructors %}
+      _{{klass.name}}(_dbDatabase*{% for arg in constructor.args %},{{arg.type}}{% endfor %});
+    {% endfor %}
     ~_{{klass.name}}();
     bool operator==(const _{{klass.name}}& rhs) const;
     bool operator!=(const _{{klass.name}}& rhs) const { return !operator==(rhs); }
     bool operator<(const _{{klass.name}}& rhs) const;
     void differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const;
     void out(dbDiff& diff, char side, const char* field) const;
-    {%if klass.hasTables%}dbObjectTable* getObjectTable(dbObjectType type);{%endif%}
+    {% if klass.hasTables %}dbObjectTable* getObjectTable(dbObjectType type);{% endif %}
     //User Code Begin methods
     //User Code End methods
   };

@@ -203,6 +203,9 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
+  // gui functions
+  std::vector<GCellCongestion> getCongestion();
+
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
@@ -210,6 +213,7 @@ class GlobalRouter
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
+  void setClockCost(int cost);
   void routeClockNets();
 
   // Highlight route in the gui.
@@ -362,6 +366,7 @@ class GlobalRouter
   std::map<std::string, float> _netsAlpha;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
+  int _clockCost;
 
   // Antenna variables
   int*** oldHUsages;
