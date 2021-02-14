@@ -160,12 +160,16 @@ void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
   log_ = log;
 }
 
-void MacroPlacer::setHalo(double halo_v, double halo_h)
+void MacroPlacer::setHalo(double halo_x, double halo_y)
 {
+  haloX_ = halo_x;
+  haloY_ = halo_y;
 }
 
-void MacroPlacer::setChannel(double channel_v, double channel_h)
+void MacroPlacer::setChannel(double channel_x, double channel_y)
 {
+  channelX_ = channel_x;
+  channelY_ = channel_y;
 }
 
 void MacroPlacer::setGlobalConfig(const char* globalConfig)
@@ -225,9 +229,10 @@ void MacroPlacer::init()
 
   // parsing from cfg file
   // global config
-  ParseGlobalConfig(globalConfig_);
+  if (!globalConfig_.empty())
+    ParseGlobalConfig(globalConfig_);
   // local config (optional)
-  if (localConfig_ != "") {
+  if (!localConfig_.empty()) {
     ParseLocalConfig(localConfig_);
   }
 

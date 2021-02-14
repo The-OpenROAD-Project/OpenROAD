@@ -22,7 +22,7 @@ if { [have_macros] } {
   # tdms_place (but replace isn't timing driven)
   global_placement -disable_routability_driven -density $global_place_density
 
-  macro_placement -global_config $ip_global_cfg
+  macro_placement -halo $macro_place_halo -channel $macro_place_channel
 }
 write_def [make_result_file ${design}_${platform}_floorplan.def]
 ################################################################

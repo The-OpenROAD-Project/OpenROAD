@@ -4,7 +4,6 @@ record_tests {
   gcd_mem3_01
   gcd_mem3_02
   gcd_mem5_01
-  gcd_mem5_02
   level1
 }
 

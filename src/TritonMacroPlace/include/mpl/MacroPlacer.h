@@ -126,8 +126,8 @@ public:
   MacroPlacer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
 
-  void setHalo(double halo_v, double halo_h);
-  void setChannel(double channel_v, double channel_h);
+  void setHalo(double halo_x, double halo_y);
+  void setChannel(double channel_x, double channel_y);
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
 

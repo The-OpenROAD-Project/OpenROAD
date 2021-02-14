@@ -1,19 +1,17 @@
+# gcd 1 macro halo=1.0
 source helpers.tcl
-set design gcd_mem1 
-set tech_dir nangate45-bench/tech
-set test_name "gcd_mem1_02"
 
-read_liberty ${tech_dir}/NangateOpenCellLibrary_typical.lib
-read_liberty ${tech_dir}/fakeram45_64x7.lib
+read_liberty Nangate45/Nangate45_typ.lib
+read_liberty Nangate45/fakeram45_64x7.lib
 
-read_lef ${tech_dir}/NangateOpenCellLibrary.lef
-read_lef ${tech_dir}/fakeram45_64x7.lef
+read_lef Nangate45/Nangate45.lef
+read_lef Nangate45/fakeram45_64x7.lef
 
 read_def gcd_mem1.def
 read_sdc gcd.sdc
 
-macro_placement -global_config halo_1.0.cfg
+macro_placement -halo {1.0 1.0}
 
-set def_file [make_result_file $test_name.def]
+set def_file [make_result_file gcd_mem1_02.def]
 write_def $def_file
-diff_file $def_file $test_name.defok
+diff_file $def_file gcd_mem1_02.defok

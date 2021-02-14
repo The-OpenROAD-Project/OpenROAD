@@ -369,15 +369,14 @@ packed using ParquetFP-based annealing. The best resulting floorplan
 according to a heuristic evaluation function kept.
 
 ```
-macro_placement -halo {vertical_width horizontal_width}
-                -channel {vertical_width horizontal_width}\
+macro_placement -halo {halo_x halo_y}
+                -channel {channel_x channel_y}\
                 [-fence_region {lx ly ux uy}]
 ```
 
--global_config - global config file loction.
 -fence_region - restrict macro placements to a region (microns)
--halo vertical and horizontal halo around macros (microns)
--channel vertical and horizontal channel width between macros (microns)
+-halo horizontal/vertical halo around macros (microns)
+-channel horizontal/vertical and channel width between macros (microns)
 
 #### Detailed Placement
 

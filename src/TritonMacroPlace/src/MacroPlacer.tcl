@@ -1,3 +1,36 @@
+#############################################################################
+##
+## Copyright (c) 2019, OpenROAD
+## All rights reserved.
+##
+## BSD 3-Clause License
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+#############################################################################
 
 sta::define_cmd_args "macro_placement" {
   -halo {vertical_width horizontal_width} \
@@ -9,17 +42,17 @@ proc macro_placement { args } {
     keys {-channel -halo -fence_region -global_config -local_config} flags {}
 
   if { [info exists keys(-halo)] } {
-    lasssign $keys(-halo) halo_v halo_h
-    sta::check_positive_float "-halo vertical" $halo_v
-    sta::check_positive_float "-halo horizontal" $halo_h
-    mpl::set_halo $halo_v $halo_h
+    lassign $keys(-halo) halo_x halo_y
+    sta::check_positive_float "-halo x" $halo_x
+    sta::check_positive_float "-halo y" $halo_y
+    mpl::set_halo $halo_x $halo_y
   }
 
   if { [info exists keys(-channel)] } {
-    lasssign $keys(-channel) channel_v channel_h
-    sta::check_positive_float "-channel vertical" $channel_v
-    sta::check_positive_float "-channel horizontal" $channel_h
-    mpl::set_channel $channel_v $channel_h
+    lassign $keys(-channel) channel_x channel_y
+    sta::check_positive_float "-channel x" $channel_x
+    sta::check_positive_float "-channel y" $channel_y
+    mpl::set_channel $channel_x $channel_y
   }
 
   set block [ord::get_db_block]
