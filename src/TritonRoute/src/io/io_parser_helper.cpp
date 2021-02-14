@@ -540,6 +540,7 @@ void io::Parser::initDefaultVias_N16(const string &node) {
 }
 
 void io::Parser::writeRefDef() {
+
   vector<frViaDef*> genViaDefs;
   for (auto &uViaDef: tech->getVias()) {
     auto viaDef = uViaDef.get();
@@ -660,7 +661,7 @@ void io::Parser::postProcess() {
   tech->printDefaultVias();
 
   // write reference def for def writing hack flow if needed
-  writeRefDef();
+  //writeRefDef();
 
   instAnalysis();
 
