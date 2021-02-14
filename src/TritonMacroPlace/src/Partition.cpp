@@ -54,6 +54,8 @@ using std::vector;
 
 using utl::MPL;
 
+namespace pfp = parquetfp;
+
 Partition::Partition(utl::Logger* log)
     : partClass(PartClass::None),
       lx(FLT_MAX),
@@ -446,13 +448,11 @@ bool Partition::DoAnneal()
     }
   }
 
-  using namespace parquetfp;
-
   // Populating DB structure
   // Instantiate Parquet DB structure
   DB db;
-  Nodes* nodes = db.getNodes();
-  Nets* nets = db.getNets();
+  pfp::Nodes* nodes = db.getNodes();
+  pfp::Nets* nets = db.getNets();
 
   //////////////////////////////////////////////////////
   // Feed node structure: macro Info
@@ -462,12 +462,12 @@ bool Partition::DoAnneal()
     double padMacroHeight
         = curMacro.h + 2 * (curMacro.haloY + curMacro.channelY);
 
-    Node tmpMacro(std::string(curMacro.name().c_str()),
-                  padMacroWidth * padMacroHeight,
-                  padMacroWidth / padMacroHeight,
-                  padMacroWidth / padMacroHeight,
-                  &curMacro - &macroStor[0],
-                  false);
+    pfp::Node tmpMacro(curMacro.name(),
+                       padMacroWidth * padMacroHeight,
+                       padMacroWidth / padMacroHeight,
+                       padMacroWidth / padMacroHeight,
+                       &curMacro - &macroStor[0],
+                       false);
 
     tmpMacro.addSubBlockIndex(&curMacro - &macroStor[0]);
 
@@ -485,7 +485,7 @@ bool Partition::DoAnneal()
   double posX[4] = {0.0, width, width / 2.0, width / 2.0};
   double posY[4] = {height / 2.0, height / 2.0, height, 0.0f};
   for (int i = 0; i < 4; i++) {
-    Node tmpPin(pinNames[i], 0, 1, 1, indexTerm++, true);
+    pfp::Node tmpPin(pinNames[i], 0, 1, 1, indexTerm++, true);
     tmpPin.putX(posX[i]);
     tmpPin.putY(posY[i]);
     nodes->putNewTerm(tmpPin);
@@ -495,18 +495,18 @@ bool Partition::DoAnneal()
   // Feed net / weight structure
   for (auto& curNet : netStor) {
     int idx = &curNet - &netStor[0];
-    Net tmpEdge;
+    pfp::Net pnet;
 
-    parquetfp::pin tempPin1(GetName(curNet.first).c_str(), true, 0, 0, idx);
-    parquetfp::pin tempPin2(GetName(curNet.second).c_str(), true, 0, 0, idx);
+    parquetfp::pin pin1(GetName(curNet.first).c_str(), true, 0, 0, idx);
+    parquetfp::pin pin2(GetName(curNet.second).c_str(), true, 0, 0, idx);
 
-    tmpEdge.addNode(tempPin1);
-    tmpEdge.addNode(tempPin2);
-    tmpEdge.putIndex(idx);
-    tmpEdge.putName(std::string("n" + std::to_string(idx)).c_str());
-    tmpEdge.putWeight(costStor[idx]);
+    pnet.addNode(pin1);
+    pnet.addNode(pin2);
+    pnet.putIndex(idx);
+    pnet.putName(std::string("n" + std::to_string(idx)).c_str());
+    pnet.putWeight(costStor[idx]);
 
-    nets->putNewNet(tmpEdge);
+    nets->putNewNet(pnet);
   }
 
   nets->updateNodeInfo(*nodes);
@@ -519,7 +519,7 @@ bool Partition::DoAnneal()
       = reinterpret_cast<MixedBlockInfoType*>(&dbBlockInfo);
 
   // Command_Line object populate
-  Command_Line param;
+  pfp::Command_Line param;
   param.minWL = true;
   param.noRotation = true;
   param.FPrep = "BTree";
@@ -533,8 +533,8 @@ bool Partition::DoAnneal()
   param.verb = "0 0 0";
 
   // Instantiate BTreeAnnealer Object
-  BTreeAreaWireAnnealer* annealer = new BTreeAreaWireAnnealer(
-      *blockInfo, const_cast<Command_Line*>(&param), &db);
+  BTreeAreaWireAnnealer* annealer =
+    new BTreeAreaWireAnnealer(*blockInfo, const_cast<pfp::Command_Line*>(&param), &db);
 
   annealer->go();
 
@@ -578,7 +578,7 @@ bool Partition::DoAnneal()
 
   // update back into macroPlacer
   for (size_t i = 0; i < nodes->getNumNodes(); i++) {
-    Node& curNode = nodes->getNode(i);
+    pfp::Node& curNode = nodes->getNode(i);
 
     macroStor[i].lx = (isFlipX)
                           ? width - curNode.getX() - curNode.getWidth() + lx

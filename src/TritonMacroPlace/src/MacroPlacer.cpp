@@ -694,7 +694,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                                             curMacro.haloY,
                                             curMacro.channelX,
                                             curMacro.channelY,
-                                            curMacro.staInstPtr,
                                             curMacro.dbInstPtr));
       } else if (chkArr[i] == 2) {
         upperPart.macroStor.push_back(
@@ -706,7 +705,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                   curMacro.haloY,
                   curMacro.channelX,
                   curMacro.channelY,
-                  curMacro.staInstPtr,
                   curMacro.dbInstPtr));
       } else if (chkArr[i] == 3) {
         double centerPoint = (isHorizontal) ? curMacro.lx + curMacro.w / 2.0
@@ -721,7 +719,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                                               curMacro.haloY,
                                               curMacro.channelX,
                                               curMacro.channelY,
-                                              curMacro.staInstPtr,
                                               curMacro.dbInstPtr));
 
         } else {
@@ -734,7 +731,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                     curMacro.haloY,
                     curMacro.channelX,
                     curMacro.channelY,
-                    curMacro.staInstPtr,
                     curMacro.dbInstPtr));
         }
       }
@@ -828,7 +824,6 @@ void MacroPlacer::FillMacroStor()
                               curHaloY,
                               curChannelX,
                               curChannelY,
-                              nullptr,
                               inst));
   }
 
@@ -1551,7 +1546,6 @@ Macro::Macro(double _lx,
              double _haloY,
              double _channelX,
              double _channelY,
-             sta::Instance* _staInstPtr,
              odb::dbInst* _dbInstPtr)
     : lx(_lx),
       ly(_ly),
@@ -1561,7 +1555,6 @@ Macro::Macro(double _lx,
       haloY(_haloY),
       channelX(_channelX),
       channelY(_channelY),
-      staInstPtr(_staInstPtr),
       dbInstPtr(_dbInstPtr)
 {
 }

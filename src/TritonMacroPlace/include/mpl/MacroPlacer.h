@@ -96,7 +96,6 @@ class Macro
         double _haloY,
         double _channelX,
         double _channelY,
-        sta::Instance* _staInstPtr,
         odb::dbInst* _dbInstPtr);
   std::string name();
   std::string type();
@@ -140,14 +139,6 @@ public:
   double GetWeightedWL();
   void UpdateNetlist(Partition& layout);
   int weight(int idx11, int idx12);
-
-  // This should NOT be public -cherry
-  // macro name -> macroStor's index.
-  std::unordered_map<std::string, int> macroNameMap;
-  // macro idx/idx pair -> give each
-  std::vector<std::vector<int>> macroWeight;
-  // macro Information
-  std::vector<Macro> macroStor;
 
 private:
   // parsing function
@@ -197,6 +188,13 @@ private:
 
   bool isTiming_;
 
+  // macro name -> macroStor's index.
+  std::unordered_map<std::string, int> macroNameMap;
+  // macro idx/idx pair -> give each
+  std::vector<std::vector<int>> macroWeight;
+  // macro Information
+  std::vector<Macro> macroStor;
+
   // sta::Instance* --> macroStor's index stor
   std::unordered_map<sta::Instance*, int> macroInstMap;
 
@@ -213,6 +211,8 @@ private:
   int verbose_;
   bool fenceRegionMode_;
   int solCount_;
+
+  friend class Partition;
 };
 
 class Layout
