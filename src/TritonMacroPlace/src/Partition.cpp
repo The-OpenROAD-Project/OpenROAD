@@ -40,7 +40,7 @@
 
 #include "Parquet.h"
 #include "btreeanneal.h"
-#include "mpl/MacroPlace.h"
+#include "mpl/MacroPlacer.h"
 #include "mixedpackingfromdb.h"
 #include "utility/Logger.h"
 

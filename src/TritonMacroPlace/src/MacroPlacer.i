@@ -31,42 +31,71 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mpl/MakeMacroPlace.h"
+%module mpl
 
-#include <tcl.h>
+%{
 
 #include "openroad/OpenRoad.hh"
-#include "sta/StaMain.hh"
-#include "mpl/MacroPlace.h"
-
-namespace sta {
-extern const char* macro_placer_tcl_inits[];
-}
-
-extern "C" {
-extern int Mpl_Init(Tcl_Interp* interp);
-}
+#include "mpl/MacroPlacer.h"
 
 namespace ord {
-
-mpl::MacroPlacer* makeMacroPlacer()
-{
-  return new mpl::MacroPlacer;
+// Defined in OpenRoad.i
+mpl::MacroPlacer*
+getMacroPlacer();
 }
 
-void initMacroPlacer(OpenRoad* openroad)
+using ord::getMacroPlacer;
+
+%}
+
+%include "../../Exception.i"
+
+%inline %{
+
+namespace mpl {
+
+void
+set_halo(double halo_v, double halo_h)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Mpl_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::macro_placer_tcl_inits);
-  openroad->getMacroPlacer()->init(openroad->getDb(),
-                                   openroad->getSta(),
-                                   openroad->getLogger());
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setHalo(halo_v, halo_h);
 }
 
-void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)
+void
+set_channel(double channel_v, double channel_h)
 {
-  delete macro_placer;
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setChannel(channel_v, channel_h); 
 }
 
-}  // namespace ord
+void
+set_fence_region(double lx, double ly, double ux, double uy)
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setFenceRegion(lx, ly, ux, uy); 
+}
+
+void
+place_macros()
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->placeMacros(); 
+} 
+
+void
+set_global_config(const char* file) 
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setGlobalConfig(file); 
+}
+
+void
+set_local_config(const char* file)
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setLocalConfig(file); 
+}
+
+}
+
+%} // inline

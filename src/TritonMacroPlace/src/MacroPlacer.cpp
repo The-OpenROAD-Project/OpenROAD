@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mpl/MacroPlace.h"
+#include "mpl/MacroPlacer.h"
 
 #include <string>
 #include <fstream>

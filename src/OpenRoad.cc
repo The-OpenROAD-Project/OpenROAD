@@ -65,7 +65,7 @@
 #include "gui/MakeGui.h"
 #include "opendp/MakeOpendp.h"
 #include "finale/MakeFinale.h"
-#include "mpl/MakeMacroPlace.h"
+#include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "fastroute/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"

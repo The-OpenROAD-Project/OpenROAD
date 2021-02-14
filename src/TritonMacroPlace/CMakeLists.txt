@@ -42,28 +42,28 @@ add_subdirectory(${PARQUET_HOME})
 # Create a library 
 ############################################################
 
-set(MPLACE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/MacroPlace_wrap.cc)
-set(MPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/MacroPlaceTclInitVar.cc)
+set(MPLACE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/MacroPlacer_wrap.cc)
+set(MPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/MacroPlacerTclInitVar.cc)
 
 
 add_custom_command(OUTPUT ${MPLACE_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix mpl -o ${MPLACE_WRAP} -I${MPLACE_HOME}/include ${MPLACE_HOME}/src/MacroPlace.i   
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix mpl -o ${MPLACE_WRAP} -I${MPLACE_HOME}/include ${MPLACE_HOME}/src/MacroPlacer.i   
   WORKING_DIRECTORY ${MPLACE_HOME}
-  DEPENDS ${MPLACE_HOME}/src/MacroPlace.i "include/mpl/MacroPlace.h"
+  DEPENDS ${MPLACE_HOME}/src/MacroPlacer.i "include/mpl/MacroPlacer.h"
 )
 
 add_custom_command(OUTPUT ${MPLACE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${MPLACE_TCL_INIT} macro_placer_tcl_inits ${MPLACE_HOME}/src/MacroPlace.tcl
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${MPLACE_TCL_INIT} macro_placer_tcl_inits ${MPLACE_HOME}/src/MacroPlacer.tcl
   WORKING_DIRECTORY ${MPLACE_HOME}/src
-  DEPENDS ${MPLACE_HOME}/src/MacroPlace.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+  DEPENDS ${MPLACE_HOME}/src/MacroPlacer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
 )
 
 ############################################################
 # Create an library 
 ############################################################
 add_library( TritonMacroPlace 
-  src/MacroPlace.cpp
-  src/MakeMacroPlace.cpp
+  src/MacroPlacer.cpp
+  src/MakeMacroPlacer.cpp
   src/Partition.cpp
   ${MPLACE_WRAP}
   ${MPLACE_TCL_INIT}
