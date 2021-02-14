@@ -88,7 +88,7 @@ proc macro_placement { args } {
   }
   
   if { [info exists keys(-global_config)] } {
-    #utl::warn "MPL" 81 "macro place -global_config deprecated. Use -channel, -halo arguments."
+    utl::warn "MPL" 81 "macro place -global_config deprecated. Use -channel, -halo arguments."
     set global_config_file $keys(-global_config)
     if { [file readable $global_config_file] } {
       mpl::set_global_config $global_config_file
