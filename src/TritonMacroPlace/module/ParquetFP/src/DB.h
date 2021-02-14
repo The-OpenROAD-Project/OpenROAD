@@ -34,12 +34,14 @@
 #ifndef DB_H
 #define DB_H
 
-#include "ABKCommon/abkcommon.h"
 #include "Nets.h"
 #include "Nodes.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <cfloat>
+
+#include "FPcommon.h"
 
 namespace parquetfp
 {
@@ -219,9 +221,9 @@ namespace parquetfp
                    bool scaleTerms, bool useSteiner, Verbosity verb); 
 #else
            void shiftOptimizeDesign(float outlineWidth,
-                   float outlineHeight, bool scaleTerms, Verbosity verb); // deduce BL-corner from DB
+                   float outlineHeight, bool scaleTerms, int verb); // deduce BL-corner from DB
            void shiftOptimizeDesign(const Point& bottomLeft,
-                   const Point& topRight, bool scaleTerms, Verbosity verb);
+                   const Point& topRight, bool scaleTerms, int verb);
 #endif
 
            void shiftDesign(const Point& offset); //shift the entire placement by an offset

@@ -305,7 +305,6 @@ target_link_libraries(openroad
   TritonRouteLib
   TritonMacroPlace
   ParquetFP
-  ABKCommon
   pdnsim
   zlib
   tm

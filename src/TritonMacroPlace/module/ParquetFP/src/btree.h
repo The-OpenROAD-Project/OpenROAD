@@ -40,6 +40,8 @@
 #include <fstream>
 #include <cmath>
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 class BTree
 {
@@ -382,5 +384,7 @@ inline void BTreeOrientedPacking::operator =(const BTree& bt)
    }
 }  
 // ========================================================
+
+} // namespace
 
 #endif

@@ -36,6 +36,8 @@
 
 #include "btree.h"
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 class PlSP2BTree
 {
@@ -121,5 +123,7 @@ inline bool PlSP2BTree::SPabove(int i, int j) const
 inline bool PlSP2BTree::SPbelow(int i, int j) const
 {   return SPabove(j, i); }
 // --------------------------------------------------------
+
+} // namespace
 
 #endif

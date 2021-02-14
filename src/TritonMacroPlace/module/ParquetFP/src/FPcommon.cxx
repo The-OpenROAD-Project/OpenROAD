@@ -124,21 +124,6 @@ bool parquetfp::BBox::isValid(void) const
   return _valid;
 }
 
-std::istream& parquetfp::operator>>(std::istream& in, BBox &box)
-{
-  Point botLeft, topRight;
-  char comma;
-  in >> botLeft.x;
-  abkfatal(needCaseChar(in,','), ", expected parsing BBox");
-  in >> comma >> botLeft.y;
-  abkfatal(needCaseChar(in,','), ", expected parsing BBox");
-  in >> comma >> topRight.x;
-  abkfatal(needCaseChar(in,','), ", expected parsing BBox");
-  in >> comma >> topRight.y;
-  box.clear(); box.put(botLeft); box.put(topRight);
-  return in;
-}
-
 std::istream& parquetfp::eatblank(std::istream& i)
 {
   while (i.peek()==' ' || i.peek()=='\t') i.get();

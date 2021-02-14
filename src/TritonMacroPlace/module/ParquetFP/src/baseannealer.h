@@ -38,7 +38,6 @@
 #include "DB.h"
 #include "AnalytSolve.h"
 #include "basepacking.h"
-#include "ABKCommon/abkcommon.h"
 #include <string>
 #include <random>
 
@@ -96,8 +95,7 @@ public:
       float height;
       float HPWL;
    };      
-   void printResults(const Timer& tm,
-                     const SolutionInfo& curr) const;
+   void printResults(const SolutionInfo& curr) const;
    float annealTime;
 
 protected:

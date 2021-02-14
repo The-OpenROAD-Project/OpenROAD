@@ -8,14 +8,11 @@ project(ParquetFP
 ############################################################
 set( PARQUET_SRC
   src/AnalytSolve.cxx
-  src/Annealer.cxx
   src/baseannealer.cxx
   src/basepacking.cxx
   src/btreeanneal.cxx
   src/btreecompact.cxx
-#  src/btreecompactsstree.cxx
   src/btree.cxx
-#  src/btreefromsstree.cxx
   src/btreeslackeval.cxx
   src/ClusterDB.cxx
   src/CommandLine.cxx
@@ -38,12 +35,11 @@ set( PARQUET_SRC
   src/SPeval.cxx
 )
 
-# unused
-#  src/debug.cxx
-#  src/Parquet.h
-#  src/Parquet.cxx
-#  src/pinCache.h
-#  src/pinCache.cxx
+# Unused
+#  src/Annealer.h
+#  src/Annealer.cxx
+#  src/btreecompactsstree.cxx
+#  src/btreefromsstree.cxx
 
 set ( PARQUET_HEADER
   src/allparquet.h
@@ -86,7 +82,6 @@ add_library( ParquetFP ${PARQUET_SRC} )
 # include directory settings
 target_include_directories( ParquetFP
   PUBLIC
-  ${ABKCOMMON_HOME}
   ${PARQUET_HOME}
   )
 

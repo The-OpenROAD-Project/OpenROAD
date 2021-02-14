@@ -35,6 +35,8 @@
 
 #include <vector>
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 void BTreeCompactor::build_orth_tree()
 {
@@ -240,3 +242,5 @@ void BTreeCompactor::out_orth_plot(const std::string& file) const {
   fb.close();
 
 }
+
+} // namespace

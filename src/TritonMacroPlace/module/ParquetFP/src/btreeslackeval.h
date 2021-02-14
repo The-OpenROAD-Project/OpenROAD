@@ -38,6 +38,8 @@
 #include "btree.h"
 #include "btreecompact.h"
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 class BTreeSlackEval 
 {
@@ -114,5 +116,7 @@ const std::vector<BTree::BTreeNode>& BTreeSlackEval::rev_tree() const
 const std::vector<BTree::BTreeNode>& BTreeSlackEval::rev_orth_tree() const
 {   return _rev_orth_tree; }
 // --------------------------------------------------------
+
+} // namespace
 
 #endif

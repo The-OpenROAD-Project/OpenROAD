@@ -34,7 +34,6 @@
 // 040608 hhchan modified how it plots:
 //                  plot terminals only when plotNets, "set size ratio -1"
 
-#include "ABKCommon/abkcommon.h"
 #include "FPcommon.h"
 #include "DB.h"
 #include "PlToSP.h"
@@ -1068,7 +1067,7 @@ void DB::updatePlacement(const vector<float>& xloc,
 {
    unsigned int numNodes = _nodes->getNumNodes();
    unsigned int size = min(unsigned(xloc.size()), numNodes);
-   abkwarn(size >= numNodes, "Too few locations specified.");
+   assert(size >= numNodes);
 
    for(unsigned i = 0; i < size; i++)
    {
@@ -2782,10 +2781,10 @@ float DB::getYSizeWMacroOnly(void)
 #ifdef USEFLUTE
 void DB::shiftOptimizeDesign(float outlineWidth, float outlineHeight,
                              bool scaleTerms, bool useSteiner,
-                             Verbosity verb)
+                             int verb)
 #else
 void DB::shiftOptimizeDesign(float outlineWidth, float outlineHeight,
-                             bool scaleTerms, Verbosity verb)
+                             bool scaleTerms, int verb)
 #endif
 {
    if (_nodes->getNumTerminals() == 0)
@@ -2811,7 +2810,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
 #else
 void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
                              const parquetfp::Point& outlineTopRight,
-                             bool scaleTerms, Verbosity verb)
+                             bool scaleTerms, int verb)
 #endif
 
 {
@@ -2846,7 +2845,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
       offset.x = xRangeStart;
       offset.y = yRangeStart;
 
-      if(verb.getForMajStats() > 0)
+      if(verb > 0)
       {
         printf("currBBox: %.2f %.2f %.2f %.2f\n",
                currBottomLeft.x, currBottomLeft.y,
@@ -2864,7 +2863,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
 #else
       float origHPWL = evalHPWL(useWts,scaleTerms);
 #endif
-      if(verb.getForMajStats() > 0)
+      if(verb > 0)
         cout << "HPWL before shifting: " << origHPWL << endl;
 
       shiftDesign(offset);
@@ -2874,12 +2873,12 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
 #else
       float newHPWL = evalHPWL(useWts,scaleTerms);
 #endif
-      if(verb.getForMajStats() > 0)
+      if(verb > 0)
         cout << "HPWL after shifting: " << newHPWL << endl;
 
       if (origHPWL < newHPWL)
       {
-         if(verb.getForMajStats() > 0)
+         if(verb > 0)
            cout << "Undo-ing the shift..." << endl;
          offset.x = -offset.x;
          offset.y = -offset.y;
@@ -2891,7 +2890,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
 #else
       float finalHPWL = evalHPWL(useWts,scaleTerms);
 #endif
-      if(verb.getForMajStats() > 0)
+      if(verb > 0)
         cout << "Final HPWL: " << finalHPWL << endl;
    }
    else
@@ -2910,7 +2909,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
        if (!(designWidth <= outlineWidth &&
 	     designHeight <= outlineHeight))
        */
-       if(verb.getForMajStats() > 0)
+       if(verb > 0)
          cout << "No shifting for HPWL minimization is performed. " << endl;
      }
 }
@@ -2989,10 +2988,10 @@ float DB::getOptimalRangeStart(bool horizontal)
    int endPointNum = endPoints.size();
    if(endPointNum < 2)
       {
-        abkwarn(0,"Could not find optimal ranges.");
+        fpwarn(0,"Could not find optimal ranges.");
         return 0;
       }
-   abkwarn(endPointNum % 2 == 0, "size of endPoints is not even.");
+   fpwarn(endPointNum % 2 == 0, "size of endPoints is not even.");
    return (endPoints[(endPointNum/2) - 1] + endPoints[endPointNum/2]) / 2;
 }
 

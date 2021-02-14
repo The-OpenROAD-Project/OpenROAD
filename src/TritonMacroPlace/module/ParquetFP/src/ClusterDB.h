@@ -39,6 +39,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <map>
+#include "DB.h"
 
 namespace parquetfp
 {

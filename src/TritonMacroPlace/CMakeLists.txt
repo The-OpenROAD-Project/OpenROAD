@@ -32,10 +32,8 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-set(ABKCOMMON_HOME ${MPLACE_HOME}/module/ABKCommon )
 set(PARQUET_HOME ${MPLACE_HOME}/module/ParquetFP )
 
-add_subdirectory(${ABKCOMMON_HOME})
 add_subdirectory(${PARQUET_HOME})
 
 ############################################################
@@ -80,7 +78,6 @@ PUBLIC
   utility
 
 PRIVATE
-  ${ABKCOMMON_HOME}
   ${PARQUET_HOME}/src
 
   ${OPENSTA_HOME}/include

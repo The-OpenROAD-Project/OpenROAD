@@ -39,7 +39,6 @@
 #ifndef _BITBOARD_H_
 #define _BITBOARD_H_
 
-#include <ABKCommon/abkcommon.h>
 #include <iostream>
 
 

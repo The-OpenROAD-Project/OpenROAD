@@ -38,7 +38,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "Parquet.h"
 #include "btreeanneal.h"
 #include "mpl/MacroPlacer.h"
 #include "mixedpackingfromdb.h"
@@ -189,7 +188,7 @@ void Partition::FillNetlistTable(
   if (mpPtr == macroPartMap.end()) {
     logger_->error(MPL,
                 54,
-                "Partition: {} not exists MacroCell (macroPartMap)",
+                "Partition: {} missing from macroPartMap",
                 partClass);
   }
 
@@ -530,15 +529,15 @@ bool Partition::DoAnneal()
   param.nonTrivialOutline = parquetfp::BBox(0, 0, width, height);
   param.reqdAR = width / height;
   param.maxWS = 0;
-  param.verb = "0 0 0";
+  param.verb = 0;
 
   // Instantiate BTreeAnnealer Object
-  BTreeAreaWireAnnealer* annealer =
-    new BTreeAreaWireAnnealer(*blockInfo, const_cast<pfp::Command_Line*>(&param), &db);
+  pfp::BTreeAreaWireAnnealer* annealer =
+    new pfp::BTreeAreaWireAnnealer(*blockInfo, const_cast<pfp::Command_Line*>(&param), &db);
 
   annealer->go();
 
-  const BTree& sol = annealer->currSolution();
+  const pfp::BTree& sol = annealer->currSolution();
   // Failed annealing
   if (sol.totalWidth() > width || sol.totalHeight() > height) {
     logger_->info(MPL, 61, "Parquet BBOX exceed the given area");

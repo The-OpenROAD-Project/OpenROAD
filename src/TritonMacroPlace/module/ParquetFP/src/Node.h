@@ -38,6 +38,8 @@
 #include <cmath>
 #include <cstdlib>
 
+#include "FPcommon.h"
+
 namespace parquetfp
 {
    class Nets;
@@ -152,9 +154,6 @@ namespace parquetfp
 
            //to be used only during initialization else use changeOrient
            void putOrient(ORIENT newOrient) {
-             abkfatal(newOrient == N || newOrient == FN || newOrient == S || newOrient == FS ||
-                      newOrient == E || newOrient == FE || newOrient == W || newOrient == FW,
-                      "bad orient handed to putOrient"); 
              _orient = newOrient;
            } 
            void putmaxAR(float newMaxAR)    { _maxAr = newMaxAR;   }

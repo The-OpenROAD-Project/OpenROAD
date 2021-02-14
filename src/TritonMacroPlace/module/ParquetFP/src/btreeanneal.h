@@ -40,10 +40,11 @@
 #include "btreeslackeval.h"
 #include "btreecompact.h"
 #include "baseannealer.h"
-#include "debug.h"
 #include "allparquet.h"
 
 #include <cfloat>
+
+namespace parquetfp {
 
 // --------------------------------------------------------
 class BTreeAreaWireAnnealer : public BaseAnnealer
@@ -297,5 +298,7 @@ inline unsigned BTreeAreaWireAnnealer::getNumObstacles()
 	return _obstacleinfo.xloc.size();
 }
 // ========================================================
+
+} // namespace
 
 #endif

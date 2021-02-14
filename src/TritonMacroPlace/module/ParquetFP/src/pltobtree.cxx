@@ -33,13 +33,14 @@
 
 #include "pltobtree.h"
 #include "plsptobtree.h"
-#include "debug.h"
 
 #include <cmath>
 #include <vector>
 #include <list>
 #include <algorithm>
 #include <cfloat>
+
+namespace parquetfp {
 
 using std::cout;
 using std::endl;
@@ -494,4 +495,5 @@ void Pl2BTree::TCGDfs(vector< vector <bool> >& TCGMatrix,
      }
   }
 }
-// --------------------------------------------------------
+
+} // namespace

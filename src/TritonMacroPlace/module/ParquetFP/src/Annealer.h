@@ -58,16 +58,15 @@ namespace parquetfp
    protected:
       SeqPair *const _sp;
       SPeval *const _spEval;
-      MaxMem *_maxMem;
   
       std::vector<Point> sortedXSlacks;
       std::vector<Point> sortedYSlacks;
 
       Annealer()
-         : BaseAnnealer(), _sp(NULL), _spEval(NULL), _maxMem(NULL) {}
+         : BaseAnnealer(), _sp(NULL), _spEval(NULL) {}
 
    public:
-      Annealer(const Command_Line *const params, DB *const db, MaxMem *maxMem);
+      Annealer(const Command_Line *const params, DB *const db);
 
       virtual ~Annealer();
       void parseConfig();

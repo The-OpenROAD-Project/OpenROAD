@@ -38,6 +38,8 @@
 
 #include <algorithm>
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 class BTreeCompactor : public BTree
 {
@@ -199,5 +201,9 @@ inline void BTreeCompactor::fix_orth_tree(std::vector<BTree::BTreeNode>& orth_tr
    orth_tree[bottomLeftBlock].parent = NUM_BLOCKS;
    std::iter_swap(&(orth_tree[NUM_BLOCKS]), &(orth_tree[NUM_BLOCKS+1]));
 }
+
 // --------------------------------------------------------
+
+} // namespace
+
 #endif

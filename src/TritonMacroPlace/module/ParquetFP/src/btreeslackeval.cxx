@@ -32,9 +32,10 @@
 
 
 #include "btreeslackeval.h"
-#include "debug.h"
 
 #include <algorithm>
+
+namespace parquetfp {
 
 using std::vector;
 
@@ -139,4 +140,5 @@ void BTreeSlackEval::reverse_tree(const vector<BTree::BTreeNode>& tree,
       }
    }
 }
-// --------------------------------------------------------
+
+} // namespace

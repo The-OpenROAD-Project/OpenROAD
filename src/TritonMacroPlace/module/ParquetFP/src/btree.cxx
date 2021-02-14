@@ -40,6 +40,8 @@
 #include <algorithm>
 #include <cfloat>
 
+namespace parquetfp {
+
 using namespace basepacking_h;
 using std::ofstream;
 using std::string;
@@ -1038,3 +1040,5 @@ void BTree::addObstacles(BasePacking &obstacles, float obstacleFrame[2])
 }
 
 // --------------------------------------------------------
+
+} // namespace

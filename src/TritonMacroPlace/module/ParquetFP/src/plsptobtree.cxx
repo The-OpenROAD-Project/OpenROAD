@@ -37,6 +37,8 @@
 #include <cfloat>
 #include <algorithm>
 
+namespace parquetfp {
+
 using std::vector;
 
 const float PlSP2BTree::Infty = basepacking_h::Dimension::Infty;
@@ -197,5 +199,4 @@ void PlSP2BTree::initializeTree()
 }
 // --------------------------------------------------------
 
-   
-
+} // namespace

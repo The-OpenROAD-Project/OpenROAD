@@ -49,10 +49,9 @@ namespace parquetfp
       DB * _db;
       Command_Line* _params;
       DB * _newDB;
-      MaxMem *_maxMem;
 
    public:
-      SolveMulti(DB * db, Command_Line* params, MaxMem *maxMem);
+      SolveMulti(DB * db, Command_Line* params);
       ~SolveMulti();
       void go(void);
       DB* clusterOnly() const;

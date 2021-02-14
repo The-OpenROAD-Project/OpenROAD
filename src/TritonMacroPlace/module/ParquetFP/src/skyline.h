@@ -2,8 +2,9 @@
 #define __SKYLINE_CONTOUR__ 0
 
 #include <iostream>
-#include "ABKCommon/abkcommon.h"
 #include "btree.h"
+
+namespace parquetfp {
 
 // A structure for building 
 struct Block { 
@@ -109,4 +110,7 @@ class SkylineContour {
     std::pair<float, int> GetHeightWithIdx(float left, float right);
   
 };
+
+} // namespace
+
 #endif

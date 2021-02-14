@@ -34,8 +34,6 @@
 #ifndef FPCOMMON
 #define FPCOMMON
 
-#include "ABKCommon/abkcommon.h"
-
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -113,8 +111,6 @@ namespace parquetfp
       bool isValid(void) const;
    };
 
-   std::istream& operator>>(std::istream& in, BBox &box);   
-
 //global parsing functions
    std::istream& eatblank(std::istream& i);
 
@@ -127,8 +123,50 @@ namespace parquetfp
 //functions to manage the orientations
    ORIENT toOrient(char* orient);
    const char* toChar(ORIENT orient);
+
+// Lifted from ABKcommon
+
+inline bool equalFloat(const float a, const float b)
+{
+   //standard def of equality
+   if(a == b) return true;
+
+   float absdiff = std::abs(a-b);
+   const float fraction = 1.e-6f;
+
+   //special case for a = 0 or b = 0
+   if(((a == 0.) || (b == 0.)) && (absdiff < fraction)) return true;
+
+   float absa = std::abs(a);
+   float absb = std::abs(b);
+
+   // difference insignificant compared to a and b
+   return ((absdiff < fraction*absa) && (absdiff < fraction*absb));
+}
+
+inline bool lessOrEqualFloat(const float a, const float b)
+{
+   return (a <= b) || equalFloat(a,b);
+}
+
+inline bool lessThanFloat(const float a, const float b)
+{
+   return (a < b) && !equalFloat(a,b);
+}
+
+#define fpwarn(CONDITION, ERRMESSAGE) {         \
+    if (!(CONDITION)) {                         \
+      std::cerr << std::endl << (ERRMESSAGE);   \
+    }                                           \
+  }
+
+#define fpfatal(CONDITION, ERRMESSAGE) {        \
+    if (!(CONDITION)) {                         \
+      std::cerr << std::endl << (ERRMESSAGE) ;  \
+      abort();                                  \
+    }                                           \
+  }
+
 } // using namespace parquetfp;
 
-
-	
 #endif

@@ -31,7 +31,6 @@
 ***************************************************************************/
 
 
-#include "ABKCommon/abkMD5.h"
 #include "baseannealer.h"
 #include "basepacking.h"
 #include "CommandLine.h"
@@ -152,12 +151,8 @@ void BaseAnnealer::postHPWLOpt()
    }
 }
 // --------------------------------------------------------
-void BaseAnnealer::printResults(const Timer& tm,
-                                const SolutionInfo& curr) const
+void BaseAnnealer::printResults(const SolutionInfo& curr) const
 {
-   float timeReqd = tm.getUserTime();
-   float realTime = tm.getRealTime();
-
    float blocksArea = _db->getNodesArea();
    float currArea = curr.area;
    float currWidth = curr.width;
@@ -172,14 +167,11 @@ void BaseAnnealer::printResults(const Timer& tm,
 
    cout.precision(6);
 
-   if(_params->verb.getForSysRes() > 0)
-      cout << "realTime:" << realTime << "\tuserTime:" << timeReqd << endl;
-
-   if(_params->verb.getForMajStats() > 0)
+   if(_params->verb > 0)
       cout << "Final Area: " << currArea << " WhiteSpace " << whiteSpace
            << "%" << " AR " << currAR << " HPWL " << HPWL << endl;
 
-   if(_params->verb.getForMajStats() > 0)
+   if(_params->verb > 0)
    {
       if (_params->dontClusterMacros && _params->solveTop)
          cout << "width w/ macros only: "

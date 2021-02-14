@@ -31,7 +31,6 @@
 ***************************************************************************/
 
 
-#include "ABKCommon/infolines.h"
 #include "FPcommon.h"
 #include "Annealer.h"
 #include "ClusterDB.h"
@@ -47,7 +46,7 @@ using std::endl;
 using std::numeric_limits;
 using std::vector;
 
-SolveMulti::SolveMulti(DB * db, Command_Line* params, MaxMem *maxMem):_newDB(0),_maxMem(maxMem)
+SolveMulti::SolveMulti(DB * db, Command_Line* params):_newDB(0)
 {
    _db = db;
    _params = params;
@@ -66,23 +65,17 @@ DB* SolveMulti::clusterOnly() const
    ClusterDB multiCluster(_db, _params);
 
    DB* clusteredDB=0;
-   Timer T;
+
    if(_params->clusterPhysical)
       multiCluster.clusterMultiPhysical(clusteredDB);
    else
       multiCluster.clusterMulti(clusteredDB);
    
-   T.stop();
-   _maxMem->update("Parquet after Clustering");
-   clusterTime +=  T.getUserTime();
-
    return clusteredDB; // Transfer ownership of the DB
 }
 
 void SolveMulti::go(void)
 {
-   Timer T;
-
    ClusterDB multiCluster(_db, _params);
 
    if(_params->clusterPhysical)
@@ -90,14 +83,7 @@ void SolveMulti::go(void)
    else
       multiCluster.clusterMulti(_newDB);
 
-   T.stop();
-   _maxMem->update("Parquet after Clustering");
-   clusterTime +=  T.getUserTime();
-   
-   if(_params->verb.getForSysRes() > 0)
-      cout<<"Clustering took "<<clusterTime<<" seconds "<<endl;
- 
-   if(_params->verb.getForMajStats() > 0)
+   if(_params->verb > 0)
       cout<<"Num Nodes: "<<_newDB->getNumNodes()<<"  Num Nets: "
           <<_newDB->getNets()->getNumNets()<<"  Num Pins: "
           <<_newDB->getNets()->getNumPins()<<"  Num Obstacles: "
@@ -115,7 +101,7 @@ void SolveMulti::go(void)
    float newMaxWS = (maxArea/newDBArea-1.f)*100.f;
    float oldMaxWS = _params->maxWS;
    float inverseRatio = 1.f;
-
+   
    if(lessThanFloat(newMaxWS, 100.f*_params->shrinkToSize))
    {
      // we don't have enough whitespace, so lets shrink the
@@ -137,7 +123,7 @@ void SolveMulti::go(void)
 
    _params->maxWS = newMaxWS;
    bool fixedOutline = _params->reqdAR != -9999;
-   if(fixedOutline && _params->verb.getForMajStats() > 0)
+   if(fixedOutline && _params->verb > 0)
       cout<<"newMaxWS is "<<_params->maxWS<<endl;
 
    if(fixedOutline)
@@ -149,7 +135,7 @@ void SolveMulti::go(void)
    int maxIter = 0;
 
    if (_db->getNumObstacles() > 0 && _params->FPrep != "BTree") {
-      if(_params->verb.getForMajStats() > 0)
+      if(_params->verb > 0)
          cout<<"Obstacles detected. Changing annealer to B*Tree"<<endl;
       _params->FPrep = "BTree";
    }
@@ -162,14 +148,14 @@ void SolveMulti::go(void)
    }
    else if (_params->FPrep == "SeqPair")
    {
-      annealer = new Annealer(_params, _newDB, _maxMem);
+      annealer = new Annealer(_params, _newDB);
    }
    else if (_params->FPrep == "Best")
    {
       if(_newDB->getNumNodes() < 100 && _params->maxWS > 10.)
       {
         _params->FPrep = "SeqPair";
-        annealer = new Annealer(_params, _newDB, _maxMem);
+        annealer = new Annealer(_params, _newDB);
       }
       else
       {
@@ -179,7 +165,7 @@ void SolveMulti::go(void)
    }
    else
    {
-      abkfatal(false, "Invalid floorplan representation specified");
+      fpfatal(false, "Invalid floorplan representation specified");
       exit(1);
    }
 
@@ -205,7 +191,7 @@ void SolveMulti::go(void)
 
    //annealer->eval();
    float startArea = _newDB->getXMax()*_newDB->getYMax();
-   if(_params->verb.getForMajStats() > 0)
+   if(_params->verb > 0)
       cout<<"Starting whitespace "<<100*(startArea-newDBArea)/newDBArea<<"%. Starting AR "<<_newDB->getXMax()/_newDB->getYMax()<<endl;
 
    //_newDB->save("temp");
@@ -266,12 +252,12 @@ void SolveMulti::go(void)
            legal = lessOrEqualFloat(currXSize,reqdWidth) && lessOrEqualFloat(currYSize,reqdHeight);
        }
 
-       if(fixedOutline && legal && _params->verb.getForMajStats() > 0)
+       if(fixedOutline && legal && _params->verb > 0)
        {
          cout<<"Fixed-outline FPing SUCCESS"<<endl;
        }
 
-       if(fixedOutline && !legal && _params->verb.getForMajStats() > 0)
+       if(fixedOutline && !legal && _params->verb > 0)
        {
          cout<<"Fixed-outline FPing FAILURE"<<endl;
        }
@@ -304,7 +290,7 @@ void SolveMulti::go(void)
        maxIter++;
        if(maxIter == _params->maxIterHier)
        {
-           if(_params->verb.getForMajStats() > 0)
+           if(_params->verb > 0)
                cout<<"FAILED to satisfy fixed outline constraints" <<
                    " for clustered hypergraph" <<endl;
            satisfied = false;
@@ -314,7 +300,7 @@ void SolveMulti::go(void)
        //change the annealer to BTree if 1'st 2 iterations fail
        if(maxIter == 2 && _params->FPrep == "SeqPair") 
        {
-           if(_params->verb.getForMajStats() > 0)
+           if(_params->verb > 0)
                cout<<"Failed 1st iteration. Changing annealer to B*Tree"<<endl;
 
            annealTime += annealer->annealTime;
@@ -392,7 +378,7 @@ void SolveMulti::placeSubBlocks(void)
                           dbLoc,
                           params->reqdAR);
 
-      if(_params->verb.getForMajStats() > 0)
+      if(_params->verb > 0)
          cout << node->getName() << "  numSubBlks : " << node->numSubBlocks()
               << "reqdAR " << params->reqdAR << endl;
 
@@ -404,13 +390,13 @@ void SolveMulti::placeSubBlocks(void)
       }
       else if (params->FPrep == "SeqPair")
       {
-         annealer = new Annealer(params, tempDB, _maxMem);
+         annealer = new Annealer(params, tempDB);
       }
       else if (_params->FPrep == "Best")
       {
          if(tempDB->getNumNodes() < 100 && _params->maxWS > 10.)
          {
-           annealer = new Annealer(_params, tempDB, _maxMem);
+           annealer = new Annealer(_params, tempDB);
          }
          else
          {
@@ -419,8 +405,7 @@ void SolveMulti::placeSubBlocks(void)
       }
       else
       {
-         abkfatal(false, "Invalid floorplan representation specified");
-         exit(1);
+         fpfatal(false, "Invalid floorplan representation specified");
       }
 
       float currXSize, currYSize;
@@ -483,7 +468,7 @@ void SolveMulti::placeSubBlocks(void)
             maxIter++;
             if(maxIter == _params->maxIterHier)
             {
-               if(_params->verb.getForMajStats() > 0)
+               if(_params->verb > 0)
                   cout<<"FAILED to satisfy fixed outline constraints for "
                       <<node->getName()<<endl;
                satisfied=false;

@@ -1,9 +1,12 @@
+#include <cfloat>
 #include <iostream>
 #include "skyline.h"
-#include "ABKCommon/abkcommon.h"
 
 using std::cout;
 using std::endl;
+
+namespace parquetfp {
+
 // A divide and conquer based C++ program to find skyline of given 
 // buildings 
 
@@ -419,3 +422,5 @@ int main()
   return 0; 
 }
 */
+
+} // namespace

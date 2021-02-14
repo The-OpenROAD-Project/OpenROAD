@@ -31,6 +31,7 @@
  ***************************************************************************/
 
 
+#include "FPcommon.h"
 #include "btreeanneal.h"
 #include <algorithm>
 #include <random>
@@ -50,18 +51,14 @@
 
 #include "skyline.h"
 
-#include <ABKCommon/abkcommon.h>
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
 #include <iterator>
 #include <deque>
 
-using parquetfp::Node;
-using parquetfp::Nodes;
-using parquetfp::DB;
-using parquetfp::Command_Line;
-using parquetfp::AnalytSolve;
+namespace parquetfp {
+
 using std::cout;
 using std::endl;
 using std::min;
@@ -252,8 +249,6 @@ void BTreeAreaWireAnnealer::constructor_core()
 // --------------------------------------------------------
 bool BTreeAreaWireAnnealer::go()
 {      
-  Timer T;
-
   DBfromSoln(in_curr_solution);
 
   //turn off rotation for hard square macros
@@ -282,11 +277,8 @@ bool BTreeAreaWireAnnealer::go()
     success = anneal();
   else
     success = packOneBlock();
-  T.stop();
 
-  annealTime += T.getUserTime();
-
-//  cout << "before DB from soln" << endl;
+  //  cout << "before DB from soln" << endl;
   // update *_db for locs, dimensions and slacks
   DBfromSoln(in_curr_solution);
 //  cout << "after DB from soln" << endl;
@@ -308,7 +300,7 @@ bool BTreeAreaWireAnnealer::go()
 #else
   currSoln.HPWL = _db->evalHPWL(useWts,_params->scaleTerms);
 #endif
-  printResults(T, currSoln);
+  printResults(currSoln);
 
   return success;
 }
@@ -377,10 +369,10 @@ bool BTreeAreaWireAnnealer::packOneBlock()
   const vector<float> defaultYloc(1, 0);
   const int defaultOrient = 0;
 
-  if(_params->verb.getForActions() > 0)
+  if(_params->verb > 0)
     cout << "Only one block is detected, deterministic algo used." << endl;
 
-  if (_params->reqdAR != FREE_OUTLINE && _params->verb.getForMajStats() > 0)
+  if (_params->reqdAR != FREE_OUTLINE && _params->verb > 0)
     cout << "outline width: " << reqdWidth
       << " outline height: " << reqdHeight << endl;
 
@@ -401,7 +393,7 @@ bool BTreeAreaWireAnnealer::packOneBlock()
         ((blockWidth <= reqdWidth) &&
          (blockHeight <= reqdHeight)));
 
-    if(_params->verb.getForMajStats() > 0)
+    if(_params->verb > 0)
       cout << "orient: " << theta
         << " width: " << blockWidth
         << " height: " << blockHeight
@@ -418,7 +410,7 @@ bool BTreeAreaWireAnnealer::packOneBlock()
       float currHPWL = _db->evalHPWL(useWts,_params->scaleTerms);
 #endif
 
-      if(_params->verb.getForMajStats() > 0)
+      if(_params->verb > 0)
         cout << " HPWL: " << currHPWL;
       if (currHPWL < bestHPWL)
       {
@@ -429,7 +421,7 @@ bool BTreeAreaWireAnnealer::packOneBlock()
     else if (fitsInside)
       bestOrient = theta;
 
-    if(_params->verb.getForMajStats() > 0)
+    if(_params->verb > 0)
       cout << endl;
   }
 
@@ -498,9 +490,6 @@ bool BTreeAreaWireAnnealer::anneal()
   bool saved_best=false;
 
 
-  Timer looptm;
-  looptm.stop();
-
   _db->updatePlacement(const_cast<vector<float>&>(in_curr_solution.xloc()),
       const_cast<vector<float>&>(in_curr_solution.yloc()));
   bool useWts = true;
@@ -543,60 +532,6 @@ bool BTreeAreaWireAnnealer::anneal()
     // ----------------------------------------
     do
     {
-      // ------------------------------------
-      // special treatment when time is fixed
-      // ------------------------------------
-      if (budgetTime)
-      {
-        if (count==0)
-        {
-          looptm.start(0.0);
-        }
-        else if (count==1000)
-        {  
-          looptm.stop();               
-          unit = looptm.getUserTime() / 1000;
-          if (unit == 0)
-          {
-            unit = 10e-6f;
-          }
-          seconds -= looptm.getUserTime();
-          if(_params->verb.getForMajStats() > 0)
-            cout << int(seconds/unit) << " moves left with "
-              << (unit*1000000) <<" micro seconds per move." << endl;
-          moves = unsigned(seconds/unit/125);// moves every .08 degree
-        }
-        else if (count > 1000)
-        {
-          seconds -= unit;
-          if (seconds <= 0)
-          {
-            if(_params->verb.getForMajStats() > 0)
-              cout << "TimeOut" << endl;
-            return false;
-          }
-        }
-      }
-      else
-      {
-        if (count==0)
-        {
-          looptm.start(0.0);
-        }
-        else if (count==1000)
-        {  
-          looptm.stop();               
-          unit = looptm.getUserTime() / 1000;
-          if (unit == 0)
-          {
-            unit = 10e-6f;
-          }
-          if(_params->verb.getForMajStats() > 0)
-            cout << (unit * 1e6) <<" micro seconds per move." << endl;
-        }
-      }         
-      // finish treating time if necessary 
-
       // -----------------------
       // select and apply a move
       // -----------------------
@@ -1127,7 +1062,7 @@ void BTreeAreaWireAnnealer::compactSoln(bool minWL, bool fixedOutline, float req
   float currArea = compactor.totalArea();
   while (numBlkChange > 0)
   {
-    if(_params->verb.getForActions() > 0 || _params->verb.getForMajStats() > 0)
+    if(_params->verb)
       printf("round[%d] %d blks moved, area: %.2f -> %.2f\n",
           round, numBlkChange, lastArea, currArea);
 
@@ -1136,7 +1071,7 @@ void BTreeAreaWireAnnealer::compactSoln(bool minWL, bool fixedOutline, float req
     lastArea = currArea;
     currArea = compactor.totalArea();
   }
-  if(_params->verb.getForActions() > 0 || _params->verb.getForMajStats() > 0)
+  if(_params->verb > 0)
     printf("round[%d] %d blks moved, area: %.2f -> %.2f\n",
         round, numBlkChange, lastArea, currArea);
 
@@ -1191,7 +1126,7 @@ int BTreeAreaWireAnnealer::makeMoveSlacks()
   total++;
   numHoriz += ((horizontal)? 1 : 0);
 
-  if (total % 1000 == 0 && _params->verb.getForMajStats() > 0)
+  if (total % 1000 == 0 && _params->verb > 0)
     cout << "total: " << total << "horiz: " << numHoriz << endl;
   return SLACKS_MOVE;
 }
@@ -1695,3 +1630,5 @@ void getObstaclesFromDB(DB *const db, BasePacking &out)
   //  out.height.push_back(50);
 }
 // --------------------------------------------------------
+
+} // namespace

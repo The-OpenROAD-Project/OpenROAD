@@ -37,6 +37,8 @@
 #include "basepacking.h"
 #include "btree.h"
 
+namespace parquetfp {
+
 // --------------------------------------------------------
 class Pl2BTree
 {
@@ -265,4 +267,5 @@ bool Pl2BTree::SPYRelation::operator ()(int i, int j) const
 }
 // --------------------------------------------------------
 
+} // namespace
 #endif

@@ -37,7 +37,6 @@
 // 040608 hhchan added StringParam "FPrep" ("SeqPair" or "BTree")
 
 #include <string>
-#include "ABKCommon/abkcommon.h"
 #include "FPcommon.h"
 
 namespace parquetfp
@@ -45,7 +44,6 @@ namespace parquetfp
    class Command_Line
    {
    public:
-      Command_Line (int argc, const char *argv[]);
       Command_Line ();
                 
       // -----public member variables to store params-----
@@ -120,7 +118,7 @@ namespace parquetfp
                           // initial SP (default: false)
       bool compact;       // compact final soln (default: false)
 
-      Verbosity verb;     // by royj to control the verbosity of Parquet
+      int verb;     // by royj to control the verbosity of Parquet
 
       bool packleft;      // directions the SPannealer should use
       bool packbot;
@@ -133,12 +131,6 @@ namespace parquetfp
 
       bool noRotation;
 
-      // print usage info. to cerr
-      void printHelp(int argc, const char *argv[]) const;
-      
-      // print the Annealer params
-      void printAnnealerParams() const;
-      void printAnnealerParamsClassic() const;
       void setSeed();
    };
 }
