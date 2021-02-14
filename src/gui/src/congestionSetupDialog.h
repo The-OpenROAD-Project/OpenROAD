@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QDialog>
 #include <QListWidgetItem>
 #include <QString>
@@ -88,7 +89,7 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
           band_ulimit_(ulimit)
     {
     }
-    QString band_color_;
+    QColor band_color_;
     std::string color_style_sheet_;  // To be Used on Color Gradient Button
     int band_ulimit_;
   };
@@ -104,7 +105,7 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
 
   // Dialog State
   int min_congestion_;
-  QVector<QString> colors_;
+  QVector<QColor> colors_;
   int cong_dir_index_;
 
   static ColorRangeMap _color_ranges;

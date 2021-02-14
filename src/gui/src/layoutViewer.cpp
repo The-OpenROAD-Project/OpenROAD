@@ -1103,7 +1103,7 @@ void LayoutViewer::addMenuAndActions()
 
   connect(
       menu_actions_[SHOW_CONGESTION_MAP], &QAction::triggered, this, [this]() {
-        this->viewCongestionMap(
+        this->showCongestionMap(
             menu_actions_[SHOW_CONGESTION_MAP]->isChecked());
       });
 
@@ -1242,13 +1242,13 @@ void LayoutViewer::populateCongestionData()
   }
 }
 
-void LayoutViewer::viewCongestionMap(bool show)
+void LayoutViewer::showCongestionMap(bool val)
 {
   if (gcell_congestion_data_.empty())
     populateCongestionData();
 
-  menu_actions_[SHOW_CONGESTION_MAP]->setChecked(show);
-  emit congestionDisplayed(show);
+  menu_actions_[SHOW_CONGESTION_MAP]->setChecked(val);
+  emit congestionDisplayed(val);
   update();
 }
 

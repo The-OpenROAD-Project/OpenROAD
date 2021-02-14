@@ -33,10 +33,12 @@
 #include "mainWindow.h"
 
 #include <QDesktopWidget>
+#include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
-
+#include <QToolButton>
+#include <QWidgetAction>
 #include <map>
 #include <vector>
 
@@ -188,11 +190,6 @@ void MainWindow::createActions()
 
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
-
-  congestion_ = new QAction("Congestion Map", this);
-  congestion_->setShortcut(QString("Ctrl+M"));
-  congestion_->setCheckable(true);
-
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
@@ -204,9 +201,6 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
-  connect(congestion_, SIGNAL(triggered()), this, SLOT(showCongestionMap()));
-
-  congestion_->setEnabled(false);
 }
 
 void MainWindow::createMenus()
@@ -217,7 +211,6 @@ void MainWindow::createMenus()
   view_menu_ = menuBar()->addMenu("&View");
   view_menu_->addAction(fit_);
   view_menu_->addAction(find_);
-  view_menu_->addAction(congestion_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
 
@@ -233,7 +226,36 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("View");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
-  view_tool_bar_->addAction(congestion_);
+
+  congestion_button_ = new QToolButton(this);
+  congestion_button_->setPopupMode(QToolButton::InstantPopup);
+
+  congestion_map_ = new QAction("Congestion");
+  congestion_map_->setCheckable(true);
+  congestion_map_->setChecked(false);
+  connect(congestion_map_,
+          SIGNAL(triggered(bool)),
+          viewer_,
+          SLOT(showCongestionMap(bool)));
+
+  congestion_setup_ = new QAction("Congestion Setup...");
+  connect(congestion_setup_,
+          SIGNAL(triggered()),
+          viewer_,
+          SLOT(showCongestionSetup()));
+
+  QMenu* congestion_button_menu = new QMenu();
+  congestion_button_menu->addAction(congestion_map_);
+  congestion_button_menu->addAction(congestion_setup_);
+  congestion_button_->setMenu(congestion_button_menu);
+
+  QWidgetAction* toolButtonAction = new QWidgetAction(this);
+  toolButtonAction->setDefaultWidget(congestion_button_);
+  congestion_button_->setText("Congestion Map...");
+  congestion_button_->setEnabled(false);
+
+  view_tool_bar_->addAction(toolButtonAction);
+
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
@@ -378,17 +400,17 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-void MainWindow::showCongestionMap()
+void MainWindow::updateCongestion(bool val)
 {
-  viewer_->viewCongestionMap(congestion_->isChecked());
-  return;
+  congestion_map_->setChecked(val);
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set) {
     for (auto& selected_obj : selected_) {
-      if ((selected_obj.isInst() && obj_type == odb::dbInstObj) || (selected_obj.isNet() && obj_type == odb::dbNetObj))
+      if ((selected_obj.isInst() && obj_type == odb::dbInstObj)
+          || (selected_obj.isNet() && obj_type == odb::dbNetObj))
         return true;
     }
     return false;
@@ -478,7 +500,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  congestion_->setEnabled(true);
+  congestion_button_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -493,7 +515,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  congestion_->setEnabled(true);
+  congestion_button_->setEnabled(true);
   emit designLoaded(block);
 }
 

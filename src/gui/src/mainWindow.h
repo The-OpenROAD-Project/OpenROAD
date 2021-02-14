@@ -144,8 +144,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Show Find Dialog Box
   void showFindDialog();
-  void showCongestionMap();
-  void updateCongestion(bool val) { congestion_->setChecked(val); }
+  void updateCongestion(bool val);
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -183,9 +182,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
-  QAction* congestion_;
   QAction* zoom_in_;
   QAction* zoom_out_;
+
+  QToolButton* congestion_button_;
+  QAction* congestion_map_;
+  QAction* congestion_setup_;
 
   QLabel* location_;
 

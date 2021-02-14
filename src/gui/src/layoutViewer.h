@@ -118,8 +118,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;
 
-  void viewCongestionMap(bool show);
-
  signals:
   void location(qreal x, qreal y);
   void selected(const Selected& selected, bool showConnectivity = false);
@@ -139,6 +137,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
   void updateCongestionView();
+
+  void showCongestionMap(bool val);
+  void showCongestionSetup() { congestion_dialog_->show(); }
 
  private:
   struct Boxes
