@@ -188,7 +188,6 @@ int TritonRoute::main() {
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.writeRefDef();
     parser.postProcessGuide();
   }
   prep();
@@ -216,7 +215,7 @@ void TritonRoute::readParams(const string &fileName)
         string value = line.substr(pos + 1);
         stringstream ss(value);
         if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
-        else if (field == "def")      { DEF_FILE = value; REF_OUT_FILE = DEF_FILE; ++readParamCnt;}
+        else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}
         else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}

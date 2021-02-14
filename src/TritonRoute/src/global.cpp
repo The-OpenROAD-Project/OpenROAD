@@ -32,7 +32,6 @@
 using namespace std;
 using namespace fr;
 
-string DEF_FILE;
 string GUIDE_FILE;
 string OUTGUIDE_FILE;
 string OUTTA_FILE;

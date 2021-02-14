@@ -62,7 +62,6 @@ namespace fr {
       void postProcess();
       void postProcessGuide();
       void initDefaultVias();
-      void writeRefDef();
       void initRPin();
       std::map<frBlock*, std::map<frOrient, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp> > >, frBlockObjectComp> &getTrackOffsetMap() {
         return trackOffsetMap;
