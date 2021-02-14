@@ -124,37 +124,48 @@ class MacroPlacer
 public:
   MacroPlacer();
   MacroPlacer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
-  int getSolutionCount();
-
-  // parsing function
-  void ParseGlobalConfig(std::string fileName);
-  void ParseLocalConfig(std::string fileName);
-
-  void UpdateNetlist(Partition& layout);
-
-  // return weighted wire-length to get best solution
-  double GetWeightedWL();
-
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
+
+  void setHalo(double halo_v, double halo_h);
+  void setChannel(double channel_v, double channel_h);
+  void setVerboseLevel(int verbose);
+  void setFenceRegion(double lx, double ly, double ux, double uy);
 
   void setGlobalConfig(const char* globalConfig);
   void setLocalConfig(const char* localConfig);
 
-  void setVerboseLevel(int verbose);
-  void setFenceRegion(double lx, double ly, double ux, double uy);
+  void placeMacros();
+  int getSolutionCount();
 
-  void PlaceMacros(int& solCount);
+  // return weighted wire-length to get best solution
+  double GetWeightedWL();
+  void UpdateNetlist(Partition& layout);
+  int weight(int idx11, int idx12);
 
-  const bool isTiming() const { return isTiming_; }
+  // This should NOT be public -cherry
+  // macro name -> macroStor's index.
+  std::unordered_map<std::string, int> macroNameMap;
+  // macro idx/idx pair -> give each
+  std::vector<std::vector<int>> macroWeight;
+  // macro Information
+  std::vector<Macro> macroStor;
 
 private:
+  // parsing function
+  void ParseGlobalConfig(std::string fileName);
+  void ParseLocalConfig(std::string fileName);
   void FillMacroStor();
   void UpdateInstanceToMacroStor();
+  const bool isTiming() const { return isTiming_; }
 
   void init();
   void reset();
   // Update Macro Location from Partition info
   void UpdateMacroCoordi(Partition& part);
+  void UpdateOpendbCoordi();
+  void UpdateMacroPartMap(Partition& part,
+                          std::unordered_map<PartClass, std::vector<int>,
+                          PartClassHash, PartClassEqual>& macroPartMap);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -188,15 +199,6 @@ private:
 
   bool isTiming_;
 
-  // macro Information
-  std::vector<Macro> macroStor;
-
-  // macro name -> macroStor's index.
-  std::unordered_map<std::string, int> macroNameMap;
-
-  // macro idx/idx pair -> give each
-  std::vector<std::vector<int>> macroWeight;
-
   // sta::Instance* --> macroStor's index stor
   std::unordered_map<sta::Instance*, int> macroInstMap;
 
@@ -212,6 +214,7 @@ private:
   double* netTable_;
   int verbose_;
   bool fenceRegionMode_;
+  int solCount_;
 };
 
 class Layout
@@ -221,10 +224,10 @@ class Layout
   Layout(double lx, double ly, double ux, double uy);
   Layout(Layout& orig, Partition& part);
 
-  double lx() const;
-  double ly() const;
-  double ux() const;
-  double uy() const;
+  double lx() const { return lx_; }
+  double ly() const { return ly_; }
+  double ux() const { return ux_; }
+  double uy() const { return uy_; }
 
   void setLx(double lx);
   void setLy(double ly);
@@ -234,26 +237,6 @@ class Layout
  private:
   double lx_, ly_, ux_, uy_;
 };
-
-inline double Layout::lx() const
-{
-  return lx_;
-}
-
-inline double Layout::ly() const
-{
-  return ly_;
-}
-
-inline double Layout::ux() const
-{
-  return ux_;
-}
-
-inline double Layout::uy() const
-{
-  return uy_;
-}
 
 }  // namespace mpl
 

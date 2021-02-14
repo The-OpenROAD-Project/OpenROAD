@@ -1,70 +1,38 @@
 
 sta::define_cmd_args "macro_placement" {
-  [-global_config global_config_file]\
-  [-local_config local_config_file]}
+  -halo {vertical_width horizontal_width} \
+    -channel {vertical_width horizontal_width}\
+    [-fence_region {lx ly ux uy}]}
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
-    keys {-global_config -local_config -fence_region} flags {-die_area}
+    keys {-channel -halo -fence_region -global_config -local_config} flags {}
 
-  if { ![info exists keys(-global_config)] } {
-    utl::error "MPL" 81 "missing -global_config argument."
-    return
-  } else {
-    set global_config_file $keys(-global_config)
-    if { [file readable $global_config_file] } {
-      mpl::set_macro_place_global_config_cmd $global_config_file
-    } else {
-      utl::warn "MPL" 82 "cannot read $global_config_file"
-    }
+  if { [info exists keys(-halo)] } {
+    lasssign $keys(-halo) halo_v halo_h
+    sta::check_positive_float "-halo vertical" $halo_v
+    sta::check_positive_float "-halo horizontal" $halo_h
+    mpl::set_halo $halo_v $halo_h
   }
 
-  if { [info exists keys(-local_config)] } {
-    set local_config_file $keys(-local_config)
-    if { [file readable $local_config_file] } {
-      mpl::set_macro_place_local_config_cmd $local_config_file
-    } else {
-      utl::warn "MPL" 83 "cannot read $local_config_file"
-    }
+  if { [info exists keys(-channel)] } {
+    lasssign $keys(-channel) channel_v channel_h
+    sta::check_positive_float "-channel vertical" $channel_v
+    sta::check_positive_float "-channel horizontal" $channel_h
+    mpl::set_channel $channel_v $channel_h
   }
 
-  if { [info exists flags(-die_area)] } {
-    if { [info exists flags(-fence_region)] } {
-      utl::warn "MPL" 84 "both -die_area and -fence_region arguments, using -die_area."
-    }
-
-    # get dieArea from odb and set fence region 
-    set db [ord::get_db]
-    set block [[$db getChip] getBlock]
-    set die_area [$block getDieArea]
-    set dbu [$block getDbUnitsPerMicron]
-
-    # note that unit is micron
-    set dieLx [expr double([$die_area xMin]) / $dbu]
-    set dieLy [expr double([$die_area yMin]) / $dbu]
-    set dieUx [expr double([$die_area xMax]) / $dbu]
-    set dieUy [expr double([$die_area yMax]) / $dbu]
-
-    mpl::set_macro_place_fence_region_cmd $dieLx $dieLy $dieUx $dieUy
-  }
-
+  set block [ord::get_db_block]
+  set die_area [$block getDieArea]
+  # note that unit is micron
+  set dieLx [ord::dbu_to_microns [$die_area xMin]]
+  set dieLy [ord::dbu_to_microns [$die_area yMin]]
+  set dieUx [ord::dbu_to_microns [$die_area xMax]]
+  set dieUy [ord::dbu_to_microns [$die_area yMax]]
+  
   if { [info exists keys(-fence_region)] } {
-    set fence_region $keys(-fence_region)
+    lassign $keys(-fence_region) lx ly ux uy 
     
-    # get dbu 
-    set db [ord::get_db]
-    set block [[$db getChip] getBlock]
-    set die_area [$block getDieArea]
-    set dbu [$block getDbUnitsPerMicron]
-
-    lassign $fence_region lx ly ux uy 
-    
-    # note that unit is micron
-    set dieLx [expr double([$die_area xMin]) / $dbu]
-    set dieLy [expr double([$die_area yMin]) / $dbu]
-    set dieUx [expr double([$die_area xMax]) / $dbu]
-    set dieUy [expr double([$die_area yMax]) / $dbu]
-
     if { $lx < $dieLx } {
       utl::warn "MPL" 85 "fence_region left x is less than die left x."
       set lx $dieLx
@@ -81,12 +49,33 @@ proc macro_placement { args } {
       utl::warn "MPL" 88 "fence_region top y is greater than die top y."
       set uy $dieUy
     }
-
-    mpl::set_macro_place_fence_region_cmd $lx $ly $ux $uy
+    mpl::set_fence_region $lx $ly $ux $uy
+  } else {
+    mpl::set_fence_region $dieLx $dieLy $dieUx $dieUy
   }
   
+  if { [info exists keys(-global_config)] } {
+    #utl::warn "MPL" 81 "macro place -global_config deprecated. Use -channel, -halo arguments."
+    set global_config_file $keys(-global_config)
+    if { [file readable $global_config_file] } {
+      mpl::set_global_config $global_config_file
+    } else {
+      utl::warn "MPL" 82 "cannot read $global_config_file"
+    }
+  }
+
+  if { [info exists keys(-local_config)] } {
+    utl::warn "MPL" 90 "macro place -local_config deprecated."
+    set local_config_file $keys(-local_config)
+    if { [file readable $local_config_file] } {
+      mpl::set_local_config $local_config_file
+    } else {
+      utl::warn "MPL" 83 "cannot read $local_config_file"
+    }
+  }
+
   if { [ord::db_has_rows] } {
-    mpl::place_macros_cmd
+    mpl::place_macros
   } else {
     utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
   }

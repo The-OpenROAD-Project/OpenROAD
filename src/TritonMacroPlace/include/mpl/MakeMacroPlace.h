@@ -34,20 +34,20 @@
 #pragma once
 
 namespace mpl {
-class TritonMacroPlace;
+class MacroPlacer;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-mpl::TritonMacroPlace *
+mpl::MacroPlacer *
 makeMacroPlacer();
 
 void
 initMacroPlacer(OpenRoad *openroad);
 
 void
-deleteMacroPlacer(mpl::TritonMacroPlace *macro_placer);
+deleteMacroPlacer(mpl::MacroPlacer *macro_placer);
 
 }

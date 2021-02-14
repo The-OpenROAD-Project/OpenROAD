@@ -35,11 +35,11 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "mpl/TritonMacroPlace.h"
+#include "mpl/MacroPlace.h"
 
 namespace ord {
 // Defined in OpenRoad.i
-mpl::TritonMacroPlace*
+mpl::MacroPlacer*
 getMacroPlacer();
 }
 
@@ -54,39 +54,46 @@ using ord::getMacroPlacer;
 namespace mpl {
 
 void
-set_macro_place_global_config_cmd(const char* file) 
+set_halo(double halo_v, double halo_h)
 {
-  TritonMacroPlace* tritonMp = getMacroPlacer();
-  tritonMp->setGlobalConfig(file); 
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setHalo(halo_v, halo_h);
 }
 
 void
-set_macro_place_local_config_cmd(const char* file)
+set_channel(double channel_v, double channel_h)
 {
-  TritonMacroPlace* tritonMp = getMacroPlacer();
-  tritonMp->setLocalConfig(file); 
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setChannel(channel_v, channel_h); 
 }
 
 void
-set_macro_place_fence_region_cmd(double lx, double ly, double ux, double uy)
+set_fence_region(double lx, double ly, double ux, double uy)
 {
-  TritonMacroPlace* tritonMp = getMacroPlacer();
-  tritonMp->setFenceRegion(lx, ly, ux, uy); 
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setFenceRegion(lx, ly, ux, uy); 
 }
 
 void
-place_macros_cmd()
+place_macros()
 {
-  TritonMacroPlace* tritonMp = getMacroPlacer();
-  tritonMp->placeMacros(); 
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->placeMacros(); 
 } 
 
-int
-get_macro_place_solution_count_cmd()
+void
+set_global_config(const char* file) 
 {
-  TritonMacroPlace* tritonMp = getMacroPlacer();
-  return tritonMp->getSolutionCount();
-} 
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setGlobalConfig(file); 
+}
+
+void
+set_local_config(const char* file)
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setLocalConfig(file); 
+}
 
 }
 

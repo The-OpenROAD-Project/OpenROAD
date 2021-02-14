@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MacroPlace.h"
+#include "mpl/MacroPlace.h"
 
 #include <string>
 #include <fstream>
@@ -99,15 +99,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                                                   bool isHorizontal,
                                                   utl::Logger* log);
 
-static void UpdateMacroPartMap(
-    MacroPlacer& mckt,
-    Partition& part,
-    unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
-        macroPartMap,
-    utl::Logger* log);
-
-static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroPlacer& mckt);
-
 static const char *coreEdgeString(CoreEdge edge);
 static int coreEdgeIndex(CoreEdge edge);
 
@@ -167,6 +158,14 @@ void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
   db_ = db;
   sta_ = sta;
   log_ = log;
+}
+
+void MacroPlacer::setHalo(double halo_v, double halo_h)
+{
+}
+
+void MacroPlacer::setChannel(double channel_v, double channel_h)
+{
 }
 
 void MacroPlacer::setGlobalConfig(const char* globalConfig)
@@ -263,7 +262,7 @@ void MacroPlacer::reportEdgePinCounts()
   }
 }
 
-void MacroPlacer::PlaceMacros(int& solCount)
+void MacroPlacer::placeMacros()
 {
   init();
   Layout layout(lx_, ly_, ux_, uy_);
@@ -292,7 +291,7 @@ void MacroPlacer::PlaceMacros(int& solCount)
 
   unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
       globalMacroPartMap;
-  UpdateMacroPartMap(*this, topLayout, globalMacroPartMap, log_);
+  UpdateMacroPartMap(topLayout, globalMacroPartMap);
 
   if (isTiming_) {
     topLayout.FillNetlistTable(*this, globalMacroPartMap);
@@ -336,7 +335,7 @@ void MacroPlacer::PlaceMacros(int& solCount)
           unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
               macroPartMap;
           for (auto& curSet : oneSet) {
-            UpdateMacroPartMap(*this, curSet, macroPartMap, log_);
+            UpdateMacroPartMap(curSet, macroPartMap);
           }
 
           if (isTiming_) {
@@ -362,7 +361,7 @@ void MacroPlacer::PlaceMacros(int& solCount)
           unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
               macroPartMap;
           for (auto& curSet : oneSet) {
-            UpdateMacroPartMap(*this, curSet, macroPartMap, log_);
+            UpdateMacroPartMap(curSet, macroPartMap);
           }
 
           if (isTiming_) {
@@ -390,7 +389,7 @@ void MacroPlacer::PlaceMacros(int& solCount)
             unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
                 macroPartMap;
             for (auto& curSet : oneSet) {
-              UpdateMacroPartMap(*this, curSet, macroPartMap, log_);
+              UpdateMacroPartMap(curSet, macroPartMap);
             }
 
             if (isTiming_) {
@@ -412,7 +411,7 @@ void MacroPlacer::PlaceMacros(int& solCount)
   }
   log_->info(MPL, 70, "NumExtractedSets: {}", allSets.size() - 1);
 
-  solCount = 0;
+  solCount_ = 0;
   int bestSetIdx = 0;
   double bestWwl = -DBL_MAX;
   for (auto& curSet : allSets) {
@@ -449,10 +448,10 @@ void MacroPlacer::PlaceMacros(int& solCount)
       bestWwl = curWwl;
       bestSetIdx = &curSet - &allSets[0];
     }
-    solCount++;
+    solCount_++;
   }
 
-  log_->info(MPL, 73, "NumFinalSols: {}", solCount);
+  log_->info(MPL, 73, "NumFinalSols: {}", solCount_);
 
   // bestset DEF writing
   std::vector<Partition> bestSet = allSets[bestSetIdx];
@@ -460,16 +459,21 @@ void MacroPlacer::PlaceMacros(int& solCount)
   for (auto& curBestPart : bestSet) {
     UpdateMacroCoordi(curBestPart);
   }
-  UpdateOpendbCoordi(db_, *this);
+  UpdateOpendbCoordi();
+}
+
+int MacroPlacer::weight(int idx1, int idx2)
+{
+  return macroWeight[idx1][idx2];
 }
 
 // update opendb dataset from mckt.
-static void UpdateOpendbCoordi(odb::dbDatabase* db, MacroPlacer& mckt)
+void MacroPlacer::UpdateOpendbCoordi()
 {
-  odb::dbTech* tech = db->getTech();
+  odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
 
-  for (auto& curMacro : mckt.macroStor) {
+  for (auto& curMacro : macroStor) {
     curMacro.dbInstPtr->setLocation(round(curMacro.lx * dbu),
                                     round(curMacro.ly * dbu));
     curMacro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
@@ -500,31 +504,25 @@ static void CutRoundUp(const Layout& layout,
 //
 // first: macro partition class info
 // second: macro candidates.
-static void UpdateMacroPartMap(
-    MacroPlacer& mckt,
-    Partition& part,
-    unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
-        macroPartMap,
-    utl::Logger* log)
+void MacroPlacer::UpdateMacroPartMap(Partition& part,
+                                     unordered_map<PartClass, vector<int>,
+                                     PartClassHash, PartClassEqual>& macroPartMap)
 {
   auto mpPtr = macroPartMap.find(part.partClass);
   if (mpPtr == macroPartMap.end()) {
     vector<int> curMacroStor;
     // convert macro Information into macroIdx
     for (auto& curMacro : part.macroStor) {
-      auto miPtr = mckt.macroInstMap.find(curMacro.staInstPtr);
-      if (miPtr == mckt.macroInstMap.end()) {
-        log->error(
-            MPL, 74, "macro {} not exists in macroInstMap", curMacro.name());
+      auto miPtr = macroInstMap.find(curMacro.staInstPtr);
+      if (miPtr == macroInstMap.end()) {
+        log_->error(MPL, 74, "macro {} not exists in macroInstMap", curMacro.name());
       }
       curMacroStor.push_back(miPtr->second);
     }
     macroPartMap[part.partClass] = curMacroStor;
   } else {
-    log->error(MPL,
-               75,
-               "Partition- {} already updated (UpdateMacroPartMap)",
-               part.partClass);
+    log_->error(MPL, 75, "Partition- {} already updated (UpdateMacroPartMap)",
+                part.partClass);
   }
 }
 
@@ -1251,6 +1249,9 @@ static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
 
 typedef std::pair<Macro*, Macro*> MacroPair;
 
+// Use OpenSTA graph to find macro adjacencies.
+// No delay calculation or arrival search is required,
+// just gate connectivity in the levelized graph.
 void MacroPlacer::findAdjacencies()
 {
   sta::dbNetwork *network = sta_->getDbNetwork();

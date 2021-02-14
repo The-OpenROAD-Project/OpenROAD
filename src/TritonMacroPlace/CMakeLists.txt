@@ -49,7 +49,7 @@ set(MPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/MacroPlaceTclInitVar.cc)
 add_custom_command(OUTPUT ${MPLACE_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix mpl -o ${MPLACE_WRAP} -I${MPLACE_HOME}/include ${MPLACE_HOME}/src/MacroPlace.i   
   WORKING_DIRECTORY ${MPLACE_HOME}
-  DEPENDS ${MPLACE_HOME}/src/MacroPlace.i "src/TritonMacroPlace.cpp" "include/mpl/TritonMacroPlace.h"
+  DEPENDS ${MPLACE_HOME}/src/MacroPlace.i "include/mpl/MacroPlace.h"
 )
 
 add_custom_command(OUTPUT ${MPLACE_TCL_INIT}
@@ -77,7 +77,7 @@ target_include_directories( TritonMacroPlace
 PUBLIC
   ${MPLACE_HOME}/src
   ${MPLACE_HOME}/include
-  utility 
+  utility
 
 PRIVATE
   ${ABKCOMMON_HOME}

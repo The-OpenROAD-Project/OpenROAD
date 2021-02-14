@@ -49,9 +49,9 @@ extern int Mpl_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-mpl::TritonMacroPlace* makeMacroPlacer()
+mpl::MacroPlacer* makeMacroPlacer()
 {
-  return new mpl::MacroPlace;
+  return new mpl::MacroPlacer;
 }
 
 void initMacroPlacer(OpenRoad* openroad)
@@ -64,7 +64,7 @@ void initMacroPlacer(OpenRoad* openroad)
                                    openroad->getLogger());
 }
 
-void deleteMacroPlacer(mpl::MacroPlace* macro_placer)
+void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)
 {
   delete macro_placer;
 }
