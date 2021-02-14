@@ -41,7 +41,6 @@
 #include "ISdb.h"
 #include "dbLogger.h"
 #include "dbObject.h"
-#include "dbPrintControl.h"
 #include "dbSet.h"
 #include "dbTypes.h"
 #include "dbViaParams.h"
@@ -1199,16 +1198,6 @@ class dbBlock : public dbObject
   /// and is O(#rows) in runtime.
   ///
   void getCoreArea(Rect& rect);
-
-  ///
-  /// Set print control
-  ///
-  void setPrintControl(const char* name, const char* netn, const char* instn);
-
-  ///
-  /// Get print count if net is in the group of the print type
-  ///
-  uint getPrintCnt(dbPrintControl::Type ptype, dbNet* net);
 
   void  setPtFile(FILE* ptf);
   FILE* getPtFile();
@@ -2595,11 +2584,6 @@ class dbNet : public dbObject
   /// Get bterm counts of this signal net
   ///
   uint getBTermCount();
-
-  ///
-  /// Get print count if net is in the group of the print type
-  ///
-  uint getPrintCnt(dbPrintControl::Type type);
 
   ///
   /// Delete the swires of this net

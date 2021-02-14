@@ -261,7 +261,7 @@ Tool Flow
 10. Clock Tree Synthesis (TritonCTS)
 11. Repair Hold Violations (Resizer)
 12. Global route (FastRoute)
-13. Detailed route (TritonRoute)n
+13. Detailed route (TritonRoute)
 14. Final timing/power report (OpenSTA)
 
 Tool Checklist

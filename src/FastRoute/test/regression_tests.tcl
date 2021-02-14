@@ -1,5 +1,6 @@
 record_tests {
   clock_route
+  clock_tracks_cost
   est_rc1
   est_rc2
   gcd
