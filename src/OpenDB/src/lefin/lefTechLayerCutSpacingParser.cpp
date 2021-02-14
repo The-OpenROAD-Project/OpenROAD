@@ -94,7 +94,9 @@ void addLayerSubRule(
 void addAdjacentCutsSubRule(
     boost::fusion::vector<std::string,
                           boost::optional<int>,
+                          boost::optional<int>,
                           double,
+                          boost::optional<double>,
                           boost::optional<std::string>,
                           boost::optional<std::string>,
                           boost::optional<std::string>,
@@ -108,18 +110,27 @@ void addAdjacentCutsSubRule(
   // auto var = at_c<0>(params);
   auto cuts                = at_c<0>(params);
   auto aligned             = at_c<1>(params);
-  auto within              = at_c<2>(params);
-  auto except_same_pgnet   = at_c<3>(params);
-  auto className           = at_c<4>(params);
-  auto sideParallelNoPrl = at_c<5>(params);
-  auto sameMask = at_c<6>(params);
+  auto twocuts             = at_c<2>(params);
+  auto within              = at_c<3>(params);
+  auto within2             = at_c<4>(params);
+  auto except_same_pgnet   = at_c<5>(params);
+  auto className           = at_c<6>(params);
+  auto sideParallelNoPrl = at_c<7>(params);
+  auto sameMask = at_c<8>(params);
   uint cuts_int            = (uint) cuts[0] - (uint) '0';
   parser->curRule->setAdjacentCuts(cuts_int);
   if (aligned.is_initialized()) {
     parser->curRule->setExactAligned(true);
     parser->curRule->setNumCuts(aligned.value());
   }
+  if(twocuts.is_initialized())
+  {
+    parser->curRule->setTwoCutsValid(true);
+    parser->curRule->setTwoCuts(twocuts.value());
+  }
   parser->curRule->setWithin(lefin->dbdist(within));
+  if(within2.is_initialized())
+    parser->curRule->setSecondWithin(lefin->dbdist(within2.value()));
   if (except_same_pgnet.is_initialized())
     parser->curRule->setExceptSamePgnet(true);
   if (className.is_initialized()) {
@@ -364,7 +375,9 @@ bool parse(Iterator                           first,
 
   qi::rule<std::string::iterator, space_type> ADJACENTCUTS
       = (lit("ADJACENTCUTS") >> (string("1") | string("2") | string("3"))
-         >> -(lit("EXACTALIGNED") >> int_) >> lit("WITHIN") >> double_
+         >> -(lit("EXACTALIGNED") >> int_)
+         >> -(lit("TWOCUTS") >> int_>> -lit("SAMECUT")[boost::bind(&setBool, parser, &odb::dbTechLayerCutSpacingRule::setSameCut, true)] )
+         >> lit("WITHIN") >> double_ >> -double_
          >> -string("EXCEPTSAMEPGNET") >> -(lit("CUTCLASS") >> _string >> -lit("TO ALL")[boost::bind(&setBool, parser, &odb::dbTechLayerCutSpacingRule::setCutClassToAll, true)] )
          >> -(
            string("SIDEPARALLELOVERLAP")

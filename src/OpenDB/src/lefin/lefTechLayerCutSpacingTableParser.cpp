@@ -114,6 +114,7 @@ void setPRL(
     boost::fusion::vector<
         double,
         boost::optional<std::string>,
+        boost::optional<std::string>,
         std::vector<boost::fusion::vector<std::string, std::string, double>>>
                                             params,
     odb::lefTechLayerCutSpacingTableParser* parser,
@@ -121,9 +122,15 @@ void setPRL(
 {
   parser->curRule->setPrlValid(true);
   auto prl   = at_c<0>(params);
-  auto maxxy = at_c<1>(params);
-  auto items = at_c<2>(params);
+  auto dir   = at_c<1>(params);
+  auto maxxy = at_c<2>(params);
+  auto items = at_c<3>(params);
   parser->curRule->setPrl(lefin->dbdist(prl));
+  if(dir.is_initialized())
+    if(dir.value()=="HORIZONTAL")
+      parser->curRule->setPrlHorizontal(true);
+    else
+      parser->curRule->setPrlVertical(true);
   if (maxxy.is_initialized())
     parser->curRule->setMaxXY(true);
 
@@ -395,7 +402,13 @@ bool parse(Iterator                                first,
          >> (+(_string >> lit("TO")
                >> _string))[boost::bind(&setCenterAndEdge, _1, parser)]);
   qi::rule<std::string::iterator, space_type> PRL
-      = (lit("PRL") >> double_ >> -string("MAXXY")
+      = (lit("PRL") >> double_ 
+         >> -(
+           string("HORIZONTAL")
+           |
+           string("VERTICAL")
+         )
+         >> -string("MAXXY")
          >> *(_string >> lit("TO") >> _string
               >> double_))[boost::bind(&setPRL, _1, parser, lefin)];
   qi::rule<std::string::iterator, space_type> EXTENSION

@@ -203,9 +203,13 @@ void endtoendspacingParser(
     sc->setExtensionValid(true);
   if (extension.is_initialized())
     sc->setExtension(l->dbdist(at_c<1>(extension.value())));
-  if (extension.is_initialized()
-      && (at_c<2>(extension.value())).is_initialized())
+  if (extension.is_initialized() && (at_c<2>(extension.value())).is_initialized())
+  {
+    sc->setWrongDirExtensionValid(true);
     sc->setWrongDirExtension(l->dbdist((at_c<2>(extension.value())).value()));
+  }
+    
+      
 
   if (otherendWidth.is_initialized())
     sc->setOtherEndWidthValid(true);

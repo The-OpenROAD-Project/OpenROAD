@@ -7043,7 +7043,7 @@ class dbTechLayer : public dbObject
   ///
   bool hasV55SpacingRules() const;
   bool getV55SpacingWidthsAndLengths(std::vector<uint>& width_idx,
-                                                std::vector<uint>& length_idx) const;
+                                     std::vector<uint>& length_idx) const;
   void printV55SpacingRules(lefout& writer) const;
   bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
 
@@ -8195,9 +8195,17 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isHorizontal() const;
 
+  void setPrlHorizontal(bool _prl_horizontal);
+
+  bool isPrlHorizontal() const;
+
   void setVertical(bool _vertical);
 
   bool isVertical() const;
+
+  void setPrlVertical(bool _prl_vertical);
+
+  bool isPrlVertical() const;
 
   void setNonOppositeEnclosureSpacingValid(
       bool _non_opposite_enclosure_spacing_valid);

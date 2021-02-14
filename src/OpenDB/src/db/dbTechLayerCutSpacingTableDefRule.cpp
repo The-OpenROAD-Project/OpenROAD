@@ -107,7 +107,13 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
   if (_flags._horizontal != rhs._flags._horizontal)
     return false;
 
+  if (_flags._prl_horizontal != rhs._flags._prl_horizontal)
+    return false;
+
   if (_flags._vertical != rhs._flags._vertical)
+    return false;
+
+  if (_flags._prl_vertical != rhs._flags._prl_vertical)
     return false;
 
   if (_flags._non_opposite_enclosure_spacing_valid
@@ -166,7 +172,9 @@ void _dbTechLayerCutSpacingTableDefRule::differences(
   DIFF_FIELD(_flags._side_extension_valid);
   DIFF_FIELD(_flags._exact_aligned_spacing_valid);
   DIFF_FIELD(_flags._horizontal);
+  DIFF_FIELD(_flags._prl_horizontal);
   DIFF_FIELD(_flags._vertical);
+  DIFF_FIELD(_flags._prl_vertical);
   DIFF_FIELD(_flags._non_opposite_enclosure_spacing_valid);
   DIFF_FIELD(_flags._opposite_enclosure_resize_spacing_valid);
   DIFF_FIELD(_default);
@@ -200,7 +208,9 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(_flags._side_extension_valid);
   DIFF_OUT_FIELD(_flags._exact_aligned_spacing_valid);
   DIFF_OUT_FIELD(_flags._horizontal);
+  DIFF_OUT_FIELD(_flags._prl_horizontal);
   DIFF_OUT_FIELD(_flags._vertical);
+  DIFF_OUT_FIELD(_flags._prl_vertical);
   DIFF_OUT_FIELD(_flags._non_opposite_enclosure_spacing_valid);
   DIFF_OUT_FIELD(_flags._opposite_enclosure_resize_spacing_valid);
   DIFF_OUT_FIELD(_default);
@@ -242,7 +252,9 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   _flags._side_extension_valid        = r._flags._side_extension_valid;
   _flags._exact_aligned_spacing_valid = r._flags._exact_aligned_spacing_valid;
   _flags._horizontal                  = r._flags._horizontal;
+  _flags._prl_horizontal              = r._flags._prl_horizontal;
   _flags._vertical                    = r._flags._vertical;
+  _flags._prl_vertical                = r._flags._prl_vertical;
   _flags._non_opposite_enclosure_spacing_valid
       = r._flags._non_opposite_enclosure_spacing_valid;
   _flags._opposite_enclosure_resize_spacing_valid
@@ -667,6 +679,22 @@ bool dbTechLayerCutSpacingTableDefRule::isHorizontal() const
   return obj->_flags._horizontal;
 }
 
+void dbTechLayerCutSpacingTableDefRule::setPrlHorizontal(bool _prl_horizontal)
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+
+  obj->_flags._prl_horizontal = _prl_horizontal;
+}
+
+bool dbTechLayerCutSpacingTableDefRule::isPrlHorizontal() const
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+
+  return obj->_flags._prl_horizontal;
+}
+
 void dbTechLayerCutSpacingTableDefRule::setVertical(bool _vertical)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
@@ -681,6 +709,22 @@ bool dbTechLayerCutSpacingTableDefRule::isVertical() const
       = (_dbTechLayerCutSpacingTableDefRule*) this;
 
   return obj->_flags._vertical;
+}
+
+void dbTechLayerCutSpacingTableDefRule::setPrlVertical(bool _prl_vertical)
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+
+  obj->_flags._prl_vertical = _prl_vertical;
+}
+
+bool dbTechLayerCutSpacingTableDefRule::isPrlVertical() const
+{
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
+
+  return obj->_flags._prl_vertical;
 }
 
 void dbTechLayerCutSpacingTableDefRule::setNonOppositeEnclosureSpacingValid(

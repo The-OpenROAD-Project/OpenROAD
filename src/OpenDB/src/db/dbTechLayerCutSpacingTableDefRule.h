@@ -70,10 +70,12 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
   bool _side_extension_valid : 1;
   bool _exact_aligned_spacing_valid : 1;
   bool _horizontal : 1;
+  bool _prl_horizontal : 1;
   bool _vertical : 1;
+  bool _prl_vertical : 1;
   bool _non_opposite_enclosure_spacing_valid : 1;
   bool _opposite_enclosure_resize_spacing_valid : 1;
-  uint _spare_bits : 11;
+  uint _spare_bits : 9;
 };
 // User Code Begin structs
 // User Code End structs

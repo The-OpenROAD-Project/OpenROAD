@@ -111,7 +111,19 @@
       "bits":1
     },
     {
+      "name":"_prl_horizontal",
+      "type":"bool",
+      "flags":[],
+      "bits":1
+    },
+    {
       "name":"_vertical",
+      "type":"bool",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "name":"_prl_vertical",
       "type":"bool",
       "flags":[],
       "bits":1
