@@ -78,6 +78,7 @@ variable template {}
 variable default_cutclass {}
 variable twowidths_table {}
 variable twowidths_table_wrongdirection {}
+variable stdcell_area ""
 
 #This file contains procedures that are used for PDN generation
 proc debug {message} {
@@ -4243,14 +4244,13 @@ proc get_stdcell_plus_area {} {
 }
 
 proc get_stdcell_area {} {
-  variable block
   variable stdcell_area
   variable stdcell_plus_area
   
   if {$stdcell_area != ""} {return $stdcell_area}
   set rails_width [get_rails_max_width]
   
-  set rows [$block getRows]
+  set rows [[ord::get_db_block] getRows]
   set first_row [[lindex $rows 0] getBBox]
 
   set minX [$first_row xMin]
