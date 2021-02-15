@@ -810,8 +810,6 @@ void MacroPlacer::FillMacroStor()
       curChannelY = (m.GetChannelY() == 0) ? channelY_ : m.GetChannelY();
     }
 
-    macroNameMap[inst->getConstName()] = macroStor.size();
-
     int placeX, placeY;
     inst->getLocation(placeX, placeY);
 
@@ -862,11 +860,7 @@ void MacroPlacer::UpdateMacroCoordi(Partition& part)
     / static_cast<float>(tech->getDbUnitsPerMicron());
 
   for (auto& curMacro : part.macroStor) {
-    auto mnPtr = macroNameMap.find(curMacro.name());
-    if (mnPtr == macroNameMap.end()) {
-      logger_->error(MPL, 22, "{} is not in MacroPlacer", curMacro.name());
-    }
-
+    auto mnPtr = macroInstMap.find(curMacro.dbInstPtr);
     // update macro coordi
     float macroX
       = (fourLayer) ? getRoundUpFloat(curMacro.lx, pitchX) : curMacro.lx;

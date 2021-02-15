@@ -190,8 +190,6 @@ private:
 
   bool isTiming_;
 
-  // macro name -> macroStor's index.
-  std::unordered_map<std::string, int> macroNameMap;
   // macro idx/idx pair -> give each
   std::vector<std::vector<int>> macroWeight;
   // macro Information

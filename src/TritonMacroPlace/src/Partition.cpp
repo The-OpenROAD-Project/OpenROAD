@@ -212,22 +212,19 @@ void Partition::FillNetlistTable(
 
         // from: macro case
         if (i < macroStor.size()) {
-          auto mPtr = mckt.macroNameMap.find(macroStor[i].name());
-          if (mPtr == mckt.macroNameMap.end()) {
-            logger_->error(MPL,
-                        55,
-                        "Cannot find macros {} in macroNameMap",
-                        macroStor[i].name());
+          auto mPtr = mckt.macroInstMap.find(macroStor[i].dbInstPtr);
+          if (mPtr == mckt.macroInstMap.end()) {
+            logger_->error(MPL, 55, "Cannot find macro {}", macroStor[i].name());
           }
           int globalIdx1 = mPtr->second;
 
           // to macro case
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-            if (mPtr == mckt.macroNameMap.end()) {
+            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
+            if (mPtr == mckt.macroInstMap.end()) {
               logger_->error(MPL,
                           56,
-                          "Cannot find macros {} in macroNameMap",
+                          "Cannot find macro {}",
                           macroStor[j].name());
             }
             int globalIdx2 = mPtr->second;
@@ -243,7 +240,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -253,7 +250,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   westSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -267,7 +264,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -277,7 +274,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   eastSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -291,7 +288,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -301,7 +298,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   northSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -315,7 +312,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -325,7 +322,7 @@ void Partition::FillNetlistTable(
               if (mpPtr != macroPartMap.end()) {
                 for (auto& curMacroIdx : mpPtr->second) {
                   int curGlobalIdx
-                    = mckt.macroNameMap[mckt.macroStor[curMacroIdx].name()];
+                    = mckt.macroInstMap[macroStor[curMacroIdx].dbInstPtr];
                   southSum += mckt.macroWeight[globalIdx1][curGlobalIdx];
                 }
               }
@@ -337,8 +334,8 @@ void Partition::FillNetlistTable(
         else if (i == WEST_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-            if (mPtr == mckt.macroNameMap.end()) {
+            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
+            if (mPtr == mckt.macroInstMap.end()) {
               logger_->error(MPL,
                           57,
                           "Cannot find macros {} in macroNameMap",
@@ -351,12 +348,9 @@ void Partition::FillNetlistTable(
         } else if (i == EAST_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-            if (mPtr == mckt.macroNameMap.end()) {
-              logger_->error(MPL,
-                          58,
-                          "Cannot find macros {} in macroNameMap",
-                          macroStor[j].name());
+            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
+            if (mPtr == mckt.macroInstMap.end()) {
+              logger_->error(MPL, 58, "Cannot macro {}", macroStor[j].name());
             }
             int globalIdx2 = mPtr->second;
             netTable[i * (macroStor.size() + 4) + j]
@@ -365,12 +359,9 @@ void Partition::FillNetlistTable(
         } else if (i == NORTH_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-            if (mPtr == mckt.macroNameMap.end()) {
-              logger_->error(MPL,
-                          59,
-                          "Cannot find macros {} in macroNameMap",
-                          macroStor[j].name());
+            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
+            if (mPtr == mckt.macroInstMap.end()) {
+              logger_->error(MPL, 59, "Cannot find macro {}", macroStor[j].name());
             }
             int globalIdx2 = mPtr->second;
             netTable[i * (macroStor.size() + 4) + j]
@@ -379,12 +370,9 @@ void Partition::FillNetlistTable(
         } else if (i == SOUTH_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroNameMap.find(macroStor[j].name());
-            if (mPtr == mckt.macroNameMap.end()) {
-              logger_->error(MPL,
-                          60,
-                          "Cannot find macros {} in macroNameMap",
-                          macroStor[j].name());
+            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
+            if (mPtr == mckt.macroInstMap.end()) {
+              logger_->error(MPL, 60, "Cannot find macro {}", macroStor[j].name());
             }
             int globalIdx2 = mPtr->second;
             netTable[i * (macroStor.size() + 4) + j]
@@ -399,7 +387,7 @@ void Partition::FillNetlistTable(
 void Partition::UpdateMacroCoordi(MacroPlacer& mckt)
 {
   for (auto& curPartMacro : macroStor) {
-    auto mPtr = mckt.macroNameMap.find(curPartMacro.name());
+    auto mPtr = mckt.macroInstMap.find(curPartMacro.dbInstPtr);
     int macroIdx = mPtr->second;
     curPartMacro.lx = mckt.macroStor[macroIdx].lx;
     curPartMacro.ly = mckt.macroStor[macroIdx].ly;
