@@ -89,6 +89,7 @@ library(fakeram45_64x32) {
     }
 cell(fakeram45_64x32) {
     area : 1074.640;
+    is_macro : true;
     interface_timing : true;
     memory() {
         type : ram;

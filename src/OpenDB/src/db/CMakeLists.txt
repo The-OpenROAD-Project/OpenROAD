@@ -71,7 +71,6 @@ add_library(opendb
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
-    dbPrintControl.cpp 
     dbNullIterator.cpp 
     dbBPin.cpp 
     dbHierInstShapeItr.cpp 
