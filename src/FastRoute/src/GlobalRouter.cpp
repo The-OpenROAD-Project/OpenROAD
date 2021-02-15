@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "fastroute/GlobalRouter.h"
+#include "fastroute/GRoute.h"
 
 #include <algorithm>
 #include <cmath>
@@ -673,11 +674,14 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
         }
         bool isClock = (net->getSignalType() == odb::dbSigType::CLOCK);
 
+        int edgeCostForNet = (isClock) ? _clockCost : 1;
+
         int netID = _fastRoute->addNet(net->getDbNet(),
                                        pinsOnGrid.size(),
                                        pinsOnGrid.size(),
                                        netAlpha,
-                                       isClock);
+                                       isClock,
+                                       edgeCostForNet);
         for (RoutePt& pinPos : pinsOnGrid) {
           _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
         }
@@ -1235,6 +1239,11 @@ void GlobalRouter::addAlphaForNet(char* netName, float alpha)
   _netsAlpha[name] = alpha;
 }
 
+void GlobalRouter::setClockCost(int cost)
+{
+  _clockCost = cost;
+}
+
 void GlobalRouter::setVerbose(const int v)
 {
   _verbose = v;
@@ -1339,15 +1348,13 @@ void GlobalRouter::writeGuides(const char* fileName)
           } else {
             RoutingLayer phLayerI;
             if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-              phLayerI = getRoutingLayerByIndex(
-                  segment.initLayer + _minRoutingLayer - segment.initLayer);
+              phLayerI = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerI = getRoutingLayerByIndex(segment.initLayer);
             }
             if (segment.finalLayer < _minRoutingLayer
                 && !_unidirectionalRoute) {
-              phLayerF = getRoutingLayerByIndex(
-                  segment.finalLayer + _minRoutingLayer - segment.finalLayer);
+              phLayerF = getRoutingLayerByIndex(_minRoutingLayer);
             } else {
               phLayerF = getRoutingLayerByIndex(segment.finalLayer);
             }
@@ -1753,6 +1760,12 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
   }
 
   return route;
+}
+
+std::vector<GCellCongestion> GlobalRouter::getCongestion() {
+  std::vector<GCellCongestion> congestion;
+  _fastRoute->findCongestionInformation(congestion);
+  return congestion;
 }
 
 void GlobalRouter::computeWirelength()
@@ -3156,8 +3169,6 @@ void GlobalRouter::print(GRoute& route)
   }
 }
 
-////////////////////////////////////////////////////////////////
-
 void GlobalRouter::reportLayerWireLengths()
 {
   std::vector<int64_t> lengths;
@@ -3190,6 +3201,39 @@ void GlobalRouter::reportLayerWireLengths()
 }
 
 ////////////////////////////////////////////////////////////////
+
+RoutePt::RoutePt(int x, int y, int layer) : _x(x), _y(y), _layer(layer)
+{
+}
+
+bool operator<(const RoutePt& p1, const RoutePt& p2)
+{
+  return (p1._x < p2._x) || (p1._x == p2._x && p1._y < p2._y)
+         || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
+}
+
+GCellCongestion::GCellCongestion(int min_x, int min_y,
+                                 int max_x, int max_y,
+                                 int layer, short h_cap, short v_cap,
+                                 short h_usage, short v_usage) {
+  gcell_rect_ = odb::Rect(min_x, min_y, max_x, max_y);
+  layer_ = layer;
+  hor_capacity_ = h_cap;
+  ver_capacity_ = v_cap;
+  hor_usage_ = h_usage;
+  ver_usage_ = v_usage;
+};
+
+GCellCongestion::GCellCongestion(odb::Rect rect, int layer,
+                                 short h_cap, short v_cap,
+                                 short h_usage, short v_usage) {
+  gcell_rect_ = rect;
+  layer_ = layer;
+  hor_capacity_ = h_cap;
+  ver_capacity_ = v_cap;
+  hor_usage_ = h_usage;
+  ver_usage_ = v_usage;
+};
 
 class GrouteRenderer : public gui::Renderer
 {

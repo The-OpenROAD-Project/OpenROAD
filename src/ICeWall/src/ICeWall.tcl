@@ -118,21 +118,19 @@ namespace eval ICeWall {
 
   proc get_footprint_padcells_by_side {side_name} {
     variable footprint
-    if {[dict exists $footprint order $side_name]} {
-      return [dict get $footprint order $side_name]
-    }
-    
-    set padcells {}
-    dict for {padcell data} [dict get $footprint padcell] {
-      if {[dict get $data side] == $side_name} {
-        lappend padcells $padcell 
+    if {![dict exists $footprint order $side_name]} {
+      set padcells {}
+      dict for {padcell data} [dict get $footprint padcell] {
+        if {[dict get $data side] == $side_name} {
+          lappend padcells $padcell 
+        }
       }
-    }
 
-    dict set footprint order $side_name $padcells
-    # debug "Side: $side_name, Padcells: [dict get $footprint order $side_name]"
+      dict set footprint order $side_name $padcells
+      # debug "Side: $side_name, Padcells: [dict get $footprint order $side_name]"
+    }
     
-    return $padcells
+    return [dict get $footprint order $side_name]
   }
 
   proc get_library_bondpad_width {} {
@@ -441,12 +439,15 @@ namespace eval ICeWall {
     variable block
     
     if {![dict exists $footprint padcell $padcell inst]} {
-      if {[set inst [$block findInst [get_padcell_inst_name $padcell]]] != "NULL"} {
+      set padcell_inst_name [get_padcell_inst_name $padcell]
+      # debug "Looking for padcell with inst name $padcell_inst_name"
+      if {[set inst [$block findInst $padcell_inst_name]] != "NULL"} {
         set signal_name [get_padcell_signal_name $padcell]
         # debug "Pad match by name for $padcell ($signal_name)"
         set_padcell_inst $padcell [$block findInst [get_padcell_inst_name $padcell]]
       } elseif {[dict get $footprint padcell $padcell type] == "sig"} {
         set signal_name [get_padcell_signal_name $padcell]
+        # debug "Try signal matching - signal: $signal_name"
         if {[is_padcell_unassigned $padcell]} {
           # debug "Pad unassigned for $padcell"
           set_padcell_inst $padcell "NULL"
@@ -460,6 +461,7 @@ namespace eval ICeWall {
           # debug "Found net [$net getName] for $padcell"
           set found_pin 0
           foreach iTerm [$net getITerms] {
+            # debug "Connection [[$iTerm getInst] getName] ([[$iTerm getMTerm] getName]) for $padcell with signal $signal_name"
             if {[[$iTerm getMTerm] getName] == $pad_pin_name} {
               # debug "Found instance [[$iTerm getInst] getName] for $padcell with signal $signal_name"
               set_padcell_inst $padcell [$iTerm getInst]
@@ -483,7 +485,18 @@ namespace eval ICeWall {
     
     return [dict get $footprint padcell $padcell inst]
   }
-  
+
+  proc get_padcell_cell_offset {padcell} {
+    # debug "padcell: $padcell, cell_name: [get_padcell_cell_type $padcell]"
+    return [get_library_cell_offset [get_padcell_cell_type $padcell]]
+  }
+
+  proc get_padcell_cell_type {padcell} {
+    set type [get_padcell_type $padcell]
+
+    return [get_library_cell_by_type $type]
+  }
+ 
   proc get_library_cell_by_type {type} {
     variable library
     
@@ -605,7 +618,15 @@ namespace eval ICeWall {
   proc get_library_cell_orientation {cell_type position} {
     variable library
 
-    # debug "cell_type $cell_type orient $side_name"
+    # debug "cell_type $cell_type position $position"
+    if {![dict exists $library cells $cell_type orient $position]} {
+      if {![dict exists $library cells $cell_type]} {
+        utl::error "PAD"  96 "No cell $cell_type defined in library ([dict keys [dict get $library cells]])"
+      } else {
+        utl::error "PAD"  97 "No entry found in library definition for cell $cell_type on $position side"
+      }
+    }
+
     set orient [dict get $library cells $cell_type orient $position]
   }
 
@@ -2341,11 +2362,18 @@ namespace eval ICeWall {
 
       # debug "$side_name: fill_start = $fill_start"
       # debug "$side_name: fill_end   = $fill_end"
+      # debug "padcells: [get_footprint_padcells_by_side $side_name]"
 
+      set bbox {}
+      set padcells_on_side [get_footprint_padcells_by_side $side_name]
+      if {[llength $padcells_on_side] == 0} {
+        ord::error "PAD" 98 "No cells found on $side side"
+      }
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set name [get_padcell_inst_name $padcell]
         set type [get_padcell_type $padcell]
         set cell [get_cell $type $side_name]
+        # debug "name: $name, type: $type, cell: $cell"
 
         set cell_height [expr max([$cell getHeight],[$cell getWidth])]
         set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
@@ -2355,13 +2383,22 @@ namespace eval ICeWall {
           continue
         }
 
+
+        set orient [get_padcell_orient $padcell]
 	set origin [get_padcell_origin $padcell]
-        
-        $inst setOrigin [dict get $origin x] [dict get $origin y]
-        $inst setOrient [get_padcell_orient $padcell]
+        # debug "padcell: $padcell, orient: $orient, origin: $origin"
+        # set offset [get_padcell_cell_offset $padcell]
+        # set location [transform_point {*}$offset [list 0 0] $orient]
+        # set place_at [list [expr [dict get $origin x] - [lindex $location 0]] [expr [dict get $origin y] - [lindex $location 1]]]
+        set place_at [list [dict get $origin x] [dict get $origin y]]
+        # debug "padcell: $padcell, origin: $origin, orient: $orient, place_at: $place_at"
+
+        $inst setOrigin {*}$place_at
+        $inst setOrient $orient
         $inst setPlacementStatus "FIRM"
         place_padcell_overlay $padcell
 
+        # debug "inst: [$inst getName]"
         set bbox [$inst getBBox]
 
         switch $side_name \
@@ -2535,7 +2572,12 @@ namespace eval ICeWall {
       foreach padcell [get_footprint_padcell_order] {
         set side_name [get_padcell_side_name $padcell]
 
-        set name [get_padcell_inst_name $padcell]
+        # debug "padcell: $padcell, inst [get_padcell_inst $padcell]"
+        if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
+          set name [get_padcell_inst_name $padcell]
+        } else {
+          set name [$inst getName]
+        }
         set type [get_padcell_type $padcell]
 
         if {[set brk_idx [lsearch $breaker_types $type]] > -1} {
@@ -2578,29 +2620,38 @@ namespace eval ICeWall {
           }
         }
       }
-      # debug [array get pad_segment]      
       foreach item [array names pad_segment] {
+        # debug "pad_segment: $name"
         regexp {([^,]*),(.*)} $item - signal idx
         dict set segment cells $signal $idx $pad_segment($item)
       }
+
+      # If there is more than one segment, need to account for the first and last segment to be the
+      # same, as they loop around back to the start
       dict for {signal seg} [dict get $segment cells] {
         set indexes [lsort -integer [dict keys $seg]]
         set first [lindex $indexes 0]
         set last [lindex $indexes end]
         
-        dict set seg $first [concat [dict get $seg $first] [dict get $seg $last]]
-        dict set segment cells $signal [dict remove $seg $last]
+        # debug "Signal: $signal, first: $first, last: $last"
+        if {$first != $last} {
+          dict set seg $first [concat [dict get $seg $first] [dict get $seg $last]]
+          dict set segment cells $signal [dict remove $seg $last]
+        }
       }
 
       # Wire up the nets that connect by abutment
       # Need to set these nets as SPECIAL so the detail router does not try to route them.
       dict for {signal sections} [dict get $segment cells] {
+        # debug "Signal: $signal"
         foreach section [dict keys $sections] {
+          # debug "Section: $section"
           if {[set net [$block findNet "${signal}_$section"]] != "NULL"} {
             # utl::error "PAD" 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
           } else {
             set net [odb::dbNet_create $block "${signal}_$section"]
           }
+          # debug "Net: [$net getName]"
           $net setSpecial
 
           foreach inst_pin_name [dict get $sections $section] {
@@ -2608,12 +2659,14 @@ namespace eval ICeWall {
             set pin_name [dict get $inst_pin_name pin_name]
 
             if {[set inst [$block findInst $inst_name]] == "NULL"} {
+              # debug "Cant find instance $inst_name"
               continue
             }
-            
+            # debug "inst_name: $inst_name, pin_name: $pin_name"    
             set mterm [[$inst getMaster] findMTerm $pin_name]
             if {$mterm != "NULL"} {
               set iterm [odb::dbITerm_connect $inst $net $mterm]
+              # debug "connect"
               $iterm setSpecial
             } else {
               utl::warn "PAD" 18 "No term $signal found on $inst_name"
@@ -2703,8 +2756,8 @@ namespace eval ICeWall {
     # Padring placement
     get_footprint_padcells_order
     place_padcells
-    connect_by_abutment
     place_padring
+    connect_by_abutment
 
     # Wirebond pad / Flipchip bump connections
     if {[is_footprint_wirebond]} {
@@ -2799,20 +2852,20 @@ namespace eval ICeWall {
     set args [dict get $footprint offsets]    
     
     if {[llength $args] == 1} {
-      set edge_bottom_offset [expr $args * $def_units]
-      set edge_right_offset  [expr $args * $def_units]
-      set edge_top_offset    [expr $args * $def_units]
-      set edge_left_offset   [expr $args * $def_units]
+      set edge_bottom_offset [expr round($args * $def_units)]
+      set edge_right_offset  [expr round($args * $def_units)]
+      set edge_top_offset    [expr round($args * $def_units)]
+      set edge_left_offset   [expr round($args * $def_units)]
     } elseif {[llength $args] == 2} {
-      set edge_bottom_offset [expr [lindex $args 0] * $def_units]
-      set edge_right_offset  [expr [lindex $args 1] * $def_units]
-      set edge_top_offset    [expr [lindex $args 0] * $def_units]
-      set edge_left_offset   [expr [lindex $args 1] * $def_units]
-    } elseif {[llength $edge_offset] == 4} {
-      set edge_bottom_offset [expr [lindex $args 0] * $def_units]
-      set edge_right_offset  [expr [lindex $args 1] * $def_units]
-      set edge_top_offset    [expr [lindex $args 2] * $def_units]
-      set edge_left_offset   [expr [lindex $args 3] * $def_units]
+      set edge_bottom_offset [expr round([lindex $args 0] * $def_units)]
+      set edge_right_offset  [expr round([lindex $args 1] * $def_units)]
+      set edge_top_offset    [expr round([lindex $args 0] * $def_units)]
+      set edge_left_offset   [expr round([lindex $args 1] * $def_units)]
+    } elseif {[llength $args] == 4} {
+      set edge_bottom_offset [expr round([lindex $args 0] * $def_units)]
+      set edge_right_offset  [expr round([lindex $args 1] * $def_units)]
+      set edge_top_offset    [expr round([lindex $args 2] * $def_units)]
+      set edge_left_offset   [expr round([lindex $args 3] * $def_units)]
     } else {
       utl::error "PAD" 9 "Expected 1, 2 or 4 offset values, got [llength $args]"
     }

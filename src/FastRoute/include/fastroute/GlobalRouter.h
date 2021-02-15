@@ -81,8 +81,8 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 class RoutePt;
-struct NET;
 class GrouteRenderer;
+
 
 struct RegionAdjustment
 {
@@ -103,6 +103,25 @@ enum class NetType
   Antenna,
   All
 };
+
+class RoutePt
+{
+ public:
+  RoutePt() = default;
+  RoutePt(int x, int y, int layer);
+  int x() { return _x; };
+  int y() { return _y; };
+  int layer() { return _layer; };
+
+  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
+
+ private:
+  int _x;
+  int _y;
+  int _layer;
+};
+
+bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 class GlobalRouter
 {
@@ -184,6 +203,9 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
+  // gui functions
+  std::vector<GCellCongestion> getCongestion();
+
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
@@ -191,6 +213,7 @@ class GlobalRouter
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
+  void setClockCost(int cost);
   void routeClockNets();
 
   // Highlight route in the gui.
@@ -297,16 +320,16 @@ class GlobalRouter
   utl::Logger *_logger;
   gui::Gui *_gui;
   // Objects variables
-  FastRouteCore* _fastRoute = nullptr;
+  FastRouteCore* _fastRoute;
+  odb::Point* _gridOrigin;
   GrouteRenderer *_groute_renderer;
-  odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 
   std::vector<Net>* _nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
-  Grid* _grid = nullptr;
-  std::vector<RoutingLayer>* _routingLayers = nullptr;
-  std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
+  Grid* _grid;
+  std::vector<RoutingLayer>* _routingLayers;
+  std::vector<RoutingTracks>* _allRoutingTracks;
 
   // Flow variables
   std::string _congestFile;
@@ -343,6 +366,7 @@ class GlobalRouter
   std::map<std::string, float> _netsAlpha;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
+  int _clockCost;
 
   // Antenna variables
   int*** oldHUsages;
@@ -357,13 +381,12 @@ class GlobalRouter
   // db variables
   sta::dbSta* _sta;
   int selectedMetal = 3;
-  odb::dbDatabase* _db = nullptr;
+  odb::dbDatabase* _db;
   odb::dbBlock* _block;
 
   std::set<odb::dbNet*> _dirtyNets;
 };
 
 std::string getITermName(odb::dbITerm* iterm);
-Net* getNet(NET* net);
 
 }  // namespace grt

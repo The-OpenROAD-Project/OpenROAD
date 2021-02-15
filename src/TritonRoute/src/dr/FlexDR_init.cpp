@@ -2126,13 +2126,12 @@ void FlexDRWorker::initMazeIdx() {
 }
 
 void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx &mi, const frDirEnum &dir, frCoord bloatLen, bool isAddPathCost) {
-  frCoord prevLen = 0;
   frCoord currLen = 0;
   frMIdx x = mi.x();
   frMIdx y = mi.y();
   frMIdx z = mi.z();
   while(1) {
-    if (currLen > bloatLen) {
+    if (currLen > bloatLen || !gridGraph_.hasEdge(x, y, z, dir)) {
       break;
     }
     if (isAddPathCost) {
@@ -2163,11 +2162,6 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx &mi, cons
         break;
       default:
         ;
-    }
-    if (prevLen == currLen) {
-      break;
-    } else {
-      prevLen = currLen;
     }
   }
 }

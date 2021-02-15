@@ -33,14 +33,15 @@
 
 #include "FPcommon.h"
 #include "SeqPair.h"
-#include <random>
 
 using namespace parquetfp;
 using std::cout;
 using std::endl;
 using std::vector;
 
-SeqPair::SeqPair(unsigned size) //ctor randomly generates the seqPair
+//ctor randomly generates the seqPair
+SeqPair::SeqPair(unsigned size,
+                 std::mt19937 random_gen)
 {
    _XX.resize(size);
    _YY.resize(size);
@@ -49,10 +50,9 @@ SeqPair::SeqPair(unsigned size) //ctor randomly generates the seqPair
       _XX[i] = i;
       _YY[i] = i;
    }
-   std::random_device rd;
-   std::mt19937 g(rd());
-   std::shuffle(_XX.begin(),_XX.end(), g);
-   std::shuffle(_YY.begin(),_YY.end(), g);
+
+   std::shuffle(_XX.begin(),_XX.end(), random_gen);
+   std::shuffle(_YY.begin(),_YY.end(), random_gen);
 }
 
 SeqPair::SeqPair(const vector<unsigned>& X,

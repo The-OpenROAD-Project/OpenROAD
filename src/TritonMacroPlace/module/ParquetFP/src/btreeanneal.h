@@ -91,7 +91,7 @@ public:
    
    inline static void sort_slacks(const std::vector<float>& slacks,
                                   std::vector<int>& indices_sorted);
-   void GenerateRandomSoln(BTree& soln, int blocknum) const;
+   void GenerateRandomSoln(BTree& soln, int blocknum);
    
    inline unsigned getNumObstacles();
 
