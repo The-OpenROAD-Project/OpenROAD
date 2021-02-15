@@ -4548,38 +4548,6 @@ void io::Writer::fillConnFigs(bool isTA) {
   }
 }
 
-void io::Writer::writeFromTA() {
-  ProfileTask profile("IO:writeFromTA");
-  if (OUTTA_FILE == string("")) {
-    if (VERBOSE > 0) {
-      cout <<"Waring: no output def specified, skipped writing track assignment def" <<endl;
-    }
-  } else {
-    //if (VERBOSE > 0) {
-    //  cout <<endl <<"start writing track assignment def" <<endl;
-    //}
-    fillConnFigs(true);
-    fillViaDefs();
-    writeDef(true);
-  }
-}
-
-void io::Writer::writeFromDR(const string &str) {
-  ProfileTask profile("IO:writeFromDR");
-  if (OUT_FILE == string("")) {
-    if (VERBOSE > 0) {
-      cout <<"Waring: no output def specified, skipped writing routed def" <<endl;
-    }
-  } else {
-    //if (VERBOSE > 0) {
-    //  cout <<endl <<"start writing routed def" <<endl;
-    //}
-  }
-  fillConnFigs(false);
-  fillViaDefs();
-  writeDef(false, str);
-}
-
 void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
 {
   frBox box;
@@ -4718,6 +4686,8 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
+  fillConnFigs(false);
+  fillViaDefs();
   if (db->getChip() == nullptr)
     logger->error(utl::DRT, 3, "load design first");
 

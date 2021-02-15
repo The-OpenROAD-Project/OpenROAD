@@ -95,7 +95,6 @@ void io::Parser::initDefaultVias() {
       // generate new via def if needed
       if (needViaGen) {
         // reference output file for writing def hack
-        REF_OUT_FILE = OUT_FILE + string(".ref");
         string viaDefName = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
         viaDefName += string("_FR");
         cout << "Warning: " << tech->getLayer(layer1Num)->getName() << " does not have viaDef align with layer direction, generating new viaDef " << viaDefName << "...\n";

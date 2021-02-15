@@ -37,6 +37,8 @@
 #include "gc/FlexGC.h"
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
+#include "opendb/db.h"
+#include "opendb/defout.h"
 #include "sta/StaMain.hh"
 
 using namespace std;
@@ -162,8 +164,6 @@ void TritonRoute::gr() {
 void TritonRoute::ta() {
   FlexTA ta(getDesign());
   ta.main();
-  io::Writer writer(getDesign(),logger_);
-  writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
@@ -175,7 +175,6 @@ void TritonRoute::dr() {
 
 void TritonRoute::endFR() {
   io::Writer writer(getDesign(),logger_);
-  writer.writeFromDR();
   writer.updateDb(db_);
 }
 
@@ -194,6 +193,15 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      odb::defout def_writer(logger_);
+      def_writer.setVersion(odb::defout::Version::DEF_5_8);
+      def_writer.writeBlock(block, OUT_FILE);
+    }
+  }
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -217,7 +225,7 @@ void TritonRoute::readParams(const string &fileName)
         if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
         else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
-        else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}
+        else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated def param in params file");}
         else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
