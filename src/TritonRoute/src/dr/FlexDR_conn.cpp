@@ -1163,8 +1163,6 @@ void FlexDR::checkConnectivity(int iter) {
   }
 
   if (isWrong) {
-    io::Writer writer(getDesign(),logger_);
-    writer.writeFromDR("_conn");
     exit(1);
   }
 }

@@ -199,7 +199,7 @@ int TritonRoute::main() {
     if (block) {
       odb::defout def_writer(logger_);
       def_writer.setVersion(odb::defout::Version::DEF_5_8);
-      def_writer.writeBlock(block, OUT_FILE);
+      def_writer.writeBlock(block, OUT_FILE.c_str());
     }
   }
 
