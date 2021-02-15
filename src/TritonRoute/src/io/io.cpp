@@ -1534,7 +1534,7 @@ int io::Parser::getLef58Spacing(void *data, frLayer* tmpLayer, const string &sIn
 
 // only support GF14 related content
 int io::Parser::getLef58MinStep(void *data, frLayer* tmpLayer, const string &sIn) {
-  bool enableOutput = true;
+  bool enableOutput = false;
   if (enableOutput) {
     cout << endl << "  PROPERTY LEF58_MINSTEP \n";
   }

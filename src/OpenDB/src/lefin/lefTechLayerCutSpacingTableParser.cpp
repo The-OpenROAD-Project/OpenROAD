@@ -127,10 +127,12 @@ void setPRL(
   auto items = at_c<3>(params);
   parser->curRule->setPrl(lefin->dbdist(prl));
   if(dir.is_initialized())
+  {
     if(dir.value()=="HORIZONTAL")
       parser->curRule->setPrlHorizontal(true);
     else
       parser->curRule->setPrlVertical(true);
+  }
   if (maxxy.is_initialized())
     parser->curRule->setMaxXY(true);
 
