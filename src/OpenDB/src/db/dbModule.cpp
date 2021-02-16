@@ -158,6 +158,8 @@ _dbModule::~_dbModule()
 {
   if (_name)
     free((void*) _name);
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //

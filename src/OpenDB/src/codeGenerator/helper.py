@@ -16,6 +16,23 @@ _comparable = [
     'char',
     'Rect'
 ]
+std = [
+    'int',
+    'uint',
+    'unint_32t',
+    'bool',
+    'string',
+    'std::string',
+    'float',
+    'short',
+    'double',
+    'long',
+    'long long',
+    'long double',
+    'char *',
+    'char*',
+    'char',
+]
 
 _removable = [
     'unsigned',
@@ -79,7 +96,8 @@ def isBitFields(field, structs):
 
 def getFunctionalName(name):
     if name.islower():
-        return ''.join([n.capitalize() for n in name.split('_')])
+        return ''.join([n.capitalize()
+                        for n in name.replace("tbl", "table").split('_')])
     return name
 
 
@@ -112,6 +130,10 @@ def getHashTableType(type_name):
     return type_name[12:-1] + "*"
 
 
+def isDbVector(type_name):
+    return type_name.find("dbVector") == 0
+
+
 def _isTemplateType(type_name):
     openBracket = type_name.find("<")
     if openBracket == -1:
@@ -121,6 +143,14 @@ def _isTemplateType(type_name):
 
     return closedBracket != -1 and closedBracket > openBracket
 
+def _isTemplateType(type_name):
+    openBracket = type_name.find("<")
+    if openBracket == -1:
+        return False
+
+    closedBracket = type_name.find(">")
+
+    return closedBracket >= openBracket
 
 def getTemplateType(type_name):
     if not _isTemplateType(type_name):
@@ -137,7 +167,7 @@ def getTemplateType(type_name):
             if numBrackets == 0:
                 closedBracket = i
 
-    return type_name[openBracket+1:closedBracket]
+    return type_name[openBracket + 1:closedBracket]
 
 
 def getRefType(type_name):

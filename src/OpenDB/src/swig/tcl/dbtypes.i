@@ -57,6 +57,77 @@
     }
 }
 
+%typemap(out) std::pair< int, int > {
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewIntObj($1.first));
+    Tcl_ListObjAppendElement(interp, $result, Tcl_NewIntObj($1.second));
+}
+
+%typemap(out) std::vector< std::pair< T*, int > > {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        Tcl_Obj *sub_list = Tcl_NewListObj(0, nullptr);
+        std::pair< T*, int > p = ((($1_type &)$1)[i]);
+        T* ptr1 = p.first;
+        int num = p.second;
+        Tcl_Obj *obj = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        Tcl_ListObjAppendElement(interp, sub_list, obj);
+        Tcl_ListObjAppendElement(interp, sub_list, Tcl_NewIntObj(num));
+        Tcl_ListObjAppendElement(interp, list, sub_list);
+    }
+    Tcl_SetObjResult(interp, list);
+}
+%typemap(out) std::vector< std::tuple< T*, T*, int > > {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        Tcl_Obj *sub_list = Tcl_NewListObj(0, nullptr);
+        std::tuple< T*, T*, int > p = ((($1_type &)$1)[i]);
+        T* ptr1 = std::get<0>(p);
+        T* ptr2 = std::get<1>(p);
+        int num = std::get<2>(p);
+        Tcl_Obj *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        Tcl_Obj *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        Tcl_ListObjAppendElement(interp, sub_list, obj1);
+        Tcl_ListObjAppendElement(interp, sub_list, obj2);
+        Tcl_ListObjAppendElement(interp, sub_list, Tcl_NewIntObj(num));
+        Tcl_ListObjAppendElement(interp, list, sub_list);
+    }
+    Tcl_SetObjResult(interp, list);
+}
+%typemap(out) std::vector< std::tuple< T*, int, int, int > > {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        Tcl_Obj *sub_list = Tcl_NewListObj(0, nullptr);
+        std::tuple< T*, int, int, int > p = ((($1_type &)$1)[i]);
+        T* ptr = std::get<0>(p);
+        int num1 = std::get<1>(p);
+        int num2 = std::get<2>(p);
+        int num3 = std::get<3>(p);
+        Tcl_Obj *obj = SWIG_NewInstanceObj(ptr, $descriptor(T *), 0);
+        Tcl_ListObjAppendElement(interp, sub_list, obj);
+        Tcl_ListObjAppendElement(interp, sub_list, Tcl_NewIntObj(num1));
+        Tcl_ListObjAppendElement(interp, sub_list, Tcl_NewIntObj(num2));
+        Tcl_ListObjAppendElement(interp, sub_list, Tcl_NewIntObj(num3));
+        Tcl_ListObjAppendElement(interp, list, sub_list);
+    }
+    Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) std::vector< std::pair< T*, T* > > {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        Tcl_Obj *sub_list = Tcl_NewListObj(0, nullptr);
+        std::pair< T*, T* > p = ((($1_type &)$1)[i]);
+        T* ptr1 = p.first;
+        T* ptr2 = p.second;
+        Tcl_Obj *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        Tcl_Obj *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        Tcl_ListObjAppendElement(interp, sub_list, obj1);
+        Tcl_ListObjAppendElement(interp, sub_list, obj2);
+        Tcl_ListObjAppendElement(interp, list, sub_list);
+    }
+    Tcl_SetObjResult(interp, list);
+}
+
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
@@ -201,3 +272,10 @@ WRAP_DB_CONTAINER(odb::dbTechMinEncRule)
 WRAP_DB_CONTAINER(odb::dbModule)
 WRAP_DB_CONTAINER(odb::dbModInst)
 WRAP_DB_CONTAINER(odb::dbGroup)
+WRAP_DB_CONTAINER(odb::dbTechLayerMinStepRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCornerSpacingRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerSpacingTablePrlRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutClassRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingTableOrthRule)
+WRAP_DB_CONTAINER(odb::dbTechLayerCutSpacingTableDefRule)

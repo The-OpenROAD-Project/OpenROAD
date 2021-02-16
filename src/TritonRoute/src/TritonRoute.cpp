@@ -132,7 +132,7 @@ void TritonRoute::init() {
   }
 
   io::Parser parser(getDesign(),logger_);
-  parser.readLefDb(db_);
+  parser.readDb(db_);
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
@@ -215,7 +215,7 @@ void TritonRoute::readParams(const string &fileName)
         string field = line.substr(0, pos);
         string value = line.substr(pos + 1);
         stringstream ss(value);
-        if (field == "lef")           { LEF_FILE = value; ++readParamCnt;}
+        if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
         else if (field == "def")      { DEF_FILE = value; REF_OUT_FILE = DEF_FILE; ++readParamCnt;}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}

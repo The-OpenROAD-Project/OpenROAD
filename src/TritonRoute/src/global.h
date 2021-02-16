@@ -38,7 +38,6 @@
 extern std::string DEF_FILE;
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
-extern std::string LEF_FILE;
 extern std::string OUTTA_FILE;
 extern std::string OUT_FILE;
 extern std::string REF_OUT_FILE;
