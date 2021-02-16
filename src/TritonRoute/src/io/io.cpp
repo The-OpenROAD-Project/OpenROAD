@@ -3663,7 +3663,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
 {
   if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL &&
-      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL)
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL &&
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
     masterSliceLayerName = string(layer->getName());
 }
 
@@ -3707,53 +3708,73 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       bound.setPoints(points);
       bounds.push_back(bound);
       tmpBlock->setBoundaries(bounds);
-      const char* macroClass = master->getType().getString();
-      if (strcmp(macroClass, "NONE")) {
-        if (strcmp(macroClass, "CORE") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE);
-        } else if (strcmp(macroClass, "CORE TIEHIGH") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
-        } else if (strcmp(macroClass, "CORE TIELOW") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
-        } else if (strcmp(macroClass, "CORE WELLTAP") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
-        } else if (strcmp(macroClass, "CORE SPACER") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
-        } else if (strcmp(macroClass, "CORE ANTENNACELL") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
-        } else if (strcmp(macroClass, "COVER") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::COVER);
-        } else if (strcmp(macroClass, "BLOCK") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-        } else if (strcmp(macroClass, "PAD") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::PAD);
-        } else if (strcmp(macroClass, "RING") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::RING);
-        } else if (strcmp(macroClass, "PAD POWER") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
-        } else if (strcmp(macroClass, "PAD SPACER") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
-        } else if (strcmp(macroClass, "ENDCAP") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
-        } else if (strcmp(macroClass, "ENDCAP PRE") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
-        } else if (strcmp(macroClass, "ENDCAP POST") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
-        } else if (strcmp(macroClass, "ENDCAP TOPLEFT") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
-        } else if (strcmp(macroClass, "ENDCAP TOPRIGHT") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
-        } else if (strcmp(macroClass, "ENDCAP BOTTOMLEFT") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
-        } else if (strcmp(macroClass, "ENDCAP BOTTOMRIGHT") == 0) {
-          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
-        } 
-        else {
-          logger->warn(utl::DRT,
+      switch (master->getType().getValue())
+      {
+        case odb::dbMasterType::NONE:
+        break;
+        case odb::dbMasterType::CORE:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE);
+        break;
+        case odb::dbMasterType::CORE_TIEHIGH:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
+        break;
+        case odb::dbMasterType::CORE_TIELOW:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
+        break;
+        case odb::dbMasterType::CORE_WELLTAP:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
+        break;
+        case odb::dbMasterType::CORE_SPACER:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
+        break;
+        case odb::dbMasterType::CORE_ANTENNACELL:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
+        break;
+        case odb::dbMasterType::COVER:
+        tmpBlock->setMacroClass(MacroClassEnum::COVER);
+        break;
+        case odb::dbMasterType::BLOCK:
+        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+        break;
+        case odb::dbMasterType::PAD:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD);
+        break;
+        case odb::dbMasterType::RING:
+        tmpBlock->setMacroClass(MacroClassEnum::RING);
+        break;
+        case odb::dbMasterType::PAD_POWER:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+        break;
+        case odb::dbMasterType::PAD_SPACER:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+        break;
+        case odb::dbMasterType::ENDCAP:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
+        break;
+        case odb::dbMasterType::ENDCAP_PRE:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+        break;
+        case odb::dbMasterType::ENDCAP_POST:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
+        break;
+        case odb::dbMasterType::ENDCAP_TOPLEFT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
+        break;
+        case odb::dbMasterType::ENDCAP_TOPRIGHT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
+        break;
+        case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
+        break;
+        case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
+        break;
+        default:
+        logger->warn(utl::DRT,
                        137,
                        "unknown macroClass {}, skipped macroClass property",
-                       macroClass);
-        }
+                       master->getType().getString());
+        break;
       }
 
       for (auto _term : master->getMTerms()) {

@@ -53,7 +53,6 @@ struct dbTechLayerCornerSpacingRuleFlags
 {
   uint _corner_type : 1;
   bool _same_mask : 1;
-  bool _same_x_y : 1;
   bool _corner_only : 1;
   bool _except_eol : 1;
   bool _except_jog_length : 1;
@@ -64,7 +63,7 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool _except_notch_length_valid : 1;
   bool _except_same_net : 1;
   bool _except_same_metal : 1;
-  uint _spare_bits : 19;
+  uint _spare_bits : 20;
 };
 // User Code Begin structs
 // User Code End structs

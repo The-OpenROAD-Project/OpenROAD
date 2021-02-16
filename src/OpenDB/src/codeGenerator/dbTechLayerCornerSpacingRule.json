@@ -16,12 +16,6 @@
     },
     {
       "type": "bool",
-      "name": "_same_x_y",
-      "flags": [],
-      "bits":1
-    },
-    {
-      "type": "bool",
       "name":"_corner_only",
       "flags":[],
       "bits":1

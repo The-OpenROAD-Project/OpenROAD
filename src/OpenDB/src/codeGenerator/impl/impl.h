@@ -50,9 +50,9 @@ namespace odb {
   class dbDiff;
   class _dbDatabase;
   {% for _class in klass.classes %}
-    {%if _class in ["dbTable","dbHashTable"]%}
+    {% if _class in ["dbTable", "dbHashTable"] %}
       template <class T>
-    {%endif%}
+    {% endif %}
     class {{ _class }};
   {% endfor %}
   //User Code Begin Classes
@@ -109,7 +109,9 @@ namespace odb {
     bool operator<(const _{{klass.name}}& rhs) const;
     void differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const;
     void out(dbDiff& diff, char side, const char* field) const;
-    {% if klass.hasTables %}dbObjectTable* getObjectTable(dbObjectType type);{% endif %}
+    {% if klass.hasTables %}
+    dbObjectTable* getObjectTable(dbObjectType type);
+    {% endif %}
     //User Code Begin methods
     //User Code End methods
   };

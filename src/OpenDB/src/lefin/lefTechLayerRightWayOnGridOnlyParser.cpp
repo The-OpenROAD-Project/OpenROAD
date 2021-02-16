@@ -46,7 +46,7 @@ bool parse(Iterator          first,
       = (lit("RIGHTWAYONGRIDONLY")[boost::bind(
              &odb::dbTechLayer::setRightWayOnGridOnly, layer, true)]
          >> -lit("CHECKMASK")[boost::bind(
-             &odb::dbTechLayer::setCheckMask, layer, true)]
+             &odb::dbTechLayer::setRightWayOnGridOnlyCheckMask, layer, true)]
          >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, rightWayOnGridOnlyRule, space);
