@@ -154,8 +154,6 @@ target_include_directories( TritonRouteLib
 target_link_libraries( TritonRouteLib
   PUBLIC
   tritonroute-swig
-  def
-  lef
   gui
   opendb
   flute
