@@ -77,7 +77,7 @@ class CtsOptions
   void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
   bool getSinkClustering() const { return _sinkClusteringEnable; }
   void setSinkClusteringUseMaxCap(bool useMaxCap) { _sinkClusteringUseMaxCap = useMaxCap; }
-  bool getSinkClusteringUseMaxCap() { return _sinkClusteringUseMaxCap; }
+  bool getSinkClusteringUseMaxCap() const { return _sinkClusteringUseMaxCap; }
   void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
   unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }
   void setMaxSlew(unsigned slew) { _maxSlew = slew; }

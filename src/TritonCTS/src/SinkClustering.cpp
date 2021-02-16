@@ -225,6 +225,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   // Has the points for each cluster of each solution.
   std::vector<std::vector<std::vector<Point<double>>>> solutionPoints;
   // Has the points index for each cluster of each solution.
+  // example: solutionsPointsIdx[solutionId][clusterIdx][pointIdx]
   std::vector<std::vector<std::vector<unsigned>>> solutionPointsIdx;
   // Has the sink indexes for each cluster of each solution.
   std::vector<std::vector<std::vector<unsigned>>> solutions;
@@ -276,7 +277,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
         // If the cluster size is higher than groupSize,
         // or the distance is higher than _maxInternalDiameter
         //-> start another cluster and save the cost of the current one.
-        if (isBoundaryViolated(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
+        if (isLimitExceeded(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
           debugPrint(_logger, CTS, "Stree", 4, "Created cluster of size {}, dia {:.3}, cap {:.3e}",
                        solutionPoints[j][clusters[j]].size(), distanceCost, capCost);
           // The cost is computed as the highest cost found on the current
@@ -346,7 +347,7 @@ void SinkClustering::findBestMatching(unsigned groupSize)
         }
       }
 
-      if (isBoundaryViolated(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
+      if (isLimitExceeded(solutionPoints[j][clusters[j]].size(), distanceCost, capCost, groupSize)) {
         debugPrint(_logger, CTS, "Stree", 4, "Created cluster of size {}, dia {:.3}, cap {:.3e}",
                      solutionPoints[j][clusters[j]].size(), distanceCost, capCost);
         if (previousCosts[j] == 0) {
@@ -389,21 +390,12 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   _bestSolution = solutions[bestSolution];
 }
 
-bool SinkClustering::isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit)
+bool SinkClustering::isLimitExceeded(unsigned size, double cost, double capCost, unsigned sizeLimit)
 {
   if (_useMaxCapLimit) {
-    if (capCost > _options->getSinkBufferMaxCap()) {
-      return true;
-    } else {
-      return false;
-    }
+    return (capCost > _options->getSinkBufferMaxCap());
   } else {
-    if (size >= sizeLimit || cost > _maxInternalDiameter)
-      return true;
-    else
-    {
-      return false;
-    } 
+    return (size >= sizeLimit || cost > _maxInternalDiameter);
   }
 }
 
@@ -450,7 +442,7 @@ void SinkClustering::writePlotFile(unsigned groupSize)
 
 double SinkClustering::getWireLength(std::vector<Point<double>> points)
 {
-  PD::PdRev* pd = new PD::PdRev(_logger);
+  std::unique_ptr<PD::PdRev> pd(new PD::PdRev(_logger));
   std::vector<unsigned> vecX(points.size()+1);
   std::vector<unsigned> vecY(points.size()+1);
   double driverX = 0;
@@ -480,10 +472,8 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
     int x2 = (PD::DTYPE) pdTree.branch[n].x;
     int y2 = (PD::DTYPE) pdTree.branch[n].y;
 
-    wl += (x1>x2 ? x1-x2 : x2-x1) + 
-          (y1>y2 ? y1-y2 : y2-y1);
+    wl += std::abs(x1 - x2) + std::abs(y1 - y2);
   }
-  delete pd;
-  return wl*1.0/1000.0;
+  return wl/1000.0;
 }
 }  // namespace cts

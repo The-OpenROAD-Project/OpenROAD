@@ -99,7 +99,7 @@ class SinkClustering
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
 
-  bool isBoundaryViolated(unsigned size, double cost, double capCost, unsigned sizeLimit);
+  bool isLimitExceeded(unsigned size, double cost, double capCost, unsigned sizeLimit);
   bool isOne(double pos) const
   {
     return (1 - pos) < std::numeric_limits<double>::epsilon();

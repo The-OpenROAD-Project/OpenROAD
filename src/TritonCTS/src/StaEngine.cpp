@@ -86,9 +86,7 @@ float StaEngine::getInputPinCap(odb::dbITerm* iterm)
   sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
   if (inputPort) {
     return inputPort->capacitance();
-  }
-  else
-  {
+  } else {
     return 0.0;
   }
     

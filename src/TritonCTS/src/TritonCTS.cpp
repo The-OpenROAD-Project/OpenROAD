@@ -226,8 +226,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
   int driverY = -1;
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->getIoType() != odb::dbIoType::INPUT) {
-      odb::dbInst * inst = iterm->getInst();
-      inst->getLocation(driverX, driverY);
+      iterm->getAvgXY(&driverX, &driverY);
       break;
     }
   }
@@ -253,15 +252,14 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
   }
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      odb::dbInst *inst = iterm->getInst();
-      std::string name = inst->getName();
+      std::string name = iterm->getInst()->getName();
       int receiverX, receiverY;
-      inst->getLocation(receiverX, receiverY);
+      iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
       if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf_", 7)) {
-        odb::dbITerm* outputPin = inst->getFirstOutput();
+        odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, currWireLength+dist, sinkWireLength);
+          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength+dist), sinkWireLength);
         else
         {
           _logger->report("  Hanging buffer {}", name);
@@ -270,7 +268,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
           leafSinks++;
       } else {
         sinks++;
-        double currSinkWl = 1.0*(dist + currWireLength)/_options->getDbUnits();
+        double currSinkWl = (dist + currWireLength)/_options->getDbUnits();
         sinkWireLength += currSinkWl;
       }
     }

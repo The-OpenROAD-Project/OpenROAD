@@ -372,24 +372,22 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bo
     switch (axis->variable()) {
       case sta::TableAxisVariable::total_output_net_capacitance:
       {
-        unsigned idx = axis->size();
-        if (midValue) {
-          idx = axis->size()/2;
-          if (idx == 0) idx = 1;
+        unsigned idx = axis->size() - 1;
+        if (midValue && idx>1) {
+          idx = axis->size()/2 - 1;
         }
-        maxCap = axis->axisValue(idx - 1);
+        maxCap = axis->axisValue(idx);
         maxCapExist = true;
         break;
       }
       case sta::TableAxisVariable::input_net_transition:
       case sta::TableAxisVariable::input_transition_time:
       {
-        unsigned idx = axis->size();
-        if (midValue) {
-          idx = axis->size()/2;
-          if (idx == 0) idx = 1;
+        unsigned idx = axis->size() - 1;
+        if (midValue && idx>1) {
+          idx = axis->size()/2 - 1;
         }
-        maxSlew = axis->axisValue(idx - 1);
+        maxSlew = axis->axisValue(idx);
         maxSlewExist = true;
         break;
       }

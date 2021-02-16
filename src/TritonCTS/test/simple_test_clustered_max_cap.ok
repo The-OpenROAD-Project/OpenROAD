@@ -86,5 +86,5 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0016]     Fanout distribution for the current clock = 3:1, 7:2, 8:2, 10:22, 11:7.
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0091] Sinks after db write = 300 (Leaf Buffers = 30)
-[INFO CTS-0092] Avg Sink Wire Length = 131.0 um
+[INFO CTS-0092] Avg Sink Wire Length = 129.0 um
  ... End of TritonCTS execution.
