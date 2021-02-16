@@ -42,7 +42,7 @@
 #include <algorithm>
 #include <math.h>
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 
 namespace parquetfp
 {
