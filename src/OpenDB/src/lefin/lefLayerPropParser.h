@@ -17,8 +17,19 @@ class lefTechLayerSpacingEolParser
 class lefTechLayerMinStepParser
 {
  public:
+  
+  bool parse(std::string, dbTechLayer*, lefin*);
+  private:
   odb::dbTechLayerMinStepRule* curRule;
-  bool                         parse(std::string, dbTechLayer*, lefin*);
+  void createSubRule(odb::dbTechLayer* layer);
+  void setMinAdjacentLength1(double length, odb::lefin* l);
+  void setMinAdjacentLength2(double length, odb::lefin* l);
+  void minBetweenLngthParser(double length, odb::lefin* l);
+  void noBetweenEolParser(double width, odb::lefin* l);
+  void minStepLengthParser(double length, odb::lefin* l);
+  void maxEdgesParser(int edges, odb::lefin* l);
+  void setConvexCorner();
+  void setExceptSameCorners();
 };
 
 class lefTechLayerCornerSpacingParser
