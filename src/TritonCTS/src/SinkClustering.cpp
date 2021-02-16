@@ -453,12 +453,12 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
   }
   driverX /= points.size();
   driverY /= points.size();
-  vecX.emplace_back(driverX*1000);
-  vecY.emplace_back(driverY*1000);
+  vecX.emplace_back(driverX*_options->getDbUnits());
+  vecY.emplace_back(driverY*_options->getDbUnits());
 
   for (auto point: points) {
-    vecX.emplace_back(point.getX()*1000);
-    vecY.emplace_back(point.getY()*1000);
+    vecX.emplace_back(point.getX()*_options->getDbUnits());
+    vecY.emplace_back(point.getY()*_options->getDbUnits());
   }
   pd->setAlphaPDII(0.8);
   pd->addNet(points.size()+1, vecX, vecY);
@@ -474,6 +474,6 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
 
     wl += std::abs(x1 - x2) + std::abs(y1 - y2);
   }
-  return wl/1000.0;
+  return wl/double(_options->getDbUnits());
 }
 }  // namespace cts

@@ -87,5 +87,5 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [WARNING ODB-0034] Can not find physical location of iterm p1/Y
 [INFO CTS-0091] Sinks after db write = 2 (Leaf Buffers = 0)
-[INFO CTS-0092] Avg Sink Wire Length = 9.50 um
+[INFO CTS-0092] Avg Sink Wire Length = 9.69 um
  ... End of TritonCTS execution.

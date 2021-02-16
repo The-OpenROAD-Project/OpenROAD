@@ -259,7 +259,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
       if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf_", 7)) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength+dist), sinkWireLength);
+          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength + dist), sinkWireLength);
         else
         {
           _logger->report("  Hanging buffer {}", name);
@@ -268,7 +268,7 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
           leafSinks++;
       } else {
         sinks++;
-        double currSinkWl = (dist + currWireLength)/_options->getDbUnits();
+        double currSinkWl = (dist + currWireLength)/double(_options->getDbUnits());
         sinkWireLength += currSinkWl;
       }
     }
