@@ -131,6 +131,14 @@ report_power
 report_floating_nets -verbose
 report_design_area
 
+if { [sta::worst_slack -max] < $setup_slack_limit } {
+  fail "setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
+}
+
+if { [sta::worst_slack -min] < $hold_slack_limit } {
+  fail "hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
+}
+
 # not really useful without pad locations
 #set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
 #analyze_power_grid -net $vdd_net_name
@@ -149,29 +157,10 @@ detailed_route -param $tr_params
 
 set drv_count [detailed_route_num_drvs]
 
-################################################################
-set pass 1
-
 if { ![info exists drv_count] } {
-  puts "Fail: drv count not found."
-  set pass 0
+  fail "drv count not found."
 } elseif { $drv_count > $max_drv_count } {
-  puts "Fail: max drv count exceeded $drv_count > $max_drv_count."
-  set pass 0
+  fail "max drv count exceeded $drv_count > $max_drv_count."
 }
 
-if { [sta::worst_slack -max] < $setup_slack_limit } {
-  puts "Fail: setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
-  set pass 0
-}
-
-if { [sta::worst_slack -min] < $hold_slack_limit } {
-  puts "Fail: hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
-  set pass 0
-}
-
-if { $pass } {
-  puts "pass"
-} else {
-  puts "fail"
-}
+puts "pass"
