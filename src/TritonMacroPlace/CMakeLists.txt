@@ -32,7 +32,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-set(PARQUET_HOME ${MPLACE_HOME}/module/ParquetFP )
+set(PARQUET_HOME ${MPLACE_HOME}/src/ParquetFP )
 
 add_subdirectory(${PARQUET_HOME})
 
