@@ -1,6 +1,7 @@
 record_tests {
   simple01
   simple01-obs
+  simple01-td
   simple02
   simple03
   simple04
