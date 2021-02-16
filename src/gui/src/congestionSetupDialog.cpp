@@ -105,7 +105,7 @@ CongestionSetupDialog::CongestionSetupDialog(QWidget* parent) : QDialog(parent)
   connect(
       applyButton, SIGNAL(clicked()), this, SIGNAL(applyCongestionRequested()));
   min_congestion_ = 0;
-  cong_dir_index_ = GCELL_BOTH_DIR;
+  cong_dir_index_ = BOTH_DIR;
 
   colors_.push_back(_color_ranges[2][0].band_color_);
   colors_.push_back(_color_ranges[2][1].band_color_);
@@ -120,11 +120,11 @@ void CongestionSetupDialog::saveState()
   while (row < colorRangeListWidget->count()) {
     colors_.push_back(colorRangeListWidget->item(row++)->background().color());
   }
-  cong_dir_index_ = GCELL_BOTH_DIR;
+  cong_dir_index_ = BOTH_DIR;
   if (horCongDir->isChecked())
-    cong_dir_index_ = GCELL_HORIZONTAL_DIR;
+    cong_dir_index_ = HORIZONTAL_DIR;
   else if (verCongDir->isChecked())
-    cong_dir_index_ = GCELL_VERTICAL_DIR;
+    cong_dir_index_ = VERTICAL_DIR;
 }
 
 void CongestionSetupDialog::accept()
@@ -156,11 +156,11 @@ void CongestionSetupDialog::reject()
   color_sheet_value = color_sheet_value.substr(0, color_sheet_value.size() - 2);
   updateCongestionButtonStyleSheet(color_sheet_value);
 
-  if (cong_dir_index_ == GCELL_BOTH_DIR) {
+  if (cong_dir_index_ == BOTH_DIR) {
     bothCongDir->setChecked(true);
     horCongDir->setChecked(false);
     verCongDir->setChecked(false);
-  } else if (cong_dir_index_ == GCELL_HORIZONTAL_DIR) {
+  } else if (cong_dir_index_ == HORIZONTAL_DIR) {
     bothCongDir->setChecked(false);
     horCongDir->setChecked(true);
     verCongDir->setChecked(false);

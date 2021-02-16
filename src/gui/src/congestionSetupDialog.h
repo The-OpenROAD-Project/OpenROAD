@@ -98,12 +98,12 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
     int band_ulimit_;
   };
 
-  enum GCELL_DIRECTION
+  enum GCellDirection
   {
-    GCELL_HORIZONTAL_DIR = 0,
-    GCELL_VERTICAL_DIR,
+    HORIZONTAL_DIR,
+    VERTICAL_DIR,
 
-    GCELL_BOTH_DIR
+    BOTH_DIR
   };
   using ColorRangeMap
       = std::map<int, std::vector<CongestionBandInfo>>;  // Key : Number Of
@@ -118,7 +118,7 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   // Dialog State
   int min_congestion_;
   QVector<QColor> colors_;
-  GCELL_DIRECTION cong_dir_index_;
+  GCellDirection cong_dir_index_;
 
   static ColorRangeMap _color_ranges;
 };  // namespace gui
