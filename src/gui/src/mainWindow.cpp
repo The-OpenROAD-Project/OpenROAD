@@ -101,10 +101,6 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
-  connect(viewer_,
-          SIGNAL(congestionDisplayed(bool)),
-          this,
-          SLOT(updateCongestion(bool)));
 
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
@@ -196,6 +192,12 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
+  congestion_setup_ = new QAction("Congestion Setup...");
+  connect(congestion_setup_,
+          SIGNAL(triggered()),
+          controls_,
+          SLOT(showCongestionSetup()));
+
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
   connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
@@ -226,35 +228,7 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("View");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
-
-  congestion_button_ = new QToolButton(this);
-  congestion_button_->setPopupMode(QToolButton::InstantPopup);
-
-  congestion_map_ = new QAction("Congestion");
-  congestion_map_->setCheckable(true);
-  congestion_map_->setChecked(false);
-  connect(congestion_map_,
-          SIGNAL(triggered(bool)),
-          viewer_,
-          SLOT(showCongestionMap(bool)));
-
-  congestion_setup_ = new QAction("Congestion Setup...");
-  connect(congestion_setup_,
-          SIGNAL(triggered()),
-          viewer_,
-          SLOT(showCongestionSetup()));
-
-  QMenu* congestion_button_menu = new QMenu();
-  congestion_button_menu->addAction(congestion_map_);
-  congestion_button_menu->addAction(congestion_setup_);
-  congestion_button_->setMenu(congestion_button_menu);
-
-  QWidgetAction* toolButtonAction = new QWidgetAction(this);
-  toolButtonAction->setDefaultWidget(congestion_button_);
-  congestion_button_->setText("Congestion Map...");
-  congestion_button_->setEnabled(false);
-
-  view_tool_bar_->addAction(toolButtonAction);
+  view_tool_bar_->addAction(congestion_setup_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
@@ -400,11 +374,6 @@ void MainWindow::showFindDialog()
   find_dialog_->exec();
 }
 
-void MainWindow::updateCongestion(bool val)
-{
-  congestion_map_->setChecked(val);
-}
-
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
   if (selection_set) {
@@ -500,7 +469,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  congestion_button_->setEnabled(true);
+  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -515,7 +484,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  congestion_button_->setEnabled(true);
+  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 

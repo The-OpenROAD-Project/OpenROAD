@@ -42,7 +42,6 @@
 #include <map>
 #include <vector>
 
-#include "congestionSetupDialog.h"
 #include "fastroute/GlobalRouter.h"
 #include "gui/gui.h"
 #include "opendb/dbBlockCallBackObj.h"
@@ -87,9 +86,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
     HIGHLIGHT_INPUT_NETS_ACT,
     HIGHLIGHT_ALL_NETS_ACT,
 
-    SHOW_CONGESTION_MAP,
-    CONGESTION_SETUP,
-
     VIEW_ZOOMIN_ACT,
     VIEW_ZOOMOUT_ACT,
     VIEW_ZOOMFIT_ACT,
@@ -122,7 +118,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void location(qreal x, qreal y);
   void selected(const Selected& selected, bool showConnectivity = false);
   void addSelected(const Selected& selected);
-  void congestionDisplayed(bool val);
 
  public slots:
   void zoomIn();
@@ -136,10 +131,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
-  void updateCongestionView();
-
-  void showCongestionMap(bool val);
-  void showCongestionSetup() { congestion_dialog_->show(); }
 
  private:
   struct Boxes
@@ -198,7 +189,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
   void addMenuAndActions();
-  QColor getCongestionColorForPercentage(float percent, int alpha = 100);
 
   void populateCongestionData();
 
@@ -217,7 +207,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool rubber_band_showing_;
 
   GCellInfo gcell_congestion_data_;
-  CongestionSetupDialog* congestion_dialog_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

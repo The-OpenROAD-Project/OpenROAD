@@ -173,16 +173,6 @@ LayoutViewer::LayoutViewer(Options* options,
   resize(100, 100);  // just a placeholder until we load the design
 
   addMenuAndActions();
-
-  congestion_dialog_ = new CongestionSetupDialog(this);
-  connect(congestion_dialog_,
-          SIGNAL(applyCongestionRequested()),
-          this,
-          SLOT(update()));
-  connect(congestion_dialog_,
-          SIGNAL(congestionSetupChanged()),
-          this,
-          SLOT(updateCongestionView()));
 }
 
 void LayoutViewer::setDb(dbDatabase* db)
@@ -604,10 +594,14 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
-  if (!menu_actions_[SHOW_CONGESTION_MAP]->isChecked()
-      || gcell_congestion_data_.empty()) {
+  if (gcell_congestion_data_.empty())
+    populateCongestionData();
+  if (!options_->isCongestionVisible() || gcell_congestion_data_.empty())
     return;
-  }
+
+  bool show_hor_congestion = options_->showHorizontalCongestion();
+  bool show_ver_congestion = options_->showVerticalCongestion();
+  auto min_congestion_to_show = options_->getMinCongestionToShow();
   for (auto& gcell_data : gcell_congestion_data_) {
     auto gcell_rect = gcell_data.first;
     if (!gcell_rect.intersects(bounds))
@@ -626,19 +620,17 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
         = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : -1;
 
     float congestion = ver_congestion;
-    if (congestion_dialog_->showHorizontalCongestion())
-      congestion = hor_congestion;
-    else if (congestion_dialog_->showVerticalCongestion())
-      congestion = ver_congestion;
-    else
+    if (show_hor_congestion && show_ver_congestion)
       congestion = std::max(hor_congestion, ver_congestion);
-    if (congestion == -1
-        || congestion < (congestion_dialog_->showCongestionFrom()
-                         + congestion_dialog_->showStartCongestionValue()))
+    else if (show_hor_congestion)
+      congestion = hor_congestion;
+    else
+      congestion = ver_congestion;
+
+    if (congestion == -1 || congestion < min_congestion_to_show)
       continue;
 
-    auto gcell_color
-        = congestion_dialog_->getCongestionColorForPercentage(congestion);
+    auto gcell_color = options_->getCongestionColor(congestion);
     Painter::Color color(
         gcell_color.red(), gcell_color.green(), gcell_color.blue(), 100);
     painter.setPen(color, true);
@@ -998,19 +990,10 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
   layout_context_menu_->popup(this->mapToGlobal(pos));
 }
 
-void LayoutViewer::updateCongestionView()
-{
-  if (menu_actions_[SHOW_CONGESTION_MAP]->isChecked())
-    update();
-}
-
 void LayoutViewer::designLoaded(dbBlock* block)
 {
   addOwner(block);  // register as a callback object
   fit();
-  menu_actions_[SHOW_CONGESTION_MAP]->setEnabled(true);
-  menu_actions_[CONGESTION_SETUP]->setEnabled(true);
-  congestion_dialog_->designLoaded(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)
@@ -1046,15 +1029,6 @@ void LayoutViewer::addMenuAndActions()
       = highlight_menu->addAction(tr("Input Nets"));
   menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
       = highlight_menu->addAction(tr("All Nets"));
-
-  // Congestion Actions
-  menu_actions_[SHOW_CONGESTION_MAP]
-      = congestion_menu->addAction(tr("Show Congestion"));
-  menu_actions_[CONGESTION_SETUP]
-      = congestion_menu->addAction(tr("Congestion Setup..."));
-  menu_actions_[SHOW_CONGESTION_MAP]->setCheckable(true);
-  menu_actions_[SHOW_CONGESTION_MAP]->setEnabled(false);
-  menu_actions_[CONGESTION_SETUP]->setEnabled(false);
 
   // View Actions
   menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
@@ -1100,16 +1074,6 @@ void LayoutViewer::addMenuAndActions()
           &QAction::triggered,
           this,
           [this]() { this->selectHighlightConnectedNets(false, true, true); });
-
-  connect(
-      menu_actions_[SHOW_CONGESTION_MAP], &QAction::triggered, this, [this]() {
-        this->showCongestionMap(
-            menu_actions_[SHOW_CONGESTION_MAP]->isChecked());
-      });
-
-  connect(menu_actions_[CONGESTION_SETUP], &QAction::triggered, this, [this]() {
-    this->congestion_dialog_->show();
-  });
 
   connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
     this->zoomIn();
@@ -1240,16 +1204,6 @@ void LayoutViewer::populateCongestionData()
     itr->second.ver_capacity_ += g_cell.getVerCapacity();
     itr->second.ver_usage_ += g_cell.getVerUsage();
   }
-}
-
-void LayoutViewer::showCongestionMap(bool val)
-{
-  if (gcell_congestion_data_.empty())
-    populateCongestionData();
-
-  menu_actions_[SHOW_CONGESTION_MAP]->setChecked(val);
-  emit congestionDisplayed(val);
-  update();
 }
 
 }  // namespace gui

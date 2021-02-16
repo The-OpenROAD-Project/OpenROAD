@@ -76,6 +76,10 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   }
 
   int showCongestionFrom() const { return min_congestion_; }
+  float getMinCongestionToShow() const
+  {
+    return showCongestionFrom() + showStartCongestionValue();
+  }
   QColor getCongestionColorForPercentage(float percent, int alpha = 100) const;
 
  private:
