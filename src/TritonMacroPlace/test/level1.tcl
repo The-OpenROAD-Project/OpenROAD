@@ -8,7 +8,7 @@ read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fakeram45_64x7.lef
 
 # place_pins result is not stable across ports. sigh.
-if {1} {
+if {0} {
 read_verilog level1.v
 link_design gcd_mem3
 read_sdc gcd.sdc
@@ -16,7 +16,7 @@ read_sdc gcd.sdc
 initialize_floorplan -die_area {0 0 58.14 56.0} \
   -core_area {0 0 58.14 56.0} \
   -site FreePDK45_38x28_10R_NP_162NW_34O \
-  -tracks Nangate45/nangate45.tracks
+  -tracks Nangate45/Nangate45.tracks
 
 place_pins -random -hor_layers 3 -ver_layers 2
 write_def level1.def
