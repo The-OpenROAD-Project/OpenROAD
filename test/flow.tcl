@@ -20,7 +20,9 @@ place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_l
 # Macro Placement
 if { [have_macros] } {
   # tdms_place (but replace isn't timing driven)
-  global_placement -disable_routability_driven -density $global_place_density
+  global_placement -disable_timing_driven \
+    -disable_routability_driven \
+    -density $global_place_density
 
   macro_placement -global_config $ip_global_cfg
 }
@@ -35,6 +37,12 @@ pdngen -verbose $pdn_cfg
 
 ################################################################
 # Global placement
+
+# Used by resizer for timing driven placement.
+set_wire_rc -signal -layer $wire_rc_layer
+set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_dont_use $dont_use
+
 global_placement -disable_routability_driven \
   -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
@@ -46,11 +54,8 @@ write_def $global_place_def
 
 ################################################################
 # Resize
-# estimate wire rc parasitics
-set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+
 estimate_parasitics -placement
-set_dont_use $dont_use
 
 repair_design
 
@@ -123,7 +128,7 @@ estimate_parasitics -global_routing
 
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-report_wns
+report_worst_slack
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_power
