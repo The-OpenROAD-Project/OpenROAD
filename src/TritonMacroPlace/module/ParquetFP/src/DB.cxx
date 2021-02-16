@@ -1067,7 +1067,6 @@ void DB::updatePlacement(const vector<float>& xloc,
 {
    unsigned int numNodes = _nodes->getNumNodes();
    unsigned int size = min(unsigned(xloc.size()), numNodes);
-   assert(size >= numNodes);
 
    for(unsigned i = 0; i < size; i++)
    {
