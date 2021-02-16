@@ -54,3 +54,8 @@ proc make_tr_params { tr_lef cts_def route_guide routed_def } {
   close $stream
   return $tr_params
 }
+
+proc fail { reason } {
+  puts "fail $reason"
+  exit
+}
