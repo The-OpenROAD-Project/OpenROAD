@@ -646,13 +646,13 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc) {
       if (sol) {
         if (isH) {
           // if cannot use bottom or upper layer to bridge, then add cost
-          if ((getTech()->isVia2ViaForbiddenLen(zIdx, false, false, false, sol, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
-              (getTech()->isVia2ViaForbiddenLen(zIdx, true, true, false, sol, false) || layerNum + 2 > getTech()->getTopLayerNum())) {
+          if ((getTech()->isVia2ViaForbiddenLen(zIdx, false, false, false, sol, nullptr, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
+              (getTech()->isVia2ViaForbiddenLen(zIdx, true, true, false, sol, nullptr, false) || layerNum + 2 > getTech()->getTopLayerNum())) {
             sol += TADRCCOST;
           }
         } else {
-          if ((getTech()->isVia2ViaForbiddenLen(zIdx, false, false, true, sol, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
-              (getTech()->isVia2ViaForbiddenLen(zIdx, true, true, true, sol, false) || layerNum + 2 > getTech()->getTopLayerNum())) {
+          if ((getTech()->isVia2ViaForbiddenLen(zIdx, false, false, true, sol, nullptr, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
+              (getTech()->isVia2ViaForbiddenLen(zIdx, true, true, true, sol, nullptr, false) || layerNum + 2 > getTech()->getTopLayerNum())) {
             sol += TADRCCOST;
           }
         }

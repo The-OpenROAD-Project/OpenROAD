@@ -82,9 +82,11 @@ namespace fr{
   class frViaDef {
   public:
     // constructors
-    frViaDef(): name(), isDefault(false), layer1Figs(), layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false) {}
+    frViaDef(): name(), isDefault(false), layer1Figs(), layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false),
+                layer1ShapeBox(), layer2ShapeBox(), cutShapeBox(){}
     frViaDef(const std::string &nameIn): name(nameIn), isDefault(false), layer1Figs(),
-                                     layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false) {}
+                                     layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false),
+                                     layer1ShapeBox(), layer2ShapeBox(), cutShapeBox(){}
     // getters
     void getName(std::string &nameIn) const {
       nameIn = name;
@@ -168,6 +170,51 @@ namespace fr{
     void setAddedByRouter(bool in) {
       addedByRouter = in;
     }
+    void calculatedShapeBoxes(){
+        frBox box;
+        frCoord xl = 0, yl = 0, xh = 0, yh = 0;
+        for (auto &fig: layer1Figs) {
+            fig->getBBox(box);
+            xl = std::min(xl, box.left());
+            yl = std::min(yl, box.bottom());
+            xh = std::max(xh, box.right());
+            yh = std::max(yh, box.top());
+        }
+        layer1ShapeBox.set(xl, yl, xh, yh);
+//        std::cout << "\nl1: " << layer1ShapeBox.left() << " " << layer1ShapeBox.right() << " " <<
+//                layer1ShapeBox.bottom() << " " << layer1ShapeBox.top()<<  "\n";
+        xl = 0; yl = 0; xh = 0; yh = 0;
+        for (auto &fig: layer2Figs) {
+            fig->getBBox(box);
+            xl = std::min(xl, box.left());
+            yl = std::min(yl, box.bottom());
+            xh = std::max(xh, box.right());
+            yh = std::max(yh, box.top());
+        }
+        layer2ShapeBox.set(xl, yl, xh, yh);
+//        std::cout << "\nl2: " << layer2ShapeBox.left() << " " << layer2ShapeBox.right() << " " <<
+//                layer2ShapeBox.bottom() << " " << layer2ShapeBox.top()<<  "\n";
+        xl = 0; yl = 0; xh = 0; yh = 0;
+        for (auto &fig: cutFigs) {
+            fig->getBBox(box);
+            xl = std::min(xl, box.left());
+            yl = std::min(yl, box.bottom());
+            xh = std::max(xh, box.right());
+            yh = std::max(yh, box.top());
+        }
+        cutShapeBox.set(xl, yl, xh, yh);
+//        std::cout << "\ncut: " << cutShapeBox.left() << " " << cutShapeBox.right() << " " <<
+//                cutShapeBox.bottom() << " " << cutShapeBox.top()<<  "\n";
+    }
+    const frBox& getLayer1ShapeBox(){
+        return layer1ShapeBox;
+    }
+    const frBox& getLayer2ShapeBox(){
+        return layer2ShapeBox;
+    }
+    const frBox& getCutShapeBox(){
+        return cutShapeBox;
+    }
   protected:
     std::string                              name;
     bool                                     isDefault;
@@ -177,6 +224,13 @@ namespace fr{
     frLef58CutClass*                         cutClass;
     int                                      cutClassIdx;
     bool                                     addedByRouter;
+    
+    frBox                                    layer1ShapeBox;
+    frBox                                    layer2ShapeBox;
+    frBox                                    cutShapeBox;
+//    frBox                                    layer1SpacingBox;
+//    frBox                                    layer2SpacingBox;
+//    frBox                                    cutSpacingBox;
   };
 }
 #endif

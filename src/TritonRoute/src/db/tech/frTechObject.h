@@ -134,18 +134,20 @@ namespace fr {
     }
 
     // forbidden length table related 
-    bool isVia2ViaForbiddenLen(int tableLayerIdx, bool isPrevDown, bool isCurrDown, bool isCurrDirX, frCoord len, bool isOverlap = false) {
+    bool isVia2ViaForbiddenLen(int tableLayerIdx, bool isPrevDown, bool isCurrDown, bool isCurrDirX, frCoord len, 
+                                frNonDefaultRule* ndr = nullptr, bool isOverlap = false) {
       int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
       if (isOverlap) {
+          if (ndr) cout << "WARNING! NDRs not considering via2ViaForbiddenOverlapLen\n";
         return isIncluded(via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
       } else {
-        return isIncluded(via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx], len);
+        return isIncluded((ndr ? ndr->via2ViaForbiddenLen : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx], len);
       }
     }
 
-    bool isViaForbiddenTurnLen(int tableLayerIdx, bool isDown, bool isCurrDirX, frCoord len) {
+    bool isViaForbiddenTurnLen(int tableLayerIdx, bool isDown, bool isCurrDirX, frCoord len, frNonDefaultRule* ndr = nullptr) {
       int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-      return isIncluded(viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx], len);
+      return isIncluded((ndr ? ndr->viaForbiddenTurnLen : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx], len);
     }
 
     bool isLine2LineForbiddenLen(int tableLayerIdx, bool isZShape, bool isCurrDirX, frCoord len) {

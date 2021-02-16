@@ -1976,6 +1976,8 @@ namespace fr {
 
       using namespace std;
   class frNonDefaultRule{
+      friend class FlexRP;
+      friend class frTechObject;
       private:
       
          string name;
@@ -1991,6 +1993,8 @@ namespace fr {
         
         bool hardSpacing_ = false;
         
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord> > > > via2ViaForbiddenLen;
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord> > > > viaForbiddenTurnLen;
         
   public:
       

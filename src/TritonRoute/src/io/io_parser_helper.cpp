@@ -132,6 +132,7 @@ void io::Parser::initDefaultVias() {
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
+        viaDef->calculatedShapeBoxes();
         tech->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
         tech->addVia(std::move(viaDef));
       }

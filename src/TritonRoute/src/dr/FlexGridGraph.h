@@ -90,6 +90,12 @@ namespace fr {
     bool isDst(frMIdx x, frMIdx y, frMIdx z) const {
       return dsts_[getIdx(x, y, z)];
     }
+    bool isDst(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
+        getNextGrid(x, y, z, dir);
+        bool b = dsts_[getIdx(x, y, z)];
+        getPrevGrid(x, y, z, dir);
+        return b;
+    }
     // unsafe access, no check
     bool isBlocked(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       correct(x, y, z, dir);
