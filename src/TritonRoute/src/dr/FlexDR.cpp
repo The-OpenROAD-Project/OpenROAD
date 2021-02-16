@@ -563,8 +563,8 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum, frViaDef* viaDef1, fr
 }
 
 void FlexDR::init_via2viaMinLen() {
-  //bool enableOutput = false;
-  bool enableOutput = true;
+  bool enableOutput = false;
+  //bool enableOutput = true;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum    = getDesign()->getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
@@ -594,12 +594,13 @@ void FlexDR::init_via2viaMinLen() {
     (via2viaMinLen_[i].first)[2] = max((via2viaMinLen_[i].first)[2], init_via2viaMinLen_minSpc(lNum, upVia, downVia));
     (via2viaMinLen_[i].first)[3] = max((via2viaMinLen_[i].first)[3], init_via2viaMinLen_minSpc(lNum, upVia, upVia));
     if (enableOutput) {
-      cout <<"initVia2ViaMinLen_minSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" (d2d, d2u, u2d, u2u) = (" 
-           <<(via2viaMinLen_[i].first)[0] <<", "
-           <<(via2viaMinLen_[i].first)[1] <<", "
-           <<(via2viaMinLen_[i].first)[2] <<", "
-           <<(via2viaMinLen_[i].first)[3] <<")" <<endl;
+      logger_->info(DRT, 188, "initVia2ViaMinLen_minSpc {}" 
+                    " (d2d, d2u, u2d, u2u) = ({}, {}, {}, {})",
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    (via2viaMinLen_[i].first)[0],
+                    (via2viaMinLen_[i].first)[1],
+                    (via2viaMinLen_[i].first)[2],
+                    (via2viaMinLen_[i].first)[3]);
     }
     i++;
   }
@@ -628,19 +629,20 @@ void FlexDR::init_via2viaMinLen() {
     (via2viaMinLen_[i].second)[2] = (via2viaMinLen_[i].second)[2] && init_via2viaMinLen_minimumcut2(lNum, upVia, downVia);
     (via2viaMinLen_[i].second)[3] = (via2viaMinLen_[i].second)[3] && init_via2viaMinLen_minimumcut2(lNum, upVia, upVia);
     if (enableOutput) {
-      cout <<"initVia2ViaMinLen_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" (d2d, d2u, u2d, u2u) = (" 
-           <<(via2viaMinLen_[i].first)[0] <<", "
-           <<(via2viaMinLen_[i].first)[1] <<", "
-           <<(via2viaMinLen_[i].first)[2] <<", "
-           <<(via2viaMinLen_[i].first)[3] <<")" <<endl;
-      cout <<"initVia2ViaMinLen_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" zerolen (b, b, b, b) = (" 
-           <<(via2viaMinLen_[i].second)[0] <<", "
-           <<(via2viaMinLen_[i].second)[1] <<", "
-           <<(via2viaMinLen_[i].second)[2] <<", "
-           <<(via2viaMinLen_[i].second)[3] <<")" 
-           <<endl;
+      logger_->info(DRT, 189, "initVia2ViaMinLen_minimumcut {}" 
+                    " (d2d, d2u, u2d, u2u) = ({}, {}, {}, {})", 
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    (via2viaMinLen_[i].first)[0],
+                    (via2viaMinLen_[i].first)[1],
+                    (via2viaMinLen_[i].first)[2],
+                    (via2viaMinLen_[i].first)[3]);
+      logger_->info(DRT, 190, "initVia2ViaMinLen_minimumcut "
+                    " zerolen (b, b, b, b) = ({}, {}, {}, {})",
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    (via2viaMinLen_[i].second)[0],
+                    (via2viaMinLen_[i].second)[1],
+                    (via2viaMinLen_[i].second)[2],
+                    (via2viaMinLen_[i].second)[3]);
     }
     i++;
   }
@@ -943,8 +945,8 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum, frViaDef* viaDef1,
 }
 
 void FlexDR::init_via2viaMinLenNew() {
-  //bool enableOutput = false;
-  bool enableOutput = true;
+  bool enableOutput = false;
+  //bool enableOutput = true;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum    = getDesign()->getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
@@ -977,16 +979,18 @@ void FlexDR::init_via2viaMinLenNew() {
     via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   false));
     via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
-      cout <<"initVia2ViaMinLenNew_minSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew_[i][0] <<", "
-           <<via2viaMinLenNew_[i][1] <<", "
-           <<via2viaMinLenNew_[i][2] <<", "
-           <<via2viaMinLenNew_[i][3] <<", "
-           <<via2viaMinLenNew_[i][4] <<", "
-           <<via2viaMinLenNew_[i][5] <<", "
-           <<via2viaMinLenNew_[i][6] <<", "
-           <<via2viaMinLenNew_[i][7] <<")" <<endl;
+      logger_->info(DRT, 191, "initVia2ViaMinLenNew_minSpc {} "
+                    "(d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
+                    "= ({}, {}, {}, {}, {}, {}, {}, {})", 
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    via2viaMinLenNew_[i][0],
+                    via2viaMinLenNew_[i][1],
+                    via2viaMinLenNew_[i][2],
+                    via2viaMinLenNew_[i][3],
+                    via2viaMinLenNew_[i][4],
+                    via2viaMinLenNew_[i][5],
+                    via2viaMinLenNew_[i][6],
+                    via2viaMinLenNew_[i][7]);
     }
     i++;
   }
@@ -1014,16 +1018,18 @@ void FlexDR::init_via2viaMinLenNew() {
     via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   false));
     via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
-      cout <<"initVia2ViaMinLenNew_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew_[i][0] <<", "
-           <<via2viaMinLenNew_[i][1] <<", "
-           <<via2viaMinLenNew_[i][2] <<", "
-           <<via2viaMinLenNew_[i][3] <<", "
-           <<via2viaMinLenNew_[i][4] <<", "
-           <<via2viaMinLenNew_[i][5] <<", "
-           <<via2viaMinLenNew_[i][6] <<", "
-           <<via2viaMinLenNew_[i][7] <<")" <<endl;
+      logger_->info(DRT, 192, "initVia2ViaMinLenNew_minimumcut "
+                    " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
+                    "= ({}, {}, {}, {}, {}, {}, {}, {})", 
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    via2viaMinLenNew_[i][0],
+                    via2viaMinLenNew_[i][1],
+                    via2viaMinLenNew_[i][2],
+                    via2viaMinLenNew_[i][3],
+                    via2viaMinLenNew_[i][4],
+                    via2viaMinLenNew_[i][5],
+                    via2viaMinLenNew_[i][6],
+                    via2viaMinLenNew_[i][7]);
     }
     i++;
   }
@@ -1051,16 +1057,18 @@ void FlexDR::init_via2viaMinLenNew() {
     via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   false));
     via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
-      cout <<"initVia2ViaMinLenNew_cutSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
-           <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew_[i][0] <<", "
-           <<via2viaMinLenNew_[i][1] <<", "
-           <<via2viaMinLenNew_[i][2] <<", "
-           <<via2viaMinLenNew_[i][3] <<", "
-           <<via2viaMinLenNew_[i][4] <<", "
-           <<via2viaMinLenNew_[i][5] <<", "
-           <<via2viaMinLenNew_[i][6] <<", "
-           <<via2viaMinLenNew_[i][7] <<")" <<endl;
+      logger_->info(DRT, 193, "initVia2ViaMinLenNew_cutSpc "
+                    " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
+                    "= ({}, {}, {}, {}, {}, {}, {}, {})", 
+                    getDesign()->getTech()->getLayer(lNum)->getName(),
+                    via2viaMinLenNew_[i][0],
+                    via2viaMinLenNew_[i][1],
+                    via2viaMinLenNew_[i][2],
+                    via2viaMinLenNew_[i][3],
+                    via2viaMinLenNew_[i][4],
+                    via2viaMinLenNew_[i][5],
+                    via2viaMinLenNew_[i][6],
+                    via2viaMinLenNew_[i][7]);
     }
     i++;
   }
@@ -1256,7 +1264,7 @@ void FlexDR::init() {
   ProfileTask profile("DR:init");
   frTime t;
   if (VERBOSE > 0) {
-    cout <<endl <<"start routing data preparation" <<endl;
+    logger_->info(DRT, 187, "start routing data preparation");
   }
   initGCell2BoundaryPin();
   getRegionQuery()->initDRObj(getTech()->getLayers().size()); // first init in postProcess
@@ -1267,7 +1275,7 @@ void FlexDR::init() {
   init_via2turnMinLen();
 
   if (VERBOSE > 0) {
-    t.print();
+    t.print(logger_);
   }
 }
 
@@ -1476,16 +1484,17 @@ void FlexDR::initDR(int size, bool enableDRC) {
     }
   }
 
-  //cout <<"  number of violations = " <<numMarkers <<endl;
   removeGCell2BoundaryPin();
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     if (enableDRC) {
-      cout <<"  number of violations = "       <<getDesign()->getTopBlock()->getNumMarkers() <<endl;
+      logger_->info(DRT, 196, "  number of violations = {}",
+                    getDesign()->getTopBlock()->getNumMarkers());
     } else {
-      cout <<"  number of quick violations = " <<numQuickMarkers <<endl;
+      logger_->info(DRT, 197, "  number of quick violations = {}",
+                    numQuickMarkers);
     }
-    t.print();
+    t.print(logger_);
     cout <<flush;
   }
 }
@@ -1516,7 +1525,6 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
   //bool TEST = false;
   //bool TEST = true;
   if (VERBOSE > 0) {
-    cout <<endl <<"start " <<iter;
     string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
       suffix = "st";
@@ -1527,7 +1535,8 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     } else {
       suffix = "th";
     }
-    cout <<suffix <<" optimization iteration ..." <<endl;
+    logger_->info(DRT, 195, "start {}{} optimization iteration ...",
+                  iter, suffix);
   }
   if (graphics_) {
     graphics_->startIter(iter);
@@ -1672,11 +1681,14 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
                   //if (true) {
                   if (isExceed) {
                     if (enableDRC) {
-                      cout <<"    completing " <<prev_perc <<"% with " <<getDesign()->getTopBlock()->getNumMarkers() <<" violations" <<endl;
-                    } else {
-                      cout <<"    completing " <<prev_perc <<"% with " <<numQuickMarkers <<" quick violations" <<endl;
+                      logger_->report("    completing {}% with {} violations",
+                                      prev_perc,
+                                      getDesign()->getTopBlock()->getNumMarkers());
+                                      } else {
+                      logger_->report("    completing {}% with {} quick violations",
+                                      prev_perc, numQuickMarkers);
                     }
-                    cout <<"    " <<t <<endl <<flush;
+                    logger_->report("    {}", t);
                   }
                 }
               }
@@ -1706,11 +1718,14 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
       //if (true) {
       if (isExceed) {
         if (enableDRC) {
-          cout <<"    completing " <<prev_perc <<"% with " <<getDesign()->getTopBlock()->getNumMarkers() <<" violations" <<endl;
+          logger_->report("    completing {}% with {} violations",
+                          prev_perc,
+                          getDesign()->getTopBlock()->getNumMarkers());
         } else {
-          cout <<"    completing " <<prev_perc <<"% with " <<numQuickMarkers <<" quick violations" <<endl;
+          logger_->report("    completing {}% with {} quick violations",
+                          prev_perc, numQuickMarkers);
         }
-        cout <<"    " <<t <<endl <<flush;
+        logger_->report("    {}", t);
       }
     }
   }
@@ -1718,11 +1733,13 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     if (enableDRC) {
-      cout <<"  number of violations = " <<getDesign()->getTopBlock()->getNumMarkers() <<endl;
+      logger_->info(DRT, 199, "  number of violations = {}",
+                    getDesign()->getTopBlock()->getNumMarkers());
     } else {
-      cout <<"  number of quick violations = " <<numQuickMarkers <<endl;
+      logger_->info(DRT, 200, "  number of quick violations = {}",
+                    numQuickMarkers);
     }
-    t.print();
+    t.print(logger_);
     cout <<flush;
   }
   end();
@@ -1766,22 +1783,25 @@ void FlexDR::end(bool writeMetrics) {
   }
 
   if (VERBOSE > 0) {
-    boost::io::ios_all_saver guard(std::cout);
-    cout <<endl <<"total wire length = " <<totWlen / getDesign()->getTopBlock()->getDBUPerUU() <<" um" <<endl;
+    logger_->report("total wire length = {} um",
+                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
     for (int i = getTech()->getBottomLayerNum(); i <= getTech()->getTopLayerNum(); i++) {
       if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::ROUTING) {
-        cout <<"total wire length on LAYER " <<getTech()->getLayer(i)->getName() <<" = " 
-             <<wlen[i] / getDesign()->getTopBlock()->getDBUPerUU() <<" um" <<endl;
+        logger_->report("total wire length on LAYER {} = {} um",
+                        getTech()->getLayer(i)->getName(),
+                        wlen[i] / getDesign()->getTopBlock()->getDBUPerUU());
       }
     }
-    cout <<"total number of vias = " <<totSCut + totMCut <<endl;
+    logger_->report("total number of vias = {}", totSCut + totMCut);
     if (totMCut > 0) {
-      cout <<"total number of multi-cut vias = " <<totMCut 
-           << " (" <<setw(5) <<fixed <<setprecision(1) <<totMCut * 100.0 / (totSCut + totMCut) <<"%)" <<endl;
-      cout <<"total number of single-cut vias = " <<totSCut 
-           << " (" <<setw(5) <<fixed <<setprecision(1) <<totSCut * 100.0 / (totSCut + totMCut) <<"%)" <<endl;
+      logger_->report("total number of multi-cut vias = {} ({:5.1f}%)",
+                      totMCut, 
+                      totMCut * 100.0 / (totSCut + totMCut));
+      logger_->report("total number of single-cut vias = {} ({:5.1f}%)",
+                      totSCut,
+                      totSCut * 100.0 / (totSCut + totMCut));
     }
-    cout <<"up-via summary (total " <<totSCut + totMCut <<"):" <<endl;
+    logger_->report("up-via summary (total {}):", totSCut + totMCut);
     int nameLen = 0;
     for (int i = getTech()->getBottomLayerNum(); i <= getTech()->getTopLayerNum(); i++) {
       if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
@@ -1792,43 +1812,44 @@ void FlexDR::end(bool writeMetrics) {
     if (totMCut) {
       maxL += 9 + 4 + (int)to_string(totMCut).length() + 9 + 4 + (int)to_string(totSCut + totMCut).length();
     }
+    std::ostringstream msg;
     if (totMCut) {
-      cout <<" " <<setw(nameLen + 4 + (int)to_string(totSCut).length() + 9) <<"single-cut";
-      cout <<setw(4 + (int)to_string(totMCut).length() + 9) <<"multi-cut" 
+      msg <<" " <<setw(nameLen + 4 + (int)to_string(totSCut).length() + 9) <<"single-cut";
+      msg <<setw(4 + (int)to_string(totMCut).length() + 9) <<"multi-cut" 
            <<setw(4 + (int)to_string(totSCut + totMCut).length()) <<"total";
     }
-    cout <<endl;
+    msg <<endl;
     for (int i = 0; i < maxL; i++) {
-      cout <<"-";
+      msg <<"-";
     }
-    cout <<endl;
+    msg <<endl;
     for (int i = getTech()->getBottomLayerNum(); i <= getTech()->getTopLayerNum(); i++) {
       if (getTech()->getLayer(i)->getType() == frLayerTypeEnum::CUT) {
-        cout <<" "    <<setw(nameLen) <<getTech()->getLayer(i-1)->getName() 
+        msg <<" "    <<setw(nameLen) <<getTech()->getLayer(i-1)->getName() 
              <<"    " <<setw((int)to_string(totSCut).length()) <<sCut[i];
         if (totMCut) {
-          cout <<" ("   <<setw(5) <<(double)((sCut[i] + mCut[i]) ? sCut[i] * 100.0 / (sCut[i] + mCut[i]) : 0.0) <<"%)";
-          cout <<"    " <<setw((int)to_string(totMCut).length()) <<mCut[i] 
+          msg <<" ("   <<setw(5) <<(double)((sCut[i] + mCut[i]) ? sCut[i] * 100.0 / (sCut[i] + mCut[i]) : 0.0) <<"%)";
+          msg <<"    " <<setw((int)to_string(totMCut).length()) <<mCut[i] 
                <<" ("   <<setw(5) <<(double)((sCut[i] + mCut[i]) ? mCut[i] * 100.0 / (sCut[i] + mCut[i]) : 0.0) <<"%)"
                <<"    " <<setw((int)to_string(totSCut + totMCut).length()) <<sCut[i] + mCut[i];
         }
-        cout <<endl;
+        msg <<endl;
       }
     }
     for (int i = 0; i < maxL; i++) {
-      cout <<"-";
+      msg <<"-";
     }
-    cout <<endl;
-    cout <<" "    <<setw(nameLen) <<""
+    msg <<endl;
+    msg <<" "    <<setw(nameLen) <<""
          <<"    " <<setw((int)to_string(totSCut).length()) <<totSCut;
     if (totMCut) {
-      cout <<" ("   <<setw(5) <<(double)((totSCut + totMCut) ? totSCut * 100.0 / (totSCut + totMCut) : 0.0) <<"%)";
-      cout <<"    " <<setw((int)to_string(totMCut).length()) <<totMCut 
+      msg <<" ("   <<setw(5) <<(double)((totSCut + totMCut) ? totSCut * 100.0 / (totSCut + totMCut) : 0.0) <<"%)";
+      msg <<"    " <<setw((int)to_string(totMCut).length()) <<totMCut 
            <<" ("   <<setw(5) <<(double)((totSCut + totMCut) ? totMCut * 100.0 / (totSCut + totMCut) : 0.0) <<"%)"
            <<"    " <<setw((int)to_string(totSCut + totMCut).length()) <<totSCut + totMCut;
     }
-    cout <<endl <<endl <<flush;
-    guard.restore();
+    msg <<endl <<endl;
+    logger_->report("{}", msg.str());
   }
 }
 
@@ -1950,7 +1971,7 @@ int FlexDR::main() {
   init();
   frTime t;
   if (VERBOSE > 0) {
-    cout <<endl <<endl <<"start detail routing ...";
+    logger_->info(DRT, 194, "start detail routing ...");
   }
   // search and repair: iter, size, offset, mazeEndIter, workerDRCCost, workerMarkerCost, 
   //                    markerBloatWidth, markerBloatDepth, enableDRC, ripupMode, followGuide, fixMode, TEST
@@ -2040,11 +2061,11 @@ int FlexDR::main() {
     reportDRC();
   }
   if (VERBOSE > 0) {
-    cout <<endl <<"complete detail routing";
+    logger_->info(DRT, 198, "complete detail routing");
     end(/* writeMetrics */ true);
   }
   if (VERBOSE > 0) {
-    t.print();
+    t.print(logger_);
     cout <<endl;
   }
   return 0;

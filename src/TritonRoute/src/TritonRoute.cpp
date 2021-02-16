@@ -155,26 +155,26 @@ void TritonRoute::prep() {
 }
 
 void TritonRoute::gr() {
-  FlexGR gr(getDesign());
+  FlexGR gr(getDesign(), logger_);
   gr.main();
 }
 
 void TritonRoute::ta() {
-  FlexTA ta(getDesign());
+  FlexTA ta(getDesign(), logger_);
   ta.main();
-  io::Writer writer(getDesign(),logger_);
+  io::Writer writer(getDesign(), logger_);
   writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
   num_drvs_ = -1;
-  FlexDR dr(getDesign(),logger_);
+  FlexDR dr(getDesign(), logger_);
   dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 
 void TritonRoute::endFR() {
-  io::Writer writer(getDesign(),logger_);
+  io::Writer writer(getDesign(), logger_);
   writer.writeFromDR();
   writer.updateDb(db_);
 }
@@ -215,7 +215,7 @@ void TritonRoute::readParams(const string &fileName)
         string field = line.substr(0, pos);
         string value = line.substr(pos + 1);
         stringstream ss(value);
-        if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
+        if (field == "lef")           { logger_->warn(DRT, 148, "deprecated lef param in params file"); }
         else if (field == "def")      { DEF_FILE = value; REF_OUT_FILE = DEF_FILE; ++readParamCnt;}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}

@@ -258,28 +258,35 @@ void FlexTA::initTA(int size) {
   }
   bool isBottomLayerH = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
 
-  int numAssigned = 0;
-  int numPanels = 0;
-
   // H first
   if (isBottomLayerH) {
-    numAssigned = initTA_helper(0, size, 0, true, numPanels);
+    int numPanelsH;
+    int numAssignedH = initTA_helper(0, size, 0, true, numPanelsH);
+
+    int numPanelsV;
+    int numAssignedV = initTA_helper(0, size, 0, false, numPanelsV);
+
     if (VERBOSE > 0) {
-      cout <<"Done with " <<numAssigned <<" horizontal wires in " <<numPanels <<" frboxes and ";
-    }
-    numAssigned = initTA_helper(0, size, 0, false, numPanels);
-    if (VERBOSE > 0) {
-      cout <<numAssigned <<" vertical wires in " <<numPanels <<" frboxes." <<endl;
+      logger_->info(DRT, 183,
+                    "Done with {} horizontal wires in {} frboxes and "
+                    "{} vertical wires in {} frboxes.",
+                    numAssignedH, numPanelsH,
+                    numAssignedV, numPanelsV);
     }
   // V first
   } else {
-    numAssigned = initTA_helper(0, size, 0, false, numPanels);
+    int numPanelsV;
+    int numAssignedV = initTA_helper(0, size, 0, false, numPanelsV);
+
+    int numPanelsH;
+    int numAssignedH = initTA_helper(0, size, 0, true, numPanelsH);
+
     if (VERBOSE > 0) {
-      cout <<"Done with " <<numAssigned <<" vertical wires in " <<numPanels <<" frboxes and ";
-    }
-    numAssigned = initTA_helper(0, size, 0, true, numPanels);
-    if (VERBOSE > 0) {
-      cout <<numAssigned <<" horizontal wires in " <<numPanels <<" frboxes." <<endl;
+      logger_->info(DRT, 184,
+                    "Done with {} vertical wires in {} frboxes and "
+                    "{} horizontal wires in {} frboxes.",
+                    numAssignedV, numPanelsV,
+                    numAssignedH, numPanelsH);
     }
   }
 }
@@ -314,28 +321,35 @@ void FlexTA::searchRepair(int iter, int size, int offset) {
   }
   bool isBottomLayerH = (bottomLayer->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
 
-  //int sol = 0;
-  int numAssigned = 0;
-  int numPanels = 0;
   // H first
   if (isBottomLayerH) {
-    numAssigned = initTA_helper(iter, size, offset, true, numPanels);
+    int numPanelsH;
+    int numAssignedH = initTA_helper(iter, size, offset, true, numPanelsH);
+
+    int numPanelsV;
+    int numAssignedV = initTA_helper(iter, size, offset, false, numPanelsV);
+
     if (VERBOSE > 0) {
-      cout <<"Done with " <<numAssigned <<" horizontal wires in " <<numPanels <<" frboxes and ";
-    }
-    numAssigned = initTA_helper(iter, size, offset, false, numPanels);
-    if (VERBOSE > 0) {
-      cout <<numAssigned <<" vertical wires in " <<numPanels <<" frboxes." <<endl;
+      logger_->info(DRT, 185,
+                    "Done with {} horizontal wires in {} frboxes and "
+                    "{} vertical wires in {} frboxes.",
+                    numAssignedH, numPanelsH,
+                    numAssignedV, numPanelsV);
     }
   // V first
   } else {
-    numAssigned = initTA_helper(iter, size, offset, false, numPanels);
+    int numPanelsV;
+    int numAssignedV = initTA_helper(iter, size, offset, false, numPanelsV);
+
+    int numPanelsH;
+    int numAssignedH = initTA_helper(iter, size, offset, true, numPanelsH);
+
     if (VERBOSE > 0) {
-      cout <<"Done with " <<numAssigned <<" vertical wires in " <<numPanels <<" frboxes and ";
-    }
-    numAssigned = initTA_helper(iter, size, offset, true, numPanels);
-    if (VERBOSE > 0) {
-      cout <<numAssigned <<" horizontal wires in " <<numPanels <<" frboxes." <<endl;
+      logger_->info(DRT, 186,
+                    "Done with {} vertical wires in {} frboxes and "
+                    "{} horizontal wires in {} frboxes.",
+                    numAssignedV, numPanelsV,
+                    numAssignedH, numPanelsH);
     }
   }
 }
@@ -345,19 +359,16 @@ int FlexTA::main() {
 
   frTime t;
   if (VERBOSE > 0) {
-    cout <<endl <<endl <<"start track assignment" <<endl;
+    logger_->info(DRT, 181, "start track assignment");
   }
   initTA(50);
   searchRepair(1, 50, 0);
 
   if (VERBOSE > 0) {
-    cout <<endl <<"complete track assignment";
-    //end();
+    logger_->info(DRT, 182, "complete track assignment");
   }
   if (VERBOSE > 0) {
-    cout <<endl;
-    t.print();
-    cout <<endl;
+    t.print(logger_);
   }
   return 0;
 }

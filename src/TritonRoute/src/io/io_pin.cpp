@@ -35,7 +35,7 @@ void io::Parser::instAnalysis() {
   bool enableOutput = false;
   //bool enableOutput = true;
   if (VERBOSE > 0) {
-    cout <<endl <<"libcell analysis ..." <<endl;
+    logger->info(DRT, 162, "libcell analysis ...");
   }
   trackOffsetMap.clear();
   prefTrackPatterns.clear();
@@ -83,7 +83,7 @@ void io::Parser::instAnalysis() {
   //cout <<"  refBlock pin layer range done" <<endl;
 
   if (VERBOSE > 0) {
-    cout <<endl <<"instance analysis ..." <<endl;
+    logger->info(DRT, 163, "instance analysis ...");
   }
 
   vector<frCoord> offset;
@@ -147,6 +147,6 @@ void io::Parser::instAnalysis() {
     }
   }
   if (VERBOSE > 0) {
-    cout <<"#unique instances = " <<cnt <<endl;
+    logger->info(DRT, 164, "# unique instances = {}", cnt);
   }
 }
