@@ -563,8 +563,8 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
                "dag.size: {} i = {} nIdx: {}",
                dag.size(),
                i,
-               nIdx) if (IsParent(nodes[cIdx].parent, nIdx))
-    {
+               nIdx);
+    if (IsParent(nodes[cIdx].parent, nIdx)) {
       GetSteiner(cIdx, nIdx, STNodes);
     }
   }
