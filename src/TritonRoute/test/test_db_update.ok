@@ -8,25 +8,16 @@
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-USEMINSPACING OBS ON
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
+[WARNING DRT-0148] deprecated lef param in params file
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 Warning: Metal5 does not have viaDef align with layer direction, generating new viaDef Via5_FR...
 Warning: Metal6 does not have viaDef align with layer direction, generating new viaDef Via6_FR...
 Warning: Metal7 does not have viaDef align with layer direction, generating new viaDef Via7_FR...
