@@ -81,12 +81,12 @@ target_include_directories(TritonCTS
   ${RESIZER_HOME}/include
   ${OPENROAD_HOME}/src/flute3
   ${TRITONCTS_HOME}/src
-  ${FASTROUTE_HOME}/src/pdrev/include
   ${TCL_INCLUDE_PATH}
   ${LEMON_INCLUDE_DIRS}
  )
 
 target_link_libraries(TritonCTS 
   PUBLIC
+  pdrev
   utility
  )
