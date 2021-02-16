@@ -694,11 +694,11 @@ void io::Parser::postProcessGuide() {
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          cout <<"  complete " <<cnt <<" nets" <<endl;
+          logger->report("  complete {} nets", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          cout <<"  complete " <<cnt <<" nets" <<endl;
+          logger->report("  complete {} nets", cnt);
         }
       }
     }

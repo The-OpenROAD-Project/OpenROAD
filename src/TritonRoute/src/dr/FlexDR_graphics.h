@@ -51,7 +51,10 @@ class FlexDRGraphics : public gui::Renderer
 {
  public:
   // Debug detailed routing
-  FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
+  FlexDRGraphics(frDebugSettings* settings,
+                 frDesign* design,
+                 odb::dbDatabase* db,
+                 Logger* logger);
 
   void startWorker(FlexDRWorker* worker);
 
@@ -82,6 +85,7 @@ class FlexDRGraphics : public gui::Renderer
   int              current_iter_;
   frLayerNum       last_pt_layer_;
   gui::Gui*        gui_;
+  Logger*          logger_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;

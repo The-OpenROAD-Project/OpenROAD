@@ -113,11 +113,11 @@ void io::Parser::instAnalysis() {
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          cout <<"  complete " <<cnt <<" instances" <<endl;
+          logger->report("  complete {} instances", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          cout <<"  complete " <<cnt <<" instances" <<endl;
+          logger->report("  complete {} instances", cnt);
         }
       }
     }
