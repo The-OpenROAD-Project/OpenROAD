@@ -76,6 +76,8 @@ class CtsOptions
   bool getSimpleCts() const { return _simpleCts; }
   void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; }
   bool getSinkClustering() const { return _sinkClusteringEnable; }
+  void setSinkClusteringUseMaxCap(bool useMaxCap) { _sinkClusteringUseMaxCap = useMaxCap; }
+  bool getSinkClusteringUseMaxCap() const { return _sinkClusteringUseMaxCap; }
   void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
   unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }
   void setMaxSlew(unsigned slew) { _maxSlew = slew; }
@@ -169,12 +171,14 @@ class CtsOptions
   bool isSimpleSegmentEnabled() const { return _simpleSegmentsEnable; }
   void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
   double getMaxDiameter() const { return _maxDiameter; }
-  void setMaxDiameter(double distance) { _maxDiameter = distance; }
+  void setMaxDiameter(double distance) { _maxDiameter = distance; _sinkClusteringUseMaxCap = false; }
   unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
-  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; }
+  void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
   unsigned getNumStaticLayers() const { return _numStaticLayers; }
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
+  void setSinkBufferMaxCap(double cap) { _sinkBufferMaxCap = cap; }
+  double getSinkBufferMaxCap() const { return _sinkBufferMaxCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
   void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}
@@ -191,7 +195,8 @@ class CtsOptions
   unsigned _wireSegmentUnit = 0;
   bool _plotSolution = false;
   bool _simpleCts = false;
-  bool _sinkClusteringEnable = false;
+  bool _sinkClusteringEnable = true;
+  bool _sinkClusteringUseMaxCap = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
   double _vertexBufDistance = 240;
@@ -202,6 +207,7 @@ class CtsOptions
   unsigned _maxSlew = 4;
   double _maxCharSlew = 0;
   double _maxCharCap = 0;
+  double _sinkBufferMaxCap = 0;
   double _capPerSqr = 0;
   double _resPerSqr = 0;
   double _capInter = 0;

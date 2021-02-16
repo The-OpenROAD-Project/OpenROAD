@@ -3,12 +3,12 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0127] Reading DEF file: check_buffers.def
+[INFO ODB-0127] Reading DEF file: ./results/clustered_test.def
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
-[INFO ODB-0131]     Created 288 components and 1728 component-terminals.
-[INFO ODB-0133]     Created 1 nets and 288 connections.
-[INFO ODB-0134] Finished DEF file: check_buffers.def
+[INFO ODB-0131]     Created 300 components and 1800 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 300 connections.
+[INFO ODB-0134] Finished DEF file: ./results/clustered_test.def
  *****************
  * TritonCTS 2.0 *
  *****************
@@ -35,7 +35,7 @@ TritonCTS forced slew degradation on these wires.
  Looking for clock nets in the design
 [INFO CTS-0007]  Net "clk" found
 [INFO CTS-0009]  Initializing clock net for : "clk"
-[INFO CTS-0010]  Clock net "clk" has 288 sinks
+[INFO CTS-0010]  Clock net "clk" has 300 sinks
 [INFO CTS-0008]  TritonCTS found 1 clock nets.
  ****************************
  *  Check characterization  *
@@ -45,42 +45,46 @@ TritonCTS forced slew degradation on these wires.
  *  Build clock trees  *
  ***********************
 [INFO CTS-0027]  Generating H-Tree topology for net clk
-[INFO CTS-0028]     Tot. number of sinks: 288
-[INFO CTS-0029]     Sinks will be clustered in groups of 10 and a maximum diameter of 60.0 um
+[INFO CTS-0028]     Tot. number of sinks: 300
+[INFO CTS-0090]     Sinks will be clustered based on buffer max cap.
 [INFO CTS-0030]     Number of static layers: 1
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um)
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um)
-[INFO CTS-0019]  Tot. number of sinks after clustering: 29
-[INFO CTS-0024]  Normalized sink region: [(1.26757, 0.912143), (13.4493, 11.6927)]
-[INFO CTS-0025]     Width:  12.1817
-[INFO CTS-0026]     Height: 10.7806
+[INFO CTS-0019]  Tot. number of sinks after clustering: 30
+[INFO CTS-0024]  Normalized sink region: [(0.892048, 0.749191), (13.6432, 12.3893)]
+[INFO CTS-0025]     Width:  12.7512
+[INFO CTS-0026]     Height: 11.6401
  Level 1
     Direction: Horizontal
     # sinks per sub-region: 15
-    Sub-region size: 6.0909 X 10.7806
+    Sub-region size: 6.3756 X 11.6401
 [INFO CTS-0034]     Segment length (rounded): 4
     Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
  Level 2
     Direction: Vertical
     # sinks per sub-region: 8
-    Sub-region size: 6.0909 X 5.3903
+    Sub-region size: 6.3756 X 5.8200
 [INFO CTS-0034]     Segment length (rounded): 2
     Key: 0 outSlew: 2 load: 1 length: 2 isBuffered: false
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is (15)
  Building clock sub nets...
-[INFO CTS-0035]  Number of sinks covered: 29
+[INFO CTS-0035]  Number of sinks covered: 30
 [INFO CTS-0033]  Clock topology of net "clk" done.
+ ****************
+ * Post CTS opt *
+ ****************
+[INFO CTS-0036]  Avg. source sink dist: 23762.90 dbu.
+[INFO CTS-0037]  Num outlier sinks: 0
  ********************
  * Write data to DB *
  ********************
  Writing clock net "clk" to DB
-[INFO CTS-0018]     Created 34 clock buffers.
+[INFO CTS-0018]     Created 35 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
-[INFO CTS-0015]     Created 34 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 7:3, 8:2, 10:28.
+[INFO CTS-0015]     Created 35 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 3:1, 7:2, 8:2, 10:22, 11:7.
 [INFO CTS-0017]     Max level of the clock tree: 2.
-[INFO CTS-0091] Sinks after db write = 288 (Leaf Buffers = 29)
-[INFO CTS-0092] Avg Sink Wire Length = 132.0 um
+[INFO CTS-0091] Sinks after db write = 300 (Leaf Buffers = 30)
+[INFO CTS-0092] Avg Sink Wire Length = 130.0 um
  ... End of TritonCTS execution.
-#unconnected buffers: 0
