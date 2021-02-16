@@ -88,19 +88,12 @@ static CoreEdge getCoreEdge(int cx,
                             int dieUx,
                             int dieUy);
 
-static const char *coreEdgeString(CoreEdge edge);
-
-static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor);
-
 static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                                                   const double siteSizeX,
                                                   const double siteSizeY,
                                                   const Partition& partition,
                                                   bool isHorizontal,
                                                   utl::Logger* log);
-
-static const char *coreEdgeString(CoreEdge edge);
-static int coreEdgeIndex(CoreEdge edge);
 
 ////////////////////////////////////////////////////////////////
 
@@ -212,7 +205,7 @@ void MacroPlacer::init()
   FillMacroStor();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.
-  isTiming_ = !isMissingLiberty(sta_, macroStor);
+  isTiming_ = !isMissingLiberty();
 
   if (isTiming_) {
     reportEdgePinCounts();
@@ -221,6 +214,21 @@ void MacroPlacer::init()
     logger_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
                "timing information");
   }
+}
+
+bool MacroPlacer::isMissingLiberty()
+{
+  sta::Network *network = sta_->network();
+  sta::LeafInstanceIterator* instIter = network->leafInstanceIterator();
+  while (instIter->hasNext()) {
+    sta::Instance* inst = instIter->next();
+    if (!network->libertyCell(inst)) {
+      delete instIter;
+      return true;
+    }
+  }
+  delete instIter;
+  return false;
 }
 
 void MacroPlacer::reportEdgePinCounts()
@@ -1181,20 +1189,6 @@ static CoreEdge getCoreEdge(int cx,
   return CoreEdge::West;
 }
 
-static bool isMissingLiberty(sta::Sta* sta, vector<Macro>& macroStor)
-{
-  sta::LeafInstanceIterator* instIter = sta->network()->leafInstanceIterator();
-  while (instIter->hasNext()) {
-    sta::Instance* inst = instIter->next();
-    if (!sta->network()->libertyCell(inst)) {
-      delete instIter;
-      return true;
-    }
-  }
-  delete instIter;
-  return false;
-}
-
 ////////////////////////////////////////////////////////////////
 
 // Use OpenSTA graph to find macro adjacencies.
@@ -1507,7 +1501,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   return CoreEdge::West;
 }
 
-static const char *coreEdgeString(CoreEdge edge)
+const char *coreEdgeString(CoreEdge edge)
 {
   switch (edge) {
   case CoreEdge::West:
@@ -1523,9 +1517,14 @@ static const char *coreEdgeString(CoreEdge edge)
   }
 }
 
-static int coreEdgeIndex(CoreEdge edge)
+int coreEdgeIndex(CoreEdge edge)
 {
   return static_cast<int>(edge);
+}
+
+CoreEdge coreEdgeFromIndex(int edge_index)
+{
+  return static_cast<CoreEdge>(edge_index);
 }
 
 ////////////////////////////////////////////////////////////////

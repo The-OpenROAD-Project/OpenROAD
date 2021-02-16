@@ -82,6 +82,9 @@ enum class CoreEdge
 };
 
 constexpr int core_edge_count = 4;
+const char *coreEdgeString(CoreEdge edge);
+CoreEdge coreEdgeFromIndex(int edge_index);
+int coreEdgeIndex(CoreEdge edge);
 
 class Macro
 {
@@ -148,7 +151,7 @@ private:
   void ParseGlobalConfig(std::string fileName);
   void ParseLocalConfig(std::string fileName);
   void FillMacroStor();
-  const bool isTiming() const { return isTiming_; }
+  bool isMissingLiberty();
 
   void init();
   // Update Macro Location from Partition info

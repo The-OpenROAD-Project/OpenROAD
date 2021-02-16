@@ -75,18 +75,13 @@ class Partition
   int tableCnt;
   std::unordered_map<std::string, int> macroMap;
 
-  Partition(utl::Logger* log);
   Partition(PartClass _partClass,
             double _lx,
             double _ly,
             double _width,
             double _height,
             utl::Logger* log);
-
-  // destructor
   ~Partition();
-
-  // copy constructor
   Partition(const Partition& prev);
 
   // assign operator overloading
@@ -97,18 +92,13 @@ class Partition
                                            std::vector<int>,
                                            PartClassHash,
                                            PartClassEqual>& macroPartMap);
-
-  void Dump();
-
   // Call Parquet to have annealing solution
   bool DoAnneal();
-
   // Update Macro location from MacroPlacer
   void UpdateMacroCoordi(MacroPlacer& mckt);
 
-  std::string GetName(int macroIdx);
-
  private:
+  std::string GetName(int macroIdx);
   utl::Logger* logger_;
 };
 

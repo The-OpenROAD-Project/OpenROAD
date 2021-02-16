@@ -45,7 +45,6 @@
 
 namespace mpl {
 
-using std::endl;
 using std::pair;
 using std::string;
 using std::unordered_map;
@@ -54,18 +53,6 @@ using std::vector;
 using utl::MPL;
 
 namespace pfp = parquetfp;
-
-Partition::Partition(utl::Logger* log)
-    : partClass(PartClass::None),
-      lx(FLT_MAX),
-      ly(FLT_MAX),
-      width(FLT_MAX),
-      height(FLT_MAX),
-      netTable(0),
-      tableCnt(0),
-      logger_(log)
-{
-}
 
 Partition::Partition(PartClass _partClass,
                      double _lx,
@@ -138,12 +125,7 @@ Partition& Partition::operator=(const Partition& prev)
   return *this;
 }
 
-void Partition::Dump()
-{
-  logger_->report("partClass: {}", partClass);
-  logger_->report("{} {} {} {}", lx, ly, width, height);
-}
-
+#if 1
 #define EAST_IDX (macroStor.size())
 #define WEST_IDX (macroStor.size() + 1)
 #define NORTH_IDX (macroStor.size() + 2)
@@ -154,11 +136,25 @@ void Partition::Dump()
 #define GLOBAL_NORTH_IDX (mckt.macroStor.size() + 2)
 #define GLOBAL_SOUTH_IDX (mckt.macroStor.size() + 3)
 
+#else
+// This "should" work but does not. -cherry
+#define EAST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::East))
+#define WEST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::West))
+#define NORTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::North))
+#define SOUTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::South))
+
+#define GLOBAL_EAST_IDX (mckt.macroStor.size() + coreEdgeIndex(CoreEdge::East))
+#define GLOBAL_WEST_IDX (mckt.macroStor.size() + coreEdgeIndex(CoreEdge::West))
+#define GLOBAL_NORTH_IDX (mckt.macroStor.size() + coreEdgeIndex(CoreEdge::North))
+#define GLOBAL_SOUTH_IDX (mckt.macroStor.size() + coreEdgeIndex(CoreEdge::South))
+#endif
+
 string Partition::GetName(int macroIdx)
 {
   if (macroIdx < macroStor.size()) {
     return macroStor[macroIdx].name();
   } else {
+#if 1
     if (macroIdx == EAST_IDX) {
       return "East";
     } else if (macroIdx == WEST_IDX) {
@@ -170,6 +166,9 @@ string Partition::GetName(int macroIdx)
     } else {
       return "None";
     }
+#else
+    return coreEdgeString(coreEdgeFromIndex(macroIdx - macroStor.size()));
+#endif
   }
 }
 
@@ -178,7 +177,7 @@ void Partition::FillNetlistTable(
     unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
         macroPartMap)
 {
-  tableCnt = (macroStor.size() + 4) * (macroStor.size() + 4);
+  tableCnt = (macroStor.size() + core_edge_count) * (macroStor.size() + core_edge_count);
   netTable = new double[tableCnt];
   for (int i = 0; i < tableCnt; i++) {
     netTable[i] = 0.0f;
@@ -194,41 +193,29 @@ void Partition::FillNetlistTable(
 
   // Just Copy to the netlistTable.
   if (partClass == ALL) {
-    for (size_t i = 0; i < (macroStor.size() + 4); i++) {
-      for (size_t j = 0; j < macroStor.size() + 4; j++) {
-        netTable[i * (macroStor.size() + 4) + j]
+    for (size_t i = 0; i < (macroStor.size() + core_edge_count); i++) {
+      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
+        netTable[i * (macroStor.size() + core_edge_count) + j]
             = (double) mckt.macroWeight[i][j];
       }
     }
   }
   else {
     // row
-    for (size_t i = 0; i < macroStor.size() + 4; i++) {
+    for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
       // column
-      for (size_t j = 0; j < macroStor.size() + 4; j++) {
+      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
         if (i == j) {
           continue;
         }
 
         // from: macro case
         if (i < macroStor.size()) {
-          auto mPtr = mckt.macroInstMap.find(macroStor[i].dbInstPtr);
-          if (mPtr == mckt.macroInstMap.end()) {
-            logger_->error(MPL, 55, "Cannot find macro {}", macroStor[i].name());
-          }
-          int globalIdx1 = mPtr->second;
-
+          int globalIdx1 = mckt.macroInstMap[macroStor[i].dbInstPtr];
           // to macro case
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
-            if (mPtr == mckt.macroInstMap.end()) {
-              logger_->error(MPL,
-                          56,
-                          "Cannot find macro {}",
-                          macroStor[j].name());
-            }
-            int globalIdx2 = mPtr->second;
-            netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mckt.macroInstMap[macroStor[j].dbInstPtr];
+            netTable[i * (macroStor.size() + core_edge_count) + j]
               = mckt.macroWeight[globalIdx1][globalIdx2];
           }
           // to IO-west case
@@ -255,7 +242,7 @@ void Partition::FillNetlistTable(
                 }
               }
             }
-            netTable[i * (macroStor.size() + 4) + j] = westSum;
+            netTable[i * (macroStor.size() + core_edge_count) + j] = westSum;
           } else if (j == EAST_IDX) {
             int eastSum = mckt.macroWeight[globalIdx1][GLOBAL_EAST_IDX];
 
@@ -279,7 +266,7 @@ void Partition::FillNetlistTable(
                 }
               }
             }
-            netTable[i * (macroStor.size() + 4) + j] = eastSum;
+            netTable[i * (macroStor.size() + core_edge_count) + j] = eastSum;
           } else if (j == NORTH_IDX) {
             int northSum = mckt.macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
 
@@ -303,7 +290,7 @@ void Partition::FillNetlistTable(
                 }
               }
             }
-            netTable[i * (macroStor.size() + 4) + j] = northSum;
+            netTable[i * (macroStor.size() + core_edge_count) + j] = northSum;
           } else if (j == SOUTH_IDX) {
             int southSum = mckt.macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
 
@@ -327,55 +314,36 @@ void Partition::FillNetlistTable(
                 }
               }
             }
-            netTable[i * (macroStor.size() + 4) + j] = southSum;
+            netTable[i * (macroStor.size() + core_edge_count) + j] = southSum;
           }
         }
         // from IO
         else if (i == WEST_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
-            if (mPtr == mckt.macroInstMap.end()) {
-              logger_->error(MPL,
-                          57,
-                          "Cannot find macros {} in macroNameMap",
-                          macroStor[j].name());
-            }
-            int globalIdx2 = mPtr->second;
-            netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mckt.macroInstMap[macroStor[j].dbInstPtr];
+            netTable[i * (macroStor.size() + core_edge_count) + j]
               = mckt.macroWeight[GLOBAL_WEST_IDX][globalIdx2];
           }
         } else if (i == EAST_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
-            if (mPtr == mckt.macroInstMap.end()) {
-              logger_->error(MPL, 58, "Cannot macro {}", macroStor[j].name());
-            }
-            int globalIdx2 = mPtr->second;
-            netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mckt.macroInstMap[macroStor[j].dbInstPtr];
+            netTable[i * (macroStor.size() + core_edge_count) + j]
               = mckt.macroWeight[GLOBAL_EAST_IDX][globalIdx2];
           }
         } else if (i == NORTH_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
-            if (mPtr == mckt.macroInstMap.end()) {
-              logger_->error(MPL, 59, "Cannot find macro {}", macroStor[j].name());
-            }
-            int globalIdx2 = mPtr->second;
-            netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mckt.macroInstMap[macroStor[j].dbInstPtr];
+            netTable[i * (macroStor.size() + core_edge_count) + j]
               = mckt.macroWeight[GLOBAL_NORTH_IDX][globalIdx2];
           }
         } else if (i == SOUTH_IDX) {
           // to Macro
           if (j < macroStor.size()) {
-            auto mPtr = mckt.macroInstMap.find(macroStor[j].dbInstPtr);
-            if (mPtr == mckt.macroInstMap.end()) {
-              logger_->error(MPL, 60, "Cannot find macro {}", macroStor[j].name());
-            }
-            int globalIdx2 = mPtr->second;
-            netTable[i * (macroStor.size() + 4) + j]
+            int globalIdx2 = mckt.macroInstMap[macroStor[j].dbInstPtr];
+            netTable[i * (macroStor.size() + core_edge_count) + j]
               = mckt.macroWeight[GLOBAL_SOUTH_IDX][globalIdx2];
           }
         }
@@ -387,8 +355,7 @@ void Partition::FillNetlistTable(
 void Partition::UpdateMacroCoordi(MacroPlacer& mckt)
 {
   for (auto& curPartMacro : macroStor) {
-    auto mPtr = mckt.macroInstMap.find(curPartMacro.dbInstPtr);
-    int macroIdx = mPtr->second;
+    int macroIdx = mckt.macroInstMap[curPartMacro.dbInstPtr];
     curPartMacro.lx = mckt.macroStor[macroIdx].lx;
     curPartMacro.ly = mckt.macroStor[macroIdx].ly;
   }
@@ -409,15 +376,15 @@ bool Partition::DoAnneal()
   vector<pair<int, int>> netStor;
   vector<int> costStor;
 
-  netStor.reserve((macroStor.size() + 4) * (macroStor.size() + 3) / 2);
-  costStor.reserve((macroStor.size() + 4) * (macroStor.size() + 3) / 2);
+  netStor.reserve((macroStor.size() + core_edge_count) * (macroStor.size() + 3) / 2);
+  costStor.reserve((macroStor.size() + core_edge_count) * (macroStor.size() + 3) / 2);
 
-  for (size_t i = 0; i < macroStor.size() + 4; i++) {
-    for (size_t j = i + 1; j < macroStor.size() + 4; j++) {
+  for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
+    for (size_t j = i + 1; j < macroStor.size() + core_edge_count; j++) {
       int cost = 0;
       if (netTable) {
-        cost = netTable[i * (macroStor.size() + 4) + j]
-               + netTable[j * (macroStor.size() + 4) + i];
+        cost = netTable[i * (macroStor.size() + core_edge_count) + j]
+               + netTable[j * (macroStor.size() + core_edge_count) + i];
       }
       if (cost != 0) {
         netStor.push_back(std::make_pair(std::min(i, j), std::max(i, j)));
@@ -427,8 +394,8 @@ bool Partition::DoAnneal()
   }
 
   if (netStor.size() == 0) {
-    for (size_t i = 0; i < 4; i++) {
-      for (size_t j = i + 1; j < 4; j++) {
+    for (size_t i = 0; i < core_edge_count; i++) {
+      for (size_t j = i + 1; j < core_edge_count; j++) {
         netStor.push_back(std::make_pair(i, j));
         costStor.push_back(1);
       }
@@ -468,11 +435,10 @@ bool Partition::DoAnneal()
 
   // Feed node structure: terminal Info
   int indexTerm = 0;
-  std::string pinNames[4] = {"West", "East", "North", "South"};
-  double posX[4] = {0.0, width, width / 2.0, width / 2.0};
-  double posY[4] = {height / 2.0, height / 2.0, height, 0.0f};
-  for (int i = 0; i < 4; i++) {
-    pfp::Node tmpPin(pinNames[i], 0, 1, 1, indexTerm++, true);
+  double posX[core_edge_count] = {0.0, width, width / 2.0, width / 2.0};
+  double posY[core_edge_count] = {height / 2.0, height / 2.0, height, 0.0f};
+  for (int i = 0; i < core_edge_count; i++) {
+    pfp::Node tmpPin(coreEdgeString(coreEdgeFromIndex(i)), 0, 1, 1, indexTerm++, true);
     tmpPin.putX(posX[i]);
     tmpPin.putY(posY[i]);
     nodes->putNewTerm(tmpPin);
@@ -505,7 +471,7 @@ bool Partition::DoAnneal()
   MixedBlockInfoType* blockInfo
       = reinterpret_cast<MixedBlockInfoType*>(&dbBlockInfo);
 
-  // Command_Line object populate
+  // Populate Command_Line options.
   pfp::Command_Line param;
   param.minWL = true;
   param.noRotation = true;
@@ -521,8 +487,7 @@ bool Partition::DoAnneal()
 
   // Instantiate BTreeAnnealer Object
   pfp::BTreeAreaWireAnnealer* annealer =
-    new pfp::BTreeAreaWireAnnealer(*blockInfo, const_cast<pfp::Command_Line*>(&param), &db);
-
+    new pfp::BTreeAreaWireAnnealer(*blockInfo, &param, &db);
   annealer->go();
 
   const pfp::BTree& sol = annealer->currSolution();
@@ -577,11 +542,6 @@ bool Partition::DoAnneal()
     macroStor[i].lx += (macroStor[i].haloX + macroStor[i].channelX);
     macroStor[i].ly += (macroStor[i].haloY + macroStor[i].channelY);
   }
-
-  //  db.plot( "out.plt", 0, 0, 0, 0, 0,
-  //      0, 1, 1,  // slack, net, name
-  //      true,
-  //      0, 0, width, height);
 
   logger_->report("End Parquet");
   return true;
