@@ -2,6 +2,7 @@
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets)
 
+include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if (Qt5_FOUND)
@@ -12,37 +13,31 @@ if (Qt5_FOUND)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
-  add_custom_command(OUTPUT ${GUI_WRAP}
-    COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix gui
-            -I${OPENROAD_HOME}/include -o ${GUI_WRAP} ${GUI_HOME}/src/gui.i
-    COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${GUI_WRAP}
-    WORKING_DIRECTORY ${GUI_HOME}/src
-    DEPENDS
-      ${GUI_HOME}/src/gui.i
-      ${GUI_HOME}/include/gui/gui.h
+  tcl_lib(NAME      gui
+          NAMESPACE gui
+          I_FILE    src/gui.i
   )
 
-  set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
-
-  add_library(gui
-    src/layoutViewer.cpp
-    src/mainWindow.cpp
-    src/scriptWidget.cpp
-    src/displayControls.cpp
-    src/gui.cpp
-    src/search.cpp 
-    src/findDialog.cpp
-    src/selectHighlightWindow.cpp
-    ${GUI_WRAP}
+  target_sources(gui
+    PRIVATE
+      src/layoutViewer.cpp
+      src/mainWindow.cpp
+      src/scriptWidget.cpp
+      src/displayControls.cpp
+      src/gui.cpp
+      src/search.cpp 
+      src/findDialog.cpp
+      src/selectHighlightWindow.cpp
   )
-
-# qt5_wrap_ui(findDlg.ui selHltWidget.ui selectedWidget.ui)
 
   target_link_libraries(gui
-    opendb
-    Qt5::Core
-    Qt5::Widgets
-    utility
+    PUBLIC
+      opendb
+    PRIVATE
+      Qt5::Core
+      Qt5::Widgets
+      utility
+      Boost::boost
   )
 else()
   message(STATUS "GUI is not enabled")
@@ -51,11 +46,5 @@ endif()
 
 target_include_directories(gui
   PUBLIC
-    ${GUI_HOME}/include
-    ${OPENDB_HOME}/include
-  PRIVATE
-    ${OPENROAD_HOME}/include
-    ${Boost_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
-    ${AUTOGEN_BUILD_DIR}/include
+    include
 )

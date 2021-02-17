@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "dbUtil.h"
-#include "extRCap.h"
+#include "OpenRCX/extRCap.h"
 #include "utility/Logger.h"
 
 //#define MAXINT 0x7FFFFFFF;

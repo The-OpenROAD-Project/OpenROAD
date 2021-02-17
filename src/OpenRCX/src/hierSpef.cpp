@@ -35,8 +35,8 @@
 
 #include <algorithm>
 
-#include "extRCap.h"
-#include "extSpef.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
 #include "parse.h"
 #include "utility/Logger.h"
 

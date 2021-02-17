@@ -42,7 +42,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* fastroute_tcl_inits[];
+extern const char* FastRoute_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
@@ -66,7 +66,7 @@ void initFastRoute(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Fastroute_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::fastroute_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::FastRoute_tcl_inits);
   openroad->getFastRoute()->init(openroad);
 }
 

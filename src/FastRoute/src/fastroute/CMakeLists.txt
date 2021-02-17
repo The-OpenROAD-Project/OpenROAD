@@ -34,9 +34,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-set(LIB_NAME "FastRoute4.1")
-
-set(SRC_FILES
+add_library(FastRoute4.1
   src/DataProc.cpp
   src/EdgeShift.cpp
   src/FastRoute.cpp
@@ -47,24 +45,22 @@ set(SRC_FILES
   src/maze3D.cpp
   src/route.cpp
   src/utility.cpp
-  )
+)
 
-add_LIBRARY(${LIB_NAME} STATIC ${SRC_FILES})
-
-target_include_directories(${LIB_NAME}
+target_include_directories(FastRoute4.1
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+    include
   PRIVATE
-  flute
-  ${Boost_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
-  ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-  ${OPENDB_HOME}/include/
-  ${OPENROAD_HOME}/include
+    # Ugly but necessary to get GRoute.h and avoid a circular dependency
+    # with FastRoute.  Remove once this data moves to OpenDB
+    ../../include
   )
 
-target_link_libraries(${LIB_NAME}
-  utility
-  pdrev
-  flute)
+target_link_libraries(FastRoute4.1
+  PRIVATE
+    utility
+    pdrev
+    flute
+    opendb
+    Boost::boost
+)

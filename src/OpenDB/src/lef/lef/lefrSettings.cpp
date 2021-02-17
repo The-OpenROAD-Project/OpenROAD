@@ -31,7 +31,7 @@
 
 
 #include "lefrSettings.hpp"
-#include "lef.tab.h"
+#include "lef_parser.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 

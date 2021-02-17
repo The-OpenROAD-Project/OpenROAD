@@ -31,9 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "MakeOpenRCX.h"
+#include "OpenRCX/MakeOpenRCX.h"
 
-#include "ext.h"
+#include "OpenRCX/ext.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {

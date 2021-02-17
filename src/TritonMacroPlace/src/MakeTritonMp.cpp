@@ -38,7 +38,7 @@
 #include "tritonmp/TritonMacroPlace.h"
 
 namespace sta {
-extern const char *tritonmp_tcl_inits[];
+extern const char *TritonMacroPlace_tcl_inits[];
 }
 
 extern "C" {
@@ -58,7 +58,7 @@ initTritonMp(OpenRoad *openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::tritonmp_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonMacroPlace_tcl_inits);
   openroad->getTritonMp()->init(openroad->getDb(), openroad->getSta(), openroad->getLogger());
 }
 

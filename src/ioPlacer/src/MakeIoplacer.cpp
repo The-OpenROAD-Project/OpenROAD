@@ -41,7 +41,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* ioplacer_tcl_inits[];
+extern const char* ioPlacer_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
@@ -65,7 +65,7 @@ void initIoplacer(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Ioplacer_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::ioplacer_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::ioPlacer_tcl_inits);
 
   openroad->getIOPlacer()->init(openroad->getDb(), openroad->getLogger());
 }
