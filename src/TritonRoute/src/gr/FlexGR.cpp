@@ -316,7 +316,7 @@ void FlexGR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     }
   }
 
-  t.print();
+  t.print(logger_);
   cout << endl << flush;
 
 }
@@ -786,7 +786,7 @@ void FlexGR::ra() {
 
   if (VERBOSE > 0) {
     cout << endl;
-    t.print();
+    t.print(logger_);
   }
 
   cout << endl << endl;

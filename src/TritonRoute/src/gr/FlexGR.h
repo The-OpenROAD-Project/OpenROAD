@@ -44,7 +44,13 @@ namespace fr {
   class FlexGR {
   public:
     // constructors
-    FlexGR(frDesign* designIn): design_(designIn), cmap_(nullptr), cmap2D_(nullptr) {}
+    FlexGR(frDesign* designIn, Logger* logger)
+      : design_(designIn),
+        cmap_(nullptr),
+        cmap2D_(nullptr),
+        logger_(logger)
+    {
+    }
 
     // getters
     frTechObject* getTech() const {
@@ -71,6 +77,7 @@ namespace fr {
     frDesign *design_;
     std::unique_ptr<FlexGRCMap> cmap_;
     std::unique_ptr<FlexGRCMap> cmap2D_;
+    Logger*         logger_;
     std::map<frNet*, std::map<std::pair<int, int>, std::vector<frNode*> >, frBlockObjectComp> net2GCellIdx2Nodes_;
     std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2GCellNodes_;
     std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2SteinerNodes_;

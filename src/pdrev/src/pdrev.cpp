@@ -92,7 +92,7 @@ void PdRev::runDAS()
       my_graphs[i]->doSteiner_HoVW();
     }
   }
- 
+
   for (unsigned i = 0; i < num_nets; ++i) {
     if (i == net_num || !runOneNet) {
       my_graphs[i]->fix_max_dc();
@@ -208,8 +208,8 @@ void PdRev::printTree(Tree fluteTree)
     _logger->report("{} ", i);
     _logger->report("{} {}", fluteTree.branch[i].x, fluteTree.branch[i].y);
     _logger->report("{} {}",
-           fluteTree.branch[fluteTree.branch[i].n].x,
-           fluteTree.branch[fluteTree.branch[i].n].y);
+                    fluteTree.branch[fluteTree.branch[i].n].x,
+                    fluteTree.branch[fluteTree.branch[i].n].y);
   }
 }
 

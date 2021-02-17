@@ -242,6 +242,7 @@ add_subdirectory(antenna_checker)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utility)
+add_subdirectory(pdrev)
 
 ################################################################
 

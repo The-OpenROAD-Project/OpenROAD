@@ -42,7 +42,7 @@
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace PD {
 

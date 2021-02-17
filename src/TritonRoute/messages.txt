@@ -1,38 +1,37 @@
 DRT 0001 TritonRoute.cpp:252       Error reading param file: {}
 DRT 0002 TritonRoute.cpp:109       Detailed routing has not been run yet.
-DRT 0003 io.cpp:5281               please load design first
-DRT 0004 io.cpp:5286               please load design first
-DRT 0005 frRegionQuery.cpp:99      Unsupported region query add
-DRT 0006 frRegionQuery.cpp:111     Unsupported region query add
-DRT 0007 frRegionQuery.cpp:131     Unsupported region query add
-DRT 0008 frRegionQuery.cpp:159     Unsupported region query add
-DRT 0009 frRegionQuery.cpp:185     Unsupported region query add
-DRT 0010 frRegionQuery.cpp:197     Unsupported region query add
-DRT 0011 frRegionQuery.cpp:224     Unsupported region query add
-DRT 0012 frRegionQuery.cpp:235     Unsupported region query add
-DRT 0013 frRegionQuery.cpp:246     Unsupported region query add
-DRT 0014 frRegionQuery.cpp:295     Unsupported region query add
-DRT 0015 frRegionQuery.cpp:312     Unsupported region query add
-DRT 0016 frRegionQuery.cpp:334     Unsupported region query add
-DRT 0017 frRegionQuery.cpp:350     Unsupported region query add
-DRT 0018 frRegionQuery.cpp:495       complete {} insts
-DRT 0019 frRegionQuery.cpp:499       complete {} insts
-DRT 0020 frRegionQuery.cpp:511       complete {} terms
-DRT 0021 frRegionQuery.cpp:515       complete {} terms
-DRT 0022 frRegionQuery.cpp:548       complete {} snets
-DRT 0023 frRegionQuery.cpp:559       complete {} blockages
-DRT 0024 frRegionQuery.cpp:569       complete {}
-DRT 0026 frRegionQuery.cpp:593       complete {} orig guides
-DRT 0027 frRegionQuery.cpp:597       complete {} orig guides
-DRT 0028 frRegionQuery.cpp:608       complete {}
-DRT 0029 frRegionQuery.cpp:632       complete {} nets (guide)
-DRT 0030 frRegionQuery.cpp:636       complete {} nets (guide)
-DRT 0031 frRegionQuery.cpp:143     Unsupported region query add
-DRT 0032 frRegionQuery.cpp:750     {} grObj region query size = {}
-DRT 0033 frRegionQuery.cpp:760     {} shape region query size = {}
-DRT 0034 frRegionQuery.cpp:780     {} drObj region query size = {}
-DRT 0035 frRegionQuery.cpp:646       complete {} (guide)
-DRT 0036 frRegionQuery.cpp:770     {} guide region query size = {}
+DRT 0003 io.cpp:4743               load design first
+DRT 0004 io.cpp:4748               load design first
+DRT 0005 frRegionQuery.cpp:101     Unsupported region query add
+DRT 0006 frRegionQuery.cpp:113     Unsupported region query add
+DRT 0007 frRegionQuery.cpp:133     Unsupported region query add
+DRT 0008 frRegionQuery.cpp:161     Unsupported region query add
+DRT 0009 frRegionQuery.cpp:187     Unsupported region query add
+DRT 0010 frRegionQuery.cpp:199     Unsupported region query add
+DRT 0011 frRegionQuery.cpp:226     Unsupported region query add
+DRT 0012 frRegionQuery.cpp:237     Unsupported region query add
+DRT 0013 frRegionQuery.cpp:248     Unsupported region query add
+DRT 0014 frRegionQuery.cpp:297     Unsupported region query add
+DRT 0015 frRegionQuery.cpp:314     Unsupported region query add
+DRT 0017 frRegionQuery.cpp:378     Unsupported region query add
+DRT 0018 frRegionQuery.cpp:523       complete {} insts
+DRT 0019 frRegionQuery.cpp:527       complete {} insts
+DRT 0020 frRegionQuery.cpp:539       complete {} terms
+DRT 0021 frRegionQuery.cpp:543       complete {} terms
+DRT 0022 frRegionQuery.cpp:576       complete {} snets
+DRT 0023 frRegionQuery.cpp:587       complete {} blockages
+DRT 0024 frRegionQuery.cpp:597       complete {}
+DRT 0026 frRegionQuery.cpp:621       complete {} orig guides
+DRT 0027 frRegionQuery.cpp:625       complete {} orig guides
+DRT 0028 frRegionQuery.cpp:636       complete {}
+DRT 0029 frRegionQuery.cpp:660       complete {} nets (guide)
+DRT 0030 frRegionQuery.cpp:664       complete {} nets (guide)
+DRT 0031 frRegionQuery.cpp:145     Unsupported region query add
+DRT 0032 frRegionQuery.cpp:778     {} grObj region query size = {}
+DRT 0033 frRegionQuery.cpp:788     {} shape region query size = {}
+DRT 0034 frRegionQuery.cpp:808     {} drObj region query size = {}
+DRT 0035 frRegionQuery.cpp:674       complete {} (guide)
+DRT 0036 frRegionQuery.cpp:798     {} guide region query size = {}
 DRT 0037 FlexGC_init.cpp:73        init_design_helper shape does not have net.
 DRT 0038 FlexGC_init.cpp:80        init_design_helper shape does not have dr net.
 DRT 0039 FlexGC_init.cpp:83        init_design_helper unsupported type.
@@ -67,41 +66,96 @@ DRT 0067 FlexPA_prep.cpp:99        FlexPA mergePinShapes unsupported shape.
 DRT 0068 FlexPA_prep.cpp:314       prepPoint_pin_genPoints_rect cannot find secondLayerNum.
 DRT 0069 FlexPA_init.cpp:258       initPinAccess error.
 DRT 0070 FlexPA_prep.cpp:534       unexpected direction in getPlanarEP
-DRT 0071 FlexPA_prep.cpp:1008      prepPoint_pin_helper unique2paidx not found.
-DRT 0072 FlexPA_prep.cpp:1021      prepPoint_pin_helper unique2paidx not found
-DRT 0073 FlexPA_prep.cpp:1089      no ap for {}/{}
-DRT 0074 FlexPA_prep.cpp:1093      no ap for PIN/{}
-DRT 0075 FlexPA_prep.cpp:1105      prepPoint_pin unique2paidx not found.
-DRT 0076 FlexPA_prep.cpp:1167        complete {} pins
-DRT 0077 FlexPA_prep.cpp:1171        complete {} pins
-DRT 0078 FlexPA_prep.cpp:1204        complete {} pins
-DRT 0079 FlexPA_prep.cpp:1240        complete {} unique inst patterns
-DRT 0080 FlexPA_prep.cpp:1244        complete {} unique inst patterns
-DRT 0081 FlexPA_prep.cpp:1251        complete {} unique inst patterns
-DRT 0082 FlexPA_prep.cpp:1324        complete {} groups
-DRT 0083 FlexPA_prep.cpp:1328        complete {} groups
-DRT 0084 FlexPA_prep.cpp:1335        complete {} groups
-DRT 0085 FlexPA_prep.cpp:1521      valid access pattern combination not found.
-DRT 0086 FlexPA_prep.cpp:1758      pin does not have access point.
-DRT 0088 FlexPA_prep.cpp:1879      {}
-DRT 0089 FlexPA_prep.cpp:1945      genPattern_gc objs empty.
-DRT 0090 FlexPA_prep.cpp:2179      valid access pattern not found.
-DRT 0091 FlexPA_prep.cpp:2242      pin does not have valid ap.
+DRT 0071 FlexPA_prep.cpp:1006      prepPoint_pin_helper unique2paidx not found.
+DRT 0072 FlexPA_prep.cpp:1019      prepPoint_pin_helper unique2paidx not found
+DRT 0073 FlexPA_prep.cpp:1086      no ap for {}/{}
+DRT 0074 FlexPA_prep.cpp:1090      no ap for PIN/{}
+DRT 0075 FlexPA_prep.cpp:1102      prepPoint_pin unique2paidx not found.
+DRT 0076 FlexPA_prep.cpp:1163        complete {} pins
+DRT 0077 FlexPA_prep.cpp:1167        complete {} pins
+DRT 0078 FlexPA_prep.cpp:1200        complete {} pins
+DRT 0079 FlexPA_prep.cpp:1236        complete {} unique inst patterns
+DRT 0080 FlexPA_prep.cpp:1240        complete {} unique inst patterns
+DRT 0081 FlexPA_prep.cpp:1247        complete {} unique inst patterns
+DRT 0082 FlexPA_prep.cpp:1320        complete {} groups
+DRT 0083 FlexPA_prep.cpp:1324        complete {} groups
+DRT 0084 FlexPA_prep.cpp:1331        complete {} groups
+DRT 0085 FlexPA_prep.cpp:1517      valid access pattern combination not found.
+DRT 0086 FlexPA_prep.cpp:1754      pin does not have access point.
+DRT 0088 FlexPA_prep.cpp:1875      {}
+DRT 0089 FlexPA_prep.cpp:1941      genPattern_gc objs empty.
+DRT 0090 FlexPA_prep.cpp:2175      valid access pattern not found.
+DRT 0091 FlexPA_prep.cpp:2238      pin does not have valid ap.
 DRT 0092 FlexRP_prep.cpp:754       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
 DRT 0093 FlexRP_prep.cpp:766       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
-DRT 0096 io.cpp:166                same cell name: {}
-DRT 0100 io.cpp:347                unsupported via: {}
-DRT 0102 io.cpp:426                odd dimension in both directions
-DRT 0103 io.cpp:455                unknown direction
-DRT 0104 io.cpp:475                term {} not found
-DRT 0106 io.cpp:494                component pin {}/{} not found
-DRT 0107 io.cpp:559                unsupported layer {}
-DRT 0108 io.cpp:669                unsupported via in db
-DRT 0109 io.cpp:729                unsupported via in db
-DRT 0110 io.cpp:759                unsupported NET USE in def
-DRT 0111 io.cpp:788                unsupported PIN USE in db
+DRT 0096 io.cpp:147                same cell name: {}
+DRT 0100 io.cpp:328                unsupported via: {}
+DRT 0102 io.cpp:407                odd dimension in both directions
+DRT 0103 io.cpp:436                unknown direction
+DRT 0104 io.cpp:456                term {} not found
+DRT 0106 io.cpp:475                component pin {}/{} not found
+DRT 0107 io.cpp:540                unsupported layer {}
+DRT 0108 io.cpp:650                unsupported via in db
+DRT 0109 io.cpp:710                unsupported via in db
+DRT 0110 io.cpp:740                unsupported NET USE in def
+DRT 0111 io.cpp:769                unsupported PIN USE in db
 DRT 0115 TritonRoute.cpp:247       Setting MAX_THREADS=1 for use with the GUI.
-DRT 0116 io.cpp:845                please load design first
-DRT 0117 io.cpp:848                please load design first
+DRT 0116 io.cpp:826                load design first
+DRT 0117 io.cpp:829                load design first
 DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
 DRT 0119 FlexPA_graphics.cpp:199   marker {} at ({}, {}) ({}, {})
+DRT 0120 io.cpp:3798               unsupported PIN USE in lef
+DRT 0125 io.cpp:4025               unsupported via {}
+DRT 0128 io.cpp:3898               unsupported viarule {}
+DRT 0136 io.cpp:4092               load design first
+DRT 0140 io.cpp:3422               SpacingRange unsupported
+DRT 0141 io.cpp:3424               SpacingLengthThreshold unsupported
+DRT 0142 io.cpp:3426               SpacingNotchLength unsupported
+DRT 0143 io.cpp:3428               SpacingEndOfNotchWidth unsupported
+DRT 0148 TritonRoute.cpp:218       deprecated lef param in params file
+DRT 0149 io.cpp:4105               Reading Tech And Libs
+DRT 0150 io.cpp:4121               Reading Design
+DRT 0151 io.cpp:4147               Reading Guide
+DRT 0152 io.cpp:4180               Error reading guide file!
+DRT 0153 io.cpp:4184               cannot find net {}
+DRT 0154 io.cpp:4189               cannot find layer {}
+DRT 0156 io.cpp:4216               guideIn read {} guides
+DRT 0157 io.cpp:4220               guideIn read {} guides
+DRT 0158 io.cpp:4225               Error reading guide file!
+DRT 0159 io.cpp:4230               failed to open guide file
+DRT 0161 io_parser_helper.cpp:554  Writing reference output def {}.
+DRT 0162 io_pin.cpp:38             libcell analysis ...
+DRT 0163 io_pin.cpp:86             instance analysis ...
+DRT 0164 io_pin.cpp:150            # unique instances = {}
+DRT 0165 FlexPA.cpp:91             start pin access
+DRT 0166 FlexPA.cpp:128            complete pin access
+DRT 0168 io_parser_helper.cpp:671  Init region query ...
+DRT 0169 io_parser_helper.cpp:680  Post process guides ...
+DRT 0170 io_parser_helper.cpp:849  no GCELLGRIDX
+DRT 0171 io_parser_helper.cpp:854  no GCELLGRIDY
+DRT 0172 io_parser_helper.cpp:904  no GCELLGRIDX
+DRT 0173 io_parser_helper.cpp:909  no GCELLGRIDY
+DRT 0174 io_parser_helper.cpp:931  gcell cnt x < 1
+DRT 0175 io_parser_helper.cpp:945  gcell cnt y < 1
+DRT 0176 io_parser_helper.cpp:950  GCELLGRID X {} DO {} STEP {} ;
+DRT 0177 io_parser_helper.cpp:954  GCELLGRID Y {} DO {} STEP {} ;
+DRT 0178 io_parser_helper.cpp:716  init guide query ...
+DRT 0179 io_parser_helper.cpp:719  init gr pin query ...
+DRT 0180 io.cpp:4560               post processing ...
+DRT 0181 FlexTA.cpp:362            start track assignment
+DRT 0182 FlexTA.cpp:368            complete track assignment
+DRT 0185 io_parser_helper.cpp:737  post process initialize RPin region query ...
+DRT 0187 FlexDR.cpp:1267           start routing data preparation
+DRT 0188 FlexDR.cpp:597            initVia2ViaMinLen_minSpc {}
+DRT 0189 FlexDR.cpp:632            initVia2ViaMinLen_minimumcut {}
+DRT 0190 FlexDR.cpp:639            initVia2ViaMinLen_minimumcut 
+DRT 0191 FlexDR.cpp:982            initVia2ViaMinLenNew_minSpc {} 
+DRT 0192 FlexDR.cpp:1021           initVia2ViaMinLenNew_minimumcut 
+DRT 0193 FlexDR.cpp:1060           initVia2ViaMinLenNew_cutSpc 
+DRT 0194 FlexDR.cpp:1974           start detail routing ...
+DRT 0195 FlexDR.cpp:1538           start {}{} optimization iteration ...
+DRT 0196 FlexDR.cpp:1491             number of violations = {}
+DRT 0197 FlexDR.cpp:1494             number of quick violations = {}
+DRT 0198 FlexDR.cpp:2064           complete detail routing
+DRT 0199 FlexDR.cpp:1736             number of violations = {}
+DRT 0200 FlexDR.cpp:1739             number of quick violations = {}

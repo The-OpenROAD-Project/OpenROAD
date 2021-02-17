@@ -36,7 +36,6 @@
 project(FastRoute)
 
 add_subdirectory(src/fastroute)
-add_subdirectory(src/pdrev)
 
 set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
@@ -76,7 +75,6 @@ target_include_directories(FastRoute
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
   ${OPENDB_HOME}/include/
   ${OPENROAD_HOME}/include
   ${DBSTA_HOME}/include
