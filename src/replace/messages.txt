@@ -18,19 +18,19 @@ GPL 0018 placerBase.cpp:1078       PlaceInstsArea: {}
 GPL 0019 placerBase.cpp:1079       Util(%): {:.2f}
 GPL 0020 placerBase.cpp:1081       StdInstsArea: {}
 GPL 0021 placerBase.cpp:1082       MacroInstsArea: {}
-GPL 0023 nesterovBase.cpp:686      TargetDensity: {:.2f}
-GPL 0024 nesterovBase.cpp:687      AveragePlaceInstArea: {}
-GPL 0025 nesterovBase.cpp:688      IdealBinArea: {}
-GPL 0026 nesterovBase.cpp:689      IdealBinCnt: {}
-GPL 0027 nesterovBase.cpp:690      TotalBinArea: {}
-GPL 0028 nesterovBase.cpp:713      BinCnt: {} {}
-GPL 0029 nesterovBase.cpp:720      BinSize: {} {}
-GPL 0030 nesterovBase.cpp:754      NumBins: {}
-GPL 0031 nesterovBase.cpp:1100     FillerInit: NumGCells: {}
-GPL 0032 nesterovBase.cpp:1101     FillerInit: NumGNets: {}
-GPL 0033 nesterovBase.cpp:1102     FillerInit: NumGPins: {}
-GPL 0034 nesterovBase.cpp:1480     gCellFiller: {}
-GPL 0035 nesterovBase.cpp:1500     NewTotalFillerArea: {}
+GPL 0023 nesterovBase.cpp:718      TargetDensity: {:.2f}
+GPL 0024 nesterovBase.cpp:719      AveragePlaceInstArea: {}
+GPL 0025 nesterovBase.cpp:720      IdealBinArea: {}
+GPL 0026 nesterovBase.cpp:721      IdealBinCnt: {}
+GPL 0027 nesterovBase.cpp:722      TotalBinArea: {}
+GPL 0028 nesterovBase.cpp:745      BinCnt: {} {}
+GPL 0029 nesterovBase.cpp:752      BinSize: {} {}
+GPL 0030 nesterovBase.cpp:786      NumBins: {}
+GPL 0031 nesterovBase.cpp:1132     FillerInit: NumGCells: {}
+GPL 0032 nesterovBase.cpp:1133     FillerInit: NumGNets: {}
+GPL 0033 nesterovBase.cpp:1134     FillerInit: NumGPins: {}
+GPL 0034 nesterovBase.cpp:1512     gCellFiller: {}
+GPL 0035 nesterovBase.cpp:1532     NewTotalFillerArea: {}
 GPL 0036 routeBase.cpp:433         TileLxL: {} {}
 GPL 0037 routeBase.cpp:434         TileSize: {} {}
 GPL 0038 routeBase.cpp:435         TileCnt: {} {}
@@ -70,4 +70,8 @@ GPL 0071 routeBase.cpp:1512        1.0rcK: {}
 GPL 0072 routeBase.cpp:1513        2.0rcK: {}
 GPL 0073 routeBase.cpp:1514        5.0rcK: {}
 GPL 0074 routeBase.cpp:1522        FinalRC: {}
-GPL 0075 nesterovPlace.cpp:524     Backtracking limit reached so a small step will be taken
+GPL 0075 nesterovPlace.cpp:525     Backtracking limit reached so a small step will be taken
+GPL 0100 timingBase.cpp:187        WNS {:.3g}
+GPL 0102 timingBase.cpp:190        No slacks found. Timing-driven mode disabled.
+GPL 0103 timingBase.cpp:247        Reweighted {} nets.
+GPL 0114 timingBase.cpp:182        No net slacks found. Timing-driven mode disabled.

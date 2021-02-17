@@ -29,8 +29,6 @@
 [INFO GPL-0019] Util(%): 77.50
 [INFO GPL-0020] StdInstsArea: 2279088000
 [INFO GPL-0021] MacroInstsArea: 0
-Begin InitialPlace
-End InitialPlace
 [INFO GPL-0031] FillerInit: NumGCells: 304
 [INFO GPL-0032] FillerInit: NumGNets: 364
 [INFO GPL-0033] FillerInit: NumGPins: 1122
@@ -42,8 +40,6 @@ End InitialPlace
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-Begin NesterovInit
-End NesterovInit
 [NesterovSolve] Iter: 1 overflow: 0.847383 HPWL: 3667528
 [NesterovSolve] Iter: 10 overflow: 0.753765 HPWL: 4261517
 [NesterovSolve] Iter: 20 overflow: 0.75022 HPWL: 4266162

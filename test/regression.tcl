@@ -224,12 +224,13 @@ proc run_test { test } {
 	  incr errors(no_ok)
 	}
       } else {
-	if { [find_log_pass_fail $log_file] } {
-	  puts " *FAIL*$error_msg"
+        set error_msg [find_log_pass_fail $log_file]
+	if { $error_msg != "pass" } {
+	  puts " *FAIL* $error_msg"
 	  append_failure $test
 	  incr errors(fail)
 	} else {
-	  puts " pass$error_msg"
+	  puts " pass"
 	}
       }
     }
@@ -248,10 +249,12 @@ proc find_log_pass_fail { log_file } {
     }
     close $stream
     if { [string match "pass*" $last_line] } {
-      return 0
+      return "pass"
+    } else {
+      return $last_line
     }
   }
-  return 1
+  return "fail - reason not found"
 }
 
 proc append_failure { test } {

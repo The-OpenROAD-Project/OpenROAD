@@ -214,8 +214,8 @@ namespace fr {
     frConstraint* getMinSpacing() const {
       return minSpc;
     }
-    void setMinSpacing(frConstraint* in) {
-      if (minSpc != nullptr) {
+    void setMinSpacing(frConstraint* in, bool verbose = false) {
+      if (verbose && minSpc != nullptr) {
         std::cout <<"Warning: override minspacing rule, ";
         if (minSpc->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
           std::cout <<"original type is SPACING, ";

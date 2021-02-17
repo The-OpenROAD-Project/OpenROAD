@@ -352,6 +352,48 @@ bool dbTechLayerSpacingRule::getLengthThresholdRange(uint& rmin,
   rmax = _lsp->_r2max;
   return true;
 }
+bool dbTechLayerSpacingRule::hasRange() const
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  if ((_lsp->_flags._rule != RANGE_ONLY) && (_lsp->_flags._rule != RANGE_RANGE)
+      && (_lsp->_flags._rule != RANGE_USELENGTH)
+      && (_lsp->_flags._rule != RANGE_INFLUENCE)
+      && (_lsp->_flags._rule != RANGE_INFLUENCE_RANGE))
+    return false;
+  return true;
+}
+
+bool dbTechLayerSpacingRule::hasLengthThreshold() const
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  if ((_lsp->_flags._rule != LENGTHTHRESHOLD) && (_lsp->_flags._rule != LENGTHTHRESHOLD_RANGE))
+    return false;
+  return true;
+}
+
+void dbTechLayerSpacingRule::setSpacingNotchLengthValid(bool val)
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  _lsp->_flags._notch_length = val;
+}
+
+void dbTechLayerSpacingRule::setSpacingEndOfNotchWidthValid(bool val)
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  _lsp->_flags._end_of_notch_width = val;
+}
+
+bool dbTechLayerSpacingRule::hasSpacingNotchLength() const
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  return _lsp->_flags._notch_length;
+}
+
+bool dbTechLayerSpacingRule::hasSpacingEndOfNotchWidth() const
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  return _lsp->_flags._end_of_notch_width;
+}
 
 bool dbTechLayerSpacingRule::getRange(uint& rmin, uint& rmax) const
 {
@@ -594,6 +636,18 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   parallelWithin = _lsp->_r2max;
   twoEdges       = _lsp->_flags._rule == ENDOFLINE_PARALLEL_TWOEDGES;
   return true;
+}
+
+void dbTechLayerSpacingRule::setSameNetPgOnly(bool pgonly)
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  _lsp->_flags._except_same_pgnet = pgonly;
+}
+
+bool dbTechLayerSpacingRule::getSameNetPgOnly()
+{
+  _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
+  return _lsp->_flags._except_same_pgnet;
 }
 
 void dbTechLayerSpacingRule::setAdjacentCuts(uint numcuts,

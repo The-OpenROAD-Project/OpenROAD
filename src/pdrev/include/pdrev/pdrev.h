@@ -35,7 +35,7 @@
 
 namespace utl {
 class Logger;
-} // namespace utl
+}  // namespace utl
 
 namespace PD {
 
@@ -61,7 +61,7 @@ typedef struct
 class PdRev
 {
  public:
-  PdRev(Logger* logger) : _logger(logger) {};
+  PdRev(Logger* logger) : _logger(logger){};
   void setAlphaPDII(float alpha);
   void addNet(int numPins, std::vector<unsigned> x, std::vector<unsigned> y);
   void runPDII();

@@ -116,7 +116,8 @@ class TritonCTS
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
-  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks);
+  void countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned & leafSinks,
+                             unsigned currWireLength, double &sinkWireLength);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
