@@ -45,7 +45,7 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *triton_route_tcl_inits[];
+extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
@@ -118,7 +118,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 
 void TritonRoute::init() {

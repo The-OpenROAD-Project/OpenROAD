@@ -10,13 +10,11 @@ add_library(zutil
 
 target_include_directories(zutil
     PUBLIC
-        $<INSTALL_INTERFACE:include/opendb>
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/opendb>
-        ${TCL_INCLUDE_PATH}
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/src/zutil
+        ${PROJECT_SOURCE_DIR}/include/opendb
 )
 
-target_compile_features(zutil PRIVATE cxx_auto_type)
-target_compile_options(zutil PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
-set_property(TARGET zutil PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(zutil
+  PROPERTIES
+    # python requirement
+    POSITION_INDEPENDENT_CODE ON
+)

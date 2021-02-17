@@ -51,7 +51,7 @@ using namespace std;
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-#include "lef.tab.h"
+#include "lef_parser.hpp"
 
 extern YYSTYPE lefyylval;
 
