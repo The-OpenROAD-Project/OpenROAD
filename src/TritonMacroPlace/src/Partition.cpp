@@ -140,23 +140,13 @@ string Partition::GetName(int macroIdx)
   }
 }
 
-void Partition::FillNetlistTable(
-    MacroPlacer *placer,
-    unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>&
-        macroPartMap)
+void Partition::FillNetlistTable(MacroPlacer *placer,
+                                 MacroPartMap &macroPartMap)
 {
   tableCnt = (macroStor.size() + core_edge_count) * (macroStor.size() + core_edge_count);
   netTable = new double[tableCnt];
   for (int i = 0; i < tableCnt; i++) {
     netTable[i] = 0.0;
-  }
-
-  auto mpPtr = macroPartMap.find(partClass);
-  if (mpPtr == macroPartMap.end()) {
-    logger_->error(MPL,
-                54,
-                "Partition: {} missing from macroPartMap",
-                partClass);
   }
 
   // Just Copy to the netlistTable.
@@ -191,23 +181,17 @@ void Partition::FillNetlistTable(
             int westSum = placer->macroWeight[globalIdx1][GLOBAL_WEST_IDX];
 
             if (partClass == PartClass::NE) {
-              auto mpPtr = macroPartMap.find(PartClass::NW);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SE) {
-              auto mpPtr = macroPartMap.find(PartClass::SW);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             netTable[i * (macroStor.size() + core_edge_count) + j] = westSum;
@@ -215,23 +199,17 @@ void Partition::FillNetlistTable(
             int eastSum = placer->macroWeight[globalIdx1][GLOBAL_EAST_IDX];
 
             if (partClass == PartClass::NW) {
-              auto mpPtr = macroPartMap.find(PartClass::NE);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::NE]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SW) {
-              auto mpPtr = macroPartMap.find(PartClass::SE);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             netTable[i * (macroStor.size() + core_edge_count) + j] = eastSum;
@@ -239,23 +217,17 @@ void Partition::FillNetlistTable(
             int northSum = placer->macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
 
             if (partClass == PartClass::SE) {
-              auto mpPtr = macroPartMap.find(PartClass::NE);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SW) {
-              auto mpPtr = macroPartMap.find(PartClass::NW);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             netTable[i * (macroStor.size() + core_edge_count) + j] = northSum;
@@ -263,23 +235,17 @@ void Partition::FillNetlistTable(
             int southSum = placer->macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
 
             if (partClass == PartClass::NE) {
-              auto mpPtr = macroPartMap.find(PartClass::SE);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::NW) {
-              auto mpPtr = macroPartMap.find(PartClass::SW);
-              if (mpPtr != macroPartMap.end()) {
-                for (auto& curMacroIdx : mpPtr->second) {
-                  int curGlobalIdx
-                    = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                  southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
-                }
+              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
+                int curGlobalIdx
+                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             netTable[i * (macroStor.size() + core_edge_count) + j] = southSum;

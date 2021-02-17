@@ -274,8 +274,7 @@ void MacroPlacer::placeMacros()
 
   // Fill the MacroPlace for ALL circuits
 
-  unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
-      globalMacroPartMap;
+  MacroPartMap globalMacroPartMap;
   UpdateMacroPartMap(topLayout, globalMacroPartMap);
 
   if (isTiming_) {
@@ -317,8 +316,7 @@ void MacroPlacer::placeMacros()
 
           // Fill Macro Netlist
           // update macroPartMap
-          unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
-              macroPartMap;
+          MacroPartMap macroPartMap;
           for (auto& curSet : oneSet) {
             UpdateMacroPartMap(curSet, macroPartMap);
           }
@@ -343,8 +341,7 @@ void MacroPlacer::placeMacros()
 
           // Fill Macro Netlist
           // update macroPartMap
-          unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
-              macroPartMap;
+          MacroPartMap macroPartMap;
           for (auto& curSet : oneSet) {
             UpdateMacroPartMap(curSet, macroPartMap);
           }
@@ -371,8 +368,7 @@ void MacroPlacer::placeMacros()
 
             // Fill Macro Netlist
             // update macroPartMap
-            unordered_map<PartClass, vector<int>, PartClassHash, PartClassEqual>
-                macroPartMap;
+            MacroPartMap macroPartMap;
             for (auto& curSet : oneSet) {
               UpdateMacroPartMap(curSet, macroPartMap);
             }
@@ -490,25 +486,16 @@ static void CutRoundUp(const Layout& layout,
 // first: macro partition class info
 // second: macro candidates.
 void MacroPlacer::UpdateMacroPartMap(Partition& part,
-                                     unordered_map<PartClass, vector<int>,
-                                     PartClassHash, PartClassEqual>& macroPartMap)
+                                     MacroPartMap& macroPartMap)
 {
-  auto mpPtr = macroPartMap.find(part.partClass);
-  if (mpPtr == macroPartMap.end()) {
-    vector<int> curMacroStor;
-    // convert macro Information into macroIdx
-    for (auto& curMacro : part.macroStor) {
-      auto miPtr = macroInstMap.find(curMacro.dbInstPtr);
-      if (miPtr == macroInstMap.end()) {
-        logger_->error(MPL, 74, "macro {} missing from macroInstMap", curMacro.name());
-      }
-      curMacroStor.push_back(miPtr->second);
-    }
-    macroPartMap[part.partClass] = curMacroStor;
-  } else {
-    logger_->error(MPL, 75, "Partition- {} already updated (UpdateMacroPartMap)",
-                part.partClass);
+  // This does not look like it actually does anything -cherry
+  vector<int> curMacroStor = macroPartMap[part.partClass];
+  // convert macro Information into macroIdx
+  for (auto& curMacro : part.macroStor) {
+    int macro_index = macroInstMap[curMacro.dbInstPtr];
+    curMacroStor.push_back(macro_index);
   }
+  macroPartMap[part.partClass] = curMacroStor;
 }
 
 // only considers lx or ly coordinates for sorting

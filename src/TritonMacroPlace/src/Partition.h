@@ -36,6 +36,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <array>
 
 namespace utl {
 class Logger;
@@ -60,8 +61,10 @@ enum PartClass
   None
 };
 
-struct PartClassHash;
-struct PartClassEqual;
+constexpr int part_class_count = None + 1;
+
+// PartClass -> macro indices
+typedef std::array<std::vector<int>, part_class_count> MacroPartMap;
 
 class Partition
 {
@@ -76,10 +79,7 @@ class Partition
   ~Partition();
 
   void FillNetlistTable(MacroPlacer* placer,
-                        std::unordered_map<PartClass,
-                                           std::vector<int>,
-                                           PartClassHash,
-                                           PartClassEqual>& macroPartMap);
+                        MacroPartMap& macroPartMap);
   // Call Parquet to have annealing solution
   bool DoAnneal();
   // Update Macro location from MacroPlacer

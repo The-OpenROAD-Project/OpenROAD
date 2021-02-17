@@ -157,9 +157,7 @@ private:
   // Update Macro Location from Partition info
   void UpdateMacroCoordi(Partition& part);
   void UpdateOpendbCoordi();
-  void UpdateMacroPartMap(Partition& part,
-                          std::unordered_map<PartClass, std::vector<int>,
-                          PartClassHash, PartClassEqual>& macroPartMap);
+  void UpdateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
 
   // graph based adjacencies
   void findAdjacencies();
