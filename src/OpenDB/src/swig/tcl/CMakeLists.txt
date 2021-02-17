@@ -28,6 +28,7 @@ add_executable(opendbtcl-bin
 target_include_directories(opendbtcl-bin
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/opendb
+        ${TCL_INCLUDE_PATH}
 )
 
 target_link_libraries(opendbtcl-bin

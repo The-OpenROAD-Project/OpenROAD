@@ -9,8 +9,9 @@ add_library(zutil
 )
 
 target_include_directories(zutil
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include/opendb
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include/opendb
+    ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(zutil

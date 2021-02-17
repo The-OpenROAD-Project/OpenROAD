@@ -16,6 +16,7 @@ add_library(lefin
 target_include_directories(lefin
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/opendb
+        ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(lefin

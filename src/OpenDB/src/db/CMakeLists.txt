@@ -118,6 +118,7 @@ add_library(opendb
 target_include_directories(opendb
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
+        ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(opendb

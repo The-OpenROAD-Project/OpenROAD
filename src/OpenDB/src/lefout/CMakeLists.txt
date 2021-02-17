@@ -5,6 +5,7 @@ add_library(lefout
 target_include_directories(lefout
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/opendb
+        ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(lefout

@@ -3,8 +3,9 @@ add_library(zlib
 )
 
 target_include_directories(zlib
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include/opendb
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include/opendb
+    ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(zlib

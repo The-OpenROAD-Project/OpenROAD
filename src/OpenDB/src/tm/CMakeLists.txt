@@ -9,9 +9,10 @@ target_include_directories(tm
         ${PROJECT_SOURCE_DIR}/include/opendb
 )
 
-target_link_libraries(tm
-    PUBLIC
-        tcl
+target_include_directories(tm
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include/opendb
+    ${TCL_INCLUDE_PATH}
 )
 
 set_target_properties(tm
