@@ -33,8 +33,7 @@
 using namespace std;
 using namespace fr;
 
-void frTime::print() {
-  boost::io::ios_all_saver guard(std::cout);
+void frTime::print(Logger* logger) {
   auto t1        = std::chrono::high_resolution_clock::now();
   auto time_span = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0_);
   int hour       = time_span.count() / 3600;
@@ -44,21 +43,14 @@ void frTime::print() {
   int chour      = t2 / 3600;
   int cmin       = (t2 % 3600) / 60;
   int csec       = t2 % 60;
-  std::cout <<"cpu time = ";
-  std::cout <<std::setw(2) <<std::setfill('0') <<chour;
-  std::cout <<":";
-  std::cout <<std::setw(2) <<std::setfill('0') <<cmin;
-  std::cout <<":";
-  std::cout <<std::setw(2) <<std::setfill('0') <<csec;
-  std::cout <<", elapsed time = ";
-  std::cout <<std::setw(2) <<std::setfill('0') <<hour;
-  std::cout <<":";
-  std::cout <<std::setw(2) <<std::setfill('0') <<min;
-  std::cout <<":";
-  std::cout <<std::setw(2) <<std::setfill('0') <<sec;
-  std::cout <<", memory = " <<std::fixed <<std::setprecision(2) <<getCurrentRSS() * 1.0 / 1024 / 1024 <<" (MB)";
-  std::cout <<", peak = "   <<std::fixed <<std::setprecision(2) <<getPeakRSS()    * 1.0 / 1024 / 1024 <<" (MB)";
-  guard.restore();
+  logger->info(DRT, 172,
+               "cpu time = {:02}:{:02}:{:02}, "
+               "elapsed time = {:02}:{:02}:{:02}, "
+               "memory = {:.2f} (MB), peak = {:.2f} (MB)",
+               chour, cmin, csec,
+               hour, min, sec,
+               getCurrentRSS() / (1024.0 * 1024.0),
+               getPeakRSS()    / (1024.0 * 1024.0));
 }
 
 namespace fr {

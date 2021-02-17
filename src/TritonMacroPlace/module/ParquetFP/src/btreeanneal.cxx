@@ -1595,7 +1595,7 @@ void BTreeAreaWireAnnealer::locateSearchBlocks(int operand,
 }
 // --------------------------------------------------------
 void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
-    int blocknum) const
+    int blocknum)
 {
   vector<int> tree_bits;
   int balance = 0;
@@ -1632,9 +1632,7 @@ void BTreeAreaWireAnnealer::GenerateRandomSoln(BTree& soln,
   tree_perm.resize(blocknum);
   for (int i = 0; i < blocknum; i++)
     tree_perm[i] = i;
-  std::random_device rd;
-  std::mt19937 g(rd());
-  std::shuffle(tree_perm.begin(), tree_perm.end(), g);
+  std::shuffle(tree_perm.begin(), tree_perm.end(), _random_gen);
 
   vector<int> tree_perm_inverse(blocknum);
   for (int i = 0; i < blocknum; i++)

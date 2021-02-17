@@ -33,13 +33,13 @@
 
 #pragma once
 
-#include <vector>
 #include <ostream>
+#include <vector>
 
 namespace PD {
 
-using std::vector;
 using std::ostream;
+using std::vector;
 
 class Node
 {
@@ -70,7 +70,7 @@ class Node
   vector<float> nn_sw_cost;
   float sw_cost_min;
   unsigned sw_cost_min_nn_idx;
-  vector<vector<int> > swap_space;
+  vector<vector<int>> swap_space;
 
   bool conn_to_par;
   vector<int> sp_chil;
@@ -120,7 +120,7 @@ class Node
   friend ostream& operator<<(ostream& os, const Node& n)
   {
     os << n.idx << "(" << n.x << ", " << n.y << ") "
-         << " parent: " << n.parent << " children: ";
+       << " parent: " << n.parent << " children: ";
     for (unsigned i = 0; i < n.children.size(); ++i) {
       os << n.children[i] << " ";
     }

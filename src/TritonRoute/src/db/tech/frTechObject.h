@@ -174,12 +174,12 @@ namespace fr {
       }
     }
 
-    void printDefaultVias() {
-      std::cout << "List of default vias:\n";
+    void printDefaultVias(Logger* logger) {
+      logger->info(DRT, 167, "List of default vias:");
       for (auto &layer: layers) {
         if (layer->getType() == frLayerTypeEnum::CUT && layer->getLayerNum() >= 2/*BOTTOM_ROUTING_LAYER*/) {
-          std::cout << "  Layer " << layer->getName() << "\n" << std::flush;
-          std::cout << "    default via: " << layer->getDefaultViaDef()->getName() << "\n";
+          logger->report("  Layer {}", layer->getName());
+          logger->report("    default via: {}", layer->getDefaultViaDef()->getName());
         }
       }
     }     

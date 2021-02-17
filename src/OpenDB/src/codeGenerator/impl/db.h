@@ -11,10 +11,10 @@ class {{klass.name}} : public dbObject
  public:
   {% for _enum in klass.enums %}
     {% if _enum.public %}
-    enum {{_enum.name}}
+    enum {{ _enum.name }}
     {
-      {% for value in _enum["values"] %}
-        {% if not loop.first %},{% endif %}{{value}} = {{loop.index0}}
+      {% for value in _enum["values"]%}
+      {% if not loop.first %},{%endif%}{{value}}
       {% endfor %}
     };
     {% endif %}
@@ -27,6 +27,10 @@ class {{klass.name}} : public dbObject
     {% if 'no-get' not in field.flags %}
       {% if field.dbSetGetter %}
         dbSet<{{field.type}}> get{{field.functional_name}}() const;
+      {% elif field.isDbVector %}
+        void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
+      {% elif field.isHashTable %}
+        {{field.getterReturnType}} {{field.getterFunctionName}}(const char* name) const;
       {% else %}
         {{field.getterReturnType}} {{field.getterFunctionName}}() const;
       {% endif %}

@@ -41,6 +41,7 @@
 #include <map>
 #include <queue>
 #include <string>
+
 #include "utility/Logger.h"
 
 namespace PD {
@@ -118,7 +119,6 @@ Graph::Graph(unsigned _num_terminals,
   orig_num_terminals = nodes.size();
   aux.resize(num_terminals);
 
-  
   debugPrint(_logger, GRT, "fastroute", 3, "-- Node locations --");
   for (unsigned i = 0; i < nodes.size(); ++i) {
     debugPrint(_logger, GRT, "fastroute", 3, "   {}", nodes[i]);
@@ -391,7 +391,7 @@ void Graph::PrintInfo()
   for (unsigned i = 0; i < dag.size(); ++i) {
     dagRpt = dagRpt + " " + std::to_string(i);
   }
-  
+
   debugPrint(_logger, GRT, "fastroute", 3, "{}", dagRpt);
 
   std::string nnRpt = "  NN:\n";
@@ -409,7 +409,7 @@ void Graph::PrintInfo()
 
   std::string dist = "  Manhattan distance:\n";
   for (unsigned i = 0; i < ManhDist.size(); ++i) {
-    dist = dist +  "    ";
+    dist = dist + "    ";
     for (unsigned j = 0; j < ManhDist[i].size(); ++j) {
       dist = dist + std::to_string(ManhDist[i][j]) + " ";
     }
@@ -549,15 +549,21 @@ void Graph::DupRemoval(vector<Node>& STNodes)
 
 void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "cur fSTNode size: {}", fSTNodes.size());
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "cur fSTNode size: {}", fSTNodes.size());
 
   int cIdx = dag[idx];
   vector<Node> STNodes;
   for (unsigned i = idx + 1; i < dag.size(); ++i) {
     int nIdx = dag[i];
-    debugPrint(_logger, GRT, "fastroute", 3,
-              "dag.size: {} i = {} nIdx: {}", dag.size(), i, nIdx)
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "dag.size: {} i = {} nIdx: {}",
+               dag.size(),
+               i,
+               nIdx);
     if (IsParent(nodes[cIdx].parent, nIdx)) {
       GetSteiner(cIdx, nIdx, STNodes);
     }
@@ -568,9 +574,13 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
   }
 
   for (unsigned i = 0; i < STNodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Before dupRemoval STNodes: {}", STNodes[i]);
-    
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "Before dupRemoval STNodes: {}",
+               STNodes[i]);
+
     std::string childRpt = " Child: ";
     for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
       childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
@@ -582,8 +592,12 @@ void Graph::GetSteinerNodes(int idx, vector<Node>& fSTNodes)
   DupRemoval(STNodes);
 
   for (unsigned i = 0; i < STNodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "After dupRemoval STNodes: {}", STNodes[i]);
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "After dupRemoval STNodes: {}",
+               STNodes[i]);
     std::string childRpt = " Child: ";
     for (unsigned j = 0; j < STNodes[i].sp_chil.size(); ++j) {
       childRpt = childRpt + std::to_string(STNodes[i].sp_chil[j]) + " ";
@@ -711,8 +725,7 @@ void Graph::UpdateSteinerNodes()
     Edge& e = edges[cIdx];
     e.STNodes.clear();
     if (cIdx != 0) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "cIdx = {}", cIdx);
+      debugPrint(_logger, GRT, "fastroute", 3, "cIdx = {}", cIdx);
       GetSteinerNodes(i, fSTNodes);
     }
   }
@@ -863,8 +876,7 @@ void Graph::RemoveUnneceSTNodes()
 
   map<int, int> idxMap;
   for (unsigned i = 0; i < nodes.size(); ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "idxMap {} {}", i, nodes[i].idx);
+    debugPrint(_logger, GRT, "fastroute", 3, "idxMap {} {}", i, nodes[i].idx);
     idxMap[nodes[i].idx] = i;
   }
   for (unsigned i = 0; i < nodes.size(); ++i) {
@@ -873,8 +885,7 @@ void Graph::RemoveUnneceSTNodes()
       removeChild(nodes[i], toBeRemoved[j]);
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "before cN: {}", cN);
+    debugPrint(_logger, GRT, "fastroute", 3, "before cN: {}", cN);
     sort(cN.children.begin(), cN.children.end());
     for (unsigned j = 0; j < cN.children.size(); ++j) {
       if (cN.children[j] != idxMap[cN.children[j]])
@@ -885,8 +896,7 @@ void Graph::RemoveUnneceSTNodes()
     edges[i].tail = i;
     edges[i].head = idxMap[edges[i].head];
     edges[i].idx = i;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "after cN: {}", cN);
+    debugPrint(_logger, GRT, "fastroute", 3, "after cN: {}", cN);
   }
 }
 
@@ -1332,8 +1342,13 @@ bool Graph::IsSameDir(int cIdx, int nIdx)
 
 void Graph::AddNode(int cIdx, int pIdx, int eShape)
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "loc: {} eShape: {}", IdentLoc(pIdx, cIdx), eShape);
+  debugPrint(_logger,
+             GRT,
+             "fastroute",
+             3,
+             "loc: {} eShape: {}",
+             IdentLoc(pIdx, cIdx),
+             eShape);
 
   if (!eShape) {
     switch (IdentLoc(pIdx, cIdx)) {
@@ -1459,12 +1474,9 @@ int Graph::ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape)
 {
   int WL = 0;
   int delta = 0;
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "loc: {}", IdentLoc(pIdx, cIdx));
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "pNode: {}", nodes[pIdx]);
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "cNode: {}", nodes[cIdx]);
+  debugPrint(_logger, GRT, "fastroute", 3, "loc: {}", IdentLoc(pIdx, cIdx));
+  debugPrint(_logger, GRT, "fastroute", 3, "pNode: {}", nodes[pIdx]);
+  debugPrint(_logger, GRT, "fastroute", 3, "cNode: {}", nodes[cIdx]);
 
   switch (IdentLoc(pIdx, cIdx)) {
     case 0:
@@ -1516,14 +1528,13 @@ int Graph::ComputeWL(int cIdx, int pIdx, bool isRemove, int eShape)
 
 void Graph::refineSteiner2()
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Pre-refineSteiner() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Pre-refineSteiner() graph status: ");
   PrintInfo();
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cN: {}", cN);
+    debugPrint(_logger, GRT, "fastroute", 3, "cN: {}", cN);
     if (cN.idx == 0)
       continue;
 
@@ -1549,8 +1560,7 @@ void Graph::refineSteiner2()
       }
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cGain: {}", cGain);
+    debugPrint(_logger, GRT, "fastroute", 3, "cGain: {}", cGain);
     int newParent = cN.parent;
 
     vector<int> neighbors = nn[cN.idx];
@@ -1570,8 +1580,8 @@ void Graph::refineSteiner2()
     AddNode(cN.idx, newParent, edgeShape);
     edges[cN.idx].best_shape = edgeShape;
   }
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-refineSteiner() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Post-refineSteiner() graph status: ");
   PrintInfo();
 
   RemoveUnneceSTNodes();
@@ -1586,26 +1596,25 @@ void Graph::refineSteiner2()
 
   UpdateAllEdgesNSEW();
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Remove unnecessary Steiner nodes -- done");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Remove unnecessary Steiner nodes -- done");
   PrintInfo();
 
   UpdateSteinerNodes();
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-updateSteinerNodes() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Post-updateSteinerNodes() graph status: ");
   PrintInfo();
 }
 
 void Graph::refineSteiner()
 {
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Pre-refineSteiner() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Pre-refineSteiner() graph status: ");
   PrintInfo();
 
   for (int i = dag.size() - 1; i >= 0; --i) {
     Node& cN = nodes[dag[i]];
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cN: {}", cN);
+    debugPrint(_logger, GRT, "fastroute", 3, "cN: {}", cN);
     if (cN.idx == 0)
       continue;
 
@@ -1631,8 +1640,7 @@ void Graph::refineSteiner()
       }
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "cGain: {}", cGain);
+    debugPrint(_logger, GRT, "fastroute", 3, "cGain: {}", cGain);
     int newParent = cN.parent;
 
     vector<int> neighbors = nn[cN.idx];
@@ -1643,10 +1651,13 @@ void Graph::refineSteiner()
 
       int newPLToChildForParentCandi = 0;
       int newMaxPLCandi = 0;
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "nNode: {}", nNode);
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "IsSubTree: {}", IsSubTree(cN.idx, nNode.idx));
+      debugPrint(_logger, GRT, "fastroute", 3, "nNode: {}", nNode);
+      debugPrint(_logger,
+                 GRT,
+                 "fastroute",
+                 3,
+                 "IsSubTree: {}",
+                 IsSubTree(cN.idx, nNode.idx));
       // is this neighbor node in sub-tree rooted by Node cN
 
       if (IsSubTree(cN.idx, nNode.idx) == false) {
@@ -1662,16 +1673,32 @@ void Graph::refineSteiner()
           }
           newPLToChildForParentCandi
               = max(nNode.maxPLToChild, newMaxPLCandi - nNode.src_to_sink_dist);
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "Computed gain: {} {}", cGain, bestWLGain);
-          debugPrint(_logger, GRT, "fastroute", 3,
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
+                     "Computed gain: {} {}",
+                     cGain,
+                     bestWLGain);
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
                      "newMaxPLCandi: {} {}",
-                     newMaxPLCandi, maxPL * PLmargin);
+                     newMaxPLCandi,
+                     maxPL * PLmargin);
           if (cGain < bestWLGain && newMaxPLCandi < maxPL * PLmargin) {
-            debugPrint(_logger, GRT, "fastroute", 3,
+            debugPrint(_logger,
+                       GRT,
+                       "fastroute",
+                       3,
                        "new best pain: {} edgeShape: {} newParent: {} "
                        "newMaxPL: {} newPLToChild: {}",
-                       cGain, i, nNode.idx, newMaxPLCandi, newPLToChildForParentCandi);
+                       cGain,
+                       i,
+                       nNode.idx,
+                       newMaxPLCandi,
+                       newPLToChildForParentCandi);
             bestWLGain = cGain;
             edgeShape = i;
             newParent = nNode.idx;
@@ -1695,8 +1722,8 @@ void Graph::refineSteiner()
     AddNode(cN.idx, newParent, edgeShape);
     edges[cN.idx].best_shape = edgeShape;
   }
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-refineSteiner() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Post-refineSteiner() graph status: ");
   PrintInfo();
 
   RemoveUnneceSTNodes();
@@ -1711,13 +1738,13 @@ void Graph::refineSteiner()
 
   UpdateAllEdgesNSEW();
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Remove unnecessary Steiner nodes -- done");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Remove unnecessary Steiner nodes -- done");
   PrintInfo();
 
   UpdateSteinerNodes();
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Post-updateSteinerNodes() graph status: ");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "Post-updateSteinerNodes() graph status: ");
   PrintInfo();
 }
 
@@ -1821,14 +1848,18 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   }
 
   // print neighbors
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Print neighbors");
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "{}th node {}", node_idx, nodes[node_idx]);
-    for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 " {} {}", nn[node_idx][j], nodes[nn[node_idx][j]]);
-    }
+  debugPrint(_logger, GRT, "fastroute", 3, "Print neighbors");
+  debugPrint(
+      _logger, GRT, "fastroute", 3, "{}th node {}", node_idx, nodes[node_idx]);
+  for (unsigned j = 0; j < nn[node_idx].size(); ++j) {
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               " {} {}",
+               nn[node_idx][j],
+               nodes[nn[node_idx][j]]);
+  }
 
   tmp.clear();
   sorted.clear();
@@ -1872,8 +1903,7 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
 
   // collect neighbor
   for (unsigned idx = 0; idx < num_terms; ++idx) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "sorted idx: {}", sorted[idx]);
+    debugPrint(_logger, GRT, "fastroute", 3, "sorted idx: {}", sorted[idx]);
     Node& cNode = nodes[sorted[idx]];
     // update idx to neighbors
     // Note: nNode.y <= cNode.y
@@ -1884,33 +1914,53 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
         urux[nNode.idx] = cNode.x;
         ullx[nNode.idx] = cNode.x;
       } else if (urux[nNode.idx] > cNode.x && urlx[nNode.idx] < cNode.x) {
-        debugPrint(_logger, GRT, "fastroute", 3,
+        debugPrint(_logger,
+                   GRT,
+                   "fastroute",
+                   3,
                    "right for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx], nNode.idx);
+                   sorted[idx],
+                   nNode.idx);
         ;
         // right
         nn[nNode.idx].push_back(cNode.idx);
         urux[nNode.idx] = cNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added to nNode right: {}", sorted[idx]);
+        debugPrint(_logger,
+                   GRT,
+                   "fastroute",
+                   3,
+                   "added to nNode right: {}",
+                   sorted[idx]);
       } else if (ullx[nNode.idx] < cNode.x && ulux[nNode.idx] > cNode.x) {
-        debugPrint(_logger, GRT, "fastroute", 3,
+        debugPrint(_logger,
+                   GRT,
+                   "fastroute",
+                   3,
                    "left for nNode cNode idx: {} nNode idx: {}",
-                   sorted[idx], nNode.idx);
+                   sorted[idx],
+                   nNode.idx);
         ;
         if (idx == num_terms - 1) {
           // left
           nn[nNode.idx].push_back(cNode.idx);
           ullx[nNode.idx] = cNode.x;
-          debugPrint(_logger, GRT, "fastroute", 3,
-                     "added to nNode left: {}", sorted[idx]);
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
+                     "added to nNode left: {}",
+                     sorted[idx]);
         } else {
           if (nodes[sorted[idx + 1]].y != cNode.y
               || nodes[sorted[idx + 1]].x > nNode.x) {
             nn[nNode.idx].push_back(cNode.idx);
             ullx[nNode.idx] = cNode.x;
-            debugPrint(_logger, GRT, "fastroute", 3,
-                       "added to nNode left: {}", sorted[idx]);
+            debugPrint(_logger,
+                       GRT,
+                       "fastroute",
+                       3,
+                       "added to nNode left: {}",
+                       sorted[idx]);
           }
         }
       }
@@ -1937,18 +1987,18 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
         lllx[cNode.idx] = nNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode center: {}", nNode.idx);
+        debugPrint(
+            _logger, GRT, "fastroute", 3, "added cNode center: {}", nNode.idx);
       } else if (lrux[cNode.idx] > nNode.x && lrlx[cNode.idx] < nNode.x) {
         // right
         nn[cNode.idx].push_back(nNode.idx);
         lrux[cNode.idx] = nNode.x;
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode right: {}", nNode.idx);
+        debugPrint(
+            _logger, GRT, "fastroute", 3, "added cNode right: {}", nNode.idx);
       } else if (lllx[cNode.idx] < nNode.x && llux[cNode.idx] > nNode.x) {
         // left
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "added cNode left: {}", nNode.idx);
+        debugPrint(
+            _logger, GRT, "fastroute", 3, "added cNode left: {}", nNode.idx);
         nn[cNode.idx].push_back(nNode.idx);
         lllx[cNode.idx] = nNode.x;
         if (cNode.y == nNode.y) {
@@ -1967,14 +2017,12 @@ bool Graph::buildNearestNeighborsForSPT(unsigned num_terms)
     }
   }
   // print neighbors
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Print neighbors");
+  debugPrint(_logger, GRT, "fastroute", 3, "Print neighbors");
   for (unsigned i = 0; i < num_terms; ++i) {
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "{}th node {}", i, nodes[i]);
+    debugPrint(_logger, GRT, "fastroute", 3, "{}th node {}", i, nodes[i]);
     for (unsigned j = 0; j < nn[i].size(); ++j) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "    {} {}", nn[i][j], nodes[nn[i][j]]);
+      debugPrint(
+          _logger, GRT, "fastroute", 3, "    {} {}", nn[i][j], nodes[nn[i][j]]);
     }
   }
 
@@ -2135,8 +2183,8 @@ void Graph::NESW_NearestNeighbors(int left, int right, unsigned oct)
     NESW_NearestNeighbors(mid, right, oct);
     NESW_Combine(left, mid, right, oct);
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "{} {} {} {}", oct, left, mid, right);
+    debugPrint(
+        _logger, GRT, "fastroute", 3, "{} {} {} {}", oct, left, mid, right);
     std::string numTermRpt;
     for (unsigned i = 0; i < num_terminals; ++i) {
       numTermRpt = numTermRpt + "  " + std::to_string(nn[i][oct]);
@@ -2157,16 +2205,26 @@ void Graph::heap_insert(int p, unsigned key)
     heap_size = 1;
     heap_elt[1] = p;
     heap_idx[p] = 1;
-    debugPrint(_logger, GRT, "fastroute", 3,
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
                "    heap_elt[1]= {}  heap_idx[p]= {}",
-               heap_elt[1], heap_idx[p]);
+               heap_elt[1],
+               heap_idx[p]);
   } else {
     k = ++heap_size;
     j = k >> 1; /* k/2 */
 
-    debugPrint(_logger, GRT, "fastroute", 3,
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
                "    k= {} j= {}  heap_elt[j]= {}  heap_key[q]= {}",
-               k, j, heap_elt[j], heap_key[heap_elt[j]]);
+               k,
+               j,
+               heap_elt[j],
+               heap_key[heap_elt[j]]);
 
     q = heap_elt[j];
     while ((j > 0) && (heap_key[q] > key)) {
@@ -2176,9 +2234,15 @@ void Graph::heap_insert(int p, unsigned key)
       j = k >> 1; /* k/2 */
       q = heap_elt[j];
 
-      debugPrint(_logger, GRT, "fastroute", 3,
-               "    k= {} j= {}  heap_elt[j]= {}  heap_key[q]= {}",
-               k, j, heap_elt[j], heap_key[heap_elt[j]]);
+      debugPrint(_logger,
+                 GRT,
+                 "fastroute",
+                 3,
+                 "    k= {} j= {}  heap_elt[j]= {}  heap_key[q]= {}",
+                 k,
+                 j,
+                 heap_elt[j],
+                 heap_key[heap_elt[j]]);
     }
 
     /* store p in the position of the hole */
@@ -2216,12 +2280,24 @@ unsigned Graph::heap_delete_min()
     k = j;
     j = k << 1;
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "    k= {} j= {}  heap_size= {}", k, j, heap_size);
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "    k= {} j= {}  heap_size= {}",
+               k,
+               j,
+               heap_size);
   }
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "    k= {} last= {}  min= {}", k, last, min);
+  debugPrint(_logger,
+             GRT,
+             "fastroute",
+             3,
+             "    k= {} last= {}  min= {}",
+             k,
+             last,
+             min);
 
   heap_elt[k] = last;
   heap_idx[last] = k;
@@ -2285,10 +2361,17 @@ void Graph::print_tree()
   for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     unsigned child = j;
     unsigned par = nodes[j].parent;
-    debugPrint(_logger, GRT, "fastroute", 3,
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
                "Node {}\t({} , {})\tparent[{}]= {} Level= {}",
-               child, nodes[child].x, nodes[child].y, child,
-               par, nodes[child].level);
+               child,
+               nodes[child].x,
+               nodes[child].y,
+               child,
+               par,
+               nodes[child].level);
   }
 }
 
@@ -2298,7 +2381,8 @@ void Graph::print_tree_v2(ofstream& ofs)
   for (unsigned j = 0; j < nodes.size(); ++j) /* For each terminal */ {
     unsigned child = j;
     unsigned par = nodes[j].parent;
-    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " " << par;
+    ofs << child << " " << nodes[child].x << " " << nodes[child].y << " "
+        << par;
   }
 }
 
@@ -2321,8 +2405,8 @@ unsigned Graph::calc_tree_pl()
     unsigned child = j;
     unsigned par = nodes[j].parent;
     while (par != child) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Child = {} ; SV Par = {}", child, par);
+      debugPrint(
+          _logger, GRT, "fastroute", 3, "Child = {} ; SV Par = {}", child, par);
       nodes[child].cost_edgeToP = dist(nodes[par], nodes[child]);
       pl += nodes[child].cost_edgeToP;
       child = par;
@@ -2358,8 +2442,9 @@ bool Graph::run_PD_brute_force(float alp)
   for (unsigned k = 0; k < num_terminals;
        k++) /* n points to be extracted from heap */ {
     int i = heap_delete_min();
-  
-    std::string rpt = "\n##############k=" + std::to_string(k) + " i=" + std::to_string(i) + "\n";
+
+    std::string rpt = "\n##############k=" + std::to_string(k)
+                      + " i=" + std::to_string(i) + "\n";
     rpt = rpt + "Heap_idx array: ";
     for (unsigned ar = 0; ar < heap_idx.size(); ar++)
       rpt = rpt + std::to_string(heap_idx[ar]) + " ";
@@ -2388,19 +2473,35 @@ bool Graph::run_PD_brute_force(float alp)
         int nn1 = nn[i][oct];
         // BruteForceint nn1 = nodes[oct].idx;
         if (nn1 >= 0) {
-          debugPrint(_logger, GRT, "fastroute", 3,
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
                      "NN={} i={} min_dist of node i={}",
-                     nn1, i, nodes[i].min_dist);
+                     nn1,
+                     i,
+                     nodes[i].min_dist);
           unsigned edge_len = dist(nodes[i], nodes[nn1]);
           float d = alp * (float) nodes[i].path_length;
-          debugPrint(_logger, GRT, "fastroute", 3,
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
                      "intermediate d = alp *(float) nodes[i].path_length = "
-                     "{}*{} = {}", alp, nodes[i].path_length, d);
+                     "{}*{} = {}",
+                     alp,
+                     nodes[i].path_length,
+                     d);
           if (nn1 != root_idx)
             d += edge_len;
-          debugPrint(_logger, GRT, "fastroute", 3,
+          debugPrint(_logger,
+                     GRT,
+                     "fastroute",
+                     3,
                      " d={} heap_idx[nn1]={} heap_key[nn1]={}",
-                     d, heap_idx[nn1], heap_key[nn1]);
+                     d,
+                     heap_idx[nn1],
+                     heap_key[nn1]);
           if ((heap_idx[nn1] > 0) && (d <= heap_key[nn1]))  // FIXME : Tie-break
           {
             heap_decrease_key(nn1, d);
@@ -2432,11 +2533,14 @@ void Graph::PDBU_new_NN()
     unsigned child = j;
     unsigned par = nodes[j].parent;
     update_edgecosts_to_parent(child, par);
-    debugPrint(_logger, GRT, "fastroute", 3,
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
                "  Detour cost of edge to parent = {}",
                nodes[child].detcost_edgePToNode);
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "  Nearest neighbors of node are {}", j);
+    debugPrint(
+        _logger, GRT, "fastroute", 3, "  Nearest neighbors of node are {}", j);
     nodes[j].nn_edge_detcost.resize(nn[j].size());
 
     // Calculating detour cost of all edges to nearest neighbours
@@ -2456,9 +2560,13 @@ void Graph::PDBU_new_NN()
   unsigned count = 1;
 
   while ((tree_cost_difference > 0) || (tree_cost_difference < -1)) {
-    debugPrint(_logger, GRT, "fastroute", 3,
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
                "\n################# PDBU Swap Iteration {}"
-               " #####################\n", count);
+               " #####################\n",
+               count);
 
     count++;
 
@@ -2466,12 +2574,20 @@ void Graph::PDBU_new_NN()
       break;
     }
 
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Tree before PDBU iteration {}", count - 1);
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "Tree before PDBU iteration {}",
+               count - 1);
     if (_logger->debugCheck(GRT, "fastroute", 3))
       print_tree();
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "\nInitial tree cost = {}", initial_tree_cost);
+    debugPrint(_logger,
+               GRT,
+               "fastroute",
+               3,
+               "\nInitial tree cost = {}",
+               initial_tree_cost);
 
     // Generating the swap space
     for (unsigned j = 0; j < num_terminals; ++j) /* For each terminal */ {
@@ -2501,17 +2617,21 @@ void Graph::PDBU_new_NN()
         iter++;
       }
 
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "\nj = {}  Swap space: ", j);
+      debugPrint(_logger, GRT, "fastroute", 3, "\nj = {}  Swap space: ", j);
       std::string swapSpcRpt;
       for (unsigned p = 0; p < nodes[j].swap_space.size(); p++) {
         for (unsigned q = 0; q < nodes[j].swap_space[p].size(); q++) {
-          swapSpcRpt = swapSpcRpt + std::to_string(nodes[j].swap_space[p][q]) + " ";
+          swapSpcRpt
+              = swapSpcRpt + std::to_string(nodes[j].swap_space[p][q]) + " ";
         }
         debugPrint(_logger, GRT, "fastroute", 3, "{}", swapSpcRpt);
       }
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "\nSwap space size = {}", nodes[j].swap_space.size());
+      debugPrint(_logger,
+                 GRT,
+                 "fastroute",
+                 3,
+                 "\nSwap space size = {}",
+                 nodes[j].swap_space.size());
     }
 
     float overall_min_cost = 10000;
@@ -2569,11 +2689,19 @@ void Graph::PDBU_new_NN()
               if (nn_node == j)
                 is_found_in_swap_space = true;
             }
-            
-            debugPrint(_logger, GRT, "fastroute", 3,
-                      "j={} iter={} Node getting new edge={} NN_node={} Is found in swap space? {}",
-                      j, iter, node_e_new, nn_node, is_found_in_swap_space);
-            
+
+            debugPrint(_logger,
+                       GRT,
+                       "fastroute",
+                       3,
+                       "j={} iter={} Node getting new edge={} NN_node={} Is "
+                       "found in swap space? {}",
+                       j,
+                       iter,
+                       node_e_new,
+                       nn_node,
+                       is_found_in_swap_space);
+
             if ((nn_node) > -1 && (nn_node != j) && !is_found_in_swap_space) {
               int child = node_e_new, par = nodes[node_e_new].parent;
               float sum_q_terms = nodes[node_e_new].nn_edge_detcost[oct];
@@ -2603,9 +2731,14 @@ void Graph::PDBU_new_NN()
               swap_cost
                   = alpha2 * M * (cumul_det_cost_term + last_det_cost_term)
                     + (1 - alpha2) * (float) last_len_term;
-              debugPrint(_logger, GRT, "fastroute", 3,
+              debugPrint(_logger,
+                         GRT,
+                         "fastroute",
+                         3,
                          "j={} iter={} cost={}",
-                         j, iter, swap_cost);
+                         j,
+                         iter,
+                         swap_cost);
             }
             if (swap_cost < overall_min_cost) {
               overall_min_cost = swap_cost;
@@ -2621,12 +2754,22 @@ void Graph::PDBU_new_NN()
     }
 
     if (overall_min_cost < -0.05) {
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Overall min = {}  for node {}  New parent (Nearest neighbour) is {}",
-                 overall_min_cost, overall_min_node, nn[overall_min_node][overall_min_nn_idx]);
+      debugPrint(
+          _logger,
+          GRT,
+          "fastroute",
+          3,
+          "Overall min = {}  for node {}  New parent (Nearest neighbour) is {}",
+          overall_min_cost,
+          overall_min_node,
+          nn[overall_min_node][overall_min_nn_idx]);
 
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Swapping with a distance of {}", overall_swap_dist);
+      debugPrint(_logger,
+                 GRT,
+                 "fastroute",
+                 3,
+                 "Swapping with a distance of {}",
+                 overall_swap_dist);
 
       swap_and_update_tree(
           overall_min_node, overall_min_nn_idx, distance, overall_initial_i);
@@ -2636,9 +2779,14 @@ void Graph::PDBU_new_NN()
     tree_cost_difference = final_tree_cost - initial_tree_cost;
 
     initial_tree_cost = final_tree_cost;
-    debugPrint(_logger, GRT, "fastroute", 3,
-               "Final tree cost = {} \ntree_cost_difference = {}\n Tree after PDBU",
-               final_tree_cost, tree_cost_difference);
+    debugPrint(
+        _logger,
+        GRT,
+        "fastroute",
+        3,
+        "Final tree cost = {} \ntree_cost_difference = {}\n Tree after PDBU",
+        final_tree_cost,
+        tree_cost_difference);
     if (_logger->debugCheck(GRT, "fastroute", 3))
       print_tree();
     // End of the while loop
@@ -2676,8 +2824,7 @@ void Graph::constructSteiner()
     int cIdx = dag[i];
     Node child = nodes[cIdx];
     Node pN = nodes[child.parent];
-    debugPrint(_logger, GRT, "fastroute", 3,
-      "parent {}\nchild: {}", pN, child);
+    debugPrint(_logger, GRT, "fastroute", 3, "parent {}\nchild: {}", pN, child);
 
     Edge e = edges[cIdx];
 
@@ -2687,8 +2834,8 @@ void Graph::constructSteiner()
       if (!IsOnEdge(cN, cIdx)) {
         continue;
       }
-      debugPrint(_logger, GRT, "fastroute", 3,
-                 "Before cN: {}\nBefore pN: {}", cN, pN);
+      debugPrint(
+          _logger, GRT, "fastroute", 3, "Before cN: {}\nBefore pN: {}", cN, pN);
       int idx = IsAdded(cN);
       // check whether cN exists in the current nodes
       if (idx == 0) {
@@ -2718,15 +2865,19 @@ void Graph::constructSteiner()
             removeChild(nodes[pIdx], cN.sp_chil[k]);
         }
         addChild(nodes[pIdx], nodes.size() - 1);
-        debugPrint(_logger, GRT, "fastroute", 3,
+        debugPrint(_logger,
+                   GRT,
+                   "fastroute",
+                   3,
                    "After cN: {}\nAfter pN: {}",
-                   nodes[nodes.size() - 1], nodes[pIdx]);
+                   nodes[nodes.size() - 1],
+                   nodes[pIdx]);
         pN = nodes[nodes.size() - 1];
       } else {
         if (nodes[idx].parent != pN.idx && idx != pN.parent
             && nodes[idx].parent != pN.parent) {
-          _logger->warn(GRT, 120, "cNode ({}) != pNode ({})",
-                        nodes[idx], nodes[pN.idx]);
+          _logger->warn(
+              GRT, 120, "cNode ({}) != pNode ({})", nodes[idx], nodes[pN.idx]);
 
           for (unsigned k = 0; k < newSP.size(); k++) {
             if (newSP[k] == idx) {
@@ -2760,8 +2911,8 @@ void Graph::constructSteiner()
                     removeChild(nodes[pN.idx], nodes[idx].children[l]);
                   }
                   addChild(nodes[pN.idx], idx);
-                  debugPrint(_logger, GRT, "fastroute", 3,
-                             "newSP: {}", nodes[idx]);
+                  debugPrint(
+                      _logger, GRT, "fastroute", 3, "newSP: {}", nodes[idx]);
                 }
               } else if (dir1 == dir3) {
                 removeChild(nodes[idx], pN.idx);
@@ -2773,8 +2924,13 @@ void Graph::constructSteiner()
             }
           }
         }
-        debugPrint(_logger, GRT, "fastroute", 3,
-                   "After cN: {}\nAfter pN: {}", nodes[idx], nodes[pN.idx]);
+        debugPrint(_logger,
+                   GRT,
+                   "fastroute",
+                   3,
+                   "After cN: {}\nAfter pN: {}",
+                   nodes[idx],
+                   nodes[pN.idx]);
         pN = nodes[idx];
       }
       if (j == e.STNodes.size() - 1) {
@@ -2818,12 +2974,25 @@ bool Graph::doSteiner_HoVW()
     update_node_detcost_Kt(j);
   // End tree preparation
 
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Wirelength before Steiner = {}", calc_tree_wl_pd());
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "Tree detour cost before Steiner = {}", calc_tree_det_cost());
-  debugPrint(_logger, GRT, "fastroute", 3,
-             "{} {}", calc_tree_wl_pd(), calc_tree_det_cost());
+  debugPrint(_logger,
+             GRT,
+             "fastroute",
+             3,
+             "Wirelength before Steiner = {}",
+             calc_tree_wl_pd());
+  debugPrint(_logger,
+             GRT,
+             "fastroute",
+             3,
+             "Tree detour cost before Steiner = {}",
+             calc_tree_det_cost());
+  debugPrint(_logger,
+             GRT,
+             "fastroute",
+             3,
+             "{} {}",
+             calc_tree_wl_pd(),
+             calc_tree_det_cost());
   if (_logger->debugCheck(GRT, "fastroute", 3))
     print_tree();
 

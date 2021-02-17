@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,58 +30,67 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin 1
 #pragma once
 
+#include "dbCore.h"
 #include "odb.h"
-#include "arnoldi1.h"
+
+// User Code Begin includes
+// User Code End includes
 
 namespace odb {
 
-//
-// This is the rcmodel, without Rd.
-// n is the number of terms
-// The vectors U[j] are of size n
-//
-class rcmodel : public arnoldi1
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
+// User Code Begin Classes
+// User Code End Classes
+
+struct dbTechLayerCutClassRuleFlags
+{
+  bool _length_valid : 1;
+  bool _cuts_valid : 1;
+  uint _spare_bits : 30;
+};
+// User Code Begin structs
+// User Code End structs
+
+class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
-  void**   itermV;  // [n]
-  void**   btermV;  // [n]
-  rcmodel* rise_cap_model;
-  rcmodel* next;
+  // User Code Begin enums
+  // User Code End enums
 
- public:
-  rcmodel()
+  dbTechLayerCutClassRuleFlags   _flags;
+  char*                          _name;
+  int                            _width;
+  int                            _length;
+  int                            _num_cuts;
+  dbId<_dbTechLayerCutClassRule> _next_entry;
+
+  // User Code Begin fields
+  // User Code End fields
+  _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
+  _dbTechLayerCutClassRule(_dbDatabase*);
+  ~_dbTechLayerCutClassRule();
+  bool operator==(const _dbTechLayerCutClassRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutClassRule& rhs) const
   {
-    itermV         = NULL;
-    btermV         = NULL;
-    rise_cap_model = NULL;
-    next           = NULL;
+    return !operator==(rhs);
   }
-  ~rcmodel() {}
+  bool operator<(const _dbTechLayerCutClassRule& rhs) const;
+  void differences(dbDiff&                         diff,
+                   const char*                     field,
+                   const _dbTechLayerCutClassRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin methods
+  // User Code End methods
 };
-
-//
-// rcmodel for a simple line
-//
-rcmodel* get_line_rcmodel(int n, double* r, double* c, int max_order, int jout);
-
-//
-// use this with get_line_rcmodel
-//
-void rcmodelDestroy(rcmodel*);
-
-//
-// get total cap from rcmodel
-//
-double rcmodel_ctot(rcmodel* mod);
-
-//
-// get max elmore from rcmodel
-// this is not the whole elmore delay,
-// does not include Rdrive*ctot
-//
-double rcmodel_max_elmore(rcmodel* mod);
-
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);
+// User Code Begin general
+// User Code End general
 }  // namespace odb
-
+   // Generator Code End 1

@@ -38,7 +38,9 @@
 #include "db_sta/dbSta.hh"
 #include "openroad/OpenRoad.hh"
 #include "utility/Logger.h"
+#include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "db_sta/dbNetwork.hh"
 #include "sta/Sdc.hh"
 
 #include <tcl.h>
@@ -71,4 +73,22 @@ void StaEngine::findClockRoots(utl::Logger* _logger)
   _options->setClockNets(clockNames);
 }
 
+float StaEngine::getInputPinCap(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* masterCell = ord::OpenRoad::openRoad()->getDbNetwork()->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
+  if (!libertyCell) {
+    return 0.0;
+  }
+
+  sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
+  sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->capacitance();
+  } else {
+    return 0.0;
+  }
+    
+}
 }  // namespace cts

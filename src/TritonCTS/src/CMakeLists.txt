@@ -87,5 +87,6 @@ target_include_directories(TritonCTS
 
 target_link_libraries(TritonCTS 
   PUBLIC
+  pdrev
   utility
  )

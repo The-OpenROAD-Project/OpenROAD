@@ -8,30 +8,20 @@
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-USEMINSPACING OBS ON
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
-Warning: override minspacing rule, original type is SPACINGTABLE PARALLELRUNLENGTH, new type is SPACINGTABLE PARALLELRUNLENGTH
-Warning: Metal5 does not have viaDef align with layer direction, generating new viaDef Via5_FR...
-Warning: Metal6 does not have viaDef align with layer direction, generating new viaDef Via6_FR...
-Warning: Metal7 does not have viaDef align with layer direction, generating new viaDef Via7_FR...
-done initConstraintLayerIdx
-List of default vias:
+[WARNING DRT-0148] deprecated lef param in params file
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
+[WARNING DRT-0160] Warning: Metal5 does not have viaDef aligned with layer direction, generating new viaDef Via5_FR.
+[WARNING DRT-0160] Warning: Metal6 does not have viaDef aligned with layer direction, generating new viaDef Via6_FR.
+[WARNING DRT-0160] Warning: Metal7 does not have viaDef aligned with layer direction, generating new viaDef Via7_FR.
+[INFO DRT-0167] List of default vias:
   Layer Via1
     default via: VIA12_1C
   Layer Via2
@@ -48,9 +38,8 @@ List of default vias:
     default via: Via7_FR
   Layer Via8
     default via: VIA8_0_VH
-Writing reference output def (results/ispd18_sample.output.def.ref)...
-
-init region query ...
+[INFO DRT-0161] Writing reference output def results/ispd18_sample.output.def.ref.
+[INFO DRT-0168] Init region query ...
 [INFO DRT-0033] FR_MASTERSLICE shape region query size = 0
 [INFO DRT-0033] FR_VIA shape region query size = 0
 [INFO DRT-0033] Metal1 shape region query size = 344
@@ -70,8 +59,7 @@ init region query ...
 [INFO DRT-0033] Metal8 shape region query size = 0
 [INFO DRT-0033] Via8 shape region query size = 0
 [INFO DRT-0033] Metal9 shape region query size = 0
-
-init guide query ...
+[INFO DRT-0178] init guide query ...
 [INFO DRT-0036] FR_MASTERSLICE guide region query size = 0
 [INFO DRT-0036] FR_VIA guide region query size = 0
 [INFO DRT-0036] Metal1 guide region query size = 22
@@ -91,60 +79,5 @@ init guide query ...
 [INFO DRT-0036] Metal8 guide region query size = 0
 [INFO DRT-0036] Via8 guide region query size = 0
 [INFO DRT-0036] Metal9 guide region query size = 0
-
-init gr pin query ...
-initVia2ViaMinLen_minSpc Metal1 (d2d, d2u, u2d, u2u) = (0, 0, 0, 380)
-initVia2ViaMinLen_minSpc Metal2 (d2d, d2u, u2d, u2u) = (260, 0, 0, 280)
-initVia2ViaMinLen_minSpc Metal3 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minSpc Metal4 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minSpc Metal5 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minSpc Metal6 (d2d, d2u, u2d, u2u) = (280, 0, 0, 1340)
-initVia2ViaMinLen_minSpc Metal7 (d2d, d2u, u2d, u2u) = (1340, 1340, 1340, 1340)
-initVia2ViaMinLen_minSpc Metal8 (d2d, d2u, u2d, u2u) = (1340, 1340, 1340, 1340)
-initVia2ViaMinLen_minSpc Metal9 (d2d, d2u, u2d, u2u) = (1340, 0, 0, 0)
-initVia2ViaMinLen_minimumcut Metal1 (d2d, d2u, u2d, u2u) = (0, 0, 0, 380)
-initVia2ViaMinLen_minimumcut Metal1 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal2 (d2d, d2u, u2d, u2u) = (260, 0, 0, 280)
-initVia2ViaMinLen_minimumcut Metal2 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal3 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minimumcut Metal3 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal4 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minimumcut Metal4 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal5 (d2d, d2u, u2d, u2u) = (280, 0, 0, 280)
-initVia2ViaMinLen_minimumcut Metal5 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal6 (d2d, d2u, u2d, u2u) = (280, 0, 0, 1340)
-initVia2ViaMinLen_minimumcut Metal6 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal7 (d2d, d2u, u2d, u2u) = (1340, 1340, 1340, 1340)
-initVia2ViaMinLen_minimumcut Metal7 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal8 (d2d, d2u, u2d, u2u) = (1340, 1340, 1340, 1340)
-initVia2ViaMinLen_minimumcut Metal8 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLen_minimumcut Metal9 (d2d, d2u, u2d, u2u) = (1340, 0, 0, 0)
-initVia2ViaMinLen_minimumcut Metal9 zerolen (b, b, b, b) = (1, 1, 1, 1)
-initVia2ViaMinLenNew_minSpc Metal1 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (0, 0, 0, 0, 0, 0, 380, 400)
-initVia2ViaMinLenNew_minSpc Metal2 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (380, 260, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_minSpc Metal3 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_minSpc Metal4 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_minSpc Metal5 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_minSpc Metal6 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 770, 0, 770, 0, 1340, 1340)
-initVia2ViaMinLenNew_minSpc Metal7 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1340, 1100, 1340, 1100, 1340, 1340)
-initVia2ViaMinLenNew_minSpc Metal8 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1100, 1340, 1100, 1340, 1340, 1340)
-initVia2ViaMinLenNew_minSpc Metal9 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 0, 0, 0, 0, 0, 0)
-initVia2ViaMinLenNew_minimumcut Metal1 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (0, 0, 0, 0, 0, 0, 380, 400)
-initVia2ViaMinLenNew_minimumcut Metal2 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (380, 260, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_minimumcut Metal3 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_minimumcut Metal4 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_minimumcut Metal5 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_minimumcut Metal6 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 770, 0, 770, 0, 1340, 1340)
-initVia2ViaMinLenNew_minimumcut Metal7 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1340, 1100, 1340, 1100, 1340, 1340)
-initVia2ViaMinLenNew_minimumcut Metal8 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1100, 1340, 1100, 1340, 1340, 1340)
-initVia2ViaMinLenNew_minimumcut Metal9 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 0, 0, 0, 0, 0, 0)
-initVia2ViaMinLenNew_cutSpc Metal1 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (0, 0, 0, 0, 0, 0, 380, 400)
-initVia2ViaMinLenNew_cutSpc Metal2 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (380, 280, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_cutSpc Metal3 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_cutSpc Metal4 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 280, 0, 280, 0, 400, 280)
-initVia2ViaMinLenNew_cutSpc Metal5 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (280, 400, 0, 280, 0, 280, 280, 400)
-initVia2ViaMinLenNew_cutSpc Metal6 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (400, 280, 770, 0, 770, 0, 1340, 1340)
-initVia2ViaMinLenNew_cutSpc Metal7 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1340, 1100, 1340, 1100, 1340, 1340)
-initVia2ViaMinLenNew_cutSpc Metal8 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 1100, 1340, 1100, 1340, 1340, 1340)
-initVia2ViaMinLenNew_cutSpc Metal9 (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (1340, 1340, 0, 0, 0, 0, 0, 0)
+[INFO DRT-0179] init gr pin query ...
 No differences found.
