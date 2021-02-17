@@ -9,6 +9,11 @@ target_include_directories(tm
         ${PROJECT_SOURCE_DIR}/include/opendb
 )
 
+target_link_libraries(tm
+    PUBLIC
+        tcl
+)
+
 set_target_properties(tm
   PROPERTIES
     # python requirement
