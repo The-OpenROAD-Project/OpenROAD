@@ -3,7 +3,7 @@ find_package(BISON REQUIRED)
 find_package(ZLIB)
 
 bison_target(lef_parser
-             lef/lef.y
+             ${CMAKE_CURRENT_SOURCE_DIR}/lef/lef.y
              ${CMAKE_CURRENT_BINARY_DIR}/lef_parser.cpp
              COMPILE_FLAGS "--name-prefix=lefyy"
 )

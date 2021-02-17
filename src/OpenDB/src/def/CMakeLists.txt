@@ -3,14 +3,12 @@ project(DEF_PARSER
   LANGUAGES CXX 
 )
 
-set(DEFLIB_HOME ${CMAKE_CURRENT_SOURCE_DIR})
-
 # BISON and ZLIB are required to compile DEF/LEF Parsers.
 find_package(BISON REQUIRED)
 find_package(ZLIB)
 
 bison_target(def_parser
-             def/def.y
+             ${CMAKE_CURRENT_SOURCE_DIR}/def/def.y
              ${CMAKE_CURRENT_BINARY_DIR}/def_parser.cpp
              COMPILE_FLAGS "--name-prefix=defyy"
 )
