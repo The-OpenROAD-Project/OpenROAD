@@ -91,21 +91,6 @@ Partition::~Partition()
   delete[] netTable;
 }
 
-#define USE_MAGIC_INDICIES 1
-
-#if USE_MAGIC_INDICIES
-#define EAST_IDX (macroStor.size())
-#define WEST_IDX (macroStor.size() + 1)
-#define NORTH_IDX (macroStor.size() + 2)
-#define SOUTH_IDX (macroStor.size() + 3)
-
-#define GLOBAL_EAST_IDX (placer->macroStor.size())
-#define GLOBAL_WEST_IDX (placer->macroStor.size() + 1)
-#define GLOBAL_NORTH_IDX (placer->macroStor.size() + 2)
-#define GLOBAL_SOUTH_IDX (placer->macroStor.size() + 3)
-
-#else
-// This "should" work but does not. -cherry
 #define EAST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::East))
 #define WEST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::West))
 #define NORTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::North))
@@ -115,28 +100,13 @@ Partition::~Partition()
 #define GLOBAL_WEST_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::West))
 #define GLOBAL_NORTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::North))
 #define GLOBAL_SOUTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::South))
-#endif
 
 string Partition::GetName(int macroIdx)
 {
   if (macroIdx < macroStor.size()) {
     return macroStor[macroIdx].name();
   } else {
-#if USE_MAGIC_INDICIES
-    if (macroIdx == EAST_IDX) {
-      return "East";
-    } else if (macroIdx == WEST_IDX) {
-      return "West";
-    } else if (macroIdx == NORTH_IDX) {
-      return "North";
-    } else if (macroIdx == SOUTH_IDX) {
-      return "South";
-    } else {
-      return "None";
-    }
-#else
     return coreEdgeString(coreEdgeFromIndex(macroIdx - macroStor.size()));
-#endif
   }
 }
 
