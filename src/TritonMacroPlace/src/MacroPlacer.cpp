@@ -580,7 +580,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
   // 1 for lower
   // 2 for upper
   // 3 for both
-  int* chkArr = new int[partition.macroStor.size()];
+  vector<int> chkArr(partition.macroStor.size());
 
   for (auto& cutLine : cutLineStor) {
     log->info(MPL, 78, "CutLine {:.2f}", cutLine);
@@ -752,7 +752,6 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
     pair<Partition, Partition> curPart(lowerPart, upperPart);
     ret.push_back(curPart);
   }
-  delete[] chkArr;
   log->report("End Partition");
 
   return ret;
@@ -761,68 +760,52 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 void MacroPlacer::FillMacroStor()
 {
   dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbRow> rows = block->getRows();
-
-  Rect dieBox;
-  rows.begin()->getBBox(dieBox);
-
-  // This should be looking at site height. -cherry
-  int cellHeight = dieBox.dy();
   const int dbu = db_->getTech()->getDbUnitsPerMicron();
-
   for (dbInst* inst : block->getInsts()) {
-    // This is broken - it should be looking at master class. -cherry
-    // Skip for standard cells
-    if ((int) inst->getBBox()->getDY() <= cellHeight) {
-      continue;
+    if (inst->getMaster()->getType().isBlock()) {
+      // for Macro cells
+      dbPlacementStatus dps = inst->getPlacementStatus();
+      if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
+        logger_->error(MPL,
+                       3,
+                       "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
+                       inst->getConstName());
+      }
+
+      double curHaloX = 0, curHaloY = 0, curChannelX = 0, curChannelY = 0;
+      auto mlPtr = macroLocalMap.find(inst->getConstName());
+      if (mlPtr == macroLocalMap.end()) {
+        curHaloX = haloX_;
+        curHaloY = haloY_;
+        curChannelX = channelX_;
+        curChannelY = channelY_;
+      } else {
+        MacroLocalInfo& m = mlPtr->second;
+        curHaloX = (m.GetHaloX() == 0) ? haloX_ : m.GetHaloX();
+        curHaloY = (m.GetHaloY() == 0) ? haloY_ : m.GetHaloY();
+        curChannelX = (m.GetChannelX() == 0) ? channelX_ : m.GetChannelX();
+        curChannelY = (m.GetChannelY() == 0) ? channelY_ : m.GetChannelY();
+      }
+
+      int placeX, placeY;
+      inst->getLocation(placeX, placeY);
+
+      macroInstMap[inst] = macroStor.size();
+      Macro macro(1.0 * placeX / dbu,
+                  1.0 * placeY / dbu,
+                  1.0 * inst->getBBox()->getDX() / dbu,
+                  1.0 * inst->getBBox()->getDY() / dbu,
+                  curHaloX,
+                  curHaloY,
+                  curChannelX,
+                  curChannelY,
+                  inst);
+      macroStor.push_back(macro);
     }
-
-    if (!inst->getMaster()->getType().isBlock()) {
-      continue;
-    }
-
-    // for Macro cells
-    dbPlacementStatus dps = inst->getPlacementStatus();
-    if (dps == dbPlacementStatus::NONE || dps == dbPlacementStatus::UNPLACED) {
-      logger_->error(MPL,
-                  3,
-                  "Macro {} is unplaced. Use global_placement to get an initial placement before macro placment.",
-                  inst->getConstName());
-    }
-
-    double curHaloX = 0, curHaloY = 0, curChannelX = 0, curChannelY = 0;
-    auto mlPtr = macroLocalMap.find(inst->getConstName());
-    if (mlPtr == macroLocalMap.end()) {
-      curHaloX = haloX_;
-      curHaloY = haloY_;
-      curChannelX = channelX_;
-      curChannelY = channelY_;
-    } else {
-      MacroLocalInfo& m = mlPtr->second;
-      curHaloX = (m.GetHaloX() == 0) ? haloX_ : m.GetHaloX();
-      curHaloY = (m.GetHaloY() == 0) ? haloY_ : m.GetHaloY();
-      curChannelX = (m.GetChannelX() == 0) ? channelX_ : m.GetChannelX();
-      curChannelY = (m.GetChannelY() == 0) ? channelY_ : m.GetChannelY();
-    }
-
-    int placeX, placeY;
-    inst->getLocation(placeX, placeY);
-
-    macroInstMap[inst] = macroStor.size();
-    Macro macro(1.0 * placeX / dbu,
-                1.0 * placeY / dbu,
-                1.0 * inst->getBBox()->getDX() / dbu,
-                1.0 * inst->getBBox()->getDY() / dbu,
-                curHaloX,
-                curHaloY,
-                curChannelX,
-                curChannelY,
-                inst);
-    macroStor.push_back(macro);
   }
 
   if (macroStor.empty()) {
-    logger_->error(MPL, 4, "Cannot find any macros in this design");
+    logger_->error(MPL, 4, "No macros found.");
   }
 
   logger_->info(MPL, 5, "NumMacros {}", macroStor.size());
@@ -1265,7 +1248,7 @@ void MacroPlacer::findFanins(sta::BfsFwdIterator &bfs,
 }
 
 void MacroPlacer::copyFaninsAcrossRegisters(sta::BfsFwdIterator &bfs,
-                                             VertexFaninMap &vertex_fanins)
+                                            VertexFaninMap &vertex_fanins)
 {
   sta::dbNetwork *network = sta_->getDbNetwork();
   sta::Graph *graph = sta_->ensureGraph();
