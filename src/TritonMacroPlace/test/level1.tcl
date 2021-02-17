@@ -25,7 +25,7 @@ read_def level1.def
 read_sdc gcd.sdc
 }
 
-global_placement -disable_routability_driven
+global_placement -disable_routability_driven -disable_timing_driven
 macro_placement -halo {0.5 0.5}
 
 set def_file [make_result_file level1.def]
