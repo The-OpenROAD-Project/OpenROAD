@@ -312,6 +312,12 @@ InitFloorplan::initFloorplan(double die_lx,
       &&  core_lx >= 0.0 && core_lx >= 0.0 && core_ux >= 0.0 && core_uy >= 0.0) {
     dbSite *site = findSite(site_name);
     if (site) {
+      // Destroy any existing rows.
+      auto rows = block_->getRows();
+      for (dbSet<dbRow>::iterator row_itr = rows.begin();
+           row_itr != rows.end() ;
+           row_itr = dbRow::destroy(row_itr)) ;
+
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // floor core lower left corner to multiple of site dx/dy.
@@ -320,6 +326,10 @@ InitFloorplan::initFloorplan(double die_lx,
       int cux = metersToMfgGrid(core_ux);
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
+
+      // Destroy existing tracks.
+      for (odb::dbTrackGrid *grid : block_->getTrackGrids())
+        dbTrackGrid::destroy(grid);
 
       if (tracks_file && tracks_file[0])
 	makeTracks(tracks_file, die_area);
@@ -338,12 +348,6 @@ InitFloorplan::makeRows(dbSite *site,
 			int core_ux,
 			int core_uy)
 {
-  // Delete any existing rows.
-  auto rows = block_->getRows();
-  for (dbSet<dbRow>::iterator row_itr = rows.begin();
-       row_itr != rows.end() ;
-       row_itr = dbRow::destroy(row_itr)) ;
-
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
   uint site_dx = site->getWidth();
