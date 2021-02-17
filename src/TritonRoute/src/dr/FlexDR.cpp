@@ -636,7 +636,7 @@ void FlexDR::init_via2viaMinLen() {
                     (via2viaMinLen_[i].first)[1],
                     (via2viaMinLen_[i].first)[2],
                     (via2viaMinLen_[i].first)[3]);
-      logger_->info(DRT, 190, "initVia2ViaMinLen_minimumcut "
+      logger_->info(DRT, 190, "initVia2ViaMinLen_minimumcut {}"
                     " zerolen (b, b, b, b) = ({}, {}, {}, {})",
                     getDesign()->getTech()->getLayer(lNum)->getName(),
                     (via2viaMinLen_[i].second)[0],
@@ -1018,7 +1018,7 @@ void FlexDR::init_via2viaMinLenNew() {
     via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   false));
     via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
-      logger_->info(DRT, 192, "initVia2ViaMinLenNew_minimumcut "
+      logger_->info(DRT, 192, "initVia2ViaMinLenNew_minimumcut {}"
                     " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
                     "= ({}, {}, {}, {}, {}, {}, {}, {})", 
                     getDesign()->getTech()->getLayer(lNum)->getName(),
@@ -1057,7 +1057,7 @@ void FlexDR::init_via2viaMinLenNew() {
     via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   false));
     via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
-      logger_->info(DRT, 193, "initVia2ViaMinLenNew_cutSpc "
+      logger_->info(DRT, 193, "initVia2ViaMinLenNew_cutSpc {}"
                     " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
                     "= ({}, {}, {}, {}, {}, {}, {}, {})", 
                     getDesign()->getTech()->getLayer(lNum)->getName(),
