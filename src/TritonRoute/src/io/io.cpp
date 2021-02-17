@@ -4643,6 +4643,7 @@ int io::Parser::Callbacks::getNonDefaultCbk(lefrCallbackType_e type, lefiNonDefa
     unique_ptr<frNonDefaultRule> ndr = make_unique<frNonDefaultRule>();
     ndr->setHardSpacing(l->hasHardspacing());
     ndr->setName(l->name());
+//    cout << "NDR " << ndr->getName() << "\n";
     for (int z = 0; z < l->numLayers(); z++){
         auto lnum = parser->tech->name2layer.at(l->layerName(z))->getLayerNum();
         layerI = lnum/2 -1;
@@ -4650,6 +4651,7 @@ int io::Parser::Callbacks::getNonDefaultCbk(lefrCallbackType_e type, lefiNonDefa
         ndr->setWidth(parser->tech->getDBUPerUU()*l->layerWidth(z), layerI);
         ndr->setSpacing(parser->tech->getDBUPerUU()*l->layerSpacing(z), layerI);
         ndr->setWireExtension(parser->tech->getDBUPerUU()*l->layerWireExtension(z), layerI);
+//        cout << ndr->getWidth(z) << "\n";
     }
     for (int z = 0; z < l->numMinCuts(); z++){
         layerI = parser->tech->name2layer.at(l->cutLayerName(z))->getLayerNum()/2-1;

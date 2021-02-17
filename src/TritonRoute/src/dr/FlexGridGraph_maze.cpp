@@ -552,7 +552,7 @@ frCoord FlexGridGraph::getViaCostsNDR2(frMIdx gridX, frMIdx gridY, frMIdx gridZ,
 //        return getCosts(gridX, gridY, gridZ, dir, layer);
     frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
     frCoord cost = getCosts(gridX, gridY, gridZ, dir, layer);
-    if (cost) return cost;
+    if (cost) return cost; //ERRADO
     frCoord sp;
     int bottomZ;
     frLayer* cutLayer;

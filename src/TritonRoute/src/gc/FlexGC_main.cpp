@@ -319,20 +319,31 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
     return false;
   }
 }
-
+//void print(){
+//    cout << "hiahsuihdhuas\n";
+//}
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
                                      frCoord prl, frCoord distX, frCoord distY, bool isNDR) {
-  bool enableOutput = printMarker_;
   
   // no violation if fixed shapes
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
   }
+  bool enableOutput = printMarker_;
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
   
   auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+//  if (layerNum == 4 && ((gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
+//       (gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000)))
+//      print();
+//  if ((gtl::xl(*rect1) == 142.43*2000 && gtl::xh(*rect1) == 142.77*2000 && gtl::yl(*rect1) == 74.505*2000 && gtl::yh(*rect1) == 74.645*2000 &&
+//       gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
+//       (gtl::xl(*rect2) == 142.43*2000 && gtl::xh(*rect2) == 142.77*2000 && gtl::yl(*rect2) == 74.505*2000 && gtl::yh(*rect2) == 74.645*2000 &&
+//       gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000) )
+//      print();
+      
   if (isNDR){
         frCoord ndrSpc1 = 0, ndrSpc2 = 0;
         if (!rect1->isFixed() && net1->isNondefault())

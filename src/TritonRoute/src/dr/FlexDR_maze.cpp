@@ -2751,9 +2751,9 @@ void FlexDRWorker::routeNet_postAstarUpdate(vector<FlexMazeIdx> &path, vector<Fl
   }
 }
 
-//void print(){
-//    cout << "AAAAAAAAAAAAAAAAAAAAAA\n\n";
-//}
+void print(){
+    cout << "AAAAAAAAAAAAAAAAAAAAAA\n\n";
+}
 void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &points,
                                                const set<FlexMazeIdx> &apMazeIdx) {
   //bool enableOutput = true;
@@ -2784,8 +2784,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
     auto startX = start.x(), startY = start.y(), startZ = start.z();
     auto endX = end.x(), endY = end.y(), endZ = end.z();
 //    if (net->getFrNet()->getName() == "net1" &&
-//            (gridGraph_.xCoord(startX) == 2000*126 && gridGraph_.yCoord(startY) == 2000*36.385 ||
-//               gridGraph_.xCoord(endX) == 2000*126 && gridGraph_.yCoord(endY) == 2000*36.385)){
+//            (gridGraph_.xCoord(startX) == 142.5*2000 && gridGraph_.yCoord(startY) == 74.575*2000 ||
+//               gridGraph_.xCoord(endX) == 142.5*2000 && gridGraph_.yCoord(endY) == 74.575*2000 ))
 //        print();
 //        std::vector<drConnFig*> res;
 //        frBox tbox(2000*126, 2000*36.385, 2000*126, 2000*36.385);
@@ -2982,7 +2982,11 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
 void FlexDRWorker::setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
                                 frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next){
     frNonDefaultRule* ndr = net->getFrNet()->getNondefaultRule();
-    currStyle.setWidth(max((int)currStyle.getWidth(), ndr->getWidth(z)));
+    if (ndr->getWidth(z) > currStyle.getWidth()){
+        currStyle.setWidth(ndr->getWidth(z));
+        currStyle.setBeginExt(ndr->getWidth(z)/2);
+        currStyle.setEndExt(ndr->getWidth(z)/2);
+    }
     if (ndr->getWireExtension(z) > 0){
         bool hasBeginExt = false, hasEndExt = false;
         if (!prev && !next){
