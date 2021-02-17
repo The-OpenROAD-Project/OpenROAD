@@ -140,7 +140,8 @@ add_executable(openroad
 target_compile_options(openroad
   PRIVATE
     -Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security
-    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gnu-zero-variadic-macro-arguments>
 )
 
 # Disable compiler specific extensions like gnu++11.
