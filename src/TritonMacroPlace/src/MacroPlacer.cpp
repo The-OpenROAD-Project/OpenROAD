@@ -279,7 +279,7 @@ void MacroPlacer::placeMacros()
   UpdateMacroPartMap(topLayout, globalMacroPartMap);
 
   if (isTiming_) {
-    topLayout.FillNetlistTable(*this, globalMacroPartMap);
+    topLayout.FillNetlistTable(this, globalMacroPartMap);
     UpdateNetlist(topLayout);
   }
 
@@ -325,7 +325,7 @@ void MacroPlacer::placeMacros()
 
           if (isTiming_) {
             for (auto& curSet : oneSet) {
-              curSet.FillNetlistTable(*this, macroPartMap);
+              curSet.FillNetlistTable(this, macroPartMap);
             }
           }
 
@@ -351,7 +351,7 @@ void MacroPlacer::placeMacros()
 
           if (isTiming_) {
             for (auto& curSet : oneSet) {
-              curSet.FillNetlistTable(*this, macroPartMap);
+              curSet.FillNetlistTable(this, macroPartMap);
             }
           }
 
@@ -379,7 +379,7 @@ void MacroPlacer::placeMacros()
 
             if (isTiming_) {
               for (auto& curSet : oneSet) {
-                curSet.FillNetlistTable(*this, macroPartMap);
+                curSet.FillNetlistTable(this, macroPartMap);
               }
             }
 
@@ -422,7 +422,7 @@ void MacroPlacer::placeMacros()
 
     // update partitons' macro info
     for (auto& curPart : curSet) {
-      curPart.UpdateMacroCoordi(*this);
+      curPart.UpdateMacroCoordi(this);
     }
 
     double curWwl = GetWeightedWL();

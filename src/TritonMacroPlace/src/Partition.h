@@ -75,7 +75,7 @@ class Partition
   Partition(const Partition& prev);
   ~Partition();
 
-  void FillNetlistTable(MacroPlacer& mckt,
+  void FillNetlistTable(MacroPlacer* placer,
                         std::unordered_map<PartClass,
                                            std::vector<int>,
                                            PartClassHash,
@@ -83,7 +83,7 @@ class Partition
   // Call Parquet to have annealing solution
   bool DoAnneal();
   // Update Macro location from MacroPlacer
-  void UpdateMacroCoordi(MacroPlacer& mckt);
+  void UpdateMacroCoordi(MacroPlacer* placer);
 
   PartClass partClass;
   std::vector<Macro> macroStor;
