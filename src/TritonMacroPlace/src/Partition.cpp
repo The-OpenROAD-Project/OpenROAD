@@ -65,20 +65,10 @@ Partition::Partition(PartClass _partClass,
       ly(_ly),
       width(_width),
       height(_height),
-      netTable(0),
+      netTable(nullptr),
       tableCnt(0),
       logger_(log)
 {
-}
-
-Partition::~Partition()
-{
-  if (netTable) {
-    delete[] netTable;
-    netTable = 0;
-    tableCnt = 0;
-  }
-  logger_ = nullptr;
 }
 
 Partition::Partition(const Partition& prev)
@@ -89,7 +79,6 @@ Partition::Partition(const Partition& prev)
       height(prev.height),
       macroStor(prev.macroStor),
       tableCnt(prev.tableCnt),
-      macroMap(prev.macroMap),
       logger_(prev.logger_)
 {
   if (prev.netTable) {
@@ -98,34 +87,18 @@ Partition::Partition(const Partition& prev)
       netTable[i] = prev.netTable[i];
     }
   } else {
-    netTable = 0;
+    netTable = nullptr;
   }
 }
 
-Partition& Partition::operator=(const Partition& prev)
+Partition::~Partition()
 {
-  partClass = prev.partClass;
-  lx = prev.lx;
-  ly = prev.ly;
-  width = prev.width;
-  height = prev.height;
-  macroStor = prev.macroStor;
-  tableCnt = prev.tableCnt;
-  macroMap = prev.macroMap;
-  logger_ = prev.logger_;
-
-  if (prev.netTable) {
-    netTable = new double[tableCnt];
-    for (int i = 0; i < tableCnt; i++) {
-      netTable[i] = prev.netTable[i];
-    }
-  } else {
-    netTable = 0;
-  }
-  return *this;
+  delete[] netTable;
 }
 
-#if 1
+#define USE_MAGIC_INDICIES 1
+
+#if USE_MAGIC_INDICIES
 #define EAST_IDX (macroStor.size())
 #define WEST_IDX (macroStor.size() + 1)
 #define NORTH_IDX (macroStor.size() + 2)
@@ -154,7 +127,7 @@ string Partition::GetName(int macroIdx)
   if (macroIdx < macroStor.size()) {
     return macroStor[macroIdx].name();
   } else {
-#if 1
+#if USE_MAGIC_INDICIES
     if (macroIdx == EAST_IDX) {
       return "East";
     } else if (macroIdx == WEST_IDX) {
@@ -180,7 +153,7 @@ void Partition::FillNetlistTable(
   tableCnt = (macroStor.size() + core_edge_count) * (macroStor.size() + core_edge_count);
   netTable = new double[tableCnt];
   for (int i = 0; i < tableCnt; i++) {
-    netTable[i] = 0.0f;
+    netTable[i] = 0.0;
   }
 
   auto mpPtr = macroPartMap.find(partClass);

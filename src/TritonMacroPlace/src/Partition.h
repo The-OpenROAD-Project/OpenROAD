@@ -67,25 +67,14 @@ struct PartClassEqual;
 class Partition
 {
  public:
-  PartClass partClass;
-  double lx, ly;
-  double width, height;
-  std::vector<Macro> macroStor;
-  double* netTable;
-  int tableCnt;
-  std::unordered_map<std::string, int> macroMap;
-
   Partition(PartClass _partClass,
             double _lx,
             double _ly,
             double _width,
             double _height,
             utl::Logger* log);
-  ~Partition();
   Partition(const Partition& prev);
-
-  // assign operator overloading
-  Partition& operator=(const Partition& prev);
+  ~Partition();
 
   void FillNetlistTable(MacroPlacer& mckt,
                         std::unordered_map<PartClass,
@@ -97,8 +86,16 @@ class Partition
   // Update Macro location from MacroPlacer
   void UpdateMacroCoordi(MacroPlacer& mckt);
 
+  PartClass partClass;
+  std::vector<Macro> macroStor;
+  double lx, ly;
+  double width, height;
+  double* netTable;
+
  private:
   std::string GetName(int macroIdx);
+
+  int tableCnt;
   utl::Logger* logger_;
 };
 
