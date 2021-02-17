@@ -310,8 +310,10 @@ bool Partition::DoAnneal()
   vector<pair<int, int>> netStor;
   vector<int> costStor;
 
-  netStor.reserve((macroStor.size() + core_edge_count) * (macroStor.size() + 3) / 2);
-  costStor.reserve((macroStor.size() + core_edge_count) * (macroStor.size() + 3) / 2);
+  netStor.reserve((macroStor.size() + core_edge_count)
+                  * (macroStor.size() + core_edge_count - 1) / 2);
+  costStor.reserve((macroStor.size() + core_edge_count)
+                   * (macroStor.size() + core_edge_count - 1) / 2);
 
   for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
     for (size_t j = i + 1; j < macroStor.size() + core_edge_count; j++) {
@@ -369,13 +371,31 @@ bool Partition::DoAnneal()
 
   // Feed node structure: terminal Info
   int indexTerm = 0;
-  double posX[core_edge_count] = {0.0, width, width / 2.0, width / 2.0};
-  double posY[core_edge_count] = {height / 2.0, height / 2.0, height, 0.0f};
   for (int i = 0; i < core_edge_count; i++) {
-    pfp::Node tmpPin(coreEdgeString(coreEdgeFromIndex(i)), 0, 1, 1, indexTerm++, true);
-    tmpPin.putX(posX[i]);
-    tmpPin.putY(posY[i]);
-    nodes->putNewTerm(tmpPin);
+    CoreEdge core_edge = coreEdgeFromIndex(i);
+    pfp::Node pin(coreEdgeString(core_edge), 0, 1, 1, indexTerm++, true);
+    double x, y;
+    switch (core_edge) {
+    case CoreEdge::West:
+      x = 0.0;
+      y = height / 2.0;
+      break;
+    case CoreEdge::East:
+      x = width;
+      y = height / 2.0;
+      break;
+    case CoreEdge::North:
+      x = width / 2.0;
+      y = height;
+      break;
+    case CoreEdge::South:
+      x = width / 2.0;
+      y = 0.0;
+      break;
+    }
+    pin.putX(x);
+    pin.putY(y);
+    nodes->putNewTerm(pin);
   }
 
   //////////////////////////////////////////////////////
@@ -402,8 +422,7 @@ bool Partition::DoAnneal()
   // Populate MixedBlockInfoType object
   // It is from DB object
   MixedBlockInfoTypeFromDB dbBlockInfo(db);
-  MixedBlockInfoType* blockInfo
-      = reinterpret_cast<MixedBlockInfoType*>(&dbBlockInfo);
+  MixedBlockInfoType* blockInfo = &dbBlockInfo;
 
   // Populate Command_Line options.
   pfp::Command_Line param;
