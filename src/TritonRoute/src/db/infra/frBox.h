@@ -104,6 +104,11 @@ namespace fr {
       frCoord ySpan = top()   - bottom();
       return std::max(xSpan, ySpan);
     }
+    frArea area() const {
+      frCoord w = right() - left();
+      frCoord h = top() - bottom();
+      return w * (frArea) h;
+    }
     bool contains(const frBox &box, bool incEdges = true) const {;
       if (incEdges) {
         return (box.right() <= ur_.x() && box.left()  >= ll_.x() &&
