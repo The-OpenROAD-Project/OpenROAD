@@ -443,8 +443,8 @@ void SinkClustering::writePlotFile(unsigned groupSize)
 double SinkClustering::getWireLength(std::vector<Point<double>> points)
 {
   std::unique_ptr<PD::PdRev> pd(new PD::PdRev(_logger));
-  std::vector<unsigned> vecX(points.size()+1);
-  std::vector<unsigned> vecY(points.size()+1);
+  std::vector<unsigned> vecX;
+  std::vector<unsigned> vecY;
   double driverX = 0;
   double driverY = 0;
   for (auto point: points) {
@@ -453,15 +453,15 @@ double SinkClustering::getWireLength(std::vector<Point<double>> points)
   }
   driverX /= points.size();
   driverY /= points.size();
-  vecX.emplace_back(driverX*_options->getDbUnits());
-  vecY.emplace_back(driverY*_options->getDbUnits());
+  vecX.emplace_back(driverX * _options->getDbUnits());
+  vecY.emplace_back(driverY * _options->getDbUnits());
 
   for (auto point: points) {
-    vecX.emplace_back(point.getX()*_options->getDbUnits());
-    vecY.emplace_back(point.getY()*_options->getDbUnits());
+    vecX.emplace_back(point.getX() * _options->getDbUnits());
+    vecY.emplace_back(point.getY() * _options->getDbUnits());
   }
   pd->setAlphaPDII(0.8);
-  pd->addNet(points.size()+1, vecX, vecY);
+  pd->addNet(points.size() + 1, vecX, vecY);
   pd->runPDII();
   PD::Tree pdTree = pd->translateTree(0);
   unsigned wl=0;
