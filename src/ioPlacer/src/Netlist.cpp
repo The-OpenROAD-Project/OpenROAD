@@ -48,6 +48,7 @@ Netlist::Netlist()
 void Netlist::addIONet(const IOPin& io_pin,
                        const std::vector<InstancePin>& inst_pins)
 {
+  _db_pin_idx_map[io_pin.getBTerm()] = io_pins_.size();
   io_pins_.push_back(io_pin);
   inst_pins_.insert(inst_pins_.end(), inst_pins.begin(), inst_pins.end());
   net_pointer_.push_back(inst_pins_.size());
@@ -57,8 +58,8 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
 {
   int pin_cnt = 0;
   std::set<int> pin_indices;
-  for (odb::dbBTerm* pin : pin_list) {
-    int pin_idx = findIoPinByName(pin->getName());
+  for (odb::dbBTerm* bterm : pin_list) {
+    int pin_idx = _db_pin_idx_map[bterm];
     if (pin_idx < 0) {
       return pin_cnt;
     }
@@ -137,17 +138,6 @@ int Netlist::numSinksOfIO(int idx)
 int Netlist::numIOPins()
 {
   return io_pins_.size();
-}
-
-int Netlist::findIoPinByName(std::string pin_name)
-{
-  for (int idx = 0; idx < io_pins_.size(); ++idx) {
-    if (io_pins_[idx].getName() == pin_name) {
-      return idx;
-    }
-  }
-
-  return -1;
 }
 
 Rect Netlist::getBB(int idx, Point slot_pos)

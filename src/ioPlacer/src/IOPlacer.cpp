@@ -971,14 +971,14 @@ void IOPlacer::initNetlist()
   odb::dbSet<odb::dbBTerm>::iterator bt_iter;
 
   for (bt_iter = bterms.begin(); bt_iter != bterms.end(); ++bt_iter) {
-    odb::dbBTerm* cur_b_term = *bt_iter;
-    odb::dbNet* net = cur_b_term->getNet();
+    odb::dbBTerm* b_term = *bt_iter;
+    odb::dbNet* net = b_term->getNet();
     if (!net) {
-      logger_->warn(PPL, 38, "Pin {} without net!", cur_b_term->getConstName());
+      logger_->warn(PPL, 38, "Pin {} without net!", b_term->getConstName());
     }
 
     Direction dir = Direction::inout;
-    switch (cur_b_term->getIoType()) {
+    switch (b_term->getIoType()) {
       case odb::dbIoType::INPUT:
         dir = Direction::input;
         break;
@@ -991,15 +991,14 @@ void IOPlacer::initNetlist()
 
     int x_pos = 0;
     int y_pos = 0;
-    cur_b_term->getFirstPinLocation(x_pos, y_pos);
+    b_term->getFirstPinLocation(x_pos, y_pos);
 
     Point bounds(0, 0);
-    IOPin io_pin(cur_b_term->getConstName(),
+    IOPin io_pin(b_term,
                  Point(x_pos, y_pos),
                  dir,
                  bounds,
                  bounds,
-                 net->getConstName(),
                  "FIXED");
 
     std::vector<InstancePin> inst_pins;
