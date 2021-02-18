@@ -1,9 +1,9 @@
-############################################################################
+#############################################################################
+##
+## Copyright (c) 2019, OpenROAD
+## All rights reserved.
 ##
 ## BSD 3-Clause License
-##
-## Copyright (c) 2021, The Regents of the University of California
-## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -30,45 +30,34 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-##
 
 include("openroad")
 
-add_subdirectory(module/ABKCommon)
-add_subdirectory(module/ParquetFP)
-
-find_package(Eigen3 REQUIRED)
+add_subdirectory(src/ParquetFP)
 
 tcl_lib(NAME      TritonMacroPlace
         NAMESPACE mpl
-        I_FILE    src/macroPlace.i
-        SCRIPTS   src/macroPlace.tcl
+        I_FILE    src/MacroPlacer.i
+        SCRIPTS   src/MacroPlacer.tcl
 )
 
-target_sources(TritonMacroPlace 
+target_sources(TritonMacroPlace
   PRIVATE
-    src/circuit.cpp
-    src/partition.cpp
-    src/graph.cpp
-    src/macro.cpp
-    src/TritonMacroPlace.cpp
-    src/macroPlace.cpp
-    src/MakeTritonMp.cpp
-    src/hashUtil.cpp
+    src/Partition.cpp
+    src/MacroPlacer.cpp
+    src/MakeMacroPlacer.cpp
 )
 
-target_include_directories(TritonMacroPlace 
+target_include_directories(TritonMacroPlace
   PUBLIC
-    include 
+    include
 )
-  
+
 target_link_libraries(TritonMacroPlace
   PRIVATE
-    ABKCommon
     ParquetFP
-    Eigen3::Eigen
-    OpenSTA
     dbSta
+    OpenSTA
     opendb
     utility
 )

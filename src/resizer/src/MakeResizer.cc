@@ -41,18 +41,14 @@
 
 namespace ord {
 
-using sta::dbSta;
-using rsz::Resizer;
-using gui::Gui;
-
-Resizer *
+rsz::Resizer *
 makeResizer()
 {
-  return new Resizer;
+  return new rsz::Resizer;
 }
 
 void
-deleteResizer(Resizer *resizer)
+deleteResizer(rsz::Resizer *resizer)
 {
   delete resizer;
 }
