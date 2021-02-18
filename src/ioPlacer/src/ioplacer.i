@@ -151,9 +151,9 @@ add_ver_layer(int layer)
 }
 
 void
-set_pin_group(const char* pin_names)
+add_pin_to_group(odb::dbBTerm* pin, int group_idx)
 {
-  getIOPlacer()->setPinGroup(pin_names);
+  getIOPlacer()->addPinToGroup(pin, group_idx);
 }
 
 void

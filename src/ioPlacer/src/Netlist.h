@@ -155,7 +155,7 @@ class Netlist
   Netlist();
 
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
-  int createIOGroup(const std::vector<std::string>& pin_list);
+  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
   void addIOGroup(const std::set<int>& pin_group);
   std::vector<std::set<int>> getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<std::set<int>>& io_groups) { io_groups_ = io_groups; }

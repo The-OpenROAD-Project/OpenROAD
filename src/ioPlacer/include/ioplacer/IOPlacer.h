@@ -105,7 +105,7 @@ struct Constraint
   }
 };
 
-typedef std::vector<std::string> Group;
+typedef std::vector<odb::dbBTerm*> PinGroup;
 
 class IOPlacer
 {
@@ -126,7 +126,7 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
-  void setPinGroup(const char* names);
+  void addPinToGroup(odb::dbBTerm* pin, int group_idx);
 
  private:
   Netlist netlist_;
@@ -143,7 +143,7 @@ class IOPlacer
   bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<Group> groups_;
+  std::vector<PinGroup> pin_groups_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;

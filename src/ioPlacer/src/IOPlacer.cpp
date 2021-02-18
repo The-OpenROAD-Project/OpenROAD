@@ -66,7 +66,7 @@ void IOPlacer::clear()
   excluded_intervals_.clear();
   constraints_.clear();
   netlist_.clear();
-  groups_.clear();
+  pin_groups_.clear();
   *parms_ = Parameters();
 }
 
@@ -226,7 +226,7 @@ void IOPlacer::initIOLists()
     }
   });
 
-  for (Group pin_group : groups_) {
+  for (PinGroup pin_group : pin_groups_) {
     netlist_io_pins_.createIOGroup(pin_group);
   }
 }
@@ -780,18 +780,15 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
-void IOPlacer::setPinGroup(const char* names)
+void IOPlacer::addPinToGroup(odb::dbBTerm* pin, int group_idx)
 {
-  std::stringstream ss(names);
-  std::istream_iterator<std::string> begin(ss);
-  std::istream_iterator<std::string> end;
-  std::vector<std::string> pins(begin, end);
-
-  Group group;
-  for (std::string pin : pins) {
+  if (group_idx >= pin_groups_.size()) {
+    PinGroup group;
     group.push_back(pin);
+    pin_groups_.push_back(group);
+  } else {
+    pin_groups_[group_idx].push_back(pin);
   }
-  groups_.push_back(group);
 }
 
 void IOPlacer::run(bool random_mode)
@@ -1022,12 +1019,10 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (Group pin_group : groups_) {
+  for (PinGroup pin_group : pin_groups_) {
     int group_created = netlist_.createIOGroup(pin_group); 
     if(group_created == pin_group.size()) {
       group_idx++;
-    } else {
-      logger_->error(PPL, 43, "Pin {} not found in group {}", pin_group[group_created], group_idx);
     }
   }
 }
