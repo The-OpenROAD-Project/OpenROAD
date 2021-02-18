@@ -20,7 +20,8 @@ if (Qt5_FOUND)
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
 
-  add_library(gui
+  target_sources(gui
+   PRIVATE
     src/layoutViewer.cpp
     src/mainWindow.cpp
     src/scriptWidget.cpp
@@ -31,7 +32,6 @@ if (Qt5_FOUND)
     src/congestionSetupDialog.cpp
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
-    ${GUI_WRAP}
   )
 
   target_link_libraries(gui
@@ -50,13 +50,8 @@ endif()
 
 target_include_directories(gui
   PUBLIC
-    ${GUI_HOME}/include
-    ${OPENDB_HOME}/include
+    include
   PRIVATE
-    ${OPENROAD_HOME}/include
+    ../FastRoute/include #Ugly but needed till we get FastRoute Data from OpenDb
     ${OPENSTA_HOME}/include
-    ${FASTROUTE_HOME}/include
-    ${Boost_INCLUDE_DIRS}
-    ${CMAKE_BINARY_DIR}
-    ${AUTOGEN_BUILD_DIR}/include
 )
