@@ -3713,6 +3713,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         case odb::dbMasterType::NONE:
         break;
         case odb::dbMasterType::CORE:
+        case odb::dbMasterType::CORE_FEEDTHRU:
         tmpBlock->setMacroClass(MacroClassEnum::CORE);
         break;
         case odb::dbMasterType::CORE_TIEHIGH:
@@ -3731,22 +3732,39 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
         break;
         case odb::dbMasterType::COVER:
+        case odb::dbMasterType::COVER_BUMP:
         tmpBlock->setMacroClass(MacroClassEnum::COVER);
         break;
         case odb::dbMasterType::BLOCK:
+        case odb::dbMasterType::BLOCK_BLACKBOX:
+        case odb::dbMasterType::BLOCK_SOFT:
+        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+        break;
         tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
         break;
         case odb::dbMasterType::PAD:
         tmpBlock->setMacroClass(MacroClassEnum::PAD);
         break;
-        case odb::dbMasterType::RING:
-        tmpBlock->setMacroClass(MacroClassEnum::RING);
+        case odb::dbMasterType::PAD_INPUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
+        break;
+        case odb::dbMasterType::PAD_OUTPUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
+        break;
+        case odb::dbMasterType::PAD_INOUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
         break;
         case odb::dbMasterType::PAD_POWER:
         tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
         break;
         case odb::dbMasterType::PAD_SPACER:
         tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+        break;
+        case odb::dbMasterType::PAD_AREAIO:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
+        break;
+        case odb::dbMasterType::RING:
+        tmpBlock->setMacroClass(MacroClassEnum::RING);
         break;
         case odb::dbMasterType::ENDCAP:
         tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
@@ -3768,12 +3786,6 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         break;
         case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
         tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
-        break;
-        default:
-        logger->warn(DRT,
-                       137,
-                       "unknown macroClass {}, skipped macroClass property",
-                       master->getType().getString());
         break;
       }
 
