@@ -126,7 +126,8 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
-  void addPinToGroup(odb::dbBTerm* pin, int group_idx);
+  PinGroup* createPinGroup();
+  void addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group);
 
  private:
   Netlist netlist_;

@@ -245,10 +245,11 @@ proc place_pins { args } {
     set group_idx 0
     foreach group $pin_groups {
       utl::info PPL 41 "Pin group $group_idx: \[$group\]"
+      set pin_group [ppl::create_pin_group]
       foreach pin_name $group {
         set db_bterm [$dbBlock findBTerm $pin_name]
         if { $db_bterm != "NULL" } {
-          ppl::add_pin_to_group $db_bterm $group_idx
+          ppl::add_pin_to_group $db_bterm $pin_group
         } else {
           utl::error PPL 43 "Pin $pin_name not found in group $group_idx"
         }

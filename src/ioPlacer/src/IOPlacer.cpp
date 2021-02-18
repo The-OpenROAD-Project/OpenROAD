@@ -779,15 +779,16 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
-void IOPlacer::addPinToGroup(odb::dbBTerm* pin, int group_idx)
+PinGroup* IOPlacer::createPinGroup()
 {
-  if (group_idx >= pin_groups_.size()) {
-    PinGroup group;
-    group.push_back(pin);
-    pin_groups_.push_back(group);
-  } else {
-    pin_groups_[group_idx].push_back(pin);
-  }
+  pin_groups_.push_back(PinGroup());
+  PinGroup* group = &pin_groups_.back();
+  return group;
+}
+
+void IOPlacer::addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group)
+{
+  pin_group->push_back(pin);
 }
 
 void IOPlacer::run(bool random_mode)
