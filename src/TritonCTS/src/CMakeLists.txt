@@ -33,59 +33,46 @@
 ##
 ###############################################################################
 
+include("openroad")
+
 project(TritonCTS)
 
 find_package(LEMON REQUIRED)
 
-set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tritoncts_wrap.cpp)
-set(TRITONCTS_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonctsTclInitVar.cc)
-
-add_custom_command(OUTPUT ${TRITONCTS_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix cts -I${TRITONCTS_HOME}/include -o ${TRITONCTS_WRAP} ${TRITONCTS_HOME}/src/tritoncts.i
-        WORKING_DIRECTORY ${TRITONCTS_HOME}/src
-        DEPENDS
-        ${TRITONCTS_HOME}/src/tritoncts.i
-        ${TRITONCTS_HOME}/include/tritoncts/TritonCTS.h
-        ${OPENROAD_HOME}/src/Exception.i
+tcl_lib(NAME      TritonCTS
+        NAMESPACE cts
+        I_FILE    tritoncts.i
+        SCRIPTS   tritoncts.tcl
 )
 
-add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
-        COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TRITONCTS_TCL_INIT} tritoncts_tcl_inits ${TRITONCTS_HOME}/src/tritoncts.tcl
-        WORKING_DIRECTORY ${TRITONCTS_HOME}/src
-        DEPENDS ${TRITONCTS_HOME}/src/tritoncts.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+target_sources(TritonCTS
+  PRIVATE
+    Clock.cpp
+    HTreeBuilder.cpp
+    MakeTritoncts.cpp
+    PostCtsOpt.cpp
+    SinkClustering.cpp
+    StaEngine.cpp
+    TechChar.cpp
+    TritonCTS.cpp
+    clustering.cpp
 )
-
-set(SRC_FILES
-  Clock.cpp
-  HTreeBuilder.cpp
-  MakeTritoncts.cpp
-  PostCtsOpt.cpp
-  SinkClustering.cpp
-  StaEngine.cpp
-  TechChar.cpp
-  TritonCTS.cpp
-  clustering.cpp
-)
-
-add_library(TritonCTS ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
 target_include_directories(TritonCTS
   PUBLIC
-  PUBLIC ${TRITONCTS_HOME}/include
+    ../include
   PRIVATE
-  ${OPENDB_HOME}/include
-  ${OPENDB_HOME}/include/opendb
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${RESIZER_HOME}/include
-  ${OPENROAD_HOME}/src/flute3
-  ${TRITONCTS_HOME}/src
-  ${TCL_INCLUDE_PATH}
-  ${LEMON_INCLUDE_DIRS}
+    .
+    ${LEMON_INCLUDE_DIRS}
  )
 
 target_link_libraries(TritonCTS 
-  PUBLIC
-  utility
+  PRIVATE
+    opendb
+    dbSta
+    OpenSTA
+    resizer
+    flute
+    pdrev
+    utility
  )

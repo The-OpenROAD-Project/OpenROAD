@@ -66,12 +66,14 @@ class ClockInst
             InstType type,
             DBU x,
             DBU y,
-            odb::dbITerm* pinObj = nullptr)
+            odb::dbITerm* pinObj = nullptr,
+            float inputCap = 0.0)
       : _name(name),
         _master(master),
         _type(type),
         _location(x, y),
-        _inputPinObj(pinObj)
+        _inputPinObj(pinObj),
+        _inputCap(inputCap)
   {
   }
 
@@ -85,6 +87,8 @@ class ClockInst
   odb::dbInst* getDbInst() const { return _instObj; }
   void setInputPinObj(odb::dbITerm* pin) { _inputPinObj = pin; }
   odb::dbITerm* getDbInputPin() const { return _inputPinObj; }
+  void setInputCap(float cap) { _inputCap = cap; }
+  float getInputCap() const { return _inputCap;}
 
   bool isClockBuffer() const { return _type == CLOCK_BUFFER; }
 
@@ -95,6 +99,7 @@ class ClockInst
   Point<DBU> _location;
   odb::dbInst* _instObj = nullptr;
   odb::dbITerm* _inputPinObj = nullptr;
+  float _inputCap;
 };
 
 //-----------------------------------------------------------------------------
@@ -192,9 +197,9 @@ class Clock
     _sinks.emplace_back(name, "", CLOCK_SINK, x, y);
   }
 
-  void addSink(const std::string& name, DBU x, DBU y, odb::dbITerm* pinObj)
+  void addSink(const std::string& name, DBU x, DBU y, odb::dbITerm* pinObj, float inputCap)
   {
-    _sinks.emplace_back(name, "", CLOCK_SINK, x, y, pinObj);
+    _sinks.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
   }
 
   std::string getName() const { return _netName; }

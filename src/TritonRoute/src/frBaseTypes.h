@@ -34,6 +34,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cstdint>
 #include "utility/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -44,6 +45,7 @@ namespace fr {
   const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
+  using frArea = uint64_t;
   using frUInt4 = unsigned int;
   using frDist  = double;
   using frString = std::string;

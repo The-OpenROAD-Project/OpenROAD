@@ -33,46 +33,33 @@
 ##
 ############################################################################
 
-set(RESIZER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Resizer_wrap.cc)
-set(RESIZER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ResizerTclInitVar.cc)
+include("openroad")
 
-add_custom_command(OUTPUT ${RESIZER_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix rsz -I${OPENROAD_HOME}/include -o ${RESIZER_WRAP} ${RESIZER_HOME}/src/Resizer.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${RESIZER_WRAP}
-  WORKING_DIRECTORY ${RESIZER_HOME}/src
-  DEPENDS
-  ${RESIZER_HOME}/src/Resizer.i
-  ${RESIZER_HOME}/include/resizer/Resizer.hh
-  )
+tcl_lib(NAME      resizer
+        NAMESPACE rsz
+        I_FILE    Resizer.i
+        SCRIPTS   Resizer.tcl
+)
 
-add_custom_command(OUTPUT ${RESIZER_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${RESIZER_TCL_INIT} resizer_tcl_inits Resizer.tcl
-  WORKING_DIRECTORY ${RESIZER_HOME}/src
-  DEPENDS Resizer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_library(resizer
-  MakeResizer.cc
-  Resizer.cc
-  Rebuffer.cc
-  SteinerTree.cc
-  ${RESIZER_WRAP}
-  ${RESIZER_TCL_INIT}
-  )
+target_sources(resizer
+  PRIVATE
+    MakeResizer.cc
+    Resizer.cc
+    Rebuffer.cc
+    SteinerTree.cc
+)
 
 target_include_directories(resizer
-  PUBLIC ${RESIZER_HOME}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENROAD_HOME}/src/flute3
-  ${GUI_HOME}/include
-  ${TCL_INCLUDE_PATH}
-  )
+  PUBLIC
+    ../include
+)
 
 target_link_libraries(resizer
   PUBLIC
-  utility
-  )
+    flute
+    opendb
+    OpenSTA
+    dbSta
+    gui
+    utility
+)

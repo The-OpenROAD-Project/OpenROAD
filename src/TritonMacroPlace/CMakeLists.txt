@@ -1,77 +1,63 @@
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+#############################################################################
+##
+## Copyright (c) 2019, OpenROAD
+## All rights reserved.
+##
+## BSD 3-Clause License
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
 
-set(ABKCOMMON_HOME ${MPLACE_HOME}/module/ABKCommon )
-set(PARQUET_HOME ${MPLACE_HOME}/module/ParquetFP )
+include("openroad")
 
-add_subdirectory(${ABKCOMMON_HOME})
-add_subdirectory(${PARQUET_HOME})
+add_subdirectory(src/ParquetFP)
 
-find_package(Eigen3 REQUIRED)
-
-# for cimg
-find_package(Threads REQUIRED)
-
-
-############################################################
-# Create a library 
-############################################################
-
-set(MPLACE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TritonMp_wrap.cc)
-set(MPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonMpTclInitVar.cc)
-
-
-add_custom_command(OUTPUT ${MPLACE_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix mpl -o ${MPLACE_WRAP} -I${MPLACE_HOME}/include ${MPLACE_HOME}/src/macroPlace.i   
-  WORKING_DIRECTORY ${MPLACE_HOME}
-  DEPENDS ${MPLACE_HOME}/src/macroPlace.i "src/TritonMacroPlace.cpp" "include/tritonmp/TritonMacroPlace.h"
+tcl_lib(NAME      TritonMacroPlace
+        NAMESPACE mpl
+        I_FILE    src/MacroPlacer.i
+        SCRIPTS   src/MacroPlacer.tcl
 )
 
-add_custom_command(OUTPUT ${MPLACE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${MPLACE_TCL_INIT} tritonmp_tcl_inits ${MPLACE_HOME}/src/macroPlace.tcl
-  WORKING_DIRECTORY ${MPLACE_HOME}/src
-  DEPENDS ${MPLACE_HOME}/src/macroPlace.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+target_sources(TritonMacroPlace
+  PRIVATE
+    src/Partition.cpp
+    src/MacroPlacer.cpp
+    src/MakeMacroPlacer.cpp
 )
 
-############################################################
-# Create an library 
-############################################################
-add_library( TritonMacroPlace 
-  src/circuit.cpp
-  src/partition.cpp
-  src/graph.cpp
-  src/macro.cpp
-  src/TritonMacroPlace.cpp
-  src/macroPlace.cpp
-  src/MakeTritonMp.cpp
-  src/hashUtil.cpp
-  ${MPLACE_WRAP}
-  ${MPLACE_TCL_INIT}
+target_include_directories(TritonMacroPlace
+  PUBLIC
+    include
 )
 
-############################################################
-# include directories 
-############################################################
-
-target_include_directories( TritonMacroPlace 
-PUBLIC
-  ${MPLACE_HOME}/src
-  ${MPLACE_HOME}/include
-  utility 
-
-PRIVATE
-  ${ABKCOMMON_HOME}
-  ${PARQUET_HOME}/src
-
-  ${OPENSTA_HOME}/include
-
-  ${OPENDB_HOME}/include
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-
-  ${TCL_INCLUDE_PATH}
-  )
-
-target_link_libraries( TritonMacroPlace
-  Eigen3::Eigen
-  utility
-  )
+target_link_libraries(TritonMacroPlace
+  PRIVATE
+    ParquetFP
+    dbSta
+    OpenSTA
+    opendb
+    utility
+)

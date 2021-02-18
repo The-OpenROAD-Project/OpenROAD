@@ -31,9 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "darr.h"
 #include "db.h"
-#include "extRCap.h"
-#include "extSpef.h"
-#include "exttree.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/exttree.h"
 
 namespace rcx {
 

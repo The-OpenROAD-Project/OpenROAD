@@ -34,7 +34,7 @@
 #include <stdio.h>
 
 #include "db.h"
-#include "extRCap.h"
+#include "OpenRCX/extRCap.h"
 #include "utility/Logger.h"
 
 namespace rcx {

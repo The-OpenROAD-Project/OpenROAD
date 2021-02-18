@@ -135,11 +135,7 @@ namespace odb {
         {% for innerField in klass.structs[0].fields %}
           {% for component in innerField.components %}
             {% if 'no-diff' not in innerField.flags %}
-              {% if innerField.table %}
-                DIFF_TABLE({{field.name}}->{{component}});
-              {% else %}
-                DIFF_FIELD({{field.name}}.{{component}});
-              {% endif %}
+              DIFF_FIELD({{field.name}}.{{component}});
             {% endif %}
           {% endfor %}
         {% endfor %}
@@ -147,9 +143,11 @@ namespace odb {
         {% for component in field.components %}
           {% if 'no-diff' not in field.flags %}
             {% if field.table %}
-              DIFF_TABLE({{component}});
+              DIFF_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
+            {% elif 'isHashTable' in field and field.isHashTable %}
+              DIFF_HASH_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
             {% else %}
-              DIFF_FIELD({{component}});
+              DIFF_FIELD{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
             {% endif %}
           {% endif %}
         {% endfor %}
@@ -167,11 +165,7 @@ namespace odb {
         {% for innerField in klass.structs[0].fields %}
           {% for component in innerField.components %}
             {% if 'no-diff' not in innerField.flags %}
-              {% if innerField.table %}
-                DIFF_OUT_TABLE({{field.name}}->{{component}});
-              {% else %}
-                DIFF_OUT_FIELD({{field.name}}.{{component}});
-              {% endif %}
+              DIFF_OUT_FIELD({{field.name}}.{{component}});
             {% endif %}
           {% endfor %}
         {% endfor %}
@@ -179,9 +173,11 @@ namespace odb {
         {% for component in field.components %}
           {% if 'no-diff' not in field.flags %}
             {% if field.table %}
-              DIFF_OUT_TABLE({{component}});
+              DIFF_OUT_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
+            {% elif field.isHashTable %}
+              DIFF_OUT_HASH_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
             {% else %}
-              DIFF_OUT_FIELD({{component}});
+              DIFF_OUT_FIELD{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
             {% endif %}
           {% endif %}
         {% endfor %}
@@ -195,9 +191,18 @@ namespace odb {
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
   {
     {% for field in klass.fields %}
-      {% if field.table %}
+      {% if field.bitFields %}
+        {% if field.numBits == 32 %}
+          uint32_t* {{field.name}}_bit_field = (uint32_t*) &{{field.name}};
+        {% else %}
+          uint64_t* {{field.name}}_bit_field = (uint64_t*) &{{field.name}};
+        {% endif %}
+        *{{field.name}}_bit_field = 0;
+      {% elif field.table %}
         {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
         ZALLOCATED({{field.name}});
+      {% elif field.isHashTable %}
+        {{field.name}}.setTable({{field.table_name}});
       {% endif %}
     {% endfor %}
     //User Code Begin constructor
@@ -210,6 +215,8 @@ namespace odb {
         {% if field.table %}
           {{field.name}} = new dbTable<_{{field.type}}>(db, this, *r.{{field.name}});
           ZALLOCATED({{field.name}});
+        {% elif field.isHashTable %}
+          {{field.name}}.setTable({{field.table_name}});
         {% else %}
           {{component}}=r.{{component}};
         {% endif %}
@@ -235,7 +242,11 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+        {% if field.numBits == 32 %}
+          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
+        {% else %}
+          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
+        {% endif %}
         stream >> *{{field.name}}_bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
@@ -251,7 +262,11 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        uint* {{field.name}}_bit_field = (uint*) &obj.{{field.name}};
+        {% if field.numBits == 32 %}
+          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
+        {% else %}
+          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
+        {% endif %}
         stream << *{{field.name}}_bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
@@ -293,7 +308,8 @@ namespace odb {
         delete {{field.name}};
       {% endif %}
     {% endfor %}
-    
+    //User Code Begin Destructor
+    //User Code End Destructor
   }
   ////////////////////////////////////////////////////////////////////
   //
@@ -309,11 +325,13 @@ namespace odb {
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
     
         {% if field.isRef %}
+    
           obj->{{field.name}}={{field.name}}->getImpl()->getOID();
+    
         {% else %}
           obj->{{field.name}}={{field.name}};
+    
         {% endif %}
-
       }
     {% endif %}
   
@@ -323,6 +341,18 @@ namespace odb {
         {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.type}}>(obj, obj->{{field.name}});
+        }
+      {% elif field.isDbVector %}
+        void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
+        {
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          tbl = obj->{{field.name}};
+        }
+      {% elif field.isHashTable %}
+        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}(const char* name) const
+        {
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
         }
       {% else %}
         {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({% if field.isHashTable %}const char* name{% endif %}) const
@@ -338,39 +368,38 @@ namespace odb {
           {% else %}
             return obj->{{field.name}};
           {% endif %}
-      }
+        }
       {% endif %}
     {% endif %}
-
-
   {% endfor %}
 
 
 
   {% for _struct in klass.structs %}
-
-    {% if  _struct.in_class %}
+  
+    {%  if  _struct.in_class %}
       {% for field in _struct.fields %}
       
-        {% if 'no-set' not in field.flags %}
-          void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
-          {
-        
-            _{{klass.name}}* obj = (_{{klass.name}}*)this;
-        
-            obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
-        
-          }
-        {% endif %}
+      {% if 'no-set' not in field.flags %}
+        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+        {
       
-        {% if 'no-get' not in field.flags %}
-          {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}() const
-          {
-            _{{klass.name}}* obj = (_{{klass.name}}*)this;
-            
-            return obj->{{_struct.in_class_name}}.{{field.name}};
-          }
-        {% endif %}
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+      
+          obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
+      
+        }
+      {% endif %}
+    
+      {% if 'no-get' not in field.flags %}
+        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}() const
+        {
+          _{{klass.name}}* obj = (_{{klass.name}}*)this;
+          
+          return obj->{{_struct.in_class_name}}.{{field.name}};
+        }
+      {% endif %}
+    
     
       {% endfor %}
     {% endif %}

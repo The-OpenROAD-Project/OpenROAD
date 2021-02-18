@@ -2,6 +2,7 @@
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets)
 
+include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if (Qt5_FOUND)
@@ -12,14 +13,9 @@ if (Qt5_FOUND)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
-  add_custom_command(OUTPUT ${GUI_WRAP}
-    COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix gui
-            -I${OPENROAD_HOME}/include -o ${GUI_WRAP} ${GUI_HOME}/src/gui.i
-    COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${GUI_WRAP}
-    WORKING_DIRECTORY ${GUI_HOME}/src
-    DEPENDS
-      ${GUI_HOME}/src/gui.i
-      ${GUI_HOME}/include/gui/gui.h
+  tcl_lib(NAME      gui
+          NAMESPACE gui
+          I_FILE    src/gui.i
   )
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
@@ -39,10 +35,13 @@ if (Qt5_FOUND)
   )
 
   target_link_libraries(gui
-    opendb
-    Qt5::Core
-    Qt5::Widgets
-    utility
+    PUBLIC
+      opendb
+    PRIVATE
+      Qt5::Core
+      Qt5::Widgets
+      utility
+      Boost::boost
   )
 else()
   message(STATUS "GUI is not enabled")
