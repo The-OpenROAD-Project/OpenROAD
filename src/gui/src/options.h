@@ -56,6 +56,12 @@ class Options
   virtual bool areRowsVisible() = 0;
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
+
+  virtual bool isCongestionVisible() const = 0;
+  virtual bool showHorizontalCongestion() const = 0;
+  virtual bool showVerticalCongestion() const = 0;
+  virtual float getMinCongestionToShow() const = 0;
+  virtual QColor getCongestionColor(float congestion) const = 0;
 };
 
 }  // namespace gui

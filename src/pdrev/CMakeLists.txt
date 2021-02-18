@@ -34,21 +34,17 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-set(LIB_NAME "pdrev")
-
-set(SRC_FILES
+add_library(pdrev
   src/graph.cpp
   src/pdrev.cpp
 )
 
-add_LIBRARY(${LIB_NAME} STATIC ${SRC_FILES})
-
-target_include_directories(${LIB_NAME} 
+target_include_directories(pdrev
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include)
+    include
+)
 
-target_link_libraries(${LIB_NAME}
-  utility
-  )
+target_link_libraries(pdrev
+  PUBLIC
+    utility
+)

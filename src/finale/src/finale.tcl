@@ -64,6 +64,6 @@ proc density_fill { args } {
     set fill_area [ord::get_db_core]
   }
 
-  finale::density_fill_cmd $rules_file $fill_area
+  fin::density_fill_cmd $rules_file $fill_area
 }
 
