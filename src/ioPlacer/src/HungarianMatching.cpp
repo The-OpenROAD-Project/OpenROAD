@@ -73,13 +73,15 @@ void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
       continue;
     }
     hungarian_matrix_[slot_index].resize(num_io_pins_);
-    netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+    int idx = 0;
+    for (IOPin& io_pin : netlist_.getIOPins()) {
       if (!io_pin.isInGroup()) {
         int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }
-    });
+      idx++;
+    }
     slot_index++;
   }
 }
@@ -94,7 +96,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   size_t rows = non_blocked_slots_;
   size_t col = 0;
   int slot_index = 0;
-  netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+  for (IOPin& io_pin : netlist_.getIOPins()) {
     if (!io_pin.isInGroup()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
@@ -119,7 +121,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
       }
       col++;
     }
-  });
+  }
 }
 
 void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constraints)
@@ -132,9 +134,9 @@ void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constra
 
 void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constraints)
 {
-  netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+  for (std::set<int>& io_group : netlist_.getIOGroups()) {
     group_size_ = (io_group.size() > group_size_) ? group_size_ : io_group.size();
-  });
+  }
 
   if (group_size_ > 0) {
     for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
@@ -166,7 +168,7 @@ void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constrain
       }
 
       hungarian_matrix_[slot_index].resize(num_pin_groups_);
-      netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+      for (std::set<int>& io_group : netlist_.getIOGroups()) {
         int hpwl = 0;
         int pin_count = 0;
         for (int io_idx : io_group) {
@@ -174,7 +176,7 @@ void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constrain
           hungarian_matrix_[slot_index][groupIndex] = hpwl;
         }
         groupIndex++;
-      });
+      }
       slot_index++;
     }
   }
@@ -188,7 +190,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
   size_t rows = group_slots_;
   size_t col = 0;
   int slot_index = 0;
-  netlist_.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+  for (std::set<int>& io_group : netlist_.getIOGroups()) {
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       while (slots_[slot_index].blocked && slot_index < slots_.size())
@@ -211,7 +213,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
       break;
     }
     col++;
-  });
+  }
 
   hungarian_matrix_.clear();
   assignment_.clear();

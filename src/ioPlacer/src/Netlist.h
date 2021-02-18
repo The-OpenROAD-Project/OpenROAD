@@ -155,19 +155,14 @@ class Netlist
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
   void addIOGroup(const std::set<int>& pin_group);
-  std::vector<std::set<int>> getIOGroups() { return io_groups_; }
+  std::vector<std::set<int>>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<std::set<int>>& io_groups) { io_groups_ = io_groups; }
-
-  void forEachIOPin(std::function<void(int, IOPin&)>);
-  void forEachIOPin(std::function<void(int, const IOPin&)>) const;
-  void forEachIOGroup(std::function<void(int, std::set<int>&)>);
-  void forEachIOGroup(std::function<void(int, const std::set<int>&)>) const;
-  void forEachSinkOfIO(int, std::function<void(InstancePin&)>);
-  void forEachSinkOfIO(int, std::function<void(const InstancePin&)>) const;
   int numSinksOfIO(int);
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }
+  std::vector<IOPin>& getIOPins() { return io_pins_; }
   IOPin& getIoPin(int idx) { return io_pins_[idx]; }
+  void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);

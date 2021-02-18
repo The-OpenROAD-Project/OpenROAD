@@ -135,8 +135,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
   std::vector<int> vIOs(num_i_os);
 
   std::vector<InstancePin> instPins;
-  netlist_.forEachSinkOfIO(
-      idx, [&](InstancePin& inst_pin) { instPins.push_back(inst_pin); });
+  netlist_.getSinksOfIO(idx, instPins);
   if (sections_.size() < 1) {
     Section s = {Point(0, 0)};
     sections_.push_back(s);
@@ -153,14 +152,14 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       std::shuffle(vSlots.begin(), vSlots.end(), g);
 
-      netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+      for (IOPin& io_pin : netlist_.getIOPins()) {
         int b = vSlots[0];
         io_pin.setPos(valid_slots.at(b).pos);
         io_pin.setLayer(valid_slots.at(b).layer);
         assignment_.push_back(io_pin);
         sections_[0].net.addIONet(io_pin, instPins);
         vSlots.erase(vSlots.begin());
-      });
+      }
       break;
     case RandomMode::even:
       logger_->report("RandomMode Even");
@@ -171,14 +170,14 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       std::shuffle(vIOs.begin(), vIOs.end(), g);
 
-      netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+      for (IOPin& io_pin : netlist_.getIOPins()) {
         int b = vIOs[0];
         io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
         io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
         assignment_.push_back(io_pin);
         sections_[0].net.addIONet(io_pin, instPins);
         vIOs.erase(vIOs.begin());
-      });
+      }
       break;
     case RandomMode::group:
       logger_->report("RandomMode Group");
@@ -197,14 +196,14 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       std::shuffle(vIOs.begin(), vIOs.end(), g);
 
-      netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+      for (IOPin& io_pin : netlist_.getIOPins()) {
         int b = vIOs[0];
         io_pin.setPos(valid_slots.at(b).pos);
         io_pin.setLayer(valid_slots.at(b).layer);
         assignment_.push_back(io_pin);
         sections_[0].net.addIONet(io_pin, instPins);
         vIOs.erase(vIOs.begin());
-      });
+      }
       break;
     default:
       logger_->error(PPL, 39, "Random mode not found");
@@ -214,17 +213,17 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
 void IOPlacer::initIOLists()
 {
-  netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+  int idx = 0;
+  for (IOPin& io_pin : netlist_.getIOPins()) {
     std::vector<InstancePin> inst_pins_vector;
     if (netlist_.numSinksOfIO(idx) != 0) {
-      netlist_.forEachSinkOfIO(idx, [&](InstancePin& inst_pin) {
-        inst_pins_vector.push_back(inst_pin);
-      });
+      netlist_.getSinksOfIO(idx, inst_pins_vector);
       netlist_io_pins_.addIONet(io_pin, inst_pins_vector);
     } else {
       zero_sink_ios_.push_back(io_pin);
     }
-  });
+    idx++;
+  }
 
   for (PinGroup pin_group : pin_groups_) {
     netlist_io_pins_.createIOGroup(pin_group);
@@ -448,7 +447,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
 
   int total_groups_assigned = 0;
 
-  net.forEachIOGroup([&](int idx, std::set<int>& io_group) {
+  for (std::set<int>& io_group : net.getIOGroups()) {
     int group_size = io_group.size();
     bool group_assigned = false;
     std::vector<int> dst(sections.size(), 0);
@@ -466,9 +465,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
           IOPin io_pin = net.getIoPin(pin_idx);
 
           std::vector<InstancePin> inst_pins_vector;
-          net.forEachSinkOfIO(pin_idx, [&](InstancePin& inst_pin) {
-            inst_pins_vector.push_back(inst_pin);
-          });
+          net.getSinksOfIO(pin_idx, inst_pins_vector);
 
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.insert(sections[i].net.numIOPins()-1);
@@ -488,7 +485,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
     } else {
       total_groups_assigned++;
     }
-  });
+  }
 
   if (total_groups_assigned != net.numIOGroups()) {
     logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
@@ -502,7 +499,8 @@ bool IOPlacer::assignPinsSections()
   createSections();
   int total_pins_assigned = 0;
   assignGroupsToSections(total_pins_assigned);
-  net.forEachIOPin([&](int idx, IOPin& io_pin) {
+  int idx = 0;
+  for (IOPin& io_pin : net.getIOPins()) {
     if (!io_pin.isInGroup()) {
       bool pin_assigned = false;
       std::vector<int> dst(sections.size());
@@ -511,9 +509,7 @@ bool IOPlacer::assignPinsSections()
         dst[i] = net.computeIONetHPWL(
             idx, sections[i].pos, sections[i].edge, constraints_);
       }
-      net.forEachSinkOfIO(idx, [&](InstancePin& inst_pin) {
-        inst_pins_vector.push_back(inst_pin);
-      });
+      net.getSinksOfIO(idx, inst_pins_vector);
       for (auto i : sortIndexes(dst)) {
         if (sections[i].cur_slots < sections[i].max_slots) {
           sections[i].net.addIONet(io_pin, inst_pins_vector);
@@ -527,11 +523,12 @@ bool IOPlacer::assignPinsSections()
           break;
       }
       if (!pin_assigned) {
-        return;  // "break" forEachIOPin
+        break;
       }
     }
-  });
-  // if forEachIOPin ends or returns/breaks goes here
+    idx++;
+  }
+  
   if (total_pins_assigned == net.numIOPins()) {
     logger_->report("Successfully assigned I/O pins");
     return true;
@@ -710,10 +707,12 @@ int IOPlacer::returnIONetsHPWL(Netlist& netlist)
 {
   int pin_index = 0;
   int hpwl = 0;
-  netlist.forEachIOPin([&](int idx, IOPin& io_pin) {
+  int idx = 0;
+  for (IOPin& io_pin : netlist.getIOPins()) {
     hpwl += netlist.computeIONetHPWL(idx, io_pin.getPosition());
     pin_index++;
-  });
+    idx++;
+  }
 
   return hpwl;
 }

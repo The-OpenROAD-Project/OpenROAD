@@ -77,54 +77,12 @@ void Netlist::addIOGroup(const std::set<int>& pin_group)
   io_groups_.push_back(pin_group);
 }
 
-void Netlist::forEachIOPin(std::function<void(int idx, IOPin&)> func)
-{
-  for (int idx = 0; idx < io_pins_.size(); ++idx) {
-    func(idx, io_pins_[idx]);
-  }
-}
-
-void Netlist::forEachIOPin(
-    std::function<void(int idx, const IOPin&)> func) const
-{
-  for (int idx = 0; idx < io_pins_.size(); ++idx) {
-    func(idx, io_pins_[idx]);
-  }
-}
-
-void Netlist::forEachIOGroup(
-    std::function<void(int, std::set<int>&)> func)
-{
-  for (int idx = 0; idx < io_groups_.size(); ++idx) {
-    func(idx, io_groups_[idx]);
-  }
-}
-
-void Netlist::forEachIOGroup(
-  std::function<void(int, const std::set<int>&)> func) const
-{
-  for (int idx = 0; idx < io_groups_.size(); ++idx) {
-    func(idx, io_groups_[idx]);
-  }
-}
-
-void Netlist::forEachSinkOfIO(int idx, std::function<void(InstancePin&)> func)
+void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
-  for (int idx = net_start; idx < net_end; ++idx) {
-    func(inst_pins_[idx]);
-  }
-}
-
-void Netlist::forEachSinkOfIO(
-    int idx,
-    std::function<void(const InstancePin&)> func) const
-{
-  int net_start = net_pointer_[idx];
-  int net_end = net_pointer_[idx + 1];
-  for (int idx = net_start; idx < net_end; ++idx) {
-    func(inst_pins_[idx]);
+  for (int sink_idx = net_start; sink_idx < net_end; ++sink_idx) {
+    sinks.push_back(inst_pins_[sink_idx]);
   }
 }
 
