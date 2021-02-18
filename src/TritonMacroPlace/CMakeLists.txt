@@ -30,65 +30,34 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-#############################################################################
 
-set(PARQUET_HOME ${MPLACE_HOME}/src/ParquetFP )
+include("openroad")
 
-add_subdirectory(${PARQUET_HOME})
+add_subdirectory(src/ParquetFP)
 
-############################################################
-# Create a library 
-############################################################
-
-set(MPLACE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/MacroPlacer_wrap.cc)
-set(MPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/MacroPlacerTclInitVar.cc)
-
-
-add_custom_command(OUTPUT ${MPLACE_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix mpl -o ${MPLACE_WRAP} -I${MPLACE_HOME}/include ${MPLACE_HOME}/src/MacroPlacer.i   
-  WORKING_DIRECTORY ${MPLACE_HOME}
-  DEPENDS ${MPLACE_HOME}/src/MacroPlacer.i "include/mpl/MacroPlacer.h"
+tcl_lib(NAME      TritonMacroPlace
+        NAMESPACE mpl
+        I_FILE    src/MacroPlacer.i
+        SCRIPTS   src/MacroPlacer.tcl
 )
 
-add_custom_command(OUTPUT ${MPLACE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${MPLACE_TCL_INIT} macro_placer_tcl_inits ${MPLACE_HOME}/src/MacroPlacer.tcl
-  WORKING_DIRECTORY ${MPLACE_HOME}/src
-  DEPENDS ${MPLACE_HOME}/src/MacroPlacer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+target_sources(TritonMacroPlace
+  PRIVATE
+    src/Partition.cpp
+    src/MacroPlacer.cpp
+    src/MakeMacroPlacer.cpp
 )
 
-############################################################
-# Create an library 
-############################################################
-add_library( TritonMacroPlace 
-  src/MacroPlacer.cpp
-  src/MakeMacroPlacer.cpp
-  src/Partition.cpp
-  ${MPLACE_WRAP}
-  ${MPLACE_TCL_INIT}
+target_include_directories(TritonMacroPlace
+  PUBLIC
+    include
 )
 
-############################################################
-# include directories 
-############################################################
-
-target_include_directories( TritonMacroPlace 
-PUBLIC
-  ${MPLACE_HOME}/src
-  ${MPLACE_HOME}/include
-  utility
-
-PRIVATE
-  ${PARQUET_HOME}/src
-
-  ${OPENSTA_HOME}/include
-
-  ${OPENDB_HOME}/include
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-
-  ${TCL_INCLUDE_PATH}
-  )
-
-target_link_libraries( TritonMacroPlace
-  utility
-  )
+target_link_libraries(TritonMacroPlace
+  PRIVATE
+    ParquetFP
+    dbSta
+    OpenSTA
+    opendb
+    utility
+)

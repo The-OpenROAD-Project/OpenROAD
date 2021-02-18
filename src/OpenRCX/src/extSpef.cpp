@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "extSpef.h"
+#include "OpenRCX/extSpef.h"
 
-#include "extRCap.h"
+#include "OpenRCX/extRCap.h"
 #include <dbExtControl.h>
 #include <math.h>
 

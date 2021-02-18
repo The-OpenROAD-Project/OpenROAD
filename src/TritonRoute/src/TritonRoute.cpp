@@ -45,7 +45,7 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *triton_route_tcl_inits[];
+extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
@@ -118,7 +118,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 
 void TritonRoute::init() {
@@ -236,8 +236,10 @@ void TritonRoute::readParams(const string &fileName)
         else if (field == "drouteViaInPinBottomLayerNum") { VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
         else if (field == "drouteViaInPinTopLayerNum") { VIAINPIN_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
         else if (field == "drouteEndIterNum") { END_ITERATION = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "OR_SEED") {OR_SEED = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "OR_K") {OR_K = atof(value.c_str()); ++readParamCnt;}
+        else if (field == "OR_SEED") { OR_SEED = atoi(value.c_str()); ++readParamCnt; }
+        else if (field == "OR_K") { OR_K = atof(value.c_str()); ++readParamCnt; }
+        else if (field == "bottomRoutingLayer") { BOTTOM_ROUTING_LAYER = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "topRoutingLayer") { TOP_ROUTING_LAYER = atoi(value.c_str()); ++readParamCnt;}
       }
     }
     fin.close();

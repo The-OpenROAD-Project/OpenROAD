@@ -77,7 +77,7 @@
 #include "PartitionMgr/src/MakePartitionMgr.h"
 
 namespace sta {
-extern const char *openroad_tcl_inits[];
+extern const char *openroad_swig_tcl_inits[];
 }
 
 // Swig uses C linkage for init functions.
@@ -211,7 +211,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Init components.
   Openroad_Init(tcl_interp);
   // Import TCL scripts.
-  evalTclInit(tcl_interp, sta::openroad_tcl_inits);
+  evalTclInit(tcl_interp, sta::openroad_swig_tcl_inits);
 
   initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger

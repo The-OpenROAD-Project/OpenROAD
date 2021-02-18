@@ -40,7 +40,7 @@
 #include "mpl/MacroPlacer.h"
 
 namespace sta {
-extern const char* macro_placer_tcl_inits[];
+extern const char *TritonMacroPlace_tcl_inits[];
 }
 
 extern "C" {
@@ -58,7 +58,7 @@ void initMacroPlacer(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::macro_placer_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonMacroPlace_tcl_inits);
   openroad->getMacroPlacer()->init(openroad->getDb(),
                                    openroad->getSta(),
                                    openroad->getLogger());

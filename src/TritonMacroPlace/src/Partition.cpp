@@ -31,7 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Partition.h"
+#include "mpl/Partition.h"
 
 #include "btreeanneal.h"
 #include "mpl/MacroPlacer.h"
