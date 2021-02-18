@@ -18,16 +18,20 @@ if (Qt5_FOUND)
           I_FILE    src/gui.i
   )
 
+  set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
+
   target_sources(gui
-    PRIVATE
-      src/layoutViewer.cpp
-      src/mainWindow.cpp
-      src/scriptWidget.cpp
-      src/displayControls.cpp
-      src/gui.cpp
-      src/search.cpp 
-      src/findDialog.cpp
-      src/selectHighlightWindow.cpp
+   PRIVATE
+    src/layoutViewer.cpp
+    src/mainWindow.cpp
+    src/scriptWidget.cpp
+    src/displayControls.cpp
+    src/gui.cpp
+    src/search.cpp 
+    src/findDialog.cpp
+    src/congestionSetupDialog.cpp
+    src/highlightGroupDialog.cpp
+    src/selectHighlightWindow.cpp
   )
 
   target_link_libraries(gui
@@ -47,4 +51,7 @@ endif()
 target_include_directories(gui
   PUBLIC
     include
+  PRIVATE
+    ../FastRoute/include #Ugly but needed till we get FastRoute Data from OpenDb
+    ${OPENSTA_HOME}/include
 )

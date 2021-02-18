@@ -184,6 +184,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* zoom_in_;
   QAction* zoom_out_;
 
+  QAction* congestion_setup_;
+
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
