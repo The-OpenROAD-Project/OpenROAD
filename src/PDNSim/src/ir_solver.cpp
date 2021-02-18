@@ -276,7 +276,7 @@ bool IRSolver::AddC4Bump()
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   m_logger->info(utl::PSM, 64, "Number of voltage sources = {}",m_C4Bumps.size());
-  for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
+  for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
     Node*        c4_node = m_Gmat->GetNode(node_loc);
@@ -337,7 +337,7 @@ void IRSolver::ReadC4Data()
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
-      m_bump_pitch_x = m_bump_pitch_default*unit_micron;
+      m_bump_pitch_x = m_bump_pitch_default * unit_micron;
       m_logger->warn(
           utl::PSM,
           17,
@@ -345,7 +345,7 @@ void IRSolver::ReadC4Data()
           m_bump_pitch_default);
     }
     if (m_bump_pitch_y == 0) {
-      m_bump_pitch_y = m_bump_pitch_default*unit_micron;
+      m_bump_pitch_y = m_bump_pitch_default * unit_micron;
       m_logger->warn(
           utl::PSM,
           18,
@@ -386,16 +386,21 @@ void IRSolver::ReadC4Data()
     }
     int x_cor, y_cor;
     if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
-        m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
-           "{:4.3f}. Changing bump location to a center of the die at {:4.3f}, {:4.3f}",
-           float(m_bump_pitch_x/unit_micron), float(m_bump_pitch_y/unit_micron), 
-           float(coreW/unit_micron), float(coreL/unit_micron), float(coreW/(2*unit_micron)), float(coreL/(2*unit_micron)));
-        x_cor = coreW/2;
-        y_cor = coreL/2;
-        m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size*unit_micron, supply_voltage_src));
+      float to_micron = 1.0f/unit_micron;
+      m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
+           "{:4.3f}. Changing bump location to the center of the die at ({:4.3f}, {:4.3f})",
+           m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron, 
+           coreW * to_micron, coreL * to_micron, (coreW * to_micron)/2, (coreL * to_micron)/2);
+      x_cor = coreW/2;
+      y_cor = coreL/2;
+      m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
     }
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
+    m_logger->warn(utl::PSM,
+                   65,
+                   "VSRC location not specified using default checkerboard pattern with one VDD every"
+                   "size bumps in x-direction and one in two bumps in the y-direction");
     for (int i = 0; i < num_b_y; i++) {
       for (int j = 0; j < num_b_x; j=j+6) {
         x_cor = (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) 
@@ -686,7 +691,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   }
   // insert c4 bumps as nodes
   int num_C4 = 0;
-  for (unsigned int it = 0; it < m_C4Bumps.size(); ++it) {
+  for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
     int           x    = get<0>(m_C4Bumps[it]);
     int           y    = get<1>(m_C4Bumps[it]);
     int           size = get<2>(m_C4Bumps[it]);
