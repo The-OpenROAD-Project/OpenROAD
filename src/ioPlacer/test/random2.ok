@@ -14,6 +14,4 @@ Using 5u default boundaries offset.
 Using 2 tracks default min distance between IO pins.
 Random pin placement
 RandomMode Even
-Differences found at line 120.
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+No differences found.
