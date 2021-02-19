@@ -1,4 +1,4 @@
-diverge01###############################################################################
+###############################################################################
 ## BSD 3-Clause License
 ##
 ## Copyright (c) 2018-2020, The Regents of the University of California
@@ -90,21 +90,22 @@ proc global_placement { args } {
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
   } 
 
-  if { [info exists flags(-disable_timing_driven)] } { 
-    utl::warn "GPL" 115 "-disable_timing_driven is deprecated."
-  } 
-  gpl::set_timing_driven_mode [info exists flags(-timing_driven)]
-  if { [info exists flags(-timing_driven)] } { 
+  set timing_driven [info exists flags(-timing_driven)]
+  gpl::set_timing_driven_mode $timing_driven
+  if { $timing_driven } {
     if { [get_libs -quiet "*"] == {} } {
       utl::error GPL 115 "No liberty libraries found."
     }
-  }  
+  }
+  if { [info exists flags(-disable_timing_driven)] } { 
+    utl::warn "GPL" 115 "-disable_timing_driven is deprecated."
+  }
 
-  # flow control for routability-driven 
+  set routability_driven [info exists flags(-routability_driven)]
+  gpl::set_routability_driven_mode $routability_driven
   if { [info exists flags(-disable_routability_driven)] } {
     utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
   }
-  gpl::set_routability_driven_mode [info exists flags(-routability_driven)]
   
   # flow control for incremental GP
   if { [info exists flags(-incremental)] } {
