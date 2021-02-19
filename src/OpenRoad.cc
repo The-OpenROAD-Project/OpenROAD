@@ -61,7 +61,7 @@
 
 #include "init_fp//MakeInitFloorplan.hh"
 #include "ioplacer/MakeIoplacer.h"
-#include "resizer/MakeResizer.hh"
+#include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "opendp/MakeOpendp.h"
 #include "finale/MakeFinale.h"
