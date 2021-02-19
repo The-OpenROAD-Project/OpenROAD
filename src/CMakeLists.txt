@@ -159,7 +159,7 @@ target_link_libraries(openroad
   replace
   opendp
   finale
-  resizer
+  rsz
   ioPlacer
   flute
   dbSta

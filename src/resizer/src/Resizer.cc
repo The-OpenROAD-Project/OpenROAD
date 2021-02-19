@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 #include "openroad/OpenRoad.hh"
 #include "gui/gui.h"
@@ -67,13 +67,13 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
-#include "resizer/SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
-extern const char *resizer_tcl_inits[];
+extern const char *rsz_tcl_inits[];
 }
 
 namespace rsz {
@@ -198,7 +198,7 @@ Resizer::init(OpenRoad *openroad,
   // Define swig TCL commands.
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
-  evalTclInit(interp, sta::resizer_tcl_inits);
+  evalTclInit(interp, sta::rsz_tcl_inits);
 }
 
 ////////////////////////////////////////////////////////////////
