@@ -43,6 +43,7 @@
 #include <string>
 #include <tuple>
 #include "utility/Logger.h"
+#include "fastcluster.h"
 
 namespace cts {
 
@@ -167,6 +168,58 @@ void SinkClustering::findBestMatching()
   }
 }
 
+void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+{
+  _scaleFactor = scaleFactor;
+  normalizePoints(maxDiameter);
+
+  int npoints = _points.size();
+  int clusMethod = HCLUST_METHOD_COMPLETE;
+  // distance computation
+  double* distMatrix = new double[(npoints*(npoints-1))/2];
+  unsigned k = 0;
+  for(unsigned i = 0; i < npoints; ++i){
+    Point<double>& point = _points[i];
+    for (unsigned j = i+1; j < npoints; ++j){
+      Point<double>& p = _points[j];
+      distMatrix[k] = p.computeDist(point);
+      ++k;
+    }
+  }
+
+  int* merge = new int[2*(npoints-1)];
+  double* height = new double[npoints-1];
+
+  hclust_fast(npoints, distMatrix, clusMethod, merge, height);
+
+  int* labels = new int[npoints];
+  // cutree_k(npoints, merge, 2, labels);
+  cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+
+  int nclusters = 0;
+  for (unsigned i = 0; i < npoints; i++){
+    nclusters = std::max(nclusters, labels[i]);
+  }
+  ++nclusters;
+
+  std::vector<std::vector<unsigned>> clusterSolution;
+
+  for (unsigned i = 0; i< nclusters; i++){
+    std::vector<unsigned> indexesVector;
+    clusterSolution.push_back(indexesVector);
+  }
+
+  for (unsigned i = 0; i<npoints; i++){
+    clusterSolution[labels[i]].push_back(i);
+  }
+
+  _bestSolution = clusterSolution;
+
+  if (_logger->debugCheck(CTS, "Stree", 1))
+    writePlotFile(groupSize);
+
+}
+
 void SinkClustering::run()
 {
   normalizePoints();
@@ -179,14 +232,16 @@ void SinkClustering::run()
 
 void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
 {
-  _scaleFactor = scaleFactor;
+  // _scaleFactor = scaleFactor;
 
-  normalizePoints(maxDiameter);
-  computeAllThetas();
-  sortPoints();
-  findBestMatching(groupSize);
-  if (_logger->debugCheck(CTS, "Stree", 1))
-    writePlotFile(groupSize);
+  // normalizePoints(maxDiameter);
+  // computeAllThetas();
+  // sortPoints();
+  // findBestMatching(groupSize);
+  // if (_logger->debugCheck(CTS, "Stree", 1))
+  //   writePlotFile(groupSize);
+
+  newrun(groupSize, maxDiameter, scaleFactor);
   
 }
 
