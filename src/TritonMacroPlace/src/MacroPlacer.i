@@ -82,20 +82,6 @@ place_macros()
   macro_placer->placeMacros(); 
 } 
 
-void
-set_global_config(const char* file) 
-{
-  MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->setGlobalConfig(file); 
-}
-
-void
-set_local_config(const char* file)
-{
-  MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->setLocalConfig(file); 
-}
-
 }
 
 %} // inline

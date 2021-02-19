@@ -107,6 +107,7 @@ class Macro
   std::string type();
 };
 
+// Lacking a command to create these.
 class MacroLocalInfo
 {
  public:
@@ -135,9 +136,6 @@ public:
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
 
-  void setGlobalConfig(const char* globalConfig);
-  void setLocalConfig(const char* localConfig);
-
   void placeMacros();
   int getSolutionCount();
 
@@ -147,9 +145,6 @@ public:
   int weight(int idx11, int idx12);
 
 private:
-  // parsing function
-  void ParseGlobalConfig(std::string fileName);
-  void ParseLocalConfig(std::string fileName);
   void FillMacroStor();
   bool isMissingLiberty();
 
@@ -185,10 +180,6 @@ private:
   sta::dbSta* sta_;
   utl::Logger* logger_;
 
-  // config filenames
-  std::string globalConfig_;
-  std::string localConfig_;
-
   bool isTiming_;
 
   // macro idx/idx pair -> give each
@@ -201,7 +192,6 @@ private:
   // save LocalCfg into this structure
   std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
 
-  // layout
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
   double siteSizeX_, siteSizeY_;

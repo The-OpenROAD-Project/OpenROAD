@@ -39,7 +39,7 @@ sta::define_cmd_args "macro_placement" {
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
-    keys {-channel -halo -fence_region -global_config -local_config} flags {}
+    keys {-channel -halo -fence_region -local_config} flags {}
 
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
@@ -99,26 +99,6 @@ proc macro_placement { args } {
     mpl::set_fence_region $dieLx $dieLy $dieUx $dieUy
   }
   
-  if { [info exists keys(-global_config)] } {
-    utl::warn "MPL" 81 "macro place -global_config deprecated. Use -channel, -halo arguments."
-    set global_config_file $keys(-global_config)
-    if { [file readable $global_config_file] } {
-      mpl::set_global_config $global_config_file
-    } else {
-      utl::warn "MPL" 82 "cannot read $global_config_file"
-    }
-  }
-
-  if { [info exists keys(-local_config)] } {
-    utl::warn "MPL" 90 "macro place -local_config deprecated."
-    set local_config_file $keys(-local_config)
-    if { [file readable $local_config_file] } {
-      mpl::set_local_config $local_config_file
-    } else {
-      utl::warn "MPL" 83 "cannot read $local_config_file"
-    }
-  }
-
   if { [ord::db_has_rows] } {
     mpl::place_macros
   } else {

@@ -34,9 +34,6 @@
 #include "mpl/MacroPlacer.h"
 
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -78,8 +75,6 @@ using odb::dbBPin;
 using odb::dbITerm;
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
-
-static size_t TrimWhiteSpace(char* out, size_t len, const char* str);
 
 static CoreEdge getCoreEdge(int cx,
                             int cy,
@@ -138,16 +133,6 @@ void MacroPlacer::setChannel(double channel_x, double channel_y)
   channelY_ = channel_y;
 }
 
-void MacroPlacer::setGlobalConfig(const char* globalConfig)
-{
-  globalConfig_ = globalConfig;
-}
-
-void MacroPlacer::setLocalConfig(const char* localConfig)
-{
-  localConfig_ = localConfig;
-}
-
 void MacroPlacer::setVerboseLevel(int verbose)
 {
   verbose_ = verbose;
@@ -191,15 +176,6 @@ void MacroPlacer::init()
     ly_ = coreRect.yMin() / dbu;
     ux_ = coreRect.xMax() / dbu;
     uy_ = coreRect.yMax() / dbu;
-  }
-
-  // parsing from cfg file
-  // global config
-  if (!globalConfig_.empty())
-    ParseGlobalConfig(globalConfig_);
-  // local config (optional)
-  if (!localConfig_.empty()) {
-    ParseLocalConfig(localConfig_);
   }
 
   FillMacroStor();
@@ -271,8 +247,6 @@ void MacroPlacer::placeMacros()
   TwoPartitions eastStor, westStor;
 
   vector<vector<Partition>> allSets;
-
-  // Fill the MacroPlace for ALL circuits
 
   MacroPartMap globalMacroPartMap;
   UpdateMacroPartMap(topLayout, globalMacroPartMap);
@@ -852,119 +826,6 @@ void MacroPlacer::UpdateMacroCoordi(Partition& part)
   }
 }
 
-static bool stringExists(std::string varname, std::string str)
-{
-  return varname.find(str) != std::string::npos;
-}
-
-void MacroPlacer::ParseGlobalConfig(string fileName)
-{
-  std::ifstream gConfFile(fileName);
-  if (!gConfFile.is_open()) {
-    logger_->error(MPL, 25, "Cannot open file {}", fileName);
-  }
-
-  string lineStr = "";
-  while (getline(gConfFile, lineStr)) {
-    char trimChar[256] = {
-        0,
-    };
-    TrimWhiteSpace(trimChar, lineStr.length() + 1, lineStr.c_str());
-    string trimStr(trimChar);
-
-    std::stringstream oStream(trimStr);
-    string buf1, varName;
-    double val = 0.0f;
-
-    oStream >> buf1;
-    string skipStr = "//";
-    // skip for slash
-    if (buf1.substr(0, skipStr.size()) == skipStr) {
-      continue;
-    }
-    if (buf1 != "set") {
-      logger_->error(MPL, 26, "Cannot parse {}", buf1);
-    }
-
-    oStream >> varName >> val;
-
-    if (stringExists(varName, "FIN_PITCH")) {
-      // TODO
-      // ?
-    } else if (stringExists(varName, "ROW_HEIGHT")) {
-      // TODO
-      // No Need
-    } else if (stringExists(varName, "SITE_WIDTH")) {
-      // TODO
-      // No Need
-    } else if (stringExists(varName, "HALO_WIDTH_V")) {
-      haloY_ = val;
-    } else if (stringExists(varName, "HALO_WIDTH_H")) {
-      haloX_ = val;
-    } else if (stringExists(varName, "CHANNEL_WIDTH_V")) {
-      channelY_ = val;
-    } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
-      channelX_ = val;
-    } else {
-      logger_->error(MPL, 27, "Cannot parse {}", varName);
-    }
-  }
-  logger_->report("End Parsing Global Config");
-}
-
-void MacroPlacer::ParseLocalConfig(string fileName)
-{
-  std::ifstream gConfFile(fileName);
-  if (!gConfFile.is_open()) {
-    logger_->error(MPL, 28, "Cannot open file {}", fileName);
-  }
-
-  string lineStr = "";
-  while (getline(gConfFile, lineStr)) {
-    char trimChar[256] = {
-        0,
-    };
-    TrimWhiteSpace(trimChar, lineStr.length() + 1, lineStr.c_str());
-    string trimStr(trimChar);
-
-    std::stringstream oStream(trimStr);
-    string buf1, varName, masterName;
-    double val = 0.0f;
-
-    oStream >> buf1;
-    string skipStr = "//";
-    // skip for slash
-    if (buf1.substr(0, skipStr.size()) == skipStr) {
-      continue;
-    }
-
-    if (buf1 == "") {
-      continue;
-    }
-    if (buf1 != "set") {
-      logger_->error(MPL, 29, "Cannot parse {}", buf1);
-    }
-
-    oStream >> varName >> masterName >> val;
-
-    if (stringExists(varName, "ROW_HEIGHT")) {
-      // TODO
-      // No Need
-    } else if (stringExists(varName, "HALO_WIDTH_V")) {
-      macroLocalMap[masterName].putHaloY(val);
-    } else if (stringExists(varName, "HALO_WIDTH_H")) {
-      macroLocalMap[masterName].putHaloX(val);
-    } else if (stringExists(varName, "CHANNEL_WIDTH_V")) {
-      macroLocalMap[masterName].putChannelY(val);
-    } else if (stringExists(varName, "CHANNEL_WIDTH_H")) {
-      macroLocalMap[masterName].putChannelX(val);
-    } else {
-      logger_->error(MPL, 30, "Cannot parse {}", varName);
-    }
-  }
-  logger_->report("End Parsing Local Config");
-}
-
 void MacroPlacer::UpdateNetlist(Partition& layout)
 {
   if (netTable_) {
@@ -1087,50 +948,6 @@ void Layout::setUx(double ux)
 void Layout::setUy(double uy)
 {
   uy_ = uy;
-}
-
-///////////////////////////////////////////////////
-//  static funcs
-
-// Stores the trimmed input string into the given output buffer, which must be
-// large enough to store the result.  If it is too small, the output is
-// truncated.
-
-// referenced from
-// https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
-
-static size_t TrimWhiteSpace(char* out, size_t len, const char* str)
-{
-  if (len == 0)
-    return 0;
-
-  const char* end;
-  size_t out_size;
-
-  // Trim leading space
-  while (isspace((unsigned char) *str))
-    str++;
-
-  if (*str == 0)  // All spaces?
-  {
-    *out = 0;
-    return 1;
-  }
-
-  // Trim trailing space
-  end = str + strlen(str) - 1;
-  while (end > str && isspace((unsigned char) *end))
-    end--;
-  end++;
-
-  // Set output size to minimum of trimmed string length and buffer size minus 1
-  out_size = (end - str) < ((int) len - 1) ? (end - str) : ((int) len - 1);
-
-  // Copy trimmed string and add null terminator
-  memcpy(out, str, out_size);
-  out[out_size] = 0;
-
-  return out_size;
 }
 
 static CoreEdge getCoreEdge(int cx,
