@@ -39,7 +39,7 @@
 #include "routeBase.h" 
 #include "timingBase.h"
 #include "utility/Logger.h"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include <iostream>
 
 namespace gpl {

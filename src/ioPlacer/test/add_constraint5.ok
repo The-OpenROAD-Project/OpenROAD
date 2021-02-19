@@ -9,17 +9,17 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Restrict INPUT pins to region 0-201600, in the right edge
-Restrict OUTPUT pins to region 0-201600, in the left edge
-Restrict I/O pin resp_val to region 0-200260, in the bottom edge
-Restrict I/O pin resp_rdy to region 0-200260, in the bottom edge
-Restrict I/O pin req_rdy to region 0-200260, in the bottom edge
-Restrict I/O pin req_val to region 0-200260, in the bottom edge
-Restrict I/O pin req_msg[15] to region 0-200260, in the top edge
-Restrict I/O pin req_msg[14] to region 0-200260, in the top edge
-Restrict I/O pin resp_msg[15] to region 0-200260, in the top edge
-Restrict I/O pin resp_msg[14] to region 0-200260, in the top edge
-#Macro blocks found: 0
+Restrict INPUT pins to region 0.0u-100.8u, in the right edge.
+Restrict OUTPUT pins to region 0.0u-100.8u, in the left edge.
+Restrict I/O pin resp_val to region 0.0u-100.13u the bottom edge.
+Restrict I/O pin resp_rdy to region 0.0u-100.13u the bottom edge.
+Restrict I/O pin req_rdy to region 0.0u-100.13u the bottom edge.
+Restrict I/O pin req_val to region 0.0u-100.13u the bottom edge.
+Restrict I/O pin req_msg[15] to region 0.0u-100.13u the top edge.
+Restrict I/O pin req_msg[14] to region 0.0u-100.13u the top edge.
+Restrict I/O pin resp_msg[15] to region 0.0u-100.13u the top edge.
+Restrict I/O pin resp_msg[14] to region 0.0u-100.13u the top edge.
+Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            54

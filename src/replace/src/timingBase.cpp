@@ -38,7 +38,7 @@
 
 #include "nesterovBase.h"
 #include "placerBase.h"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "utility/Logger.h"
 
