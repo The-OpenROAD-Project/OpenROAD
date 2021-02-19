@@ -172,7 +172,7 @@ target_link_libraries(openroad
   tapcell
   gui
   TritonRoute
-  TritonMacroPlace
+  mpl
   pdnsim
   antennachecker
   PartitionMgr
