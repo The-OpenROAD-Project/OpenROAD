@@ -11,6 +11,4 @@ read_def ${design_dir}/${design}_fragmented_row.def
 read_liberty ${lib_dir}/NangateOpenCellLibrary_typical.lib
 read_sdc ${design_dir}/${design}.sdc
 
-global_placement -verbose 3 -skip_initial_place -timing_driven -wire_res 16 -wire_cap 0.23e-15
-
-exit
+global_placement -timing_driven -verbose 3 -skip_initial_place

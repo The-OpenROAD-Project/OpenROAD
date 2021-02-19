@@ -1,4 +1,4 @@
-###############################################################################
+diverge01###############################################################################
 ## BSD 3-Clause License
 ##
 ## Copyright (c) 2018-2020, The Regents of the University of California
@@ -33,8 +33,8 @@
 
 sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
+    [-timing_driven]\
+    [-routability_driven]\
     [-incremental]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
@@ -75,6 +75,8 @@ proc global_placement { args } {
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
+      -timing_driven \
+      -routability_driven \
       -disable_timing_driven \
       -disable_routability_driven \
       -incremental}
@@ -88,10 +90,11 @@ proc global_placement { args } {
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
   } 
 
-  # flow control for timing-driven 
   if { [info exists flags(-disable_timing_driven)] } { 
-    gpl::set_disable_timing_driven_mode_cmd
-  } else {
+    utl::warn "GPL" 115 "-disable_timing_driven is deprecated."
+  } 
+  gpl::set_timing_driven_mode [info exists flags(-timing_driven)]
+  if { [info exists flags(-timing_driven)] } { 
     if { [get_libs -quiet "*"] == {} } {
       utl::error GPL 115 "No liberty libraries found."
     }
@@ -99,15 +102,16 @@ proc global_placement { args } {
 
   # flow control for routability-driven 
   if { [info exists flags(-disable_routability_driven)] } {
-    gpl::set_disable_routability_driven_mode_cmd
+    utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
   }
+  gpl::set_routability_driven_mode [info exists flags(-routability_driven)]
   
   # flow control for incremental GP
   if { [info exists flags(-incremental)] } {
     gpl::set_initial_place_max_iter_cmd 0
     gpl::set_incremental_place_mode_cmd
-    # disable-routability-driven
-    gpl::set_disable_routability_driven_mode_cmd
+    # Disable routability driven
+    gpl::set_routability_driven_mode 0
   }
 
   if { [info exists keys(-initial_place_max_fanout)] } { 
