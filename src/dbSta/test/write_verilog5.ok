@@ -11,13 +11,9 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO ODB-0134] Finished DEF file: write_verilog5.def
 module top (in1,
-    out1,
-    VDD,
-    VSS);
+    out1);
  input in1;
  output out1;
- input VDD;
- input VSS;
 
  wire out;
 
