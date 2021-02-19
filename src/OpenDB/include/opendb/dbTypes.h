@@ -995,7 +995,9 @@ struct _Flword
   bool      _cut_center_to_center : 1;
   bool      _cut_same_net : 1;
   bool      _cut_parallel_overlap : 1;
-  uint      _spare_bits : 23;
+  bool      _notch_length : 1;
+  bool      _end_of_notch_width : 1;
+  uint      _spare_bits : 21;
 };
 
 const char* getString(_RuleType type);

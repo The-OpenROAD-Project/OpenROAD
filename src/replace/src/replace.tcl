@@ -33,8 +33,8 @@
 
 sta::define_cmd_args "global_placement" {\
   [-skip_initial_place]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
+    [-timing_driven]\
+    [-routability_driven]\
     [-incremental]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
@@ -75,6 +75,8 @@ proc global_placement { args } {
       -pad_left -pad_right \
       -verbose_level} \
     flags {-skip_initial_place \
+      -timing_driven \
+      -routability_driven \
       -disable_timing_driven \
       -disable_routability_driven \
       -incremental}
@@ -88,22 +90,29 @@ proc global_placement { args } {
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
   } 
 
-  # flow control for timing-driven 
+  set timing_driven [info exists flags(-timing_driven)]
+  gpl::set_timing_driven_mode $timing_driven
+  if { $timing_driven } {
+    if { [get_libs -quiet "*"] == {} } {
+      utl::error GPL 115 "No liberty libraries found."
+    }
+  }
   if { [info exists flags(-disable_timing_driven)] } { 
-    gpl::set_disable_timing_driven_mode_cmd
+    utl::warn "GPL" 115 "-disable_timing_driven is deprecated."
   }
 
-  # flow control for routability-driven 
+  set routability_driven [info exists flags(-routability_driven)]
+  gpl::set_routability_driven_mode $routability_driven
   if { [info exists flags(-disable_routability_driven)] } {
-    gpl::set_disable_routability_driven_mode_cmd
+    utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
   }
   
   # flow control for incremental GP
   if { [info exists flags(-incremental)] } {
     gpl::set_initial_place_max_iter_cmd 0
     gpl::set_incremental_place_mode_cmd
-    # disable-routability-driven
-    gpl::set_disable_routability_driven_mode_cmd
+    # Disable routability driven
+    gpl::set_routability_driven_mode 0
   }
 
   if { [info exists keys(-initial_place_max_fanout)] } { 
@@ -165,7 +174,7 @@ proc global_placement { args } {
     sta::check_positive_float "-overflow" $overflow
     gpl::set_overflow_cmd $overflow
   }
-  
+
   # routability check overflow
   if { [info exists keys(-routability_check_overflow)] } {
     set routability_check_overflow $keys(-routability_check_overflow)
@@ -224,7 +233,6 @@ proc global_placement { args } {
     set k4 [lindex $rc_coefficients 3]
     gpl::set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
-
 
   if { [info exists keys(-verbose_level)] } {
     set verbose_level $keys(-verbose_level)

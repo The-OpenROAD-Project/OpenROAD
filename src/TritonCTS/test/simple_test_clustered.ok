@@ -46,7 +46,7 @@ TritonCTS forced slew degradation on these wires.
  ***********************
 [INFO CTS-0027]  Generating H-Tree topology for net clk
 [INFO CTS-0028]     Tot. number of sinks: 300
-[INFO CTS-0029]     Sinks will be clustered in groups of 10 and a maximum diameter of 60 um
+[INFO CTS-0029]     Sinks will be clustered in groups of 10 and a maximum diameter of 60.0 um
 [INFO CTS-0030]     Number of static layers: 1
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um)
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um)
@@ -80,4 +80,6 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0015]     Created 35 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 7:2, 8:2, 10:30.
 [INFO CTS-0017]     Max level of the clock tree: 2.
+[INFO CTS-0091] Sinks after db write = 300 (Leaf Buffers = 30)
+[INFO CTS-0092] Avg Sink Wire Length = 128.0 um
  ... End of TritonCTS execution.

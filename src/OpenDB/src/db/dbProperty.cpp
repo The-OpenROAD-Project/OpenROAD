@@ -557,10 +557,16 @@ dbStringProperty* dbStringProperty::create(dbObject*   object,
                                            const char* name,
                                            const char* value)
 {
-  if (find(object, name))
-    return NULL;
+  _dbProperty* prop = (_dbProperty*) find(object, name);
+  if (prop){
+    std::string val = std::string(prop->_value._str_val) + " " + value;
+    free(prop->_value._str_val);
+    prop->_value._str_val = strdup(val.c_str());
+    ZALLOCATED(prop->_value._str_val);
+    return (dbStringProperty*) prop;
+  }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
+  prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
   prop->_value._str_val = strdup(value);
   ZALLOCATED(prop->_value._str_val);
   return (dbStringProperty*) prop;

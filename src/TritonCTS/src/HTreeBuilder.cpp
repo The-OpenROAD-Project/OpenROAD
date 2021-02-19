@@ -49,11 +49,11 @@ using utl::CTS;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
+    std::vector<const ClockInst*>& sinkInsts,
     float maxDiameter,
     unsigned clusterSize)
 {
   std::vector<std::pair<float, float>>& points = sinks;
-
   _clock.forEachSink([&](ClockInst& inst) {
     Point<double> normLocation((float) inst.getX() / _wireSegmentUnit,
                                (float) inst.getY() / _wireSegmentUnit);
@@ -65,14 +65,15 @@ void HTreeBuilder::preSinkClustering(
     return;
   }
 
-  SinkClustering matching;
+  SinkClustering matching(_options, _techChar);
   unsigned numPoints = points.size();
 
   for (long int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
     const std::pair<float, float>& point = points[pointIdx];
     matching.addPoint(point.first, point.second);
+    matching.addCap(sinkInsts[pointIdx]->getInputCap());
   }
-  matching.run(clusterSize, maxDiameter);
+  matching.run(clusterSize, maxDiameter, _wireSegmentUnit);
 
   unsigned clusterCount = 0;
 
@@ -153,12 +154,13 @@ void HTreeBuilder::initSinkRegion()
   }
 
   std::vector<std::pair<float, float>> topLevelSinks;
-  initTopLevelSinks(topLevelSinks);
+  std::vector<const ClockInst*> sinkInsts;
+  initTopLevelSinks(topLevelSinks, sinkInsts);
 
   float maxDiameter = (_options->getMaxDiameter() * dbUnits) / _wireSegmentUnit;
 
   preSinkClustering(
-      topLevelSinks, maxDiameter, _options->getSizeSinkClustering());
+      topLevelSinks, sinkInsts, maxDiameter, _options->getSizeSinkClustering());
   if (topLevelSinks.size() <= 200 || !(_options->getSinkClustering())) {
     Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
     _logger->info(CTS, 23, " Original sink region: {}", sinkRegionDbu);
@@ -177,9 +179,12 @@ void HTreeBuilder::run()
   _logger->info(CTS, 27, " Generating H-Tree topology for net {}", _clock.getName());
   _logger->info(CTS, 28, "    Tot. number of sinks: {}", _clock.getNumSinks());
   if (_options->getSinkClustering()) {
-    _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
-                  _options->getSizeSinkClustering(),
-                  static_cast<int>(_options->getMaxDiameter()));
+    if (_options->getSinkClusteringUseMaxCap()) {
+      _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
+    } else {
+      _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
+                  _options->getSizeSinkClustering(), _options->getMaxDiameter());
+    }
   }
   _logger->info(CTS, 30, "    Number of static layers: {}", _options->getNumStaticLayers());
 
@@ -618,12 +623,14 @@ void HTreeBuilder::computeBranchingPoints(unsigned level,
 }
 
 void HTreeBuilder::initTopLevelSinks(
-    std::vector<std::pair<float, float>>& sinkLocations)
+    std::vector<std::pair<float, float>>& sinkLocations,
+    std::vector<const ClockInst*> &sinkInsts)
 {
   sinkLocations.clear();
   _clock.forEachSink([&](const ClockInst& sink) {
     sinkLocations.emplace_back((float) sink.getX() / _wireSegmentUnit,
                                (float) sink.getY() / _wireSegmentUnit);
+    sinkInsts.emplace_back(&sink);
   });
 }
 

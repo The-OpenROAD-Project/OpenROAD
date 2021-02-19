@@ -37,13 +37,15 @@ namespace fr {
 
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
-                               odb::dbDatabase* db)
+                               odb::dbDatabase* db,
+                               Logger* logger)
   : worker_(nullptr),
     net_(nullptr),
     settings_(settings),
     current_iter_(-1),
     last_pt_layer_(-1),
-    gui_(gui::Gui::get())
+    gui_(gui::Gui::get()),
+    logger_(logger)
 {
   assert(MAX_THREADS == 1);
 
@@ -116,7 +118,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
 
       default:
-        printf("unknown %d\n", (int)fig->typeId());
+        logger_->debug(DRT, 1, "unknown fig type {} in drawLayer",
+                       fig->typeId());
       }
     }
   }

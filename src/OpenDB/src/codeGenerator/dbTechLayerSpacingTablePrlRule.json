@@ -1,0 +1,55 @@
+{
+  "name": "dbTechLayerSpacingTablePrlRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "_wrong_direction",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name":"_same_mask",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name":"_exceept_eol",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_eol_width",
+      "flags": []
+    },
+    {
+      "type": "dbVector<int>",
+      "name": "_length_tbl",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "type": "dbVector<int>",
+      "name": "_width_tbl",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "type": "dbVector<dbVector<int>>",
+      "name": "_spacing_tbl",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "type": "dbVector<std::tuple<int,int,int>>",
+      "name": "_influence_tbl",
+      "flags":["no-set","no-get","no-template"]
+    }
+  ],
+  "constructors": [],
+  "enums":[],
+  "h_includes": [
+    "dbVector.h"
+  ],
+  "cpp_includes":["dbTechLayer.h"]
+}

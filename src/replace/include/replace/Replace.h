@@ -42,8 +42,13 @@ namespace odb {
 namespace sta {
   class dbSta;
 }
+
 namespace grt {
   class GlobalRouter;
+}
+
+namespace rsz {
+  class Resizer;
 }
 
 namespace utl {
@@ -55,6 +60,7 @@ namespace gpl {
 class PlacerBase;
 class NesterovBase;
 class RouteBase;
+class TimingBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -71,10 +77,13 @@ class Replace
 
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
+    void setResizer(rsz::Resizer* resizer);
     void setFastRoute(grt::GlobalRouter* fr);
     void setLogger(utl::Logger* log);
 
     void doInitialPlace();
+
+    void initNesterovPlace();
     void doNesterovPlace();
 
     // Initial Place param settings
@@ -126,20 +135,20 @@ class Replace
                   int update_iterations,
                   bool draw_bins,
                   bool initial);
+
   private:
     odb::dbDatabase* db_;
-    sta::dbSta* sta_;
+    rsz::Resizer* rs_;
     grt::GlobalRouter* fr_;
     utl::Logger* log_;
 
     std::shared_ptr<PlacerBase> pb_;
     std::shared_ptr<NesterovBase> nb_;
     std::shared_ptr<RouteBase> rb_;
+    std::shared_ptr<TimingBase> tb_;
 
     std::unique_ptr<InitialPlace> ip_;
     std::unique_ptr<NesterovPlace> np_;
-
-
 
     int initialPlaceMaxIter_;
     int initialPlaceMinDiffLength_;
@@ -157,6 +166,7 @@ class Replace
     float minPhiCoef_;
     float maxPhiCoef_;
     float referenceHpwl_;
+
     float routabilityCheckOverflow_;
     float routabilityMaxDensity_;
     float routabilityTargetRcMetric_;

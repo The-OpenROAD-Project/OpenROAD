@@ -1,0 +1,81 @@
+{
+  "name": "dbTechLayerMinStepRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "_min_step_length",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "_max_edges",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name":"_max_edges_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_min_adj_length1",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name":"_min_adj_length1_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_min_adj_length2",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_eol_width",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name":"_no_between_eol",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name":"_min_adj_length2_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type" : "bool",
+      "name" : "_convex_corner",
+      "flags" : [],
+      "bits" : 1
+    },
+    {
+      "type": "int",
+      "name": "_min_between_length",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name":"_min_between_length_valid",
+      "flags":[],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_corners",
+      "flags": [],
+      "bits" : 1
+    }
+  ],
+  "constructors": [],
+  "enums": [],
+  "cpp_includes":["dbTechLayer.h"]
+}

@@ -29,8 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-#include "ext.h"
+#include "OpenRCX/ext.h"
 
 #include <errno.h>
 
@@ -39,7 +38,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* openrcx_tcl_inits[];
+extern const char* OpenRCX_tcl_inits[];
 }  // namespace sta
 
 namespace rcx {
@@ -84,7 +83,7 @@ void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 
   // Define swig TCL commands.
   Openrcx_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::openrcx_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::OpenRCX_tcl_inits);
 }
 
 void Ext::setLogger(Logger* logger)

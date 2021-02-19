@@ -222,6 +222,8 @@ void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
           createCliqueGraph(graph, net);
         }
         break;
+      case HYPERGRAPH:
+        break;
     }
   }
   createCompressedMatrix(graph);
