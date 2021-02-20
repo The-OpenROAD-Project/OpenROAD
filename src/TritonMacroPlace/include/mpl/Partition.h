@@ -74,6 +74,7 @@ class Partition
             double _ly,
             double _width,
             double _height,
+            MacroPlacer *macro_placer,
             utl::Logger* log);
   Partition(const Partition& prev);
   ~Partition();
@@ -92,23 +93,11 @@ class Partition
   double* netTable;
 
  private:
-  std::string GetName(int macroIdx);
+  std::string getName(int macroIdx);
 
   int tableCnt;
   utl::Logger* logger_;
-};
-
-struct PartClassHash
-{
-  std::size_t operator()(const PartClass& k) const { return k; }
-};
-
-struct PartClassEqual
-{
-  bool operator()(const PartClass& p1, const PartClass& p2) const
-  {
-    return p1 == p2;
-  }
+  MacroPlacer *macro_placer_;
 };
 
 }  // namespace mpl

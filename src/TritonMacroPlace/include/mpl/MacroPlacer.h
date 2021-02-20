@@ -96,42 +96,36 @@ int coreEdgeIndex(CoreEdge edge);
 class Macro
 {
  public:
-  double lx, ly;
-  double w, h;
-  double haloX, haloY;
-  double channelX, channelY;
-  odb::dbInst* dbInstPtr;
   Macro(double _lx,
         double _ly,
         double _w,
         double _h,
-        double _haloX,
-        double _haloY,
-        double _channelX,
-        double _channelY,
         odb::dbInst* _dbInstPtr);
   Macro(double _lx,
         double _ly,
         const Macro &copy_from);
   string name();
+
+  double lx, ly;
+  double w, h;
+  odb::dbInst* dbInstPtr;
 };
 
-// Lacking a command to create these.
-class MacroLocalInfo
+class MacroSpacings
 {
  public:
-  MacroLocalInfo();
-  void putHaloX(double haloX) { haloX_ = haloX; }
-  void putHaloY(double haloY) { haloY_ = haloY; }
-  void putChannelX(double channelX) { channelX_ = channelX; }
-  void putChannelY(double channelY) { channelY_ = channelY; }
-  double GetHaloX() { return haloX_; }
-  double GetHaloY() { return haloY_; }
-  double GetChannelX() { return channelX_; }
-  double GetChannelY() { return channelY_; }
+  MacroSpacings();
+  void setHalo(double halo_x,
+               double halo_y);
+  void setChannel(double channel_x,
+                  double channel_y);
+  double getHaloX() const { return halo_x_; }
+  double getHaloY() const { return halo_y_; }
+  double getChannelX() const { return channel_x_; }
+  double getChannelY() const { return channel_y_; }
 
  private:
-  double haloX_, haloY_, channelX_, channelY_;
+  double halo_x_, halo_y_, channel_x_, channel_y_;
 };
 
 class MacroPlacer
@@ -153,6 +147,7 @@ public:
   void UpdateNetlist(Partition& layout);
   int weight(int idx11, int idx12);
 
+  MacroSpacings &getSpacings(Macro &macro);
 private:
   void FillMacroStor();
   bool isMissingLiberty();
@@ -203,14 +198,12 @@ private:
   // dbInst* --> macroStor's index
   unordered_map<odb::dbInst*, int> macroInstMap;
 
-  // save LocalCfg into this structure
-  unordered_map<string, MacroLocalInfo> macroLocalMap;
+  MacroSpacings default_macro_spacings_;
+  unordered_map<odb::dbInst*, MacroSpacings> macro_spacings_;
 
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
   double siteSizeX_, siteSizeY_;
-  double haloX_, haloY_;
-  double channelX_, channelY_;
   double* netTable_;
   int verbose_;
   bool fenceRegionMode_;
@@ -241,4 +234,3 @@ class Layout
 };
 
 }  // namespace mpl
-

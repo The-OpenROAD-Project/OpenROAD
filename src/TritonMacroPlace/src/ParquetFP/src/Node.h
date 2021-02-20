@@ -91,9 +91,8 @@ namespace parquetfp
 
            //ctors
            Node(const std::string block_name,float block_area,float minAr,float maxAr,
-                   int index,bool type);
+                int index,bool type);
            Node(const Node& orig);
-//           Node& operator=(const Node& rhs);
 
            bool getType() const            {return _type;}
            int getIndex(void) const        {return _index;} 

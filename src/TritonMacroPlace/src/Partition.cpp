@@ -54,6 +54,7 @@ Partition::Partition(PartClass _partClass,
                      double _ly,
                      double _width,
                      double _height,
+                     MacroPlacer *macro_placer,
                      utl::Logger* log)
     : partClass(_partClass),
       lx(_lx),
@@ -62,6 +63,7 @@ Partition::Partition(PartClass _partClass,
       height(_height),
       netTable(nullptr),
       tableCnt(0),
+      macro_placer_(macro_placer),
       logger_(log)
 {
 }
@@ -74,6 +76,7 @@ Partition::Partition(const Partition& prev)
       height(prev.height),
       macroStor(prev.macroStor),
       tableCnt(prev.tableCnt),
+      macro_placer_(prev.macro_placer_),
       logger_(prev.logger_)
 {
   if (prev.netTable) {
@@ -101,7 +104,7 @@ Partition::~Partition()
 #define GLOBAL_NORTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::North))
 #define GLOBAL_SOUTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::South))
 
-string Partition::GetName(int macroIdx)
+string Partition::getName(int macroIdx)
 {
   if (macroIdx < macroStor.size()) {
     return macroStor[macroIdx].name();
@@ -317,26 +320,27 @@ bool Partition::DoAnneal()
   //////////////////////////////////////////////////////
   // Feed node structure: macro Info
   for (auto& curMacro : macroStor) {
-    double padMacroWidth
-        = curMacro.w + 2 * (curMacro.haloX + curMacro.channelX);
-    double padMacroHeight
-        = curMacro.h + 2 * (curMacro.haloY + curMacro.channelY);
-
-    pfp::Node tmpMacro(curMacro.name(),
-                       padMacroWidth * padMacroHeight,
-                       padMacroWidth / padMacroHeight,
-                       padMacroWidth / padMacroHeight,
-                       &curMacro - &macroStor[0],
-                       false);
-
-    tmpMacro.addSubBlockIndex(&curMacro - &macroStor[0]);
+    MacroSpacings &spacings = macro_placer_->getSpacings(curMacro);
+    double padded_width
+      = curMacro.w + 2 * (spacings.getHaloX() + spacings.getChannelX());
+    double padded_height
+        = curMacro.h + 2 * (spacings.getHaloY() + spacings.getChannelY());
+    double aspect_ratio = padded_width / padded_height;
+    pfp::Node node(curMacro.name(),
+                   padded_width * padded_height,
+                   aspect_ratio,
+                   aspect_ratio,
+                   &curMacro - &macroStor[0],
+                   false);
+    
+    node.addSubBlockIndex(&curMacro - &macroStor[0]);
 
     // TODO
     // tmpMacro.putSnapX();
     // tmpMacro.putHaloX();
     // tmpMacro.putChannelX();
 
-    nodes->putNewNode(tmpMacro);
+    nodes->putNewNode(node);
   }
 
   // Feed node structure: terminal Info
@@ -374,8 +378,8 @@ bool Partition::DoAnneal()
     int idx = &curNet - &netStor[0];
     pfp::Net pnet;
 
-    parquetfp::pin pin1(GetName(curNet.first).c_str(), true, 0, 0, idx);
-    parquetfp::pin pin2(GetName(curNet.second).c_str(), true, 0, 0, idx);
+    parquetfp::pin pin1(getName(curNet.first).c_str(), true, 0, 0, idx);
+    parquetfp::pin pin2(getName(curNet.second).c_str(), true, 0, 0, idx);
 
     pnet.addNode(pin1);
     pnet.addNode(pin2);
@@ -462,8 +466,10 @@ bool Partition::DoAnneal()
                           ? height - curNode.getY() - curNode.getHeight() + ly
                           : curNode.getY() + ly;
 
-    macroStor[i].lx += (macroStor[i].haloX + macroStor[i].channelX);
-    macroStor[i].ly += (macroStor[i].haloY + macroStor[i].channelY);
+    Macro &macro = macroStor[i];
+    MacroSpacings &spacings = macro_placer_->getSpacings(macro);
+    macro.lx += spacings.getHaloX() + spacings.getChannelX();
+    macro.ly += spacings.getHaloY() + spacings.getChannelY();
   }
 
   logger_->report("End Parquet");

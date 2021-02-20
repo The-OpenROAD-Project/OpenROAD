@@ -91,10 +91,6 @@ MacroPlacer::MacroPlacer()
       uy_(0),
       siteSizeX_(0),
       siteSizeY_(0),
-      haloX_(0),
-      haloY_(0),
-      channelX_(0),
-      channelY_(0),
       netTable_(nullptr),
       verbose_(1),
       fenceRegionMode_(false),
@@ -111,14 +107,12 @@ void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
 
 void MacroPlacer::setHalo(double halo_x, double halo_y)
 {
-  haloX_ = halo_x;
-  haloY_ = halo_y;
+  default_macro_spacings_.setHalo(halo_x, halo_y);
 }
 
 void MacroPlacer::setChannel(double channel_x, double channel_y)
 {
-  channelX_ = channel_x;
-  channelY_ = channel_y;
+  default_macro_spacings_.setChannel(channel_x, channel_y);
 }
 
 void MacroPlacer::setVerboseLevel(int verbose)
@@ -217,7 +211,7 @@ void MacroPlacer::placeMacros()
 
   bool isHorizontal = true;
 
-  Partition topLayout(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, logger_);
+  Partition topLayout(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   topLayout.macroStor = macroStor;
 
   logger_->report("Begin One Level Partition");
@@ -618,6 +612,7 @@ MacroPlacer::getPartitions(const Layout& layout,
         partition.ly,
         (isHorizontal) ? cutLine - partition.lx : partition.width,
         (isHorizontal) ? partition.height : cutLine - partition.ly,
+        this,
         logger_);
 
     Partition upperPart(
@@ -628,6 +623,7 @@ MacroPlacer::getPartitions(const Layout& layout,
                        : partition.width,
         (isHorizontal) ? partition.height
                        : partition.ly + partition.height - cutLine,
+        this,
         logger_);
 
     //
@@ -699,21 +695,6 @@ void MacroPlacer::FillMacroStor()
                        inst->getConstName());
       }
 
-      double curHaloX = 0, curHaloY = 0, curChannelX = 0, curChannelY = 0;
-      auto mlPtr = macroLocalMap.find(inst->getConstName());
-      if (mlPtr == macroLocalMap.end()) {
-        curHaloX = haloX_;
-        curHaloY = haloY_;
-        curChannelX = channelX_;
-        curChannelY = channelY_;
-      } else {
-        MacroLocalInfo& m = mlPtr->second;
-        curHaloX = (m.GetHaloX() == 0) ? haloX_ : m.GetHaloX();
-        curHaloY = (m.GetHaloY() == 0) ? haloY_ : m.GetHaloY();
-        curChannelX = (m.GetChannelX() == 0) ? channelX_ : m.GetChannelX();
-        curChannelY = (m.GetChannelY() == 0) ? channelY_ : m.GetChannelY();
-      }
-
       int placeX, placeY;
       inst->getLocation(placeX, placeY);
 
@@ -722,10 +703,6 @@ void MacroPlacer::FillMacroStor()
                   1.0 * placeY / dbu,
                   1.0 * inst->getBBox()->getDX() / dbu,
                   1.0 * inst->getBBox()->getDY() / dbu,
-                  curHaloX,
-                  curHaloY,
-                  curChannelX,
-                  curChannelY,
                   inst);
       macroStor.push_back(macro);
     }
@@ -1241,6 +1218,20 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   return CoreEdge::West;
 }
 
+////////////////////////////////////////////////////////////////
+
+MacroSpacings &
+MacroPlacer::getSpacings(Macro &macro)
+{
+  auto itr = macro_spacings_.find(macro.dbInstPtr);
+  if (itr == macro_spacings_.end())
+    return default_macro_spacings_;
+  else
+    return itr->second;
+}
+
+////////////////////////////////////////////////////////////////
+
 const char *coreEdgeString(CoreEdge edge)
 {
   switch (edge) {
@@ -1275,19 +1266,11 @@ Macro::Macro(double _lx,
              double _ly,
              double _w,
              double _h,
-             double _haloX,
-             double _haloY,
-             double _channelX,
-             double _channelY,
              odb::dbInst* _dbInstPtr)
     : lx(_lx),
       ly(_ly),
       w(_w),
       h(_h),
-      haloX(_haloX),
-      haloY(_haloY),
-      channelX(_channelX),
-      channelY(_channelY),
       dbInstPtr(_dbInstPtr)
 {
 }
@@ -1299,10 +1282,6 @@ Macro::Macro(double _lx,
     ly(_ly),
       w(copy_from.w),
       h(copy_from.h),
-      haloX(copy_from.haloX),
-      haloY(copy_from.haloY),
-      channelX(copy_from.channelX),
-      channelY(copy_from.channelY),
       dbInstPtr(copy_from.dbInstPtr)
 {
 }
@@ -1312,9 +1291,23 @@ std::string Macro::name()
   return dbInstPtr->getName();
 }
 
-MacroLocalInfo::MacroLocalInfo()
-    : haloX_(0), haloY_(0), channelX_(0), channelY_(0)
+MacroSpacings::MacroSpacings()
+    : halo_x_(0), halo_y_(0), channel_x_(0), channel_y_(0)
 {
+}
+
+void MacroSpacings::setHalo(double halo_x,
+                            double halo_y)
+{
+  halo_x_ = halo_x;
+  halo_y_ = halo_y;
+}
+
+void MacroSpacings::setChannel(double channel_x,
+                               double channel_y)
+{
+  channel_x_ = channel_x;
+  channel_y_ = channel_y;
 }
 
 }  // namespace mpl
