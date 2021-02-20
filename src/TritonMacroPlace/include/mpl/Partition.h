@@ -84,12 +84,11 @@ class Partition
   Partition(const Partition& prev);
   ~Partition();
 
-  void FillNetlistTable(MacroPlacer* placer,
-                        MacroPartMap& macroPartMap);
+  void fillNetlistTable(MacroPartMap& macroPartMap);
   // Call Parquet to have annealing solution
-  bool DoAnneal();
+  bool anneal();
   // Update Macro location from MacroPlacer
-  void UpdateMacroCoordi(MacroPlacer* placer);
+  void updateMacroCoordi();
 
   PartClass partClass;
   vector<Macro> macros_;
@@ -99,6 +98,8 @@ class Partition
 
  private:
   string getName(int macroIdx);
+  int globalIndex(int macro_idx);
+
   utl::Logger* logger_;
   MacroPlacer *macro_placer_;
 };

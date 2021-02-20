@@ -214,7 +214,7 @@ void MacroPlacer::placeMacros()
   UpdateMacroPartMap(topLayout, globalMacroPartMap);
 
   if (timing_driven_) {
-    topLayout.FillNetlistTable(this, globalMacroPartMap);
+    topLayout.fillNetlistTable(globalMacroPartMap);
     UpdateNetlist(topLayout);
   }
 
@@ -257,7 +257,7 @@ void MacroPlacer::placeMacros()
 
           if (timing_driven_) {
             for (auto& curSet : oneSet) {
-              curSet.FillNetlistTable(this, macroPartMap);
+              curSet.fillNetlistTable(macroPartMap);
             }
           }
 
@@ -282,7 +282,7 @@ void MacroPlacer::placeMacros()
 
           if (timing_driven_) {
             for (auto& curSet : oneSet) {
-              curSet.FillNetlistTable(this, macroPartMap);
+              curSet.fillNetlistTable(macroPartMap);
             }
           }
 
@@ -309,7 +309,7 @@ void MacroPlacer::placeMacros()
 
             if (timing_driven_) {
               for (auto& curSet : oneSet) {
-                curSet.FillNetlistTable(this, macroPartMap);
+                curSet.fillNetlistTable(macroPartMap);
               }
             }
 
@@ -339,7 +339,7 @@ void MacroPlacer::placeMacros()
     bool isFailed = false;
     for (auto& curPart : curSet) {
       // Annealing based on ParquetFP Engine
-      if (!curPart.DoAnneal()) {
+      if (!curPart.anneal()) {
         isFailed = true;
         break;
       }
@@ -352,7 +352,7 @@ void MacroPlacer::placeMacros()
 
     // update partitons' macro info
     for (auto& curPart : curSet) {
-      curPart.UpdateMacroCoordi(this);
+      curPart.updateMacroCoordi();
     }
 
     double curWwl = GetWeightedWL();
@@ -379,7 +379,7 @@ void MacroPlacer::placeMacros()
 
 int MacroPlacer::weight(int idx1, int idx2)
 {
-  return macroWeight[idx1][idx2];
+  return macro_weights_[idx1][idx2];
 }
 
 // update opendb dataset from mckt.
@@ -1085,14 +1085,14 @@ void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
   }
 }
 
-// Fill macroWeight array.
+// Fill macro_weights_ array.
 void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
 {
   size_t weight_size = macros_.size() + 4;
-  macroWeight.resize(weight_size);
+  macro_weights_.resize(weight_size);
   for (size_t i = 0; i < weight_size; i++) {
-    macroWeight[i].resize(weight_size);
-    macroWeight[i] = {0};
+    macro_weights_[i].resize(weight_size);
+    macro_weights_[i] = {0};
   }
 
   for (auto pair_weight : adj_map) {
@@ -1101,7 +1101,7 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
     Macro *to = from_to.second;
     float weight = pair_weight.second;
     if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
-      macroWeight[macroIndex(from)][macroIndex(to)] = weight;
+      macro_weights_[macroIndex(from)][macroIndex(to)] = weight;
       if (weight > 0)
         debugPrint(logger_, MPL, "weights", 1, "{} -> {} {}",
                    faninName(from),
@@ -1127,6 +1127,11 @@ int MacroPlacer::macroIndex(Macro *macro)
     return edge_index;
   else
     return macro - &macros_[0] + core_edge_count;
+}
+
+int MacroPlacer::macroIndex(dbInst *inst)
+{
+  return macroInstMap[inst];
 }
 
 bool MacroPlacer::macroIndexIsEdge(Macro *macro)

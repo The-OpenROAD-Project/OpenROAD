@@ -146,8 +146,9 @@ public:
   double GetWeightedWL();
   void UpdateNetlist(Partition& layout);
   int weight(int idx11, int idx12);
-
+  int macroIndex(odb::dbInst *inst);
   MacroSpacings &getSpacings(Macro &macro);
+
 private:
   void FillMacroStor();
   bool isMissingLiberty();
@@ -193,7 +194,7 @@ private:
   bool timing_driven_;
 
   // macro idx/idx pair -> give each
-  vector<vector<int>> macroWeight;
+  vector<vector<int>> macro_weights_;
   // macro Information
   vector<Macro> macros_;
   // dbInst* --> macros_'s index
