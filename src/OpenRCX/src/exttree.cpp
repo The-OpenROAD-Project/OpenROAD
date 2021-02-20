@@ -38,7 +38,7 @@
 
 #include "dbExtControl.h"
 #include "dbSearch.h"
-#include "exttree.h"
+#include "OpenRCX/exttree.h"
 #include "utility/Logger.h"
 
 namespace rcx {

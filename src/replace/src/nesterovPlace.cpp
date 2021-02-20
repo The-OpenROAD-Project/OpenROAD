@@ -36,6 +36,7 @@
 #include "nesterovPlace.h"
 #include "opendb/db.h"
 #include "routeBase.h"
+#include "timingBase.h"
 #include "utility/Logger.h"
 #include <iostream>
 using namespace std;
@@ -81,7 +82,8 @@ NesterovPlaceVars::reset() {
 }
 
 NesterovPlace::NesterovPlace() 
-  : pb_(nullptr), nb_(nullptr), rb_(nullptr), log_(nullptr), npVars_(), 
+  : pb_(nullptr), nb_(nullptr), rb_(nullptr), tb_(nullptr), 
+  log_(nullptr), npVars_(), 
   wireLengthGradSum_(0), 
   densityGradSum_(0),
   stepLength_(0),
@@ -98,12 +100,14 @@ NesterovPlace::NesterovPlace(
     std::shared_ptr<PlacerBase> pb, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<RouteBase> rb,
+    std::shared_ptr<TimingBase> tb,
     utl::Logger* log) 
 : NesterovPlace() {
   npVars_ = npVars;
   pb_ = pb;
   nb_ = nb;
   rb_ = rb;
+  tb_ = tb;
   log_ = log;
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = make_unique<Graphics>(log_, this, pb, nb, npVars_.debug_draw_bins);
@@ -120,8 +124,6 @@ static PlotEnv pe;
 #endif
 
 void NesterovPlace::init() {
-  log_->report("Begin NesterovInit");
-
   const int gCellSize = nb_->gCells().size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
   curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
@@ -229,7 +231,6 @@ void NesterovPlace::init() {
     = getStepLength (prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
-  log_->report ("End NesterovInit");
 
   if( isnan(stepLength_) ) {
     log_->error(GPL, 304, "RePlAce diverged on initial iteration.");
@@ -561,6 +562,28 @@ NesterovPlace::doNesterovPlace() {
       hpwlWithMinSumOverflow = prevHpwl_; 
     }
 
+    // timing driven feature
+    // do reweight on timing-critical nets. 
+    if( npVars_.timingDrivenMode 
+        && tb_->isTimingUpdateIter(sumOverflow_) ){
+      // update db's instance location from current density coordinates
+      updateDb();
+
+      // Call resizer's estimateRC API to fill in PEX using placed locations, 
+      // Call sta's API to extract worst timing paths,
+      // and update GNet's weights from worst timing paths.
+      //
+      // See timingBase.cpp in detail
+      bool shouldTdProceed = tb_->updateGNetWeights(sumOverflow_); 
+
+      // problem occured
+      // escape timing driven later
+      if (!shouldTdProceed) {
+        npVars_.timingDrivenMode = false;
+      }
+    } 
+
+
     // diverge detection on
     // large max_phi_cof value + large design 
     //
@@ -600,7 +623,8 @@ NesterovPlace::doNesterovPlace() {
         break;
       }
     }
-    
+  
+    // save snapshots for routability-driven  
     if( !isSnapshotSaved 
         && npVars_.routabilityDrivenMode 
         && 0.6 >= sumOverflow_ ) {

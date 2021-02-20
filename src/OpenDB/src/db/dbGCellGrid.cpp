@@ -41,10 +41,8 @@
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 // User Code Begin includes
-#include <dbBlock.h>
-
+#include "dbBlock.h"
 #include <algorithm>
-
 #include "dbSet.h"
 // User Code End includes
 namespace odb {
@@ -139,8 +137,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj._y_origin;
   stream >> obj._y_count;
   stream >> obj._y_step;
-  // stream >> obj._usage_map;
-  // stream >> obj._capacity_map;
+  stream >> obj._usage_map;
+  stream >> obj._capacity_map;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -153,8 +151,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
   stream << obj._y_origin;
   stream << obj._y_count;
   stream << obj._y_step;
-  // stream << obj._usage_map;
-  // stream << obj._capacity_map;
+  stream << obj._usage_map;
+  stream << obj._capacity_map;
   // User Code Begin <<
   // User Code End <<
   return stream;

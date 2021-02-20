@@ -1,0 +1,103 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: gcd_mem3.def
+[INFO ODB-0128] Design: gcd_mem3
+[INFO ODB-0130]     Created 75 pins.
+[INFO ODB-0131]     Created 309 components and 1802 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 398 nets and 1184 connections.
+[INFO ODB-0134] Finished DEF file: gcd_mem3.def
+[INFO MPL-0005] NumMacros 3
+[INFO MPL-0009] West pins 18
+[INFO MPL-0009] East pins 13
+[INFO MPL-0009] North pins 12
+[INFO MPL-0009] South pins 32
+Begin One Level Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 3
+[INFO MPL-0078] CutLine 2.06
+[INFO MPL-0079] RoundUpCutLine 2.09
+[INFO MPL-0078] CutLine 25.32
+[INFO MPL-0079] RoundUpCutLine 25.27
+[INFO MPL-0078] CutLine 44.30
+[INFO MPL-0079] RoundUpCutLine 44.27
+End Partition
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 0
+[INFO MPL-0077] NumCutLines 0
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 3
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 1
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 2
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
+End Partition
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 2
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 11.65
+[INFO MPL-0079] RoundUpCutLine 11.20
+End Partition
+End East Partition
+Begin West Partition
+Begin Partition
+[INFO MPL-0076] NumMacros 1
+[INFO MPL-0077] NumCutLines 1
+[INFO MPL-0078] CutLine 12.10
+[INFO MPL-0079] RoundUpCutLine 12.60
+End Partition
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] NumExtractedSets: 3
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 1
+[INFO MPL-0072] WeightedWL: 0
+Begin Parquet
+End Parquet
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 2
+[INFO MPL-0072] WeightedWL: 0
+Begin Parquet
+End Parquet
+Begin Parquet
+End Parquet
+[INFO MPL-0071] SetId: 3
+[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0073] NumFinalSols: 3
+No differences found.

@@ -33,26 +33,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/MakeResizer.hh"
+#include "rsz/MakeResizer.hh"
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include "openroad/OpenRoad.hh"
 #include "gui/gui.h"
 
 namespace ord {
 
-using sta::dbSta;
-using rsz::Resizer;
-using gui::Gui;
-
-Resizer *
+rsz::Resizer *
 makeResizer()
 {
-  return new Resizer;
+  return new rsz::Resizer;
 }
 
 void
-deleteResizer(Resizer *resizer)
+deleteResizer(rsz::Resizer *resizer)
 {
   delete resizer;
 }

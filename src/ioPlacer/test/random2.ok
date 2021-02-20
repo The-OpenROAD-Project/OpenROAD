@@ -9,9 +9,9 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-#Macro blocks found: 0
-Using 5u default boundaries offset
-Using 2 tracks default min distance between IO pins
+Found 0 macro blocks.
+Using 5u default boundaries offset.
+Using 2 tracks default min distance between IO pins.
 Random pin placement
 RandomMode Even
 No differences found.

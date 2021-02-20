@@ -68,6 +68,7 @@ void TritonCTS::makeComponents()
 {
   _db = _openroad->getDb();
   _options = new CtsOptions;
+  _options->setLogger(_logger);
   _techChar = new TechChar(_options, _logger);
   _staEngine = new StaEngine(_options);
   _builders = new std::vector<TreeBuilder*>;
@@ -214,20 +215,51 @@ void TritonCTS::runPostCtsOpt()
   }
 }
 
-void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks)
+void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks,
+                                      unsigned currWireLength, double &sinkWireLength)
 {
   if (sinks > 100000)
     return;
 
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
+  int driverX = -1;
+  int driverY = -1;
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm->getIoType() != odb::dbIoType::INPUT) {
+      iterm->getAvgXY(&driverX, &driverY);
+      break;
+    }
+  }
+  odb::dbSet<odb::dbBTerm> bterms = net->getBTerms();
+  for (odb::dbBTerm* bterm : bterms) {
+    if (bterm->getIoType() == odb::dbIoType::INPUT) {
+      for (odb::dbBPin* pin : bterm->getBPins()) {
+        odb::dbPlacementStatus status = pin->getPlacementStatus();
+        if (status == odb::dbPlacementStatus::NONE
+            || status == odb::dbPlacementStatus::UNPLACED) {
+          continue;
+        }
+        for (odb::dbBox* box : pin->getBoxes()) {
+          if (box) {
+            driverX = box->xMin();
+            driverY = box->yMin();
+            break;
+          }
+        }
+        break;
+      }
+    }
+  }
   for (odb::dbITerm* iterm : iterms) {
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      odb::dbInst *inst = iterm->getInst();
-      std::string name = inst->getName();
+      std::string name = iterm->getInst()->getName();
+      int receiverX, receiverY;
+      iterm->getAvgXY(&receiverX, &receiverY);
+      unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
       if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf_", 7)) {
-        odb::dbITerm* outputPin = inst->getFirstOutput();
+        odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
-          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks);
+          countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength + dist), sinkWireLength);
         else
         {
           _logger->report("  Hanging buffer {}", name);
@@ -236,9 +268,11 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
           leafSinks++;
       } else {
         sinks++;
+        double currSinkWl = (dist + currWireLength)/double(_options->getDbUnits());
+        sinkWireLength += currSinkWl;
       }
     }
-  }
+  } // ignoring block pins/feedthrus
 }
 
 void TritonCTS::writeDataToDb()
@@ -249,13 +283,14 @@ void TritonCTS::writeDataToDb()
 
   for (TreeBuilder* builder : *_builders) {
     writeClockNetsToDb(builder->getClock());
-    if (_logger->debugCheck(utl::CTS, "HTree", 2)) {
-      odb::dbNet* topClockNet = builder->getClock().getNetObj();
-      unsigned sinkCount = 0;
-      unsigned leafSinks = 0;
-      countSinksPostDbWrite(topClockNet, sinkCount, leafSinks);
-      _logger->report("  Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
-    }
+    odb::dbNet* topClockNet = builder->getClock().getNetObj();
+    unsigned sinkCount = 0;
+    unsigned leafSinks = 0;
+    double allSinkDistance = 0.0;
+    countSinksPostDbWrite(topClockNet, sinkCount, leafSinks, 0, allSinkDistance);
+    _logger->info(CTS, 91, "Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
+    double avgWL = allSinkDistance/sinkCount;
+    _logger->info(CTS, 92, "Avg Sink Wire Length = {:.3} um", avgWL);
   }
 }
 
@@ -445,7 +480,7 @@ void TritonCTS::initClock(odb::dbNet* net)
                          + std::string(mterm->getConstName());
       int x, y;
       computeITermPosition(iterm, x, y);
-      clockNet.addSink(name, x, y, iterm);
+      clockNet.addSink(name, x, y, iterm, _staEngine->getInputPinCap(iterm));
     }
   }
 

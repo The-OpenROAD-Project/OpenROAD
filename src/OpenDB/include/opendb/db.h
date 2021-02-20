@@ -33,6 +33,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -48,8 +49,8 @@
 
 #define ADS_MAX_CORNER 10
 
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 
 namespace odb {
@@ -102,7 +103,15 @@ class dbBlockCallBackObj;
 class dbRegion;
 class dbBPin;
 // Generator Code Begin 2
+class dbTechLayer;
 class dbTechLayerSpacingEolRule;
+class dbTechLayerMinStepRule;
+class dbTechLayerCornerSpacingRule;
+class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerCutClassRule;
+class dbTechLayerCutSpacingRule;
+class dbTechLayerCutSpacingTableOrthRule;
+class dbTechLayerCutSpacingTableDefRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -121,7 +130,6 @@ class dbTarget;
 
 // Tech objects
 class dbTech;
-class dbTechLayer;
 class dbTechVia;
 class dbTechViaRule;
 class dbTechViaLayerRule;
@@ -824,7 +832,7 @@ class dbBlock : public dbObject
   /// Returns the hierarchical parent of this block if it exists.
   ///
   dbInst* getParentInst();
-  
+
   ///
   /// Returns the top module of this block.
   ///
@@ -1773,7 +1781,7 @@ class dbBPin : public dbObject
   /// Get the placement status of this block-terminal.
   ///
   dbPlacementStatus getPlacementStatus();
-  
+
   ///
   /// Set the placement status of this block-terminal.
   ///
@@ -1793,7 +1801,7 @@ class dbBPin : public dbObject
   /// Get bbox of this pin (ie the bbox of getBoxes())
   ///
   Rect getBBox();
-  
+
   ///
   /// Returns true if this bpin has an effective-width rule.
   ///
@@ -5854,290 +5862,6 @@ class dbTech : public dbObject
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
-/// A TechLayer is the element that represents a specific process layer in
-/// a technolgy.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbTechLayer : public dbObject
-{
- public:
-  ///
-  /// Get the layer name.
-  ///
-  std::string getName() const;
-
-  ///
-  /// Get the layer name.
-  ///
-  const char* getConstName() const;
-
-  ///
-  /// Returns true if this layer has an alias.
-  ///
-  bool hasAlias();
-
-  ///
-  /// Get the layer alias.
-  ///
-  std::string getAlias();
-
-  ///
-  /// Set the layer alias.
-  ///
-  void setAlias(const char* alias);
-
-  ///
-  /// Get the minimum path-width.
-  ///
-  uint getWidth() const;
-  void setWidth(int width);
-
-  ///
-  /// Get the minimum object-to-object spacing.
-  ///
-  int  getSpacing();
-  void setSpacing(int spacing);
-
-  ///
-  /// Get the minimum spacing to a wide line.
-  ///
-  int getSpacing(int width, int length = 0);
-
-  ///
-  /// Get the low end of the uppermost range for wide wire design rules.
-  ///
-  void getMaxWideDRCRange(int& owidth, int& olength);
-  void getMinWideDRCRange(int& owidth, int& olength);
-
-  /// Get the collection of spacing rules for the object, assuming
-  /// coding in LEF 5.4 format.
-  /// Return false if rules not encoded in this format.
-  /// Contents of sp_rules are undefined if function returns false.
-  ///
-  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
-
-  // Get the collection of Eol Spacing Rules for the object
-  dbSet<dbTechLayerSpacingEolRule> getEolSpacingRules() const;
-
-  ///
-  /// API for version 5.5 spacing rules, expressed as a 2D matrix with
-  /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
-  /// this is not enforced here.
-  /// V5.4 and V5.5 spacing rules are optional -- in this case there is a
-  /// single spacing value for all length/width combinations.
-  ///
-  bool hasV55SpacingRules() const;
-  void printV55SpacingRules(lefout& writer) const;
-  bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
-
-  void initV55LengthIndex(uint numelems);
-  void addV55LengthEntry(uint length);
-  void initV55WidthIndex(uint numelems);
-  void addV55WidthEntry(uint width);
-  void initV55SpacingTable(uint numrows, uint numcols);
-  void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
-
-  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
-  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
-
-  ///
-  /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix
-  /// with index tables
-  ///
-  bool hasTwoWidthsSpacingRules() const;
-  void printTwoWidthsSpacingRules(lefout& writer) const;
-  bool getTwoWidthsSpacingTable(std::vector<std::vector<uint>>& sptbl) const;
-  uint getTwoWidthsSpacingTableNumWidths() const;
-  uint getTwoWidthsSpacingTableWidth(uint row) const;
-  bool getTwoWidthsSpacingTableHasPRL(uint row) const;
-  uint getTwoWidthsSpacingTablePRL(uint row) const;
-  uint getTwoWidthsSpacingTableEntry(uint row, uint col) const;
-
-  void initTwoWidths(uint num_widths);
-  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1);
-  void addTwoWidthsSpacingTableEntry(uint inrow, uint incol, uint spacing);
-  ///
-  ///  create container for layer specific antenna rules
-  ///  currently only oxide1 (default) and oxide2 models supported.
-  ///
-  dbTechLayerAntennaRule* createDefaultAntennaRule();
-  dbTechLayerAntennaRule* createOxide2AntennaRule();
-
-  ///
-  /// Access and write antenna rule models -- get functions will return NULL
-  /// if model not created.
-  ///
-  bool                    hasDefaultAntennaRule() const;
-  bool                    hasOxide2AntennaRule() const;
-  dbTechLayerAntennaRule* getDefaultAntennaRule() const;
-  dbTechLayerAntennaRule* getOxide2AntennaRule() const;
-  void                    writeAntennaRulesLef(lefout& writer) const;
-
-  ///
-  ///
-  /// Get collection of minimum cuts, minimum enclosure rules, if exist
-  ///
-  bool getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules);
-  bool getMinEnclosureRules(std::vector<dbTechMinEncRule*>& enc_rules);
-
-  dbSet<dbTechMinCutRule> getMinCutRules();
-  dbSet<dbTechMinEncRule> getMinEncRules();
-
-  ///
-  /// Get/Set the minimum feature size (pitch).
-  ///
-  int  getPitch();
-  int  getPitchX();
-  int  getPitchY();
-  void setPitch(int pitch);
-  void setPitchXY(int pitch_x, int pitch_y);
-  bool hasXYPitch();
-
-  int  getOffset();
-  int  getOffsetX();
-  int  getOffsetY();
-  void setOffset(int pitch);
-  void setOffsetXY(int pitch_x, int pitch_y);
-  bool hasXYOffset();
-
-  ///
-  ///  Get THICKNESS in DB units, and return indicator of existence.
-  ///  Do not trust value of output parm if return value is false.
-  ///
-  bool getThickness(uint& inthk) const;
-  void setThickness(uint thickness);
-
-  ///
-  ///  Get/set AREA parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool   hasArea() const;
-  double getArea() const;
-  void   setArea(double area);
-
-  ///
-  ///  Get/set MAXWIDTH parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasMaxWidth() const;
-  uint getMaxWidth() const;
-  void setMaxWidth(uint max_width);
-
-  ///
-  ///  Get/set min width parameter.
-  ///
-  uint getMinWidth() const;
-  void setMinWidth(uint max_width);
-
-  ///
-  ///  Get/set MINSTEP parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasMinStep() const;
-  uint getMinStep() const;
-  void setMinStep(uint min_step);
-
-  dbTechLayerMinStepType getMinStepType() const;
-  void                   setMinStepType(dbTechLayerMinStepType type);
-
-  bool hasMinStepMaxLength() const;
-  uint getMinStepMaxLength() const;
-  void setMinStepMaxLength(uint length);
-
-  bool hasMinStepMaxEdges() const;
-  uint getMinStepMaxEdges() const;
-  void setMinStepMaxEdges(uint edges);
-
-  ///
-  ///  Get/set PROTRUSIONWIDTH parameter.  This interface is used when a
-  ///  reasonable default exists.
-  ///
-  bool hasProtrusion() const;
-  uint getProtrusionWidth() const;
-  uint getProtrusionLength() const;
-  uint getProtrusionFromWidth() const;
-  void setProtrusion(uint pt_width, uint pt_length, uint pt_from_width);
-
-  /// Get the layer-type
-  ///
-  dbTechLayerType getType();
-
-  ///
-  /// Get/Set the layer-direction
-  ///
-  dbTechLayerDir getDirection();
-  void           setDirection(dbTechLayerDir direction);
-
-  ///
-  /// Get/Set the resistance (ohms per square for routing layers;
-  ///                         ohms per cut on via layers)
-  ///
-  double getResistance();
-  void   setResistance(double res);
-
-  ///
-  /// Get/Set the capacitance (pF per square micron)
-  ///
-  double getCapacitance();
-  void   setCapacitance(double cap);
-
-  ///
-  /// Get/Set the edge capacitance (pF per micron)
-  ///
-  double getEdgeCapacitance();
-  void   setEdgeCapacitance(double cap);
-
-  ///
-  /// Get/Set the wire extension
-  ///
-  uint getWireExtension();
-  void setWireExtension(uint ext);
-
-  ///
-  /// Get mask-order number of this layer.
-  ///
-  int getNumber() const;
-
-  ///
-  /// Get routing-level of this routing layer. The routing level
-  /// is from [1-num_layers]. This function returns 0, if this
-  /// layer is not a routing layer.
-  ///
-  int getRoutingLevel();
-
-  ///
-  /// Get the layer below this layer.
-  /// Returns NULL if at bottom of layer stack.
-  ///
-  dbTechLayer* getLowerLayer();
-
-  ///
-  /// Get the layer above this layer.
-  /// Returns NULL if at top of layer stack.
-  ///
-  dbTechLayer* getUpperLayer();
-
-  ///
-  /// Get the technology this layer belongs too.
-  ///
-  dbTech* getTech();
-
-  ///
-  /// Create a new layer. The mask order is implicit in the create order.
-  /// Returns NULL if a layer with this name already exists
-  ///
-  static dbTechLayer* create(dbTech*         tech,
-                             const char*     name,
-                             dbTechLayerType type);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbTechLayer* getTechLayer(dbTech* tech, uint oid);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
 /// A TechVia is the element that represents a specific process VIA in
 /// a technolgy.
 ///
@@ -6542,6 +6266,12 @@ class dbTechLayerSpacingRule : public dbObject
   bool getLengthThreshold(uint& threshold) const;
   bool getLengthThresholdRange(uint& rmin, uint& rmax) const;
   bool getRange(uint& rmin, uint& rmax) const;
+  void setSpacingNotchLengthValid(bool val);
+  void setSpacingEndOfNotchWidthValid(bool val);
+  bool hasSpacingNotchLength() const;
+  bool hasSpacingEndOfNotchWidth() const;
+  bool hasRange() const;
+  bool hasLengthThreshold() const;
   bool hasUseLengthThreshold() const;
   bool getInfluence(uint& influence) const;
   bool getInfluenceRange(uint& rmin, uint& rmax) const;
@@ -6558,6 +6288,8 @@ class dbTechLayerSpacingRule : public dbObject
   uint getCutArea() const;
   void writeLef(lefout& writer) const;
 
+  void setSameNetPgOnly(bool pgonly);
+  bool getSameNetPgOnly();
   void setLengthThreshold(uint threshold);
   void setSpacing(uint spacing);
   void setLengthThresholdRange(uint rmin, uint rmax);
@@ -7112,6 +6844,338 @@ class dbViaParams : private _dbViaParams
 
 // Generator Code Begin 5
 
+class dbTechLayer : public dbObject
+{
+ public:
+  enum LEF58_TYPE
+  {
+    NONE,
+    NWELL,
+    PWELL,
+    ABOVEDIEEDGE,
+    BELOWDIEEDGE,
+    DIFFUSION,
+    TRIMPOLY
+  };
+
+  dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
+
+  dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
+
+  dbSet<dbTechLayerSpacingEolRule> getTechLayerSpacingEolRules() const;
+
+  dbSet<dbTechLayerCutSpacingRule> getTechLayerCutSpacingRules() const;
+
+  dbSet<dbTechLayerMinStepRule> getTechLayerMinStepRules() const;
+
+  dbSet<dbTechLayerCornerSpacingRule> getTechLayerCornerSpacingRules() const;
+
+  dbSet<dbTechLayerSpacingTablePrlRule> getTechLayerSpacingTablePrlRules()
+      const;
+
+  dbSet<dbTechLayerCutSpacingTableOrthRule>
+  getTechLayerCutSpacingTableOrthRules() const;
+
+  dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
+      const;
+
+  void setRectOnly(bool _rect_only);
+
+  bool isRectOnly() const;
+
+  void setRightWayOnGridOnly(bool _right_way_on_grid_only);
+
+  bool isRightWayOnGridOnly() const;
+
+  void setRightWayOnGridOnlyCheckMask(bool _right_way_on_grid_only_check_mask);
+
+  bool isRightWayOnGridOnlyCheckMask() const;
+
+  void setRectOnlyExceptNonCorePins(bool _rect_only_except_non_core_pins);
+
+  bool isRectOnlyExceptNonCorePins() const;
+
+  // User Code Begin dbTechLayer
+
+  void setLef58Type(LEF58_TYPE type);
+
+  LEF58_TYPE getLef58Type() const;
+
+  ///
+  /// Get the layer name.
+  ///
+  std::string getName() const;
+
+  ///
+  /// Get the layer name.
+  ///
+  const char* getConstName() const;
+
+  ///
+  /// Returns true if this layer has an alias.
+  ///
+  bool hasAlias();
+
+  ///
+  /// Get the layer alias.
+  ///
+  std::string getAlias();
+
+  ///
+  /// Set the layer alias.
+  ///
+  void setAlias(const char* alias);
+
+  ///
+  /// Get the minimum path-width.
+  ///
+  uint getWidth() const;
+  void setWidth(int width);
+
+  ///
+  /// Get the minimum object-to-object spacing.
+  ///
+  int  getSpacing();
+  void setSpacing(int spacing);
+
+  ///
+  /// Get the minimum spacing to a wide line.
+  ///
+  int getSpacing(int width, int length = 0);
+
+  ///
+  /// Get the low end of the uppermost range for wide wire design rules.
+  ///
+  void getMaxWideDRCRange(int& owidth, int& olength);
+  void getMinWideDRCRange(int& owidth, int& olength);
+
+  /// Get the collection of spacing rules for the object, assuming
+  /// coding in LEF 5.4 format.
+  /// Return false if rules not encoded in this format.
+  /// Contents of sp_rules are undefined if function returns false.
+  ///
+  bool getV54SpacingRules(dbSet<dbTechLayerSpacingRule>& sp_rules) const;
+
+  ///
+  /// API for version 5.5 spacing rules, expressed as a 2D matrix with
+  /// index tables  LEF 5.4 and 5.5 rules should not co-exist -- although
+  /// this is not enforced here.
+  /// V5.4 and V5.5 spacing rules are optional -- in this case there is a
+  /// single spacing value for all length/width combinations.
+  ///
+  bool hasV55SpacingRules() const;
+  bool getV55SpacingWidthsAndLengths(std::vector<uint>& width_idx,
+                                     std::vector<uint>& length_idx) const;
+  void printV55SpacingRules(lefout& writer) const;
+  bool getV55SpacingTable(std::vector<std::vector<uint>>& sptbl) const;
+
+  void initV55LengthIndex(uint numelems);
+  void addV55LengthEntry(uint length);
+  void initV55WidthIndex(uint numelems);
+  void addV55WidthEntry(uint width);
+  void initV55SpacingTable(uint numrows, uint numcols);
+  void addV55SpacingTableEntry(uint inrow, uint incol, uint spacing);
+
+  bool getV55InfluenceRules(std::vector<dbTechV55InfluenceEntry*>& inf_tbl);
+  dbSet<dbTechV55InfluenceEntry> getV55InfluenceEntries();
+
+  ///
+  /// API for version 5.7 two widths spacing rules, expressed as a 2D matrix
+  /// with index tables
+  ///
+  bool hasTwoWidthsSpacingRules() const;
+  void printTwoWidthsSpacingRules(lefout& writer) const;
+  bool getTwoWidthsSpacingTable(std::vector<std::vector<uint>>& sptbl) const;
+  uint getTwoWidthsSpacingTableNumWidths() const;
+  uint getTwoWidthsSpacingTableWidth(uint row) const;
+  bool getTwoWidthsSpacingTableHasPRL(uint row) const;
+  uint getTwoWidthsSpacingTablePRL(uint row) const;
+  uint getTwoWidthsSpacingTableEntry(uint row, uint col) const;
+
+  void initTwoWidths(uint num_widths);
+  void addTwoWidthsIndexEntry(uint width, int parallel_run_length = -1);
+  void addTwoWidthsSpacingTableEntry(uint inrow, uint incol, uint spacing);
+  ///
+  ///  create container for layer specific antenna rules
+  ///  currently only oxide1 (default) and oxide2 models supported.
+  ///
+  dbTechLayerAntennaRule* createDefaultAntennaRule();
+  dbTechLayerAntennaRule* createOxide2AntennaRule();
+
+  ///
+  /// Access and write antenna rule models -- get functions will return NULL
+  /// if model not created.
+  ///
+  bool                    hasDefaultAntennaRule() const;
+  bool                    hasOxide2AntennaRule() const;
+  dbTechLayerAntennaRule* getDefaultAntennaRule() const;
+  dbTechLayerAntennaRule* getOxide2AntennaRule() const;
+  void                    writeAntennaRulesLef(lefout& writer) const;
+
+  ///
+  ///
+  /// Get collection of minimum cuts, minimum enclosure rules, if exist
+  ///
+  bool getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules);
+  bool getMinEnclosureRules(std::vector<dbTechMinEncRule*>& enc_rules);
+
+  dbSet<dbTechMinCutRule> getMinCutRules();
+  dbSet<dbTechMinEncRule> getMinEncRules();
+
+  ///
+  /// Get/Set the minimum feature size (pitch).
+  ///
+  int  getPitch();
+  int  getPitchX();
+  int  getPitchY();
+  void setPitch(int pitch);
+  void setPitchXY(int pitch_x, int pitch_y);
+  bool hasXYPitch();
+
+  int  getOffset();
+  int  getOffsetX();
+  int  getOffsetY();
+  void setOffset(int pitch);
+  void setOffsetXY(int pitch_x, int pitch_y);
+  bool hasXYOffset();
+
+  ///
+  ///  Get THICKNESS in DB units, and return indicator of existence.
+  ///  Do not trust value of output parm if return value is false.
+  ///
+  bool getThickness(uint& inthk) const;
+  void setThickness(uint thickness);
+
+  ///
+  ///  Get/set AREA parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool   hasArea() const;
+  double getArea() const;
+  void   setArea(double area);
+
+  ///
+  ///  Get/set MAXWIDTH parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasMaxWidth() const;
+  uint getMaxWidth() const;
+  void setMaxWidth(uint max_width);
+
+  ///
+  ///  Get/set min width parameter.
+  ///
+  uint getMinWidth() const;
+  void setMinWidth(uint max_width);
+
+  ///
+  ///  Get/set MINSTEP parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasMinStep() const;
+  uint getMinStep() const;
+  void setMinStep(uint min_step);
+
+  dbTechLayerMinStepType getMinStepType() const;
+  void                   setMinStepType(dbTechLayerMinStepType type);
+
+  bool hasMinStepMaxLength() const;
+  uint getMinStepMaxLength() const;
+  void setMinStepMaxLength(uint length);
+
+  bool hasMinStepMaxEdges() const;
+  uint getMinStepMaxEdges() const;
+  void setMinStepMaxEdges(uint edges);
+
+  ///
+  ///  Get/set PROTRUSIONWIDTH parameter.  This interface is used when a
+  ///  reasonable default exists.
+  ///
+  bool hasProtrusion() const;
+  uint getProtrusionWidth() const;
+  uint getProtrusionLength() const;
+  uint getProtrusionFromWidth() const;
+  void setProtrusion(uint pt_width, uint pt_length, uint pt_from_width);
+
+  /// Get the layer-type
+  ///
+  dbTechLayerType getType();
+
+  ///
+  /// Get/Set the layer-direction
+  ///
+  dbTechLayerDir getDirection();
+  void           setDirection(dbTechLayerDir direction);
+
+  ///
+  /// Get/Set the resistance (ohms per square for routing layers;
+  ///                         ohms per cut on via layers)
+  ///
+  double getResistance();
+  void   setResistance(double res);
+
+  ///
+  /// Get/Set the capacitance (pF per square micron)
+  ///
+  double getCapacitance();
+  void   setCapacitance(double cap);
+
+  ///
+  /// Get/Set the edge capacitance (pF per micron)
+  ///
+  double getEdgeCapacitance();
+  void   setEdgeCapacitance(double cap);
+
+  ///
+  /// Get/Set the wire extension
+  ///
+  uint getWireExtension();
+  void setWireExtension(uint ext);
+
+  ///
+  /// Get mask-order number of this layer.
+  ///
+  int getNumber() const;
+
+  ///
+  /// Get routing-level of this routing layer. The routing level
+  /// is from [1-num_layers]. This function returns 0, if this
+  /// layer is not a routing layer.
+  ///
+  int getRoutingLevel();
+
+  ///
+  /// Get the layer below this layer.
+  /// Returns NULL if at bottom of layer stack.
+  ///
+  dbTechLayer* getLowerLayer();
+
+  ///
+  /// Get the layer above this layer.
+  /// Returns NULL if at top of layer stack.
+  ///
+  dbTechLayer* getUpperLayer();
+
+  ///
+  /// Get the technology this layer belongs too.
+  ///
+  dbTech* getTech();
+
+  ///
+  /// Create a new layer. The mask order is implicit in the create order.
+  /// Returns NULL if a layer with this name already exists
+  ///
+  static dbTechLayer* create(dbTech*         tech,
+                             const char*     name,
+                             dbTechLayerType type);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbTechLayer* getTechLayer(dbTech* tech, uint oid);
+  // User Code End dbTechLayer
+};
+
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
@@ -7413,10 +7477,741 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   // User Code Begin dbTechLayerSpacingEolRule
   static dbTechLayerSpacingEolRule* create(dbTechLayer* layer);
+
   static dbTechLayerSpacingEolRule* getTechLayerSpacingEolRule(
       dbTechLayer* inly,
       uint         dbid);
+
+  static void destroy(dbTechLayerSpacingEolRule* rule);
   // User Code End dbTechLayerSpacingEolRule
+};
+
+class dbTechLayerMinStepRule : public dbObject
+{
+ public:
+  void setMinStepLength(int _min_step_length);
+
+  int getMinStepLength() const;
+
+  void setMaxEdges(uint _max_edges);
+
+  uint getMaxEdges() const;
+
+  void setMinAdjLength1(int _min_adj_length1);
+
+  int getMinAdjLength1() const;
+
+  void setMinAdjLength2(int _min_adj_length2);
+
+  int getMinAdjLength2() const;
+
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setMinBetweenLength(int _min_between_length);
+
+  int getMinBetweenLength() const;
+
+  void setMaxEdgesValid(bool _max_edges_valid);
+
+  bool isMaxEdgesValid() const;
+
+  void setMinAdjLength1Valid(bool _min_adj_length1_valid);
+
+  bool isMinAdjLength1Valid() const;
+
+  void setNoBetweenEol(bool _no_between_eol);
+
+  bool isNoBetweenEol() const;
+
+  void setMinAdjLength2Valid(bool _min_adj_length2_valid);
+
+  bool isMinAdjLength2Valid() const;
+
+  void setConvexCorner(bool _convex_corner);
+
+  bool isConvexCorner() const;
+
+  void setMinBetweenLengthValid(bool _min_between_length_valid);
+
+  bool isMinBetweenLengthValid() const;
+
+  void setExceptSameCorners(bool _except_same_corners);
+
+  bool isExceptSameCorners() const;
+
+  // User Code Begin dbTechLayerMinStepRule
+  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
+
+  static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
+                                                         uint         dbid);
+
+  static void destroy(dbTechLayerMinStepRule* rule);
+  // User Code End dbTechLayerMinStepRule
+};
+
+class dbTechLayerCornerSpacingRule : public dbObject
+{
+ public:
+  enum CornerType
+  {
+    CONVEXCORNER,
+    CONCAVECORNER
+  };
+
+  void setWithin(int _within);
+
+  int getWithin() const;
+
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setJogLength(int _jog_length);
+
+  int getJogLength() const;
+
+  void setEdgeLength(int _edge_length);
+
+  int getEdgeLength() const;
+
+  void setMinLength(int _min_length);
+
+  int getMinLength() const;
+
+  void setExceptNotchLength(int _except_notch_length);
+
+  int getExceptNotchLength() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setCornerOnly(bool _corner_only);
+
+  bool isCornerOnly() const;
+
+  void setExceptEol(bool _except_eol);
+
+  bool isExceptEol() const;
+
+  void setExceptJogLength(bool _except_jog_length);
+
+  bool isExceptJogLength() const;
+
+  void setEdgeLengthValid(bool _edge_length_valid);
+
+  bool isEdgeLengthValid() const;
+
+  void setIncludeShape(bool _include_shape);
+
+  bool isIncludeShape() const;
+
+  void setMinLengthValid(bool _min_length_valid);
+
+  bool isMinLengthValid() const;
+
+  void setExceptNotch(bool _except_notch);
+
+  bool isExceptNotch() const;
+
+  void setExceptNotchLengthValid(bool _except_notch_length_valid);
+
+  bool isExceptNotchLengthValid() const;
+
+  void setExceptSameNet(bool _except_same_net);
+
+  bool isExceptSameNet() const;
+
+  void setExceptSameMetal(bool _except_same_metal);
+
+  bool isExceptSameMetal() const;
+
+  // User Code Begin dbTechLayerCornerSpacingRule
+  void setType(CornerType _type);
+
+  CornerType getType() const;
+
+  void addSpacing(uint width, uint spacing1, uint spacing2 = 0);
+
+  void getSpacingTable(std::vector<std::pair<int, int>>& tbl);
+
+  void getWidthTable(std::vector<int>& tbl);
+
+  static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
+
+  static dbTechLayerCornerSpacingRule* getTechLayerCornerSpacingRule(
+      dbTechLayer* inly,
+      uint         dbid);
+  static void destroy(dbTechLayerCornerSpacingRule* rule);
+  // User Code End dbTechLayerCornerSpacingRule
+};
+
+class dbTechLayerSpacingTablePrlRule : public dbObject
+{
+ public:
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setWrongDirection(bool _wrong_direction);
+
+  bool isWrongDirection() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setExceeptEol(bool _exceept_eol);
+
+  bool isExceeptEol() const;
+
+  // User Code Begin dbTechLayerSpacingTablePrlRule
+  static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(
+      dbTechLayer* inly,
+      uint         dbid);
+
+  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerSpacingTablePrlRule* rule);
+
+  void setTable(std::vector<int>                    width_tbl,
+                std::vector<int>                    length_tbl,
+                std::vector<std::vector<int>>       spacing_tbl,
+                std::map<uint, std::pair<int, int>> excluded_map);
+  void getTable(std::vector<int>&                    width_tbl,
+                std::vector<int>&                    length_tbl,
+                std::vector<std::vector<int>>&       spacing_tbl,
+                std::map<uint, std::pair<int, int>>& excluded_map);
+
+  void setSpacingTableInfluence(
+      std::vector<std::tuple<int, int, int>> influence_tbl);
+
+  int getSpacing(const int width, const int length) const;
+
+  bool hasExceptWithin(int width) const;
+
+  std::pair<int, int> getExceptWithin(int width) const;
+
+  // User Code End dbTechLayerSpacingTablePrlRule
+};
+
+class dbTechLayerCutClassRule : public dbObject
+{
+ public:
+  char* getName() const;
+
+  void setWidth(int _width);
+
+  int getWidth() const;
+
+  void setLength(int _length);
+
+  int getLength() const;
+
+  void setNumCuts(int _num_cuts);
+
+  int getNumCuts() const;
+
+  void setLengthValid(bool _length_valid);
+
+  bool isLengthValid() const;
+
+  void setCutsValid(bool _cuts_valid);
+
+  bool isCutsValid() const;
+
+  // User Code Begin dbTechLayerCutClassRule
+  static dbTechLayerCutClassRule* getTechLayerCutClassRule(dbTechLayer* inly,
+                                                           uint         dbid);
+
+  static dbTechLayerCutClassRule* create(dbTechLayer* _layer, const char* name);
+
+  static void destroy(dbTechLayerCutClassRule* rule);
+  // User Code End dbTechLayerCutClassRule
+};
+
+class dbTechLayerCutSpacingRule : public dbObject
+{
+ public:
+  enum CutSpacingType
+  {
+    NONE,
+    MAXXY,
+    SAMEMASK,
+    LAYER,
+    ADJACENTCUTS,
+    PARALLELOVERLAP,
+    PARALLELWITHIN,
+    SAMEMETALSHAREDEDGE,
+    AREA
+  };
+
+  void setCutSpacing(int _cut_spacing);
+
+  int getCutSpacing() const;
+
+  void setSecondLayer(dbTechLayer* _second_layer);
+
+  void setOrthogonalSpacing(int _orthogonal_spacing);
+
+  int getOrthogonalSpacing() const;
+
+  void setWidth(int _width);
+
+  int getWidth() const;
+
+  void setEnclosure(int _enclosure);
+
+  int getEnclosure() const;
+
+  void setEdgeLength(int _edge_length);
+
+  int getEdgeLength() const;
+
+  void setParWithin(int _par_within);
+
+  int getParWithin() const;
+
+  void setParEnclosure(int _par_enclosure);
+
+  int getParEnclosure() const;
+
+  void setEdgeEnclosure(int _edge_enclosure);
+
+  int getEdgeEnclosure() const;
+
+  void setAdjEnclosure(int _adj_enclosure);
+
+  int getAdjEnclosure() const;
+
+  void setAboveEnclosure(int _above_enclosure);
+
+  int getAboveEnclosure() const;
+
+  void setAboveWidth(int _above_width);
+
+  int getAboveWidth() const;
+
+  void setMinLength(int _min_length);
+
+  int getMinLength() const;
+
+  void setExtension(int _extension);
+
+  int getExtension() const;
+
+  void setEolWidth(int _eol_width);
+
+  int getEolWidth() const;
+
+  void setNumCuts(uint _num_cuts);
+
+  uint getNumCuts() const;
+
+  void setWithin(int _within);
+
+  int getWithin() const;
+
+  void setSecondWithin(int _second_within);
+
+  int getSecondWithin() const;
+
+  void setCutClass(dbTechLayerCutClassRule* _cut_class);
+
+  void setTwoCuts(uint _two_cuts);
+
+  uint getTwoCuts() const;
+
+  void setPrl(uint _prl);
+
+  uint getPrl() const;
+
+  void setParLength(uint _par_length);
+
+  uint getParLength() const;
+
+  void setCutArea(int _cut_area);
+
+  int getCutArea() const;
+
+  void setCenterToCenter(bool _center_to_center);
+
+  bool isCenterToCenter() const;
+
+  void setSameNet(bool _same_net);
+
+  bool isSameNet() const;
+
+  void setSameMetal(bool _same_metal);
+
+  bool isSameMetal() const;
+
+  void setSameVia(bool _same_via);
+
+  bool isSameVia() const;
+
+  void setStack(bool _stack);
+
+  bool isStack() const;
+
+  void setOrthogonalSpacingValid(bool _orthogonal_spacing_valid);
+
+  bool isOrthogonalSpacingValid() const;
+
+  void setAboveWidthEnclosureValid(bool _above_width_enclosure_valid);
+
+  bool isAboveWidthEnclosureValid() const;
+
+  void setShortEdgeOnly(bool _short_edge_only);
+
+  bool isShortEdgeOnly() const;
+
+  void setConcaveCornerWidth(bool _concave_corner_width);
+
+  bool isConcaveCornerWidth() const;
+
+  void setConcaveCornerParallel(bool _concave_corner_parallel);
+
+  bool isConcaveCornerParallel() const;
+
+  void setConcaveCornerEdgeLength(bool _concave_corner_edge_length);
+
+  bool isConcaveCornerEdgeLength() const;
+
+  void setConcaveCorner(bool _concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExtensionValid(bool _extension_valid);
+
+  bool isExtensionValid() const;
+
+  void setNonEolConvexCorner(bool _non_eol_convex_corner);
+
+  bool isNonEolConvexCorner() const;
+
+  void setEolWidthValid(bool _eol_width_valid);
+
+  bool isEolWidthValid() const;
+
+  void setMinLengthValid(bool _min_length_valid);
+
+  bool isMinLengthValid() const;
+
+  void setAboveWidthValid(bool _above_width_valid);
+
+  bool isAboveWidthValid() const;
+
+  void setMaskOverlap(bool _mask_overlap);
+
+  bool isMaskOverlap() const;
+
+  void setWrongDirection(bool _wrong_direction);
+
+  bool isWrongDirection() const;
+
+  void setAdjacentCuts(uint _adjacent_cuts);
+
+  uint getAdjacentCuts() const;
+
+  void setExactAligned(bool _exact_aligned);
+
+  bool isExactAligned() const;
+
+  void setCutClassToAll(bool _cut_class_to_all);
+
+  bool isCutClassToAll() const;
+
+  void setNoPrl(bool _no_prl);
+
+  bool isNoPrl() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setExceptSamePgnet(bool _except_same_pgnet);
+
+  bool isExceptSamePgnet() const;
+
+  void setSideParallelOverlap(bool _side_parallel_overlap);
+
+  bool isSideParallelOverlap() const;
+
+  void setExceptSameNet(bool _except_same_net);
+
+  bool isExceptSameNet() const;
+
+  void setExceptSameMetal(bool _except_same_metal);
+
+  bool isExceptSameMetal() const;
+
+  void setExceptSameMetalOverlap(bool _except_same_metal_overlap);
+
+  bool isExceptSameMetalOverlap() const;
+
+  void setExceptSameVia(bool _except_same_via);
+
+  bool isExceptSameVia() const;
+
+  void setAbove(bool _above);
+
+  bool isAbove() const;
+
+  void setExceptTwoEdges(bool _except_two_edges);
+
+  bool isExceptTwoEdges() const;
+
+  void setTwoCutsValid(bool _two_cuts_valid);
+
+  bool isTwoCutsValid() const;
+
+  void setSameCut(bool _same_cut);
+
+  bool isSameCut() const;
+
+  void setLongEdgeOnly(bool _long_edge_only);
+
+  bool isLongEdgeOnly() const;
+
+  void setPrlValid(bool _prl_valid);
+
+  bool isPrlValid() const;
+
+  void setBelow(bool _below);
+
+  bool isBelow() const;
+
+  void setParWithinEnclosureValid(bool _par_within_enclosure_valid);
+
+  bool isParWithinEnclosureValid() const;
+
+  // User Code Begin dbTechLayerCutSpacingRule
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  dbTechLayer* getSecondLayer() const;
+
+  void setType(CutSpacingType _type);
+
+  CutSpacingType getType() const;
+
+  static dbTechLayerCutSpacingRule* getTechLayerCutSpacingRule(
+      dbTechLayer* inly,
+      uint         dbid);
+
+  static dbTechLayerCutSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerCutSpacingRule* rule);
+  // User Code End dbTechLayerCutSpacingRule
+};
+
+class dbTechLayerCutSpacingTableOrthRule : public dbObject
+{
+ public:
+  void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
+
+  // User Code Begin dbTechLayerCutSpacingTableOrthRule
+  void setSpacingTable(std::vector<std::pair<int, int>> tbl);
+
+  static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
+
+  static dbTechLayerCutSpacingTableOrthRule*
+  getTechLayerCutSpacingTableOrthSubRule(dbTechLayer* parent, uint dbid);
+
+  static void destroy(dbTechLayerCutSpacingTableOrthRule* rule);
+  // User Code End dbTechLayerCutSpacingTableOrthRule
+};
+
+class dbTechLayerCutSpacingTableDefRule : public dbObject
+{
+ public:
+  void setDefault(int _default);
+
+  int getDefault() const;
+
+  void setSecondLayer(dbTechLayer* _second_layer);
+
+  void setPrl(int _prl);
+
+  int getPrl() const;
+
+  void setExtension(int _extension);
+
+  int getExtension() const;
+
+  void setDefaultValid(bool _default_valid);
+
+  bool isDefaultValid() const;
+
+  void setSameMask(bool _same_mask);
+
+  bool isSameMask() const;
+
+  void setSameNet(bool _same_net);
+
+  bool isSameNet() const;
+
+  void setSameMetal(bool _same_metal);
+
+  bool isSameMetal() const;
+
+  void setSameVia(bool _same_via);
+
+  bool isSameVia() const;
+
+  void setLayerValid(bool _layer_valid);
+
+  bool isLayerValid() const;
+
+  void setNoStack(bool _no_stack);
+
+  bool isNoStack() const;
+
+  void setNonZeroEnclosure(bool _non_zero_enclosure);
+
+  bool isNonZeroEnclosure() const;
+
+  void setPrlForAlignedCut(bool _prl_for_aligned_cut);
+
+  bool isPrlForAlignedCut() const;
+
+  void setCenterToCenterValid(bool _center_to_center_valid);
+
+  bool isCenterToCenterValid() const;
+
+  void setCenterAndEdgeValid(bool _center_and_edge_valid);
+
+  bool isCenterAndEdgeValid() const;
+
+  void setNoPrl(bool _no_prl);
+
+  bool isNoPrl() const;
+
+  void setPrlValid(bool _prl_valid);
+
+  bool isPrlValid() const;
+
+  void setMaxXY(bool _max_x_y);
+
+  bool isMaxXY() const;
+
+  void setEndExtensionValid(bool _end_extension_valid);
+
+  bool isEndExtensionValid() const;
+
+  void setSideExtensionValid(bool _side_extension_valid);
+
+  bool isSideExtensionValid() const;
+
+  void setExactAlignedSpacingValid(bool _exact_aligned_spacing_valid);
+
+  bool isExactAlignedSpacingValid() const;
+
+  void setHorizontal(bool _horizontal);
+
+  bool isHorizontal() const;
+
+  void setPrlHorizontal(bool _prl_horizontal);
+
+  bool isPrlHorizontal() const;
+
+  void setVertical(bool _vertical);
+
+  bool isVertical() const;
+
+  void setPrlVertical(bool _prl_vertical);
+
+  bool isPrlVertical() const;
+
+  void setNonOppositeEnclosureSpacingValid(
+      bool _non_opposite_enclosure_spacing_valid);
+
+  bool isNonOppositeEnclosureSpacingValid() const;
+
+  void setOppositeEnclosureResizeSpacingValid(
+      bool _opposite_enclosure_resize_spacing_valid);
+
+  bool isOppositeEnclosureResizeSpacingValid() const;
+
+  // User Code Begin dbTechLayerCutSpacingTableDefRule
+  void addPrlForAlignedCutEntry(dbTechLayerCutClassRule* from,
+                                dbTechLayerCutClassRule* to);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
+  getPrlForAlignedCutTable() const;
+
+  void addCenterToCenterEntry(dbTechLayerCutClassRule* from,
+                              dbTechLayerCutClassRule* to);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
+  getCenterToCenterTable() const;
+
+  void addCenterAndEdgeEntry(dbTechLayerCutClassRule* from,
+                             dbTechLayerCutClassRule* to);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
+  getCenterAndEdgeTable() const;
+
+  void addPrlEntry(dbTechLayerCutClassRule* from,
+                   dbTechLayerCutClassRule* to,
+                   int                      ccPrl);
+
+  std::vector<
+      std::tuple<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*, int>>
+  getPrlTable() const;
+
+  void addEndExtensionEntry(dbTechLayerCutClassRule* cls, int ext);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getEndExtensionTable()
+      const;
+
+  void addSideExtensionEntry(dbTechLayerCutClassRule* cls, int ext);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getSideExtensionTable()
+      const;
+
+  void addExactElignedEntry(dbTechLayerCutClassRule* cls, int spacing);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, int>> getExactAlignedTable()
+      const;
+
+  void addNonOppEncSpacingEntry(dbTechLayerCutClassRule* cls, int spacing);
+
+  std::vector<std::pair<dbTechLayerCutClassRule*, int>>
+  getNonOppEncSpacingTable() const;
+
+  void addOppEncSpacingEntry(dbTechLayerCutClassRule* cls,
+                             int                      rsz1,
+                             int                      rsz2,
+                             int                      spacing);
+
+  std::vector<std::tuple<dbTechLayerCutClassRule*, int, int, int>>
+  getOppEncSpacingTable() const;
+
+  dbTechLayer* getSecondLayer() const;
+
+  void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
+                       std::map<std::string, uint>                   row_map,
+                       std::map<std::string, uint>                   col_map);
+
+  void getSpacingTable(std::vector<std::vector<std::pair<int, int>>>& table,
+                       std::map<std::string, uint>&                   row_map,
+                       std::map<std::string, uint>&                   col_map);
+
+  std::pair<int, int> getSpacing(const char* class1,
+                                 bool        SIDE1,
+                                 const char* class2,
+                                 bool        SIDE2);
+
+  static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
+
+  static dbTechLayerCutSpacingTableDefRule*
+  getTechLayerCutSpacingTableDefSubRule(dbTechLayer* parent, uint dbid);
+
+  static void destroy(dbTechLayerCutSpacingTableDefRule* rule);
+  // User Code End dbTechLayerCutSpacingTableDefRule
 };
 
 class dbModule : public dbObject
@@ -7467,7 +8262,7 @@ class dbModInst : public dbObject
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
   char* getName() const;
-  
+
   char* getHierarchalName() const;
   // User Code End dbModInst
 };
@@ -7477,8 +8272,8 @@ class dbGroup : public dbObject
  public:
   enum dbGroupType
   {
-    PHYSICAL_CLUSTER = 0,
-    VOLTAGE_DOMAIN   = 1
+    PHYSICAL_CLUSTER,
+    VOLTAGE_DOMAIN
   };
 
   char* getName() const;

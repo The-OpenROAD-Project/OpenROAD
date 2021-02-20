@@ -32,6 +32,7 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include "frBaseTypes.h"
 
 extern size_t getPeakRSS();
 extern size_t getCurrentRSS();
@@ -43,7 +44,7 @@ namespace fr {
     std::chrono::high_resolution_clock::time_point getT0() const {
       return t0_;
     }
-    void print();
+    void print(Logger* logger);
     bool isExceed(double in) {
       auto t1        = std::chrono::high_resolution_clock::now();
       auto time_span = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0_);

@@ -8,7 +8,7 @@
 [INFO ODB-0130]     Created 10 pins.
 [INFO ODB-0133]     Created 10 nets and 0 connections.
 [INFO ODB-0134] Finished DEF file: no_instance_pins.def
-#Macro blocks found: 0
+Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            10

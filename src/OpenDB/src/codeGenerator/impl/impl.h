@@ -50,19 +50,20 @@ namespace odb {
   class dbDiff;
   class _dbDatabase;
   {% for _class in klass.classes %}
-    {% if _class=="dbTable" %}
+    {% if _class in ["dbTable", "dbHashTable"] %}
       template <class T>
     {% endif %}
-    class {{_class}};
+    class {{ _class }};
   {% endfor %}
   //User Code Begin Classes
   //User Code End Classes
 
   {% for _struct in klass.structs %}
-    struct {{_struct.name}}
+    struct {{ _struct.name }}
     {
       {% for field in _struct.fields %}
         {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
+      
       {% endfor %}
     };
   {% endfor %}
@@ -78,7 +79,7 @@ namespace odb {
         enum {{_enum.name}}
         {
           {% for value in _enum["values"] %}
-            {% if not loop.first %},{% endif %}{{value}} = {{loop.index0}}
+            {% if not loop.first %},{% endif %}{{value}}
           {% endfor %}
         };
       {% endif %}
@@ -90,7 +91,8 @@ namespace odb {
       {% if field.table %} 
         dbTable<_{{field.type}}>* {{field.name}}; 
       {% else %}
-        {{field.type}} {{field.name}}{% if "default" in field %}= {{field.default}}{% endif %};
+      {{field.type}} {{field.name}};{% if "comment" in field %} {{field.comment}}{% endif %}
+
       {% endif %}
     {% endfor %}
 
@@ -107,7 +109,9 @@ namespace odb {
     bool operator<(const _{{klass.name}}& rhs) const;
     void differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const;
     void out(dbDiff& diff, char side, const char* field) const;
-    {% if klass.hasTables %}dbObjectTable* getObjectTable(dbObjectType type);{% endif %}
+    {% if klass.hasTables %}
+    dbObjectTable* getObjectTable(dbObjectType type);
+    {% endif %}
     //User Code Begin methods
     //User Code End methods
   };

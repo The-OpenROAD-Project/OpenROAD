@@ -38,9 +38,9 @@
 
 #include "db.h"
 #include "dbSearch.h"
-#include "extRCap.h"
-#include "extSpef.h"
-#include "exttree.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/exttree.h"
 #include "utility/Logger.h"
 
 namespace rcx {

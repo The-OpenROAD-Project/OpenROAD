@@ -1,9 +1,9 @@
 /* Copyright Athena Design Systems 2005 */
 
 #include "db.h"
-#include "extRCap.h"
-#include "extSpef.h"
-#include "extprocess.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/extprocess.h"
 
 #ifdef _WIN32
 #include "direct.h"

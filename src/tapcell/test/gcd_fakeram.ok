@@ -1,11 +1,11 @@
-[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/NangateOpenCellLibrary.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
-[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
-[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
 [INFO ODB-0127] Reading DEF file: gcd_fakeram.def
 [INFO ODB-0128] Design: gcd_mem1
 [INFO ODB-0130]     Created 61 pins.

@@ -36,31 +36,12 @@
 #include "io/io.h"
 #include "db/tech/frConstraint.h"
 
-#include "defrReader.hpp"
-#include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
 #include "utility/Logger.h"
-#include "opendb/dbWireCodec.h"
 
 using namespace std;
 using namespace fr;
-
-// This class hides the dependency on the Si2 parsing libraries from clients
-class io::Parser::Callbacks
-{
-public:
-      static int getLefMacros(lefrCallbackType_e type, lefiMacro* macro, lefiUserData data);
-      static int getLefPins(lefrCallbackType_e type, lefiPin* pin, lefiUserData data);
-      static int getLefObs(lefrCallbackType_e type, lefiObstruction* obs, lefiUserData data);
-      static int getLefString(lefrCallbackType_e type, const char* string, lefiUserData data);
-      static int getLefUnits(lefrCallbackType_e type, lefiUnits* units, lefiUserData data);
-      static int getLefManufacturingGrid(lefrCallbackType_e type, double number, lefiUserData data);
-      static int getLefLayers(lefrCallbackType_e type, lefiLayer* layer, lefiUserData data);
-      static int getLefVias(lefrCallbackType_e type, lefiVia* via, lefiUserData data);
-      static int getLefViaRules(lefrCallbackType_e type, lefiViaRule* via, lefiUserData data);
-      static int getLefUseMinSpacing(lefrCallbackType_e type, lefiUseMinSpacing* spacing, lefiUserData data);
-};
 
 int defdist(odb::dbBlock* block, int x)
 {
@@ -91,7 +72,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
   for (auto track : tracks) {
     if (tech->name2layer.find(track->getTechLayer()->getName())
         == tech->name2layer.end())
-      logger->error(utl::DRT,
+      logger->error(DRT,
                     94,
                     "cannot find layer: {}",
                     track->getTechLayer()->getName());
@@ -157,13 +138,13 @@ void io::Parser::setInsts(odb::dbBlock* block)
   for (auto inst : block->getInsts()) {
     if (design->name2refBlock_.find(inst->getMaster()->getName())
         == design->name2refBlock_.end())
-      logger->error(utl::DRT,
+      logger->error(DRT,
                     95,
                     "library cell {} not found",
                     inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
-      logger->error(utl::DRT, 96, "same cell name: {}", inst->getName());
+      logger->error(DRT, 96, "same cell name: {}", inst->getName());
     frBlock* refBlock = design->name2refBlock_.at(inst->getMaster()->getName());
     auto uInst = make_unique<frInst>(inst->getName(), refBlock);
     auto tmpInst = uInst.get();
@@ -240,7 +221,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 
       if (tech->name2layer.find(params.getCutLayer()->getName())
           == tech->name2layer.end())
-        logger->error(utl::DRT,
+        logger->error(DRT,
                       97,
                       "cannot find cut layer {}",
                       params.getCutLayer()->getName());
@@ -250,7 +231,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 
       if (tech->name2layer.find(params.getBottomLayer()->getName())
           == tech->name2layer.end())
-        logger->error(utl::DRT,
+        logger->error(DRT,
                       98,
                       "cannot find bottom layer {}",
                       params.getBottomLayer()->getName());
@@ -260,7 +241,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 
       if (tech->name2layer.find(params.getTopLayer()->getName())
           == tech->name2layer.end())
-        logger->error(utl::DRT,
+        logger->error(DRT,
                       99,
                       "cannot find top layer {}",
                       params.getTopLayer()->getName());
@@ -344,10 +325,10 @@ void io::Parser::setVias(odb::dbBlock* block)
         lNum2Int[layerNum].insert(box);
       }
       if ((int) lNum2Int.size() != 3)
-        logger->error(utl::DRT, 100, "unsupported via: {}", via->getName());
+        logger->error(DRT, 100, "unsupported via: {}", via->getName());
       if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first)
         logger->error(
-            utl::DRT, 101, "non-consecutive layers for via: {}", via->getName());
+            DRT, 101, "non-consecutive layers for via: {}", via->getName());
       auto viaDef = make_unique<frViaDef>(via->getName());
       int cnt = 0;
       for (auto& [layerNum, boxes] : lNum2Int) {
@@ -423,7 +404,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
         y2 -= dw;
         assert(y1 == y2);
       } else
-        logger->error(utl::DRT, 102, "odd dimension in both directions");
+        logger->error(DRT, 102, "odd dimension in both directions");
       break;
     }
     case odb::dbSBox::HORIZONTAL: {
@@ -452,7 +433,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       break;
     }
     default:
-      logger->error(utl::DRT, 103, "unknown direction");
+      logger->error(DRT, 103, "unknown direction");
       break;
   }
   beginX = defdist(block, x1);
@@ -472,7 +453,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     for (auto term : net->getBTerms()) {
       if (tmpBlock->name2term_.find(term->getName())
           == tmpBlock->name2term_.end())
-        logger->error(utl::DRT, 104, "term {} not found", term->getName());
+        logger->error(DRT, 104, "term {} not found", term->getName());
       auto frterm = tmpBlock->name2term_[term->getName()];  // frTerm*
       frterm->addToNet(netIn);
       netIn->addTerm(frterm);
@@ -486,12 +467,12 @@ void io::Parser::setNets(odb::dbBlock* block)
       if (tmpBlock->name2inst_.find(term->getInst()->getName())
           == tmpBlock->name2inst_.end())
         logger->error(
-            utl::DRT, 105, "component {} not found", term->getInst()->getName());
+            DRT, 105, "component {} not found", term->getInst()->getName());
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
       auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
       if(frterm == nullptr)
-        logger->error(utl::DRT, 106, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
+        logger->error(DRT, 106, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
       int idx = frterm->getOrderId();
       auto &instTerms = inst->getInstTerms();
       auto instTerm = instTerms[idx].get();
@@ -556,7 +537,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             case odb::dbWireDecoder::VWIRE:
               layerName = decoder.getLayer()->getName();
               if (tech->name2layer.find(layerName) == tech->name2layer.end())
-                logger->error(utl::DRT, 107, "unsupported layer {}", layerName);
+                logger->error(DRT, 107, "unsupported layer {}", layerName);
               break;
             case odb::dbWireDecoder::POINT:
 
@@ -666,7 +647,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         }
         if (viaName != "") {
           if (tech->name2via.find(viaName) == tech->name2via.end()) {
-            logger->error(utl::DRT, 108, "unsupported via in db");
+            logger->error(DRT, 108, "unsupported via in db");
           } else {
             frPoint p;
             if (hasEndPoint) {
@@ -726,7 +707,7 @@ void io::Parser::setNets(odb::dbBlock* block)
               viaName = box->getBlockVia()->getName();
 
             if (tech->name2via.find(viaName) == tech->name2via.end())
-              logger->error(utl::DRT, 109, "unsupported via in db");
+              logger->error(DRT, 109, "unsupported via in db");
             else {
               int x, y;
               box->getViaXY(x, y);
@@ -756,7 +737,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         netType = frNetEnum::frcGroundNet;
         break;
       default:
-        logger->error(utl::DRT, 110, "unsupported NET USE in def");
+        logger->error(DRT, 110, "unsupported NET USE in def");
         break;
     }
     netIn->setType(netType);
@@ -785,7 +766,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         termType = frTermEnum::frcClockTerm;
         break;
       default:
-        logger->error(utl::DRT, 111, "unsupported PIN USE in db");
+        logger->error(DRT, 111, "unsupported PIN USE in db");
         break;
     }
     frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
@@ -815,7 +796,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for (auto box : pin->getBoxes()) {
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
-          logger->error(utl::DRT,
+          logger->error(DRT,
                         112,
                         "unsupported layer {}",
                         box->getTechLayer()->getName());
@@ -838,14 +819,14 @@ void io::Parser::setBTerms(odb::dbBlock* block)
   }
 }
 
-void io::Parser::readDb(odb::dbDatabase* db)
+void io::Parser::readDesign(odb::dbDatabase* db)
 {
-  ProfileTask profile("IO:readDb");
+  ProfileTask profile("IO:readDesign");
   if(db->getChip() == nullptr)
-    logger->error(utl::DRT, 116, "please load design first");
+    logger->error(DRT, 116, "load design first");
   odb::dbBlock* block = db->getChip()->getBlock();
   if(block == nullptr)
-    logger->error(utl::DRT, 117, "please load design first");
+    logger->error(DRT, 117, "load design first");
   tmpBlock = make_unique<frBlock>(string(block->getName()));
   tmpBlock->trackPatterns_.clear();
   tmpBlock->trackPatterns_.resize(tech->layers.size());
@@ -1553,7 +1534,7 @@ int io::Parser::getLef58Spacing(void *data, frLayer* tmpLayer, const string &sIn
 
 // only support GF14 related content
 int io::Parser::getLef58MinStep(void *data, frLayer* tmpLayer, const string &sIn) {
-  bool enableOutput = true;
+  bool enableOutput = false;
   if (enableOutput) {
     cout << endl << "  PROPERTY LEF58_MINSTEP \n";
   }
@@ -3252,1203 +3233,855 @@ int io::Parser::getLef58CornerSpacing(void *data, frLayer *tmpLayer, const strin
   return 0;
 }
 
-int io::Parser::Callbacks::getLefLayers(lefrCallbackType_e type, lefiLayer* layer, lefiUserData data) {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  //bool enableDoubleCheck = true;
-  //bool enableDoubleCheck = false;
-  std::string masterSliceLayerName("FR_MASTERSLICE"); // default masterslice
-  std::string viaLayerName("FR_VIA"); // default via above masterslice
-  if (type != lefrLayerCbkType) {
-    cout <<"Type is not lefrLayerCbkType!" <<endl;
-    exit(1);
+void io::Parser::addDefaultMasterSliceLayer()
+{
+  // TODO REPLACE WITH ACTUAL MASTERSLICE NAME
+  unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
+  auto tmpMSLayer = uMSLayer.get();
+  tmpMSLayer->setLayerNum(readLayerCnt++);
+  tmpMSLayer->setName("FR_MASTERSLICE");
+  tech->addLayer(std::move(uMSLayer));
+  tmpMSLayer->setType(frLayerTypeEnum::MASTERSLICE);
+}
+
+void io::Parser::addDefaultCutLayer()
+{
+  std::string viaLayerName("FR_VIA");
+  unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
+  auto tmpCutLayer = uCutLayer.get();
+  tmpCutLayer->setLayerNum(readLayerCnt++);
+  tmpCutLayer->setName(viaLayerName);
+  tech->addLayer(std::move(uCutLayer));
+  tmpCutLayer->setType(frLayerTypeEnum::CUT);
+}
+
+void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
+{
+  if (readLayerCnt == 0) {
+    addDefaultMasterSliceLayer();
+    addDefaultCutLayer();
   }
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
-  io::Parser* parser = (io::Parser*) data;
+  tmpLayer->setLayerNum(readLayerCnt++);
+  tmpLayer->setName(layer->getName());
+  tech->addLayer(std::move(uLayer));
 
-  if (!strcmp(layer->type(), "ROUTING")) {
-    // add default masterslice and via layers if LEF does not have one
-    if (parser->readLayerCnt == 0) {
-      unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
-      auto tmpMSLayer = uMSLayer.get();
-      tmpMSLayer->setLayerNum(parser->readLayerCnt++);
-      tmpMSLayer->setName(masterSliceLayerName);
-      parser->tech->addLayer(std::move(uMSLayer));
-      tmpMSLayer->setType(frLayerTypeEnum::MASTERSLICE);
-      if (enableOutput) {
-        cout <<"\n";
-        cout <<"LAYER     " <<tmpMSLayer->getName() <<endl;
-        cout <<"  TYPE      " <<"MASTERSLICE" <<endl;
-        cout <<"  layerNum  " <<tmpMSLayer->getLayerNum() <<endl;
-      }
+  tmpLayer->setWidth(layer->getWidth());
+  tmpLayer->setMinWidth(layer->getMinWidth());
+  // add minWidth constraint
+  auto minWidthConstraint
+      = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
+  tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
+  tech->addUConstraint(std::move(minWidthConstraint));
 
-      unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
-      auto tmpCutLayer = uCutLayer.get();
-      tmpCutLayer->setLayerNum(parser->readLayerCnt++);
-      tmpCutLayer->setName(viaLayerName);
-      parser->tech->addLayer(std::move(uCutLayer));
-      tmpCutLayer->setType(frLayerTypeEnum::CUT);
-      if (enableOutput) {
-        cout <<"\n";
-        cout <<"LAYER     " <<tmpCutLayer->getName() <<endl;
-        cout <<"  TYPE      " <<"CUT" <<endl;
-        cout <<"  layerNum  " <<tmpCutLayer->getLayerNum() <<endl;
-      }
-    }
-    if (enableOutput) {
-        cout <<"\n";
-      cout <<"LAYER "       <<layer->name() <<endl;
-      cout <<"  TYPE      " <<layer->type() <<endl;
-      cout <<"  DIRECTION " <<layer->direction() <<endl;
-      //cout <<"  MINWIDTH  " <<layer->minwidth() <<endl;
-      cout <<"  AREA      " <<layer->area() <<endl;
-      cout <<"  WIDTH     " <<layer->width() <<endl;
-      cout <<"  layerNum  " <<parser->readLayerCnt <<endl;
-    }
-    tmpLayer->setLayerNum(parser->readLayerCnt++);
-    tmpLayer->setName(layer->name());
-    parser->tech->addLayer(std::move(uLayer));
+  tmpLayer->setType(frLayerTypeEnum::ROUTING);
+  if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
+    tmpLayer->setDir(frcHorzPrefRoutingDir);
+  else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL)
+    tmpLayer->setDir(frcVertPrefRoutingDir);
 
-    tmpLayer->setWidth(round(layer->width() * parser->tech->getDBUPerUU()));
-    if (layer->hasMinwidth()) {
-      tmpLayer->setMinWidth(round(layer->minwidth() * parser->tech->getDBUPerUU()));
-      if (tmpLayer->getMinWidth() > tmpLayer->getWidth()) {
-        cout << "Warning: minWidth on layer " << layer->name() << " is larger than width, setting minWidth to width\n";
-        tmpLayer->setMinWidth(tmpLayer->getWidth());
-      }
-    } else {
-      tmpLayer->setMinWidth(tmpLayer->getWidth());
-    }
-    // add minWidth constraint
-    auto minWidthConstraint = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
-    tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
-    parser->tech->addUConstraint(std::move(minWidthConstraint));
+  tmpLayer->setPitch(layer->getPitch());
 
-    tmpLayer->setType(frLayerTypeEnum::ROUTING);
-    if (!strcmp(layer->direction(), "HORIZONTAL")) {
-      tmpLayer->setDir(frcHorzPrefRoutingDir);
-    } else if (!strcmp(layer->direction(), "VERTICAL")) {
-      tmpLayer->setDir(frcVertPrefRoutingDir);
-    }
-    tmpLayer->setPitch(round(layer->pitch() * parser->tech->getDBUPerUU()));
+  // Add off grid rule for every layer
+  auto recheckConstraint = make_unique<frRecheckConstraint>();
+  tmpLayer->setRecheckConstraint(recheckConstraint.get());
+  tech->addUConstraint(std::move(recheckConstraint));
 
-    // Add off grid rule for every layer
-    auto recheckConstraint = make_unique<frRecheckConstraint>();
-    tmpLayer->setRecheckConstraint(recheckConstraint.get());
-    parser->tech->addUConstraint(std::move(recheckConstraint));
+  // Add short rule for every layer
+  auto shortConstraint = make_unique<frShortConstraint>();
+  tmpLayer->setShortConstraint(shortConstraint.get());
+  tech->addUConstraint(std::move(shortConstraint));
 
-    // Add short rule for every layer
-    auto shortConstraint = make_unique<frShortConstraint>();
-    tmpLayer->setShortConstraint(shortConstraint.get());
-    parser->tech->addUConstraint(std::move(shortConstraint));
+  // Add off grid rule for every layer
+  auto offGridConstraint = make_unique<frOffGridConstraint>();
+  tmpLayer->setOffGridConstraint(offGridConstraint.get());
+  tech->addUConstraint(std::move(offGridConstraint));
 
-    // Add off grid rule for every layer
-    auto offGridConstraint = make_unique<frOffGridConstraint>();
-    tmpLayer->setOffGridConstraint(offGridConstraint.get());
-    parser->tech->addUConstraint(std::move(offGridConstraint));
-    
-    // Add nsmetal rule for every layer
-    auto nsmetalConstraint = make_unique<frNonSufficientMetalConstraint>();
-    tmpLayer->setNonSufficientMetalConstraint(nsmetalConstraint.get());
+  // Add nsmetal rule for every layer
+  auto nsmetalConstraint = make_unique<frNonSufficientMetalConstraint>();
+  tmpLayer->setNonSufficientMetalConstraint(nsmetalConstraint.get());
 
-    parser->tech->addUConstraint(std::move(nsmetalConstraint));
-
-    //cout <<"number of props " <<layer->numProps() <<endl;
-    for (int i = 0; i < layer->numProps(); i++) {
-      if (string(layer->propName(i)) == string("LEF58_PROTRUSIONWIDTH") ||
-          // string(layer->propName(i)) == string("LEF58_MINSTEP") ||
-          string(layer->propName(i)) == string("LEF58_ENCLOSURESPACING") ||
-          string(layer->propName(i)) == string("LEF58_VOLTAGESPACING") ||
-          string(layer->propName(i)) == string("LEF58_ANTENNAGATEPLUSDIFF") ||
-          string(layer->propName(i)) == string("LEF58_ANTENNAGATEPWL") ||
-          string(layer->propName(i)) == string("LEF58_ANTENNAGATEPWL") ||
-          string(layer->propName(i)) == string("LEF58_FORBIDDENSPACING") 
-         ) {
+  tech->addUConstraint(std::move(nsmetalConstraint));
+  for (auto prop : odb::dbProperty::getProperties(layer))
+    if (prop->getType() == odb::dbProperty::Type::STRING_PROP) {
+      odb::dbStringProperty* strProp = (odb::dbStringProperty*) prop;
+      if (string(strProp->getName()) == string("LEF58_PROTRUSIONWIDTH")
+          || string(strProp->getName()) == string("LEF58_ENCLOSURESPACING")
+          || string(strProp->getName()) == string("LEF58_VOLTAGESPACING")
+          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPLUSDIFF")
+          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPWL")
+          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPWL")
+          || string(strProp->getName()) == string("LEF58_FORBIDDENSPACING")) {
         ;
       } else {
-        //cout <<"name:     " <<layer->propName(i) <<endl;
-        //cout <<"value:    " <<layer->propValue(i) <<endl;
-        //cout <<"number:   " <<layer->propNumber(i) <<endl;
-        //cout <<"type:     " <<layer->propType(i) <<endl;
-        //cout <<"isNumber: " <<layer->propIsNumber(i) <<endl;
-        //cout <<"isString: " <<layer->propIsString(i) <<endl;
-        if (!strcmp(layer->propName(i), "LEF58_CORNERSPACING") && layer->propIsString(i)) {
-         //cout <<"start parsing LEF58_CORNERSPACING" <<endl;
-         getLef58CornerSpacing(data, tmpLayer, layer->propValue(i));
-        }
-        if (!strcmp(layer->propName(i), "LEF58_SPACING") && layer->propIsString(i)) {
-          //cout <<"name:     " <<layer->propName(i) <<endl;
-          //cout <<"value:    " <<layer->propValue(i) <<endl;
-          getLef58Spacing(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF57_SPACING") && layer->propIsString(i)) {
-          getLef58Spacing(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_SPACINGTABLE") && layer->propIsString(i)) {
-          //cout <<"name:     " <<layer->propName(i) <<endl;
-          //cout <<"value:    " <<layer->propValue(i) <<endl;
-          getLef58SpacingTable(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_RIGHTWAYONGRIDONLY") && layer->propIsString(i)) {
-          getLef58RightWayOnGridOnly(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_RECTONLY") && layer->propIsString(i)) {
-          getLef58RectOnly(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_MINSTEP") && layer->propIsString(i)) {
-          // cout <<"name:     " <<layer->propName(i) <<endl;
-          // cout <<"value:    " <<layer->propValue(i) <<endl;
-          getLef58MinStep(data, tmpLayer, layer->propValue(i));
+        if (!strcmp(strProp->getName().c_str(), "LEF58_CORNERSPACING")) {
+          getLef58CornerSpacing(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACING")) {
+          getLef58Spacing(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF57_SPACING")) {
+          getLef58Spacing(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACINGTABLE")) {
+          getLef58SpacingTable(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_RIGHTWAYONGRIDONLY")) {
+          getLef58RightWayOnGridOnly(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_RECTONLY")) {
+          getLef58RectOnly(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_MINSTEP")) {
+          getLef58MinStep(this, tmpLayer, strProp->getValue());
         } else {
-          //cout <<"  name:     " <<layer->propName(i) <<endl;
+          ;
         }
       }
     }
 
-    // read minArea rule
-    if (layer->hasArea()) {
-      frCoord minArea = frCoord(round(layer->area() * parser->tech->getDBUPerUU() * parser->tech->getDBUPerUU()));
-      unique_ptr<frConstraint> uCon = make_unique<frAreaConstraint>(minArea);
-      auto rptr = static_cast<frAreaConstraint*>(uCon.get());
-      parser->tech->addUConstraint(std::move(uCon));
-      //std::cout << "Add minArea constraint to " << tmpLayer->getName() << "\n";
-      tmpLayer->setAreaConstraint(rptr);
+  // read minArea rule
+  if (layer->hasArea()) {
+    frCoord minArea = frCoord(
+        round(layer->getArea() * tech->getDBUPerUU() * tech->getDBUPerUU()));
+    unique_ptr<frConstraint> uCon = make_unique<frAreaConstraint>(minArea);
+    auto rptr = static_cast<frAreaConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->setAreaConstraint(rptr);
+  }
+
+  if (layer->hasMinStep()) {
+    unique_ptr<frConstraint> uCon = make_unique<frMinStepConstraint>();
+    auto rptr = static_cast<frMinStepConstraint*>(uCon.get());
+    rptr->setInsideCorner(layer->getMinStepType()
+                          == odb::dbTechLayerMinStepType::INSIDE_CORNER);
+    rptr->setOutsideCorner(layer->getMinStepType()
+                           == odb::dbTechLayerMinStepType::OUTSIDE_CORNER);
+    rptr->setStep(layer->getMinStepType() == odb::dbTechLayerMinStepType::STEP);
+    switch (layer->getMinStepType()) {
+      case odb::dbTechLayerMinStepType::INSIDE_CORNER:
+        rptr->setMinstepType(frMinstepTypeEnum::INSIDECORNER);
+        break;
+      case odb::dbTechLayerMinStepType::OUTSIDE_CORNER:
+        rptr->setMinstepType(frMinstepTypeEnum::OUTSIDECORNER);
+        break;
+      case odb::dbTechLayerMinStepType::STEP:
+        rptr->setMinstepType(frMinstepTypeEnum::STEP);
+        break;
+      default:
+        break;
+    }
+    if (layer->hasMinStepMaxLength())
+      rptr->setMaxLength(layer->getMinStepMaxLength());
+    if (layer->hasMinStepMaxEdges()) {
+      rptr->setMaxEdges(layer->getMinStepMaxEdges());
+      rptr->setInsideCorner(true);
+      rptr->setOutsideCorner(true);
+      rptr->setStep(true);
+      rptr->setMinstepType(frMinstepTypeEnum::UNKNOWN);
+    }
+    rptr->setMinStepLength(layer->getMinStep());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->setMinStepConstraint(rptr);
+  }
+
+  // read minHole rule
+  std::vector<odb::dbTechMinEncRule*> minEncRules;
+  layer->getMinEnclosureRules(minEncRules);
+  for (odb::dbTechMinEncRule* rule : minEncRules) {
+    frUInt4 _minEnclosedWidth = -1;
+    bool hasMinenclosedareaWidth = rule->getEnclosureWidth(_minEnclosedWidth);
+    if (hasMinenclosedareaWidth) {
+      logger->warn(
+          DRT,
+          139,
+          "minEnclosedArea constraint with width is not supported, skipped");
+      continue;
+    }
+    frUInt4 _minEnclosedArea;
+    rule->getEnclosure(_minEnclosedArea);
+    frCoord minEnclosedArea = _minEnclosedArea;
+    auto minEnclosedAreaConstraint
+        = make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
+    tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
+    tech->addUConstraint(std::move(minEnclosedAreaConstraint));
+  }
+
+  // read spacing rule
+  odb::dbSet<odb::dbTechLayerSpacingRule> sp_rules;
+  layer->getV54SpacingRules(sp_rules);
+  for (auto rule : sp_rules) {
+    frCoord minSpacing = rule->getSpacing();
+    frUInt4 _eolWidth = 0, _eolWithin = 0, _parSpace = 0, _parWithin = 0;
+    bool hasSpacingParellelEdge = false;
+    bool hasSpacingTwoEdges = false;
+    bool hasSpacingEndOfLine = rule->getEol(_eolWidth,
+                                            _eolWithin,
+                                            hasSpacingParellelEdge,
+                                            _parSpace,
+                                            _parWithin,
+                                            hasSpacingTwoEdges);
+    frCoord eolWidth(_eolWidth), eolWithin(_eolWithin), parSpace(_parSpace),
+        parWithin(_parWithin);
+    if (rule->hasRange()) {
+      logger->warn(DRT, 140, "SpacingRange unsupported");
+    } else if (rule->hasLengthThreshold()) {
+      logger->warn(DRT, 141, "SpacingLengthThreshold unsupported");
+    } else if (rule->hasSpacingNotchLength()) {
+      logger->warn(DRT, 142, "SpacingNotchLength unsupported");
+    } else if (rule->hasSpacingEndOfNotchWidth()) {
+      logger->warn(DRT, 143, "SpacingEndOfNotchWidth unsupported");
+    } else if (hasSpacingEndOfLine) {
+      unique_ptr<frConstraint> uCon
+          = make_unique<frSpacingEndOfLineConstraint>();
+      auto rptr = static_cast<frSpacingEndOfLineConstraint*>(uCon.get());
+      rptr->setMinSpacing(minSpacing);
+      rptr->setEolWidth(eolWidth);
+      rptr->setEolWithin(eolWithin);
+      if (hasSpacingParellelEdge) {
+        rptr->setParSpace(parSpace);
+        rptr->setParWithin(parWithin);
+        rptr->setTwoEdges(hasSpacingTwoEdges);
+      }
+      tech->addUConstraint(std::move(uCon));
+      tmpLayer->addEolSpacing(rptr);
+    } else if (rule->getCutSameNet()) {
+      bool pgOnly = rule->getSameNetPgOnly();
+      unique_ptr<frConstraint> uCon
+          = make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
+      auto rptr = uCon.get();
+      tech->addUConstraint(std::move(uCon));
+      if (tmpLayer->hasSpacingSamenet()) {
+        logger->warn(DRT,
+                     138,
+                     "new SPACING SAMENET overrides old SPACING SAMENET rule");
+      }
+      tmpLayer->setSpacingSamenet(
+          static_cast<frSpacingSamenetConstraint*>(rptr));
+    } else {
+      frCollection<frCoord> rowVals(1, 0), colVals(1, 0);
+      frCollection<frCollection<frCoord>> tblVals(1, {minSpacing});
+      frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
+      unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(
+          fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+      auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
+      tech->addUConstraint(std::move(uCon));
+      if (tmpLayer->getMinSpacing())
+        logger->warn(DRT,
+                     144,
+                     "new SPACING SAMENET overrides old SPACING SAMENET rule");
+      tmpLayer->setMinSpacing(rptr);
+    }
+  }
+
+  // read prl spacingTable
+  if (layer->hasV55SpacingRules()) {
+    frCollection<frUInt4> _rowVals, _colVals;
+    frCollection<frCollection<frUInt4>> _tblVals;
+    layer->getV55SpacingWidthsAndLengths(_rowVals, _colVals);
+    layer->getV55SpacingTable(_tblVals);
+    frCollection<frCoord> rowVals(_rowVals.begin(), _rowVals.end());
+    frCollection<frCoord> colVals(_colVals.begin(), _colVals.end());
+    frCollection<frCollection<frCoord>> tblVals;
+    tblVals.resize(_tblVals.size());
+    for (size_t i = 0; i < _tblVals.size(); i++)
+      for (size_t j = 0; j < _tblVals[i].size(); j++)
+        tblVals[i].push_back(_tblVals[i][j]);
+
+    std::shared_ptr<frSpacingTableConstraint> spacingTableConstraint;
+    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl;
+    frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
+
+    // old
+    prlTbl = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
+        rowName, rowVals, colName, colVals, tblVals);
+    spacingTableConstraint = make_shared<frSpacingTableConstraint>(prlTbl);
+    tech->addConstraint(spacingTableConstraint);
+    tmpLayer->addConstraint(spacingTableConstraint);
+    // new
+    unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(
+        fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+    auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    if (tmpLayer->getMinSpacing())
+      logger->warn(
+          DRT,
+          145,
+          "new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule");
+    tmpLayer->setMinSpacing(rptr);
+  }
+
+  if (layer->hasTwoWidthsSpacingRules()) {
+    frCollection<frCollection<frUInt4>> _tblVals;
+    layer->getTwoWidthsSpacingTable(_tblVals);
+    frCollection<frCollection<frCoord>> tblVals;
+    tblVals.resize(_tblVals.size());
+    for (size_t i = 0; i < _tblVals.size(); i++)
+      for (size_t j = 0; j < _tblVals[i].size(); j++)
+        tblVals[i].push_back(_tblVals[i][j]);
+
+    frCoord defaultPrl = -abs(tblVals[0][0]);
+
+    frCollection<frSpacingTableTwRowType> rowVals, colVals;
+    frString rowName("WIDTH1PRL"), colName("WIDTH2PRL");
+
+    for (uint j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
+      frCoord width = layer->getTwoWidthsSpacingTableWidth(j);
+      frCoord prl = defaultPrl;
+
+      if (layer->getTwoWidthsSpacingTableHasPRL(j)) {
+        prl = layer->getTwoWidthsSpacingTablePRL(j);
+        defaultPrl = prl;
+      }
+      colVals.push_back(frSpacingTableTwRowType(width, prl));
+      rowVals.push_back(frSpacingTableTwRowType(width, prl));
+    }
+    unique_ptr<frConstraint> uCon = make_unique<frSpacingTableTwConstraint>(
+        fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+    auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    if (tmpLayer->getMinSpacing())
+      logger->warn(DRT,
+                   146,
+                   "new SPACINGTABLE TWOWIDTHS overrides old SPACING rule");
+    tmpLayer->setMinSpacing(rptr);
+  }
+
+  for (auto rule : layer->getMinCutRules()) {
+    frUInt4 numCuts, width, within, length, distance;
+    if (!rule->getMinimumCuts(numCuts, width))
+      continue;
+    unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
+    auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+    rptr->setNumCuts(numCuts);
+    rptr->setWidth(width);
+    if (rule->getCutDistance(within))
+      rptr->setWithin(within);
+    if (rule->isAboveOnly())
+      rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
+    if (rule->isBelowOnly())
+      rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
+    if (rule->getLengthForCuts(length, distance))
+      rptr->setLength(length, distance);
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addMinimumcutConstraint(rptr);
+  }
+}
+
+void io::Parser::addCutLayer(odb::dbTechLayer* layer)
+{
+  if (readLayerCnt == 0)
+    addDefaultMasterSliceLayer();
+
+  unique_ptr<frLayer> uLayer = make_unique<frLayer>();
+  auto tmpLayer = uLayer.get();
+  tmpLayer->setLayerNum(readLayerCnt++);
+  tmpLayer->setName(layer->getName());
+  tmpLayer->setType(frLayerTypeEnum::CUT);
+  tech->addLayer(std::move(uLayer));
+
+  auto shortConstraint = make_shared<frShortConstraint>();
+  tech->addConstraint(shortConstraint);
+  tmpLayer->addConstraint(shortConstraint);
+  tmpLayer->setShortConstraint(shortConstraint.get());
+
+  // read spacing constraint
+  odb::dbSet<odb::dbTechLayerSpacingRule> spRules;
+  layer->getV54SpacingRules(spRules);
+  for (odb::dbTechLayerSpacingRule* rule : spRules) {
+    std::shared_ptr<frCutSpacingConstraint> cutSpacingConstraint;
+    frCoord cutArea = rule->getCutArea();
+    frCoord cutSpacing = rule->getSpacing();
+    bool centerToCenter = rule->getCutCenterToCenter();
+    bool sameNet = rule->getCutSameNet();
+    bool stack = rule->getCutStacking();
+    bool exceptSamePGNet = rule->getSameNetPgOnly();
+    bool parallelOverlap = rule->getCutParallelOverlap();
+    odb::dbTechLayer* outly;
+    frString secondLayerName = string("");
+    if (rule->getCutLayer4Spacing(outly))
+      secondLayerName = string(outly->getName());
+    frUInt4 _adjacentCuts;
+    frUInt4 within;
+    frUInt4 spacing;
+    bool except_same_pgnet;
+    frCoord cutWithin = 0;
+    int adjacentCuts = 0;
+    if (rule->getAdjacentCuts(
+            _adjacentCuts, within, spacing, except_same_pgnet)) {
+      adjacentCuts = _adjacentCuts;
+      cutWithin = within;
     }
 
-    if (layer->hasMinstep()) {
-      if (layer->numMinstep() > 1) {
-        std::cout << "ERROR: only one minStep rule should be defined for a given layer. Only the last one is checked\n";
-      }
-      for (int i = 0; i < layer->numMinstep(); ++i) {
-        unique_ptr<frConstraint> uCon = make_unique<frMinStepConstraint>();
-        auto rptr = static_cast<frMinStepConstraint*>(uCon.get());
-        if (layer->hasMinstepType(i)) {
-          if (strcmp(layer->minstepType(i), "INSIDECORNER") == 0) {
-            rptr->setInsideCorner(true);
-            rptr->setOutsideCorner(false);
-            rptr->setStep(false);
-            rptr->setMinstepType(frMinstepTypeEnum::INSIDECORNER);
-          } else if (strcmp(layer->minstepType(i), "OUTSIDECORNER") == 0) {
-            rptr->setInsideCorner(false);
-            rptr->setOutsideCorner(true);
-            rptr->setStep(false);
-            rptr->setMinstepType(frMinstepTypeEnum::OUTSIDECORNER);
-          } else if (strcmp(layer->minstepType(i), "STEP") == 0) {
-            rptr->setInsideCorner(false);
-            rptr->setOutsideCorner(false);
-            rptr->setStep(true);
-            rptr->setMinstepType(frMinstepTypeEnum::STEP);
-          }
-        } else {
-           rptr->setMinstepType(frMinstepTypeEnum::OUTSIDECORNER);
-        }
-        if (layer->hasMinstepLengthsum(i)) {
-          rptr->setMaxLength(frCoord(layer->minstepLengthsum(i) * parser->tech->getDBUPerUU()));
-        }
-        if (layer->hasMinstepMaxedges(i)) {
-          rptr->setMaxEdges(layer->minstepMaxedges(i));
-          rptr->setInsideCorner(true);
-          rptr->setOutsideCorner(true);
-          rptr->setStep(true);
-          rptr->setMinstepType(frMinstepTypeEnum::UNKNOWN);
-        }
-        rptr->setMinStepLength(layer->minstep(i) * parser->tech->getDBUPerUU());
-        parser->tech->addUConstraint(std::move(uCon));
-        //std::cout << "Add minStep constraint to " << tmpLayer->getName() << "\n";
-        tmpLayer->setMinStepConstraint(rptr);
-      }
+    // initialize for invalid variables
+    cutArea = (cutArea == 0) ? -1 : cutArea;
+    cutWithin = (cutWithin == 0) ? -1 : cutWithin;
+    adjacentCuts = (adjacentCuts == 0) ? -1 : adjacentCuts;
+
+    if (cutWithin != -1 && cutWithin < cutSpacing) {
+      logger->warn(DRT,
+                   147,
+                   "cutWithin is smaller than cutSpacing for ADJACENTCUTS on "
+                   "layer {}, please check your rule definition",
+                   layer->getName());
     }
+    cutSpacingConstraint = make_shared<frCutSpacingConstraint>(cutSpacing,
+                                                               centerToCenter,
+                                                               sameNet,
+                                                               secondLayerName,
+                                                               stack,
+                                                               adjacentCuts,
+                                                               cutWithin,
+                                                               exceptSamePGNet,
+                                                               parallelOverlap,
+                                                               cutArea);
 
-    // read minHole rule
-    for (int i = 0; i < layer->numMinenclosedarea(); ++i) {
-      frCoord minEnclosedArea = frCoord(round(layer->minenclosedarea(i) * parser->tech->getDBUPerUU() * parser->tech->getDBUPerUU()));
-      frCoord minEnclosedWidth = -1;
-      if (layer->hasMinenclosedareaWidth(i)) {
-        minEnclosedWidth = frCoord(round(layer->minenclosedareaWidth(i) * parser->tech->getDBUPerUU()));
-        cout << "Warning: minEnclosedArea constraint with width is not supported, skipped\n";
-        continue;
-      }
-      auto minEnclosedAreaConstraint = make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
-      if (minEnclosedWidth != -1) {
-        minEnclosedAreaConstraint->setWidth(minEnclosedWidth);
-      }
-      tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
-      parser->tech->addUConstraint(std::move(minEnclosedAreaConstraint));
-    }
+    tech->addConstraint(cutSpacingConstraint);
+    tmpLayer->addConstraint(cutSpacingConstraint);
+    tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
+  }
 
-    // read spacing rule
-    for (int i = 0; i < layer->numSpacing(); ++i) {
-      //std::shared_ptr<frSpacingConstraint> minSpacingCosntraint;
-      frCoord minSpacing = frCoord(round(layer->spacing(i) * parser->tech->getDBUPerUU()));
-      if (layer->hasSpacingRange(i)) {
-        cout <<" WARNING: hasSpacing Range unsupported" <<endl;
-      } else if (layer->hasSpacingLengthThreshold(i)) {
-        cout <<" WARNING: hasSpacingLengthThreshold unsupported" <<endl;
-      } else if (layer->hasSpacingEndOfLine(i)) {
-        // new
-        unique_ptr<frConstraint> uCon = make_unique<frSpacingEndOfLineConstraint>();
-        auto rptr = static_cast<frSpacingEndOfLineConstraint*>(uCon.get());
-        if (enableOutput) {
-          cout <<"  SPACING " <<layer->spacing(i) <<" ENDOFLINE " <<layer->spacingEolWidth(i)
-               <<" WITHIN " <<layer->spacingEolWithin(i);
-        }
-        frCoord eolWidth = frCoord(round(layer->spacingEolWidth(i) * parser->tech->getDBUPerUU()));
-        frCoord eolWithin = frCoord(round(layer->spacingEolWithin(i) * parser->tech->getDBUPerUU()));
-        rptr->setMinSpacing(minSpacing);
-        rptr->setEolWidth(eolWidth);
-        rptr->setEolWithin(eolWithin);
-        if (layer->hasSpacingParellelEdge(i)) {
-          if (enableOutput) {
-            cout <<" PARALLELEDGE " <<layer->spacingParSpace(i) <<" WITHIN " <<layer->spacingParWithin(i);
-            if (layer->hasSpacingTwoEdges(i)) {
-              cout <<" TWOEDGES";
-            }
-          }
-          frCoord parSpace = frCoord(round(layer->spacingParSpace(i) * parser->tech->getDBUPerUU()));
-          frCoord parWithin = frCoord(round(layer->spacingParWithin(i) * parser->tech->getDBUPerUU()));
-          rptr->setParSpace(parSpace);
-          rptr->setParWithin(parWithin);
-          rptr->setTwoEdges(layer->hasSpacingTwoEdges(i));
-        }
-        if (enableOutput) {
-          cout <<" ;" <<endl;
-        }
-        parser->tech->addUConstraint(std::move(uCon));
-        tmpLayer->addEolSpacing(rptr);
-      } else if (layer->hasSpacingSamenet(i)) {
-        bool pgOnly = layer->hasSpacingSamenetPGonly(i);
-        if (enableOutput) {
-          cout <<"  SPACING " <<layer->spacing(i) <<" SAMENET ";
-          if (pgOnly) {
-            cout <<"PGONLY ";
-          }
-          cout <<endl;
-        }
-        unique_ptr<frConstraint> uCon = make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
-        auto rptr = uCon.get();
-        parser->tech->addUConstraint(std::move(uCon));
-        if (tmpLayer->hasSpacingSamenet()) {
-          cout <<"Warning: new SPACING SAMENET overrides old SPACING SAMENET rule" <<endl;
-        }
-        tmpLayer->setSpacingSamenet(static_cast<frSpacingSamenetConstraint*>(rptr));
-      } else if (layer->hasSpacingNotchLength(i)) {
-        cout <<" WARNING: hasSpacingNotchLength unsupported" <<endl;
-      } else if (layer->hasSpacingEndOfNotchWidth(i)) {
-        cout <<" WARNING: hasSpacingEndOfNotchWidth unsupported" <<endl;
-      } else { // min spacing
-        if (enableOutput) {
-          cout <<"  SPACING " <<layer->spacing(i) <<" ;" <<endl;
-        }
-        
-        frCollection<frCoord> rowVals(1, 0), colVals(1, 0);
-        frCollection<frCollection<frCoord> > tblVals(1, {minSpacing});
-        frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
-        unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
-        auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
-        parser->tech->addUConstraint(std::move(uCon));
-        if (tmpLayer->getMinSpacing()) {
-          cout <<"Warning: new SPACING overrides old SPACING rule" <<endl;
-        }
-        tmpLayer->setMinSpacing(rptr);
-      }
-    }
+  // lef58
+  for (auto prop : odb::dbProperty::getProperties(layer))
+    if (prop->getType() == odb::dbProperty::Type::STRING_PROP) {
+      odb::dbStringProperty* strProp = (odb::dbStringProperty*) prop;
 
-    // read spacingTable
-    for (int i = 0; i < layer->numSpacingTable(); ++i) {
-      // old
-      std::shared_ptr<frSpacingTableConstraint> spacingTableConstraint;
-      auto spTable = layer->spacingTable(i);
-      if (spTable->isInfluence()) {
-        cout <<" WARNING: SPACINGTABLE INFLUENCE unsupported" <<endl;
-      } else if (spTable->isParallel()) {
-        // old
-        shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > prlTbl;
-        auto parallel = spTable->parallel();
-        frCollection<frCoord> rowVals, colVals;
-        frCollection<frCollection<frCoord> > tblVals;
-        frCollection<frCoord> tblRowVals;
-        frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
-        if (enableOutput) {
-          cout <<"  SPACINGTABLE" <<endl;
-          cout <<"  PARALLELRUNLENGTH";
-        }
-        for (int j = 0; j < parallel->numLength(); ++j) {
-          frCoord prl = frCoord(round(parallel->length(j) * parser->tech->getDBUPerUU()));
-          if (enableOutput) {
-            cout <<" " <<prl * 1.0 / parser->tech->getDBUPerUU();
-          }
-          colVals.push_back(prl);
-        }
-        for (int j = 0; j < parallel->numWidth(); ++j) {
-          frCoord width = frCoord(round(parallel->width(j) * parser->tech->getDBUPerUU()));
-          rowVals.push_back(width);
-          if (enableOutput) {
-            cout <<endl <<"  WIDTH " <<width * 1.0 / parser->tech->getDBUPerUU();
-          }
-          tblRowVals.clear();
-          for (int k = 0; k < parallel->numLength(); ++k) {
-            frCoord spacing = frCoord(round(parallel->widthSpacing(j, k) * parser->tech->getDBUPerUU()));
-            tblRowVals.push_back(spacing);
-            if (enableOutput) {
-              cout <<" " <<spacing * 1.0 / parser->tech->getDBUPerUU();
-            }
-          }
-          tblVals.push_back(tblRowVals);
-        }
-        if (enableOutput) {
-          cout <<" ;" <<endl;
-        }
-        // old
-        prlTbl = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord> >(rowName, rowVals, colName, colVals, tblVals);
-        spacingTableConstraint = make_shared<frSpacingTableConstraint>(prlTbl);
-        parser->tech->addConstraint(spacingTableConstraint);
-        tmpLayer->addConstraint(spacingTableConstraint);
-
-        // new
-        unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
-        auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
-        parser->tech->addUConstraint(std::move(uCon));
-        if (tmpLayer->getMinSpacing()) {
-          cout <<"Warning: new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule" <<endl;
-        }
-        tmpLayer->setMinSpacing(rptr);
-      } else { // two width spacing rule
-        auto tw = spTable->twoWidths();
-        frCoord defaultPrl = -abs(frCoord(round(tw->widthSpacing(0,0) * parser->tech->getDBUPerUU())));
-        //cout <<"default prl: " <<defaultPrl <<endl;
-        frCollection<frSpacingTableTwRowType> rowVals, colVals;
-        frCollection<frCollection<frCoord> > tblVals;
-        frCollection<frCoord> tblRowVals;
-        frString rowName("WIDTH1PRL"), colName("WIDTH2PRL");
-        if (enableOutput) {
-          cout <<"  SPACINGTABLE TWOWIDTHS";
-        }
-        for (int j = 0; j < tw->numWidth(); ++j) {
-          frCoord width = frCoord(round(tw->width(j) * parser->tech->getDBUPerUU()));
-          frCoord prl   = defaultPrl;
-          if (enableOutput) {
-            cout <<endl <<"    WIDTH " <<tw->width(j);
-          }
-          if (tw->hasWidthPRL(j)) {
-            if (enableOutput) {
-              cout <<" PRL " <<tw->widthPRL(j);
-            }
-            prl = frCoord(round(tw->widthPRL(j) * parser->tech->getDBUPerUU()));
-            defaultPrl = prl;
-            //hasPrl = true;
-          } else {
-            //if (!hasPrl) {
-            //  defaultPrl = -abs(frCoord(round(tw->widthSpacing(j,0) * parser->tech->getDBUPerUU())));
-            //  prl = defaultPrl;
-            //}
-          }
-          colVals.push_back(frSpacingTableTwRowType(width, prl));
-          rowVals.push_back(frSpacingTableTwRowType(width, prl));
-          tblRowVals.clear();
-          for (int k = 0; k < tw->numWidthSpacing(j); k++) {
-            if (enableOutput) {
-              cout <<" " <<tw->widthSpacing(j, k);
-            }
-            frCoord spacing = frCoord(round(tw->widthSpacing(j, k) * parser->tech->getDBUPerUU()));
-            tblRowVals.push_back(spacing);
-          }
-          tblVals.push_back(tblRowVals);
-        }
-        if (enableOutput) {
-          cout <<" ;" <<endl;
-        }
-        unique_ptr<frConstraint> uCon = make_unique<frSpacingTableTwConstraint>(fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
-        auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
-        parser->tech->addUConstraint(std::move(uCon));
-        if (tmpLayer->getMinSpacing()) {
-          cout <<"Warning: new SPACINGTABLE TWOWIDTHS overrides old SPACING rule" <<endl;
-        }
-        tmpLayer->setMinSpacing(rptr);
-      }
-    }
-
-    for (int i = 0; i < layer->numMinimumcut(); i++) {
-      double dbu = parser->tech->getDBUPerUU();
-      unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
-      auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
-      
-      //if (enableOutput) {
-      //  cout <<"  MINIMUMCUT " <<layer->minimumcut(i) <<" WIDTH " <<layer->minimumcutWidth(i);
-      //}
-      rptr->setNumCuts(layer->minimumcut(i));
-      rptr->setWidth(frCoord(round(layer->minimumcutWidth(i) * dbu)));
-
-      if (layer->hasMinimumcutWithin(i)) {
-        //if (enableOutput) {
-        //  cout <<" WITHIN " <<layer->minimumcutWithin(i);
-        //}
-        rptr->setWithin(frCoord(round(layer->minimumcutWithin(i) * dbu)));
-      }
-
-      if (layer->hasMinimumcutConnection(i)) {
-        //if (enableOutput) {
-        //  cout <<" " <<layer->minimumcutConnection(i);
-        //}
-        if (strcmp(layer->minimumcutConnection(i), "FROMABOVE") == 0) {
-          rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
-        } else if (strcmp(layer->minimumcutConnection(i), "FROMBELOW") == 0) {
-          rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
-        } else {
-          cout <<"Error: layer minimumcut unsupporterd connection type" <<endl;
-          exit(1);
-        }
-      }
-      
-      // hasMinimumcutNumCuts actually outputs whether there is [LENGTH length WITHIN distance]
-      if (layer->hasMinimumcutNumCuts(i)) {
-        //if (enableOutput) {
-        //  cout <<" LENGTH " <<layer->minimumcutLength(i) <<" WITHIN " <<layer->minimumcutDistance(i);
-        //}
-        rptr->setLength(frCoord(round(layer->minimumcutLength(i) * dbu)), frCoord(round(layer->minimumcutDistance(i) * dbu)));
-      }
-
-      parser->tech->addUConstraint(std::move(uCon));
-      tmpLayer->addMinimumcutConstraint(rptr);
-      //if (enableOutput) {
-      //  cout <<" ;" <<endl;
-      //}
-      if (enableOutput) {
-        cout <<"  MINIMUMCUT " <<rptr->getNumCuts() <<" WIDTH " <<rptr->getWidth() / dbu;
-        if (rptr->hasWithin()) {
-          cout <<" WITHIN " <<rptr->getCutDistance() / dbu;
-        }
-        if (rptr->hasConnection()) {
-          switch(rptr->getConnection()) {
-            case frMinimumcutConnectionEnum::FROMABOVE: 
-              cout <<" FROMABOVE"; 
-              break;
-            case frMinimumcutConnectionEnum::FROMBELOW: 
-              cout <<" FROMBELOW";
-              break;
-            default: 
-              cout <<" UNKNOWN";
-          }
-        }
-        if (rptr->hasLength()) {
-          cout <<" LENGTH " <<rptr->getLength() / dbu <<" WITHIN " <<rptr->getDistance() / dbu;
-        }
-        cout <<" ;" <<endl;
-      }
-    }
-  } else if (strcmp(layer->type(), "CUT") == 0) {
-    // add default masterslice layer if LEF does not have one
-    if (parser->readLayerCnt == 0) {
-      unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
-      auto tmpMSLayer = uMSLayer.get();
-      tmpMSLayer->setLayerNum(parser->readLayerCnt++);
-      tmpMSLayer->setName(masterSliceLayerName);
-      parser->tech->addLayer(std::move(uMSLayer));
-      tmpMSLayer->setType(frLayerTypeEnum::MASTERSLICE);
-      if (enableOutput) {
-        cout <<"\n";
-        cout <<"LAYER     " <<tmpMSLayer->getName() <<endl;
-        cout <<"  TYPE      " <<"MASTERSLICE" <<endl;
-        cout <<"  layerNum  " <<tmpMSLayer->getLayerNum() <<endl;
-      }
-    }
-    if (enableOutput) {
-      cout <<"\n";
-      cout <<"LAYER "       <<layer->name() <<endl;
-      cout <<"  TYPE      " <<layer->type() <<endl;
-      cout <<"  layerNum  " <<parser->readLayerCnt <<endl;
-    }
-    tmpLayer->setLayerNum(parser->readLayerCnt++);
-    tmpLayer->setName(layer->name());
-    tmpLayer->setType(frLayerTypeEnum::CUT);
-    parser->tech->addLayer(std::move(uLayer));
-
-    auto shortConstraint = make_shared<frShortConstraint>();
-    // std::cout << "add shortConstraint to layer " <<tmpLayer->getName() << "\n";
-    parser->tech->addConstraint(shortConstraint);
-    tmpLayer->addConstraint(shortConstraint);
-    tmpLayer->setShortConstraint(shortConstraint.get());
-
-    // read spacing constraint
-    for (int i = 0; i < layer->numSpacing(); ++i) {
-      std::shared_ptr<frCutSpacingConstraint> cutSpacingConstraint;
-      frCoord cutArea = frCoord(round(layer->spacingArea(i) * parser->tech->getDBUPerUU()));
-      frCoord cutSpacing = frCoord(round(layer->spacing(i) * parser->tech->getDBUPerUU()));
-      bool centerToCenter = layer->hasSpacingCenterToCenter(i);
-      bool sameNet = layer->hasSpacingSamenet(i);
-      bool stack = layer->hasSpacingLayerStack(i);
-      bool exceptSamePGNet = layer->hasSpacingSamenetPGonly(i);
-      bool parallelOverlap = layer->hasSpacingParallelOverlap(i);
-      frString secondLayerName = layer->hasSpacingName(i) ? string(layer->spacingName(i)) : string("");
-      int adjacentCuts = layer->spacingAdjacentCuts(i);
-      frCoord cutWithin = frCoord(round(layer->spacingAdjacentWithin(i) * parser->tech->getDBUPerUU()));
-
-      // std::cout << cutSpacing << " " << centerToCenter << " " << sameNet << " " << stack << " " << exceptSamePGNet 
-      //           << " " << parallelOverlap << " " << secondLayerName << " " << adjacentCuts << " " << cutWithin << "\n";
-
-      // std::cout << "raw cutArea = " << layer->spacingArea(i) << "\n";
-      // std::cout << "cutArea = " << cutArea << "\n";
-      // initialize for invalid variables
-      cutArea = (cutArea == 0) ? -1 : cutArea;
-      cutWithin = (cutWithin == 0) ? -1 : cutWithin;
-      adjacentCuts = (adjacentCuts == 0) ? -1 : adjacentCuts;
-      // std::cout << "cutArea = " << cutArea << "\n";
-
-      if (cutWithin != -1 && cutWithin < cutSpacing) {
-        cout << "Warning: cutWithin is smaller than cutSpacing for ADJACENTCUTS on layer " << layer->name() 
-             << ", please check your rule definition\n";
-      }
-
-      cutSpacingConstraint = make_shared<frCutSpacingConstraint>(cutSpacing,
-                                                              centerToCenter, 
-                                                              sameNet, 
-                                                              secondLayerName, 
-                                                              stack,
-                                                              adjacentCuts,
-                                                              cutWithin,
-                                                              exceptSamePGNet,
-                                                              parallelOverlap,
-                                                              cutArea);
-
-      parser->tech->addConstraint(cutSpacingConstraint);
-      tmpLayer->addConstraint(cutSpacingConstraint);
-      tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
-
-    }
-
-    // lef58
-    for (int i = 0; i < layer->numProps(); i++) {
-      if (string(layer->propName(i)) == string("LEF58_ENCLOSUREEDGE") ||
-          string(layer->propName(i)) == string("LEF58_ENCLOSURE") ||
-          string(layer->propName(i)) == string("LEF58_ENCLOSURETABLE")
-         ) {
+      if (string(strProp->getName().c_str()) == string("LEF58_ENCLOSUREEDGE")
+          || string(strProp->getName().c_str()) == string("LEF58_ENCLOSURE")
+          || string(strProp->getName().c_str())
+                 == string("LEF58_ENCLOSURETABLE")) {
         ;
       } else {
-        if (!strcmp(layer->propName(i), "LEF58_CUTCLASS") && layer->propIsString(i)) {
-          getLef58CutClass(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_SPACING") && layer->propIsString(i)) {
-          getLef58CutSpacing(data, tmpLayer, layer->propValue(i));
-        } else if (!strcmp(layer->propName(i), "LEF58_SPACINGTABLE") && layer->propIsString(i)) {
-          getLef58CutSpacingTable(data, tmpLayer, layer->propValue(i));
+        if (!strcmp(strProp->getName().c_str(), "LEF58_CUTCLASS")) {
+          getLef58CutClass(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACING")) {
+          getLef58CutSpacing(this, tmpLayer, strProp->getValue());
+        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACINGTABLE")) {
+          getLef58CutSpacingTable(this, tmpLayer, strProp->getValue());
         } else {
-          cout <<" Unsupported property name:     " <<layer->propName(i) <<endl;
+          ;
         }
       }
     }
-  } else if (strcmp(layer->type(), "MASTERSLICE") == 0) {
-    bool hasWell = false;
-    for (int i = 0; i < layer->numProps(); i++) {
-      if (string(layer->propName(i)) == string("LEF58_TYPE")) {
-        if (layer->propValue(i) == string("TYPE PWELL") || 
-            layer->propValue(i) == string("TYPE NWELL")) {
-          hasWell = true;
-        }
+}
+
+void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
+{
+  if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL &&
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL &&
+      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
+    masterSliceLayerName = string(layer->getName());
+}
+
+void io::Parser::setLayers(odb::dbTech* tech)
+{
+  masterSliceLayerName = "FR_MASTERSLICE";
+  for (auto layer : tech->getLayers()) {
+    switch (layer->getType().getValue()) {
+      case odb::dbTechLayerType::ROUTING:
+        addRoutingLayer(layer);
+        break;
+      case odb::dbTechLayerType::CUT:
+        addCutLayer(layer);
+        break;
+      case odb::dbTechLayerType::MASTERSLICE:
+        addMasterSliceLayer(layer);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+void io::Parser::setMacros(odb::dbDatabase* db)
+{
+  for (auto lib : db->getLibs()) {
+    for (odb::dbMaster* master : lib->getMasters()) {
+      tmpBlock = make_unique<frBlock>(master->getName());
+      frCoord originX;
+      frCoord originY;
+      master->getOrigin(originX, originY);
+      frCoord sizeX = master->getWidth();
+      frCoord sizeY = master->getHeight();
+      vector<frBoundary> bounds;
+      frBoundary bound;
+      vector<frPoint> points;
+      points.push_back(frPoint(originX, originY));
+      points.push_back(frPoint(sizeX, originY));
+      points.push_back(frPoint(sizeX, sizeY));
+      points.push_back(frPoint(originX, sizeY));
+      bound.setPoints(points);
+      bounds.push_back(bound);
+      tmpBlock->setBoundaries(bounds);
+      switch (master->getType().getValue())
+      {
+        case odb::dbMasterType::NONE:
+        break;
+        case odb::dbMasterType::CORE:
+        case odb::dbMasterType::CORE_FEEDTHRU:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE);
+        break;
+        case odb::dbMasterType::CORE_TIEHIGH:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
+        break;
+        case odb::dbMasterType::CORE_TIELOW:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
+        break;
+        case odb::dbMasterType::CORE_WELLTAP:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
+        break;
+        case odb::dbMasterType::CORE_SPACER:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
+        break;
+        case odb::dbMasterType::CORE_ANTENNACELL:
+        tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
+        break;
+        case odb::dbMasterType::COVER:
+        case odb::dbMasterType::COVER_BUMP:
+        tmpBlock->setMacroClass(MacroClassEnum::COVER);
+        break;
+        case odb::dbMasterType::BLOCK:
+        case odb::dbMasterType::BLOCK_BLACKBOX:
+        case odb::dbMasterType::BLOCK_SOFT:
+        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+        break;
+        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+        break;
+        case odb::dbMasterType::PAD:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD);
+        break;
+        case odb::dbMasterType::PAD_INPUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
+        break;
+        case odb::dbMasterType::PAD_OUTPUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
+        break;
+        case odb::dbMasterType::PAD_INOUT:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
+        break;
+        case odb::dbMasterType::PAD_POWER:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+        break;
+        case odb::dbMasterType::PAD_SPACER:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+        break;
+        case odb::dbMasterType::PAD_AREAIO:
+        tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
+        break;
+        case odb::dbMasterType::RING:
+        tmpBlock->setMacroClass(MacroClassEnum::RING);
+        break;
+        case odb::dbMasterType::ENDCAP:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
+        break;
+        case odb::dbMasterType::ENDCAP_PRE:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+        break;
+        case odb::dbMasterType::ENDCAP_POST:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
+        break;
+        case odb::dbMasterType::ENDCAP_TOPLEFT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
+        break;
+        case odb::dbMasterType::ENDCAP_TOPRIGHT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
+        break;
+        case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
+        break;
+        case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
+        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
+        break;
       }
-    }
-    if (!hasWell) {
-      masterSliceLayerName = string(layer->name());
-    }
-  } else {
-    ;
-  }
 
-  return 0;
-}
+      for (auto _term : master->getMTerms()) {
+        unique_ptr<frTerm> uTerm = make_unique<frTerm>(_term->getName());
+        auto term = uTerm.get();
+        term->setId(numTerms);
+        numTerms++;
+        tmpBlock->addTerm(std::move(uTerm));
 
-int io::Parser::Callbacks::getLefMacros(lefrCallbackType_e type, lefiMacro* macro, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (type != lefrMacroCbkType) {
-    cout <<"Type is not lefrMacroCbkType!" <<endl;
-    exit(2);
-  }
+        frTermEnum termType = frTermEnum::frcNormalTerm;
+        string str(_term->getSigType().getString());
+        if (str == "SIGNAL") {
+          ;
+        } else if (str == "CLOCK") {
+          termType = frTermEnum::frcClockTerm;
+        } else if (str == "POWER") {
+          termType = frTermEnum::frcPowerTerm;
+        } else if (str == "GROUND") {
+          termType = frTermEnum::frcGroundTerm;
+        } else {
+          logger->error(DRT, 120, "unsupported PIN USE in lef");
+        }
+        term->setType(termType);
+        frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+        str = string(_term->getIoType().getString());
+        if (str == "INPUT") {
+          termDirection = frTermDirectionEnum::INPUT;
+        } else if (str == "OUTPUT") {
+          termDirection = frTermDirectionEnum::OUTPUT;
+        } else if (str == "OUTPUT TRISTATE") {
+          termDirection = frTermDirectionEnum::OUTPUT;
+        } else if (str == "INOUT") {
+          termDirection = frTermDirectionEnum::INOUT;
+        } else if (str == "FEEDTHRU") {
+          termDirection = frTermDirectionEnum::FEEDTHRU;
+        } else {
+          logger->error(
+              DRT, 121, "unsupported term direction {} in lef", str);
+        }
+        term->setDirection(termDirection);
 
-  io::Parser* parser = (io::Parser*) data;
-  frCoord originX = round(macro->originX() * parser->tech->getDBUPerUU()); 
-  frCoord originY = round(macro->originY() * parser->tech->getDBUPerUU());
-  frCoord sizeX   = round(macro->sizeX()   * parser->tech->getDBUPerUU());
-  frCoord sizeY   = round(macro->sizeY()   * parser->tech->getDBUPerUU());
-  if (enableOutput) {
-    cout <<"  ORIGIN " <<originX * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                       <<originY * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
-    cout <<"  SIZE   " <<sizeX   * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                       <<sizeY   * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
-  }
-  vector<frBoundary> bounds;
-  frBoundary bound;
-  vector<frPoint> points;
-  points.push_back(frPoint(originX, originY));
-  points.push_back(frPoint(sizeX,   originY));
-  points.push_back(frPoint(sizeX,   sizeY));
-  points.push_back(frPoint(originX, sizeY));
-  bound.setPoints(points);
-  bounds.push_back(bound);
+        int i = 0;
+        for (auto mpin : _term->getMPins()) {
+          auto pinIn = make_unique<frPin>();
+          pinIn->setId(i++);
+          for (auto box : mpin->getGeometry()) {
+            frLayerNum layerNum = -1;
+            string layer = box->getTechLayer()->getName();
+            if (tech->name2layer.find(layer) == tech->name2layer.end()){
+              logger->warn(DRT,
+                           122,
+                           "layer {} is skipped for {}/{}",
+                           layer,
+                           tmpBlock->getName(),
+                           _term->getName());
+              continue;
+            }
+            else
+              layerNum = tech->name2layer.at(layer)->getLayerNum();
 
-  parser->tmpBlock->setBoundaries(bounds);
-
-  if (enableOutput) {
-    if (macro->hasClass()) {
-      std::cout << macro->macroClass() << "\n";
-    }
-  }
-  if (macro->hasClass()) {
-    if (strcmp(macro->macroClass(), "CORE") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE);
-    } else if (strcmp(macro->macroClass(), "CORE TIEHIGH") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
-    } else if (strcmp(macro->macroClass(), "CORE TIELOW") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
-    } else if (strcmp(macro->macroClass(), "CORE WELLTAP") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
-    } else if (strcmp(macro->macroClass(), "CORE SPACER") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
-    } else if (strcmp(macro->macroClass(), "CORE ANTENNACELL") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
-    } else if (strcmp(macro->macroClass(), "COVER") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::COVER);
-    } else if (strcmp(macro->macroClass(), "BLOCK") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-    } else if (strcmp(macro->macroClass(), "PAD") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD);
-    } else if (strcmp(macro->macroClass(), "RING") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::RING);
-    } else if (strcmp(macro->macroClass(), "PAD POWER") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
-    } else if (strcmp(macro->macroClass(), "PAD INPUT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
-    } else if (strcmp(macro->macroClass(), "PAD OUTPUT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
-    } else if (strcmp(macro->macroClass(), "PAD INOUT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
-    } else if (strcmp(macro->macroClass(), "PAD AREAIO") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
-    } else if (strcmp(macro->macroClass(), "PAD SPACER") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
-    } else if (strcmp(macro->macroClass(), "ENDCAP") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
-    } else if (strcmp(macro->macroClass(), "ENDCAP PRE") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
-    } else if (strcmp(macro->macroClass(), "ENDCAP POST") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
-    } else if (strcmp(macro->macroClass(), "ENDCAP TOPLEFT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
-    } else if (strcmp(macro->macroClass(), "ENDCAP TOPRIGHT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
-    } else if (strcmp(macro->macroClass(), "ENDCAP BOTTOMLEFT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
-    } else if (strcmp(macro->macroClass(), "ENDCAP BOTTOMRIGHT") == 0) {
-      parser->tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
-    } else {
-      cout << "Warning: unknown macroClass " << macro->macroClass() << ", skipped macroClass property\n"; 
-    }
-  }
-
-
-  return 0;
-}
-
-int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lefiUserData data) {
-  bool enableOutput = false;
-  //bool enableOutput = true;
-  if (type != lefrPinCbkType) {
-    cout <<"Type is not lefrPinCbkType!" <<endl;
-    exit(1);
-  }
-  io::Parser* parser = (io::Parser*) data;
-
-  // term
-  unique_ptr<frTerm> uTerm = make_unique<frTerm>(pin->name());
-  auto term = uTerm.get();
-  term->setId(parser->numTerms);
-  parser->numTerms++;
-
-  // inst 
-  parser->tmpBlock->addTerm(std::move(uTerm));
-  // inst completed
-  
-  if (enableOutput) {
-    cout <<"  PIN " <<pin->name() <<endl;
-  }
-  
-  frTermEnum termType = frTermEnum::frcNormalTerm;
-  if (pin->hasUse()) {
-    string str(pin->use());
-    if (str == "SIGNAL") {
-      ;
-    } else if (str == "CLOCK") {
-      termType = frTermEnum::frcClockTerm;
-    } else if (str == "POWER") {
-      termType = frTermEnum::frcPowerTerm;
-    } else if (str == "GROUND") {
-      termType = frTermEnum::frcGroundTerm;
-    } else {
-      cout <<"Error: unsupported PIN USE in lef" <<endl;
-      exit(1);
-    }
-    if (enableOutput) {
-      cout <<"    USE " <<str <<" ;" <<endl;
-    }
-  }
-  term->setType(termType);
-
-  frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
-  if (pin->hasDirection()) {
-    string str(pin->direction());
-    if (str == "INPUT") {
-      termDirection = frTermDirectionEnum::INPUT;
-    } else if (str == "OUTPUT") {
-      termDirection = frTermDirectionEnum::OUTPUT;
-    } else if (str == "OUTPUT TRISTATE") {
-      // TODO: add separate flag for TRISTATE
-      termDirection = frTermDirectionEnum::OUTPUT;
-    } else if (str == "INOUT") {
-      termDirection = frTermDirectionEnum::INOUT;
-    } else if (str == "FEEDTHRU") {
-      termDirection = frTermDirectionEnum::FEEDTHRU;
-    } else {
-      cout << "Error: unsupported term direction " << str << " in lef" << endl;
-      exit(1);
-    }
-  }
-  if (termDirection == frTermDirectionEnum::UNKNOWN) {
-    cout << "Warning: LEF " << ((io::Parser*)data)->tmpBlock->getName() << "/" <<pin->name() << " has no direction, setting to INPUT...\n";
-    termDirection = frTermDirectionEnum::INPUT;
-  }
-  term->setDirection(termDirection);
-
-  int numPorts = pin->numPorts();
-  int numItems = 0;
-  int itemType = 0;
-  // cout <<"pin->numPorts: " <<numPorts <<endl;
-  for (int i = 0; i < numPorts; ++i) {
-    numItems = pin->port(i)->numItems();
-    // cout <<"pin->ports(" <<i <<")->numItems: " <<numItems <<endl;
-    if (enableOutput) {
-      cout <<"    PORT" <<endl;
-    }
-
-    // pin
-    auto pinIn = make_unique<frPin>();
-    pinIn->setId(i);
-
-    // term
-    frLayerNum layerNum = -1;
-    for (int j = 0; j < numItems; ++j) {
-      itemType = pin->port(i)->itemType(j);
-      if (itemType == lefiGeomLayerE) {
-        string layer = pin->port(i)->getLayer(j);
-        if (parser->tech->name2layer.find(layer) == parser->tech->name2layer.end()) {
-          if (VERBOSE > 1) {
-            cout <<"Warning: layer " <<layer <<" is skipped for " <<parser->tmpBlock->getName() <<"/" <<pin->name() <<endl;
+            frCoord xl = box->xMin();
+            frCoord yl = box->yMin();
+            frCoord xh = box->xMax();
+            frCoord yh = box->yMax();
+            unique_ptr<frRect> pinFig = make_unique<frRect>();
+            pinFig->setBBox(frBox(xl, yl, xh, yh));
+            pinFig->addToPin(pinIn.get());
+            pinFig->setLayerNum(layerNum);
+            unique_ptr<frPinFig> uptr(std::move(pinFig));
+            pinIn->addPinFig(std::move(uptr));
           }
-          layerNum = -1;
-          continue;
+          term->addPin(std::move(pinIn));
         }
+      }
 
-        layerNum = parser->tech->name2layer.at(layer)->getLayerNum();
-        //cout <<"  layer: " <<pin->port(i)->getLayer(j) <<endl;
-        if (enableOutput) {
-          cout <<"    LAYER " <<layer <<" ;" <<endl;
-        }
-        //cout <<"    LAYERNUM " <<layerNum <<" ;" <<endl;
-      } else if (itemType == lefiGeomRectE) {
-        if (layerNum == -1) {
+      for (auto obs : master->getObstructions()) {
+        frLayerNum layerNum = -1;
+        string layer = obs->getTechLayer()->getName();
+        if (tech->name2layer.find(layer) == tech->name2layer.end()) {
+          logger->warn(DRT,
+                       123,
+                       "layer {} is skipped for {}/OBS",
+                       layer,
+                       tmpBlock->getName());
           continue;
-        }
-        frCoord xl = round(pin->port(i)->getRect(j)->xl * parser->tech->getDBUPerUU());
-        frCoord yl = round(pin->port(i)->getRect(j)->yl * parser->tech->getDBUPerUU());
-        frCoord xh = round(pin->port(i)->getRect(j)->xh * parser->tech->getDBUPerUU());
-        frCoord yh = round(pin->port(i)->getRect(j)->yh * parser->tech->getDBUPerUU());
-
+        } else
+          layerNum = tech->name2layer.at(layer)->getLayerNum();
+        auto blkIn = make_unique<frBlockage>();
+        blkIn->setId(numBlockages);
+        numBlockages++;
+        auto pinIn = make_unique<frPin>();
+        pinIn->setId(0);
+        frCoord xl = obs->xMin();
+        frCoord yl = obs->yMin();
+        frCoord xh = obs->xMax();
+        frCoord yh = obs->yMax();
         // pinFig
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(frBox(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
         pinFig->setLayerNum(layerNum);
-        // pinFig completed
-        // pin
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
-        // pin completed
-
-        if (enableOutput) {
-          cout <<"      RECT " <<xl * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                               <<yl * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                               <<xh * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                               <<yh * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
-        }
-             
-      } else if (itemType == lefiGeomPolygonE) {
-        if (layerNum == -1) {
-          continue;
-        }
-        //Polygon polygon;
-        if (enableOutput) {
-          cout <<"      POLYGON"; 
-        }
-        frCollection<frPoint> tmpPoints;
-        for (int k = 0; k < pin->port(i)->getPolygon(j)->numPoints; k++) {
-          frCoord x = round(pin->port(i)->getPolygon(j)->x[k] * parser->tech->getDBUPerUU());
-          frCoord y = round(pin->port(i)->getPolygon(j)->y[k] * parser->tech->getDBUPerUU());
-          tmpPoints.push_back(frPoint(x, y));
-          if (enableOutput) {
-             cout <<" " <<x * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                        <<y * 1.0 / parser->tech->getDBUPerUU();
-          }
-        }
-        // pinFig
-        unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
-        pinFig->setPoints(tmpPoints);
-        pinFig->addToPin(pinIn.get());
-        pinFig->setLayerNum(layerNum);
-        // pinFig completed
-        // pin
-        unique_ptr<frPinFig> uptr(std::move(pinFig));
-        pinIn->addPinFig(std::move(uptr));
-        // pin completed
-
-        if (enableOutput) {
-          cout <<" ;" <<endl;
-        }
-      } else {
-        if (VERBOSE > -1) {
-          cout <<"Error: unsupported lefiGeometries in getLefPins!" <<endl;
-        }
-        continue;
+        blkIn->setPin(std::move(pinIn));
+        tmpBlock->addBlockage(std::move(blkIn));
       }
-      //cout <<"  enum: " <<pin->port(i)->itemType(j) <<endl;
-    }
-    term->addPin(std::move(pinIn));
-    // term completed
-    if (enableOutput) {
-      cout <<"    END" <<endl;
+      tmpBlock->setId(numRefBlocks + 1);
+      design->addRefBlock(std::move(tmpBlock));
+      numRefBlocks++;
+      numTerms = 0;
+      numBlockages = 0;
     }
   }
-  if (enableOutput) {
-    cout <<"  END " <<pin->name() <<endl;
-  }
-
-  return 0;
 }
 
-
-int io::Parser::Callbacks::getLefObs(lefrCallbackType_e type, lefiObstruction* obs, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-
-  if (type != lefrObstructionCbkType) {
-    cout <<"Type is not lefrObstructionCbkType!" <<endl;
-    exit(1);
-  }
-
-  if (enableOutput) {
-    cout <<"  OBS" <<endl;
-  }
-  
-  auto geometry = obs->geometries();
-  int numItems  = geometry->numItems();
-  io::Parser* parser = (io::Parser*) data;
-
-  // blockage
-  auto blkIn = make_unique<frBlockage>();
-  blkIn->setId(parser->numBlockages);
-  parser->numBlockages++;
-  // pin
-  auto pinIn = make_unique<frPin>();
-  pinIn->setId(0);
-  
-  string layer = "";
-  frLayerNum layerNum = -1;
-  for (int i = 0; i < numItems; ++i) {
-    if (geometry->itemType(i) == lefiGeomLayerE) {
-      layer = geometry->getLayer(i);
-      if (parser->tech->name2layer.find(layer) != parser->tech->name2layer.end()) {
-        layerNum = parser->tech->name2layer[layer]->getLayerNum();
-      } else {
-        if (VERBOSE > 2) {
-          cout <<"Warning: layer " <<geometry->getLayer(i) <<" is skipped for " <<parser->tmpBlock->getName() <<"/OBS" <<endl; 
-        }
-        layerNum = -1;
-        continue;
-      }
-      if (enableOutput) {
-        cout <<"    LAYER " <<layer <<" ;" <<endl;
-      }
-    } else if (geometry->itemType(i) == lefiGeomRectE) {
-      if (layerNum == -1) {
-        // cout <<"Warning: OBS on undefined layer " <<" is skipped... " <<endl; 
-        continue;
-      }
-      auto rect = geometry->getRect(i);
-      frCoord xl = round(rect->xl * parser->tech->getDBUPerUU());
-      frCoord yl = round(rect->yl * parser->tech->getDBUPerUU());
-      frCoord xh = round(rect->xh * parser->tech->getDBUPerUU());
-      frCoord yh = round(rect->yh * parser->tech->getDBUPerUU());
-      // pinFig
-      unique_ptr<frRect> pinFig = make_unique<frRect>();
-      pinFig->setBBox(frBox(xl, yl, xh, yh));
-      pinFig->addToPin(pinIn.get());
-      pinFig->setLayerNum(layerNum);
-      // pinFig completed
-      // pin
-      unique_ptr<frPinFig> uptr(std::move(pinFig));
-      pinIn->addPinFig(std::move(uptr));
-      // pin completed
-      if (enableOutput) {
-        cout <<"      RECT " <<rect->xl <<" " <<rect->yl <<" " <<rect->xh <<" " <<rect->yh <<" ;" <<endl;
-      }
-    } else if (geometry->itemType(i) == lefiGeomPolygonE) {
-      if (layerNum == -1) {
-        // cout <<"Warning: OBS on undefined layer " <<" is skipped... " <<endl; 
-        continue;
-      }
-      std::vector<frPoint> tmpPoints;
-      for (int k = 0; k < geometry->getPolygon(i)->numPoints; k++) {
-        frCoord x = round(geometry->getPolygon(i)->x[k] * parser->tech->getDBUPerUU());
-        frCoord y = round(geometry->getPolygon(i)->y[k] * parser->tech->getDBUPerUU());
-        tmpPoints.push_back(frPoint(x, y));
-        if (enableOutput) {
-           cout <<" " <<x * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                      <<y * 1.0 / parser->tech->getDBUPerUU();
+void io::Parser::setTechViaRules(odb::dbTech* _tech)
+{
+  for (auto rule : _tech->getViaGenerateRules()) {
+    int count = rule->getViaLayerRuleCount();
+    if (count != 3)
+      logger->error(DRT, 128, "unsupported viarule {}", rule->getName());
+    map<frLayerNum, int> lNum2Int;
+    for (int i = 0; i < count; i++) {
+      auto layerRule = rule->getViaLayerRule(i);
+      string layerName = layerRule->getLayer()->getName();
+      if (tech->name2layer.find(layerName) == tech->name2layer.end())
+        logger->error(DRT,
+                      129,
+                      "unknown layer {} for viarule {}",
+                      layerName,
+                      rule->getName());
+      frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
+      lNum2Int[lNum] = 1;
+    }
+    int curOrder = 0;
+    for (auto [lnum, i] : lNum2Int) {
+      lNum2Int[lnum] = ++curOrder;
+    }
+    if (lNum2Int.begin()->first + count - 1 != (--lNum2Int.end())->first) {
+      logger->error(DRT,
+                    130,
+                    "non consecutive layers for viarule {}",
+                    rule->getName());
+    }
+    auto viaRuleGen = make_unique<frViaRuleGenerate>(rule->getName());
+    if (rule->isDefault()) {
+      viaRuleGen->setDefault(1);
+    }
+    for (int i = 0; i < count; i++) {
+      auto layerRule = rule->getViaLayerRule(i);
+      frLayerNum layerNum
+          = tech->name2layer[layerRule->getLayer()->getName()]->getLayerNum();
+      if (layerRule->hasEnclosure()) {
+        frCoord x;
+        frCoord y;
+        layerRule->getEnclosure(x, y);
+        frPoint enc(x, y);
+        switch (lNum2Int[layerNum]) {
+          case 1:
+            viaRuleGen->setLayer1Enc(enc);
+            break;
+          case 2:
+            logger->warn(DRT,
+                         131,
+                         "cutLayer cannot have overhangs in viarule {}, "
+                         "skipping enclosure",
+                         rule->getName());
+            break;
+          default:
+            viaRuleGen->setLayer2Enc(enc);
+            break;
         }
       }
-      // pinFig
-      unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
-      pinFig->setPoints(tmpPoints);
-      pinFig->addToPin(pinIn.get());
-      pinFig->setLayerNum(layerNum);
-      // pinFig completed
-      // pin
-      unique_ptr<frPinFig> uptr(std::move(pinFig));
-      pinIn->addPinFig(std::move(uptr));
-      // pin completed
-    } else if (geometry->itemType(i) == lefiGeomLayerMinSpacingE) {
-      if (layerNum == -1) {
-        // cout <<"Warning: OBS on undefined layer " <<" is skipped... " <<endl; 
-        continue;
+      if (layerRule->hasRect()) {
+        odb::Rect rect;
+        layerRule->getRect(rect);
+        frCoord xl = rect.xMin();
+        frCoord yl = rect.yMin();
+        frCoord xh = rect.xMax();
+        frCoord yh = rect.yMax();
+        frBox box(xl, yl, xh, yh);
+        switch (lNum2Int[layerNum]) {
+          case 1:
+            logger->warn(
+                DRT,
+                132,
+                "botLayer cannot have rect in viarule {}, skipping rect",
+                rule->getName());
+            break;
+          case 2:
+            viaRuleGen->setCutRect(box);
+            break;
+          default:
+            logger->warn(
+                DRT,
+                133,
+                "topLayer cannot have rect in viarule {}, skipping rect",
+                rule->getName());
+            break;
+        }
       }
-      frCoord x = round(geometry->getLayerMinSpacing(i) * parser->tech->getDBUPerUU());
-      if (enableOutput) {
-         cout <<"      MINSPACING " <<x * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
+      if (layerRule->hasSpacing()) {
+        frCoord x;
+        frCoord y;
+        layerRule->getSpacing(x, y);
+        frPoint pt(x, y);
+        switch (lNum2Int[layerNum]) {
+          case 1:
+            logger->warn(
+                DRT,
+                134,
+                "botLayer cannot have spacing in viarule {}, skipping spacing",
+                rule->getName());
+            break;
+          case 2:
+            viaRuleGen->setCutSpacing(pt);
+            break;
+          default:
+            logger->warn(
+                DRT,
+                135,
+                "botLayer cannot have spacing in viarule {}, skipping spacing",
+                rule->getName());
+            break;
+        }
       }
-    } else if (geometry->itemType(i) == lefiGeomLayerRuleWidthE) {
-      if (layerNum == -1) {
-        // cout <<"Warning: OBS on undefined layer " <<" is skipped... " <<endl; 
-        continue;
-      }
-      frCoord x = round(geometry->getLayerRuleWidth(i) * parser->tech->getDBUPerUU());
-      if (enableOutput) {
-         cout <<"      DESIGNRULEWIDTH " <<x * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
-      }
-    } else {
-      if (VERBOSE > -1) {
-        cout <<"Error: unsupported lefiGeometries in getLefObs" <<endl;
-      }
-      continue;
     }
+    tech->addViaRuleGenerate(std::move(viaRuleGen));
   }
-  if (enableOutput) {
-    cout <<"  END" <<endl;
-  }
-  blkIn->setPin(std::move(pinIn));
-  parser->tmpBlock->addBlockage(std::move(blkIn));
-  return 0;
 }
 
-int io::Parser::Callbacks::getLefString(lefrCallbackType_e type, const char* str, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  io::Parser* parser = (io::Parser*) data;
-  if (type == lefrMacroBeginCbkType) {
-    auto &tmpBlock = parser->tmpBlock;
-    tmpBlock = make_unique<frBlock>(string(str));
-    if (enableOutput) {
-      cout <<"MACRO " <<tmpBlock->getName() <<endl;
+void io::Parser::setTechVias(odb::dbTech* _tech)
+{
+  for (auto via : _tech->getVias()) {
+    map<frLayerNum, int> lNum2Int;
+    for (auto box : via->getBoxes()) {
+      string layerName = box->getTechLayer()->getName();
+      if (tech->name2layer.find(layerName) == tech->name2layer.end())
+        logger->error(DRT,
+                      124,
+                      "unknown layer {} for via {}",
+                      layerName,
+                      via->getName());
+      frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
+      lNum2Int[lNum] = 1;
     }
-  } else if (type == lefrMacroEndCbkType) {
-    auto &tmpBlock = parser->tmpBlock;
-    tmpBlock->setId(parser->numRefBlocks + 1);
-    if (enableOutput) {
-      cout <<"END " <<tmpBlock->getName() <<" " <<parser->numRefBlocks + 1 <<endl;
+    if (lNum2Int.size() != 3)
+      logger->error(DRT, 125, "unsupported via {}", via->getName());
+    int curOrder = 0;
+    for (auto [lnum, i] : lNum2Int) {
+      lNum2Int[lnum] = ++curOrder;
     }
-    parser->design->addRefBlock(std::move(parser->tmpBlock));
-    parser->numRefBlocks++;
-    parser->numTerms     = 0;
-    parser->numBlockages = 0;
-  } else {
-    cout <<"Type is not supported!" <<endl;
-    // exit(2);
-  }
-  return 0;
-}
 
-int io::Parser::Callbacks::getLefUnits(lefrCallbackType_e type, lefiUnits* units, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  io::Parser* parser = (io::Parser*) data;
-  parser->tech->setDBUPerUU(frUInt4(units->databaseNumber()));
-  if (enableOutput) {
-    cout <<"DATABASE MICRONS " <<parser->tech->getDBUPerUU() <<endl;
-  }
-  return 0;
-}
-
-int io::Parser::Callbacks::getLefUseMinSpacing(lefrCallbackType_e type, lefiUseMinSpacing* spacing, lefiUserData data) {
-  bool enableOutput = true;
-  if (!strcmp(spacing->lefiUseMinSpacing::name(), "OBS")) {
-    if (enableOutput) {
-      cout << "USEMINSPACING OBS";
+    if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first) {
+      logger->error(
+          DRT, 126, "non consecutive layers for via {}", via->getName());
     }
-    if (spacing->lefiUseMinSpacing::value()) {
-      if (enableOutput) {
-        cout << " ON";
-      }
-      USEMINSPACING_OBS = true;
-    } else {
-      if (enableOutput) {
-        cout << " OFF";
-      }
-      USEMINSPACING_OBS = false;
-    }
-    if (enableOutput) {
-      cout << endl;
-    }
-  }
-  return 0;
-}
-
-int io::Parser::Callbacks::getLefManufacturingGrid(lefrCallbackType_e type, double number, lefiUserData data) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  io::Parser* parser = (io::Parser*) data;
-  parser->tech->setManufacturingGrid(frUInt4(round(number * parser->tech->getDBUPerUU())));
-  if (enableOutput) {
-    cout <<"MANUFACTURINGGRID " <<number <<endl;
-  }
-  return 0;
-}
-
-int io::Parser::Callbacks::getLefVias(lefrCallbackType_e type, lefiVia* via, lefiUserData data) {
-  bool enableOutput = false;
-  // bool enableOutput = true;
-  if (type != lefrViaCbkType) {
-    cout <<"Type is not lefrViaCbkType!" <<endl;
-  }
-  if (enableOutput) {
-    cout <<"VIA " <<via->name();
-    if (via->hasDefault()) {
-      cout <<" DEFAULT";
-    }
-    cout <<endl;
-  }
-  if (via->numLayers() != 3) {
-    if (VERBOSE > -1) {
-      cout <<"Error: unsupported via" <<endl;
-    }
-    exit(1);
-  }
-  io::Parser* parser = (io::Parser*) data;
-  map<frLayerNum, int> lNum2Int;
-  for (int i = 0; i < via->numLayers(); ++i) {
-    if (parser->tech->name2layer.find(via->layerName(i)) == parser->tech->name2layer.end()) {
-      if (VERBOSE > -1) {
-        cout <<"Warning: layer " <<via->layerName(i) <<" is skipiped for " <<via->name() <<endl;
-      }
-      return 0;
-    }
-    lNum2Int[parser->tech->name2layer.at(via->layerName(i))->getLayerNum()] = i;
-  }
-  //for (auto &m: lNum2Int) {
-  //  cout <<"print " <<m.first <<" " <<m.second <<endl;
-  //}
-  if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first) {
-    if (VERBOSE > -1) {
-      cout <<"Error: non-consecutive layers" <<endl;
-    }
-    exit(1);
-  }
-
-  auto viaDef = make_unique<frViaDef>(via->name());
-  if (via->hasDefault()) {
-    viaDef->setDefault(true);
-  }
-  int cnt = 0;
-  for (auto &m: lNum2Int) {
-    int i = m.second;
-    if (enableOutput) {
-      cout <<"  LAYER " <<via->layerName(i) <<" ;" <<endl;
-    }
-    auto layerNum = m.first;
-    for (int j = 0; j < via->numRects(i); ++j) {
-      frCoord xl = round(via->xl(i, j) * parser->tech->getDBUPerUU());
-      frCoord yl = round(via->yl(i, j) * parser->tech->getDBUPerUU());
-      frCoord xh = round(via->xh(i, j) * parser->tech->getDBUPerUU());
-      frCoord yh = round(via->yh(i, j) * parser->tech->getDBUPerUU());
+    auto viaDef = make_unique<frViaDef>(via->getName());
+    if (via->isDefault())
+      viaDef->setDefault(true);
+    for (auto box : via->getBoxes()) {
+      frLayerNum layerNum;
+      string layer = box->getTechLayer()->getName();
+      if (tech->name2layer.find(layer) == tech->name2layer.end())
+        logger->error(DRT,
+                      127,
+                      "unknown layer {} for via {}",
+                      layer,
+                      via->getName());
+      else
+        layerNum = tech->name2layer.at(layer)->getLayerNum();
+      frCoord xl = box->xMin();
+      frCoord yl = box->yMin();
+      frCoord xh = box->xMax();
+      frCoord yh = box->yMax();
       unique_ptr<frRect> pinFig = make_unique<frRect>();
       pinFig->setBBox(frBox(xl, yl, xh, yh));
       pinFig->setLayerNum(layerNum);
-      if (enableOutput) {
-        cout <<"    RECT "   <<xl * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                             <<yl * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                             <<xh * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                             <<yh * 1.0 / parser->tech->getDBUPerUU() <<" ;" <<endl;
-      }
-      switch(cnt) {
-        case 0 :
-          viaDef->addLayer1Fig(std::move(pinFig));
-          break;
-        case 1 :
-          viaDef->addCutFig(std::move(pinFig));
-          break;
-        default:
-          viaDef->addLayer2Fig(std::move(pinFig));
-          break;
+      if (lNum2Int[layerNum] == 1) {
+        viaDef->addLayer1Fig(std::move(pinFig));
+      } else if (lNum2Int[layerNum] == 3) {
+        viaDef->addLayer2Fig(std::move(pinFig));
+      } else if (lNum2Int[layerNum] == 2) {
+        viaDef->addCutFig(std::move(pinFig));
       }
     }
-    for (int j = 0; j < via->numPolygons(i); ++j) {
-      if (enableOutput) {
-        cout <<"    POLYGON"; 
-      }
-      vector<frPoint> tmpPoints;
-      for (int k = 0; k < via->getPolygon(i, j).numPoints; k++) {
-        frCoord x = round(via->getPolygon(i, j).x[k] * parser->tech->getDBUPerUU());
-        frCoord y = round(via->getPolygon(i, j).y[k] * parser->tech->getDBUPerUU());
-        tmpPoints.push_back(frPoint(x, y));
-        if (enableOutput) {
-           cout <<" " <<x * 1.0 / parser->tech->getDBUPerUU() <<" " 
-                      <<y * 1.0 / parser->tech->getDBUPerUU();
-        }
-      }
-      unique_ptr<frPolygon> pinFig = make_unique<frPolygon>();
-      pinFig->setPoints(tmpPoints);
-      pinFig->setLayerNum(layerNum);
-      if (enableOutput) {
-        cout <<" ;" <<endl;
-      }
-      switch(cnt) {
-        case 0 :
-          viaDef->addLayer1Fig(std::move(pinFig));
-          break;
-        case 1 :
-          viaDef->addCutFig(std::move(pinFig));
-          break;
-        default:
-          viaDef->addLayer2Fig(std::move(pinFig));
-          break;
-      }
-    }
-    cnt++;
-  }
-  if (enableOutput) {
-    cout <<"END " <<via->name() <<endl;
-  }
+    auto cutLayerNum = viaDef->getCutLayerNum();
+    auto cutLayer = tech->getLayer(cutLayerNum);
+    int cutClassIdx = -1;
+    frLef58CutClass* cutClass = nullptr;
 
-  // add via class information
-  auto cutLayerNum = viaDef->getCutLayerNum();
-  auto cutLayer    = parser->tech->getLayer(cutLayerNum);
-  int cutClassIdx = -1;
-  frLef58CutClass *cutClass = nullptr;
-
-  for (auto &cutFig: viaDef->getCutFigs()) {
-    if (cutFig->typeId() == frcRect) {
+    for (auto& cutFig : viaDef->getCutFigs()) {
       frBox box;
       cutFig->getBBox(box);
-      auto width  = box.width();
+      auto width = box.width();
       auto length = box.length();
       cutClassIdx = cutLayer->getCutClassIdx(width, length);
       if (cutClassIdx != -1) {
@@ -4456,249 +4089,74 @@ int io::Parser::Callbacks::getLefVias(lefrCallbackType_e type, lefiVia* via, lef
         break;
       }
     }
+    if (cutClass) {
+      viaDef->setCutClass(cutClass);
+      viaDef->setCutClassIdx(cutClassIdx);
+    }
+    tech->addVia(std::move(viaDef));
   }
-
-  if (cutClass) {
-    viaDef->setCutClass(cutClass);
-    viaDef->setCutClassIdx(cutClassIdx);
-  }
-
-  parser->tech->addVia(std::move(viaDef));
-  return 0;
 }
 
-int io::Parser::Callbacks::getLefViaRules(lefrCallbackType_e type, lefiViaRule* viaRule, lefiUserData data) {
-  bool enableOutput = false;
-  //bool enableOutput = true;
-  if (type != lefrViaRuleCbkType) {
-    cout <<"Type is not lefrViaRuleCbkType!" <<endl;
-    // exit(1);
-  }
-  if (enableOutput) {
-    cout <<"VIARULE " <<viaRule->name();
-    if (viaRule->hasGenerate()) {
-      cout <<" GENERATE";
-    } else {
-      cout <<"Error: getLefViaRules does not support non-generate rules" <<endl;
-      exit(1);
-    }
-    if (viaRule->hasDefault()) {
-      cout <<" DEFAULT";
-    }
-    cout <<endl;
-  }
-  if (viaRule->numLayers() != 3) {
-    if (VERBOSE > -1) {
-      cout <<"Error: unsupported via" <<endl;
-    }
-    exit(1);
-  }
-  io::Parser* parser = (io::Parser*) data;
-  map<frLayerNum, int> lNum2Int;
-  for (int i = 0; i < viaRule->numLayers(); ++i) {
-    auto viaRuleLayer = viaRule->layer(i);
-    if (parser->tech->name2layer.find(viaRuleLayer->name()) == parser->tech->name2layer.end()) {
-      if (VERBOSE > -1) {
-        cout <<"Warning: layer " <<viaRuleLayer->name() <<" is skipiped for " <<viaRule->name() <<endl;
-      }
-      return 0;
-    }
-    lNum2Int[parser->tech->name2layer.at(viaRuleLayer->name())->getLayerNum()] = i;
-  }
-  if (lNum2Int.begin()->first + 2!= (--lNum2Int.end())->first) {
-    if (VERBOSE > -1) {
-      cout <<"Error: non-consecutive layers" <<endl;
-    }
-    exit(1);
-  }
-
-  if (!viaRule->hasGenerate()) {
-    cout <<"Error: getLefViaRules does not support non-generate rules" <<endl;
-    exit(1);
-  }
-  auto viaRuleGen = make_unique<frViaRuleGenerate>(viaRule->name());
-  if (viaRule->hasDefault()) {
-    viaRuleGen->setDefault(1);
-  }
-  int cnt = 0;
-  for (auto &[lNum, i]: lNum2Int) {
-    auto viaRuleLayer = viaRule->layer(i);
-    if (enableOutput) {
-      cout <<"  LAYER " <<viaRuleLayer->name() <<" ;" <<endl;
-    }
-    if (viaRuleLayer->hasEnclosure()) {
-      frCoord x = round(viaRuleLayer->enclosureOverhang1() * parser->tech->getDBUPerUU());
-      frCoord y = round(viaRuleLayer->enclosureOverhang2() * parser->tech->getDBUPerUU());
-      frPoint enc(x, y);
-      switch(cnt) {
-        case 0:
-          viaRuleGen->setLayer1Enc(enc);
-          break;
-        case 1:
-          cout <<"Error: getViaRuleGenerates cutLayer cannot have overhands" <<endl;
-          break;
-        default:
-          viaRuleGen->setLayer2Enc(enc);
-          break;
-      }
-      if (enableOutput) {
-        cout <<"    ENCLOSURE " <<viaRuleLayer->enclosureOverhang1() <<" " <<viaRuleLayer->enclosureOverhang1() <<" ;" <<endl;
-      }
-    }
-    if (viaRuleLayer->hasRect()) {
-      frCoord xl = round(viaRuleLayer->xl() * parser->tech->getDBUPerUU());
-      frCoord yl = round(viaRuleLayer->yl() * parser->tech->getDBUPerUU());
-      frCoord xh = round(viaRuleLayer->xh() * parser->tech->getDBUPerUU());
-      frCoord yh = round(viaRuleLayer->yh() * parser->tech->getDBUPerUU());
-      frBox box(xl, yl, xh, yh);
-      switch(cnt) {
-        case 0:
-          cout <<"Error: getViaRuleGenerates botLayer cannot have rect" <<endl;
-          break;
-        case 1:
-          viaRuleGen->setCutRect(box);
-          break;
-        default:
-          cout <<"Error: getViaRuleGenerates topLayer cannot have rect" <<endl;
-          break;
-      }
-      if (enableOutput) {
-        cout <<"    RECT " <<viaRuleLayer->xl() <<" " 
-                           <<viaRuleLayer->yl() <<" " 
-                           <<viaRuleLayer->xh() <<" " 
-                           <<viaRuleLayer->yh() 
-                           <<" ;" <<endl;
-      }
-    }
-    if (viaRuleLayer->hasSpacing()) {
-      frCoord x = round(viaRuleLayer->spacingStepX() * parser->tech->getDBUPerUU());
-      frCoord y = round(viaRuleLayer->spacingStepY() * parser->tech->getDBUPerUU());
-      frPoint pt(x, y);
-      switch(cnt) {
-        case 0:
-          cout <<"Error: getViaRuleGenerates botLayer cannot have spacing" <<endl;
-          break;
-        case 1:
-          viaRuleGen->setCutSpacing(pt);
-          break;
-        default:
-          cout <<"Error: getViaRuleGenerates topLayer cannot have spacing" <<endl;
-          break;
-      }
-      if (enableOutput) {
-        cout <<"    SPACING " <<viaRuleLayer->spacingStepX() <<" BY " <<viaRuleLayer->spacingStepY() <<" ;" <<endl;
-      }
-    }
-    cnt++;
-  }
-
-  parser->tech->addViaRuleGenerate(std::move(viaRuleGen));
-  return 0;
+void io::Parser::readTechAndLibs(odb::dbDatabase* db)
+{
+  auto _tech = db->getTech();
+  if (_tech == nullptr)
+    logger->error(DRT, 136, "load design first");
+  tech->setDBUPerUU(_tech->getDbUnitsPerMicron());
+  USEMINSPACING_OBS = _tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
+  tech->setManufacturingGrid(frUInt4(_tech->getManufacturingGrid()));
+  setLayers(_tech);
+  setTechVias(db->getTech());
+  setTechViaRules(db->getTech());
+  setMacros(db);
 }
 
-void io::Parser::readLef() {
-  ProfileTask profile("IO:readLef");
-  FILE* f;
-  int res;
-
-  lefrInitSession(0);
-
-  lefrSetUserData ((lefiUserData)this);
-
-  lefrSetMacroCbk(Callbacks::getLefMacros);
-  lefrSetMacroBeginCbk(Callbacks::getLefString);
-  lefrSetMacroEndCbk(Callbacks::getLefString);
-  lefrSetUnitsCbk(Callbacks::getLefUnits);
-  lefrSetManufacturingCbk(Callbacks::getLefManufacturingGrid);
-  lefrSetUseMinSpacingCbk(Callbacks::getLefUseMinSpacing);
-  lefrSetPinCbk(Callbacks::getLefPins);
-  lefrSetObstructionCbk(Callbacks::getLefObs);
-  lefrSetLayerCbk(Callbacks::getLefLayers);
-  lefrSetViaCbk(Callbacks::getLefVias);
-  lefrSetViaRuleCbk(Callbacks::getLefViaRules);
-
-  if ((f = fopen(LEF_FILE.c_str(),"r")) == 0) {
-    cout <<"Couldn't open lef file" <<endl;
-    exit(2);
-  }
-
-  res = lefrRead(f, LEF_FILE.c_str(), (lefiUserData)this);
-  if (res != 0) {
-    cout <<"LEF parser returns an error!" <<endl;
-    exit(2);
-  }
-  fclose(f);
-
-  lefrClear();
-}
-
-void io::Parser::readLefDb(odb::dbDatabase* db) {
-  bool enableOutput = false;
-  // bool enableOutput = true;
-
+void io::Parser::readDb(odb::dbDatabase* db)
+{
   if (VERBOSE > 0) {
-    cout <<endl <<"reading lef ..." <<endl;
+    logger->info(DRT, 149, "Reading Tech And Libs");
   }
-
-  readLef();
-
+  readTechAndLibs(db);
   if (VERBOSE > 0) {
-    cout <<endl;
-    cout <<"units:       " <<tech->getDBUPerUU()       <<endl;
-    cout <<"#layers:     " <<tech->layers.size()       <<endl;
-    cout <<"#macros:     " <<design->refBlocks_.size() <<endl;
-    cout <<"#vias:       " <<tech->vias.size()         <<endl;
-    cout <<"#viarulegen: " <<tech->viaRuleGenerates.size() <<endl;
+    logger->report("");
+    logger->report("units:       {}", tech->getDBUPerUU());
+    logger->report("#layers:     {}", tech->layers.size());
+    logger->report("#macros:     {}", design->refBlocks_.size());
+    logger->report("#vias:       {}", tech->vias.size());
+    logger->report("#viarulegen: {}", tech->viaRuleGenerates.size());
+    logger->report("");
   }
 
   auto numLefVia = tech->vias.size();
 
-  //tech->printAllConstraints();
-  
-  if (enableOutput) {
-    // printAllLayers();
-    //printLayerMaps();
+  if (VERBOSE > 0) {
+    logger->info(DRT, 150, "Reading Design");
   }
 
-  if (VERBOSE > 0) {
-    cout <<endl <<"reading def ..." <<endl;
-  }
-  readDb(db);
-
-
+  readDesign(db);
 
   if (VERBOSE > 0) {
-    cout <<endl;
+    logger->report("");
     frBox dieBox;
     design->getTopBlock()->getBoundaryBBox(dieBox);
-    cout <<"design:      " <<design->getTopBlock()->getName()    <<endl;
-    cout <<"die area:    " <<dieBox                              <<endl;
-    cout <<"trackPts:    " <<design->getTopBlock()->getTrackPatterns().size() <<endl;
-    cout <<"defvias:     " <<tech->vias.size() - numLefVia       <<endl;
-    cout <<"#components: " <<design->getTopBlock()->insts_.size() <<endl;
-    cout <<"#terminals:  " <<design->getTopBlock()->terms_.size() <<endl;
-    cout <<"#snets:      " <<design->getTopBlock()->snets_.size() <<endl;
-    cout <<"#nets:       " <<design->getTopBlock()->nets_.size()  <<endl;
-    //cout <<"#pins:       " <<numPins <<endl;
+    logger->report("design:      {}", design->getTopBlock()->getName());
+    logger->report("die area:    {}", dieBox);
+    logger->report("trackPts:    {}",
+                   design->getTopBlock()->getTrackPatterns().size());
+    logger->report("defvias:     {}", tech->vias.size() - numLefVia);
+    logger->report("#components: {}", design->getTopBlock()->insts_.size());
+    logger->report("#terminals:  {}", design->getTopBlock()->terms_.size());
+    logger->report("#snets:      {}", design->getTopBlock()->snets_.size());
+    logger->report("#nets:       {}", design->getTopBlock()->nets_.size());
+    logger->report("");
   }
-  //cout <<flush;
-
-  if (enableOutput) {
-    //printCompMaps();
-    //printTermMaps();
-    //printAllNets();
-    //printAllTrackGens();
-    //printAllTrackPatterns();
-  }
-  //exit(1);
-
 }
 
 void io::Parser::readGuide() {
   ProfileTask profile("IO:readGuide");
 
   if (VERBOSE > 0) {
-    cout <<endl <<"reading guide ..." <<endl;
+    logger->info(DRT, 151, "Reading Guide");
   }
 
   int numGuides = 0;
@@ -4731,35 +4189,33 @@ void io::Parser::readGuide() {
       //cout <<endl;
 
       if (vLine.size() == 0) {
-        cout <<"Error: reading guide file!" <<endl;
-        exit(2);
+        logger->error(DRT, 152, "Error reading guide file!");
       } else if (vLine.size() == 1) {
         netName = vLine[0];
         if (design->topBlock_->name2net_.find(vLine[0]) == design->topBlock_->name2net_.end()) {
-          cout <<"Error: cannot find net: " <<vLine[0] <<endl;
-          exit(2);
+          logger->error(DRT, 153, "cannot find net {}",vLine[0]);
         }
         net = design->topBlock_->name2net_[netName]; 
       } else if (vLine.size() == 5) {
         if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
-          cout <<"Error: cannot find layer: " <<vLine[4] <<endl;
-          exit(2);
+          logger->error(DRT, 154, "cannot find layer {}",vLine[4]);
         }
         layerNum = tech->name2layer[vLine[4]]->getLayerNum();
 
         if (layerNum < (BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
-            || layerNum > TOP_ROUTING_LAYER) {
-          cout << "Error: guide in net " << netName
-               << " uses layer " << vLine[4]
-               << " (" << layerNum << ")"
-               << " that is outside the allowed routing range "
-               << "[" << tech->getLayer(BOTTOM_ROUTING_LAYER)->getName()
-               << " (" << BOTTOM_ROUTING_LAYER << "), "
-               << tech->getLayer(TOP_ROUTING_LAYER)->getName()
-               << " (" << TOP_ROUTING_LAYER << ")]"
-               << endl;
-          exit(2);
-        }
+            || layerNum > TOP_ROUTING_LAYER)
+            logger->error(DRT,
+                        155,
+                        "guide in net {} uses layer {} ({})"
+                        " that is outside the allowed routing range "
+                        "[{} ({}), ({})]",
+                        netName,
+                        vLine[4],
+                        layerNum,
+                        tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
+                        BOTTOM_ROUTING_LAYER,
+                        tech->getLayer(TOP_ROUTING_LAYER)->getName(),
+                        TOP_ROUTING_LAYER);
 
         box.set(stoi(vLine[0]), stoi(vLine[1]), stoi(vLine[2]), stoi(vLine[3]));
         frRect rect;
@@ -4769,29 +4225,28 @@ void io::Parser::readGuide() {
         ++numGuides;
         if (numGuides < 1000000) {
           if (numGuides % 100000 == 0) {
-            cout <<"guideIn read " <<numGuides <<" guides" <<endl;
+            logger->info(DRT, 156, "guideIn read {} guides", numGuides);
           }
         } else {
           if (numGuides % 1000000 == 0) {
-            cout <<"guideIn read " <<numGuides <<" guides" <<endl;
+            logger->info(DRT, 157, "guideIn read {} guides", numGuides);
           }
         }
 
       } else {
-        cout <<"Error: reading guide file!" <<endl;
-        exit(2);
+        logger->error(DRT, 158, "Error reading guide file!");
       }
     }
     fin.close();
   } else {
-    cout <<"Error: failed to open guide file" <<endl;
-    exit(2);
+    logger->error(DRT, 159, "failed to open guide file");
   }
 
 
   if (VERBOSE > 0) {
-    cout <<endl;
-    cout <<"#guides:     " <<numGuides <<endl;
+    logger->report("");
+    logger->report("#guides:     {}", numGuides);
+    logger->report("");
   }
 
 }
@@ -5114,7 +4569,7 @@ void io::Writer::fillViaDefs() {
 void io::Writer::fillConnFigs(bool isTA) {
   connFigs.clear();
   if (VERBOSE > 0) {
-    cout <<endl <<"post processing ..." <<endl;
+    logger->info(DRT, 180, "post processing ...");
   }
   for (auto &net: getDesign()->getTopBlock()->getNets()) {
     fillConnFigs_net(net.get(), isTA);
@@ -5157,6 +4612,7 @@ void io::Writer::writeFromDR(const string &str) {
   fillViaDefs();
   writeDef(false, str);
 }
+
 void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
 {
   frBox box;
@@ -5170,7 +4626,7 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
     if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
-      logger->error(utl::DRT,
+      logger->error(DRT,
                     113,
                     "techlayers for via {} not found in db tech",
                     via->getName());
@@ -5281,7 +4737,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           }
           default: {
             _wire_encoder.clear();
-            logger->error(utl::DRT,
+            logger->error(DRT,
                           114,
                           "unknown connfig type while writing net {}",
                           net->getName());
@@ -5296,12 +4752,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(utl::DRT, 3, "please load design first");
+    logger->error(DRT, 3, "load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(utl::DRT, 4, "please load design first");
+    logger->error(DRT, 4, "load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);
