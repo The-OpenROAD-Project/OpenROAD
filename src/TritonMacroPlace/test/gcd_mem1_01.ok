@@ -48,4 +48,6 @@ End Parquet
 [INFO MPL-0071] SetId: 1
 [INFO MPL-0072] WeightedWL: 0
 [INFO MPL-0073] NumFinalSols: 1
-No differences found.
+Differences found at line 377.
+    - mem0 fakeram45_64x7 + FIXED ( 62720 11760 ) N ;
+    - mem0 fakeram45_64x7 + FIXED ( 63840 12880 ) N ;
