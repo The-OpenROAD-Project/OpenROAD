@@ -251,7 +251,7 @@ proc place_pins { args } {
         if { $db_bterm != "NULL" } {
           ppl::add_pin_to_group $db_bterm $pin_group
         } else {
-          utl::error PPL 43 "Pin $pin_name not found in group $group_idx"
+          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
         }
       }
       incr group_idx
