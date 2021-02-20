@@ -44,6 +44,11 @@ class Logger;
 
 namespace mpl {
 
+using std::vector;
+using std::array;
+using std::pair;
+using std::string;
+
 class MacroPlacer;
 class Macro;
 
@@ -64,7 +69,7 @@ enum PartClass
 constexpr int part_class_count = None + 1;
 
 // PartClass -> macro indices
-typedef std::array<std::vector<int>, part_class_count> MacroPartMap;
+typedef array<vector<int>, part_class_count> MacroPartMap;
 
 class Partition
 {
@@ -87,15 +92,13 @@ class Partition
   void UpdateMacroCoordi(MacroPlacer* placer);
 
   PartClass partClass;
-  std::vector<Macro> macroStor;
+  vector<Macro> macros_;
   double lx, ly;
   double width, height;
-  double* netTable;
+  vector<double> net_tbl_;
 
  private:
-  std::string getName(int macroIdx);
-
-  int tableCnt;
+  string getName(int macroIdx);
   utl::Logger* logger_;
   MacroPlacer *macro_placer_;
 };

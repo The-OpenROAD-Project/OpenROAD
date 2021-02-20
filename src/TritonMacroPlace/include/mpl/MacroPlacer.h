@@ -195,8 +195,8 @@ private:
   // macro idx/idx pair -> give each
   vector<vector<int>> macroWeight;
   // macro Information
-  vector<Macro> macroStor;
-  // dbInst* --> macroStor's index
+  vector<Macro> macros_;
+  // dbInst* --> macros_'s index
   unordered_map<odb::dbInst*, int> macroInstMap;
 
   MacroSpacings default_macro_spacings_;
@@ -204,10 +204,10 @@ private:
 
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
-  double* netTable_;
+  vector<double> net_tbl_;
   int verbose_;
   bool fenceRegionMode_;
-  int solCount_;
+  int solution_count_;
 
   friend class Partition;
 };

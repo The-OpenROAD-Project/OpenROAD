@@ -40,10 +40,10 @@
 
 namespace mpl {
 
-using std::pair;
-using std::string;
-using std::unordered_map;
-using std::vector;
+using std::min;
+using std::max;
+using std::make_pair;
+using std::to_string;
 
 using utl::MPL;
 
@@ -61,8 +61,6 @@ Partition::Partition(PartClass _partClass,
       ly(_ly),
       width(_width),
       height(_height),
-      netTable(nullptr),
-      tableCnt(0),
       macro_placer_(macro_placer),
       logger_(log)
 {
@@ -74,79 +72,69 @@ Partition::Partition(const Partition& prev)
       ly(prev.ly),
       width(prev.width),
       height(prev.height),
-      macroStor(prev.macroStor),
-      tableCnt(prev.tableCnt),
+      macros_(prev.macros_),
+      net_tbl_(prev.net_tbl_),
       macro_placer_(prev.macro_placer_),
       logger_(prev.logger_)
 {
-  if (prev.netTable) {
-    netTable = new double[tableCnt];
-    for (int i = 0; i < tableCnt; i++) {
-      netTable[i] = prev.netTable[i];
-    }
-  } else {
-    netTable = nullptr;
-  }
 }
 
 Partition::~Partition()
 {
-  delete[] netTable;
 }
 
-#define EAST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::East))
-#define WEST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::West))
-#define NORTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::North))
-#define SOUTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::South))
+#define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
+#define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
+#define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
+#define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
 
-#define GLOBAL_EAST_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::East))
-#define GLOBAL_WEST_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::West))
-#define GLOBAL_NORTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::North))
-#define GLOBAL_SOUTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::South))
+#define GLOBAL_EAST_IDX (placer->macros_.size() + coreEdgeIndex(CoreEdge::East))
+#define GLOBAL_WEST_IDX (placer->macros_.size() + coreEdgeIndex(CoreEdge::West))
+#define GLOBAL_NORTH_IDX (placer->macros_.size() + coreEdgeIndex(CoreEdge::North))
+#define GLOBAL_SOUTH_IDX (placer->macros_.size() + coreEdgeIndex(CoreEdge::South))
 
 string Partition::getName(int macroIdx)
 {
-  if (macroIdx < macroStor.size()) {
-    return macroStor[macroIdx].name();
+  if (macroIdx < macros_.size()) {
+    return macros_[macroIdx].name();
   } else {
-    return coreEdgeString(coreEdgeFromIndex(macroIdx - macroStor.size()));
+    return coreEdgeString(coreEdgeFromIndex(macroIdx - macros_.size()));
   }
 }
 
 void Partition::FillNetlistTable(MacroPlacer *placer,
                                  MacroPartMap &macroPartMap)
 {
-  tableCnt = (macroStor.size() + core_edge_count) * (macroStor.size() + core_edge_count);
-  netTable = new double[tableCnt];
-  for (int i = 0; i < tableCnt; i++) {
-    netTable[i] = 0.0;
+  int macro_edge_count = macros_.size() + core_edge_count;
+  net_tbl_.resize(macro_edge_count * macro_edge_count);
+  for (size_t i = 0; i < net_tbl_.size(); i++) {
+    net_tbl_[i] = 0.0;
   }
 
   // Just Copy to the netlistTable.
   if (partClass == ALL) {
-    for (size_t i = 0; i < (macroStor.size() + core_edge_count); i++) {
-      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
-        netTable[i * (macroStor.size() + core_edge_count) + j]
-            = (double) placer->macroWeight[i][j];
+    for (size_t i = 0; i < macro_edge_count; i++) {
+      for (size_t j = 0; j < macro_edge_count; j++) {
+        net_tbl_[i * macro_edge_count + j] = placer->macroWeight[i][j];
       }
     }
   }
   else {
     // row
-    for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
+    for (size_t i = 0; i < macro_edge_count; i++) {
       // column
-      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
+      for (size_t j = 0; j < macro_edge_count; j++) {
         if (i == j) {
           continue;
         }
 
         // from: macro case
-        if (i < macroStor.size()) {
-          int globalIdx1 = placer->macroInstMap[macroStor[i].dbInstPtr];
+        if (i < macros_.size()) {
+          int globalIdx1 = placer->macroInstMap[macros_[i].dbInstPtr];
           // to macro case
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
+          if (j < macros_.size()) {
+            int globalIdx2 = placer->macroInstMap[macros_[j].dbInstPtr];
+            net_tbl_[i * (macros_.size() + core_edge_count) + j]
               = placer->macroWeight[globalIdx1][globalIdx2];
           }
           // to IO-west case
@@ -156,101 +144,101 @@ void Partition::FillNetlistTable(MacroPlacer *placer,
             if (partClass == PartClass::NE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = westSum;
+            net_tbl_[i * (macros_.size() + core_edge_count) + j] = westSum;
           } else if (j == EAST_IDX) {
             int eastSum = placer->macroWeight[globalIdx1][GLOBAL_EAST_IDX];
 
             if (partClass == PartClass::NW) {
               for (auto& curMacroIdx : macroPartMap[PartClass::NE]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SW) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = eastSum;
+            net_tbl_[i * (macros_.size() + core_edge_count) + j] = eastSum;
           } else if (j == NORTH_IDX) {
             int northSum = placer->macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
 
             if (partClass == PartClass::SE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::SW) {
               for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = northSum;
+            net_tbl_[i * (macros_.size() + core_edge_count) + j] = northSum;
           } else if (j == SOUTH_IDX) {
             int southSum = placer->macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
 
             if (partClass == PartClass::NE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
             if (partClass == PartClass::NW) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
                 int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
+                  = placer->macroInstMap[macros_[curMacroIdx].dbInstPtr];
                 southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = southSum;
+            net_tbl_[i * (macros_.size() + core_edge_count) + j] = southSum;
           }
         }
         // from IO
         else if (i == WEST_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
+          if (j < macros_.size()) {
+            int globalIdx2 = placer->macroInstMap[macros_[j].dbInstPtr];
+            net_tbl_[i * (macros_.size() + core_edge_count) + j]
               = placer->macroWeight[GLOBAL_WEST_IDX][globalIdx2];
           }
         } else if (i == EAST_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
+          if (j < macros_.size()) {
+            int globalIdx2 = placer->macroInstMap[macros_[j].dbInstPtr];
+            net_tbl_[i * (macros_.size() + core_edge_count) + j]
               = placer->macroWeight[GLOBAL_EAST_IDX][globalIdx2];
           }
         } else if (i == NORTH_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
+          if (j < macros_.size()) {
+            int globalIdx2 = placer->macroInstMap[macros_[j].dbInstPtr];
+            net_tbl_[i * (macros_.size() + core_edge_count) + j]
               = placer->macroWeight[GLOBAL_NORTH_IDX][globalIdx2];
           }
         } else if (i == SOUTH_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
+          if (j < macros_.size()) {
+            int globalIdx2 = placer->macroInstMap[macros_[j].dbInstPtr];
+            net_tbl_[i * (macros_.size() + core_edge_count) + j]
               = placer->macroWeight[GLOBAL_SOUTH_IDX][globalIdx2];
           }
         }
@@ -261,10 +249,10 @@ void Partition::FillNetlistTable(MacroPlacer *placer,
 
 void Partition::UpdateMacroCoordi(MacroPlacer* placer)
 {
-  for (auto& curPartMacro : macroStor) {
+  for (auto& curPartMacro : macros_) {
     int macroIdx = placer->macroInstMap[curPartMacro.dbInstPtr];
-    curPartMacro.lx = placer->macroStor[macroIdx].lx;
-    curPartMacro.ly = placer->macroStor[macroIdx].ly;
+    curPartMacro.lx = placer->macros_[macroIdx].lx;
+    curPartMacro.ly = placer->macros_[macroIdx].ly;
   }
 }
 
@@ -272,7 +260,7 @@ void Partition::UpdateMacroCoordi(MacroPlacer* placer)
 bool Partition::DoAnneal()
 {
   // No macro, no need to execute
-  if (macroStor.size() == 0) {
+  if (macros_.size() == 0) {
     return true;
   }
 
@@ -283,20 +271,19 @@ bool Partition::DoAnneal()
   vector<pair<int, int>> netStor;
   vector<int> costStor;
 
-  netStor.reserve((macroStor.size() + core_edge_count)
-                  * (macroStor.size() + core_edge_count - 1) / 2);
-  costStor.reserve((macroStor.size() + core_edge_count)
-                   * (macroStor.size() + core_edge_count - 1) / 2);
+  int macro_edge_count = macros_.size() + core_edge_count;
+  netStor.reserve(macro_edge_count * (macro_edge_count - 1) / 2);
+  costStor.reserve(macro_edge_count * (macro_edge_count - 1) / 2);
 
-  for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
-    for (size_t j = i + 1; j < macroStor.size() + core_edge_count; j++) {
+  for (size_t i = 0; i < macro_edge_count; i++) {
+    for (size_t j = i + 1; j < macro_edge_count; j++) {
       int cost = 0;
-      if (netTable) {
-        cost = netTable[i * (macroStor.size() + core_edge_count) + j]
-               + netTable[j * (macroStor.size() + core_edge_count) + i];
+      if (!net_tbl_.empty()) {
+        cost = net_tbl_[i * macro_edge_count + j]
+               + net_tbl_[j * macro_edge_count + i];
       }
       if (cost != 0) {
-        netStor.push_back(std::make_pair(std::min(i, j), std::max(i, j)));
+        netStor.push_back(make_pair(min(i, j), max(i, j)));
         costStor.push_back(cost);
       }
     }
@@ -305,7 +292,7 @@ bool Partition::DoAnneal()
   if (netStor.size() == 0) {
     for (size_t i = 0; i < core_edge_count; i++) {
       for (size_t j = i + 1; j < core_edge_count; j++) {
-        netStor.push_back(std::make_pair(i, j));
+        netStor.push_back(make_pair(i, j));
         costStor.push_back(1);
       }
     }
@@ -319,7 +306,7 @@ bool Partition::DoAnneal()
 
   //////////////////////////////////////////////////////
   // Feed node structure: macro Info
-  for (auto& curMacro : macroStor) {
+  for (auto& curMacro : macros_) {
     MacroSpacings &spacings = macro_placer_->getSpacings(curMacro);
     double padded_width
       = curMacro.w + 2 * (spacings.getHaloX() + spacings.getChannelX());
@@ -330,10 +317,10 @@ bool Partition::DoAnneal()
                    padded_width * padded_height,
                    aspect_ratio,
                    aspect_ratio,
-                   &curMacro - &macroStor[0],
+                   &curMacro - &macros_[0],
                    false);
     
-    node.addSubBlockIndex(&curMacro - &macroStor[0]);
+    node.addSubBlockIndex(&curMacro - &macros_[0]);
 
     // TODO
     // tmpMacro.putSnapX();
@@ -384,7 +371,7 @@ bool Partition::DoAnneal()
     pnet.addNode(pin1);
     pnet.addNode(pin2);
     pnet.putIndex(idx);
-    pnet.putName(std::string("n" + std::to_string(idx)).c_str());
+    pnet.putName(string("n" + to_string(idx)).c_str());
     pnet.putWeight(costStor[idx]);
 
     nets->putNewNet(pnet);
@@ -459,14 +446,14 @@ bool Partition::DoAnneal()
   for (size_t i = 0; i < nodes->getNumNodes(); i++) {
     pfp::Node& curNode = nodes->getNode(i);
 
-    macroStor[i].lx = (isFlipX)
+    macros_[i].lx = (isFlipX)
                           ? width - curNode.getX() - curNode.getWidth() + lx
                           : curNode.getX() + lx;
-    macroStor[i].ly = (isFlipY)
+    macros_[i].ly = (isFlipY)
                           ? height - curNode.getY() - curNode.getHeight() + ly
                           : curNode.getY() + ly;
 
-    Macro &macro = macroStor[i];
+    Macro &macro = macros_[i];
     MacroSpacings &spacings = macro_placer_->getSpacings(macro);
     macro.lx += spacings.getHaloX() + spacings.getChannelX();
     macro.ly += spacings.getHaloY() + spacings.getChannelY();
