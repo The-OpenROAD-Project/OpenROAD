@@ -66,16 +66,16 @@ Partition::Partition(PartClass _partClass,
 {
 }
 
-Partition::Partition(const Partition& prev)
-    : partClass(prev.partClass),
-      lx(prev.lx),
-      ly(prev.ly),
-      width(prev.width),
-      height(prev.height),
-      macros_(prev.macros_),
-      net_tbl_(prev.net_tbl_),
-      macro_placer_(prev.macro_placer_),
-      logger_(prev.logger_)
+Partition::Partition(const Partition& part)
+    : partClass(part.partClass),
+      lx(part.lx),
+      ly(part.ly),
+      width(part.width),
+      height(part.height),
+      macros_(part.macros_),
+      net_tbl_(part.net_tbl_),
+      macro_placer_(part.macro_placer_),
+      logger_(part.logger_)
 {
 }
 
@@ -123,106 +123,105 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
           continue;
         // from: macro case
         if (i < macros_.size()) {
-          int globalIdx1 = globalIndex(i);
+          int global_idx1 = globalIndex(i);
           // to macro case
           if (j < macros_.size()) {
-            int globalIdx2 = globalIndex(j);
+            int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(globalIdx1, globalIdx2);
+              = macro_placer_->weight(global_idx1, global_idx2);
           }
           // to IO-west case
           else if (j == WEST_IDX) {
-            int westSum = macro_placer_->weight(globalIdx1, GLOBAL_WEST_IDX);
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_WEST_IDX);
             if (partClass == PartClass::NE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                westSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::NW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                westSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::SW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            net_tbl_[i * macro_edge_count + j] = westSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == EAST_IDX) {
-            int eastSum = macro_placer_->weight(globalIdx1, GLOBAL_EAST_IDX);
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_EAST_IDX);
             if (partClass == PartClass::NW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NE]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                eastSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::NE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                eastSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            net_tbl_[i * macro_edge_count + j] = eastSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == NORTH_IDX) {
-            int northSum = macro_placer_->weight(globalIdx1, GLOBAL_NORTH_IDX);
-
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_NORTH_IDX);
             if (partClass == PartClass::SE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                northSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                northSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::NW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            net_tbl_[i * macro_edge_count + j] = northSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == SOUTH_IDX) {
-            int southSum = macro_placer_->weight(globalIdx1, GLOBAL_SOUTH_IDX);
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_SOUTH_IDX);
 
             if (partClass == PartClass::NE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                southSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::NW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
-                int curGlobalIdx = globalIndex(curMacroIdx);
-                southSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
+              for (auto& macro_idx : macroPartMap[PartClass::SW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            net_tbl_[i * macro_edge_count + j] = southSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           }
         }
         // from IO
         else if (i == WEST_IDX) {
           // to Macro
           if (j < macros_.size()) {
-            int globalIdx2 = globalIndex(j);
+            int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_WEST_IDX, globalIdx2);
+              = macro_placer_->weight(GLOBAL_WEST_IDX, global_idx2);
           }
         } else if (i == EAST_IDX) {
           // to Macro
           if (j < macros_.size()) {
-            int globalIdx2 = globalIndex(j);
+            int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_EAST_IDX, globalIdx2);
+              = macro_placer_->weight(GLOBAL_EAST_IDX, global_idx2);
           }
         } else if (i == NORTH_IDX) {
           // to Macro
           if (j < macros_.size()) {
-            int globalIdx2 = globalIndex(j);
+            int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_NORTH_IDX, globalIdx2);
+              = macro_placer_->weight(GLOBAL_NORTH_IDX, global_idx2);
           }
         } else if (i == SOUTH_IDX) {
           // to Macro
           if (j < macros_.size()) {
-            int globalIdx2 = globalIndex(j);
+            int global_idx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
-              = macro_placer_->weight(GLOBAL_SOUTH_IDX, globalIdx2);
+              = macro_placer_->weight(GLOBAL_SOUTH_IDX, global_idx2);
           }
         }
       }
