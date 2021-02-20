@@ -154,9 +154,9 @@ class Netlist
 
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
-  void addIOGroup(const std::set<int>& pin_group);
-  std::vector<std::set<int>>& getIOGroups() { return io_groups_; }
-  void setIOGroups(const std::vector<std::set<int>>& io_groups) { io_groups_ = io_groups; }
+  void addIOGroup(const std::vector<int>& pin_group);
+  std::vector<std::vector<int>>& getIOGroups() { return io_groups_; }
+  void setIOGroups(const std::vector<std::vector<int>>& io_groups) { io_groups_ = io_groups; }
   int numSinksOfIO(int);
   int numIOPins();
   int numIOGroups() { return io_groups_.size(); }
@@ -174,7 +174,7 @@ class Netlist
   std::vector<InstancePin> inst_pins_;
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
-  std::vector<std::set<int>> io_groups_;
+  std::vector<std::vector<int>> io_groups_;
   std::map<odb::dbBTerm*, int> _db_pin_idx_map;
 
   bool checkSlotForPin(IOPin& pin,

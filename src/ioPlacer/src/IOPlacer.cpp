@@ -447,7 +447,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
 
   int total_groups_assigned = 0;
 
-  for (std::set<int>& io_group : net.getIOGroups()) {
+  for (std::vector<int>& io_group : net.getIOGroups()) {
     int group_size = io_group.size();
     bool group_assigned = false;
     std::vector<int> dst(sections.size(), 0);
@@ -460,7 +460,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
 
     for (auto i : sortIndexes(dst)) {
       if (sections[i].cur_slots+group_size < sections[i].max_slots) {
-        std::set<int> group;
+        std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin io_pin = net.getIoPin(pin_idx);
 
@@ -468,7 +468,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
           net.getSinksOfIO(pin_idx, inst_pins_vector);
 
           sections[i].net.addIONet(io_pin, inst_pins_vector);
-          group.insert(sections[i].net.numIOPins()-1);
+          group.push_back(sections[i].net.numIOPins()-1);
           sections[i].cur_slots++;
         }
         total_pins_assigned += group_size;
