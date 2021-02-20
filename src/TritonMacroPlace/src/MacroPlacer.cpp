@@ -211,7 +211,7 @@ void MacroPlacer::placeMacros()
   vector<vector<Partition>> allSets;
 
   MacroPartMap globalMacroPartMap;
-  UpdateMacroPartMap(topLayout, globalMacroPartMap);
+  updateMacroPartMap(topLayout, globalMacroPartMap);
 
   if (timing_driven_) {
     topLayout.fillNetlistTable(globalMacroPartMap);
@@ -222,7 +222,6 @@ void MacroPlacer::placeMacros()
   vector<Partition> layoutSet;
   layoutSet.push_back(topLayout);
 
-  // push
   allSets.push_back(layoutSet);
 
   for (auto& curSet : oneLevelPart) {
@@ -240,7 +239,7 @@ void MacroPlacer::placeMacros()
       logger_->report("End West Partition");
 
       // Zero case handling when eastStor = 0
-      if (eastStor.size() == 0 && westStor.size() != 0) {
+      if (eastStor.empty() && !westStor.empty()) {
         for (size_t i = 0; i < westStor.size(); i++) {
           vector<Partition> oneSet;
 
@@ -252,7 +251,7 @@ void MacroPlacer::placeMacros()
           // update macroPartMap
           MacroPartMap macroPartMap;
           for (auto& curSet : oneSet) {
-            UpdateMacroPartMap(curSet, macroPartMap);
+            updateMacroPartMap(curSet, macroPartMap);
           }
 
           if (timing_driven_) {
@@ -265,7 +264,7 @@ void MacroPlacer::placeMacros()
         }
       }
       // Zero case handling when westStor = 0
-      else if (eastStor.size() != 0 && westStor.size() == 0) {
+      else if (!eastStor.empty() && westStor.empty()) {
         for (size_t i = 0; i < eastStor.size(); i++) {
           vector<Partition> oneSet;
 
@@ -277,7 +276,7 @@ void MacroPlacer::placeMacros()
           // update macroPartMap
           MacroPartMap macroPartMap;
           for (auto& curSet : oneSet) {
-            UpdateMacroPartMap(curSet, macroPartMap);
+            updateMacroPartMap(curSet, macroPartMap);
           }
 
           if (timing_driven_) {
@@ -304,7 +303,7 @@ void MacroPlacer::placeMacros()
             // update macroPartMap
             MacroPartMap macroPartMap;
             for (auto& curSet : oneSet) {
-              UpdateMacroPartMap(curSet, macroPartMap);
+              updateMacroPartMap(curSet, macroPartMap);
             }
 
             if (timing_driven_) {
@@ -344,7 +343,7 @@ void MacroPlacer::placeMacros()
         break;
       }
       // Update mckt frequently
-      UpdateMacroCoordi(curPart);
+      updateMacroLocations(curPart);
     }
     if (isFailed) {
       continue;
@@ -372,9 +371,9 @@ void MacroPlacer::placeMacros()
   std::vector<Partition> bestSet = allSets[bestSetIdx];
 
   for (auto& curBestPart : bestSet) {
-    UpdateMacroCoordi(curBestPart);
+    updateMacroLocations(curBestPart);
   }
-  UpdateOpendbCoordi();
+  updateDbInstLocations();
 }
 
 int MacroPlacer::weight(int idx1, int idx2)
@@ -383,7 +382,7 @@ int MacroPlacer::weight(int idx1, int idx2)
 }
 
 // update opendb dataset from mckt.
-void MacroPlacer::UpdateOpendbCoordi()
+void MacroPlacer::updateDbInstLocations()
 {
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
@@ -423,7 +422,7 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
 //
 // first: macro partition class info
 // second: macro candidates.
-void MacroPlacer::UpdateMacroPartMap(Partition& part,
+void MacroPlacer::updateMacroPartMap(Partition& part,
                                      MacroPartMap& macroPartMap)
 {
   // This does not look like it actually does anything -cherry
@@ -711,7 +710,7 @@ static float getRoundUpFloat(float x, float unit)
   return std::round(x / unit) * unit;
 }
 
-void MacroPlacer::UpdateMacroCoordi(Partition& part)
+void MacroPlacer::updateMacroLocations(Partition& part)
 {
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer(4);
@@ -748,10 +747,10 @@ void MacroPlacer::UpdateNetlist(Partition& layout)
   net_tbl_ = layout.net_tbl_;
 }
 
-#define EAST_IDX (macros_.size())
-#define WEST_IDX (macros_.size() + 1)
-#define NORTH_IDX (macros_.size() + 2)
-#define SOUTH_IDX (macros_.size() + 3)
+#define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
+#define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
+#define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
+#define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
 
 double MacroPlacer::GetWeightedWL()
 {
@@ -760,8 +759,8 @@ double MacroPlacer::GetWeightedWL()
   double width = ux_ - lx_;
   double height = uy_ - ly_;
 
-  for (size_t i = 0; i < macros_.size() + 4; i++) {
-    for (size_t j = 0; j < macros_.size() + 4; j++) {
+  for (size_t i = 0; i < macros_.size() + core_edge_count; i++) {
+    for (size_t j = 0; j < macros_.size() + core_edge_count; j++) {
       if (j >= i) {
         continue;
       }
@@ -1088,7 +1087,7 @@ void MacroPlacer::findAdjWeights(VertexFaninMap &vertex_fanins,
 // Fill macro_weights_ array.
 void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
 {
-  size_t weight_size = macros_.size() + 4;
+  size_t weight_size = macros_.size() + core_edge_count;
   macro_weights_.resize(weight_size);
   for (size_t i = 0; i < weight_size; i++) {
     macro_weights_[i].resize(weight_size);
@@ -1137,7 +1136,7 @@ int MacroPlacer::macroIndex(dbInst *inst)
 bool MacroPlacer::macroIndexIsEdge(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
-  return edge_index < 4;
+  return edge_index < core_edge_count;
 }
 
 // This is completely broken but I want to match FillPinGroup()

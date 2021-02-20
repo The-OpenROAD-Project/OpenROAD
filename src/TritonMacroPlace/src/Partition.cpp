@@ -82,10 +82,10 @@ Partition::Partition(const Partition& part)
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
 #define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
 
-#define GLOBAL_EAST_IDX (macro_placer_->macros_.size() + coreEdgeIndex(CoreEdge::East))
-#define GLOBAL_WEST_IDX (macro_placer_->macros_.size() + coreEdgeIndex(CoreEdge::West))
-#define GLOBAL_NORTH_IDX (macro_placer_->macros_.size() + coreEdgeIndex(CoreEdge::North))
-#define GLOBAL_SOUTH_IDX (macro_placer_->macros_.size() + coreEdgeIndex(CoreEdge::South))
+#define GLOBAL_EAST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::East))
+#define GLOBAL_WEST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::West))
+#define GLOBAL_NORTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::North))
+#define GLOBAL_SOUTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::South))
 
 string Partition::getName(int macroIdx)
 {
@@ -234,10 +234,11 @@ int Partition::globalIndex(int macro_idx)
 
 void Partition::updateMacroCoordi()
 {
-  for (auto& macro : macros_) {
-    int macro_idx = macro_placer_->macroIndex(macro.dbInstPtr);
-    macro.lx = macro_placer_->macros_[macro_idx].lx;
-    macro.ly = macro_placer_->macros_[macro_idx].ly;
+  for (auto& pmacro : macros_) {
+    int macro_idx = macro_placer_->macroIndex(pmacro.dbInstPtr);
+    Macro &macro = macro_placer_->macro(macro_idx);
+    macro.lx = macro.lx;
+    macro.ly = macro.ly;
   }
 }
 

@@ -148,6 +148,8 @@ public:
   int weight(int idx11, int idx12);
   int macroIndex(odb::dbInst *inst);
   MacroSpacings &getSpacings(Macro &macro);
+  Macro& macro(int idx) { return macros_[idx]; }
+  size_t macroCount() { return macros_.size(); }
 
 private:
   void FillMacroStor();
@@ -155,9 +157,9 @@ private:
 
   void init();
   // Update Macro Location from Partition info
-  void UpdateMacroCoordi(Partition& part);
-  void UpdateOpendbCoordi();
-  void UpdateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
+  void updateMacroLocations(Partition& part);
+  void updateDbInstLocations();
+  void updateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
   vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
                                                    const Partition& partition,
                                                    bool isHorizontal);
@@ -209,8 +211,6 @@ private:
   int verbose_;
   bool fenceRegionMode_;
   int solution_count_;
-
-  friend class Partition;
 };
 
 class Layout
