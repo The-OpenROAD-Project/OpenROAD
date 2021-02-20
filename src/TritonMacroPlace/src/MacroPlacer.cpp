@@ -84,7 +84,7 @@ MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
       logger_(nullptr),
-      isTiming_(false),
+      timing_driven_(false),
       lx_(0),
       ly_(0),
       ux_(0),
@@ -150,9 +150,9 @@ void MacroPlacer::init()
   FillMacroStor();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.
-  isTiming_ = !isMissingLiberty();
+  timing_driven_ = !isMissingLiberty();
 
-  if (isTiming_) {
+  if (timing_driven_) {
     reportEdgePinCounts();
     findAdjacencies();
   } else {
@@ -213,7 +213,7 @@ void MacroPlacer::placeMacros()
   MacroPartMap globalMacroPartMap;
   UpdateMacroPartMap(topLayout, globalMacroPartMap);
 
-  if (isTiming_) {
+  if (timing_driven_) {
     topLayout.FillNetlistTable(this, globalMacroPartMap);
     UpdateNetlist(topLayout);
   }
@@ -255,7 +255,7 @@ void MacroPlacer::placeMacros()
             UpdateMacroPartMap(curSet, macroPartMap);
           }
 
-          if (isTiming_) {
+          if (timing_driven_) {
             for (auto& curSet : oneSet) {
               curSet.FillNetlistTable(this, macroPartMap);
             }
@@ -280,7 +280,7 @@ void MacroPlacer::placeMacros()
             UpdateMacroPartMap(curSet, macroPartMap);
           }
 
-          if (isTiming_) {
+          if (timing_driven_) {
             for (auto& curSet : oneSet) {
               curSet.FillNetlistTable(this, macroPartMap);
             }
@@ -307,7 +307,7 @@ void MacroPlacer::placeMacros()
               UpdateMacroPartMap(curSet, macroPartMap);
             }
 
-            if (isTiming_) {
+            if (timing_driven_) {
               for (auto& curSet : oneSet) {
                 curSet.FillNetlistTable(this, macroPartMap);
               }
@@ -803,7 +803,7 @@ double MacroPlacer::GetWeightedWL()
       }
 
       float edgeWeight = 0.0f;
-      if (isTiming_) {
+      if (timing_driven_) {
         edgeWeight = net_tbl_[i * (macros_.size()) + j];
       } else {
         edgeWeight = 1;

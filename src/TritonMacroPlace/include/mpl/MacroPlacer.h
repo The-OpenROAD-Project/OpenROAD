@@ -190,7 +190,7 @@ private:
   sta::dbSta* sta_;
   utl::Logger* logger_;
 
-  bool isTiming_;
+  bool timing_driven_;
 
   // macro idx/idx pair -> give each
   vector<vector<int>> macroWeight;
