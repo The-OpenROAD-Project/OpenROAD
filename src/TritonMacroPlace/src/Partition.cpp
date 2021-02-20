@@ -236,12 +236,26 @@ int Partition::globalIndex(int macro_idx)
 
 void Partition::updateMacroCoordi()
 {
-  for (auto& curPartMacro : macros_) {
-    int macroIdx = macro_placer_->macroIndex(curPartMacro.dbInstPtr);
-    curPartMacro.lx = macro_placer_->macros_[macroIdx].lx;
-    curPartMacro.ly = macro_placer_->macros_[macroIdx].ly;
+  for (auto& macro : macros_) {
+    int macro_idx = macro_placer_->macroIndex(macro.dbInstPtr);
+    macro.lx = macro_placer_->macros_[macro_idx].lx;
+    macro.ly = macro_placer_->macros_[macro_idx].ly;
   }
 }
+
+class EdgeCost
+{
+public:
+  EdgeCost(int idx1,
+           int idx2,
+           int cost) :
+    idx1_(idx1),
+    idx2_(idx2),
+    cost_(cost) {}
+  int idx1_;
+  int idx2_;
+  int cost_;
+};
 
 // Call ParquetFP
 bool Partition::anneal()
@@ -250,71 +264,32 @@ bool Partition::anneal()
   if (!macros_.empty()) {
     logger_->report("Begin Parquet");
 
-    // Preprocessing in macroPlacer side
-    // For nets and wts
-    vector<pair<int, int>> netStor;
-    vector<int> costStor;
-
-    int macro_edge_count = macros_.size() + core_edge_count;
-    netStor.reserve(macro_edge_count * (macro_edge_count - 1) / 2);
-    costStor.reserve(macro_edge_count * (macro_edge_count - 1) / 2);
-
-    for (size_t i = 0; i < macro_edge_count; i++) {
-      for (size_t j = i + 1; j < macro_edge_count; j++) {
-        int cost = 0;
-        if (!net_tbl_.empty()) {
-          cost = net_tbl_[i * macro_edge_count + j]
-            + net_tbl_[j * macro_edge_count + i];
-        }
-        if (cost != 0) {
-          netStor.push_back(make_pair(min(i, j), max(i, j)));
-          costStor.push_back(cost);
-        }
-      }
-    }
-
-    if (netStor.size() == 0) {
-      for (size_t i = 0; i < core_edge_count; i++) {
-        for (size_t j = i + 1; j < core_edge_count; j++) {
-          netStor.push_back(make_pair(i, j));
-          costStor.push_back(1);
-        }
-      }
-    }
-
     // Populating DB structure
     // Instantiate Parquet DB structure
     DB db;
-    pfp::Nodes* nodes = db.getNodes();
-    pfp::Nets* nets = db.getNets();
+    pfp::Nodes* pfp_nodes = db.getNodes();
+    pfp::Nets* pfp_nets = db.getNets();
 
     //////////////////////////////////////////////////////
-    // Feed node structure: macro Info
-    for (auto& curMacro : macros_) {
-      MacroSpacings &spacings = macro_placer_->getSpacings(curMacro);
-      double padded_width
-        = curMacro.w + 2 * (spacings.getHaloX() + spacings.getChannelX());
-      double padded_height
-        = curMacro.h + 2 * (spacings.getHaloY() + spacings.getChannelY());
+    // Make node structures for macros.
+    for (auto& macro : macros_) {
+      MacroSpacings &spacings = macro_placer_->getSpacings(macro);
+      // ParqueFP Node putHaloX/Y, putChannelX/Y putSnapX/Y no absolutely nothing.
+      // Simulate them by expanding the macro size.
+      double padded_width = macro.w + (spacings.getHaloX()+spacings.getChannelX())*2;
+      double padded_height = macro.h + (spacings.getHaloY()+spacings.getChannelY())*2;
       double aspect_ratio = padded_width / padded_height;
-      pfp::Node node(curMacro.name(),
+      pfp::Node node(macro.name(),
                      padded_width * padded_height,
                      aspect_ratio,
                      aspect_ratio,
-                     &curMacro - &macros_[0],
+                     &macro - &macros_[0],
                      false);
-    
-      node.addSubBlockIndex(&curMacro - &macros_[0]);
-
-      // TODO
-      // tmpMacro.putSnapX();
-      // tmpMacro.putHaloX();
-      // tmpMacro.putChannelX();
-
-      nodes->putNewNode(node);
+      node.addSubBlockIndex(&macro - &macros_[0]);
+      pfp_nodes->putNewNode(node);
     }
 
-    // Feed node structure: terminal Info
+    // Make node structures for pin edges.
     int indexTerm = 0;
     for (int i = 0; i < core_edge_count; i++) {
       CoreEdge core_edge = coreEdgeFromIndex(i);
@@ -340,29 +315,55 @@ bool Partition::anneal()
       }
       pin.putX(x);
       pin.putY(y);
-      nodes->putNewTerm(pin);
+      pfp_nodes->putNewTerm(pin);
     }
 
     //////////////////////////////////////////////////////
     // Feed net / weight structure
-    for (auto& curNet : netStor) {
-      int idx = &curNet - &netStor[0];
+
+    // Preprocessing in macro placer side
+    // For nets and wts
+    vector<EdgeCost> edge_costs;
+    int macro_edge_count = macros_.size() + core_edge_count;
+    for (size_t i = 0; i < macro_edge_count; i++) {
+      for (size_t j = i + 1; j < macro_edge_count; j++) {
+        int cost = 0;
+        if (!net_tbl_.empty()) {
+          cost = net_tbl_[i * macro_edge_count + j]
+            + net_tbl_[j * macro_edge_count + i];
+        }
+        if (cost != 0) {
+          edge_costs.push_back(EdgeCost(min(i, j), max(i, j), cost));
+        }
+      }
+    }
+
+    if (edge_costs.empty()) {
+      for (size_t i = 0; i < core_edge_count; i++) {
+        for (size_t j = i + 1; j < core_edge_count; j++) {
+          edge_costs.push_back(EdgeCost(i, j, 1));
+        }
+      }
+    }
+
+    for (EdgeCost& edge_cost : edge_costs) {
+      int idx = &edge_cost - &edge_costs[0];
       pfp::Net pnet;
 
-      parquetfp::pin pin1(getName(curNet.first).c_str(), true, 0, 0, idx);
-      parquetfp::pin pin2(getName(curNet.second).c_str(), true, 0, 0, idx);
+      parquetfp::pin pin1(getName(edge_cost.idx1_).c_str(), true, 0, 0, idx);
+      parquetfp::pin pin2(getName(edge_cost.idx2_).c_str(), true, 0, 0, idx);
 
       pnet.addNode(pin1);
       pnet.addNode(pin2);
       pnet.putIndex(idx);
       pnet.putName(string("n" + to_string(idx)).c_str());
-      pnet.putWeight(costStor[idx]);
+      pnet.putWeight(edge_cost.cost_);
 
-      nets->putNewNet(pnet);
+      pfp_nets->putNewNet(pnet);
     }
 
-    nets->updateNodeInfo(*nodes);
-    nodes->updatePinsInfo(*nets);
+    pfp_nets->updateNodeInfo(*pfp_nodes);
+    pfp_nodes->updatePinsInfo(*pfp_nets);
 
     // Populate MixedBlockInfoType object
     // It is from DB object
@@ -426,22 +427,19 @@ bool Partition::anneal()
     }
 
     // update back into macro placer
-    for (size_t i = 0; i < nodes->getNumNodes(); i++) {
-      pfp::Node& curNode = nodes->getNode(i);
-
-      macros_[i].lx = (isFlipX)
-        ? width - curNode.getX() - curNode.getWidth() + lx
-        : curNode.getX() + lx;
-      macros_[i].ly = (isFlipY)
-        ? height - curNode.getY() - curNode.getHeight() + ly
-        : curNode.getY() + ly;
-
+    for (size_t i = 0; i < pfp_nodes->getNumNodes(); i++) {
+      pfp::Node& node = pfp_nodes->getNode(i);
       Macro &macro = macros_[i];
+      macro.lx = (isFlipX)
+        ? width - node.getX() - node.getWidth() + lx
+        : node.getX() + lx;
+      macro.ly = (isFlipY)
+        ? height - node.getY() - node.getHeight() + ly
+        : node.getY() + ly;
       MacroSpacings &spacings = macro_placer_->getSpacings(macro);
       macro.lx += spacings.getHaloX() + spacings.getChannelX();
       macro.ly += spacings.getHaloY() + spacings.getChannelY();
     }
-
     logger_->report("End Parquet");
   }
   return true;
