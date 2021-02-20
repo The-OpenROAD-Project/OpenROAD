@@ -230,12 +230,7 @@ void MacroPlacer::placeMacros()
 
   bool isHorizontal = true;
 
-  Partition topLayout(PartClass::ALL,
-                      layout.lx(),
-                      layout.ly(),
-                      layout.ux() - layout.lx(),
-                      layout.uy() - layout.ly(),
-                      logger_);
+  Partition topLayout(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, logger_);
   topLayout.macroStor = macroStor;
 
   logger_->report("Begin One Level Partition");
@@ -651,55 +646,27 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 
     //
     // Fill in child partitons' macroStor
-    for (auto& curMacro : partition.macroStor) {
+    for (const Macro& curMacro : partition.macroStor) {
       int i = &curMacro - &partition.macroStor[0];
       if (chkArr[i] == 1) {
-        lowerPart.macroStor.push_back(Macro(curMacro.lx,
-                                            curMacro.ly,
-                                            curMacro.w,
-                                            curMacro.h,
-                                            curMacro.haloX,
-                                            curMacro.haloY,
-                                            curMacro.channelX,
-                                            curMacro.channelY,
-                                            curMacro.dbInstPtr));
+        lowerPart.macroStor.push_back(curMacro);
       } else if (chkArr[i] == 2) {
         upperPart.macroStor.push_back(
             Macro((isHorizontal) ? curMacro.lx - cutLine : curMacro.lx,
                   (isHorizontal) ? curMacro.ly : curMacro.ly - cutLine,
-                  curMacro.w,
-                  curMacro.h,
-                  curMacro.haloX,
-                  curMacro.haloY,
-                  curMacro.channelX,
-                  curMacro.channelY,
-                  curMacro.dbInstPtr));
+                  curMacro));
       } else if (chkArr[i] == 3) {
         double centerPoint = (isHorizontal) ? curMacro.lx + curMacro.w / 2.0
                                             : curMacro.ly + curMacro.h / 2.0;
 
         if (centerPoint < cutLine) {
-          lowerPart.macroStor.push_back(Macro(curMacro.lx,
-                                              curMacro.ly,
-                                              curMacro.w,
-                                              curMacro.h,
-                                              curMacro.haloX,
-                                              curMacro.haloY,
-                                              curMacro.channelX,
-                                              curMacro.channelY,
-                                              curMacro.dbInstPtr));
+          lowerPart.macroStor.push_back(curMacro);
 
         } else {
           upperPart.macroStor.push_back(
               Macro((isHorizontal) ? curMacro.lx - cutLine : curMacro.lx,
                     (isHorizontal) ? curMacro.ly : curMacro.ly - cutLine,
-                    curMacro.w,
-                    curMacro.h,
-                    curMacro.haloX,
-                    curMacro.haloY,
-                    curMacro.channelX,
-                    curMacro.channelY,
-                    curMacro.dbInstPtr));
+                    curMacro));
         }
       }
     }
@@ -1336,6 +1303,21 @@ Macro::Macro(double _lx,
       channelX(_channelX),
       channelY(_channelY),
       dbInstPtr(_dbInstPtr)
+{
+}
+
+Macro::Macro(double _lx,
+             double _ly,
+             const Macro &copy_from)
+  : lx(_lx),
+    ly(_ly),
+      w(copy_from.w),
+      h(copy_from.h),
+      haloX(copy_from.haloX),
+      haloY(copy_from.haloY),
+      channelX(copy_from.channelX),
+      channelY(copy_from.channelY),
+      dbInstPtr(copy_from.dbInstPtr)
 {
 }
 

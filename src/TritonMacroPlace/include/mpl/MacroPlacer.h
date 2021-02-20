@@ -103,6 +103,9 @@ class Macro
         double _channelX,
         double _channelY,
         odb::dbInst* _dbInstPtr);
+  Macro(double _lx,
+        double _ly,
+        const Macro &copy_from);
   std::string name();
   std::string type();
 };
