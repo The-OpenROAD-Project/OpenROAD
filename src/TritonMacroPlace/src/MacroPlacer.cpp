@@ -89,8 +89,6 @@ MacroPlacer::MacroPlacer()
       ly_(0),
       ux_(0),
       uy_(0),
-      siteSizeX_(0),
-      siteSizeY_(0),
       netTable_(nullptr),
       verbose_(1),
       fenceRegionMode_(false),
@@ -136,21 +134,11 @@ int MacroPlacer::getSolutionCount()
 
 void MacroPlacer::init()
 {
-  dbBlock* block = db_->getChip()->getBlock();
-
-  dbSet<dbRow> rows = block->getRows();
-  if (rows.empty()) {
-    logger_->error(MPL, 1, "no rows found.");
-  }
-
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
-  dbSite* site = rows.begin()->getSite();
-  siteSizeX_ = site->getWidth() / dbu;
-  siteSizeY_ = site->getHeight() / dbu;
-
   // if fenceRegion is not set
   // (lx, ly) - (ux, uy) becomes core area
   if (!fenceRegionMode_) {
+    dbBlock* block = db_->getChip()->getBlock();
     odb::Rect coreRect;
     block->getCoreArea(coreRect);
 
@@ -216,8 +204,7 @@ void MacroPlacer::placeMacros()
 
   logger_->report("Begin One Level Partition");
 
-  TwoPartitions oneLevelPart
-      = getPartitions(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal);
+  TwoPartitions oneLevelPart = getPartitions(layout, topLayout, isHorizontal);
 
   logger_->report("End One Level Partition");
   TwoPartitions eastStor, westStor;
@@ -246,13 +233,11 @@ void MacroPlacer::placeMacros()
       Layout westInfo(layout, curSet.second);
 
       logger_->report("Begin East Partition");
-      TwoPartitions eastStor = getPartitions(eastInfo, siteSizeX_, siteSizeY_,
-                                               curSet.first, !isHorizontal);
+      TwoPartitions eastStor = getPartitions(eastInfo, curSet.first, !isHorizontal);
       logger_->report("End East Partition");
 
       logger_->report("Begin West Partition");
-      TwoPartitions westStor = getPartitions(westInfo, siteSizeX_, siteSizeY_,
-                                             curSet.second, !isHorizontal);
+      TwoPartitions westStor = getPartitions(westInfo, curSet.second, !isHorizontal);
       logger_->report("End West Partition");
 
       // Zero case handling when eastStor = 0
@@ -411,17 +396,21 @@ void MacroPlacer::UpdateOpendbCoordi()
   }
 }
 
-static void CutRoundUp(const Layout& layout,
-                       const double siteSizeX,
-                       const double siteSizeY,
-                       double& cutLine,
-                       bool isHorizontal)
+void MacroPlacer::cutRoundUp(const Layout& layout,
+                             double& cutLine,
+                             bool isHorizontal)
 {
+  dbBlock* block = db_->getChip()->getBlock();
+  dbSet<dbRow> rows = block->getRows();
+  const double dbu = db_->getTech()->getDbUnitsPerMicron();
+  dbSite* site = rows.begin()->getSite();
   if (isHorizontal) {
+    double siteSizeX = site->getWidth() / dbu;
     cutLine = std::round(cutLine / siteSizeX) * siteSizeX;
     cutLine = std::min(cutLine, layout.ux());
     cutLine = std::max(cutLine, layout.lx());
   } else {
+    double siteSizeY = site->getHeight() / dbu;
     cutLine = round(cutLine / siteSizeY) * siteSizeY;
     cutLine = std::min(cutLine, layout.uy());
     cutLine = std::max(cutLine, layout.ly());
@@ -462,8 +451,6 @@ static bool segLxLyLess(const std::pair<int, double>& p1,
 // cutLine is sweeping from lower to upper coordinates in x / y
 vector<pair<Partition, Partition>>
 MacroPlacer::getPartitions(const Layout& layout,
-                           const double siteSizeX,
-                           const double siteSizeY,
                            const Partition& partition,
                            bool isHorizontal)
 {
@@ -533,7 +520,7 @@ MacroPlacer::getPartitions(const Layout& layout,
 
   for (auto& cutLine : cutLineStor) {
     logger_->info(MPL, 78, "CutLine {:.2f}", cutLine);
-    CutRoundUp(layout, siteSizeX, siteSizeY, cutLine, isHorizontal);
+    cutRoundUp(layout, cutLine, isHorizontal);
 
     logger_->info(MPL, 79, "RoundUpCutLine {:.2f}", cutLine);
 

@@ -158,10 +158,11 @@ private:
   void UpdateOpendbCoordi();
   void UpdateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
   vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
-                                                   const double siteSizeX,
-                                                   const double siteSizeY,
                                                    const Partition& partition,
                                                    bool isHorizontal);
+  void cutRoundUp(const Layout& layout,
+                  double& cutLine,
+                  bool isHorizontal);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -203,7 +204,6 @@ private:
 
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
-  double siteSizeX_, siteSizeY_;
   double* netTable_;
   int verbose_;
   bool fenceRegionMode_;
