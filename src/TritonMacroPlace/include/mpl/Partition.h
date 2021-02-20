@@ -42,12 +42,18 @@ namespace utl {
 class Logger;
 }
 
+namespace parquetfp {
+class Nets;
+}
+
 namespace mpl {
 
 using std::vector;
 using std::array;
 using std::pair;
 using std::string;
+
+namespace pfp = parquetfp;
 
 class MacroPlacer;
 class Macro;
@@ -98,6 +104,11 @@ class Partition
  private:
   string getName(int macroIdx);
   int globalIndex(int macro_idx);
+  void makePins(int macro_idx1,
+                int macro_idx2,
+                int cost,
+                int pnet_idx,
+                pfp::Nets* pfp_nets);
 
   utl::Logger* logger_;
   MacroPlacer *macro_placer_;

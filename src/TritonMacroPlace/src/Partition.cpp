@@ -47,8 +47,6 @@ using std::to_string;
 
 using utl::MPL;
 
-namespace pfp = parquetfp;
-
 Partition::Partition(PartClass _partClass,
                      double _lx,
                      double _ly,
@@ -243,20 +241,6 @@ void Partition::updateMacroCoordi()
   }
 }
 
-class EdgeCost
-{
-public:
-  EdgeCost(int idx1,
-           int idx2,
-           int cost) :
-    idx1_(idx1),
-    idx2_(idx2),
-    cost_(cost) {}
-  int idx1_;
-  int idx2_;
-  int cost_;
-};
-
 // Call ParquetFP
 bool Partition::anneal()
 {
@@ -323,8 +307,8 @@ bool Partition::anneal()
 
     // Preprocessing in macro placer side
     // For nets and wts
-    vector<EdgeCost> edge_costs;
     int macro_edge_count = macros_.size() + core_edge_count;
+    int pnet_idx = 0;
     for (size_t i = 0; i < macro_edge_count; i++) {
       for (size_t j = i + 1; j < macro_edge_count; j++) {
         int cost = 0;
@@ -333,33 +317,19 @@ bool Partition::anneal()
             + net_tbl_[j * macro_edge_count + i];
         }
         if (cost != 0) {
-          edge_costs.push_back(EdgeCost(min(i, j), max(i, j), cost));
+          makePins(min(i, j), max(i, j), cost, pnet_idx, pfp_nets);
+          pnet_idx++;
         }
       }
     }
 
-    if (edge_costs.empty()) {
+    if (pnet_idx == 0) {
       for (size_t i = 0; i < core_edge_count; i++) {
         for (size_t j = i + 1; j < core_edge_count; j++) {
-          edge_costs.push_back(EdgeCost(i, j, 1));
+          makePins(i, j, 1, pnet_idx, pfp_nets);
+          pnet_idx++;
         }
       }
-    }
-
-    for (EdgeCost& edge_cost : edge_costs) {
-      int idx = &edge_cost - &edge_costs[0];
-      pfp::Net pnet;
-
-      parquetfp::pin pin1(getName(edge_cost.idx1_).c_str(), true, 0, 0, idx);
-      parquetfp::pin pin2(getName(edge_cost.idx2_).c_str(), true, 0, 0, idx);
-
-      pnet.addNode(pin1);
-      pnet.addNode(pin2);
-      pnet.putIndex(idx);
-      pnet.putName(string("n" + to_string(idx)).c_str());
-      pnet.putWeight(edge_cost.cost_);
-
-      pfp_nets->putNewNet(pnet);
     }
 
     pfp_nets->updateNodeInfo(*pfp_nodes);
@@ -443,6 +413,26 @@ bool Partition::anneal()
     logger_->report("End Parquet");
   }
   return true;
+}
+
+void Partition::makePins(int macro_idx1,
+                         int macro_idx2,
+                         int cost,
+                         int pnet_idx,
+                         pfp::Nets* pfp_nets)
+{
+  pfp::Net pnet;
+
+  parquetfp::pin pin1(getName(macro_idx1).c_str(), true, 0, 0, pnet_idx);
+  parquetfp::pin pin2(getName(macro_idx2).c_str(), true, 0, 0, pnet_idx);
+
+  pnet.addNode(pin1);
+  pnet.addNode(pin2);
+  pnet.putIndex(pnet_idx);
+  pnet.putName(string("n" + to_string(pnet_idx)).c_str());
+  pnet.putWeight(cost);
+
+  pfp_nets->putNewNet(pnet);
 }
 
 }  // namespace mpl
