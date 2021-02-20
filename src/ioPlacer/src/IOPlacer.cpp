@@ -440,8 +440,9 @@ void IOPlacer::createSections()
   }
 }
 
-void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
+int IOPlacer::assignGroupsToSections()
 {
+  int total_pins_assigned = 0;
   Netlist& net = netlist_io_pins_;
   SectionVector& sections = sections_;
 
@@ -481,7 +482,7 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
         break;
     }
     if (!group_assigned) {
-      return;
+      break;
     } else {
       total_groups_assigned++;
     }
@@ -490,6 +491,8 @@ void IOPlacer::assignGroupsToSections(int& total_pins_assigned)
   if (total_groups_assigned != net.numIOGroups()) {
     logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
   }
+
+  return total_pins_assigned;
 }
 
 bool IOPlacer::assignPinsSections()
@@ -497,8 +500,7 @@ bool IOPlacer::assignPinsSections()
   Netlist& net = netlist_io_pins_;
   SectionVector& sections = sections_;
   createSections();
-  int total_pins_assigned = 0;
-  assignGroupsToSections(total_pins_assigned);
+  int total_pins_assigned = assignGroupsToSections();
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
     if (!io_pin.isInGroup()) {

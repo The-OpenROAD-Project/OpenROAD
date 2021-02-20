@@ -170,7 +170,7 @@ class IOPlacer
   void createSections();
   void setupSections();
   bool assignPinsSections();
-  void assignGroupsToSections(int&);
+  int assignGroupsToSections();
   int returnIONetsHPWL(Netlist&);
 
   void updateOrientation(IOPin&);
