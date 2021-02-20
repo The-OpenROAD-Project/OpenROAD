@@ -79,10 +79,6 @@ Partition::Partition(const Partition& prev)
 {
 }
 
-Partition::~Partition()
-{
-}
-
 #define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
 #define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
@@ -127,10 +123,10 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
           continue;
         // from: macro case
         if (i < macros_.size()) {
-          int globalIdx1 = macro_placer_->macroIndex(macros_[i].dbInstPtr);
+          int globalIdx1 = globalIndex(i);
           // to macro case
           if (j < macros_.size()) {
-            int globalIdx2 = macro_placer_->macroIndex(macros_[j].dbInstPtr);
+            int globalIdx2 = globalIndex(j);
             net_tbl_[i * macro_edge_count + j]
               = macro_placer_->weight(globalIdx1, globalIdx2);
           }
@@ -139,15 +135,13 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
             int westSum = macro_placer_->weight(globalIdx1, GLOBAL_WEST_IDX);
             if (partClass == PartClass::NE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
-                int curGlobalIdx
-                  = macro_placer_->macroIndex(macros_[curMacroIdx].dbInstPtr);
+                int curGlobalIdx = globalIndex(curMacroIdx);
                 westSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
               }
             }
             if (partClass == PartClass::SE) {
               for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
-                int curGlobalIdx
-                  = macro_placer_->macroIndex(macros_[curMacroIdx].dbInstPtr);
+                int curGlobalIdx = globalIndex(curMacroIdx);
                 westSum += macro_placer_->weight(globalIdx1, curGlobalIdx);
               }
             }
@@ -385,7 +379,7 @@ bool Partition::anneal()
     param.scaleTerms = false;
 
     // Fixed-outline mode in Parquet
-    param.nonTrivialOutline = parquetfp::BBox(0, 0, width, height);
+    param.nonTrivialOutline = pfp::BBox(0, 0, width, height);
     param.reqdAR = width / height;
     param.maxWS = 0;
     param.verb = 0;
@@ -409,7 +403,6 @@ bool Partition::anneal()
     }
     delete annealer;
 
-    //
     // flip info initialization for each partition
     bool isFlipX = false, isFlipY = false;
     switch (partClass) {
@@ -433,7 +426,7 @@ bool Partition::anneal()
       break;
     }
 
-    // update back into macroPlacer
+    // update back into macro placer
     for (size_t i = 0; i < nodes->getNumNodes(); i++) {
       pfp::Node& curNode = nodes->getNode(i);
 

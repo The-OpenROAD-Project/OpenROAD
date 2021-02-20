@@ -82,7 +82,6 @@ class Partition
             MacroPlacer *macro_placer,
             utl::Logger* log);
   Partition(const Partition& prev);
-  ~Partition();
 
   void fillNetlistTable(MacroPartMap& macroPartMap);
   // Call Parquet to have annealing solution
