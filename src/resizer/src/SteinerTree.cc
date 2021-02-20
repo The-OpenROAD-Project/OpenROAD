@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 #include <fstream>
 #include <string>

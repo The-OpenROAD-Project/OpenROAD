@@ -159,7 +159,7 @@ target_link_libraries(openroad
   replace
   opendp
   finale
-  resizer
+  rsz
   ioPlacer
   flute
   dbSta
@@ -172,7 +172,7 @@ target_link_libraries(openroad
   tapcell
   gui
   TritonRoute
-  TritonMacroPlace
+  mpl
   pdnsim
   antennachecker
   PartitionMgr

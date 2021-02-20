@@ -9,7 +9,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-#Macro blocks found: 0
+Found 0 macro blocks.
 [INFO PPL-0041] Pin group 0: [resp_val resp_rdy req_rdy]
 [INFO PPL-0041] Pin group 1: [req_msg[15] req_msg[14] resp_msg[15] resp_msg[14]]
 [INFO PPL-0010] Tentative 0 to setup sections

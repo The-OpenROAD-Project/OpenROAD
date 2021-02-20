@@ -40,7 +40,7 @@
 #include <cstdint>
 
 #include "sta/Liberty.hh"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 

@@ -479,47 +479,41 @@ InitFloorplan::makeTracks(Rect &die_area)
   dbSet<dbTechLayer> layers = tech->getLayers();
   for (auto layer : layers) {
     if (layer->getType() == dbTechLayerType::ROUTING) {
-      dbTechLayerDir layer_dir = layer->getDirection();
       dbTrackGrid *grid;
       uint width;
       int offset, pitch, track_count;
-      switch (layer_dir) {
-      case dbTechLayerDir::VERTICAL:
-        grid = block_->findTrackGrid(layer);
-        if (grid == nullptr)
-          grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dx();
-	pitch = layer->getPitchX();
-	if (pitch) {
-	  offset = layer->getOffsetX();
-	  if (offset == 0)
-	    offset = pitch;
-	  track_count = floor((width - offset) / pitch) + 1;
-	  grid->addGridPatternX(offset, track_count, pitch);
-	}
-	else
-	  logger_->error(IFP, 7, "layer {} has zero pitch.", layer->getConstName());
-	break;
-      case dbTechLayerDir::HORIZONTAL:
-        grid = block_->findTrackGrid(layer);
-        if (grid == nullptr)
-          grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dy();
-	pitch = layer->getPitchY();
-	if (pitch) {
-	  offset = layer->getOffsetY();
-	  if (offset == 0)
-	    offset = pitch;
-	  track_count = floor((width - offset) / pitch) + 1;
-	  grid->addGridPatternY(offset, track_count, pitch);
-	}
-	else
-	  logger_->error(IFP, 8, "layer {} has zero pitch.",
-                         layer->getConstName());
-	break;
-      case dbTechLayerDir::NONE:
-	break;
+      // vertical
+      grid = block_->findTrackGrid(layer);
+      if (grid == nullptr)
+        grid = dbTrackGrid::create(block_, layer);
+      width = die_area.dx();
+      pitch = layer->getPitchX();
+      if (pitch) {
+        offset = layer->getOffsetX();
+        if (offset == 0)
+          offset = pitch;
+        track_count = floor((width - offset) / pitch) + 1;
+        grid->addGridPatternX(offset, track_count, pitch);
       }
+      else
+        logger_->error(IFP, 7, "layer {} has zero X pitch.", layer->getConstName());
+
+      // horizontal
+      grid = block_->findTrackGrid(layer);
+      if (grid == nullptr)
+        grid = dbTrackGrid::create(block_, layer);
+      width = die_area.dy();
+      pitch = layer->getPitchY();
+      if (pitch) {
+        offset = layer->getOffsetY();
+        if (offset == 0)
+          offset = pitch;
+        track_count = floor((width - offset) / pitch) + 1;
+        grid->addGridPatternY(offset, track_count, pitch);
+      }
+      else
+        logger_->error(IFP, 8, "layer {} has zero Y pitch.",
+                       layer->getConstName());
     }
   }
 }
