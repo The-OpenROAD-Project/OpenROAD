@@ -1326,11 +1326,6 @@ std::string Macro::name()
   return dbInstPtr->getName();
 }
 
-std::string Macro::type()
-{
-  return dbInstPtr->getMaster()->getName();
-}
-
 MacroLocalInfo::MacroLocalInfo()
     : haloX_(0), haloY_(0), channelX_(0), channelY_(0)
 {

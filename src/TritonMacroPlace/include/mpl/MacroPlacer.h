@@ -107,7 +107,6 @@ class Macro
         double _ly,
         const Macro &copy_from);
   std::string name();
-  std::string type();
 };
 
 // Lacking a command to create these.
