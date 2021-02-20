@@ -30,88 +30,73 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin 1
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "dbVector.h"
 #include "odb.h"
+
+// User Code Begin includes
+#include "dbVector.h"
+#include <map>
+// User Code End includes
 
 namespace odb {
 
-class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbDatabase;
+// User Code Begin Classes
+class _dbTechLayer;
+// User Code End Classes
+
+struct GCellData
+{
+  uint _horizontal = 0;
+  uint _vertical   = 0;
+  uint _up         = 0;
+};
+// User Code Begin structs
+// User Code End structs
 
 class _dbGCellGrid : public _dbObject
 {
  public:
+  // User Code Begin enums
+  // User Code End enums
+
   dbVector<int> _x_origin;
   dbVector<int> _x_count;
   dbVector<int> _x_step;
   dbVector<int> _y_origin;
   dbVector<int> _y_count;
   dbVector<int> _y_step;
+  std::map<dbId<_dbTechLayer>, std::map<uint, std::map<uint, GCellData>>>
+      _usage_map;
+  std::map<dbId<_dbTechLayer>, std::map<uint, std::map<uint, GCellData>>>
+      _capacity_map;
 
+  // User Code Begin fields
+  // User Code End fields
+  _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
-  _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& g);
   ~_dbGCellGrid();
-
   bool operator==(const _dbGCellGrid& rhs) const;
   bool operator!=(const _dbGCellGrid& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGCellGrid& rhs) const;
   void differences(dbDiff&             diff,
                    const char*         field,
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
-  bool operator<(const _dbGCellGrid& rhs) const
-  {
-    _dbGCellGrid* o1 = (_dbGCellGrid*) this;
-    _dbGCellGrid* o2 = (_dbGCellGrid*) &rhs;
-    return o1->getOID() < o2->getOID();
-  }
+  // User Code Begin methods
+  // User Code End methods
 };
-
-inline _dbGCellGrid::_dbGCellGrid(_dbDatabase*)
-{
-}
-
-inline _dbGCellGrid::_dbGCellGrid(_dbDatabase*, const _dbGCellGrid& g)
-    : _x_origin(g._x_origin),
-      _x_count(g._x_count),
-      _x_step(g._x_step),
-      _y_origin(g._y_origin),
-      _y_count(g._y_count),
-      _y_step(g._y_step)
-{
-}
-
-inline _dbGCellGrid::~_dbGCellGrid()
-{
-}
-
-inline dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& grid)
-{
-  stream << grid._x_origin;
-  stream << grid._x_count;
-  stream << grid._x_step;
-  stream << grid._y_origin;
-  stream << grid._y_count;
-  stream << grid._y_step;
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& grid)
-{
-  stream >> grid._x_origin;
-  stream >> grid._x_count;
-  stream >> grid._x_step;
-  stream >> grid._y_origin;
-  stream >> grid._y_count;
-  stream >> grid._y_step;
-  return stream;
-}
-
+dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);
+// User Code Begin general
+dbIStream& operator>>(dbIStream& stream, GCellData& obj);
+dbOStream& operator<<(dbOStream& stream, const GCellData& obj);
+// User Code End general
 }  // namespace odb
+// Generator Code End 1

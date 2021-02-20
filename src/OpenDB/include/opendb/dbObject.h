@@ -74,7 +74,6 @@ enum dbObjectType
   dbITermObj,
   dbBoxObj,
   dbViaObj,
-  dbGCellGridObj,
   dbTrackGridObj,
   dbObstructionObj,
   dbBlockageObj,
@@ -94,6 +93,7 @@ enum dbObjectType
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,
+  dbGCellGridObj,
   // Generator Code End 1
 
   // Lib Objects

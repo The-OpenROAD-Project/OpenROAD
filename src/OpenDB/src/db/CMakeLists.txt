@@ -31,7 +31,6 @@ add_library(opendb
     dbVia.cpp 
     dbWire.cpp 
     dbWireCodec.cpp 
-    dbGCellGrid.cpp 
     dbTrackGrid.cpp 
     dbBlockage.cpp 
     dbObstruction.cpp 
@@ -100,6 +99,7 @@ add_library(opendb
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp
+    dbGCellGrid.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp

@@ -590,6 +590,9 @@
         }
       ],
       "cpp_includes":["dbBlock.h","dbBox.h","dbNet.h","dbInst.h","dbModInst.h","dbHashTable.hpp","dbGroupItr.h","dbGroupInstItr.h","dbGroupModInstItr.h"]
+    },
+    {
+      "src":"dbGCellGrid.json"
     }
   ],
   "iterators":[

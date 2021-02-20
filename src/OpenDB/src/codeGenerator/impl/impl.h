@@ -62,7 +62,7 @@ namespace odb {
     struct {{_struct.name}}
     {
       {% for field in _struct.fields %}
-        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %};
+        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
       {% endfor %}
     };
   {% endfor %}
