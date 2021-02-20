@@ -53,11 +53,6 @@
 
 namespace mpl {
 
-using std::string;
-using std::vector;
-using std::pair;
-using std::unordered_map;
-
 using utl::MPL;
 
 using odb::dbTech;
@@ -82,13 +77,6 @@ static CoreEdge getCoreEdge(int cx,
                             int dieLy,
                             int dieUx,
                             int dieUy);
-
-static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
-                                                  const double siteSizeX,
-                                                  const double siteSizeY,
-                                                  const Partition& partition,
-                                                  bool isHorizontal,
-                                                  utl::Logger* log);
 
 ////////////////////////////////////////////////////////////////
 
@@ -215,11 +203,10 @@ void MacroPlacer::reportEdgePinCounts()
     counts[coreEdgeIndex(edge)]++;
   }
   for (int i = 0; i < core_edge_count; i++) {
-    CoreEdge edge = static_cast<CoreEdge>(i);
-    
-      logger_->info(MPL, 9, "{} pins {}",
-                 coreEdgeString(edge),
-                 counts[i]);
+    CoreEdge edge = coreEdgeFromIndex(i);
+    logger_->info(MPL, 9, "{} pins {}",
+                  coreEdgeString(edge),
+                  counts[i]);
   }
 }
 
@@ -236,7 +223,7 @@ void MacroPlacer::placeMacros()
   logger_->report("Begin One Level Partition");
 
   TwoPartitions oneLevelPart
-      = GetPart(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal, logger_);
+      = getPartitions(layout, siteSizeX_, siteSizeY_, topLayout, isHorizontal);
 
   logger_->report("End One Level Partition");
   TwoPartitions eastStor, westStor;
@@ -265,13 +252,13 @@ void MacroPlacer::placeMacros()
       Layout westInfo(layout, curSet.second);
 
       logger_->report("Begin East Partition");
-      TwoPartitions eastStor = GetPart(
-          eastInfo, siteSizeX_, siteSizeY_, curSet.first, !isHorizontal, logger_);
+      TwoPartitions eastStor = getPartitions(eastInfo, siteSizeX_, siteSizeY_,
+                                               curSet.first, !isHorizontal);
       logger_->report("End East Partition");
 
       logger_->report("Begin West Partition");
-      TwoPartitions westStor = GetPart(
-          westInfo, siteSizeX_, siteSizeY_, curSet.second, !isHorizontal, logger_);
+      TwoPartitions westStor = getPartitions(westInfo, siteSizeX_, siteSizeY_,
+                                             curSet.second, !isHorizontal);
       logger_->report("End West Partition");
 
       // Zero case handling when eastStor = 0
@@ -468,8 +455,8 @@ void MacroPlacer::UpdateMacroPartMap(Partition& part,
 }
 
 // only considers lx or ly coordinates for sorting
-static bool SortMacroPair(const std::pair<int, double>& p1,
-                          const std::pair<int, double>& p2)
+static bool segLxLyLess(const std::pair<int, double>& p1,
+                        const std::pair<int, double>& p2)
 {
   return p1.second < p2.second;
 }
@@ -479,18 +466,17 @@ static bool SortMacroPair(const std::pair<int, double>& p1,
 // second : upper part
 //
 // cutLine is sweeping from lower to upper coordinates in x / y
-static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
-                                                  const double siteSizeX,
-                                                  const double siteSizeY,
-                                                  const Partition& partition,
-                                                  bool isHorizontal,
-                                                  utl::Logger* log)
+vector<pair<Partition, Partition>>
+MacroPlacer::getPartitions(const Layout& layout,
+                           const double siteSizeX,
+                           const double siteSizeY,
+                           const Partition& partition,
+                           bool isHorizontal)
 {
-  log->report("Begin Partition");
-  log->info(MPL, 76, "NumMacros {}", partition.macroStor.size());
+  logger_->report("Begin Partition");
+  logger_->info(MPL, 76, "NumMacros {}", partition.macroStor.size());
 
-  // Return vector
-  vector<pair<Partition, Partition>> ret;
+  vector<pair<Partition, Partition>> partitions;
 
   double maxWidth = -1e30;
   double maxHeight = -1e30;
@@ -517,7 +503,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 
   // less than 4
   if (partition.macroStor.size() <= 4) {
-    sort(segStor.begin(), segStor.end(), SortMacroPair);
+    sort(segStor.begin(), segStor.end(), segLxLyLess);
 
     // first : macroStor index
     // second : macro lower coordinates
@@ -542,7 +528,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
   }
-  log->info(MPL, 77, "NumCutLines {}", cutLineStor.size());
+  logger_->info(MPL, 77, "NumCutLines {}", cutLineStor.size());
 
   // Macro checker array
   // 0 for uninitialize
@@ -552,10 +538,10 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
   vector<int> chkArr(partition.macroStor.size());
 
   for (auto& cutLine : cutLineStor) {
-    log->info(MPL, 78, "CutLine {:.2f}", cutLine);
+    logger_->info(MPL, 78, "CutLine {:.2f}", cutLine);
     CutRoundUp(layout, siteSizeX, siteSizeY, cutLine, isHorizontal);
 
-    log->info(MPL, 79, "RoundUpCutLine {:.2f}", cutLine);
+    logger_->info(MPL, 79, "RoundUpCutLine {:.2f}", cutLine);
 
     // chkArr initialize
     for (size_t i = 0; i < partition.macroStor.size(); i++) {
@@ -632,7 +618,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
         partition.ly,
         (isHorizontal) ? cutLine - partition.lx : partition.width,
         (isHorizontal) ? partition.height : cutLine - partition.ly,
-        log);
+        logger_);
 
     Partition upperPart(
         uClass,
@@ -642,7 +628,7 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
                        : partition.width,
         (isHorizontal) ? partition.height
                        : partition.ly + partition.height - cutLine,
-        log);
+        logger_);
 
     //
     // Fill in child partitons' macroStor
@@ -686,16 +672,16 @@ static vector<pair<Partition, Partition>> GetPart(const Layout& layout,
 
     // impossible partitioning
     if (upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      log->info(MPL, 80, "Impossible partiton found. Continue");
+      logger_->info(MPL, 80, "Impossible partiton found. Continue");
       continue;
     }
 
     pair<Partition, Partition> curPart(lowerPart, upperPart);
-    ret.push_back(curPart);
+    partitions.push_back(curPart);
   }
-  log->report("End Partition");
+  logger_->report("End Partition");
 
-  return ret;
+  return partitions;
 }
 
 void MacroPlacer::FillMacroStor()

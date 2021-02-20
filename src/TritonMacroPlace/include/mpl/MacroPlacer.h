@@ -65,13 +65,20 @@ namespace mpl {
 
 class Layout;
 
-typedef std::set<Macro*> MacroSet;
+using std::string;
+using std::pair;
+using std::set;
+using std::map;
+using std::vector;
+using std::unordered_map;
+
+typedef set<Macro*> MacroSet;
 // vertex -> fanin macro set
-typedef std::map<sta::Vertex*, MacroSet> VertexFaninMap;
-typedef std::pair<Macro*, Macro*> MacroPair;
+typedef map<sta::Vertex*, MacroSet> VertexFaninMap;
+typedef pair<Macro*, Macro*> MacroPair;
 // from/to -> weight
 // weight = from/pin -> to/pin count
-typedef std::map<MacroPair, int> AdjWeightMap;
+typedef map<MacroPair, int> AdjWeightMap;
 
 enum class CoreEdge
 {
@@ -106,7 +113,7 @@ class Macro
   Macro(double _lx,
         double _ly,
         const Macro &copy_from);
-  std::string name();
+  string name();
 };
 
 // Lacking a command to create these.
@@ -155,6 +162,11 @@ private:
   void UpdateMacroCoordi(Partition& part);
   void UpdateOpendbCoordi();
   void UpdateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
+  vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
+                                                   const double siteSizeX,
+                                                   const double siteSizeY,
+                                                   const Partition& partition,
+                                                   bool isHorizontal);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -170,7 +182,7 @@ private:
                           sta::LibertyPort *out_port);
   void fillMacroWeights(AdjWeightMap &adj_map);
   CoreEdge findNearestEdge(odb::dbBTerm* bTerm);
-  std::string faninName(Macro *macro);
+  string faninName(Macro *macro);
   int macroIndex(Macro *macro);
   bool macroIndexIsEdge(Macro *macro);
 
@@ -185,14 +197,14 @@ private:
   bool isTiming_;
 
   // macro idx/idx pair -> give each
-  std::vector<std::vector<int>> macroWeight;
+  vector<vector<int>> macroWeight;
   // macro Information
-  std::vector<Macro> macroStor;
+  vector<Macro> macroStor;
   // dbInst* --> macroStor's index
-  std::unordered_map<odb::dbInst*, int> macroInstMap;
+  unordered_map<odb::dbInst*, int> macroInstMap;
 
   // save LocalCfg into this structure
-  std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
+  unordered_map<string, MacroLocalInfo> macroLocalMap;
 
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
