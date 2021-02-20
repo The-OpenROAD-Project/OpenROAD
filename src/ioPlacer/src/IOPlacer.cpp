@@ -970,10 +970,7 @@ void IOPlacer::initNetlist()
 {
   odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
 
-  odb::dbSet<odb::dbBTerm>::iterator bt_iter;
-
-  for (bt_iter = bterms.begin(); bt_iter != bterms.end(); ++bt_iter) {
-    odb::dbBTerm* b_term = *bt_iter;
+  for (odb::dbBTerm* b_term : bterms) {
     odb::dbNet* net = b_term->getNet();
     if (!net) {
       logger_->warn(PPL, 38, "Pin {} without net!", b_term->getConstName());
