@@ -258,10 +258,11 @@ bool Partition::anneal()
     // Make node structures for macros.
     for (auto& macro : macros_) {
       MacroSpacings &spacings = macro_placer_->getSpacings(macro);
-      // ParqueFP Node putHaloX/Y, putChannelX/Y putSnapX/Y no absolutely nothing.
+      // ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
       // Simulate them by expanding the macro size.
-      double padded_width = macro.w + (spacings.getHaloX()+spacings.getChannelX())*2;
-      double padded_height = macro.h + (spacings.getHaloY()+spacings.getChannelY())*2;
+      // Halo and 1/2 channel on both left/right top/bottom.
+      double padded_width = macro.w + max(spacings.getHaloX() * 2, spacings.getChannelX());
+      double padded_height = macro.h + max(spacings.getHaloY() * 2, spacings.getChannelY());
       double aspect_ratio = padded_width / padded_height;
       pfp::Node node(macro.name(),
                      padded_width * padded_height,
@@ -269,6 +270,12 @@ bool Partition::anneal()
                      aspect_ratio,
                      &macro - &macros_[0],
                      false);
+      // These do absolutely nothing.
+      node.putHaloX(spacings.getHaloX());
+      node.putHaloY(spacings.getHaloY());
+      node.putChannelX(spacings.getChannelX());
+      node.putChannelY(spacings.getChannelY());
+
       node.addSubBlockIndex(&macro - &macros_[0]);
       pfp_nodes->putNewNode(node);
     }

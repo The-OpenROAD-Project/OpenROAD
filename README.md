@@ -367,14 +367,17 @@ packed using ParquetFP-based annealing. The best resulting floorplan
 according to a heuristic evaluation function kept.
 
 ```
-macro_placement -halo {halo_x halo_y}
-                -channel {channel_x channel_y}\
+macro_placement [-halo {halo_x halo_y}]
+                [-channel {channel_x channel_y}]
                 [-fence_region {lx ly ux uy}]
 ```
 
--fence_region - restrict macro placements to a region (microns)
 -halo horizontal/vertical halo around macros (microns)
--channel horizontal/vertical and channel width between macros (microns)
+-channel horizontal/vertical channel width between macros (microns)
+-fence_region - restrict macro placements to a region (microns)
+
+Macros will be placed with max(halo * 2, channel) spacing between macros and the
+fence/die boundary.
 
 #### Detailed Placement
 
