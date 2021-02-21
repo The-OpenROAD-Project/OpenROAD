@@ -38,6 +38,8 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "db/tech/frTechObject.h"
+#include "frDesign.h"
 
 using namespace std;
 using namespace fr;
@@ -177,6 +179,11 @@ void TritonRoute::endFR() {
   io::Writer writer(getDesign(), logger_);
   writer.writeFromDR();
   writer.updateDb(db_);
+}
+
+void TritonRoute::reportConstraints()
+{
+  getDesign()->getTech()->printAllConstraints();
 }
 
 int TritonRoute::main() {
