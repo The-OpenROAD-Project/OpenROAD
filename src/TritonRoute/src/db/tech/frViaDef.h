@@ -33,12 +33,13 @@
 #include <memory>
 #include "frBaseTypes.h"
 #include "db/obj/frShape.h"
+#include "utility/Logger.h"
 
 namespace fr{
   class frLef58CutClass {
   public:
     // constructors
-    frLef58CutClass(): name(""), viaWidth(0), viaLength(0), numCut(1) {}
+    frLef58CutClass(utl::Logger* loggerIn = nullptr): name(""), viaWidth(0), viaLength(0), numCut(1), logger(loggerIn) {}
     // getters
     void getName(std::string &in) const {
       in = name;
@@ -71,11 +72,18 @@ namespace fr{
     void setNumCut(frUInt4 in) {
       numCut = in;
     }
+    void report()
+    {
+      if(logger == nullptr)
+        return;
+      logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}", name, viaWidth, viaLength, numCut);
+    }
   protected:
     std::string name;
     frCoord  viaWidth;
     frCoord  viaLength;
     frUInt4  numCut; // this value is not equal to #multi cuts, only used for calculating resistance, currently ignored in rule checking process
+    utl::Logger* logger;
   };
 
 

@@ -866,7 +866,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     rule->getWidthTable(widths);
 
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(widthName, widths, spacings);
-    unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+    unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl, logger);
     auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
     switch (rule->getType())
     {
@@ -916,7 +916,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     for(auto &[key, value] : _ewVals) ewVals[key] = value;
     shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > prlTbl = make_shared<
       fr2DLookupTbl<frCoord, frCoord, frCoord> >(rowName, rowVals, colName, colVals, tblVals);
-    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
+    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals, logger);
     spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
     spacingTableConstraint->setSameMask(rule->isSameMask());
     if (rule->isExceeptEol()) {
@@ -932,13 +932,13 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       logger->warn(utl::DRT, 168, "unsupported LEF58_SPACING rule for layer {}",layer->getName());
       continue;
     }
-    auto con = make_shared<frLef58SpacingEndOfLineConstraint>();
+    auto con = make_shared<frLef58SpacingEndOfLineConstraint>(logger);
     con->setEol(rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
     if (rule->isWrongDirSpacingValid()) {
       con->setWrongDirSpace(rule->getWrongDirSpace());
     }
 
-    auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+    auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>(logger);
     con->setWithinConstraint(within);
     if (rule->isOppositeWidthValid()) {
       within->setOppositeWidth(rule->getOppositeWidth());
@@ -951,7 +951,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       within->setSameMask(rule->isSameMaskValid());
     }
     if (rule->isEndToEndValid()) {
-      auto endToEnd = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+      auto endToEnd = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>(logger);
       within->setEndToEndConstraint(endToEnd);
       endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
       endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
@@ -967,7 +967,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       }
     }
     if (rule->isParallelEdgeValid()) {
-      auto parallelEdge = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+      auto parallelEdge = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>(logger);
       within->setParallelEdgeConstraint(parallelEdge);
       if (rule->isSubtractEolWidthValid()) {
         parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
@@ -993,7 +993,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       }
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
-      auto len = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+      auto len = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>(logger);
       within->setMaxMinLengthConstraint(len);
       if(rule->isMinLengthValid())
         len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
@@ -1005,19 +1005,19 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
   }
   if(layer->isRectOnly())
   {
-    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(layer->isExceptNonCorePins());
+    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(layer->isExceptNonCorePins(), logger);
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech->addUConstraint(std::move(rectOnlyConstraint));
   }
   if(layer->isRightWayOnGridOnly())
   {
-    auto rightWayOnGridOnlyConstraint = make_unique<frLef58RightWayOnGridOnlyConstraint>(layer->isCheckMask());
+    auto rightWayOnGridOnlyConstraint = make_unique<frLef58RightWayOnGridOnlyConstraint>(layer->isCheckMask(), logger);
     tmpLayer->setLef58RightWayOnGridOnlyConstraint(rightWayOnGridOnlyConstraint.get());
     tech->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for(auto rule : layer->getTechLayerMinStepRules())
   {
-    auto con = make_unique<frLef58MinStepConstraint>();
+    auto con = make_unique<frLef58MinStepConstraint>(logger);
     con->setMinStepLength(rule->getMinStepLength());
     con->setMaxEdges(rule->isMaxEdgesValid()?rule->getMaxEdges():-1);
     con->setMinAdjacentLength(rule->isMinAdjLength1Valid()?rule->getMinAdjLength1():-1);
@@ -1031,7 +1031,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
 {
   for(auto rule : layer->getTechLayerCutClassRules())
   {
-    auto cutClass = make_unique<frLef58CutClass>();
+    auto cutClass = make_unique<frLef58CutClass>(logger);
     string name = rule->getName();
     cutClass->setName(name);
     cutClass->setViaWidth(rule->getWidth());
@@ -1052,7 +1052,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
     switch (rule->getType())
     {
     case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS:{
-      auto con = make_unique<frLef58CutSpacingConstraint>();
+      auto con = make_unique<frLef58CutSpacingConstraint>(logger);
       con->setCutSpacing(rule->getCutSpacing());
       con->setCenterToCenter(rule->isCenterToCenter());
       con->setSameNet(rule->isSameNet());
@@ -1089,7 +1089,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
     case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER:{
       if(rule->getSecondLayer() == nullptr)
         continue;
-      auto con = make_unique<frLef58CutSpacingConstraint>();
+      auto con = make_unique<frLef58CutSpacingConstraint>(logger);
       con->setCutSpacing(rule->getCutSpacing());
       con->setCenterToCenter(rule->isCenterToCenter());
       con->setSameNet(rule->isSameNet());
@@ -1178,12 +1178,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
   {
     if(rule->isLayerValid()&&tmpLayer->getLayerNum()==1)
       continue;
-    auto con = make_shared<frLef58CutSpacingTableConstraint>();
+    auto con = make_shared<frLef58CutSpacingTableConstraint>(logger);
     if(rule->isDefaultValid())
       con->setDefaultCutSpacing(rule->getDefault());
     if(rule->isPrlValid())
     {
-      auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
+      auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>(logger);
       ptr->setPrl(rule->getPrl());
       ptr->setHorizontal(rule->isPrlHorizontal());
       ptr->setVertical(rule->isPrlVertical());
@@ -1193,7 +1193,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
     if(rule->isLayerValid())
     {
       auto secondLayerName = rule->getSecondLayer()->getName();
-      auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
+      auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>(logger);
       if(tech->name2layer.find(secondLayerName) == tech->name2layer.end()){
         logger->warn(utl::DRT, 167, "layer {} is not found to layer {} LEF58_SPACINGTABLE",secondLayerName
         ,layer->getName());
