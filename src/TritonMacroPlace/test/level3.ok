@@ -6,12 +6,12 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: level1.def
+[INFO ODB-0127] Reading DEF file: level3.def
 [INFO ODB-0128] Design: gcd_mem3
 [INFO ODB-0130]     Created 75 pins.
 [INFO ODB-0131]     Created 24 components and 222 component-terminals.
 [INFO ODB-0133]     Created 139 nets and 153 connections.
-[INFO ODB-0134] Finished DEF file: level1.def
+[INFO ODB-0134] Finished DEF file: level3.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
