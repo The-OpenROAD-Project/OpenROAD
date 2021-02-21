@@ -1,0 +1,91 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: east_west2.def
+[INFO ODB-0128] Design: mem2
+[INFO ODB-0130]     Created 15 pins.
+[INFO ODB-0131]     Created 2 components and 64 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 16 connections.
+[INFO ODB-0134] Finished DEF file: east_west2.def
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 116280 112000
+[INFO GPL-0006] NumInstances: 2
+[INFO GPL-0007] NumPlaceInstances: 2
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 15
+[INFO GPL-0011] NumPins: 31
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 116280 112000
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 116280 112000
+[INFO GPL-0016] CoreArea: 13023360000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 3298400000
+[INFO GPL-0019] Util(%): 25.33
+[INFO GPL-0020] StdInstsArea: 0
+[INFO GPL-0021] MacroInstsArea: 3298400000
+[INFO GPL-0031] FillerInit: NumGCells: 6
+[INFO GPL-0032] FillerInit: NumGNets: 15
+[INFO GPL-0033] FillerInit: NumGPins: 31
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 1649200000
+[INFO GPL-0025] IdealBinArea: 2356000000
+[INFO GPL-0026] IdealBinCnt: 5
+[INFO GPL-0027] TotalBinArea: 13023360000
+[INFO GPL-0028] BinCnt: 2 2
+[INFO GPL-0029] BinSize: 58140 56000
+[INFO GPL-0030] NumBins: 4
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 894728
+[NesterovSolve] Iter: 10 overflow: 0 HPWL: 894728
+[NesterovSolve] Iter: 20 overflow: 0 HPWL: 894728
+[NesterovSolve] Iter: 30 overflow: 0 HPWL: 894728
+[NesterovSolve] Iter: 40 overflow: 0 HPWL: 894728
+[NesterovSolve] Iter: 50 overflow: 0 HPWL: 894728
+[NesterovSolve] Finished with Overflow: 0.000000
+[INFO MPL-0005] Found 2 macros
+[INFO MPL-0009] West pins 8
+[INFO MPL-0009] East pins 7
+[INFO MPL-0009] North pins 0
+[INFO MPL-0009] South pins 0
+Begin One Level Partition
+[INFO MPL-0076] Partition 2 macros
+[INFO MPL-0077] Using 2 cut lines
+[INFO MPL-0079] Cut line 14.63
+[INFO MPL-0079] Cut line 31.73
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+[INFO MPL-0076] Partition 0 macros
+[INFO MPL-0077] Using 0 cut lines
+End East Partition
+Begin West Partition
+[INFO MPL-0076] Partition 2 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 2.80
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+[INFO MPL-0076] Partition 1 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 2.80
+End East Partition
+Begin West Partition
+[INFO MPL-0076] Partition 1 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 2.80
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] Using 2 partiion sets
+[INFO MPL-0071] Solution 1 weighted wire length 520.69
+[INFO MPL-0071] Solution 2 weighted wire length 165.436
+[INFO MPL-0073] Best weighted wire length 165.436
+No differences found.
