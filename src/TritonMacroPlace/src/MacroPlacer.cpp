@@ -150,7 +150,7 @@ void MacroPlacer::init()
     uy_ = coreRect.yMax() / dbu;
   }
 
-  FillMacroStor();
+  findMacros();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.
   timing_driven_ = !isMissingLiberty();
@@ -218,7 +218,7 @@ void MacroPlacer::placeMacros()
 
   if (timing_driven_) {
     topLayout.fillNetlistTable(globalMacroPartMap);
-    UpdateNetlist(topLayout);
+    updateNetlist(topLayout);
   }
 
   // push to the outer vector
@@ -326,7 +326,7 @@ void MacroPlacer::placeMacros()
       logger_->report("End Vertical Partition");
     }
   }
-  logger_->info(MPL, 70, "NumExtractedSets: {}", allSets.size() - 1);
+  logger_->info(MPL, 70, "Using {} partiion sets", allSets.size() - 1);
 
   solution_count_ = 0;
   int bestSetIdx = 0;
@@ -357,9 +357,10 @@ void MacroPlacer::placeMacros()
       curPart.updateMacroCoordi();
     }
 
-    double curWwl = GetWeightedWL();
-    logger_->info(MPL, 71, "SetId: {}", &curSet - &allSets[0]);
-    logger_->info(MPL, 72, "WeightedWL: {:g}", curWwl);
+    double curWwl = getWeightedWL();
+    logger_->info(MPL, 71, "Solution {} weighted wire length {:g}",
+                  solution_count_ + 1,
+                  curWwl);
 
     if (curWwl > bestWwl) {
       bestWwl = curWwl;
@@ -368,11 +369,9 @@ void MacroPlacer::placeMacros()
     solution_count_++;
   }
 
-  logger_->info(MPL, 73, "NumFinalSols: {}", solution_count_);
+  logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
 
-  // bestset DEF writing
   std::vector<Partition> bestSet = allSets[bestSetIdx];
-
   for (auto& curBestPart : bestSet) {
     updateMacroLocations(curBestPart);
   }
@@ -455,8 +454,7 @@ MacroPlacer::getPartitions(const Layout& layout,
                            const Partition& partition,
                            bool isHorizontal)
 {
-  logger_->report("Begin Partition");
-  logger_->info(MPL, 76, "NumMacros {}", partition.macros_.size());
+  logger_->info(MPL, 76, "Partition {} macros", partition.macros_.size());
 
   vector<pair<Partition, Partition>> partitions;
 
@@ -510,7 +508,7 @@ MacroPlacer::getPartitions(const Layout& layout,
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
   }
-  logger_->info(MPL, 77, "NumCutLines {}", cutLineStor.size());
+  logger_->info(MPL, 77, "Using {} cut lines", cutLineStor.size());
 
   // Macro checker array
   // 0 for uninitialize
@@ -520,10 +518,9 @@ MacroPlacer::getPartitions(const Layout& layout,
   vector<int> chkArr(partition.macros_.size());
 
   for (auto& cutLine : cutLineStor) {
-    logger_->info(MPL, 78, "CutLine {:.2f}", cutLine);
     cutRoundUp(layout, cutLine, isHorizontal);
 
-    logger_->info(MPL, 79, "RoundUpCutLine {:.2f}", cutLine);
+    logger_->info(MPL, 79, "Cut line {:.2f}", cutLine);
 
     // chkArr initialize
     for (size_t i = 0; i < partition.macros_.size(); i++) {
@@ -656,19 +653,17 @@ MacroPlacer::getPartitions(const Layout& layout,
 
     // impossible partitioning
     if (upperMacroArea > upperArea || lowerMacroArea > lowerArea) {
-      logger_->info(MPL, 80, "Impossible partiton found. Continue");
+      logger_->info(MPL, 80, "Impossible partiton found.");
       continue;
     }
 
     pair<Partition, Partition> curPart(lowerPart, upperPart);
     partitions.push_back(curPart);
   }
-  logger_->report("End Partition");
-
   return partitions;
 }
 
-void MacroPlacer::FillMacroStor()
+void MacroPlacer::findMacros()
 {
   dbBlock* block = db_->getChip()->getBlock();
   const int dbu = db_->getTech()->getDbUnitsPerMicron();
@@ -700,7 +695,7 @@ void MacroPlacer::FillMacroStor()
     logger_->error(MPL, 4, "No macros found.");
   }
 
-  logger_->info(MPL, 5, "NumMacros {}", macros_.size());
+  logger_->info(MPL, 5, "Found {} macros", macros_.size());
 }
 
 static bool isWithIn(int val, int min, int max)
@@ -744,7 +739,7 @@ void MacroPlacer::updateMacroLocations(Partition& part)
   }
 }
 
-void MacroPlacer::UpdateNetlist(Partition& layout)
+void MacroPlacer::updateNetlist(Partition& layout)
 {
   assert(layout.macros_.size() == macros_.size());
   net_tbl_ = layout.net_tbl_;
@@ -755,7 +750,7 @@ void MacroPlacer::UpdateNetlist(Partition& layout)
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
 #define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
 
-double MacroPlacer::GetWeightedWL()
+double MacroPlacer::getWeightedWL()
 {
   double wwl = 0.0f;
 

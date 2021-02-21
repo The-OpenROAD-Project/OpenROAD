@@ -143,8 +143,8 @@ public:
   int getSolutionCount();
 
   // return weighted wire-length to get best solution
-  double GetWeightedWL();
-  void UpdateNetlist(Partition& layout);
+  double getWeightedWL();
+  void updateNetlist(Partition& layout);
   int weight(int idx11, int idx12);
   int macroIndex(odb::dbInst *inst);
   MacroSpacings &getSpacings(Macro &macro);
@@ -152,7 +152,7 @@ public:
   size_t macroCount() { return macros_.size(); }
 
 private:
-  void FillMacroStor();
+  void findMacros();
   bool isMissingLiberty();
 
   void init();

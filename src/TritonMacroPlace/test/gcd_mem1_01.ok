@@ -13,39 +13,28 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 1124 connections.
 [INFO ODB-0134] Finished DEF file: gcd_mem1.def
-[INFO MPL-0005] NumMacros 1
+[INFO MPL-0005] Found 1 macros
 [INFO MPL-0009] West pins 22
 [INFO MPL-0009] East pins 9
 [INFO MPL-0009] North pins 12
 [INFO MPL-0009] South pins 18
 Begin One Level Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 1
-[INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 23.92
-[INFO MPL-0079] RoundUpCutLine 23.94
-End Partition
+[INFO MPL-0076] Partition 1 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 23.94
 End One Level Partition
 Begin Horizontal Partition
 Begin East Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 0
-[INFO MPL-0077] NumCutLines 0
-End Partition
+[INFO MPL-0076] Partition 0 macros
+[INFO MPL-0077] Using 0 cut lines
 End East Partition
 Begin West Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 1
-[INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 3.47
-[INFO MPL-0079] RoundUpCutLine 2.80
-End Partition
+[INFO MPL-0076] Partition 1 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 2.80
 End West Partition
 End Horizontal Partition
-[INFO MPL-0070] NumExtractedSets: 1
-Begin Parquet
-End Parquet
-[INFO MPL-0071] SetId: 1
-[INFO MPL-0072] WeightedWL: 1789.48
-[INFO MPL-0073] NumFinalSols: 1
+[INFO MPL-0070] Using 1 partiion sets
+[INFO MPL-0071] Solution 1 weighted wire length 1789.48
+[INFO MPL-0073] Best weighted wire length 1789.48
 No differences found.

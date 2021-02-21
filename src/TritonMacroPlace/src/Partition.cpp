@@ -248,8 +248,6 @@ bool Partition::anneal()
 {
   // No macro, no need to execute
   if (!macros_.empty()) {
-    logger_->report("Begin Parquet");
-
     // Populating DB structure
     // Instantiate Parquet DB structure
     DB db;
@@ -413,7 +411,6 @@ bool Partition::anneal()
       macro.lx += spacings.getHaloX() + spacings.getChannelX();
       macro.ly += spacings.getHaloY() + spacings.getChannelY();
     }
-    logger_->report("End Parquet");
   }
   return true;
 }
