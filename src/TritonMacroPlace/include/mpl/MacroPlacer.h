@@ -200,7 +200,7 @@ private:
   // macro Information
   vector<Macro> macros_;
   // dbInst* --> macros_'s index
-  unordered_map<odb::dbInst*, int> macroInstMap;
+  unordered_map<odb::dbInst*, int> macro_inst_map_;
 
   MacroSpacings default_macro_spacings_;
   unordered_map<odb::dbInst*, MacroSpacings> macro_spacings_;

@@ -429,7 +429,7 @@ void MacroPlacer::updateMacroPartMap(Partition& part,
   vector<int> curMacroStor = macroPartMap[part.partClass];
   // convert macro Information into macroIdx
   for (auto& curMacro : part.macros_) {
-    int macro_index = macroInstMap[curMacro.dbInstPtr];
+    int macro_index = macro_inst_map_[curMacro.dbInstPtr];
     curMacroStor.push_back(macro_index);
   }
   macroPartMap[part.partClass] = curMacroStor;
@@ -683,7 +683,7 @@ void MacroPlacer::FillMacroStor()
       int placeX, placeY;
       inst->getLocation(placeX, placeY);
 
-      macroInstMap[inst] = macros_.size();
+      macro_inst_map_[inst] = macros_.size();
       Macro macro(1.0 * placeX / dbu,
                   1.0 * placeY / dbu,
                   1.0 * inst->getBBox()->getDX() / dbu,
@@ -727,7 +727,7 @@ void MacroPlacer::updateMacroLocations(Partition& part)
     / static_cast<float>(tech->getDbUnitsPerMicron());
 
   for (auto& curMacro : part.macros_) {
-    auto mnPtr = macroInstMap.find(curMacro.dbInstPtr);
+    auto mnPtr = macro_inst_map_.find(curMacro.dbInstPtr);
     // update macro coordi
     float macroX
       = (fourLayer) ? getRoundUpFloat(curMacro.lx, pitchX) : curMacro.lx;
@@ -1130,7 +1130,7 @@ int MacroPlacer::macroIndex(Macro *macro)
 
 int MacroPlacer::macroIndex(dbInst *inst)
 {
-  return macroInstMap[inst];
+  return macro_inst_map_[inst];
 }
 
 bool MacroPlacer::macroIndexIsEdge(Macro *macro)
