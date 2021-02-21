@@ -35,6 +35,6 @@ Begin West Partition
 End West Partition
 End Horizontal Partition
 [INFO MPL-0070] Using 1 partiion sets
-[INFO MPL-0071] Solution 1 weighted wire length 1789.48
-[INFO MPL-0073] Best weighted wire length 1789.48
+[INFO MPL-0071] Solution 1 weighted wire length 774.205
+[INFO MPL-0073] Best weighted wire length 774.205
 No differences found.

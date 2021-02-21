@@ -144,7 +144,6 @@ public:
 
   // return weighted wire-length to get best solution
   double getWeightedWL();
-  void updateNetlist(Partition& layout);
   int weight(int idx11, int idx12);
   int macroIndex(odb::dbInst *inst);
   MacroSpacings &getSpacings(Macro &macro);
@@ -184,6 +183,7 @@ private:
   string faninName(Macro *macro);
   int macroIndex(Macro *macro);
   bool macroIndexIsEdge(Macro *macro);
+  string macroIndexName(int index);
 
   void reportEdgePinCounts();
 
@@ -207,7 +207,6 @@ private:
 
   double lx_, ly_, ux_, uy_;
   double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
-  vector<double> net_tbl_;
   int verbose_;
   bool fenceRegionMode_;
   int solution_count_;

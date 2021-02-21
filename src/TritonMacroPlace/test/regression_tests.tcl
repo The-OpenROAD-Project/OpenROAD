@@ -5,6 +5,7 @@ record_tests {
   gcd_mem3_02
   gcd_mem5_01
   level3
+  east_west1
 }
 
 

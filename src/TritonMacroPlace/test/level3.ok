@@ -117,6 +117,6 @@ End Horizontal Partition
 [INFO MPL-0061] Parquet BBOX exceed the given area
 [INFO MPL-0062] ParquetSolLayout 38.34 36
 [INFO MPL-0063] TargetLayout 35.91 50.4
-[INFO MPL-0071] Solution 1 weighted wire length 811.821
-[INFO MPL-0073] Best weighted wire length 811.821
+[INFO MPL-0071] Solution 1 weighted wire length 924.77
+[INFO MPL-0073] Best weighted wire length 924.77
 No differences found.

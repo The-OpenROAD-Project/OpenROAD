@@ -218,7 +218,6 @@ void MacroPlacer::placeMacros()
 
   if (timing_driven_) {
     topLayout.fillNetlistTable(globalMacroPartMap);
-    updateNetlist(topLayout);
   }
 
   // push to the outer vector
@@ -329,15 +328,15 @@ void MacroPlacer::placeMacros()
   logger_->info(MPL, 70, "Using {} partiion sets", allSets.size() - 1);
 
   solution_count_ = 0;
+  bool found_best = false;
   int bestSetIdx = 0;
-  double bestWwl = -DBL_MAX;
+  double bestWwl = DBL_MAX;
   for (auto& curSet : allSets) {
     // skip for top-topLayout partition
     if (curSet.size() == 1) {
       continue;
     }
-    // For each partitions (four partition)
-    //
+    // For each of the 4 partitions
     bool isFailed = false;
     for (auto& curPart : curSet) {
       // Annealing based on ParquetFP Engine
@@ -362,20 +361,25 @@ void MacroPlacer::placeMacros()
                   solution_count_ + 1,
                   curWwl);
 
-    if (curWwl > bestWwl) {
+    if (!found_best
+        || curWwl < bestWwl) {
       bestWwl = curWwl;
       bestSetIdx = &curSet - &allSets[0];
+      found_best = true;
     }
     solution_count_++;
   }
 
-  logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
-
-  std::vector<Partition> bestSet = allSets[bestSetIdx];
-  for (auto& curBestPart : bestSet) {
-    updateMacroLocations(curBestPart);
+  if (found_best) {
+    logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
+    std::vector<Partition> bestSet = allSets[bestSetIdx];
+    for (auto& curBestPart : bestSet) {
+      updateMacroLocations(curBestPart);
+    }
+    updateDbInstLocations();
   }
-  updateDbInstLocations();
+  else
+    logger_->warn(MPL, 72, "No partition solutions found.");
 }
 
 int MacroPlacer::weight(int idx1, int idx2)
@@ -739,12 +743,6 @@ void MacroPlacer::updateMacroLocations(Partition& part)
   }
 }
 
-void MacroPlacer::updateNetlist(Partition& layout)
-{
-  assert(layout.macros_.size() == macros_.size());
-  net_tbl_ = layout.net_tbl_;
-}
-
 #define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
 #define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
@@ -758,11 +756,7 @@ double MacroPlacer::getWeightedWL()
   double height = uy_ - ly_;
 
   for (size_t i = 0; i < macros_.size() + core_edge_count; i++) {
-    for (size_t j = 0; j < macros_.size() + core_edge_count; j++) {
-      if (j >= i) {
-        continue;
-      }
-
+    for (size_t j = i + 1; j < macros_.size() + core_edge_count; j++) {
       double pointX1 = 0, pointY1 = 0;
       if (i == EAST_IDX) {
         pointX1 = lx_ + width;
@@ -777,8 +771,8 @@ double MacroPlacer::getWeightedWL()
         pointX1 = lx_ + width / 2.0;
         pointY1 = ly_;
       } else {
-        pointX1 = macros_[i].lx + macros_[i].w;
-        pointY1 = macros_[i].ly + macros_[i].h;
+        pointX1 = macros_[i].lx + macros_[i].w / 2;
+        pointY1 = macros_[i].ly + macros_[i].h / 2;
       }
 
       double pointX2 = 0, pointY2 = 0;
@@ -795,20 +789,28 @@ double MacroPlacer::getWeightedWL()
         pointX2 = lx_ + width / 2.0;
         pointY2 = ly_;
       } else {
-        pointX2 = macros_[j].lx + macros_[j].w;
-        pointY2 = macros_[j].ly + macros_[j].h;
+        pointX2 = macros_[j].lx + macros_[j].w / 2;
+        pointY2 = macros_[j].ly + macros_[j].h / 2;
       }
 
       float edgeWeight = 0.0f;
       if (timing_driven_) {
-        edgeWeight = net_tbl_[i * (macros_.size()) + j];
+        edgeWeight = macro_weights_[i][j];
       } else {
         edgeWeight = 1;
       }
-
-      wwl += edgeWeight
-             * std::sqrt((pointX1 - pointX2) * (pointX1 - pointX2)
-                         + (pointY1 - pointY2) * (pointY1 - pointY2));
+      double wl = std::sqrt((pointX1 - pointX2) * (pointX1 - pointX2)
+                              + (pointY1 - pointY2) * (pointY1 - pointY2));
+      double weighted_wl = edgeWeight * wl;
+      if (edgeWeight > 0)
+        debugPrint(logger_, MPL, "weighted_wl", 1,
+                   "{} -> {} wl {:.2f} * weight {:.2f} = {:.2f}",
+                   macroIndexName(i),
+                   macroIndexName(j),
+                   wl,
+                   edgeWeight,
+                   weighted_wl);
+      wwl += weighted_wl;
     }
   }
 
@@ -1130,6 +1132,14 @@ int MacroPlacer::macroIndex(Macro *macro)
     return macro - &macros_[0];
 }
 
+string MacroPlacer::macroIndexName(int index)
+{
+  if (index < macros_.size())
+    return macros_[index].name();
+  else
+    return coreEdgeString(static_cast<CoreEdge>(index - macros_.size()));
+}
+
 int MacroPlacer::macroIndex(dbInst *inst)
 {
   return macro_inst_map_[inst];
@@ -1141,9 +1151,7 @@ bool MacroPlacer::macroIndexIsEdge(Macro *macro)
   return edge_index < core_edge_count;
 }
 
-// This is completely broken but I want to match FillPinGroup()
-// until it is flushed.
-// It assumes the pins are on the core boundary.
+// It assumes the pins straddle the die/fence boundary.
 // It should look for the nearest edge to the pin center. -cherry
 CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 {

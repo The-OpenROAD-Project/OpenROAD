@@ -61,10 +61,10 @@ Begin West Partition
 End West Partition
 End Horizontal Partition
 [INFO MPL-0070] Using 3 partiion sets
-[INFO MPL-0071] Solution 1 weighted wire length 7626.26
-[INFO MPL-0071] Solution 2 weighted wire length 7929.89
+[INFO MPL-0071] Solution 1 weighted wire length 5572.71
+[INFO MPL-0071] Solution 2 weighted wire length 5633.76
 [INFO MPL-0061] Parquet BBOX exceed the given area
 [INFO MPL-0062] ParquetSolLayout 14.78 38
 [INFO MPL-0063] TargetLayout 13.87 43.4
-[INFO MPL-0073] Best weighted wire length 7929.89
+[INFO MPL-0073] Best weighted wire length 5572.71
 No differences found.
