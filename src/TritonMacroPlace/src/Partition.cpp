@@ -104,6 +104,7 @@ void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
   if (partClass == ALL) {
     for (size_t i = 0; i < macro_edge_count; i++) {
       for (size_t j = 0; j < macro_edge_count; j++) {
+        // Note that net_tbl only entries for i < j.
         net_tbl_[i * macro_edge_count + j] = macro_placer_->weight(i, j);
       }
     }
@@ -314,6 +315,7 @@ bool Partition::anneal()
       for (size_t j = i + 1; j < macro_edge_count; j++) {
         int cost = 0;
         if (!net_tbl_.empty()) {
+          // Note that net_tbl only entries for i < j.
           cost = net_tbl_[i * macro_edge_count + j]
             + net_tbl_[j * macro_edge_count + i];
         }

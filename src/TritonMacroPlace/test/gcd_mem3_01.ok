@@ -86,18 +86,18 @@ End Horizontal Partition
 Begin Parquet
 End Parquet
 [INFO MPL-0071] SetId: 1
-[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0072] WeightedWL: 7681.99
 Begin Parquet
 End Parquet
 Begin Parquet
 End Parquet
 [INFO MPL-0071] SetId: 2
-[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0072] WeightedWL: 8013.89
 Begin Parquet
 End Parquet
 Begin Parquet
 End Parquet
 [INFO MPL-0071] SetId: 3
-[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0072] WeightedWL: 9061.55
 [INFO MPL-0073] NumFinalSols: 3
 No differences found.

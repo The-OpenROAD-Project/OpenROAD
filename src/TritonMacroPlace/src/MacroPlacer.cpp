@@ -69,6 +69,9 @@ using odb::dbBTerm;
 using odb::dbBPin;
 using odb::dbITerm;
 
+using std::min;
+using std::max;
+
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
 static CoreEdge getCoreEdge(int cx,
@@ -1100,7 +1103,10 @@ void MacroPlacer::fillMacroWeights(AdjWeightMap &adj_map)
     Macro *to = from_to.second;
     float weight = pair_weight.second;
     if (!(macroIndexIsEdge(from) && macroIndexIsEdge(to))) {
-      macro_weights_[macroIndex(from)][macroIndex(to)] = weight;
+      int idx1 = macroIndex(from);
+      int idx2 = macroIndex(to);
+      // Note macro_weights only has entries for idx1 < idx2.
+      macro_weights_[min(idx1, idx2)][max(idx1, idx2)] = weight;
       if (weight > 0)
         debugPrint(logger_, MPL, "weights", 1, "{} -> {} {}",
                    faninName(from),
@@ -1119,13 +1125,14 @@ std::string MacroPlacer::faninName(Macro *macro)
     return macro->name();
 }
 
+// This has to be consistent with the accessors in EAST_IDX
 int MacroPlacer::macroIndex(Macro *macro)
 {
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
-    return edge_index;
+    return macros_.size() + edge_index;
   else
-    return macro - &macros_[0] + core_edge_count;
+    return macro - &macros_[0];
 }
 
 int MacroPlacer::macroIndex(dbInst *inst)

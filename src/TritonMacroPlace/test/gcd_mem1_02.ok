@@ -46,8 +46,6 @@ End Horizontal Partition
 Begin Parquet
 End Parquet
 [INFO MPL-0071] SetId: 1
-[INFO MPL-0072] WeightedWL: 0
+[INFO MPL-0072] WeightedWL: 1754.12
 [INFO MPL-0073] NumFinalSols: 1
-Differences found at line 377.
-    - mem0 fakeram45_64x7 + FIXED ( 60480 10080 ) N ;
-    - mem0 fakeram45_64x7 + FIXED ( 62720 11760 ) N ;
+No differences found.
