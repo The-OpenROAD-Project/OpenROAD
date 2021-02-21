@@ -194,7 +194,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("MINSTEP minStepLength {} insideCorner {} outsideCorner {} step {} maxLength {} maxEdges {} minAdjLength {} convexCorner {} exceptWithin {} concaveCorner {} threeConcaveCorners {} width {} minAdjLength2 {} minBetweenLength {} exceptSameCorners {} eolWidth {} concaveCorners {} ", minStepLength, insideCorner, outsideCorner, step, maxLength, maxEdges, minAdjLength, convexCorner, exceptWithin, concaveCorner, threeConcaveCorners, width, minAdjLength2, minBetweenLength, exceptSameCorners, eolWidth, concaveCorners);
+      logger->report("\tMINSTEP minStepLength {} insideCorner {} outsideCorner {} step {} maxLength {} maxEdges {} minAdjLength {} convexCorner {} exceptWithin {} concaveCorner {} threeConcaveCorners {} width {} minAdjLength2 {} minBetweenLength {} exceptSameCorners {} eolWidth {} concaveCorners {} ", minStepLength, insideCorner, outsideCorner, step, maxLength, maxEdges, minAdjLength, convexCorner, exceptWithin, concaveCorner, threeConcaveCorners, width, minAdjLength2, minBetweenLength, exceptSameCorners, eolWidth, concaveCorners);
     }
 
   protected:
@@ -471,7 +471,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("\t\tSPACING_WITHIN_ENDTOEND endToEndSpace {} cutSpace {} oneCutSpace {} twoCutSpace {} hExtension {} extension {} wrongDirExtension {} hOtherEndWidth {} otherEndWidth {} ", endToEndSpace, cutSpace, oneCutSpace, twoCutSpace, hExtension, extension, wrongDirExtension, hOtherEndWidth, otherEndWidth);
+      logger->report("\t\t\tSPACING_WITHIN_ENDTOEND endToEndSpace {} cutSpace {} oneCutSpace {} twoCutSpace {} hExtension {} extension {} wrongDirExtension {} hOtherEndWidth {} otherEndWidth {} ", endToEndSpace, cutSpace, oneCutSpace, twoCutSpace, hExtension, extension, wrongDirExtension, hOtherEndWidth, otherEndWidth);
     }
   protected:
     frCoord    endToEndSpace;
@@ -563,7 +563,7 @@ namespace fr {
     void report(){
       if(logger == nullptr)
         return;
-      logger->report("\t\tSPACING_WITHIN_PARALLELEDGE subtractEolWidth {} parSpace {} parWithin {} hPrl {} prl {} hMinLength {} minLength {} twoEdges {} sameMetal {} nonEolCornerOnly {} parallelSameMask {} ", subtractEolWidth, parSpace, parWithin, hPrl, prl, hMinLength, minLength, twoEdges, sameMetal, nonEolCornerOnly, parallelSameMask);
+      logger->report("\t\t\tSPACING_WITHIN_PARALLELEDGE subtractEolWidth {} parSpace {} parWithin {} hPrl {} prl {} hMinLength {} minLength {} twoEdges {} sameMetal {} nonEolCornerOnly {} parallelSameMask {} ", subtractEolWidth, parSpace, parWithin, hPrl, prl, hMinLength, minLength, twoEdges, sameMetal, nonEolCornerOnly, parallelSameMask);
     }
   protected:
     bool    subtractEolWidth;
@@ -606,7 +606,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("\t\tSPACING_WITHIN_MAXMIN maxLength {} length {} twoSides {} ", maxLength, length, twoSides);
+      logger->report("\t\t\tSPACING_WITHIN_MAXMIN maxLength {} length {} twoSides {} ", maxLength, length, twoSides);
     }
   protected:
     bool    maxLength;
@@ -710,11 +710,13 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} wrongDirWithin {} sameMask {} ", hOppositeWidth, oppositeWidth, eolWithin, wrongDirWithin, sameMask);
+      logger->report("\t\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} wrongDirWithin {} sameMask {} ", hOppositeWidth, oppositeWidth, eolWithin, wrongDirWithin, sameMask);
       if(endToEndConstraint != nullptr)
         endToEndConstraint->report();
       if(parallelEdgeConstraint != nullptr)
         parallelEdgeConstraint->report();
+      if(maxMinLengthConstraint != nullptr)
+        maxMinLengthConstraint->report();
     }
   protected:
     
@@ -784,7 +786,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("SPACING eolSpace {} eolWidth {} exactWidth {} wrongDirSpacing {} wrongDirSpace {} ", eolSpace, eolWidth, exactWidth, wrongDirSpacing, wrongDirSpace);
+      logger->report("\tSPACING eolSpace {} eolWidth {} exactWidth {} wrongDirSpacing {} wrongDirSpace {} ", eolSpace, eolWidth, exactWidth, wrongDirSpacing, wrongDirSpace);
       if(withinConstraint != nullptr)
         withinConstraint->report();
     }
@@ -922,7 +924,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("\tLAYERCONSTRAINT secondLayerNum {} nonZeroEnc {} ", secondLayerNum, nonZeroEnc);
+      logger->report("\t\tLAYERCONSTRAINT secondLayerNum {} nonZeroEnc {} ", secondLayerNum, nonZeroEnc);
     }
   protected:
     frLayerNum secondLayerNum;
@@ -969,7 +971,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("\tPRLCONSTRAINT prl {} horizontal {} vertical {} maxXY {} ", prl, horizontal, vertical, maxXY);
+      logger->report("\t\tPRLCONSTRAINT prl {} horizontal {} vertical {} maxXY {} ", prl, horizontal, vertical, maxXY);
     }
   protected:
     frCoord prl;
@@ -1026,7 +1028,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("CUTSPACINGTABLE defaultCutSpacing {} cutClassHasAll {}");
+      logger->report("\tCUTSPACINGTABLE defaultCutSpacing {} cutClassHasAll {}");
       if(prlConstraint != nullptr)
         prlConstraint->report();
       if(layerConstraint != nullptr)
@@ -1039,17 +1041,17 @@ namespace fr {
           rows = rows + row + " ";
         for(auto col : cutClassTbl->getCols())
           cols = cols + col + " ";
-        logger->report("\trowName: {}", cutClassTbl->getRowName());
-        logger->report("\trows: {}", rows);
-        logger->report("\trcolName: {}", cutClassTbl->getColName());
-        logger->report("\tcols: {}", cols);
+        logger->report("\t\trowName: {}", cutClassTbl->getRowName());
+        logger->report("\t\trows: {}", rows);
+        logger->report("\t\trcolName: {}", cutClassTbl->getColName());
+        logger->report("\t\tcols: {}", cols);
         auto tbl = cutClassTbl->getValues();
         for(auto row : tbl)
         {
           std::string vals = "";
           for(auto col : row)
             vals = vals + "("+ std::to_string(col.first) + "," + std::to_string(col.second) + ") ";
-          logger->report("\t{}", vals);
+          logger->report("\t\t{}", vals);
         }
       }
     }
@@ -1204,10 +1206,10 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("SPACINGTABLE wrongDirection {} sameMask {} exceptEol {} eolWidth {} ", wrongDirection, sameMask, exceptEol, eolWidth);
-      logger->report("\texceptWithinConstraint");
+      logger->report("\tSPACINGTABLE wrongDirection {} sameMask {} exceptEol {} eolWidth {} ", wrongDirection, sameMask, exceptEol, eolWidth);
+      logger->report("\t\texceptWithinConstraint:");
       for(auto &[key, val] : exceptWithinConstraint)
-        logger->report("\t{} ({} {})", key, val.first, val.second);
+        logger->report("\t\t{} ({} {})", key, val.first, val.second);
     }
   protected:
     std::map<frCoord, std::pair<frCoord, frCoord> > exceptWithinConstraint;
@@ -1759,7 +1761,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("CUTSPACING cutSpacing {} sameMask {} maxXY {} centerToCenter {} sameNet {} sameMetal {} sameVia {} secondLayerName {} secondLayerNum {} stack {} orthogonalSpacing {} cutClassName {} cutClassIdx {} shortEdgeOnly {} prl {} concaveCorner {} width {} enclosure {} edgeLength {} parLength {} parWithin {} edgeEnclosure {} adjEnclosure {} extension {} eolWidth {} minLength {} maskOverlap {} wrongDirection {} adjacentCuts {} exactAlignedCut {} twoCuts {} twoCutsSpacing {} sameCut {} cutWithin1 {} cutWithin2 {} exceptSamePGNet {} exceptAllWithin {} above {} below {} toAll {} noPrl {} sideParallelOverlap {} parallelOverlap {} exceptSameNet {} exceptSameMetal {} exceptSameMetalOverlap {} exceptSameVia {} within {} longEdgeOnly {} exceptTwoEdges {} numCut {} cutArea {} ", cutSpacing, sameMask, maxXY, centerToCenter, sameNet, sameMetal, sameVia, secondLayerName, secondLayerNum, stack, orthogonalSpacing, cutClassName, cutClassIdx, shortEdgeOnly, prl, concaveCorner, width, enclosure, edgeLength, parLength, parWithin, edgeEnclosure, adjEnclosure, extension, eolWidth, minLength, maskOverlap, wrongDirection, adjacentCuts, exactAlignedCut, twoCuts, twoCutsSpacing, sameCut, cutWithin1, cutWithin2, exceptSamePGNet, exceptAllWithin, above, below, toAll, noPrl, sideParallelOverlap, parallelOverlap, exceptSameNet, exceptSameMetal, exceptSameMetalOverlap, exceptSameVia, within, longEdgeOnly, exceptTwoEdges, numCut, cutArea);
+      logger->report("\tCUTSPACING cutSpacing {} sameMask {} maxXY {} centerToCenter {} sameNet {} sameMetal {} sameVia {} secondLayerName {} secondLayerNum {} stack {} orthogonalSpacing {} cutClassName {} cutClassIdx {} shortEdgeOnly {} prl {} concaveCorner {} width {} enclosure {} edgeLength {} parLength {} parWithin {} edgeEnclosure {} adjEnclosure {} extension {} eolWidth {} minLength {} maskOverlap {} wrongDirection {} adjacentCuts {} exactAlignedCut {} twoCuts {} twoCutsSpacing {} sameCut {} cutWithin1 {} cutWithin2 {} exceptSamePGNet {} exceptAllWithin {} above {} below {} toAll {} noPrl {} sideParallelOverlap {} parallelOverlap {} exceptSameNet {} exceptSameMetal {} exceptSameMetalOverlap {} exceptSameVia {} within {} longEdgeOnly {} exceptTwoEdges {} numCut {} cutArea {} ", cutSpacing, sameMask, maxXY, centerToCenter, sameNet, sameMetal, sameVia, secondLayerName, secondLayerNum, stack, orthogonalSpacing, cutClassName, cutClassIdx, shortEdgeOnly, prl, concaveCorner, width, enclosure, edgeLength, parLength, parWithin, edgeEnclosure, adjEnclosure, extension, eolWidth, minLength, maskOverlap, wrongDirection, adjacentCuts, exactAlignedCut, twoCuts, twoCutsSpacing, sameCut, cutWithin1, cutWithin2, exceptSamePGNet, exceptAllWithin, above, below, toAll, noPrl, sideParallelOverlap, parallelOverlap, exceptSameNet, exceptSameMetal, exceptSameMetalOverlap, exceptSameVia, within, longEdgeOnly, exceptTwoEdges, numCut, cutArea);
     }
 
   protected:
@@ -1958,7 +1960,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length {} edgeLength {} includeLShape {} minLength {} exceptNotch {} notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} ", cornerType, sameMask, within, eolWidth, length, edgeLength, includeLShape, minLength, exceptNotch, notchLength, exceptSameNet, exceptSameMetal, sameXY);
+      logger->report("\tCORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length {} edgeLength {} includeLShape {} minLength {} exceptNotch {} notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} ", cornerType, sameMask, within, eolWidth, length, edgeLength, includeLShape, minLength, exceptNotch, notchLength, exceptSameNet, exceptSameMetal, sameXY);
       
       std::string vals = "";
       std::string rows = "";
@@ -1966,9 +1968,9 @@ namespace fr {
         rows = rows + std::to_string(row) + " ";
       for(auto val : tbl.getValues())
         vals = vals + "(" + std::to_string(val.first) + "," + std::to_string(val.second) + ") ";
-      logger->report("\trowName: {}", tbl.getRowName());
-      logger->report("\trows: {}", rows);
-      logger->report("\tvals: {}", vals);
+      logger->report("\t\trowName: {}", tbl.getRowName());
+      logger->report("\t\trows: {}", rows);
+      logger->report("\t\tvals: {}", vals);
     }
 
   protected:
@@ -2085,7 +2087,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("RECTONLY exceptNonCorePins {}", exceptNonCorePins);
+      logger->report("\tRECTONLY exceptNonCorePins {}", exceptNonCorePins);
     }
   protected:
     bool exceptNonCorePins;
@@ -2113,7 +2115,7 @@ namespace fr {
     {
       if(logger == nullptr)
         return;
-      logger->report("RIGHTWAYONGRIDONLY checkMask {}", checkMask);
+      logger->report("\tRIGHTWAYONGRIDONLY checkMask {}", checkMask);
     }
   protected:
     bool checkMask;
