@@ -398,7 +398,7 @@ void io::Parser::setNDRs(odb::dbBlock* block)
             fnd = ptnd.get();
             design->tech_->addNDR(std::move(ptnd));
         }
-        fnd->setName(ndr->getName());
+        fnd->setName(ndr->getName().data());
         fnd->setHardSpacing(ndr->getHardSpacing());
         vector<odb::dbTechLayerRule*> lr;
         ndr->getLayerRules(lr);
