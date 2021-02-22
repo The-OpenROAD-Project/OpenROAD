@@ -138,7 +138,6 @@ namespace fr {
                                 frNonDefaultRule* ndr = nullptr, bool isOverlap = false) {
       int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
       if (isOverlap) {
-          if (ndr) cout << "WARNING! NDRs not considering via2ViaForbiddenOverlapLen\n";
         return isIncluded(via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
       } else {
         return isIncluded((ndr ? ndr->via2ViaForbiddenLen : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx], len);
