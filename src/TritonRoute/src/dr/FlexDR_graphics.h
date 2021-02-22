@@ -50,8 +50,6 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
-     
-  frDebugSettings*          settings_;
   
   // Debug InitialPlace
   FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
@@ -92,9 +90,7 @@ class FlexDRGraphics : public gui::Renderer
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
-  
-  
-//  void drawPath(gui::Painter& painter, std::vector<FlexMazeIdx>& path, frLayerNum ln);
+  frDebugSettings*          settings_;
   
 };
 
