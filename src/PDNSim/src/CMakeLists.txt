@@ -1,10 +1,46 @@
-set(PDNSIM_WRAP ${CMAKE_CURRENT_BINARY_DIR}/pdnsim_wrap.cpp)
-set(PDNSIM_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/PDNSimTclInitVar.cc)
+# BSD 3-Clause License
+# 
+# Copyright (c) 2021, The Regents of the University of Minnesota
+# 
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+# 
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## configure settings
+include("openroad")
+
 find_package(Eigen3 REQUIRED)
 
-set (PDNSIM_SRC 
+tcl_lib(NAME      pdnsim
+        NAMESPACE psm
+        I_FILE    pdnsim.i
+        SCRIPTS   pdnsim.tcl
+)
+
+target_sources(pdnsim
+  PRIVATE
   node.cpp
   gmat.cpp
   ir_solver.cpp
@@ -12,50 +48,18 @@ set (PDNSIM_SRC
   get_voltage.cpp
   pdnsim.cpp
   MakePDNSim.cpp
-  ${PDNSIM_WRAP}
-  ${PDNSIM_TCL_INIT}
-  )
-
-add_custom_command(OUTPUT ${PDNSIM_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${PDNSIM_WRAP} ${PDNSIM_HOME}/src/pdnsim.i 
-  WORKING_DIRECTORY ${PDNSIM_HOME}
-  DEPENDS ${PDNSIM_HOME}/src/pdnsim.i ${PDNSIM_HOME}/include/pdnsim/pdnsim.h
 )
-
-add_custom_command(OUTPUT ${PDNSIM_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${PDNSIM_TCL_INIT} pdnsim_tcl_inits ${PDNSIM_HOME}/src/pdnsim.tcl
-  WORKING_DIRECTORY ${PDNSIM_HOME}/src
-  DEPENDS ${PDNSIM_HOME}/src/pdnsim.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-)
-
-############################################################
-# Create a library 
-############################################################
-add_library( pdnsim 
-    ${PDNSIM_SRC}
-)
-
-
-############################################################
-# include directories 
-############################################################
 
 target_include_directories( pdnsim
-PUBLIC
-  ${PDNSIM_HOME}/include
-PRIVATE
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-
-  ${PDNSIM_HOME}/src
-
-  ${OPENSTA_HOME}/include
-
-  ${OPENDB_HOME}/include
-  ${TCL_INCLUDE_PATH}
+  PUBLIC
+    ../include
 )
 
 target_link_libraries(pdnsim
-  Eigen3::Eigen
-  utility
+  PRIVATE
+    utility
+    opendb
+    OpenSTA
+    dbSta
+    Eigen3::Eigen
 )

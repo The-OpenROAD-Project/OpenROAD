@@ -294,7 +294,7 @@ std::string Pin::name() const
     return "DUMMY";
   }
   if (isITerm()) {
-    return dbITerm()->getInst()->getName() + ':' +
+    return dbITerm()->getInst()->getName() + '/' +
       dbITerm()->getMTerm()->getName();
   } else {
     return dbBTerm()->getName();

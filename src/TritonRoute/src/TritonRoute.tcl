@@ -44,7 +44,7 @@ proc detailed_route { args } {
   if { ![info exists keys(-param)] } {
     sta::cmd_usage_error "detailed_route"
   }
-  tr::detailed_route_cmd $keys(-param)
+  drt::detailed_route_cmd $keys(-param)
 }
 
 proc drt_report_constraints { args } {
@@ -53,7 +53,7 @@ proc drt_report_constraints { args } {
 
 proc detailed_route_num_drvs { args } {
   sta::check_argc_eq0 "detailed_route_num_drvs" $args
-  return [tr::detailed_route_num_drvs]
+  return [drt::detailed_route_num_drvs]
 }
 
 sta::define_cmd_args "detailed_route_debug" {
@@ -109,6 +109,6 @@ proc detailed_route_debug { args } {
     set iter 0
   }
 
-  tr::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
+  drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $pa $maze \
       $gcell_x $gcell_y $iter $pa_markers
 }

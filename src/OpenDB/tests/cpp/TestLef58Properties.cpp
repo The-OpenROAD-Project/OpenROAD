@@ -90,7 +90,6 @@ BOOST_AUTO_TEST_CASE( test_default )
     odb::dbTechLayerCornerSpacingRule* corner_rule = (odb::dbTechLayerCornerSpacingRule*) *corner_rules.begin();
     BOOST_TEST(corner_rule->getType() == odb::dbTechLayerCornerSpacingRule::CONVEXCORNER);
     BOOST_TEST(corner_rule->isExceptEol() == true);
-    BOOST_TEST(corner_rule->isSameXY());
     BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
     vector<pair<int,int>> spacing;
     vector<int> corner_width;
@@ -120,10 +119,10 @@ BOOST_AUTO_TEST_CASE( test_default )
     BOOST_TEST(spacing_tbl_rule->getSpacing(0,0)==0.05*distFactor);
 
     BOOST_TEST(layer->isRightWayOnGridOnly()==true);
-    BOOST_TEST(layer->isCheckMask()==true);
+    BOOST_TEST(layer->isRightWayOnGridOnlyCheckMask()==true);
 
     BOOST_TEST(layer->isRectOnly()==true);
-    BOOST_TEST(layer->isExceptNonCorePins()==true);
+    BOOST_TEST(layer->isRectOnlyExceptNonCorePins()==true);
 
     auto cutLayer = dbTech->findLayer("via1");
 

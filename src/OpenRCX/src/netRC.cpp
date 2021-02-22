@@ -35,8 +35,8 @@
 #include <map>
 #include <vector>
 
-#include "extRCap.h"
-#include "extSpef.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
 #include "utility/Logger.h"
 
 #define MAXINT 0x7FFFFFFF;

@@ -35,7 +35,7 @@
 %module openrcx
 %{
 #include "openroad/OpenRoad.hh"
-#include "ext.h"
+#include "OpenRCX/ext.h"
 
 namespace ord {
 // Defined in OpenRoad.i

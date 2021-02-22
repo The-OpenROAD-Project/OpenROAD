@@ -6945,17 +6945,13 @@ class dbTechLayer : public dbObject
 
   bool isRightWayOnGridOnly() const;
 
-  void setCheckMask(bool _check_mask);
+  void setRightWayOnGridOnlyCheckMask(bool _right_way_on_grid_only_check_mask);
 
-  bool isCheckMask() const;
+  bool isRightWayOnGridOnlyCheckMask() const;
 
-  void setExceptNonCorePins(bool _except_non_core_pins);
+  void setRectOnlyExceptNonCorePins(bool _rect_only_except_non_core_pins);
 
-  bool isExceptNonCorePins() const;
-
-  void setPWell(bool _p_well);
-
-  bool isPWell() const;
+  bool isRectOnlyExceptNonCorePins() const;
 
   // User Code Begin dbTechLayer
 
@@ -7649,10 +7645,6 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setSameMask(bool _same_mask);
 
   bool isSameMask() const;
-
-  void setSameXY(bool _same_x_y);
-
-  bool isSameXY() const;
 
   void setCornerOnly(bool _corner_only);
 

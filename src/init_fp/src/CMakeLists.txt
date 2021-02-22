@@ -33,43 +33,29 @@
 ##
 ############################################################################
 
-set(INIT_FP_WRAP ${CMAKE_CURRENT_BINARY_DIR}/InitFloorplan_wrap.cc)
-set(INIT_FP_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/InitFloorplanTclInitVar.cc)
+include("openroad")
 
-add_custom_command(OUTPUT ${INIT_FP_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ifp -I${INIT_FP_HOME}/include -o ${INIT_FP_WRAP} ${INIT_FP_HOME}/src/InitFloorplan.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${INIT_FP_WRAP}
-  WORKING_DIRECTORY ${INIT_FP_HOME}/src
-  DEPENDS
-  ${INIT_FP_HOME}/src/InitFloorplan.i
-  ${INIT_FP_HOME}/include/init_fp/InitFloorplan.hh
-  )
+tcl_lib(NAME      init_fp
+        NAMESPACE ifp
+        I_FILE    InitFloorplan.i
+        SCRIPTS   InitFloorplan.tcl
+)
 
-add_custom_command(OUTPUT ${INIT_FP_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${INIT_FP_TCL_INIT} init_fp_tcl_inits InitFloorplan.tcl
-  WORKING_DIRECTORY ${INIT_FP_HOME}/src
-  DEPENDS InitFloorplan.tcl
-  )
-
-add_library(init_fp
-  InitFloorplan.cc
-  MakeInitFloorplan.cc
-  ${INIT_FP_WRAP}
-  ${INIT_FP_TCL_INIT}
-  )
+target_sources(init_fp
+  PRIVATE
+    InitFloorplan.cc
+    MakeInitFloorplan.cc
+)
 
 target_include_directories(init_fp
-  PUBLIC ${INIT_FP_HOME}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${DBSTA_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENSTA_INCLUDE_DIRS}
-  ${TCL_INCLUDE_PATH}
-  )
+  PUBLIC
+    ../include
+)
 
 target_link_libraries(init_fp
-  PUBLIC
-  utility
+  PRIVATE
+    opendb
+    dbSta
+    OpenSTA
+    utility
   )

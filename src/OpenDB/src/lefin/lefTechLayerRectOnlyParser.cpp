@@ -46,7 +46,7 @@ bool parse(Iterator          first,
       = (lit("RECTONLY")[boost::bind(
              &odb::dbTechLayer::setRectOnly, layer, true)]
          >> -lit("EXCEPTNONCOREPINS")[boost::bind(
-             &odb::dbTechLayer::setExceptNonCorePins, layer, true)]
+             &odb::dbTechLayer::setRectOnlyExceptNonCorePins, layer, true)]
          >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, rightWayOnGridOnlyRule, space);

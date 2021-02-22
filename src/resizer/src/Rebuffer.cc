@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 // Move logger macro out of the way.
 #undef debugPrint

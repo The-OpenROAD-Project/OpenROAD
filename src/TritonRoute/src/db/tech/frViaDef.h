@@ -76,7 +76,7 @@ namespace fr{
     {
       if(logger == nullptr)
         return;
-      logger->report("\tCUTCLASS name {} viaWidth {} viaLength {} numCut {}", name, viaWidth, viaLength, numCut);
+      logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}", name, viaWidth, viaLength, numCut);
     }
   protected:
     std::string name;

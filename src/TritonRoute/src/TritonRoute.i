@@ -59,7 +59,7 @@ void detailed_route_cmd(const char* param_file)
   router->main();
 }
 
-void drt_report_constraints_cmd()
+void report_constraints()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->reportConstraints();

@@ -131,7 +131,7 @@ def getHashTableType(type_name):
 
 
 def isDbVector(type_name):
-    return type_name.strip().find("dbVector") == 0
+    return type_name.find("dbVector") == 0
 
 
 def _isTemplateType(type_name):
@@ -150,8 +150,7 @@ def _isTemplateType(type_name):
 
     closedBracket = type_name.find(">")
 
-    return False if closedBracket == -1 or closedBracket < openBracket \
-        else True
+    return closedBracket >= openBracket
 
 def getTemplateType(type_name):
     if not _isTemplateType(type_name):

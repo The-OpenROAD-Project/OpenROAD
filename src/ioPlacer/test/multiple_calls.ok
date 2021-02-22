@@ -9,7 +9,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-#Macro blocks found: 0
+Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            54
@@ -21,7 +21,7 @@
 [INFO PPL-0008]  * Usage Increase Factor 0.01
 [INFO PPL-0009]  * Force Pin Spread      true
 Successfully assigned I/O pins
-#Macro blocks found: 0
+Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            54

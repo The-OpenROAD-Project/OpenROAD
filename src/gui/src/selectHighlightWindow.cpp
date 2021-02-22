@@ -43,6 +43,7 @@
 #include <string>
 
 #include "gui/gui.h"
+#include "highlightGroupDialog.h"
 
 namespace gui {
 
@@ -149,8 +150,17 @@ int HighlightModel::columnCount(const QModelIndex& parent) const
 
 QVariant HighlightModel::data(const QModelIndex& index, int role) const
 {
-  if (!index.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) {
+  if (!index.isValid()
+      || (role != Qt::DisplayRole && role != Qt::EditRole
+          && role != Qt::BackgroundRole)) {
     return QVariant();
+  }
+  if (role == Qt::BackgroundRole && index.column() != 3)
+    return QVariant();
+  else if (role == Qt::BackgroundRole && index.column() == 3) {
+    auto highlight_color
+        = Painter::highlightColors[table_data_[index.row()].first];
+    return QColor(highlight_color.r, highlight_color.g, highlight_color.b, 100);
   }
   int row_index = index.row();
   if (row_index > table_data_.size())
@@ -171,7 +181,8 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 2) {
     return QString::fromStdString(table_data_[row_index].second->getLocation());
   } else if (index.column() == 3) {
-    return QString::number(table_data_[row_index].first);
+    return QString("Group ")
+           + QString::number(table_data_[row_index].first + 1);
   }
   return QVariant();
 }
@@ -211,13 +222,14 @@ bool HighlightModel::setData(const QModelIndex& index,
 HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
-  items_.push_back("0");
-  items_.push_back("1");
-  items_.push_back("2");
-  items_.push_back("3");
-  items_.push_back("4");
-  items_.push_back("5");
-  items_.push_back("6");
+  items_.push_back("Group 1");
+  items_.push_back("Group 2");
+  items_.push_back("Group 3");
+  items_.push_back("Group 4");
+  items_.push_back("Group 5");
+  items_.push_back("Group 6");
+  items_.push_back("Group 7");
+  items_.push_back("Group 8");
 }
 
 QWidget* HighlightGroupDelegate::createEditor(
@@ -290,9 +302,6 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
 
   ui->selTableView->setModel(sel_filter_proxy);
   ui->hltTableView->setModel(hlt_filter_proxy);
-
-  HighlightGroupDelegate* delegate = new HighlightGroupDelegate(this);
-  ui->hltTableView->setItemDelegateForColumn(3, delegate);
 
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
@@ -396,12 +405,14 @@ void SelectHighlightWindow::deselectItems()
 }
 void SelectHighlightWindow::highlightSelectedItems()
 {
+  HighlightGroupDialog dlg;
+  dlg.exec();
   auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
     sel_items << selection_model_.getItemAt(sel_item.row());
   }
-  emit highlightSelectedItemsSig(sel_items);
+  emit highlightSelectedItemsSig(sel_items, dlg.getSelectedHighlightGroup());
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()
