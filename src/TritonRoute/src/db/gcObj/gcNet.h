@@ -130,7 +130,9 @@ namespace fr {
       return gccNet;
     }
     frNet* getFrNet(){
-        if (owner_->typeId() == frcNet) return static_cast<frNet*>(owner_);
+        if (owner_->typeId() == frcNet){
+          return static_cast<frNet*>(owner_);
+        }
         return nullptr;
     }
     bool isNondefault(){
