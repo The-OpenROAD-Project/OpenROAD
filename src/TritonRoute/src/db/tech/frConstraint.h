@@ -1980,7 +1980,7 @@ namespace fr {
       friend class frTechObject;
       private:
       
-         string name;
+         string name_;
         //each vector position is a metal layer
         vector<frCoord> widths_; 
         vector<frCoord> spacings_;
@@ -1993,8 +1993,8 @@ namespace fr {
         
         bool hardSpacing_ = false;
         
-        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord> > > > via2ViaForbiddenLen;
-        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord> > > > viaForbiddenTurnLen;
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>> via2ViaForbiddenLen;
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>> viaForbiddenTurnLen;
         
   public:
       
@@ -2056,15 +2056,15 @@ namespace fr {
 //    void addViaRule(frViaRuleGenerate* via, int z);
     
     void setName(const char* n){
-        name = string(n);
+        name_ = string(n);
     }
     
     void setName(string n){
-        name = n;
+        name_ = n;
     }
     
     string getName() const{
-        return name;
+        return name_;
     }
     
     frCoord getWidth(int z){
