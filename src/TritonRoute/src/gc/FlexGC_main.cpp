@@ -319,9 +319,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
     return false;
   }
 }
-//void print(){
-//    cout << "hiahsuihdhuas\n";
-//}
+
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
                                      frCoord prl, frCoord distX, frCoord distY, bool isNDR) {
   
@@ -335,15 +333,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
   auto net2 = rect2->getNet();
   
   auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
-//  if (layerNum == 4 && ((gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
-//       (gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000)))
-//      print();
-//  if ((gtl::xl(*rect1) == 142.43*2000 && gtl::xh(*rect1) == 142.77*2000 && gtl::yl(*rect1) == 74.505*2000 && gtl::yh(*rect1) == 74.645*2000 &&
-//       gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
-//       (gtl::xl(*rect2) == 142.43*2000 && gtl::xh(*rect2) == 142.77*2000 && gtl::yl(*rect2) == 74.505*2000 && gtl::yh(*rect2) == 74.645*2000 &&
-//       gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000) )
-//      print();
-      
   if (isNDR){
         frCoord ndrSpc1 = 0, ndrSpc2 = 0;
         if (!rect1->isFixed() && net1->isNondefault())
@@ -409,8 +398,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
     }
   }
   if (!hasRoute) {
-//      if (net1->getFrNet() && net1->getFrNet()->getName() == "net1" && net2->getFrNet() && net2->getFrNet()->getName() == "net1" && layerNum == 6) //ondefaultRule() || net2->getFrNet() && net2->getFrNet()->getNondefaultRule())
-//          cout << "2222222\n";
     return;
   }
 
@@ -709,16 +696,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2, bool
   }
 }
 
-//void print2(){
-//    cout << "ahsduhaus";
-//}
-
 void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
   //bool enableOutput = true;
   bool enableOutput = false;
-//  if (rect->getNet() && rect->getNet()->getFrNet() && rect->getNet()->getFrNet()->getName() == "net1"){
-//      print2();
-//  }
   auto layerNum = rect->getLayerNum();
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, isNDR);
   box_t queryBox;
