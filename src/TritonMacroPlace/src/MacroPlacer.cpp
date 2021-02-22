@@ -877,8 +877,7 @@ void MacroPlacer::findAdjacencies()
   findFanins(bfs, vertex_fanins);
 
   // Propagate fanins through 3 levels of register D->Q.
-  constexpr int reg_adjacency_depth = 3;
-  for (int i = 0; i < reg_adjacency_depth; i++) {
+  for (int i = 0; i < reg_adjacency_depth_; i++) {
     copyFaninsAcrossRegisters(bfs, vertex_fanins);
     findFanins(bfs, vertex_fanins);
   }
@@ -1129,7 +1128,7 @@ bool MacroPlacer::macroIndexIsEdge(Macro *macro)
   return edge_index < core_edge_count;
 }
 
-// It assumes the pins straddle the die/fence boundary.
+// This assumes the pins straddle the die/fence boundary.
 // It should look for the nearest edge to the pin center. -cherry
 CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 {

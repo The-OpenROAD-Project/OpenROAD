@@ -212,6 +212,8 @@ private:
   double lx_, ly_, ux_, uy_;
   int verbose_;
   int solution_count_;
+  // Number of register levels to look through for macro adjacency.
+  static constexpr int reg_adjacency_depth_ = 3;
 };
 
 class Layout
