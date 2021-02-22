@@ -1,69 +1,11 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Logs
-*.log
-
-# Executables
-*.exe
-*.out
-*.app
-
 # python cache
 __pycache__/
 *.py[cod]
 
-# build
-build
-lbuild
-.DS_Store
-.vscode
-
-**/rpm/RPM-GPG-KEY-nefelus
-autom4te.cache
-.deps
-*.o
-*.so
-*.a
-pkgIndex.tcl
-tclIndex
-Makefile.defs
 *~
 core
 *.core
-*.dSYM
-*.rej
 TAGS
 defRWarning.log
-
-src/def/def/def.tab.cpp
-src/def/def/def.tab.h
-src/lef/lef/lef.tab.cpp
-src/lef/lef/lef.tab.h
 
 tests/results

@@ -38,7 +38,7 @@
 
 #include "dbExtControl.h"
 #include "dbSearch.h"
-#include "exttree.h"
+#include "OpenRCX/exttree.h"
 #include "utility/Logger.h"
 
 namespace rcx {
@@ -480,12 +480,6 @@ void extRcTree::printTree(FILE* fp, uint netId, uint tnodeCnt)
     fprintf(fp, "node %5d : ", ii);
 
     extTnode* node = _tnodeTable[ii];
-    if (_printChildN) {
-      for (uint jj = 0; jj < node->_childCnt; jj++) {
-        fprintf(fp, "   %p ", node->_child[jj]);
-      }
-    }
-    fprintf(fp, "\n");
     for (uint jj = 0; jj < _cornerCnt; jj++)
       fprintf(fp, "\t\t\t\t\tR= %5g  C= %5g\n", node->_res[jj], node->_cap[jj]);
     fprintf(fp, "\t\t\t\t\tX= %d Y= %d\n", node->_x, node->_y);
@@ -1479,12 +1473,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     if (net->isDisconnected())
       return NULL;
   }
-  uint pcnt;
-  char tag[16];
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt0_", pcnt);
-    net->printWnP(tag);
-  }
   if (makeTree(net,
                max_cap,
                test,
@@ -1500,10 +1488,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     return NULL;
 
   tnodeCnt = _tnodeCnt;
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt1_", pcnt);
-    _tnodeTable[0]->printTnodes(tag, _cornerCnt);
-  }
   return _tnodeTable[0];
 }
 

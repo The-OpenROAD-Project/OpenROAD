@@ -106,28 +106,6 @@ namespace fr {
       return zCoords_[z];
     }
 
-    // bool isEdgeInBox(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, const frBox &box) {
-    //   bool sol = false;
-    //   correct(x, y, z, dir);
-    //   if (isValid(x, y, z)) {
-    //     auto x1 = x;
-    //     auto y1 = y;
-    //     auto z1 = z;
-    //     reverse(x1, y1, z1, dir);
-    //     frPoint pt, pt1;
-    //     getPoint(pt, x, y);
-    //     getPoint(pt1, x1, y1);
-    //     if (box.contains(pt) && box.contains(pt1)) {
-    //       sol = true;
-    //     } else {
-    //       sol = false;
-    //     }
-    //   } else {
-    //     sol = false;
-    //   }
-    //   return sol;
-    // }
-
     bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
@@ -232,25 +210,6 @@ namespace fr {
       }
     }
 
-    // // E == H; N == V; currently no U / D
-    // unsigned getDemand(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
-    //   correct(x, y, z, dir);
-    //   if (isValid(x, y, z)) {
-    //     auto idx = getIdx(x, y, z);
-    //     switch (dir) {
-    //       case frDirEnum::E:
-    //         return (getBits(idx, 48 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE));
-    //       case frDirEnum::N:
-    //         return (getBits(idx, 32 + GRFRACSIZE, GRDEMANDSIZE - GRFRACSIZE));
-    //       default:
-    //         cout << "Error: unexpected dir in FlexGRGridGraph::getDemand\n";
-    //         return 0;
-    //     }
-    //   } else {
-    //     return 0;
-    //   }
-    // }
-
     // E == H; N == V; currently no U / D
     unsigned getRawDemand(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       correct(x, y, z, dir);
@@ -298,9 +257,6 @@ namespace fr {
     // setters
     bool addEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir/*, const frBox &box*/) {
       bool sol = false;
-      // if (!isEdgeInBox(x, y, z, dir, box)) {
-      //   sol = false;
-      // } else {
         correct(x, y, z, dir);
         if (isValid(x, y, z)) {
           auto idx = getIdx(x, y, z);

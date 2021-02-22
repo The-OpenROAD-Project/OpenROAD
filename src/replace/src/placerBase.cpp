@@ -294,7 +294,7 @@ std::string Pin::name() const
     return "DUMMY";
   }
   if (isITerm()) {
-    return dbITerm()->getInst()->getName() + ':' +
+    return dbITerm()->getInst()->getName() + '/' +
       dbITerm()->getMTerm()->getName();
   } else {
     return dbBTerm()->getName();
@@ -1082,9 +1082,7 @@ PlacerBase::printInfo() const {
   log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_ );
 
   if( util >= 100.1 ) {
-    std::string msg = "Error: Util exceeds 100%.\n";
-    msg += "       Please double-check your die/row size";
-    log_->error(GPL, 301, msg);
+    log_->error(GPL, 301, "Utilization exceeds 100%.");
   }
 
 }

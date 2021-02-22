@@ -19,10 +19,8 @@ place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_l
 ################################################################
 # Macro Placement
 if { [have_macros] } {
-  # tdms_place (but replace isn't timing driven)
-  global_placement -disable_routability_driven -density $global_place_density
-
-  macro_placement -global_config $ip_global_cfg
+  global_placement -density $global_place_density
+  macro_placement -halo $macro_place_halo -channel $macro_place_channel
 }
 write_def [make_result_file ${design}_${platform}_floorplan.def]
 ################################################################
@@ -35,8 +33,13 @@ pdngen -verbose $pdn_cfg
 
 ################################################################
 # Global placement
-global_placement -disable_routability_driven \
-  -density $global_place_density \
+
+# Used by resizer for timing driven placement.
+set_wire_rc -signal -layer $wire_rc_layer
+set_wire_rc -clock  -layer $wire_rc_layer_clk
+set_dont_use $dont_use
+
+global_placement -timing_driven -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
@@ -46,11 +49,8 @@ write_def $global_place_def
 
 ################################################################
 # Resize
-# estimate wire rc parasitics
-set_wire_rc -signal -layer $wire_rc_layer
-set_wire_rc -clock  -layer $wire_rc_layer_clk
+
 estimate_parasitics -placement
-set_dont_use $dont_use
 
 repair_design
 
@@ -73,7 +73,7 @@ report_check_types -max_slew -max_capacitance -max_fanout -violators
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
 
-clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
+clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clustering_enable
 
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
@@ -82,6 +82,8 @@ repair_clock_nets
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_timing
+
+report_clock_skew
 
 detailed_placement
 
@@ -121,13 +123,21 @@ estimate_parasitics -global_routing
 
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-report_wns
+report_worst_slack
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_power
 
 report_floating_nets -verbose
 report_design_area
+
+if { [sta::worst_slack -max] < $setup_slack_limit } {
+  fail "setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
+}
+
+if { [sta::worst_slack -min] < $hold_slack_limit } {
+  fail "hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
+}
 
 # not really useful without pad locations
 #set_pdnsim_net_voltage -net $vdd_net_name -voltage $vdd_voltage
@@ -147,29 +157,10 @@ detailed_route -param $tr_params
 
 set drv_count [detailed_route_num_drvs]
 
-################################################################
-set pass 1
-
 if { ![info exists drv_count] } {
-  puts "Fail: drv count not found."
-  set pass 0
+  fail "drv count not found."
 } elseif { $drv_count > $max_drv_count } {
-  puts "Fail: max drv count exceeded $drv_count > $max_drv_count."
-  set pass 0
+  fail "max drv count exceeded $drv_count > $max_drv_count."
 }
 
-if { [sta::worst_slack -max] < $setup_slack_limit } {
-  puts "Fail: setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
-  set pass 0
-}
-
-if { [sta::worst_slack -min] < $hold_slack_limit } {
-  puts "Fail: hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
-  set pass 0
-}
-
-if { $pass } {
-  puts "pass"
-} else {
-  puts "fail"
-}
+puts "pass"

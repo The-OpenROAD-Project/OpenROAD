@@ -35,8 +35,8 @@
 #include <map>
 #include <vector>
 
-#include "extRCap.h"
-#include "extSpef.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
 #include "utility/Logger.h"
 
 #define MAXINT 0x7FFFFFFF;
@@ -2434,7 +2434,7 @@ void extMain::makeCornerNameMap()
     if (s == NULL)
       sprintf(buff, "%s %d", buff, ii);
     else
-      sprintf(buff, "%s %d", buff, s->_name);
+      sprintf(buff, "%s %s", buff, s->_name);
   }
   if (!_remote) {
     _block->setCornerCount(_cornerCnt);
@@ -2443,21 +2443,6 @@ void extMain::makeCornerNameMap()
 
   delete[] map;
   updatePrevControl();
-  /*
-          uint k;
-          for (k= 0; k<cornerCnt; k++) {
-                  fprintf(stdout, "corner {} ---- corner name {}\n", k,
-     _block->getExtCornerName(k));
-          }
-          for (k= 0; k<cornerCnt; k++) {
-                  extCorner *s= map[k];
-                  if (s==NULL)
-                          continue;
-
-                  fprintf(stdout, "corner name {} ---- corner index {}\n",
-     s->_name, _block->getExtCornerIndex(s->_name));
-          }
-  */
 }
 bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
 {

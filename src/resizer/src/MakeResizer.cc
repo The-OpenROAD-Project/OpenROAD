@@ -33,24 +33,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/MakeResizer.hh"
+#include "rsz/MakeResizer.hh"
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 
 namespace ord {
 
-using sta::dbSta;
-using rsz::Resizer;
-
-Resizer *
+rsz::Resizer *
 makeResizer()
 {
-  return new Resizer;
+  return new rsz::Resizer;
 }
 
 void
-deleteResizer(Resizer *resizer)
+deleteResizer(rsz::Resizer *resizer)
 {
   delete resizer;
 }
@@ -61,6 +59,8 @@ initResizer(OpenRoad *openroad)
   openroad->getResizer()->init(openroad,
                                openroad->tclInterp(),
                                openroad->getLogger(),
+                               // Broken gui api missing openroad accessor.
+                               gui::Gui::get(),
                                openroad->getDb(),
                                openroad->getSta());
 }

@@ -33,11 +33,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 #include "utility/Logger.h"
-#include "opendb/dbTransform.h"
 // Move logger macro out of the way.
 #undef debugPrint
 
@@ -67,13 +67,13 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
-#include "resizer/SteinerTree.hh"
+#include "rsz/SteinerTree.hh"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
-extern const char *resizer_tcl_inits[];
+extern const char *rsz_tcl_inits[];
 }
 
 namespace rsz {
@@ -94,7 +94,6 @@ using odb::dbInst;
 using odb::dbPlacementStatus;
 using odb::Rect;
 using odb::dbOrientType;
-using odb::dbTransform;
 using odb::dbMPin;
 using odb::dbBox;
 
@@ -159,6 +158,7 @@ Resizer::Resizer() :
   wire_clk_cap_(0.0),
   corner_(nullptr),
   max_area_(0.0),
+  gui_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
   db_(nullptr),
@@ -174,7 +174,8 @@ Resizer::Resizer() :
   unique_net_index_(1),
   unique_inst_index_(1),
   resize_count_(0),
-  design_area_(0.0)
+  design_area_(0.0),
+  steiner_renderer_(nullptr)
 {
 }
 
@@ -182,11 +183,13 @@ void
 Resizer::init(OpenRoad *openroad,
               Tcl_Interp *interp,
               Logger *logger,
+              Gui *gui,
               dbDatabase *db,
               dbSta *sta)
 {
   openroad_ = openroad;
   logger_ = logger;
+  gui_ = gui;
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
@@ -195,7 +198,7 @@ Resizer::init(OpenRoad *openroad,
   // Define swig TCL commands.
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
-  evalTclInit(interp, sta::resizer_tcl_inits);
+  evalTclInit(interp, sta::rsz_tcl_inits);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -629,7 +632,9 @@ Resizer::repairDesign(double max_wire_length, // zero for none (meters)
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
-    Net *net = network_->net(drvr_pin);
+    Net *net = network_->isTopLevelPort(drvr_pin)
+      ? network_->net(network_->term(drvr_pin))
+      : network_->net(drvr_pin);
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
@@ -3462,15 +3467,6 @@ Resizer::isSpecial(Net *net)
   return db_net->isSpecial();
 }
 
-void
-Resizer::writeNetSVG(Net *net,
-                     const char *filename)
-{
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
-  if (tree)
-    tree->writeSVG(filename, sdc_network_, logger_);
-}
-
 ////////////////////////////////////////////////////////////////
 
 void
@@ -3613,6 +3609,63 @@ Resizer::journalRestore()
     debugPrint(debug_, "resize_journal", 1, "remove %s",
                network_->pathName(buffer));
     removeBuffer(buffer);
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+class SteinerRenderer : public gui::Renderer
+{
+public:
+  SteinerRenderer(Resizer *resizer);
+  void highlight(SteinerTree *tree);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  Resizer *resizer_;
+  SteinerTree *tree_;
+};
+
+// Highlight guide in the gui.
+void
+Resizer::highlightSteiner(const Net *net)
+{
+  if (gui_) {
+    if (steiner_renderer_ == nullptr) {
+      steiner_renderer_ = new SteinerRenderer(this);
+      gui_->registerRenderer(steiner_renderer_);
+    }
+    SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
+    if (tree)
+      steiner_renderer_->highlight(tree);
+  }
+}
+
+SteinerRenderer::SteinerRenderer(Resizer *resizer) :
+  resizer_(resizer),
+  tree_(nullptr)
+{
+}
+
+void
+SteinerRenderer::highlight(SteinerTree *tree)
+{
+  tree_ = tree;
+}
+
+void
+SteinerRenderer::drawObjects(gui::Painter &painter)
+{
+  if (tree_) {
+    painter.setPen(gui::Painter::red, true);
+    for (int i = 0 ; i < tree_->branchCount(); ++i) {
+      Point pt1, pt2;
+      Pin *pin1, *pin2;
+      int steiner_pt1, steiner_pt2;
+      int wire_length;
+      tree_->branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
+      painter.drawLine(pt1, pt2);
+    }
   }
 }
 

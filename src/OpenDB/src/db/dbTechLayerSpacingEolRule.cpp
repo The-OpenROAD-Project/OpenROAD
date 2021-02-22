@@ -461,81 +461,42 @@ void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
+  uint64_t* _flags_bit_field = (uint64_t*) &_flags;
+  *_flags_bit_field          = 0;
   // User Code Begin constructor
-  _flags._exact_width_valid = 0;
-  _flags._wrong_dir_spacing_valid = 0;
-  _flags._opposite_width_valid = 0;
-  _flags._within_valid = 0;
-  _flags._wrong_dir_within_valid = 0;
-  _flags._same_mask_valid = 0;
-  _flags._except_exact_width_valid = 0;
-  _flags._fill_concave_corner_valid = 0;
-  _flags._withcut_valid = 0;
-  _flags._cut_class_valid = 0;
-  _flags._with_cut_above_valid = 0;
-  _flags._enclosure_end_valid = 0;
-  _flags._enclosure_end_within_valid = 0;
-  _flags._end_prl_spacing_valid = 0;
-  _flags._prl_valid = 0;
-  _flags._end_to_end_valid = 0;
-  _flags._cut_spaces_valid = 0;
-  _flags._extension_valid = 0;
-  _flags._wrong_dir_extension_valid = 0;
-  _flags._other_end_width_valid = 0;
-  _flags._max_length_valid = 0;
-  _flags._min_length_valid = 0;
-  _flags._two_sides_valid = 0;
-  _flags._equal_rect_width_valid = 0;
-  _flags._parallel_edge_valid = 0;
-  _flags._subtract_eol_width_valid = 0;
-  _flags._par_prl_valid = 0;
-  _flags._par_min_length_valid = 0;
-  _flags._two_edges_valid = 0;
-  _flags._same_metal_valid = 0;
-  _flags._non_eol_corner_only_valid = 0;
-  _flags._parallel_same_mask_valid = 0;
-  _flags._enclose_cut_valid = 0;
-  _flags._below_valid = 0;
-  _flags._above_valid = 0;
-  _flags._cut_spacing_valid = 0;
-  _flags._all_cuts_valid = 0;
-  _flags._to_concave_corner_valid = 0;
-  _flags._min_adjacent_length_valid = 0;
-  _flags._two_min_adj_length_valid = 0;
-  _flags._to_notch_length_valid = 0;
-  _eol_space = 0;
-  _eol_width = 0;
-  _wrong_dir_space = 0;
-  _opposite_width = 0;
-  _eol_within = 0;
-  _wrong_dir_within = 0;
-  _exact_width = 0;
-  _other_width = 0;
-  _fill_triangle = 0;
-  _cut_class = 0;
-  _with_cut_space = 0;
-  _enclosure_end_width = 0;
+  _eol_space            = 0;
+  _eol_width            = 0;
+  _wrong_dir_space      = 0;
+  _opposite_width       = 0;
+  _eol_within           = 0;
+  _wrong_dir_within     = 0;
+  _exact_width          = 0;
+  _other_width          = 0;
+  _fill_triangle        = 0;
+  _cut_class            = 0;
+  _with_cut_space       = 0;
+  _enclosure_end_width  = 0;
   _enclosure_end_within = 0;
-  _end_prl_space = 0;
-  _end_prl = 0;
-  _end_to_end_space = 0;
-  _one_cut_space = 0;
-  _two_cut_space = 0;
-  _extension = 0;
-  _wrong_dir_extension = 0;
-  _other_end_width = 0;
-  _max_length = 0;
-  _min_length = 0;
-  _par_space = 0;
-  _par_within = 0;
-  _par_prl = 0;
-  _par_min_length = 0;
-  _enclose_dist = 0;
-  _cut_to_metal_space = 0;
-  _min_adj_length = 0;
-  _min_adj_length1 = 0;
-  _min_adj_length2 = 0;
-  _notch_length = 0;
+  _end_prl_space        = 0;
+  _end_prl              = 0;
+  _end_to_end_space     = 0;
+  _one_cut_space        = 0;
+  _two_cut_space        = 0;
+  _extension            = 0;
+  _wrong_dir_extension  = 0;
+  _other_end_width      = 0;
+  _max_length           = 0;
+  _min_length           = 0;
+  _par_space            = 0;
+  _par_within           = 0;
+  _par_prl              = 0;
+  _par_min_length       = 0;
+  _enclose_dist         = 0;
+  _cut_to_metal_space   = 0;
+  _min_adj_length       = 0;
+  _min_adj_length1      = 0;
+  _min_adj_length2      = 0;
+  _notch_length         = 0;
   // User Code End constructor
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
@@ -623,7 +584,7 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint64_t* _flags_bit_field = (uint64_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._eol_space;
   stream >> obj._eol_width;
@@ -664,7 +625,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  uint* _flags_bit_field = (uint*) &obj._flags;
+  uint64_t* _flags_bit_field = (uint64_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._eol_space;
   stream << obj._eol_width;
@@ -706,6 +667,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 
 _dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
 {
+  // User Code Begin Destructor
+  // User Code End Destructor
 }
 ////////////////////////////////////////////////////////////////////
 //
@@ -1751,6 +1714,13 @@ dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingEolRule*) layer->_spacing_eol_rules_tbl->getPtr(
       dbid);
+}
+
+void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->_spacing_eol_rules_tbl->destroy((_dbTechLayerSpacingEolRule*) rule);
 }
 
 // User Code End dbTechLayerSpacingEolRulePublicMethods

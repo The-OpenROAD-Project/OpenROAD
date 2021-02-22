@@ -37,7 +37,7 @@
 #include "db/tech/frLayer.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frViaRuleGenerate.h"
-
+#include "utility/Logger.h"
 namespace fr {
   namespace io {
     class Parser;
@@ -159,35 +159,35 @@ namespace fr {
     }
 
     // debug
-    void printAllConstraints() {
-      std::cout << "List of Constraints:\n";
-      for (auto &layer: layers) {
-        std::cout << "  Layer " << layer->getName() << "\n";
-        for (auto &constraint: layer->getConstraints()) {
-          if (std::dynamic_pointer_cast<frCutSpacingConstraint>(constraint)) {
-            std::cout << "    CUT SPACING " << std::dynamic_pointer_cast<frCutSpacingConstraint>(constraint)->getCutSpacing() * 1.0 / dbUnit << "\n";
-          }
-          if (std::dynamic_pointer_cast<frSpacingConstraint>(constraint)) {
-            std::cout << "    ROUTING SPACING " << std::dynamic_pointer_cast<frSpacingConstraint>(constraint)->getMinSpacing() * 1.0 / dbUnit << "\n"; 
-          }
-        }
+    void printAllConstraints(utl::Logger* logger) {
+      logger->report("Reporting Layer Properties");
+      for(auto &layer: layers)
+      {
+        auto type = layer->getType();
+        if(type == frLayerTypeEnum::CUT)
+          logger->report("Cut Layer {}",layer->getName());
+        else if(type == frLayerTypeEnum::ROUTING)
+          logger->report("Routing Layer {}",layer->getName());
+        layer->printAllConstraints(logger);
       }
     }
 
-    void printDefaultVias() {
-      std::cout << "List of default vias:\n";
+    void printDefaultVias(Logger* logger) {
+      logger->info(DRT, 167, "List of default vias:");
       for (auto &layer: layers) {
         if (layer->getType() == frLayerTypeEnum::CUT && layer->getLayerNum() >= 2/*BOTTOM_ROUTING_LAYER*/) {
-          std::cout << "  Layer " << layer->getName() << "\n" << std::flush;
-          std::cout << "    default via: " << layer->getDefaultViaDef()->getName() << "\n";
+          logger->report("  Layer {}", layer->getName());
+          logger->report("    default via: {}", layer->getDefaultViaDef()->getName());
         }
       }
-    }     
+    }   
 
     friend class io::Parser;
   protected:
+    
     frUInt4                                          dbUnit;
     frUInt4                                          manufacturingGrid;
+    
 
     std::map<frString, frLayer*>                     name2layer;
     std::vector<std::unique_ptr<frLayer> >           layers;

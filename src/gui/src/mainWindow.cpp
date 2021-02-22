@@ -33,12 +33,19 @@
 #include "mainWindow.h"
 
 #include <QDesktopWidget>
+#include <QMenu>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
+#include <QToolButton>
+#include <QWidgetAction>
+#include <map>
+#include <vector>
 
 #include "displayControls.h"
+#include "fastroute/GlobalRouter.h"
 #include "layoutViewer.h"
+#include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
 
@@ -94,6 +101,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
+
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
 
@@ -130,9 +138,9 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
   connect(selection_browser_,
-          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
+          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&, int)),
           this,
-          SLOT(updateHighlightedSet(const QList<const Selected*>&)));
+          SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -178,12 +186,17 @@ void MainWindow::createActions()
 
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
-
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
+
+  congestion_setup_ = new QAction("Congestion Setup...");
+  connect(congestion_setup_,
+          SIGNAL(triggered()),
+          controls_,
+          SLOT(showCongestionSetup()));
 
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
@@ -215,6 +228,8 @@ void MainWindow::createToolbars()
   view_tool_bar_ = addToolBar("View");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
+  view_tool_bar_->addAction(congestion_setup_);
+
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
@@ -332,19 +347,19 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty())
     return;
-  odb::Rect itemsBBox;
-  itemsBBox.mergeInit();
-  int mergeCnt = 0;
+  odb::Rect items_bbox;
+  items_bbox.mergeInit();
+  int merge_cnt = 0;
   for (auto& item : items) {
-    odb::Rect itemBBox;
-    if (item->getBBox(itemBBox)) {
-      mergeCnt++;
-      itemsBBox.merge(itemBBox);
+    odb::Rect item_bbox;
+    if (item->getBBox(item_bbox)) {
+      merge_cnt++;
+      items_bbox.merge(item_bbox);
     }
   }
-  if (mergeCnt == 0)
+  if (merge_cnt == 0)
     return;
-  zoomTo(itemsBBox);
+  zoomTo(items_bbox);
 }
 
 void MainWindow::status(const std::string& message)
@@ -361,11 +376,10 @@ void MainWindow::showFindDialog()
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
 {
-  if (selection_set == true) {
+  if (selection_set) {
     for (auto& selected_obj : selected_) {
-      if (selected_obj.isInst() && obj_type == odb::dbInstObj)
-        return true;
-      if (selected_obj.isNet() && obj_type == odb::dbNetObj)
+      if ((selected_obj.isInst() && obj_type == odb::dbInstObj)
+          || (selected_obj.isNet() && obj_type == odb::dbNetObj))
         return true;
     }
     return false;
@@ -386,9 +400,9 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
                                                int highlight_group)
 {
   SelectionSet connected_insts;
-  for (auto& selObj : selected_) {
-    if (selObj.isNet()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+  for (auto& sel_obj : selected_) {
+    if (sel_obj.isNet()) {
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
       odb::dbNet* net_obj = static_cast<odb::dbNet*>(db_obj);
       for (auto inst_term : net_obj->getITerms()) {
         connected_insts.insert(Selected(inst_term));
@@ -409,21 +423,23 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
                                               int highlight_group)
 {
   SelectionSet connected_nets;
-  for (auto selObj : selected_) {
-    if (selObj.isInst()) {
-      odb::dbObject* db_obj = static_cast<odb::dbObject*>(selObj.getObject());
+  for (auto sel_obj : selected_) {
+    if (sel_obj.isInst()) {
+      odb::dbObject* db_obj = static_cast<odb::dbObject*>(sel_obj.getObject());
       odb::dbInst* inst_obj = static_cast<odb::dbInst*>(db_obj);
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
             || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
-        auto inst_term_dir = inst_term->getIoType().getValue();
+        auto inst_term_dir = inst_term->getIoType();
 
-        if (output && (inst_term_dir == odb::dbIoType::OUTPUT
-                       || inst_term_dir == odb::dbIoType::INOUT))
+        if (output
+            && (inst_term_dir == odb::dbIoType::OUTPUT
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet()));
-        if (input && (inst_term_dir == odb::dbIoType::INPUT
-                      || inst_term_dir == odb::dbIoType::INOUT))
+        if (input
+            && (inst_term_dir == odb::dbIoType::INPUT
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Selected(inst_term->getNet(), inst_term));
       }
     }
@@ -453,6 +469,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
+  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 
@@ -467,6 +484,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
+  congestion_setup_->setEnabled(true);
   emit designLoaded(block);
 }
 

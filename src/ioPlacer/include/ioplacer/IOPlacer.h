@@ -105,6 +105,8 @@ struct Constraint
   }
 };
 
+typedef std::vector<odb::dbBTerm*> PinGroup;
+
 class IOPlacer
 {
  public:
@@ -124,6 +126,8 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
+  PinGroup* createPinGroup();
+  void addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group);
 
  private:
   Netlist netlist_;
@@ -140,6 +144,7 @@ class IOPlacer
   bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
+  std::vector<PinGroup> pin_groups_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
@@ -147,8 +152,6 @@ class IOPlacer
   SlotVector slots_;
   SectionVector sections_;
   std::vector<IOPin> zero_sink_ios_;
-  RandomMode random_mode_ = RandomMode::full;
-  bool cells_placed_ = true;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
 
@@ -156,7 +159,6 @@ class IOPlacer
   odb::dbDatabase* db_;
   odb::dbTech* tech_;
   odb::dbBlock* block_;
-  bool verbose_ = false;
 
   void initNetlistAndCore(std::set<int> hor_layer_idx,
                           std::set<int> ver_layer_idx);
@@ -168,6 +170,7 @@ class IOPlacer
   void createSections();
   void setupSections();
   bool assignPinsSections();
+  int assignGroupsToSections();
   int returnIONetsHPWL(Netlist&);
 
   void updateOrientation(IOPin&);

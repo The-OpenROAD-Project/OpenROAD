@@ -1,9 +1,9 @@
 /* Copyright Athena Design Systems 2005 */
 
 #include "db.h"
-#include "extRCap.h"
-#include "extSpef.h"
-#include "extprocess.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/extprocess.h"
 
 #ifdef _WIN32
 #include "direct.h"
@@ -322,7 +322,7 @@ uint extMain::benchVerilog_bterms(FILE* fp,
       if (iotype != bterm->getIoType())
         continue;
       if (n == nets.size() - 1 && skip_postfix_last)
-        fprintf(fp, "%s%s\n", prefix, btermName, postfix);
+        fprintf(fp, "%s%s%s\n", prefix, btermName, postfix);
       else
         fprintf(fp, "%s%s%s\n", prefix, btermName, postfix);
       n++;

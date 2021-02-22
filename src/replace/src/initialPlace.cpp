@@ -90,8 +90,6 @@ static PlotEnv pe;
 #endif
 
 void InitialPlace::doBicgstabPlace() {
-  log_->report("Begin InitialPlace");
-
   float errorX = 0.0f, errorY = 0.0f;
 
 #ifdef ENABLE_CIMG_LIB
@@ -144,8 +142,6 @@ void InitialPlace::doBicgstabPlace() {
       break;
     }
   }
-
-  log_->report("End InitialPlace");
 }
 
 // starting point of initial place is center.
