@@ -33,13 +33,14 @@
 #############################################################################
 
 sta::define_cmd_args "macro_placement" {
-  -halo {vertical_width horizontal_width} \
-    -channel {vertical_width horizontal_width}\
-    [-fence_region {lx ly ux uy}]}
+  [-halo {vertical_width horizontal_width}] \
+    [-channel {vertical_width horizontal_width}]\
+    [-fence_region {lx ly ux uy}]\
+    [-snap_layer snap_layer_number]}
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
-    keys {-channel -halo -fence_region -local_config} flags {}
+    keys {-channel -halo -fence_region -snap_layer} flags {}
 
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
@@ -63,6 +64,9 @@ proc macro_placement { args } {
     mpl::set_channel $channel_x $channel_y
   }
 
+  if { ![ord::db_has_rows] } {
+    utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
+  }
   set core [ord::get_db_core]
   set core_lx [ord::dbu_to_microns [$core xMin]]
   set core_ly [ord::dbu_to_microns [$core yMin]]
@@ -77,16 +81,24 @@ proc macro_placement { args } {
     lassign $fence_region lx ly ux uy 
     
     if { $lx < $core_lx || $ly < $core_ly || $ux > $core_ux || $uy > $core_uy } {
-      utl::warn "MPL" 85 "fence_region outside of core_ area. Using core area."
+      utl::warn "MPL" 85 "fence_region outside of core area. Using core area."
     }
     mpl::set_fence_region $lx $ly $ux $uy
   } else {
     mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
   }
-  
-  if { [ord::db_has_rows] } {
-    mpl::place_macros
-  } else {
-    utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
+
+  set snap_layer 4
+  if { [info exists keys(-snap_layer)] } {
+    set snap_layer $keys(-snap_layer)
+    sta::check_positive_integer "-snap_layer" $snap_layer
   }
+  set tech [ord::get_db_tech]
+  set layer [$tech findRoutingLayer $snap_layer]
+  if { $layer == "NULL" } {
+    utl::error "MPL" 95 "snap layer $snap_layer is not a routing layer."
+  }
+  mpl::set_snap_layer $layer
+
+  mpl::place_macros
 }

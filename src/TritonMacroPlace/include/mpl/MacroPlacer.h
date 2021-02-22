@@ -123,6 +123,8 @@ class MacroSpacings
   double getHaloY() const { return halo_y_; }
   double getChannelX() const { return channel_x_; }
   double getChannelY() const { return channel_y_; }
+  double getSpacingX() const;
+  double getSpacingY() const;
 
  private:
   double halo_x_, halo_y_, channel_x_, channel_y_;
@@ -138,6 +140,7 @@ public:
   void setChannel(double channel_x, double channel_y);
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
+  void setSnapLayer(odb::dbTechLayer *snap_layer);
 
   void placeMacros();
   int getSolutionCount();
@@ -192,6 +195,7 @@ private:
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
+  odb::dbTechLayer *snap_layer_;
 
   bool timing_driven_;
 

@@ -76,6 +76,13 @@ set_fence_region(double lx, double ly, double ux, double uy)
 }
 
 void
+set_snap_layer(odb::dbTechLayer *snap_layer)
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setSnapLayer(snap_layer);
+}
+
+void
 place_macros()
 {
   MacroPlacer* macro_placer = getMacroPlacer();

@@ -127,6 +127,11 @@ void MacroPlacer::setFenceRegion(double lx, double ly, double ux, double uy)
   uy_ = uy;
 }
 
+void MacroPlacer::setSnapLayer(odb::dbTechLayer *snap_layer)
+{
+  snap_layer_ = snap_layer;
+}
+
 int MacroPlacer::getSolutionCount()
 {
   return solution_count_;
@@ -699,27 +704,16 @@ static float getRoundUpFloat(float x, float unit)
 void MacroPlacer::updateMacroLocations(Partition& part)
 {
   dbTech* tech = db_->getTech();
-  dbTechLayer* fourLayer = tech->findRoutingLayer(4);
-  if (!fourLayer) {
-    logger_->warn(MPL,
-               21,
-               "Metal 4 not exist! Macro snapping will not be applied on "
-               "Metal4 pitch");
-  }
-
-  const float pitchX = static_cast<float>(fourLayer->getPitchX())
-    / static_cast<float>(tech->getDbUnitsPerMicron());
-  const float pitchY = static_cast<float>(fourLayer->getPitchY())
-    / static_cast<float>(tech->getDbUnitsPerMicron());
+  const float pitchX = static_cast<float>(snap_layer_->getPitchX())
+    / tech->getDbUnitsPerMicron();
+  const float pitchY = static_cast<float>(snap_layer_->getPitchY())
+    / tech->getDbUnitsPerMicron();
 
   for (auto& curMacro : part.macros_) {
     auto mnPtr = macro_inst_map_.find(curMacro.dbInstPtr);
-    // update macro coordi
-    float macroX
-      = (fourLayer) ? getRoundUpFloat(curMacro.lx, pitchX) : curMacro.lx;
-    float macroY
-      = (fourLayer) ? getRoundUpFloat(curMacro.ly, pitchY) : curMacro.ly;
-
+    // snap location to routing layer grid
+    float macroX = getRoundUpFloat(curMacro.lx, pitchX);
+    float macroY = getRoundUpFloat(curMacro.ly, pitchY);
     // Update Macro Location
     int macroIdx = mnPtr->second;
     macros_[macroIdx].lx = macroX;
@@ -1281,6 +1275,16 @@ void MacroSpacings::setChannel(double channel_x,
 {
   channel_x_ = channel_x;
   channel_y_ = channel_y;
+}
+
+double MacroSpacings::getSpacingX() const
+{
+  return max(halo_x_, channel_x_ / 2);
+}
+
+double MacroSpacings::getSpacingY() const
+{
+  return max(halo_y_, channel_y_ / 2);
 }
 
 }  // namespace mpl

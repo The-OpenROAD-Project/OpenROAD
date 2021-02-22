@@ -261,8 +261,9 @@ bool Partition::anneal()
       // ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
       // Simulate them by expanding the macro size.
       // Halo and 1/2 channel on both left/right top/bottom.
-      double padded_width = macro.w + max(spacings.getHaloX() * 2, spacings.getChannelX());
-      double padded_height = macro.h + max(spacings.getHaloY() * 2, spacings.getChannelY());
+      // Note well that these spacings must be removed to get the macro origin (below).
+      double padded_width = macro.w + spacings.getSpacingX() * 2;
+      double padded_height = macro.h + spacings.getSpacingY() * 2;
       double aspect_ratio = padded_width / padded_height;
       pfp::Node node(macro.name(),
                      padded_width * padded_height,
@@ -415,8 +416,9 @@ bool Partition::anneal()
         ? height - node.getY() - node.getHeight() + ly
         : node.getY() + ly;
       MacroSpacings &spacings = macro_placer_->getSpacings(macro);
-      macro.lx += spacings.getHaloX() + spacings.getChannelX();
-      macro.ly += spacings.getHaloY() + spacings.getChannelY();
+      // Remove halo/channel origin offset.
+      macro.lx += spacings.getSpacingX();
+      macro.ly += spacings.getSpacingY();
     }
   }
   return true;
