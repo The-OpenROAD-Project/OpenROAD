@@ -186,35 +186,33 @@ void MacroPlacer::reportEdgePinCounts()
 void MacroPlacer::placeMacros()
 {
   init();
+
   Layout layout(lx_, ly_, ux_, uy_);
-
   bool isHorizontal = true;
-
-  Partition topLayout(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
-  topLayout.macros_ = macros_;
+  Partition top_partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
+  top_partition.macros_ = macros_;
 
   logger_->report("Begin One Level Partition");
 
-  TwoPartitions oneLevelPart = getPartitions(layout, topLayout, isHorizontal);
+  TwoPartitions oneLevelPart = getPartitions(layout, top_partition, isHorizontal);
 
   logger_->report("End One Level Partition");
-  TwoPartitions eastStor, westStor;
+  TwoPartitions east_partitions, west_partitions;
 
   vector<vector<Partition>> allSets;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(topLayout, globalMacroPartMap);
+  updateMacroPartMap(top_partition, globalMacroPartMap);
 
   if (timing_driven_) {
-    topLayout.fillNetlistTable(globalMacroPartMap);
+    top_partition.fillNetlistTable(globalMacroPartMap);
   }
 
   // push to the outer vector
   vector<Partition> layoutSet;
-  layoutSet.push_back(topLayout);
+  layoutSet.push_back(top_partition);
 
   allSets.push_back(layoutSet);
-
   for (auto& curSet : oneLevelPart) {
     if (isHorizontal) {
       logger_->report("Begin Horizontal Partition");
@@ -222,21 +220,21 @@ void MacroPlacer::placeMacros()
       Layout westInfo(layout, curSet.second);
 
       logger_->report("Begin East Partition");
-      TwoPartitions eastStor = getPartitions(eastInfo, curSet.first, !isHorizontal);
+      TwoPartitions east_partitions = getPartitions(eastInfo, curSet.first, !isHorizontal);
       logger_->report("End East Partition");
 
       logger_->report("Begin West Partition");
-      TwoPartitions westStor = getPartitions(westInfo, curSet.second, !isHorizontal);
+      TwoPartitions west_partitions = getPartitions(westInfo, curSet.second, !isHorizontal);
       logger_->report("End West Partition");
 
-      // Zero case handling when eastStor = 0
-      if (eastStor.empty() && !westStor.empty()) {
-        for (size_t i = 0; i < westStor.size(); i++) {
+      // Zero case handling when east_partitions = 0
+      if (east_partitions.empty() && !west_partitions.empty()) {
+        for (size_t i = 0; i < west_partitions.size(); i++) {
           vector<Partition> oneSet;
 
           // one set is composed of two subblocks
-          oneSet.push_back(westStor[i].first);
-          oneSet.push_back(westStor[i].second);
+          oneSet.push_back(west_partitions[i].first);
+          oneSet.push_back(west_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
@@ -254,14 +252,14 @@ void MacroPlacer::placeMacros()
           allSets.push_back(oneSet);
         }
       }
-      // Zero case handling when westStor = 0
-      else if (!eastStor.empty() && westStor.empty()) {
-        for (size_t i = 0; i < eastStor.size(); i++) {
+      // Zero case handling when west_partitions = 0
+      else if (!east_partitions.empty() && west_partitions.empty()) {
+        for (size_t i = 0; i < east_partitions.size(); i++) {
           vector<Partition> oneSet;
 
           // one set is composed of two subblocks
-          oneSet.push_back(eastStor[i].first);
-          oneSet.push_back(eastStor[i].second);
+          oneSet.push_back(east_partitions[i].first);
+          oneSet.push_back(east_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
@@ -279,19 +277,17 @@ void MacroPlacer::placeMacros()
           allSets.push_back(oneSet);
         }
       } else {
-        // for all possible combinations in partitions
-        for (size_t i = 0; i < eastStor.size(); i++) {
-          for (size_t j = 0; j < westStor.size(); j++) {
+        // for all possible partiion combinations
+        for (size_t i = 0; i < east_partitions.size(); i++) {
+          for (size_t j = 0; j < west_partitions.size(); j++) {
             vector<Partition> oneSet;
 
             // one set is composed of four subblocks
-            oneSet.push_back(eastStor[i].first);
-            oneSet.push_back(eastStor[i].second);
-            oneSet.push_back(westStor[j].first);
-            oneSet.push_back(westStor[j].second);
+            oneSet.push_back(east_partitions[i].first);
+            oneSet.push_back(east_partitions[i].second);
+            oneSet.push_back(west_partitions[j].first);
+            oneSet.push_back(west_partitions[j].second);
 
-            // Fill Macro Netlist
-            // update macroPartMap
             MacroPartMap macroPartMap;
             for (auto& curSet : oneSet) {
               updateMacroPartMap(curSet, macroPartMap);
@@ -302,16 +298,13 @@ void MacroPlacer::placeMacros()
                 curSet.fillNetlistTable(macroPartMap);
               }
             }
-
             allSets.push_back(oneSet);
           }
         }
       }
       logger_->report("End Horizontal Partition");
     } else {
-      logger_->report("Begin Vertical Partition");
-      // TODO
-      logger_->report("End Vertical Partition");
+      // Vertical partition support MIA
     }
   }
   logger_->info(MPL, 70, "Using {} partiion sets", allSets.size() - 1);
@@ -321,7 +314,7 @@ void MacroPlacer::placeMacros()
   int bestSetIdx = 0;
   double bestWwl = DBL_MAX;
   for (auto& curSet : allSets) {
-    // skip for top-topLayout partition
+    // skip for top partition
     if (curSet.size() == 1) {
       continue;
     }
@@ -454,19 +447,19 @@ MacroPlacer::getPartitions(const Layout& layout,
   double maxWidth = -1e30;
   double maxHeight = -1e30;
 
-  // segment stor
-  // first: macros_ index
-  // second: lx or ly values
+  // segments
+  // first: partition macro index
+  // second: lx or ly value
   vector<std::pair<int, double>> segStor;
 
   // in parent partition, traverse macros
-  for (auto& curMacro : partition.macros_) {
+  for (const Macro& macro : partition.macros_) {
     segStor.push_back(
-        std::make_pair(&curMacro - &partition.macros_[0],
-                       (isHorizontal) ? curMacro.lx : curMacro.ly));
+        std::make_pair(&macro - &partition.macros_[0],
+                       (isHorizontal) ? macro.lx : macro.ly));
 
-    maxWidth = std::max(maxWidth, curMacro.w);
-    maxHeight = std::max(maxHeight, curMacro.h);
+    maxWidth = std::max(maxWidth, macro.w);
+    maxHeight = std::max(maxHeight, macro.h);
   }
 
   double cutLineLimit = (isHorizontal) ? maxWidth * 0.25 : maxHeight * 0.25;
@@ -521,15 +514,15 @@ MacroPlacer::getPartitions(const Layout& layout,
     }
 
     bool isImpossible = false;
-    for (auto& curMacro : partition.macros_) {
-      int i = &curMacro - &partition.macros_[0];
+    for (auto& macro : partition.macros_) {
+      int i = &macro - &partition.macros_[0];
       if (isHorizontal) {
         // lower is possible
-        if (curMacro.w <= cutLine) {
+        if (macro.w <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (curMacro.w <= partition.lx + partition.width - cutLine) {
+        if (macro.w <= partition.lx + partition.width - cutLine) {
           chkArr[i] += 2;
         }
         // none of them
@@ -539,11 +532,11 @@ MacroPlacer::getPartitions(const Layout& layout,
         }
       } else {
         // lower is possible
-        if (curMacro.h <= cutLine) {
+        if (macro.h <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (curMacro.h <= partition.ly + partition.height - cutLine) {
+        if (macro.h <= partition.ly + partition.height - cutLine) {
           chkArr[i] += 2;
         }
         // none of
@@ -606,27 +599,27 @@ MacroPlacer::getPartitions(const Layout& layout,
 
     //
     // Fill in child partitons' macros_
-    for (const Macro& curMacro : partition.macros_) {
-      int i = &curMacro - &partition.macros_[0];
+    for (const Macro& macro : partition.macros_) {
+      int i = &macro - &partition.macros_[0];
       if (chkArr[i] == 1) {
-        lowerPart.macros_.push_back(curMacro);
+        lowerPart.macros_.push_back(macro);
       } else if (chkArr[i] == 2) {
         upperPart.macros_.push_back(
-            Macro((isHorizontal) ? curMacro.lx - cutLine : curMacro.lx,
-                  (isHorizontal) ? curMacro.ly : curMacro.ly - cutLine,
-                  curMacro));
+            Macro((isHorizontal) ? macro.lx - cutLine : macro.lx,
+                  (isHorizontal) ? macro.ly : macro.ly - cutLine,
+                  macro));
       } else if (chkArr[i] == 3) {
-        double centerPoint = (isHorizontal) ? curMacro.lx + curMacro.w / 2.0
-                                            : curMacro.ly + curMacro.h / 2.0;
+        double centerPoint = (isHorizontal) ? macro.lx + macro.w / 2.0
+                                            : macro.ly + macro.h / 2.0;
 
         if (centerPoint < cutLine) {
-          lowerPart.macros_.push_back(curMacro);
+          lowerPart.macros_.push_back(macro);
 
         } else {
           upperPart.macros_.push_back(
-              Macro((isHorizontal) ? curMacro.lx - cutLine : curMacro.lx,
-                    (isHorizontal) ? curMacro.ly : curMacro.ly - cutLine,
-                    curMacro));
+              Macro((isHorizontal) ? macro.lx - cutLine : macro.lx,
+                    (isHorizontal) ? macro.ly : macro.ly - cutLine,
+                    macro));
         }
       }
     }
@@ -637,11 +630,11 @@ MacroPlacer::getPartitions(const Layout& layout,
     double upperMacroArea = 0.0f;
     double lowerMacroArea = 0.0f;
 
-    for (auto& curMacro : upperPart.macros_) {
-      upperMacroArea += curMacro.w * curMacro.h;
+    for (auto& macro : upperPart.macros_) {
+      upperMacroArea += macro.w * macro.h;
     }
-    for (auto& curMacro : lowerPart.macros_) {
-      lowerMacroArea += curMacro.w * curMacro.h;
+    for (auto& macro : lowerPart.macros_) {
+      lowerMacroArea += macro.w * macro.h;
     }
 
     // impossible partitioning
@@ -709,11 +702,11 @@ void MacroPlacer::updateMacroLocations(Partition& part)
   const float pitchY = static_cast<float>(snap_layer_->getPitchY())
     / tech->getDbUnitsPerMicron();
 
-  for (auto& curMacro : part.macros_) {
-    auto mnPtr = macro_inst_map_.find(curMacro.dbInstPtr);
+  for (auto& macro : part.macros_) {
+    auto mnPtr = macro_inst_map_.find(macro.dbInstPtr);
     // snap location to routing layer grid
-    float macroX = getRoundUpFloat(curMacro.lx, pitchX);
-    float macroY = getRoundUpFloat(curMacro.ly, pitchY);
+    float macroX = getRoundUpFloat(macro.lx, pitchX);
+    float macroY = getRoundUpFloat(macro.ly, pitchY);
     // Update Macro Location
     int macroIdx = mnPtr->second;
     macros_[macroIdx].lx = macroX;
