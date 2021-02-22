@@ -275,11 +275,14 @@ bool IRSolver::AddC4Bump()
   if (m_C4Bumps.size() == 0) {
     m_logger->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
-  for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
+  m_logger->info(utl::PSM, 64, "Number of voltage sources = {}",m_C4Bumps.size());
+  for (size_t it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc      = m_C4Nodes[it].first;
     double  voltage_value = m_C4Nodes[it].second;
+    Node*        c4_node = m_Gmat->GetNode(node_loc);
     m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
     m_J.push_back(voltage_value);     // push back first vdd
+    NodeLoc c4_node_loc = c4_node->GetLoc();
   }
   return true;
 }
@@ -334,7 +337,7 @@ void IRSolver::ReadC4Data()
     int offset_x = coreRect.xMin() - dieRect.xMin();
     int offset_y = coreRect.yMin() - dieRect.yMin();
     if (m_bump_pitch_x == 0) {
-      m_bump_pitch_x = m_bump_pitch_default;
+      m_bump_pitch_x = m_bump_pitch_default * unit_micron;
       m_logger->warn(
           utl::PSM,
           17,
@@ -342,7 +345,7 @@ void IRSolver::ReadC4Data()
           m_bump_pitch_default);
     }
     if (m_bump_pitch_y == 0) {
-      m_bump_pitch_y = m_bump_pitch_default;
+      m_bump_pitch_y = m_bump_pitch_default * unit_micron;
       m_logger->warn(
           utl::PSM,
           18,
@@ -382,14 +385,27 @@ void IRSolver::ReadC4Data()
       }
     }
     int x_cor, y_cor;
+    if (coreW < m_bump_pitch_x || coreL < m_bump_pitch_y) {
+      float to_micron = 1.0f/unit_micron;
+      m_logger->warn(utl::PSM, 63, "Specified bump pitches of {:4.3f} and {:4.3f} are less than core width of {:4.3f} or core height of " 
+           "{:4.3f}. Changing bump location to the center of the die at ({:4.3f}, {:4.3f})",
+           m_bump_pitch_x * to_micron, m_bump_pitch_y * to_micron, 
+           coreW * to_micron, coreL * to_micron, (coreW * to_micron)/2, (coreL * to_micron)/2);
+      x_cor = coreW/2;
+      y_cor = coreL/2;
+      m_C4Bumps.push_back(make_tuple(x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
+    }
     int num_b_x = coreW / m_bump_pitch_x;
     int num_b_y = coreL / m_bump_pitch_y;
+    m_logger->warn(utl::PSM,
+                   65,
+                   "VSRC location not specified using default checkerboard pattern with one VDD every"
+                   "size bumps in x-direction and one in two bumps in the y-direction");
     for (int i = 0; i < num_b_y; i++) {
-      for (int j = 0; j < num_b_y; j++) {
-        x_cor = (m_bump_pitch_x * j + ((2 * i) % 6) * m_bump_pitch_x)
-                    * unit_micron
+      for (int j = 0; j < num_b_x; j=j+6) {
+        x_cor = (m_bump_pitch_x * j) + (((2 * i) % 6) * m_bump_pitch_x) 
                 + offset_x;
-        y_cor = (m_bump_pitch_y * i) * unit_micron + offset_y;
+        y_cor = (m_bump_pitch_y * i) + offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
           m_C4Bumps.push_back(make_tuple(
               x_cor, y_cor, m_bump_size * unit_micron, supply_voltage_src));
@@ -546,8 +562,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  int progress_wires   = 0;
-  int progress_percent = 1;
   for (vIter = power_nets.begin(); vIter != power_nets.end(); ++vIter) {
     dbNet*                   curDnet = *vIter;
     dbSet<dbSWire>           swires  = curDnet->getSWires();
@@ -557,7 +571,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       dbSet<dbSBox>           wires    = curSWire->getWires();
       dbSet<dbSBox>::iterator wIter;
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        progress_wires++;
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
           dbVia* via                = curWire->getBlockVia();
@@ -676,11 +689,9 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  progress_wires   = 0;
-  progress_percent = 1;
   // insert c4 bumps as nodes
   int num_C4 = 0;
-  for (unsigned int it = 0; it < m_C4Bumps.size(); ++it) {
+  for (size_t it = 0; it < m_C4Bumps.size(); ++it) {
     int           x    = get<0>(m_C4Bumps[it]);
     int           y    = get<1>(m_C4Bumps[it]);
     int           size = get<2>(m_C4Bumps[it]);
@@ -726,7 +737,6 @@ bool IRSolver::CreateGmat(bool connection_only)
   }
   // All new nodes must be inserted by this point
   // initialize G Matrix
-
   m_logger->info(utl::PSM,
                  31,
                  "Number of nodes on net {} = {}.",
@@ -746,7 +756,6 @@ bool IRSolver::CreateGmat(bool connection_only)
       dbSet<dbSBox>           wires    = curSWire->getWires();
       dbSet<dbSBox>::iterator wIter;
       for (wIter = wires.begin(); wIter != wires.end(); ++wIter) {
-        progress_wires++;
         dbSBox* curWire = *wIter;
         if (curWire->isVia()) {
           dbVia* via                = curWire->getBlockVia();
@@ -783,7 +792,6 @@ bool IRSolver::CreateGmat(bool connection_only)
           R        = R / (num_via_rows * num_via_cols);
           if (R == 0.0) {
             err_flag_via = 0;
-            R            = 4;
             // R = get<2>(m_layer_res[l]); /// Must figure out via resistance
             // value cout << "Via Resistance" << R << endl;
           }
@@ -836,8 +844,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           dbTechLayerDir::Value layer_dir = via_layer->getDirection();
           l                               = via_layer->getRoutingLevel();
           if (l != m_bottom_layer) {
-            double rho = via_layer->getResistance()
-                         * double(via_layer->getWidth()) / double(unit_micron);
+            double rho = via_layer->getResistance();
             if (rho <= 1e-12) {
               rho            = 0;
               err_flag_layer = 0;
@@ -866,8 +873,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           layer_dir = via_layer->getDirection();
           l         = via_layer->getRoutingLevel();
           if (l != m_top_layer) {
-            double rho = via_layer->getResistance()
-                         * double(via_layer->getWidth()) / double(unit_micron);
+            double rho = via_layer->getResistance();
             if (rho <= 1e-12) {
               rho            = 0;
               err_flag_layer = 0;
@@ -896,8 +902,7 @@ bool IRSolver::CreateGmat(bool connection_only)
         } else {
           dbTechLayer* wire_layer = curWire->getTechLayer();
           int          l          = wire_layer->getRoutingLevel();
-          double       rho        = wire_layer->getResistance()
-                       * double(wire_layer->getWidth()) / double(unit_micron);
+          double       rho        = wire_layer->getResistance();
           if (rho <= 1e-12) {
             rho            = 0;
             err_flag_layer = 0;
