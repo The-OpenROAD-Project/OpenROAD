@@ -3200,7 +3200,6 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry> &rerouteQueue) 
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
     for (auto &net: nets_) {
-//        cout << net->getFrNet()->getName() << (net->getFrNet()->getNondefaultRule() ? " HAS NDR!\n" : " no ndr\n");
       ripupNets.push_back(net.get());
     }
 
@@ -3265,7 +3264,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
                 if (!canRipup(dNet)) {
                   continue;
                 }
-                if (dNet->isNDR()) n_NDnets++;
+                if (dNet->hasNDR()) n_NDnets++;
                 else n_dNets++;
               }
             }
@@ -3389,13 +3388,13 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
             if (!canRipup(dNet)) {
               continue;
             }
-            if (dNet->isNDR() && n_NDnets == 1 && n_dNets > 0){
+            if (dNet->hasNDR() && n_NDnets == 1 && n_dNets > 0){
                 if (dNet->getNdrRipupThresh() < NDR_NETS_RIPUP_THRESH) {
                     dNet->incNdrRipupThresh();
                     continue;
                 }
                 dNet->setNdrRipupThresh(0);
-            }//else if (dNet->isNDR()) cout << " n_NDnets " << n_NDnets << " n_dNets" << n_dNets << "\n";
+            }//else if (dNet->hasNDR()) cout << " n_NDnets " << n_NDnets << " n_dNets" << n_dNets << "\n";
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }
@@ -3411,7 +3410,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
 
 bool FlexDRWorker::canRipup(drNet* n){
     if (n->getNumReroutes() >= getMazeEndIter()) return false;
-//    if (n->isNDR()) return n->getNdrRipupThresh() >= NDR_NETS_RIPUP_THRESH;
+//    if (n->hasNDR()) return n->getNdrRipupThresh() >= NDR_NETS_RIPUP_THRESH;
     return true;
 }
 
