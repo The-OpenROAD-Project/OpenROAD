@@ -143,10 +143,6 @@ namespace fr {
       return (owner_) && (owner_->typeId() == frcNet);
     }
     
-//    frNet* getNet() const override {
-//      return reinterpret_cast<frNet*>(owner_);
-//    }
-    
     void addToNet(frNet* in) override {
       owner_ = reinterpret_cast<frBlockObject*>(in);
     }
