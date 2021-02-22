@@ -48,6 +48,7 @@ ppl::IOPlacer* getIOPlacer();
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
+using ppl::PinGroup;
 %}
 
 %include "../../Exception.i"
@@ -148,6 +149,18 @@ void
 add_ver_layer(int layer)
 {
   getIOPlacer()->addVerLayer(layer);
+}
+
+PinGroup*
+create_pin_group()
+{
+  return getIOPlacer()->createPinGroup();
+}
+
+void
+add_pin_to_group(odb::dbBTerm* pin, PinGroup* pin_group)
+{
+  getIOPlacer()->addPinToGroup(pin, pin_group);
 }
 
 void

@@ -16,4 +16,8 @@ record_tests {
   add_constraint3
   add_constraint4
   add_constraint5
+  group_pins1
+  group_pins2
+  group_pins3
+  group_pins_warn1
 }
