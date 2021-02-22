@@ -45,7 +45,7 @@ namespace fr {
   class frTechObject {
   public:
     // constructors
-    frTechObject(utl::Logger* loggerIn = nullptr) : dbUnit(0), manufacturingGrid(0), logger(loggerIn) {}
+    frTechObject() : dbUnit(0), manufacturingGrid(0) {}
     // getters
     frUInt4 getDBUPerUU() const {
       return dbUnit;
@@ -159,9 +159,7 @@ namespace fr {
     }
 
     // debug
-    void printAllConstraints() {
-      if(logger == nullptr)
-        return;
+    void printAllConstraints(utl::Logger* logger) {
       logger->report("Reporting Layer Properties");
       for(auto &layer: layers)
       {
@@ -171,31 +169,7 @@ namespace fr {
         else if(type == frLayerTypeEnum::ROUTING)
           logger->report("Routing Layer {}",layer->getName());
         for (auto &constraint: layer->getConstraints()) {
-          if(type == frLayerTypeEnum::CUT)
-          {
-            if (std::dynamic_pointer_cast<frLef58CutClass>(constraint)) {
-              std::dynamic_pointer_cast<frLef58CutClass>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58CutSpacingConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58CutSpacingConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58CutSpacingTableConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58CutSpacingTableConstraint>(constraint)->report();
-            }
-          }else if(type == frLayerTypeEnum::ROUTING)
-          {
-            if (std::dynamic_pointer_cast<frLef58CornerSpacingConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58CornerSpacingConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58SpacingTableConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58SpacingTableConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58SpacingEndOfLineConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58SpacingEndOfLineConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58RectOnlyConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58RectOnlyConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58RightWayOnGridOnlyConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58RightWayOnGridOnlyConstraint>(constraint)->report();
-            }else if (std::dynamic_pointer_cast<frLef58MinStepConstraint>(constraint)) {
-              std::dynamic_pointer_cast<frLef58MinStepConstraint>(constraint)->report();
-            }
-          }
+          constraint->report(logger);
         }
       }
     }
@@ -215,7 +189,6 @@ namespace fr {
     
     frUInt4                                          dbUnit;
     frUInt4                                          manufacturingGrid;
-    utl::Logger*                                     logger;
     
 
     std::map<frString, frLayer*>                     name2layer;

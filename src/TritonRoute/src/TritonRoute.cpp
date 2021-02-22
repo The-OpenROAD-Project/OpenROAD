@@ -183,14 +183,14 @@ void TritonRoute::endFR() {
 
 void TritonRoute::reportConstraints()
 {
-  getDesign()->getTech()->printAllConstraints();
+  getDesign()->getTech()->printAllConstraints(logger_);
 }
 
 int TritonRoute::main() {
   init();
   if (GUIDE_FILE == string("")) {
     gr();
-    io::Parser parser(getDesign(),logger_);
+    io::Parser parser(getDesign(), logger_);
     GUIDE_FILE = OUTGUIDE_FILE;
     ENABLE_VIA_GEN = true;
     parser.readGuide();
