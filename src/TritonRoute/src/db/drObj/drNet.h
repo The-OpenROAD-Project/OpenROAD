@@ -209,7 +209,7 @@ namespace fr {
       ndrRipupThresh_ = n;
     }
     void incNdrRipupThresh();
-    bool isNDR();
+    bool hasNDR();
     // others
     frBlockObjectEnum typeId() const override {
       return drcNet;
