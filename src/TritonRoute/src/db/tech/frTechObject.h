@@ -168,9 +168,7 @@ namespace fr {
           logger->report("Cut Layer {}",layer->getName());
         else if(type == frLayerTypeEnum::ROUTING)
           logger->report("Routing Layer {}",layer->getName());
-        for (auto &constraint: layer->getConstraints()) {
-          constraint->report(logger);
-        }
+        layer->printAllConstraints(logger);
       }
     }
 

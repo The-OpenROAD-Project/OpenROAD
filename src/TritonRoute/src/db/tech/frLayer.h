@@ -34,6 +34,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include <set>
 
 namespace fr {
   namespace io {
@@ -450,6 +451,7 @@ namespace fr {
       return (!lef58CornerSpacingConstraints.empty());
     }
 
+    void printAllConstraints(utl::Logger* logger);
   protected:
     frLayerTypeEnum                                                 type;
     frLayerNum                                                      layerNum;

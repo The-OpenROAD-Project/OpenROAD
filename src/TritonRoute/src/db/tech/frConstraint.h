@@ -39,6 +39,10 @@
 #include "db/tech/frLookupTbl.h"
 
 namespace fr {
+  namespace io {
+    class Parser;
+  }
+
   enum class frLef58CornerSpacingExceptionEnum {
     NONE,
     EXCEPTSAMENET,

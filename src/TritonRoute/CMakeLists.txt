@@ -102,6 +102,7 @@ target_sources(TritonRoute
     src/db/obj/frRPin.cpp
     src/db/obj/frNode.cpp
     src/db/obj/frInstTerm.cpp
+    src/db/tech/frLayer.cc
     src/frRegionQuery.cpp
     src/io/io_pin.cpp
     src/io/io.cpp
