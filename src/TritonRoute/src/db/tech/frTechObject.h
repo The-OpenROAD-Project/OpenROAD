@@ -177,32 +177,34 @@ namespace fr {
     
     frNonDefaultRule* getNondefaultRule(string name){
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getName() == name) return nd.get();
+            if (nd->getName() == name)
+              return nd.get();
         }
         return nullptr;
     }
+    
     frCoord getMaxNondefaultSpacing(int z){
         frCoord spc = 0;
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getSpacing(z) > spc) spc = nd->getSpacing(z);
+            if (nd->getSpacing(z) > spc) 
+              spc = nd->getSpacing(z);
         }
         return spc;
     }
+    
     frCoord getMaxNondefaultWidth(int z){
         frCoord spc = 0;
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getWidth(z) > spc) spc = nd->getWidth(z);
+            if (nd->getWidth(z) > spc) 
+              spc = nd->getWidth(z);
         }
         return spc;
     }
+    
     bool hasNondefaultRules(){
         return !nonDefaultRules.empty();
     }
-//    frViaDef* getPrefVia(frLayerNum l, frNet* n){
-//        if (n && n->getNondefaultRule() && n->getNondefaultRule()->getPrefVia(l/2 -1))
-//            return n->getNondefaultRule()->getPrefVia(l/2 -1);
-//        return getLayer(l)->getDefaultViaDef();
-//    }
+
     // debug
     void printAllConstraints() {
       std::cout << "List of Constraints:\n";
