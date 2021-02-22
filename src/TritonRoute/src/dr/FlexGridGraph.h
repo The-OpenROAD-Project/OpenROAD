@@ -739,7 +739,6 @@ namespace fr {
     
     frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
-    frCoord getViaCostsNDR2(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
     frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
     
