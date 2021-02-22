@@ -49,7 +49,7 @@ find_package(OpenMP REQUIRED)
 find_package(VTune)
 
 tcl_lib(NAME      TritonRoute
-        NAMESPACE tr
+        NAMESPACE drt
         I_FILE    src/TritonRoute.i
         SCRIPTS   src/TritonRoute.tcl
 )
