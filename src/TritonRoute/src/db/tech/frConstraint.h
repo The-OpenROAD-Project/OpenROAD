@@ -1997,54 +1997,45 @@ namespace fr {
         std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>> viaForbiddenTurnLen;
         
   public:
-      
-//    void setWidth(frCoord w, int z);
-//    void setSpacing(frCoord s, int z);
-//    void setWireExtension(frCoord we, int z);
-    
+
     frViaDef* getPrefVia(int z){
-        if (z >= vias_.size() || vias_[z].empty()) return nullptr;
+        if (z >= vias_.size() || vias_[z].empty()) 
+          return nullptr;
         return vias_[z][0];
     }
     void setWidth(frCoord w, int z){
-        if (z >= widths_.size())
-            for (int i = widths_.size(); i <= z; i++)
-                widths_.push_back(0);
+        if (z >= widths_.size()) 
+          widths_.resize(z+1, 0);
         widths_[z] = w;
     }
     
     void setSpacing(frCoord s, int z){
-        if (z >= spacings_.size())
-            for (int i = spacings_.size(); i <= z; i++)
-                spacings_.push_back(0);
+        if (z >= spacings_.size()) 
+          spacings_.resize(z+1, 0);
         spacings_[z] = s;
     }
     
     void setMinCuts(int ncuts, int z){
         if (z >= minCuts_.size())
-            for (int i = minCuts_.size(); i <= z; i++)
-                minCuts_.push_back(1);
+          minCuts_.resize(z+1, 1);
         minCuts_[z] = ncuts;
     }
 
     void setWireExtension(frCoord we, int z){
-        if (z >= wireExtensions_.size())
-            for (int i = wireExtensions_.size(); i <= z; i++)
-                wireExtensions_.push_back(0);
+        if (z >= wireExtensions_.size()) 
+          wireExtensions_.resize(z+1, 0);
         wireExtensions_[z] = we;
     }
 
     void addVia(frViaDef* via, int z){
-        if (z >= vias_.size())
-            for (int i = vias_.size(); i <= z; i++)
-                vias_.push_back(vector<frViaDef*>());
+        if (z >= vias_.size()) 
+          vias_.resize(z+1, vector<frViaDef*>());
         vias_[z].push_back(via);
     }
 
     void addViaRule(frViaRuleGenerate* via, int z){
-        if (z >= viasRules_.size())
-            for (int i = viasRules_.size(); i <= z; i++)
-                viasRules_.push_back(vector<frViaRuleGenerate*>());
+        if (z >= viasRules_.size()) 
+          viasRules_.resize(z+1, vector<frViaRuleGenerate*>());
         viasRules_[z].push_back(via);
     }
     
@@ -2052,15 +2043,8 @@ namespace fr {
         hardSpacing_ = isHard;
     }
     
-//    void addVia(frViaDef* via, int z);
-//    void addViaRule(frViaRuleGenerate* via, int z);
-    
     void setName(const char* n){
         name_ = string(n);
-    }
-    
-    void setName(string n){
-        name_ = n;
     }
     
     string getName() const{
@@ -2068,22 +2052,26 @@ namespace fr {
     }
     
     frCoord getWidth(int z){
-        if (z >= widths_.size()) return 0;
+        if (z >= widths_.size()) 
+          return 0;
         return widths_[z];
     }
     
     frCoord getSpacing(int z){
-        if (z >= spacings_.size()) return 0;
+        if (z >= spacings_.size()) 
+          return 0;
         return spacings_[z];
     }
     
     frCoord getWireExtension(int z){
-        if (z >= wireExtensions_.size()) return 0;
+        if (z >= wireExtensions_.size()) 
+          return 0;
         return wireExtensions_[z];
     }
     
     int getMinCuts(int z){
-        if (z >= minCuts_.size()) return 1;
+        if (z >= minCuts_.size()) 
+          return 1;
         return minCuts_[z];
     }
     
