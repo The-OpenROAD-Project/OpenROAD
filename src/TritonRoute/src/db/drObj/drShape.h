@@ -96,9 +96,6 @@ namespace fr {
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
       begin_.set(beginIn);
       end_.set(endIn);
-//      if (end_.x() == 252000 && end_.y() == 2000*36.385){
-//            print();
-//        }
     }
     void setStyle(const frSegStyle &styleIn) {
       style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
