@@ -93,7 +93,6 @@ MacroPlacer::MacroPlacer()
       ux_(0),
       uy_(0),
       verbose_(1),
-      fenceRegionMode_(false),
       solution_count_(0)
 {
 }
@@ -122,7 +121,6 @@ void MacroPlacer::setVerboseLevel(int verbose)
 
 void MacroPlacer::setFenceRegion(double lx, double ly, double ux, double uy)
 {
-  fenceRegionMode_ = true;
   lx_ = lx;
   ly_ = ly;
   ux_ = ux;
@@ -136,20 +134,6 @@ int MacroPlacer::getSolutionCount()
 
 void MacroPlacer::init()
 {
-  const double dbu = db_->getTech()->getDbUnitsPerMicron();
-  // if fenceRegion is not set
-  // (lx, ly) - (ux, uy) becomes core area
-  if (!fenceRegionMode_) {
-    dbBlock* block = db_->getChip()->getBlock();
-    odb::Rect coreRect;
-    block->getCoreArea(coreRect);
-
-    lx_ = coreRect.xMin() / dbu;
-    ly_ = coreRect.yMin() / dbu;
-    ux_ = coreRect.xMax() / dbu;
-    uy_ = coreRect.yMax() / dbu;
-  }
-
   findMacros();
 
   // Timing-driven will be skipped if some instances are missing liberty cells.

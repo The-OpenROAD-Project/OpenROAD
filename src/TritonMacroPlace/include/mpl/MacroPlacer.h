@@ -206,9 +206,7 @@ private:
   unordered_map<odb::dbInst*, MacroSpacings> macro_spacings_;
 
   double lx_, ly_, ux_, uy_;
-  double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
   int verbose_;
-  bool fenceRegionMode_;
   int solution_count_;
 };
 

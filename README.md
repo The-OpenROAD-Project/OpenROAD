@@ -374,7 +374,7 @@ macro_placement [-halo {halo_x halo_y}]
 
 -halo horizontal/vertical halo around macros (microns)
 -channel horizontal/vertical channel width between macros (microns)
--fence_region - restrict macro placements to a region (microns)
+-fence_region - restrict macro placements to a region (microns). Defaults to the core area.
 
 Macros will be placed with max(halo * 2, channel) spacing between macros and the
 fence/die boundary.

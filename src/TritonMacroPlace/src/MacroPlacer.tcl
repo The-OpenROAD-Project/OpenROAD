@@ -63,13 +63,11 @@ proc macro_placement { args } {
     mpl::set_channel $channel_x $channel_y
   }
 
-  set block [ord::get_db_block]
-  set die_area [$block getDieArea]
-  # note that unit is micron
-  set dieLx [ord::dbu_to_microns [$die_area xMin]]
-  set dieLy [ord::dbu_to_microns [$die_area yMin]]
-  set dieUx [ord::dbu_to_microns [$die_area xMax]]
-  set dieUy [ord::dbu_to_microns [$die_area yMax]]
+  set core [ord::get_db_core]
+  set core_lx [ord::dbu_to_microns [$core xMin]]
+  set core_ly [ord::dbu_to_microns [$core yMin]]
+  set core_ux [ord::dbu_to_microns [$core xMax]]
+  set core_uy [ord::dbu_to_microns [$core yMax]]
   
   if { [info exists keys(-fence_region)] } {
     set fence_region $keys(-fence_region)
@@ -78,25 +76,12 @@ proc macro_placement { args } {
     }
     lassign $fence_region lx ly ux uy 
     
-    if { $lx < $dieLx } {
-      utl::warn "MPL" 85 "fence_region left x is less than die left x."
-      set lx $dieLx
-    }
-    if { $ly < $dieLy } {
-      utl::warn "MPL" 86 "fence_region bottom y is less than die bottom y."
-      set ly $dieLy
-    }
-    if { $ux > $dieUx } {
-      utl::warn "MPL" 87 "fence_region right x is greater than die right x."
-      set ux $dieUx
-    }
-    if { $uy > $dieUy } {
-      utl::warn "MPL" 88 "fence_region top y is greater than die top y."
-      set uy $dieUy
+    if { $lx < $core_lx || $ly < $core_ly || $ux > $core_ux || $uy > $core_uy } {
+      utl::warn "MPL" 85 "fence_region outside of core_ area. Using core area."
     }
     mpl::set_fence_region $lx $ly $ux $uy
   } else {
-    mpl::set_fence_region $dieLx $dieLy $dieUx $dieUy
+    mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
   }
   
   if { [ord::db_has_rows] } {
