@@ -86,9 +86,6 @@ namespace fr {
       beginIn.set(begin_);
       endIn.set(end_);
     }
-//    void print(){
-//        std::cout << "uihasduihasdui\n";
-//    }
     
     void getStyle(frSegStyle &styleIn) const {
       styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
