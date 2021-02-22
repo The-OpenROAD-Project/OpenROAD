@@ -33,13 +33,8 @@
         "flags":["private"]
       },
       {
-        "name":"_usage_map",
-        "type":"std::map< dbId<_dbTechLayer>, std::map< uint, std::map< uint, GCellData>>>",
-        "flags":["private","no-template"]
-      },
-      {
-        "name":"_capacity_map",
-        "type":"std::map< dbId<_dbTechLayer>, std::map< uint, std::map< uint, GCellData>>>",
+        "name":"_congestion_map",
+        "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>",
         "flags":["private","no-template"]
       }
     ],
@@ -48,19 +43,37 @@
         "name":"GCellData",
         "fields":[
           {
-            "name":"_horizontal",
+            "name":"_horizontal_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_vertical",
+            "name":"_vertical_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_up",
+            "name":"_up_usage",
+            "type":"uint",
+            "flags":[],
+            "default":0
+          },
+          {
+            "name":"_horizontal_capacity",
+            "type":"uint",
+            "flags":[],
+            "default":0
+          },
+          {
+            "name":"_vertical_capacity",
+            "type":"uint",
+            "flags":[],
+            "default":0
+          },
+          {
+            "name":"_up_capacity",
             "type":"uint",
             "flags":[],
             "default":0

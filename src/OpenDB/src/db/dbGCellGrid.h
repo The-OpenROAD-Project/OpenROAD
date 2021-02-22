@@ -37,8 +37,9 @@
 #include "odb.h"
 
 // User Code Begin includes
-#include "dbVector.h"
 #include <map>
+
+#include "dbVector.h"
 // User Code End includes
 
 namespace odb {
@@ -53,9 +54,12 @@ class _dbTechLayer;
 
 struct GCellData
 {
-  uint _horizontal = 0;
-  uint _vertical   = 0;
-  uint _up         = 0;
+  uint _horizontal_usage    = 0;
+  uint _vertical_usage      = 0;
+  uint _up_usage            = 0;
+  uint _horizontal_capacity = 0;
+  uint _vertical_capacity   = 0;
+  uint _up_capacity         = 0;
 };
 // User Code Begin structs
 // User Code End structs
@@ -72,10 +76,8 @@ class _dbGCellGrid : public _dbObject
   dbVector<int> _y_origin;
   dbVector<int> _y_count;
   dbVector<int> _y_step;
-  std::map<dbId<_dbTechLayer>, std::map<uint, std::map<uint, GCellData>>>
-      _usage_map;
-  std::map<dbId<_dbTechLayer>, std::map<uint, std::map<uint, GCellData>>>
-      _capacity_map;
+  std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>
+      _congestion_map;
 
   // User Code Begin fields
   // User Code End fields

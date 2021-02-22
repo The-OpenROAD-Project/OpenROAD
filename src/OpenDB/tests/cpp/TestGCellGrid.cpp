@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE TestLef58Properties
+#define BOOST_TEST_MODULE TestGCellGrid
 #include <boost/test/included/unit_test.hpp>
 #include "db.h"
 #include "helper.cpp"
@@ -15,18 +15,19 @@ BOOST_AUTO_TEST_CASE( test_default )
     auto block     = db->getChip()->getBlock();
     auto l1 = db->getTech()->findLayer("L1");
     dbGCellGrid* grid = dbGCellGrid::create(block);
-    grid->addGridPatternX(0, 20, 10);
-    grid->addGridPatternY(0, 20, 10);
+    grid->addGridPatternX(0, 20, 10);// 0 10 20 30 40 50 ... 190
+    grid->addGridPatternY(0, 20, 10);// 0 10 20 30 40 50 ... 190
 
-    uint xIdx = grid->getXIdx(15);
-    uint yIdx = grid->getYIdx(25);
-    BOOST_TEST(xIdx == 1);
-    BOOST_TEST(yIdx == 2);
-    BOOST_TEST(grid->getHorizontalCapacity(l1,xIdx,yIdx) == 0);
-    grid->setHorizontalCapacity(l1, xIdx,yIdx, 20);
-    BOOST_TEST(grid->getHorizontalCapacity(l1,xIdx,yIdx) == 20);
+    BOOST_TEST(grid->getXIdx(-1) == 0);
+    BOOST_TEST(grid->getXIdx(0) == 0);
+    BOOST_TEST(grid->getXIdx(5) == 0);
+    BOOST_TEST(grid->getXIdx(15) == 1);
+    BOOST_TEST(grid->getXIdx(210) == 19);
+    BOOST_TEST(grid->getHorizontalCapacity(l1, 0, 0) == 0);
+    grid->setHorizontalCapacity(l1, 0, 0, 20);
+    BOOST_TEST(grid->getHorizontalCapacity(l1, 0, 0) == 20);
     grid->addGridPatternX(30, 20, 10);
-    BOOST_TEST(grid->getHorizontalCapacity(l1,xIdx,yIdx) == 0);
+    BOOST_TEST(grid->getHorizontalCapacity(l1, 0, 0) == 0);
 
 }
 

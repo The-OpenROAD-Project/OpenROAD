@@ -8400,9 +8400,11 @@ class dbGCellGrid : public dbObject
   ///
   static dbGCellGrid* getGCellGrid(dbBlock* block, uint oid);
 
-  uint getXIdx(uint x, std::vector<int> x_grid = std::vector<int>()) const;
+  uint getXIdx(int                    x,
+               const std::vector<int>& x_grid = std::vector<int>()) const;
 
-  uint getYIdx(uint y, std::vector<int> y_grid = std::vector<int>()) const;
+  uint getYIdx(int                    y,
+               const std::vector<int>& y_grid = std::vector<int>()) const;
 
   uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
