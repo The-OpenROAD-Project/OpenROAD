@@ -806,8 +806,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
     }
-//    if (currNet->getFrNet()->getName() == "net1233")
-//        cout << "Expanding (" << xCoords_[currGrid.x()] << ", " << yCoords_[currGrid.y()] << ", " << currGrid.z() << ") cost: " << currGrid.getCost() << "(g " << currGrid.getPathCost() << ")\n";
     if (graphics_) {
       graphics_->searchNode(this, currGrid);
     }
