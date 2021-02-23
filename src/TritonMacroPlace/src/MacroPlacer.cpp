@@ -553,28 +553,32 @@ MacroPlacer::getPartitions(const Layout& layout,
 
     // Fill in the Partitioning information
     PartClass lClass = None, uClass = None;
-    if (partition.partClass == PartClass::ALL) {
+    switch (partition.partClass) {
+    case PartClass::ALL:
       lClass = (isHorizontal) ? W : S;
       uClass = (isHorizontal) ? E : N;
-    }
-
-    if (partition.partClass == W) {
+      break;
+    case PartClass::W:
       lClass = SW;
       uClass = NW;
-    }
-    if (partition.partClass == E) {
+      break;
+    case PartClass::E:
       lClass = SE;
       uClass = NE;
-    }
-
-    if (partition.partClass == N) {
+      break;
+    case PartClass::N:
       lClass = NW;
       uClass = NE;
-    }
-
-    if (partition.partClass == S) {
+      break;
+    case PartClass::S:
       lClass = SW;
       uClass = SE;
+      break;
+    default:
+      logger_->error(MPL, 12, "unhandled partition class");
+      lClass = W;
+      uClass = E;
+      break;
     }
 
     Partition lowerPart(
@@ -597,7 +601,6 @@ MacroPlacer::getPartitions(const Layout& layout,
         this,
         logger_);
 
-    //
     // Fill in child partitons' macros_
     for (const Macro& macro : partition.macros_) {
       int i = &macro - &partition.macros_[0];
