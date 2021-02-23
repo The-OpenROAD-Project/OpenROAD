@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 #include "fastcluster.h"
 
@@ -37,31 +38,60 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
     return;
   }
 
+  std::cout << "TODO: 1 step" << std::endl;
+
   // assign to each observable the number of its last merge step
   // beware: indices of observables in merge start at 1 (R convention)
   std::vector<int> last_merge(n, 0);
   for (k=1; k<=(n-nclust); k++) {
     // (m1,m2) = merge[k,]
+    std::cout << "TODO: " << k << std::endl; 
     m1 = merge[k-1];
     m2 = merge[n-1+k-1];
+    std::cout << "TODO: MERGE : " << m1 << " " << m2 << std::endl;
     if (m1 < 0 && m2 < 0) { // both single observables
+      std::cout << "TODO: " << "01" << std::endl; 
+
       last_merge[-m1-1] = last_merge[-m2-1] = k;
 	}
 	else if (m1 < 0 || m2 < 0) { // one is a cluster
-	    if(m1 < 0) { j = -m1; m1 = m2; } else j = -m2;
+      std::cout << "TODO: " << "02" << std::endl; 
+      int temp = -m1;
+	    if (m1 < 0) 
+        { 
+          temp = -m1; 
+          m1 = m2; 
+        } 
+      else 
+        {
+          temp = -m2;
+        }
+      std::cout << "TODO: " << "02" << std::endl; 
+
 	    // merging single observable and cluster
-	    for(l = 0; l < n; l++)
-		if (last_merge[l] == m1)
-		    last_merge[l] = k;
-	    last_merge[j-1] = k;
+	    for(l = 0; l < n; l++){
+		    if (last_merge[l] == m1){
+          last_merge[l] = k;
+        }
+      }
+      std::cout << "TODO: " << "02" << std::endl; 
+
+	    last_merge[0] = k;
+      std::cout << "TODO: " << "02 " << temp-1 << std::endl; 
+
 	}
 	else { // both cluster
+    std::cout << "TODO: " << "03" << std::endl; 
+
 	    for(l=0; l < n; l++) {
 		if( last_merge[l] == m1 || last_merge[l] == m2 )
 		    last_merge[l] = k;
 	    }
     }
   }
+
+  std::cout << "TODO: 2 step" << std::endl;
+
 
   // assign cluster labels
   int label = 0;
@@ -76,7 +106,12 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
       labels[j] = z[last_merge[j]];
     }
   }
+
+  std::cout << "TODO: 3 step" << std::endl;
+
 }
+
+
 
 //
 // Assigns cluster labels (0, ..., nclust-1) to the n points such
@@ -99,6 +134,9 @@ void cutree_cdist(int n, const int* merge, double* height, double cdist, int* la
       break;
     }
   }
+
+  std::cout << "TODO: 0 step :" << n-k << " " << n << std::endl;
+
   cutree_k(n, merge, n-k, labels);
 }
 

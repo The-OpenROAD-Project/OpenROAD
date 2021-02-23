@@ -186,15 +186,45 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
       ++k;
     }
   }
+  std::cout << "TODO: DIST COMPUTATION DONE" << std::endl;
+
+  for(unsigned i=0; i<(npoints*(npoints-1))/2; i++){
+    std::cout << "TODO: dist after " << distMatrix[i] << std::endl;
+  }
+
+  std::cout << "TODO: points" << npoints << std::endl;
 
   int* merge = new int[2*(npoints-1)];
   double* height = new double[npoints-1];
 
-  hclust_fast(npoints, distMatrix, clusMethod, merge, height);
+  for(unsigned i=0; i<2*(npoints-1); i++){
+    std::cout << "TODO: merge before " << merge[i] << std::endl;
+  }
+
+  int runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
+
+  std::cout << "TODO: runInt " << runInt << std::endl;
+
+
+  for(unsigned i=0; i<2*(npoints-1); i++){
+    std::cout << "TODO: merge after " << merge[i] << std::endl;
+  }
+
+  delete[] distMatrix;
+  delete[] height;
+  
+
+  std::cout << "TODO: Cluster COMPUTATION DONE" << std::endl;
+
 
   int* labels = new int[npoints];
-  // cutree_k(npoints, merge, 2, labels);
-  cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+  cutree_k(npoints, merge, 10, labels);
+
+
+  // cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+
+  std::cout << "TODO: Tree COMPUTATION DONE" << std::endl;
+
 
   int nclusters = 0;
   for (unsigned i = 0; i < npoints; i++){
@@ -215,8 +245,11 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
   _bestSolution = clusterSolution;
 
-  if (_logger->debugCheck(CTS, "Stree", 1))
-    writePlotFile(groupSize);
+  std::cout << "TODO: Tree COMPUTATION DONE" << std::endl;
+  
+
+  // if (_logger->debugCheck(CTS, "Stree", 1))
+  //   writePlotFile(groupSize);
 
 }
 
