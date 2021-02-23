@@ -31,47 +31,31 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ###########################################################################
 
-set(FINALE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/finale_wrap.cc)
-set(FINALE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FinaleTclInitVar.cc)
+include("openroad")
 
-add_custom_command(OUTPUT ${FINALE_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix finale -I${FINALE_HOME}/include -o ${FINALE_WRAP} ${FINALE_HOME}/src/finale.i
-  WORKING_DIRECTORY ${FINALE_HOME}/src
-  DEPENDS
-  ${FINALE_HOME}/src/finale.i
-  ${FINALE_HOME}/include/finale/Finale.h
-  ${OPENROAD_HOME}/src/Exception.i
+tcl_lib(NAME      finale
+        NAMESPACE fin
+        I_FILE    src/finale.i
+        SCRIPTS   src/finale.tcl
 )
 
-add_custom_command(OUTPUT ${FINALE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${FINALE_TCL_INIT} finale_tcl_inits ${FINALE_HOME}/src/finale.tcl
-  WORKING_DIRECTORY ${FINALE_HOME}/src
-  DEPENDS ${FINALE_HOME}/src/finale.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_library(finale
-  src/Finale.cpp
-  src/MakeFinale.cpp
-  src/DensityFill.cpp
-  src/graphics.cpp
-
-  ${FINALE_WRAP}
-  ${FINALE_TCL_INIT}
+target_sources(finale
+  PRIVATE
+    src/Finale.cpp
+    src/MakeFinale.cpp
+    src/DensityFill.cpp
+    src/graphics.cpp
 )
 
 target_include_directories(finale
-  PUBLIC ${FINALE_HOME}/include
-  PRIVATE
-  ${FINALE_HOME}/src
-  ${OPENROAD_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${TCL_INCLUDE_PATH}
-  ${Boost_INCLUDE_DIRS}
- )
+  PUBLIC
+    include
+)
 
 target_link_libraries( finale
   PRIVATE
-  opendb
-  gui
+    opendb
+    gui
+    OpenSTA
+    Boost::boost
 )

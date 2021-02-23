@@ -13,79 +13,52 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(DBSTA_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/dbStaTclInitVar.cc)
-set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
+include("openroad")
 
-# Only used for depends.
-set(DBSTA_SWIG_FILES
-  ${DBSTA_HOME}/src/dbSta.i
+tcl_lib(NAME          dbSta
+        NAMESPACE     sta
+        I_FILE        dbSta.i
+        SWIG_INCLUDES ${OPENSTA_HOME}
+        SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
+                      ${OPENSTA_HOME}/tcl/Liberty.tcl
+                      ${OPENSTA_HOME}/tcl/Network.tcl
+                      ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
+                      ${OPENSTA_HOME}/tcl/Sdc.tcl
+                      ${OPENSTA_HOME}/tcl/Search.tcl
+                      ${OPENSTA_HOME}/tcl/Cmds.tcl
+                      ${OPENSTA_HOME}/tcl/Variables.tcl
+                      ${OPENSTA_HOME}/tcl/Sta.tcl
+                      ${OPENSTA_HOME}/tcl/Power.tcl
+                      ${OPENSTA_HOME}/tcl/Splash.tcl
+                      ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
+                      ${OPENSTA_HOME}/parasitics/Parasitics.tcl
+                      ${OPENSTA_HOME}/sdf/Sdf.tcl
+                      ${DBSTA_HOME}/src/dbReadVerilog.tcl
+                      ${DBSTA_HOME}/src/dbSta.tcl
+)
 
-  ${OPENSTA_HOME}/tcl/Exception.i
-  ${OPENSTA_HOME}/tcl/StaTcl.i
-  ${OPENSTA_HOME}/tcl/NetworkEdit.i
-  ${OPENSTA_HOME}/sdf/Sdf.i
-  ${OPENSTA_HOME}/dcalc/DelayCalc.i
-  ${OPENSTA_HOME}/parasitics/Parasitics.i
-  )
-
-set(DBSTA_TCL_FILES
-  ${OPENSTA_HOME}/tcl/Graph.tcl
-  ${OPENSTA_HOME}/tcl/Liberty.tcl
-  ${OPENSTA_HOME}/tcl/Network.tcl
-  ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
-  ${OPENSTA_HOME}/tcl/Sdc.tcl
-  ${OPENSTA_HOME}/tcl/Search.tcl
-  ${OPENSTA_HOME}/tcl/Cmds.tcl
-  ${OPENSTA_HOME}/tcl/Variables.tcl
-  ${OPENSTA_HOME}/tcl/Sta.tcl
-  ${OPENSTA_HOME}/tcl/Power.tcl
-  ${OPENSTA_HOME}/tcl/Splash.tcl
-  ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
-  ${OPENSTA_HOME}/parasitics/Parasitics.tcl
-  ${OPENSTA_HOME}/sdf/Sdf.tcl
-
-  ${DBSTA_HOME}/src/dbReadVerilog.tcl
-  ${DBSTA_HOME}/src/dbSta.tcl
-  )
-
-add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${DBSTA_TCL_INIT} dbsta_tcl_inits ${DBSTA_TCL_FILES}
-  DEPENDS ${DBSTA_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_custom_command(OUTPUT ${DBSTA_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME} -I${OPENDB_HOME}/src/swig/tcl -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${DBSTA_WRAP}
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
-  DEPENDS ${DBSTA_SWIG_FILES}
-  )
-
-add_library(dbSta
-  dbSta.cc
-  dbNetwork.cc
-  dbSdcNetwork.cc
-  ${DBSTA_TCL_INIT}
-  ${DBSTA_WRAP}
-  dbReadVerilog.cc
-  )
+target_sources(dbSta
+  PRIVATE
+    dbSta.cc
+    dbNetwork.cc
+    dbSdcNetwork.cc
+    dbReadVerilog.cc
+)
 
 target_include_directories(dbSta
   PUBLIC
-  ${DBSTA_HOME}/include
+    ../include
 
   PRIVATE
-  ${DBSTA_HOME}/include/db_sta
-  ${OPENROAD_HOME}/include
-  ${OPENDB_HOME}/include
-  ${GUI_HOME}/include
-  ${TCL_INCLUDE_PATH}
-  ${OPENSTA_HOME}/include
-  # Unfortunate side-effect of swig include StaTcl.i
-  ${OPENSTA_HOME}/include/sta
-  ${OPENSTA_HOME}
-  )
+    # Unfortunate side-effect of swig include StaTcl.i
+    ${OPENSTA_HOME}/include/sta
+    ${OPENSTA_HOME}
+)
 
 target_link_libraries(dbSta
-  PUBLIC
-  utility
-  )
+  PRIVATE
+    OpenSTA
+    opendb
+    gui
+    utility
+)

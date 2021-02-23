@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "darr.h"
-#include "extRCap.h"
-#include "extSpef.h"
-#include "exttree.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/exttree.h"
 #include "utility/Logger.h"
 
 namespace rcx {

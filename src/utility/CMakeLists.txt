@@ -13,33 +13,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(LOGGER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Logger_wrap.cc)
+include("openroad")
 
-add_custom_command(OUTPUT ${LOGGER_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix utl -I${OPENROAD_HOME}/include -o ${LOGGER_WRAP} ${UTILITY_HOME}/src/Logger.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${LOGGER_WRAP}
-  WORKING_DIRECTORY ${UTILITY_HOME}/src
-  DEPENDS
-  ${UTILITY_HOME}/src/Logger.i
-  ${UTILITY_HOME}/include/utility/Logger.h
-  )
+tcl_lib(NAME      utility
+        NAMESPACE utl
+        I_FILE    src/Logger.i
+)
 
-############################################################
-# Create a library 
-############################################################
-add_library( utility
-  src/Logger.cpp
-  src/MakeLogger.cpp
-  ${LOGGER_WRAP}
+target_sources(utility
+  PRIVATE
+    src/Logger.cpp
+    src/MakeLogger.cpp
 )
   
-target_include_directories( utility
+target_include_directories(utility
   PUBLIC
-  ${UTILITY_HOME}/include
-  ${TCL_INCLUDE_PATH}
+    include
 )
 
-target_link_libraries( utility
+target_link_libraries(utility
   PUBLIC
-  spdlog::spdlog
+    spdlog::spdlog
 )

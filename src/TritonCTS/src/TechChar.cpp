@@ -45,7 +45,7 @@
 #include "sta/Units.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 #include <algorithm>
 #include <fstream>

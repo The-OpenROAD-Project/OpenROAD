@@ -30,9 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "extRCap.h"
-#include "extSpef.h"
-#include "extprocess.h"
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/extprocess.h"
 
 #ifdef _WIN32
 #include "direct.h"

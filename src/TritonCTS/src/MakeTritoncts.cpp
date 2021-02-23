@@ -42,7 +42,7 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* tritoncts_tcl_inits[];
+extern const char* TritonCTS_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
@@ -61,7 +61,7 @@ void initTritonCts(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Tritoncts_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::tritoncts_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonCTS_tcl_inits);
   openroad->getTritonCts()->init(openroad);
 }
 

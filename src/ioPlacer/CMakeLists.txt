@@ -33,60 +33,41 @@
 ##
 ###############################################################################
 
+include("openroad")
+
 project(ioPlacer)
 
-add_subdirectory(${IOPLACER_HOME}/src/munkres)
+add_subdirectory(src/munkres)
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-
-set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/ioplacer_wrap.cpp)
-set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
-
-add_custom_command(OUTPUT ${IOPLACER_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ppl -I${IOPLACER_HOME}/include -o ${IOPLACER_WRAP} ${IOPLACER_HOME}/src/ioplacer.i
-        WORKING_DIRECTORY ${IOPLACER_HOME}/src
-        DEPENDS
-        ${IOPLACER_HOME}/src/ioplacer.i
-        ${IOPLACER_HOME}/include/ioplacer/IOPlacer.h
-        ${OPENROAD_HOME}/src/Exception.i
+tcl_lib(NAME      ioPlacer
+        NAMESPACE ppl
+        I_FILE    src/ioplacer.i
+        SCRIPTS   src/ioPlacer.tcl
 )
 
-add_custom_command(OUTPUT ${IOPLACER_TCL_INIT}
-        COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${IOPLACER_TCL_INIT} ioplacer_tcl_inits ${IOPLACER_HOME}/src/ioPlacer.tcl
-        WORKING_DIRECTORY ${IOPLACER_HOME}/src
-        DEPENDS ${IOPLACER_HOME}/src/ioPlacer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+target_sources(ioPlacer
+  PRIVATE
+    src/Core.cpp
+    src/HungarianMatching.cpp
+    src/IOPlacer.cpp
+    src/MakeIoplacer.cpp
+    src/Netlist.cpp
 )
 
-set(SRC_FILES
-  src/Core.cpp
-  src/HungarianMatching.cpp
-  src/IOPlacer.cpp
-  src/MakeIoplacer.cpp
-  src/Netlist.cpp
-  ${IOPLACER_WRAP}
-  ${IOPLACER_TCL_INIT}
-  )
-
-
-add_LIBRARY(ioPlacer STATIC ${SRC_FILES} ${IOPLACER_WRAP} ${IOPLACER_TCL_INIT})
 
 target_include_directories(ioPlacer
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    include
   PRIVATE
-  ${OPENDB_HOME}/include/
-  ${OPENSTA_HOME}/include
-  ${OPENROAD_HOME}/include
-  ${TCL_INCLUDE_PATH}
-  ${IOPLACER_HOME}/src
-  ${IOPLACER_HOME}/src/munkres/src
-  )
+    src
+)
 
 target_link_libraries(ioPlacer
   PUBLIC
-  Munkres
-  utility
-  )
+    Munkres
+    OpenSTA
+    opendb
+    utility
+)
                       
                       

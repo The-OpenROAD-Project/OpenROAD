@@ -19,12 +19,8 @@ place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_l
 ################################################################
 # Macro Placement
 if { [have_macros] } {
-  # tdms_place (but replace isn't timing driven)
-  global_placement -disable_timing_driven \
-    -disable_routability_driven \
-    -density $global_place_density
-
-  macro_placement -global_config $ip_global_cfg
+  global_placement -density $global_place_density
+  macro_placement -halo $macro_place_halo -channel $macro_place_channel
 }
 write_def [make_result_file ${design}_${platform}_floorplan.def]
 ################################################################
@@ -43,8 +39,7 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
-global_placement -disable_routability_driven \
-  -density $global_place_density \
+global_placement -timing_driven -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 

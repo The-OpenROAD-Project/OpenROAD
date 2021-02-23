@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "extprocess.h"
-
+#include "OpenRCX/extprocess.h"
 #include "utility/Logger.h"
 
 namespace rcx {

@@ -31,46 +31,17 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-find_package(SWIG REQUIRED)
-include(UseSWIG)
+include("openroad")
 
-include_directories(PRIVATE ${PROJECT_SOURCE_DIR}/include/OpenRCX ${TCL_INCLUDE_PATH})
-
-set(OPENRCX_SWIG_FILES
-    ${PROJECT_SOURCE_DIR}/src/ext.i
+tcl_lib(NAME      OpenRCX
+        NAMESPACE rcx
+        I_FILE    ext.i
+        SCRIPTS   OpenRCX.tcl
 )
 
-set_source_files_properties(${OPENRCX_SWIG_FILES}
-    PROPERTIES CPLUSPLUS ON
-)
 
-swig_add_library(openrcx-swig
-    LANGUAGE tcl
-    TYPE STATIC
-    SOURCES ${OPENRCX_SWIG_FILES}
-)
-
-set_property(TARGET openrcx-swig PROPERTY SWIG_COMPILE_OPTIONS -namespace -prefix rcx)
-
-swig_link_libraries(openrcx-swig
-    PUBLIC
-        opendb 
-)
-
-target_include_directories(openrcx-swig
+target_sources(OpenRCX
   PRIVATE
-  ${OPENROAD_HOME}/include
-)
-
-set(OPENRCX_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenrcxTclInitVar.cc)
-
-add_custom_command(OUTPUT ${OPENRCX_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENRCX_TCL_INIT} openrcx_tcl_inits OpenRCX.tcl
-  WORKING_DIRECTORY ${OPENRCX_HOME}/src
-  DEPENDS OpenRCX.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_library(OpenRCX
     ext.cpp
     extBench.cpp
     extBenchDB.cpp
@@ -93,19 +64,17 @@ add_library(OpenRCX
     netRC.cpp
     powerConn.cpp
     MakeOpenRCX.cpp
-   ${OPENRCX_TCL_INIT}
 )
 
 target_include_directories(OpenRCX
-  PUBLIC ${OPENRCX_HOME}/include
-  PRIVATE
-  ${OPENRCX_HOME}/include/OpenRCX
-  ${OPENROAD_HOME}/include
-  ${OPENSTA_HOME}/include
+  PUBLIC
+    ../include
 )
 
 target_link_libraries(OpenRCX
-                      opendb
-                      openrcx-swig
-                      utility
+  PUBLIC
+    opendb
+    utility
+  PRIVATE
+    OpenSTA
 )

@@ -32,7 +32,7 @@
 
 #include <math.h>
 
-#include "extSpef.h"
+#include "OpenRCX/extSpef.h"
 #include "parse.h"
 #include "wire.h"
 

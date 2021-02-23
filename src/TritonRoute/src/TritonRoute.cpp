@@ -38,6 +38,8 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "db/tech/frTechObject.h"
+#include "frDesign.h"
 
 using namespace std;
 using namespace fr;
@@ -45,7 +47,7 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *triton_route_tcl_inits[];
+extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
@@ -118,7 +120,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 
 void TritonRoute::init() {
@@ -179,11 +181,16 @@ void TritonRoute::endFR() {
   writer.updateDb(db_);
 }
 
+void TritonRoute::reportConstraints()
+{
+  getDesign()->getTech()->printAllConstraints(logger_);
+}
+
 int TritonRoute::main() {
   init();
   if (GUIDE_FILE == string("")) {
     gr();
-    io::Parser parser(getDesign(),logger_);
+    io::Parser parser(getDesign(), logger_);
     GUIDE_FILE = OUTGUIDE_FILE;
     ENABLE_VIA_GEN = true;
     parser.readGuide();
@@ -204,7 +211,7 @@ int TritonRoute::main() {
 void TritonRoute::readParams(const string &fileName)
 {
   int readParamCnt = 0;
-  fstream fin(fileName.c_str());
+  ifstream fin(fileName.c_str());
   string line;
   if (fin.is_open()){
     while (fin.good()){
