@@ -47,8 +47,11 @@
 #include "route.h"
 #include "utility.h"
 #include "utility/Logger.h"
+#include "utility/Logger.h"
 
 namespace grt {
+
+using utl::GRT;
 
 #define FLUTEACCURACY 2
 
@@ -175,8 +178,8 @@ int mapxy(int nx, int xs[], int nxs[], int d)
       min = mid + 1;
   }
 
-  if (min > max)
-    printf("mapping error\n");
+  debugPrint(logger, GRT, "fastroute", 3, "Fail when mapping coordinates");
+
   return -1;
 }
 
@@ -204,8 +207,6 @@ void copyStTree(int ind, Tree rsmt)
   // initialize the nbrcnt for treenodes
   for (i = 0; i < numnodes; i++)
     nbrcnt[i] = 0;
-
-  // printf("tree ind %d\n",ind);
 
   edgecnt = 0;
   // original rsmt has 2*d-2 branch (one is a loop for root), in StTree 2*d-3
@@ -244,12 +245,10 @@ void copyStTree(int ind, Tree rsmt)
       edgecnt++;
     }
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
-      printf("wrong\n");
+      logger->error(GRT, 188, "Invalid number of node neighbours.");
   }
   if (edgecnt != numnodes - 1) {
-    printf("copy tree wrong\n");
-    printf("num edges %d, num nodes %d\n", edgecnt, numnodes);
-    exit(0);
+    logger->error(GRT, 189, "Fail in copy tree. Num edges: {}, num nodes: {}, edgecnt, numnodes.");
   }
 }
 
@@ -353,8 +352,6 @@ void fluteNormal(int netID,
       pt[i].y = y[i];
       ptp[i] = &pt[i];
     }
-    // printf("OK here\n");
-    // sort x
 
     if (d < 1000) {
       for (i = 0; i < d - 1; i++) {
@@ -711,8 +708,6 @@ Bool HTreeSuite(int netID)
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
 
-  //  printf("d %d\n",deg);
-
   for (i = 0; i < deg; i++) {
     if (xmin > nets[netID]->pinX[i]) {
       xmin = nets[netID]->pinX[i];
@@ -747,8 +742,6 @@ float coeffADJ(int netID)
   xmin = ymin = BIG_INT;
   Hcap = Vcap = 0;
   Husage = Vusage = 0;
-
-  //  printf("d %d\n",deg);
 
   for (i = 0; i < deg; i++) {
     if (xmin > nets[netID]->pinX[i]) {
@@ -864,7 +857,7 @@ void gen_brk_RSMT(Bool congestionDriven,
             y1 = treenodes[n1].y;
             x2 = treenodes[n2].x;
             y2 = treenodes[n2].y;
-            newRipup(treeedge, treenodes, x1, y1, x2, y2);
+            newRipup(treeedge, treenodes, x1, y1, x2, y2, i);
           }
         }
       } else {
@@ -911,7 +904,7 @@ void gen_brk_RSMT(Bool congestionDriven,
     }
 
     if (nets[i]->deg != rsmt.deg) {
-      printf("[WARNING] Net degree differs from rsmt degree\n");
+      logger->warn(GRT, 190, "Net degree differs from rsmt degree.");
       d = rsmt.deg;
     }
 
@@ -964,9 +957,9 @@ void gen_brk_RSMT(Bool congestionDriven,
   }  // loop i
 
   if (verbose > 1) {
-    printf("[INFO] WIRELEN : %d, WIRELEN1 : %d\n", wl, wl1);
-    printf("[INFO] NumSeg  : %d\n", totalNumSeg);
-    printf("[INFO] NumShift: %d\n", numShift);
+    logger->info(GRT, 191, "WIRELEN : {}, WIRELEN1 : {}", wl, wl1);
+    logger->info(GRT, 192, "NumSeg  : {}", totalNumSeg);
+    logger->info(GRT, 193, "NumShift: {}", numShift);
   }
 }
 

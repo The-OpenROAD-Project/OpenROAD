@@ -35,11 +35,16 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include "utility/Logger.h"
 #include "db/tech/frLookupTbl.h"
 #include "frViaDef.h"
 #include "frViaRuleGenerate.h"
 
 namespace fr {
+  namespace io {
+    class Parser;
+  }
+
   enum class frLef58CornerSpacingExceptionEnum {
     NONE,
     EXCEPTSAMENET,
@@ -52,6 +57,7 @@ namespace fr {
   public:
     virtual ~frConstraint() {}
     virtual frConstraintTypeEnum typeId() const = 0;    
+    virtual void report(utl::Logger* logger) const = 0;
   protected:
     frConstraint() {}
   };
@@ -77,6 +83,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CutClassConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Cut class");
+    }
   protected:
     std::map<frString, std::shared_ptr<frLef58CutClass> > cutClasses;
   };
@@ -87,6 +97,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcRecheckConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Recheck");
+    }
   };
 
   // short
@@ -96,6 +110,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcShortConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Short");
+    }
   };
   
   // NSMetal
@@ -104,6 +122,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcNonSufficientMetalConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("NSMetal");
+    }
   };
 
   // offGrid
@@ -111,6 +133,10 @@ namespace fr {
   public:
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcOffGridConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Off grid");
     }
   };
 
@@ -136,6 +162,11 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcMinEnclosedAreaConstraint;
+    }
+
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Min enclosed area {} width {}", area, width);
     }
 
   protected:
@@ -189,6 +220,10 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58MinStepConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("MINSTEP minStepLength {} insideCorner {} outsideCorner {} step {} maxLength {} maxEdges {} minAdjLength {} convexCorner {} exceptWithin {} concaveCorner {} threeConcaveCorners {} width {} minAdjLength2 {} minBetweenLength {} exceptSameCorners {} eolWidth {} concaveCorners {} ", minStepLength, insideCorner, outsideCorner, step, maxLength, maxEdges, minAdjLength, convexCorner, exceptWithin, concaveCorner, threeConcaveCorners, width, minAdjLength2, minBetweenLength, exceptSameCorners, eolWidth, concaveCorners);
     }
 
   protected:
@@ -280,6 +315,18 @@ namespace fr {
       return frConstraintTypeEnum::frcMinStepConstraint;
     }
 
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Min step length min {} type {} max {} "
+                     "insideCorner {} outsideCorner {} step {} maxEdges {}",
+                     minStepLength,
+                     minstepType,
+                     maxLength,
+                     insideCorner,
+                     outsideCorner,
+                     step,
+                     maxEdges);
+    }
   protected:
     frCoord minStepLength;
     frMinstepTypeEnum minstepType;
@@ -345,6 +392,17 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcMinimumcutConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Min cut numCuts {} width {} cutDistance {} "
+                     "connection {} length {} distance {}",
+                     numCuts,
+                     width,
+                     cutDistance,
+                     connection,
+                     length,
+                     distance);
+    }
   protected:
     int                        numCuts;
     frCoord                    width;
@@ -374,6 +432,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcAreaConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Area {}", minArea);
+    }
   protected:
     frCoord minArea;
   };
@@ -396,6 +458,10 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcMinWidthConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Width {}", minWidth);
     }
   protected:
     frCoord minWidth;
@@ -459,6 +525,10 @@ namespace fr {
     // others
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinEndToEndConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("\t\tSPACING_WITHIN_ENDTOEND endToEndSpace {} cutSpace {} oneCutSpace {} twoCutSpace {} hExtension {} extension {} wrongDirExtension {} hOtherEndWidth {} otherEndWidth {} ", endToEndSpace, cutSpace, oneCutSpace, twoCutSpace, hExtension, extension, wrongDirExtension, hOtherEndWidth, otherEndWidth);
     }
   protected:
     frCoord    endToEndSpace;
@@ -546,6 +616,9 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinParallelEdgeConstraint;
     }
+    void report(utl::Logger* logger) const override{
+      logger->report("\t\tSPACING_WITHIN_PARALLELEDGE subtractEolWidth {} parSpace {} parWithin {} hPrl {} prl {} hMinLength {} minLength {} twoEdges {} sameMetal {} nonEolCornerOnly {} parallelSameMask {} ", subtractEolWidth, parSpace, parWithin, hPrl, prl, hMinLength, minLength, twoEdges, sameMetal, nonEolCornerOnly, parallelSameMask);
+    }
   protected:
     bool    subtractEolWidth;
     frCoord parSpace;
@@ -564,6 +637,7 @@ namespace fr {
   public:
     // constructors
     frLef58SpacingEndOfLineWithinMaxMinLengthConstraint(): maxLength(false), length(0), twoSides(false) {}
+    
     // getters
     frCoord getLength() const {
       return length;
@@ -581,6 +655,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("\t\tSPACING_WITHIN_MAXMIN maxLength {} length {} twoSides {} ", maxLength, length, twoSides);
+    }
   protected:
     bool    maxLength;
     frCoord length;
@@ -594,6 +672,7 @@ namespace fr {
     frLef58SpacingEndOfLineWithinConstraint(): hOppositeWidth(false), oppositeWidth(0), eolWithin(0),
                                                wrongDirWithin(false), sameMask(false), 
                                                endToEndConstraint(nullptr), parallelEdgeConstraint(nullptr) {}
+                                               
     // getters
     bool hasOppositeWidth() const {
       return hOppositeWidth;
@@ -677,7 +756,16 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("\tSPACING_WITHIN hOppositeWidth {} oppositeWidth {} eolWithin {} wrongDirWithin {} sameMask {} ", hOppositeWidth, oppositeWidth, eolWithin, wrongDirWithin, sameMask);
+      if(endToEndConstraint != nullptr)
+        endToEndConstraint->report(logger);
+      if(parallelEdgeConstraint != nullptr)
+        parallelEdgeConstraint->report(logger);
+    }
   protected:
+    
     bool                                                                 hOppositeWidth;
     frCoord                                                              oppositeWidth;
     frCoord                                                              eolWithin;
@@ -739,6 +827,12 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("SPACING eolSpace {} eolWidth {} exactWidth {} wrongDirSpacing {} wrongDirSpace {} ", eolSpace, eolWidth, exactWidth, wrongDirSpacing, wrongDirSpace);
+      if(withinConstraint != nullptr)
+        withinConstraint->report(logger);
+    }
   protected:
     frCoord                                                  eolSpace;
     frCoord                                                  eolWidth;
@@ -768,6 +862,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing {}", minSpacing);
+    }
   protected:
     frCoord minSpacing;
   };
@@ -787,6 +885,10 @@ namespace fr {
     // check
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingSamenetConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing same net pgonly {}", pgonly);
     }
   protected:
     bool pgonly;
@@ -838,6 +940,16 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingEndOfLineConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing EOL eolWidth {} eolWithin {} "
+                     "parSpace {} parWithin {} isTwoEdges {}",
+                     eolWidth,
+                     eolWithin,
+                     parSpace,
+                     parWithin,
+                     isTwoEdges);
+    }
 
   protected:
     frCoord eolWidth, eolWithin;
@@ -867,6 +979,10 @@ namespace fr {
     // others
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CutSpacingTableLayerConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("\tLAYERCONSTRAINT secondLayerNum {} nonZeroEnc {} ", secondLayerNum, nonZeroEnc);
     }
   protected:
     frLayerNum secondLayerNum;
@@ -907,6 +1023,10 @@ namespace fr {
     // others
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CutSpacingTablePrlConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("\tPRLCONSTRAINT prl {} horizontal {} vertical {} maxXY {} ", prl, horizontal, vertical, maxXY);
     }
   protected:
     frCoord prl;
@@ -958,6 +1078,35 @@ namespace fr {
     void setDefaultCutSpacing(frCoord in) {
       defaultCutSpacing = in;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("CUTSPACINGTABLE defaultCutSpacing {} cutClassHasAll {}");
+      if(prlConstraint != nullptr)
+        prlConstraint->report(logger);
+      if(layerConstraint != nullptr)
+        layerConstraint->report(logger);
+      if(cutClassTbl != nullptr)
+      {
+        std::string cols = "";
+        std::string rows = "";
+        for(auto row : cutClassTbl->getRows())
+          rows = rows + row + " ";
+        for(auto col : cutClassTbl->getCols())
+          cols = cols + col + " ";
+        logger->report("\trowName: {}", cutClassTbl->getRowName());
+        logger->report("\trows: {}", rows);
+        logger->report("\trcolName: {}", cutClassTbl->getColName());
+        logger->report("\tcols: {}", cols);
+        auto tbl = cutClassTbl->getValues();
+        for(auto row : tbl)
+        {
+          std::string vals = "";
+          for(auto col : row)
+            vals = vals + "("+ std::to_string(col.first) + "," + std::to_string(col.second) + ") ";
+          logger->report("\t{}", vals);
+        }
+      }
+    }
     // others
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CutSpacingTableConstraint;
@@ -995,6 +1144,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingTablePrlConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing table PRL");
+    }
   protected:
     fr2DLookupTbl<frCoord, frCoord, frCoord> tbl;
   };
@@ -1029,6 +1182,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingTableTwConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing table tw");
+    }
   protected:
     fr2DLookupTbl<frSpacingTableTwRowType, frSpacingTableTwRowType, frCoord> tbl;
   };
@@ -1051,6 +1208,10 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcSpacingTableConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("Spacing table");
     }
   protected:
     std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > parallelRunLengthConstraint;
@@ -1101,6 +1262,14 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58SpacingTableConstraint;
+    }
+
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("SPACINGTABLE wrongDirection {} sameMask {} exceptEol {} eolWidth {} ", wrongDirection, sameMask, exceptEol, eolWidth);
+      logger->report("\texceptWithinConstraint");
+      for(auto &[key, val] : exceptWithinConstraint)
+        logger->report("\t{} ({} {})", key, val.first, val.second);
     }
   protected:
     std::map<frCoord, std::pair<frCoord, frCoord> > exceptWithinConstraint;
@@ -1215,6 +1384,10 @@ namespace fr {
     return twoCuts;
   }
 
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("Cut Spacing");
+  }
 
 
   // setter
@@ -1647,6 +1820,11 @@ namespace fr {
       return frConstraintTypeEnum::frcLef58CutSpacingConstraint;
     }
 
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("CUTSPACING cutSpacing {} sameMask {} maxXY {} centerToCenter {} sameNet {} sameMetal {} sameVia {} secondLayerName {} secondLayerNum {} stack {} orthogonalSpacing {} cutClassName {} cutClassIdx {} shortEdgeOnly {} prl {} concaveCorner {} width {} enclosure {} edgeLength {} parLength {} parWithin {} edgeEnclosure {} adjEnclosure {} extension {} eolWidth {} minLength {} maskOverlap {} wrongDirection {} adjacentCuts {} exactAlignedCut {} twoCuts {} twoCutsSpacing {} sameCut {} cutWithin1 {} cutWithin2 {} exceptSamePGNet {} exceptAllWithin {} above {} below {} toAll {} noPrl {} sideParallelOverlap {} parallelOverlap {} exceptSameNet {} exceptSameMetal {} exceptSameMetalOverlap {} exceptSameVia {} within {} longEdgeOnly {} exceptTwoEdges {} numCut {} cutArea {} ", cutSpacing, sameMask, maxXY, centerToCenter, sameNet, sameMetal, sameVia, secondLayerName, secondLayerNum, stack, orthogonalSpacing, cutClassName, cutClassIdx, shortEdgeOnly, prl, concaveCorner, width, enclosure, edgeLength, parLength, parWithin, edgeEnclosure, adjEnclosure, extension, eolWidth, minLength, maskOverlap, wrongDirection, adjacentCuts, exactAlignedCut, twoCuts, twoCutsSpacing, sameCut, cutWithin1, cutWithin2, exceptSamePGNet, exceptAllWithin, above, below, toAll, noPrl, sideParallelOverlap, parallelOverlap, exceptSameNet, exceptSameMetal, exceptSameMetalOverlap, exceptSameVia, within, longEdgeOnly, exceptTwoEdges, numCut, cutArea);
+    }
+
   protected:
     frCoord cutSpacing;
     bool sameMask;
@@ -1838,6 +2016,20 @@ namespace fr {
     void setSameXY(bool in) {
       sameXY = in;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("CORNERSPACING cornerType {} sameMask {} within {} eolWidth {} length {} edgeLength {} includeLShape {} minLength {} exceptNotch {} notchLength {} exceptSameNet {} exceptSameMetal {} sameXY {} ", cornerType, sameMask, within, eolWidth, length, edgeLength, includeLShape, minLength, exceptNotch, notchLength, exceptSameNet, exceptSameMetal, sameXY);
+      
+      std::string vals = "";
+      std::string rows = "";
+      for(auto row : tbl.getRows())
+        rows = rows + std::to_string(row) + " ";
+      for(auto val : tbl.getValues())
+        vals = vals + "(" + std::to_string(val.first) + "," + std::to_string(val.second) + ") ";
+      logger->report("\trowName: {}", tbl.getRowName());
+      logger->report("\trows: {}", rows);
+      logger->report("\tvals: {}", vals);
+    }
 
   protected:
     frCornerTypeEnum cornerType;
@@ -1875,6 +2067,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CornerSpacingSpacingConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("58 Corner spacing spacing {}", width);
+    }
   protected:
     frCoord width;
   };
@@ -1898,6 +2094,10 @@ namespace fr {
       return frConstraintTypeEnum::frcLef58CornerSpacingSpacing1DConstraint;
     }
     
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("58 Corner spacing 1D {}", spacing);
+    }
   protected:
     frCoord spacing = -1;
   };
@@ -1926,6 +2126,11 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58CornerSpacingSpacing2DConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("58 Corner spacing spacing 2D h {} v {}",
+                     horizontalSpacing, verticalSpacing);
+    }
   protected:
     frCoord horizontalSpacing = -1, verticalSpacing = -1;
   };
@@ -1933,9 +2138,8 @@ namespace fr {
   class frLef58RectOnlyConstraint : public frConstraint {
   public:
     // constructor
-    frLef58RectOnlyConstraint(bool exceptNonCorePinsIn = false) : exceptNonCorePins(exceptNonCorePinsIn) {
-
-    }
+    frLef58RectOnlyConstraint(bool exceptNonCorePinsIn = false) :
+      exceptNonCorePins(exceptNonCorePinsIn) {}
     // getter
     bool isExceptNonCorePinsIn() {
       return exceptNonCorePins;
@@ -1948,6 +2152,10 @@ namespace fr {
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58RectOnlyConstraint;
     }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("RECTONLY exceptNonCorePins {}", exceptNonCorePins);
+    }
   protected:
     bool exceptNonCorePins;
   };
@@ -1955,9 +2163,8 @@ namespace fr {
   class frLef58RightWayOnGridOnlyConstraint : public frConstraint {
   public:
     // constructor
-    frLef58RightWayOnGridOnlyConstraint(bool checkMaskIn = false) : checkMask(checkMaskIn) {
-
-    }
+    frLef58RightWayOnGridOnlyConstraint(bool checkMaskIn = false) : 
+      checkMask(checkMaskIn) {}
     // getter
     bool isCheckMask() {
       return checkMask;
@@ -1969,6 +2176,10 @@ namespace fr {
 
     frConstraintTypeEnum typeId() const override {
       return frConstraintTypeEnum::frcLef58RightWayOnGridOnlyConstraint;
+    }
+    void report(utl::Logger* logger) const override
+    {
+      logger->report("RIGHTWAYONGRIDONLY checkMask {}", checkMask);
     }
   protected:
     bool checkMask;

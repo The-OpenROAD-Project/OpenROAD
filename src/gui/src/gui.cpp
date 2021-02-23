@@ -42,7 +42,11 @@
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
+
 #include "gui/gui.h"
+
+#include "geom.h"
+
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
@@ -126,8 +130,9 @@ void Gui::addSelectedNet(const char* name)
 
 void Gui::addSelectedNets(const char* pattern,
                           bool match_case,
-                          bool match_regex,
-                          bool add_to_highlight_set)
+                          bool match_reg_ex,
+                          bool add_to_highlight_set,
+                          int highlight_group)
 {
   auto block = getBlock(main_window->getDb());
   if (!block) {
@@ -136,7 +141,7 @@ void Gui::addSelectedNets(const char* pattern,
 
   QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet nets;
-  if (match_regex == true) {
+  if (match_reg_ex == true) {
     QRegExp re(pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
@@ -161,7 +166,7 @@ void Gui::addSelectedNets(const char* pattern,
 
   main_window->addSelected(nets);
   if (add_to_highlight_set == true)
-    main_window->addHighlighted(nets);
+    main_window->addHighlighted(nets, highlight_group);
 }  // namespace gui
 
 void Gui::addSelectedInst(const char* name)
@@ -181,8 +186,9 @@ void Gui::addSelectedInst(const char* name)
 
 void Gui::addSelectedInsts(const char* pattern,
                            bool match_case,
-                           bool match_regex,
-                           bool add_to_highlight_set)
+                           bool match_reg_ex,
+                           bool add_to_highlight_set,
+                           int highlight_group)
 {
   auto block = getBlock(main_window->getDb());
   if (!block) {
@@ -190,7 +196,7 @@ void Gui::addSelectedInsts(const char* pattern,
   }
 
   SelectionSet insts;
-  if (match_regex) {
+  if (match_reg_ex) {
     QRegExp re(pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
@@ -215,7 +221,68 @@ void Gui::addSelectedInsts(const char* pattern,
   
   main_window->addSelected(insts);
   if (add_to_highlight_set == true)
-    main_window->addHighlighted(insts);
+    main_window->addHighlighted(insts, highlight_group);
+}
+
+bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
+{
+  return main_window->anyObjectInSet(selection_set, obj_type);
+}
+
+void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
+{
+  return main_window->selectHighlightConnectedInsts(select_flag,
+                                                    highlight_group);
+}
+void Gui::selectHighlightConnectedNets(bool select_flag,
+                                       bool output,
+                                       bool input,
+                                       int highlight_group)
+{
+  return main_window->selectHighlightConnectedNets(
+      select_flag, output, input, highlight_group);
+}
+
+void Gui::addInstToHighlightSet(const char* name, int highlight_group)
+{
+  auto block = getBlock(main_window->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto inst = block->findInst(name);
+  if (!inst) {
+    return;
+  }
+  SelectionSet sel_inst_set;
+  sel_inst_set.insert(Selected(inst, OpenDbDescriptor::get()));
+  main_window->addHighlighted(sel_inst_set, highlight_group);
+}
+
+void Gui::addNetToHighlightSet(const char* name, int highlight_group)
+{
+  auto block = getBlock(main_window->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto net = block->findNet(name);
+  if (!net) {
+    return;
+  }
+  SelectionSet selection_set;
+  selection_set.insert(Selected(net, OpenDbDescriptor::get()));
+  main_window->addHighlighted(selection_set, highlight_group);
+}
+
+void Gui::clearSelections()
+{
+  main_window->setSelected(Selected());
+}
+
+void Gui::clearHighlights(int highlight_group)
+{
+  main_window->clearHighlighted(highlight_group);
 }
 bool Gui::isGridGraphVisible(){
     return main_window->getControls()->isGridGraphVisible();
@@ -270,7 +337,7 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       auto net = static_cast<odb::dbNet*>(db_obj);
       auto wire = net->getWire();
       odb::Rect wire_bbox;
-      if (wire->getBBox(wire_bbox)) {
+      if (wire && wire->getBBox(wire_bbox)) {
         std::stringstream ss;
         ss << "[(" << wire_bbox.xMin() / to_microns << ","
            << wire_bbox.yMin() / to_microns << "), ("
@@ -305,7 +372,7 @@ bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
       auto wire = net->getWire();
-      if (wire->getBBox(bbox)) {
+      if (wire && wire->getBBox(bbox)) {
         return true;
       }
       return false;
@@ -326,15 +393,27 @@ bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
 
 void OpenDbDescriptor::highlight(void* object,
                                  Painter& painter,
-                                 bool select_flag) const
+                                 bool select_flag,
+                                 int highlight_group,
+                                 void* additional_data) const
 {
+  auto highlight_color = Painter::persistHighlight;
   if (select_flag == true) {
   painter.setPen(Painter::highlight, true);
   painter.setBrush(Painter::transparent);
   } else {
-    painter.setPen(Painter::persist_highlight, true);
+    if (highlight_group >= 0 && highlight_group < 7) {
+      highlight_color = Painter::highlightColors[highlight_group];
+      highlight_color.a = 100;
+      painter.setPen(highlight_color, true);
+      painter.setBrush(highlight_color);
+    } else
+      painter.setPen(Painter::persistHighlight);
   }
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  odb::dbObject* sink_object = nullptr;
+  if (additional_data != nullptr)
+    sink_object = static_cast<odb::dbObject*>(additional_data);
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
@@ -349,6 +428,62 @@ void OpenDbDescriptor::highlight(void* object,
         while (it.next(shape)) {
           shape.getBox(rect);
           painter.drawRect(rect);
+        }
+      } else {
+        std::set<odb::Point> driver_locs;
+        std::set<odb::Point> sink_locs;
+        for (auto inst_term : net->getITerms()) {
+          odb::Point rect_center ;
+          int x, y ;
+          if (!inst_term->getAvgXY(&x, &y)) {
+            auto inst_term_inst = inst_term->getInst();
+            odb::dbBox* bbox = inst_term_inst->getBBox();
+            odb::Rect rect;
+            bbox->getBox(rect);
+            rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
+                                  (rect.yMax() + rect.yMin()) / 2.0);
+          } else
+            rect_center = odb::Point(x, y);
+          auto iotype = inst_term->getIoType();
+          if (iotype == odb::dbIoType::INPUT
+              || iotype == odb::dbIoType::INOUT) {
+            if (sink_object != nullptr && sink_object != inst_term)
+              continue;
+            sink_locs.insert(rect_center);
+          }
+          if (iotype == odb::dbIoType::INOUT
+              || iotype == odb::dbIoType::OUTPUT)
+            driver_locs.insert(rect_center);
+        }
+        for (auto blk_term : net->getBTerms()) {
+          auto blk_term_pins = blk_term->getBPins();
+          auto iotype = blk_term->getIoType();
+          bool driver_term = iotype == odb::dbIoType::INPUT
+                             || iotype == odb::dbIoType::INOUT
+                             || iotype == odb::dbIoType::FEEDTHRU;
+          bool sink_term = iotype == odb::dbIoType::INOUT
+                           || iotype == odb::dbIoType::OUTPUT
+                           || iotype == odb::dbIoType::FEEDTHRU;
+          for (auto pin : blk_term_pins) {
+            auto pin_rect = pin->getBBox();
+            odb::Point rect_center((pin_rect.xMax() + pin_rect.xMin()) / 2.0,
+                                   (pin_rect.yMax() + pin_rect.yMin()) / 2.0);
+            if (driver_term == true)
+              driver_locs.insert(rect_center);
+            if (sink_term)
+              sink_locs.insert(rect_center);
+          }
+        }
+
+        if (driver_locs.empty() || sink_locs.empty())
+          return;
+        highlight_color.a = 255;
+        painter.setPen(highlight_color, true);
+        painter.setBrush(highlight_color);
+        for (auto& driver : driver_locs) {
+          for (auto& sink : sink_locs) {
+            painter.drawLine(driver, sink);
+          }
         }
       }
 
@@ -378,6 +513,18 @@ void OpenDbDescriptor::highlight(void* object,
     default:
       throw std::runtime_error("Unsupported type for highlighting");
   }
+}
+
+bool OpenDbDescriptor::isInst(void* object) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  return db_obj->getObjectType() == odb::dbInstObj;
+}
+
+bool OpenDbDescriptor::isNet(void* object) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  return db_obj->getObjectType() == odb::dbNetObj;
 }
 
 // This is the main entry point to start the GUI.  It only

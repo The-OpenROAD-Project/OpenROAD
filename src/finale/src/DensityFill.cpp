@@ -38,7 +38,6 @@
 
 #include "graphics.h"
 #include "opendb/dbShape.h"
-#include "openroad/Error.hh"
 
 namespace fin {
 

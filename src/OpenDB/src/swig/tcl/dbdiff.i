@@ -45,7 +45,7 @@ db_def_diff(odb::dbDatabase *db1,
   odb::dbChip *chip2 = db2->getChip();
   if (chip2)
     odb::dbChip::destroy(chip2);
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger();
   odb::defin def_reader(db2, logger);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db2->getLibs())

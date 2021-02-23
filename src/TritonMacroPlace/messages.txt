@@ -1,0 +1,37 @@
+MPL 0001 MacroPlacer.cpp:210       no rows found.
+MPL 0002 MacroPlacer.cpp:249       Missing Liberty Detected. TritonMP will place macros without 
+MPL 0004 MacroPlacer.cpp:863       Cannot find any macros in this design
+MPL 0005 MacroPlacer.cpp:866       NumMacros {}
+MPL 0009 MacroPlacer.cpp:264       {} pins {}
+MPL 0011 MacroPlacer.cpp:1497      pin {} is not placed. Using west.
+MPL 0022 MacroPlacer.cpp:908       {} is not in MacroPlacer
+MPL 0025 MacroPlacer.cpp:933       Cannot open file {}
+MPL 0026 MacroPlacer.cpp:955       Cannot parse {}
+MPL 0027 MacroPlacer.cpp:978       Cannot parse {}
+MPL 0028 MacroPlacer.cpp:988       Cannot open file {}
+MPL 0029 MacroPlacer.cpp:1014      Cannot parse {}
+MPL 0030 MacroPlacer.cpp:1031      Cannot parse {}
+MPL 0061 Partition.cpp:544         Parquet BBOX exceed the given area
+MPL 0063 Partition.cpp:550         TargetLayout {:g} {:g}
+MPL 0070 MacroPlacer.cpp:417       NumExtractedSets: {}
+MPL 0071 MacroPlacer.cpp:449       SetId: {}
+MPL 0072 MacroPlacer.cpp:450       WeightedWL: {:g}
+MPL 0073 MacroPlacer.cpp:459       NumFinalSols: {}
+MPL 0074 MacroPlacer.cpp:523       macro {} not exists in macroInstMap
+MPL 0075 MacroPlacer.cpp:529       Partition- {} already updated (UpdateMacroPartMap)
+MPL 0076 MacroPlacer.cpp:554       NumMacros {}
+MPL 0077 MacroPlacer.cpp:609       NumCutLines {}
+MPL 0078 MacroPlacer.cpp:619       CutLine {:.2f}
+MPL 0079 MacroPlacer.cpp:622       RoundUpCutLine {:.2f}
+MPL 0080 MacroPlacer.cpp:785       Impossible partiton found. Continue
+MPL 0081 MacroPlacer.tcl:99        macro place -global_config deprecated. Use -channel, -halo arguments.
+MPL 0082 MacroPlacer.tcl:104       cannot read $global_config_file
+MPL 0083 MacroPlacer.tcl:114       cannot read $local_config_file
+MPL 0085 MacroPlacer.tcl:78        fence_region left x is less than die left x.
+MPL 0086 MacroPlacer.tcl:82        fence_region bottom y is less than die bottom y.
+MPL 0087 MacroPlacer.tcl:86        fence_region right x is greater than die right x.
+MPL 0088 MacroPlacer.tcl:90        fence_region top y is greater than die top y.
+MPL 0089 MacroPlacer.tcl:121       No rows found. Use initialize_floorplan to add rows.
+MPL 0090 MacroPlacer.tcl:109       macro place -local_config deprecated.
+MPL 0092 MacroPlacer.tcl:47        -halo is not a list of 2 values.
+MPL 0093 MacroPlacer.tcl:58        -channel is not a list of 2 values.

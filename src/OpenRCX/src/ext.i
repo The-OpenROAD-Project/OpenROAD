@@ -35,12 +35,16 @@
 %module openrcx
 %{
 #include "openroad/OpenRoad.hh"
-#include "ext.h"
+#include "OpenRCX/ext.h"
 
 namespace ord {
 // Defined in OpenRoad.i
 rcx::Ext*
 getOpenRCX();
+
+OpenRoad *
+getOpenRoad();
+
 }
 
 using ord::getOpenRCX;
@@ -65,7 +69,8 @@ extract(const char* ext_model_file,
         int cc_model,
         int context_depth,
         const char* debug_net_id,
-        bool lef_res)
+        bool lef_res,
+        bool no_merge_via_res)
 {
   Ext* ext = getOpenRCX();
   Ext::ExtractOptions opts;
@@ -79,7 +84,8 @@ extract(const char* ext_model_file,
   opts.context_depth = context_depth;
   opts.lef_res = lef_res;
   opts.debug_net = debug_net_id;
-
+  opts.no_merge_via_res = no_merge_via_res;
+  
   ext->extract(opts);
 }
 
@@ -93,6 +99,7 @@ write_spef(const char* file,
   opts.file = file;
   opts.nets = nets;
   opts.net_id = net_id;
+  
   ext->write_spef(opts);
 }
 
@@ -119,6 +126,7 @@ diff_spef(const char* file,
   opts.r_cap = r_cap;
   opts.r_cc_cap = r_cc_cap;
   opts.r_conn = r_conn;
+  
   ext->diff_spef(opts);
 }
 
@@ -178,8 +186,8 @@ read_spef(const char* file)
 {
   Ext* ext = getOpenRCX();
   Ext::ReadSpefOpts opts;
-
   opts.file = file;
+  
   ext->read_spef(opts);
 }
 

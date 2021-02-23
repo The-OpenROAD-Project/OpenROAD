@@ -29,40 +29,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include <dbRtTree.h>
+#include <dbShape.h>
+#include <dbWireCodec.h>
 #include <stdio.h>
 
 #include <algorithm>
 
 #include "db.h"
 #include "dbSearch.h"
-
-//#include "dbWireCodec.h"
-//#include "dbShape.h"
-//#include "dbRtTree.h"
-
-#include <dbRtTree.h>
-#include <dbShape.h>
-#include <dbWireCodec.h>
-
-#include "extRCap.h"
-#include "extSpef.h"
-#include "exttree.h"
-
-//#include "logger.h"
-#include <dbLogger.h>
+#include "OpenRCX/extRCap.h"
+#include "OpenRCX/extSpef.h"
+#include "OpenRCX/exttree.h"
+#include "utility/Logger.h"
 
 namespace rcx {
 
-void extMain::setPowerExtOptions(bool        skip_power_stubs,
+using utl::RCX;
+
+void extMain::setPowerExtOptions(bool skip_power_stubs,
                                  const char* exclude_cells,
-                                 bool        skip_m1_caps,
+                                 bool skip_m1_caps,
                                  const char* source_file)
 {
-  _power_extract_only      = true;
-  _skip_power_stubs        = skip_power_stubs;
+  _power_extract_only = true;
+  _skip_power_stubs = skip_power_stubs;
   _power_exclude_cell_list = exclude_cells;
-  _skip_m1_caps            = skip_m1_caps;
-  _power_source_file       = NULL;
+  _skip_m1_caps = skip_m1_caps;
+  _power_source_file = NULL;
   if (source_file != NULL)
     _power_source_file = strdup(source_file);
 }
@@ -79,8 +73,8 @@ bool extMain::markExcludedCells()
   for (uint ii = 0; ii < cnt; ii++) {
     odb::dbMaster* m = masters[ii];
     m->setSpecialPower(true);
-    odb::notice(
-        0, "Marked Master %s as special power cell\n", m->getConstName());
+    logger_->info(
+        RCX, 299, "Marked Master {} as special power cell", m->getConstName());
   }
 
   return true;
@@ -91,10 +85,10 @@ float extMain::getPowerViaRes(odb::dbBox* v, float val)
   bool dbg = false;
   if (dbg)
     writeViaName(stdout, v, 0, "\n");
-  uint            cutCount = 0;
-  float           res      = val;
-  uint            level;
-  uint            width;
+  uint cutCount = 0;
+  float res = val;
+  uint level;
+  uint width;
   odb::dbTechVia* tvia = v->getTechVia();
   if (tvia != NULL) {
     res = tvia->getResistance();
@@ -107,7 +101,7 @@ float extMain::getPowerViaRes(odb::dbBox* v, float val)
       if (res <= 0.0) {
         level = tvia->getBottomLayer()->getRoutingLevel();
         width = tvia->getBottomLayer()->getWidth();
-        res   = getResistance(level, width, width, 0);
+        res = getResistance(level, width, width, 0);
         if (cutCount > 0)
           res /= cutCount;
         if (dbg)
@@ -116,7 +110,7 @@ float extMain::getPowerViaRes(odb::dbBox* v, float val)
     }
   } else {
     odb::dbVia* bvia = v->getBlockVia();
-    res              = computeViaResistance(v, cutCount);
+    res = computeViaResistance(v, cutCount);
     if (dbg)
       fprintf(stdout,
               "\tComputed Block Via %s Res = %g\n",
@@ -125,7 +119,7 @@ float extMain::getPowerViaRes(odb::dbBox* v, float val)
     if (res <= 0.0) {
       level = bvia->getBottomLayer()->getRoutingLevel();
       width = bvia->getBottomLayer()->getWidth();
-      res   = getResistance(level, width, width, 0);
+      res = getResistance(level, width, width, 0);
       if (cutCount > 0)
         res /= cutCount;
       if (dbg)
@@ -183,11 +177,11 @@ class sortInst_x
   }
 };
 // static void print_wire( odb::dbWire * wire );
-void extMain::writeViaRC(FILE*             fp,
-                         uint              level,
+void extMain::writeViaRC(FILE* fp,
+                         uint level,
                          odb::dbTechLayer* layer,
-                         odb::dbBox*       v,
-                         odb::dbBox*       w)
+                         odb::dbBox* v,
+                         odb::dbBox* w)
 {
   uint top;
   uint bot = _block->getSearchDb()->getViaLevels(v, top);
@@ -225,32 +219,31 @@ void extMain::writeResNode(char* nodeName, odb::dbCapNode* capNode, uint level)
         else
           writeViaName(nodeName, v, level, " ");
       } else {
-        v          = odb::dbBox::getBox(_tech, -vid);
+        v = odb::dbBox::getBox(_tech, -vid);
         char* name = getPowerSourceName(level, -vid);
         sprintf(nodeName, "%s ", name);
-        // odb::notice(0, "id=%d vianame=%s\n", vid, name);
       }
       if (level > 0)
         _via2JunctionMap->set(v->getId(), capNode->getId());
     }
   }
 }
-void extMain::writeNegativeCoords(char*       buf,
-                                  int         netId,
-                                  int         x,
-                                  int         y,
-                                  int         level,
+void extMain::writeNegativeCoords(char* buf,
+                                  int netId,
+                                  int x,
+                                  int y,
+                                  int level,
                                   const char* post)
 {
   const char* mx = "";
   if (x < 0) {
     mx = "m";
-    x  = -x;
+    x = -x;
   }
   const char* my = "";
   if (y < 0) {
     my = "m";
-    y  = -y;
+    y = -y;
   }
   if (level < 0)
     sprintf(buf, "%sn%d_%s%d_%s%d", _node_blk_prefix, netId, mx, x, my, y);
@@ -267,10 +260,10 @@ void extMain::writeNegativeCoords(char*       buf,
             post);
 }
 void extMain::createNode_xy(odb::dbCapNode* capNode,
-                            int             x,
-                            int             y,
-                            int             level,
-                            odb::dbITerm*   iterm)
+                            int x,
+                            int y,
+                            int level,
+                            odb::dbITerm* iterm)
 {
   if (_junct2viaMap->geti(capNode->getNode()) != 0)
     return;
@@ -301,7 +294,6 @@ void extMain::createNode_xy(odb::dbCapNode* capNode,
   writeNegativeCoords(buf, netId, x, y, level);
 
   odb::dbStringProperty::create(capNode, "_inode", buf);
-  // odb::notice(0, " capNode %s\n", buf);
   capNode->setNameFlag();
   if (iterm == NULL)
     return;
@@ -310,10 +302,8 @@ void extMain::createNode_xy(odb::dbCapNode* capNode,
   if (p != NULL) {
     odb::dbStringProperty::destroy(p);
     sprintf(buf, "%s %s", buf, p->getValue().c_str());
-    // odb::notice(0, "Destroy iterm Prop");
   }
   odb::dbStringProperty::create(iterm, "_inode", buf);
-  // odb::notice(0, " iterm %s\n", buf);
 }
 void extMain::writeInternalNode_xy(odb::dbCapNode* capNode, char* buff)
 {
@@ -342,8 +332,8 @@ void extMain::writeResNode(FILE* fp, odb::dbCapNode* capNode, uint level)
       // fprintf(fp, " n%d ", capNode->getId());
       writeInternalNode_xy(capNode, fp);
     else {
-      int         vid = _junct2viaMap->geti(capNode->getNode());
-      odb::dbBox* v   = NULL;
+      int vid = _junct2viaMap->geti(capNode->getNode());
+      odb::dbBox* v = NULL;
       if (vid > 0) {
         v = odb::dbSBox::getSBox(_block, vid);
 
@@ -353,20 +343,19 @@ void extMain::writeResNode(FILE* fp, odb::dbCapNode* capNode, uint level)
         else
           writeViaName(fp, v, level, " ");
       } else {
-        v          = odb::dbBox::getBox(_tech, -vid);
+        v = odb::dbBox::getBox(_tech, -vid);
         char* name = getPowerSourceName(level, -vid);
         fprintf(fp, "%s ", name);
         // sprintf(nodeName, "%s", name);
-        // odb::notice(0, "id=%d vianame=%s\n", vid, name);
       }
       if (level > 0)
         _via2JunctionMap->set(v->getId(), capNode->getId());
     }
   }
 }
-void extMain::writeResNodeRC(char*           capNodeName,
+void extMain::writeResNodeRC(char* capNodeName,
                              odb::dbCapNode* capNode,
-                             uint            level)
+                             uint level)
 {
   if (capNode->isITerm()) {
     sprintf(capNodeName, " I%d ", capNode->getNode());
@@ -396,10 +385,10 @@ void extMain::writeResNodeRC(FILE* fp, odb::dbCapNode* capNode, uint level)
     }
   }
 }
-void extMain::writeOneCapNode(FILE*           fp,
+void extMain::writeOneCapNode(FILE* fp,
                               odb::dbCapNode* capNode,
-                              uint            level,
-                              bool            onlyVias)
+                              uint level,
+                              bool onlyVias)
 {
   if (capNode->isITerm()) {
     if (capNode->getNet()->isMarked())  // VDD
@@ -410,7 +399,7 @@ void extMain::writeOneCapNode(FILE*           fp,
   // float cap= 1.0e-15;
   // float cap = capNode->getCapacitance();
   float cap = 1.0e-15 * _capNode_map[capNode->getId()];
-  char  capNodeName[128];
+  char capNodeName[128];
   if (!onlyVias) {
     writeResNodeRC(capNodeName, capNode, level);
     fprintf(fp, "C_0_%d %s 0 %g\n", capNode->getId(), capNodeName, cap);
@@ -427,10 +416,10 @@ void extMain::writeOneCapNode(FILE*           fp,
       writeSubcktNode(capNodeName, level > 1, capNode->getNet()->isMarked());
   }
 }
-void extMain::writeCapNodesRC(FILE*                         fp,
-                              odb::dbNet*                   net,
-                              uint                          level,
-                              bool                          onlyVias,
+void extMain::writeCapNodesRC(FILE* fp,
+                              odb::dbNet* net,
+                              uint level,
+                              bool onlyVias,
                               std::vector<odb::dbCapNode*>& capNodeTable)
 {
   for (uint ii = 0; ii < capNodeTable.size(); ii++) {
@@ -438,11 +427,11 @@ void extMain::writeCapNodesRC(FILE*                         fp,
     writeOneCapNode(fp, capNode, level, onlyVias);
   }
 }
-void extMain::writeCapNodesRC(FILE*       fp,
+void extMain::writeCapNodesRC(FILE* fp,
                               odb::dbNet* net,
-                              uint        level,
-                              bool        onlyVias,
-                              bool        skipFirst)
+                              uint level,
+                              bool onlyVias,
+                              bool skipFirst)
 {
   odb::dbSet<odb::dbCapNode> cSet = net->getCapNodes();
 
@@ -453,7 +442,7 @@ void extMain::writeCapNodesRC(FILE*       fp,
   odb::dbSet<odb::dbCapNode>::iterator rc_itr;
 
   uint cnt = 0;
-  rc_itr   = cSet.begin();
+  rc_itr = cSet.begin();
   if (skipFirst) {
     if (setCnt > 3) {
       cnt++;
@@ -475,7 +464,7 @@ void extMain::writeCapNodesRC(FILE*       fp,
     // float cap= 1.0e-15;
     // float cap = capNode->getCapacitance();
     float cap = 1.0e-15 * _capNode_map[capNode->getId()];
-    char  capNodeName[128];
+    char capNodeName[128];
     if (!onlyVias) {
       writeResNodeRC(capNodeName, capNode, level);
       fprintf(fp, "C_0_%d %s 0 %g\n", capNode->getId(), capNodeName, cap);
@@ -493,11 +482,11 @@ void extMain::writeCapNodesRC(FILE*       fp,
     }
   }
 }
-void extMain::writeCapNodes(FILE*       fp,
+void extMain::writeCapNodes(FILE* fp,
                             odb::dbNet* net,
-                            uint        level,
-                            bool        onlyVias,
-                            bool        skipFirst)
+                            uint level,
+                            bool onlyVias,
+                            bool skipFirst)
 {
   odb::dbSet<odb::dbCapNode> cSet = net->getCapNodes();
   cSet.reverse();
@@ -517,7 +506,7 @@ void extMain::writeCapNodes(FILE*       fp,
     // float cap= 1.0e-15;
     // float cap = capNode->getCapacitance();
     float cap = 1.0e-15 * _capNode_map[capNode->getId()];
-    char  capNodeName[128];
+    char capNodeName[128];
     if (!onlyVias) {
       writeResNode(capNodeName, capNode, level);
       fprintf(fp, "Cpn_0_%d %s 0 %g\n", capNode->getId(), capNodeName, cap);
@@ -552,21 +541,20 @@ float extMain::micronCoords(int xy)
 }
 float extMain::distributeCap(FILE* fp, odb::dbNet* net)
 {
-  odb::dbSet<odb::dbCapNode>           cSet = net->getCapNodes();
+  odb::dbSet<odb::dbCapNode> cSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator c_itr;
   for (c_itr = cSet.begin(); c_itr != cSet.end(); ++c_itr) {
-    odb::dbCapNode* capNode        = *c_itr;
+    odb::dbCapNode* capNode = *c_itr;
     _capNode_map[capNode->getId()] = 0.0;
   }
   float totCap = 0.0;
 
-  odb::dbSet<odb::dbRSeg>           rSet = net->getRSegs();
+  odb::dbSet<odb::dbRSeg> rSet = net->getRSegs();
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
 
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    odb::dbRSeg* rc  = *rc_itr;
-    float        cap = rc->getCapacitance(0);
-    // odb::notice(0, "R_%d_%d_s%d %g\n", net->getId(), rc->getId(),
+    odb::dbRSeg* rc = *rc_itr;
+    float cap = rc->getCapacitance(0);
     // rc->getShapeId(), cap);
 
     odb::dbCapNode* src = rc->getSourceCapNode();
@@ -598,41 +586,42 @@ float extMain::distributeCap(FILE* fp, odb::dbNet* net)
 uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
 {
   uint maxJunctionId = 0;
-  bool RCflag        = true;
+  bool RCflag = true;
 
   if (_dbgPowerFlow)
-    odb::notice(0, "setNodeCoords_xy Net= %s\n", net->getConstName());
+    logger_->info(RCX, 300, "setNodeCoords_xy Net= {}", net->getConstName());
   odb::dbWire* wire = net->getWire();
 
   if (!RCflag) {
     odb::dbWireShapeItr shapes;
-    odb::dbShape        s;
+    odb::dbShape s;
     for (shapes.begin(wire); shapes.next(s);) {
       uint sid = shapes.getShapeId();
-      int  vid;
+      int vid;
       wire->getProperty(sid, vid);
       // if (_dbgPowerFlow)
-      odb::notice(0,
-                  "sID= %d RC%d  %d %d %d %d\n",
-                  sid,
-                  vid,
-                  s.xMin(),
-                  s.yMin(),
-                  s.xMax(),
-                  s.yMax());
+      logger_->info(RCX,
+                    301,
+                    "sID= {} RC{}  {} {} {} {}",
+                    sid,
+                    vid,
+                    s.xMin(),
+                    s.yMin(),
+                    s.xMax(),
+                    s.yMax());
       if (vid == 0)
         continue;
-      odb::dbRSeg*    rc  = odb::dbRSeg::getRSeg(net->getBlock(), vid);
+      odb::dbRSeg* rc = odb::dbRSeg::getRSeg(net->getBlock(), vid);
       odb::dbCapNode* src = rc->getSourceCapNode();
       odb::dbCapNode* tgt = rc->getTargetCapNode();
       createNode_xy(src, s.xMin(), s.yMin(), level);
       createNode_xy(tgt, s.xMax(), s.yMax(), level);
     }
     if (_dbgPowerFlow)
-      odb::notice(0, "End Net= %s\n", net->getConstName());
+      logger_->info(RCX, 302, "End Net= {}", net->getConstName());
     return 0;
   }
-  odb::dbSet<odb::dbRSeg>           rSet = net->getRSegs();
+  odb::dbSet<odb::dbRSeg> rSet = net->getRSegs();
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
 
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
@@ -640,7 +629,6 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
     if (rc->getShapeId() == 0) {
       odb::dbCapNode* src = rc->getSourceCapNode();
       odb::dbCapNode* tgt = rc->getTargetCapNode();
-      // odb::notice(0,"RC%d  \n", rc->getId());
       continue;
     }
     int x = 0;
@@ -648,11 +636,8 @@ uint extMain::setNodeCoords_xy(odb::dbNet* net, int level)
     rc->getCoords(x, y);
     odb::dbShape s;
     wire->getShape(rc->getShapeId(), s);
-    // odb::notice(0,"RC%d  SID= %d %d %d %d %d  x=%d y=%d\n", rc->getId(),
-    // rc->getShapeId(), s.xMin(), s.yMin(), s.xMax(), s.yMax(), x, y);
 
     odb::dbCapNode* src = rc->getSourceCapNode();
-    // odb::notice(0, "\tSRC: ");
     if (!src->isName()) {
       // createNode_xy(src, x, y, level);
       createNode_xy(src, s.xMin(), s.yMin(), level);
@@ -681,10 +666,6 @@ endxy[2]);
 {
         bool RCflag= true;
 
-        if (_dbgPowerFlow)
-                odb::notice(0,"setNodeCoords_xy Net= %s\n",
-net->getConstName()); odb::dbWire *wire= net->getWire();
-
         if (!RCflag)
         {
         odb::dbWireShapeItr shapes;
@@ -694,15 +675,13 @@ net->getConstName()); odb::dbWire *wire= net->getWire();
                 int vid;
                 wire->getProperty(sid, vid);
                 if (_dbgPowerFlow)
-                odb::notice(0,"sID= %d RC%d  %d %d %d %d\n", sid, vid, s.xMin(),
-s.yMin(), s.xMax(), s.yMax()); if (vid==0) continue; odb::dbRSeg* rc =
+                logger_->info(RCX, 0,"sID= {} RC{}  {} {} {} {}", sid, vid,
+s.xMin(), s.yMin(), s.xMax(), s.yMax()); if (vid==0) continue; odb::dbRSeg* rc =
 odb::dbRSeg::getRSeg(net->getBlock(), vid); odb::dbCapNode *src=
 rc->getSourceCapNode(); odb::dbCapNode *tgt= rc->getTargetCapNode();
                 createNode_xy(src, s.xMin(), s.yMin());
                 createNode_xy(tgt, s.xMax(), s.yMax());
         }
-        if (_dbgPowerFlow)
-                odb::notice(0,"End Net= %s\n", net->getConstName());
         return;
         }
         odb::dbSet<odb::dbRSeg> rSet= net->getRSegs();
@@ -733,8 +712,6 @@ rc->getSourceCapNode(); odb::dbCapNode *tgt= rc->getTargetCapNode();
 
                 odb::dbShape s;
                 wire->getShape( rc->getShapeId(), s );
-                odb::notice(0,"RC%d  SID= %d %d %d %d %d  x=%d y=%d\n",
-rc->getId(), rc->getShapeId(), s.xMin(), s.yMin(), s.xMax(), s.yMax(), x, y);
 
                 if (dir>0)
                         xy[0]= s.xMax();
@@ -744,12 +721,12 @@ rc->getId(), rc->getShapeId(), s.xMin(), s.yMin(), s.xMax(), s.yMax(), x, y);
                 createNode_xy(tgt, xy[0], xy[1]);
         }
 }*/
-double extMain::writeRes(FILE*       fp,
+double extMain::writeRes(FILE* fp,
                          odb::dbNet* net,
-                         uint        level,
-                         uint        width,
-                         uint        dir,
-                         bool        skipFirst)
+                         uint level,
+                         uint width,
+                         uint dir,
+                         bool skipFirst)
 {
   double totRes = 0.0;
   // rSet.reverse();
@@ -770,7 +747,7 @@ double extMain::writeRes(FILE*       fp,
     fprintf(_globGeom, "prop netName %s endprop\n", net->getConstName());
   }
 
-  odb::dbSet<odb::dbRSeg>           rSet = net->getRSegs();
+  odb::dbSet<odb::dbRSeg> rSet = net->getRSegs();
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
 
   // 102912 for( rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr )
@@ -831,7 +808,7 @@ double extMain::writeRes(FILE*       fp,
 // COMMENT -- 032913
 void extMain::replaceItermCoords(odb::dbNet* net, uint dir, int xy[2])
 {
-  odb::dbSet<odb::dbCapNode>           cSet   = net->getCapNodes();
+  odb::dbSet<odb::dbCapNode> cSet = net->getCapNodes();
   odb::dbSet<odb::dbCapNode>::iterator rc_itr = cSet.begin();
   for (; rc_itr != cSet.end(); ++rc_itr) {
     odb::dbCapNode* capNode = *rc_itr;
@@ -850,8 +827,8 @@ void extMain::replaceItermCoords(odb::dbNet* net, uint dir, int xy[2])
       int n1 = parser.mkWords(buff, "_");
       int ixy[2];
 
-      ixy[0]   = parser.getInt(1);
-      ixy[1]   = parser.getInt(2);
+      ixy[0] = parser.getInt(1);
+      ixy[1] = parser.getInt(2);
       ixy[dir] = xy[dir];
 
       char buff2[128];
@@ -864,12 +841,8 @@ void extMain::replaceItermCoords(odb::dbNet* net, uint dir, int xy[2])
 
       p->setValue(buff2);
 
-      // odb::notice(0, "found iterm I%d node = %s dir=%d xy= %d %d NEW %s\n",
-      // capNode->getId(), buff, dir, xy[0], xy[1], buff2);
-      // COMMENT --32613 -- transfered from findConnect
-
-      odb::dbITerm*  iterm = odb::dbITerm::getITerm(_block, capNode->getNode());
-      odb::dbInst*   inst  = iterm->getInst();
+      odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, capNode->getNode());
+      odb::dbInst* inst = iterm->getInst();
       odb::dbMaster* master = inst->getMaster();
 
       fprintf(_blkInfo,
@@ -896,10 +869,10 @@ void extMain::replaceItermCoords(odb::dbNet* net, uint dir, int xy[2])
 }
 void extMain::findViaMainCoord(odb::dbNet* net, char* buff)
 {
-  odb::dbSet<odb::dbRSeg>           rSet = net->getRSegs();
+  odb::dbSet<odb::dbRSeg> rSet = net->getRSegs();
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
-  uint                              cnt = 0;
-  rc_itr                                = rSet.begin();
+  uint cnt = 0;
+  rc_itr = rSet.begin();
   for (; rc_itr != rSet.end(); ++rc_itr) {
     odb::dbRSeg* rc = *rc_itr;
 
@@ -910,35 +883,34 @@ void extMain::findViaMainCoord(odb::dbNet* net, char* buff)
       if (p == NULL)
         continue;
       sprintf(buff, " %s ", p->getValue().c_str());
-      // odb::notice(0, "found via cap node = %s\n", buff);
       return;
     }
   }
 }
-double extMain::writeResRC(FILE*       fp,
+double extMain::writeResRC(FILE* fp,
                            odb::dbNet* net,
-                           uint        level,
-                           uint        width,
-                           uint        dir,
-                           bool        skipFirst,
-                           bool        reverse,
-                           bool        onlyVias,
-                           bool        writeCapNodes,
-                           int         xy[2])
+                           uint level,
+                           uint width,
+                           uint dir,
+                           bool skipFirst,
+                           bool reverse,
+                           bool onlyVias,
+                           bool writeCapNodes,
+                           int xy[2])
 {
   if ((level > 1) && (_globGeom != NULL))
     fprintf(_globGeom, "prop netName %s endprop\n", net->getConstName());
 
-  odb::dbSet<odb::dbRSeg> rSet   = net->getRSegs();
-  uint                    setCnt = rSet.size();
+  odb::dbSet<odb::dbRSeg> rSet = net->getRSegs();
+  uint setCnt = rSet.size();
   if (setCnt == 0)
     return 0;
   if (reverse)
     rSet.reverse();
 
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
-  uint                              cnt = 0;
-  rc_itr                                = rSet.begin();
+  uint cnt = 0;
+  rc_itr = rSet.begin();
   if (skipFirst) {
     if (setCnt > 1) {
       cnt++;
@@ -1056,8 +1028,8 @@ bool extMain::fisrt_markInst_UserFlag(odb::dbInst* inst, odb::dbNet* net)
 }
 
 odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
-                                   odb::dbNet*  net,
-                                   odb::dbNet*  targetNet)
+                                   odb::dbNet* net,
+                                   odb::dbNet* targetNet)
 {
   odb::dbITerm* iterm = NULL;
 
@@ -1067,7 +1039,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
 
   uint instId = inst->getId();
 
-  odb::dbSet<odb::dbITerm>           iterms = inst->getITerms();
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   odb::dbSet<odb::dbITerm>::iterator iterm_itr;
 
   odb::dbITerm* foundIterm = NULL;
@@ -1078,11 +1050,7 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
     if (!((iterm->getSigType() == odb::dbSigType::GROUND)
           || (iterm->getSigType() == odb::dbSigType::POWER)))
       continue;
-    // if (iterm->getId()==180648)
-    // odb::notice(0, "-------
-    // ----------------------------------------------------------- Found
-    // 180648!\n");
-    // 071212 if (targetNet==iterm->getNet())
+
     if (net == iterm->getNet()) {
       if (master->isSpecialPower())
         return NULL;
@@ -1114,13 +1082,11 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
   }
   if (foundIterm != NULL) {
     // no TIE lo/hi 3/26/2013  iterm2Vias_cells(inst, foundIterm);
-
-    // odb::notice(0, "findConnect I%d\n", foundIterm->getId());
     return foundIterm;
   }
   return NULL;
 
-  odb::dbSet<odb::dbMTerm>           mterms = master->getMTerms();
+  odb::dbSet<odb::dbMTerm> mterms = master->getMTerms();
   odb::dbSet<odb::dbMTerm>::iterator itr;
 
   for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
@@ -1132,18 +1098,20 @@ odb::dbITerm* extMain::findConnect(odb::dbInst* inst,
     break;
   }
   if (iterm == NULL) {
-    odb::warning(0,
-                 "Cannot conect to Inst: %s of %s for power net %s\n",
-                 inst->getConstName(),
-                 master->getConstName(),
-                 net->getConstName());
+    logger_->warn(RCX,
+                  303,
+                  "Cannot connect to Inst: {} of {} for power net {}",
+                  inst->getConstName(),
+                  master->getConstName(),
+                  net->getConstName());
     odb::dbBox* bb = inst->getBBox();
-    odb::warning(0,
-                 "   @ %d %d  %d %d\n",
-                 bb->xMin(),
-                 bb->yMin(),
-                 bb->getDX(),
-                 bb->getDY());
+    logger_->warn(RCX,
+                  304,
+                  "   @ {} {}  {} {}",
+                  bb->xMin(),
+                  bb->yMin(),
+                  bb->getDX(),
+                  bb->getDY());
   } else {
     // fprintf(_blkInfo, "%s %s is_std [%s] I%d\n", inst->getConstName(),
     if (!master->isSpecialPower()) {
@@ -1278,8 +1246,9 @@ foundIterm->getId());
         }
         if (iterm==NULL)
         {
-                odb::warning(0, "Cannot find an iterm for Inst: %s for power net
-%s\n", inst->getConstName(), net->getConstName());
+                logger_->warn(RCX, 0, "Cannot find an iterm for Inst: {} for
+power net
+{}", inst->getConstName(), net->getConstName());
         }
         else {
                 //fprintf(_blkInfo, "%s %s is_std [%s] I%d\n",
@@ -1307,20 +1276,17 @@ inst->getBBox(); fprintf(_coordsFP, "%s %d %d  %d %d   I%d %s\n",
 }
 */
 uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer,
-                                       int*              xyLo,
-                                       int*              xyHi,
-                                       uint*             pitch)
+                                       int* xyLo,
+                                       int* xyHi,
+                                       uint* pitch)
 {
   odb::Rect maxRect;
   _block->getDieArea(maxRect);
 
   uint width = layer->getWidth();
-  uint p     = layer->getPitch();
+  uint p = layer->getPitch();
   if (p <= 0)
-    error(0,
-          "Layer %s has pitch %u !!\n",
-          layer->getConstName(),
-          *pitch);
+    error(0, "Layer %s has pitch %u !!\n", layer->getConstName(), *pitch);
 
   pitch[0] = 0;
   pitch[1] = 0;
@@ -1329,7 +1295,7 @@ uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer,
     dir = 1;
   pitch[dir] = p;
 
-  std::vector<int>  trackXY(32000);
+  std::vector<int> trackXY(32000);
   odb::dbTrackGrid* tg = _block->findTrackGrid(layer);
   if (tg) {
     tg->getGridX(trackXY);
@@ -1344,9 +1310,9 @@ uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer,
   xyHi[1] = maxRect.yMax();
   return dir;
 }
-uint extMain::mergeRails(uint                      dir,
+uint extMain::mergeRails(uint dir,
                          std::vector<odb::dbBox*>& boxTable,
-                         std::vector<odb::Rect*>&  mergeTable)
+                         std::vector<odb::Rect*>& mergeTable)
 {
   uint n = boxTable.size();
   for (uint ii = 0; ii < n; ii++) {
@@ -1368,12 +1334,12 @@ uint extMain::mergeRails(uint                      dir,
   }
   return mergeTable.size();
 }
-uint extMain::getITermConn2(uint                dir,
+uint extMain::getITermConn2(uint dir,
                             odb::dbWireEncoder& encoder,
-                            odb::dbWire*        wire,
-                            odb::dbNet*         net,
-                            int*                xy,
-                            int*                xy2)
+                            odb::dbWire* wire,
+                            odb::dbNet* net,
+                            int* xy,
+                            int* xy2)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -1381,7 +1347,7 @@ uint extMain::getITermConn2(uint                dir,
   // odb::dbTechLayerRule *wRule=_netUtil->getRule(level,WIDTH2);
 
   std::vector<odb::dbInst*> instTable;
-  uint                      instCnt
+  uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
   /*
   if (instCnt>0)
@@ -1390,47 +1356,51 @@ uint extMain::getITermConn2(uint                dir,
   xy2[0], xy2[1]);
   */
 
-  int        prevX = xy[0];
-  int        prevY = xy[1];
+  int prevX = xy[0];
+  int prevY = xy[1];
   sortInst_x sort_by_x;
   std::sort(instTable.begin(), instTable.end(), sort_by_x);
   for (uint jj = 0; jj < instCnt; jj++) {
-    odb::dbInst* inst   = instTable[jj];
-    int          instId = inst->getId();
-    odb::dbBox*  bb     = inst->getBBox();
-    const char*  debug  = "";
+    odb::dbInst* inst = instTable[jj];
+    int instId = inst->getId();
+    odb::dbBox* bb = inst->getBBox();
+    const char* debug = "";
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
-                  inst->getConstName(),
-                  net->getConstName(),
-                  instCnt,
-                  xy[0],
-                  xy[1],
-                  xy2[0],
-                  xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
-                  bb->xMin(),
-                  bb->xMax(),
-                  bb->yMin(),
-                  bb->yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
-                  instCnt,
-                  prevX,
-                  prevY);
+      logger_->info(RCX,
+                    305,
+                    "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
+                    inst->getConstName(),
+                    net->getConstName(),
+                    instCnt,
+                    xy[0],
+                    xy[1],
+                    xy2[0],
+                    xy2[1]);
+      logger_->info(RCX,
+                    306,
+                    "inst BBox= X {} {}  Y {} {}",
+                    bb->xMin(),
+                    bb->xMax(),
+                    bb->yMin(),
+                    bb->yMax());
+      logger_->info(RCX,
+                    307,
+                    "instCount={} ----- --------- Prev X {}  Y {} ",
+                    instCnt,
+                    prevX,
+                    prevY);
       for (uint kk = 0; kk < instCnt; kk++) {
-        odb::dbInst* ii     = instTable[kk];
-        int          instId = inst->getId();
-        odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    b->xMin(),
-                    b->yMin(),
-                    b->xMax(),
-                    b->yMax());
+        odb::dbInst* ii = instTable[kk];
+        int instId = inst->getId();
+        odb::dbBox* b = ii->getBBox();
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      b->xMin(),
+                      b->yMin(),
+                      b->xMax(),
+                      b->yMax());
       }
     }
     if ((net->getSigType() == odb::dbSigType::POWER) && inst->getUserFlag1())
@@ -1449,7 +1419,7 @@ uint extMain::getITermConn2(uint                dir,
       if (bb->yMax() < xy[1] - WIDTH2 / 2)
         continue;
     }
-    int bbXY[2]  = {bb->xMin(), bb->yMin()};
+    int bbXY[2] = {bb->xMin(), bb->yMin()};
     int bbXY2[2] = {bb->xMax(), bb->yMax()};
     /*
                     if (dir>0)
@@ -1489,22 +1459,21 @@ uint extMain::getITermConn2(uint                dir,
     if (sameJunctionPoint(ixy[0], ixy[1]))
     {
             if (_dbgPowerFlow)
-            odb::notice(0, "\t\tSameJubct[%d]: %d %d ITERM=%d\n", jj, ixy[0],
-    ixy[1], iterm->getId()); if (dir>0) ixy[!dir]= (bb->xMin()+bb->xMax())/2;
-            else
-                    ixy[!dir]= (bb->yMin()+bb->yMax())/2;
+            logger_->info(RCX, 0, "\t\tSameJubct[{}]: {} {} ITERM={}", jj,
+    ixy[0], ixy[1], iterm->getId()); if (dir>0) ixy[!dir]=
+    (bb->xMin()+bb->xMax())/2; else ixy[!dir]= (bb->yMin()+bb->yMax())/2;
 
             if (ameJunctionPointameJunctionPoint(ixy[0], ixy[1]))
             if (_dbgPowerFlow)
-                    odb::notice(0, "\t\tFIXED! SameJubct[%d]: %d %d ITERM=%d\n",
-    jj, ixy[0], ixy[1], iterm->getId());
+                    logger_->info(RCX, 0, "\t\tFIXED! SameJubct[{}]: {} {}
+    ITERM={}", jj, ixy[0], ixy[1], iterm->getId());
     }
     */
     uint jid = encoder.addPoint(ixy[0], ixy[1]);
     encoder.addITerm(iterm);
-    // odb::notice(0, "\t\tITERM [%d]: %d %d   <%d> %s\n", jj, ixy[0], ixy[1],
-    // iterm->getId(), inst->getConstName()); encoder.newPathExt(jid, 0); uint
-    // jid= encoder.addPoint(PP[0], PP[1], 0);
+    // logger_->info(RCX, 0, "\t\tITERM [{}]: {} {}   <{}> {}", jj, ixy[0],
+    // ixy[1], iterm->getId(), inst->getConstName()); encoder.newPathExt(jid,
+    // 0); uint jid= encoder.addPoint(PP[0], PP[1], 0);
 
     xy[!dir] = ixy[!dir];
   }
@@ -1522,7 +1491,7 @@ uint extMain::getITermConn2(uint                dir,
         || ((net->getSigType() == odb::dbSigType::GROUND)
             && !inst->getUserFlag2())) {
       odb::dbBox* bb = inst->getBBox();
-      // odb::notice(0, "jj%d I%d %s %d %d %d %d %s\n", jj, inst->getId(),
+      // logger_->info(RCX, 0, "jj{} I{} {} {} {} {} {} {}", jj, inst->getId(),
       // inst->getMaster()->getConstName(),
       // bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax(),
       // wire->getNet()->getConstName());
@@ -1538,11 +1507,11 @@ uint extMain::getITermConn2(uint                dir,
 }
 //#define DEBUG_INST_NAME "ledc_3.OPTHOLD_G_11905"
 odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
-                                        uint            level,
-                                        uint            dir,
-                                        odb::dbNet*     net,
-                                        int*            xy,
-                                        int*            xy2)
+                                        uint level,
+                                        uint dir,
+                                        odb::dbNet* net,
+                                        int* xy,
+                                        int* xy2)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -1550,65 +1519,65 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
   // odb::dbTechLayerRule *wRule=_netUtil->getRule(level,WIDTH2);
 
   std::vector<odb::dbInst*> instTable;
-  uint                      instCnt
+  uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
 
-  int        prevX = xy[0];
-  int        prevY = xy[1];
+  int prevX = xy[0];
+  int prevY = xy[1];
   sortInst_x sort_by_x;
   std::sort(instTable.begin(), instTable.end(), sort_by_x);
 
   std::vector<odb::Rect> rectTable;
 
-  // odb::notice(0, "------------------------\n");
   for (uint kk = 0; kk < instCnt; kk++) {
     odb::dbInst* inst = instTable[kk];
-    odb::dbBox*  b    = inst->getBBox();
-    odb::Rect    rb;
+    odb::dbBox* b = inst->getBBox();
+    odb::Rect rb;
     b->getBox(rb);
     rectTable.push_back(rb);
 
-    // odb::notice(0, "inst BBox= X %d %d  Y %d %d\n", rb.xMin(), rb.xMax(),
-    // rb.yMin(), rb.yMax());
-
 #ifdef DEBUG_INST_NAME
     if (strcmp(inst->getConstName(), DEBUG_INST_NAME) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
-                  inst->getConstName(),
-                  net->getConstName(),
-                  instCnt,
-                  xy[0],
-                  xy[1],
-                  xy2[0],
-                  xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
-                  rb.xMin(),
-                  rb.xMax(),
-                  rb.yMin(),
-                  rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
-                  instCnt,
-                  prevX,
-                  prevY);
+      logger_->info(RCX,
+                    305,
+                    "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
+                    inst->getConstName(),
+                    net->getConstName(),
+                    instCnt,
+                    xy[0],
+                    xy[1],
+                    xy2[0],
+                    xy2[1]);
+      logger_->info(RCX,
+                    306,
+                    "inst BBox= X {} {}  Y {} {}",
+                    rb.xMin(),
+                    rb.xMax(),
+                    rb.yMin(),
+                    rb.yMax());
+      logger_->info(RCX,
+                    307,
+                    "instCount={} ----- --------- Prev X {}  Y {} ",
+                    instCnt,
+                    prevX,
+                    prevY);
       for (uint kk = 0; kk < instCnt; kk++) {
-        odb::dbInst* ii     = instTable[kk];
-        int          instId = inst->getId();
-        odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    b->xMin(),
-                    b->yMin(),
-                    b->xMax(),
-                    b->yMax());
+        odb::dbInst* ii = instTable[kk];
+        int instId = inst->getId();
+        odb::dbBox* b = ii->getBBox();
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      b->xMin(),
+                      b->yMin(),
+                      b->xMax(),
+                      b->yMax());
       }
     }
 #endif
   }
-  // odb::notice(0, "------------------------\n");
+  // logger_->info(RCX, 0, "------------------------");
   /*
           for (uint jj= 0; jj<instCnt; jj++)
           {
@@ -1646,54 +1615,59 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
           }
   */
   for (uint jj = 0; jj < instCnt; jj++) {
-    odb::dbInst* inst   = instTable[jj];
-    int          instId = inst->getId();
-    odb::dbBox*  b      = inst->getBBox();
-    odb::Rect    rb     = rectTable[jj];
+    odb::dbInst* inst = instTable[jj];
+    int instId = inst->getId();
+    odb::dbBox* b = inst->getBBox();
+    odb::Rect rb = rectTable[jj];
 
     const char* debug = " ";
 #ifdef DEBUG_INST_NAME
     debug = DEBUG_INST_NAME;
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
-                  inst->getConstName(),
-                  net->getConstName(),
-                  instCnt,
-                  xy[0],
-                  xy[1],
-                  xy2[0],
-                  xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
-                  rb.xMin(),
-                  rb.xMax(),
-                  rb.yMin(),
-                  rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
-                  instCnt,
-                  prevX,
-                  prevY);
+      logger_->info(RCX,
+                    305,
+                    "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
+                    inst->getConstName(),
+                    net->getConstName(),
+                    instCnt,
+                    xy[0],
+                    xy[1],
+                    xy2[0],
+                    xy2[1]);
+      logger_->info(RCX,
+                    306,
+                    "inst BBox= X {} {}  Y {} {}",
+                    rb.xMin(),
+                    rb.xMax(),
+                    rb.yMin(),
+                    rb.yMax());
+      logger_->info(RCX,
+                    307,
+                    "instCount={} ----- --------- Prev X {}  Y {} ",
+                    instCnt,
+                    prevX,
+                    prevY);
       for (uint kk = 0; kk < instCnt; kk++) {
-        odb::Rect    rrb    = rectTable[kk];
-        odb::dbInst* ii     = instTable[kk];
-        int          instId = inst->getId();
-        odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    b->xMin(),
-                    b->yMin(),
-                    b->xMax(),
-                    b->yMax());
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    rrb.xMin(),
-                    rrb.yMin(),
-                    rrb.xMax(),
-                    rrb.yMax());
+        odb::Rect rrb = rectTable[kk];
+        odb::dbInst* ii = instTable[kk];
+        int instId = inst->getId();
+        odb::dbBox* b = ii->getBBox();
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      b->xMin(),
+                      b->yMin(),
+                      b->xMax(),
+                      b->yMax());
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      rrb.xMin(),
+                      rrb.yMin(),
+                      rrb.xMax(),
+                      rrb.yMax());
       }
     }
 #endif
@@ -1702,7 +1676,7 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
     if ((net->getSigType() == odb::dbSigType::GROUND) && inst->getUserFlag2())
       continue;
 
-    int bbXY[2]  = {rb.xMin(), rb.yMin()};
+    int bbXY[2] = {rb.xMin(), rb.yMin()};
     int bbXY2[2] = {rb.xMax(), rb.yMax()};
 
     int n = !dir;
@@ -1719,31 +1693,30 @@ odb::dbCapNode* extMain::getITermConnRC(odb::dbCapNode* srcCapNode,
     else
       ixy[!dir] = rb.yMin();
 
-    // odb::notice(0, "I[%d] %10d %10d  %10d %10d\n",inst->getId(),rb.xMin(),
-    // rb.yMin(), rb.xMax(), rb.yMax());
     srcCapNode
         = makePowerRes(srcCapNode, dir, ixy, level, WIDTH2, iterm->getId(), 1);
 
     if ((_dbgPowerFlow)
         || ((debug != NULL) && (strcmp(inst->getConstName(), debug) == 0)))
-      odb::notice(0,
-                  "\t\tITERM [%d]: %d %d   <%d> %s\n",
-                  jj,
-                  ixy[0],
-                  ixy[1],
-                  iterm->getId(),
-                  inst->getConstName());
+      logger_->info(RCX,
+                    309,
+                    "\t\tITERM [{}]: {} {}   <{}> {}",
+                    jj,
+                    ixy[0],
+                    ixy[1],
+                    iterm->getId(),
+                    inst->getConstName());
 
     xy[!dir] = ixy[!dir];
   }
   return srcCapNode;
 }
-uint extMain::getITermConn(uint                dir,
+uint extMain::getITermConn(uint dir,
                            odb::dbWireEncoder& encoder,
-                           odb::dbWire*        wire,
-                           odb::dbNet*         net,
-                           int*                xy,
-                           int*                xy2)
+                           odb::dbWire* wire,
+                           odb::dbNet* net,
+                           int* xy,
+                           int* xy2)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -1751,45 +1724,45 @@ uint extMain::getITermConn(uint                dir,
   // odb::dbTechLayerRule *wRule=_netUtil->getRule(level,WIDTH2);
 
   std::vector<odb::dbInst*> instTable;
-  uint                      instCnt
+  uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
 
-  int        prevX = xy[0];
-  int        prevY = xy[1];
+  int prevX = xy[0];
+  int prevY = xy[1];
   sortInst_x sort_by_x;
   std::sort(instTable.begin(), instTable.end(), sort_by_x);
 
   std::vector<odb::Rect> rectTable;
   for (uint kk = 0; kk < instCnt; kk++) {
     odb::dbInst* inst = instTable[kk];
-    odb::dbBox*  b    = inst->getBBox();
-    odb::Rect    rb;
+    odb::dbBox* b = inst->getBBox();
+    odb::Rect rb;
     b->getBox(rb);
     rectTable.push_back(rb);
     /*
     if (strcmp(inst->getConstName(),"OPTHOLD_G_15519")==0)
     {
-    odb::notice(0, "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
+    logger_->info(RCX, 0, "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
     inst->getConstName(), net->getConstName(), instCnt, xy[0], xy[1], xy2[0],
-    xy2[1]); odb::notice(0, "inst BBox= X %d %d  Y %d %d\n", rb.xMin(),
-    rb.xMax(), rb.yMin(), rb.yMax()); odb::notice(0, "instCount=%d -----
-    --------- Prev X %d  Y %d \n", instCnt, prevX, prevY); for (uint kk= 0;
+    xy2[1]); logger_->info(RCX, 0, "inst BBox= X {} {}  Y {} {}", rb.xMin(),
+    rb.xMax(), rb.yMin(), rb.yMax()); logger_->info(RCX, 0, "instCount={} -----
+    --------- Prev X {}  Y {} ", instCnt, prevX, prevY); for (uint kk= 0;
     kk<instCnt; kk++)
             {
                     odb::dbInst *ii= instTable[kk];
                     int instId= inst->getId();
                     odb::dbBox *b= ii->getBBox();
-                    odb::notice(0, "I[%d] %10d %10d  %10d %10d\n",kk,b->xMin(),
-    b->yMin(), b->xMax(), b->yMax());
+                    logger_->info(RCX, 0, "I[{}] %10d %10d  %10d
+    %10d",kk,b->xMin(), b->yMin(), b->xMax(), b->yMax());
             }
     }
     */
   }
   for (uint jj = 0; jj < instCnt; jj++) {
-    odb::dbInst* inst   = instTable[jj];
-    int          instId = inst->getId();
-    odb::dbBox*  b      = inst->getBBox();
-    odb::Rect    rb     = rectTable[jj];
+    odb::dbInst* inst = instTable[jj];
+    int instId = inst->getId();
+    odb::dbBox* b = inst->getBBox();
+    odb::Rect rb = rectTable[jj];
 
     if (jj < instCnt - 1) {
       odb::Rect rc = rectTable[jj + 1];
@@ -1799,10 +1772,10 @@ uint extMain::getITermConn(uint                dir,
         {
           rb.set_xlo(rc.xMax());
 
-          rectTable[jj]     = rc;
+          rectTable[jj] = rc;
           rectTable[jj + 1] = rb;
 
-          instTable[jj]     = instTable[jj + 1];
+          instTable[jj] = instTable[jj + 1];
           instTable[jj + 1] = inst;
         } else if (rb.xMax() < rc.xMax()) {
           rc.set_xlo(rb.xMax());
@@ -1814,52 +1787,57 @@ uint extMain::getITermConn(uint                dir,
     }
   }
   for (uint jj = 0; jj < instCnt; jj++) {
-    odb::dbInst* inst   = instTable[jj];
-    int          instId = inst->getId();
-    odb::dbBox*  b      = inst->getBBox();
-    odb::Rect    rb     = rectTable[jj];
+    odb::dbInst* inst = instTable[jj];
+    int instId = inst->getId();
+    odb::dbBox* b = inst->getBBox();
+    odb::Rect rb = rectTable[jj];
 
     const char* debug = " ";
     if (strcmp(inst->getConstName(), debug) == 0) {
-      odb::notice(0,
-                  "inst= %s net=%s \tgetITermConn[%d]: %d %d  %d %d\n",
-                  inst->getConstName(),
-                  net->getConstName(),
-                  instCnt,
-                  xy[0],
-                  xy[1],
-                  xy2[0],
-                  xy2[1]);
-      odb::notice(0,
-                  "inst BBox= X %d %d  Y %d %d\n",
-                  rb.xMin(),
-                  rb.xMax(),
-                  rb.yMin(),
-                  rb.yMax());
-      odb::notice(0,
-                  "instCount=%d ----- --------- Prev X %d  Y %d \n",
-                  instCnt,
-                  prevX,
-                  prevY);
+      logger_->info(RCX,
+                    305,
+                    "inst= {} net={} \tgetITermConn[{}]: {} {}  {} {}",
+                    inst->getConstName(),
+                    net->getConstName(),
+                    instCnt,
+                    xy[0],
+                    xy[1],
+                    xy2[0],
+                    xy2[1]);
+      logger_->info(RCX,
+                    306,
+                    "inst BBox= X {} {}  Y {} {}",
+                    rb.xMin(),
+                    rb.xMax(),
+                    rb.yMin(),
+                    rb.yMax());
+      logger_->info(RCX,
+                    307,
+                    "instCount={} ----- --------- Prev X {}  Y {} ",
+                    instCnt,
+                    prevX,
+                    prevY);
       for (uint kk = 0; kk < instCnt; kk++) {
-        odb::Rect    rrb    = rectTable[kk];
-        odb::dbInst* ii     = instTable[kk];
-        int          instId = inst->getId();
-        odb::dbBox*  b      = ii->getBBox();
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    b->xMin(),
-                    b->yMin(),
-                    b->xMax(),
-                    b->yMax());
-        odb::notice(0,
-                    "I[%d] %10d %10d  %10d %10d\n",
-                    kk,
-                    rrb.xMin(),
-                    rrb.yMin(),
-                    rrb.xMax(),
-                    rrb.yMax());
+        odb::Rect rrb = rectTable[kk];
+        odb::dbInst* ii = instTable[kk];
+        int instId = inst->getId();
+        odb::dbBox* b = ii->getBBox();
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      b->xMin(),
+                      b->yMin(),
+                      b->xMax(),
+                      b->yMax());
+        logger_->info(RCX,
+                      308,
+                      "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                      kk,
+                      rrb.xMin(),
+                      rrb.yMin(),
+                      rrb.xMax(),
+                      rrb.yMax());
       }
     }
     if ((net->getSigType() == odb::dbSigType::POWER) && inst->getUserFlag1())
@@ -1883,7 +1861,7 @@ uint extMain::getITermConn(uint                dir,
                                     continue;
                     }
     */
-    int bbXY[2]  = {rb.xMin(), rb.yMin()};
+    int bbXY[2] = {rb.xMin(), rb.yMin()};
     int bbXY2[2] = {rb.xMax(), rb.yMax()};
 
     // if (dir>0)
@@ -1930,13 +1908,14 @@ uint extMain::getITermConn(uint                dir,
 
     if ((_dbgPowerFlow)
         || ((debug != NULL) && (strcmp(inst->getConstName(), debug) == 0)))
-      odb::notice(0,
-                  "\t\tITERM [%d]: %d %d   <%d> %s\n",
-                  jj,
-                  ixy[0],
-                  ixy[1],
-                  iterm->getId(),
-                  inst->getConstName());
+      logger_->info(RCX,
+                    308,
+                    "I[{}] {:10d} {:10d}  {:10d} {:10d}",
+                    jj,
+                    ixy[0],
+                    ixy[1],
+                    iterm->getId(),
+                    inst->getConstName());
 
     xy[!dir] = ixy[!dir];
   }
@@ -1963,18 +1942,18 @@ class sortRect_x
   }
 };
 
-void extMain::getSpecialItermShapes(odb::dbInst*                inst,
-                                    odb::dbNet*                 specialNet,
-                                    uint                        dir,
-                                    uint                        level,
-                                    int*                        xy,
-                                    int*                        xy2,
-                                    std::vector<odb::Rect*>&    rectTable,
+void extMain::getSpecialItermShapes(odb::dbInst* inst,
+                                    odb::dbNet* specialNet,
+                                    uint dir,
+                                    uint level,
+                                    int* xy,
+                                    int* xy2,
+                                    std::vector<odb::Rect*>& rectTable,
                                     std::vector<odb::dbITerm*>& itermTable)
 {
   odb::Rect bb(xy[0], xy[1], xy2[0], xy2[1]);
 
-  odb::dbSet<odb::dbITerm>           iterms = inst->getITerms();
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   odb::dbSet<odb::dbITerm>::iterator iterm_itr;
 
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
@@ -1986,8 +1965,8 @@ void extMain::getSpecialItermShapes(odb::dbInst*                inst,
       continue;
 
     std::vector<odb::Rect*> table;
-    odb::dbShape            s;
-    odb::dbITermShapeItr    term_shapes;
+    odb::dbShape s;
+    odb::dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -2020,13 +1999,13 @@ void extMain::getSpecialItermShapes(odb::dbInst*                inst,
   }
 }
 
-uint extMain::getITermPhysicalConn(uint                dir,
-                                   uint                level,
+uint extMain::getITermPhysicalConn(uint dir,
+                                   uint level,
                                    odb::dbWireEncoder& encoder,
-                                   odb::dbWire*        wire,
-                                   odb::dbNet*         net,
-                                   int*                xy,
-                                   int*                xy2)
+                                   odb::dbWire* wire,
+                                   odb::dbNet* net,
+                                   int* xy,
+                                   int* xy2)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -2034,7 +2013,7 @@ uint extMain::getITermPhysicalConn(uint                dir,
   // odb::dbTechLayerRule *wRule=_netUtil->getRule(level,WIDTH2);
 
   std::vector<odb::dbInst*> instTable;
-  uint                      instCnt
+  uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
 
   int prevX = xy[0];
@@ -2049,7 +2028,7 @@ uint extMain::getITermPhysicalConn(uint                dir,
     std::sort(instTable.begin(), instTable.end(), sort_by_y);
   }
 
-  std::vector<odb::Rect*>    rectTable;
+  std::vector<odb::Rect*> rectTable;
   std::vector<odb::dbITerm*> itermTable;
   for (uint kk = 0; kk < instCnt; kk++) {
     odb::dbInst* inst = instTable[kk];
@@ -2060,33 +2039,35 @@ uint extMain::getITermPhysicalConn(uint                dir,
   if (_dbgPowerFlow)
   // if (true)
   {
-    odb::notice(0,
-                "getITermPhysicalConn dir=%d net=%s %d: %d %d  %d %d\n",
-                dir,
-                net->getConstName(),
-                instCnt,
-                xy[0],
-                xy[1],
-                xy2[0],
-                xy2[1]);
+    logger_->info(RCX,
+                  310,
+                  "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
+                  dir,
+                  net->getConstName(),
+                  instCnt,
+                  xy[0],
+                  xy[1],
+                  xy2[0],
+                  xy2[1]);
     for (uint k = 0; k < rectTable.size(); k++) {
-      odb::Rect*    rb    = rectTable[k];
+      odb::Rect* rb = rectTable[k];
       odb::dbITerm* iterm = itermTable[k];
-      odb::notice(0,
-                  "\tishape X %d %d  Y %d %d %s %s \n",
-                  rb->xMin(),
-                  rb->xMax(),
-                  rb->yMin(),
-                  rb->yMax(),
-                  iterm->getInst()->getConstName(),
-                  iterm->getMTerm()->getConstName());
+      logger_->info(RCX,
+                    311,
+                    "\tishape X {} {}  Y {} {} {} {} ",
+                    rb->xMin(),
+                    rb->xMax(),
+                    rb->yMin(),
+                    rb->yMax(),
+                    iterm->getInst()->getConstName(),
+                    iterm->getMTerm()->getConstName());
     }
   }
   for (uint k = 0; k < rectTable.size(); k++) {
-    odb::Rect*    rb       = rectTable[k];
-    odb::dbITerm* iterm    = itermTable[k];
-    int           bbXY[2]  = {rb->xMin(), rb->yMin()};
-    int           bbXY2[2] = {rb->xMax(), rb->yMax()};
+    odb::Rect* rb = rectTable[k];
+    odb::dbITerm* iterm = itermTable[k];
+    int bbXY[2] = {rb->xMin(), rb->yMin()};
+    int bbXY2[2] = {rb->xMax(), rb->yMax()};
 
     // if (dir>0)
     // bbXY[!dir]= (bb->xMin()+bb->xMax())/2;
@@ -2118,20 +2099,20 @@ uint extMain::getITermPhysicalConn(uint                dir,
     // encoder.addITerm(iterm);
     _junct2iterm->set(jid, iterm);
 
-    // odb::notice(0, "\t\taddPoint: ITERM_JUNCTION %d : %d %d   <%d> %s %s\n",
-    // jid, ixy[0], ixy[1], iterm->getId(), iterm->getInst()->getConstName(),
-    // iterm->getMTerm()->getConstName());
+    // logger_->info(RCX, 0, "\t\taddPoint: ITERM_JUNCTION {} : {} {}   <{}> {}
+    // {}", jid, ixy[0], ixy[1], iterm->getId(),
+    // iterm->getInst()->getConstName(), iterm->getMTerm()->getConstName());
     xy[!dir] = ixy[!dir];
   }
   return instCnt;
 }
 odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
-                                                uint            level,
-                                                uint            dir,
-                                                odb::dbNet*     net,
-                                                int*            xy,
-                                                int*            xy2,
-                                                bool            macro)
+                                                uint level,
+                                                uint dir,
+                                                odb::dbNet* net,
+                                                int* xy,
+                                                int* xy2,
+                                                bool macro)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -2139,7 +2120,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
   // odb::dbTechLayerRule *wRule=_netUtil->getRule(level,WIDTH2);
 
   std::vector<odb::dbInst*> instTable;
-  uint                      instCnt
+  uint instCnt
       = blkSearch->getInstBoxes(xy[0], xy[1], xy2[0], xy2[1], instTable);
 
   int prevX = xy[0];
@@ -2154,7 +2135,7 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
     std::sort(instTable.begin(), instTable.end(), sort_by_y);
   }
 
-  std::vector<odb::Rect*>    rectTable;
+  std::vector<odb::Rect*> rectTable;
   std::vector<odb::dbITerm*> itermTable;
   for (uint kk = 0; kk < instCnt; kk++) {
     odb::dbInst* inst = instTable[kk];
@@ -2164,30 +2145,32 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
   if (_dbgPowerFlow)
   // if (true)
   {
-    odb::notice(0,
-                "getITermPhysicalConn dir=%d net=%s %d: %d %d  %d %d\n",
-                dir,
-                net->getConstName(),
-                instCnt,
-                xy[0],
-                xy[1],
-                xy2[0],
-                xy2[1]);
+    logger_->info(RCX,
+                  310,
+                  "getITermPhysicalConn dir={} net={} {}: {} {}  {} {}",
+                  dir,
+                  net->getConstName(),
+                  instCnt,
+                  xy[0],
+                  xy[1],
+                  xy2[0],
+                  xy2[1]);
     for (uint k = 0; k < rectTable.size(); k++) {
-      odb::Rect*    rb    = rectTable[k];
+      odb::Rect* rb = rectTable[k];
       odb::dbITerm* iterm = itermTable[k];
-      odb::notice(0,
-                  "\tishape X %d %d  Y %d %d %s %s \n",
-                  rb->xMin(),
-                  rb->xMax(),
-                  rb->yMin(),
-                  rb->yMax(),
-                  iterm->getInst()->getConstName(),
-                  iterm->getMTerm()->getConstName());
+      logger_->info(RCX,
+                    311,
+                    "\tishape X {} {}  Y {} {} {} {} ",
+                    rb->xMin(),
+                    rb->xMax(),
+                    rb->yMin(),
+                    rb->yMax(),
+                    iterm->getInst()->getConstName(),
+                    iterm->getMTerm()->getConstName());
     }
   }
   for (uint k = 0; k < rectTable.size(); k++) {
-    odb::Rect*    rb    = rectTable[k];
+    odb::Rect* rb = rectTable[k];
     odb::dbITerm* iterm = itermTable[k];
     if (!((iterm->getSigType() == odb::dbSigType::POWER)
           || (iterm->getSigType() == odb::dbSigType::GROUND)))
@@ -2215,9 +2198,6 @@ odb::dbCapNode* extMain::getITermPhysicalConnRC(odb::dbCapNode* srcCapNode,
         = makePowerRes(srcCapNode, dir, ixy, level, WIDTH2, iterm->getId(), 1);
     // TO DELETE _junct2iterm _junct2iterm->set(srcCapNode->getId(), iterm);
 
-    // odb::notice(0, "\t\taddPoint: ITERM_JUNCTION : %d %d   I%d %s %s\n",
-    // ixy[0], ixy[1], iterm->getId(), iterm->getInst()->getConstName(),
-    // iterm->getMTerm()->getConstName());
     xy[!dir] = ixy[!dir];
   }
   return srcCapNode;
@@ -2263,8 +2243,8 @@ bool extMain::overlapWithMacro(odb::Rect& w)
 {
   for (uint ii = 0; ii < _powerMacroTable.size(); ii++) {
     odb::dbInst* inst = _powerMacroTable[ii];
-    odb::Rect    r0;
-    odb::dbBox*  bb = inst->getBBox();
+    odb::Rect r0;
+    odb::dbBox* bb = inst->getBBox();
     bb->getBox(r0);
 
     if (r0.inside(w))
@@ -2273,24 +2253,22 @@ bool extMain::overlapWithMacro(odb::Rect& w)
   return false;
 }
 bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
-                            uint                      level,
-                            odb::dbNet*               net,
-                            odb::Rect*                w)
+                            uint level,
+                            odb::dbNet* net,
+                            odb::Rect* w)
 {
-  // odb::notice(0, "skipSideMetal: level=%d -- %d %d %d %d \n", level,
-  // w->xMin(), w->yMin(), w->xMax(), w->yMax());
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  int                 width     = w->minDXDY();
-  int                 len       = w->maxDXDY();
+  int width = w->minDXDY();
+  int len = w->maxDXDY();
   /*
           int xy1[2]= {w->xMin(), w->yMin()};
           int xy[2];
           xy[0]= xy1[0];
           xy[1]= xy1[1];
   */
-  uint        Met[2];
+  uint Met[2];
   odb::dbBox* vTable[2];
-  uint        vCnt = 0;
+  uint vCnt = 0;
 
   uint viaCnt = viaTable.size();
   for (uint ii = 0; ii < viaCnt; ii++) {
@@ -2306,7 +2284,7 @@ bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
     if (vCnt > 1)
       return false;
 
-    Met[vCnt]      = bot;
+    Met[vCnt] = bot;
     vTable[vCnt++] = v;
   }
   if (vCnt < 2)
@@ -2314,8 +2292,8 @@ bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
 
   odb::dbBox* v0 = vTable[0];
   odb::dbBox* v1 = vTable[1];
-  odb::Rect   r0;
-  odb::Rect   r1;
+  odb::Rect r0;
+  odb::Rect r1;
   v0->getBox(r0);
   v1->getBox(r1);
   bool overlap = r0.overlaps(r1);
@@ -2327,10 +2305,6 @@ bool extMain::skipSideMetal(std::vector<odb::dbBox*>& viaTable,
     if (overlap)
       return false;
 
-    // odb::notice(0, "skipSideMetal: level=%d -- v0= %d %d %d %d \n", level,
-    // v0->xMin(), v0->yMin(), v0->xMax(), v0->yMax()); odb::notice(0,
-    // "skipSideMetal: level=%d -- v1= %d %d %d %d \n", level, v1->xMin(),
-    // v1->yMin(), v1->xMax(), v1->yMax());
     return true;  // COMMENT 03/26/13 -- small wire with 2 vias
 
     if ((_via_map[v0] != NULL) && (_via_map[v1] != NULL))
@@ -2366,10 +2340,10 @@ char* extMain::getViaResNode(odb::dbBox* v, const char* propName)
   odb::dbIntProperty* p = odb::dbIntProperty::find(v, propName);
   if (p == NULL)
     return NULL;
-  uint            capId   = p->getValue();
+  uint capId = p->getValue();
   odb::dbCapNode* capNode = odb::dbCapNode::getCapNode(_block, capId);
 
-  char                   buf[2048];
+  char buf[2048];
   odb::dbStringProperty* ppp = odb::dbStringProperty::find(capNode, "_inode");
   if (ppp == NULL)
     return NULL;
@@ -2398,10 +2372,9 @@ void extMain::writeViaResistorsRC(FILE* fp, uint ii, FILE* fp1)
 
     uint top;
     uint bot = blkSearch->getViaLevels(v, top);
-    // odb::notice(0, "R_M%dM%d_%d \n", bot, top, v->getId());
     // 10312012
     float res = getPowerViaRes(v, 0.1);
-    char  bufRes[128];
+    char bufRes[128];
     sprintf(bufRes, "%g", res);
     odb::dbStringProperty* p = odb::dbStringProperty::find(v, "_Res");
     if (p != NULL)
@@ -2412,16 +2385,14 @@ void extMain::writeViaResistorsRC(FILE* fp, uint ii, FILE* fp1)
 
     // if ((srcNode==NULL)&&(dstNode==NULL))
     if ((srcNode == NULL) || (dstNode == NULL)) {
-      // odb::notice(0, "src/dst is NULL R_M%dM%d_%d \n", bot, top, v->getId());
       continue;
     }
     if (dstNode == NULL) {
-      // odb::notice(0, "dst is NULL R_M%dM%d_%d \n", bot, top, v->getId());
       continue;
     }
 
     if (srcNode == NULL) {
-      odb::notice(0, "src is NULL R_M%dM%d_%d \n", bot, top, v->getId());
+      logger_->info(RCX, 312, "src is NULL R_M{}M{}_{}", bot, top, v->getId());
       srcNode = new char[64];
       sprintf(srcNode, "%s_%d", dstNode, bot);
     }
@@ -2480,7 +2451,7 @@ void extMain::writeViaResistors(FILE* fp, uint ii, FILE* fp1, bool skipWireConn)
       writeViaName_xy(dstNode, v, bot, top, bot);
 
       // fprintf(fp, " %s %s %g\n", srcNode, dstNode, res);
-      char                   buf[2048];
+      char buf[2048];
       odb::dbStringProperty* p = odb::dbStringProperty::find(v, "_Res");
       if (p != NULL)
         fprintf(fp, " %s %s %s\n", srcNode, dstNode, p->getValue().c_str());
@@ -2500,7 +2471,7 @@ void extMain::writeViaResistors(FILE* fp, uint ii, FILE* fp1, bool skipWireConn)
 }
 bool extMain::sameJunctionPoint(int xy[2], int BB[2], uint width, uint dir)
 {
-  width     = 0;
+  width = 0;
   int dd[2] = {xy[0] - _prevX, xy[1] - _prevY};
   if ((dir > 0) && (dd[0] <= width / 2)) {
     xy[0] = BB[0];
@@ -2513,24 +2484,25 @@ bool extMain::sameJunctionPoint(int xy[2], int BB[2], uint width, uint dir)
   _prevY = xy[1];
   return false;
 }
-uint extMain::addGroupVias(uint                      level,
-                           odb::Rect*                w,
+uint extMain::addGroupVias(uint level,
+                           odb::Rect* w,
                            std::vector<odb::dbBox*>& viaTable)
 {
   uint cnt = 0;
   for (uint ll = 0; ll < _multiViaBoxTable[level].size(); ll++) {
     odb::dbBox* v = _multiViaBoxTable[level][ll];
-    odb::Rect   vr;
+    odb::Rect vr;
     v->getBox(vr);
     if (!w->overlaps(vr))
       continue;
     odb::dbTechVia* via = v->getTechVia();
     /*
                     if (via==NULL)
-                    odb::notice(0, "\tMVvia: TECH_VIA id=%d %d %d  %d %d\n",
-       v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax()); odb::dbVia
-       *via1= (odb::dbVia *) v->getBlockVia(); if (via1==NULL) odb::notice(0,
-       "\tMVvia: TECH_VIA id=%d %d %d  %d %d\n", v->getId(), v->xMin(),
+                    logger_->info(RCX, 0, "\tMVvia: TECH_VIA id={} {} {}  {}
+       {}", v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax()); odb::dbVia
+       *via1= (odb::dbVia *) v->getBlockVia(); if (via1==NULL)
+       logger_->info(RCX, 0,
+       "\tMVvia: TECH_VIA id={} {} {}  {} {}", v->getId(), v->xMin(),
        v->yMin(), v->xMax(), v->yMax());
     */
     viaTable.push_back(v);
@@ -2538,18 +2510,17 @@ uint extMain::addGroupVias(uint                      level,
   }
   return cnt;
 }
-void extMain::createNode_xy_RC(char*           buf,
+void extMain::createNode_xy_RC(char* buf,
                                odb::dbCapNode* capNode,
-                               int             x,
-                               int             y,
-                               int             level)
+                               int x,
+                               int y,
+                               int level)
 {
   int netId = _netUtil->getCurrentNet()->getId();
   writeNegativeCoords(buf, netId, x, y, level);
 
   odb::dbStringProperty::create(capNode, "_inode", buf);
   capNode->setNameFlag();
-  // odb::notice(0, " capNode[%d] %s\n", capNode->getId(), buf);
 }
 odb::dbCapNode* extMain::getPowerCapNode(odb::dbNet* net, int xy, uint level)
 {
@@ -2566,15 +2537,15 @@ odb::dbCapNode* extMain::getPowerCapNode(odb::dbNet* net, int xy, uint level)
   return cap;
 }
 odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
-                                      uint            dir,
-                                      int             xy[2],
-                                      uint            level,
-                                      uint            width,
-                                      uint            objId,
-                                      int             type)
+                                      uint dir,
+                                      int xy[2],
+                                      uint level,
+                                      uint width,
+                                      uint objId,
+                                      int type)
 {
-  bool            dbg     = false;
-  bool            foreign = false;
+  bool dbg = false;
+  bool foreign = false;
   odb::dbCapNode* dstCap = odb::dbCapNode::create(srcCap->getNet(), 0, foreign);
   dstCap->setNode(objId);  // it can be 0 if first/last node of the rail
 
@@ -2591,26 +2562,19 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
     dstCap->setBranchFlag();
   } else {
     dstCap->setITermFlag();
-    odb::dbITerm*          iterm = odb::dbITerm::getITerm(_block, objId);
-    odb::dbStringProperty* p     = odb::dbStringProperty::find(iterm, "_inode");
+    odb::dbITerm* iterm = odb::dbITerm::getITerm(_block, objId);
+    odb::dbStringProperty* p = odb::dbStringProperty::find(iterm, "_inode");
     if (p != NULL) {
       odb::dbStringProperty::destroy(p);
       // sprintf(buf, "%s %s",  buf, p->getValue().c_str());
-      // odb::notice(0, "Destroy iterm Prop -- new= %s", buf);
     }
     odb::dbStringProperty::create(iterm, "_inode", strdup(CapNodeName));
-
-    // odb::notice(0, "iterm Prop = I%d  %s\n", objId, CapNodeName);
   }
-  uint         pathDir = 0;
+  uint pathDir = 0;
   odb::dbRSeg* rc
       = odb::dbRSeg::create(srcCap->getNet(), xy[0], xy[1], pathDir, true);
 
   uint rid = rc->getId();
-  // if (rid==79)
-  //{
-  // odb::notice(0, "HERE rid=%d\n", rid);
-  //}
 
   rc->setSourceNode(srcCap->getId());
   rc->setTargetNode(dstCap->getId());
@@ -2627,28 +2591,28 @@ odb::dbCapNode* extMain::makePowerRes(odb::dbCapNode* srcCap,
 
   if (dbg) {
     if (xy[!dir] - _last_node_xy[!dir] <= 0) {
-      odb::notice(0,
-                  "R_%d level%d dir=%d   xy[%d]=%10d  _last_node_xy[%d]=%10d   "
-                  "  len= %10d width= %d calc_len= %d res=%g\n",
-                  rid,
-                  level,
-                  dir,
-                  !dir,
-                  xy[!dir],
-                  !dir,
-                  _last_node_xy[!dir],
-                  xy[!dir] - _last_node_xy[!dir],
-                  width,
-                  len,
-                  res);
+      logger_->info(
+          RCX,
+          313,
+          "R_{} level{} dir={}   xy[{}]={:10d}  _last_node_xy[{}]={:10d}   "
+          "  len= {:10d} width= {:d} calc_len= {:d} res={:g}",
+          rid,
+          level,
+          dir,
+          !dir,
+          xy[!dir],
+          !dir,
+          _last_node_xy[!dir],
+          xy[!dir] - _last_node_xy[!dir],
+          width,
+          len,
+          res);
     }
   }
 
   double cap = _modelTable->get(0)->getTotCapOverSub(level) * len;
   rc->setCapacitance(cap);
 
-  // odb::notice(0, "\tRC_%d %12d %12d  %12d %12d\n", rc->getId(),
-  // _last_node_xy[0], _last_node_xy[1], xy[0], xy[1]);
   _last_node_xy[0] = xy[0];
   _last_node_xy[1] = xy[1];
 
@@ -2662,24 +2626,24 @@ void extMain::viaTagByCapNode(odb::dbBox* v, odb::dbCapNode* cap)
   else
     odb::dbIntProperty::create(v, "_down_node", cap->getId());
 }
-uint extMain::viaAndInstConnRC(uint              dir,
-                               uint              width,
+uint extMain::viaAndInstConnRC(uint dir,
+                               uint width,
                                odb::dbTechLayer* layer,
-                               odb::dbNet*       net,
-                               odb::dbNet*       orig_power_net,
-                               odb::Rect*        w,
-                               bool              skipSideMetalFlag)
+                               odb::dbNet* net,
+                               odb::dbNet* orig_power_net,
+                               odb::Rect* w,
+                               bool skipSideMetalFlag)
 {
-  int                 EXT       = 0;
+  int EXT = 0;
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
   // ----------------------------
   // --------------------------
   // -i-V--i---i---i--V---i---V--i-
   //    -------------------------
   std::vector<odb::dbBox*> viaTable;
-  int                      level = layer->getRoutingLevel();
+  int level = layer->getRoutingLevel();
 
-  uint viaCnt  = blkSearch->getPowerWiresAndVias(w->xMin(),
+  uint viaCnt = blkSearch->getPowerWiresAndVias(w->xMin(),
                                                 w->yMin(),
                                                 w->xMax(),
                                                 w->yMax(),
@@ -2705,18 +2669,16 @@ uint extMain::viaAndInstConnRC(uint              dir,
   int xy1[2] = {w->xMin(), w->yMin()};
 
   int xy[2];
-  xy[0]         = xy1[0];
-  xy[1]         = xy1[1];
+  xy[0] = xy1[0];
+  xy[1] = xy1[1];
   int lastXY[2] = {w->xMin(), w->yMin()};
 
-  _last_node_xy[0]           = xy[0];
-  _last_node_xy[1]           = xy[1];
+  _last_node_xy[0] = xy[0];
+  _last_node_xy[1] = xy[1];
   odb::dbCapNode* srcCapNode = NULL;
   if (level >= 1)  // for first rcseg
   {
     _last_node_xy[!dir] -= width / 2;
-    // odb::notice(0, "FIRST %d %d : %d %d  %d %d\n", _last_node_xy[0],
-    // _last_node_xy[1], w->xMin(), w->yMin(), w->xMax(), w->yMax());
     srcCapNode = getPowerCapNode(net, xy[!dir] - width / 2, level);  // pseudo
     srcCapNode = makePowerRes(srcCapNode, dir, xy, level, width, 0, 0);
   } else
@@ -2725,27 +2687,25 @@ uint extMain::viaAndInstConnRC(uint              dir,
   std::vector<odb::dbBox*> processedViaTable;
 
   uint gridViaCnt = viaCnt;
-  // if (level==6)
-  // odb::notice(0, "WIRE : %d %d  %d %d\n", w->xMin(), w->yMin(), w->xMax(),
-  // w->yMax());
   uint powerSrcCnt = addPowerSources(viaTable, isVDDnet, level, w);
-  uint gViaCnt     = addGroupVias(level + 1, w, viaTable);
+  uint gViaCnt = addGroupVias(level + 1, w, viaTable);
   gViaCnt += addGroupVias(level, w, viaTable);
   sortViasXY(dir, viaTable);
   uint jid = 0;
-  viaCnt   = viaTable.size();
+  viaCnt = viaTable.size();
   if (_dbgPowerFlow)
     // if (level==5)
-    odb::notice(0,
-                "viaAndInstConnRC[%d=%d+%d+%d]: %d %d  %d %d\n",
-                viaCnt,
-                gViaCnt,
-                gridViaCnt,
-                powerSrcCnt,
-                w->xMin(),
-                w->yMin(),
-                w->xMax(),
-                w->yMax());
+    logger_->info(RCX,
+                  314,
+                  "viaAndInstConnRC[{}={}+{}+{}]: {} {}  {} {}",
+                  viaCnt,
+                  gViaCnt,
+                  gridViaCnt,
+                  powerSrcCnt,
+                  w->xMin(),
+                  w->yMin(),
+                  w->xMax(),
+                  w->yMax());
   for (uint ii = 0; ii < viaCnt; ii++) {
     int xy2[2] = {w->xMax(), w->yMax()};
 
@@ -2757,7 +2717,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
     uint bot = blkSearch->getViaLevels(v, top);
 
     // if (level==2)
-    // odb::notice(0, " init via M%dM%d  id=%d: %d %d  %d %d\n", bot, top,
+    // logger_->info(RCX, 0, " init via M{}M{}  id={}: {} {}  {} {}", bot, top,
     // v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
     // NOT_TESTED : overla[ check should cover this one: if
     // (viaXY[!dir]<=LAST_VIA_MAX[!dir])
@@ -2773,13 +2733,9 @@ uint extMain::viaAndInstConnRC(uint              dir,
       continue;
 
     if (!((level == bot) || (level == top))) {
-      // odb::notice(0, "M%d via[%d]: %d %d  %d %d\n", level, v->getId(),
-      // v->xMin(), v->yMin(), v->xMax(), v->yMax());
       if ((bot == 0) && (top == 0)) {
-        // odb::notice(0, "M%d via[%d]: %d %d  %d %d\n", level, v->getId(),
-        // v->xMin(), v->yMin(), v->xMax(), v->yMax());
         sname = getPowerSourceName(isVDDnet, level, v->getId());
-        odb::notice(0, "    powerLocName= %s\n", sname);
+        logger_->info(RCX, 315, "    powerLocName= {}", sname);
 
         if (sname == NULL)
           continue;
@@ -2787,8 +2743,7 @@ uint extMain::viaAndInstConnRC(uint              dir,
         continue;
       }
     }
-    // if (level==2)
-    // odb::notice(0, "    Found via M%dM%d  id=%d\n", bot, top, v->getId());
+
     v->setVisited(true);
     processedViaTable.push_back(v);
     if (dir > 0)
@@ -2812,9 +2767,6 @@ uint extMain::viaAndInstConnRC(uint              dir,
     } else  // 03/03/13 -- connectivity to the power wire only -- will mark
             // iterm!
     {
-      // if (level==2)
-      // odb::notice(0, "     getITermPhysicalConnRC: %d %d  %d %d \n", xy[0],
-      // xy[1], xy2[0], xy2[1]);
       bool macro = true;
 
       // 03132013 -- the wire is trying to connect! -- the via should connect
@@ -2824,32 +2776,28 @@ uint extMain::viaAndInstConnRC(uint              dir,
     }
     LAST_VIA_MAX[0] = v->xMax();  //
     LAST_VIA_MAX[1] = v->yMax();  //
-                                  // if (level==1)
-    // odb::notice(0, "MMM%d via[%7d] %d-%d: %10d %10d  %d %d\n\n", level,
-    // v->getId(), bot, top, v->xMin(), v->yMin(), v->xMax(), v->yMax());
+
     srcCapNode
         = makePowerRes(srcCapNode, dir, xy2, level, width, v->getId(), 0);
     viaTagByCapNode(v, srcCapNode);
 
-    if (_dbgPowerFlow)
-    // if (level==8)
-    // if (v->getId()==280675)
-    {
+    if (_dbgPowerFlow) {
       char* prop = getViaResNode(v, "_up_node");
-      odb::notice(0,
-                  "M%d via[%d]: %s  %d %d  %d %d\n",
-                  level,
-                  v->getId(),
-                  prop,
-                  v->xMin(),
-                  v->yMin(),
-                  v->xMax(),
-                  v->yMax());
+      logger_->info(RCX,
+                    316,
+                    "M{} via[{}]: {}  {} {}  {} {}",
+                    level,
+                    v->getId(),
+                    prop,
+                    v->xMin(),
+                    v->yMin(),
+                    v->xMax(),
+                    v->yMax());
     }
 
-    xy[!dir]     = xy2[!dir];
-    xy2[dir]     = xy1[dir];
-    lastXY[dir]  = xy2[dir];
+    xy[!dir] = xy2[!dir];
+    xy2[dir] = xy1[dir];
+    lastXY[dir] = xy2[dir];
     lastXY[!dir] = xy2[!dir];
     if (level == 1) {
       _viaM1Table->push_back(v);
@@ -2897,16 +2845,16 @@ uint extMain::viaAndInstConnRC(uint              dir,
   */
   return lastXY[!dir];
 }
-uint extMain::viaAndInstConn(uint                dir,
-                             uint                width,
-                             odb::dbTechLayer*   layer,
+uint extMain::viaAndInstConn(uint dir,
+                             uint width,
+                             odb::dbTechLayer* layer,
                              odb::dbWireEncoder& encoder,
-                             odb::dbWire*        wire,
-                             odb::dbNet*         net,
-                             odb::Rect*          w,
-                             bool                skipSideMetalFlag)
+                             odb::dbWire* wire,
+                             odb::dbNet* net,
+                             odb::Rect* w,
+                             bool skipSideMetalFlag)
 {
-  int                 EXT       = 0;
+  int EXT = 0;
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
   // ----------------------------
   // --------------------------
@@ -2914,7 +2862,7 @@ uint extMain::viaAndInstConn(uint                dir,
   //    -------------------------
   std::vector<odb::dbBox*> viaTable;
   std::vector<odb::dbBox*> crossWireTable;
-  int                      level = layer->getRoutingLevel();
+  int level = layer->getRoutingLevel();
 
   // int width= w->minDXDY();
 
@@ -2925,7 +2873,7 @@ uint extMain::viaAndInstConn(uint                dir,
           {
                   odb::dbBox *v= viaTable[ii];
 
-                          odb::notice(0, "\tvia: id=%d %d %d  %d %d\n",
+                          logger_->info(RCX, 0, "\tvia: id={} {} {}  {} {}",
      v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
                   }
   */
@@ -2954,15 +2902,15 @@ uint extMain::viaAndInstConn(uint                dir,
                   xy1[1]= w->yMin()+width/2;
   */
   int xy[2];
-  xy[0]         = xy1[0];
-  xy[1]         = xy1[1];
+  xy[0] = xy1[0];
+  xy[1] = xy1[1];
   int lastXY[2] = {w->xMin(), w->yMin()};
 
   encoder.addPoint(w->xMin(), w->yMin(), 0, 0);
 
-  // odb::notice(0, "\t\tencoder BEGIN: %d %d \n", w->xMin(), w->yMin());
+  // logger_->info(RCX, 0, "\t\tencoder BEGIN: {} {} ", w->xMin(), w->yMin());
   // encoder.addPoint(xy1[0], xy1[1], 0, width);
-  // odb::notice(0, "\t\tencoder BEGIN: %d %d \n", xy1[0], xy1[1]);
+  // logger_->info(RCX, 0, "\t\tencoder BEGIN: {} {} ", xy1[0], xy1[1]);
   /*
           if (dir==0)
                   encoder.addPoint(w->xMin(), w->yMin(), 0, 0);
@@ -2972,22 +2920,23 @@ uint extMain::viaAndInstConn(uint                dir,
 
   if (_dbgPowerFlow)
     // if (level==7)
-    odb::notice(0,
-                "viaAndInstConn[%d]: %d %d  %d %d\n",
-                viaCnt,
-                w->xMin(),
-                w->yMin(),
-                w->xMax(),
-                w->yMax());
+    logger_->info(RCX,
+                  314,
+                  "viaAndInstConn[{}]: {} {}  {} {}",
+                  viaCnt,
+                  w->xMin(),
+                  w->yMin(),
+                  w->xMax(),
+                  w->yMax());
 
   std::vector<odb::dbBox*> processedViaTable;
 
   uint powerSrcCnt = addPowerSources(viaTable, isVDDnet, level, w);
-  uint gViaCnt     = addGroupVias(level + 1, w, viaTable);
+  uint gViaCnt = addGroupVias(level + 1, w, viaTable);
   gViaCnt += addGroupVias(level, w, viaTable);
   sortViasXY(dir, viaTable);
   uint jid = 0;
-  viaCnt   = viaTable.size();
+  viaCnt = viaTable.size();
   for (uint ii = 0; ii < viaCnt; ii++) {
     int xy2[2] = {w->xMax(), w->yMax()};
 
@@ -2996,10 +2945,10 @@ uint extMain::viaAndInstConn(uint                dir,
     odb::Rect vr;
     v->getBox(vr);
     if (!w->overlaps(vr)) {
-      // odb::notice(0, "\n\tW: %d %d  %d %d\n", w->xMin(), w->yMin(),
+      // logger_->info(RCX, 0, "\tW: {} {}  {} {}", w->xMin(), w->yMin(),
       // w->xMax(), w->yMax());
       // if (level==7)
-      // odb::notice(0, "\toverlap via: id=%d %d %d  %d %d\n", v->getId(),
+      // logger_->info(RCX, 0, "\toverlap via: id={} {} {}  {} {}", v->getId(),
       // v->xMin(), v->yMin(), v->xMax(), v->yMax());
       continue;
     }
@@ -3011,7 +2960,7 @@ uint extMain::viaAndInstConn(uint                dir,
     {
                     if (v->getId()==283584)
                     {
-                    odb::notice(0, "\tvVISITED ia: id=%d %d %d  %d %d\n",
+                    logger_->info(RCX, 0, "\tvVISITED ia: id={} {} {}  {} {}",
     v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax()); continue;
                     }
     }
@@ -3022,7 +2971,7 @@ uint extMain::viaAndInstConn(uint                dir,
     uint top;
     uint bot = blkSearch->getViaLevels(v, top);
     if (!((level == bot) || (level == top))) {
-      // odb::notice(0, "\tV[%d][%d]: id=%d %d %d  %d %d\n", bot, top,
+      // logger_->info(RCX, 0, "\tV[{}][{}]: id={} {} {}  {} {}", bot, top,
       // v->getId(), v->xMin(), v->yMin(), v->xMax(), v->yMax());
       if ((bot == 0) && (top == 0)) {
         sname = getPowerSourceName(isVDDnet, level, v->getId());
@@ -3032,8 +2981,8 @@ uint extMain::viaAndInstConn(uint                dir,
         continue;
       }
     }
-    // odb::notice(0, "\t\tvia: id=%d %d %d  %d %d\n", v->getId(), v->xMin(),
-    // v->yMin(), v->xMax(), v->yMax());
+    // logger_->info(RCX, 0, "\t\tvia: id={} {} {}  {} {}", v->getId(),
+    // v->xMin(), v->yMin(), v->xMax(), v->yMax());
     if (dir > 0)
       xy2[!dir] = (v->xMin() + v->xMax()) / 2;
     else
@@ -3051,38 +3000,40 @@ uint extMain::viaAndInstConn(uint                dir,
 
     xy[!dir] = xy2[!dir];
 
-    xy2[dir]  = xy1[dir];
+    xy2[dir] = xy1[dir];
     int BB[2] = {v->xMax(), v->yMax()};
     sameJunctionPoint(xy2, BB, width, dir);
     jid = encoder.addPoint(xy2[0], xy2[1], v->getId());  // viapoint
     /*
                     if (sameJunctionPoint(xy2[0], xy2[1]))
-                            odb::notice(0, "\t\tSameJubct[%d]: %d %d VIA=%d\n",
-       ii, xy2[0], xy2[1], v->getId());
+                            logger_->info(RCX, 0, "\t\tSameJubct[{}]: {} {}
+       VIA={}", ii, xy2[0], xy2[1], v->getId());
     */
     if (_dbgPowerFlow)
     // if (level==7)
     {
-      odb::notice(0,
-                  "\t\tencoder.addPoint [%d]: %d %d VIA=%d\n",
-                  ii,
-                  xy2[0],
-                  xy2[1],
-                  v->getId());
-      odb::notice(0,
-                  "\t\tvia: id=%d %d %d  %d %d\n",
-                  v->getId(),
-                  v->xMin(),
-                  v->yMin(),
-                  v->xMax(),
-                  v->yMax());
+      logger_->info(RCX,
+                    317,
+                    "\t\tencoder.addPoint [{}]: {} {} VIA={}",
+                    ii,
+                    xy2[0],
+                    xy2[1],
+                    v->getId());
+      logger_->info(RCX,
+                    318,
+                    "\t\tvia: id={} {} {}  {} {}",
+                    v->getId(),
+                    v->xMin(),
+                    v->yMin(),
+                    v->xMax(),
+                    v->yMax());
     }
     if (sname == NULL)
       _junct2viaMap->set(jid, v->getId());
     else
       _junct2viaMap->set(jid, -v->getId());
 
-    lastXY[dir]  = xy2[dir];
+    lastXY[dir] = xy2[dir];
     lastXY[!dir] = xy2[!dir];
     if (level == 1) {
       _viaM1Table->push_back(v);
@@ -3118,16 +3069,16 @@ uint extMain::viaAndInstConn(uint                dir,
     lastXY2[dir] = lastXY[dir];
     //       jid= encoder.addPoint(lastXY2[0], lastXY2[1]); // viapoint
     jid = encoder.addPoint(lastXY2[0], lastXY2[1]);  // viapoint
-    // odb::notice(0, "\t\tencoder.addPoint : %d %d LAST\n", lastXY2[0],
+    // logger_->info(RCX, 0, "\t\tencoder.addPoint : {} {} LAST", lastXY2[0],
     // lastXY2[1]);
   }
 
   // encoder.end();
   return lastXY[!dir];
 }
-odb::dbNet* extMain::createRailNet(odb::dbNet*       pnet,
+odb::dbNet* extMain::createRailNet(odb::dbNet* pnet,
                                    odb::dbTechLayer* layer,
-                                   odb::Rect*        w)
+                                   odb::Rect* w)
 {
   char buf_name[128];
   sprintf(buf_name,
@@ -3144,13 +3095,13 @@ odb::dbNet* extMain::createRailNet(odb::dbNet*       pnet,
   // power_net->getConstName());
   return power_net;
 }
-void extMain::powerWireConnRC(odb::Rect*        w,
-                              uint              dir,
+void extMain::powerWireConnRC(odb::Rect* w,
+                              uint dir,
                               odb::dbTechLayer* layer,
-                              odb::dbNet*       net)
+                              odb::dbNet* net)
 {
   int length = w->maxDXDY();
-  int width  = w->minDXDY();
+  int width = w->minDXDY();
 
   odb::dbNet* power_net = createRailNet(net, layer, w);
   if (net->getSigType() == odb::dbSigType::POWER)
@@ -3159,7 +3110,7 @@ void extMain::powerWireConnRC(odb::Rect*        w,
   _junct2viaMap->clear(0);
   uint jid = 0;
 
-  uint len   = w->maxDXDY();
+  uint len = w->maxDXDY();
   uint level = layer->getRoutingLevel();
 
   double Res = getResistance(level, width, len, 0);
@@ -3186,9 +3137,9 @@ void extMain::powerWireConnRC(odb::Rect*        w,
   // skipEnds= false;
   bool onlyVias = false;
 
-  bool  writeCapNodes = false;
-  bool  reverseRs     = true;
-  float totCap        = 0;
+  bool writeCapNodes = false;
+  bool reverseRs = true;
+  float totCap = 0;
   fprintf(cirFP,
           "\n*layer:M%d,%s net:%d\n\n",
           level,
@@ -3198,19 +3149,18 @@ void extMain::powerWireConnRC(odb::Rect*        w,
   findViaMainCoord(power_net, buff);
   Ath__parser parser;
 
-  int  n1 = parser.mkWords(buff, "_");
-  int  xy[2];
+  int n1 = parser.mkWords(buff, "_");
+  int xy[2];
   bool ok2replace = true;
   if (n1 > 2) {
     xy[0] = parser.getInt(1);
     xy[1] = parser.getInt(2);
   } else {
     ok2replace = false;
-    // odb::notice(0, "\n%s\n", buff);
   }
 
   if ((level > 1) || (!_skip_m1_caps)) {
-    totCap        = distributeCap(NULL, power_net);
+    totCap = distributeCap(NULL, power_net);
     writeCapNodes = true;
 
     // writeResRC(cirFP, power_net, level, width, dir, skipEnds, reverseRs,
@@ -3276,19 +3226,19 @@ void extMain::writeMacroItermConns(odb::dbNet* net)
   }
 }
 
-void extMain::powerWireConn(odb::Rect*        w,
-                            uint              dir,
+void extMain::powerWireConn(odb::Rect* w,
+                            uint dir,
                             odb::dbTechLayer* layer,
-                            odb::dbNet*       net)
+                            odb::dbNet* net)
 {
   int length = w->maxDXDY();
-  int width  = w->minDXDY();
+  int width = w->minDXDY();
 
   odb::dbNet* power_net = createRailNet(net, layer, w);
   if (net->getSigType() == odb::dbSigType::POWER)
     power_net->setMark(true);
 
-  odb::dbWire*       wire = odb::dbWire::create(power_net);
+  odb::dbWire* wire = odb::dbWire::create(power_net);
   odb::dbWireEncoder encoder;
   encoder.begin(wire);
 
@@ -3297,7 +3247,7 @@ void extMain::powerWireConn(odb::Rect*        w,
   _junct2viaMap->clear(0);
   uint jid = 0;
 
-  uint len   = w->maxDXDY();
+  uint len = w->maxDXDY();
   uint level = layer->getRoutingLevel();
 
   double Res = getResistance(level, width, len, 0);
@@ -3333,7 +3283,7 @@ void extMain::powerWireConn(odb::Rect*        w,
   uint maxShapeId = setNodeCoords_xy(power_net, level);
 
   bool skipFirst = true;
-  bool onlyVias  = false;
+  bool onlyVias = false;
   if (level == 1) {
     fprintf(_stdCir,
             "\n*layer:M%d,%s net:%d\n\n",
@@ -3424,10 +3374,10 @@ public:
 };
 */
 
-bool extMain::matchLayerDir(odb::dbBox*         rail,
+bool extMain::matchLayerDir(odb::dbBox* rail,
                             odb::dbTechLayerDir layerDir,
-                            int                 level,
-                            bool                debug)
+                            int level,
+                            bool debug)
 {
   int dir = rail->getDir();
   if (layerDir == odb::dbTechLayerDir::HORIZONTAL) {
@@ -3438,29 +3388,30 @@ bool extMain::matchLayerDir(odb::dbBox*         rail,
       return true;
   }
   if (debug)
-    odb::notice(0,
-                "\nR%d DIR=%d %12d %12d %12d %12d -- %d %d\n",
-                level,
-                dir,
-                rail->xMin(),
-                rail->yMin(),
-                rail->xMax(),
-                rail->yMax(),
-                rail->getDX(),
-                rail->getDY());
+    logger_->info(RCX,
+                  319,
+                  "R{} DIR={} {} {} {} {} -- {} {}",
+                  level,
+                  dir,
+                  rail->xMin(),
+                  rail->yMin(),
+                  rail->xMax(),
+                  rail->yMax(),
+                  rail->getDX(),
+                  rail->getDY());
   return false;
 }
 uint extMain::addSboxesOnSearch(odb::dbNet* net)
 {
   Ath__array1D<uint>* table = new Ath__array1D<uint>();
 
-  uint                               cnt    = 0;
-  odb::dbSet<odb::dbSWire>           swires = net->getSWires();
+  uint cnt = 0;
+  odb::dbSet<odb::dbSWire> swires = net->getSWires();
   odb::dbSet<odb::dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    odb::dbSWire*                     swire = *itr;
-    odb::dbSet<odb::dbSBox>           wires = swire->getWires();
+    odb::dbSWire* swire = *itr;
+    odb::dbSet<odb::dbSBox> wires = swire->getWires();
     odb::dbSet<odb::dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -3475,15 +3426,8 @@ uint extMain::addSboxesOnSearch(odb::dbNet* net)
       uint wtype = 11;
       uint level = s->getTechLayer()->getRoutingLevel();
 
-      // if (level==5)
-      // odb::notice(0, "l=%d AddBox %d %d %d %d\n", level, r.xMin(), r.yMin(),
-      // r.xMax(), r.yMax());
-
       int trackNum = _search->addBox(
           r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, s->getId(), 0, wtype);
-      // if (level==5)
-      // odb::notice(0, "track[%d] %d AddBox %d %d %d %d\n", level, trackNum,
-      // r.xMin(), r.yMin(), r.xMax(), r.yMax());
 
       if (false) {
         for (uint dir = 0; dir < 2; dir++) {
@@ -3495,15 +3439,16 @@ uint extMain::addSboxesOnSearch(odb::dbNet* net)
 
           if (boxCnt > 0) {
             odb::Rect* v = getRect_SBox(table, 0, false, 0, wtype);
-            odb::notice(0,
-                        "track[%d] %d AddBox %d %d %d %d dir=%d\n",
-                        level,
-                        trackNum,
-                        v->xMin(),
-                        v->yMin(),
-                        v->xMax(),
-                        v->yMax(),
-                        dir);
+            logger_->info(RCX,
+                          320,
+                          "track[{}] {} AddBox {} {} {} {} dir={}",
+                          level,
+                          trackNum,
+                          v->xMin(),
+                          v->yMin(),
+                          v->xMax(),
+                          v->yMax(),
+                          dir);
           }
         }
       }
@@ -3518,25 +3463,26 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
   uint w = s->getWidth(targetDir);
 
   if (dbg)
-    odb::notice(
-        0,
-        "\ntargetDir=%d  maxWidth=%d   D=%d W=%d L=%d-- %d %d   %d %d\n",
-        targetDir,
-        maxWidth,
-        s->getDir(),
-        w,
-        s->getLength(targetDir),
-        s->xMin(),
-        s->yMin(),
-        s->xMax(),
-        s->yMax());
+    logger_->info(RCX,
+                  321,
+                  "targetDir={}  maxWidth={}   D={} W={} L={}-- {} {}   {} {}",
+                  targetDir,
+                  maxWidth,
+                  s->getDir(),
+                  w,
+                  s->getLength(targetDir),
+                  s->xMin(),
+                  s->yMin(),
+                  s->xMax(),
+                  s->yMax());
 
   if ((s->getDir() == -1) || (s->getDir() != targetDir))  // -1 == square
   {
     if (dbg)
-      odb::notice(
-          0,
-          "filterPowerGeoms: targetDiri<> %d maxDith=%d -- %d %d   %d %d\n",
+      logger_->info(
+          RCX,
+          322,
+          "filterPowerGeoms: targetDiri<> {} maxDith={} -- {} {}   {} {}",
           s->getDir(),
           maxWidth,
           s->xMin(),
@@ -3551,9 +3497,10 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
 
   if (w < maxWidth) {
     if (dbg)
-      odb::notice(
-          0,
-          "filterPowerGeoms: smallWidth<> %d maxDith=%d -- %d %d   %d %d\n",
+      logger_->info(
+          RCX,
+          323,
+          "filterPowerGeoms: smallWidth<> {} maxDith={} -- {} {}   {} {}",
           w,
           maxWidth,
           s->xMin(),
@@ -3565,10 +3512,10 @@ bool extMain::filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth)
   return false;
 }
 odb::Rect* extMain::getRect_SBox(Ath__array1D<uint>* table,
-                                 uint                ii,
-                                 bool                filter,
-                                 uint                targetDir,
-                                 uint&               maxWidth)
+                                 uint ii,
+                                 bool filter,
+                                 uint targetDir,
+                                 uint& maxWidth)
 {
   uint boxId = table->get(ii);
 
@@ -3615,19 +3562,19 @@ uint extMain::overlapPowerWires(std::vector<odb::Rect*>& mergeTableHi,
   }
   return cnt;
 }
-uint extMain::mergePowerWires(uint                     dir,
-                              uint                     level,
+uint extMain::mergePowerWires(uint dir,
+                              uint level,
                               std::vector<odb::Rect*>& mergeTable)
 {
-  bool       dbg  = false;
-  uint       cnt  = 0;
+  bool dbg = false;
+  uint cnt = 0;
   Ath__grid* grid = _search->getGrid(dir, level);
   // odb::dbBlockSearch *blkSearch= _block->getSearchDb();
   // Ath__grid *grid = blkSearch->getGrid(dir, level);
   grid->setSearchDomain(0);
 
-  Ath__array1D<uint>* table    = new Ath__array1D<uint>();
-  uint                trackCnt = grid->getTrackCnt();
+  Ath__array1D<uint>* table = new Ath__array1D<uint>();
+  uint trackCnt = grid->getTrackCnt();
 
   uint maxWidth = 0;
   for (uint ii = 0; ii < trackCnt; ii++) {
@@ -3636,10 +3583,10 @@ uint extMain::mergePowerWires(uint                     dir,
     if (boxCnt == 0)
       continue;
 
-    bool       filterSmallGeoms = level == 1;
-    odb::Rect* v                = NULL;
-    uint       kk               = 0;
-    odb::Rect* r                = NULL;
+    bool filterSmallGeoms = level == 1;
+    odb::Rect* v = NULL;
+    uint kk = 0;
+    odb::Rect* r = NULL;
     for (; kk < boxCnt; kk++) {
       v = getRect_SBox(table, kk, filterSmallGeoms, dir, maxWidth);
       if (v == NULL)
@@ -3708,9 +3655,9 @@ odb::dbBox* extMain::createMultiVia(uint top, uint bot, odb::Rect* r)
 
   return v;
 }
-void extMain::mergeViasOnMetal_1(odb::Rect*                w,
-                                 odb::dbNet*               pNet,
-                                 uint                      level,
+void extMain::mergeViasOnMetal_1(odb::Rect* w,
+                                 odb::dbNet* pNet,
+                                 uint level,
                                  std::vector<odb::dbBox*>& viaTable)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
@@ -3718,8 +3665,8 @@ void extMain::mergeViasOnMetal_1(odb::Rect*                w,
   for (uint kk = 0; kk < viaTable.size(); kk++)  // all vias on rail
   {
     odb::dbBox* v = viaTable[kk];
-    uint        top;
-    uint        bot = blkSearch->getViaLevels(v, top);
+    uint top;
+    uint bot = blkSearch->getViaLevels(v, top);
     if (bot > 1)
       continue;
 
@@ -3730,7 +3677,7 @@ void extMain::mergeViasOnMetal_1(odb::Rect*                w,
 
     v->setVisited(false);
     std::vector<odb::dbBox*> upViaTable;
-    uint                     cnt = blkSearch->getPowerWiresAndVias(v->xMin(),
+    uint cnt = blkSearch->getPowerWiresAndVias(v->xMin(),
                                                v->yMin(),
                                                v->xMax(),
                                                v->yMax(),
@@ -3749,20 +3696,20 @@ void extMain::mergeViasOnMetal_1(odb::Rect*                w,
   }
 }
 void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
-                              odb::dbNet*             pNet)
+                              odb::dbNet* pNet)
 {
-  bool                    dbg = false;
+  bool dbg = false;
   std::vector<odb::Rect*> overlapTable[16];
 
-  odb::dbBlockSearch* blkSearch  = _block->getSearchDb();
-  int                 layerCount = _tech->getRoutingLayerCount();
+  odb::dbBlockSearch* blkSearch = _block->getSearchDb();
+  int layerCount = _tech->getRoutingLayerCount();
 
   for (uint level = layerCount; level > 1; level--) {
     if (mergeTable[level].size() == 0)
       continue;
 
     if (dbg)
-      odb::notice(0, "OVERLAPS -------------- LEVEL= %d ----\n", level);
+      logger_->info(RCX, 324, "OVERLAPS ---- LEVEL= {} ----", level);
     uint ocnt = overlapPowerWires(
         mergeTable[level], mergeTable[level - 1], overlapTable[level]);
     _overlapPowerWireCnt += overlapTable[level].size();
@@ -3782,11 +3729,11 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
                                                     viaTable);
 
       std::vector<odb::dbBox*> overlapviaTable;
-      uint                     vCnt = 0;
+      uint vCnt = 0;
       for (uint ii = 0; ii < viaCnt; ii++) {
         odb::dbBox* v = viaTable[ii];
-        uint        top;
-        uint        bot = blkSearch->getViaLevels(v, top);
+        uint top;
+        uint bot = blkSearch->getViaLevels(v, top);
         if (!((level == bot) || (level == top)))
           continue;
 
@@ -3808,7 +3755,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
 
         // TODO SET RESISTANCE writeNegativeCoords(buf, pNet->getId(),
         // w->xMin(), w->yMin(), level, "MULTI");
-        char  buf[128];
+        char buf[128];
         float res = getPowerViaRes(W, 0.1);
         writeNegativeCoords(buf, pNet->getId(), w->xMin(), w->yMin(), -1, "");
         odb::dbStringProperty::create(W, "_inode", buf);
@@ -3845,7 +3792,7 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
       }
     }
     if (dbg)
-      odb::notice(0, "\n\nNEW VIAS -------------- LEVEL= %d ----\n", level);
+      logger_->info(RCX, 325, "NEW VIAS ---- LEVEL= {} ----", level);
     for (uint kk = 0; kk < _multiViaBoxTable[level].size(); kk++) {
       // odb::Rect *w= _multiViaTable[level][kk];
       odb::dbBox* v = _multiViaBoxTable[level][kk];
@@ -3865,29 +3812,29 @@ void extMain::formOverlapVias(std::vector<odb::Rect*> mergeTable[16],
 }
 void extMain::railConnOpt(odb::dbNet* pNet)
 {
-  bool                dbg       = false;
+  bool dbg = false;
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  odb::dbTech*        tech      = _block->getDb()->getTech();
-  odb::dbBox*         bb        = _block->getBBox();
-  odb::Rect           BB;
+  odb::dbTech* tech = _block->getDb()->getTech();
+  odb::dbBox* bb = _block->getBBox();
+  odb::Rect BB;
   bb->getBox(BB);
 
   initPowerSearch();
 
   _powerWireCnt += addSboxesOnSearch(pNet);
-  // odb::notice(0, "_powerWireCnt= %d\n", _powerWireCnt);
-  int                     layerCount = _tech->getRoutingLayerCount();
+  int layerCount = _tech->getRoutingLayerCount();
   std::vector<odb::Rect*> mergeTable[16];
   std::vector<odb::Rect*> mergeTableNOT[16];
   for (uint level = layerCount; level > 0; level--) {
-    odb::dbTechLayer*   routelayer = tech->findRoutingLayer(level);
-    odb::dbTechLayerDir layerDir   = routelayer->getDirection();
-    uint                dir        = 0;
+    odb::dbTechLayer* routelayer = tech->findRoutingLayer(level);
+    odb::dbTechLayerDir layerDir = routelayer->getDirection();
+    uint dir = 0;
     if (layerDir == odb::dbTechLayerDir::HORIZONTAL)
       dir = 1;
 
     if (dbg)
-      odb::notice(0, "--- MERGE ---- DIR=%d - LEVEL= %d ----\n", dir, level);
+      logger_->info(
+          RCX, 326, "--- MERGE ---- DIR={} - LEVEL= {} ----", dir, level);
     uint powerWireCnt = mergePowerWires(dir, level, mergeTable[level]);
     _mergedPowerWireCnt += powerWireCnt;
     powerWireCnt = mergePowerWires(!dir, level, mergeTableNOT[level]);
@@ -3924,10 +3871,11 @@ void extMain::railConnOpt(odb::dbNet* pNet)
     }
   }
   if (_overlapPowerWireCnt > 0)
-    odb::notice(
-        0,
-        "After Net: %d %s -- %d power Wires, into %d merged wires, %d wire "
-        "overlaps, %d multi-via objects ==> created %d compound Via Objects\n",
+    logger_->info(
+        RCX,
+        327,
+        "After Net: {} {} -- {} power Wires, into {} merged wires, {} wire "
+        "overlaps, {} multi-via objects ==> created {} compound Via Objects",
         pNet->getId(),
         pNet->getConstName(),
         _powerWireCnt,
@@ -3937,16 +3885,16 @@ void extMain::railConnOpt(odb::dbNet* pNet)
         _multiViaCnt);
 
   for (uint level = layerCount; level > 0; level--) {
-    odb::dbTechLayer*   routelayer = tech->findRoutingLayer(level);
-    odb::dbTechLayerDir layerDir   = routelayer->getDirection();
-    uint                dir        = 0;
+    odb::dbTechLayer* routelayer = tech->findRoutingLayer(level);
+    odb::dbTechLayerDir layerDir = routelayer->getDirection();
+    uint dir = 0;
     if (layerDir == odb::dbTechLayerDir::HORIZONTAL)
       dir = 1;
 
     if (_wireInfra) {
       if (level == 1) {
         for (uint kk = 0; kk < mergeTable[1].size(); kk++) {
-          odb::Rect*               w = mergeTable[1][kk];
+          odb::Rect* w = mergeTable[1][kk];
           std::vector<odb::dbBox*> viaTable;
           uint viaCnt = blkSearch->getPowerWiresAndVias(w->xMin(),
                                                         w->yMin(),
@@ -3965,15 +3913,16 @@ void extMain::railConnOpt(odb::dbNet* pNet)
       odb::Rect* r = mergeTable[level][kk];
       // HERE
       if (level == 0) {
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
-                    level,
-                    r->xMin(),
-                    r->yMin(),
-                    r->xMax(),
-                    r->yMax(),
-                    r->dx(),
-                    r->dy());
+        logger_->info(RCX,
+                      328,
+                      "powerWireConn: M{}  {} {} {} {} -- {} {}",
+                      level,
+                      r->xMin(),
+                      r->yMin(),
+                      r->xMax(),
+                      r->yMax(),
+                      r->dx(),
+                      r->dy());
       }
       if (_wireInfra)
         powerWireConn(r, dir, routelayer, pNet);
@@ -3984,15 +3933,16 @@ void extMain::railConnOpt(odb::dbNet* pNet)
       odb::Rect* r = mergeTableNOT[level][kk];
       // HERE
       if (level == 0) {
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
-                    level,
-                    r->xMin(),
-                    r->yMin(),
-                    r->xMax(),
-                    r->yMax(),
-                    r->dx(),
-                    r->dy());
+        logger_->info(RCX,
+                      328,
+                      "powerWireConn: M{}  {} {} {} {} -- {} {}",
+                      level,
+                      r->xMin(),
+                      r->yMin(),
+                      r->xMax(),
+                      r->yMax(),
+                      r->dx(),
+                      r->dy());
       }
       if (_wireInfra)
         powerWireConn(r, !dir, routelayer, pNet);
@@ -4006,12 +3956,12 @@ void extMain::railConnOpt(odb::dbNet* pNet)
     {
       // odb::dbBox *v= _viaM1_VDDtable[kk];
       odb::dbBox* v = (*_viaM1Table)[kk];
-      // odb::notice( 0, "Stack %d %d %d %d %d\n", v->getId(),
+      // logger_->info(RCX,  0, "Stack {} {} {} {} {}", v->getId(),
       // v->xMin(), v->yMin(), v->xMax(), v->yMax() );
 
       v->setVisited(false);
       std::vector<odb::dbBox*> upViaTable;
-      uint                     cnt = blkSearch->getPowerWiresAndVias(v->xMin(),
+      uint cnt = blkSearch->getPowerWiresAndVias(v->xMin(),
                                                  v->yMin(),
                                                  v->xMax(),
                                                  v->yMax(),
@@ -4030,26 +3980,27 @@ void extMain::railConnOpt(odb::dbNet* pNet)
 }
 void extMain::railConn(odb::dbNet* pNet)
 {
-  bool                debug     = false;
+  bool debug = false;
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  odb::dbTech*        tech      = _block->getDb()->getTech();
-  odb::dbBox*         bb        = _block->getBBox();
-  odb::Rect           BB;
+  odb::dbTech* tech = _block->getDb()->getTech();
+  odb::dbBox* bb = _block->getBBox();
+  odb::Rect BB;
   bb->getBox(BB);
 
-  odb::notice(0,
-              "BBOX: %d %d %d %d %d %d\n",
-              bb->xMin(),
-              bb->yMin(),
-              bb->xMax(),
-              bb->yMax(),
-              BB.dx(),
-              BB.dy());
+  logger_->info(RCX,
+                329,
+                "BBOX: {} {} {} {} {} {}",
+                bb->xMin(),
+                bb->yMin(),
+                bb->xMax(),
+                bb->yMax(),
+                BB.dx(),
+                BB.dy());
 
   std::vector<odb::dbBox*> mergeTable[16];
 
   std::vector<odb::dbBox*> boxTable;
-  int                      layerCount = _tech->getRoutingLayerCount();
+  int layerCount = _tech->getRoutingLayerCount();
   for (uint level = layerCount; level > 0; level--) {
     boxTable.clear();
     uint n = blkSearch->getPowerWires(
@@ -4057,15 +4008,16 @@ void extMain::railConn(odb::dbNet* pNet)
     if (n == 0)
       continue;
 
-    odb::dbTechLayer*   routelayer = tech->findRoutingLayer(level);
-    odb::dbTechLayerDir layerDir   = routelayer->getDirection();
+    odb::dbTechLayer* routelayer = tech->findRoutingLayer(level);
+    odb::dbTechLayerDir layerDir = routelayer->getDirection();
 
     uint maxLen = 0;
-    odb::notice(0,
-                "%d M%d power wires of net %s found:\n",
-                n,
-                level,
-                pNet->getConstName());
+    logger_->info(RCX,
+                  330,
+                  "{} M{} power wires of net {} found:",
+                  n,
+                  level,
+                  pNet->getConstName());
     int dirCnt[2];
     dirCnt[0] = 0;
     dirCnt[1] = 0;
@@ -4083,21 +4035,22 @@ void extMain::railConn(odb::dbNet* pNet)
     // uint m= mergeTable[level].size();
     uint m = boxTable.size();
     if (debug)
-      odb::notice(0, "\n\n%d power RAILS found:\n", m);
+      logger_->info(RCX, 331, "{} power RAILS found", m);
     for (uint jj = 0; jj < m; jj++) {
       // odb::dbBox *rail= mergeTable[level][jj];
       odb::dbBox* rail = boxTable[jj];
       if (debug)
-        odb::notice(0,
-                    "\nR%d DIR=%d %12d %12d %12d %12d -- %d %d\n",
-                    level,
-                    dir,
-                    rail->xMin(),
-                    rail->yMin(),
-                    rail->xMax(),
-                    rail->yMax(),
-                    rail->getDX(),
-                    rail->getDY());
+        logger_->info(RCX,
+                      319,
+                      "R{} DIR={} {} {} {} {} -- {} {}",
+                      level,
+                      dir,
+                      rail->xMin(),
+                      rail->yMin(),
+                      rail->xMax(),
+                      rail->yMax(),
+                      rail->getDX(),
+                      rail->getDY());
       std::vector<odb::dbBox*> railMergeTable;
       if (!matchLayerDir(rail, layerDir, level, false))  // squares not
         continue;
@@ -4144,14 +4097,15 @@ void extMain::railConn(odb::dbNet* pNet)
       for (uint kk = 0; kk < railMergeTable.size(); kk++) {
         odb::dbBox* w = railMergeTable[kk];
         if (debug) {
-          odb::notice(0,
-                      "\t%12d %12d %12d %12d -- %d %d\n",
-                      w->xMin(),
-                      w->yMin(),
-                      w->xMax(),
-                      w->yMax(),
-                      w->getDX(),
-                      w->getDY());
+          logger_->info(RCX,
+                        332,
+                        "\t{} {} {} {} -- {} {}",
+                        w->xMin(),
+                        w->yMin(),
+                        w->xMax(),
+                        w->yMax(),
+                        w->getDX(),
+                        w->getDY());
         }
         odb::Rect r;
         w->getBox(r);
@@ -4165,12 +4119,13 @@ void extMain::railConn(odb::dbNet* pNet)
           if (r.intersects(a)) {
             r.merge(a);  // TODO
             if (debug) {
-              odb::notice(0,
-                          "\t\tM %d %d %d %d \n",
-                          v->xMin(),
-                          v->yMin(),
-                          v->xMax(),
-                          v->yMax());
+              logger_->info(RCX,
+                            333,
+                            "\t\tM {} {} {} {} ",
+                            v->xMin(),
+                            v->yMin(),
+                            v->xMax(),
+                            v->yMax());
             }
           } else {
             kk--;
@@ -4179,14 +4134,15 @@ void extMain::railConn(odb::dbNet* pNet)
           //}
         }
         if (debug)
-          odb::notice(0,
-                      "Merged: %d %d %d %d -- %d %d\n",
-                      r.xMin(),
-                      r.yMin(),
-                      r.xMax(),
-                      r.yMax(),
-                      r.dx(),
-                      r.dy());
+          logger_->info(RCX,
+                        334,
+                        "Merged: {} {} {} {} -- {} {}",
+                        r.xMin(),
+                        r.yMin(),
+                        r.xMax(),
+                        r.yMax(),
+                        r.dx(),
+                        r.dy());
         if (level == 1) {
           std::vector<odb::dbBox*> viaTable;
           uint viaCnt = blkSearch->getPowerWiresAndVias(r.xMin(),
@@ -4201,8 +4157,8 @@ void extMain::railConn(odb::dbNet* pNet)
           for (uint kk = 0; kk < viaCnt; kk++)  // all vias on rail
           {
             odb::dbBox* v = viaTable[kk];
-            uint        top;
-            uint        bot = blkSearch->getViaLevels(v, top);
+            uint top;
+            uint bot = blkSearch->getViaLevels(v, top);
             if (bot > 1)
               continue;
 
@@ -4228,42 +4184,45 @@ void extMain::railConn(odb::dbNet* pNet)
         if (layerDir == odb::dbTechLayerDir::HORIZONTAL) {
           if (r.dx() <= r.dy()) {
             if (debug)
-              odb::notice(0,
-                          "Skip: M%d  %d %d %d %d -- %d %d\n",
-                          level,
-                          r.xMin(),
-                          r.yMin(),
-                          r.xMax(),
-                          r.yMax(),
-                          r.dx(),
-                          r.dy());
+              logger_->info(RCX,
+                            335,
+                            "Skip: M{}  {} {} {} {} -- {} {}",
+                            level,
+                            r.xMin(),
+                            r.yMin(),
+                            r.xMax(),
+                            r.yMax(),
+                            r.dx(),
+                            r.dy());
             continue;
           }
         } else {
           if (r.dy() <= r.dx()) {
             if (debug)
-              odb::notice(0,
-                          "Skip: M%d  %d %d %d %d -- %d %d\n",
-                          level,
-                          r.xMin(),
-                          r.yMin(),
-                          r.xMax(),
-                          r.yMax(),
-                          r.dx(),
-                          r.dy());
+              logger_->info(RCX,
+                            335,
+                            "Skip: M{}  {} {} {} {} -- {} {}",
+                            level,
+                            r.xMin(),
+                            r.yMin(),
+                            r.xMax(),
+                            r.yMax(),
+                            r.dx(),
+                            r.dy());
             continue;
           }
         }
         // if (debug)
-        odb::notice(0,
-                    "powerWireConn: M%d  %d %d %d %d -- %d %d\n",
-                    level,
-                    r.xMin(),
-                    r.yMin(),
-                    r.xMax(),
-                    r.yMax(),
-                    r.dx(),
-                    r.dy());
+        logger_->info(RCX,
+                      328,
+                      "powerWireConn: M{}  {} {} {} {} -- {} {}",
+                      level,
+                      r.xMin(),
+                      r.yMin(),
+                      r.xMax(),
+                      r.yMax(),
+                      r.dx(),
+                      r.dy());
         powerWireConn(&r, dir, routelayer, pNet);
       }
     }
@@ -4272,15 +4231,15 @@ void extMain::railConn(odb::dbNet* pNet)
 uint extMain::print_shapes(FILE* fp, odb::dbWire* wire)
 {
   odb::dbWireShapeItr shapes;
-  odb::dbShape        s;
+  odb::dbShape s;
 
   uint tLen = 0;
   for (shapes.begin(wire); shapes.next(s);) {
     uint width = s.getDY();
-    uint len   = s.getDX();
+    uint len = s.getDX();
     if (width > s.getDX()) {
       width = s.getDX();
-      len   = s.getDY();
+      len = s.getDY();
     }
     tLen += len;
     fprintf(fp,
@@ -4300,29 +4259,29 @@ void extMain::setupNanoFiles(odb::dbNet* net)
   odb::dbSigType type = net->getSigType();
 
   if (type == odb::dbSigType::POWER) {
-    _coordsFP        = _coordsVDD;
-    _blkInfo         = _blkInfoVDD;
-    _viaInfo         = _viaInfoVDD;
-    _globGeom        = _globGeomVDD;
-    _globCir         = _globCirVDD;
+    _coordsFP = _coordsVDD;
+    _blkInfo = _blkInfoVDD;
+    _viaInfo = _viaInfoVDD;
+    _globGeom = _globGeomVDD;
+    _globCir = _globCirVDD;
     _viaStackGlobCir = _viaStackGlobVDD;
-    _stdCir          = _stdCirVDD;
-    _globCirHead     = _globCirHeadVDD;
-    _stdCirHead      = _stdCirHeadVDD;
-    _viaM1Table      = &_viaM1_VDDtable;
-    _viaUpTable      = &_viaUp_VDDtable;
+    _stdCir = _stdCirVDD;
+    _globCirHead = _globCirHeadVDD;
+    _stdCirHead = _stdCirHeadVDD;
+    _viaM1Table = &_viaM1_VDDtable;
+    _viaUpTable = &_viaUp_VDDtable;
   } else if (type == odb::dbSigType::GROUND) {
-    _coordsFP        = _coordsGND;
-    _blkInfo         = _blkInfoGND;
-    _viaInfo         = _viaInfoGND;
-    _globCir         = _globCirGND;
+    _coordsFP = _coordsGND;
+    _blkInfo = _blkInfoGND;
+    _viaInfo = _viaInfoGND;
+    _globCir = _globCirGND;
     _viaStackGlobCir = _viaStackGlobGND;
-    _globGeom        = _globGeomGND;
-    _stdCir          = _stdCirGND;
-    _globCirHead     = _globCirHeadGND;
-    _stdCirHead      = _stdCirHeadGND;
-    _viaM1Table      = &_viaM1_GNDtable;
-    _viaUpTable      = &_viaUp_GNDtable;
+    _globGeom = _globGeomGND;
+    _stdCir = _stdCirGND;
+    _globCirHead = _globCirHeadGND;
+    _stdCirHead = _stdCirHeadGND;
+    _viaM1Table = &_viaM1_GNDtable;
+    _viaUpTable = &_viaUp_GNDtable;
   }
 }
 void extMain::setPrefix(char* prefix)
@@ -4362,7 +4321,7 @@ void extMain::netDirPrefix(char* prefix, char* netName)
   sprintf(syscmd, "mkdir -p %s/%s", _node_blk_dir, netName);
   system(syscmd);
 }
-FILE* extMain::openNanoFileNet(char*       netname,
+FILE* extMain::openNanoFileNet(char* netname,
                                const char* name,
                                const char* name2,
                                const char* suffix,
@@ -4374,8 +4333,6 @@ FILE* extMain::openNanoFileNet(char*       netname,
   char buf[2048];
   sprintf(buf, "%s%s_%s.%s", hier_prefix, name, name2, suffix);
 
-  // odb::notice(0, "Opening file %s ...\n", buf);
-
   FILE* fp = fopen(buf, perms);
   if (fp == NULL) {
     fprintf(stderr, "Cannot open file %s with %s\n", buf, perms);
@@ -4383,7 +4340,7 @@ FILE* extMain::openNanoFileNet(char*       netname,
   }
   return fp;
 }
-void extMain::writeSubckt(FILE*       fp,
+void extMain::writeSubckt(FILE* fp,
                           const char* keyword,
                           const char* vdd,
                           const char* std,
@@ -4403,16 +4360,16 @@ void extMain::writeGeomHeader(FILE* fp, const char* vdd)
 }
 void extMain::openNanoFilesDomain(odb::dbNet* pNet)
 {
-  const char* vdd   = "GND";
+  const char* vdd = "GND";
   const char* ptype = "ground";
-  int         ii    = 0;
+  int ii = 0;
   if (pNet->getSigType() == odb::dbSigType::POWER) {
-    vdd   = "VDD";
-    ii    = 1;
+    vdd = "VDD";
+    ii = 1;
     ptype = "power";
   }
   char* netName = (char*) pNet->getConstName();
-  char  sysCmd[4000];
+  char sysCmd[4000];
   if (strcmp(_node_blk_dir, "./") == 0)
     sprintf(sysCmd, "echo %s %s %s >> Extract.info", netName, netName, ptype);
   else
@@ -4439,8 +4396,8 @@ void extMain::openNanoFilesDomain(odb::dbNet* pNet)
     _blkInfoVDD = openNanoFileNet(netName, "Block", "VDD", "info", "w");
     fprintf(_blkInfoVDD, "%c\n", _block->getHierarchyDelimeter());
 
-    _viaInfoVDD  = openNanoFileNet(netName, "Via", "VDD", "info", "w");
-    _stdCirVDD   = openNanoFileNet(netName, "std", "VDD", "cir", "w");
+    _viaInfoVDD = openNanoFileNet(netName, "Via", "VDD", "info", "w");
+    _stdCirVDD = openNanoFileNet(netName, "std", "VDD", "cir", "w");
     _globGeomVDD = openNanoFileNet(netName, "glob", "VDD", "geom", "w");
     writeGeomHeader(_globGeomVDD, "VDD");
 
@@ -4451,34 +4408,34 @@ void extMain::openNanoFilesDomain(odb::dbNet* pNet)
 
     _viaStackGlobVDD = openNanoFileNet(netName, "glob_vias", "VDD", "cir", "w");
 
-    _blkInfoGND      = NULL;
-    _viaInfoGND      = NULL;
-    _stdCirGND       = NULL;
-    _globGeomGND     = NULL;
-    _globCirGND      = NULL;
-    _coordsGND       = NULL;
+    _blkInfoGND = NULL;
+    _viaInfoGND = NULL;
+    _stdCirGND = NULL;
+    _globGeomGND = NULL;
+    _globCirGND = NULL;
+    _coordsGND = NULL;
     _viaStackGlobGND = NULL;
   } else {
     _blkInfoGND = openNanoFileNet(netName, "Block", "GND", "info", "w");
     fprintf(_blkInfoGND, "%c\n", _block->getHierarchyDelimeter());
     _viaInfoGND = openNanoFileNet(netName, "Via", "GND", "info", "w");
-    _stdCirGND  = openNanoFileNet(netName, "std", "GND", "cir", "w");
+    _stdCirGND = openNanoFileNet(netName, "std", "GND", "cir", "w");
 
     _globGeomGND = openNanoFileNet(netName, "glob", "GND", "geom", "w");
     writeGeomHeader(_globGeomGND, "GND");
 
     _globCirGND = openNanoFileNet(netName, "glob", "GND", "cir", "w");
-    _coordsGND  = openNanoFileNet(netName, "ViaBlock", "GND", "coords", "w");
+    _coordsGND = openNanoFileNet(netName, "ViaBlock", "GND", "coords", "w");
     fprintf(_coordsGND, "DbUnitsPerMicron %d\n", _block->getDbUnitsPerMicron());
 
     _viaStackGlobGND = openNanoFileNet(netName, "glob_vias", "GND", "cir", "w");
 
-    _blkInfoVDD      = NULL;
-    _viaInfoVDD      = NULL;
-    _stdCirVDD       = NULL;
-    _globGeomVDD     = NULL;
-    _globCirVDD      = NULL;
-    _coordsVDD       = NULL;
+    _blkInfoVDD = NULL;
+    _viaInfoVDD = NULL;
+    _stdCirVDD = NULL;
+    _globGeomVDD = NULL;
+    _globCirVDD = NULL;
+    _coordsVDD = NULL;
     _viaStackGlobVDD = NULL;
   }
 }
@@ -4721,7 +4678,6 @@ void extMain::addSubcktStatementDomain(const char* cirFile1,
           cirFile,
           cirFile);
 
-  // odb::notice(0, "Performing cmd: %s\n", cmd);
   system(cmd);
 
   // system("mv glob_VDD.cir glob_VDD.cir.TMP ; cat glob_VDD.subckt
@@ -4774,14 +4730,14 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
     ptype = "GROUND";
 
   /*
-          odb::notice(0, "iterm2Vias: %s %s -- %s %s\n",
+          logger_->info(RCX, 0, "iterm2Vias: {} {} -- {} {}",
                           inst->getConstName(),
      inst->getMaster()->getConstName(), ptype, net->getConstName());
   */
-  std::vector<odb::dbBox*>   connShapeTable[32];
+  std::vector<odb::dbBox*> connShapeTable[32];
   std::vector<odb::dbITerm*> connItermTable[32];
 
-  odb::dbSet<odb::dbITerm>           iterms = inst->getITerms();
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   odb::dbSet<odb::dbITerm>::iterator iitr;
 
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
@@ -4799,13 +4755,13 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
     uint vcnt = 0;
 
     odb::dbITermShapeItr term_shapes;
-    odb::dbShape         s;
+    odb::dbShape s;
     for (term_shapes.begin(tr); term_shapes.next(s);) {
       if (s.isVia())
         continue;
 
       std::vector<odb::dbBox*> viaTable;
-      uint                     level = s.getTechLayer()->getRoutingLevel();
+      uint level = s.getTechLayer()->getRoutingLevel();
       if (level == 1)
         continue;
 
@@ -4815,11 +4771,11 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
       if (viaCnt == 0)
         continue;
 
-      // odb::notice(0, "%s/%s  %d  %d %d  %d %d\n", inst->getConstName(),
+      // logger_->info(RCX, 0, "{}/{}  {}  {} {}  {} {}", inst->getConstName(),
       // tr->getMTerm()->getConstName(), level,
       // s.xMin(),s.yMin(),s.xMax(),s.yMax());
       for (uint ii = 0; ii < viaCnt; ii++) {
-        odb::dbBox*   w     = viaTable[ii];
+        odb::dbBox* w = viaTable[ii];
         odb::dbSWire* swire = (odb::dbSWire*) w->getBoxOwner();
         if (swire->getNet() != net)
           continue;
@@ -4827,7 +4783,7 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
         // if (w->getUserFlag1())
         // continue;
 
-        // odb::notice(0, "\tFOUND%s/%s  %d  %d %d  %d %d\n",
+        // logger_->info(RCX, 0, "\tFOUND{}/{}  {}  {} {}  {} {}",
         // inst->getConstName(), tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
         uint top;
@@ -4845,14 +4801,14 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
           continue;
         if (w->yMax() < s.yMin())
           continue;
-        // odb::notice(0, "\tOVERL%s/%s  %d  %d %d  %d %d\n",
+        // logger_->info(RCX, 0, "\tOVERL{}/{}  {}  {} {}  {} {}",
         // inst->getConstName(), tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
 
         connShapeTable[top].push_back(w);
         connItermTable[top].push_back(tr);
-        // odb::notice(0, "%s/%s  %d  %d %d  %d %d\n\n", inst->getConstName(),
-        // tr->getMTerm()->getConstName(), level,
+        // logger_->info(RCX, 0, "{}/{}  {}  {} {}  {} {}",
+        // inst->getConstName(), tr->getMTerm()->getConstName(), level,
         // w->xMin(),w->yMin(),w->xMax(),w->yMax());
       }
     }
@@ -4862,7 +4818,7 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
       continue;
 
     for (int jj = 0; jj < connShapeTable[level].size(); jj++) {
-      odb::dbBox*   w  = connShapeTable[level][jj];
+      odb::dbBox* w = connShapeTable[level][jj];
       odb::dbITerm* tr = connItermTable[level][jj];
 
       if (tr->isSetMark())
@@ -4904,10 +4860,11 @@ uint extMain::iterm2Vias(odb::dbInst* inst, odb::dbNet* net)
         else
           _via_id_map[w->getId()] = NULL;
 
-        odb::notice(0,
-                    "\tTERM %s is Connected at %s\n",
-                    tr->getMTerm()->getConstName(),
-                    srcNode);
+        logger_->info(RCX,
+                      336,
+                      "\tTERM {} is Connected at {}",
+                      tr->getMTerm()->getConstName(),
+                      srcNode);
         tr->setMark(1);
         break;
       }
@@ -5012,13 +4969,13 @@ srcNode); _viaUpTable->push_back(w);
                                 vcnt ++;
                         }
                 }
-                odb::notice(0,"\tTERM %s has %d via conns\n",
+                logger_->info(RCX, 0,"\tTERM {} has {} via conns",
 tr->getMTerm()->getConstName(),vcnt);
         }
         return 0;
 }
 */
-uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
+uint extMain::iterm2Vias_cells(odb::dbInst* inst,
                                odb::dbITerm* connectedPowerIterm)
 {
   if (inst->getMaster()->isSpecialPower())
@@ -5033,11 +4990,11 @@ uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
     ptype = "GROUND";
 
   /*
-          odb::notice(0, "iterm2Vias_cells: %s %s -- %s %s\n",
+          logger_->info(RCX, 0, "iterm2Vias_cells: {} {} -- {} {}",
                           inst->getConstName(),
      inst->getMaster()->getConstName(), ptype, net->getConstName());
   */
-  odb::dbSet<odb::dbITerm>           iterms = inst->getITerms();
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
   odb::dbSet<odb::dbITerm>::iterator iitr;
 
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
@@ -5057,13 +5014,13 @@ uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
     uint vcnt = 0;
 
     odb::dbITermShapeItr term_shapes;
-    odb::dbShape         s;
+    odb::dbShape s;
     for (term_shapes.begin(tr); term_shapes.next(s);) {
       if (s.isVia())
         continue;
 
       std::vector<odb::dbBox*> viaTable;
-      uint                     level = s.getTechLayer()->getRoutingLevel();
+      uint level = s.getTechLayer()->getRoutingLevel();
 
       uint viaCnt = blkSearch->getPowerWiresAndVias(
           s.xMin(), s.yMin(), s.xMax(), s.yMax(), level, net, false, viaTable);
@@ -5113,22 +5070,22 @@ uint extMain::iterm2Vias_cells(odb::dbInst*  inst,
       if (tr->isSetMark())
         break;
     }
-    // odb::notice(0,"\tTERM %s has %d via conns\n",
+    // logger_->info(RCX, 0,"\tTERM {} has {} via conns",
     // tr->getMTerm()->getConstName(),vcnt);
   }
   return 0;
 }
-uint extMain::mergeStackedViasOpt(FILE*                     fp,
-                                  odb::dbNet*               net,
+uint extMain::mergeStackedViasOpt(FILE* fp,
+                                  odb::dbNet* net,
                                   std::vector<odb::dbBox*>& viaSearchTable,
-                                  odb::dbBox*               botVia,
-                                  FILE*                     fp1,
-                                  uint                      viaStackLevel)
+                                  odb::dbBox* botVia,
+                                  FILE* fp1,
+                                  uint viaStackLevel)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  odb::dbBox*         v         = botVia;
+  odb::dbBox* v = botVia;
 
-  // odb::notice(0, "M1: Via_%d %d %d %d %d\n", botVia->getId(),
+  // logger_->info(RCX, 0, "M1: Via_{} {} {} {} {}", botVia->getId(),
   // botVia->xMin(), botVia->yMin(),  botVia->xMax(),  botVia->yMax());
 
   char srcNode[128];
@@ -5141,8 +5098,8 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     botVia->setVisited(true);
     _stackedViaResCnt++;
   }
-  float res    = 0.0;
-  uint  viaCnt = viaSearchTable.size();
+  float res = 0.0;
+  uint viaCnt = viaSearchTable.size();
 
   std::vector<odb::dbBox*> viaLevelTable[16];
   for (uint ii = 0; ii < viaCnt; ii++) {
@@ -5162,13 +5119,13 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     viaLevelTable[bot].push_back(w);
     // uint vid= w->getId();
 
-    // odb::notice(0, "ID=%d %d  %d %d    %d %d\n", vid,
+    // logger_->info(RCX, 0, "ID={} {}  {} {}    {} {}", vid,
     // w->isVisited(),w->xMin(),w->yMin(),w->xMax(),w->yMax());
   }
 
-  odb::dbBox*              topVia     = NULL;
-  int                      stackLevel = 0;
-  int                      stackCnt   = 0;
+  odb::dbBox* topVia = NULL;
+  int stackLevel = 0;
+  int stackCnt = 0;
   std::vector<odb::dbBox*> viaTable;
   for (uint jj = viaStackLevel; jj < 16; jj++) {
     if (viaLevelTable[jj].size() == 0)
@@ -5194,7 +5151,7 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     }
 
     stackLevel = jj;
-    topVia     = a;
+    topVia = a;
     break;
     // fprintf(stdout, "\tstack[%d] %d %d v%d\n ", jj, a->xMin(), a->yMin(),
     // a->getId());
@@ -5215,8 +5172,9 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
                       char * botNode= getViaResNode(botVia, "_up_node");
                       if (botNode!=NULL)
                       sprintf(srcNode,"%s", botNode);
-                              odb::notice(0, "NOT CONNECTED M1: node=%s Via_%d
-         %d %d %d %d\n", srcNode, botVia->getId(), botVia->xMin(),
+                              logger_->info(RCX, 0, "NOT CONNECTED M1: node={}
+         Via_{}
+         {} {} {} {}", srcNode, botVia->getId(), botVia->xMin(),
          botVia->yMin(),  botVia->xMax(),  botVia->yMax());
       */
       return 0;
@@ -5227,18 +5185,19 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
   }
 
   for (uint ii = 0; ii < viaCnt; ii++) {
-    odb::dbBox* w   = viaTable[ii];
-    uint        vid = w->getId();
+    odb::dbBox* w = viaTable[ii];
+    uint vid = w->getId();
 
     res = getPowerViaRes(w, 0.1);
     totRes += res;
   }
   if (topVia == NULL) {
-    odb::warning(0,
-                 "Via_%d %d %d has no overlaps from above!\n",
-                 botVia->getId(),
-                 botVia->xMin(),
-                 botVia->yMin());
+    logger_->warn(RCX,
+                  337,
+                  "Via_{} {} {} has no overlaps from above!",
+                  botVia->getId(),
+                  botVia->xMin(),
+                  botVia->yMin());
     return 0;
   }
   if (botVia == topVia)  // TO_TEST????
@@ -5248,8 +5207,9 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
                     char * botNode= getViaResNode(botVia, "_up_node");
                     if (botNode!=NULL)
                     sprintf(srcNode,"%s", botNode);
-                            odb::notice(0, "NOT CONNECTED M1: node=%s Via_%d %d
-       %d %d %d\n", srcNode, botVia->getId(), botVia->xMin(), botVia->yMin(),
+                            logger_->info(RCX, 0, "NOT CONNECTED M1: node={}
+       Via_{} {}
+       {} {} {}", srcNode, botVia->getId(), botVia->xMin(), botVia->yMin(),
        botVia->xMax(),  botVia->yMax());
     */
     return 0;
@@ -5271,13 +5231,14 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
     if (topNode == NULL)
       topNode = getViaResNode(topVia, "_up_node");
     if (topNode == NULL) {
-      odb::notice(0,
-                  "NOT CONNECTED M1: Via_%d %d %d %d %d\n",
-                  botVia->getId(),
-                  botVia->xMin(),
-                  botVia->yMin(),
-                  botVia->xMax(),
-                  botVia->yMax());
+      logger_->warn(RCX,
+                    338,
+                    "NOT CONNECTED M1: Via_{} {} {} {} {}",
+                    botVia->getId(),
+                    botVia->xMin(),
+                    botVia->yMin(),
+                    botVia->xMax(),
+                    botVia->yMax());
       return 0;
     }
     sprintf(dstNode, "%s", topNode);
@@ -5295,15 +5256,15 @@ uint extMain::mergeStackedViasOpt(FILE*                     fp,
   return 1;
 }
 
-uint extMain::mergeStackedVias(FILE*                     fp,
-                               odb::dbNet*               net,
+uint extMain::mergeStackedVias(FILE* fp,
+                               odb::dbNet* net,
                                std::vector<odb::dbBox*>& viaSearchTable,
-                               odb::dbBox*               botVia,
-                               FILE*                     fp1)
+                               odb::dbBox* botVia,
+                               FILE* fp1)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  odb::dbBox*         v         = botVia;
-  odb::dbBox*         w         = NULL;
+  odb::dbBox* v = botVia;
+  odb::dbBox* w = NULL;
 
   float totRes = 0;
   if (!botVia->isVisited()) {
@@ -5311,8 +5272,8 @@ uint extMain::mergeStackedVias(FILE*                     fp,
     botVia->setVisited(true);
     _stackedViaResCnt++;
   }
-  float res    = 0.0;
-  uint  viaCnt = viaSearchTable.size();
+  float res = 0.0;
+  uint viaCnt = viaSearchTable.size();
 
   std::vector<odb::dbBox*> viaLevelTable[16];
   for (uint ii = 0; ii < viaCnt; ii++) {
@@ -5322,9 +5283,6 @@ uint extMain::mergeStackedVias(FILE*                     fp,
     uint bot = blkSearch->getViaLevels(w, top);
     viaLevelTable[bot].push_back(w);
     // uint vid= w->getId();
-
-    // odb::notice(0, "ID=%d %d  %d %d    %d %d\n", vid,
-    // w->isVisited(),w->xMin(),w->yMin(),w->xMax(),w->yMax());
   }
 
   std::vector<odb::dbBox*> viaTable;
@@ -5342,7 +5300,7 @@ uint extMain::mergeStackedVias(FILE*                     fp,
           botVia->yMin());
   viaCnt = viaTable.size();
   for (uint ii = 0; ii < viaCnt; ii++) {
-    w        = viaTable[ii];
+    w = viaTable[ii];
     uint vid = w->getId();
 
     fprintf(stdout,
@@ -5391,11 +5349,12 @@ uint extMain::mergeStackedVias(FILE*                     fp,
     w->setVisited(false);
   }
   if (w == NULL) {
-    odb::warning(0,
-                 "Via_%d %d %d has no overlaps from above!\n",
-                 botVia->getId(),
-                 botVia->xMin(),
-                 botVia->yMin());
+    logger_->warn(RCX,
+                  339,
+                  "Via_{} {} {} has no overlaps from above!",
+                  botVia->getId(),
+                  botVia->xMin(),
+                  botVia->yMin());
     return 0;
   }
   if (botVia == w)  // TO_TEST????
@@ -5434,7 +5393,7 @@ uint extMain::mergeStackedVias(FILE*                     fp,
 
 uint extMain::getPowerNets(std::vector<odb::dbNet*>& powerNetTable)
 {
-  odb::dbSet<odb::dbNet>           nets = _block->getNets();
+  odb::dbSet<odb::dbNet> nets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     odb::dbNet* net = *net_itr;
@@ -5448,16 +5407,15 @@ uint extMain::getPowerNets(std::vector<odb::dbNet*>& powerNetTable)
 }
 uint extMain::findHighLevelPinMacros(std::vector<odb::dbInst*>& instTable)
 {
-  odb::dbSet<odb::dbInst>           insts = _block->getInsts();
+  odb::dbSet<odb::dbInst> insts = _block->getInsts();
   odb::dbSet<odb::dbInst>::iterator i_itr;
   for (i_itr = insts.begin(); i_itr != insts.end(); ++i_itr) {
     odb::dbInst* inst = *i_itr;
     /*
                     odb::dbBox *bb= inst->getBBox();
-                    odb::notice(0, "I%d %s  %s  %d %d  %d %d\n", inst->getId(),
-                            inst->getConstName(),
-       inst->getMaster()->getConstName(), bb->xMin(), bb->yMin(), bb->xMax(),
-       bb->yMax());
+                    logger_->info(RCX, 0, "I{} {}  {}  {} {}  {} {}",
+       inst->getId(), inst->getConstName(), inst->getMaster()->getConstName(),
+       bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     */
 
     inst->clearUserFlag3();
@@ -5478,8 +5436,8 @@ bool extMain::topHierBlock()
 }
 void extMain::allocMappingTables(int n1, int n2, int n3)
 {
-  _junct2iterm     = new Ath__array1D<odb::dbITerm*>(n1);
-  _junct2viaMap    = new Ath__array1D<int>(n2);
+  _junct2iterm = new Ath__array1D<odb::dbITerm*>(n1);
+  _junct2viaMap = new Ath__array1D<int>(n2);
   _via2JunctionMap = new Ath__array1D<int>(n3);
 }
 void extMain::initMappingTables()
@@ -5508,8 +5466,8 @@ uint extMain::initPowerSearch()
     widthTable[ii] = 0;
   }
   uint dirTable[16];
-  int  baseX[16];
-  int  baseY[16];
+  int baseX[16];
+  int baseY[16];
 
   // if (_search!=NULL)
   // delete _search;
@@ -5526,12 +5484,13 @@ void extMain::setupDirNaming()
   sprintf(_node_inst_prefix, "");
   odb::dbInst* ii = _block->getParentInst();
   if (ii != NULL) {
-    odb::notice(0,
-                "Extract Hier Block %d name= %s of Inst %d %s\n",
-                _block->getId(),
-                _block->getConstName(),
-                ii->getId(),
-                ii->getConstName());
+    logger_->info(RCX,
+                  340,
+                  "Extract Hier Block {} name= {} of Inst {} {}",
+                  _block->getId(),
+                  _block->getConstName(),
+                  ii->getId(),
+                  ii->getConstName());
 
     _block->getDieArea(_extMaxRect);
     // odb::dbBox *bb= ii->getBBox();
@@ -5547,23 +5506,26 @@ void extMain::setupDirNaming()
       sprintf(_node_blk_prefix, "B%d_", _block->getId());
       sprintf(_node_inst_prefix, "%s_", _block->getConstName());
 
-      odb::notice(0,
-                  "Extract Top Block %d name= %s \n",
-                  _block->getId(),
-                  _block->getConstName());
+      logger_->info(RCX,
+                    341,
+                    "Extract Top Block {} name= {} ",
+                    _block->getId(),
+                    _block->getConstName());
 
     } else {
-      odb::notice(0,
-                  "Extract Block %d name= %s\n",
-                  _block->getId(),
-                  _block->getConstName());
+      logger_->info(RCX,
+                    342,
+                    "Extract Block {} name= {}",
+                    _block->getId(),
+                    _block->getConstName());
     }
     _block->getDieArea(_extMaxRect);
   }
-  odb::notice(0,
-              "nodeBlockPrefix=%s nodeInstPrefix=%s\n\n",
-              _node_blk_prefix,
-              _node_inst_prefix);
+  logger_->info(RCX,
+                343,
+                "nodeBlockPrefix={} nodeInstPrefix={}",
+                _node_blk_prefix,
+                _node_inst_prefix);
 }
 
 // START
@@ -5571,14 +5533,14 @@ uint extMain::powerRCGen()
 {
   _wireInfra = false;
 
-  _powerWireCnt        = 0;
-  _mergedPowerWireCnt  = 0;
+  _powerWireCnt = 0;
+  _mergedPowerWireCnt = 0;
   _overlapPowerWireCnt = 0;
-  _viaOverlapPowerCnt  = 0;
-  _multiViaCnt         = 0;
+  _viaOverlapPowerCnt = 0;
+  _multiViaCnt = 0;
 
   _nodeCoords = true;  // coord based node naming
-  _netUtil    = new odb::dbCreateNetUtil();
+  _netUtil = new odb::dbCreateNetUtil();
   _netUtil->setBlock(_block, false);
   _dbgPowerFlow = false;
 
@@ -5586,18 +5548,19 @@ uint extMain::powerRCGen()
 
   setupDirNaming();
 
-  odb::notice(0,
-              "Extract Bounding Box %d %d %d %d\n",
-              _extMaxRect.xMin(),
-              _extMaxRect.yMin(),
-              _extMaxRect.xMax(),
-              _extMaxRect.yMax());
+  logger_->info(RCX,
+                344,
+                "Extract Bounding Box {} {} {} {}",
+                _extMaxRect.xMin(),
+                _extMaxRect.yMin(),
+                _extMaxRect.xMax(),
+                _extMaxRect.yMax());
 
   _supplyViaMap[0] = NULL;  // check to see whether
   if (_power_source_file != NULL)
     readPowerSupplyCoords(_power_source_file);
 
-  odb::dbSet<odb::dbTechLayer>           layers = _tech->getLayers();
+  odb::dbSet<odb::dbTechLayer> layers = _tech->getLayers();
   odb::dbSet<odb::dbTechLayer>::iterator itr;
 
   // openNanoFiles();
@@ -5606,15 +5569,15 @@ uint extMain::powerRCGen()
   //_via2JunctionMap= new Ath__array1D<int>(10000000);
 
   findHighLevelPinMacros(_powerMacroTable);
-  odb::notice(0, "Found %lu macro blocks\n", _powerMacroTable.size());
+  logger_->info(RCX, 345, "Found {:lu} macro blocks", _powerMacroTable.size());
 
   markExcludedCells();
 
   std::vector<odb::dbNet*> powerNetTable;
-  uint                     pNetCnt = getPowerNets(powerNetTable);
+  uint pNetCnt = getPowerNets(powerNetTable);
 
   // odb::dbBox *bb = _block->getBBox();
-  // odb::notice(0, "BBOX: %d %d %d %d \n",
+  // logger_->info(RCX, 0, "BBOX: {} {} {} {} ",
   // bb->xMin(),bb->yMin(),bb->xMax(),bb->yMax());
   char msg1[1024];
   sprintf(msg1, "\nExtracting %d nets ", pNetCnt);
@@ -5640,7 +5603,7 @@ uint extMain::powerRCGen()
     setupNanoFiles(net);
     _netUtil->setCurrentNet(net);
 
-    odb::notice(0, "\nExtracting net %s ... \n", net->getConstName());
+    logger_->info(RCX, 346, "Extracting net {} ... ", net->getConstName());
 
     // 103012 Release railConn(net);
 
@@ -5655,10 +5618,11 @@ uint extMain::powerRCGen()
 
     for (uint jj = 0; jj < _powerMacroTable.size(); jj++) {
       odb::dbInst* inst = _powerMacroTable[jj];
-      odb::notice(0,
-                  "\n--- Connectivity of macro %s with net %s ... \n",
-                  inst->getConstName(),
-                  net->getConstName());
+      logger_->info(RCX,
+                    347,
+                    "--- Connectivity of macro {} with net {} ... ",
+                    inst->getConstName(),
+                    net->getConstName());
       iterm2Vias(inst, net);
       AthResourceLog("-- Finished Macro", 0);
     }
@@ -5693,15 +5657,15 @@ void extMain::writeViasAndClose(odb::dbNet* net, bool m1Vias)
   else
     closeNanoFilesDomainGND((char*) net->getConstName());
 }
-void extMain::writeViaName_xy(char*       nodeName,
+void extMain::writeViaName_xy(char* nodeName,
                               odb::dbBox* v,
-                              uint        bot,
-                              uint        top,
-                              uint        level,
+                              uint bot,
+                              uint top,
+                              uint level,
                               const char* post)
 {
-  odb::dbSWire* s   = (odb::dbSWire*) v->getBoxOwner();
-  odb::dbNet*   net = s->getNet();
+  odb::dbSWire* s = (odb::dbSWire*) v->getBoxOwner();
+  odb::dbNet* net = s->getNet();
 
   bool change = true;
   if (change) {
@@ -5711,7 +5675,7 @@ void extMain::writeViaName_xy(char*       nodeName,
 
     char* srcNode = getViaResNode(v, "_up_node");
 
-    char                   buf[2048];
+    char buf[2048];
     odb::dbStringProperty* p = odb::dbStringProperty::find(v, "_inode");
     if (p != NULL)
       sprintf(nodeName, "%s_%d%s", p->getValue().c_str(), level, post);
@@ -5733,14 +5697,14 @@ void extMain::writeViaName_xy(char*       nodeName,
   } else
     sprintf(nodeName, "n%d_%d_%d ", net->getId(), v->xMin(), v->yMin());
 }
-void extMain::writeViaName(char*       nodeName,
+void extMain::writeViaName(char* nodeName,
                            odb::dbBox* v,
-                           uint        level,
+                           uint level,
                            const char* post)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  uint                top;
-  uint                bot = blkSearch->getViaLevels(v, top);
+  uint top;
+  uint bot = blkSearch->getViaLevels(v, top);
   if (_nodeCoords) {
     writeViaName_xy(nodeName, v, bot, top, level, post);
     return;
@@ -5752,9 +5716,9 @@ void extMain::writeViaName(char*       nodeName,
   else
     sprintf(nodeName, "vM%dM%d_%d%s", bot, top, v->getId(), post);
 }
-void extMain::writeViaName(FILE*       fp,
+void extMain::writeViaName(FILE* fp,
                            odb::dbBox* v,
-                           uint        level,
+                           uint level,
                            const char* post)
 {
   if (!_wireInfra) {
@@ -5763,7 +5727,7 @@ void extMain::writeViaName(FILE*       fp,
       fprintf(fp, "%s%s", srcNode, post);
     /* 030313
                     else
-                            odb::notice(0, "NULL _up_node: v%d %d %d ",
+                            logger_->info(RCX, 0, "NULL _up_node: v{} {} {} ",
        v->getId(), v->xMin(), v->yMin());
     */
 
@@ -5776,8 +5740,8 @@ void extMain::writeViaName(FILE*       fp,
 void extMain::writeViaNameCoords(FILE* fp, odb::dbBox* v)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
-  uint                top;
-  uint                bot = blkSearch->getViaLevels(v, top);
+  uint top;
+  uint bot = blkSearch->getViaLevels(v, top);
 
   writeViaName(fp, v, 0, "");
   fprintf(fp, " %d %d  %d %d\n", v->xMin(), v->yMin(), v->getDX(), v->getDY());
@@ -5802,10 +5766,10 @@ void extMain::writeViaInfo(FILE* fp, bool power)
     fprintf(fp, "%s\n", sname);
   }
 }
-uint extMain::writeViaInfo(FILE*                     fp,
+uint extMain::writeViaInfo(FILE* fp,
                            std::vector<odb::dbBox*>& viaTable,
-                           bool                      m1Vias,
-                           bool                      power)
+                           bool m1Vias,
+                           bool power)
 {
   uint viaCnt = viaTable.size();
   if (viaCnt == 0)
@@ -5850,9 +5814,9 @@ uint extMain::writeViaInfo(FILE*                     fp,
   fprintf(fp, "\n");
   return viaCnt;
 }
-uint extMain::writeViaCoords(FILE*                     fp,
+uint extMain::writeViaCoords(FILE* fp,
                              std::vector<odb::dbBox*>& viaTable,
-                             bool                      m1Vias)
+                             bool m1Vias)
 {
   uint viaCnt = viaTable.size();
   if (viaCnt == 0)
@@ -5871,9 +5835,9 @@ uint extMain::writeViaCoords(FILE*                     fp,
   fprintf(fp, "\n");
   return viaCnt;
 }
-uint extMain::writeViaInfo_old(FILE*                     fp,
+uint extMain::writeViaInfo_old(FILE* fp,
                                std::vector<odb::dbBox*>& viaTable,
-                               bool                      m1Vias)
+                               bool m1Vias)
 {
   odb::dbBlockSearch* blkSearch = _block->getSearchDb();
 
@@ -5892,8 +5856,8 @@ uint extMain::writeViaInfo_old(FILE*                     fp,
 
   for (uint ii = 0; ii < viaCnt; ii++) {
     odb::dbBox* v = viaTable[ii];
-    uint        top;
-    uint        bot = blkSearch->getViaLevels(v, top);
+    uint top;
+    uint bot = blkSearch->getViaLevels(v, top);
     if (m1Vias) {
       // fprintf(fp, "vM1_%d\n", v->getId());
       fprintf(
@@ -5918,8 +5882,8 @@ float extMain::computeViaResistance(odb::dbBox* viaBox, uint& cutCount)
 
   std::vector<odb::dbShape>::iterator shape_itr;
 
-  uint  cut_count = 0;
-  float totRes    = 0.0;
+  uint cut_count = 0;
+  float totRes = 0.0;
   for (shape_itr = shapes.begin(); shape_itr != shapes.end(); ++shape_itr) {
     odb::dbShape s = *shape_itr;
 
@@ -5932,45 +5896,48 @@ float extMain::computeViaResistance(odb::dbBox* viaBox, uint& cutCount)
   float avgCutRes = totRes / cut_count;
 
   float Res = avgCutRes / cut_count;
-  cutCount  = cut_count;
+  cutCount = cut_count;
   return Res;
 }
 uint extMain::readPowerSupplyCoords(char* filename)
 {
   int layerCount = _tech->getRoutingLayerCount() + 1;
   for (uint ii = 0; ii < 2; ii++) {
-    _supplyViaMap[ii]   = new Ath__array1D<char*>*[layerCount];
+    _supplyViaMap[ii] = new Ath__array1D<char*>*[layerCount];
     _supplyViaTable[ii] = new Ath__array1D<odb::dbBox*>*[layerCount];
     for (uint jj = 0; jj < layerCount; jj++) {
-      _supplyViaMap[ii][jj]   = new Ath__array1D<char*>(100000);
+      _supplyViaMap[ii][jj] = new Ath__array1D<char*>(100000);
       _supplyViaTable[ii][jj] = new Ath__array1D<odb::dbBox*>(1024);
     }
   }
-  int         cnt      = 0;
-  int         db_units = _block->getDbUnitsPerMicron();
+  int cnt = 0;
+  int db_units = _block->getDbUnitsPerMicron();
   Ath__parser parser;
   // parser.addSeparator("\r");
   parser.openFile(filename);
   while (parser.parseNextLine() > 0) {
     if (parser.getWordCnt() < 5) {
-      odb::warning(0, "Less than 5 tokens in line %d\n", parser.getLineNum());
+      logger_->warn(
+          RCX, 348, "Less than 5 tokens in line {}", parser.getLineNum());
       parser.printWords(NULL);
       continue;
     }
-    char*             layer_name = parser.get(3);
-    odb::dbTechLayer* layer      = _tech->findLayer(layer_name);
+    char* layer_name = parser.get(3);
+    odb::dbTechLayer* layer = _tech->findLayer(layer_name);
     if (layer == NULL) {
-      odb::warning(
-          0, "Layer %s might be undefined in LEF at line: ", layer_name);
+      logger_->warn(
+          RCX, 349, "Layer {} might be undefined in LEF at line: ", layer_name);
       parser.printWords(NULL);
-      odb::warning(0, "the above line will be skipped!\n");
+      logger_->warn(RCX, 0, "the above line will be skipped!");
       continue;
     }
     if (layer->getRoutingLevel() >= _tech->getRoutingLayerCount()) {
-      odb::warning(
-          0, "Layer Name %s cannot be the top layer at line: ", layer_name);
+      logger_->warn(RCX,
+                    350,
+                    "Layer Name {} cannot be the top layer at line: ",
+                    layer_name);
       parser.printWords(NULL);
-      odb::warning(0, "the above line will be skipped!\n");
+      logger_->warn(RCX, 351, "the above line will be skipped!");
       continue;
     }
     parser.printWords(NULL);
@@ -5978,13 +5945,13 @@ uint extMain::readPowerSupplyCoords(char* filename)
     if (parser.isKeyword(4, "POWER")) {
       power = true;
     }
-    char*  source_name = parser.get(0);
-    double x_microns   = parser.getDouble(1);
-    int    x           = Ath__double2int(db_units * x_microns);
-    double y_microns   = parser.getDouble(2);
-    int    y           = Ath__double2int(db_units * y_microns);
+    char* source_name = parser.get(0);
+    double x_microns = parser.getDouble(1);
+    int x = Ath__double2int(db_units * x_microns);
+    double y_microns = parser.getDouble(2);
+    int y = Ath__double2int(db_units * y_microns);
 
-    int               level        = layer->getRoutingLevel();
+    int level = layer->getRoutingLevel();
     odb::dbTechLayer* layer_plus_1 = _tech->findRoutingLayer(level + 1);
 
     odb::dbTechVia* techVia = odb::dbTechVia::create(_tech, source_name);
@@ -6000,19 +5967,20 @@ uint extMain::readPowerSupplyCoords(char* filename)
 
     cnt++;
     char* sname = _supplyViaMap[power][level]->geti(v->getId());
-    odb::notice(0,
-                "%s %d %d %d %d -- viaId= %d viaBoxId=%d %d %d\n",
-                sname,
-                x,
-                y,
-                level,
-                power,
-                techVia->getId(),
-                v->getId(),
-                bot->getId(),
-                top->getId());
+    logger_->info(RCX,
+                  352,
+                  "{} {} {} {} {} -- viaId= {} viaBoxId={} {} {}",
+                  sname,
+                  x,
+                  y,
+                  level,
+                  power,
+                  techVia->getId(),
+                  v->getId(),
+                  bot->getId(),
+                  top->getId());
   }
-  odb::notice(0, "Have read %d power/ground sources\n", cnt);
+  logger_->info(RCX, 353, "Have read {} power/ground sources", cnt);
   return cnt;
 }
 char* extMain::getPowerSourceName(bool power, uint level, uint vid)
@@ -6023,50 +5991,53 @@ char* extMain::getPowerSourceName(bool power, uint level, uint vid)
   return _supplyViaMap[power][level]->geti(vid);
 }
 uint extMain::addPowerSources(std::vector<odb::dbBox*>& viaTable,
-                              bool                      power,
-                              uint                      level,
-                              odb::Rect*                powerWire)
+                              bool power,
+                              uint level,
+                              odb::Rect* powerWire)
 {
   if (_supplyViaTable[0] == NULL)
     return 0;
 
-  uint n   = _supplyViaTable[power][level]->getCnt();
+  uint n = _supplyViaTable[power][level]->getCnt();
   uint cnt = 0;
   for (uint ii = 0; ii < n; ii++) {
     odb::dbBox* v = _supplyViaTable[power][level]->get(ii);
-    odb::Rect   via;
+    odb::Rect via;
     v->getBox(via);
     if (!powerWire->contains(via))
       continue;
     // v->setMarked(true);
     viaTable.push_back(v);
     cnt++;
-    odb::notice(0,
-                "    viaSource@ %d %d  %d %d\n",
-                v->xMin(),
-                v->yMin(),
-                v->xMax(),
-                v->yMax());
-    odb::notice(0,
-                "    connected with power wire at level %d :  %d %d  %d %d\n\n",
-                level,
-                powerWire->xMin(),
-                powerWire->yMin(),
-                powerWire->xMax(),
-                powerWire->yMax());
+    logger_->info(RCX,
+                  354,
+                  "    viaSource@ {} {}  {} {}",
+                  v->xMin(),
+                  v->yMin(),
+                  v->xMax(),
+                  v->yMax());
+    logger_->info(RCX,
+                  355,
+                  "    connected with power wire at level {} :  {} {}  {} {}",
+                  level,
+                  powerWire->xMin(),
+                  powerWire->yMin(),
+                  powerWire->xMax(),
+                  powerWire->yMax());
   }
   if (cnt > 0)
-    odb::notice(0,
-                "added %d [type=%d] power/ground sources on level %d\n",
-                cnt,
-                power,
-                level);
+    logger_->info(RCX,
+                  356,
+                  "added {} [type={}] power/ground sources on level {}",
+                  cnt,
+                  power,
+                  level);
   return n;
 }
 char* extMain::getPowerSourceName(uint level, uint vid)
 {
-  odb::dbNet* net      = _netUtil->getCurrentNet();
-  bool        isVDDnet = false;
+  odb::dbNet* net = _netUtil->getCurrentNet();
+  bool isVDDnet = false;
   if (net->getSigType() == odb::dbSigType::POWER)
     isVDDnet = true;
 

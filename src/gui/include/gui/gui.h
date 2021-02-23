@@ -34,6 +34,7 @@
 
 #include <tcl.h>
 
+#include <array>
 #include <initializer_list>
 #include <set>
 #include <string>
@@ -62,7 +63,12 @@ class Descriptor
   // highlightSet, if the user clicks on layout view as in case of selectionSet
   virtual void highlight(void* object,
                          Painter& painter,
-                         bool select_flag = true) const = 0;
+                         bool select_flag = true,
+                         int highlight_group = 0,
+                         void* additional_data = nullptr) const = 0;
+
+  virtual bool isInst(void* object) const = 0;
+  virtual bool isNet(void* object) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -76,7 +82,12 @@ class OpenDbDescriptor : public Descriptor
 
   void highlight(void* object,
                  Painter& painter,
-                 bool select_flag) const override;
+                 bool select_flag,
+                 int highlight_group,
+                 void* additional_data) const override;
+
+  bool isInst(void* object) const override;
+  bool isNet(void* object) const override;
 
   static OpenDbDescriptor* get();
 
@@ -93,15 +104,23 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_(nullptr), descriptor_(nullptr) {}
-
-  Selected(void* object, Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+  Selected() : object_(nullptr), additional_data_(nullptr), descriptor_(nullptr)
   {
   }
 
-  Selected(odb::dbObject* object)
-      : object_(object), descriptor_(OpenDbDescriptor::get())
+  Selected(void* object,
+           Descriptor* descriptor,
+           void* additional_data = nullptr)
+      : object_(object),
+        additional_data_(additional_data),
+        descriptor_(descriptor)
+  {
+  }
+
+  Selected(odb::dbObject* object, odb::dbObject* sink_object = nullptr)
+      : object_(object),
+        additional_data_(sink_object),
+        descriptor_(OpenDbDescriptor::get())
   {
   }
 
@@ -112,9 +131,16 @@ class Selected
     return descriptor_->getBBox(object_, bbox);
   }
 
-  void highlight(Painter& painter, bool select_flag = true) const
+  bool isInst() const { return descriptor_->isInst(object_); }
+  bool isNet() const { return descriptor_->isNet(object_); }
+  void* getObject() const { return object_; }
+
+  void highlight(Painter& painter,
+                 bool select_flag = true,
+                 int highlight_group = 0) const
   {
-    return descriptor_->highlight(object_, painter, select_flag);
+    return descriptor_->highlight(
+        object_, painter, select_flag, highlight_group, additional_data_);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -127,11 +153,15 @@ class Selected
 
  private:
   void* object_;
+  void* additional_data_;  // Will only be required for highlighting input nets,
+                           // in which case it will store the input instTerm
   Descriptor* descriptor_;
 };
 
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
+using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
+                                                   // Color is supported for now
 
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from
@@ -172,9 +202,19 @@ class Painter
   static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
+  static inline const std::array<Painter::Color, 8> highlightColors{
+      Painter::green,
+      Painter::yellow,
+      Painter::cyan,
+      Painter::magenta,
+      Painter::red,
+      Painter::dark_green,
+      Painter::dark_magenta,
+      Painter::blue};
+
   // The color to highlight in
   static inline const Color highlight = yellow;
-  static inline const Color persist_highlight = cyan;
+  static inline const Color persistHighlight = yellow;
 
   virtual ~Painter() = default;
 
@@ -262,8 +302,9 @@ class Gui
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
                        bool match_case = true,
-                       bool match_regex = false,
-                       bool add_to_highlight_set = false);
+                       bool match_reg_ex = false,
+                       bool add_to_highlight_set = false,
+                       int highlight_group = 0);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
@@ -271,8 +312,23 @@ class Gui
   // Add instances matching the pattern to the selection set
   void addSelectedInsts(const char* pattern,
                         bool match_case = true,
-                        bool match_regex = false,
-                        bool add_to_highlight_set = false);
+                        bool match_regE_ex = true,
+                        bool add_to_highlight_set = false,
+                        int highlight_group = 0);
+  // check if any object(inst/net) is present in sect/highlight set
+  bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
+
+  void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
+  void selectHighlightConnectedNets(bool select_flag,
+                                    bool output,
+                                    bool input,
+                                    int highlight_group = 0);
+
+  void addInstToHighlightSet(const char* name, int highlight_group = 0);
+  void addNetToHighlightSet(const char* name, int highlight_group = 0);
+
+  void clearSelections();
+  void clearHighlights(int highlight_group = 0);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);

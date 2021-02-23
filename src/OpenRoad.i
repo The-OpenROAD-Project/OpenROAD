@@ -71,6 +71,12 @@ getOpenRoad()
   return OpenRoad::openRoad();
 }
 
+utl::Logger *
+getLogger()
+{
+  return OpenRoad::openRoad()->getLogger();
+}
+
 dbDatabase *
 getDb()
 {
@@ -121,11 +127,11 @@ getTritonCts()
   return openroad->getTritonCts();
 }
 
-mpl::TritonMacroPlace *
-getTritonMp()
+mpl::MacroPlacer *
+getMacroPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getTritonMp();
+  return openroad->getMacroPlacer();
 }
 
 gpl::Replace*
@@ -192,6 +198,7 @@ using sta::LibertyCell;
 
 using ord::OpenRoad;
 using ord::getOpenRoad;
+using ord::getLogger;
 using ord::getDb;
 using ord::ensureLinked;
 
@@ -236,49 +243,6 @@ openroad_git_sha1()
 }
 
 void
-report(const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->report(msg);
-}
-
-void
-info(utl::ToolId tool,
-     int id,
-     const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->info(tool, id, msg);
-}
-
-void
-ord_warn(utl::ToolId tool,
-         int id,
-         const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->warn(tool, id, msg);
-}
-
-void
-ord_error(utl::ToolId tool,
-          int id,
-          const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->error(tool, id, msg);
-}
-
-void
-critical(utl::ToolId tool,
-         int id,
-         const char *msg)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->getLogger()->critical(tool, id, msg);
-}
-
-void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
 	     bool make_tech,
@@ -301,6 +265,15 @@ write_def_cmd(const char *filename,
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeDef(filename, version);
+}
+
+
+void 
+write_cdl_cmd(const char *filename,
+              bool includeFillers)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeCdl(filename, includeFillers);
 }
 
 void
@@ -353,7 +326,7 @@ set_debug_level(const char* tool_name,
                 int level)
 {
   using namespace ord;
-  auto* logger = getOpenRoad()->getLogger();
+  auto logger = getLogger();
 
   auto id = utl::Logger::findToolId(tool_name);
   if (id == utl::UKN) {

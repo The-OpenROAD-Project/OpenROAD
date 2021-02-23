@@ -1,20 +1,20 @@
-[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
-[INFO ODB-0222] Reading LEF file: sky130/sky130_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
 [INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
 [INFO ODB-0127] Reading DEF file: repair_antennas2.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 7887 components and 32384 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 0 connections.
-[INFO ODB-0133]     Created 262 nets and 836 connections.
+[INFO ODB-0131]     Created 7167 components and 29882 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 14334 connections.
+[INFO ODB-0133]     Created 437 nets and 1214 connections.
 [INFO ODB-0134] Finished DEF file: repair_antennas2.def
 Min routing layer: 2
 Max routing layer: 6
-Global adjustment: 0.0
+Global adjustment: 0%
 Unidirectional routing: true
 Grid origin: (0, 0)
 Layer 2 pitch: 0.37
@@ -22,37 +22,35 @@ Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 119549
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 105790
+[INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 29
-[INFO GRT-0018] Processing 24756 obstacles on layer 1
-[INFO GRT-0019] Processing 29999 obstacles on layer 2
-[INFO GRT-0022] Processing 10 obstacles on layer 5
-[INFO GRT-0022] Reducing resources of layer 3 by 15%
-[INFO GRT-0023] Reducing resources of layer 4 by 15%
-[INFO GRT-0024] Reducing resources of layer 5 by 15%
-[INFO GRT-0025] Reducing resources of layer 6 by 15%
+[INFO GRT-0002] Maximum degree: 25
+[INFO GRT-0018] Processing 25185 blockages on layer 1.
+[INFO GRT-0019] Processing 27401 blockages on layer 2.
+[INFO GRT-0022] Processing 10 blockages on layer 5.
+[INFO GRT-0022] Reducing resources of layer 3 by 15%.
+[INFO GRT-0023] Reducing resources of layer 4 by 15%.
+[INFO GRT-0024] Reducing resources of layer 5 by 15%.
+[INFO GRT-0025] Reducing resources of layer 6 by 15%.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 2035
+[INFO GRT-0157] Total Capacity: 55615
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
 
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 2368
-[Overflow Report] Total Capacity: 64204
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
-[INFO GRT-0110] Final usage          : 2368
-[INFO GRT-0111] Final number of vias : 1435
-[INFO GRT-0112] Final usage 3D       : 6673
-[INFO GRT-0018] Total wirelength: 23911 um
+[INFO GRT-0110] Final usage: 2035
+[INFO GRT-0111] Final number of vias: 1831
+[INFO GRT-0112] Final usage 3D: 7528
+[INFO GRT-0018] Total wirelength: 22298 um
 Repairing antennas...
-[WARNING GRT-0043] No OR_DEFAULT vias defined
+[WARNING GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -68,18 +66,37 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 3 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 2 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-[INFO GRT-0012] #Antenna violations: 13
-[INFO GRT-0011] 6676 filler cells deleted
-[INFO GRT-0015] 13 diodes inserted
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+[INFO GRT-0012] #Antenna violations: 1
+[INFO GRT-0011] 5890 filler cells deleted.
+[INFO GRT-0015] 1 diodes inserted.
 Min routing layer: 2
 Max routing layer: 6
-Global adjustment: 0.0
+Global adjustment: 0%
 Unidirectional routing: true
 Grid origin: (0, 0)
 Layer 2 pitch: 0.37
@@ -87,35 +104,33 @@ Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
-[INFO GRT-0004] #DB Obstructions: 0
-[INFO GRT-0005] #DB Obstacles: 14621
-[INFO GRT-0006] #DB Macros: 0
-[INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 22
-[INFO GRT-0018] Processing 11443 obstacles on layer 1
-[INFO GRT-0019] Processing 3347 obstacles on layer 2
-[INFO GRT-0022] Processing 10 obstacles on layer 5
-[INFO GRT-0022] Reducing resources of layer 3 by 15%
-[INFO GRT-0023] Reducing resources of layer 4 by 15%
-[INFO GRT-0024] Reducing resources of layer 5 by 15%
-[INFO GRT-0025] Reducing resources of layer 6 by 15%
-[INFO GRT-0009] #Nets to reroute: 25
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 17100
+[INFO GRT-0001] Minimum degree: 3
+[INFO GRT-0002] Maximum degree: 3
+[INFO GRT-0018] Processing 13408 blockages on layer 1.
+[INFO GRT-0019] Processing 3845 blockages on layer 2.
+[INFO GRT-0022] Processing 10 blockages on layer 5.
+[INFO GRT-0022] Reducing resources of layer 3 by 15%.
+[INFO GRT-0023] Reducing resources of layer 4 by 15%.
+[INFO GRT-0024] Reducing resources of layer 5 by 15%.
+[INFO GRT-0025] Reducing resources of layer 6 by 15%.
+[INFO GRT-0009] #Nets to reroute: 1.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 21
+[INFO GRT-0157] Total Capacity: 53641
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
 
-Final usage/overflow report: 
-
-[Overflow Report] Total Usage   : 516
-[Overflow Report] Total Capacity: 62410
-[Overflow Report] Max H Overflow: 0
-[Overflow Report] Max V Overflow: 0
-[Overflow Report] Max Overflow  : 0
-[Overflow Report] H   Overflow  : 0
-[Overflow Report] V   Overflow  : 0
-[Overflow Report] Final Overflow: 0
-
-[INFO GRT-0110] Final usage          : 516
-[INFO GRT-0111] Final number of vias : 161
-[INFO GRT-0112] Final usage 3D       : 999
-[INFO DPL-0001] Placed 6678 filler instances.
-[INFO GRT-0014] Num routed nets: 262
+[INFO GRT-0110] Final usage: 21
+[INFO GRT-0111] Final number of vias: 4
+[INFO GRT-0112] Final usage 3D: 33
+[INFO DPL-0001] Placed 5890 filler instances.
+[INFO GRT-0014] Num routed nets: 437
 No differences found.
 No differences found.

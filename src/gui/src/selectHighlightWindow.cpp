@@ -32,6 +32,8 @@
 
 #include "selectHighlightWindow.h"
 
+#include <QComboBox>
+#include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
@@ -41,15 +43,15 @@
 #include <string>
 
 #include "gui/gui.h"
+#include "highlightGroupDialog.h"
 
 namespace gui {
 
-SelectHighlightModel::SelectHighlightModel(const SelectionSet& objs)
-    : objs_(objs)
+SelectionModel::SelectionModel(const SelectionSet& objs) : objs_(objs)
 {
 }
 
-void SelectHighlightModel::populateModel()
+void SelectionModel::populateModel()
 {
   beginResetModel();
   table_data_.clear();
@@ -60,19 +62,19 @@ void SelectHighlightModel::populateModel()
   endResetModel();
 }
 
-int SelectHighlightModel::rowCount(const QModelIndex& parent) const
+int SelectionModel::rowCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return objs_.size();
 }
 
-int SelectHighlightModel::columnCount(const QModelIndex& parent) const
+int SelectionModel::columnCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return 3;
 }
 
-QVariant SelectHighlightModel::data(const QModelIndex& index, int role) const
+QVariant SelectionModel::data(const QModelIndex& index, int role) const
 {
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
@@ -99,9 +101,9 @@ QVariant SelectHighlightModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-QVariant SelectHighlightModel::headerData(int section,
-                                          Qt::Orientation orientation,
-                                          int role) const
+QVariant SelectionModel::headerData(int section,
+                                    Qt::Orientation orientation,
+                                    int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     if (section == 0) {
@@ -115,17 +117,182 @@ QVariant SelectHighlightModel::headerData(int section,
   return QVariant();
 }
 
-SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selection_set,
-                                             const SelectionSet& highlight_set,
+HighlightModel::HighlightModel(const HighlightSet& objs) : objs_(objs)
+{
+}
+
+void HighlightModel::populateModel()
+{
+  beginResetModel();
+  table_data_.clear();
+  table_data_.reserve(objs_.size());
+  int highlight_group = 0;
+  for (auto& highlight_objs : objs_) {
+    for (auto& obj : highlight_objs) {
+      table_data_.push_back(std::make_pair(highlight_group, &obj));
+    }
+    ++highlight_group;
+  }
+  endResetModel();
+}
+
+int HighlightModel::rowCount(const QModelIndex& parent) const
+{
+  Q_UNUSED(parent);
+  return table_data_.size();
+}
+
+int HighlightModel::columnCount(const QModelIndex& parent) const
+{
+  Q_UNUSED(parent);
+  return 4;
+}
+
+QVariant HighlightModel::data(const QModelIndex& index, int role) const
+{
+  if (!index.isValid()
+      || (role != Qt::DisplayRole && role != Qt::EditRole
+          && role != Qt::BackgroundRole)) {
+    return QVariant();
+  }
+  if (role == Qt::BackgroundRole && index.column() != 3)
+    return QVariant();
+  else if (role == Qt::BackgroundRole && index.column() == 3) {
+    auto highlight_color
+        = Painter::highlightColors[table_data_[index.row()].first];
+    return QColor(highlight_color.r, highlight_color.g, highlight_color.b, 100);
+  }
+  int row_index = index.row();
+  if (row_index > table_data_.size())
+    return QVariant();
+  std::string obj_name = table_data_[row_index].second->getName();
+  std::string obj_type("");
+  if (obj_name.rfind("Net: ", 0) == 0) {
+    obj_name = obj_name.substr(5);
+    obj_type = "Net";
+  } else if (obj_name.rfind("Inst: ", 0) == 0) {
+    obj_name = obj_name.substr(6);
+    obj_type = "Instance";
+  }
+  if (index.column() == 0) {
+    return QString::fromStdString(obj_name);
+  } else if (index.column() == 1) {
+    return QString::fromStdString(obj_type);
+  } else if (index.column() == 2) {
+    return QString::fromStdString(table_data_[row_index].second->getLocation());
+  } else if (index.column() == 3) {
+    return QString("Group ")
+           + QString::number(table_data_[row_index].first + 1);
+  }
+  return QVariant();
+}
+
+QVariant HighlightModel::headerData(int section,
+                                    Qt::Orientation orientation,
+                                    int role) const
+{
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    if (section == 0) {
+      return QString("Object");
+    } else if (section == 1) {
+      return QString("Type");
+    } else if (section == 2) {
+      return QString("Loc");
+    } else if (section == 3) {
+      return QString("Highlight Group");
+    }
+  }
+  return QVariant();
+}
+
+int HighlightModel::highlightGroup(const QModelIndex& index) const
+{
+  int row_index = index.row();
+  return table_data_[row_index].first;
+}
+
+bool HighlightModel::setData(const QModelIndex& index,
+                             const QVariant& value,
+                             int role)
+{
+  int row_index = index.row();
+  return false;
+}
+
+HighlightGroupDelegate::HighlightGroupDelegate(QObject* parent)
+    : QStyledItemDelegate(parent)
+{
+  items_.push_back("Group 1");
+  items_.push_back("Group 2");
+  items_.push_back("Group 3");
+  items_.push_back("Group 4");
+  items_.push_back("Group 5");
+  items_.push_back("Group 6");
+  items_.push_back("Group 7");
+  items_.push_back("Group 8");
+}
+
+QWidget* HighlightGroupDelegate::createEditor(
+    QWidget* parent,
+    const QStyleOptionViewItem& /* option */,
+    const QModelIndex& index) const
+{
+  QComboBox* editor = new QComboBox(parent);
+  for (unsigned int i = 0; i < items_.size(); ++i) {
+    editor->addItem(items_[i].c_str());
+  }
+  editor->setFrame(true);
+  editor->setEditable(true);
+  return editor;
+}
+
+void HighlightGroupDelegate::setEditorData(QWidget* editor,
+                                           const QModelIndex& index) const
+{
+  QString value = index.model()->data(index, Qt::EditRole).toString();
+  QComboBox* combo_box = static_cast<QComboBox*>(editor);
+  combo_box->setCurrentText(value);
+}
+
+void HighlightGroupDelegate::setModelData(QWidget* editor,
+                                          QAbstractItemModel* model,
+                                          const QModelIndex& index) const
+{
+  QComboBox* combo_box = static_cast<QComboBox*>(editor);
+  model->setData(index, combo_box->currentIndex(), Qt::EditRole);
+}
+
+void HighlightGroupDelegate::updateEditorGeometry(
+    QWidget* editor,
+    const QStyleOptionViewItem& option,
+    const QModelIndex& /* index */) const
+{
+  editor->setGeometry(option.rect);
+}
+
+void HighlightGroupDelegate::paint(QPainter* painter,
+                                   const QStyleOptionViewItem& option,
+                                   const QModelIndex& index) const
+{
+  QStyleOptionViewItem my_option = option;
+
+  QString text = index.model()->data(index, Qt::EditRole).toString();
+  my_option.text = text;
+  QApplication::style()->drawControl(
+      QStyle::CE_ItemViewItem, &my_option, painter);
+}
+
+SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
+                                             const HighlightSet& hlt_set,
                                              QWidget* parent)
     : QDockWidget(parent),
-      ui_(new Ui::SelectHighlightWidget),
-      selection_model_(selection_set),
-      highlight_model_(highlight_set),
+      ui(new Ui::SelectHighlightWidget),
+      selection_model_(sel_set),
+      highlight_model_(hlt_set),
       select_context_menu_(new QMenu(this)),
       highlight_context_menu_(new QMenu(this))
 {
-  ui_->setupUi(this);
+  ui->setupUi(this);
 
   QSortFilterProxyModel* sel_filter_proxy = new QSortFilterProxyModel(this);
   sel_filter_proxy->setSourceModel(&selection_model_);
@@ -133,27 +300,27 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selection_set,
   QSortFilterProxyModel* hlt_filter_proxy = new QSortFilterProxyModel(this);
   hlt_filter_proxy->setSourceModel(&highlight_model_);
 
-  ui_->selTableView->setModel(sel_filter_proxy);
-  ui_->hltTableView->setModel(hlt_filter_proxy);
+  ui->selTableView->setModel(sel_filter_proxy);
+  ui->hltTableView->setModel(hlt_filter_proxy);
 
-  connect(ui_->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
-    this->ui_->selTableView->keyboardSearch(ui_->findEditInSel->text());
+  connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
+    this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
   });
-  connect(ui_->findEditInHlt, &QLineEdit::returnPressed, this, [this]() {
-    this->ui_->hltTableView->keyboardSearch(ui_->findEditInSel->text());
+  connect(ui->findEditInHlt, &QLineEdit::returnPressed, this, [this]() {
+    this->ui->hltTableView->keyboardSearch(ui->findEditInSel->text());
   });
 
-  connect(ui_->selTableView,
+  connect(ui->selTableView,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showSelectCustomMenu(QPoint)));
-  connect(ui_->hltTableView,
+  connect(ui->hltTableView,
           SIGNAL(customContextMenuRequested(QPoint)),
           this,
           SLOT(showHighlightCustomMenu(QPoint)));
-  ui_->selTableView->horizontalHeader()->setSectionResizeMode(
+  ui->selTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
-  ui_->hltTableView->horizontalHeader()->setSectionResizeMode(
+  ui->hltTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
 
   QAction* remove_sel_item_act = select_context_menu_->addAction("De-Select");
@@ -196,8 +363,10 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selection_set,
           this,
           SLOT(zoomInHighlightedItems()));
 
-  ui_->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui_->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+  ui->tabWidget->setCurrentIndex(0);
 }
 
 SelectHighlightWindow::~SelectHighlightWindow()
@@ -216,18 +385,18 @@ void SelectHighlightWindow::updateHighlightModel()
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
 {
-  select_context_menu_->popup(ui_->selTableView->viewport()->mapToGlobal(pos));
+  select_context_menu_->popup(ui->selTableView->viewport()->mapToGlobal(pos));
 }
 
 void SelectHighlightWindow::showHighlightCustomMenu(QPoint pos)
 {
   highlight_context_menu_->popup(
-      ui_->hltTableView->viewport()->mapToGlobal(pos));
+      ui->hltTableView->viewport()->mapToGlobal(pos));
 }
 
 void SelectHighlightWindow::deselectItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
     desel_items << selection_model_.getItemAt(sel_item.row());
@@ -236,17 +405,19 @@ void SelectHighlightWindow::deselectItems()
 }
 void SelectHighlightWindow::highlightSelectedItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  HighlightGroupDialog dlg;
+  dlg.exec();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> sel_items;
   for (auto& sel_item : sel_indices) {
     sel_items << selection_model_.getItemAt(sel_item.row());
   }
-  emit highlightSelectedItemsSig(sel_items);
+  emit highlightSelectedItemsSig(sel_items, dlg.getSelectedHighlightGroup());
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()
 {
-  auto sel_indices = ui_->selTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> desel_items;
   for (auto& sel_item : sel_indices) {
     desel_items << selection_model_.getItemAt(sel_item.row());
@@ -256,7 +427,7 @@ void SelectHighlightWindow::zoomInSelectedItems()
 
 void SelectHighlightWindow::dehighlightItems()
 {
-  auto sel_indices = ui_->hltTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
     dehlt_items << highlight_model_.getItemAt(sel_item.row());
@@ -266,7 +437,7 @@ void SelectHighlightWindow::dehighlightItems()
 
 void SelectHighlightWindow::zoomInHighlightedItems()
 {
-  auto sel_indices = ui_->hltTableView->selectionModel()->selectedRows();
+  auto sel_indices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehlt_items;
   for (auto& sel_item : sel_indices) {
     dehlt_items << highlight_model_.getItemAt(sel_item.row());

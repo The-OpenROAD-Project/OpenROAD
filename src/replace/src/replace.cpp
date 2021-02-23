@@ -37,7 +37,9 @@
 #include "placerBase.h"
 #include "nesterovBase.h"
 #include "routeBase.h" 
+#include "timingBase.h"
 #include "utility/Logger.h"
+#include "rsz/Resizer.hh"
 #include <iostream>
 
 namespace gpl {
@@ -47,7 +49,6 @@ using utl::GPL;
 
 Replace::Replace()
   : db_(nullptr), 
-  sta_(nullptr), 
   fr_(nullptr),
   log_(nullptr),
   pb_(nullptr), nb_(nullptr), 
@@ -98,8 +99,8 @@ void Replace::init() {
 void Replace::reset() {
   // two pointers should not be freed.
   db_ = nullptr;
-  sta_ = nullptr;
   fr_ = nullptr;
+  rs_ = nullptr;
   log_ = nullptr;
 
   ip_.reset();
@@ -107,6 +108,7 @@ void Replace::reset() {
 
   pb_.reset();
   nb_.reset();
+  tb_.reset();
 
   initialPlaceMaxIter_ = 20;
   initialPlaceMinDiffLength_ = 1500;
@@ -151,20 +153,18 @@ void Replace::reset() {
 void Replace::setDb(odb::dbDatabase* db) {
   db_ = db;
 }
-void Replace::setSta(sta::dbSta* sta) {
-  sta_ = sta;
-}
 void Replace::setFastRoute(grt::GlobalRouter* fr) {
   fr_ = fr;
+}
+void Replace::setResizer(rsz::Resizer* rs) {
+  rs_ = rs;
 }
 void Replace::setLogger(utl::Logger* logger) {
   log_ = logger;
 }
 void Replace::doInitialPlace() {
 
-  if( log_ ) {
-    log_->setDebugLevel(GPL, "replace", verbose_);
-  }
+  log_->setDebugLevel(GPL, "replace", verbose_);
 
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
@@ -186,11 +186,8 @@ void Replace::doInitialPlace() {
   ip_->doBicgstabPlace();
 }
 
-void Replace::doNesterovPlace() {
-  
-  if( log_ ) {
-    log_->setDebugLevel(GPL, "replace", verbose_);
-  }
+void Replace::initNesterovPlace() {
+  log_->setDebugLevel(GPL, "replace", verbose_);
 
   if( !pb_ ) {
     PlacerBaseVars pbVars;
@@ -200,62 +197,73 @@ void Replace::doNesterovPlace() {
     pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
   }
   
+  if( !nb_ ) {
+    NesterovBaseVars nbVars;
+    nbVars.targetDensity = density_;
 
-  NesterovBaseVars nbVars;
-  nbVars.targetDensity = density_;
+    if( binGridCntX_ != 0 ) {
+      nbVars.isSetBinCntX = 1;
+      nbVars.binCntX = binGridCntX_;
+    }
+
+    if( binGridCntY_ != 0 ) {
+      nbVars.isSetBinCntY = 1;
+      nbVars.binCntY = binGridCntY_;
+    }
+
+    nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
+  }
   
-  if( binGridCntX_ != 0 ) {
-    nbVars.isSetBinCntX = 1;
-    nbVars.binCntX = binGridCntX_;
+  if( !rb_ ) {
+    RouteBaseVars rbVars;
+    rbVars.maxDensity = routabilityMaxDensity_;
+    rbVars.maxBloatIter = routabilityMaxBloatIter_;
+    rbVars.maxInflationIter = routabilityMaxInflationIter_;
+    rbVars.targetRC = routabilityTargetRcMetric_;
+    rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
+    rbVars.gRoutePitchScale = routabilityPitchScale_;
+    rbVars.maxInflationRatio = routabilityMaxInflationRatio_;
+    rbVars.rcK1 = routabilityRcK1_;
+    rbVars.rcK2 = routabilityRcK2_;
+    rbVars.rcK3 = routabilityRcK3_;
+    rbVars.rcK4 = routabilityRcK4_;
+
+    rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
   }
 
-  if( binGridCntY_ != 0 ) {
-    nbVars.isSetBinCntY = 1;
-    nbVars.binCntY = binGridCntY_;
+  if( !tb_ ) {
+    tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
   }
 
+  if( !np_ ) {
+    NesterovPlaceVars npVars;
 
-  nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
-  
+    npVars.minPhiCoef = minPhiCoef_;
+    npVars.maxPhiCoef = maxPhiCoef_;
+    npVars.referenceHpwl = referenceHpwl_;
+    npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
+    npVars.initDensityPenalty = initDensityPenalityFactor_;
+    npVars.initWireLengthCoef = initWireLengthCoef_;
+    npVars.targetOverflow = overflow_;
+    npVars.maxNesterovIter = nesterovPlaceMaxIter_; 
+    npVars.timingDrivenMode = timingDrivenMode_;
+    npVars.routabilityDrivenMode = routabilityDrivenMode_;
+    npVars.debug = gui_debug_;
+    npVars.debug_pause_iterations = gui_debug_pause_iterations_;
+    npVars.debug_update_iterations = gui_debug_update_iterations_;
+    npVars.debug_draw_bins = gui_debug_draw_bins_;
 
-  RouteBaseVars rbVars;
-  rbVars.maxDensity = routabilityMaxDensity_;
-  rbVars.maxBloatIter = routabilityMaxBloatIter_;
-  rbVars.maxInflationIter = routabilityMaxInflationIter_;
-  rbVars.targetRC = routabilityTargetRcMetric_;
-  rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
-  rbVars.gRoutePitchScale = routabilityPitchScale_;
-  rbVars.maxInflationRatio = routabilityMaxInflationRatio_;
-  rbVars.rcK1 = routabilityRcK1_;
-  rbVars.rcK2 = routabilityRcK2_;
-  rbVars.rcK3 = routabilityRcK3_;
-  rbVars.rcK4 = routabilityRcK4_;
-
-  rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
-
-  NesterovPlaceVars npVars;
-
-  npVars.minPhiCoef = minPhiCoef_;
-  npVars.maxPhiCoef = maxPhiCoef_;
-  npVars.referenceHpwl = referenceHpwl_;
-  npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
-  npVars.initDensityPenalty = initDensityPenalityFactor_;
-  npVars.initWireLengthCoef = initWireLengthCoef_;
-  npVars.targetOverflow = overflow_;
-  npVars.maxNesterovIter = nesterovPlaceMaxIter_; 
-  npVars.timingDrivenMode = timingDrivenMode_;
-  npVars.routabilityDrivenMode = routabilityDrivenMode_;
-  npVars.debug = gui_debug_;
-  npVars.debug_pause_iterations = gui_debug_pause_iterations_;
-  npVars.debug_update_iterations = gui_debug_update_iterations_;
-  npVars.debug_draw_bins = gui_debug_draw_bins_;
-
-  std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, log_));
-  np_ = std::move(np);
-
-  np_->doNesterovPlace();
+    std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
+    np_ = std::move(np);
+  }
 }
 
+void Replace::doNesterovPlace() {
+  initNesterovPlace();
+  if (timingDrivenMode_)
+    rs_->resizeSlackPreamble();
+  np_->doNesterovPlace();
+}
 
 void
 Replace::setInitialPlaceMaxIter(int iter) {

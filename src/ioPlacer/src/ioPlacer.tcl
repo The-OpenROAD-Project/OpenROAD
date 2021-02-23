@@ -69,20 +69,20 @@ proc set_io_pin_constraint { args } {
   }
 
   if {[info exists keys(-direction)] && [info exists keys(-name)]} {
-    ord::error PPL 16 "set_io_pin_constraint: only one constraint allowed"
+    utl::error PPL 16 "Both -direction and -name constraints not allowed.."
   }
 
   if [info exists keys(-direction)] {
     set direction $keys(-direction)
     set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-    ord::report "Restrict $direction pins to region $begin-$end, in the $edge edge"
+    utl::report "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
     ppl::add_direction_constraint $dir $edge_ $begin $end
   }
 
   if [info exists keys(-names)] {
     set names $keys(-names)
     foreach name $names {
-      ord::report "Restrict I/O pin $name to region $begin-$end, in the $edge edge"
+      utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
       ppl::add_name_constraint $name $edge_ $begin $end
     }
   }
@@ -95,44 +95,46 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-boundaries_offset offset]\
                                   [-min_distance min_dist]\
                                   [-exclude region]\
+                                  [-group_pins pin_list]
                                  }
 
 proc io_placer { args } {
-  ord::warn PPL 14 "io_placer command is deprecated. Use place_pins instead"
+  utl::warn PPL 14 "io_placer command is deprecated. Use place_pins instead."
   [eval place_pins $args]
 }
 
 proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
+  set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude} \
+  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude -group_pins} \
   flags {-random}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
-    ord::critical PPL 31 "missing dbTech"
+    utl::error PPL 31 "no technology found."
   }
 
   set dbBlock [ord::get_db_block]
   if { $dbBlock == "NULL" } {
-    ord::critical PPL 32 "missing dbBlock"
+    utl::error PPL 32 "no block found."
   }
 
-  set db [::ord::get_db]
+  set db [ord::get_db]
   
   set blockages {}
 
   foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
       if { ![$inst isPlaced] } {
-        ord::warn PPL 15 "Macro [$inst getName] is not placed"
-          continue
+        utl::warn PPL 15 "Macro [$inst getName] is not placed."
+      } else {
+        lappend blockages $inst
       }
-      lappend blockages $inst
     }
   }
 
-  ord::report "#Macro blocks found: [llength $blockages]"
+  utl::report "Found [llength $blockages] macro blocks."
 
   set seed 42
   if [info exists keys(-random_seed)] {
@@ -143,13 +145,13 @@ proc place_pins { args } {
   if [info exists keys(-hor_layers)] {
     set hor_layers $keys(-hor_layers)
   } else {
-    ord::error PPL 17 "-hor_layers is mandatory"
+    utl::error PPL 17 "-hor_layers is required."
   }       
   
   if [info exists keys(-ver_layers)] {
     set ver_layers $keys(-ver_layers)
   } else {
-    ord::error PPL 18 "-ver_layers is mandatory"
+    utl::error PPL 18 "-ver_layers is required."
   }
 
   set offset 5
@@ -157,7 +159,7 @@ proc place_pins { args } {
     set offset $keys(-boundaries_offset)
     ppl::set_boundaries_offset $offset
   } else {
-    ord::report "Using ${offset}u default boundaries offset"
+    utl::report "Using ${offset}u default boundaries offset."
     ppl::set_boundaries_offset $offset
   }
 
@@ -166,35 +168,35 @@ proc place_pins { args } {
     set min_dist $keys(-min_distance)
     ppl::set_min_distance $min_dist
   } else {
-    ord::report "Using $min_dist tracks default min distance between IO pins"
+    utl::report "Using $min_dist tracks default min distance between IO pins."
     ppl::set_min_distance $min_dist
   }
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
   if { $bterms_cnt == 0 } {
-    ord::error PPL 19 "Design without pins"
+    utl::error PPL 19 "Design without pins"
   }
 
   foreach hor_layer $hor_layers {
     set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
     if { $hor_track_grid == "NULL" } {
-      ord::error PPL 20 "Horizontal routing layer ($hor_layer) not found"
+      utl::error PPL 20 "Horizontal routing layer $hor_layer not found."
     }
 
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      ord::error PPL 21 "Routing tracks not found for layer $hor_layer"
+      utl::error PPL 21 "Routing tracks not found for layer $hor_layer."
     }
   }
 
   foreach ver_layer $ver_layers {
     set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
     if { $ver_track_grid == "NULL" } {
-      ord::error PPL 22 "Vertical routing layer ($ver_layer) not found"
+      utl::error PPL 22 "Vertical routing layer $ver_layer not found."
     }
 
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      ord::error PPL 23 "Routing tracks not found for layer $ver_layer"
+      utl::error PPL 23 "Routing tracks not found for layer $ver_layer."
     }
   }
 
@@ -204,7 +206,7 @@ proc place_pins { args } {
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
   if { ($bterms_cnt > $num_slots) } {
-    ord::error PPL 24 "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
+    utl::error PPL 24 "Number of pins $bterms_cnt exceeds max possible $num_slots."
   }
  
   if { $regions != {} } {
@@ -231,11 +233,28 @@ proc place_pins { args } {
 
           ppl::exclude_interval $edge_ $begin $end
         } else {
-          ord::error PPL 25 "-exclude: $interval is an invalid region"
+          utl::error PPL 25 "-exclude: $interval is an invalid region"
         }
       } else {
-        ord::error PPL 26 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
+        utl::error PPL 26 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval."
       }
+    }
+  }
+
+  if { $pin_groups != {} } {
+    set group_idx 0
+    foreach group $pin_groups {
+      utl::info PPL 41 "Pin group $group_idx: \[$group\]"
+      set pin_group [ppl::create_pin_group]
+      foreach pin_name $group {
+        set db_bterm [$dbBlock findBTerm $pin_name]
+        if { $db_bterm != "NULL" } {
+          ppl::add_pin_to_group $db_bterm $pin_group
+        } else {
+          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
+        }
+      }
+      incr group_idx
     }
   }
 
@@ -255,7 +274,7 @@ namespace eval ppl {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    ord::error PPL 27 "$cmd: $edge is an invalid edge. use top, bottom, left or right"
+    utl::error PPL 27 "$cmd: $edge is an invalid edge. use top, bottom, left or right."
   }
   return [ppl::get_edge $edge]
 }
@@ -268,7 +287,7 @@ proc parse_direction { cmd direction } {
     set direction [string tolower $direction]
     return [ppl::get_direction $direction]      
   } else {
-    ord::error PPL 28 "$cmd: Invalid pin direction"
+    utl::error PPL 28 "$cmd: Invalid pin direction."
   }
 }
 
@@ -287,6 +306,21 @@ proc parse_excludes_arg { args_var } {
   return $regions
 }
 
+proc parse_group_pins_arg { args_var } {
+  set pins {}
+  while { $args_var != {} } {
+    set arg [lindex $args_var 0]
+    if { $arg == "-group_pins" } {
+      lappend pins [lindex $args_var 1]
+      set args_var [lrange $args_var 1 end]
+    } else {
+      set args_var [lrange $args_var 1 end]
+    }
+  }
+
+  return $pins
+}
+
 proc get_edge_extreme { cmd begin edge } {
   set dbBlock [ord::get_db_block]
   set die_area [$dbBlock getDieArea]
@@ -296,7 +330,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMin]
     } else {
-      ord::error PPL 29 "$cmd: Invalid edge"
+      utl::error PPL 29 "$cmd: Invalid edge"
     }
   } else {
     if {$edge == "top" || $edge == "bottom"} {
@@ -304,7 +338,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMax]
     } else {
-      ord::error PPL 30 "$cmd: Invalid edge"
+      utl::error PPL 30 "$cmd: Invalid edge"
     }
   }
 }

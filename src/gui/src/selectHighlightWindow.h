@@ -32,15 +32,18 @@
 
 #pragma once
 
+#include <QAbstractItemDelegate>
 #include <QAbstractTableModel>
 #include <QAction>
 #include <QDockWidget>
+#include <QItemDelegate>
 #include <QMainWindow>
 #include <QMenu>
 #include <QModelIndex>
 #include <QPoint>
 #include <QShortcut>
 #include <QStringList>
+#include <QStyledItemDelegate>
 #include <QToolBar>
 #include <QVariant>
 #include <unordered_map>
@@ -49,11 +52,11 @@
 #include "ui_selectedWidget.h"
 
 namespace gui {
-class SelectHighlightModel : public QAbstractTableModel
+class SelectionModel : public QAbstractTableModel
 {
   Q_OBJECT
  public:
-  SelectHighlightModel(const SelectionSet& objs);
+  SelectionModel(const SelectionSet& objs);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -74,13 +77,65 @@ class SelectHighlightModel : public QAbstractTableModel
   std::vector<const Selected*> table_data_;
 };
 
+class HighlightModel : public QAbstractTableModel
+{
+  Q_OBJECT
+ public:
+  HighlightModel(const HighlightSet& objs);
+
+  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
+  int columnCount(const QModelIndex& parent
+                  = QModelIndex()) const Q_DECL_OVERRIDE;
+
+  QVariant data(const QModelIndex& index,
+                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant headerData(int section,
+                      Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+  const Selected* getItemAt(int idx) const { return table_data_[idx].second; }
+  void populateModel();
+
+  int highlightGroup(const QModelIndex& index) const;
+  bool setData(const QModelIndex& index, const QVariant& value, int role) override;
+
+ private:
+  const HighlightSet& objs_;
+  std::vector<std::pair<int, const Selected*>> table_data_;
+};
+
+class HighlightGroupDelegate : public QStyledItemDelegate
+{
+  Q_OBJECT
+ public:
+  HighlightGroupDelegate(QObject* parent = 0);
+
+  QWidget* createEditor(QWidget* parent,
+                        const QStyleOptionViewItem& option,
+                        const QModelIndex& index) const;
+  void setEditorData(QWidget* editor, const QModelIndex& index) const;
+  void setModelData(QWidget* editor,
+                    QAbstractItemModel* model,
+                    const QModelIndex& index) const;
+  void updateEditorGeometry(QWidget* editor,
+                            const QStyleOptionViewItem& option,
+                            const QModelIndex& index) const;
+  void paint(QPainter* painter,
+             const QStyleOptionViewItem& option,
+             const QModelIndex& index) const;
+
+ private:
+  std::vector<std::string> items_;
+  HighlightModel* table_model_;
+};
+
 class SelectHighlightWindow : public QDockWidget
 {
   Q_OBJECT
 
  public:
-  explicit SelectHighlightWindow(const SelectionSet& selection_set,
-                                 const SelectionSet& highlight_set,
+  explicit SelectHighlightWindow(const SelectionSet& selSet,
+                                 const HighlightSet& hltSet,
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
 
@@ -91,7 +146,8 @@ class SelectHighlightWindow : public QDockWidget
   void clearSelectedItems(const QList<const Selected*>& items);
   void clearHighlightedItems(const QList<const Selected*>& items);
   void zoomInToItems(const QList<const Selected*>& items);
-  void highlightSelectedItemsSig(const QList<const Selected*>& items);
+  void highlightSelectedItemsSig(const QList<const Selected*>& items,
+                                 int highlight_group);
 
  public slots:
   void updateSelectionModel();
@@ -106,9 +162,9 @@ class SelectHighlightWindow : public QDockWidget
   void zoomInHighlightedItems();
 
  private:
-  Ui::SelectHighlightWidget* ui_;
-  SelectHighlightModel selection_model_;
-  SelectHighlightModel highlight_model_;
+  Ui::SelectHighlightWidget* ui;
+  SelectionModel selection_model_;
+  HighlightModel highlight_model_;
 
   QMenu* select_context_menu_;
   QMenu* highlight_context_menu_;

@@ -1522,8 +1522,8 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
-                         auto areaA = (boxA.right() - boxA.left()) * (boxA.top() - boxA.bottom());
-                         auto areaB = (boxB.right() - boxB.left()) * (boxB.top() - boxB.bottom());
+                         auto areaA = boxA.area();
+                         auto areaB = boxB.area();
                          return (a->getNumPinsIn() == b->getNumPinsIn() ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB) : 
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          };
@@ -1542,8 +1542,8 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
-                         auto areaA = (boxA.right() - boxA.left()) * (boxA.top() - boxA.bottom());
-                         auto areaB = (boxB.right() - boxB.left()) * (boxB.top() - boxB.bottom());
+                         auto areaA = boxA.area();
+                         auto areaB = boxB.area();
                          bool sol = (a->getNumPinsIn() == b->getNumPinsIn() ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB) : 
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          return (a->getMarkerDist() == b->getMarkerDist() ? sol : a->getMarkerDist() < b->getMarkerDist());
@@ -3016,6 +3016,10 @@ bool FlexDRWorker::routeNet(drNet* net) {
   ProfileTask profile("DR:routeNet");
   //bool enableOutput = true;
   bool enableOutput = false;
+  if (graphics_) {
+    graphics_->startNet(net);
+  }
+
   if (net->getPins().size() <= 1) {
     return true;
   }

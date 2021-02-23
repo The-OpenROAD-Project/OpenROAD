@@ -54,7 +54,6 @@
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
 #include "openroad/Version.hh"
-#include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
 #include "utility/Logger.h" 
@@ -71,6 +70,7 @@ static int cmd_argc;
 static char **cmd_argv;
 bool gui_mode = false;
 const char* log_filename = nullptr;
+const char* metrics_filename = nullptr;
 
 static const char *init_filename = ".openroad";
 
@@ -96,6 +96,10 @@ main(int argc,
   log_filename = findCmdLineKey(argc, argv, "-log");
   if (log_filename)
     remove(log_filename);
+
+  metrics_filename = findCmdLineKey(argc, argv, "-metrics");
+  if (metrics_filename)
+    remove(metrics_filename);
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -231,7 +235,7 @@ showSplash()
   string sha = OPENROAD_GIT_SHA1;
   logger->report("OpenROAD {} {}",
                  OPENROAD_VERSION,
-                 sha.substr(0, 10).c_str());
+                 sha.c_str());
   logger->report("This program is licensed under the BSD-3 license. See the LICENSE file for details.");
   logger->report("Components of this program may be licensed under more restrictive licenses which must be honored.");
 }

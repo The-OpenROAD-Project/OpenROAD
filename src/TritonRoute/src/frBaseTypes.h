@@ -34,6 +34,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cstdint>
 #include "utility/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -44,6 +45,7 @@ namespace fr {
   const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
+  using frArea = uint64_t;
   using frUInt4 = unsigned int;
   using frDist  = double;
   using frString = std::string;
@@ -260,21 +262,35 @@ namespace fr {
     CORE_SPACER,
     CORE_ANTENNACELL,
     COVER,
-    ENDCAP_PRE,
     BLOCK,
-    RING, // ispd19
-    PAD, // ispd19
-    PAD_POWER, // ispd19
+    RING,
+    PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
     PAD_SPACER,
-    ENDCAP_BOTTOMLEFT // ispd19
+    PAD_AREAIO,
+    ENDCAP,
+    ENDCAP_PRE,
+    ENDCAP_POST,
+    ENDCAP_TOPLEFT,
+    ENDCAP_TOPRIGHT,
+    ENDCAP_BOTTOMLEFT,
+    ENDCAP_BOTTOMRIGHT
   };
+
+  // This will go away when we move to OpenDB's types
+  bool isPad(MacroClassEnum e);
+  bool isEndcap(MacroClassEnum e);
 
   // note: In ascending cost order for FlexPA
   enum class frAccessPointEnum {
-    OnGridAP   = 0,
-    HalfGridAP = 1,
-    CenterAP   = 2,
-    EncOptAP   = 3
+    OnGrid   = 0,
+    HalfGrid = 1,
+    Center   = 2,
+    EncOpt   = 3,
+    NearbyGrid = 4 // nearby grid or 1/2 grid
   };
 
   namespace bg  = boost::geometry;
@@ -298,8 +314,13 @@ namespace fr {
         allowPause(true),
         gcellX(-1),
         gcellY(-1),
-        iter(0)
+        iter(0),
+        paMarkers(false)
     {
+    }
+
+    bool is_on() const {
+      return debugDR || debugPA;
     }
 
     bool debugDR;
@@ -312,6 +333,7 @@ namespace fr {
     int gcellX;
     int gcellY;
     int iter;
+    bool paMarkers;
   };
 }
 

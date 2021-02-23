@@ -231,6 +231,8 @@ class TechChar
            | (outputSlew << 2 * NUM_BITS_PER_FIELD);
   }
 
+  float getCharMaxCap() const { return _charMaxCap; }
+  float getCharMaxSlew() const { return _charMaxSlew; }
   utl::Logger* getLogger() { return _options->getLogger(); }
 
  protected:
@@ -282,9 +284,9 @@ class TechChar
   void getClockLayerResCap(double &cap, double &res);
   void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
                                       float &maxSlew, bool &maxSlewExist,
-                                      float &maxCap, bool &maxCapExist);
+                                      float &maxCap, bool &maxCapExist, bool midValue = false);
   void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
-                                     float& maxCap, bool& maxCapExist);
+                                     float& maxCap, bool& maxCapExist, bool midValue = false);
 
   Logger* _logger;
   sta::dbSta* _openSta = nullptr;

@@ -118,7 +118,7 @@ namespace fr {
     void prepPoint_pin_genPoints_rect(std::vector<std::unique_ptr<frAccessPoint> > &aps, std::set<std::pair<frPoint, frLayerNum> > &apset,
                                       const gtl::rectangle_data<frCoord> &rect,
                                       frLayerNum layerNum, bool allowPlanar, bool allowVia, frAccessPointEnum lowerType, frAccessPointEnum upperType, bool isMacroCellPin);
-    void prepPoint_pin_genPoints_rect_genGrid(std::map<frCoord, frAccessPointEnum> &coords, const std::map<frCoord, frAccessPointEnum> &trackCoords, frCoord low, frCoord high);
+    void prepPoint_pin_genPoints_rect_genGrid(std::map<frCoord, frAccessPointEnum> &coords, const std::map<frCoord, frAccessPointEnum> &trackCoords, frCoord low, frCoord high, bool useNearbyGrid = false);
     void prepPoint_pin_genPoints_rect_genCenter(std::map<frCoord, frAccessPointEnum> &coords, frLayerNum layerNum, frCoord low, frCoord high);
     void prepPoint_pin_genPoints_rect_genEnc(std::map<frCoord, frAccessPointEnum> &coords, const gtl::rectangle_data<frCoord> &rect,
                                              frLayerNum layerNum, bool isCurrLayerHorz);

@@ -441,7 +441,13 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(frNet *net, const frPo
   //bool enableOutput = true;
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
-  regionQuery->query(frBox(bp, bp), lNum, result);
+  // In PA we may have used NearbyGrid which puts a via outside the pin
+  // but still overlapping.  So we expand bp to a min-width square when
+  // searching for the pin shape.
+  auto half_min_width = getTech()->getLayer(lNum)->getMinWidth() / 2;
+  frBox query_box(bp.x() - half_min_width, bp.y() - half_min_width,
+                  bp.x() + half_min_width, bp.y() + half_min_width);
+  regionQuery->query(query_box, lNum, result);
   for (auto &[bx, rqObj]: result) {
     if (rqObj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(rqObj);
@@ -2120,13 +2126,12 @@ void FlexDRWorker::initMazeIdx() {
 }
 
 void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx &mi, const frDirEnum &dir, frCoord bloatLen, bool isAddPathCost) {
-  frCoord prevLen = 0;
   frCoord currLen = 0;
   frMIdx x = mi.x();
   frMIdx y = mi.y();
   frMIdx z = mi.z();
   while(1) {
-    if (currLen > bloatLen) {
+    if (currLen > bloatLen || !gridGraph_.hasEdge(x, y, z, dir)) {
       break;
     }
     if (isAddPathCost) {
@@ -2157,11 +2162,6 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx &mi, cons
         break;
       default:
         ;
-    }
-    if (prevLen == currLen) {
-      break;
-    } else {
-      prevLen = currLen;
     }
   }
 }
@@ -2221,8 +2221,7 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost) {
       // macro cell or stdcell
       if (term->typeId() == frcInstTerm) {
         if (static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-            static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-            static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+            isPad(static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass()) ||
             static_cast<frInstTerm*>(term)->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
           isStdCellPin = false;
           //cout <<"curr dPin is macro pin" <<endl;
@@ -3805,8 +3804,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             }
             // temporary solution, only add cost around macro pins
             if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                isPad(inst->getRefBlock()->getMacroClass()) ||
                 inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
               modMinimumcutCostVia(box, zIdx, type, true);
               modMinimumcutCostVia(box, zIdx, type, false);
@@ -3892,8 +3890,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost) {
       frInstTerm *instTerm = static_cast<frInstTerm*>(dPinTerm);
       frInst *inst = instTerm->getInst();
       if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK || 
-          inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-          inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+          isPad(inst->getRefBlock()->getMacroClass()) ||
           inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
         continue;
       }

@@ -51,7 +51,7 @@ namespace grt {
 class FastRouteCore
 {
  public:
-  FastRouteCore(utl::Logger* logger);
+  FastRouteCore(utl::Logger* log);
   ~FastRouteCore();
 
   void deleteComponents();
@@ -71,7 +71,8 @@ class FastRouteCore
              int nPins,
              int validPins,
              float alpha,
-             bool isClock);
+             bool isClock,
+             int cost);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,
@@ -86,6 +87,7 @@ class FastRouteCore
   NetRouteMap run();
   void writeCongestionReport2D(std::string fileName);
   void writeCongestionReport3D(std::string fileName);
+  void findCongestionInformation(std::vector<GCellCongestion>& congestionInfo);
 
   int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
   int getEdgeCurrentResource(long x1,
@@ -117,7 +119,6 @@ class FastRouteCore
   void setAllowOverflow(bool allow);
 
  private:
-  utl::Logger *_logger;
   NetRouteMap getRoutes();
   int maxNetDegree;
 };

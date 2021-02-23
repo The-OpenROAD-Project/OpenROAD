@@ -1,8 +1,26 @@
 # OpenROAD
 
-OpenROAD is a chip physical design tool. It uses the OpenDB database
-as a design database and representation. OpenSTA is used for static
-timing analysis.
+OpenROAD is an integrated chip physical design tool that takes a
+design from synthesized Verilog to routed layout.  
+
+An outline of steps used to build a chip using OpenROAD are shown below.
+
+* Initialize floorplan - define the chip size and cell rows
+* Place pins (for designs without pads )
+* Place macro cells (RAMs, embedded macros)
+* Insert substrate tap cells
+* Insert power distribution network
+* Macro Placment of macro cells
+* Global placement of standard cells
+* Repair max slew, max capacitance, and max fanout violations and long wires
+* Clock tree synthesis
+* Optimize setup/hold timing
+* Insert fill cells
+* Global routing (route guides for detailed routing)
+* Detailed routing
+
+OpenROAD uses the OpenDB database and OpenSTA for static timing
+analysis.
 
 #### Build
 
@@ -230,16 +248,18 @@ place_pins [-hor_layers h_layers]
            [-random_seed seed]
            [-exclude interval]
            [-random]
+           [-group_pins pins]
 ```
-- ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
+- ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
-- ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
+- ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
 of pins placed in vertical tracks. Can be a single layer or a list of layer indices
-- ``-random_seed``. Set the seed for random operations.
-- ``-exclude``. Set an interval in one of the four edges of the die boundary
+- ``-random_seed``. Specify the seed for random operations.
+- ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
+- ``-group_pins``. Specify a list of pins to be placed together on the die boundary
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -254,6 +274,146 @@ set_io_pin_constraint -direction direction -names names -region edge:interval
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
 function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+
+#### Tapcell
+
+Tapcell and endcap insertion.
+
+```
+tapcell -tapcell_master <tapcell_master>
+        -endcap_master <endcap_master>
+        -endcap_cpp <endcap_cpp>
+        -distance <dist>
+        -halo_width_x <halo_x>
+        -halo_width_y <halo_y>
+        -tap_nwin2_master <tap_nwin2_master>
+        -tap_nwin3_master <tap_nwin3_master>
+        -tap_nwout2_master <tap_nwout2_master>
+        -tap_nwout3_master <tap_nwout3_master>
+        -tap_nwintie_master <tap_nwintie_master>
+        -tap_nwouttie_master <tap_nwouttie_master>
+        -cnrcap_nwin_master <cnrcap_nwin_master>
+        -cnrcap_nwout_master <cnrcap_nwout_master>
+        -incnrcap_nwin_master <incnrcap_nwin_master>
+        -incnrcap_nwout_master <incnrcap_nwout_master>
+        -tbtie_cpp <tbtie_cpp>
+        -no_cell_at_top_bottom
+        -add_boundary_cell
+```
+You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
+
+#### Global Placement
+
+RePlAce global placement.
+
+```
+global_placement
+    [-timing_driven]
+    [-routability_driven]
+    [-skip_initial_place]
+    [-disable_timing_driven]
+    [-disable_routability_driven]
+    [-incremental]
+    [-bin_grid_count grid_count]
+    [-density target_density]
+    [-init_density_penalty init_density_penalty]
+    [-init_wirelength_coef init_wirelength_coef]
+    [-min_phi_coef min_phi_conef]
+    [-max_phi_coef max_phi_coef]
+    [-overflow overflow]
+    [-initial_place_max_iter initial_place_max_iter]
+    [-initial_place_max_fanout initial_place_max_fanout]
+    [-routability_check_overflow routability_check_overflow]
+    [-routability_max_density routability_max_density]
+    [-routability_max_bloat_iter routability_max_bloat_iter]
+    [-routability_max_inflation_iter routability_max_inflation_iter]
+    [-routability_target_rc_metric routability_target_rc_metric]
+    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
+    [-routability_pitch_scale routability_pitch_scale]
+    [-routability_max_inflation_ratio routability_max_inflation_ratio]
+    [-routability_rc_coefficients routability_rc_coefficients]
+    [-pad_left pad_left]
+    [-pad_right pad_right]
+    [-verbose_level level]
+```
+
+- **timing_driven**: Enable timing-driven mode
+* __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
+* __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with pre-placed solutions. 
+- **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+
+### Tuning Parameters
+* __bin_grid_count__ : Set bin grid's counts. Default: Defined by internal algorithm. [64,128,256,512,..., int]
+* __density__ : Set target density. Default: 0.70 [0-1, float]
+* __init_density_penalty__ : Set initial density penalty. Default: 8e-5 [1e-6 - 1e6, float]
+* __init_wire_length__coef__ : Set initial wirelength coefficient. Default: 0.25 [unlimited, float] 
+* __min_phi_coef__ : Set pcof_min(µ_k Lower Bound). Default: 0.95 [0.95-1.05, float]
+* __max_phi_coef__ : Set pcof_max(µ_k Upper Bound). Default: 1.05 [1.00-1.20, float]
+* __overflow__ : Set target overflow for termination condition. Default: 0.1 [0-1, float]
+* __initial_place_max_iter__ : Set maximum iterations in initial place. Default: 20 [0-, int]
+* __initial_place_max_fanout__ : Set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default: 200 [1-, int]
+* __verbose_level__ : Set verbose level for RePlAce. Default: 1 [0-10, int]
+
+`-timing_driven` does a virtual 'repair_design' to find slacks and
+weight nets with low slack.  Use the `set_wire_rc` command to set
+resistance and capacitance of estimated wires used for timing.
+
+#### Macro Placement
+
+ParquetFP based macro cell placer. Run `global_placement` before macro placement.
+The macro placer places macros/blocks honoring halos, channels and cell row "snapping".
+
+Approximately ceil((#macros/3)^(3/2)) sets corresponding to
+quadrisections of the initial placed mixed-size layout are explored and
+packed using ParquetFP-based annealing. The best resulting floorplan
+according to a heuristic evaluation function kept.
+
+```
+macro_placement -halo {halo_x halo_y}
+                -channel {channel_x channel_y}\
+                [-fence_region {lx ly ux uy}]
+```
+
+-fence_region - restrict macro placements to a region (microns)
+-halo horizontal/vertical halo around macros (microns)
+-channel horizontal/vertical and channel width between macros (microns)
+
+#### Detailed Placement
+
+The `detailed_placement` command does detailed placement of instances
+to legal locations after global placement.
+
+```
+set_placement_padding -global|-instances insts|-masters masters
+                      [-left pad_left] [-right pad_right]
+detailed_placement [-max_displacement rows]
+check_placement [-verbose]
+filler_placement filler_masters
+optimimize_mirroring
+```
+
+The `set_placement_padding` command sets left and right padding in
+multiples of the row site width. Use the `set_placement_padding`
+command before legalizing placement to leave room for routing. Use the
+`-global` flag for padding that applies to all instances. Use the
+`instances` argument for instances specific padding.  The instances
+can be a list of instance name, or instance object returned by the SDC
+`get_cells` command. To specify padding for all instances of a common
+master, use the `-filter "ref_name == <name>" option to `get_cells`.
+
+The `set_power_net` command is used to set the power and ground
+special net names. The defaults are `VDD` and `VSS`.
+
+The `check_placement` command checks the placement legality. It returns `0` if the
+placement is legal.
+
+The `filler_placement` command fills gaps between detail placed instances
+to connect the power and ground rails in the rows. `filler_masters` is
+a list of master/macro names to use for filling the gaps. Wildcard matching
+is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
+
+The `optimimize_mirroring` command mirrors instances about the Y axis
+in vane attempt to minimize the total wire length (hpwl).
 
 #### Gate Resizer
 
@@ -441,128 +601,6 @@ set_output_delay -clock clk 0 out
 report_checks
 ```
 
-#### Tapcell
-
-Tapcell and endcap insertion.
-
-```
-tapcell -tapcell_master <tapcell_master>
-        -endcap_master <endcap_master>
-        -endcap_cpp <endcap_cpp>
-        -distance <dist>
-        -halo_width_x <halo_x>
-        -halo_width_y <halo_y>
-        -tap_nwin2_master <tap_nwin2_master>
-        -tap_nwin3_master <tap_nwin3_master>
-        -tap_nwout2_master <tap_nwout2_master>
-        -tap_nwout3_master <tap_nwout3_master>
-        -tap_nwintie_master <tap_nwintie_master>
-        -tap_nwouttie_master <tap_nwouttie_master>
-        -cnrcap_nwin_master <cnrcap_nwin_master>
-        -cnrcap_nwout_master <cnrcap_nwout_master>
-        -incnrcap_nwin_master <incnrcap_nwin_master>
-        -incnrcap_nwout_master <incnrcap_nwout_master>
-        -tbtie_cpp <tbtie_cpp>
-        -no_cell_at_top_bottom
-        -add_boundary_cell
-```
-You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
-
-#### Global Placement
-
-RePlAce global placement.
-
-```
-global_placement [-timing_driven]
-                 [-bin_grid_count grid_count]
-```
-- **timing_driven**: Enable timing-driven mode
-- **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
-
-Use the `set_wire_rc` command to set resistance and capacitance of
-estimated wires used for timing.
-
-```
-global_placement
-    [-skip_initial_place]
-    [-disable_timing_driven]
-    [-disable_routability_driven]
-    [-incremental]
-    [-bin_grid_count grid_count]
-    [-density target_density]
-    [-init_density_penalty init_density_penalty]
-    [-init_wirelength_coef init_wirelength_coef]
-    [-min_phi_coef min_phi_conef]
-    [-max_phi_coef max_phi_coef]
-    [-overflow overflow]
-    [-initial_place_max_iter initial_place_max_iter]
-    [-initial_place_max_fanout initial_place_max_fanout]
-    [-routability_check_overflow routability_check_overflow]
-    [-routability_max_density routability_max_density]
-    [-routability_max_bloat_iter routability_max_bloat_iter]
-    [-routability_max_inflation_iter routability_max_inflation_iter]
-    [-routability_target_rc_metric routability_target_rc_metric]
-    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
-    [-routability_pitch_scale routability_pitch_scale]
-    [-routability_max_inflation_ratio routability_max_inflation_ratio]
-    [-routability_rc_coefficients routability_rc_coefficients]
-    [-pad_left pad_left]
-    [-pad_right pad_right]
-    [-verbose_level level]
-```
-
-* __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
-* __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with pre-placed solutions. 
-
-### Tuning Parameters
-* __bin_grid_count__ : Set bin grid's counts. Default: Defined by internal algorithm. [64,128,256,512,..., int]
-* __density__ : Set target density. Default: 0.70 [0-1, float]
-* __init_density_penalty__ : Set initial density penalty. Default: 8e-5 [1e-6 - 1e6, float]
-* __init_wire_length__coef__ : Set initial wirelength coefficient. Default: 0.25 [unlimited, float] 
-* __min_phi_coef__ : Set pcof_min(µ_k Lower Bound). Default: 0.95 [0.95-1.05, float]
-* __max_phi_coef__ : Set pcof_max(µ_k Upper Bound). Default: 1.05 [1.00-1.20, float]
-* __overflow__ : Set target overflow for termination condition. Default: 0.1 [0-1, float]
-* __initial_place_max_iter__ : Set maximum iterations in initial place. Default: 20 [0-, int]
-* __initial_place_max_fanout__ : Set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default: 200 [1-, int]
-* __verbose_level__ : Set verbose level for RePlAce. Default: 1 [0-10, int]
-
-#### Detailed Placement
-
-The `detailed_placement` command does detailed placement of instances
-to legal locations after global placement.
-
-```
-set_placement_padding -global|-instances insts|-masters masters
-                      [-left pad_left] [-right pad_right]
-detailed_placement [-max_displacement rows]
-check_placement [-verbose]
-filler_placement filler_masters
-optimimize_mirroring
-```
-
-The `set_placement_padding` command sets left and right padding in
-multiples of the row site width. Use the `set_placement_padding`
-command before legalizing placement to leave room for routing. Use the
-`-global` flag for padding that applies to all instances. Use the
-`instances` argument for instances specific padding.  The instances
-can be a list of instance name, or instance object returned by the SDC
-`get_cells` command. To specify padding for all instances of a common
-master, use the `-filter "ref_name == <name>" option to `get_cells`.
-
-The `set_power_net` command is used to set the power and ground
-special net names. The defaults are `VDD` and `VSS`.
-
-The `check_placement` command checks the placement legality. It returns `0` if the
-placement is legal.
-
-The `filler_placement` command fills gaps between detail placed instances
-to connect the power and ground rails in the rows. `filler_masters` is
-a list of master/macro names to use for filling the gaps. Wildcard matching
-is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
-
-The `optimimize_mirroring` command mirrors instances about the Y axis
-in vane attempt to minimize the total wire length (hpwl).
-
 #### Clock Tree Synthesis
 
 TritonCTS 2.0 is available under the OpenROAD app as ``clock_tree_synthesis`` command.
@@ -579,7 +617,6 @@ read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
 set_wire_rc -clock -layer metal5
 
-report_checks
 cts_configure_characterization [-max_slew <max_slew>] \
                                [-max_cap <max_cap>] \
                                [-slew_inter <slew_inter>] \
@@ -667,6 +704,7 @@ global_route [-guide_file out_file] \
              [-clock_layers min-max] \
              [-clock_pdrev_fanout fanout] \
              [-clock_topology_priority priority] \
+             [-clock_tracks_cost clock_tracks_cost] \
              [-macro_extension extension]
              [-unidirectional_routing] \
              [-allow_overflow]
@@ -685,6 +723,7 @@ Options description:
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
+- **clock_tracks_cost**: Set the routing tracks consumption by clock nets
 - **macro_extension**: Set the number of GCells added to the obstacles boundaries from macros
 - **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
@@ -750,103 +789,6 @@ option of the `estimate_parasitics` command.
 ```
 estimate_parasitics -global_routing
 ```
-
-#### Logical and Physical Optimizations
-
-OpenPhySyn performs additional timing and area optimization.
-
-
-```
-optimize_logic
-        [-tiehi tiehi_cell_name] 
-        [-tielo tielo_cell_name] 
-```
-The `optimize_logic` command should be run after the logic synthesis on hierarical designs to perform logic optimization; currently, it performs constant propagation to reduce the design area. You can optionally specify the name of tie-hi/tie-lo liberty cell names to use for the optimization.
-
-
-```
-psn_repair_timing
-        [-capacitance_violations]
-        [-transition_violations]
-        [-negative_slack_violations]
-        [-iterations iteration_count]
-        [-buffers buffer_cells]
-        [-inverters inverter cells]
-        [-auto_buffer_library <single|small|medium|large|all>]
-        [-no_minimize_buffer_library]
-        [-auto_buffer_library_inverters_enabled]
-        [-buffer_disabled]
-        [-resize_disabled]
-        [-pin_swap_disabled]
-        [-capacitance_pessimism_factor factor]
-        [-transition_pessimism_factor factor]
-        [-minimum_cost_buffer_enabled]
-        [-legalization_frequency num_edits]
-        [-legalize_each_iteration iterations]
-        [-legalize_eventually]
-        [-post_place]
-        [-post_route]
-        [-minimum_gain gain]
-        [-high_effort]
-        [-maximum_negative_slack_paths count]
-        [-maximum_negative_slack_path_depth count]
-        [-pins pin_names]
-```
-The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
-
-`repair_timing` options:
--   `[-capacitance_violations]`: Repair capacitance violations.
--   `[-transition_violations]`: Repair transition violations.
--   `[-negative_slack_violations]`: Repair paths with negative slacks.
--   `[-iterations iterations]`: Maximum number of iterations.
--   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
--   `[-inverters inverter cells]`: Manually specify inverter cells to use.
--   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
--   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
--   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
--   `[-buffer_disabled]`: Disable all buffering.
--   `[-resize_disabled]`: Disable driver sizing.
--   `[-pin_swap_disabled]`: Disable pin-swapping.
--   `[-transition_pessimism_factor factor]` Scaling factor for transition violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
--   `[-capacitance_pessimism_factor factor]` Scaling factor for capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
--   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
--   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
--   `[-legalize_eventually]`: Legalize at the end of the optimization.
--   `[-legalize_each_iteration]`: Legalize after each iteration.
--   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
--   `[-minimum_gain <unit_time>]`: Minimum slack gain to accept an optimization.
--   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
--   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
--   `[-maximum_negative_slack_paths count]`: Maximum number of negative slack paths to try to optimize.
--   `[-maximum_negative_slack_path_depth count]`: Maximum depth per negative slack path to try to optimize.
--   `[-pins pin_names]`: Manually select the pins to optimize.
-
-```
-pin_swap
-       -path_count count
-       [-power]
-```
-The `pin_swap` command performs additional timing optimization by commutative pin swapping.
-
-
-```
-optimize_fanout
-        -buffer_cell buffer_cell_name
-        -max_fanout max_fanout
-```
-The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
-
-
-```
-cluster_buffers
-  [-cluster_threshold diameter]
-  [-cluster_size single|small|medium|large|all]
-```
-The `cluster_buffers` command can be used to automatically select representative set of buffers through k-center clustering.
-
-
-
-
 
 #### PDN analysis
 

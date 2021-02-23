@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 // Move logger macro out of the way.
 #undef debugPrint
@@ -446,6 +446,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                  buffer_name.c_str(),
                                                  parent);
+    journalMakeBuffer(buffer);
     inserted_buffer_count_++;
     design_area_ += area(db_network_->cell(buffer_cell));
     level_drvr_vertices_valid_ = false;

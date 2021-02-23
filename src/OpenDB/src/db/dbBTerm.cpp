@@ -548,9 +548,11 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
   if (net->_bterms != 0) {
     _dbBTerm* tail    = block->_bterm_tbl->getPtr(net->_bterms);
     _next_bterm       = net->_bterms;
-    _prev_bterm       = 0;
     tail->_prev_bterm = getOID();
   }
+  else
+    _next_bterm = 0;
+  _prev_bterm = 0;
   net->_bterms = getOID();
   for(auto callback:block->_callbacks)
     callback->inDbBTermPostConnect((dbBTerm*)this); 

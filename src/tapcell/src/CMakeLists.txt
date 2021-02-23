@@ -33,35 +33,28 @@
 ##
 ###############################################################################
 
-set(TAPCELL_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tapcell_wrap.cpp)
-set(TAPCELL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TapcellTclInitVar.cpp)
+include("openroad")
 
-add_custom_command(OUTPUT ${TAPCELL_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix tap -I${OPENROAD_HOME}/include -o ${TAPCELL_WRAP} ${TAPCELL_HOME}/src/tapcell.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${TAPCELL_WRAP}
-  WORKING_DIRECTORY ${TAPCELL_HOME}/src
-  DEPENDS ${TAPCELL_HOME}/src/tapcell.i
-  )
+tcl_lib(NAME      tapcell
+        NAMESPACE tap
+        I_FILE    tapcell.i
+        SCRIPTS   tapcell.tcl
+)
 
-add_custom_command(OUTPUT ${TAPCELL_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TAPCELL_TCL_INIT} tapcell_tcl_inits tapcell.tcl
-  WORKING_DIRECTORY ${TAPCELL_HOME}/src
-  DEPENDS tapcell.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_library(tapcell
-  tapcell.cpp
-  MakeTapcell.cpp
-  ${TAPCELL_WRAP}
-  ${TAPCELL_TCL_INIT}
-  )
+target_sources(tapcell
+  PRIVATE
+    tapcell.cpp
+    MakeTapcell.cpp
+)
 
 target_include_directories(tapcell
-  PUBLIC ${TAPCELL_HOME}/include
-  spdlog::spdlog
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(tapcell
   PRIVATE
-  ${OPENROAD_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${TCL_INCLUDE_PATH}
-  )
+    utility
+    opendb
+    OpenSTA
+)

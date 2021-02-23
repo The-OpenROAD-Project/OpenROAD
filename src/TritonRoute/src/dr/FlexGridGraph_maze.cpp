@@ -532,7 +532,6 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
     if (xCoords_[endX] > x2) endX--;
     if (yCoords_[startY] < y1) startY++;
     if (yCoords_[endY] > y2) endY--;
-    if (startX > endX || startY > endY) ERROR("ERROR FlexGridGraph::getCostsNDR");
     //get costs
     for (frMIdx x = startX; x <= endX; x++){
         for (frMIdx y = startY; y <= endY; y++){
@@ -626,7 +625,7 @@ frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoor
     
     if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
       return static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
-    ERROR("ERROR FlexGridGraph::getMinSpacingValue");
+    drWorker_->getLogger()->error(utl::ToolId::TTR, 0, "ERROR FlexGridGraph::getMinSpacingValue");
 }
 
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const{

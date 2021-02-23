@@ -34,12 +34,15 @@
 
 #include <QFrame>
 #include <QMainWindow>
+#include <QMap>
+#include <QMenu>
 #include <QOpenGLWidget>
 #include <QScrollArea>
 #include <QShortcut>
 #include <map>
 #include <vector>
 
+#include "fastroute/GlobalRouter.h"
 #include "gui/gui.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -71,9 +74,29 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Q_OBJECT
 
  public:
+  enum CONTEXT_MENU_ACTIONS
+  {
+    SELECT_CONNECTED_INST_ACT,
+    SELECT_OUTPUT_NETS_ACT,
+    SELECT_INPUT_NETS_ACT,
+    SELECT_ALL_NETS_ACT,
+
+    HIGHLIGHT_CONNECTED_INST_ACT,
+    HIGHLIGHT_OUTPUT_NETS_ACT,
+    HIGHLIGHT_INPUT_NETS_ACT,
+    HIGHLIGHT_ALL_NETS_ACT,
+
+    VIEW_ZOOMIN_ACT,
+    VIEW_ZOOMOUT_ACT,
+    VIEW_ZOOMFIT_ACT,
+
+    CLEAR_SELECTIONS_ACT,
+    CLEAR_HIGHLIGHTS_ACT,
+    CLEAR_ALL_ACT
+  };
   LayoutViewer(Options* options,
                const SelectionSet& selected,
-               const SelectionSet& highlighted,
+               const HighlightSet& highlighted,
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
@@ -93,7 +116,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
  signals:
   void location(qreal x, qreal y);
-  void selected(const Selected& selected);
+  void selected(const Selected& selected, bool showConnectivity = false);
   void addSelected(const Selected& selected);
 
  public slots:
@@ -103,14 +126,38 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
 
+  void selectHighlightConnectedInst(bool selectFlag);
+  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+
+  void updateContextMenuItems();
+  void showLayoutCustomMenu(QPoint pos);
+
  private:
   struct Boxes
   {
     std::vector<QRect> obs;
     std::vector<QRect> mterms;
   };
+
+  struct GCellData
+  {
+    int hor_capacity_;
+    int hor_usage_;
+    int ver_capacity_;
+    int ver_usage_;
+
+    GCellData(int h_cap = 0, int h_usage = 0, int v_cap = 0, int v_usage = 0)
+        : hor_capacity_(h_cap),
+          hor_usage_(h_usage),
+          ver_capacity_(v_cap),
+          ver_usage_(v_usage)
+    {
+    }
+  };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
   using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
+  using GCellInfo
+      = std::map<odb::Rect, GCellData>;  // Key : GCell BBox, Value : GCellData
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
@@ -134,16 +181,21 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
+  void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
   odb::Point screenToDBU(const QPoint& point);
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
+  void addMenuAndActions();
+
+  void populateCongestionData();
+
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
-  const SelectionSet& highlighted_;
+  const HighlightSet& highlighted_;
   LayoutScroll* scroller_;
   qreal pixels_per_dbu_;
   int min_depth_;
@@ -153,6 +205,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
+
+  GCellInfo gcell_congestion_data_;
+
+  QMenu* layout_context_menu_;
+  QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

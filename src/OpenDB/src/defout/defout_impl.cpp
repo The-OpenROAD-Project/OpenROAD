@@ -44,6 +44,17 @@
 #include "utility/Logger.h"
 namespace odb {
 
+template<typename T>
+static std::vector<T*> sortedSet(dbSet<T>& to_sort)
+{
+  std::vector<T*> sorted(to_sort.begin(), to_sort.end());
+  std::sort(sorted.begin(), sorted.end(),
+            [](T* a, T* b) {
+              return a->getName() < b->getName();
+            });
+  return sorted;
+}
+
 static const char* defOrient(dbOrientType orient)
 {
   switch (orient.getValue()) {
@@ -448,10 +459,8 @@ void defout_impl::writeInsts(dbBlock* block)
 
   fprintf(_out, "COMPONENTS %u ;\n", insts.size());
 
-  dbSet<dbInst>::iterator itr;
-
-  for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst* inst = *itr;
+  // Sort the components for consistent output
+  for (dbInst* inst : sortedSet(insts)) {
     if (_select_inst_map && !(*_select_inst_map)[inst])
       continue;
     writeInst(inst);
@@ -660,7 +669,7 @@ void defout_impl::writeInst(dbInst* inst)
       int right  = defdist(box->xMax());
       int top    = defdist(box->yMax());
 
-      fprintf(_out, " + HALO ( %d %d ) ( %d %d )", left, bottom, right, top);
+      fprintf(_out, " + HALO %d %d %d %d", left, bottom, right, top);
     }
   }
 
@@ -696,8 +705,7 @@ void defout_impl::writeBTerms(dbBlock* block)
 
   fprintf(_out, "PINS %u ;\n", n);
 
-  for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    dbBTerm* bterm = *itr;
+  for (dbBTerm* bterm : sortedSet(bterms)) {
     dbNet*   net   = bterm->getNet();
     if (net && _select_net_map && !(*_select_net_map)[net])
       continue;
@@ -963,7 +971,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
 
   bool isFirst = 1;
-  int dw, dh, x , y ;
+  int dw, dh, x = 0, y = 0;
   int xMin, yMin, xMax, yMax;
 
   for (dbBox* box : bpin->getBoxes())
@@ -1221,11 +1229,13 @@ void defout_impl::writeNets(dbBlock* block)
   dbSet<dbNet>::iterator itr;
   dbMap<dbNet, char>     regular_net(nets);
 
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
-    if (_select_net_map)
+  auto sorted_nets = sortedSet(nets);
+
+  for (dbNet* net : sorted_nets) {
+    if (_select_net_map) {
       if (!(*_select_net_map)[net])
         continue;
+    }
 
     if (!net->isSpecial()) {
       regular_net[net] = 1;
@@ -1233,13 +1243,9 @@ void defout_impl::writeNets(dbBlock* block)
     } else {
       regular_net[net] = 0;
       snet_cnt++;
+
       // Check for non-special iterms.
-      dbSet<dbITerm>           iterms = net->getITerms();
-      dbSet<dbITerm>::iterator iterm_itr;
-
-      for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-        dbITerm* iterm = *iterm_itr;
-
+      for (dbITerm* iterm : net->getITerms()) {
         if (!iterm->isSpecial()) {
           regular_net[net] = 1;
           net_cnt++;
@@ -1252,8 +1258,7 @@ void defout_impl::writeNets(dbBlock* block)
   if (snet_cnt > 0) {
     fprintf(_out, "SPECIALNETS %d ;\n", snet_cnt);
 
-    for (itr = nets.begin(); itr != nets.end(); ++itr) {
-      dbNet* net = *itr;
+    for (dbNet* net : sorted_nets) {
       if (_select_net_map && !(*_select_net_map)[net])
         continue;
       if (net->isSpecial())
@@ -1265,8 +1270,7 @@ void defout_impl::writeNets(dbBlock* block)
 
   fprintf(_out, "NETS %d ;\n", net_cnt);
 
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
+  for (dbNet* net : sorted_nets) {
     if (_select_net_map && !(*_select_net_map)[net])
       continue;
 

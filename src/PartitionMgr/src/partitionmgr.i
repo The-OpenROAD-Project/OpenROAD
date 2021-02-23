@@ -232,4 +232,8 @@ void run_clustering() {
         getPartitionMgr()->runClustering();
 }
 
+void report_graph() {
+        getPartitionMgr()->reportGraph();
+}
+
 %}

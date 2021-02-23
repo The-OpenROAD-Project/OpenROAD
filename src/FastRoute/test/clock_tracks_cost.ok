@@ -1,0 +1,80 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: clock_route.def
+[INFO ODB-0128] Design: gcd
+[WARNING ODB-0099] error: netlist component (_462_) is not defined
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
+[INFO ODB-0134] Finished DEF file: clock_route.def
+Min routing layer: 4
+Max routing layer: 6
+Global adjustment: 50%
+Unidirectional routing: true
+Grid origin: (0, 0)
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 6714
+[INFO GRT-0017] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 5
+[INFO GRT-0018] Processing 5262 blockages on layer 1.
+[INFO GRT-0019] Processing 706 blockages on layer 2.
+[INFO GRT-0021] Reducing resources of layer 2 by 80%.
+[INFO GRT-0022] Reducing resources of layer 3 by 70%.
+[INFO GRT-0023] Reducing resources of layer 4 by 50%.
+[INFO GRT-0024] Reducing resources of layer 5 by 50%.
+[INFO GRT-0025] Reducing resources of layer 6 by 50%.
+Routing clock nets...
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 99
+[INFO GRT-0157] Total Capacity: 12210
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
+
+[INFO GRT-0110] Final usage: 99
+[INFO GRT-0111] Final number of vias: 29
+[INFO GRT-0112] Final usage 3D: 186
+[INFO GRT-0010] #Routed clock nets: 2
+Min routing layer: 2
+Max routing layer: 6
+Global adjustment: 50%
+Unidirectional routing: true
+Grid origin: (0, 0)
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 6714
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 12
+[INFO GRT-0018] Processing 5262 blockages on layer 1.
+[INFO GRT-0019] Processing 706 blockages on layer 2.
+[INFO GRT-0021] Reducing resources of layer 2 by 80%.
+[INFO GRT-0022] Reducing resources of layer 3 by 70%.
+[INFO GRT-0023] Reducing resources of layer 4 by 50%.
+[INFO GRT-0024] Reducing resources of layer 5 by 50%.
+[INFO GRT-0025] Reducing resources of layer 6 by 50%.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 303
+[INFO GRT-0157] Total Capacity: 24016
+[INFO GRT-0158] Max H Overflow: 1
+[INFO GRT-0159] Max V Overflow: 1
+[INFO GRT-0160] Max Overflow  : 1
+[INFO GRT-0161] H   Overflow  : 3
+[INFO GRT-0162] V   Overflow  : 1
+[INFO GRT-0163] Final Overflow: 4
+
+[INFO GRT-0110] Final usage: 303
+[INFO GRT-0111] Final number of vias: 122
+[INFO GRT-0112] Final usage 3D: 669
+[INFO GRT-0018] Total wirelength: 1699 um
+[INFO GRT-0014] Num routed nets: 15
+No differences found.

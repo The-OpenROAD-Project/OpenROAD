@@ -52,17 +52,17 @@ using odb::dbPlacementStatus;
 void
 Opendp::fillerPlacement(const StringSeq *filler_master_names)
 {
-  if (cells_.empty()) {
+  if (cells_.empty())
     importDb();
-  }
 
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
   filler_count_ = 0;
-  Grid *grid = makeCellGrid();
-  for (int row = 0; row < row_count_; row++) {
-    placeRowFillers(grid, row);
-  }
+  makeCellGrid();
+
+  for (int row = 0; row < row_count_; row++)
+    placeRowFillers(row);
+
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
 }
 
@@ -86,46 +86,39 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
             });
 }
 
-Grid *
+void
 Opendp::makeCellGrid()
 {
-  Grid *grid = makeGrid();
-
+  initGrid();
   for (Cell &cell : cells_) {
-    int grid_x = gridX(&cell);
-    int grid_y = gridY(&cell);
-
+    int x_ll = gridX(&cell);
+    int y_ll = gridY(&cell);
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
-    // Don't barf if cell is outside the core.
-    grid_x = max(0, grid_x);
-    grid_y = max(0, grid_y);
-    x_ur = min(x_ur, row_site_count_);
-    y_ur = min(y_ur, row_count_);
-
-    for (int j = grid_y; j < y_ur; j++) {
-      for (int k = grid_x; k < x_ur; k++) {
-        grid[j][k].cell = &cell;
+    for (int y = y_ll; y < y_ur; y++) {
+      for (int x = x_ll; x < x_ur; x++) {
+        Pixel *pixel = gridPixel(x, y);
+        if (pixel)
+          pixel->cell = &cell;
       }
     }
   }
-  return grid;
 }
 
 void
-Opendp::placeRowFillers(const Grid *grid,
-                        int row)
+Opendp::placeRowFillers(int row)
 {
   dbOrientType orient = rowOrient(row);
   int j = 0;
   while (j < row_site_count_) {
-    if (grid[row][j].cell == nullptr
-        && grid[row][j].is_valid) {
+    Pixel *pixel = gridPixel(j, row);
+    if (pixel->cell == nullptr
+        && pixel->is_valid) {
       int k = j;
-      while (grid[row][k].cell == nullptr
-             && grid[row][k].is_valid
-             && k < row_site_count_) {
+      while (k < row_site_count_
+             && gridPixel(k, row)->cell == nullptr
+             && gridPixel(k, row)->is_valid) {
         k++;
       }
       int gap = k - j;
@@ -137,8 +130,8 @@ Opendp::placeRowFillers(const Grid *grid,
         logger_->error(DPL, 2,
                        "could not fill gap of size {} at {},{} dbu between {} and {}",
                        gap, x, y,
-                       gridInstName(grid, row, j - 1),
-                       gridInstName(grid, row, k + 1));
+                       gridInstName(row, j - 1),
+                       gridInstName(row, k + 1));
       }
       else {
         k = j;
@@ -165,8 +158,7 @@ Opendp::placeRowFillers(const Grid *grid,
 }
 
 const char *
-Opendp::gridInstName(const Grid *grid,
-                     int row,
+Opendp::gridInstName(int row,
                      int col)
 {
   if (col < 0)
@@ -174,7 +166,7 @@ Opendp::gridInstName(const Grid *grid,
   else if (col > row_site_count_)
     return "core_right";
   else {
-    const Cell *cell = grid[row][col].cell;
+    const Cell *cell = gridPixel(col, row)->cell;
     if (cell)
       return cell->db_inst_->getConstName();
   }

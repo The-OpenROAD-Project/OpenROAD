@@ -39,9 +39,8 @@
 
 #include <cstdint>
 
-#include "sta/Error.hh"
 #include "sta/Liberty.hh"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 
@@ -549,15 +548,6 @@ max_load_manhatten_distance(Net *net)
   return resizer->maxLoadManhattenDistance(net);
 }
 
-void
-write_net_svg(Net *net,
-              const char *filename)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->writeNetSVG(net, filename);
-}
-
 double
 utilization()
 {
@@ -567,5 +557,12 @@ utilization()
 }
 
 } // namespace
+
+void
+highlight_steiner_tree(const Net *net)
+{
+  Resizer *resizer = getResizer();
+  resizer->highlightSteiner(net);
+}
 
 %} // inline

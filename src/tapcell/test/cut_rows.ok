@@ -15,7 +15,6 @@
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0131]     Created 2 components and 214 component-terminals.
 [INFO ODB-0134] Finished DEF file: cut_rows.def
-Step 1: Cut rows...
 [INFO TAP-0001] Macro blocks found: 2
-[INFO TAP-0002] #Original rows: 557
-[INFO TAP-0003] #Cut rows: 83
+[INFO TAP-0002] Original rows: 557
+[INFO TAP-0003] Cut rows: 83

@@ -1,7 +1,7 @@
-[INFO ODB-0222] Reading LEF file: sky130/sky130_tech.lef
-[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130/sky130_tech.lef
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
 [INFO ODB-0222] Reading LEF file: multi_height05.lef
 [INFO ODB-0225]     Created 3 library cells
 [INFO ODB-0226] Finished LEF file:  multi_height05.lef
@@ -14,7 +14,7 @@ Placement Analysis
 ---------------------------------
 total displacement          5.4 u
 average displacement        1.8 u
-max displacement            3.3 u
+max displacement            3.8 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

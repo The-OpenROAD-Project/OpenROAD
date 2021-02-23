@@ -37,6 +37,11 @@
 #include <string>
 #include <vector>
 
+namespace utl {
+class Logger;
+}
+using utl::Logger;
+
 namespace par {
 
 class Hypergraph
@@ -105,8 +110,8 @@ class Hypergraph
   }
 
   void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
-  void computeVertexWeightRange(int maxVertexWeight);
-  void computeEdgeWeightRange(int maxEdgeWeight);
+  void computeVertexWeightRange(int maxVertexWeight, Logger * logger);
+  void computeEdgeWeightRange(int maxEdgeWeight, Logger * logger);
   int computeNextVertexIdx(bool cluster = false) const
   {
     if (cluster)

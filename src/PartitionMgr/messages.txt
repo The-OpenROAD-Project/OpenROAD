@@ -1,0 +1,69 @@
+PAR 0001 PartitionMgr.cpp:205      Graph has too many sets (>8), the number of target partitions changed or the architecture is invalid.
+PAR 0002 PartitionMgr.cpp:209      Graph has too many sets (>8) or the number of target partitions changed.
+PAR 0003 PartitionMgr.cpp:308      [Chaco] Partitioned graph for {} seeds.
+PAR 0004 PartitionMgr.cpp:311      [Chaco] Partitioned graph for seed {} in {} ms.
+PAR 0005 PartitionMgr.cpp:321      [Chaco] Run completed. Partition ID = {}. Total runs = {}.
+PAR 0006 PartitionMgr.cpp:892      Partitioning Results for ID = {} and Tool = {}.
+PAR 0007 PartitionMgr.cpp:895      Best results used seed {}.
+PAR 0008 PartitionMgr.cpp:896      Number of Hyperedge Cuts = {}.
+PAR 0009 PartitionMgr.cpp:897      Number of Terminals = {}.
+PAR 0010 PartitionMgr.cpp:898      Cluster Size SD = {}.
+PAR 0011 PartitionMgr.cpp:899      Cluster Area SD = {}.
+PAR 0012 PartitionMgr.cpp:900      Total Hop Weigth = {}.
+PAR 0013 PartitionMgr.cpp:901      Total Runtime = {}.
+PAR 0014 PartitionMgr.cpp:918      Partition id out of range ({}).
+PAR 0015 PartitionMgr.cpp:951      Property not found for inst {}
+PAR 0016 PartitionMgr.cpp:1097     [Chaco] Clustered graph in {} ms.
+PAR 0017 PartitionMgr.cpp:1103     [Chaco] Run completed. Cluster ID = {}.
+PAR 0018 PartitionMgr.cpp:1294     Cluster id out of range ({}}.
+PAR 0019 PartitionMgr.cpp:1358     The netlist has {} partitions.
+PAR 0020 PartitionMgr.cpp:1362     Partition {} has {} vertices.
+PAR 0021 PartitionMgr.cpp:1365     The total number of vertices is {}.
+PAR 0022 PartitionMgr.cpp:1390     Unable to open file.
+PAR 0023 Hypergraph.cpp:75         Number of edges equal to 0.
+PAR 0024 Hypergraph.cpp:112        Number of vertices equal to 0.
+PAR 0025 partitionmgr.tcl:84       missing mandatory argument -tool
+PAR 0026 partitionmgr.tcl:86       invalid tool. Use one of the following: $tools
+PAR 0027 partitionmgr.tcl:95       argument -clique_threshold should be an integer in the range [3, 32768]
+PAR 0028 partitionmgr.tcl:108      invalid graph model. Use one of the following: $graph_models
+PAR 0029 partitionmgr.tcl:119      argument -weight_model should be an integer in the range [1, 7]
+PAR 0030 partitionmgr.tcl:131      argument -max_edge_weight should be an integer in the range [1, 32768]
+PAR 0031 partitionmgr.tcl:143      argument -max_vertex_weight should be an integer in the range [1, 32768]
+PAR 0032 partitionmgr.tcl:155      argument -num_starts should be an integer in the range [1, 32768]
+PAR 0033 partitionmgr.tcl:165      argument -balance_constraint should be an integer in the range [0, 50]
+PAR 0034 partitionmgr.tcl:177      argument -coarsening_ratio should be a floating number in the range [0.5, 1.0]
+PAR 0035 partitionmgr.tcl:188      argument -coarsening_vertices should be an integer
+PAR 0036 partitionmgr.tcl:200      argument -enable_term_prop should be 0 or 1
+PAR 0037 partitionmgr.tcl:212      argument -cut_hop_ratio should be a floating number in the range [0.5, 1.0]
+PAR 0038 partitionmgr.tcl:231      argument -refinement should be an integer in the range [0, 32768]
+PAR 0039 partitionmgr.tcl:244      missing argument -seeds or -num_starts.
+PAR 0040 partitionmgr.tcl:252      missing mandatory argument "-num_partitions [2, 32768]"
+PAR 0041 partitionmgr.tcl:255      argument -num_partitions should be an integer in the range [2, 32768]
+PAR 0042 partitionmgr.tcl:266      argument -partition_id should be an integer
+PAR 0043 partitionmgr.tcl:300      missing argument -partition_ids.
+PAR 0044 partitionmgr.tcl:307      invalid function. Use one of the following: $functions
+PAR 0045 partitionmgr.tcl:333      missing mandatory argument -partitioning_id
+PAR 0046 partitionmgr.tcl:365      missing mandatory argument -tool
+PAR 0047 partitionmgr.tcl:367      invalid tool. Use one of the following: $tools
+PAR 0048 partitionmgr.tcl:376      argument -coarsening_ratio should be a floating number in the range [0.5, 1.0]
+PAR 0049 partitionmgr.tcl:417      missing mandatory argument -clustering_id
+PAR 0050 partitionmgr.tcl:443      missing mandatory argument -partitioning_id
+PAR 0051 partitionmgr.tcl:463      missing mandatory argument -read_file
+PAR 0052 partitionmgr.tcl:470      missing mandatory argument "-final_partitions [2, 32768]"
+PAR 0053 partitionmgr.tcl:486      missing mandatory argument -scheme
+PAR 0054 partitionmgr.tcl:488      invalid scheme. Use one of the following: $schemes
+PAR 0055 PartitionMgr.cpp:442      [GPMetis] Partitioned graph for {} seeds.
+PAR 0056 PartitionMgr.cpp:445      [GPMetis] Partitioned graph for seed {} in {} ms.
+PAR 0057 PartitionMgr.cpp:458      [GPMetis] Run completed. Partition ID = {}. Total runs = {}.
+PAR 0058 PartitionMgr.cpp:616      [MLPart] Partitioned graph for {} seeds.
+PAR 0059 PartitionMgr.cpp:619      [MLPart] Partitioned graph for seed {} in {} ms.
+PAR 0060 PartitionMgr.cpp:630      [MLPart] Run completed. Partition ID = {}. Total runs = {}.
+PAR 0061 PartitionMgr.cpp:1176     [GPMetis] Clustered graph in {} ms.
+PAR 0062 PartitionMgr.cpp:1185     [GPMetis] Run completed. Cluster ID = {}.
+PAR 0063 PartitionMgr.cpp:1267     [MLPart] Clustered graph in {} ms.
+PAR 0064 PartitionMgr.cpp:1278     [MLPart] Run completed. Cluster ID = {}.
+PAR 0065 PartitionMgr.cpp:1327     Property not found for inst {}
+PAR 0066 partitionmgr.tcl:509      invalid graph model. Use one of the following: $graph_models
+PAR 0067 PartitionMgr.cpp:1435     #Nodes: {}
+PAR 0068 PartitionMgr.cpp:1436     #Hyperedges/Edges: {}
+PAR 0069 partitionmgr.tcl:517      argument -clique_threshold should be an integer in the range [3, 32768]

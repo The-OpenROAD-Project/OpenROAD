@@ -206,7 +206,7 @@ namespace fr {
                       frUInt4 workerMarkerBloatWidth = 0, frUInt4 workerMarkerBloatDepth = 0,
                       bool enableDRC = false, int ripupMode = 1, bool followGuide = true, 
                       int fixMode = 0, bool TEST = false);
-    void end();
+    void end(bool writeMetrics = false);
 
     // utility
     void reportDRC();
@@ -500,6 +500,10 @@ namespace fr {
     int main_mt();
     // others
     int getNumQuickMarkers();
+    
+    Logger* getLogger(){
+        return logger_;
+    }
     
   protected:
     typedef struct {

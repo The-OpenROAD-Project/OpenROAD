@@ -114,22 +114,25 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void addSelected(const SelectionSet& selections);
 
   // Displays the selection in the status bar
-  void setSelected(const Selected& selection);
+  void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection);
+  void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
 
   // Add the selections(List) to highlight set
-  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight);
+  void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
+                            int highlight_group = 0);
 
   // Higlight set will be cleared with this explicit call
-  void clearHighlighted();
+  void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
 
   // Remove items from the Selected Set
   void removeFromSelected(const QList<const Selected*>& items);
 
   // Remove items from the Highlighted Set
-  void removeFromHighlighted(const QList<const Selected*>& items);
+  void removeFromHighlighted(const QList<const Selected*>& items,
+                             int highlight_group
+                             = -1 /* Search and remove...*/);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
@@ -142,11 +145,22 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   
   // Show Find Dialog Box
   void showFindDialog();
+
   
   DisplayControls* getControls(){
       return controls_;
   }
   
+
+
+  bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
+  void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
+  void selectHighlightConnectedNets(bool select_flag,
+                                    bool output,
+                                    bool input,
+                                    int highlight_group = 0);
+
+
  private:
   void createMenus();
   void createActions();
@@ -157,31 +171,33 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   odb::dbDatabase* db_;
   SelectionSet selected_;
-  SelectionSet highlighted_;
+  HighlightSet highlighted_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
-  SelectHighlightWindow* selectionBrowser_;
+  SelectHighlightWindow* selection_browser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
 
-  QMenu* fileMenu_;
-  QMenu* viewMenu_;
-  QMenu* windowsMenu_;
+  QMenu* file_menu_;
+  QMenu* view_menu_;
+  QMenu* windows_menu_;
 
-  QToolBar* viewToolBar_;
+  QToolBar* view_tool_bar_;
 
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
-  QAction* zoomIn_;
-  QAction* zoomOut_;
+  QAction* zoom_in_;
+  QAction* zoom_out_;
+
+  QAction* congestion_setup_;
 
   QLabel* location_;
 
-  FindObjectDialog* findDialog_;
+  FindObjectDialog* find_dialog_;
 };
 
 }  // namespace gui

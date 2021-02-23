@@ -276,7 +276,7 @@ GCell::isStdInstance() const {
 
 GNet::GNet()
   : lx_(0), ly_(0), ux_(0), uy_(0),
-  customWeight_(1), weight_(1),
+  timingWeight_(1), customWeight_(1),
   waExpMinSumX_(0), waXExpMinSumX_(0),
   waExpMaxSumX_(0), waXExpMaxSumX_(0),
   waExpMinSumY_(0), waYExpMinSumY_(0),
@@ -299,6 +299,11 @@ GNet::~GNet() {
 Net* 
 GNet::net() const { 
   return *nets_.begin();
+}
+
+void
+GNet::setTimingWeight(float timingWeight) {
+  timingWeight_ = timingWeight;
 }
 
 void
@@ -1183,10 +1188,13 @@ NesterovBase::initFillerGCells() {
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
-    string msg = "Filler area is negative!!\n";
-    msg += "       Please put higher target density or \n";
-    msg += "       Re-floorplan to have enough coreArea\n";
-    log_->error(GPL, 302,  msg);
+    log_->error(GPL, 302, 
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
+        "Given target density: {:.2f}\n"
+        "Suggested target density: {:.2f}", 
+        targetDensity_, 
+        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
   }
 
   int fillerCnt = 
@@ -1457,10 +1465,13 @@ NesterovBase::updateAreas() {
   
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   if( totalFillerArea_ < 0 ) {
-    string msg = "Filler area is negative!!\n";
-    msg += "       Please put higher target density or \n";
-    msg += "       Re-floorplan to have enough coreArea\n";
-    log_->error(GPL, 303, msg);
+    log_->error(GPL, 303, 
+        "Use a higher -density or "
+        "re-floorplan with a larger core area.\n"
+        "Given target density: {:.2f}\n"
+        "Suggested target density: {:.2f}", 
+        targetDensity_, 
+        static_cast<float>(nesterovInstsArea()) / static_cast<float>(whiteSpaceArea_));
   }
 }
 
@@ -1628,6 +1639,11 @@ NesterovBase::getWireLengthGradientWA(const GCell* gCell, float wlCoeffX, float 
 
   for(auto& gPin : gCell->gPins()) {
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+    
+    // apply timing/custom net weight
+    tmpPair.x *= gPin->gNet()->totalWeight();
+    tmpPair.y *= gPin->gNet()->totalWeight();
+    
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
   }

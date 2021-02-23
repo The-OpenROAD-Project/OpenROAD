@@ -37,6 +37,7 @@
 
 #include <iostream>
 
+#include "utility/MakeLogger.h"
 #include "utility/Logger.h"
 
 #include "opendb/db.h"
@@ -44,6 +45,7 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
+#include "opendb/cdl.h"
 
 #include "sta/VerilogWriter.hh"
 #include "sta/StaMain.hh"
@@ -59,11 +61,11 @@
 
 #include "init_fp//MakeInitFloorplan.hh"
 #include "ioplacer/MakeIoplacer.h"
-#include "resizer/MakeResizer.hh"
+#include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "opendp/MakeOpendp.h"
 #include "finale/MakeFinale.h"
-#include "tritonmp/MakeTritonMp.h"
+#include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "fastroute/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
@@ -75,7 +77,7 @@
 #include "PartitionMgr/src/MakePartitionMgr.h"
 
 namespace sta {
-extern const char *openroad_tcl_inits[];
+extern const char *openroad_swig_tcl_inits[];
 }
 
 // Swig uses C linkage for init functions.
@@ -86,6 +88,7 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 
 // Main.cc set by main()
 extern const char* log_filename;
+extern const char* metrics_filename;
 
 namespace ord {
 
@@ -104,8 +107,6 @@ using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
 
-OpenRoad *OpenRoad::openroad_ = nullptr;
-
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
     logger_(nullptr),
@@ -116,7 +117,7 @@ OpenRoad::OpenRoad()
     ioPlacer_(nullptr),
     opendp_(nullptr),
     finale_(nullptr),
-    tritonMp_(nullptr),
+    macro_placer_(nullptr),
     fastRoute_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
@@ -127,7 +128,6 @@ OpenRoad::OpenRoad()
     pdnsim_(nullptr), 
     partitionMgr_(nullptr) 
 {
-  openroad_ = this;
   db_ = dbDatabase::create();
 }
 
@@ -141,7 +141,7 @@ OpenRoad::~OpenRoad()
   deleteFastRoute(fastRoute_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
-  deleteTritonMp(tritonMp_);
+  deleteMacroPlacer(macro_placer_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -170,10 +170,9 @@ OpenRoad::getDbNetwork()
 /* static */
 OpenRoad *OpenRoad::openRoad()
 {
-  if (openroad_ == nullptr) {
-    openroad_ = new OpenRoad;    
-  }
-  return openroad_;
+  // This will be destroyed at application exit
+  static OpenRoad o;
+  return &o;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -190,7 +189,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = new utl::Logger(log_filename);
+  logger_ = makeLogger(log_filename, metrics_filename);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
@@ -201,7 +200,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   fastRoute_ = makeFastRoute();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
-  tritonMp_ = makeTritonMp();
+  macro_placer_ = makeMacroPlacer();
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
@@ -212,8 +211,9 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Init components.
   Openroad_Init(tcl_interp);
   // Import TCL scripts.
-  evalTclInit(tcl_interp, sta::openroad_tcl_inits);
+  evalTclInit(tcl_interp, sta::openroad_swig_tcl_inits);
 
+  initLogger(logger_, tcl_interp);
   initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
@@ -228,7 +228,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initFastRoute(this);
   initTritonCts(this);
   initTapcell(this);
-  initTritonMp(this);
+  initMacroPlacer(this);
   initOpenRCX(this);
   initTritonRoute(this);
   initPDNSim(this);
@@ -327,6 +327,19 @@ OpenRoad::writeDef(const char *filename,
       def_writer.writeBlock(block, filename);
     }
   }
+}
+
+void 
+OpenRoad::writeCdl(const char* filename, bool includeFillers)
+{
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      odb::cdl::writeCdl(block, filename, includeFillers);
+    }
+  }
+  
 }
 
 void

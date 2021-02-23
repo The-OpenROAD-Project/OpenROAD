@@ -383,7 +383,7 @@ void FlexPA::initTrackCoords() {
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();
       for (int i = 0; i < (int)trackPattern->getNumTracks(); i++) {
-        trackCoords_[layerNum][currCoord] = frAccessPointEnum::OnGridAP;
+        trackCoords_[layerNum][currCoord] = frAccessPointEnum::OnGrid;
         currCoord += trackPattern->getTrackSpacing();
       }
     }
@@ -413,7 +413,7 @@ void FlexPA::initTrackCoords() {
       prevFullCoord = currFullCoord;
     }
     for (auto halfCoord: halfTrackCoords[i]) {
-      trackCoords_[i][halfCoord] = frAccessPointEnum::HalfGridAP;
+      trackCoords_[i][halfCoord] = frAccessPointEnum::HalfGrid;
     }
   }
   if (enableOutput) {

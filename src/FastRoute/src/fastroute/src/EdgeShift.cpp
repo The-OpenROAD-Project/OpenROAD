@@ -73,7 +73,6 @@ int edgeShift(Tree* t, int net)
       break;
     }
   }
-  // printf("root=%d\n", root);
 
   // find all neighbors for steiner nodes
   for (i = deg; i < 2 * deg - 2; i++)
@@ -95,9 +94,6 @@ int edgeShift(Tree* t, int net)
       nbrCnt[n]++;
     }
   }
-
-  // for(i=deg; i<2*deg-2; i++)
-  //   if(nbrCnt[i]!=3) printf("nbrCnt[%d]=%d(!=3)\n", i, nbrCnt[i]);
 
   bestBenefit = BIG_INT;   // used to enter while loop
   while (bestBenefit > 0)  // && numShift<60)
@@ -157,8 +153,6 @@ int edgeShift(Tree* t, int net)
         }
         minY = std::max(minY1, minY2);
         maxY = std::min(maxY1, maxY2);
-        // printf("(%d-%d) minY1=%d, maxY1=%d, minY2=%d, maxY2=%d, minY = %d,
-        // maxY = %d\n", n1, n2, minY1, maxY1, minY2, maxY2, minY, maxY);
 
         // find the best position (least total usage) to shift
         if (minY < maxY)  // more than 1 possible positions
@@ -433,8 +427,7 @@ int edgeShiftNew(Tree* t, int net)
         pairCnt++;
       }
     }
-    // if(net==3){printf("# pairs: %d, N1=%d, N2=%d\n", pairCnt, pairN1[0],
-    // pairN2[0]);getchar();}
+
     if (pairCnt > 0) {
       if (pairN1[0] != cur_pairN1
           || pairN2[0] != cur_pairN2)  // don't try the same as last one
@@ -450,8 +443,6 @@ int edgeShiftNew(Tree* t, int net)
       } else
         isPair = FALSE;
 
-      // if(net==3){printf("isPair: %d, N1=%d, N2=%d\n", isPair, cur_pairN1,
-      // cur_pairN2);getchar();}
       if (isPair)  // find a new pair to swap
       {
         N1nbrH = N1nbrV = N2nbrH = N2nbrV = -1;
@@ -484,9 +475,6 @@ int edgeShiftNew(Tree* t, int net)
                  && t->branch[n].x != t->branch[cur_pairN2].x)
           N2nbrH = n;
 
-        // if(net==3){printf("N1=%d, N2=%d, N1nbrH=%d, N1nbrV=%d, N2nbrH=%d,
-        // N2nbrV=%d\n", cur_pairN1, cur_pairN2, N1nbrH, N1nbrV, N2nbrH,
-        // N2nbrV);getchar();}
         if (N1nbrH >= 0 && N2nbrH >= 0) {
           if (N2nbrH == t->branch[cur_pairN2].n) {
             t->branch[N1nbrH].n = cur_pairN2;
@@ -508,7 +496,6 @@ int edgeShiftNew(Tree* t, int net)
           }
           numShift += edgeShift(t, net);
         }
-        // if(net==3){printtree(*t);getchar();}
       }  // if(isPair)
 
     }  // if(pairCnt>0)

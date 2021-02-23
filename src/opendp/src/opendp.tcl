@@ -50,7 +50,7 @@ proc detailed_placement { args } {
     dpl::detailed_placement_cmd $max_displacement
     dpl::report_legalization_stats
   } else {
-    ord::error "no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
@@ -155,7 +155,7 @@ proc get_masters_arg { arg_name arg } {
     }
   }
   if { !$matched } {
-    puts "Warning: $name did not match any masters."
+    utl::warn DPL 26 "$name did not match any masters."
   }
   return $masters
 }
