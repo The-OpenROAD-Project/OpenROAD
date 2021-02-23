@@ -452,10 +452,16 @@ int IOPlacer::assignGroupsToSections()
     int group_size = io_group.size();
     bool group_assigned = false;
     std::vector<int> dst(sections.size(), 0);
-    for (int pin_idx : io_group) {
-      for (int i = 0; i < sections.size(); i++) {
-        dst[i] += net.computeIONetHPWL(
+    for (int i = 0; i < sections.size(); i++) {
+      for (int pin_idx : io_group) {
+        int pin_hpwl = net.computeIONetHPWL(
             pin_idx, sections[i].pos, sections[i].edge, constraints_);
+        if (pin_hpwl == std::numeric_limits<int>::max()) {
+          dst[i] = pin_hpwl;
+          break;
+        } else {
+          dst[i] += pin_hpwl;
+        }
       }
     }
 
