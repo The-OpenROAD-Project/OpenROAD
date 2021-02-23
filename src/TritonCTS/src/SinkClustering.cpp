@@ -188,27 +188,27 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
   }
   std::cout << "TODO: DIST COMPUTATION DONE" << std::endl;
 
-  for(unsigned i=0; i<(npoints*(npoints-1))/2; i++){
-    std::cout << "TODO: dist after " << distMatrix[i] << std::endl;
-  }
+  // for(unsigned i=0; i<(npoints*(npoints-1))/2; i++){
+  //   std::cout << "TODO: dist after " << distMatrix[i] << std::endl;
+  // }
 
   std::cout << "TODO: points" << npoints << std::endl;
 
   int* merge = new int[2*(npoints-1)];
   double* height = new double[npoints-1];
 
-  for(unsigned i=0; i<2*(npoints-1); i++){
-    std::cout << "TODO: merge before " << merge[i] << std::endl;
-  }
+  // for(unsigned i=0; i<2*(npoints-1); i++){
+  //   std::cout << "TODO: merge before " << merge[i] << std::endl;
+  // }
 
   int runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
 
   std::cout << "TODO: runInt " << runInt << std::endl;
 
 
-  for(unsigned i=0; i<2*(npoints-1); i++){
-    std::cout << "TODO: merge after " << merge[i] << std::endl;
-  }
+  // for(unsigned i=0; i<2*(npoints-1); i++){
+  //   std::cout << "TODO: merge after " << merge[i] << std::endl;
+  // }
 
   delete[] distMatrix;
   delete[] height;
@@ -218,10 +218,10 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
 
   int* labels = new int[npoints];
-  cutree_k(npoints, merge, 10, labels);
+  // cutree_k(npoints, merge, 10, labels);
 
 
-  // cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+  cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
 
   std::cout << "TODO: Tree COMPUTATION DONE" << std::endl;
 

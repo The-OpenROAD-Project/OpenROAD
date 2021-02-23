@@ -17,7 +17,6 @@
 // Code by Daniel Müllner
 // workaround to make it usable as a standalone version (without R)
 #include "fastcluster_dm.cpp"
-
 //
 // Assigns cluster labels (0, ..., nclust-1) to the n points such
 // that the cluster result is split into nclust clusters.
@@ -38,24 +37,17 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
     return;
   }
 
-  std::cout << "TODO: 1 step" << std::endl;
-
   // assign to each observable the number of its last merge step
   // beware: indices of observables in merge start at 1 (R convention)
   std::vector<int> last_merge(n, 0);
   for (k=1; k<=(n-nclust); k++) {
     // (m1,m2) = merge[k,]
-    std::cout << "TODO: " << k << std::endl; 
     m1 = merge[k-1];
     m2 = merge[n-1+k-1];
-    std::cout << "TODO: MERGE : " << m1 << " " << m2 << std::endl;
     if (m1 < 0 && m2 < 0) { // both single observables
-      std::cout << "TODO: " << "01" << std::endl; 
-
       last_merge[-m1-1] = last_merge[-m2-1] = k;
 	}
 	else if (m1 < 0 || m2 < 0) { // one is a cluster
-      std::cout << "TODO: " << "02" << std::endl; 
       int temp = -m1;
 	    if (m1 < 0) 
         { 
@@ -66,7 +58,6 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
         {
           temp = -m2;
         }
-      std::cout << "TODO: " << "02" << std::endl; 
 
 	    // merging single observable and cluster
 	    for(l = 0; l < n; l++){
@@ -74,23 +65,15 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
           last_merge[l] = k;
         }
       }
-      std::cout << "TODO: " << "02" << std::endl; 
-
-	    last_merge[0] = k;
-      std::cout << "TODO: " << "02 " << temp-1 << std::endl; 
-
+	    last_merge[temp-1] = k;
 	}
 	else { // both cluster
-    std::cout << "TODO: " << "03" << std::endl; 
-
 	    for(l=0; l < n; l++) {
 		if( last_merge[l] == m1 || last_merge[l] == m2 )
 		    last_merge[l] = k;
 	    }
     }
   }
-
-  std::cout << "TODO: 2 step" << std::endl;
 
 
   // assign cluster labels
@@ -107,7 +90,6 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
     }
   }
 
-  std::cout << "TODO: 3 step" << std::endl;
 
 }
 
@@ -191,6 +173,15 @@ int hclust_fast(int n, double* distmat, int method, int* merge, double* height) 
   else {
     return 1;
   }
+
+  int* order = new int[n];
+  if (method == HCLUST_METHOD_MEDIAN) {
+    generate_R_dendrogram<true>(merge, height, order, Z2, n);
+  } else {
+    generate_R_dendrogram<false>(merge, height, order, Z2, n);
+  }
+
+  delete[] order; // only needed for visualization
   
   
   return 0;
