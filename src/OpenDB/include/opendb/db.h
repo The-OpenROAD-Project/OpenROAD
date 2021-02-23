@@ -8051,6 +8051,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   dbTechLayer* getSecondLayer() const;
 
+  dbTechLayer* getTechLayer() const;
+
   void setType(CutSpacingType _type);
 
   CutSpacingType getType() const;
@@ -8262,6 +8264,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
                                  bool        SIDE1,
                                  const char* class2,
                                  bool        SIDE2);
+
+
+  dbTechLayer* getTechLayer() const;
 
   static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
 

@@ -612,13 +612,13 @@ void lefin::layer(lefiLayer* layer)
     } else if (type.getValue() == dbTechLayerType::CUT) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
         lefTechLayerCutSpacingParser cutSpacingParser;
-        valid = cutSpacingParser.parse(layer->propValue(iii), l, this);
+        valid = cutSpacingParser.parse(layer->propValue(iii), l, this, _incomplete_props);
       } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         valid
             = lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
-        valid = cutSpacingTableParser.parse(layer->propValue(iii), this);
+        valid = cutSpacingTableParser.parse(layer->propValue(iii), this, _incomplete_props);
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
@@ -634,9 +634,10 @@ void lefin::layer(lefiLayer* layer)
     if (supported && !valid)
       _logger->warn(utl::ODB,
                     248,
-                    "parse mismatch in layer propery {} for layer {}",
+                    "parse mismatch in layer propery {} for layer {} : \"{}\"",
                     layer->propName(iii),
-                    layer->name());
+                    layer->name(),
+                    layer->propValue(iii));
   }
 
   if (layer->hasWidth())
@@ -1938,7 +1939,36 @@ bool lefin::readLef(const char* lef_file)
   _logger->info(utl::ODB, 222, "Reading LEF file: {}", lef_file);
 
   bool r = lefin_parse(this, _logger, lef_file);
-
+  for(auto &[obj, name] : _incomplete_props)
+  {
+    auto layer = _tech->findLayer(name.c_str());
+    if(layer != nullptr)
+    {
+      if(obj->getObjectType() == odb::dbTechLayerCutSpacingRuleObj)
+      {
+        odb::dbTechLayerCutSpacingRule* cutSpacingRule = (odb::dbTechLayerCutSpacingRule*) obj;
+        cutSpacingRule->setSecondLayer(layer);
+      }else if(obj->getObjectType() == odb::dbTechLayerCutSpacingTableDefRuleObj)
+      {
+        odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
+        cutSpacingTableRule->setSecondLayer(layer);
+      }
+    }else
+    {
+      if(obj->getObjectType() == odb::dbTechLayerCutSpacingRuleObj)
+      {
+        odb::dbTechLayerCutSpacingRule* cutSpacingRule = (odb::dbTechLayerCutSpacingRule*) obj;
+        _logger->warn(utl::ODB, 246, "dropping LEF58_SPACING rule for cut layer {} for referencing undefined layer {}",cutSpacingRule->getTechLayer()->getName(), name);
+        odb::dbTechLayerCutSpacingRule::destroy(cutSpacingRule);
+      }else if(obj->getObjectType() == odb::dbTechLayerCutSpacingTableDefRuleObj)
+      {
+        odb::dbTechLayerCutSpacingTableDefRule* cutSpacingTableRule = (odb::dbTechLayerCutSpacingTableDefRule*) obj;
+        _logger->warn(utl::ODB, 247, "dropping LEF58_SPACINGTABLE rule for cut layer {} for referencing undefined layer {}",cutSpacingTableRule->getTechLayer()->getName(), name);
+        odb::dbTechLayerCutSpacingTableDefRule::destroy(cutSpacingTableRule);
+      }
+    }
+  }
+  _incomplete_props.clear();
   if (_layer_cnt)
     _logger->info(
         utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
