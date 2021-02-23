@@ -32,6 +32,7 @@ if (Qt5_FOUND)
     src/congestionSetupDialog.cpp
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
+    src/staGui.cpp
   )
 
   target_link_libraries(gui
@@ -54,4 +55,5 @@ target_include_directories(gui
   PRIVATE
     ../FastRoute/include #Ugly but needed till we get FastRoute Data from OpenDb
     ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
 )
