@@ -129,13 +129,13 @@ namespace fr {
     frBlockObjectEnum typeId() const override {
       return gccNet;
     }
-    frNet* getFrNet(){
+    frNet* getFrNet() const{
         if (owner_->typeId() == frcNet){
           return static_cast<frNet*>(owner_);
         }
         return nullptr;
     }
-    bool isNondefault(){
+    bool isNondefault() const{
         return getFrNet() && getFrNet()->getNondefaultRule();
     }
   protected:

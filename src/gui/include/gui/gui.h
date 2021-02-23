@@ -244,7 +244,7 @@ class Painter
  
   virtual void drawCircle(int x, int y, int r) = 0;
   
-  virtual void drawString(int x, int y, int of, std::string& s) = 0;
+  virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
   
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)

@@ -104,9 +104,6 @@ int HISTCOST = 32;
 
 namespace fr {
 
-    void ERROR(std::string s){
-        throw logic_error(s);
-    }
     
 ostream& operator<< (ostream& os, const frPoint &pIn) {
   os <<"( " <<pIn.x() <<" " <<pIn.y() <<" )";

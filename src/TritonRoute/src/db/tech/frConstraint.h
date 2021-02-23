@@ -2262,39 +2262,39 @@ namespace fr {
         return name_;
     }
     
-    frCoord getWidth(int z){
+    frCoord getWidth(int z) const{
         if (z >= widths_.size()) 
           return 0;
         return widths_[z];
     }
     
-    frCoord getSpacing(int z){
+    frCoord getSpacing(int z) const{
         if (z >= spacings_.size()) 
           return 0;
         return spacings_[z];
     }
     
-    frCoord getWireExtension(int z){
+    frCoord getWireExtension(int z) const{
         if (z >= wireExtensions_.size()) 
           return 0;
         return wireExtensions_[z];
     }
     
-    int getMinCuts(int z){
+    int getMinCuts(int z) const{
         if (z >= minCuts_.size()) 
           return 1;
         return minCuts_[z];
     }
     
-    const vector<frViaDef*>& getVias(int z){
+    const vector<frViaDef*>& getVias(int z) const{
         return vias_[z];
     }
     
-    const vector<frViaRuleGenerate*>& getViaRules(int z){
+    const vector<frViaRuleGenerate*>& getViaRules(int z) const{
         return viasRules_[z];
     }
     
-    bool isHardSpacing(){
+    bool isHardSpacing() const{
         return hardSpacing_;
     }
     

@@ -803,7 +803,6 @@ namespace fr {
       wavefront_.cleanup();
       wavefront_.fit();
     }
-    drNet* currNet;
   protected:
     frDesign*     design_;
     FlexDRWorker* drWorker_;

@@ -127,7 +127,7 @@ namespace fr {
                ll_.y() < in.y() && in.y() < ur_.y();
       }
     }
-    void merge(frBox& box){
+    void merge(const frBox& box){
         set(std::min(left(), box.left()), std::min(bottom(), box.bottom()), std::max(right(), box.right()), std::max(top(), box.top()));
     }
     

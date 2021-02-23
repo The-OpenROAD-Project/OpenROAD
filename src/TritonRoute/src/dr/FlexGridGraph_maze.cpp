@@ -416,9 +416,8 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
   if (currDir != frDirEnum::UNKNOWN && currDir != dir) {
     // next dir is a via
     if (dir == frDirEnum::U || dir == frDirEnum::D) {
-      isTLengthViaUp = (dir == frDirEnum::U);
-      // if there was a turn before
-//      if (tLength != std::numeric_limits<frCoord>::max()) {
+        isTLengthViaUp = (dir == frDirEnum::U);
+        // if there was a turn before
         if (currDir == frDirEnum::W || currDir == frDirEnum::E) {
           tLength = currGrid.getTLength();
           if (getTech()->isViaForbiddenTurnLen(gridZ, !isTLengthViaUp, true, tLength, ndr_)) {
@@ -430,7 +429,6 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
             isForbiddenTLen = true;
           }
         }
-//      }
     // curr is a planar turn
     } else {
       isTLengthViaUp = currGrid.isPrevViaUp();
@@ -625,7 +623,7 @@ frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoor
     
     if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
       return static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
-    drWorker_->getLogger()->error(utl::ToolId::TTR, 0, "ERROR FlexGridGraph::getMinSpacingValue");
+    drWorker_->getLogger()->error(utl::ToolId::DRT, 0, "ERROR FlexGridGraph::getMinSpacingValue");
 }
 
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const{

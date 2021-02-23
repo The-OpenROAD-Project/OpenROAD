@@ -427,7 +427,6 @@ void FlexTAWorker::initIroute(frGuide *guide) {
   }
 
   unique_ptr<taPinFig> ps = make_unique<taPathSeg>();
-//  cout << guide->getNet()->getName() << "\n";
   ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {

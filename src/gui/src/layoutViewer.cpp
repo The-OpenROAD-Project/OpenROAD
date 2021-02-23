@@ -167,9 +167,9 @@ class GuiPainter : public Painter
   void drawCircle(int x, int y, int r){
       painter_->drawEllipse(x-r/2, y-r/2, r, r);
   }
-  
-  void drawString(int x, int y, int of, std::string& s){
-      painter_->drawText(x+of, y+of, s.data());
+  //NOTE: it is drawing upside down
+  void drawString(int x, int y, int offset, const std::string& s){
+      painter_->drawText(x+offset, y+offset, s.data());
   }
  private:
   QPainter* painter_;
@@ -361,7 +361,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(event->pos());
-  qreal to_microns = 1;//block->getDbUnitsPerMicron();
+  qreal to_microns = block->getDbUnitsPerMicron();
   emit location(pt_dbu.x() / to_microns, pt_dbu.y() / to_microns);
 
   if (rubber_band_showing_) {

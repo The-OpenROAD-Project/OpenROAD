@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
-//#include <qt5/QtGui/qcolor.h>
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
@@ -150,8 +149,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
     frMIdx z = grid_graph_->getMazeZIdx(layerNum);
     if (gui_->isGridGraphVisible()){
-        int of = 50;
-        bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
+        const int offset = 50;
+        const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
         frMIdx x_dim, y_dim, z_dim;
         grid_graph_->getDim(x_dim, y_dim, z_dim);
         for (frMIdx x = 0; x < x_dim; ++x) {
@@ -173,7 +172,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
             }
             if (grid_graph_->hasAnyPlanarCost(x, y, z))
-                painter.drawRect({grid_graph_->xCoord(x)-of, grid_graph_->yCoord(y)-of, grid_graph_->xCoord(x)+of, grid_graph_->yCoord(y)+of});
+                painter.drawRect({grid_graph_->xCoord(x)-offset, grid_graph_->yCoord(y)-offset, grid_graph_->xCoord(x)+offset, grid_graph_->yCoord(y)+offset});
           }
         }
     }

@@ -102,16 +102,16 @@ namespace fr {
       style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
       style_.setWidth(styleIn.getWidth());
     }
-    frCoord getBeginX(){
+    frCoord getBeginX() const{
         return begin_.x();
     }
-    frCoord getBeginY(){
+    frCoord getBeginY() const{
         return begin_.y();
     }
-    frCoord getEndX(){
+    frCoord getEndX() const{
         return end_.x();
     }
-    frCoord getEndY(){
+    frCoord getEndY() const{
         return end_.y();
     }
     // others

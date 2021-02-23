@@ -759,16 +759,7 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
       for (auto &pin: targetNet_->getPins(i)) {
         for (auto &maxrect: pin->getMaxRectangles()) {
           checkMetalSpacing_main(maxrect.get());
-//          if (!targetNet_->isNondefault() && design_->getTech()->hasNondefaultRules())
-//              checkMetalSpacing_main(maxrect.get(), true);
         }
-//        if (targetNet_->isNondefault()){
-//            std::vector<gcRect> rects;
-//            targetNet_->getRouteRectangles(i, rects);
-//            for (auto& r : rects){
-//                checkMetalSpacing_main(&r, true);
-//            }
-//        }
       }
     }
   } else {
@@ -786,14 +777,6 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
             checkMetalSpacing_main(maxrect.get());
           }
         }
-//        // nondefautl spacing
-//        if (net->isNondefault()){
-//            std::vector<gcRect> rects;
-//            net->getRouteRectangles(i, rects);
-//            for (auto& r : rects){
-//                checkMetalSpacing_main(&r, true);
-//            }
-//        }
       }
     }
   }

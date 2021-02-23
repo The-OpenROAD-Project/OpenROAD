@@ -158,13 +158,22 @@ namespace fr{
     }
     // setters
     void addLayer1Fig(std::unique_ptr<frShape> figIn) {
-      layer1Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer1ShapeBox.merge(box);
+        layer1Figs.push_back(std::move(figIn));
     }
     void addLayer2Fig(std::unique_ptr<frShape> figIn) {
-      layer2Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer2ShapeBox.merge(box);
+        layer2Figs.push_back(std::move(figIn));
     }
     void addCutFig(std::unique_ptr<frShape> figIn) {
-      cutFigs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        cutShapeBox.merge(box);
+        cutFigs.push_back(std::move(figIn));
     }
     void setDefault(bool isDefaultIn) {
       isDefault = isDefaultIn;
@@ -177,21 +186,6 @@ namespace fr{
     }
     void setAddedByRouter(bool in) {
       addedByRouter = in;
-    }
-    void calculatedShapeBoxes(){
-        frBox box;
-        for (auto &fig: layer1Figs) {
-            fig->getBBox(box);
-            layer1ShapeBox.merge(box);
-        }
-        for (auto &fig: layer2Figs) {
-            fig->getBBox(box);
-            layer2ShapeBox.merge(box);
-        }
-        for (auto &fig: cutFigs) {
-            fig->getBBox(box);
-            cutShapeBox.merge(box);
-        }
     }
     const frBox& getLayer1ShapeBox(){
         return layer1ShapeBox;
@@ -215,9 +209,6 @@ namespace fr{
     frBox                                    layer1ShapeBox;
     frBox                                    layer2ShapeBox;
     frBox                                    cutShapeBox;
-//    frBox                                    layer1SpacingBox;
-//    frBox                                    layer2SpacingBox;
-//    frBox                                    cutSpacingBox;
   };
 }
 #endif

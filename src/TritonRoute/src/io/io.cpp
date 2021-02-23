@@ -313,7 +313,6 @@ void io::Parser::setVias(odb::dbBlock* block)
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
-      viaDef->calculatedShapeBoxes();
       tech->addVia(std::move(viaDef));
     } else {
       map<frLayerNum, set<odb::dbBox*> > lNum2Int;
@@ -355,7 +354,6 @@ void io::Parser::setVias(odb::dbBlock* block)
         }
         cnt++;
       }
-      viaDef->calculatedShapeBoxes();
       tech->addVia(std::move(viaDef));
     }
   }
@@ -4134,7 +4132,6 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
       viaDef->setCutClass(cutClass);
       viaDef->setCutClassIdx(cutClassIdx);
     }
-    viaDef->calculatedShapeBoxes();
     tech->addVia(std::move(viaDef));
   }
 }

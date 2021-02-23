@@ -3393,7 +3393,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
                     continue;
                 }
                 dNet->setNdrRipupThresh(0);
-            }//else if (dNet->hasNDR()) cout << " n_NDnets " << n_NDnets << " n_dNets" << n_dNets << "\n";
+            }
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }
@@ -3409,7 +3409,6 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
 
 bool FlexDRWorker::canRipup(drNet* n){
     if (n->getNumReroutes() >= getMazeEndIter()) return false;
-//    if (n->hasNDR()) return n->getNdrRipupThresh() >= NDR_NETS_RIPUP_THRESH;
     return true;
 }
 

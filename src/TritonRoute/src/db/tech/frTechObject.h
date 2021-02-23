@@ -171,7 +171,7 @@ namespace fr {
         nonDefaultRules.push_back(std::move(n));
     }
     
-    std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules(){
+    const std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules() const{
         return nonDefaultRules;
     }
     

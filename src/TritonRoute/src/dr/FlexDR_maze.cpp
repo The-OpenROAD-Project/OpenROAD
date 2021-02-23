@@ -3027,7 +3027,6 @@ bool FlexDRWorker::routeNet(drNet* net) {
   if (TEST_ || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
   }
-  gridGraph_.currNet = net;
   if (graphics_) {
     graphics_->startNet(net);
   }
