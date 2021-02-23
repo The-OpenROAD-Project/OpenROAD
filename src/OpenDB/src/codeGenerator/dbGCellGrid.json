@@ -33,6 +33,28 @@
         "flags":["private"]
       },
       {
+        "name":"_x_grid",
+        "type":"dbVector<int>",
+        "flags":["private"]
+      },
+      {
+        "name":"_y_grid",
+        "type":"dbVector<int>",
+        "flags":["private"]
+      },
+      {
+        "name":"_x_grid_valid",
+        "flags":["private"],
+        "type":"bool",
+        "bits":1
+      },
+      {
+        "name":"_y_grid_valid",
+        "flags":["private"],
+        "type":"bool",
+        "bits":1
+      },
+      {
         "name":"_congestion_map",
         "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>",
         "flags":["private","no-template"]

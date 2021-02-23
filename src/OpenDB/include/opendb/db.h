@@ -8348,12 +8348,12 @@ class dbGCellGrid : public dbObject
   ///
   /// Get the "X" grid coordinates
   ///
-  void getGridX(std::vector<int>& x_grid) const;
+  void getGridX(std::vector<int>& x_grid);
 
   ///
   /// Get the "Y" grid coordinates
   ///
-  void getGridY(std::vector<int>& y_grid) const;
+  void getGridY(std::vector<int>& y_grid);
 
   ///
   /// Get the block this grid belongs too.
@@ -8400,11 +8400,9 @@ class dbGCellGrid : public dbObject
   ///
   static dbGCellGrid* getGCellGrid(dbBlock* block, uint oid);
 
-  uint getXIdx(int                    x,
-               const std::vector<int>& x_grid = std::vector<int>()) const;
+  uint getXIdx(int x);
 
-  uint getYIdx(int                    y,
-               const std::vector<int>& y_grid = std::vector<int>()) const;
+  uint getYIdx(int y);
 
   uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 

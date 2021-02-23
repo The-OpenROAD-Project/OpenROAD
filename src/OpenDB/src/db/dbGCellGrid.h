@@ -52,6 +52,12 @@ class _dbDatabase;
 class _dbTechLayer;
 // User Code End Classes
 
+struct dbGCellGridFlags
+{
+  bool _x_grid_valid : 1;
+  bool _y_grid_valid : 1;
+  uint _spare_bits : 30;
+};
 struct GCellData
 {
   uint _horizontal_usage    = 0;
@@ -70,12 +76,15 @@ class _dbGCellGrid : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbVector<int> _x_origin;
-  dbVector<int> _x_count;
-  dbVector<int> _x_step;
-  dbVector<int> _y_origin;
-  dbVector<int> _y_count;
-  dbVector<int> _y_step;
+  dbGCellGridFlags _flags;
+  dbVector<int>    _x_origin;
+  dbVector<int>    _x_count;
+  dbVector<int>    _x_step;
+  dbVector<int>    _y_origin;
+  dbVector<int>    _y_count;
+  dbVector<int>    _y_step;
+  dbVector<int>    _x_grid;
+  dbVector<int>    _y_grid;
   std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>
       _congestion_map;
 
