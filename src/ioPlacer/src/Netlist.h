@@ -88,21 +88,20 @@ class InstancePin
 class IOPin
 {
  public:
-  IOPin(const std::string& name,
+  IOPin(odb::dbBTerm* bterm,
         const odb::Point& pos,
         Direction dir,
         odb::Point lower_bound,
         odb::Point upper_bound,
-        std::string net_name,
         std::string location_type)
-      : name_(name),
+      : bterm_(bterm),
         pos_(pos),
         orientation_(Orientation::north),
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
-        net_name_(net_name),
-        location_type_(location_type)
+        location_type_(location_type),
+        in_group(false)
   {
   }
 
@@ -122,27 +121,30 @@ class IOPin
     upper_bound_ = odb::Point(x, y);
   };
   void setLayer(const int layer) { layer_ = layer; }
-  std::string getName() const { return name_; }
+  std::string getName() const { return bterm_->getName(); }
   odb::Point getPos() const { return pos_; }
   int getX() const { return pos_.getX(); }
   int getY() const { return pos_.getY(); }
   Direction getDirection() const { return direction_; }
   odb::Point getLowerBound() const { return lower_bound_; };
   odb::Point getUpperBound() const { return upper_bound_; };
-  std::string getNetName() const { return net_name_; }
+  std::string getNetName() const { return bterm_->getNet()->getName(); }
   std::string getLocationType() const { return location_type_; };
+  odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
+  bool isInGroup() const { return in_group; }
+  void inGroup() { in_group = true; }
 
  private:
-  std::string name_;
+  odb::dbBTerm* bterm_;
   odb::Point pos_;
   Orientation orientation_;
   Direction direction_;
   odb::Point lower_bound_;
   odb::Point upper_bound_;
-  std::string net_name_;
   std::string location_type_;
   int layer_;
+  bool in_group;
 };
 
 class Netlist
@@ -151,13 +153,16 @@ class Netlist
   Netlist();
 
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
-
-  void forEachIOPin(std::function<void(int, IOPin&)>);
-  void forEachIOPin(std::function<void(int, const IOPin&)>) const;
-  void forEachSinkOfIO(int, std::function<void(InstancePin&)>);
-  void forEachSinkOfIO(int, std::function<void(const InstancePin&)>) const;
+  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list);
+  void addIOGroup(const std::vector<int>& pin_group);
+  std::vector<std::vector<int>>& getIOGroups() { return io_groups_; }
+  void setIOGroups(const std::vector<std::vector<int>>& io_groups) { io_groups_ = io_groups; }
   int numSinksOfIO(int);
   int numIOPins();
+  int numIOGroups() { return io_groups_.size(); }
+  std::vector<IOPin>& getIOPins() { return io_pins_; }
+  IOPin& getIoPin(int idx) { return io_pins_[idx]; }
+  void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
@@ -169,6 +174,8 @@ class Netlist
   std::vector<InstancePin> inst_pins_;
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
+  std::vector<std::vector<int>> io_groups_;
+  std::map<odb::dbBTerm*, int> _db_pin_idx_map;
 
   bool checkSlotForPin(IOPin& pin,
                        Edge edge,

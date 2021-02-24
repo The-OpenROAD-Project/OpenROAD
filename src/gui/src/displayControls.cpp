@@ -30,17 +30,21 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+
 #include "displayControls.h"
 
 #include <QDebug>
+
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
 #include <QSettings>
+#include <QVBoxLayout>
 #include <vector>
 
 #include "db.h"
+#include "displayControls.h"
 #include "openroad/InitOpenRoad.hh"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
@@ -153,7 +157,11 @@ DisplayControls::DisplayControls(QWidget* parent)
       nets_power_visible_(true),
       nets_ground_visible_(true),
       nets_clock_visible_(true),
+      isGridGraphVisible_(false),
+      areRouteGuidesVisible_(true),
+      areRoutingObjsVisible_(true),
       congestion_visible_(false)
+
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
@@ -234,6 +242,22 @@ DisplayControls::DisplayControls(QWidget* parent)
     fills_visible_ = visible;
   });
 
+  //Grid Graph
+  grid_graph_ = makeItem("Grid Graph", model_, Qt::Unchecked, [this](bool visible) {
+    isGridGraphVisible_ = visible;
+  });
+  
+  //Guides
+  route_guides_ = makeItem("Route Guides", model_, Qt::Checked, [this](bool visible) {
+    areRouteGuidesVisible_ = visible;
+  });
+  
+  //Routing objs
+  routing_objs_ = makeItem("Routing Objects", model_, Qt::Checked, [this](bool visible) {
+    areRoutingObjsVisible_ = visible;
+  });
+  
+  
   setWidget(view_);
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -417,16 +441,16 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
   switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
-      return nets_signal_visible_;
-    case dbSigType::POWER:
-      return nets_power_visible_;
-    case dbSigType::GROUND:
-      return nets_ground_visible_;
-    case dbSigType::CLOCK:
-      return nets_clock_visible_;
-    default:
-      return true;
+  case dbSigType::SIGNAL:
+    return nets_signal_visible_;
+  case dbSigType::POWER:
+    return nets_power_visible_;
+  case dbSigType::GROUND:
+    return nets_ground_visible_;
+  case dbSigType::CLOCK:
+    return nets_clock_visible_;
+  default:
+    return true;
   }
 }
 
@@ -457,6 +481,16 @@ bool DisplayControls::arePrefTracksVisible()
 bool DisplayControls::areNonPrefTracksVisible()
 {
   return tracks_visible_non_pref_;
+}
+bool DisplayControls::isGridGraphVisible(){
+    return isGridGraphVisible_;
+}
+
+bool DisplayControls::areRouteGuidesVisible(){
+    return areRouteGuidesVisible_;
+}
+bool DisplayControls::areRoutingObjsVisible(){
+    return areRoutingObjsVisible_;
 }
 
 bool DisplayControls::isCongestionVisible() const
@@ -549,6 +583,7 @@ void DisplayControls::techInit()
     layer_visible_[layer] = true;
     layer_selectable_[layer] = true;
   }
+
   tech_inited_ = true;
 }
 

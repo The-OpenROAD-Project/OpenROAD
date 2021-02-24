@@ -35,13 +35,13 @@
 
 include("openroad")
 
-tcl_lib(NAME      resizer
+tcl_lib(NAME      rsz
         NAMESPACE rsz
         I_FILE    Resizer.i
         SCRIPTS   Resizer.tcl
 )
 
-target_sources(resizer
+target_sources(rsz
   PRIVATE
     MakeResizer.cc
     Resizer.cc
@@ -49,12 +49,12 @@ target_sources(resizer
     SteinerTree.cc
 )
 
-target_include_directories(resizer
+target_include_directories(rsz
   PUBLIC
     ../include
 )
 
-target_link_libraries(resizer
+target_link_libraries(rsz
   PUBLIC
     flute
     opendb

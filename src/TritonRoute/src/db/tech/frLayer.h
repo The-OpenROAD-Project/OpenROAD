@@ -34,6 +34,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include <set>
 
 namespace fr {
   namespace io {
@@ -345,6 +346,13 @@ namespace fr {
         return cutConstraints;
       }
     }
+    frCoord getCutSpacingValue() const {
+        frCoord s = 0;
+        for (auto con: getCutSpacing()) {
+          s = max(s, con->getCutSpacing());
+        }
+        return s;
+    }
     bool hasCutSpacing(bool samenet = false) const {
       if (samenet) {
         return (!cutSpacingSamenetConstraints.empty());
@@ -450,6 +458,7 @@ namespace fr {
       return (!lef58CornerSpacingConstraints.empty());
     }
 
+    void printAllConstraints(utl::Logger* logger);
   protected:
     frLayerTypeEnum                                                 type;
     frLayerNum                                                      layerNum;

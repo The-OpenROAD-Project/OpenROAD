@@ -38,6 +38,8 @@
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "db/tech/frTechObject.h"
+#include "frDesign.h"
 
 using namespace std;
 using namespace fr;
@@ -179,11 +181,16 @@ void TritonRoute::endFR() {
   writer.updateDb(db_);
 }
 
+void TritonRoute::reportConstraints()
+{
+  getDesign()->getTech()->printAllConstraints(logger_);
+}
+
 int TritonRoute::main() {
   init();
   if (GUIDE_FILE == string("")) {
     gr();
-    io::Parser parser(getDesign(),logger_);
+    io::Parser parser(getDesign(), logger_);
     GUIDE_FILE = OUTGUIDE_FILE;
     ENABLE_VIA_GEN = true;
     parser.readGuide();

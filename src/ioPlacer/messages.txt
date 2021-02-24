@@ -1,39 +1,38 @@
-PPL 0001 IOPlacer.cpp:492           * Num of slots          {}
-PPL 0002 IOPlacer.cpp:493           * Num of I/O            {}
-PPL 0003 IOPlacer.cpp:494           * Num of I/O w/sink     {}
-PPL 0004 IOPlacer.cpp:495           * Num of I/O w/o sink   {}
-PPL 0005 IOPlacer.cpp:496           * Slots Per Section     {}
-PPL 0006 IOPlacer.cpp:497           * Slots Increase Factor {}
-PPL 0007 IOPlacer.cpp:498           * Usage Per Section     {}
-PPL 0008 IOPlacer.cpp:499           * Usage Increase Factor {}
-PPL 0009 IOPlacer.cpp:500           * Force Pin Spread      {}
-PPL 0010 IOPlacer.cpp:509          Tentative {} to setup sections
-PPL 0011 IOPlacer.cpp:776          ***HPWL before ioPlacer: {}
-PPL 0012 IOPlacer.cpp:777          ***HPWL after  ioPlacer: {}
-PPL 0013 IOPlacer.cpp:778          ***HPWL delta  ioPlacer: {}
-PPL 0014 ioPlacer.tcl:101          io_placer command is deprecated. Use place_pins instead
-PPL 0015 ioPlacer.tcl:128          Macro [$inst getName] is not placed
+PPL 0001 IOPlacer.cpp:543           * Num of slots          {}
+PPL 0002 IOPlacer.cpp:544           * Num of I/O            {}
+PPL 0004 IOPlacer.cpp:547           * Num of I/O w/o sink   {}
+PPL 0005 IOPlacer.cpp:548           * Slots Per Section     {}
+PPL 0006 IOPlacer.cpp:549           * Slots Increase Factor {}
+PPL 0007 IOPlacer.cpp:550           * Usage Per Section     {}
+PPL 0008 IOPlacer.cpp:551           * Usage Increase Factor {}
+PPL 0009 IOPlacer.cpp:552           * Force Pin Spread      {}
+PPL 0010 IOPlacer.cpp:561          Tentative {} to setup sections
+PPL 0011 IOPlacer.cpp:870          ***HPWL before ioPlacer: {}
+PPL 0012 IOPlacer.cpp:871          ***HPWL after  ioPlacer: {}
+PPL 0013 IOPlacer.cpp:872          ***HPWL delta  ioPlacer: {}
+PPL 0014 ioPlacer.tcl:102          io_placer command is deprecated. Use place_pins instead
+PPL 0015 ioPlacer.tcl:130          Macro [$inst getName] is not placed
 PPL 0016 ioPlacer.tcl:72           set_io_pin_constraint: only one constraint allowed
-PPL 0017 ioPlacer.tcl:146          -hor_layers is mandatory
-PPL 0018 ioPlacer.tcl:152          -ver_layers is mandatory
-PPL 0019 ioPlacer.tcl:176          Design without pins
-PPL 0020 ioPlacer.tcl:182          Horizontal routing layer ($hor_layer) not found
-PPL 0021 ioPlacer.tcl:186          Routing tracks not found for layer $hor_layer
-PPL 0022 ioPlacer.tcl:193          Vertical routing layer ($ver_layer) not found
-PPL 0023 ioPlacer.tcl:197          Routing tracks not found for layer $ver_layer
-PPL 0024 ioPlacer.tcl:207          Number of pins ($bterms_cnt) exceed max possible ($num_slots)
-PPL 0025 ioPlacer.tcl:234          -exclude: $interval is an invalid region
-PPL 0026 ioPlacer.tcl:237          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval
-PPL 0027 ioPlacer.tcl:258          $cmd: $edge is an invalid edge. use top, bottom, left or right
-PPL 0028 ioPlacer.tcl:271          $cmd: Invalid pin direction
-PPL 0029 ioPlacer.tcl:299          $cmd: Invalid edge
-PPL 0030 ioPlacer.tcl:307          $cmd: Invalid edge
-PPL 0033 HungarianMatching.cpp:99  I/O pin {} cannot be placed in the specified region. Not enough space
-PPL 0034 IOPlacer.cpp:399          Redefining the number of slots per section to have at least one section per edge
-PPL 0035 IOPlacer.cpp:416          section usage exeeded max
-PPL 0036 IOPlacer.cpp:517          Number of sections is {}
-PPL 0037 IOPlacer.cpp:523          Number of slots per sections is {}
-PPL 0038 IOPlacer.cpp:877          Pin {} without net!
-PPL 0039 IOPlacer.cpp:224          Random mode not found
-PPL 0040 IOPlacer.cpp:429          Negative number of slots
-PPL 0041 IOPlacer.cpp:768          Assigned {} pins out of {} IO pins
+PPL 0017 ioPlacer.tcl:148          -hor_layers is mandatory
+PPL 0018 ioPlacer.tcl:154          -ver_layers is mandatory
+PPL 0019 ioPlacer.tcl:178          Design without pins
+PPL 0020 ioPlacer.tcl:184          Horizontal routing layer ($hor_layer) not found
+PPL 0021 ioPlacer.tcl:188          Routing tracks not found for layer $hor_layer
+PPL 0022 ioPlacer.tcl:195          Vertical routing layer ($ver_layer) not found
+PPL 0023 ioPlacer.tcl:199          Routing tracks not found for layer $ver_layer
+PPL 0024 ioPlacer.tcl:209          Number of pins ($bterms_cnt) exceed max possible ($num_slots)
+PPL 0025 ioPlacer.tcl:236          -exclude: $interval is an invalid region
+PPL 0026 ioPlacer.tcl:239          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval
+PPL 0027 ioPlacer.tcl:276          $cmd: $edge is an invalid edge. use top, bottom, left or right
+PPL 0028 ioPlacer.tcl:289          $cmd: Invalid pin direction
+PPL 0029 ioPlacer.tcl:332          $cmd: Invalid edge
+PPL 0030 ioPlacer.tcl:340          $cmd: Invalid edge
+PPL 0031 ioPlacer.tcl:115          missing dbTech
+PPL 0032 ioPlacer.tcl:120          missing dbBlock
+PPL 0035 IOPlacer.cpp:410          section usage exeeded max
+PPL 0038 IOPlacer.cpp:976          Pin {} without net!
+PPL 0039 IOPlacer.cpp:209          Random mode not found
+PPL 0040 IOPlacer.cpp:423          Negative number of slots
+PPL 0041 ioPlacer.tcl:247          Pin group $group_idx: [$group]
+PPL 0042 IOPlacer.cpp:491          Unsuccessfully assigned I/O groups
+PPL 0043 ioPlacer.tcl:253          Pin $pin_name not found in group $group_idx

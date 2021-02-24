@@ -50,6 +50,7 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
+
   // Debug detailed routing
   FlexDRGraphics(frDebugSettings* settings,
                  frDesign* design,
@@ -76,8 +77,14 @@ class FlexDRGraphics : public gui::Renderer
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
-
+  
+  
+  void update();
+  
+  void pause(drNet* net);
+  
  private:
+
   FlexDRWorker*    worker_;
   drNet*           net_;
   const FlexGridGraph* grid_graph_;
@@ -89,6 +96,7 @@ class FlexDRGraphics : public gui::Renderer
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
+  
 };
 
-}  // namespace fr
+}  // namespace dr

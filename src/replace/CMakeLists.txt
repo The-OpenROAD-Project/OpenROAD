@@ -94,7 +94,7 @@ target_link_libraries(replace
     opendb
     OpenSTA
     flute
-    resizer
+    rsz
     FastRoute
 )
 
