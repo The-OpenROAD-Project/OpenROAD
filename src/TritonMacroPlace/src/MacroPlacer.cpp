@@ -50,6 +50,7 @@
 #include "sta/SearchPred.hh"
 
 #include "utility/Logger.h"
+#include "gui/gui.h"
 
 namespace mpl {
 
@@ -87,7 +88,7 @@ MacroPlacer::MacroPlacer()
     : db_(nullptr),
       sta_(nullptr),
       logger_(nullptr),
-      timing_driven_(false),
+      connection_driven_(false),
       lx_(0),
       ly_(0),
       ux_(0),
@@ -141,15 +142,14 @@ void MacroPlacer::init()
 {
   findMacros();
 
-  // Timing-driven will be skipped if some instances are missing liberty cells.
-  timing_driven_ = !isMissingLiberty();
+  // Connection driven will be disabled if some instances are missing liberty cells.
+  connection_driven_ = !isMissingLiberty();
 
-  if (timing_driven_) {
+  if (connection_driven_) {
     reportEdgePinCounts();
     findAdjacencies();
   } else {
-    logger_->warn(MPL, 2, "Missing Liberty Detected. TritonMP will place macros without "
-               "timing information");
+    logger_->warn(MPL, 2, "Some instances do not have liberty models. TritonMP will place macros without connection information.");
   }
 }
 
@@ -159,7 +159,7 @@ bool MacroPlacer::isMissingLiberty()
   sta::LeafInstanceIterator* instIter = network->leafInstanceIterator();
   while (instIter->hasNext()) {
     sta::Instance* inst = instIter->next();
-    if (!network->libertyCell(inst)) {
+    if (network->libertyCell(inst) == nullptr) {
       delete instIter;
       return true;
     }
@@ -187,14 +187,17 @@ void MacroPlacer::placeMacros()
 {
   init();
 
+  double wl = getWeightedWL();
+  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+
   Layout layout(lx_, ly_, ux_, uy_);
-  bool isHorizontal = true;
+  bool horizontal = true;
   Partition top_partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
   top_partition.macros_ = macros_;
 
   logger_->report("Begin One Level Partition");
 
-  TwoPartitions oneLevelPart = getPartitions(layout, top_partition, isHorizontal);
+  TwoPartitions oneLevelPart = getPartitions(layout, top_partition, horizontal);
 
   logger_->report("End One Level Partition");
   TwoPartitions east_partitions, west_partitions;
@@ -204,7 +207,7 @@ void MacroPlacer::placeMacros()
   MacroPartMap globalMacroPartMap;
   updateMacroPartMap(top_partition, globalMacroPartMap);
 
-  if (timing_driven_) {
+  if (connection_driven_) {
     top_partition.fillNetlistTable(globalMacroPartMap);
   }
 
@@ -213,92 +216,92 @@ void MacroPlacer::placeMacros()
   layoutSet.push_back(top_partition);
 
   allSets.push_back(layoutSet);
-  for (auto& curSet : oneLevelPart) {
-    if (isHorizontal) {
+  for (auto& partition_set : oneLevelPart) {
+    if (horizontal) {
       logger_->report("Begin Horizontal Partition");
-      Layout eastInfo(layout, curSet.first);
-      Layout westInfo(layout, curSet.second);
+      Layout eastInfo(layout, partition_set.first);
+      Layout westInfo(layout, partition_set.second);
 
       logger_->report("Begin East Partition");
-      TwoPartitions east_partitions = getPartitions(eastInfo, curSet.first, !isHorizontal);
+      TwoPartitions east_partitions = getPartitions(eastInfo, partition_set.first, !horizontal);
       logger_->report("End East Partition");
 
       logger_->report("Begin West Partition");
-      TwoPartitions west_partitions = getPartitions(westInfo, curSet.second, !isHorizontal);
+      TwoPartitions west_partitions = getPartitions(westInfo, partition_set.second, !horizontal);
       logger_->report("End West Partition");
 
       // Zero case handling when east_partitions = 0
       if (east_partitions.empty() && !west_partitions.empty()) {
         for (size_t i = 0; i < west_partitions.size(); i++) {
-          vector<Partition> oneSet;
+          vector<Partition> partition_set;
 
           // one set is composed of two subblocks
-          oneSet.push_back(west_partitions[i].first);
-          oneSet.push_back(west_partitions[i].second);
+          partition_set.push_back(west_partitions[i].first);
+          partition_set.push_back(west_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& curSet : oneSet) {
-            updateMacroPartMap(curSet, macroPartMap);
+          for (auto& partition_set : partition_set) {
+            updateMacroPartMap(partition_set, macroPartMap);
           }
 
-          if (timing_driven_) {
-            for (auto& curSet : oneSet) {
-              curSet.fillNetlistTable(macroPartMap);
+          if (connection_driven_) {
+            for (auto& partition_set : partition_set) {
+              partition_set.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(oneSet);
+          allSets.push_back(partition_set);
         }
       }
       // Zero case handling when west_partitions = 0
       else if (!east_partitions.empty() && west_partitions.empty()) {
         for (size_t i = 0; i < east_partitions.size(); i++) {
-          vector<Partition> oneSet;
+          vector<Partition> partition_set;
 
           // one set is composed of two subblocks
-          oneSet.push_back(east_partitions[i].first);
-          oneSet.push_back(east_partitions[i].second);
+          partition_set.push_back(east_partitions[i].first);
+          partition_set.push_back(east_partitions[i].second);
 
           // Fill Macro Netlist
           // update macroPartMap
           MacroPartMap macroPartMap;
-          for (auto& curSet : oneSet) {
-            updateMacroPartMap(curSet, macroPartMap);
+          for (auto& partition_set : partition_set) {
+            updateMacroPartMap(partition_set, macroPartMap);
           }
 
-          if (timing_driven_) {
-            for (auto& curSet : oneSet) {
-              curSet.fillNetlistTable(macroPartMap);
+          if (connection_driven_) {
+            for (auto& partition_set : partition_set) {
+              partition_set.fillNetlistTable(macroPartMap);
             }
           }
 
-          allSets.push_back(oneSet);
+          allSets.push_back(partition_set);
         }
       } else {
         // for all possible partiion combinations
         for (size_t i = 0; i < east_partitions.size(); i++) {
           for (size_t j = 0; j < west_partitions.size(); j++) {
-            vector<Partition> oneSet;
+            vector<Partition> partition_set;
 
             // one set is composed of four subblocks
-            oneSet.push_back(east_partitions[i].first);
-            oneSet.push_back(east_partitions[i].second);
-            oneSet.push_back(west_partitions[j].first);
-            oneSet.push_back(west_partitions[j].second);
+            partition_set.push_back(east_partitions[i].first);
+            partition_set.push_back(east_partitions[i].second);
+            partition_set.push_back(west_partitions[j].first);
+            partition_set.push_back(west_partitions[j].second);
 
             MacroPartMap macroPartMap;
-            for (auto& curSet : oneSet) {
-              updateMacroPartMap(curSet, macroPartMap);
+            for (auto& partition_set : partition_set) {
+              updateMacroPartMap(partition_set, macroPartMap);
             }
 
-            if (timing_driven_) {
-              for (auto& curSet : oneSet) {
-                curSet.fillNetlistTable(macroPartMap);
+            if (connection_driven_) {
+              for (auto& partition_set : partition_set) {
+                partition_set.fillNetlistTable(macroPartMap);
               }
             }
-            allSets.push_back(oneSet);
+            allSets.push_back(partition_set);
           }
         }
       }
@@ -311,16 +314,16 @@ void MacroPlacer::placeMacros()
 
   solution_count_ = 0;
   bool found_best = false;
-  int bestSetIdx = 0;
+  int best_setIdx = 0;
   double bestWwl = DBL_MAX;
-  for (auto& curSet : allSets) {
+  for (auto& partition_set : allSets) {
     // skip for top partition
-    if (curSet.size() == 1) {
+    if (partition_set.size() == 1) {
       continue;
     }
     // For each of the 4 partitions
     bool isFailed = false;
-    for (auto& curPart : curSet) {
+    for (auto& curPart : partition_set) {
       // Annealing based on ParquetFP Engine
       if (!curPart.anneal()) {
         isFailed = true;
@@ -334,7 +337,7 @@ void MacroPlacer::placeMacros()
     }
 
     // update partitons' macro info
-    for (auto& curPart : curSet) {
+    for (auto& curPart : partition_set) {
       curPart.updateMacroCoordi();
     }
 
@@ -342,11 +345,10 @@ void MacroPlacer::placeMacros()
     logger_->info(MPL, 71, "Solution {} weighted wire length {:g}",
                   solution_count_ + 1,
                   curWwl);
-
     if (!found_best
         || curWwl < bestWwl) {
       bestWwl = curWwl;
-      bestSetIdx = &curSet - &allSets[0];
+      best_setIdx = &partition_set - &allSets[0];
       found_best = true;
     }
     solution_count_++;
@@ -354,9 +356,9 @@ void MacroPlacer::placeMacros()
 
   if (found_best) {
     logger_->info(MPL, 73, "Best weighted wire length {:g}", bestWwl);
-    std::vector<Partition> bestSet = allSets[bestSetIdx];
-    for (auto& curBestPart : bestSet) {
-      updateMacroLocations(curBestPart);
+    std::vector<Partition> best_set = allSets[best_setIdx];
+    for (auto& best_partition : best_set) {
+      updateMacroLocations(best_partition);
     }
     updateDbInstLocations();
   }
@@ -375,22 +377,22 @@ void MacroPlacer::updateDbInstLocations()
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
 
-  for (auto& curMacro : macros_) {
-    curMacro.dbInstPtr->setLocation(round(curMacro.lx * dbu),
-                                    round(curMacro.ly * dbu));
-    curMacro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  for (auto& macro : macros_) {
+    macro.dbInstPtr->setLocation(round(macro.lx * dbu),
+                                    round(macro.ly * dbu));
+    macro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
 
 void MacroPlacer::cutRoundUp(const Layout& layout,
                              double& cutLine,
-                             bool isHorizontal)
+                             bool horizontal)
 {
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbRow> rows = block->getRows();
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
   dbSite* site = rows.begin()->getSite();
-  if (isHorizontal) {
+  if (horizontal) {
     double siteSizeX = site->getWidth() / dbu;
     cutLine = std::round(cutLine / siteSizeX) * siteSizeX;
     cutLine = std::min(cutLine, layout.ux());
@@ -414,13 +416,13 @@ void MacroPlacer::updateMacroPartMap(Partition& part,
                                      MacroPartMap& macroPartMap)
 {
   // This does not look like it actually does anything -cherry
-  vector<int> curMacroStor = macroPartMap[part.partClass];
+  vector<int> macros = macroPartMap[part.partClass];
   // convert macro Information into macroIdx
-  for (auto& curMacro : part.macros_) {
-    int macro_index = macro_inst_map_[curMacro.dbInstPtr];
-    curMacroStor.push_back(macro_index);
+  for (auto& macro : part.macros_) {
+    int macro_index = macro_inst_map_[macro.dbInstPtr];
+    macros.push_back(macro_index);
   }
-  macroPartMap[part.partClass] = curMacroStor;
+  macroPartMap[part.partClass] = macros;
 }
 
 // only considers lx or ly coordinates for sorting
@@ -438,7 +440,7 @@ static bool segLxLyLess(const std::pair<int, double>& p1,
 vector<pair<Partition, Partition>>
 MacroPlacer::getPartitions(const Layout& layout,
                            const Partition& partition,
-                           bool isHorizontal)
+                           bool horizontal)
 {
   logger_->info(MPL, 76, "Partition {} macros", partition.macros_.size());
 
@@ -456,13 +458,13 @@ MacroPlacer::getPartitions(const Layout& layout,
   for (const Macro& macro : partition.macros_) {
     segStor.push_back(
         std::make_pair(&macro - &partition.macros_[0],
-                       (isHorizontal) ? macro.lx : macro.ly));
+                       (horizontal) ? macro.lx : macro.ly));
 
     maxWidth = std::max(maxWidth, macro.w);
     maxHeight = std::max(maxHeight, macro.h);
   }
 
-  double cutLineLimit = (isHorizontal) ? maxWidth * 0.25 : maxHeight * 0.25;
+  double cutLineLimit = (horizontal) ? maxWidth * 0.25 : maxHeight * 0.25;
   double prevPushLimit = -1e30;
   bool isFirst = true;
   vector<double> cutLineStor;
@@ -489,7 +491,7 @@ MacroPlacer::getPartitions(const Layout& layout,
     int hardLimit = std::round(std::sqrt(partition.macros_.size() / 3.0));
     for (int i = 0; i <= hardLimit; i++) {
       cutLineStor.push_back(
-          (isHorizontal)
+          (horizontal)
               ? layout.lx() + (layout.ux() - layout.lx()) / hardLimit * i
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
@@ -504,7 +506,7 @@ MacroPlacer::getPartitions(const Layout& layout,
   vector<int> chkArr(partition.macros_.size());
 
   for (auto& cutLine : cutLineStor) {
-    cutRoundUp(layout, cutLine, isHorizontal);
+    cutRoundUp(layout, cutLine, horizontal);
 
     logger_->info(MPL, 79, "Cut line {:.2f}", cutLine);
 
@@ -516,7 +518,7 @@ MacroPlacer::getPartitions(const Layout& layout,
     bool isImpossible = false;
     for (auto& macro : partition.macros_) {
       int i = &macro - &partition.macros_[0];
-      if (isHorizontal) {
+      if (horizontal) {
         // lower is possible
         if (macro.w <= cutLine) {
           chkArr[i] += 1;
@@ -555,8 +557,8 @@ MacroPlacer::getPartitions(const Layout& layout,
     PartClass lClass = None, uClass = None;
     switch (partition.partClass) {
     case PartClass::ALL:
-      lClass = (isHorizontal) ? W : S;
-      uClass = (isHorizontal) ? E : N;
+      lClass = (horizontal) ? W : S;
+      uClass = (horizontal) ? E : N;
       break;
     case PartClass::W:
       lClass = SW;
@@ -585,18 +587,18 @@ MacroPlacer::getPartitions(const Layout& layout,
         lClass,
         partition.lx,
         partition.ly,
-        (isHorizontal) ? cutLine - partition.lx : partition.width,
-        (isHorizontal) ? partition.height : cutLine - partition.ly,
+        (horizontal) ? cutLine - partition.lx : partition.width,
+        (horizontal) ? partition.height : cutLine - partition.ly,
         this,
         logger_);
 
     Partition upperPart(
         uClass,
-        (isHorizontal) ? cutLine : partition.lx,
-        (isHorizontal) ? partition.ly : cutLine,
-        (isHorizontal) ? partition.lx + partition.width - cutLine
+        (horizontal) ? cutLine : partition.lx,
+        (horizontal) ? partition.ly : cutLine,
+        (horizontal) ? partition.lx + partition.width - cutLine
                        : partition.width,
-        (isHorizontal) ? partition.height
+        (horizontal) ? partition.height
                        : partition.ly + partition.height - cutLine,
         this,
         logger_);
@@ -608,11 +610,11 @@ MacroPlacer::getPartitions(const Layout& layout,
         lowerPart.macros_.push_back(macro);
       } else if (chkArr[i] == 2) {
         upperPart.macros_.push_back(
-            Macro((isHorizontal) ? macro.lx - cutLine : macro.lx,
-                  (isHorizontal) ? macro.ly : macro.ly - cutLine,
+            Macro((horizontal) ? macro.lx - cutLine : macro.lx,
+                  (horizontal) ? macro.ly : macro.ly - cutLine,
                   macro));
       } else if (chkArr[i] == 3) {
-        double centerPoint = (isHorizontal) ? macro.lx + macro.w / 2.0
+        double centerPoint = (horizontal) ? macro.lx + macro.w / 2.0
                                             : macro.ly + macro.h / 2.0;
 
         if (centerPoint < cutLine) {
@@ -620,8 +622,8 @@ MacroPlacer::getPartitions(const Layout& layout,
 
         } else {
           upperPart.macros_.push_back(
-              Macro((isHorizontal) ? macro.lx - cutLine : macro.lx,
-                    (isHorizontal) ? macro.ly : macro.ly - cutLine,
+              Macro((horizontal) ? macro.lx - cutLine : macro.lx,
+                    (horizontal) ? macro.ly : macro.ly - cutLine,
                     macro));
         }
       }
@@ -768,7 +770,7 @@ double MacroPlacer::getWeightedWL()
       }
 
       float edgeWeight = 0.0f;
-      if (timing_driven_) {
+      if (connection_driven_) {
         edgeWeight = macro_weights_[i][j];
       } else {
         edgeWeight = 1;

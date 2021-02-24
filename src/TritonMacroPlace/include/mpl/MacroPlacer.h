@@ -197,7 +197,7 @@ private:
   utl::Logger* logger_;
   odb::dbTechLayer *snap_layer_;
 
-  bool timing_driven_;
+  bool connection_driven_;
 
   // macro idx/idx pair -> give each
   vector<vector<int>> macro_weights_;

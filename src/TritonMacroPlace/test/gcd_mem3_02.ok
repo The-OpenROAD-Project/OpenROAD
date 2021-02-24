@@ -18,6 +18,7 @@
 [INFO MPL-0009] East pins 13
 [INFO MPL-0009] North pins 12
 [INFO MPL-0009] South pins 32
+[INFO MPL-0071] Initial weighted wire length 5248.89
 Begin One Level Partition
 [INFO MPL-0076] Partition 3 macros
 [INFO MPL-0077] Using 3 cut lines
