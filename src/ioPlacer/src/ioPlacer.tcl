@@ -95,6 +95,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-boundaries_offset offset]\
                                   [-min_distance min_dist]\
                                   [-exclude region]\
+                                  [-group_pins pin_list]
                                  }
 
 proc io_placer { args } {
@@ -104,8 +105,9 @@ proc io_placer { args } {
 
 proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
+  set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude} \
+  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude -group_pins} \
   flags {-random}
 
   set dbTech [ord::get_db_tech]
@@ -239,6 +241,23 @@ proc place_pins { args } {
     }
   }
 
+  if { $pin_groups != {} } {
+    set group_idx 0
+    foreach group $pin_groups {
+      utl::info PPL 41 "Pin group $group_idx: \[$group\]"
+      set pin_group [ppl::create_pin_group]
+      foreach pin_name $group {
+        set db_bterm [$dbBlock findBTerm $pin_name]
+        if { $db_bterm != "NULL" } {
+          ppl::add_pin_to_group $db_bterm $pin_group
+        } else {
+          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
+        }
+      }
+      incr group_idx
+    }
+  }
+
   foreach hor_layer $hor_layers {
     ppl::add_hor_layer $hor_layer 
   }
@@ -285,6 +304,21 @@ proc parse_excludes_arg { args_var } {
   }
 
   return $regions
+}
+
+proc parse_group_pins_arg { args_var } {
+  set pins {}
+  while { $args_var != {} } {
+    set arg [lindex $args_var 0]
+    if { $arg == "-group_pins" } {
+      lappend pins [lindex $args_var 1]
+      set args_var [lrange $args_var 1 end]
+    } else {
+      set args_var [lrange $args_var 1 end]
+    }
+  }
+
+  return $pins
 }
 
 proc get_edge_extreme { cmd begin edge } {

@@ -45,10 +45,13 @@ HungarianMatching::HungarianMatching(Section& section,
     : netlist_(section.net), slots_(slots)
 {
   num_io_pins_ = netlist_.numIOPins();
+  num_pin_groups_ = netlist_.numIOGroups();
   begin_slot_ = section.begin_slot;
   end_slot_ = section.end_slot;
   num_slots_ = end_slot_ - begin_slot_;
   non_blocked_slots_ = section.num_slots;
+  group_slots_ = 0;
+  group_size_ = -1;
   edge_ = section.edge;
   logger_ = logger;
 }
@@ -70,11 +73,15 @@ void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
       continue;
     }
     hungarian_matrix_[slot_index].resize(num_io_pins_);
-    netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
-      int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
-      hungarian_matrix_[slot_index][pinIndex] = hpwl;
-      pinIndex++;
-    });
+    int idx = 0;
+    for (IOPin& io_pin : netlist_.getIOPins()) {
+      if (!io_pin.isInGroup()) {
+        int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
+        hungarian_matrix_[slot_index][pinIndex] = hpwl;
+        pinIndex++;
+      }
+      idx++;
+    }
     slot_index++;
   }
 }
@@ -89,7 +96,107 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   size_t rows = non_blocked_slots_;
   size_t col = 0;
   int slot_index = 0;
-  netlist_.forEachIOPin([&](int idx, IOPin& io_pin) {
+  for (IOPin& io_pin : netlist_.getIOPins()) {
+    if (!io_pin.isInGroup()) {
+      slot_index = begin_slot_;
+      for (size_t row = 0; row < rows; row++) {
+        while (slots_[slot_index].blocked && slot_index < slots_.size())
+          slot_index++;
+        if (assignment_[row] != col) {
+          slot_index++;
+          continue;
+        }
+        if (hungarian_matrix_[row][col] == hungarian_fail) {
+          logger_->warn(utl::PPL,
+                        33,
+                        "I/O pin {} cannot be placed in the specified region. "
+                        "Not enough space",
+                        io_pin.getName().c_str());
+        }
+        io_pin.setPos(slots_[slot_index].pos);
+        io_pin.setLayer(slots_[slot_index].layer);
+        assigment.push_back(io_pin);
+        slots_[slot_index].used = true;
+        break;
+      }
+      col++;
+    }
+  }
+}
+
+void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constraints)
+{
+  createMatrixForGroups(constraints);
+
+  if (hungarian_matrix_.size() > 0)
+    hungarian_solver_.solve(hungarian_matrix_, assignment_);
+}
+
+void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constraints)
+{
+  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+    group_size_ = std::max((int)io_group.size(), group_size_);
+  }
+
+  if (group_size_ > 0) {
+    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
+      bool blocked = false;
+      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
+        if (slots_[i + pin_cnt].blocked) {
+          blocked = true;
+        }
+      }
+      if (!blocked) {
+        group_slots_++;
+      }
+    }
+
+    hungarian_matrix_.resize(group_slots_);
+    int slot_index = 0;
+    for (int i = begin_slot_; i < end_slot_; i+=group_size_) {
+      int groupIndex = 0;
+      Point newPos = slots_[i].pos;
+      
+      bool blocked = false;
+      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
+        if (slots_[i + pin_cnt].blocked) {
+          blocked = true;
+        }
+      }
+      if (blocked) {
+        continue;
+      }
+
+      hungarian_matrix_[slot_index].resize(num_pin_groups_);
+      for (std::vector<int>& io_group : netlist_.getIOGroups()) {
+        int group_hpwl = 0;
+        int pin_count = 0;
+        for (int io_idx : io_group) {
+          int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+          if (pin_hpwl == hungarian_fail) {
+            group_hpwl = hungarian_fail;
+            break;
+          } else {
+            group_hpwl += netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+          }
+        }
+        hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
+        groupIndex++;
+      }
+      slot_index++;
+    }
+  }
+}
+
+void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
+{
+  if (hungarian_matrix_.size() <= 0)
+    return;
+
+  size_t rows = group_slots_;
+  size_t col = 0;
+  int slot_index = 0;
+  for (std::vector<int>& io_group : netlist_.getIOGroups()) {
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       while (slots_[slot_index].blocked && slot_index < slots_.size())
@@ -98,27 +205,24 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
         slot_index++;
         continue;
       }
-      if (hungarian_matrix_[row][col] == hungarian_fail) {
-        logger_->warn(utl::PPL,
-                      33,
-                      "I/O pin {} cannot be placed in the specified region. "
-                      "Not enough space",
-                      io_pin.getName().c_str());
-      }
-      io_pin.setPos(slots_[slot_index].pos);
-      io_pin.setLayer(slots_[slot_index].layer);
-      assigment.push_back(io_pin);
-      Point s_pos = slots_[slot_index].pos;
-      for (int i = 0; i < slots_.size(); i++) {
-        if (samePos(slots_[i].pos, s_pos)) {
-          slots_[i].used = true;
-          break;
-        }
+      int pin_cnt = 0;
+      for (int pin_idx : io_group) {
+        IOPin io_pin = netlist_.getIoPin(pin_idx);
+        io_pin.setPos(slots_[slot_index + pin_cnt].pos);
+        io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
+        assigment.push_back(io_pin);
+        slots_[slot_index + pin_cnt].used = true;
+        slots_[slot_index + pin_cnt].blocked = true;
+        non_blocked_slots_--;
+        pin_cnt++;
       }
       break;
     }
     col++;
-  });
+  }
+
+  hungarian_matrix_.clear();
+  assignment_.clear();
 }
 
 }  // namespace ppl
