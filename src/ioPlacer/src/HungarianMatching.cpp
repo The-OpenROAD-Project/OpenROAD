@@ -177,7 +177,7 @@ void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constrain
             group_hpwl = hungarian_fail;
             break;
           } else {
-            group_hpwl += netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+            group_hpwl += pin_hpwl;
           }
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
@@ -200,9 +200,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       while (slots_[slot_index].blocked && slot_index < slots_.size())
-        slot_index++;
+        slot_index+=group_size_;
       if (assignment_[row] != col) {
-        slot_index++;
+        slot_index+=group_size_;
         continue;
       }
       int pin_cnt = 0;

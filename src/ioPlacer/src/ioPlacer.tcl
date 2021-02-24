@@ -178,6 +178,8 @@ proc place_pins { args } {
     utl::error PPL 19 "Design without pins"
   }
 
+
+  set num_tracks_y 0
   foreach hor_layer $hor_layers {
     set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
     if { $hor_track_grid == "NULL" } {
@@ -187,8 +189,11 @@ proc place_pins { args } {
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
       utl::error PPL 21 "Routing tracks not found for layer $hor_layer."
     }
+    
+    set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
   }
 
+  set num_tracks_x 0
   foreach ver_layer $ver_layers {
     set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
     if { $ver_track_grid == "NULL" } {
@@ -198,10 +203,9 @@ proc place_pins { args } {
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
       utl::error PPL 23 "Routing tracks not found for layer $ver_layer."
     }
-  }
 
-  set num_tracks_x [llength [$ver_track_grid getGridX]]
-  set num_tracks_y [llength [$hor_track_grid getGridY]]
+    set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
+  }
   
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 

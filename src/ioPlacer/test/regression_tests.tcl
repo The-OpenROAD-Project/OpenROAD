@@ -19,5 +19,6 @@ record_tests {
   group_pins1
   group_pins2
   group_pins3
+  group_pins4
   group_pins_warn1
 }
