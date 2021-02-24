@@ -68,47 +68,71 @@ float getRequiredTime(sta::dbSta* staRoot,
   }
   return req;
 }
-}  // namespace gui
 
-using namespace gui;
-
-staGui::staGui(ord::OpenRoad* oprd) : or_(oprd)
+TimingPathsModel::TimingPathsModel() : openroad_(ord::OpenRoad::openRoad())
 {
+  populateModel();
+}
+
+int TimingPathsModel::rowCount(const QModelIndex& parent) const
+{
+  return timing_paths_.size();
+}
+
+int TimingPathsModel::columnCount(const QModelIndex& parent) const
+{
+  return TimingPathsModel::_path_columns.size();
+}
+
+QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
+{
+  return QVariant();
+}
+
+QVariant TimingPathsModel::headerData(int section,
+                                      Qt::Orientation orientation,
+                                      int role) const
+{
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
+    return QString(TimingPathsModel::_path_columns[section].c_str());
+  return QVariant();
 }
 
 // Get the network for commands.
-void staGui::findInstances(std::string pattern,
-                           std::vector<odb::dbInst*>& insts)
+void TimingPathsModel::findInstances(std::string pattern,
+                                     std::vector<odb::dbInst*>& insts)
 {
-  if (!or_)
+  if (!openroad_)
     return;
   std::vector<sta::Instance*> staInsts = findInstancesNetwork(pattern);
   for (auto staInst : staInsts) {
-    insts.push_back(or_->getSta()->getDbNetwork()->staToDb(staInst));
+    insts.push_back(openroad_->getSta()->getDbNetwork()->staToDb(staInst));
   }
   return;
 }
 
-void staGui::findNets(std::string pattern, std::vector<odb::dbNet*>& nets)
+void TimingPathsModel::findNets(std::string pattern,
+                                std::vector<odb::dbNet*>& nets)
 {
-  if (!or_)
+  if (!openroad_)
     return;
   std::vector<sta::Net*> staNets = findNetsNetwork(pattern);
   for (auto staNet : staNets) {
-    nets.push_back(or_->getSta()->getDbNetwork()->staToDb(staNet));
+    nets.push_back(openroad_->getSta()->getDbNetwork()->staToDb(staNet));
   }
   return;
 }
 
-void staGui::findPins(std::string pattern, std::vector<odb::dbObject*>& pins)
+void TimingPathsModel::findPins(std::string pattern,
+                                std::vector<odb::dbObject*>& pins)
 {
-  if (!or_)
+  if (!openroad_)
     return;
   std::vector<sta::Pin*> staPins = findPinsNetwork(pattern);
   for (auto staPin : staPins) {
     odb::dbITerm* term;
     odb::dbBTerm* port;
-    or_->getSta()->getDbNetwork()->staToDb(staPin, term, port);
+    openroad_->getSta()->getDbNetwork()->staToDb(staPin, term, port);
     odb::dbObject* pinObject
         = term ? (odb::dbObject*) term : (odb::dbObject*) port;
     pins.push_back(pinObject);
@@ -116,42 +140,54 @@ void staGui::findPins(std::string pattern, std::vector<odb::dbObject*>& pins)
   return;
 }
 
-std::vector<sta::Instance*> staGui::findInstancesNetwork(std::string pattern)
+std::vector<sta::Instance*> TimingPathsModel::findInstancesNetwork(
+    std::string pattern)
 {
   sta::InstanceSeq all_insts;
   sta::PatternMatch staPattern(pattern.c_str());
-  if (or_)
-    or_->getSta()->getDbNetwork()->findInstancesMatching(
-        or_->getSta()->getDbNetwork()->topInstance(), &staPattern, &all_insts);
+  if (openroad_)
+    openroad_->getSta()->getDbNetwork()->findInstancesMatching(
+        openroad_->getSta()->getDbNetwork()->topInstance(),
+        &staPattern,
+        &all_insts);
   return static_cast<std::vector<sta::Instance*>>(all_insts);
 }
 
-std::vector<sta::Net*> staGui::findNetsNetwork(std::string pattern)
+std::vector<sta::Net*> TimingPathsModel::findNetsNetwork(std::string pattern)
 {
   sta::NetSeq all_nets;
   sta::PatternMatch staPattern(pattern.c_str());
-  if (or_)
-    or_->getSta()->getDbNetwork()->findNetsMatching(
-        or_->getSta()->getDbNetwork()->topInstance(), &staPattern, &all_nets);
+  if (openroad_)
+    openroad_->getSta()->getDbNetwork()->findNetsMatching(
+        openroad_->getSta()->getDbNetwork()->topInstance(),
+        &staPattern,
+        &all_nets);
   return static_cast<std::vector<sta::Net*>>(all_nets);
 }
 
-std::vector<sta::Pin*> staGui::findPinsNetwork(std::string pattern)
+std::vector<sta::Pin*> TimingPathsModel::findPinsNetwork(std::string pattern)
 {
   sta::PinSeq all_pins;
   sta::PatternMatch staPattern(pattern.c_str());
-  if (or_)
-    or_->getSta()->getDbNetwork()->findPinsMatching(
-        or_->getSta()->getDbNetwork()->topInstance(), &staPattern, &all_pins);
+  if (openroad_)
+    openroad_->getSta()->getDbNetwork()->findPinsMatching(
+        openroad_->getSta()->getDbNetwork()->topInstance(),
+        &staPattern,
+        &all_pins);
   return static_cast<std::vector<sta::Pin*>>(all_pins);
 }
 
-bool staGui::getPaths(std::vector<guiTimingPath*>& paths,
-                      bool get_max,
-                      int path_count)
+void TimingPathsModel::populateModel()
+{
+  beginResetModel();
+  populatePaths();
+  endResetModel();
+}
+
+bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 {
   // On lines of DataBaseHandler
-  sta::dbSta* sta_ = or_->getSta();
+  sta::dbSta* sta_ = openroad_->getSta();
   sta_->ensureGraph();
   sta_->searchPreamble();
 
@@ -184,8 +220,8 @@ bool staGui::getPaths(std::vector<guiTimingPath*>& paths,
   bool first_path = true;
   for (auto& path_end : *path_ends) {
     sta::PathExpanded expanded(path_end->path(), sta_);
-    guiTimingPath* path = new guiTimingPath();
-    paths.push_back(path);
+
+    TimingPath* path = new TimingPath();
 
     for (size_t i = 1; i < expanded.size(); i++) {
       auto ref = expanded.path(i);
@@ -200,15 +236,49 @@ bool staGui::getPaths(std::vector<guiTimingPath*>& paths,
       auto slack = !first_path ? path_required - arrival : ref->slack(sta_);
       odb::dbITerm* term;
       odb::dbBTerm* port;
-      or_->getSta()->getDbNetwork()->staToDb(pin, term, port);
+      openroad_->getSta()->getDbNetwork()->staToDb(pin, term, port);
       odb::dbObject* pinObject
           = term ? (odb::dbObject*) term : (odb::dbObject*) port;
-      path->nodes.push_back(
-          guiTimingNode(pinObject, is_rising, arrival, path_required, slack));
+      path->appendNode(
+          TimingPathNode(pinObject, is_rising, arrival, path_required, slack));
       first_path = false;
     }
+    timing_paths_.push_back(path);
   }
 
   delete path_ends;
   return true;
 }
+
+int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
+{
+  return path_->levelsCount();
+}
+
+int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
+{
+  return TimingPathDetailModel::_path_details_columns.size();
+}
+
+QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
+{
+  return QVariant();
+}
+
+QVariant TimingPathDetailModel::headerData(int section,
+                                           Qt::Orientation orientation,
+                                           int role) const
+{
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
+    return QString(
+        TimingPathDetailModel::_path_details_columns[section].c_str());
+  return QVariant();
+}
+
+void TimingPathDetailModel::populateModel(TimingPath* path)
+{
+  beginResetModel();
+  path_ = path;
+  endResetModel();
+}
+}  // namespace gui

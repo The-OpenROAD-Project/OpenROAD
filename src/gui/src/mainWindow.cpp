@@ -88,6 +88,12 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+
+  connect(this,
+          SIGNAL(designLoaded(odb::dbBlock*)),
+          timing_dialog_,
+          SLOT(designLoaded(odb::dbBlock*)));
+
   connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
   connect(viewer_,

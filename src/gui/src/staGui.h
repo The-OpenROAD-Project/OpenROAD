@@ -35,7 +35,10 @@
 
 #pragma once
 
+#include <QAbstractTableModel>
+
 #include "opendb/db.h"
+
 namespace ord {
 class OpenRoad;
 }
@@ -45,35 +48,51 @@ class Net;
 class Pin;
 }  // namespace sta
 namespace gui {
-class guiTimingPath;
-class staGui
+class TimingPathsModel;
+class TimingPathNode;
+class TimingPath;
+class TimingPathDetailModel;
+class TimingPathsModel : public QAbstractTableModel
 {
  public:
-  staGui(ord::OpenRoad* oprd);
+  TimingPathsModel();
+
+  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
+  int columnCount(const QModelIndex& parent
+                  = QModelIndex()) const Q_DECL_OVERRIDE;
+
+  QVariant data(const QModelIndex& index,
+                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant headerData(int section,
+                      Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
   void findInstances(std::string pattern, std::vector<odb::dbInst*>& insts);
   void findNets(std::string pattern, std::vector<odb::dbNet*>& nets);
   void findPins(std::string pattern, std::vector<odb::dbObject*>& pins);
 
-  bool getPaths(std::vector<guiTimingPath*>& paths,
-                bool get_max,
-                int path_count);
-
  private:
-  ord::OpenRoad* or_;
+  void populateModel();
+  bool populatePaths(bool get_max = true, int path_count = 1000);
+
+  ord::OpenRoad* openroad_;
   std::vector<sta::Instance*> findInstancesNetwork(std::string pattern);
   std::vector<sta::Net*> findNetsNetwork(std::string pattern);
   std::vector<sta::Pin*> findPinsNetwork(std::string pattern);
+
+  std::vector<TimingPath*> timing_paths_;
+  const static inline std::vector<std::string> _path_columns
+      = {"Id", "Clock", "Req", "Arrival", "Slack", "Start", "End"};
 };
 
-class guiTimingNode
+class TimingPathNode
 {
  public:
-  guiTimingNode(odb::dbObject* pin,
-                bool isRising,
-                float arrival,
-                float required,
-                float slack)
+  TimingPathNode(odb::dbObject* pin,
+                 bool isRising,
+                 float arrival,
+                 float required,
+                 float slack)
       : pin_(pin),
         isRising_(isRising),
         arrival_(arrival),
@@ -89,9 +108,39 @@ class guiTimingNode
   float slack_;
 };
 
-class guiTimingPath
+class TimingPath
 {
  public:
-  std::vector<guiTimingNode> nodes;
+  TimingPath() {}
+
+  void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
+  int levelsCount() const { return path_nodes_.size(); }
+
+ private:
+  std::vector<TimingPathNode> path_nodes_;
+};
+
+class TimingPathDetailModel : public QAbstractTableModel
+{
+ public:
+  TimingPathDetailModel() {}
+  ~TimingPathDetailModel() {}
+
+  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
+  int columnCount(const QModelIndex& parent
+                  = QModelIndex()) const Q_DECL_OVERRIDE;
+
+  QVariant data(const QModelIndex& index,
+                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant headerData(int section,
+                      Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+
+  void populateModel(TimingPath* path);
+
+ private:
+  TimingPath* path_;
+  const static inline std::vector<std::string> _path_details_columns
+      = {"Fanout", "Cap", "Slew", "Delay", "Time", "Description"};
 };
 }  // namespace gui

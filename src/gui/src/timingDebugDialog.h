@@ -34,7 +34,13 @@
 
 #include <QDialog>
 
+#include "opendb/db.h"
+#include "staGui.h"
 #include "ui_timingDebug.h"
+
+namespace ord {
+class OpenRoad;
+}
 
 namespace gui {
 class TimingDebugDialog : public QDialog, public Ui::TimingDialog
@@ -45,5 +51,9 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
  public slots:
   void accept();
   void reject();
+  void designLoaded(odb::dbBlock* block);
+
+ private:
+  TimingPathsModel* timing_paths_model_;
 };
 }  // namespace gui

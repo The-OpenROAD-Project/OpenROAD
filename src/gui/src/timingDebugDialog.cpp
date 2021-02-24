@@ -32,8 +32,13 @@
 
 #include "timingDebugDialog.h"
 
+#include <QDebug>
+
+#include "staGui.h"
+
 namespace gui {
-TimingDebugDialog::TimingDebugDialog(QWidget* parent) : QDialog(parent)
+TimingDebugDialog::TimingDebugDialog(QWidget* parent)
+    : QDialog(parent), timing_paths_model_(nullptr)
 {
   setupUi(this);
 }
@@ -47,4 +52,13 @@ void TimingDebugDialog::reject()
 {
   QDialog::reject();
 }
+
+void TimingDebugDialog::designLoaded(odb::dbBlock* block)
+{
+  if (timing_paths_model_)
+    delete timing_paths_model_;
+  timing_paths_model_ = new TimingPathsModel();
+  timingPathTableView->setModel(timing_paths_model_);
+}
+
 }  // namespace gui
