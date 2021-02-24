@@ -54,7 +54,7 @@ class defin
 
 
  public:
-  defin(dbDatabase* db, utl::Logger* logger);
+  defin(dbDatabase* db, utl::Logger* logger, bool floorplan = false);
   ~defin();
 
   void skipWires();

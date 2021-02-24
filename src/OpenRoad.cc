@@ -271,9 +271,10 @@ OpenRoad::readLef(const char *filename,
 void
 OpenRoad::readDef(const char *filename,
 		  bool order_wires,
-		  bool continue_on_errors)
+		  bool continue_on_errors,
+      bool floorplan_initialize)
 {
-  odb::defin def_reader(db_,logger_);
+  odb::defin def_reader(db_, logger_, floorplan_initialize);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);

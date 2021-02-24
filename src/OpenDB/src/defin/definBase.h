@@ -52,6 +52,12 @@ class dbTech;
 class definBase
 {
  public:
+  enum MODE{
+    DEFAULT,
+    FLOORPLAN,
+    INCR
+  };
+  MODE _mode;
   dbTech*  _tech;
   dbBlock* _block;
   utl::Logger* _logger;
@@ -64,6 +70,7 @@ class definBase
   void         setBlock(dbBlock* block);
   void         setLogger(utl::Logger* logger);
   void         units(int d);
+  void         setMode(MODE mode);
   virtual void init();
 
   int dbdist(int value) { return (int) (value * _dist_factor); }

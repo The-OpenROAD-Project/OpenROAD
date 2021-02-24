@@ -87,8 +87,12 @@ void definPin::pinBegin(const char* name, const char* net_name)
   const char* s = strstr(name, ".extra");
 
   if (s == NULL) {
-    _cur_bterm = dbBTerm::create(net, name);
-    _bterm_cnt++;
+    if(_mode == FLOORPLAN)
+      _cur_bterm = _block->findBTerm(name);
+    if(_cur_bterm == nullptr){
+      _cur_bterm = dbBTerm::create(net, name);
+      _bterm_cnt++;
+    }
   } else  // extra pin statement
   {
     const char* busleft  = strchr(s, _left_bus);

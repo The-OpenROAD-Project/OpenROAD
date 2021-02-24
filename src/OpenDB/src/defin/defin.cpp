@@ -36,9 +36,12 @@
 
 namespace odb {
 
-defin::defin(dbDatabase* db,utl::Logger* logger)
+defin::defin(dbDatabase* db,utl::Logger* logger, bool floorplan)
 {
-  _reader = new definReader(db, logger);
+  if(floorplan)
+    _reader = new definReader(db, logger, definBase::FLOORPLAN);
+  else
+    _reader = new definReader(db, logger);
 }
 
 defin::~defin()

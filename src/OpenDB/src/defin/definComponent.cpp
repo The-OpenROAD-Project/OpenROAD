@@ -152,17 +152,21 @@ void definComponent::begin(const char* iname, const char* mname)
     _errors++;
     return;
   }
+  if(_mode == FLOORPLAN && _block->findInst(iname) != nullptr)
+    _cur_inst = _block->findInst(iname);
+  else{
+    _cur_inst = dbInst::create(_block, master, iname);
+    _inst_cnt++;
+  }
 
-  _cur_inst = dbInst::create(_block, master, iname);
-
-  if (_cur_inst == NULL) {
+  if (_cur_inst == nullptr) {
+    --_inst_cnt;
     _logger->warn(utl::ODB, 93,  "error: duplicate instance definition({})", iname);
     _errors++;
     return;
   }
 
   _iterm_cnt += master->getMTermCount();
-  _inst_cnt++;
   if (_inst_cnt % 100000 == 0)
     _logger->info(utl::ODB, 94,  "\t\tCreated {} Insts", _inst_cnt);
 }
@@ -239,6 +243,8 @@ void definComponent::region(const char* name)
 
   if (region == NULL)
     region = dbRegion::create(_block, name);
+  else if(_mode == FLOORPLAN && _cur_inst->getRegion() == region)
+    return;
 
   region->addInst(_cur_inst);
 }

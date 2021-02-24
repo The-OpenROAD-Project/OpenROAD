@@ -75,6 +75,11 @@ void definBase::setLogger(utl::Logger* logger)
   _logger  = logger;
 }
 
+void definBase::setMode(MODE mode)
+{
+  _mode = mode;
+}
+
 dbOrientType definBase::translate_orientation(int orient)
 {
   switch (orient) {

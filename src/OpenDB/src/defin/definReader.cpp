@@ -94,13 +94,14 @@ class DefHeader
   static DefHeader* getDefHeader(const char* file);
 };
 
-definReader::definReader(dbDatabase* db, utl::Logger* logger)
+definReader::definReader(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
   _db                 = db;
   _block_name         = NULL;
   _continue_on_errors = false;
 
   definBase::setLogger(logger);
+  definBase::setMode(mode);
 
   _blockageR         = new definBlockage;
   _componentR        = new definComponent;
@@ -231,6 +232,7 @@ void definReader::init()
   for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr){
     (*itr)->init();
     (*itr)->setLogger(_logger);
+    (*itr)->setMode(_mode);
   }
   _update = false;
 }
@@ -425,7 +427,7 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
 
   const defiPoints points = box->getPoint();
 
-  if (!reader->_update) {
+  if (reader->_mode == DEFAULT || reader->_mode == FLOORPLAN) {
     std::vector<Point> P;
     reader->translate(points, P);
 
@@ -1610,25 +1612,31 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
 
   if (hdr == NULL)
     return NULL;
-
-  if (_db->getChip()) {
+  dbChip* chip = _db->getChip();
+  if (_mode == FLOORPLAN){
+    if(chip == nullptr)
+      _logger->error(utl::ODB, 0, "No chip created for floorplan initialization");
+  } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return NULL;
-  }
+  } else
+    chip = dbChip::create(_db);
 
-  dbChip* chip = dbChip::create(_db);
   assert(chip);
-
-  if (_block_name)
-    _block = dbBlock::create(chip, _block_name, hdr->_hier_delimeter);
-  else
-    _block = dbBlock::create(chip, hdr->_design, hdr->_hier_delimeter);
+  if(_mode == FLOORPLAN)
+    _block = chip->getBlock();
+  else{
+    if (_block_name)
+      _block = dbBlock::create(chip, _block_name, hdr->_hier_delimeter);
+    else
+      _block = dbBlock::create(chip, hdr->_design, hdr->_hier_delimeter);
+  }
 
   assert(_block);
   setBlock(_block);
   setTech(_db->getTech());
-
-  _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
+  if(_mode != FLOORPLAN)
+    _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
 
   _logger->info(utl::ODB, 127,  "Reading DEF file: {}", file);
   _logger->info(utl::ODB, 128,  "Design: {}", hdr->_design);
@@ -1789,40 +1797,46 @@ bool definReader::createBlock(const char* file)
   defrReset();
 
   defrInitSession();
-
-  defrSetPropCbk(propCallback);
-  defrSetPropDefEndCbk(propEndCallback);
-  defrSetPropDefStartCbk(propStartCallback);
-  defrSetBlockageCbk(blockageCallback);
+  // FOR DEFAULT || FLOORPLAN || INCR
   defrSetComponentCbk(componentsCallback);
   defrSetComponentMaskShiftLayerCbk(componentMaskShiftCallback);
-  defrSetDieAreaCbk(dieAreaCallback);
-  defrSetExtensionCbk(extensionCallback);
-  defrSetFillStartCbk(fillsCallback);
-  defrSetFillCbk(fillCallback);
-  defrSetGcellGridCbk(gcellGridCallback);
-  defrSetGroupCbk(groupCallback);
-  defrSetGroupMemberCbk(groupMemberCallback);
-  defrSetGroupNameCbk(groupNameCallback);
-  defrSetHistoryCbk(historyCallback);
-  defrSetNetCbk(netCallback);
-  defrSetNonDefaultCbk(nonDefaultRuleCallback);
-  defrSetPinCbk(pinCallback);
-  defrSetPinEndCbk(pinsEndCallback);
-  defrSetPinPropCbk(pinPropCallback);
-  defrSetRegionCbk(regionCallback);
-  defrSetRowCbk(rowCallback);
-  defrSetScanchainsStartCbk(scanchainsCallback);
-  defrSetSlotStartCbk(slotsCallback);
-  defrSetSNetCbk(specialNetCallback);
-  defrSetStartPinsCbk(pinsStartCallback);
-  defrSetStylesStartCbk(stylesCallback);
-  defrSetTechnologyCbk(technologyCallback);
-  defrSetTrackCbk(trackCallback);
-  defrSetUnitsCbk(unitsCallback);
-  defrSetViaCbk(viaCallback);
+  
+  if(_mode == DEFAULT || _mode == FLOORPLAN)
+  {
+    defrSetPropCbk(propCallback);
+    defrSetPropDefEndCbk(propEndCallback);
+    defrSetPropDefStartCbk(propStartCallback);
+    defrSetBlockageCbk(blockageCallback);
+    
+    defrSetDieAreaCbk(dieAreaCallback);
+    defrSetExtensionCbk(extensionCallback);
+    defrSetFillStartCbk(fillsCallback);
+    defrSetFillCbk(fillCallback);
+    defrSetGcellGridCbk(gcellGridCallback);
+    defrSetGroupCbk(groupCallback);
+    defrSetGroupMemberCbk(groupMemberCallback);
+    defrSetGroupNameCbk(groupNameCallback);
+    defrSetHistoryCbk(historyCallback);
+    defrSetNetCbk(netCallback);
+    defrSetNonDefaultCbk(nonDefaultRuleCallback);
+    defrSetPinCbk(pinCallback);
+    defrSetPinEndCbk(pinsEndCallback);
+    defrSetPinPropCbk(pinPropCallback);
+    defrSetRegionCbk(regionCallback);
+    defrSetRowCbk(rowCallback);
+    defrSetScanchainsStartCbk(scanchainsCallback);
+    defrSetSlotStartCbk(slotsCallback);
+    defrSetSNetCbk(specialNetCallback);
+    defrSetStartPinsCbk(pinsStartCallback);
+    defrSetStylesStartCbk(stylesCallback);
+    defrSetTechnologyCbk(technologyCallback);
+    defrSetTrackCbk(trackCallback);
+    defrSetUnitsCbk(unitsCallback);
+    defrSetViaCbk(viaCallback);
+    
+    defrSetAddPathToNet();
+  }
 
-  defrSetAddPathToNet();
 
   int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
   if (res != 0 || _errors != 0) {
