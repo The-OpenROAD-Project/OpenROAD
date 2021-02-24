@@ -373,39 +373,40 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 }
 
-void IOPlacer::createSections()
+void IOPlacer::createSectionsPerEdge(Edge edge)
 {
-  Point lb = core_.getBoundary().ll();
-  Point ub = core_.getBoundary().ur();
-
-  SlotVector& slots = slots_;
-  sections_.clear();
-  int num_slots = slots.size();
-  int begin_slot = 0;
-  int end_slot = 0;
-
-  int slots_per_edge = num_slots / slots_per_section_;
-  if (slots_per_edge < 4) {
-    slots_per_section_ = num_slots / 4;
-    logger_->warn(PPL,
-                  34,
-                  "Redefining the number of slots per section to have at least "
-                  "one section per edge");
+  int edge_begin;
+  for (int i = 0; i < slots_.size(); i++) {
+    if (slots_[i].edge == edge) {
+      edge_begin = i;
+      break;
+    }
   }
 
-  while (end_slot < num_slots) {
-    int blocked_slots = 0;
-    end_slot = begin_slot + slots_per_section_ - 1;
-    if (end_slot > num_slots) {
-      end_slot = num_slots;
+  int edge_end = -1;
+  for (int i = edge_begin; i < slots_.size(); i++) {
+    if (slots_[i].edge != edge) {
+      edge_end = i-1;
+      break;
     }
-    for (int i = begin_slot; i < end_slot; ++i) {
-      if (slots[i].blocked) {
+    edge_end = i;
+  }
+
+  int begin_slot = 0;
+  int end_slot = 0;
+  while (end_slot < edge_end) {
+    int blocked_slots = 0;
+    end_slot = edge_begin + slots_per_section_ - 1;
+    if (end_slot > edge_end) {
+      end_slot = edge_end;
+    }
+    for (int i = edge_begin; i < end_slot; ++i) {
+      if (slots_[i].blocked) {
         blocked_slots++;
       }
     }
-    int mid_point = (end_slot - begin_slot) / 2;
-    Section n_sec = {slots.at(begin_slot + mid_point).pos};
+    int mid_point = (end_slot - edge_begin) / 2;
+    Section n_sec = {slots_.at(edge_begin + mid_point).pos};
     if (usage_per_section_ > 1.f) {
       logger_->warn(PPL, 35, "section usage exeeded max");
       usage_per_section_ = 1.;
@@ -418,26 +419,36 @@ void IOPlacer::createSections()
         slots_per_section_ *= 1.1;
       }
     }
-    n_sec.num_slots = end_slot - begin_slot - blocked_slots;
+    n_sec.num_slots = end_slot - edge_begin - blocked_slots;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots");
     }
-    n_sec.begin_slot = begin_slot;
+    n_sec.begin_slot = edge_begin;
     n_sec.end_slot = end_slot;
     n_sec.max_slots = n_sec.num_slots * usage_per_section_;
     n_sec.cur_slots = 0;
-    if (n_sec.pos.x() == lb.x()) {
-      n_sec.edge = Edge::left;
-    } else if (n_sec.pos.x() == ub.x()) {
-      n_sec.edge = Edge::right;
-    } else if (n_sec.pos.y() == lb.y()) {
-      n_sec.edge = Edge::bottom;
-    } else if (n_sec.pos.y() == ub.y()) {
-      n_sec.edge = Edge::top;
-    }
+    n_sec.edge = edge;
+
     sections_.push_back(n_sec);
-    begin_slot = ++end_slot;
+    edge_begin = ++end_slot;
   }
+}
+
+void IOPlacer::createSections()
+{
+  Point lb = core_.getBoundary().ll();
+  Point ub = core_.getBoundary().ur();
+
+  SlotVector& slots = slots_;
+  sections_.clear();
+  int num_slots = slots.size();
+  int begin_slot = 0;
+  int end_slot = 0;
+
+  createSectionsPerEdge(Edge::bottom);
+  createSectionsPerEdge(Edge::right);
+  createSectionsPerEdge(Edge::top);
+  createSectionsPerEdge(Edge::left);
 }
 
 int IOPlacer::assignGroupsToSections()
