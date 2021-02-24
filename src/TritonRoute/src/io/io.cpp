@@ -1838,7 +1838,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         frLayerNum layerNum = -1;
         string layer = obs->getTechLayer()->getName();
         if (tech->name2layer.find(layer) == tech->name2layer.end()) {
-          auto type = box->getTechLayer()->getType();
+          auto type = obs->getTechLayer()->getType();
           if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
             logger->warn(DRT,
                         123,
