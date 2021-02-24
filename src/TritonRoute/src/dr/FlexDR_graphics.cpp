@@ -159,14 +159,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
             grid_graph_->getPoint(pt, x, y);
 
             if (x != x_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::E) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || !prefIsVert && grid_graph_->hasGridCostE(x, y, z))) {
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
               frPoint pt2;
               grid_graph_->getPoint(pt2, x + 1, y);
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
             }
 
             if (y != y_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::N) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || prefIsVert && grid_graph_->hasGridCostN(x, y, z))) {
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
               frPoint pt2;
               grid_graph_->getPoint(pt2, x, y + 1);
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
@@ -198,8 +198,8 @@ void FlexDRGraphics::update(){
 }
   
 void FlexDRGraphics::pause(drNet* net){
-    if (!settings_->allowPause || net && !settings_->netName.empty() &&
-        net->getFrNet()->getName() != settings_->netName) {
+    if (!settings_->allowPause || (net && !settings_->netName.empty() &&
+                 net->getFrNet()->getName() != settings_->netName)) {
       return;
     }
     gui_->pause();

@@ -2210,43 +2210,50 @@ namespace fr {
   public:
 
     frViaDef* getPrefVia(int z){
-        if (z >= vias_.size() || vias_[z].empty()) 
+        if (z >= (int) vias_.size() || vias_[z].empty()) {
           return nullptr;
+        }
         return vias_[z][0];
     }
     void setWidth(frCoord w, int z){
-        if (z >= widths_.size()) 
+        if (z >= (int) widths_.size()) {
           widths_.resize(z+1, 0);
+        }
         widths_[z] = w;
     }
     
     void setSpacing(frCoord s, int z){
-        if (z >= spacings_.size()) 
+        if (z >= (int) spacings_.size()) {
           spacings_.resize(z+1, 0);
+        }
         spacings_[z] = s;
     }
     
     void setMinCuts(int ncuts, int z){
-        if (z >= minCuts_.size())
+        if (z >= (int) minCuts_.size()) {
           minCuts_.resize(z+1, 1);
+        }
         minCuts_[z] = ncuts;
     }
 
     void setWireExtension(frCoord we, int z){
-        if (z >= wireExtensions_.size()) 
+        if (z >= (int) wireExtensions_.size()) {
           wireExtensions_.resize(z+1, 0);
+        }
         wireExtensions_[z] = we;
     }
 
     void addVia(frViaDef* via, int z){
-        if (z >= vias_.size()) 
+        if (z >= (int) vias_.size()) {
           vias_.resize(z+1, vector<frViaDef*>());
+        }
         vias_[z].push_back(via);
     }
 
     void addViaRule(frViaRuleGenerate* via, int z){
-        if (z >= viasRules_.size()) 
+        if (z >= (int) viasRules_.size()) {
           viasRules_.resize(z+1, vector<frViaRuleGenerate*>());
+        }
         viasRules_[z].push_back(via);
     }
     
@@ -2263,26 +2270,30 @@ namespace fr {
     }
     
     frCoord getWidth(int z) const{
-        if (z >= widths_.size()) 
+        if (z >= (int) widths_.size()) {
           return 0;
+        }
         return widths_[z];
     }
     
     frCoord getSpacing(int z) const{
-        if (z >= spacings_.size()) 
+        if (z >= (int) spacings_.size()) {
           return 0;
+        }
         return spacings_[z];
     }
     
     frCoord getWireExtension(int z) const{
-        if (z >= wireExtensions_.size()) 
+        if (z >= (int) wireExtensions_.size()) {
           return 0;
+        }
         return wireExtensions_[z];
     }
     
     int getMinCuts(int z) const{
-        if (z >= minCuts_.size()) 
+        if (z >= (int) minCuts_.size()) {
           return 1;
+        }
         return minCuts_[z];
     }
     
