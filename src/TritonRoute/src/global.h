@@ -83,6 +83,7 @@ extern int MINNUMACCESSPOINT_STDCELLPIN;
 extern int ACCESS_PATTERN_END_ITERATION_NUM;
 
 extern int END_ITERATION;
+extern int NDR_NETS_RIPUP_THRESH;
 
 extern fr::frUInt4 TAVIACOST;
 extern fr::frUInt4 TAPINCOST;
@@ -122,6 +123,7 @@ namespace fr {
   frCoord getGCELLGRIDY();
   frCoord getGCELLOFFSETX();
   frCoord getGCELLOFFSETY();
+  
 
   // These need to be in the fr namespace to support argument-dependent
   // lookup
