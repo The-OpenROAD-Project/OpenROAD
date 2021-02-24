@@ -78,6 +78,5 @@ Found 0 macro blocks.
 [INFO PPL-0007]  * Usage Per Section     0.8
 [INFO PPL-0008]  * Usage Increase Factor 0.01
 [INFO PPL-0009]  * Force Pin Spread      true
-[WARNING PPL-0034] Redefining the number of slots per section to have at least one section per edge
 Successfully assigned I/O pins
 No differences found.
