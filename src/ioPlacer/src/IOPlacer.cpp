@@ -858,6 +858,7 @@ void IOPlacer::run(bool random_mode)
       i++;
     }
   }
+
   for (int i = 0; i < assignment_.size(); ++i) {
     updateOrientation(assignment_[i]);
     updatePinArea(assignment_[i]);
@@ -891,8 +892,8 @@ void IOPlacer::populateIOPlacer(std::set<int> hor_layer_idx,
 {
   tech_ = db_->getTech();
   block_ = db_->getChip()->getBlock();
-  initNetlist();
   initCore(hor_layer_idx, ver_layer_idx);
+  initNetlist();
 }
 
 void IOPlacer::initCore(std::set<int> hor_layer_idxs,
@@ -974,6 +975,10 @@ void IOPlacer::initCore(std::set<int> hor_layer_idxs,
 
 void IOPlacer::initNetlist()
 {
+  const Rect& coreBoundary = core_.getBoundary();
+  int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
+  int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;
+
   odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
 
   for (odb::dbBTerm* b_term : bterms) {
@@ -1012,7 +1017,14 @@ void IOPlacer::initNetlist()
     for (i_iter = iterms.begin(); i_iter != iterms.end(); ++i_iter) {
       odb::dbITerm* cur_i_term = *i_iter;
       int x, y;
-      cur_i_term->getAvgXY(&x, &y);
+
+      if (cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::NONE ||
+          cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::UNPLACED) {
+        x = x_center;
+        y = y_center;
+      } else {
+        cur_i_term->getAvgXY(&x, &y);
+      }
 
       inst_pins.push_back(
           InstancePin(cur_i_term->getInst()->getConstName(), Point(x, y)));
