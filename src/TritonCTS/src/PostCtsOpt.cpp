@@ -137,15 +137,16 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
                                       tolerance,
                                       outSlew,
                                       outCap);
-
-      _techChar->reportSegment(key);
+      if (_logger->debugCheck(utl::CTS, "HTree", 3)) {
+        _techChar->reportSegment(key);
+      }
       inputCap = std::max(outCap, inputCap);
       inputSlew = outSlew;
       segments.push_back(key);
     }
   }
-  SegmentBuilder builder("clkbuf_opt_" + std::to_string(bufIndex) + " " + _clock->getName(),
-                      "clknet_opt_" + std::to_string(bufIndex) + "_" + _clock->getName(),
+  SegmentBuilder builder("clkbuf_opt_" + std::to_string(bufIndex) + "_",
+                      "clknet_opt_" + std::to_string(bufIndex) + "_",
                       driverLoc, sinkLoc, segments, *_clock,
                       net, *_techChar, wireSegmentUnit);
   bufIndex++;

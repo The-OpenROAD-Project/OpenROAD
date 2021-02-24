@@ -69,16 +69,6 @@ TritonCTS forced slew degradation on these wires.
  * Post CTS opt *
  ****************
 [INFO CTS-0036]  Avg. source sink dist: 36812.45 dbu.
-    Key: 27 outSlew: 2 load: 1 length: 4 isBuffered: true
-    Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
-    Key: 61 outSlew: 3 load: 1 length: 4 isBuffered: false
-    Key: 27 outSlew: 2 load: 1 length: 4 isBuffered: true
-    Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
-    Key: 61 outSlew: 3 load: 1 length: 4 isBuffered: false
-    Key: 27 outSlew: 2 load: 1 length: 4 isBuffered: true
-    Key: 24 outSlew: 2 load: 1 length: 4 isBuffered: false
-    Key: 61 outSlew: 3 load: 1 length: 4 isBuffered: false
-    Key: 27 outSlew: 2 load: 1 length: 4 isBuffered: true
 [INFO CTS-0037]  Num outlier sinks: 1
  ********************
  * Write data to DB *
