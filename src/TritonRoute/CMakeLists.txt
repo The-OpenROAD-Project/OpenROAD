@@ -70,6 +70,7 @@ target_sources(TritonRoute
     src/dr/FlexDR_conn.cpp
     src/dr/FlexDR_init.cpp
     src/dr/FlexDR.cpp
+    src/db/drObj/drNet.cpp
     src/dr/FlexDR_maze.cpp
     src/dr/FlexGridGraph_maze.cpp
     src/dr/FlexGridGraph.cpp

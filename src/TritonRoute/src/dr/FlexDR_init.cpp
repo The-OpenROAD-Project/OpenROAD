@@ -3253,6 +3253,23 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
   set<frNet*> movableAggressorNets;
   set<frBlockObject*> movableAggressorOwners;
 
+  int n_NDnets = 0, n_dNets = 0;
+  if (design_->getTech()->hasNondefaultRules()){
+    for (auto& a : marker->getSrcs()){
+        if (a->typeId() == frcNet){
+            auto fNet = static_cast<frNet*>(a);
+            if (getDRNets(fNet)) {
+              for (auto dNet: *(getDRNets(fNet))) {
+                if (!canRipup(dNet)) {
+                  continue;
+                }
+                if (dNet->hasNDR()) n_NDnets++;
+                else n_dNets++;
+              }
+            }
+        }
+    }
+  }
   for (auto &aggressorPair: markerAggressors) {
     auto &aggressor = aggressorPair.first;
     if (aggressor && aggressor->typeId() == frcNet) {
@@ -3261,7 +3278,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
         movableAggressorNets.insert(fNet);
         if (getDRNets(fNet)) {
           for (auto dNet: *(getDRNets(fNet))) {
-            if (dNet->getNumReroutes() >= getMazeEndIter()) {
+            if (!canRipup(dNet)) {
               continue;
             }
             movableAggressorOwners.insert(aggressor);
@@ -3279,7 +3296,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
         // int subNetIdx = -1;
         for (auto dNet: *(getDRNets(fNet))) {
           // subNetIdx++;
-          if (dNet->getNumReroutes() >= getMazeEndIter()) {
+          if (!canRipup(dNet)) {
             continue;
           }
           // rerouteQueue.push_back(make_pair(dNet, make_pair(true, dNet->getNumReroutes())));
@@ -3327,7 +3344,7 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
           if (getDRNets(fNet)) {
             // int subNetIdx = -1;
             for (auto dNet: *(getDRNets(fNet))) {
-              if (dNet->getNumReroutes() >= getMazeEndIter()) {
+              if (!canRipup(dNet)) {
                 continue;
               }
               if (uniqueAggressors.find(fNet) == uniqueAggressors.end()) {
@@ -3360,7 +3377,6 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
       }
     }
   }
-
   // add to victims and aggressors as appropriate
   for (auto &aggressorOwner: uniqueAggressorOwners) {
     if (aggressorOwner && aggressorOwner->typeId() == frcNet) {
@@ -3368,8 +3384,15 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
       if (fNet->getType() == frNetEnum::frcNormalNet || fNet->getType() == frNetEnum::frcClockNet) {
         if (getDRNets(fNet)) {
           for (auto dNet: *(getDRNets(fNet))) {
-            if (dNet->getNumReroutes() >= getMazeEndIter()) {
+            if (!canRipup(dNet)) {
               continue;
+            }
+            if (dNet->hasNDR() && n_NDnets == 1 && n_dNets > 0){
+                if (dNet->getNdrRipupThresh() < NDR_NETS_RIPUP_THRESH) {
+                    dNet->incNdrRipupThresh();
+                    continue;
+                }
+                dNet->setNdrRipupThresh(0);
             }
             routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
@@ -3382,6 +3405,11 @@ void FlexDRWorker::route_queue_update_from_marker(frMarker *marker,
     checks.push_back({victimOwner, -1, false});
   }
 
+}
+
+bool FlexDRWorker::canRipup(drNet* n){
+    if (n->getNumReroutes() >= getMazeEndIter()) return false;
+    return true;
 }
 
 void FlexDRWorker::route_queue_update_queue(const vector<unique_ptr<frMarker> > &markers,
@@ -3560,7 +3588,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
         }
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3, true);
+          modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true,  false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
           modEolSpacingCost(box, zIdx, 3);
@@ -3580,7 +3608,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
 
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3, true);
+          modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true,  false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
           modEolSpacingCost(box, zIdx, 3);
@@ -3604,7 +3632,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
           // unblock planar edge for obs over pin, ap will unblock via edge for legal pin access
           modBlockedPlanar(box, zIdx, false);
           if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-            modMinSpacingCostPlaner(box, zIdx, 3, true);
+            modMinSpacingCostPlanar(box, zIdx, 3, true);
             modEolSpacingCost(box, zIdx, 3);
           }
         } else {
@@ -3619,7 +3647,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
           cout <<"  initMazeCost_snet " <<ps->getNet()->getName() <<endl;
         }
         // assume only routing layer
-        modMinSpacingCostPlaner(box, zIdx, 3);
+        modMinSpacingCostPlanar(box, zIdx, 3);
         modMinSpacingCostVia(box, zIdx, 3, true,  true);
         modMinSpacingCostVia(box, zIdx, 3, false, true);
         modEolSpacingCost(box, zIdx, 3);
@@ -3636,7 +3664,7 @@ void FlexDRWorker::initMazeCost_fixedObj() {
         }
         if (isRoutingLayer) {
           // assume only routing layer
-          modMinSpacingCostPlaner(box, zIdx, 3);
+          modMinSpacingCostPlanar(box, zIdx, 3);
           modMinSpacingCostVia(box, zIdx, 3, true,  false);
           modMinSpacingCostVia(box, zIdx, 3, false, false);
           modEolSpacingCost(box, zIdx, 3);
@@ -3704,7 +3732,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             int type = isAddPathCost ? 3 : 2;
 
             if (isRoutingLayer) {
-              modMinSpacingCostPlaner(box, zIdx, type);
+              modMinSpacingCostPlanar(box, zIdx, type);
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true,  false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);
@@ -3762,7 +3790,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*> &objs, bool isAd
             int type = isAddPathCost ? 3 : 2;
 
             if (isRoutingLayer) {
-              modMinSpacingCostPlaner(box, zIdx, type);
+              modMinSpacingCostPlanar(box, zIdx, type);
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true,  false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);

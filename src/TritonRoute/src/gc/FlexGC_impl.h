@@ -169,15 +169,16 @@ namespace fr {
     void updateGCWorker();
 
     void checkMetalSpacing();
-    frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum);
+    frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum, bool isNDR=true);
     void myBloat(const gtl::rectangle_data<frCoord> &rect, frCoord val, box_t &box);
-    void checkMetalSpacing_main(gcRect* rect);
-    void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2);
+    void checkMetalSpacing_main(gcRect* rect, bool isNDR=true);
+    void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool isNDR=true);
     void checkMetalSpacing_short(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
     bool checkMetalSpacing_short_skipOBSPin(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
     frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gcRect* rect2, frCoord prl);
     bool checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, int type, frCoord prl);
-    void checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, frCoord prl, frCoord distX, frCoord distY);
+    void checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, 
+                                frCoord prl, frCoord distX, frCoord distY, bool isNDR=true);
     box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner, frCoord &maxSpcValX, frCoord &maxSpcValY);
     void checkMetalCornerSpacing();
     void checkMetalCornerSpacing_getMaxSpcVal(frLayerNum layerNum, frCoord &maxSpcValX, frCoord &maxSpcValY);
