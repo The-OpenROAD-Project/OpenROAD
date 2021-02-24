@@ -37,6 +37,10 @@
 
 namespace fr {
 
+const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
+const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
+const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
+
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
@@ -63,6 +67,10 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     }
   }
 
+  gui_->addCustomVisibilityControl(grid_graph_visible_);
+  gui_->addCustomVisibilityControl(route_guides_visible_, true);
+  gui_->addCustomVisibilityControl(routing_objs_visible_, true);
+
   gui_->registerRenderer(this);
 }
 
@@ -81,7 +89,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->areRoutingObjsVisible()){
+  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)){
     auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
     worker_->getRouteBox(box);
@@ -126,7 +134,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (gui_->areRouteGuidesVisible()){
+  if (gui_->checkCustomVisibilityControl(route_guides_visible_)){
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -148,7 +156,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   // Draw graphs
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
     frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    if (gui_->isGridGraphVisible()){
+    if (gui_->checkCustomVisibilityControl(grid_graph_visible_)){
         const int offset = 50;
         const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
         frMIdx x_dim, y_dim, z_dim;
