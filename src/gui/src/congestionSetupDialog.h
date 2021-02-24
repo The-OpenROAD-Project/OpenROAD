@@ -60,12 +60,10 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
  public slots:
   void accept() override;
   void reject() override;
-
-  void designLoaded(odb::dbBlock* block);
   void colorIntervalChanged(int value);
   void colorIntervalItemDblClicked(QListWidgetItem* item);
 
-  void congestionStartValueChanged(int value);
+  void congestionBandChanged(int value);
 
   void saveState();
   bool showHorizontalCongestion() const { return horCongDir->isChecked(); }
@@ -74,28 +72,20 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   {
     return startCongestionSpinBox->value();
   }
+  int showEndCongestionValue() const { return endCongestionSpinBox->value(); }
 
-  int showCongestionFrom() const { return min_congestion_; }
-  float getMinCongestionToShow() const
-  {
-    return showCongestionFrom() + showStartCongestionValue();
-  }
   QColor getCongestionColorForPercentage(float percent, int alpha = 100) const;
 
  private:
   struct CongestionBandInfo
   {
     CongestionBandInfo(const QString band_color = "",
-                       const std::string style_sheet = "",
-                       int ulimit = 100)
-        : band_color_(band_color),
-          color_style_sheet_(style_sheet),
-          band_ulimit_(ulimit)
+                       const std::string style_sheet = "")
+        : band_color_(band_color), color_style_sheet_(style_sheet)
     {
     }
     QColor band_color_;
     std::string color_style_sheet_;  // To be Used on Color Gradient Button
-    int band_ulimit_;
   };
 
   enum GCellDirection
@@ -117,6 +107,7 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
 
   // Dialog State
   int min_congestion_;
+  int max_congestion_;
   QVector<QColor> colors_;
   GCellDirection cong_dir_index_;
 

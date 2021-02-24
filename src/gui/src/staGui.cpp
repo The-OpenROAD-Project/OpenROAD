@@ -34,48 +34,47 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "staGui.h"
-#include "openroad/OpenRoad.hh"
-
-#include "db_sta/dbSta.hh"
-#include "db_sta/dbNetwork.hh"
-
-#include "sta/Graph.hh"
-#include "sta/Sta.hh"
-#include "sta/Network.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sdc.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Corner.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathRef.hh"
-#include "sta/Search.hh"
 
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "openroad/OpenRoad.hh"
+#include "sta/Corner.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/PathEnd.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PathRef.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
+#include "sta/Search.hh"
+#include "sta/Sta.hh"
+
 namespace gui {
-  //helper functions
-float
-getRequiredTime(sta::dbSta* staRoot, sta::Pin* term, bool is_rise,
-                    sta::PathAnalysisPt* path_ap)
+// helper functions
+float getRequiredTime(sta::dbSta* staRoot,
+                      sta::Pin* term,
+                      bool is_rise,
+                      sta::PathAnalysisPt* path_ap)
 {
-    auto vert = staRoot->getDbNetwork()->graph()->pinLoadVertex(term);
-    auto req  = staRoot->vertexRequired(
-        vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
-    if (sta::delayInf(req))
-    {
-        return 0;
-    }
-    return req;
+  auto vert = staRoot->getDbNetwork()->graph()->pinLoadVertex(term);
+  auto req = staRoot->vertexRequired(
+      vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
+  if (sta::delayInf(req)) {
+    return 0;
+  }
+  return req;
 }
-}
+}  // namespace gui
 
 using namespace gui;
 
-
 staGui::staGui(ord::OpenRoad* oprd) : or_(oprd)
-{}
+{
+}
 
 // Get the network for commands.
 void staGui::findInstances(std::string pattern,
@@ -158,19 +157,29 @@ bool staGui::getPaths(std::vector<guiTimingPath*>& paths,
 
   sta::PathEndSeq* path_ends
       = sta_->search()->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr, nullptr, nullptr, false,
+          nullptr,
+          nullptr,
+          nullptr,
+          false,
           // corner, min_max,
           sta_->findCorner("default"),
           get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
           // group_count, endpoint_count, unique_pins
-          path_count, path_count, true,
-          -sta::INF, sta::INF,  // slack_min, slack_max,
+          path_count,
+          path_count,
+          true,
+          -sta::INF,
+          sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
           nullptr,   // group_names
           // setup, hold, recovery, removal,
-          true, true, true, true,
+          true,
+          true,
+          true,
+          true,
           // clk_gating_setup, clk_gating_hold
-          true, true);
+          true,
+          true);
 
   bool first_path = true;
   for (auto& path_end : *path_ends) {

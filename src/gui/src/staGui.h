@@ -44,8 +44,7 @@ class Instance;
 class Net;
 class Pin;
 }  // namespace sta
-namespace gui
-{
+namespace gui {
 class guiTimingPath;
 class staGui
 {
@@ -70,11 +69,15 @@ class staGui
 class guiTimingNode
 {
  public:
-  guiTimingNode(odb::dbObject* pin, bool isRising,
-                float arrival, float required,
+  guiTimingNode(odb::dbObject* pin,
+                bool isRising,
+                float arrival,
+                float required,
                 float slack)
-      : pin_(pin), isRising_(isRising),
-        arrival_(arrival), required_(required),
+      : pin_(pin),
+        isRising_(isRising),
+        arrival_(arrival),
+        required_(required),
         slack_(slack)
   {
   }
@@ -91,5 +94,4 @@ class guiTimingPath
  public:
   std::vector<guiTimingNode> nodes;
 };
-}// namespace gui
-
+}  // namespace gui

@@ -146,6 +146,7 @@ class DisplayControls : public QDockWidget, public Options
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
   float getMinCongestionToShow() const override;
+  float getMaxCongestionToShow() const override;
   QColor getCongestionColor(float congestion) const override;
 
  signals:

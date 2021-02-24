@@ -602,6 +602,7 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
+  auto max_congestion_to_show = options_->getMaxCongestionToShow();
   for (auto& gcell_data : gcell_congestion_data_) {
     auto gcell_rect = gcell_data.first;
     if (!gcell_rect.intersects(bounds))
@@ -627,7 +628,8 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
     else
       congestion = ver_congestion;
 
-    if (congestion == -1 || congestion < min_congestion_to_show)
+    if (congestion <= 0 || congestion < min_congestion_to_show
+        || congestion > max_congestion_to_show)
       continue;
 
     auto gcell_color = options_->getCongestionColor(congestion);

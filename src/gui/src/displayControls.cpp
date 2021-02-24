@@ -478,7 +478,12 @@ bool DisplayControls::showVerticalCongestion() const
 
 float DisplayControls::getMinCongestionToShow() const
 {
-  return congestion_dialog_->getMinCongestionToShow();
+  return congestion_dialog_->showStartCongestionValue();
+}
+
+float DisplayControls::getMaxCongestionToShow() const
+{
+  return congestion_dialog_->showEndCongestionValue();
 }
 
 QColor DisplayControls::getCongestionColor(float congestion) const
