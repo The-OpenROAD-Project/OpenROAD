@@ -221,6 +221,7 @@ void IOPlacer::initIOLists()
       netlist_io_pins_.addIONet(io_pin, inst_pins_vector);
     } else {
       zero_sink_ios_.push_back(io_pin);
+      netlist_io_pins_.addIONet(io_pin, inst_pins_vector);
     }
     idx++;
   }
@@ -333,9 +334,6 @@ void IOPlacer::defineSlots()
   int lb_y = lb.y();
   int ub_x = ub.x();
   int ub_y = ub.y();
-
-  int offset = parms_->getBoundariesOffset();
-  offset *= core_.getDatabaseUnit();
 
   /*******************************************
    *  Order of the edges when creating slots  *
@@ -855,18 +853,6 @@ void IOPlacer::run(bool random_mode)
 
     for (int idx = 0; idx < hg_vec.size(); idx++) {
       hg_vec[idx].getFinalAssignment(assignment_);
-    }
-
-    int i = 0;
-    while (zero_sink_ios_.size() > 0 && i < slots_.size()) {
-      if (!slots_[i].used && !slots_[i].blocked) {
-        slots_[i].used = true;
-        zero_sink_ios_[0].setPos(slots_[i].pos);
-        zero_sink_ios_[0].setLayer(slots_[i].layer);
-        assignment_.push_back(zero_sink_ios_[0]);
-        zero_sink_ios_.erase(zero_sink_ios_.begin());
-      }
-      i++;
     }
   }
 

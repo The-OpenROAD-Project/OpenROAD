@@ -154,7 +154,7 @@ proc place_pins { args } {
     utl::error PPL 18 "-ver_layers is required."
   }
 
-  set offset 5
+  set offset 1
   if [info exists keys(-boundaries_offset)] {
     set offset $keys(-boundaries_offset)
     ppl::set_boundaries_offset $offset
