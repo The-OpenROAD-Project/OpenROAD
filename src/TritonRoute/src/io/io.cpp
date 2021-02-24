@@ -1806,12 +1806,14 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             frLayerNum layerNum = -1;
             string layer = box->getTechLayer()->getName();
             if (tech->name2layer.find(layer) == tech->name2layer.end()){
-              logger->warn(DRT,
-                           122,
-                           "layer {} is skipped for {}/{}",
-                           layer,
-                           tmpBlock->getName(),
-                           _term->getName());
+              auto type = box->getTechLayer()->getType();
+              if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+                logger->warn(DRT,
+                            122,
+                            "layer {} is skipped for {}/{}",
+                            layer,
+                            tmpBlock->getName(),
+                            _term->getName());
               continue;
             }
             else
@@ -1836,11 +1838,13 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         frLayerNum layerNum = -1;
         string layer = obs->getTechLayer()->getName();
         if (tech->name2layer.find(layer) == tech->name2layer.end()) {
-          logger->warn(DRT,
-                       123,
-                       "layer {} is skipped for {}/OBS",
-                       layer,
-                       tmpBlock->getName());
+          auto type = box->getTechLayer()->getType();
+          if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+            logger->warn(DRT,
+                        123,
+                        "layer {} is skipped for {}/OBS",
+                        layer,
+                        tmpBlock->getName());
           continue;
         } else
           layerNum = tech->name2layer.at(layer)->getLayerNum();
