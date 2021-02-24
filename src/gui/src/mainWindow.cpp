@@ -67,6 +67,7 @@ MainWindow::MainWindow(QWidget* parent)
   move(size.width() * 0.1, size.height() * 0.1);
 
   find_dialog_ = new FindObjectDialog(this);
+  timing_dialog_ = new TimingDebugDialog(this);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
@@ -192,6 +193,9 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
+  timing_debug_ = new QAction("Timing ...", this);
+  timing_debug_->setShortcut(QString("Ctrl+T"));
+
   congestion_setup_ = new QAction("Congestion Setup...");
   connect(congestion_setup_,
           SIGNAL(triggered()),
@@ -203,6 +207,7 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
 }
 
 void MainWindow::createMenus()
@@ -215,6 +220,7 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
+  view_menu_->addAction(timing_debug_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
@@ -229,6 +235,7 @@ void MainWindow::createToolbars()
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
   view_tool_bar_->addAction(congestion_setup_);
+  view_tool_bar_->addAction(timing_debug_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
@@ -372,6 +379,11 @@ void MainWindow::showFindDialog()
   if (getBlock() == nullptr)
     return;
   find_dialog_->exec();
+}
+
+void MainWindow::showTimingDialog()
+{
+  timing_dialog_->show();
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
