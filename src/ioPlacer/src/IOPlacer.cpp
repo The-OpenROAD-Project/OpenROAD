@@ -451,7 +451,7 @@ int IOPlacer::assignGroupsToSections()
   for (std::vector<int>& io_group : net.getIOGroups()) {
     int group_size = io_group.size();
     bool group_assigned = false;
-    std::vector<int> dst(sections.size(), 0);
+    std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         int pin_hpwl = net.computeIONetHPWL(
