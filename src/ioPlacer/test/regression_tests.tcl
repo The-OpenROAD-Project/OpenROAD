@@ -8,6 +8,7 @@ record_tests {
   no_tracks
   random1
   random2
+  cells_not_placed
   exclude1
   exclude2
   exclude3
