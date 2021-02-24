@@ -346,6 +346,13 @@ namespace fr {
         return cutConstraints;
       }
     }
+    frCoord getCutSpacingValue() const {
+        frCoord s = 0;
+        for (auto con: getCutSpacing()) {
+          s = max(s, con->getCutSpacing());
+        }
+        return s;
+    }
     bool hasCutSpacing(bool samenet = false) const {
       if (samenet) {
         return (!cutSpacingSamenetConstraints.empty());

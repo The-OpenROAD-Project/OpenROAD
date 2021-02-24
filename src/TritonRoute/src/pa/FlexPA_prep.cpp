@@ -839,9 +839,11 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
-    gcWorker.setTargetObj(instTerm->getInst());
+      if (!instTerm->getNet() || !instTerm->getNet()->getNondefaultRule())
+        gcWorker.setTargetObj(instTerm->getInst());
   } else {
-    gcWorker.setTargetObj(pin->getTerm());
+      if (!pin->getTerm()->getNet() || !pin->getTerm()->getNet()->getNondefaultRule())
+        gcWorker.setTargetObj(pin->getTerm());
   }
 
   gcWorker.initPA0();
