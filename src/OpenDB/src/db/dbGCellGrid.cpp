@@ -214,6 +214,15 @@ dbOStream& operator<<(dbOStream& stream, const GCellData& obj)
   return stream;
 }
 
+bool _dbGCellGrid::gcellExists(dbId<_dbTechLayer> lid,
+                               uint               x_idx,
+                               uint               y_idx) const
+{
+  return _congestion_map.find(lid) != _congestion_map.end()
+         && _congestion_map.at(lid).find({x_idx, y_idx})
+                != _congestion_map.at(lid).end();
+}
+
 void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
@@ -397,9 +406,7 @@ uint dbGCellGrid::getHorizontalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_capacity;
   return 0;
 }
@@ -410,9 +417,7 @@ uint dbGCellGrid::getVerticalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_capacity;
   return 0;
 }
@@ -423,9 +428,7 @@ uint dbGCellGrid::getUpCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._up_capacity;
   return 0;
 }
@@ -436,9 +439,7 @@ uint dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_usage;
   return 0;
 }
@@ -449,9 +450,7 @@ uint dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_usage;
   return 0;
 }
@@ -460,9 +459,7 @@ uint dbGCellGrid::getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end())
+  if (_grid->gcellExists(lid, x_idx, y_idx))
     return _grid->_congestion_map[lid][{x_idx, y_idx}]._up_usage;
   return 0;
 }
@@ -474,10 +471,7 @@ void dbGCellGrid::setHorizontalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (capacity == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_capacity = capacity;
 }
@@ -489,10 +483,7 @@ void dbGCellGrid::setVerticalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (capacity == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_capacity = capacity;
 }
@@ -505,10 +496,7 @@ void dbGCellGrid::setUpCapacity(dbTechLayer* layer,
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
 
-  if (capacity == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._up_capacity = capacity;
 }
@@ -520,10 +508,7 @@ void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (use == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_usage = use;
 }
@@ -535,10 +520,7 @@ void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (use == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_usage = use;
 }
@@ -550,10 +532,7 @@ void dbGCellGrid::setUpUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (use == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._up_usage = use;
 }
@@ -568,9 +547,7 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
   if (horizontal == 0 && vertical == 0 && up == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+      && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_capacity = horizontal;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_capacity   = vertical;
@@ -587,9 +564,7 @@ void dbGCellGrid::setUsage(dbTechLayer* layer,
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
   if (horizontal == 0 && vertical == 0 && up == 0
-      && (_grid->_congestion_map.find(lid) == _grid->_congestion_map.end()
-          || _grid->_congestion_map[lid].find({x_idx, y_idx})
-                 == _grid->_congestion_map[lid].end()))
+      && !_grid->gcellExists(lid, x_idx, y_idx))
     return;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._horizontal_usage = horizontal;
   _grid->_congestion_map[lid][{x_idx, y_idx}]._vertical_usage   = vertical;
@@ -605,9 +580,7 @@ void dbGCellGrid::getCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end()) {
+  if (_grid->gcellExists(lid, x_idx, y_idx)) {
     auto data  = _grid->_congestion_map[lid][{x_idx, y_idx}];
     horizontal = data._horizontal_capacity;
     vertical   = data._vertical_capacity;
@@ -628,9 +601,7 @@ void dbGCellGrid::getUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint          lid   = layer->getId();
-  if (_grid->_congestion_map.find(lid) != _grid->_congestion_map.end()
-      && _grid->_congestion_map[lid].find({x_idx, y_idx})
-             != _grid->_congestion_map[lid].end()) {
+  if (_grid->gcellExists(lid, x_idx, y_idx)) {
     auto data = _grid->_congestion_map[lid][{x_idx, y_idx}];
 
     horizontal = data._horizontal_usage;

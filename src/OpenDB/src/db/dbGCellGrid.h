@@ -85,7 +85,7 @@ class _dbGCellGrid : public _dbObject
   dbVector<int>    _y_step;
   dbVector<int>    _x_grid;
   dbVector<int>    _y_grid;
-  std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>
+  std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, GCellData>>
       _congestion_map;
 
   // User Code Begin fields
@@ -101,6 +101,7 @@ class _dbGCellGrid : public _dbObject
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin methods
+  bool gcellExists(dbId<_dbTechLayer> lid, uint x_idx, uint y_idx) const;
   // User Code End methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);

@@ -56,7 +56,7 @@
       },
       {
         "name":"_congestion_map",
-        "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<int, int>, GCellData>>",
+        "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, GCellData>>",
         "flags":["private","no-template"]
       }
     ],
