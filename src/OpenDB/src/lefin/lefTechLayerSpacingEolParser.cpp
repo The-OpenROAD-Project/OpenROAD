@@ -451,7 +451,7 @@ bool parse(Iterator          first,
                   true)]
               >> double_[boost::bind(&wrongDirSpaceParser, _1, sc, l)])
          >> (withinRule | toconcavecornerrule | tonotchlengthrule)
-
+         >> -lit(";")
       );
 
   bool valid = qi::phrase_parse(first, last, spacingRule, space);
