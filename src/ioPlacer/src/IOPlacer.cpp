@@ -1011,12 +1011,11 @@ void IOPlacer::initNetlist()
     odb::dbSet<odb::dbITerm>::iterator i_iter;
     for (i_iter = iterms.begin(); i_iter != iterms.end(); ++i_iter) {
       odb::dbITerm* cur_i_term = *i_iter;
-      odb::dbInst* inst = cur_i_term->getInst();
-      int inst_x = 0, inst_y = 0;
-      inst->getLocation(inst_x, inst_y);
+      int x, y;
+      cur_i_term->getAvgXY(&x, &y);
 
       inst_pins.push_back(
-          InstancePin(inst->getConstName(), Point(inst_x, inst_y)));
+          InstancePin(cur_i_term->getInst()->getConstName(), Point(x, y)));
     }
 
     netlist_.addIONet(io_pin, inst_pins);
