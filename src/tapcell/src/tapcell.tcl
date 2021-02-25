@@ -489,9 +489,6 @@ namespace eval tap {
                     }
 
                     set inst_name "PHY_${cnt}"
-                    set tap_width [$master getWidth]
-                    set tap_urx [expr $x + $tap_width]
-                    set end_llx [expr $urx - $endcap_width]
 
                     set x_tmp [expr {floor (1.0*$x/$site_x)*$site_x}]
                     set row_orig_fix [expr { $llx % $site_x }]
@@ -511,9 +508,13 @@ namespace eval tap {
                         }
                     }
 
-                    if {($x != $min_x) && ($x_end != $max_x)} {
+                    set tap_width [$master getWidth]
+                    set tap_urx [expr $x_tmp + $tap_width]
+                    set end_llx [expr $urx - $endcap_width]
+
+                    if {($x_tmp != $min_x) && ($x_end != $max_x)} {
                         if { $tap_urx > $end_llx } {
-                            set x_microns [ord::dbu_to_microns $x]
+                            set x_microns [ord::dbu_to_microns $x_tmp]
                             set y_microns [ord::dbu_to_microns $lly]
                             utl::warn TAP 10 "Tapcell at position ($x_microns, $y_microns) will cause overlap with endcap. Skipping..."
                             continue
