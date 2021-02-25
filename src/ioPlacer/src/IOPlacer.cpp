@@ -81,7 +81,7 @@ void IOPlacer::initParms()
   report_hpwl_ = false;
   slots_per_section_ = 200;
   slots_increase_factor_ = 0.01f;
-  usage_per_section_ = .8f;
+  usage_per_section_ = 1;
   usage_increase_factor_ = 0.01f;
   force_pin_spread_ = true;
   netlist_ = Netlist();
@@ -417,7 +417,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
         slots_per_section_ *= 1.1;
       }
     }
-    n_sec.num_slots = end_slot - edge_begin - blocked_slots;
+    n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots");
     }
