@@ -43,6 +43,7 @@ namespace odb {
 
 definPin::definPin()
     : _bterm_cnt(0),
+      _update_cnt(0),
       _cur_bterm(NULL),
       _status(dbPlacementStatus::NONE),
       _orient(dbOrientType::R0),
