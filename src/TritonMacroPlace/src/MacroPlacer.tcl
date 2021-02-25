@@ -36,11 +36,12 @@ sta::define_cmd_args "macro_placement" {
   [-halo {vertical_width horizontal_width}] \
     [-channel {vertical_width horizontal_width}]\
     [-fence_region {lx ly ux uy}]\
-    [-snap_layer snap_layer_number]}
+    [-snap_layer snap_layer_number]\
+    [-style corner_max_wl|center_spread]}
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
-    keys {-channel -halo -fence_region -snap_layer} flags {}
+    keys {-channel -halo -fence_region -snap_layer -style} flags {}
 
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
@@ -100,5 +101,15 @@ proc macro_placement { args } {
   }
   mpl::set_snap_layer $layer
 
-  mpl::place_macros
+  set style "corner_max_wl"
+  if { [info exists keys(-style)] } {
+    set style $keys(-style)
+  }
+  if { $style == "corner_max_wl" } {
+    mpl::place_macros_corner_max_wl
+  } elseif { $style == "center_spread" } {
+    mpl::place_macros_center_spread
+  } else {
+    utl::error MPL 96 "Unknown placement style."
+  }
 }

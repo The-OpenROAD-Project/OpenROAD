@@ -99,6 +99,7 @@ class Partition
   vector<Macro> macros_;
   double lx, ly;
   double width, height;
+  double solution_width, solution_height;
   vector<double> net_tbl_;
 
  private:

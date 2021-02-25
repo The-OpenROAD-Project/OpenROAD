@@ -369,18 +369,17 @@ bool Partition::anneal()
     annealer->go();
 
     const pfp::BTree& sol = annealer->currSolution();
-    // Failed annealing
-    if (sol.totalWidth() > width || sol.totalHeight() > height) {
-      logger_->info(MPL, 61, "Parquet BBOX exceed the given area");
-      logger_->info(MPL,
-                    62,
-                    "ParquetSolLayout {:g} {:g}",
-                    sol.totalWidth(),
-                    sol.totalHeight());
-      logger_->info(MPL, 63, "TargetLayout {:g} {:g}", width, height);
+    solution_width = sol.totalWidth();
+    solution_height = sol.totalHeight();
+    delete annealer;
+    if (solution_width > width || solution_height > height) {
+      logger_->warn(MPL, 61, "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
+                    solution_width,
+                    solution_height,
+                    width,
+                    height);
       return false;
     }
-    delete annealer;
 
     // flip info initialization for each partition
     bool isFlipX = false, isFlipY = false;
@@ -405,7 +404,7 @@ bool Partition::anneal()
       break;
     }
 
-    // update back into macro placer
+    // update partition macro locations
     for (size_t i = 0; i < pfp_nodes->getNumNodes(); i++) {
       pfp::Node& node = pfp_nodes->getNode(i);
       Macro &macro = macros_[i];

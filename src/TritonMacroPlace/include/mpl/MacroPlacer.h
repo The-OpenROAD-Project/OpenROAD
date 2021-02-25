@@ -142,7 +142,8 @@ public:
   void setFenceRegion(double lx, double ly, double ux, double uy);
   void setSnapLayer(odb::dbTechLayer *snap_layer);
 
-  void placeMacros();
+  void placeMacrosCenterSpread();
+  void placeMacrosCornerMaxWl();
   int getSolutionCount();
 
   // return weighted wire-length to get best solution
@@ -154,6 +155,8 @@ public:
   size_t macroCount() { return macros_.size(); }
 
 private:
+  double partitionMaxSpace(Partition &partition,
+                           MacroSpacings &spacings);
   void findMacros();
   bool isMissingLiberty();
 

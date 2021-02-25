@@ -50,7 +50,6 @@
 #include "sta/SearchPred.hh"
 
 #include "utility/Logger.h"
-#include "gui/gui.h"
 
 namespace mpl {
 
@@ -183,7 +182,94 @@ void MacroPlacer::reportEdgePinCounts()
   }
 }
 
-void MacroPlacer::placeMacros()
+// Pick a channel size to spread the macros out in the core.
+// Use parquefp on all the macros.
+void MacroPlacer::placeMacrosCenterSpread()
+{
+  init();
+
+  double wl = getWeightedWL();
+  logger_->info(MPL, 71, "Initial weighted wire length {:g}", wl);
+
+  // All of this partitioning garbage is unnecessary but survives to support
+  // the multiple partition algorithm.
+
+  Layout layout(lx_, ly_, ux_, uy_);
+  bool horizontal = true;
+  Partition top_partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
+  top_partition.macros_ = macros_;
+
+  MacroPartMap globalMacroPartMap;
+  updateMacroPartMap(top_partition, globalMacroPartMap);
+
+  if (connection_driven_) {
+    top_partition.fillNetlistTable(globalMacroPartMap);
+  }
+
+  // Annealing based on ParquetFP Engine
+  // spacings1 lower bound
+  // spacings1 upper bound
+  MacroSpacings spacings1 = default_macro_spacings_;
+  MacroSpacings spacings2 = default_macro_spacings_;
+  spacings2.setChannel(spacings2.getChannelX() * 2,
+                       spacings2.getChannelY() * 2);
+
+  double tol = .1; // 10%
+  double diff1 = partitionMaxSpace(top_partition, spacings1);
+  double diff2 = partitionMaxSpace(top_partition, spacings2);
+  // binary search for largest channel factor that does not fail.
+  while (abs(spacings1.getChannelX() - spacings2.getChannelX())
+         > max(spacings1.getChannelX(), spacings2.getChannelX()) * tol
+         && abs(spacings1.getChannelX() - spacings2.getChannelX())
+         > max(spacings1.getChannelX(), spacings2.getChannelX()) * tol) {
+    if (diff2 > 0.0) {
+      spacings1 = spacings2;
+      diff1 = diff2;
+      spacings2.setChannel(spacings2.getChannelX() * 2,
+                           spacings2.getChannelY() * 2);
+      diff2 = partitionMaxSpace(top_partition, spacings2);
+    }
+    else {
+      MacroSpacings spacings3 = spacings1;
+      spacings3.setChannel((spacings1.getChannelX() + spacings2.getChannelX()) / 2,
+                           (spacings1.getChannelY() + spacings2.getChannelY()) / 2);
+      double diff3 = partitionMaxSpace(top_partition, spacings3);
+      if (diff3 > 0.0) {
+        spacings1 = spacings3;
+        diff1 = diff3;
+      }
+      else {
+        spacings2 = spacings3;
+        diff2 = diff3;
+      }
+    }
+  }
+
+  if (top_partition.anneal()) {
+    updateMacroLocations(top_partition);
+    top_partition.updateMacroCoordi();
+    updateDbInstLocations();
+
+    double curWwl = getWeightedWL();
+    logger_->info(MPL, 71, "Placed weighted wire length {:g}", curWwl);
+  }
+  else
+    logger_->warn(MPL, 72, "Partitioning failed.");
+}
+
+double MacroPlacer::partitionMaxSpace(Partition &partition,
+                                      MacroSpacings &spacings)
+{
+  default_macro_spacings_ = spacings;
+  partition.anneal();
+  return min(partition.width - partition.solution_width,
+             partition.height - partition.solution_height);
+}
+
+// Use some undocumented method with cut lines to break the design
+// into regions and try all combinations. Pick the one that maximizes (yes, really)
+// wire lengths of connections between the macros to force them to the corners.
+void MacroPlacer::placeMacrosCornerMaxWl()
 {
   init();
 
@@ -315,7 +401,7 @@ void MacroPlacer::placeMacros()
   solution_count_ = 0;
   bool found_best = false;
   int best_setIdx = 0;
-  double bestWwl = DBL_MAX;
+  double bestWwl = -DBL_MAX;
   for (auto& partition_set : allSets) {
     // skip for top partition
     if (partition_set.size() == 1) {
@@ -346,7 +432,11 @@ void MacroPlacer::placeMacros()
                   solution_count_ + 1,
                   curWwl);
     if (!found_best
-        || curWwl < bestWwl) {
+        // Note that this MAXIMIZES wirelength.
+        // That is they way mingyu wrote it.
+        // This is the only thing that keeps all the macros from ending
+        // up in one clump. -cherry
+        || curWwl > bestWwl) {
       bestWwl = curWwl;
       best_setIdx = &partition_set - &allSets[0];
       found_best = true;

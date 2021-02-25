@@ -10,7 +10,7 @@ read_lef Nangate45/fakeram45_64x7.lef
 read_def gcd_mem3.def
 read_sdc gcd.sdc
 
-macro_placement -halo {0.5 0.5} -channel {2.0 2.0}
+macro_placement -halo {0.5 0.5} -channel {2.0 2.0} -algorithm cherry
 
 set def_file [make_result_file gcd_mem3_02.def]
 write_def $def_file

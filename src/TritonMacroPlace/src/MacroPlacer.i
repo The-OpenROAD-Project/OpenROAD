@@ -83,10 +83,17 @@ set_snap_layer(odb::dbTechLayer *snap_layer)
 }
 
 void
-place_macros()
+place_macros_center_spread()
 {
   MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->placeMacros(); 
+  macro_placer->placeMacrosCenterSpread(); 
+} 
+
+void
+place_macros_corner_max_wl()
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->placeMacrosCornerMaxWl(); 
 } 
 
 }
