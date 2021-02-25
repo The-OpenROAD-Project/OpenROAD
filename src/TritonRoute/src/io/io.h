@@ -72,6 +72,7 @@ namespace fr {
       }
 
     protected:
+
       void readDesign(odb::dbDatabase*);
       void readTechAndLibs(odb::dbDatabase*);
       void setMacros(odb::dbDatabase*);
@@ -99,6 +100,8 @@ namespace fr {
       void setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
       void setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
 
+      void setNDRs(odb::dbDatabase* db);
+      
       frDesign*       design;
       frTechObject*   tech;
       Logger*         logger;

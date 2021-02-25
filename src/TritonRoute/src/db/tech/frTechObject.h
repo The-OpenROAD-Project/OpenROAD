@@ -134,18 +134,19 @@ namespace fr {
     }
 
     // forbidden length table related 
-    bool isVia2ViaForbiddenLen(int tableLayerIdx, bool isPrevDown, bool isCurrDown, bool isCurrDirX, frCoord len, bool isOverlap = false) {
+    bool isVia2ViaForbiddenLen(int tableLayerIdx, bool isPrevDown, bool isCurrDown, bool isCurrDirX, frCoord len, 
+                                frNonDefaultRule* ndr = nullptr, bool isOverlap = false) {
       int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
       if (isOverlap) {
         return isIncluded(via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx], len);
       } else {
-        return isIncluded(via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx], len);
+        return isIncluded((ndr ? ndr->via2ViaForbiddenLen : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx], len);
       }
     }
 
-    bool isViaForbiddenTurnLen(int tableLayerIdx, bool isDown, bool isCurrDirX, frCoord len) {
+    bool isViaForbiddenTurnLen(int tableLayerIdx, bool isDown, bool isCurrDirX, frCoord len, frNonDefaultRule* ndr = nullptr) {
       int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-      return isIncluded(viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx], len);
+      return isIncluded((ndr ? ndr->viaForbiddenTurnLen : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx], len);
     }
 
     bool isLine2LineForbiddenLen(int tableLayerIdx, bool isZShape, bool isCurrDirX, frCoord len) {
@@ -156,6 +157,52 @@ namespace fr {
     bool isViaForbiddenThrough(int tableLayerIdx, bool isDown, bool isCurrDirX) {
       int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
       return viaForbiddenThrough[tableLayerIdx][tableEntryIdx];
+    }
+
+    frViaDef* getVia(frString name) const{
+        return name2via.at(name);
+    }
+    
+    frViaRuleGenerate* getViaRule(frString name) const{
+        return name2viaRuleGenerate.at(name);
+    }
+    
+    void addNDR(std::unique_ptr<frNonDefaultRule> n) {
+        nonDefaultRules.push_back(std::move(n));
+    }
+    
+    const std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules() const{
+        return nonDefaultRules;
+    }
+    
+    frNonDefaultRule* getNondefaultRule(string name){
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getName() == name)
+              return nd.get();
+        }
+        return nullptr;
+    }
+    
+    frCoord getMaxNondefaultSpacing(int z){
+        frCoord spc = 0;
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getSpacing(z) > spc) 
+              spc = nd->getSpacing(z);
+        }
+        return spc;
+    }
+    
+    frCoord getMaxNondefaultWidth(int z){
+        frCoord spc = 0;
+        for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
+            if (nd->getWidth(z) > spc) 
+              spc = nd->getWidth(z);
+        }
+        return spc;
+    }
+    
+    bool hasNondefaultRules(){
+        return !nonDefaultRules.empty();
     }
 
     // debug
@@ -203,6 +250,7 @@ namespace fr {
 
     frCollection<std::shared_ptr<frConstraint> >     constraints;
     std::vector<std::unique_ptr<frConstraint> >      uConstraints;
+    std::vector<std::unique_ptr<frNonDefaultRule>>    nonDefaultRules;
 
     // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forgidden x dist range (for non-shape-based rule)
     // via2ViaForbiddenLen[z][1], prev via is down, curr via is down, forgidden y dist range (for non-shape-based rule)

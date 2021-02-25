@@ -100,7 +100,7 @@ void FlexGCWorker::Impl::myBloat(const gtl::rectangle_data<frCoord> &rect, frCoo
   bg::set<bg::max_corner, 1>(box, gtl::yh(rect) + val);
 }
 
-frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum) {
+frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum, bool isNDR) {
   frCoord maxSpcVal = 0;
   auto currLayer = getDesign()->getTech()->getLayer(layerNum);
   if (currLayer->hasMinSpacing()) {
@@ -115,6 +115,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum) 
       default:
         logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
     }
+    if (isNDR) return max(maxSpcVal, getDesign()->getTech()->getMaxNondefaultSpacing(layerNum/2-1));
   }
   return maxSpcVal;
 }
@@ -320,17 +321,28 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
 }
 
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
-                                     frCoord prl, frCoord distX, frCoord distY) {
-  bool enableOutput = printMarker_;
-
-  auto layerNum = rect1->getLayerNum();
-  auto net1 = rect1->getNet();
-  auto net2 = rect2->getNet();
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+                                     frCoord prl, frCoord distX, frCoord distY, bool isNDR) {
+  
   // no violation if fixed shapes
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
   }
+  bool enableOutput = printMarker_;
+  auto layerNum = rect1->getLayerNum();
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
+  
+  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+  if (isNDR){
+        frCoord ndrSpc1 = 0, ndrSpc2 = 0;
+        if (!rect1->isFixed() && net1->isNondefault())
+            ndrSpc1 = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
+        if (!rect2->isFixed() && net2->isNondefault())
+            ndrSpc2 = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
+
+        reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
+  }
+  
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {
     return;
@@ -652,7 +664,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(gcRect* rect1, gcRect* rect2, c
   }
 }
 
-void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2) {
+void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2, bool isNDR) {
   //bool enableOutput = true;
 
   // NSMetal does not need self-intersection
@@ -660,7 +672,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2) {
   if (ptr1 == ptr2) {
     return;
   }
-
   gtl::rectangle_data<frCoord> markerRect(*ptr1);
   auto distX = gtl::euclidean_distance(markerRect, *ptr2, gtl::HORIZONTAL);
   auto distY = gtl::euclidean_distance(markerRect, *ptr2, gtl::VERTICAL);
@@ -681,18 +692,15 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2) {
     checkMetalSpacing_short(ptr1, ptr2, markerRect);
   // prl
   } else {
-    checkMetalSpacing_prl(ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY);
+    checkMetalSpacing_prl(ptr1, ptr2, markerRect, std::max(prlX, prlY), distX, distY, isNDR);
   }
 }
 
-
-
-void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect) {
+void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
   //bool enableOutput = true;
   bool enableOutput = false;
-
   auto layerNum = rect->getLayerNum();
-  auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum);
+  auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, isNDR);
   box_t queryBox;
   myBloat(*rect, maxSpcVal, queryBox);
   if (enableOutput) {
@@ -735,7 +743,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect) {
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
   // Short, metSpc, NSMetal here
   for (auto &[objBox, ptr]: result) {
-    checkMetalSpacing_main(rect, ptr);
+    checkMetalSpacing_main(rect, ptr, isNDR);
   }
 }
 

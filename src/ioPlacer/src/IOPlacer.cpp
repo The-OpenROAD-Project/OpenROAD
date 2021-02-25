@@ -451,11 +451,17 @@ int IOPlacer::assignGroupsToSections()
   for (std::vector<int>& io_group : net.getIOGroups()) {
     int group_size = io_group.size();
     bool group_assigned = false;
-    std::vector<int> dst(sections.size(), 0);
-    for (int pin_idx : io_group) {
-      for (int i = 0; i < sections.size(); i++) {
-        dst[i] += net.computeIONetHPWL(
+    std::vector<int64_t> dst(sections.size(), 0);
+    for (int i = 0; i < sections.size(); i++) {
+      for (int pin_idx : io_group) {
+        int pin_hpwl = net.computeIONetHPWL(
             pin_idx, sections[i].pos, sections[i].edge, constraints_);
+        if (pin_hpwl == std::numeric_limits<int>::max()) {
+          dst[i] = pin_hpwl;
+          break;
+        } else {
+          dst[i] += pin_hpwl;
+        }
       }
     }
 
@@ -1005,12 +1011,11 @@ void IOPlacer::initNetlist()
     odb::dbSet<odb::dbITerm>::iterator i_iter;
     for (i_iter = iterms.begin(); i_iter != iterms.end(); ++i_iter) {
       odb::dbITerm* cur_i_term = *i_iter;
-      odb::dbInst* inst = cur_i_term->getInst();
-      int inst_x = 0, inst_y = 0;
-      inst->getLocation(inst_x, inst_y);
+      int x, y;
+      cur_i_term->getAvgXY(&x, &y);
 
       inst_pins.push_back(
-          InstancePin(inst->getConstName(), Point(inst_x, inst_y)));
+          InstancePin(cur_i_term->getInst()->getConstName(), Point(x, y)));
     }
 
     netlist_.addIONet(io_pin, inst_pins);

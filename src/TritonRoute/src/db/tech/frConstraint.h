@@ -37,6 +37,8 @@
 #include <utility>
 #include "utility/Logger.h"
 #include "db/tech/frLookupTbl.h"
+#include "frViaDef.h"
+#include "frViaRuleGenerate.h"
 
 namespace fr {
   namespace io {
@@ -2199,6 +2201,132 @@ namespace fr {
     utl::Logger* logger;
   };
 
+      using namespace std;
+  class frNonDefaultRule{
+      friend class FlexRP;
+      friend class frTechObject;
+      private:
+      
+         string name_;
+        //each vector position is a metal layer
+        vector<frCoord> widths_; 
+        vector<frCoord> spacings_;
+        vector<frCoord> wireExtensions_;
+        vector<int> minCuts_; //min cuts per cut layer 
+
+        //vias for each layer
+        vector<vector<frViaDef*>> vias_;
+        vector<vector<frViaRuleGenerate*>> viasRules_;  
+        
+        bool hardSpacing_ = false;
+        
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>> via2ViaForbiddenLen;
+        std::vector<std::vector<std::vector<std::pair<frCoord, frCoord>>>> viaForbiddenTurnLen;
+        
+  public:
+
+    frViaDef* getPrefVia(int z){
+        if (z >= (int) vias_.size() || vias_[z].empty()) {
+          return nullptr;
+        }
+        return vias_[z][0];
+    }
+    void setWidth(frCoord w, int z){
+        if (z >= (int) widths_.size()) {
+          widths_.resize(z+1, 0);
+        }
+        widths_[z] = w;
+    }
+    
+    void setSpacing(frCoord s, int z){
+        if (z >= (int) spacings_.size()) {
+          spacings_.resize(z+1, 0);
+        }
+        spacings_[z] = s;
+    }
+    
+    void setMinCuts(int ncuts, int z){
+        if (z >= (int) minCuts_.size()) {
+          minCuts_.resize(z+1, 1);
+        }
+        minCuts_[z] = ncuts;
+    }
+
+    void setWireExtension(frCoord we, int z){
+        if (z >= (int) wireExtensions_.size()) {
+          wireExtensions_.resize(z+1, 0);
+        }
+        wireExtensions_[z] = we;
+    }
+
+    void addVia(frViaDef* via, int z){
+        if (z >= (int) vias_.size()) {
+          vias_.resize(z+1, vector<frViaDef*>());
+        }
+        vias_[z].push_back(via);
+    }
+
+    void addViaRule(frViaRuleGenerate* via, int z){
+        if (z >= (int) viasRules_.size()) {
+          viasRules_.resize(z+1, vector<frViaRuleGenerate*>());
+        }
+        viasRules_[z].push_back(via);
+    }
+    
+    void setHardSpacing(bool isHard){
+        hardSpacing_ = isHard;
+    }
+    
+    void setName(const char* n){
+        name_ = string(n);
+    }
+    
+    string getName() const{
+        return name_;
+    }
+    
+    frCoord getWidth(int z) const{
+        if (z >= (int) widths_.size()) {
+          return 0;
+        }
+        return widths_[z];
+    }
+    
+    frCoord getSpacing(int z) const{
+        if (z >= (int) spacings_.size()) {
+          return 0;
+        }
+        return spacings_[z];
+    }
+    
+    frCoord getWireExtension(int z) const{
+        if (z >= (int) wireExtensions_.size()) {
+          return 0;
+        }
+        return wireExtensions_[z];
+    }
+    
+    int getMinCuts(int z) const{
+        if (z >= (int) minCuts_.size()) {
+          return 1;
+        }
+        return minCuts_[z];
+    }
+    
+    const vector<frViaDef*>& getVias(int z) const{
+        return vias_[z];
+    }
+    
+    const vector<frViaRuleGenerate*>& getViaRules(int z) const{
+        return viasRules_[z];
+    }
+    
+    bool isHardSpacing() const{
+        return hardSpacing_;
+    }
+    
+    
+  };
 }
 
 #endif

@@ -43,6 +43,7 @@
 using namespace std;
 using namespace fr;
 
+
 int defdist(odb::dbBlock* block, int x)
 {
   return x * (double) block->getDefUnits()
@@ -358,6 +359,43 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
+void io::Parser::setNDRs(odb::dbDatabase* db)
+{
+    frNonDefaultRule* fnd;
+    unique_ptr<frNonDefaultRule> ptnd;
+    int z;
+    for (auto ndr : db->getTech()->getNonDefaultRules()) {
+        ptnd = make_unique<frNonDefaultRule>();
+        fnd = ptnd.get();
+        design->tech_->addNDR(std::move(ptnd));
+        fnd->setName(ndr->getName().data());
+        fnd->setHardSpacing(ndr->getHardSpacing());
+        vector<odb::dbTechLayerRule*> lr;
+        ndr->getLayerRules(lr);
+        for (auto& l : lr){
+            z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum()/2 -1;
+            fnd->setWidth(l->getWidth(), z);
+            fnd->setSpacing(l->getSpacing(), z);
+            fnd->setWireExtension(l->getWireExtension(), z);
+        }
+        vector<odb::dbTechVia*> vias;
+        ndr->getUseVias(vias);
+        for (auto via : vias){
+            fnd->addVia(design->getTech()->getVia(via->getName()), via->getBottomLayer()->getNumber()-1);
+        }
+        vector<odb::dbTechViaGenerateRule*> viaRules;
+        ndr->getUseViaRules(viaRules);
+        z = std::numeric_limits<int>().max();
+        for (auto via : viaRules){
+            for (int i = 0; i < (int)via->getViaLayerRuleCount(); i++){
+                if (via->getViaLayerRule(i)->getLayer()->getType() == odb::dbTechLayerType::CUT) continue;
+                if (via->getViaLayerRule(i)->getLayer()->getNumber()/2 < z) 
+                    z = via->getViaLayerRule(i)->getLayer()->getNumber()/2;
+            }
+            fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
+        }
+    }
+}
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
                                frCoord& beginY,
@@ -448,6 +486,7 @@ void io::Parser::setNets(odb::dbBlock* block)
   for (auto net : block->getNets()) {
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
+    if (net->getNonDefaultRule()) uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
@@ -2083,6 +2122,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
   setMacros(db);
+  setNDRs(db);
 }
 
 void io::Parser::readDb(odb::dbDatabase* db)
@@ -2107,7 +2147,9 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->info(DRT, 150, "Reading Design");
   }
 
+
   readDesign(db);
+
 
   if (VERBOSE > 0) {
     logger->report("");

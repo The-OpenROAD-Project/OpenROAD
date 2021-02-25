@@ -50,9 +50,9 @@ namespace fr {
                   design_(designIn), drWorker_(workerIn),
                   graphics_(nullptr),
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
-                  ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
-                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr),
-                  via2turnMinLen_(nullptr) {}
+                  ggDRCCost_(0), ggMarkerCost_(0), ndr_(nullptr),
+                  halfViaEncArea_(nullptr), via2viaMinLen_(nullptr), 
+                  via2viaMinLenNew_(nullptr), via2turnMinLen_(nullptr) {}
     // getters
     frTechObject* getTech() const {
       return design_->getTech();
@@ -89,6 +89,12 @@ namespace fr {
     // unsafe access, no check
     bool isDst(frMIdx x, frMIdx y, frMIdx z) const {
       return dsts_[getIdx(x, y, z)];
+    }
+    bool isDst(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
+        getNextGrid(x, y, z, dir);
+        bool b = dsts_[getIdx(x, y, z)];
+        getPrevGrid(x, y, z, dir);
+        return b;
     }
     // unsafe access, no check
     bool isBlocked(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
@@ -271,6 +277,16 @@ namespace fr {
         sol += nodes_[idx].markerCostVia;
       }
       return (sol);
+    }
+    bool hasAnyPlanarCost(frMIdx x, frMIdx y, frMIdx z) const{
+        auto& nd = nodes_[getIdx(x, y, z)];
+        return nd.drcCostPlanar || nd.markerCostPlanar || nd.shapeCostPlanar;
+    }
+    frCoord xCoord(frMIdx x) const{
+        return xCoords_[x];
+    }
+    frCoord yCoord(frMIdx y) const{
+        return yCoords_[y];
     }
     // unsafe access
     frCoord getEdgeLength(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
@@ -717,6 +733,18 @@ namespace fr {
       graphics_ = g;
     }
 
+    void setNDR(frNonDefaultRule* ndr){
+        ndr_ = ndr;
+    }
+    
+    frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
+    frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
+    frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
+    frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
+    
+    frNonDefaultRule* getNDR() const{
+        return ndr_;
+    }
     // functions
     void init(const frBox &routeBBox, const frBox &extBBox,
               std::map<frCoord, std::map<frLayerNum, frTrackPattern* > > &xMap,
@@ -775,7 +803,6 @@ namespace fr {
       wavefront_.cleanup();
       wavefront_.fit();
     }
-
   protected:
     frDesign*     design_;
     FlexDRWorker* drWorker_;
@@ -832,6 +859,7 @@ namespace fr {
     frUInt4                                    ggMarkerCost_;
     // temporary variables
     FlexWavefront                              wavefront_;
+    frNonDefaultRule*                          ndr_;
     const std::vector<std::pair<frCoord, frCoord> >* halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
@@ -918,6 +946,9 @@ namespace fr {
       }
       return;
     }
+    frMIdx getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
+    frMIdx getUpperBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
+    
     void getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     void getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     bool isValid(frMIdx x, frMIdx y, frMIdx z) const {

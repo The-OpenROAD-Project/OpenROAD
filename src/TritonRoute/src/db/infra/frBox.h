@@ -127,6 +127,10 @@ namespace fr {
                ll_.y() < in.y() && in.y() < ur_.y();
       }
     }
+    void merge(const frBox& box){
+        set(std::min(left(), box.left()), std::min(bottom(), box.bottom()), std::max(right(), box.right()), std::max(top(), box.top()));
+    }
+    
     void transform(const frTransform &xform);
     bool overlaps(const frBox &boxIn, bool incEdges = true) const;
     void bloat(const frCoord distance, frBox &boxOut) const;
