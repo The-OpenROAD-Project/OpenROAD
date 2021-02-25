@@ -45,7 +45,7 @@ namespace fr {
   class frTechObject {
   public:
     // constructors
-    frTechObject(utl::Logger* loggerIn = nullptr) : dbUnit(0), manufacturingGrid(0) {}
+    frTechObject() : dbUnit(0), manufacturingGrid(0) {}
     // getters
     frUInt4 getDBUPerUU() const {
       return dbUnit;

@@ -44,7 +44,7 @@ namespace fr {
   public:
     // constructors
     frDesign(Logger* logger): topBlock_(nullptr),
-                              tech_(std::make_unique<frTechObject>(logger)), 
+                              tech_(std::make_unique<frTechObject>()), 
                               rq_(std::make_unique<frRegionQuery>(this, logger))
     {
     }

@@ -47,10 +47,6 @@ proc detailed_route { args } {
   drt::detailed_route_cmd $keys(-param)
 }
 
-proc drt_report_constraints { args } {
-  tr::drt_report_constraints_cmd
-}
-
 proc detailed_route_num_drvs { args } {
   sta::check_argc_eq0 "detailed_route_num_drvs" $args
   return [drt::detailed_route_num_drvs]
