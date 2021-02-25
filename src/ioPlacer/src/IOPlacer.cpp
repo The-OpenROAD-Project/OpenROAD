@@ -565,9 +565,9 @@ void IOPlacer::printConfig()
       PPL, 3, " * Num of I/O w/sink     {}", netlist_io_pins_.numIOPins());
   logger_->info(PPL, 4, " * Num of I/O w/o sink   {}", zero_sink_ios_.size());
   logger_->info(PPL, 5, " * Slots Per Section     {}", slots_per_section_);
-  logger_->info(PPL, 6, " * Slots Increase Factor {}", slots_increase_factor_);
-  logger_->info(PPL, 7, " * Usage Per Section     {}", usage_per_section_);
-  logger_->info(PPL, 8, " * Usage Increase Factor {}", usage_increase_factor_);
+  logger_->info(PPL, 6, " * Slots Increase Factor {:.1}", slots_increase_factor_);
+  logger_->info(PPL, 7, " * Usage Per Section     {:.1}", usage_per_section_);
+  logger_->info(PPL, 8, " * Usage Increase Factor {:.1}", usage_increase_factor_);
   logger_->info(PPL, 9, " * Force Pin Spread      {}", force_pin_spread_);
 }
 
