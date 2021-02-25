@@ -89,12 +89,12 @@ class TimingPathNode
 {
  public:
   TimingPathNode(odb::dbObject* pin,
-                 bool isRising,
+                 bool is_rising,
                  float arrival,
                  float required,
                  float slack)
       : pin_(pin),
-        isRising_(isRising),
+        is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
         slack_(slack)
@@ -102,7 +102,7 @@ class TimingPathNode
   }
 
   odb::dbObject* pin_;
-  bool isRising_;
+  bool is_rising_;
   float arrival_;
   float required_;
   float slack_;

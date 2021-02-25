@@ -35,6 +35,7 @@
 
 #include "staGui.h"
 
+#include <QDebug>
 #include <string>
 
 #include "db_sta/dbNetwork.hh"
@@ -182,6 +183,9 @@ void TimingPathsModel::populateModel()
   beginResetModel();
   populatePaths();
   endResetModel();
+
+  qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
+           << " Paths...";
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
