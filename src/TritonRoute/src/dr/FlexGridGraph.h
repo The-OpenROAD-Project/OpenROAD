@@ -50,9 +50,9 @@ namespace fr {
                   design_(designIn), drWorker_(workerIn),
                   graphics_(nullptr),
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
-                  ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
-                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr),
-                  via2turnMinLen_(nullptr), ndr_(nullptr) {}
+                  ggDRCCost_(0), ggMarkerCost_(0), ndr_(nullptr),
+                  halfViaEncArea_(nullptr), via2viaMinLen_(nullptr), 
+                  via2viaMinLenNew_(nullptr), via2turnMinLen_(nullptr) {}
     // getters
     frTechObject* getTech() const {
       return design_->getTech();

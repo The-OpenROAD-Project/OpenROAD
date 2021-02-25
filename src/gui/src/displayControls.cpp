@@ -157,9 +157,6 @@ DisplayControls::DisplayControls(QWidget* parent)
       nets_power_visible_(true),
       nets_ground_visible_(true),
       nets_clock_visible_(true),
-      isGridGraphVisible_(false),
-      areRouteGuidesVisible_(true),
-      areRoutingObjsVisible_(true),
       congestion_visible_(false)
 
 {
@@ -242,22 +239,6 @@ DisplayControls::DisplayControls(QWidget* parent)
     fills_visible_ = visible;
   });
 
-  //Grid Graph
-  grid_graph_ = makeItem("Grid Graph", model_, Qt::Unchecked, [this](bool visible) {
-    isGridGraphVisible_ = visible;
-  });
-  
-  //Guides
-  route_guides_ = makeItem("Route Guides", model_, Qt::Checked, [this](bool visible) {
-    areRouteGuidesVisible_ = visible;
-  });
-  
-  //Routing objs
-  routing_objs_ = makeItem("Routing Objects", model_, Qt::Checked, [this](bool visible) {
-    areRoutingObjsVisible_ = visible;
-  });
-  
-  
   setWidget(view_);
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -482,20 +463,26 @@ bool DisplayControls::areNonPrefTracksVisible()
 {
   return tracks_visible_non_pref_;
 }
-bool DisplayControls::isGridGraphVisible(){
-    return isGridGraphVisible_;
-}
-
-bool DisplayControls::areRouteGuidesVisible(){
-    return areRouteGuidesVisible_;
-}
-bool DisplayControls::areRoutingObjsVisible(){
-    return areRoutingObjsVisible_;
-}
 
 bool DisplayControls::isCongestionVisible() const
 {
   return congestion_visible_;
+}
+
+void DisplayControls::addCustomVisibilityControl(const std::string& name,
+                                                 bool initially_visible)
+{
+  auto q_name = QString::fromStdString(name);
+  auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
+  auto item = makeItem(q_name, model_, checked, [this, name](bool visible) {
+    custom_visibility_[name] = visible;
+  });
+  custom_visibility_[name] = initially_visible;
+}
+
+bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
+{
+  return custom_visibility_[name];
 }
 
 bool DisplayControls::showHorizontalCongestion() const

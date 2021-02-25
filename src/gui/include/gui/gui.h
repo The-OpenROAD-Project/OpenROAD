@@ -343,15 +343,19 @@ class Gui
   // Show a message in the status bar
   void status(const std::string& message);
 
+  // Add a custom visibilty control to the 'Display Control' panel.
+  // Useful for debug renderers to control their display.
+  void addCustomVisibilityControl(const std::string& name,
+                                  bool initially_visible = false);
+
+  // Get the visibility for a custom control in the 'Display Control' panel.
+  bool checkCustomVisibilityControl(const std::string& name);
+
   const std::set<Renderer*>& renderers() { return renderers_; }
 
   // Will return nullptr if openroad was invoked without -gui
   static Gui* get();
-
-  bool isGridGraphVisible();
-  bool areRouteGuidesVisible();
-  bool areRoutingObjsVisible();
-  
+ 
  private:
   Gui() = default;
 

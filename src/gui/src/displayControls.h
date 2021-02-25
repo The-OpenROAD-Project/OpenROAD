@@ -141,6 +141,11 @@ class DisplayControls : public QDockWidget, public Options
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
+
+  void addCustomVisibilityControl(const std::string& name,
+                                  bool initially_visible = false);
+  bool checkCustomVisibilityControl(const std::string& name);
+
   bool isGridGraphVisible();
   bool areRouteGuidesVisible();
   bool areRoutingObjsVisible();
@@ -216,6 +221,9 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* route_guides_;
   QStandardItem* routing_objs_;
 
+  std::map<std::string, QStandardItem*> custom_controls_;
+  std::map<std::string, bool> custom_visibility_;
+
   odb::dbDatabase* db_;
   bool tech_inited_;
   bool fills_visible_;
@@ -227,10 +235,6 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_power_visible_;
   bool nets_ground_visible_;
   bool nets_clock_visible_;
-  
-  bool isGridGraphVisible_;
-  bool areRouteGuidesVisible_;
-  bool areRoutingObjsVisible_;
   
   bool congestion_visible_;
 
