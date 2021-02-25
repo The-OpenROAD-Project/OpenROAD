@@ -41,6 +41,10 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
     : QDialog(parent), timing_paths_model_(nullptr)
 {
   setupUi(this);
+  timingPathTableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
+  timingPathTableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
 }
 
 void TimingDebugDialog::accept()

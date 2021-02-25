@@ -36,8 +36,9 @@
 #include "staGui.h"
 
 #include <QDebug>
-#include <string>
+#include <fstream>
 #include <iostream>
+#include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -88,6 +89,30 @@ int TimingPathsModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 {
+  if (!index.isValid() || role != Qt::DisplayRole) {
+    return QVariant();
+  }
+  int row_index = index.row();
+  if (row_index > timing_paths_.size())
+    return QVariant();
+  int col_index = index.column();
+  auto timing_path = timing_paths_[row_index];
+  switch (col_index) {
+    case 0:  // Path Id
+      return QString::number(row_index + 1);
+    case 1:  // Clock
+      return QString(timing_path->getStartClock().c_str());
+    case 2:  // Required Time
+      return QString::number(timing_path->getPathRequiredTime()) + "ns";
+    case 3:  // Arrival Time
+      return QString::number(timing_path->getPathArrivalTime()) + "ns";
+    case 4:  // Slack
+      return QString::number(timing_path->getSlack()) + "ns";
+    case 5:  // Path Start
+      return QString(timing_path->getStartStageName().c_str());
+    case 6:  // Path End
+      return QString(timing_path->getEndStageName().c_str());
+  }
   return QVariant();
 }
 
@@ -184,8 +209,11 @@ void TimingPathsModel::populateModel()
   beginResetModel();
   populatePaths();
   endResetModel();
-  std::cout << "Timing Path Model populated with : " << timing_paths_.size()
-           << " Paths..." << std::endl;
+  qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
+           << " Paths...";
+  if (timing_paths_.size() > 0) {
+    timing_paths_[0]->printPath("pathReport.csv");
+  }
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
@@ -233,8 +261,9 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
-      //if (sta_->getDbNetwork()->isDriver(pin)) {
-      //  cap = loadCap(pin, ref->transition(sta_), ref->pathAnalysisPt(sta_)->dcalcAnalysisPt());
+      // if (sta_->getDbNetwork()->isDriver(pin)) {
+      //  cap = loadCap(pin, ref->transition(sta_),
+      //  ref->pathAnalysisPt(sta_)->dcalcAnalysisPt());
       //}
       auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
       auto arrival = ref->arrival(sta_);
@@ -249,8 +278,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       sta_->getDbNetwork()->staToDb(pin, term, port);
       odb::dbObject* pinObject
           = term ? (odb::dbObject*) term : (odb::dbObject*) port;
-      path->appendNode(
-          TimingPathNode(pinObject, is_rising, arrival, path_required, slack, slew, cap));
+      path->appendNode(TimingPathNode(
+          pinObject, is_rising, arrival, path_required, slack, slew, cap));
       first_path = false;
     }
     timing_paths_.push_back(path);
@@ -258,6 +287,64 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 
   delete path_ends;
   return true;
+}
+
+double TimingPath::getPathArrivalTime() const
+{
+  // TBD
+  return 0;
+}
+
+double TimingPath::getPathRequiredTime() const
+{
+  // TBD
+  return 0;
+}
+
+double TimingPath::getSlack() const
+{
+  // TBD
+  return 0;
+}
+
+std::string TimingPath::getStartStageName() const
+{
+  auto db_obj = path_nodes_.begin()->pin_;
+  if (db_obj->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(db_obj);
+    return db_iterm->getInst()->getName() + "/"
+           + db_iterm->getMTerm()->getName();
+  }
+  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(db_obj);
+  return db_bterm->getName();
+}
+
+std::string TimingPath::getEndStageName() const
+{
+  auto db_obj = path_nodes_.rbegin()->pin_;
+  if (db_obj->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(db_obj);
+    return db_iterm->getInst()->getName() + "/"
+           + db_iterm->getMTerm()->getName();
+  }
+  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(db_obj);
+  return db_bterm->getName();
+}
+
+void TimingPath::printPath(const std::string& file_name) const
+{
+  std::ofstream ofs(file_name.c_str());
+  if (ofs.is_open()) {
+    ofs << "Node,Rising,Arrival,Required,Slack" << std::endl;
+    for (auto& node : path_nodes_) {
+      char db_name[1000];
+      node.pin_->getDbName(db_name);
+      ofs << node.pin_->getObjName() << "," << node.is_rising_ << ","
+          << node.arrival_ << "," << node.required_ << "," << node.slack_
+          << std::endl;
+    }
+    ofs.close();
+  }
 }
 
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const

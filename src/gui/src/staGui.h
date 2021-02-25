@@ -92,12 +92,16 @@ class TimingPathNode
                  bool is_rising,
                  float arrival,
                  float required,
-                 float slack, float slew, float load)
+                 float slack,
+                 float slew,
+                 float load)
       : pin_(pin),
         is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
-        slack_(slack), slew_(slew), load_(load)
+        slack_(slack),
+        slew_(slew),
+        load_(load)
   {
   }
 
@@ -121,6 +125,16 @@ class TimingPath
   std::string getStartClock() const { return startClk; }
   void setEndClock(const char* name) { endClk = name; }
   std::string getEndClock() const { return endClk; }
+
+  // Time will be returned in in nano seconds
+  double getPathArrivalTime() const;
+  double getPathRequiredTime() const;
+  double getSlack() const;
+
+  std::string getStartStageName() const;
+  std::string getEndStageName() const;
+
+  void printPath(const std::string& file_name) const;
 
  private:
   std::vector<TimingPathNode> path_nodes_;

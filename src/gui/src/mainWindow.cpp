@@ -89,10 +89,10 @@ MainWindow::MainWindow(QWidget* parent)
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
 
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          timing_dialog_,
-          SLOT(designLoaded(odb::dbBlock*)));
+  // connect(this,
+  //        SIGNAL(designLoaded(odb::dbBlock*)),
+  //        timing_dialog_,
+  //        SLOT(designLoaded(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
@@ -389,6 +389,7 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showTimingDialog()
 {
+  timing_dialog_->designLoaded(nullptr);
   timing_dialog_->show();
 }
 
