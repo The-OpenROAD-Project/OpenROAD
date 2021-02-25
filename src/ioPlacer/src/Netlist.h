@@ -166,6 +166,7 @@ class Netlist
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
+  int computeIONetHPWL(int, odb::Point, odb::Point, odb::Point, Edge, std::vector<Constraint>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
   void clear();

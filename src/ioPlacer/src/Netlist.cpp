@@ -148,6 +148,28 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
 }
 
 int Netlist::computeIONetHPWL(int idx,
+                              Point section_begin,
+                              Point section_end,
+                              Point section_center,
+                              Edge edge,
+                              std::vector<Constraint>& constraints)
+{
+  int hpwl;
+
+  if (checkSlotForPin(io_pins_[idx], edge, section_center, constraints)) {
+    hpwl = computeIONetHPWL(idx, section_center);
+  } else if (checkSlotForPin(io_pins_[idx], edge, section_begin, constraints)) {
+    hpwl = computeIONetHPWL(idx, section_begin);
+  } else if (checkSlotForPin(io_pins_[idx], edge, section_end, constraints)) {
+    hpwl = computeIONetHPWL(idx, section_end);
+  } else {
+    hpwl = std::numeric_limits<int>::max();
+  }
+
+  return hpwl;
+}
+
+int Netlist::computeIONetHPWL(int idx,
                               Point slot_pos,
                               Edge edge,
                               std::vector<Constraint>& constraints)

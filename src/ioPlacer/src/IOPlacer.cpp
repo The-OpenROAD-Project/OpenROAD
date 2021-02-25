@@ -523,8 +523,10 @@ bool IOPlacer::assignPinsSections()
       std::vector<int> dst(sections.size());
       std::vector<InstancePin> inst_pins_vector;
       for (int i = 0; i < sections.size(); i++) {
+        Point& section_begin = slots_[sections[i].begin_slot].pos;
+        Point& section_end = slots_[sections[i].end_slot].pos;
         dst[i] = net.computeIONetHPWL(
-            idx, sections[i].pos, sections[i].edge, constraints_);
+            idx, section_begin, section_end, sections[i].pos, sections[i].edge, constraints_);
       }
       net.getSinksOfIO(idx, inst_pins_vector);
       for (auto i : sortIndexes(dst)) {
