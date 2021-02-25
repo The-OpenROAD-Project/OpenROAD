@@ -78,9 +78,10 @@ void definComponent::init()
     free((void*) (*sitr).first);
 
   _sites.clear();
-  _inst_cnt  = 0;
-  _iterm_cnt = 0;
-  _cur_inst  = NULL;
+  _inst_cnt   = 0;
+  _update_cnt = 0;
+  _iterm_cnt  = 0;
+  _cur_inst   = NULL;
 }
 
 dbMaster* definComponent::getMaster(const char* name)
@@ -152,23 +153,28 @@ void definComponent::begin(const char* iname, const char* mname)
     _errors++;
     return;
   }
-  if(_mode == FLOORPLAN && _block->findInst(iname) != nullptr)
+  if(_mode == FLOORPLAN){
     _cur_inst = _block->findInst(iname);
+    if(_cur_inst == nullptr){
+      _errors++;
+      return;
+    }
+    _update_cnt++;
+  }
   else{
     _cur_inst = dbInst::create(_block, master, iname);
-    _inst_cnt++;
+    if(_cur_inst != nullptr){
+      _inst_cnt++;
+      _iterm_cnt += master->getMTermCount();
+    }else
+    {
+      _logger->warn(utl::ODB, 93,  "error: duplicate instance definition({})", iname);
+      _errors++;
+      return;
+    }
+    if (_inst_cnt % 100000 == 0)
+      _logger->info(utl::ODB, 94,  "\t\tCreated {} Insts", _inst_cnt);
   }
-
-  if (_cur_inst == nullptr) {
-    --_inst_cnt;
-    _logger->warn(utl::ODB, 93,  "error: duplicate instance definition({})", iname);
-    _errors++;
-    return;
-  }
-
-  _iterm_cnt += master->getMTermCount();
-  if (_inst_cnt % 100000 == 0)
-    _logger->info(utl::ODB, 94,  "\t\tCreated {} Insts", _inst_cnt);
 }
 
 void definComponent::placement(int status, int x, int y, int orient)

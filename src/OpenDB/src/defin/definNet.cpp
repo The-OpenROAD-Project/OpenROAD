@@ -80,6 +80,7 @@ void definNet::init()
   definBase::init();
   _found_new_routing = false;
   _net_cnt           = 0;
+  _update_cnt        = 0;
   _net_iterm_cnt     = 0;
   _cur_net           = NULL;
   _cur_layer         = NULL;
@@ -134,12 +135,15 @@ void definNet::begin(const char* name)
     // This may cause problems with other routers.
     _non_default_rule = _cur_net->getNonDefaultRule();
   }
+  if(_mode == FLOORPLAN)
+    _update_cnt++;
+  else
+    _net_cnt++;
 
-  _net_cnt++;
   _wire              = NULL;
   _rule_for_path     = NULL;
   _found_new_routing = false;
-  if (_net_cnt % 100000 == 0)
+  if (_net_cnt != 0 && _net_cnt % 100000 == 0)
     _logger->info(utl::ODB, 97,  "\t\tCreated {} Nets", _net_cnt);
 }
 

@@ -369,6 +369,10 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
 {
   definReader*    reader     = (definReader*) data;
   definComponent* componentR = reader->_componentR;
+  if(reader->_mode == FLOORPLAN && reader->_block->findInst(comp->id()) == nullptr){
+    reader->_logger->warn(utl::ODB, 248, "skipping undefined comp {} encountered in FLOORPLAN DEF", comp->id());
+    return PARSE_OK;
+  }
 
   if (comp->hasEEQ()) {
     UNSUPPORTED("EEQMASTER on component is unsupported");
@@ -589,7 +593,10 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definNet*    netR   = reader->_netR;
-
+  if(reader->_mode == FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
+    reader->_logger->warn(utl::ODB, 246, "skipping undefined net {} encountered in FLOORPLAN DEF", net->name());
+    return PARSE_OK;
+  }
   if (net->numShieldNets() > 0) {
     UNSUPPORTED("SHIELDNET on net is unsupported");
   }
@@ -811,6 +818,10 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definPin*    pinR   = reader->_pinR;
+  if(reader->_mode == FLOORPLAN && reader->_block->findBTerm(pin->pinName()) == nullptr){
+    reader->_logger->warn(utl::ODB, 247, "skipping undefined pin {} encountered in FLOORPLAN DEF", pin->pinName());
+    return PARSE_OK;
+  }
 
   if (pin->numVias() > 0) {
     UNSUPPORTED("VIA in pins is unsupported");
@@ -1325,7 +1336,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definSNet*   snetR  = reader->_snetR;
-
+  if(reader->_mode == FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
+    reader->_logger->warn(utl::ODB, 249, "skipping undefined net {} encountered in FLOORPLAN DEF", net->name());
+    return PARSE_OK;
+  }
   if (net->hasCap()) {
     UNSUPPORTED("ESTCAP on special net is unsupported");
   }
@@ -1615,7 +1629,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
   dbChip* chip = _db->getChip();
   if (_mode == FLOORPLAN){
     if(chip == nullptr)
-      _logger->error(utl::ODB, 0, "No chip created for floorplan initialization");
+      _logger->error(utl::ODB, 250, "No chip created for floorplan initialization");
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return NULL;
@@ -1650,10 +1664,16 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
 
   if (_pinR->_bterm_cnt)
     _logger->info(utl::ODB, 130,  "    Created {} pins.", _pinR->_bterm_cnt);
+  
+  if (_pinR->_update_cnt)
+    _logger->info(utl::ODB, 252,  "    Updated {} pins.", _pinR->_update_cnt);
 
   if (_componentR->_inst_cnt)
     _logger->info(utl::ODB, 131, 
 "    Created {} components and {} component-terminals.",_componentR->_inst_cnt,_componentR->_iterm_cnt);
+
+  if (_componentR->_update_cnt)
+    _logger->info(utl::ODB, 253, "    Updated {} components.",_componentR->_update_cnt);
 
   if (_snetR->_snet_cnt)
     _logger->info(utl::ODB, 132, 
@@ -1662,6 +1682,10 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
   if (_netR->_net_cnt)
     _logger->info(utl::ODB, 133, 
 "    Created {} nets and {} connections.",_netR->_net_cnt,_netR->_net_iterm_cnt);
+
+  if (_netR->_update_cnt)
+    _logger->info(utl::ODB, 254, 
+"    Updated {} nets and {} connections.",_netR->_update_cnt,_netR->_net_iterm_cnt);
 
   _logger->info(utl::ODB, 134,  "Finished DEF file: {}", file);
   delete hdr;

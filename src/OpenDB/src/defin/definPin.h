@@ -78,6 +78,7 @@ class definPin : public definBase
 
  public:
   int _bterm_cnt;
+  int _update_cnt;
 
  private:
   dbBTerm*                 _cur_bterm;
