@@ -50,6 +50,9 @@ We maintain the following channels for communication:
 + Gitter Community: https://gitter.im/The-OpenROAD-Project/community
 + Inquiries: openroad@eng.ucsd.edu
 
+Site Map
+--------
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
@@ -58,9 +61,14 @@ We maintain the following channels for communication:
    user/UserGuide
    user/ToolLimitations
    contrib/GettingInvolved
+   contrib/Contributions
    contrib/DeveloperGuide
+   contrib/CodingPractices
    contrib/DatabaseMath
-   user/FAQs
+   contrib/GettingInvolved
+   contrib/Logger
+   contrib/OpenroadArch
+   user/FAQS
 
 
 .. _OpenDB: https://github.com/The-OpenROAD-Project/OpenDB
