@@ -387,7 +387,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
         ndr->getUseViaRules(viaRules);
         z = std::numeric_limits<int>().max();
         for (auto via : viaRules){
-            for (int i = 0; i < via->getViaLayerRuleCount(); i++){
+            for (int i = 0; i < (int)via->getViaLayerRuleCount(); i++){
                 if (via->getViaLayerRule(i)->getLayer()->getType() == odb::dbTechLayerType::CUT) continue;
                 if (via->getViaLayerRule(i)->getLayer()->getNumber()/2 < z) 
                     z = via->getViaLayerRule(i)->getLayer()->getNumber()/2;

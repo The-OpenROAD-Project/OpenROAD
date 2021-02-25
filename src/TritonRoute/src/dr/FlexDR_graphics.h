@@ -96,7 +96,11 @@ class FlexDRGraphics : public gui::Renderer
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
-  
+
+  // Names for the custom visibility controls in the gui
+  static const char* grid_graph_visible_;
+  static const char* route_guides_visible_;
+  static const char* routing_objs_visible_;
 };
 
 }  // namespace dr

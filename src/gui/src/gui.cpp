@@ -284,14 +284,17 @@ void Gui::clearHighlights(int highlight_group)
 {
   main_window->clearHighlighted(highlight_group);
 }
-bool Gui::isGridGraphVisible(){
-    return main_window->getControls()->isGridGraphVisible();
+
+void Gui::addCustomVisibilityControl(const std::string& name,
+                                     bool initially_visible)
+{
+  main_window->getControls()->addCustomVisibilityControl(name,
+                                                         initially_visible);
 }
-bool Gui::areRouteGuidesVisible(){
-    return main_window->getControls()->areRouteGuidesVisible();
-}
-bool Gui::areRoutingObjsVisible(){
-    return main_window->getControls()->areRoutingObjsVisible();
+
+bool Gui::checkCustomVisibilityControl(const std::string& name)
+{
+  return main_window->getControls()->checkCustomVisibilityControl(name);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)

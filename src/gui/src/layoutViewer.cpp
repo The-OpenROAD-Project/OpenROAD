@@ -115,7 +115,7 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  virtual void setPenWidth(int width){
+  virtual void setPenWidth(int width) override {
       QPen pen(painter_->pen().color());
       pen.setCosmetic(painter_->pen().isCosmetic());
       pen.setWidth(width);
@@ -161,14 +161,14 @@ class GuiPainter : public Painter
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
-  void setTransparentBrush(){
+  void setTransparentBrush() override {
       painter_->setBrush(Qt::transparent);
   }
-  void drawCircle(int x, int y, int r){
+  void drawCircle(int x, int y, int r) override {
       painter_->drawEllipse(x-r/2, y-r/2, r, r);
   }
   //NOTE: it is drawing upside down
-  void drawString(int x, int y, int offset, const std::string& s){
+  void drawString(int x, int y, int offset, const std::string& s) override {
       painter_->drawText(x+offset, y+offset, s.data());
   }
  private:

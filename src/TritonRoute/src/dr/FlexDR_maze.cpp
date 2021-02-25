@@ -33,6 +33,7 @@
 #include <chrono>
 #include <algorithm>
 #include <random>
+#include <sstream>
 #include <boost/polygon/polygon.hpp>
 
 using namespace std;
@@ -2787,7 +2788,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
         currStyle.setEndStyle(frcTruncateEndStyle, 0);
       }
       if (net->getFrNet()->getNondefaultRule()){
-          setNDRStyle(net, currStyle, startX, endX, startY, endY, startZ, i-1 >= 0 ? &points[i-1] : nullptr, i+2 < points.size() ? &points[i+2] : nullptr);
+        setNDRStyle(net, currStyle, startX, endX, startY, endY, startZ, i-1 >= 0 ? &points[i-1] : nullptr, i+2 < (int)points.size() ? &points[i+2] : nullptr);
       }
       currPathSeg->setStyle(currStyle);
       currPathSeg->setMazeIdx(start, end);
@@ -2857,7 +2858,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
         currStyle.setEndStyle(frcTruncateEndStyle, 0);
       }
       if (net->getFrNet()->getNondefaultRule()){
-          setNDRStyle(net, currStyle, startX, endX, startY, endY, startZ, i-1 >= 0 ? &points[i-1] : nullptr, i+2 < points.size() ? &points[i+2] : nullptr);
+        setNDRStyle(net, currStyle, startX, endX, startY, endY, startZ, i-1 >= 0 ? &points[i-1] : nullptr, i+2 < (int)points.size() ? &points[i+2] : nullptr);
       }
       currPathSeg->setStyle(currStyle);
       currPathSeg->setMazeIdx(start, end);
@@ -2954,7 +2955,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
 void FlexDRWorker::setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
                                 frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next){
     frNonDefaultRule* ndr = net->getFrNet()->getNondefaultRule();
-    if (ndr->getWidth(z) > currStyle.getWidth()){
+    if (ndr->getWidth(z) > (int) currStyle.getWidth()){
         currStyle.setWidth(ndr->getWidth(z));
         currStyle.setBeginExt(ndr->getWidth(z)/2);
         currStyle.setEndExt(ndr->getWidth(z)/2);
