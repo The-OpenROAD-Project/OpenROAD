@@ -903,6 +903,10 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     std::vector<std::pair<frCoord, frCoord> > spacings;
     rule->getSpacingTable(spacings);
     rule->getWidthTable(widths);
+    bool hasSameXY = true;
+    for(auto &[spacing1, spacing2] : spacings)
+      if(spacing1 != spacing2)
+        hasSameXY = false;
 
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(widthName, widths, spacings);
     unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
@@ -937,6 +941,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
         }
         break;
     }
+    rptr->setSameXY(hasSameXY);
     rptr->setExceptSameNet(rule->isExceptSameNet());
     rptr->setExceptSameMetal(rule->isExceptSameMetal());
     tech->addUConstraint(std::move(uCon));
