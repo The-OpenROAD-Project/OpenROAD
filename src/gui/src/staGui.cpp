@@ -52,6 +52,7 @@
 #include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
@@ -225,29 +226,18 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 
   sta::PathEndSeq* path_ends
       = sta_->search()->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr,
-          nullptr,
-          nullptr,
-          false,
+          nullptr, nullptr, nullptr, false,
           // corner, min_max,
-          sta_->findCorner("default"),
-          get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+          sta_->findCorner("default"), get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
           // group_count, endpoint_count, unique_pins
-          path_count,
-          path_count,
-          true,
-          -sta::INF,
-          sta::INF,  // slack_min, slack_max,
+          path_count, path_count, true,
+          -sta::INF, sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
           nullptr,   // group_names
           // setup, hold, recovery, removal,
-          true,
-          true,
-          true,
-          true,
+          true, true, false, false,
           // clk_gating_setup, clk_gating_hold
-          true,
-          true);
+          false, false);
 
   bool first_path = true;
   for (auto& path_end : *path_ends) {
@@ -256,6 +246,10 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     TimingPath* path = new TimingPath();
     path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
     path->setEndClock(path_end->targetClk(sta_)->name());
+    path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay() : 0);
+    path->setSlack(path_end->slack(sta_));
+    path->setArrTime(path_end->dataArrivalTime(sta_));
+    path->setReqTime(path_end->requiredTime(sta_));
     for (size_t i = 1; i < expanded.size(); i++) {
       auto ref = expanded.path(i);
       auto pin = ref->vertex(sta_)->pin();
@@ -287,24 +281,6 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 
   delete path_ends;
   return true;
-}
-
-double TimingPath::getPathArrivalTime() const
-{
-  // TBD
-  return 0;
-}
-
-double TimingPath::getPathRequiredTime() const
-{
-  // TBD
-  return 0;
-}
-
-double TimingPath::getSlack() const
-{
-  // TBD
-  return 0;
 }
 
 std::string TimingPath::getStartStageName() const

@@ -121,15 +121,20 @@ class TimingPath
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
-  void setStartClock(const char* name) { startClk = name; }
-  std::string getStartClock() const { return startClk; }
-  void setEndClock(const char* name) { endClk = name; }
-  std::string getEndClock() const { return endClk; }
+  void setStartClock(const char* name) { startClk_ = name; }
+  std::string getStartClock() const { return startClk_; }
+  void setEndClock(const char* name) { endClk_ = name; }
+  std::string getEndClock() const { return endClk_; }
 
   // Time will be returned in in nano seconds
-  double getPathArrivalTime() const;
-  double getPathRequiredTime() const;
-  double getSlack() const;
+  float getPathArrivalTime() const { return arrTime_; }
+  void setArrTime(float arr) { arrTime_ = arr; }
+  float getPathRequiredTime() const { return reqTime_; }
+  void setReqTime(float req) { reqTime_ = req; }
+  float getSlack() const { return slack_; }
+  void setSlack(float slack) { slack_ = slack;}
+  float getPathDelay() const { return pathDelay_; }
+  void setPathDelay(float del) { pathDelay_ = del; }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
@@ -138,8 +143,12 @@ class TimingPath
 
  private:
   std::vector<TimingPathNode> path_nodes_;
-  std::string startClk;
-  std::string endClk;
+  std::string startClk_;
+  std::string endClk_;
+  float slack_;
+  float pathDelay_;
+  float arrTime_;
+  float reqTime_;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
