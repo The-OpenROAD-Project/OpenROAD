@@ -1102,6 +1102,12 @@ void GlobalRouter::computeObstructionsAdjustments()
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
       for (odb::Rect& obs : layerObstructions) {
+        if (obs.xMax() <= _grid->getLowerLeftX() || obs.xMin() >= _grid->getUpperRightX() ||
+	          obs.yMax() <= _grid->getLowerLeftY() || obs.yMin() >= _grid->getUpperRightY()) {
+          _logger->info(GRT, 209, "Ignoring an obstruction on layer {} outside the die area.", layer);
+      		continue;
+      	}
+
         odb::Rect firstTileBox;
         odb::Rect lastTileBox;
 
