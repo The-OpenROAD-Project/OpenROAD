@@ -2171,12 +2171,12 @@ Resizer::repairSetup(float slack_margin)
              delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
-  int decreasing_slack_passes = 0;
+  int non_decreasing_slack_passes = 0;
   while (fuzzyLess(worst_slack, slack_margin)
-         // Allow slack to increase a few passes to get out of local minima.
-         && (decreasing_slack_passes < 0
-             || fuzzyGreater(worst_slack, prev_worst_slack))
-         && !fuzzyEqual(worst_slack, prev_worst_slack)) {
+         // Allow a few passes where our slack doesn't improve to get out of
+         // local minima.
+         && (non_decreasing_slack_passes < max_non_decreasing_slack_passes_
+             || fuzzyGreater(worst_slack, prev_worst_slack))) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
     repairSetup(worst_path, worst_slack);
@@ -2189,10 +2189,12 @@ Resizer::repairSetup(float slack_margin)
     debugPrint(debug_, "retime", 1, "pass %d worst_slack = %s",
                pass,
                delayAsString(worst_slack, sta_, 3));
-    if (fuzzyLess(worst_slack, prev_worst_slack))
-      decreasing_slack_passes++;
+
+    if (!fuzzyGreater(worst_slack, prev_worst_slack))
+      non_decreasing_slack_passes++;
     else
-      decreasing_slack_passes = 0;
+      non_decreasing_slack_passes = 0;
+
     if (overMaxArea())
       break;
     pass++;

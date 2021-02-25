@@ -566,6 +566,9 @@ protected:
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSet inserted_buffers_;
+
+  // During setup repair, allow this many passes where slack doesn't improve.
+  static constexpr int max_non_decreasing_slack_passes_ = 5;
 };
 
 } // namespace
