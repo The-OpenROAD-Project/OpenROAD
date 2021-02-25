@@ -398,7 +398,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
     if (end_slot > edge_end) {
       end_slot = edge_end;
     }
-    for (int i = edge_begin; i < end_slot; ++i) {
+    for (int i = edge_begin; i <= end_slot; ++i) {
       if (slots_[i].blocked) {
         blocked_slots++;
       }

@@ -159,9 +159,9 @@ int Netlist::computeIONetHPWL(int idx,
   if (checkSlotForPin(io_pins_[idx], edge, section_center, constraints)) {
     hpwl = computeIONetHPWL(idx, section_center);
   } else if (checkSlotForPin(io_pins_[idx], edge, section_begin, constraints)) {
-    hpwl = computeIONetHPWL(idx, section_begin);
+    hpwl = computeIONetHPWL(idx, section_begin)*1.1;
   } else if (checkSlotForPin(io_pins_[idx], edge, section_end, constraints)) {
-    hpwl = computeIONetHPWL(idx, section_end);
+    hpwl = computeIONetHPWL(idx, section_end)*1.1;
   } else {
     hpwl = std::numeric_limits<int>::max();
   }
