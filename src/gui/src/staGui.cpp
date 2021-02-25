@@ -309,7 +309,9 @@ double TimingPath::getSlack() const
 
 std::string TimingPath::getStartStageName() const
 {
-  auto db_obj = path_nodes_.begin()->pin_;
+  auto path_itr = path_nodes_.begin();
+  path_itr++;
+  auto db_obj = path_itr->pin_;
   if (db_obj->getObjectType() == odb::dbObjectType::dbITermObj) {
     odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(db_obj);
     return db_iterm->getInst()->getName() + "/"
@@ -337,11 +339,17 @@ void TimingPath::printPath(const std::string& file_name) const
   if (ofs.is_open()) {
     ofs << "Node,Rising,Arrival,Required,Slack" << std::endl;
     for (auto& node : path_nodes_) {
-      char db_name[1000];
-      node.pin_->getDbName(db_name);
-      ofs << node.pin_->getObjName() << "," << node.is_rising_ << ","
-          << node.arrival_ << "," << node.required_ << "," << node.slack_
-          << std::endl;
+      std::string obj_name;
+      if (node.pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+        odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node.pin_);
+        obj_name = db_iterm->getInst()->getName() + "/"
+                   + db_iterm->getMTerm()->getName();
+      } else {
+        odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(node.pin_);
+        obj_name = db_bterm->getName();
+      }
+      ofs << obj_name << "," << node.is_rising_ << "," << node.arrival_ << ","
+          << node.required_ << "," << node.slack_ << std::endl;
     }
     ofs.close();
   }
