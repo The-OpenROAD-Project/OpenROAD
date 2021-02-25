@@ -37,6 +37,7 @@
 
 #include <QDebug>
 #include <string>
+#include <iostream>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -183,9 +184,8 @@ void TimingPathsModel::populateModel()
   beginResetModel();
   populatePaths();
   endResetModel();
-
-  qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
-           << " Paths...";
+  std::cout << "Timing Path Model populated with : " << timing_paths_.size()
+           << " Paths..." << std::endl;
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
@@ -230,6 +230,11 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     for (size_t i = 1; i < expanded.size(); i++) {
       auto ref = expanded.path(i);
       auto pin = ref->vertex(sta_)->pin();
+      auto slew = ref->slew(sta_);
+      float cap = 0.0;
+      //if (sta_->getDbNetwork()->isDriver(pin)) {
+      //  cap = loadCap(pin, ref->transition(sta_), ref->pathAnalysisPt(sta_)->dcalcAnalysisPt());
+      //}
       auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
       auto arrival = ref->arrival(sta_);
       auto path_ap = ref->pathAnalysisPt(sta_);
@@ -240,11 +245,11 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       auto slack = !first_path ? path_required - arrival : ref->slack(sta_);
       odb::dbITerm* term;
       odb::dbBTerm* port;
-      openroad_->getSta()->getDbNetwork()->staToDb(pin, term, port);
+      sta_->getDbNetwork()->staToDb(pin, term, port);
       odb::dbObject* pinObject
           = term ? (odb::dbObject*) term : (odb::dbObject*) port;
       path->appendNode(
-          TimingPathNode(pinObject, is_rising, arrival, path_required, slack));
+          TimingPathNode(pinObject, is_rising, arrival, path_required, slack, slew, cap));
       first_path = false;
     }
     timing_paths_.push_back(path);

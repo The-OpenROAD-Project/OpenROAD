@@ -92,12 +92,12 @@ class TimingPathNode
                  bool is_rising,
                  float arrival,
                  float required,
-                 float slack)
+                 float slack, float slew, float load)
       : pin_(pin),
         is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
-        slack_(slack)
+        slack_(slack), slew_(slew), load_(load)
   {
   }
 
@@ -106,6 +106,8 @@ class TimingPathNode
   float arrival_;
   float required_;
   float slack_;
+  float slew_;
+  float load_;
 };
 
 class TimingPath
