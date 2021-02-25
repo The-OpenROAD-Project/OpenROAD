@@ -117,9 +117,15 @@ class TimingPath
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
+  void setStartClock(const char* name) { startClk = name; }
+  std::string getStartClock() const { return startClk; }
+  void setEndClock(const char* name) { endClk = name; }
+  std::string getEndClock() const { return endClk; }
 
  private:
   std::vector<TimingPathNode> path_nodes_;
+  std::string startClk;
+  std::string endClk;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel

@@ -226,7 +226,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     sta::PathExpanded expanded(path_end->path(), sta_);
 
     TimingPath* path = new TimingPath();
-
+    path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
+    path->setEndClock(path_end->targetClk(sta_)->name());
     for (size_t i = 1; i < expanded.size(); i++) {
       auto ref = expanded.path(i);
       auto pin = ref->vertex(sta_)->pin();
