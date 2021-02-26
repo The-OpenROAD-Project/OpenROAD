@@ -233,16 +233,6 @@ int Partition::globalIndex(int macro_idx)
   return macro_placer_->macroIndex(macros_[macro_idx].dbInstPtr);
 }
 
-void Partition::updateMacroCoordi()
-{
-  for (auto& pmacro : macros_) {
-    int macro_idx = macro_placer_->macroIndex(pmacro.dbInstPtr);
-    Macro &macro = macro_placer_->macro(macro_idx);
-    macro.lx = macro.lx;
-    macro.ly = macro.ly;
-  }
-}
-
 // Call ParquetFP
 bool Partition::anneal()
 {

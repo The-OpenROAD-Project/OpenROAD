@@ -278,7 +278,6 @@ void MacroPlacer::placeMacrosCenterSpread()
   default_macro_spacings_ = spacings1;
   if (top_partition.anneal()) {
     updateMacroLocations(top_partition);
-    top_partition.updateMacroCoordi();
     updateDbInstLocations();
 
     double curWwl = getWeightedWL();
@@ -459,11 +458,6 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     }
     if (isFailed) {
       continue;
-    }
-
-    // update partitons' macro info
-    for (auto& curPart : partition_set) {
-      curPart.updateMacroCoordi();
     }
 
     double curWwl = getWeightedWL();
@@ -838,11 +832,13 @@ void MacroPlacer::updateMacroLocations(Partition& part)
 
   for (auto& macro : part.macros_) {
     auto mnPtr = macro_inst_map_.find(macro.dbInstPtr);
+    int macroIdx = mnPtr->second;
     // snap location to routing layer grid
     float macroX = getRoundUpFloat(macro.lx, pitchX);
     float macroY = getRoundUpFloat(macro.ly, pitchY);
+    macro.lx = macroX;
+    macro.ly = macroY;
     // Update Macro Location
-    int macroIdx = mnPtr->second;
     macros_[macroIdx].lx = macroX;
     macros_[macroIdx].ly = macroY;
   }

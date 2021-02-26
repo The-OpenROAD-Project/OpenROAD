@@ -92,8 +92,6 @@ class Partition
   void fillNetlistTable(MacroPartMap& macroPartMap);
   // Call Parquet to have annealing solution
   bool anneal();
-  // Update Macro location from MacroPlacer
-  void updateMacroCoordi();
 
   PartClass partClass;
   vector<Macro> macros_;
