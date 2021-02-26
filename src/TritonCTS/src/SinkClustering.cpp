@@ -188,7 +188,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
   }
   std::cout << "TODO: DIST COMPUTATION DONE" << std::endl;
 
-  std::cout << "TODO: points" << npoints << std::endl;
+  std::cout << "TODO: points " << npoints << std::endl;
 
   int* merge = new int[2*(npoints-1)];
   double* height = new double[npoints-1];
@@ -234,7 +234,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
   unsigned bigCluster = 0;
   int maxSizeCluster = 0;
   int bigSizeClusterIndex = nclusters - 1;
-  float threshSize = 1.1;
+  float threshSize = 1.0;
 
   unsigned l = 0;
   while(l<clusterSolution.size()){
@@ -256,7 +256,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
           ++k;
         }
       }
-      std::cout << "TODO: points" << npoints << std::endl;
+      std::cout << "TODO: points " << npoints << std::endl;
 
       merge = new int[2*(npoints-1)];
       height = new double[npoints-1];
@@ -289,9 +289,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
         tempSolution[labels[i]].push_back(clusterSolution[l][i]);
       }
 
-      std::cout << clusterSolution.size() << std::endl;
       clusterSolution[l].clear();
-      std::cout << clusterSolution.size() << std::endl;
       clusterSolution[l] = tempSolution[0];
       for (unsigned i = 1; i< numberClusters; i++){
         clusterSolution.push_back(tempSolution[i]);
