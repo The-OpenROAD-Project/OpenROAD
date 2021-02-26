@@ -204,7 +204,7 @@ namespace eval tap {
 
         set end_master [$db findMaster $endcap_master]
         if { $end_master == "NULL" } {
-            utl::error TAP 11 "Master $endcap_master not found"
+            utl::error TAP 10 "Master $endcap_master not found."
         }
         set end_width [$end_master getWidth]
         set min_row_width [expr 2*$end_width]
@@ -290,7 +290,7 @@ namespace eval tap {
             set endcapwidth [expr $endcap_cpp*$site_x]
 
             if { $master == "NULL" } {
-                utl::error 11 "Master $endcap_master not found"
+                utl::error TAP 11 "Master $endcap_master not found."
             }
 
             set row_name [$row getName]
@@ -305,13 +305,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 12 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 12 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
                         
                         if { $master == "NULL" } {
-                            utl::error TAP 13 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 13 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } elseif {$top_bottom == -1} {
@@ -319,13 +319,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 14 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 14 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 15 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 15 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } else {
@@ -344,7 +344,6 @@ namespace eval tap {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                utl::warn TAP 8 "Not enough space to place endcap in row $row_name. Skipping..."
                 continue
             }
 
@@ -395,7 +394,7 @@ namespace eval tap {
             }
 
             if {$llx == $loc_2_x && $lly == $loc_2_y} {
-                utl::warn TAP 9 "WARNING: row $row_name have enough space for only one endcap"
+                utl::warn TAP 9 "row $row_name have enough space for only one endcap."
             continue
             }
 
@@ -485,7 +484,7 @@ namespace eval tap {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
                     if { $master == "NULL" } {
-                        utl::error TAP 16 "Master $tapcell_master not found"
+                        utl::error TAP 16 "Master $tapcell_master not found."
                     }
 
                     set inst_name "PHY_${cnt}"
