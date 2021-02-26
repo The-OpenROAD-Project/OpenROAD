@@ -85,7 +85,5 @@
 [INFO MPL-0009] North pins 16
 [INFO MPL-0009] South pins 16
 [INFO MPL-0071] Initial weighted wire length 752.615
-[INFO MPL-0071] Placed weighted wire length 732.439
-Differences found at line 68.
-    - mem0 fakeram45_64x7 + FIXED ( 85120 20720 ) N ;
-    - mem0 fakeram45_64x7 + FIXED ( 84560 20160 ) N ;
+[INFO MPL-0071] Placed weighted wire length 671.811
+No differences found.

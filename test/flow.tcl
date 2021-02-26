@@ -90,7 +90,7 @@ detailed_placement
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-if {0} {
+
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
 
@@ -164,4 +164,4 @@ if { ![info exists drv_count] } {
 }
 
 puts "pass"
-}
+

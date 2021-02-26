@@ -161,10 +161,6 @@ public:
   size_t macroCount() { return macros_.size(); }
 
 private:
-  void partitionMaxSpace(Partition &partition,
-                         MacroSpacings &spacings,
-                         double &diff_x,
-                         double &diff_y);
   void findMacros();
   bool isMissingLiberty();
 
@@ -179,6 +175,8 @@ private:
   void cutRoundUp(const Layout& layout,
                   double& cutLine,
                   bool isHorizontal);
+    void setDbInstLocations(double x_scale, 
+                            double y_scale);
 
   // graph based adjacencies
   void findAdjacencies();

@@ -53,6 +53,10 @@
 
 namespace mpl {
 
+using std::round;
+using std::min;
+using std::max;
+
 using utl::MPL;
 
 using odb::dbTech;
@@ -68,9 +72,6 @@ using odb::dbSigType;
 using odb::dbBTerm;
 using odb::dbBPin;
 using odb::dbITerm;
-
-using std::min;
-using std::max;
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
@@ -196,89 +197,27 @@ void MacroPlacer::placeMacrosCenterSpread()
 
   Layout layout(lx_, ly_, ux_, uy_);
   bool horizontal = true;
-  Partition top_partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
-  top_partition.macros_ = macros_;
+  Partition partition(PartClass::ALL, lx_, ly_, ux_ - lx_, uy_ - ly_, this, logger_);
+  partition.macros_ = macros_;
 
   MacroPartMap globalMacroPartMap;
-  updateMacroPartMap(top_partition, globalMacroPartMap);
+  updateMacroPartMap(partition, globalMacroPartMap);
 
   if (connection_driven_) {
-    top_partition.fillNetlistTable(globalMacroPartMap);
+    partition.fillNetlistTable(globalMacroPartMap);
   }
 
   // Annealing based on ParquetFP Engine
-  //
-  // Binary search for channel x/y to space fill the core.
-  double spacing_x = default_macro_spacings_.getSpacingX();
-  double spacing_y = default_macro_spacings_.getSpacingY();
-  // spacings1 lower bound
-  // spacings1 upper bound
-  MacroSpacings spacings1(0, 0, spacing_x, spacing_y);
-  MacroSpacings spacings2(0, 0,
-                          spacing_x == 0 ? 1.0 : spacing_x * 2,
-                          spacing_y == 0 ? 1.0 : spacing_y * 2);
-  double tol = .01; // 1%
-  double diff_x1, diff_y1;
-  partitionMaxSpace(top_partition, spacings1, diff_x1, diff_y1);
-  double diff_x2, diff_y2;
-  partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
-  while (abs(diff_x1) > top_partition.width * tol
-         || abs(diff_y1) > top_partition.height * tol) {
-    debugPrint(logger_, MPL, "find_channels", 1, "{:.2f} {:.2f} -> {:.2f} {:.2f}",
-               spacings1.getChannelX(), spacings1.getChannelY(), diff_x1, diff_y1);
-    debugPrint(logger_, MPL, "find_channels", 1, "{:.2f} {:.2f} -> {:.2f} {:.2f}",
-               spacings2.getChannelX(), spacings2.getChannelY(), diff_x2, diff_y2);
-    if (diff_x2 > 0.0) {
-      spacings1.setChannelX(spacings2.getChannelX());
-      diff_x1 = diff_x2;
-      spacings2.setChannelX(spacings2.getChannelX() * 2);
-      partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
-    }
-    else {
-      MacroSpacings spacings3 = spacings1;
-      spacings3.setChannelX((spacings1.getChannelX() + spacings2.getChannelX()) / 2);
-      double diff_x3, diff_y3;
-      partitionMaxSpace(top_partition, spacings3, diff_x3, diff_y3);
-      if (diff_x3 > 0.0) {
-        spacings1.setChannelX(spacings3.getChannelX());
-        diff_x1 = diff_x3;
-      }
-      else {
-        spacings2.setChannelX(spacings3.getChannelX());
-        if (abs(diff_x2 - diff_x3) < max(diff_x2, diff_x3) * tol)
-          break;
-        diff_x2 = diff_x3;
-      }
-    }
+  if (partition.anneal()) {
+    updateMacroLocations(partition);
 
-    if (diff_y2 > 0.0) {
-      spacings1.setChannelY(spacings2.getChannelY());
-      diff_y1 = diff_y2;
-      spacings2.setChannelY(spacings2.getChannelY() * 2);
-      partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
-    }
-    else {
-      MacroSpacings spacings3 = spacings1;
-      spacings3.setChannelY((spacings1.getChannelY() + spacings2.getChannelY()) / 2);
-      double diff_x3, diff_y3;
-      partitionMaxSpace(top_partition, spacings3, diff_x3, diff_y3);
-      if (diff_y3 > 0.0) {
-        spacings1.setChannelY(spacings3.getChannelY());
-        diff_y1 = diff_y3;
-      }
-      else {
-        spacings2.setChannelY(spacings3.getChannelY());
-        if (abs(diff_y2 - diff_y3) < max(diff_y2, diff_y3) * tol)
-          break;
-        diff_y2 = diff_y3;
-      }
-    }
-  }
+    double x_scale, y_scale;
+    double width = ux_ - lx_;
+    double height = uy_ - ly_;
+    x_scale = width / partition.solution_width;
+    y_scale = height / partition.solution_height;
 
-  default_macro_spacings_ = spacings1;
-  if (top_partition.anneal()) {
-    updateMacroLocations(top_partition);
-    updateDbInstLocations();
+    setDbInstLocations(x_scale, y_scale);
 
     double curWwl = getWeightedWL();
     logger_->info(MPL, 71, "Placed weighted wire length {:g}", curWwl);
@@ -287,17 +226,26 @@ void MacroPlacer::placeMacrosCenterSpread()
     logger_->warn(MPL, 72, "Partitioning failed.");
 }
 
-void MacroPlacer::partitionMaxSpace(Partition &partition,
-                                    MacroSpacings &spacings,
-                                    double &diff_x,
-                                    double &diff_y)
+void MacroPlacer::setDbInstLocations(double x_scale,
+                                     double y_scale)
 {
-  // This is a hack until we flush the macro specific spacings.
-  default_macro_spacings_ = spacings;
-  partition.anneal();
-  diff_x = partition.width - partition.solution_width;
-  diff_y = partition.height - partition.solution_height;
+  odb::dbTech* tech = db_->getTech();
+  const int dbu = tech->getDbUnitsPerMicron();
+  const float pitch_x = static_cast<float>(snap_layer_->getPitchX()) / dbu;
+  const float pitch_y = static_cast<float>(snap_layer_->getPitchY()) / dbu;
+
+  for (auto& macro : macros_) {
+    double x = (macro.lx + macro.w / 2) * x_scale - macro.w / 2;
+    double y = (macro.ly + macro.h / 2) * y_scale - macro.h / 2;
+    // Snap to routing grid.
+    x = round(x / pitch_x) * pitch_x;
+    y = round(y / pitch_y) * pitch_y;
+    macro.dbInstPtr->setLocation(round(x * dbu), round(y * dbu));
+    macro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  }
 }
+
+////////////////////////////////////////////////////////////////
 
 // Use some undocumented method with cut lines to break the design
 // into regions and try all combinations. Pick the one that maximizes (yes, really)
@@ -494,7 +442,7 @@ int MacroPlacer::weight(int idx1, int idx2)
   return macro_weights_[idx1][idx2];
 }
 
-// update opendb dataset from mckt.
+// Update opendb instance locations from macros.
 void MacroPlacer::updateDbInstLocations()
 {
   odb::dbTech* tech = db_->getTech();
@@ -502,7 +450,7 @@ void MacroPlacer::updateDbInstLocations()
 
   for (auto& macro : macros_) {
     macro.dbInstPtr->setLocation(round(macro.lx * dbu),
-                                    round(macro.ly * dbu));
+                                 round(macro.ly * dbu));
     macro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
@@ -517,14 +465,14 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
   dbSite* site = rows.begin()->getSite();
   if (horizontal) {
     double siteSizeX = site->getWidth() / dbu;
-    cutLine = std::round(cutLine / siteSizeX) * siteSizeX;
-    cutLine = std::min(cutLine, layout.ux());
-    cutLine = std::max(cutLine, layout.lx());
+    cutLine = round(cutLine / siteSizeX) * siteSizeX;
+    cutLine = min(cutLine, layout.ux());
+    cutLine = max(cutLine, layout.lx());
   } else {
     double siteSizeY = site->getHeight() / dbu;
     cutLine = round(cutLine / siteSizeY) * siteSizeY;
-    cutLine = std::min(cutLine, layout.uy());
-    cutLine = std::max(cutLine, layout.ly());
+    cutLine = min(cutLine, layout.uy());
+    cutLine = max(cutLine, layout.ly());
   }
 }
 
@@ -611,7 +559,7 @@ MacroPlacer::getPartitions(const Layout& layout,
   }
   // more than 4
   else {
-    int hardLimit = std::round(std::sqrt(partition.macros_.size() / 3.0));
+    int hardLimit = round(std::sqrt(partition.macros_.size() / 3.0));
     for (int i = 0; i <= hardLimit; i++) {
       cutLineStor.push_back(
           (horizontal)
@@ -819,7 +767,7 @@ static bool isWithIn(int val, int min, int max)
 
 static float getRoundUpFloat(float x, float unit)
 {
-  return std::round(x / unit) * unit;
+  return round(x / unit) * unit;
 }
 
 void MacroPlacer::updateMacroLocations(Partition& part)
@@ -831,14 +779,13 @@ void MacroPlacer::updateMacroLocations(Partition& part)
     / tech->getDbUnitsPerMicron();
 
   for (auto& macro : part.macros_) {
-    auto mnPtr = macro_inst_map_.find(macro.dbInstPtr);
-    int macroIdx = mnPtr->second;
     // snap location to routing layer grid
     float macroX = getRoundUpFloat(macro.lx, pitchX);
     float macroY = getRoundUpFloat(macro.ly, pitchY);
     macro.lx = macroX;
     macro.ly = macroY;
     // Update Macro Location
+    int macroIdx = macro_inst_map_[macro.dbInstPtr];
     macros_[macroIdx].lx = macroX;
     macros_[macroIdx].ly = macroY;
   }
