@@ -154,9 +154,9 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
+  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
+    && gui_->checkCustomVisibilityControl(grid_graph_visible_)) {
     frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    if (gui_->checkCustomVisibilityControl(grid_graph_visible_)){
         const int offset = 50;
         const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
         frMIdx x_dim, y_dim, z_dim;
@@ -183,7 +183,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                 painter.drawRect({grid_graph_->xCoord(x)-offset, grid_graph_->yCoord(y)-offset, grid_graph_->xCoord(x)+offset, grid_graph_->yCoord(y)+offset});
           }
         }
-    }
+ }
    
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
@@ -198,7 +198,6 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                        {box.right(), box.bottom()});
     }
   }
- }
 }
   
 void FlexDRGraphics::update(){
@@ -359,7 +358,9 @@ void FlexDRGraphics::startIter(int iter)
   current_iter_ = iter;
   if (iter >= settings_->iter) {
     status("Start iter: " + std::to_string(iter));
-    if (settings_->allowPause) gui_->pause();
+    if (settings_->allowPause) {
+      gui_->pause();
+    }
   }
 }
 
