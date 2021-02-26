@@ -188,27 +188,15 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
   }
   std::cout << "TODO: DIST COMPUTATION DONE" << std::endl;
 
-  // for(unsigned i=0; i<(npoints*(npoints-1))/2; i++){
-  //   std::cout << "TODO: dist after " << distMatrix[i] << std::endl;
-  // }
-
   std::cout << "TODO: points" << npoints << std::endl;
 
   int* merge = new int[2*(npoints-1)];
   double* height = new double[npoints-1];
 
-  // for(unsigned i=0; i<2*(npoints-1); i++){
-  //   std::cout << "TODO: merge before " << merge[i] << std::endl;
-  // }
-
   int runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
 
   std::cout << "TODO: runInt " << runInt << std::endl;
 
-
-  // for(unsigned i=0; i<2*(npoints-1); i++){
-  //   std::cout << "TODO: merge after " << merge[i] << std::endl;
-  // }
 
   delete[] distMatrix;
   delete[] height;
@@ -243,9 +231,82 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
     clusterSolution[labels[i]].push_back(i);
   }
 
+  unsigned bigCluster = 0;
+  int maxSizeCluster = 0;
+  int bigSizeClusterIndex = nclusters - 1;
+  float threshSize = 1.1;
+
+  unsigned l = 0;
+  while(l<clusterSolution.size()){
+
+    if(clusterSolution[l].size() > threshSize*groupSize){
+      maxSizeCluster = std::max(maxSizeCluster, (int)(clusterSolution[l].size()));
+      bigCluster++;
+
+      npoints = clusterSolution[l].size();
+      clusMethod = HCLUST_METHOD_COMPLETE;
+      // distance computation
+      distMatrix = new double[(npoints*(npoints-1))/2];
+      unsigned k = 0;
+      for(unsigned i = 0; i < npoints; ++i){
+        Point<double>& point = _points[clusterSolution[l][i]];
+        for (unsigned j = i+1; j < npoints; ++j){
+          Point<double>& p = _points[clusterSolution[l][j]];
+          distMatrix[k] = p.computeDist(point);
+          ++k;
+        }
+      }
+      std::cout << "TODO: points" << npoints << std::endl;
+
+      merge = new int[2*(npoints-1)];
+      height = new double[npoints-1];
+
+      runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
+
+      delete[] distMatrix;
+      delete[] height;
+      
+      labels = new int[npoints];
+      cutree_k(npoints, merge, 2, labels);
+      // cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+
+      int numberClusters = 0;
+      for (unsigned i = 0; i < npoints; i++){
+        numberClusters = std::max(numberClusters, labels[i]);
+      }
+      ++numberClusters;
+
+      assert(numberClusters==2);
+
+      std::vector<std::vector<unsigned>> tempSolution;
+
+      for (unsigned i = 0; i< numberClusters; i++){
+        std::vector<unsigned> indexesVector;
+        tempSolution.push_back(indexesVector);
+      }
+
+      for (unsigned i = 0; i<npoints; i++){
+        tempSolution[labels[i]].push_back(clusterSolution[l][i]);
+      }
+
+      std::cout << clusterSolution.size() << std::endl;
+      clusterSolution[l].clear();
+      std::cout << clusterSolution.size() << std::endl;
+      clusterSolution[l] = tempSolution[0];
+      for (unsigned i = 1; i< numberClusters; i++){
+        clusterSolution.push_back(tempSolution[i]);
+      }
+    }
+    else{
+      ++l;
+    }
+  }
+
   _bestSolution = clusterSolution;
 
-  std::cout << "TODO: Tree COMPUTATION DONE" << std::endl;
+
+
+  std::cout << "TODO: Clustering COMPUTATION DONE " << bigCluster << " " << maxSizeCluster << " " << clusterSolution.size() << std::endl;
   
 
   // if (_logger->debugCheck(CTS, "Stree", 1))
