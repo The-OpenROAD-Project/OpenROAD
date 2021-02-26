@@ -349,6 +349,16 @@ std::string TimingPathNode::getNodeName() const
   return db_bterm->getName();
 }
 
+std::string TimingPathNode::getNetName() const
+{
+  if (pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(pin_);
+    return db_iterm->getNet()->getName();
+  }
+  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(pin_);
+  return db_bterm->getNet()->getName();
+}
+
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
   return path_->levelsCount();

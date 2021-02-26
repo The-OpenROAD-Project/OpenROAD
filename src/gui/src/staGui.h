@@ -108,6 +108,7 @@ class TimingPathNode
   }
 
   std::string getNodeName() const;
+  std::string getNetName() const;
 
   odb::dbObject* pin_;
   bool is_rising_;
