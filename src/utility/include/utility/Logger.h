@@ -83,12 +83,22 @@ enum ToolId
  SIZE // the number of tools, do not put anything after this
 };
 
+enum LogMode {
+  FULL,
+  QUIET,
+  SILENT,
+};
+
 class Logger
 {
  public:
   // Use nullptr if messages or metrics are not logged to a file.
-  Logger(const char* filename = nullptr,
-         const char *metrics_filename = nullptr);
+  // Passing in true for quiet_logs will set the log level of stdout to warning
+  // and above.
+  //
+  // Passing in true for silent_logs will disable stdout logging.
+  Logger(const char* filename = nullptr, const char* metrics_filename = nullptr,
+         const bool quiet_logs = false, const bool silent_logs = false);
   ~Logger();
   static ToolId findToolId(const char *tool_name);
 
@@ -96,7 +106,13 @@ class Logger
     inline void report(const std::string& message,
                        const Args&... args)
     {
-      logger_->log(spdlog::level::level_enum::off, message, args...);
+      spdlog::level::level_enum report_level = spdlog::level::level_enum::off;
+
+      if (log_mode_ == LogMode::QUIET || log_mode_ == LogMode::SILENT) {
+        report_level = spdlog::level::level_enum::info;
+      }
+
+      logger_->log(report_level, message, args...);
     }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined below)
@@ -228,6 +244,7 @@ class Logger
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::shared_ptr<spdlog::logger> metrics_logger_;
+  LogMode log_mode_;
 
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;

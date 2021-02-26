@@ -89,6 +89,8 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 // Main.cc set by main()
 extern const char* log_filename;
 extern const char* metrics_filename;
+extern const bool quiet_logs;
+extern const bool silent_logs;
 
 namespace ord {
 
@@ -189,7 +191,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  logger_ = makeLogger(log_filename, metrics_filename);
+  logger_ = makeLogger(log_filename, metrics_filename, quiet_logs, silent_logs);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();

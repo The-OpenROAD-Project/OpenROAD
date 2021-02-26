@@ -56,7 +56,7 @@
 #include "openroad/Version.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h" 
+#include "utility/Logger.h"
 #include "gui/gui.h"
 
 using std::string;
@@ -71,6 +71,8 @@ static char **cmd_argv;
 bool gui_mode = false;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
+bool quiet_logs = false;
+bool silent_logs = false;
 
 static const char *init_filename = ".openroad";
 
@@ -100,6 +102,14 @@ main(int argc,
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
   if (metrics_filename)
     remove(metrics_filename);
+
+  if (findCmdLineFlag(argc, argv, "-quiet")) {
+    quiet_logs = true;
+  }
+
+  if (findCmdLineFlag(argc, argv, "-silent")) {
+    silent_logs = true;
+  }
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -216,7 +226,7 @@ static void
 showUsage(const char *prog,
 	  const char *init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-log file_name] cmd_file\n", prog);
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-log file_name] [-silent] [-quiet] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
   printf("  -version           show version and exit\n");
   printf("  -no_init           do not read %s init file\n", init_filename);
@@ -225,6 +235,8 @@ showUsage(const char *prog,
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
   printf("  -log <file_name>   write a log in <file_name>\n");
+  printf("  -quiet             only emit warnings and above to the console\n");
+  printf("  -silent            do not emit logs to console.\n");
   printf("  cmd_file           source cmd_file\n");
 }
 

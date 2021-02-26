@@ -45,9 +45,8 @@ struct Tcl_Interp;
 
 namespace ord {
 
-utl::Logger *
-makeLogger(const char *log_filename,
-           const char *metrics_filename);
+utl::Logger *makeLogger(const char *log_filename, const char *metrics_filename,
+                        const bool quiet_logs, const bool silent_logs);
 void
 initLogger(utl::Logger *logger,
            Tcl_Interp *tcl_interp);

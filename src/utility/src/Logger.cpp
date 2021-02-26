@@ -35,22 +35,40 @@
 
 #include "utility/Logger.h"
 
+#include <memory>
 #include <mutex>
 
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/sink.h"
 
 namespace utl {
 
-Logger::Logger(const char* log_filename, const char *metrics_filename)
-  : debug_on_(false),
-    first_metric_(true)
-{
-  sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-  if (log_filename)
+/**
+ */
+Logger::Logger(const char* log_filename, const char* metrics_filename,
+               const bool quiet_logs, const bool silent_logs)
+    : debug_on_(false), first_metric_(true) {
+  log_mode_ = LogMode::FULL;
+  auto stdout = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+
+  if (quiet_logs) {
+    log_mode_ = LogMode::QUIET;
+    stdout->set_level(spdlog::level::warn);
+  }
+
+  if (silent_logs) {
+    log_mode_ = LogMode::SILENT;
+  } else {
+    sinks_.push_back(stdout);
+  }
+
+  if (log_filename) {
     sinks_.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
-  
+  }
+
   logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
   logger_->set_pattern(pattern_);
   logger_->set_level(spdlog::level::level_enum::debug);
