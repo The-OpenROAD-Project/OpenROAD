@@ -389,7 +389,7 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showTimingDialog()
 {
-  timing_dialog_->designLoaded(nullptr);
+  timing_dialog_->populateTimingPaths(nullptr);
   timing_dialog_->show();
 }
 

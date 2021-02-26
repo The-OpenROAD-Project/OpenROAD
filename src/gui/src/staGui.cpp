@@ -44,6 +44,7 @@
 #include "db_sta/dbSta.hh"
 #include "openroad/OpenRoad.hh"
 #include "sta/Corner.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -52,7 +53,6 @@
 #include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
-#include "sta/ExceptionPath.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
@@ -93,6 +93,16 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
   }
+
+  const double one_nano_sec = 1.0e-09;
+  const double one_pico_sec = 1.0e-12;
+
+  auto time_repr = [&](double time_val) {
+    return (time_val > one_pico_sec && time_val < one_nano_sec
+                ? QString::number(time_val * 1.0e12) + "ps"
+                : QString::number(time_val * 1.0e09) + "ns");
+  };
+
   int row_index = index.row();
   if (row_index > timing_paths_.size())
     return QVariant();
@@ -104,11 +114,11 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
     case 1:  // Clock
       return QString(timing_path->getStartClock().c_str());
     case 2:  // Required Time
-      return QString::number(timing_path->getPathRequiredTime()) + "ns";
+      return time_repr(timing_path->getPathRequiredTime());
     case 3:  // Arrival Time
-      return QString::number(timing_path->getPathArrivalTime()) + "ns";
+      return time_repr(timing_path->getPathArrivalTime());
     case 4:  // Slack
-      return QString::number(timing_path->getSlack()) + "ns";
+      return time_repr(timing_path->getSlack());
     case 5:  // Path Start
       return QString(timing_path->getStartStageName().c_str());
     case 6:  // Path End
@@ -212,9 +222,8 @@ void TimingPathsModel::populateModel()
   endResetModel();
   qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
            << " Paths...";
-  if (timing_paths_.size() > 0) {
-    timing_paths_[0]->printPath("pathReport.csv");
-  }
+  // if (timing_paths_.size() > 0)
+  //  timing_paths_[0]->printPath("pathReport.csv");
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
@@ -226,18 +235,29 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 
   sta::PathEndSeq* path_ends
       = sta_->search()->findPathEnds(  // from, thrus, to, unconstrained
-          nullptr, nullptr, nullptr, false,
+          nullptr,
+          nullptr,
+          nullptr,
+          false,
           // corner, min_max,
-          sta_->findCorner("default"), get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+          sta_->findCorner("default"),
+          get_max ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
           // group_count, endpoint_count, unique_pins
-          path_count, path_count, true,
-          -sta::INF, sta::INF,  // slack_min, slack_max,
+          path_count,
+          path_count,
+          true,
+          -sta::INF,
+          sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
           nullptr,   // group_names
           // setup, hold, recovery, removal,
-          true, true, false, false,
+          true,
+          true,
+          false,
+          false,
           // clk_gating_setup, clk_gating_hold
-          false, false);
+          false,
+          false);
 
   bool first_path = true;
   for (auto& path_end : *path_ends) {
@@ -246,7 +266,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     TimingPath* path = new TimingPath();
     path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
     path->setEndClock(path_end->targetClk(sta_)->name());
-    path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay() : 0);
+    path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay()
+                                             : 0);
     path->setSlack(path_end->slack(sta_));
     path->setArrTime(path_end->dataArrivalTime(sta_));
     path->setReqTime(path_end->requiredTime(sta_));
@@ -285,28 +306,14 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
 
 std::string TimingPath::getStartStageName() const
 {
-  auto path_itr = path_nodes_.begin();
-  path_itr++;
-  auto db_obj = path_itr->pin_;
-  if (db_obj->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(db_obj);
-    return db_iterm->getInst()->getName() + "/"
-           + db_iterm->getMTerm()->getName();
-  }
-  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(db_obj);
-  return db_bterm->getName();
+  auto node = getNodeAt(0);
+  return node.getNodeName();
 }
 
 std::string TimingPath::getEndStageName() const
 {
-  auto db_obj = path_nodes_.rbegin()->pin_;
-  if (db_obj->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(db_obj);
-    return db_iterm->getInst()->getName() + "/"
-           + db_iterm->getMTerm()->getName();
-  }
-  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(db_obj);
-  return db_bterm->getName();
+  auto node = getNodeAt(path_nodes_.size() - 1);
+  return node.getNodeName();
 }
 
 void TimingPath::printPath(const std::string& file_name) const
@@ -331,6 +338,17 @@ void TimingPath::printPath(const std::string& file_name) const
   }
 }
 
+std::string TimingPathNode::getNodeName() const
+{
+  if (pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(pin_);
+    return db_iterm->getInst()->getName() + "/"
+           + db_iterm->getMTerm()->getName();
+  }
+  odb::dbBTerm* db_bterm = static_cast<odb::dbBTerm*>(pin_);
+  return db_bterm->getName();
+}
+
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
   return path_->levelsCount();
@@ -343,6 +361,40 @@ int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
+  if (!index.isValid() || role != Qt::DisplayRole) {
+    return QVariant();
+  }
+
+  const double one_nano_sec = 1.0e-09;
+  const double one_pico_sec = 1.0e-12;
+
+  auto time_repr = [&](double time_val) {
+    return (time_val > one_pico_sec && time_val < one_nano_sec
+                ? QString::number(time_val * 1.0e12) + "ps"
+                : QString::number(time_val * 1.0e09) + "ns");
+  };
+
+  int row_index = index.row();
+  if (row_index > path_->levelsCount())
+    return QVariant();
+  int col_index = index.column();
+  auto node = path_->getNodeAt(row_index);
+  switch (col_index) {
+    case 0:  // Node Name
+      return QString(node.getNodeName().c_str());
+    case 1:  // Rising
+      return QVariant(node.is_rising_);
+    case 2:  // Required Time
+      return time_repr(node.required_);
+    case 3:  // Arrival Time
+      return time_repr(node.arrival_);
+    case 4:  // Slack
+      return time_repr(node.slack_);
+    case 5:  // Slew
+      return time_repr(node.slew_);
+    case 6:  // Load
+      return QString::number(node.load_);
+  }
   return QVariant();
 }
 

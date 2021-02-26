@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QModelIndex>
 
 #include "opendb/db.h"
 #include "staGui.h"
@@ -51,9 +52,13 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
  public slots:
   void accept();
   void reject();
-  void designLoaded(odb::dbBlock* block);
+  void populateTimingPaths(odb::dbBlock* block);
+
+  void showPathDetails(const QModelIndex& index);
+  void showPathInLayout(const QModelIndex& index);
 
  private:
   TimingPathsModel* timing_paths_model_;
+  TimingPathDetailModel* path_details_model_;
 };
 }  // namespace gui

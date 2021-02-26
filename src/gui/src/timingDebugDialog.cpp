@@ -38,13 +38,28 @@
 
 namespace gui {
 TimingDebugDialog::TimingDebugDialog(QWidget* parent)
-    : QDialog(parent), timing_paths_model_(nullptr)
+    : QDialog(parent),
+      timing_paths_model_(nullptr),
+      path_details_model_(new TimingPathDetailModel())
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
-  timingPathTableView->horizontalHeader()->setSectionResizeMode(
+  pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
+  timingPathTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  pathDetailsTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  // pathDetailsTableView->setModel(path_details_model_);
+
+  connect(timingPathTableView,
+          SIGNAL(clicked(const QModelIndex&)),
+          this,
+          SLOT(showPathDetails(const QModelIndex&)));
+
+  connect(timingPathTableView,
+          SIGNAL(doubleClicked(const QModelIndex&)),
+          this,
+          SLOT(showPathInLayout(const QModelIndex&)));
 }
 
 void TimingDebugDialog::accept()
@@ -57,12 +72,27 @@ void TimingDebugDialog::reject()
   QDialog::reject();
 }
 
-void TimingDebugDialog::designLoaded(odb::dbBlock* block)
+void TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
 {
-  if (timing_paths_model_)
-    delete timing_paths_model_;
+  if (timing_paths_model_ != nullptr)
+    return;
   timing_paths_model_ = new TimingPathsModel();
   timingPathTableView->setModel(timing_paths_model_);
+}
+
+void TimingDebugDialog::showPathDetails(const QModelIndex& index)
+{
+  if (!index.isValid() || timing_paths_model_ == nullptr)
+    return;
+  auto path = timing_paths_model_->getPathAt(index.row());
+  path_details_model_->populateModel(path);
+  pathDetailsTableView->setModel(path_details_model_);
+}
+
+void TimingDebugDialog::showPathInLayout(const QModelIndex& index)
+{
+  // TBD
+  qDebug() << "Came to show Path In Layout of path " << index.row() + 1;
 }
 
 }  // namespace gui

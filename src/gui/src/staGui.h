@@ -67,6 +67,8 @@ class TimingPathsModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
+  TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
+
   void findInstances(std::string pattern, std::vector<odb::dbInst*>& insts);
   void findNets(std::string pattern, std::vector<odb::dbNet*>& nets);
   void findPins(std::string pattern, std::vector<odb::dbObject*>& pins);
@@ -105,6 +107,8 @@ class TimingPathNode
   {
   }
 
+  std::string getNodeName() const;
+
   odb::dbObject* pin_;
   bool is_rising_;
   float arrival_;
@@ -132,9 +136,11 @@ class TimingPath
   float getPathRequiredTime() const { return reqTime_; }
   void setReqTime(float req) { reqTime_ = req; }
   float getSlack() const { return slack_; }
-  void setSlack(float slack) { slack_ = slack;}
+  void setSlack(float slack) { slack_ = slack; }
   float getPathDelay() const { return pathDelay_; }
   void setPathDelay(float del) { pathDelay_ = del; }
+
+  TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
@@ -172,6 +178,7 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   TimingPath* path_;
   const static inline std::vector<std::string> _path_details_columns
-      = {"Fanout", "Cap", "Slew", "Delay", "Time", "Description"};
+      = {"Node", "Rising", "Required", "Arrival", "Slack", "Slew", "Load"};
+  //= {"Fanout", "Cap", "Slew", "Delay", "Time", "Description"};
 };
 }  // namespace gui
