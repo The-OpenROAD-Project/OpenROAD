@@ -85,39 +85,7 @@
 [INFO MPL-0009] North pins 16
 [INFO MPL-0009] South pins 16
 [INFO MPL-0071] Initial weighted wire length 752.615
-Begin One Level Partition
-[INFO MPL-0076] Partition 3 macros
-[INFO MPL-0077] Using 2 cut lines
-[INFO MPL-0079] Cut line 22.23
-[INFO MPL-0079] Cut line 38.00
-End One Level Partition
-Begin Horizontal Partition
-Begin East Partition
-[INFO MPL-0076] Partition 0 macros
-[INFO MPL-0077] Using 0 cut lines
-End East Partition
-Begin West Partition
-[INFO MPL-0076] Partition 3 macros
-[INFO MPL-0077] Using 1 cut lines
-[INFO MPL-0079] Cut line 5.60
-End West Partition
-End Horizontal Partition
-Begin Horizontal Partition
-Begin East Partition
-[INFO MPL-0076] Partition 2 macros
-[INFO MPL-0077] Using 1 cut lines
-[INFO MPL-0079] Cut line 5.60
-End East Partition
-Begin West Partition
-[INFO MPL-0076] Partition 1 macros
-[INFO MPL-0077] Using 1 cut lines
-[INFO MPL-0079] Cut line 11.20
-End West Partition
-End Horizontal Partition
-[INFO MPL-0070] Using 2 partiion sets
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 38.34 36
-[INFO MPL-0063] TargetLayout 35.91 50.4
-[INFO MPL-0071] Solution 1 weighted wire length 924.77
-[INFO MPL-0073] Best weighted wire length 924.77
-No differences found.
+[INFO MPL-0071] Placed weighted wire length 732.439
+Differences found at line 68.
+    - mem0 fakeram45_64x7 + FIXED ( 85120 20720 ) N ;
+    - mem0 fakeram45_64x7 + FIXED ( 84560 20160 ) N ;

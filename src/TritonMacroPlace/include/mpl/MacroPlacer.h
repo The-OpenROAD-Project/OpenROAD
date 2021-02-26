@@ -115,10 +115,16 @@ class MacroSpacings
 {
  public:
   MacroSpacings();
+  MacroSpacings(double halo_x,
+                double halo_y,
+                double channel_x,
+                double channel_y);
   void setHalo(double halo_x,
                double halo_y);
   void setChannel(double channel_x,
                   double channel_y);
+  void setChannelX(double channel_x);
+  void setChannelY(double channel_y);
   double getHaloX() const { return halo_x_; }
   double getHaloY() const { return halo_y_; }
   double getChannelX() const { return channel_x_; }
@@ -155,8 +161,10 @@ public:
   size_t macroCount() { return macros_.size(); }
 
 private:
-  double partitionMaxSpace(Partition &partition,
-                           MacroSpacings &spacings);
+  void partitionMaxSpace(Partition &partition,
+                         MacroSpacings &spacings,
+                         double &diff_x,
+                         double &diff_y);
   void findMacros();
   bool isMissingLiberty();
 

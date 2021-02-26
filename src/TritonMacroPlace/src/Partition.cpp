@@ -321,7 +321,8 @@ bool Partition::anneal()
       for (size_t j = i + 1; j < macro_edge_count; j++) {
         int cost = 0;
         if (!net_tbl_.empty()) {
-          // Note that net_tbl only entries for i < j.
+          // Note that net_tbl only has entries for i < j.
+          // This looks stupid because it is looking at ij and ji entries -cherry
           cost = net_tbl_[i * macro_edge_count + j]
             + net_tbl_[j * macro_edge_count + i];
         }
@@ -373,11 +374,6 @@ bool Partition::anneal()
     solution_height = sol.totalHeight();
     delete annealer;
     if (solution_width > width || solution_height > height) {
-      logger_->warn(MPL, 61, "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
-                    solution_width,
-                    solution_height,
-                    width,
-                    height);
       return false;
     }
 
@@ -409,9 +405,11 @@ bool Partition::anneal()
       pfp::Node& node = pfp_nodes->getNode(i);
       Macro &macro = macros_[i];
       macro.lx = (isFlipX)
+        // why would node.getWidth() != width? -cherry
         ? width - node.getX() - node.getWidth() + lx
         : node.getX() + lx;
       macro.ly = (isFlipY)
+        // why would node.getHeight() != height? -cherry
         ? height - node.getY() - node.getHeight() + ly
         : node.getY() + ly;
       MacroSpacings &spacings = macro_placer_->getSpacings(macro);

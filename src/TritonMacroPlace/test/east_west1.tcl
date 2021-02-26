@@ -11,7 +11,9 @@ read_def east_west1.def
 read_sdc gcd.sdc
 
 global_placement -skip_initial_place
-macro_placement -halo {0.5 0.5}
+macro_placement -style corner_max_wl
+# corner_max_wl cannot get this right
+#macro_placement -style center_spread
 
 set def_file [make_result_file east_west1.def]
 write_def $def_file

@@ -207,44 +207,75 @@ void MacroPlacer::placeMacrosCenterSpread()
   }
 
   // Annealing based on ParquetFP Engine
+  //
+  // Binary search for channel x/y to space fill the core.
+  double spacing_x = default_macro_spacings_.getSpacingX();
+  double spacing_y = default_macro_spacings_.getSpacingY();
   // spacings1 lower bound
   // spacings1 upper bound
-  MacroSpacings spacings1 = default_macro_spacings_;
-  MacroSpacings spacings2 = default_macro_spacings_;
-  spacings2.setChannel(spacings2.getChannelX() * 2,
-                       spacings2.getChannelY() * 2);
-
-  double tol = .1; // 10%
-  double diff1 = partitionMaxSpace(top_partition, spacings1);
-  double diff2 = partitionMaxSpace(top_partition, spacings2);
-  // binary search for largest channel factor that does not fail.
-  while (abs(spacings1.getChannelX() - spacings2.getChannelX())
-         > max(spacings1.getChannelX(), spacings2.getChannelX()) * tol
-         && abs(spacings1.getChannelX() - spacings2.getChannelX())
-         > max(spacings1.getChannelX(), spacings2.getChannelX()) * tol) {
-    if (diff2 > 0.0) {
-      spacings1 = spacings2;
-      diff1 = diff2;
-      spacings2.setChannel(spacings2.getChannelX() * 2,
-                           spacings2.getChannelY() * 2);
-      diff2 = partitionMaxSpace(top_partition, spacings2);
+  MacroSpacings spacings1(0, 0, spacing_x, spacing_y);
+  MacroSpacings spacings2(0, 0,
+                          spacing_x == 0 ? 1.0 : spacing_x * 2,
+                          spacing_y == 0 ? 1.0 : spacing_y * 2);
+  double tol = .01; // 1%
+  double diff_x1, diff_y1;
+  partitionMaxSpace(top_partition, spacings1, diff_x1, diff_y1);
+  double diff_x2, diff_y2;
+  partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
+  while (abs(diff_x1) > top_partition.width * tol
+         || abs(diff_y1) > top_partition.height * tol) {
+    debugPrint(logger_, MPL, "find_channels", 1, "{:.2f} {:.2f} -> {:.2f} {:.2f}",
+               spacings1.getChannelX(), spacings1.getChannelY(), diff_x1, diff_y1);
+    debugPrint(logger_, MPL, "find_channels", 1, "{:.2f} {:.2f} -> {:.2f} {:.2f}",
+               spacings2.getChannelX(), spacings2.getChannelY(), diff_x2, diff_y2);
+    if (diff_x2 > 0.0) {
+      spacings1.setChannelX(spacings2.getChannelX());
+      diff_x1 = diff_x2;
+      spacings2.setChannelX(spacings2.getChannelX() * 2);
+      partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
     }
     else {
       MacroSpacings spacings3 = spacings1;
-      spacings3.setChannel((spacings1.getChannelX() + spacings2.getChannelX()) / 2,
-                           (spacings1.getChannelY() + spacings2.getChannelY()) / 2);
-      double diff3 = partitionMaxSpace(top_partition, spacings3);
-      if (diff3 > 0.0) {
-        spacings1 = spacings3;
-        diff1 = diff3;
+      spacings3.setChannelX((spacings1.getChannelX() + spacings2.getChannelX()) / 2);
+      double diff_x3, diff_y3;
+      partitionMaxSpace(top_partition, spacings3, diff_x3, diff_y3);
+      if (diff_x3 > 0.0) {
+        spacings1.setChannelX(spacings3.getChannelX());
+        diff_x1 = diff_x3;
       }
       else {
-        spacings2 = spacings3;
-        diff2 = diff3;
+        spacings2.setChannelX(spacings3.getChannelX());
+        if (abs(diff_x2 - diff_x3) < max(diff_x2, diff_x3) * tol)
+          break;
+        diff_x2 = diff_x3;
+      }
+    }
+
+    if (diff_y2 > 0.0) {
+      spacings1.setChannelY(spacings2.getChannelY());
+      diff_y1 = diff_y2;
+      spacings2.setChannelY(spacings2.getChannelY() * 2);
+      partitionMaxSpace(top_partition, spacings2, diff_x2, diff_y2);
+    }
+    else {
+      MacroSpacings spacings3 = spacings1;
+      spacings3.setChannelY((spacings1.getChannelY() + spacings2.getChannelY()) / 2);
+      double diff_x3, diff_y3;
+      partitionMaxSpace(top_partition, spacings3, diff_x3, diff_y3);
+      if (diff_y3 > 0.0) {
+        spacings1.setChannelY(spacings3.getChannelY());
+        diff_y1 = diff_y3;
+      }
+      else {
+        spacings2.setChannelY(spacings3.getChannelY());
+        if (abs(diff_y2 - diff_y3) < max(diff_y2, diff_y3) * tol)
+          break;
+        diff_y2 = diff_y3;
       }
     }
   }
 
+  default_macro_spacings_ = spacings1;
   if (top_partition.anneal()) {
     updateMacroLocations(top_partition);
     top_partition.updateMacroCoordi();
@@ -257,13 +288,16 @@ void MacroPlacer::placeMacrosCenterSpread()
     logger_->warn(MPL, 72, "Partitioning failed.");
 }
 
-double MacroPlacer::partitionMaxSpace(Partition &partition,
-                                      MacroSpacings &spacings)
+void MacroPlacer::partitionMaxSpace(Partition &partition,
+                                    MacroSpacings &spacings,
+                                    double &diff_x,
+                                    double &diff_y)
 {
+  // This is a hack until we flush the macro specific spacings.
   default_macro_spacings_ = spacings;
   partition.anneal();
-  return min(partition.width - partition.solution_width,
-             partition.height - partition.solution_height);
+  diff_x = partition.width - partition.solution_width;
+  diff_y = partition.height - partition.solution_height;
 }
 
 // Use some undocumented method with cut lines to break the design
@@ -412,6 +446,11 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     for (auto& curPart : partition_set) {
       // Annealing based on ParquetFP Engine
       if (!curPart.anneal()) {
+        logger_->warn(MPL, 61, "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
+                      curPart.solution_width,
+                      curPart.solution_height,
+                      curPart.width,
+                      curPart.height);
         isFailed = true;
         break;
       }
@@ -1350,6 +1389,17 @@ MacroSpacings::MacroSpacings()
 {
 }
 
+MacroSpacings::MacroSpacings(double halo_x,
+                             double halo_y,
+                             double channel_x,
+                             double channel_y) :
+      halo_x_(halo_x),
+      halo_y_(halo_y),
+      channel_x_(channel_x),
+      channel_y_(channel_y)
+{
+}
+
 void MacroSpacings::setHalo(double halo_x,
                             double halo_y)
 {
@@ -1361,6 +1411,16 @@ void MacroSpacings::setChannel(double channel_x,
                                double channel_y)
 {
   channel_x_ = channel_x;
+  channel_y_ = channel_y;
+}
+
+void MacroSpacings::setChannelX(double channel_x)
+{
+  channel_x_ = channel_x;
+}
+
+void MacroSpacings::setChannelY(double channel_y)
+{
   channel_y_ = channel_y;
 }
 

@@ -50,19 +50,9 @@ Begin West Partition
 End West Partition
 End Horizontal Partition
 [INFO MPL-0070] Using 4 partiion sets
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 51.12 72
-[INFO MPL-0063] TargetLayout 69.35 67.2
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 51.12 72
-[INFO MPL-0063] TargetLayout 69.35 67.2
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 51.12 72
-[INFO MPL-0063] TargetLayout 69.35 67.2
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 51.12 72
-[INFO MPL-0063] TargetLayout 69.35 67.2
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
 [WARNING MPL-0072] No partition solutions found.
-Differences found at line 395.
-    - mem0 fakeram45_64x7 + FIXED ( 86290 49130 ) N ;
-    - mem0 fakeram45_64x7 + FIXED ( 86240 49280 ) N ;
+No differences found.
