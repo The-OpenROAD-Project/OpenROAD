@@ -122,12 +122,10 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
   const unsigned slewThreshold = _options->getMaxSlew();
   const unsigned tolerance = 1;
   std::vector<unsigned> segments;
-  unsigned length = 0;
   unsigned charSegLength = _techChar->getMaxSegmentLength();
-  unsigned numWires = (wireLength - length) / charSegLength;
+  unsigned numWires = wireLength / charSegLength;
 
   if (numWires >= 1) {
-    length += numWires * charSegLength;
     for (int wireCount = 0; wireCount < numWires; ++wireCount) {
       unsigned outCap = 0, outSlew = 0;
       unsigned key = _builder->computeMinDelaySegment(charSegLength,
