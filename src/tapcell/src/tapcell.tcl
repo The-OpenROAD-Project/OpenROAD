@@ -516,7 +516,6 @@ namespace eval tap {
                         if { $tap_urx > $end_llx } {
                             set x_microns [ord::dbu_to_microns $x_tmp]
                             set y_microns [ord::dbu_to_microns $lly]
-                            utl::warn TAP 10 "Tapcell at position ($x_microns, $y_microns) will cause overlap with endcap. Moving tapcell to valid position..."
                             set x_tmp [expr $x_tmp - ($tap_urx - $end_llx)]
                         }
 

@@ -2,12 +2,11 @@ TAP 0001 tapcell.tcl:267           Macro blocks found: $block_count
 TAP 0002 tapcell.tcl:268           Original rows: $rows_count
 TAP 0003 tapcell.tcl:269           Cut rows: $cut_rows_count
 TAP 0004 tapcell.tcl:419           Endcaps inserted: $endcap_count
-TAP 0005 tapcell.tcl:541           Tapcells inserted: $tapcell_count
-TAP 0006 tapcell.tcl:652           Top/bottom cells inserted: $topbottom_cnt
-TAP 0007 tapcell.tcl:916           Cells inserted near blkgs: $blkgs_cnt
+TAP 0005 tapcell.tcl:539           Tapcells inserted: $tapcell_count
+TAP 0006 tapcell.tcl:650           Top/bottom cells inserted: $topbottom_cnt
+TAP 0007 tapcell.tcl:914           Cells inserted near blkgs: $blkgs_cnt
 TAP 0008 tapcell.tcl:347           Not enough space to place endcap in row $row_name. Skipping...
 TAP 0009 tapcell.tcl:398           WARNING: row $row_name have enough space for only one endcap
-TAP 0010 tapcell.tcl:519           Tapcell at position ($x_microns, $y_microns) will cause overlap with endcap. Moving tapcell to valid position...
 TAP 0011 tapcell.tcl:207           Master $endcap_master not found
 TAP 0012 tapcell.tcl:308           Master $cnrcap_nwin_master not found
 TAP 0013 tapcell.tcl:314           Master $cnrcap_nwout_master not found
