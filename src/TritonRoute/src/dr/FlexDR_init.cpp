@@ -1393,7 +1393,6 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*> &terms) 
                       <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") origin";
         }
         auto bNum = ap->getLayerNum();
-        auto bLayer = getDesign()->getTech()->getLayer(bNum);
         bp.transform(shiftXform);
 
         auto dAp  = make_unique<drAccessPattern>();
@@ -1418,24 +1417,13 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*> &terms) 
             dAp->setAccessViaDef(frDirEnum::U, &(ap->getViaDefs()));
           }
         }
-        if (getRouteBox().contains(bp)) {
-          if (isInitDR() && getRouteBox().right() == bp.x() && getRouteBox().top() == bp.y()) {
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") skipped";
-            }
-          } else if ((getRouteBox().right() == bp.x() && bLayer->getDir() == frcVertPrefRoutingDir && bLayer->getLef58RectOnlyConstraint()) || 
-                     (getRouteBox().top() == bp.y() && bLayer->getDir() == frcHorzPrefRoutingDir && bLayer->getLef58RectOnlyConstraint())) {
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") skipped";
-            }
-          } else {
-            dPin->addAccessPattern(std::move(dAp));
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") added";
-            }
+        // The worker doesn't own tracks on its top & right edges.
+        if (getRouteBox().contains(bp) && getRouteBox().right() != bp.x()
+            && getRouteBox().top() != bp.y()) {
+          dPin->addAccessPattern(std::move(dAp));
+          if (enableOutput) {
+            cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+                 <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") added";
           }
         } else {
           if (enableOutput) {

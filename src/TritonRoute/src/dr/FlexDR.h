@@ -81,6 +81,7 @@ namespace fr {
   protected:
     frDesign*          design_;
     Logger*            logger_;
+    // Index: gcell_x, gcell_y
     std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin_;
 
     std::vector<std::pair<frCoord, frCoord> >  halfViaEncArea_; // std::pair<layer1area, layer2area>
