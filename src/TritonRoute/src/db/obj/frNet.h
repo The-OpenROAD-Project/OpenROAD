@@ -42,11 +42,15 @@
 namespace fr {
   class frInstTerm;
   class frTerm;
-
+  class frNonDefaultRule;
+  
   class frNet: public frBlockObject {
   public:
     // constructors
-    frNet(const frString &in): frBlockObject(), name_(in), instTerms_(), terms_(), shapes_(), vias_(), pwires_(), grShapes_(), grVias_(), nodes_(), root_(nullptr), rootGCellNode_(nullptr), firstNonRPinNode_(nullptr), rpins_(), guides_(), type_(frNetEnum::frcNormalNet), modified_(false), isFakeNet_(false) {}
+    frNet(const frString &in): frBlockObject(), name_(in), instTerms_(), terms_(), shapes_(), vias_(), 
+                                pwires_(), grShapes_(), grVias_(), nodes_(), root_(nullptr), rootGCellNode_(nullptr), 
+                                firstNonRPinNode_(nullptr), rpins_(), guides_(), type_(frNetEnum::frcNormalNet), 
+                                modified_(false), isFakeNet_(false), ndr_(nullptr) {}
     // getters
     const frString& getName() const {
       return name_;
@@ -111,7 +115,9 @@ namespace fr {
     bool isFake() const {
       return isFakeNet_;
     }
-
+    frNonDefaultRule* getNondefaultRule() const {
+      return ndr_;
+    }
     // setters
     void addInstTerm(frInstTerm* in) {
       instTerms_.push_back(in);
@@ -224,6 +230,12 @@ namespace fr {
     virtual frBlockObjectEnum typeId() const override {
       return frcNet;
     }
+    void setNondefaultRule(frNonDefaultRule* n) {
+      ndr_ = n;
+    }
+    bool hasNDR() const{
+        return getNondefaultRule() != nullptr;
+    }
   protected:
     frString                                  name_;
     std::vector<frInstTerm*>                  instTerms_;
@@ -246,6 +258,7 @@ namespace fr {
     frNetEnum                                 type_;
     bool                                      modified_;
     bool                                      isFakeNet_; // indicate floating PG nets
+    frNonDefaultRule*                         ndr_;
   };
 }
 

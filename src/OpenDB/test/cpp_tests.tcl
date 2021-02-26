@@ -2,7 +2,7 @@ source "helpers.tcl"
 
 set test_dir [pwd]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
-set tests_path [file join $openroad_dir "build" "src" "OpenDB" "tests" "cpp"]
+set tests_path [file join $openroad_dir "build" "src" "OpenDB" "test" "cpp"]
 
 set tests_list [split [exec sh -c "find $tests_path -maxdepth 1 -name 'Test*'"] \n]
 

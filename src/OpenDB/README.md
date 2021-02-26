@@ -52,10 +52,10 @@ After building successfully, run OpenDB tcl shell using `./build/src/swig/tcl/op
 ```
 set db [dbDatabase_create]
 set lef_parser [new_lefin $db true]
-set tech [lefin_createTech $lef_parser ./OpenDB/tests/data/gscl45nm.lef]
+set tech [lefin_createTech $lef_parser ./OpenDB/test/data/gscl45nm.lef]
 ```
 
-You can find examples on using the API from TCL under `tests/tcl/` directory.
+You can find examples on using the API from TCL under `test/tcl/` directory.
 
 The full set of the tcl commands exposed can be found under `./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
 
@@ -72,7 +72,7 @@ spec.loader.exec_module(odb)
 # use it as following
 odb.[class_name]
 ```
-You can find examples on using the API from Python under `tests/python/` directory.
+You can find examples on using the API from Python under `test/python/` directory.
 
 The full set of the Python classes exposed can be found under `./build/src/swig/python/opendbpy.py`.
 
@@ -103,11 +103,11 @@ same layout across save/restores.
 The database distance units are **nanometers** and use the type `uint`.
 
 ## Tests
-There are a set of regression tests in /tests.
+There are a set of regression tests in /test.
 
 ```
-./tests/regression-tcl.sh
-./tests/regression-py.sh
+./test/regression-tcl.sh
+./test/regression-py.sh
 ```
 
 ## Database Internals

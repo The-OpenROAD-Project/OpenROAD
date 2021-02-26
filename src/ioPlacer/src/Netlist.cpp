@@ -48,43 +48,41 @@ Netlist::Netlist()
 void Netlist::addIONet(const IOPin& io_pin,
                        const std::vector<InstancePin>& inst_pins)
 {
+  _db_pin_idx_map[io_pin.getBTerm()] = io_pins_.size();
   io_pins_.push_back(io_pin);
   inst_pins_.insert(inst_pins_.end(), inst_pins.begin(), inst_pins.end());
   net_pointer_.push_back(inst_pins_.size());
 }
 
-void Netlist::forEachIOPin(std::function<void(int idx, IOPin&)> func)
+int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
 {
-  for (int idx = 0; idx < io_pins_.size(); ++idx) {
-    func(idx, io_pins_[idx]);
+  int pin_cnt = 0;
+  std::vector<int> pin_indices;
+  for (odb::dbBTerm* bterm : pin_list) {
+    int pin_idx = _db_pin_idx_map[bterm];
+    if (pin_idx < 0) {
+      return pin_cnt;
+    }
+    io_pins_[pin_idx].inGroup();
+    pin_indices.push_back(pin_idx);
+    pin_cnt++;
   }
+
+  io_groups_.push_back(pin_indices);
+  return pin_indices.size();
 }
 
-void Netlist::forEachIOPin(
-    std::function<void(int idx, const IOPin&)> func) const
+void Netlist::addIOGroup(const std::vector<int>& pin_group)
 {
-  for (int idx = 0; idx < io_pins_.size(); ++idx) {
-    func(idx, io_pins_[idx]);
-  }
+  io_groups_.push_back(pin_group);
 }
 
-void Netlist::forEachSinkOfIO(int idx, std::function<void(InstancePin&)> func)
+void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
 {
   int net_start = net_pointer_[idx];
   int net_end = net_pointer_[idx + 1];
-  for (int idx = net_start; idx < net_end; ++idx) {
-    func(inst_pins_[idx]);
-  }
-}
-
-void Netlist::forEachSinkOfIO(
-    int idx,
-    std::function<void(const InstancePin&)> func) const
-{
-  int net_start = net_pointer_[idx];
-  int net_end = net_pointer_[idx + 1];
-  for (int idx = net_start; idx < net_end; ++idx) {
-    func(inst_pins_[idx]);
+  for (int sink_idx = net_start; sink_idx < net_end; ++sink_idx) {
+    sinks.push_back(inst_pins_[sink_idx]);
   }
 }
 
