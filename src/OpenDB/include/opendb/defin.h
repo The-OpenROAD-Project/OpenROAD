@@ -59,7 +59,7 @@ class defin
     FLOORPLAN,
     INCREMENTAL
   };
-  defin(dbDatabase* db, utl::Logger* logger, MODE mode = MODE::DEFAULT);
+  defin(dbDatabase* db, utl::Logger* logger, MODE mode = DEFAULT);
   ~defin();
 
   void skipWires();
