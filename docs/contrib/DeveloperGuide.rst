@@ -22,7 +22,7 @@ Every tool follows the following file structure.
    CMakelists.txt - add_subdirectory's src/CMakelists.txt
    src/ - sources and private headers
    src/CMakelists.txt
-   include/<toolname>/ - exported headers
+   include/<tool_tla>/ - public headers
    test/
    test/regression
 
@@ -41,15 +41,7 @@ Submodule repos in /src (note these are NOT in src/module)
 
 ::
 
-   OpenDB
    OpenSTA
-   replace
-   ioPlacer
-   FastRoute
-   TritonMacroPlace
-   OpenRCX
-   flute3
-   eigen
 
 Submodules that are shared by multiple tools are owned by OpenROAD so
 that there are not redundant source trees and compiles.
