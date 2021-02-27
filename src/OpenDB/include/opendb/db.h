@@ -8468,6 +8468,8 @@ class dbGCellGrid : public dbObject
                 uint&        up) const;
 
   void resetCongestionMap();
+
+  void resetGrid();
   // User Code End dbGCellGrid
 };
 

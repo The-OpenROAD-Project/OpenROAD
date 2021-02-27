@@ -619,6 +619,22 @@ void dbGCellGrid::resetCongestionMap()
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   _grid->_congestion_map.clear();
 }
+
+void dbGCellGrid::resetGrid()
+{
+  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
+  _grid->_x_origin.clear();
+  _grid->_x_count.clear();
+  _grid->_x_step.clear();
+  _grid->_y_origin.clear();
+  _grid->_y_count.clear();
+  _grid->_y_step.clear();
+  _grid->_x_grid.clear();
+  _grid->_y_grid.clear();
+  _grid->_congestion_map.clear();
+  _grid->_flags._x_grid_valid = true;
+  _grid->_flags._y_grid_valid = true;
+}
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb
    // Generator Code End 1
