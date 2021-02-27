@@ -32,10 +32,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "dpl/Opendp.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <limits>
-#include "opendp/Opendp.h"
+
 #include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"
 

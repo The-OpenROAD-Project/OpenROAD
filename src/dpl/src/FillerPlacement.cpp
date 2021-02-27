@@ -32,7 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 
 #include <algorithm>
 #include "utility/Logger.h"

@@ -62,17 +62,14 @@ target_include_directories(FastRoute
 )
 
 target_link_libraries(FastRoute
-  PUBLIC
-    opendb
-    OpenSTA
-  PRIVATE
     utility
     FastRoute4.1
     pdrev
     antennachecker
-    opendp
+    dpl
     dbSta
     gui
     pdrev
+    OpenSTA
     Boost::boost
 )

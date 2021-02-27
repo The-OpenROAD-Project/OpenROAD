@@ -33,11 +33,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
-#include <iomanip>
-#include <iostream>
 #include <limits>
 
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 #include "utility/Logger.h"
 
 namespace dpl {

@@ -46,7 +46,7 @@
 #include "opendb/dbBlockCallBackObj.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 #include "sta/Liberty.hh"
 
 // Forward declaration protects FastRoute code from any

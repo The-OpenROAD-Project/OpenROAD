@@ -32,7 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 
 #include <unordered_set>
 #include <cstdlib>
