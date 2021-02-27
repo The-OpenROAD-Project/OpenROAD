@@ -59,7 +59,7 @@
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
 
-#include "init_fp//MakeInitFloorplan.hh"
+#include "ifp//MakeInitFloorplan.hh"
 #include "ioplacer/MakeIoplacer.h"
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"

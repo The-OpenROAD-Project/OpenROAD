@@ -32,16 +32,16 @@ proc define_tool_script { tool script } {
   dict set tool_scripts [string tolower $tool] $script
 }
 
-define_tool_script "init_fp" "src/init_fp/test/regression"
+define_tool_script "ifp" "src/init_fp/test/regression"
 define_tool_script "dbSta" "src/dbSta/test/regression"
 define_tool_script "IoPlacer" "src/ioPlacer/test/regression"
 define_tool_script "PDNgen" "src/pdngen/test/regression"
 define_tool_script "ICeWall" "src/ICeWall/test/regression"
 define_tool_script "TritonMacroPlace" "src/TritonMacroPlace/test/regression"
-define_tool_script "Resizer" "src/resizer/test/regression"
+define_tool_script "rsz" "src/rsz/test/regression"
 define_tool_script "Replace" "src/replace/test/regression"
 define_tool_script "TritonCTS" "src/TritonCTS/test/regression"
-define_tool_script "OpenDP" "src/opendp/test/regression"
+define_tool_script "dpl" "src/dpl/test/regression"
 define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"

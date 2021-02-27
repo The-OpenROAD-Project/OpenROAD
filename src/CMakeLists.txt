@@ -108,7 +108,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(BUILD_PYTHON false)
 
 # Build flow tools
-add_subdirectory(init_fp)
+add_subdirectory(ifp)
 add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
@@ -154,7 +154,7 @@ target_include_directories(openroad
 )
 
 target_link_libraries(openroad
-  init_fp
+  ifp
   openroad_swig
   replace
   dpl

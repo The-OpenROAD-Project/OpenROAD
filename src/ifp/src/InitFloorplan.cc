@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "init_fp/InitFloorplan.hh"
+#include "ifp/InitFloorplan.hh"
 
 #include <iostream>
 #include <fstream>
