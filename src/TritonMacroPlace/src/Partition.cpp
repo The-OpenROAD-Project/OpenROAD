@@ -40,215 +40,187 @@
 
 namespace mpl {
 
-using std::pair;
-using std::string;
-using std::unordered_map;
-using std::vector;
+using std::min;
+using std::max;
+using std::make_pair;
+using std::to_string;
 
 using utl::MPL;
-
-namespace pfp = parquetfp;
 
 Partition::Partition(PartClass _partClass,
                      double _lx,
                      double _ly,
                      double _width,
                      double _height,
+                     MacroPlacer *macro_placer,
                      utl::Logger* log)
     : partClass(_partClass),
       lx(_lx),
       ly(_ly),
       width(_width),
       height(_height),
-      netTable(nullptr),
-      tableCnt(0),
+      macro_placer_(macro_placer),
       logger_(log)
 {
 }
 
-Partition::Partition(const Partition& prev)
-    : partClass(prev.partClass),
-      lx(prev.lx),
-      ly(prev.ly),
-      width(prev.width),
-      height(prev.height),
-      macroStor(prev.macroStor),
-      tableCnt(prev.tableCnt),
-      logger_(prev.logger_)
+Partition::Partition(const Partition& part)
+    : partClass(part.partClass),
+      lx(part.lx),
+      ly(part.ly),
+      width(part.width),
+      height(part.height),
+      macros_(part.macros_),
+      net_tbl_(part.net_tbl_),
+      macro_placer_(part.macro_placer_),
+      logger_(part.logger_)
 {
-  if (prev.netTable) {
-    netTable = new double[tableCnt];
-    for (int i = 0; i < tableCnt; i++) {
-      netTable[i] = prev.netTable[i];
-    }
+}
+
+#define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
+#define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
+#define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
+#define SOUTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::South))
+
+#define GLOBAL_EAST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::East))
+#define GLOBAL_WEST_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::West))
+#define GLOBAL_NORTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::North))
+#define GLOBAL_SOUTH_IDX (macro_placer_->macroCount() + coreEdgeIndex(CoreEdge::South))
+
+string Partition::getName(int macroIdx)
+{
+  if (macroIdx < macros_.size()) {
+    return macros_[macroIdx].name();
   } else {
-    netTable = nullptr;
+    return coreEdgeString(coreEdgeFromIndex(macroIdx - macros_.size()));
   }
 }
 
-Partition::~Partition()
+void Partition::fillNetlistTable(MacroPartMap &macroPartMap)
 {
-  delete[] netTable;
-}
+  int macro_edge_count = macros_.size() + core_edge_count;
+  net_tbl_.resize(macro_edge_count * macro_edge_count);
 
-#define EAST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::East))
-#define WEST_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::West))
-#define NORTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::North))
-#define SOUTH_IDX (macroStor.size() + coreEdgeIndex(CoreEdge::South))
-
-#define GLOBAL_EAST_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::East))
-#define GLOBAL_WEST_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::West))
-#define GLOBAL_NORTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::North))
-#define GLOBAL_SOUTH_IDX (placer->macroStor.size() + coreEdgeIndex(CoreEdge::South))
-
-string Partition::GetName(int macroIdx)
-{
-  if (macroIdx < macroStor.size()) {
-    return macroStor[macroIdx].name();
-  } else {
-    return coreEdgeString(coreEdgeFromIndex(macroIdx - macroStor.size()));
-  }
-}
-
-void Partition::FillNetlistTable(MacroPlacer *placer,
-                                 MacroPartMap &macroPartMap)
-{
-  tableCnt = (macroStor.size() + core_edge_count) * (macroStor.size() + core_edge_count);
-  netTable = new double[tableCnt];
-  for (int i = 0; i < tableCnt; i++) {
-    netTable[i] = 0.0;
-  }
-
-  // Just Copy to the netlistTable.
   if (partClass == ALL) {
-    for (size_t i = 0; i < (macroStor.size() + core_edge_count); i++) {
-      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
-        netTable[i * (macroStor.size() + core_edge_count) + j]
-            = (double) placer->macroWeight[i][j];
+    for (size_t i = 0; i < macro_edge_count; i++) {
+      for (size_t j = 0; j < macro_edge_count; j++) {
+        // Note that net_tbl only entries for i < j.
+        net_tbl_[i * macro_edge_count + j] = macro_placer_->weight(i, j);
       }
     }
   }
   else {
-    // row
-    for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
-      // column
-      for (size_t j = 0; j < macroStor.size() + core_edge_count; j++) {
-        if (i == j) {
-          continue;
-        }
+    for (size_t i = 0; i < net_tbl_.size(); i++) {
+      net_tbl_[i] = 0.0;
+    }
 
+    // row
+    for (size_t i = 0; i < macro_edge_count; i++) {
+      // column
+      for (size_t j = 0; j < macro_edge_count; j++) {
+        if (i == j)
+          continue;
         // from: macro case
-        if (i < macroStor.size()) {
-          int globalIdx1 = placer->macroInstMap[macroStor[i].dbInstPtr];
+        if (i < macros_.size()) {
+          int global_idx1 = globalIndex(i);
           // to macro case
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
-              = placer->macroWeight[globalIdx1][globalIdx2];
+          if (j < macros_.size()) {
+            int global_idx2 = globalIndex(j);
+            net_tbl_[i * macro_edge_count + j]
+              = macro_placer_->weight(global_idx1, global_idx2);
           }
           // to IO-west case
           else if (j == WEST_IDX) {
-            int westSum = placer->macroWeight[globalIdx1][GLOBAL_WEST_IDX];
-
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_WEST_IDX);
             if (partClass == PartClass::NE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::NW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                westSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::SW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = westSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == EAST_IDX) {
-            int eastSum = placer->macroWeight[globalIdx1][GLOBAL_EAST_IDX];
-
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_EAST_IDX);
             if (partClass == PartClass::NW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NE]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::NE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                eastSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = eastSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == NORTH_IDX) {
-            int northSum = placer->macroWeight[globalIdx1][GLOBAL_NORTH_IDX];
-
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_NORTH_IDX);
             if (partClass == PartClass::SE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::SW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::NW]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                northSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::NW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = northSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           } else if (j == SOUTH_IDX) {
-            int southSum = placer->macroWeight[globalIdx1][GLOBAL_SOUTH_IDX];
+            int weight = macro_placer_->weight(global_idx1, GLOBAL_SOUTH_IDX);
 
             if (partClass == PartClass::NE) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SE]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::SE]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
             if (partClass == PartClass::NW) {
-              for (auto& curMacroIdx : macroPartMap[PartClass::SW]) {
-                int curGlobalIdx
-                  = placer->macroInstMap[macroStor[curMacroIdx].dbInstPtr];
-                southSum += placer->macroWeight[globalIdx1][curGlobalIdx];
+              for (auto& macro_idx : macroPartMap[PartClass::SW]) {
+                int global_idx = globalIndex(macro_idx);
+                weight += macro_placer_->weight(global_idx1, global_idx);
               }
             }
-            netTable[i * (macroStor.size() + core_edge_count) + j] = southSum;
+            net_tbl_[i * macro_edge_count + j] = weight;
           }
         }
         // from IO
         else if (i == WEST_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
-              = placer->macroWeight[GLOBAL_WEST_IDX][globalIdx2];
+          if (j < macros_.size()) {
+            int global_idx2 = globalIndex(j);
+            net_tbl_[i * macro_edge_count + j]
+              = macro_placer_->weight(GLOBAL_WEST_IDX, global_idx2);
           }
         } else if (i == EAST_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
-              = placer->macroWeight[GLOBAL_EAST_IDX][globalIdx2];
+          if (j < macros_.size()) {
+            int global_idx2 = globalIndex(j);
+            net_tbl_[i * macro_edge_count + j]
+              = macro_placer_->weight(GLOBAL_EAST_IDX, global_idx2);
           }
         } else if (i == NORTH_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
-              = placer->macroWeight[GLOBAL_NORTH_IDX][globalIdx2];
+          if (j < macros_.size()) {
+            int global_idx2 = globalIndex(j);
+            net_tbl_[i * macro_edge_count + j]
+              = macro_placer_->weight(GLOBAL_NORTH_IDX, global_idx2);
           }
         } else if (i == SOUTH_IDX) {
           // to Macro
-          if (j < macroStor.size()) {
-            int globalIdx2 = placer->macroInstMap[macroStor[j].dbInstPtr];
-            netTable[i * (macroStor.size() + core_edge_count) + j]
-              = placer->macroWeight[GLOBAL_SOUTH_IDX][globalIdx2];
+          if (j < macros_.size()) {
+            int global_idx2 = globalIndex(j);
+            net_tbl_[i * macro_edge_count + j]
+              = macro_placer_->weight(GLOBAL_SOUTH_IDX, global_idx2);
           }
         }
       }
@@ -256,218 +228,207 @@ void Partition::FillNetlistTable(MacroPlacer *placer,
   }
 }
 
-void Partition::UpdateMacroCoordi(MacroPlacer* placer)
+int Partition::globalIndex(int macro_idx)
 {
-  for (auto& curPartMacro : macroStor) {
-    int macroIdx = placer->macroInstMap[curPartMacro.dbInstPtr];
-    curPartMacro.lx = placer->macroStor[macroIdx].lx;
-    curPartMacro.ly = placer->macroStor[macroIdx].ly;
-  }
+  return macro_placer_->macroIndex(macros_[macro_idx].dbInstPtr);
 }
 
 // Call ParquetFP
-bool Partition::DoAnneal()
+bool Partition::anneal()
 {
   // No macro, no need to execute
-  if (macroStor.size() == 0) {
-    return true;
-  }
+  if (!macros_.empty()) {
+    // Populating DB structure
+    // Instantiate Parquet DB structure
+    DB db;
+    pfp::Nodes* pfp_nodes = db.getNodes();
+    pfp::Nets* pfp_nets = db.getNets();
 
-  logger_->report("Begin Parquet");
+    //////////////////////////////////////////////////////
+    // Make node structures for macros.
+    for (auto& macro : macros_) {
+      MacroSpacings &spacings = macro_placer_->getSpacings(macro);
+      // ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
+      // Simulate them by expanding the macro size.
+      // Halo and 1/2 channel on both left/right top/bottom.
+      // Note well that these spacings must be removed to get the macro origin (below).
+      double padded_width = macro.w + spacings.getSpacingX() * 2;
+      double padded_height = macro.h + spacings.getSpacingY() * 2;
+      double aspect_ratio = padded_width / padded_height;
+      pfp::Node node(macro.name(),
+                     padded_width * padded_height,
+                     aspect_ratio,
+                     aspect_ratio,
+                     &macro - &macros_[0],
+                     false);
+      // These do absolutely nothing.
+      node.putHaloX(spacings.getHaloX());
+      node.putHaloY(spacings.getHaloY());
+      node.putChannelX(spacings.getChannelX());
+      node.putChannelY(spacings.getChannelY());
 
-  // Preprocessing in macroPlacer side
-  // For nets and wts
-  vector<pair<int, int>> netStor;
-  vector<int> costStor;
+      node.addSubBlockIndex(&macro - &macros_[0]);
+      pfp_nodes->putNewNode(node);
+    }
 
-  netStor.reserve((macroStor.size() + core_edge_count)
-                  * (macroStor.size() + core_edge_count - 1) / 2);
-  costStor.reserve((macroStor.size() + core_edge_count)
-                   * (macroStor.size() + core_edge_count - 1) / 2);
-
-  for (size_t i = 0; i < macroStor.size() + core_edge_count; i++) {
-    for (size_t j = i + 1; j < macroStor.size() + core_edge_count; j++) {
-      int cost = 0;
-      if (netTable) {
-        cost = netTable[i * (macroStor.size() + core_edge_count) + j]
-               + netTable[j * (macroStor.size() + core_edge_count) + i];
+    // Make node structures for pin edges.
+    int indexTerm = 0;
+    for (int i = 0; i < core_edge_count; i++) {
+      CoreEdge core_edge = coreEdgeFromIndex(i);
+      pfp::Node pin(coreEdgeString(core_edge), 0, 1, 1, indexTerm++, true);
+      double x, y;
+      switch (core_edge) {
+      case CoreEdge::West:
+        x = 0.0;
+        y = height / 2.0;
+        break;
+      case CoreEdge::East:
+        x = width;
+        y = height / 2.0;
+        break;
+      case CoreEdge::North:
+        x = width / 2.0;
+        y = height;
+        break;
+      case CoreEdge::South:
+        x = width / 2.0;
+        y = 0.0;
+        break;
       }
-      if (cost != 0) {
-        netStor.push_back(std::make_pair(std::min(i, j), std::max(i, j)));
-        costStor.push_back(cost);
+      pin.putX(x);
+      pin.putY(y);
+      pfp_nodes->putNewTerm(pin);
+    }
+
+    //////////////////////////////////////////////////////
+    // Feed net / weight structure
+
+    // Preprocessing in macro placer side
+    // For nets and wts
+    int macro_edge_count = macros_.size() + core_edge_count;
+    int pnet_idx = 0;
+    for (size_t i = 0; i < macro_edge_count; i++) {
+      for (size_t j = i + 1; j < macro_edge_count; j++) {
+        int cost = 0;
+        if (!net_tbl_.empty()) {
+          // Note that net_tbl only has entries for i < j.
+          // This looks stupid because it is looking at ij and ji entries -cherry
+          cost = net_tbl_[i * macro_edge_count + j]
+            + net_tbl_[j * macro_edge_count + i];
+        }
+        if (cost != 0) {
+          makePins(min(i, j), max(i, j), cost, pnet_idx, pfp_nets);
+          pnet_idx++;
+        }
       }
     }
-  }
 
-  if (netStor.size() == 0) {
-    for (size_t i = 0; i < core_edge_count; i++) {
-      for (size_t j = i + 1; j < core_edge_count; j++) {
-        netStor.push_back(std::make_pair(i, j));
-        costStor.push_back(1);
+    if (pnet_idx == 0) {
+      for (size_t i = 0; i < core_edge_count; i++) {
+        for (size_t j = i + 1; j < core_edge_count; j++) {
+          makePins(i, j, 1, pnet_idx, pfp_nets);
+          pnet_idx++;
+        }
       }
     }
-  }
 
-  // Populating DB structure
-  // Instantiate Parquet DB structure
-  DB db;
-  pfp::Nodes* nodes = db.getNodes();
-  pfp::Nets* nets = db.getNets();
+    pfp_nets->updateNodeInfo(*pfp_nodes);
+    pfp_nodes->updatePinsInfo(*pfp_nets);
 
-  //////////////////////////////////////////////////////
-  // Feed node structure: macro Info
-  for (auto& curMacro : macroStor) {
-    double padMacroWidth
-        = curMacro.w + 2 * (curMacro.haloX + curMacro.channelX);
-    double padMacroHeight
-        = curMacro.h + 2 * (curMacro.haloY + curMacro.channelY);
+    // Populate MixedBlockInfoType object
+    // It is from DB object
+    MixedBlockInfoTypeFromDB dbBlockInfo(db);
+    MixedBlockInfoType* blockInfo = &dbBlockInfo;
 
-    pfp::Node tmpMacro(curMacro.name(),
-                       padMacroWidth * padMacroHeight,
-                       padMacroWidth / padMacroHeight,
-                       padMacroWidth / padMacroHeight,
-                       &curMacro - &macroStor[0],
-                       false);
+    // Populate Command_Line options.
+    pfp::Command_Line param;
+    param.minWL = true;
+    param.noRotation = true;
+    param.FPrep = "BTree";
+    param.seed = 100;
+    param.scaleTerms = false;
 
-    tmpMacro.addSubBlockIndex(&curMacro - &macroStor[0]);
+    // Fixed-outline mode in Parquet
+    param.nonTrivialOutline = pfp::BBox(0, 0, width, height);
+    param.reqdAR = width / height;
+    param.maxWS = 0;
+    param.verb = 0;
 
-    // TODO
-    // tmpMacro.putSnapX();
-    // tmpMacro.putHaloX();
-    // tmpMacro.putChannelX();
+    // Instantiate BTreeAnnealer Object
+    pfp::BTreeAreaWireAnnealer* annealer =
+      new pfp::BTreeAreaWireAnnealer(*blockInfo, &param, &db);
+    annealer->go();
 
-    nodes->putNewNode(tmpMacro);
-  }
-
-  // Feed node structure: terminal Info
-  int indexTerm = 0;
-  for (int i = 0; i < core_edge_count; i++) {
-    CoreEdge core_edge = coreEdgeFromIndex(i);
-    pfp::Node pin(coreEdgeString(core_edge), 0, 1, 1, indexTerm++, true);
-    double x, y;
-    switch (core_edge) {
-    case CoreEdge::West:
-      x = 0.0;
-      y = height / 2.0;
-      break;
-    case CoreEdge::East:
-      x = width;
-      y = height / 2.0;
-      break;
-    case CoreEdge::North:
-      x = width / 2.0;
-      y = height;
-      break;
-    case CoreEdge::South:
-      x = width / 2.0;
-      y = 0.0;
-      break;
+    const pfp::BTree& sol = annealer->currSolution();
+    solution_width = sol.totalWidth();
+    solution_height = sol.totalHeight();
+    delete annealer;
+    if (solution_width > width || solution_height > height) {
+      return false;
     }
-    pin.putX(x);
-    pin.putY(y);
-    nodes->putNewTerm(pin);
-  }
 
-  //////////////////////////////////////////////////////
-  // Feed net / weight structure
-  for (auto& curNet : netStor) {
-    int idx = &curNet - &netStor[0];
-    pfp::Net pnet;
-
-    parquetfp::pin pin1(GetName(curNet.first).c_str(), true, 0, 0, idx);
-    parquetfp::pin pin2(GetName(curNet.second).c_str(), true, 0, 0, idx);
-
-    pnet.addNode(pin1);
-    pnet.addNode(pin2);
-    pnet.putIndex(idx);
-    pnet.putName(std::string("n" + std::to_string(idx)).c_str());
-    pnet.putWeight(costStor[idx]);
-
-    nets->putNewNet(pnet);
-  }
-
-  nets->updateNodeInfo(*nodes);
-  nodes->updatePinsInfo(*nets);
-
-  // Populate MixedBlockInfoType object
-  // It is from DB object
-  MixedBlockInfoTypeFromDB dbBlockInfo(db);
-  MixedBlockInfoType* blockInfo = &dbBlockInfo;
-
-  // Populate Command_Line options.
-  pfp::Command_Line param;
-  param.minWL = true;
-  param.noRotation = true;
-  param.FPrep = "BTree";
-  param.seed = 100;
-  param.scaleTerms = false;
-
-  // Fixed-outline mode in Parquet
-  param.nonTrivialOutline = parquetfp::BBox(0, 0, width, height);
-  param.reqdAR = width / height;
-  param.maxWS = 0;
-  param.verb = 0;
-
-  // Instantiate BTreeAnnealer Object
-  pfp::BTreeAreaWireAnnealer* annealer =
-    new pfp::BTreeAreaWireAnnealer(*blockInfo, &param, &db);
-  annealer->go();
-
-  const pfp::BTree& sol = annealer->currSolution();
-  // Failed annealing
-  if (sol.totalWidth() > width || sol.totalHeight() > height) {
-    logger_->info(MPL, 61, "Parquet BBOX exceed the given area");
-    logger_->info(MPL,
-               62,
-               "ParquetSolLayout {:g} {:g}",
-               sol.totalWidth(),
-               sol.totalHeight());
-    logger_->info(MPL, 63, "TargetLayout {:g} {:g}", width, height);
-    return false;
-  }
-  delete annealer;
-
-  //
-  // flip info initialization for each partition
-  bool isFlipX = false, isFlipY = false;
-  switch (partClass) {
-    // y flip
+    // flip info initialization for each partition
+    bool isFlipX = false, isFlipY = false;
+    switch (partClass) {
+      // y flip
     case NW:
       isFlipY = true;
       break;
-    // x, y flip
+      // x, y flip
     case NE:
       isFlipX = isFlipY = true;
       break;
-    // NonFlip
+      // NonFlip
     case SW:
       break;
-    // x flip
+      // x flip
     case SE:
       isFlipX = true;
       break;
-    // very weird
+      // very weird
     default:
       break;
+    }
+
+    // update partition macro locations
+    for (size_t i = 0; i < pfp_nodes->getNumNodes(); i++) {
+      pfp::Node& node = pfp_nodes->getNode(i);
+      Macro &macro = macros_[i];
+      macro.lx = (isFlipX)
+        // why would node.getWidth() != width? -cherry
+        ? width - node.getX() - node.getWidth() + lx
+        : node.getX() + lx;
+      macro.ly = (isFlipY)
+        // why would node.getHeight() != height? -cherry
+        ? height - node.getY() - node.getHeight() + ly
+        : node.getY() + ly;
+      MacroSpacings &spacings = macro_placer_->getSpacings(macro);
+      // Remove halo/channel origin offset.
+      macro.lx += spacings.getSpacingX();
+      macro.ly += spacings.getSpacingY();
+    }
   }
-
-  // update back into macroPlacer
-  for (size_t i = 0; i < nodes->getNumNodes(); i++) {
-    pfp::Node& curNode = nodes->getNode(i);
-
-    macroStor[i].lx = (isFlipX)
-                          ? width - curNode.getX() - curNode.getWidth() + lx
-                          : curNode.getX() + lx;
-    macroStor[i].ly = (isFlipY)
-                          ? height - curNode.getY() - curNode.getHeight() + ly
-                          : curNode.getY() + ly;
-
-    macroStor[i].lx += (macroStor[i].haloX + macroStor[i].channelX);
-    macroStor[i].ly += (macroStor[i].haloY + macroStor[i].channelY);
-  }
-
-  logger_->report("End Parquet");
   return true;
+}
+
+void Partition::makePins(int macro_idx1,
+                         int macro_idx2,
+                         int cost,
+                         int pnet_idx,
+                         pfp::Nets* pfp_nets)
+{
+  pfp::Net pnet;
+
+  parquetfp::pin pin1(getName(macro_idx1).c_str(), true, 0, 0, pnet_idx);
+  parquetfp::pin pin2(getName(macro_idx2).c_str(), true, 0, 0, pnet_idx);
+
+  pnet.addNode(pin1);
+  pnet.addNode(pin2);
+  pnet.putIndex(pnet_idx);
+  pnet.putName(string("n" + to_string(pnet_idx)).c_str());
+  pnet.putWeight(cost);
+
+  pfp_nets->putNewNet(pnet);
 }
 
 }  // namespace mpl

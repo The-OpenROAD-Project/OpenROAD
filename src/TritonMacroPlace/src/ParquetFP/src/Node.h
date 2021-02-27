@@ -84,16 +84,14 @@ namespace parquetfp
            float _origWidth;
            float _origHeight;
 
-//           Node(void) {} //Default constructor private and disabled use a reference or pointer
        public:
            bool allPinsAtCenter;   //helps for HPWL evaluation. made public member for speed. be carefull in modifying this.
            bool calcAllPinsAtCenter(Nets& nets); //use this only for initialization. else use above variable
 
            //ctors
            Node(const std::string block_name,float block_area,float minAr,float maxAr,
-                   int index,bool type);
+                int index,bool type);
            Node(const Node& orig);
-//           Node& operator=(const Node& rhs);
 
            bool getType() const            {return _type;}
            int getIndex(void) const        {return _index;} 

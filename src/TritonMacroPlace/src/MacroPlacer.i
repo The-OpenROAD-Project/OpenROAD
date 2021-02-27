@@ -76,25 +76,25 @@ set_fence_region(double lx, double ly, double ux, double uy)
 }
 
 void
-place_macros()
+set_snap_layer(odb::dbTechLayer *snap_layer)
 {
   MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->placeMacros(); 
+  macro_placer->setSnapLayer(snap_layer);
+}
+
+void
+place_macros_center_spread()
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->placeMacrosCenterSpread(); 
 } 
 
 void
-set_global_config(const char* file) 
+place_macros_corner_max_wl()
 {
   MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->setGlobalConfig(file); 
-}
-
-void
-set_local_config(const char* file)
-{
-  MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->setLocalConfig(file); 
-}
+  macro_placer->placeMacrosCornerMaxWl(); 
+} 
 
 }
 
