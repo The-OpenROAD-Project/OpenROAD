@@ -37,7 +37,7 @@
 %{
 #include "openroad/OpenRoad.hh"
 #include "db_sta/dbNetwork.hh"
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 
 using dpl::StringSeq;
 using sta::Instance;

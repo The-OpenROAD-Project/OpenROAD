@@ -35,27 +35,27 @@
 
 include("openroad")
 
-tcl_lib(NAME      init_fp
+tcl_lib(NAME      ifp
         NAMESPACE ifp
         I_FILE    InitFloorplan.i
         SCRIPTS   InitFloorplan.tcl
 )
 
-target_sources(init_fp
+target_sources(ifp
   PRIVATE
     InitFloorplan.cc
     MakeInitFloorplan.cc
 )
 
-target_include_directories(init_fp
+target_include_directories(ifp
   PUBLIC
     ../include
 )
 
-target_link_libraries(init_fp
+target_link_libraries(ifp
   PRIVATE
     opendb
     dbSta
     OpenSTA
     utility
-  )
+    )

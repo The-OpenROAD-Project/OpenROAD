@@ -1,4 +1,4 @@
-%module init_fp
+%module ifp
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -38,7 +38,7 @@
 %{
 
 #include "db_sta/dbSta.hh"
-#include "init_fp/InitFloorplan.hh"
+#include "ifp/InitFloorplan.hh"
 
 // Defined by OpenRoad.i
 namespace ord {

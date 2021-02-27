@@ -32,17 +32,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/MakeOpendp.h"
+#include "dpl/MakeOpendp.h"
 
 #include <tcl.h>
 
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *opendp_tcl_inits[];
+extern const char *dpl_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
@@ -71,7 +71,7 @@ initOpendp(OpenRoad *openroad)
   // Define swig TCL commands.
   Opendp_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::opendp_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::dpl_tcl_inits);
   openroad->getOpendp()->init(openroad->getDb(),
                               openroad->getLogger());
 }

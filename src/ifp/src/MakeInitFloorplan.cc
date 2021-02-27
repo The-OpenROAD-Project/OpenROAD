@@ -38,15 +38,15 @@
 #include <tcl.h>
 
 #include "openroad/OpenRoad.hh"
-#include "init_fp/MakeInitFloorplan.hh"
+#include "ifp/MakeInitFloorplan.hh"
 
 namespace sta {
 
 extern "C" {
-extern int Init_fp_Init(Tcl_Interp *interp);
+extern int Ifp_Init(Tcl_Interp *interp);
 }
 
-extern const char *init_fp_tcl_inits[];
+extern const char *ifp_tcl_inits[];
 
 }
 
@@ -57,9 +57,9 @@ initInitFloorplan(OpenRoad *openroad)
 {
   Tcl_Interp *interp = openroad->tclInterp();
   // Define swig TCL commands.
-  sta::Init_fp_Init(interp);
+  sta::Ifp_Init(interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::init_fp_tcl_inits);
+  sta::evalTclInit(interp, sta::ifp_tcl_inits);
 }
 
 } // namespace ord

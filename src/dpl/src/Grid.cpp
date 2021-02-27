@@ -37,7 +37,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/Opendp.h"
+#include "dpl/Opendp.h"
 
 #include <cmath>
 #include <limits>
