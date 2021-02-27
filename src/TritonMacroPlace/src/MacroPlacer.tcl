@@ -33,13 +33,15 @@
 #############################################################################
 
 sta::define_cmd_args "macro_placement" {
-  -halo {vertical_width horizontal_width} \
-    -channel {vertical_width horizontal_width}\
-    [-fence_region {lx ly ux uy}]}
+  [-halo {vertical_width horizontal_width}] \
+    [-channel {vertical_width horizontal_width}]\
+    [-fence_region {lx ly ux uy}]\
+    [-snap_layer snap_layer_number]\
+    [-style corner_max_wl|center_spread]}
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
-    keys {-channel -halo -fence_region -global_config -local_config} flags {}
+    keys {-channel -halo -fence_region -snap_layer -style} flags {}
 
   if { [info exists keys(-halo)] } {
     set halo $keys(-halo)
@@ -63,13 +65,14 @@ proc macro_placement { args } {
     mpl::set_channel $channel_x $channel_y
   }
 
-  set block [ord::get_db_block]
-  set die_area [$block getDieArea]
-  # note that unit is micron
-  set dieLx [ord::dbu_to_microns [$die_area xMin]]
-  set dieLy [ord::dbu_to_microns [$die_area yMin]]
-  set dieUx [ord::dbu_to_microns [$die_area xMax]]
-  set dieUy [ord::dbu_to_microns [$die_area yMax]]
+  if { ![ord::db_has_rows] } {
+    utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
+  }
+  set core [ord::get_db_core]
+  set core_lx [ord::dbu_to_microns [$core xMin]]
+  set core_ly [ord::dbu_to_microns [$core yMin]]
+  set core_ux [ord::dbu_to_microns [$core xMax]]
+  set core_uy [ord::dbu_to_microns [$core yMax]]
   
   if { [info exists keys(-fence_region)] } {
     set fence_region $keys(-fence_region)
@@ -78,50 +81,35 @@ proc macro_placement { args } {
     }
     lassign $fence_region lx ly ux uy 
     
-    if { $lx < $dieLx } {
-      utl::warn "MPL" 85 "fence_region left x is less than die left x."
-      set lx $dieLx
-    }
-    if { $ly < $dieLy } {
-      utl::warn "MPL" 86 "fence_region bottom y is less than die bottom y."
-      set ly $dieLy
-    }
-    if { $ux > $dieUx } {
-      utl::warn "MPL" 87 "fence_region right x is greater than die right x."
-      set ux $dieUx
-    }
-    if { $uy > $dieUy } {
-      utl::warn "MPL" 88 "fence_region top y is greater than die top y."
-      set uy $dieUy
+    if { $lx < $core_lx || $ly < $core_ly || $ux > $core_ux || $uy > $core_uy } {
+      utl::warn "MPL" 85 "fence_region outside of core area. Using core area."
     }
     mpl::set_fence_region $lx $ly $ux $uy
   } else {
-    mpl::set_fence_region $dieLx $dieLy $dieUx $dieUy
-  }
-  
-  if { [info exists keys(-global_config)] } {
-    utl::warn "MPL" 81 "macro place -global_config deprecated. Use -channel, -halo arguments."
-    set global_config_file $keys(-global_config)
-    if { [file readable $global_config_file] } {
-      mpl::set_global_config $global_config_file
-    } else {
-      utl::warn "MPL" 82 "cannot read $global_config_file"
-    }
+    mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
   }
 
-  if { [info exists keys(-local_config)] } {
-    utl::warn "MPL" 90 "macro place -local_config deprecated."
-    set local_config_file $keys(-local_config)
-    if { [file readable $local_config_file] } {
-      mpl::set_local_config $local_config_file
-    } else {
-      utl::warn "MPL" 83 "cannot read $local_config_file"
-    }
+  set snap_layer 4
+  if { [info exists keys(-snap_layer)] } {
+    set snap_layer $keys(-snap_layer)
+    sta::check_positive_integer "-snap_layer" $snap_layer
   }
+  set tech [ord::get_db_tech]
+  set layer [$tech findRoutingLayer $snap_layer]
+  if { $layer == "NULL" } {
+    utl::error "MPL" 95 "snap layer $snap_layer is not a routing layer."
+  }
+  mpl::set_snap_layer $layer
 
-  if { [ord::db_has_rows] } {
-    mpl::place_macros
+  set style "corner_max_wl"
+  if { [info exists keys(-style)] } {
+    set style $keys(-style)
+  }
+  if { $style == "corner_max_wl" } {
+    mpl::place_macros_corner_max_wl
+  } elseif { $style == "center_spread" } {
+    mpl::place_macros_center_spread
   } else {
-    utl::error "MPL" 89 "No rows found. Use initialize_floorplan to add rows."
+    utl::error MPL 96 "Unknown placement style."
   }
 }

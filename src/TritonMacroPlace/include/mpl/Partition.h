@@ -42,7 +42,18 @@ namespace utl {
 class Logger;
 }
 
+namespace parquetfp {
+class Nets;
+}
+
 namespace mpl {
+
+using std::vector;
+using std::array;
+using std::pair;
+using std::string;
+
+namespace pfp = parquetfp;
 
 class MacroPlacer;
 class Macro;
@@ -64,7 +75,7 @@ enum PartClass
 constexpr int part_class_count = None + 1;
 
 // PartClass -> macro indices
-typedef std::array<std::vector<int>, part_class_count> MacroPartMap;
+typedef array<vector<int>, part_class_count> MacroPartMap;
 
 class Partition
 {
@@ -74,41 +85,32 @@ class Partition
             double _ly,
             double _width,
             double _height,
+            MacroPlacer *macro_placer,
             utl::Logger* log);
   Partition(const Partition& prev);
-  ~Partition();
 
-  void FillNetlistTable(MacroPlacer* placer,
-                        MacroPartMap& macroPartMap);
+  void fillNetlistTable(MacroPartMap& macroPartMap);
   // Call Parquet to have annealing solution
-  bool DoAnneal();
-  // Update Macro location from MacroPlacer
-  void UpdateMacroCoordi(MacroPlacer* placer);
+  bool anneal();
 
   PartClass partClass;
-  std::vector<Macro> macroStor;
+  vector<Macro> macros_;
   double lx, ly;
   double width, height;
-  double* netTable;
+  double solution_width, solution_height;
+  vector<double> net_tbl_;
 
  private:
-  std::string GetName(int macroIdx);
+  string getName(int macroIdx);
+  int globalIndex(int macro_idx);
+  void makePins(int macro_idx1,
+                int macro_idx2,
+                int cost,
+                int pnet_idx,
+                pfp::Nets* pfp_nets);
 
-  int tableCnt;
   utl::Logger* logger_;
-};
-
-struct PartClassHash
-{
-  std::size_t operator()(const PartClass& k) const { return k; }
-};
-
-struct PartClassEqual
-{
-  bool operator()(const PartClass& p1, const PartClass& p2) const
-  {
-    return p1 == p2;
-  }
+  MacroPlacer *macro_placer_;
 };
 
 }  // namespace mpl

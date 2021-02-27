@@ -374,7 +374,7 @@ COMPONENTS 307 ;
     - _890_ DFF_X1 + PLACED ( 29260 11200 ) S ;
     - _891_ DFF_X1 + PLACED ( 34200 28000 ) S ;
     - _892_ DFF_X1 + PLACED ( 33060 36400 ) N ;
-    - mem0 fakeram45_64x7 + FIXED ( 62720 11760 ) N ;
+    - mem0 fakeram45_64x7 + FIXED ( 60480 10080 ) N ;
 END COMPONENTS
 PINS 61 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
