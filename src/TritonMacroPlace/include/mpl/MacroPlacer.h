@@ -65,13 +65,20 @@ namespace mpl {
 
 class Layout;
 
-typedef std::set<Macro*> MacroSet;
+using std::string;
+using std::pair;
+using std::set;
+using std::map;
+using std::vector;
+using std::unordered_map;
+
+typedef set<Macro*> MacroSet;
 // vertex -> fanin macro set
-typedef std::map<sta::Vertex*, MacroSet> VertexFaninMap;
-typedef std::pair<Macro*, Macro*> MacroPair;
+typedef map<sta::Vertex*, MacroSet> VertexFaninMap;
+typedef pair<Macro*, Macro*> MacroPair;
 // from/to -> weight
 // weight = from/pin -> to/pin count
-typedef std::map<MacroPair, int> AdjWeightMap;
+typedef map<MacroPair, int> AdjWeightMap;
 
 enum class CoreEdge
 {
@@ -89,39 +96,44 @@ int coreEdgeIndex(CoreEdge edge);
 class Macro
 {
  public:
-  double lx, ly;
-  double w, h;
-  double haloX, haloY;
-  double channelX, channelY;
-  odb::dbInst* dbInstPtr;
   Macro(double _lx,
         double _ly,
         double _w,
         double _h,
-        double _haloX,
-        double _haloY,
-        double _channelX,
-        double _channelY,
         odb::dbInst* _dbInstPtr);
-  std::string name();
-  std::string type();
+  Macro(double _lx,
+        double _ly,
+        const Macro &copy_from);
+  string name();
+
+  double lx, ly;
+  double w, h;
+  odb::dbInst* dbInstPtr;
 };
 
-class MacroLocalInfo
+class MacroSpacings
 {
  public:
-  MacroLocalInfo();
-  void putHaloX(double haloX) { haloX_ = haloX; }
-  void putHaloY(double haloY) { haloY_ = haloY; }
-  void putChannelX(double channelX) { channelX_ = channelX; }
-  void putChannelY(double channelY) { channelY_ = channelY; }
-  double GetHaloX() { return haloX_; }
-  double GetHaloY() { return haloY_; }
-  double GetChannelX() { return channelX_; }
-  double GetChannelY() { return channelY_; }
+  MacroSpacings();
+  MacroSpacings(double halo_x,
+                double halo_y,
+                double channel_x,
+                double channel_y);
+  void setHalo(double halo_x,
+               double halo_y);
+  void setChannel(double channel_x,
+                  double channel_y);
+  void setChannelX(double channel_x);
+  void setChannelY(double channel_y);
+  double getHaloX() const { return halo_x_; }
+  double getHaloY() const { return halo_y_; }
+  double getChannelX() const { return channel_x_; }
+  double getChannelY() const { return channel_y_; }
+  double getSpacingX() const;
+  double getSpacingY() const;
 
  private:
-  double haloX_, haloY_, channelX_, channelY_;
+  double halo_x_, halo_y_, channel_x_, channel_y_;
 };
 
 class MacroPlacer
@@ -134,30 +146,37 @@ public:
   void setChannel(double channel_x, double channel_y);
   void setVerboseLevel(int verbose);
   void setFenceRegion(double lx, double ly, double ux, double uy);
+  void setSnapLayer(odb::dbTechLayer *snap_layer);
 
-  void setGlobalConfig(const char* globalConfig);
-  void setLocalConfig(const char* localConfig);
-
-  void placeMacros();
+  void placeMacrosCenterSpread();
+  void placeMacrosCornerMaxWl();
   int getSolutionCount();
 
   // return weighted wire-length to get best solution
-  double GetWeightedWL();
-  void UpdateNetlist(Partition& layout);
+  double getWeightedWL();
   int weight(int idx11, int idx12);
+  int macroIndex(odb::dbInst *inst);
+  MacroSpacings &getSpacings(Macro &macro);
+  Macro& macro(int idx) { return macros_[idx]; }
+  size_t macroCount() { return macros_.size(); }
 
 private:
-  // parsing function
-  void ParseGlobalConfig(std::string fileName);
-  void ParseLocalConfig(std::string fileName);
-  void FillMacroStor();
+  void findMacros();
   bool isMissingLiberty();
 
   void init();
   // Update Macro Location from Partition info
-  void UpdateMacroCoordi(Partition& part);
-  void UpdateOpendbCoordi();
-  void UpdateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
+  void updateMacroLocations(Partition& part);
+  void updateDbInstLocations();
+  void updateMacroPartMap(Partition& part, MacroPartMap &macroPartMap);
+  vector<pair<Partition, Partition>> getPartitions(const Layout& layout,
+                                                   const Partition& partition,
+                                                   bool isHorizontal);
+  void cutRoundUp(const Layout& layout,
+                  double& cutLine,
+                  bool isHorizontal);
+    void setDbInstLocations(double x_scale, 
+                            double y_scale);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -173,9 +192,10 @@ private:
                           sta::LibertyPort *out_port);
   void fillMacroWeights(AdjWeightMap &adj_map);
   CoreEdge findNearestEdge(odb::dbBTerm* bTerm);
-  std::string faninName(Macro *macro);
+  string faninName(Macro *macro);
   int macroIndex(Macro *macro);
   bool macroIndexIsEdge(Macro *macro);
+  string macroIndexName(int index);
 
   void reportEdgePinCounts();
 
@@ -184,35 +204,25 @@ private:
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
+  odb::dbTechLayer *snap_layer_;
 
-  // config filenames
-  std::string globalConfig_;
-  std::string localConfig_;
-
-  bool isTiming_;
+  bool connection_driven_;
 
   // macro idx/idx pair -> give each
-  std::vector<std::vector<int>> macroWeight;
+  vector<vector<int>> macro_weights_;
   // macro Information
-  std::vector<Macro> macroStor;
-  // dbInst* --> macroStor's index
-  std::unordered_map<odb::dbInst*, int> macroInstMap;
+  vector<Macro> macros_;
+  // dbInst* --> macros_'s index
+  unordered_map<odb::dbInst*, int> macro_inst_map_;
 
-  // save LocalCfg into this structure
-  std::unordered_map<std::string, MacroLocalInfo> macroLocalMap;
+  MacroSpacings default_macro_spacings_;
+  unordered_map<odb::dbInst*, MacroSpacings> macro_spacings_;
 
-  // layout
   double lx_, ly_, ux_, uy_;
-  double fenceLx_, fenceLy_, fenceUx_, fenceUy_;
-  double siteSizeX_, siteSizeY_;
-  double haloX_, haloY_;
-  double channelX_, channelY_;
-  double* netTable_;
   int verbose_;
-  bool fenceRegionMode_;
-  int solCount_;
-
-  friend class Partition;
+  int solution_count_;
+  // Number of register levels to look through for macro adjacency.
+  static constexpr int reg_adjacency_depth_ = 3;
 };
 
 class Layout
@@ -237,4 +247,3 @@ class Layout
 };
 
 }  // namespace mpl
-

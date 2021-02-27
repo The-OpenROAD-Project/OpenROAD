@@ -139,6 +139,7 @@ using sta::PathExpanded;
 using sta::INF;
 using sta::fuzzyEqual;
 using sta::fuzzyLess;
+using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::stringPrint;
@@ -1387,6 +1388,7 @@ Resizer::allLibraries()
   return libs;
 }
 
+// Run repair design to find the slacks but save/restore all changes to the netlist.
 void
 Resizer::findResizeSlacks()
 {
@@ -2172,11 +2174,7 @@ Resizer::repairSetup(float slack_margin)
   Slack prev_worst_slack = -INF;
   int pass = 1;
   int decreasing_slack_passes = 0;
-  while (fuzzyLess(worst_slack, slack_margin)
-         // Allow slack to increase a few passes to get out of local minima.
-         && (decreasing_slack_passes < 0
-             || fuzzyGreater(worst_slack, prev_worst_slack))
-         && !fuzzyEqual(worst_slack, prev_worst_slack)) {
+  while (fuzzyLess(worst_slack, slack_margin)) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
     repairSetup(worst_path, worst_slack);
@@ -2189,10 +2187,25 @@ Resizer::repairSetup(float slack_margin)
     debugPrint(debug_, "retime", 1, "pass %d worst_slack = %s",
                pass,
                delayAsString(worst_slack, sta_, 3));
-    if (fuzzyLess(worst_slack, prev_worst_slack))
+    if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
+      // Allow slack to increase a few passes to get out of local minima.
       decreasing_slack_passes++;
-    else
+      if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
+        // Undo changes that reduced slack.
+        journalRestore();
+        sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+        debugPrint(debug_, "retime", 1,
+                   "decreasing slack for %d passes restoring worst_slack %s",
+                   repair_setup_decreasing_slack_passes_allowed_,
+                   delayAsString(worst_slack, sta_, 3));
+        break;
+      }
+    }
+    else {
       decreasing_slack_passes = 0;
+      // Progress, start journal so we can back up to here.
+      journalBegin();
+    }
     if (overMaxArea())
       break;
     pass++;
@@ -3603,12 +3616,14 @@ Resizer::journalRestore()
                  network_->pathName(inst),
                  lib_cell->name());
       replaceCell(inst, lib_cell, false);
+      resize_count_--;
     }
   }
   for (Instance *buffer : inserted_buffers_) {
     debugPrint(debug_, "resize_journal", 1, "remove %s",
                network_->pathName(buffer));
     removeBuffer(buffer);
+    inserted_buffer_count_--;
   }
 }
 

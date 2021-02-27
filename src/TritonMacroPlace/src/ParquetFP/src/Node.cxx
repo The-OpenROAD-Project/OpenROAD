@@ -57,23 +57,6 @@ namespace parquetfp
             //by default orientation is N
         }
 
-    //default ctor --Disabled
-    //Node::Node()
-    //  : _area(0),_minAr(0),_maxAr(0),_orient(N),_isOrientFixed(false),_slackX(0),
-    //    _slackY(0),_index(0),_type(true),_isMacro(false),//_isHard(true),
-    //    allPinsAtCenter(false)
-    //{
-    //  //strcpy(_name,"");
-    //  _name = "";
-    //  _placement.x=0;
-    //  _placement.y=0;
-    //  _height = 0;
-    //  _width = 0;
-    //    // cout<<"Setting "<<_index<<" "<<_name<<" new AR (d) max: "<<_maxAr<<" min: "<<_minAr<<" hard?: "<<_isHard<<" "<< isHard()<<endl;
-    //}
-
-
-
     Node::Node(const Node& orig):
       _area(orig._area), _minAr(orig._minAr), _maxAr(orig._maxAr), _width(orig._width),
       _height(orig._height), 
@@ -88,37 +71,6 @@ namespace parquetfp
       _origHeight(orig._origHeight), allPinsAtCenter(orig.allPinsAtCenter),
       needSyncOrient(orig.needSyncOrient)
     { }
-
-/*
-    Node& Node::operator=(const Node& rhs)
-    {
-
-        _name=rhs._name; 
-        _area=rhs._area;
-        _minAr=rhs._minAr;
-        _maxAr=rhs._maxAr;
-        _width=rhs._width;
-        _height=rhs._height;
-        _origWidth=rhs._origWidth; 
-        _origHeight=rhs._origHeight;
-        _orient=rhs._orient; 
-        _isOrientFixed=rhs._isOrientFixed;
-        _slackX=rhs._slackX;
-        _slackY=rhs._slackY;
-        _index=rhs._index;
-        _type=rhs._type;
-        _isMacro=rhs._isMacro;
-        _pins.clear();
-        _pins.insert(_pins.end(), rhs._pins.begin(), rhs._pins.end());
-        _subBlockIndices.clear();
-        _subBlockIndices.insert(_subBlockIndices.end(), rhs._subBlockIndices.begin(), rhs._subBlockIndices.end());
-        allPinsAtCenter=rhs.allPinsAtCenter;
-        needSyncOrient=rhs.needSyncOrient;
-        _placement.x=rhs._placement.x;
-        _placement.y=rhs._placement.y;
-        return *this;
-    }
-*/
 
     void Node::changeOrient(ORIENT newOrient, Nets& nets)
     {
