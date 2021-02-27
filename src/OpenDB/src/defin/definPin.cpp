@@ -89,7 +89,7 @@ void definPin::pinBegin(const char* name, const char* net_name)
   const char* s = strstr(name, ".extra");
 
   if (s == NULL) {
-    if(_mode == FLOORPLAN){
+    if(_mode != defin::DEFAULT){
       _cur_bterm = _block->findBTerm(name);
       if(_cur_bterm != nullptr)
         _update_cnt++;

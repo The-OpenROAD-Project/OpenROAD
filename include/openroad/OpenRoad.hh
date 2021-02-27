@@ -170,7 +170,9 @@ public:
   void readDef(const char *filename,
                bool order_wires,
                bool continue_on_errors,
-               bool floorplan_initialize);
+               bool floorplan_init,
+               bool incremental);
+  
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);

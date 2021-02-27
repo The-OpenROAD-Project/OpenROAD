@@ -75,7 +75,7 @@ void definBase::setLogger(utl::Logger* logger)
   _logger  = logger;
 }
 
-void definBase::setMode(MODE mode)
+void definBase::setMode(defin::MODE mode)
 {
   _mode = mode;
 }

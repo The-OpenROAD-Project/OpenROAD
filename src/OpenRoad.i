@@ -253,10 +253,10 @@ read_lef_cmd(const char *filename,
 }
 
 void
-read_def_cmd(const char *filename, bool order_wires, bool continue_on_errors, bool floorplan_initialize)
+read_def_cmd(const char *filename, bool order_wires, bool continue_on_errors, bool floorplan_init, bool incremental)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDef(filename, order_wires, continue_on_errors, floorplan_initialize);
+  ord->readDef(filename, order_wires, continue_on_errors, floorplan_init, incremental);
 }
 
 void

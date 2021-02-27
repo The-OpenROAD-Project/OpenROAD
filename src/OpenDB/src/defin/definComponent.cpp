@@ -153,7 +153,7 @@ void definComponent::begin(const char* iname, const char* mname)
     _errors++;
     return;
   }
-  if(_mode == FLOORPLAN){
+  if(_mode != defin::DEFAULT){
     _cur_inst = _block->findInst(iname);
     if(_cur_inst == nullptr){
       _errors++;
@@ -249,7 +249,7 @@ void definComponent::region(const char* name)
 
   if (region == NULL)
     region = dbRegion::create(_block, name);
-  else if(_mode == FLOORPLAN && _cur_inst->getRegion() == region)
+  else if(_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
     return;
 
   region->addInst(_cur_inst);

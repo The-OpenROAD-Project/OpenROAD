@@ -135,7 +135,7 @@ void definNet::begin(const char* name)
     // This may cause problems with other routers.
     _non_default_rule = _cur_net->getNonDefaultRule();
   }
-  if(_mode == FLOORPLAN)
+  if(_mode == defin::FLOORPLAN)
     _update_cnt++;
   else
     _net_cnt++;

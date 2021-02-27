@@ -54,7 +54,12 @@ class defin
 
 
  public:
-  defin(dbDatabase* db, utl::Logger* logger, bool floorplan = false);
+  enum MODE{
+    DEFAULT,
+    FLOORPLAN,
+    INCREMENTAL
+  };
+  defin(dbDatabase* db, utl::Logger* logger, MODE mode = MODE::DEFAULT);
   ~defin();
 
   void skipWires();

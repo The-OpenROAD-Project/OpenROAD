@@ -94,7 +94,7 @@ class DefHeader
   static DefHeader* getDefHeader(const char* file);
 };
 
-definReader::definReader(dbDatabase* db, utl::Logger* logger, MODE mode)
+definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db                 = db;
   _block_name         = NULL;
@@ -369,8 +369,10 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
 {
   definReader*    reader     = (definReader*) data;
   definComponent* componentR = reader->_componentR;
-  if(reader->_mode == FLOORPLAN && reader->_block->findInst(comp->id()) == nullptr){
-    reader->_logger->warn(utl::ODB, 248, "skipping undefined comp {} encountered in FLOORPLAN DEF", comp->id());
+  if(reader->_mode != defin::DEFAULT && reader->_block->findInst(comp->id()) == nullptr )
+  {
+    std::string modeStr = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
+    reader->_logger->warn(utl::ODB, 248, "skipping undefined comp {} encountered in {} DEF", comp->id(), modeStr);
     return PARSE_OK;
   }
 
@@ -431,7 +433,7 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
 
   const defiPoints points = box->getPoint();
 
-  if (reader->_mode == DEFAULT || reader->_mode == FLOORPLAN) {
+  if (reader->_mode == defin::DEFAULT || reader->_mode == defin::FLOORPLAN) {
     std::vector<Point> P;
     reader->translate(points, P);
 
@@ -593,7 +595,7 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definNet*    netR   = reader->_netR;
-  if(reader->_mode == FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
+  if(reader->_mode == defin::FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
     reader->_logger->warn(utl::ODB, 246, "skipping undefined net {} encountered in FLOORPLAN DEF", net->name());
     return PARSE_OK;
   }
@@ -818,8 +820,10 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definPin*    pinR   = reader->_pinR;
-  if(reader->_mode == FLOORPLAN && reader->_block->findBTerm(pin->pinName()) == nullptr){
-    reader->_logger->warn(utl::ODB, 247, "skipping undefined pin {} encountered in FLOORPLAN DEF", pin->pinName());
+  if(reader->_mode != defin::DEFAULT && reader->_block->findBTerm(pin->pinName()) == nullptr )
+  {
+    std::string modeStr = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
+    reader->_logger->warn(utl::ODB, 247, "skipping undefined pin {} encountered in {} DEF", pin->pinName(), modeStr);
     return PARSE_OK;
   }
 
@@ -1336,7 +1340,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   definSNet*   snetR  = reader->_snetR;
-  if(reader->_mode == FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
+  if(reader->_mode == defin::FLOORPLAN && reader->_block->findNet(net->name()) == nullptr){
     reader->_logger->warn(utl::ODB, 249, "skipping undefined net {} encountered in FLOORPLAN DEF", net->name());
     return PARSE_OK;
   }
@@ -1627,9 +1631,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
   if (hdr == NULL)
     return NULL;
   dbChip* chip = _db->getChip();
-  if (_mode == FLOORPLAN){
+  if (_mode != defin::DEFAULT){
     if(chip == nullptr)
-      _logger->error(utl::ODB, 250, "No chip created for floorplan initialization");
+      _logger->error(utl::ODB, 250, "Chip does not exist");
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return NULL;
@@ -1637,7 +1641,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
     chip = dbChip::create(_db);
 
   assert(chip);
-  if(_mode == FLOORPLAN)
+  if(_mode != defin::DEFAULT)
     _block = chip->getBlock();
   else{
     if (_block_name)
@@ -1649,7 +1653,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
   assert(_block);
   setBlock(_block);
   setTech(_db->getTech());
-  if(_mode != FLOORPLAN)
+  if(_mode == defin::DEFAULT)
     _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
 
   _logger->info(utl::ODB, 127,  "Reading DEF file: {}", file);
@@ -1821,18 +1825,30 @@ bool definReader::createBlock(const char* file)
   defrReset();
 
   defrInitSession();
-  // FOR DEFAULT || FLOORPLAN || INCR
+  // FOR DEFAULT || FLOORPLAN || INCREMENTAL
+  defrSetUnitsCbk(unitsCallback);
   defrSetComponentCbk(componentsCallback);
   defrSetComponentMaskShiftLayerCbk(componentMaskShiftCallback);
+  defrSetPinCbk(pinCallback);
+  defrSetPinEndCbk(pinsEndCallback);
+  defrSetPinPropCbk(pinPropCallback);
+
+  if(_mode == defin::DEFAULT || _mode == defin::FLOORPLAN)
+  {
+    defrSetDieAreaCbk(dieAreaCallback);
+    defrSetTrackCbk(trackCallback);
+    defrSetRowCbk(rowCallback);
+    defrSetNetCbk(netCallback);
+    defrSetSNetCbk(specialNetCallback);
+  } 
   
-  if(_mode == DEFAULT || _mode == FLOORPLAN)
+  if(_mode == defin::DEFAULT)
   {
     defrSetPropCbk(propCallback);
     defrSetPropDefEndCbk(propEndCallback);
     defrSetPropDefStartCbk(propStartCallback);
     defrSetBlockageCbk(blockageCallback);
     
-    defrSetDieAreaCbk(dieAreaCallback);
     defrSetExtensionCbk(extensionCallback);
     defrSetFillStartCbk(fillsCallback);
     defrSetFillCbk(fillCallback);
@@ -1841,21 +1857,18 @@ bool definReader::createBlock(const char* file)
     defrSetGroupMemberCbk(groupMemberCallback);
     defrSetGroupNameCbk(groupNameCallback);
     defrSetHistoryCbk(historyCallback);
-    defrSetNetCbk(netCallback);
+   
     defrSetNonDefaultCbk(nonDefaultRuleCallback);
-    defrSetPinCbk(pinCallback);
-    defrSetPinEndCbk(pinsEndCallback);
-    defrSetPinPropCbk(pinPropCallback);
     defrSetRegionCbk(regionCallback);
-    defrSetRowCbk(rowCallback);
+    
     defrSetScanchainsStartCbk(scanchainsCallback);
     defrSetSlotStartCbk(slotsCallback);
-    defrSetSNetCbk(specialNetCallback);
+    
     defrSetStartPinsCbk(pinsStartCallback);
     defrSetStylesStartCbk(stylesCallback);
     defrSetTechnologyCbk(technologyCallback);
-    defrSetTrackCbk(trackCallback);
-    defrSetUnitsCbk(unitsCallback);
+    
+    
     defrSetViaCbk(viaCallback);
     
     defrSetAddPathToNet();
