@@ -1,0 +1,89 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: level3.def
+[INFO ODB-0128] Design: gcd_mem3
+[INFO ODB-0130]     Created 75 pins.
+[INFO ODB-0131]     Created 24 components and 222 component-terminals.
+[INFO ODB-0133]     Created 139 nets and 153 connections.
+[INFO ODB-0134] Finished DEF file: level3.def
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 116280 112000
+[INFO GPL-0006] NumInstances: 24
+[INFO GPL-0007] NumPlaceInstances: 24
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 139
+[INFO GPL-0011] NumPins: 228
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 116280 112000
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 116280 112000
+[INFO GPL-0016] CoreArea: 13023360000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 5327448000
+[INFO GPL-0019] Util(%): 40.91
+[INFO GPL-0020] StdInstsArea: 379848000
+[INFO GPL-0021] MacroInstsArea: 4947600000
+[InitialPlace]  Iter: 1 CG Error: 0.00000005 HPWL: 7928720
+[InitialPlace]  Iter: 2 CG Error: 0.00000011 HPWL: 8024391
+[InitialPlace]  Iter: 3 CG Error: 0.00000004 HPWL: 8064873
+[InitialPlace]  Iter: 4 CG Error: 0.00000006 HPWL: 8077827
+[InitialPlace]  Iter: 5 CG Error: 0.00000012 HPWL: 8081328
+[INFO GPL-0031] FillerInit: NumGCells: 144
+[INFO GPL-0032] FillerInit: NumGNets: 139
+[INFO GPL-0033] FillerInit: NumGPins: 228
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 221977000
+[INFO GPL-0025] IdealBinArea: 317109984
+[INFO GPL-0026] IdealBinCnt: 41
+[INFO GPL-0027] TotalBinArea: 13023360000
+[INFO GPL-0028] BinCnt: 4 4
+[INFO GPL-0029] BinSize: 29070 28000
+[INFO GPL-0030] NumBins: 16
+[NesterovSolve] Iter: 1 overflow: 0.188272 HPWL: 1938482
+[NesterovSolve] Iter: 10 overflow: 0.194734 HPWL: 1960536
+[NesterovSolve] Iter: 20 overflow: 0.210138 HPWL: 1979807
+[NesterovSolve] Iter: 30 overflow: 0.207007 HPWL: 1978744
+[NesterovSolve] Iter: 40 overflow: 0.205899 HPWL: 1978206
+[NesterovSolve] Iter: 50 overflow: 0.207256 HPWL: 1979754
+[NesterovSolve] Iter: 60 overflow: 0.206722 HPWL: 1979953
+[NesterovSolve] Iter: 70 overflow: 0.20654 HPWL: 1980282
+[NesterovSolve] Iter: 80 overflow: 0.206801 HPWL: 1981343
+[NesterovSolve] Iter: 90 overflow: 0.206597 HPWL: 1982421
+[NesterovSolve] Iter: 100 overflow: 0.206524 HPWL: 1984036
+[NesterovSolve] Iter: 110 overflow: 0.206539 HPWL: 1986426
+[NesterovSolve] Iter: 120 overflow: 0.206389 HPWL: 1989561
+[NesterovSolve] Iter: 130 overflow: 0.206313 HPWL: 1994346
+[NesterovSolve] Iter: 140 overflow: 0.206243 HPWL: 1999787
+[NesterovSolve] Iter: 150 overflow: 0.206178 HPWL: 2006303
+[NesterovSolve] Iter: 160 overflow: 0.206193 HPWL: 2013996
+[NesterovSolve] Iter: 170 overflow: 0.206203 HPWL: 2013348
+[NesterovSolve] Iter: 180 overflow: 0.206657 HPWL: 2016474
+[NesterovSolve] Iter: 190 overflow: 0.207036 HPWL: 2008478
+[NesterovSolve] Iter: 200 overflow: 0.207216 HPWL: 2012719
+[NesterovSolve] Iter: 210 overflow: 0.207555 HPWL: 2015499
+[NesterovSolve] Iter: 220 overflow: 0.207234 HPWL: 2002833
+[NesterovSolve] Iter: 230 overflow: 0.204583 HPWL: 1995684
+[NesterovSolve] Iter: 240 overflow: 0.199577 HPWL: 1986343
+[NesterovSolve] Iter: 250 overflow: 0.189193 HPWL: 1988108
+[NesterovSolve] Iter: 260 overflow: 0.175686 HPWL: 1985076
+[NesterovSolve] Iter: 270 overflow: 0.158414 HPWL: 1978929
+[NesterovSolve] Iter: 280 overflow: 0.136638 HPWL: 1985792
+[NesterovSolve] Iter: 290 overflow: 0.111381 HPWL: 1994840
+[NesterovSolve] Finished with Overflow: 0.099078
+[INFO MPL-0005] Found 3 macros
+[INFO MPL-0009] West pins 21
+[INFO MPL-0009] East pins 22
+[INFO MPL-0009] North pins 16
+[INFO MPL-0009] South pins 16
+[INFO MPL-0071] Initial weighted wire length 752.615
+[INFO MPL-0071] Placed weighted wire length 671.811
+No differences found.

@@ -6,12 +6,12 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: level1.def
+[INFO ODB-0127] Reading DEF file: level3.def
 [INFO ODB-0128] Design: gcd_mem3
 [INFO ODB-0130]     Created 75 pins.
 [INFO ODB-0131]     Created 24 components and 222 component-terminals.
 [INFO ODB-0133]     Created 139 nets and 153 connections.
-[INFO ODB-0134] Finished DEF file: level1.def
+[INFO ODB-0134] Finished DEF file: level3.def
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
@@ -79,65 +79,43 @@
 [NesterovSolve] Iter: 280 overflow: 0.136638 HPWL: 1985792
 [NesterovSolve] Iter: 290 overflow: 0.111381 HPWL: 1994840
 [NesterovSolve] Finished with Overflow: 0.099078
-[INFO MPL-0005] NumMacros 3
+[INFO MPL-0005] Found 3 macros
 [INFO MPL-0009] West pins 21
 [INFO MPL-0009] East pins 22
 [INFO MPL-0009] North pins 16
 [INFO MPL-0009] South pins 16
+[INFO MPL-0071] Initial weighted wire length 752.615
 Begin One Level Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 3
-[INFO MPL-0077] NumCutLines 2
-[INFO MPL-0078] CutLine 22.18
-[INFO MPL-0079] RoundUpCutLine 22.23
-[INFO MPL-0078] CutLine 37.95
-[INFO MPL-0079] RoundUpCutLine 38.00
-End Partition
+[INFO MPL-0076] Partition 3 macros
+[INFO MPL-0077] Using 2 cut lines
+[INFO MPL-0079] Cut line 22.23
+[INFO MPL-0079] Cut line 38.00
 End One Level Partition
 Begin Horizontal Partition
 Begin East Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 0
-[INFO MPL-0077] NumCutLines 0
-End Partition
+[INFO MPL-0076] Partition 0 macros
+[INFO MPL-0077] Using 0 cut lines
 End East Partition
 Begin West Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 3
-[INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 5.92
-[INFO MPL-0079] RoundUpCutLine 5.60
-End Partition
+[INFO MPL-0076] Partition 3 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 5.60
 End West Partition
 End Horizontal Partition
 Begin Horizontal Partition
 Begin East Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 2
-[INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 5.92
-[INFO MPL-0079] RoundUpCutLine 5.60
-End Partition
+[INFO MPL-0076] Partition 2 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 5.60
 End East Partition
 Begin West Partition
-Begin Partition
-[INFO MPL-0076] NumMacros 1
-[INFO MPL-0077] NumCutLines 1
-[INFO MPL-0078] CutLine 11.44
-[INFO MPL-0079] RoundUpCutLine 11.20
-End Partition
+[INFO MPL-0076] Partition 1 macros
+[INFO MPL-0077] Using 1 cut lines
+[INFO MPL-0079] Cut line 11.20
 End West Partition
 End Horizontal Partition
-[INFO MPL-0070] NumExtractedSets: 2
-Begin Parquet
-[INFO MPL-0061] Parquet BBOX exceed the given area
-[INFO MPL-0062] ParquetSolLayout 38.34 36
-[INFO MPL-0063] TargetLayout 35.91 50.4
-Begin Parquet
-End Parquet
-Begin Parquet
-End Parquet
-[INFO MPL-0071] SetId: 2
-[INFO MPL-0072] WeightedWL: 0
-[INFO MPL-0073] NumFinalSols: 1
+[INFO MPL-0070] Using 2 partiion sets
+[WARNING MPL-0061] Parquet area 38.34 x 36 exceeds the partition area 35.91 x 50.4.
+[INFO MPL-0071] Solution 1 weighted wire length 924.77
+[INFO MPL-0073] Best weighted wire length 924.77
 No differences found.

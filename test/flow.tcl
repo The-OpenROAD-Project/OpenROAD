@@ -80,7 +80,7 @@ repair_clock_nets
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
-if {0} {
+
 # CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
@@ -167,4 +167,3 @@ if { ![info exists drv_count] } {
 }
 
 puts "pass"
-}
