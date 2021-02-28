@@ -6,8 +6,9 @@ read_sdc $sdc_file
 
 initialize_floorplan -site $site \
   -die_area $die_area \
-  -core_area $core_area \
-  -tracks $tracks_file
+  -core_area $core_area
+
+source $tracks_file
 
 # remove buffers inserted by synthesis 
 remove_buffers

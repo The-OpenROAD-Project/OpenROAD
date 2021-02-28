@@ -20,30 +20,12 @@ COMPONENTS 5 ;
     - u2 AND2_X1 ;
 END COMPONENTS
 PINS 6 ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 3800 2800 ) N ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 14246 2800 ) N ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 23940 3552 ) N ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 23940 13998 ) N ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 13496 14000 ) N ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 3800 13250 ) N ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
 NETS 10 ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;
