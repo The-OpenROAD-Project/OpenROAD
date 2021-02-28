@@ -94,7 +94,6 @@ void io::Parser::initDefaultVias() {
 
       // generate new via def if needed
       if (needViaGen) {
-        // reference output file for writing def hack
         string viaDefName = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
         viaDefName += string("_FR");
         logger->warn(DRT, 160,
