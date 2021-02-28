@@ -1,12 +1,6 @@
-li1 X 0.23 0.46
-li1 Y 0.17 0.34
-met1 X 0.17 0.34
-met1 Y 0.17 0.34
-met2 X 0.23 0.46
-met2 Y 0.23 0.46
-met3 X 0.34 0.68
-met3 Y 0.34 0.68
-met4 X 0.46 0.92
-met4 Y 0.46 0.92
-met5 X 1.70 3.40
-met5 Y 1.70 3.40
+make_tracks li1 -x_offset 0.23 -x_pitch 0.46 -y_offset 0.17 -y_pitch 0.34
+make_tracks met1 -x_offset 0.17 -x_pitch 0.34 -y_offset 0.17 -y_pitch 0.34
+make_tracks met2 -x_offset 0.23 -x_pitch 0.46 -y_offset 0.23 -y_pitch 0.46
+make_tracks met3 -x_offset 0.34 -x_pitch 0.68 -y_offset 0.34 -y_pitch 0.68
+make_tracks met4 -x_offset 0.46 -x_pitch 0.92 -y_offset 0.46 -y_pitch 0.92
+make_tracks met5 -x_offset 1.70 -x_pitch 3.40 -y_offset 1.70 -y_pitch 3.40
