@@ -192,7 +192,7 @@ _dbGCellGrid::~_dbGCellGrid()
 ////////////////////////////////////////////////////////////////////
 
 // User Code Begin dbGCellGridPublicMethods
-dbIStream& operator>>(dbIStream& stream, GCellData& obj)
+dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
   stream >> obj._horizontal_usage;
   stream >> obj._vertical_usage;
@@ -203,7 +203,7 @@ dbIStream& operator>>(dbIStream& stream, GCellData& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const GCellData& obj)
+dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
 {
   stream << obj._horizontal_usage;
   stream << obj._vertical_usage;
@@ -634,6 +634,31 @@ void dbGCellGrid::resetGrid()
   _grid->_congestion_map.clear();
   _grid->_flags._x_grid_valid = true;
   _grid->_flags._y_grid_valid = true;
+}
+
+std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>
+dbGCellGrid::getCongestionMap(dbTechLayer* layer)
+{
+  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
+  if (layer == nullptr) {
+    std::map<std::pair<uint, uint>, dbGCellGrid::GCellData> congestion;
+    for (auto& [lid, layer_map] : _grid->_congestion_map)
+      for (auto& [key, val] : layer_map) {
+        congestion[key]._horizontal_usage += val._horizontal_usage;
+        congestion[key]._vertical_usage += val._vertical_usage;
+        congestion[key]._up_usage += val._up_usage;
+        congestion[key]._horizontal_capacity += val._horizontal_capacity;
+        congestion[key]._vertical_capacity += val._vertical_capacity;
+        congestion[key]._up_capacity += val._up_capacity;
+      }
+    return congestion;
+  } else {
+    if (_grid->_congestion_map.find(layer->getId())
+        != _grid->_congestion_map.end())
+      return _grid->_congestion_map[layer->getId()];
+    else
+      return std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>();
+  }
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb

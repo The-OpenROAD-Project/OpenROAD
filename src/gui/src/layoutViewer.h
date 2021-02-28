@@ -42,7 +42,6 @@
 #include <map>
 #include <vector>
 
-#include "fastroute/GlobalRouter.h"
 #include "gui/gui.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -156,8 +155,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
   using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
-  using GCellInfo
-      = std::map<odb::Rect, GCellData>;  // Key : GCell BBox, Value : GCellData
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
@@ -190,7 +187,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void addMenuAndActions();
 
-  void populateCongestionData();
 
   odb::dbDatabase* db_;
   Options* options_;
@@ -206,7 +202,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
 
-  GCellInfo gcell_congestion_data_;
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;

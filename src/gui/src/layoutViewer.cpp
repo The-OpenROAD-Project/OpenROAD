@@ -618,24 +618,44 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
-  if (gcell_congestion_data_.empty())
-    populateCongestionData();
-  if (!options_->isCongestionVisible() || gcell_congestion_data_.empty())
+  auto block = getBlock();
+  if(block == nullptr)
+    return;
+  auto grid = block->getGCellGrid();
+  if(grid == nullptr)
+    return;
+  std::vector<int> x_grid, y_grid;
+  uint x_grid_sz, y_grid_sz;
+  grid->getGridX(x_grid);
+  x_grid_sz = x_grid.size();
+  grid->getGridY(y_grid);
+  y_grid_sz = y_grid.size();
+  auto gcell_congestion_data = grid->getCongestionMap();
+
+  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
     return;
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
-  for (auto& gcell_data : gcell_congestion_data_) {
-    auto gcell_rect = gcell_data.first;
+  for (auto &[key, cong_data] : gcell_congestion_data) {
+    uint x_idx = key.first;;
+    uint y_idx = key.second;
+
+    if(x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1)
+    {
+      //WARNING
+      continue;
+    }
+
+    auto gcell_rect = odb::Rect(x_grid[x_idx], y_grid[y_idx], x_grid[x_idx+1], y_grid[y_idx+1]);
     if (!gcell_rect.intersects(bounds))
       continue;
-    auto& cong_data = gcell_data.second;
 
-    auto hor_capacity = cong_data.hor_capacity_;
-    auto hor_usage = cong_data.hor_usage_;
-    auto ver_capacity = cong_data.ver_capacity_;
-    auto ver_usage = cong_data.ver_usage_;
+    auto hor_capacity = cong_data._horizontal_capacity;
+    auto hor_usage = cong_data._horizontal_usage;
+    auto ver_capacity = cong_data._vertical_capacity;
+    auto ver_usage = cong_data._vertical_usage;
 
     //-1 indicates capacity is not well defined...
     float hor_congestion
@@ -1205,31 +1225,6 @@ void LayoutViewer::inDbFillCreate(dbFill* fill)
   update();
 }
 
-
-void LayoutViewer::populateCongestionData()
-{
-  auto* openroad = ord::OpenRoad::openRoad();
-  auto fast_route = openroad->getFastRoute();
-  if (!fast_route)
-    return;
-  auto g_cells = fast_route->getCongestion();
-  if (g_cells.empty())
-    return;
-  for (auto& g_cell : g_cells) {
-    odb::Rect gcell_rect = g_cell.getGCellRect();
-    auto itr = gcell_congestion_data_.find(gcell_rect);
-    if (itr == gcell_congestion_data_.end()) {
-      gcell_congestion_data_[gcell_rect] = GCellData();
-      itr = gcell_congestion_data_.find(gcell_rect);
-    }
-
-    itr->second.hor_capacity_ += g_cell.getHorCapacity();
-    itr->second.hor_usage_ += g_cell.getHorUsage();
-
-    itr->second.ver_capacity_ += g_cell.getVerCapacity();
-    itr->second.ver_usage_ += g_cell.getVerUsage();
-  }
-}
 
 }  // namespace gui
 
