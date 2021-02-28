@@ -918,7 +918,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
-  db_gcell->addGridPatternY(ycorner, yGrid, hTile);
+  db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
   for (int k = 0; k < numLayers; k++) {
     auto layer = db->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
