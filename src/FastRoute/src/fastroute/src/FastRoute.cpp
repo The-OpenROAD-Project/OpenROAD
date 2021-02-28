@@ -933,22 +933,12 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
 
         unsigned short capH = h_edges3D[gridH].cap;
         unsigned short usageH = h_edges3D[gridH].usage;
-        
 
         unsigned short capV = v_edges3D[gridV].cap;
         unsigned short usageV = v_edges3D[gridV].usage;
 
-        long xReal = wTile * (j + 0.5) + xcorner;
-        long yReal = hTile * (i + 0.5) + ycorner;
-
-        long llX = xReal - (wTile / 2);
-        long llY = yReal - (hTile / 2);
-
-        auto x_idx = db_gcell->getXIdx(llX);
-        auto y_idx = db_gcell->getYIdx(llY);
-
-        db_gcell->setCapacity(layer, x_idx, y_idx, (uint) capH, (uint) capV, 0);
-        db_gcell->setUsage(layer, x_idx, y_idx, (uint) usageH, (uint) usageV, 0);
+        db_gcell->setCapacity(layer, j, i, (uint) capH, (uint) capV, 0);
+        db_gcell->setUsage(layer, j, i, (uint) usageH, (uint) usageV, 0);
       }
     }
   }
