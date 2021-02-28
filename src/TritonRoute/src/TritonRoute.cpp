@@ -232,7 +232,7 @@ void TritonRoute::readParams(const string &fileName)
         if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
         else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
-        else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated def param in params file");}
+        else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated outputTA param in params file");}
         else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
