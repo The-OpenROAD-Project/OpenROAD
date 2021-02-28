@@ -35,12 +35,13 @@
 #include <cmath>
 #include "db/infra/frTime.h"
 #include <omp.h>
+#include "opendb/db.h"
 
 
 using namespace std;
 using namespace fr;
 
-void FlexGR::main() {
+void FlexGR::main(odb::dbDatabase* db) {
   init();
   // resource analysis
   ra();
@@ -87,6 +88,8 @@ void FlexGR::main() {
 
   searchRepair(/*iter*/0, /*size*/10, /*offset*/0, /*mazeEndIter*/2, /*workerCongCost*/4 * CONGCOST, /*workerHistCost*/0.25 * HISTCOST, /*congThresh*/1.0, /*is2DRouting*/false, 1, /*TEST*/false);
   reportCong3D();
+  if(db != nullptr)
+    updateDbCongestion(db, cmap_.get());
 
   writeToGuide();
 
@@ -537,6 +540,46 @@ void FlexGR::reportCong3DGolden(FlexGRCMap *baseCMap) {
   cout << "start reporting golden 3D congestion...";
   reportCong3D(&goldenCMap3D);
   
+}
+
+void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap *cmap)
+{
+  if(db->getChip()==nullptr || db->getChip()->getBlock()==nullptr || db->getTech() == nullptr)
+    logger_->error(utl::DRT, 201, "design isn't loaded before global routing");
+  auto block = db->getChip()->getBlock();
+  auto tech = db->getTech();
+  auto gcell = block->getGCellGrid();
+  if(gcell == nullptr)
+    gcell = odb::dbGCellGrid::create(block);
+  else
+    gcell->resetGrid();
+  auto &gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+  auto xgp = &(gCellPatterns.at(0));
+  auto ygp = &(gCellPatterns.at(1));
+  gcell->addGridPatternX(xgp->getStartCoord(), xgp->getCount()+1, xgp->getSpacing());
+  gcell->addGridPatternY(ygp->getStartCoord(), ygp->getCount()+1, ygp->getSpacing());
+  unsigned cmapLayerIdx = 0;
+  for (auto &[layerNum, dir]: cmap->getZMap()) {
+    string layerName(design_->getTech()->getLayer(layerNum)->getName());
+    auto layer = tech->findLayer(layerName.c_str());
+    if(layer == nullptr)
+    {
+      logger_->warn(utl::DRT, 202, "skipping layer {} not found in db for congestion map", layerName);
+      cmapLayerIdx++;
+      continue;
+    }
+    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
+      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) 
+      {
+        uint horizontal_capacity = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+        uint horizontal_usage = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+        uint vertical_capacity = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+        uint vertical_usage = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+        gcell->setCapacity(layer, xIdx, yIdx, horizontal_capacity, vertical_capacity, 0);
+        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage, vertical_usage, 0);
+      }
+    cmapLayerIdx++;
+  }
 }
 
 void FlexGR::reportCong3D(FlexGRCMap *cmap) {

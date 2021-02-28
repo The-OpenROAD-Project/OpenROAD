@@ -158,7 +158,7 @@ void TritonRoute::prep() {
 
 void TritonRoute::gr() {
   FlexGR gr(getDesign(), logger_);
-  gr.main();
+  gr.main(db_);
 }
 
 void TritonRoute::ta() {
