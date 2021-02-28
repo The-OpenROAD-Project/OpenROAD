@@ -199,7 +199,6 @@ Each of these designs use the common script `flow.tcl`.
 ```
 initialize_floorplan
   [-site site_name]               LEF site name for ROWS
-  [-tracks tracks_file]           routing track specification
   -die_area "lx ly ux uy"         die area in microns
   [-core_area "lx ly ux uy"]      core area in microns
 or
@@ -216,8 +215,6 @@ explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
-If no -tracks file is used the routing layers from the LEF are used.
-
 ```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
@@ -228,6 +225,19 @@ If no -tracks file is used the routing layers from the LEF are used.
         ( core_width + core_space_left + core_space_right, 
           core_height + core_space_bottom + core_space_top )
 ```
+
+Use the `make_tracks` command to add routing tracks to a floorplan.
+```
+make_tracks [layer]
+            [-x_pitch x_pitch]
+            [-y_pitch y_pitch]
+            [-x_offset x_offset]
+            [-y_offset y_offset]
+```
+
+With no arguments `make_tracks` adds X and Y tracks for each routing layer.
+With a `-layer` argument `make_tracks` adds X and Y tracks for layer with
+options to override the LEF technology X and Y pitch and offset.
 
 Place pins around core boundary.
 

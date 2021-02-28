@@ -47,6 +47,7 @@ proc initialize_floorplan { args } {
 	    -die_area -core_area -site -tracks} \
     flags {}
 
+  sta::check_argc_eq0 "initialize_floorplan" $args
   ord::ensure_units_initialized
 
   set site_name ""
@@ -145,6 +146,78 @@ proc initialize_floorplan { args } {
   }
 }
 
+sta::define_cmd_args "make_tracks" {[layer]\
+                                      [-x_pitch x_pitch]\
+                                      [-y_pitch y_pitch]\
+                                      [-x_offset x_offset]\
+                                      [-y_offset y_offset]}
+
+# Look Ma, not c++!
+proc make_tracks { args } {
+  sta::parse_key_args "make_tracks" args \
+    keys {-x_pitch -y_pitch -x_offset -y_offset} \
+    flags {}
+
+  sta::check_argc_eq0or1 "initialize_floorplan" $args
+  ord::ensure_units_initialized
+
+  set tech [ord::get_db_tech]
+
+  if { [llength $args] == 0 } {
+    foreach layer [$tech getLayers] {
+      if { [$layer getType] == "ROUTING" } {
+        set x_pitch [$layer getPitchX]
+        set x_offset [$layer getOffsetX]
+        set y_pitch [$layer getPitchY]
+        set y_offset [$layer getOffsetY]
+        ifp::make_layer_tracks $layer $x_offset $x_pitch $y_offset $y_pitch
+      }
+    }
+  } elseif { [llength $args] == 1 } {
+    set layer_name [lindex $args 0]
+    set layer [$tech findLayer $layer_name]
+    if { $layer == "NULL" } {
+      utl::error "IFP" 21 "layer $layer_name not found."
+    }
+    if { [$layer getType] != "ROUTING" } {
+      utl::error "IFP" 22 "layer $layer_name is not a routing layer."
+    }
+
+    if { [info exists keys(-x_pitch)] } {
+      set x_pitch $keys(-x_pitch)
+      set x_pitch [ifp::microns_to_mfg_grid $x_pitch]
+      sta::check_positive_float "-x_pitch" $x_pitch
+    } else {
+      set x_pitch [$layer getPitchX]
+    }
+
+    if { [info exists keys(-x_offset)] } {
+      set x_offset $keys(-x_offset)
+      sta::check_positive_float "-x_offset" $x_offset
+      set x_offset [ifp::microns_to_mfg_grid $x_offset]
+    } else {
+      set x_offset [$layer getOffsetX]
+    }
+
+    if { [info exists keys(-y_pitch)] } {
+      set y_pitch $keys(-y_pitch)
+      set y_pitch [ifp::microns_to_mfg_grid $y_pitch]
+      sta::check_positive_float "-y_pitch" $y_pitch
+    } else {
+      set y_pitch [$layer getPitchY]
+    }
+
+    if { [info exists keys(-y_offset)] } {
+      set y_offset $keys(-y_offset)
+      sta::check_positive_float "-y_offset" $y_offset
+      set y_offset [ifp::microns_to_mfg_grid $y_offset]
+    } else {
+      set y_offset [$layer getOffsetY]
+    }
+    ifp::make_layer_tracks $layer $x_offset $x_pitch $y_offset $y_pitch
+  }
+}
+
 sta::define_cmd_args "auto_place_pins" {pin_layer}
 
 proc auto_place_pins { pin_layer } {
@@ -153,4 +226,41 @@ proc auto_place_pins { pin_layer } {
   } else {
     utl::error IFP 20 "layer $pin_layer not found."
   }
+}
+
+namespace eval ifp {
+
+proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
+  set block [ord::get_db_block]
+  set die_area [$block getDieArea]
+  set grid [$block findTrackGrid $layer]
+  if { $grid != "NULL" } {
+    [odb::dbTrackGrid_destroy $grid]
+  }
+  set grid [odb::dbTrackGrid_create $block $layer]
+
+  if { $y_offset == 0 } {
+    set y_offset $y_pitch
+  }
+  set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
+  $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
+
+  if { $x_offset == 0 } {
+    set x_offset $x_pitch
+  }
+  set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
+  $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
+}
+
+proc microns_to_mfg_grid { microns } {
+  set tech [ord::get_db_tech]
+  if { [$tech hasManufacturingGrid] } {
+    set dbu [$tech getDbUnitsPerMicron]
+    set grid [$tech getManufacturingGrid]
+    return [expr round(round($microns * $dbu / $grid) * $grid)]
+  } else {
+    return [ord::microns_to_dbu $microns]
+  }  
+}
+
 }

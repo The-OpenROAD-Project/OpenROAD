@@ -9,7 +9,6 @@ initialize_floorplan -utilization 30 \
   -core_space "100 150 200 300" \
   -tracks init_floorplan2.tracks \
   -site FreePDK45_38x28_10R_NP_162NW_34O
-auto_place_pins metal1
 
 set def_file [make_result_file init_floorplan6.def]
 write_def $def_file
