@@ -17,8 +17,19 @@ class lefTechLayerSpacingEolParser
 class lefTechLayerMinStepParser
 {
  public:
+  
+  bool parse(std::string, dbTechLayer*, lefin*);
+  private:
   odb::dbTechLayerMinStepRule* curRule;
-  bool                         parse(std::string, dbTechLayer*, lefin*);
+  void createSubRule(odb::dbTechLayer* layer);
+  void setMinAdjacentLength1(double length, odb::lefin* l);
+  void setMinAdjacentLength2(double length, odb::lefin* l);
+  void minBetweenLngthParser(double length, odb::lefin* l);
+  void noBetweenEolParser(double width, odb::lefin* l);
+  void minStepLengthParser(double length, odb::lefin* l);
+  void maxEdgesParser(int edges, odb::lefin* l);
+  void setConvexCorner();
+  void setExceptSameCorners();
 };
 
 class lefTechLayerCornerSpacingParser
@@ -67,7 +78,7 @@ class lefTechLayerCutSpacingParser
 {
  public:
   odb::dbTechLayerCutSpacingRule* curRule;
-  bool                            parse(std::string, dbTechLayer*, lefin*);
+  bool                            parse(std::string, dbTechLayer*, lefin*, std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
 class lefTechLayerCutSpacingTableParser
@@ -76,7 +87,7 @@ class lefTechLayerCutSpacingTableParser
   odb::dbTechLayerCutSpacingTableDefRule* curRule;
   odb::dbTechLayer*                       layer;
   lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly) { layer = inly; };
-  bool parse(std::string, lefin*);
+  bool parse(std::string, lefin*, std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
 }  // namespace odb

@@ -39,7 +39,12 @@ namespace fr {
   class FlexTA {
   public:
     // constructors
-    FlexTA(frDesign* in): tech_(in->getTech()), design_(in) {};
+    FlexTA(frDesign* in, Logger* logger)
+      : tech_(in->getTech()),
+        design_(in),
+        logger_(logger)
+    {
+    };
     // getters
     frTechObject* getTech() const {
       return tech_;
@@ -52,6 +57,7 @@ namespace fr {
   protected:
     frTechObject*   tech_;
     frDesign*       design_;
+    Logger*         logger_;
     // others
     void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
     void initTA(int size);
@@ -232,7 +238,7 @@ namespace fr {
     frUInt4 assignIroute_getPinCost(taPin* iroute, frCoord trackLoc);
     frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
     frUInt4 assignIroute_getDRCCost(taPin *iroute, frCoord trackLoc);
-    frUInt4 assignIroute_getDRCCost_helper(taPin* iroute, const frBox &box, frLayerNum lNum);
+    frUInt4 assignIroute_getDRCCost_helper(taPin* iroute, frBox &box, frLayerNum lNum);
     void assignIroute_updateIroute(taPin* iroute, frCoord bestTrackLoc, std::set<taPin*, frBlockObjectComp> *pinS);
     void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp> &pinS);
 

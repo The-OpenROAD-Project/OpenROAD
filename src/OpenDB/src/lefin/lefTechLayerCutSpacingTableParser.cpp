@@ -65,14 +65,17 @@ void setDefault(double                                  value,
   parser->curRule->setDefaultValid(true);
   parser->curRule->setDefault(lefin->dbdist(value));
 }
-void setLayer(std::string value, odb::lefTechLayerCutSpacingTableParser* parser)
+void setLayer(std::string value, odb::lefTechLayerCutSpacingTableParser* parser, std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   odb::dbTech* tech        = parser->layer->getTech();
   auto         secondLayer = tech->findLayer(value.c_str());
-  if (secondLayer == nullptr)
-    return;
   parser->curRule->setLayerValid(true);
-  parser->curRule->setSecondLayer(secondLayer);
+  if (secondLayer == nullptr)
+  {
+    incomplete_props.push_back({parser->curRule, value});
+  }else{    
+    parser->curRule->setSecondLayer(secondLayer);
+  }
 }
 void setPrlForAlignedCut(
     std::vector<boost::fusion::vector<std::string, std::string>> params,
@@ -127,10 +130,12 @@ void setPRL(
   auto items = at_c<3>(params);
   parser->curRule->setPrl(lefin->dbdist(prl));
   if(dir.is_initialized())
+  {
     if(dir.value()=="HORIZONTAL")
       parser->curRule->setPrlHorizontal(true);
     else
       parser->curRule->setPrlVertical(true);
+  }
   if (maxxy.is_initialized())
     parser->curRule->setMaxXY(true);
 
@@ -374,7 +379,8 @@ template <typename Iterator>
 bool parse(Iterator                                first,
            Iterator                                last,
            odb::lefTechLayerCutSpacingTableParser* parser,
-           odb::lefin*                             lefin)
+           odb::lefin*                             lefin,
+            std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
@@ -385,7 +391,7 @@ bool parse(Iterator                                first,
              ";"))[boost::bind(&createOrthongonalSubRule, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> LAYER
-      = (lit("LAYER") >> _string[boost::bind(&setLayer, _1, parser)]
+      = (lit("LAYER") >> _string[boost::bind(&setLayer, _1, parser, boost::ref(incomplete_props))]
          >> -lit("NOSTACK")[boost::bind(&setNoStack, parser)]
          >> -(lit("NONZEROENCLOSURE")[boost::bind(&setNonZeroEnclosure, parser)]
               | (lit("PRLFORALIGNEDCUT")
@@ -457,8 +463,11 @@ bool parse(Iterator                                first,
   qi::rule<std::string::iterator, space_type> LEF58_SPACINGTABLE
       = (+(ORTHOGONAL | DEFAULT));
   bool valid = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space);
-  if (!valid && parser->curRule != nullptr)
+  if (!valid && parser->curRule != nullptr){
+    if(!incomplete_props.empty() && incomplete_props.back().first == parser->curRule)
+      incomplete_props.pop_back();
     odb::dbTechLayerCutSpacingTableDefRule::destroy(parser->curRule);
+  }
 
   return valid && first == last;
 }
@@ -466,9 +475,9 @@ bool parse(Iterator                                first,
 
 namespace odb {
 
-bool lefTechLayerCutSpacingTableParser::parse(std::string s, odb::lefin* l)
+bool lefTechLayerCutSpacingTableParser::parse(std::string s, odb::lefin* l, std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  return lefTechLayerCutSpacingTable::parse(s.begin(), s.end(), this, l);
+  return lefTechLayerCutSpacingTable::parse(s.begin(), s.end(), this, l, incomplete_props);
 }
 
 }  // namespace odb

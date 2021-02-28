@@ -56,9 +56,6 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (_flags._same_mask != rhs._flags._same_mask)
     return false;
 
-  if (_flags._same_x_y != rhs._flags._same_x_y)
-    return false;
-
   if (_flags._corner_only != rhs._flags._corner_only)
     return false;
 
@@ -128,7 +125,6 @@ void _dbTechLayerCornerSpacingRule::differences(
 
   DIFF_FIELD(_flags._corner_type);
   DIFF_FIELD(_flags._same_mask);
-  DIFF_FIELD(_flags._same_x_y);
   DIFF_FIELD(_flags._corner_only);
   DIFF_FIELD(_flags._except_eol);
   DIFF_FIELD(_flags._except_jog_length);
@@ -156,7 +152,6 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._corner_type);
   DIFF_OUT_FIELD(_flags._same_mask);
-  DIFF_OUT_FIELD(_flags._same_x_y);
   DIFF_OUT_FIELD(_flags._corner_only);
   DIFF_OUT_FIELD(_flags._except_eol);
   DIFF_OUT_FIELD(_flags._except_jog_length);
@@ -191,7 +186,6 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
 {
   _flags._corner_type               = r._flags._corner_type;
   _flags._same_mask                 = r._flags._same_mask;
-  _flags._same_x_y                  = r._flags._same_x_y;
   _flags._corner_only               = r._flags._corner_only;
   _flags._except_eol                = r._flags._except_eol;
   _flags._except_jog_length         = r._flags._except_jog_length;
@@ -351,20 +345,6 @@ bool dbTechLayerCornerSpacingRule::isSameMask() const
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
   return obj->_flags._same_mask;
-}
-
-void dbTechLayerCornerSpacingRule::setSameXY(bool _same_x_y)
-{
-  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-
-  obj->_flags._same_x_y = _same_x_y;
-}
-
-bool dbTechLayerCornerSpacingRule::isSameXY() const
-{
-  _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-
-  return obj->_flags._same_x_y;
 }
 
 void dbTechLayerCornerSpacingRule::setCornerOnly(bool _corner_only)

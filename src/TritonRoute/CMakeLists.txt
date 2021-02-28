@@ -1,4 +1,39 @@
-cmake_minimum_required(VERSION 3.9)
+###############################################################################
+##
+## BSD 3-Clause License
+##
+## Copyright (c) 2021, University of California, San Diego.
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
+###############################################################################
+
+include("openroad")
 
 project(TritonRoute
   LANGUAGES CXX
@@ -9,172 +44,113 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 
-if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
-  message(FATAL_ERROR "TritonRoute requires GCC 7 and above! \nuse -DCMAKE_CXX_COMPILER to assign your compiler path")
-endif()
-
-# Default to bulding optimized/release executable.
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE RELEASE)
-endif()
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR} )
-
-## configure settings
-find_package(Boost 1.68.0 COMPONENTS unit_test_framework)
+find_package(Boost 1.68.0)
 find_package(OpenMP REQUIRED)
-find_package(Threads REQUIRED)
 find_package(VTune)
 
-set (FLEXROUTE_SRC
-  ${FLEXROUTE_HOME}/src/gr/FlexGRCMap.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR_end.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGRGridGraph.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGRGridGraph_maze.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR_init.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR_maze.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR_rq.cpp
-  ${FLEXROUTE_HOME}/src/gr/FlexGR_topo.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_conn.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_init.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_maze.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexGridGraph_maze.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexGridGraph.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_rq.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_end.cpp
-  ${FLEXROUTE_HOME}/src/dr/FlexDR_graphics.cpp
-  ${FLEXROUTE_HOME}/src/ta/FlexTA_end.cpp
-  ${FLEXROUTE_HOME}/src/ta/FlexTA_init.cpp
-  ${FLEXROUTE_HOME}/src/ta/FlexTA_rq.cpp
-  ${FLEXROUTE_HOME}/src/ta/FlexTA_assign.cpp
-  ${FLEXROUTE_HOME}/src/ta/FlexTA.cpp
-  ${FLEXROUTE_HOME}/src/global.cpp
-  ${FLEXROUTE_HOME}/src/gc/FlexGC_end.cpp
-  ${FLEXROUTE_HOME}/src/gc/FlexGC_rq.cpp
-  ${FLEXROUTE_HOME}/src/gc/FlexGC.cpp
-  ${FLEXROUTE_HOME}/src/gc/FlexGC_init.cpp
-  ${FLEXROUTE_HOME}/src/gc/FlexGC_main.cpp
-  ${FLEXROUTE_HOME}/src/db/drObj/drShape.cpp
-  ${FLEXROUTE_HOME}/src/db/drObj/drVia.cpp
-  ${FLEXROUTE_HOME}/src/db/infra/frBox.cpp
-  ${FLEXROUTE_HOME}/src/db/infra/frTime_helper.cpp
-  ${FLEXROUTE_HOME}/src/db/infra/frTime.cpp
-  ${FLEXROUTE_HOME}/src/db/infra/frPoint.cpp
-  ${FLEXROUTE_HOME}/src/db/taObj/taShape.cpp
-  ${FLEXROUTE_HOME}/src/db/taObj/taTrack.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frShape.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frInst.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frVia.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frAccess.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frRPin.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frNode.cpp
-  ${FLEXROUTE_HOME}/src/db/obj/frInstTerm.cpp
-  ${FLEXROUTE_HOME}/src/frRegionQuery.cpp
-  ${FLEXROUTE_HOME}/src/io/io_pin.cpp
-  ${FLEXROUTE_HOME}/src/io/io.cpp
-  ${FLEXROUTE_HOME}/src/io/io_guide.cpp
-  ${FLEXROUTE_HOME}/src/io/io_parser_helper.cpp
-  ${FLEXROUTE_HOME}/src/io/defw.cpp
-  ${FLEXROUTE_HOME}/src/pa/FlexPA_init.cpp
-  ${FLEXROUTE_HOME}/src/pa/FlexPA.cpp
-  ${FLEXROUTE_HOME}/src/pa/FlexPA_prep.cpp
-  ${FLEXROUTE_HOME}/src/pa/FlexPA_graphics.cpp
-  ${FLEXROUTE_HOME}/src/rp/FlexRP_init.cpp
-  ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
-  ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp
-  ${FLEXROUTE_HOME}/src/TritonRoute.cpp
-  ${FLEXROUTE_HOME}/src/MakeTritonRoute.cpp
-  )
-
-############################################################
-# Create TCL Interface
-############################################################
-
-set(TRITONROUTE_SWIG_FILES
-    ${FLEXROUTE_HOME}/src/TritonRoute.i
+tcl_lib(NAME      TritonRoute
+        NAMESPACE drt
+        I_FILE    src/TritonRoute.i
+        SCRIPTS   src/TritonRoute.tcl
 )
 
-set_source_files_properties(${TRITONROUTE_SWIG_FILES}
-    PROPERTIES CPLUSPLUS ON
-)
+set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
 
-swig_add_library(tritonroute-swig
-    LANGUAGE tcl
-    TYPE STATIC
-    SOURCES ${TRITONROUTE_SWIG_FILES}
-)
-
-set_property(TARGET tritonroute-swig PROPERTY SWIG_COMPILE_OPTIONS -namespace -prefix tr)
-
-target_include_directories(tritonroute-swig
+target_sources(TritonRoute
   PRIVATE
-  ${FLEXROUTE_HOME}/include
-  ${OPENROAD_HOME}/include
-  ${FLEXROUTE_HOME}/src
-  ${TCL_INCLUDE_PATH}
+    src/gr/FlexGRCMap.cpp
+    src/gr/FlexGR.cpp
+    src/gr/FlexGR_end.cpp
+    src/gr/FlexGRGridGraph.cpp
+    src/gr/FlexGRGridGraph_maze.cpp
+    src/gr/FlexGR_init.cpp
+    src/gr/FlexGR_maze.cpp
+    src/gr/FlexGR_rq.cpp
+    src/gr/FlexGR_topo.cpp
+    src/dr/FlexDR_conn.cpp
+    src/dr/FlexDR_init.cpp
+    src/dr/FlexDR.cpp
+    src/db/drObj/drNet.cpp
+    src/dr/FlexDR_maze.cpp
+    src/dr/FlexGridGraph_maze.cpp
+    src/dr/FlexGridGraph.cpp
+    src/dr/FlexDR_rq.cpp
+    src/dr/FlexDR_end.cpp
+    src/dr/FlexDR_graphics.cpp
+    src/ta/FlexTA_end.cpp
+    src/ta/FlexTA_init.cpp
+    src/ta/FlexTA_rq.cpp
+    src/ta/FlexTA_assign.cpp
+    src/ta/FlexTA.cpp
+    src/global.cpp
+    src/gc/FlexGC_end.cpp
+    src/gc/FlexGC_rq.cpp
+    src/gc/FlexGC.cpp
+    src/gc/FlexGC_init.cpp
+    src/gc/FlexGC_main.cpp
+    src/db/drObj/drShape.cpp
+    src/db/drObj/drVia.cpp
+    src/db/infra/frBox.cpp
+    src/db/infra/frTime_helper.cpp
+    src/db/infra/frTime.cpp
+    src/db/infra/frPoint.cpp
+    src/db/taObj/taShape.cpp
+    src/db/taObj/taTrack.cpp
+    src/db/obj/frShape.cpp
+    src/db/obj/frInst.cpp
+    src/db/obj/frVia.cpp
+    src/db/obj/frAccess.cpp
+    src/db/obj/frRPin.cpp
+    src/db/obj/frNode.cpp
+    src/db/obj/frInstTerm.cpp
+    src/db/tech/frLayer.cc
+    src/frRegionQuery.cpp
+    src/io/io_pin.cpp
+    src/io/io.cpp
+    src/io/io_guide.cpp
+    src/io/io_parser_helper.cpp
+    src/io/defw.cpp
+    src/pa/FlexPA_init.cpp
+    src/pa/FlexPA.cpp
+    src/pa/FlexPA_prep.cpp
+    src/pa/FlexPA_graphics.cpp
+    src/rp/FlexRP_init.cpp
+    src/rp/FlexRP.cpp
+    src/rp/FlexRP_prep.cpp
+    src/TritonRoute.cpp
+    src/MakeTritonRoute.cpp
 )
 
-set(TRITONROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonRouteTclInitVar.cc)
-
-add_custom_command(OUTPUT ${TRITONROUTE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TRITONROUTE_TCL_INIT} triton_route_tcl_inits TritonRoute.tcl
-  WORKING_DIRECTORY ${TRITONROUTE_HOME}/src
-  DEPENDS ${TRITONROUTE_HOME}/src/TritonRoute.tcl
-          ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-############################################################
-# Create a library
-############################################################
-add_library( TritonRouteLib
-  ${FLEXROUTE_SRC}
-  ${TRITONROUTE_TCL_INIT}
-)
-
-set_target_properties( TritonRouteLib
-  PROPERTIES OUTPUT_NAME "flexroute"
-)
-
-target_include_directories( TritonRouteLib
+target_include_directories(TritonRoute
   PUBLIC
-  ${FLEXROUTE_HOME}/include
-  ${TCL_INCLUDE_PATH}
+    include
 
   PRIVATE
-  ${FLEXROUTE_HOME}/src
-  ${OPENROAD_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${OPENDB_HOME}/include
+    src
 )
 
-target_link_libraries( TritonRouteLib
+target_link_libraries(TritonRoute
   PUBLIC
-  tritonroute-swig
-  def
-  lef
-  gui
-  opendb
-  flute
-  Threads::Threads
-  OpenMP::OpenMP_CXX
-  Boost::boost
-  ZLIB::ZLIB
-  utility
+    gui
+    opendb
+    flute
+    OpenSTA
+    utility
+    Threads::Threads
+    OpenMP::OpenMP_CXX
+    Boost::boost
+    ZLIB::ZLIB
 )
 
 ############################################################
 # Compiler flags
 ############################################################
 # Todo: add -Wextra and cleanup warnings
-target_compile_options( TritonRouteLib
+target_compile_options(TritonRoute
   PRIVATE
-  $<$<CXX_COMPILER_ID:GNU>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
-  $<$<CXX_COMPILER_ID:AppleClang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
-  $<$<CXX_COMPILER_ID:Clang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
   )
 
 ############################################################
@@ -187,14 +163,14 @@ add_executable(trTest
   ${FLEXROUTE_HOME}/test/fixture.cpp
 )
 
-target_include_directories( trTest
+target_include_directories(trTest
   PRIVATE
   ${FLEXROUTE_HOME}/src
   ${OPENROAD_HOME}/include
 )
 
 target_link_libraries(trTest
-  TritonRouteLib
+  TritonRoute
 )
 
 # Use the shared library if found.  We need to pass this info to
@@ -218,12 +194,12 @@ add_test(NAME trTest COMMAND trTest)
 ############################################################
 
 if (VTune_FOUND)
-  target_compile_definitions( TritonRouteLib
+  target_compile_definitions(TritonRoute
     PUBLIC
     HAS_VTUNE=1
   )
 
-  target_link_libraries( TritonRouteLib
+  target_link_libraries(TritonRoute
     PUBLIC
     VTune::VTune
   )

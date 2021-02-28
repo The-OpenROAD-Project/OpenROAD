@@ -86,7 +86,6 @@ class dbNet;
 class dbInst;
 class dbITerm;
 class dbVia;
-class dbGCellGrid;
 class dbTrackGrid;
 class dbObstruction;
 class dbBlockage;
@@ -116,6 +115,7 @@ class dbTechLayerCutSpacingTableDefRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
+class dbGCellGrid;
 // Generator Code End 2
 
 // Lib objects
@@ -3803,64 +3803,6 @@ class dbSWire : public dbObject
 /// definition.
 ///
 ///////////////////////////////////////////////////////////////////////////////
-class dbGCellGrid : public dbObject
-{
- public:
-  ///
-  /// Get the "X" grid coordinates
-  ///
-  void getGridX(std::vector<int>& x_grid);
-
-  ///
-  /// Get the "Y" grid coordinates
-  ///
-  void getGridY(std::vector<int>& y_grid);
-
-  ///
-  /// Get the block this grid belongs too.
-  ///
-  dbBlock* getBlock();
-
-  ///
-  /// Add a "X" grid pattern.
-  ///
-  void addGridPatternX(int origin_x, int line_count, int step);
-
-  ///
-  /// Add a "Y" grid pattern.
-  ///
-  void addGridPatternY(int origin_y, int line_count, int step);
-
-  ///
-  /// Get the number of "X" grid patterns.
-  ///
-  int getNumGridPatternsX();
-
-  ///
-  /// Get the number of "Y" grid patterns.
-  ///
-  int getNumGridPatternsY();
-
-  ///
-  /// Get the "ith" "X" grid pattern.
-  ///
-  void getGridPatternX(int i, int& origin_x, int& line_count, int& step);
-
-  ///
-  /// Get the "ith" "Y" grid pattern.
-  ///
-  void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
-  ///
-  /// Create an empty GCell grid.
-  /// Returns NULL if a grid already exists.
-  ///
-  static dbGCellGrid* create(dbBlock* block);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbGCellGrid* getGCellGrid(dbBlock* block, uint oid);
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -6945,17 +6887,13 @@ class dbTechLayer : public dbObject
 
   bool isRightWayOnGridOnly() const;
 
-  void setCheckMask(bool _check_mask);
+  void setRightWayOnGridOnlyCheckMask(bool _right_way_on_grid_only_check_mask);
 
-  bool isCheckMask() const;
+  bool isRightWayOnGridOnlyCheckMask() const;
 
-  void setExceptNonCorePins(bool _except_non_core_pins);
+  void setRectOnlyExceptNonCorePins(bool _rect_only_except_non_core_pins);
 
-  bool isExceptNonCorePins() const;
-
-  void setPWell(bool _p_well);
-
-  bool isPWell() const;
+  bool isRectOnlyExceptNonCorePins() const;
 
   // User Code Begin dbTechLayer
 
@@ -7650,10 +7588,6 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isSameMask() const;
 
-  void setSameXY(bool _same_x_y);
-
-  bool isSameXY() const;
-
   void setCornerOnly(bool _corner_only);
 
   bool isCornerOnly() const;
@@ -8059,6 +7993,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   dbTechLayer* getSecondLayer() const;
 
+  dbTechLayer* getTechLayer() const;
+
   void setType(CutSpacingType _type);
 
   CutSpacingType getType() const;
@@ -8271,6 +8207,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
                                  const char* class2,
                                  bool        SIDE2);
 
+
+  dbTechLayer* getTechLayer() const;
+
   static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
 
   static dbTechLayerCutSpacingTableDefRule*
@@ -8404,6 +8343,132 @@ class dbGroup : public dbObject
   static dbGroup* getGroup(dbBlock* block_, uint dbid_);
 
   // User Code End dbGroup
+};
+
+class dbGCellGrid : public dbObject
+{
+ public:
+  // User Code Begin dbGCellGrid
+
+  ///
+  /// Get the "X" grid coordinates
+  ///
+  void getGridX(std::vector<int>& x_grid);
+
+  ///
+  /// Get the "Y" grid coordinates
+  ///
+  void getGridY(std::vector<int>& y_grid);
+
+  ///
+  /// Get the block this grid belongs too.
+  ///
+  dbBlock* getBlock();
+
+  ///
+  /// Add a "X" grid pattern.
+  ///
+  void addGridPatternX(int origin_x, int line_count, int step);
+
+  ///
+  /// Add a "Y" grid pattern.
+  ///
+  void addGridPatternY(int origin_y, int line_count, int step);
+
+  ///
+  /// Get the number of "X" grid patterns.
+  ///
+  int getNumGridPatternsX();
+
+  ///
+  /// Get the number of "Y" grid patterns.
+  ///
+  int getNumGridPatternsY();
+
+  ///
+  /// Get the "ith" "X" grid pattern.
+  ///
+  void getGridPatternX(int i, int& origin_x, int& line_count, int& step);
+
+  ///
+  /// Get the "ith" "Y" grid pattern.
+  ///
+  void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
+  ///
+  /// Create an empty GCell grid.
+  /// Returns NULL if a grid already exists.
+  ///
+  static dbGCellGrid* create(dbBlock* block);
+
+  ///
+  /// Translate a database-id back to a pointer.
+  ///
+  static dbGCellGrid* getGCellGrid(dbBlock* block, uint oid);
+
+  uint getXIdx(int x);
+
+  uint getYIdx(int y);
+
+  uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+
+  void setHorizontalCapacity(dbTechLayer* layer,
+                             uint         x_idx,
+                             uint         y_idx,
+                             uint         capacity);
+
+  void setVerticalCapacity(dbTechLayer* layer,
+                           uint         x_idx,
+                           uint         y_idx,
+                           uint         capacity);
+
+  void setUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, uint capacity);
+
+  void setHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+
+  void setVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+
+  void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+
+  void setCapacity(dbTechLayer* layer,
+                   uint         x_idx,
+                   uint         y_idx,
+                   uint         horizontal,
+                   uint         vertical,
+                   uint         up);
+
+  void setUsage(dbTechLayer* layer,
+                uint         x_idx,
+                uint         y_idx,
+                uint         horizontal,
+                uint         vertical,
+                uint         up);
+
+  void getCapacity(dbTechLayer* layer,
+                   uint         x_idx,
+                   uint         y_idx,
+                   uint&        horizontal,
+                   uint&        vertical,
+                   uint&        up) const;
+
+  void getUsage(dbTechLayer* layer,
+                uint         x_idx,
+                uint         y_idx,
+                uint&        horizontal,
+                uint&        vertical,
+                uint&        up) const;
+
+  void resetCongestionMap();
+  // User Code End dbGCellGrid
 };
 
 // Generator Code End 5

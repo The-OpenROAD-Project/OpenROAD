@@ -54,7 +54,7 @@ using namespace std;
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-#include "def.tab.h"
+#include "def_parser.hpp"
 
 
 int defrData::defGetKeyword(const char* name, int *result) 

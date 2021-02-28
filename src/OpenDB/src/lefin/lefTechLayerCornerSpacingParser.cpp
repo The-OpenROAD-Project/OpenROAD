@@ -86,7 +86,6 @@ void addSpacing(boost::fusion::vector<double, double, boost::optional<double>>& 
   auto spacing1 = lefin->dbdist(at_c<1>(params));
   auto spacing2 = at_c<2>(params);
   if(spacing2.is_initialized()){
-    rule->setSameXY(false);
     rule->addSpacing(width, spacing1, lefin->dbdist(spacing2.value()));
   } else
     rule->addSpacing(width, spacing1, spacing1);
@@ -99,7 +98,6 @@ bool parse(Iterator          first,
 {
   odb::dbTechLayerCornerSpacingRule* rule
       = odb::dbTechLayerCornerSpacingRule::create(layer);
-  rule->setSameXY(true);
   qi::rule<std::string::iterator, space_type> convexCornerRule
       = (lit("CONVEXCORNER")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setType,

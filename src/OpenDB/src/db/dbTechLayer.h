@@ -80,11 +80,10 @@ struct dbTechLayerFlags
   uint                          _has_xy_offset : 1;
   bool                          _rect_only : 1;
   bool                          _right_way_on_grid_only : 1;
-  bool                          _check_mask : 1;  // LEF58_RIGHTWAYONGRIDONLY CHECKMASK
-  bool                          _except_non_core_pins : 1;  // LEF58_RECTONLY EXCEPTNONCOREPINS
+  bool                          _right_way_on_grid_only_check_mask : 1;
+  bool                          _rect_only_except_non_core_pins : 1;
   uint                          _lef58_type : 3;
-  bool                          _p_well : 1;  // LEF58_TYPE PWELL Layer(MasterSlice)
-  uint                          _spare_bits : 7;
+  uint                          _spare_bits : 8;
 };
 // User Code Begin structs
 // User Code End structs
@@ -172,7 +171,8 @@ class _dbTechLayer : public _dbObject
                    const char*         field,
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);  // User Code Begin methods
+  dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin methods
   // User Code End methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);

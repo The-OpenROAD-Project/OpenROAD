@@ -104,6 +104,11 @@ namespace fr {
       frCoord ySpan = top()   - bottom();
       return std::max(xSpan, ySpan);
     }
+    frArea area() const {
+      frCoord w = right() - left();
+      frCoord h = top() - bottom();
+      return w * (frArea) h;
+    }
     bool contains(const frBox &box, bool incEdges = true) const {;
       if (incEdges) {
         return (box.right() <= ur_.x() && box.left()  >= ll_.x() &&
@@ -122,6 +127,10 @@ namespace fr {
                ll_.y() < in.y() && in.y() < ur_.y();
       }
     }
+    void merge(const frBox& box){
+        set(std::min(left(), box.left()), std::min(bottom(), box.bottom()), std::max(right(), box.right()), std::max(top(), box.top()));
+    }
+    
     void transform(const frTransform &xform);
     bool overlaps(const frBox &boxIn, bool incEdges = true) const;
     void bloat(const frCoord distance, frBox &boxOut) const;

@@ -50,8 +50,12 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
+
   // Debug detailed routing
-  FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
+  FlexDRGraphics(frDebugSettings* settings,
+                 frDesign* design,
+                 odb::dbDatabase* db,
+                 Logger* logger);
 
   void startWorker(FlexDRWorker* worker);
 
@@ -73,8 +77,14 @@ class FlexDRGraphics : public gui::Renderer
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
-
+  
+  
+  void update();
+  
+  void pause(drNet* net);
+  
  private:
+
   FlexDRWorker*    worker_;
   drNet*           net_;
   const FlexGridGraph* grid_graph_;
@@ -82,9 +92,15 @@ class FlexDRGraphics : public gui::Renderer
   int              current_iter_;
   frLayerNum       last_pt_layer_;
   gui::Gui*        gui_;
+  Logger*          logger_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
+
+  // Names for the custom visibility controls in the gui
+  static const char* grid_graph_visible_;
+  static const char* route_guides_visible_;
+  static const char* routing_objs_visible_;
 };
 
-}  // namespace fr
+}  // namespace dr

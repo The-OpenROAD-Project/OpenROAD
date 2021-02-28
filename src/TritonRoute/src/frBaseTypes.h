@@ -34,6 +34,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cstdint>
 #include "utility/Logger.h"
 
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -44,6 +45,7 @@ namespace fr {
   const utl::ToolId DRT = utl::DRT;
   using frLayerNum = int;
   using frCoord = int;
+  using frArea = uint64_t;
   using frUInt4 = unsigned int;
   using frDist  = double;
   using frString = std::string;
@@ -308,6 +310,8 @@ namespace fr {
       : debugDR(false),
         debugMaze(false),
         debugPA(false),
+        draw(true),
+        allowPause(true),
         gcellX(-1),
         gcellY(-1),
         iter(0),
@@ -322,6 +326,8 @@ namespace fr {
     bool debugDR;
     bool debugMaze;
     bool debugPA;
+    bool draw;
+    bool allowPause;
     std::string netName;
     std::string pinName;
     int gcellX;

@@ -88,7 +88,7 @@ class Finale;
 }
 
 namespace mpl {
-class TritonMacroPlace;
+class MacroPlacer;
 }
 
 namespace gpl {
@@ -148,7 +148,7 @@ public:
   dpl::Opendp *getOpendp() { return opendp_; }
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
-  mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
+  mpl::MacroPlacer *getMacroPlacer() { return macro_placer_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -222,7 +222,7 @@ private:
   ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
   fin::Finale *finale_;
-  mpl::TritonMacroPlace *tritonMp_;
+  mpl::MacroPlacer *macro_placer_;
   grt::GlobalRouter *fastRoute_;
   cts::TritonCTS *tritonCts_;
   tap::Tapcell *tapcell_;

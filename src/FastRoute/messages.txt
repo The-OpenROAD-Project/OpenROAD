@@ -204,3 +204,4 @@ GRT 0205 utility.cpp:1131          Error in opening output.out.
 GRT 0206 utility.cpp:1252          trying to recover an 0 length edge.
 GRT 0207 utility.cpp:1480          rip upped edge without edge len re assignment.
 GRT 0208 utility.cpp:1486          .routelen {} len {}.
+GRT 0209 GlobalRouter.cpp:1107     Ignoring an obstruction on layer {} outside the die area.

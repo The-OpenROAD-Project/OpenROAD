@@ -90,16 +90,15 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (_flags._right_way_on_grid_only != rhs._flags._right_way_on_grid_only)
     return false;
 
-  if (_flags._check_mask != rhs._flags._check_mask)
+  if (_flags._right_way_on_grid_only_check_mask
+      != rhs._flags._right_way_on_grid_only_check_mask)
     return false;
 
-  if (_flags._except_non_core_pins != rhs._flags._except_non_core_pins)
+  if (_flags._rect_only_except_non_core_pins
+      != rhs._flags._rect_only_except_non_core_pins)
     return false;
 
   if (_flags._lef58_type != rhs._flags._lef58_type)
-    return false;
-
-  if (_flags._p_well != rhs._flags._p_well)
     return false;
 
   if (*_cut_class_rules_tbl != *rhs._cut_class_rules_tbl)
@@ -284,10 +283,9 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_FIELD(_flags._has_xy_offset);
   DIFF_FIELD(_flags._rect_only);
   DIFF_FIELD(_flags._right_way_on_grid_only);
-  DIFF_FIELD(_flags._check_mask);
-  DIFF_FIELD(_flags._except_non_core_pins);
+  DIFF_FIELD(_flags._right_way_on_grid_only_check_mask);
+  DIFF_FIELD(_flags._rect_only_except_non_core_pins);
   DIFF_FIELD(_flags._lef58_type);
-  DIFF_FIELD(_flags._p_well);
   DIFF_TABLE(_cut_class_rules_tbl);
   DIFF_HASH_TABLE(_cut_class_rules_hash);
   DIFF_TABLE(_spacing_eol_rules_tbl);
@@ -353,10 +351,9 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._has_xy_offset);
   DIFF_OUT_FIELD(_flags._rect_only);
   DIFF_OUT_FIELD(_flags._right_way_on_grid_only);
-  DIFF_OUT_FIELD(_flags._check_mask);
-  DIFF_OUT_FIELD(_flags._except_non_core_pins);
+  DIFF_OUT_FIELD(_flags._right_way_on_grid_only_check_mask);
+  DIFF_OUT_FIELD(_flags._rect_only_except_non_core_pins);
   DIFF_OUT_FIELD(_flags._lef58_type);
-  DIFF_OUT_FIELD(_flags._p_well);
   DIFF_OUT_TABLE(_cut_class_rules_tbl);
   DIFF_OUT_HASH_TABLE(_cut_class_rules_hash);
   DIFF_OUT_TABLE(_spacing_eol_rules_tbl);
@@ -543,12 +540,13 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _flags._has_xy_offset          = r._flags._has_xy_offset;
   _flags._rect_only              = r._flags._rect_only;
   _flags._right_way_on_grid_only = r._flags._right_way_on_grid_only;
-  _flags._check_mask             = r._flags._check_mask;
-  _flags._except_non_core_pins   = r._flags._except_non_core_pins;
-  _flags._lef58_type             = r._flags._lef58_type;
-  _flags._p_well                 = r._flags._p_well;
-  _flags._spare_bits             = r._flags._spare_bits;
-  _cut_class_rules_tbl           = new dbTable<_dbTechLayerCutClassRule>(
+  _flags._right_way_on_grid_only_check_mask
+      = r._flags._right_way_on_grid_only_check_mask;
+  _flags._rect_only_except_non_core_pins
+      = r._flags._rect_only_except_non_core_pins;
+  _flags._lef58_type   = r._flags._lef58_type;
+  _flags._spare_bits   = r._flags._spare_bits;
+  _cut_class_rules_tbl = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r._cut_class_rules_tbl);
   ZALLOCATED(_cut_class_rules_tbl);
   _cut_class_rules_hash.setTable(_cut_class_rules_tbl);
@@ -910,46 +908,35 @@ bool dbTechLayer::isRightWayOnGridOnly() const
   return obj->_flags._right_way_on_grid_only;
 }
 
-void dbTechLayer::setCheckMask(bool _check_mask)
+void dbTechLayer::setRightWayOnGridOnlyCheckMask(
+    bool _right_way_on_grid_only_check_mask)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  obj->_flags._check_mask = _check_mask;
+  obj->_flags._right_way_on_grid_only_check_mask
+      = _right_way_on_grid_only_check_mask;
 }
 
-bool dbTechLayer::isCheckMask() const
+bool dbTechLayer::isRightWayOnGridOnlyCheckMask() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  return obj->_flags._check_mask;
+  return obj->_flags._right_way_on_grid_only_check_mask;
 }
 
-void dbTechLayer::setExceptNonCorePins(bool _except_non_core_pins)
+void dbTechLayer::setRectOnlyExceptNonCorePins(
+    bool _rect_only_except_non_core_pins)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  obj->_flags._except_non_core_pins = _except_non_core_pins;
+  obj->_flags._rect_only_except_non_core_pins = _rect_only_except_non_core_pins;
 }
 
-bool dbTechLayer::isExceptNonCorePins() const
+bool dbTechLayer::isRectOnlyExceptNonCorePins() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  return obj->_flags._except_non_core_pins;
-}
-
-void dbTechLayer::setPWell(bool _p_well)
-{
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-
-  obj->_flags._p_well = _p_well;
-}
-
-bool dbTechLayer::isPWell() const
-{
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-
-  return obj->_flags._p_well;
+  return obj->_flags._rect_only_except_non_core_pins;
 }
 
 // User Code Begin dbTechLayerPublicMethods
