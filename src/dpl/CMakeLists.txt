@@ -38,13 +38,13 @@
 
 include("openroad")
 
-tcl_lib(NAME         opendp
+tcl_lib(NAME         dpl
         NAMESPACE    dpl
-        I_FILE       src/opendp.i
-        SCRIPTS      src/opendp.tcl
+        I_FILE       src/Opendp.i
+        SCRIPTS      src/Opendp.tcl
 )
 
-target_sources(opendp
+target_sources(dpl
   PRIVATE
     src/Opendp.cpp
     src/dbToOpendp.cpp
@@ -56,12 +56,12 @@ target_sources(opendp
     src/OptMirror.cpp
 )
 
-target_include_directories(opendp
+target_include_directories(dpl
   PUBLIC
     include
 )
 
-target_link_libraries(opendp
+target_link_libraries(dpl
   PRIVATE
     opendb
     OpenSTA
@@ -73,6 +73,6 @@ target_link_libraries(opendp
 
 add_custom_target(opendp_tags etags -o TAGS
   ${OPENDP_SRC}
-  ${OPENDB_HOME}/include/opendb/*.h
+  ${OPENDB_HOME}/include/dpl/*.h
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
