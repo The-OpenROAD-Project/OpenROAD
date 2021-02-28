@@ -155,10 +155,9 @@ protected:
 		int core_ux,
 		int core_uy);
   dbSite *findSite(const char *site_name);
+  Vector<Track> readTracks(const char *tracks_file);
   void makeTracks(const char *tracks_file,
 		  Rect &die_area);
-  void makeTracks(Rect &die_area);
-  void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
@@ -167,7 +166,6 @@ protected:
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
-  Vector<Track> tracks_;
 };
 
 void
@@ -333,8 +331,6 @@ InitFloorplan::initFloorplan(double die_lx,
 
       if (tracks_file && tracks_file[0])
 	makeTracks(tracks_file, die_area);
-      else
-	makeTracks(die_area);
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
@@ -385,9 +381,9 @@ void
 InitFloorplan::makeTracks(const char *tracks_file,
 			  Rect &die_area)
 {
-  readTracks(tracks_file);
+  Vector<Track> tracks = readTracks(tracks_file);
   dbTech *tech = db_->getTech();
-  for (auto track : tracks_) {
+  for (auto track : tracks) {
     int pitch = metersToMfgGrid(track.pitch());
     int offset = metersToMfgGrid(track.offset());
     char dir = track.dir();
@@ -417,9 +413,10 @@ InitFloorplan::makeTracks(const char *tracks_file,
   }
 }
 
-void
+Vector<Track>
 InitFloorplan::readTracks(const char *tracks_file)
 {
+  Vector<Track> tracks;
   std::ifstream tracks_stream(tracks_file);
   if (tracks_stream.is_open()) {
     int line_count = 1;
@@ -444,7 +441,7 @@ InitFloorplan::readTracks(const char *tracks_file)
 	  // microns -> meters
 	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
 	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
-	  tracks_.push_back(Track(layer_name, dir, offset, pitch));
+	  tracks.push_back(Track(layer_name, dir, offset, pitch));
 	}
 	else
 	  logger_->error(IFP, 5, "layer {} not found.", layer_name);
@@ -459,6 +456,7 @@ InitFloorplan::readTracks(const char *tracks_file)
   }
   else
     logger_->error(IFP, 10, "Tracks file not readable.");
+  return tracks;
 }
 
 Track::Track(string layer,
@@ -470,52 +468,6 @@ Track::Track(string layer,
   offset_(offset),
   pitch_(pitch)
 {
-}
-
-void
-InitFloorplan::makeTracks(Rect &die_area)
-{
-  dbTech *tech = db_->getTech();
-  dbSet<dbTechLayer> layers = tech->getLayers();
-  for (auto layer : layers) {
-    if (layer->getType() == dbTechLayerType::ROUTING) {
-      dbTrackGrid *grid;
-      uint width;
-      int offset, pitch, track_count;
-      // vertical
-      grid = block_->findTrackGrid(layer);
-      if (grid == nullptr)
-        grid = dbTrackGrid::create(block_, layer);
-      width = die_area.dx();
-      pitch = layer->getPitchX();
-      if (pitch) {
-        offset = layer->getOffsetX();
-        if (offset == 0)
-          offset = pitch;
-        track_count = floor((width - offset) / pitch) + 1;
-        grid->addGridPatternX(offset, track_count, pitch);
-      }
-      else
-        logger_->error(IFP, 7, "layer {} has zero X pitch.", layer->getConstName());
-
-      // horizontal
-      grid = block_->findTrackGrid(layer);
-      if (grid == nullptr)
-        grid = dbTrackGrid::create(block_, layer);
-      width = die_area.dy();
-      pitch = layer->getPitchY();
-      if (pitch) {
-        offset = layer->getOffsetY();
-        if (offset == 0)
-          offset = pitch;
-        track_count = floor((width - offset) / pitch) + 1;
-        grid->addGridPatternY(offset, track_count, pitch);
-      }
-      else
-        logger_->error(IFP, 8, "layer {} has zero Y pitch.",
-                       layer->getConstName());
-    }
-  }
 }
 
 ////////////////////////////////////////////////////////////////

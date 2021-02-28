@@ -8,7 +8,6 @@ initialize_floorplan -die_area "10 20 1010 1020" \
   -core_area "110 120 910 920" \
   -site FreePDK45_38x28_10R_NP_162NW_34O \
   -tracks init_floorplan2.tracks
-auto_place_pins metal1
 
 set def_file [make_result_file init_floorplan5.def]
 write_def $def_file
