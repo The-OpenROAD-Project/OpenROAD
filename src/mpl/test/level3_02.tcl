@@ -26,7 +26,7 @@ read_sdc gcd.sdc
 }
 
 global_placement
-macro_placement -style center_spread
+macro_placement -style center_spread -halo {0.5 0.5}
 
 set def_file [make_result_file level3_02.def]
 write_def $def_file

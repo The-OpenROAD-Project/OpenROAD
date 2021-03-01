@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019-2020, The Regents of the University of California
+// Copyright (c) 2021, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,84 +33,46 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
+#include <memory>
 #include <vector>
-#include <array>
+
+#include "gui/gui.h"
+#include "mpl/MacroPlacer.h"
 
 namespace utl {
 class Logger;
 }
 
-namespace parquetfp {
-class Nets;
+namespace odb {
+class dbDatabase;
 }
 
 namespace mpl {
 
-using std::vector;
-using std::array;
-using std::pair;
-using std::string;
-
-namespace pfp = parquetfp;
-
-class MacroPlacer;
-class Macro;
-
-enum PartClass
-{
-  S,
-  N,
-  W,
-  E,
-  NW,
-  NE,
-  SW,
-  SE,
-  ALL,
-  None
-};
-
-constexpr int part_class_count = None + 1;
-
-// PartClass -> macro indices
-typedef array<vector<int>, part_class_count> MacroPartMap;
-
-class Partition
+// This class draws debugging graphics on the layout
+class Graphics : public gui::Renderer
 {
  public:
-  Partition(PartClass _partClass,
-            double _lx,
-            double _ly,
-            double _width,
-            double _height,
-            MacroPlacer *macro_placer,
-            utl::Logger* log);
-  Partition(const Partition& prev) = default;
+  Graphics(odb::dbDatabase* db, utl::Logger* logger);
 
-  void fillNetlistTable(MacroPartMap& macroPartMap);
-  // Call Parquet to have annealing solution
-  bool anneal();
+  // Draw the partition
+  void set_partitions(const std::vector<Partition>& partitions,
+                      bool relative_coords);
 
-  PartClass partClass;
-  vector<Macro> macros_;
-  double lx, ly;
-  double width, height;
-  double solution_width, solution_height;
-  vector<double> net_tbl_;
+  // Show a message in the status bar
+  void status(const std::string& message);
+
+  // From Renderer API
+  virtual void drawObjects(gui::Painter& painter) override;
+
+  // Is the GUI being displayed (true) or are we in batch mode (false)
+  static bool guiActive();
 
  private:
-  string getName(int macroIdx);
-  int globalIndex(int macro_idx);
-  void makePins(int macro_idx1,
-                int macro_idx2,
-                int cost,
-                int pnet_idx,
-                pfp::Nets* pfp_nets);
-
+  std::vector<Partition> partitions_;
+  bool partition_relative_coords_;
+  odb::dbDatabase* db_;
   utl::Logger* logger_;
-  MacroPlacer *macro_placer_;
 };
 
 }  // namespace mpl

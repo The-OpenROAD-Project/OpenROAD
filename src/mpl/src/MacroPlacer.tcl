@@ -113,3 +113,17 @@ proc macro_placement { args } {
     utl::error MPL 96 "Unknown placement style."
   }
 }
+
+sta::define_cmd_args "macro_placement_debug" {
+    [-partitions]
+}
+
+proc macro_placement_debug { args } {
+  sta::parse_key_args "macro_placement_debug" args \
+      keys {} \
+      flags {-partitions}
+
+  set partitions [info exists flags(-partitions)]
+
+  mpl::set_debug_cmd $partitions
+}
