@@ -37,8 +37,6 @@
 #include "gc/FlexGC.h"
 #include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
-#include "opendb/db.h"
-#include "opendb/defout.h"
 #include "sta/StaMain.hh"
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"
@@ -200,15 +198,7 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
-  odb::dbChip *chip = db_->getChip();
-  if (chip) {
-    odb::dbBlock *block = chip->getBlock();
-    if (block) {
-      odb::defout def_writer(logger_);
-      def_writer.setVersion(odb::defout::Version::DEF_5_8);
-      def_writer.writeBlock(block, OUT_FILE.c_str());
-    }
-  }
+
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -233,7 +223,7 @@ void TritonRoute::readParams(const string &fileName)
         else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated outputTA param in params file");}
-        else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}
+        else if (field == "output")   { logger_->warn(utl::DRT, 205, "deprecated output param in params file");}
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
         else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
@@ -264,7 +254,7 @@ void TritonRoute::readParams(const string &fileName)
     MAX_THREADS = 1;
   }
 
-  if (readParamCnt < 3) {
+  if (readParamCnt < 2) {
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
   }
 }

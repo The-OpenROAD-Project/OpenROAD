@@ -34,7 +34,6 @@ using namespace fr;
 
 string GUIDE_FILE;
 string OUTGUIDE_FILE;
-string OUT_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
