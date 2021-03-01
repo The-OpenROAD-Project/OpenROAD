@@ -395,11 +395,9 @@ bool Partition::anneal()
       pfp::Node& node = pfp_nodes->getNode(i);
       Macro &macro = macros_[i];
       macro.lx = (isFlipX)
-        // why would node.getWidth() != width? -cherry
         ? width - node.getX() - node.getWidth() + lx
         : node.getX() + lx;
       macro.ly = (isFlipY)
-        // why would node.getHeight() != height? -cherry
         ? height - node.getY() - node.getHeight() + ly
         : node.getY() + ly;
       MacroSpacings &spacings = macro_placer_->getSpacings(macro);
