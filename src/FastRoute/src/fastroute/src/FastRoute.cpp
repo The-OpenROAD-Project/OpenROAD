@@ -914,7 +914,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
   if(db_gcell == nullptr)
   {
     db_gcell = block->getGCellGrid();
-    logger->warn(utl::GRT, 210, "gcell grid already exists in db. clearing existing dbGCellGrid");
+    logger->warn(utl::GRT, 210, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
@@ -926,10 +926,10 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
       logger->warn(utl::GRT, 211, "skipping layer {} not found in db", k+1);
       continue;
     }
-    for (int i = 0; i < yGrid; i++) {
-      for (int j = 0; j < xGrid - 1; j++) {
-        int gridH = i * (xGrid - 1) + j + k * (xGrid - 1) * yGrid;
-        int gridV = i * xGrid + j + k * xGrid * (yGrid - 1);
+    for (int y = 0; y < yGrid; y++) {
+      for (int x = 0; x < xGrid - 1; x++) {
+        int gridH = y * (xGrid - 1) + x + k * (xGrid - 1) * yGrid;
+        int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
 
         unsigned short capH = h_edges3D[gridH].cap;
         unsigned short usageH = h_edges3D[gridH].usage;
@@ -937,8 +937,8 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
         unsigned short capV = v_edges3D[gridV].cap;
         unsigned short usageV = v_edges3D[gridV].usage;
 
-        db_gcell->setCapacity(layer, j, i, (uint) capH, (uint) capV, 0);
-        db_gcell->setUsage(layer, j, i, (uint) usageH, (uint) usageV, 0);
+        db_gcell->setCapacity(layer, x, y, (uint) capH, (uint) capV, 0);
+        db_gcell->setUsage(layer, x, y, (uint) usageH, (uint) usageV, 0);
       }
     }
   }

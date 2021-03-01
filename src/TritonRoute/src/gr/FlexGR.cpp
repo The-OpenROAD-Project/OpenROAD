@@ -551,13 +551,19 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap *cmap)
   auto gcell = block->getGCellGrid();
   if(gcell == nullptr)
     gcell = odb::dbGCellGrid::create(block);
-  else
+  else{
+    logger_->warn(utl::DRT, 203, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
     gcell->resetGrid();
+  }
   auto &gCellPatterns = design_->getTopBlock()->getGCellPatterns();
   auto xgp = &(gCellPatterns.at(0));
   auto ygp = &(gCellPatterns.at(1));
-  gcell->addGridPatternX(xgp->getStartCoord(), xgp->getCount()+1, xgp->getSpacing());
-  gcell->addGridPatternY(ygp->getStartCoord(), ygp->getCount()+1, ygp->getSpacing());
+  gcell->addGridPatternX(xgp->getStartCoord(), xgp->getCount(), xgp->getSpacing());
+  gcell->addGridPatternY(ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
+  frBox dieBox;
+  design_->getTopBlock()->getBoundaryBBox(dieBox);
+  gcell->addGridPatternX(dieBox.right(), 1, 0);
+  gcell->addGridPatternY(dieBox.top(), 1, 0);
   unsigned cmapLayerIdx = 0;
   for (auto &[layerNum, dir]: cmap->getZMap()) {
     string layerName(design_->getTech()->getLayer(layerNum)->getName());
