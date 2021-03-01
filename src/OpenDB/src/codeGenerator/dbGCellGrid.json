@@ -65,37 +65,37 @@
         "name":"GCellData",
         "fields":[
           {
-            "name":"_horizontal_usage",
+            "name":"horizontal_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_vertical_usage",
+            "name":"vertical_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_up_usage",
+            "name":"up_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_horizontal_capacity",
+            "name":"horizontal_capacity",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_vertical_capacity",
+            "name":"vertical_capacity",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_up_capacity",
+            "name":"up_capacity",
             "type":"uint",
             "flags":[],
             "default":0

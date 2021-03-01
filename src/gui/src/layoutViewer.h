@@ -47,6 +47,10 @@
 #include "options.h"
 #include "search.h"
 
+namespace utl {
+  class Logger;
+}
+
 namespace odb {
 class dbBlock;
 class dbDatabase;
@@ -99,6 +103,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
+  void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
@@ -201,6 +206,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
+  utl::Logger* logger_;
 
 
   QMenu* layout_context_menu_;

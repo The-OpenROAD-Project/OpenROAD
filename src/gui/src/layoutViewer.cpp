@@ -60,6 +60,8 @@
 #include "mainWindow.h"
 #include "search.h"
 
+#include "utility/Logger.h"
+
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
 // and formats use the origin at the LOWER-left with y increasing
@@ -191,6 +193,7 @@ LayoutViewer::LayoutViewer(Options* options,
       max_depth_(99),
       search_init_(false),
       rubber_band_showing_(false),
+      logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
@@ -205,6 +208,11 @@ void LayoutViewer::setDb(dbDatabase* db)
     update();
   }
   db_ = db;
+}
+
+void LayoutViewer::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 dbBlock* LayoutViewer::getBlock()
@@ -644,7 +652,8 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 
     if(x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1)
     {
-      //WARNING
+      if(logger_ != nullptr)
+        logger_->warn(utl::GUI, 4, "Skipping malformed GCell");
       continue;
     }
 
@@ -652,10 +661,10 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
     if (!gcell_rect.intersects(bounds))
       continue;
 
-    auto hor_capacity = cong_data._horizontal_capacity;
-    auto hor_usage = cong_data._horizontal_usage;
-    auto ver_capacity = cong_data._vertical_capacity;
-    auto ver_usage = cong_data._vertical_usage;
+    auto hor_capacity = cong_data.horizontal_capacity;
+    auto hor_usage = cong_data.horizontal_usage;
+    auto ver_capacity = cong_data.vertical_capacity;
+    auto ver_usage = cong_data.vertical_usage;
 
     //-1 indicates capacity is not well defined...
     float hor_congestion

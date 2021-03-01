@@ -8349,12 +8349,12 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint _horizontal_usage    = 0;
-    uint _vertical_usage      = 0;
-    uint _up_usage            = 0;
-    uint _horizontal_capacity = 0;
-    uint _vertical_capacity   = 0;
-    uint _up_capacity         = 0;
+    uint horizontal_usage    = 0;
+    uint vertical_usage      = 0;
+    uint up_usage            = 0;
+    uint horizontal_capacity = 0;
+    uint vertical_capacity   = 0;
+    uint up_capacity         = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -8480,8 +8480,8 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(
-      dbTechLayer* layer = nullptr);
+  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
+                                                              = nullptr);
   // User Code End dbGCellGrid
 };
 
