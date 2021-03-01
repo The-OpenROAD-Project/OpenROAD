@@ -1162,8 +1162,7 @@ void FlexDR::checkConnectivity(int iter) {
 
   }
 
-  if (isWrong) {
-    exit(1);
-  }
+  if (isWrong)
+    logger_->critical(utl::DRT, 206, "checkConnectivity error");
 }
 
