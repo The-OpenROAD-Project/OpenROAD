@@ -8,4 +8,4 @@ core
 TAGS
 defRWarning.log
 
-tests/results
+test/results
