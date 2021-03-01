@@ -183,7 +183,6 @@ void MacroPlacer::reportEdgePinCounts()
   }
 }
 
-// Pick a channel size to spread the macros out in the core.
 // Use parquefp on all the macros.
 void MacroPlacer::placeMacrosCenterSpread()
 {
@@ -209,15 +208,7 @@ void MacroPlacer::placeMacrosCenterSpread()
 
   // Annealing based on ParquetFP Engine
   if (partition.anneal()) {
-    updateMacroLocations(partition);
-
-    double x_scale, y_scale;
-    double width = ux_ - lx_;
-    double height = uy_ - ly_;
-    x_scale = width / partition.solution_width;
-    y_scale = height / partition.solution_height;
-
-    setDbInstLocations(x_scale, y_scale);
+    setDbInstLocations(partition);
 
     double curWwl = getWeightedWL();
     logger_->info(MPL, 71, "Placed weighted wire length {:g}", curWwl);
@@ -226,22 +217,45 @@ void MacroPlacer::placeMacrosCenterSpread()
     logger_->warn(MPL, 72, "Partitioning failed.");
 }
 
-void MacroPlacer::setDbInstLocations(double x_scale,
-                                     double y_scale)
+void MacroPlacer::setDbInstLocations(Partition &partition)
 {
+  double width = ux_ - lx_;
+  double height = uy_ - ly_;
+  double x_scale = width / partition.solution_width;
+  double y_scale = height / partition.solution_height;
+
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
   const float pitch_x = static_cast<float>(snap_layer_->getPitchX()) / dbu;
   const float pitch_y = static_cast<float>(snap_layer_->getPitchY()) / dbu;
 
-  for (auto& macro : macros_) {
-    double x = (macro.lx + macro.w / 2) * x_scale - macro.w / 2;
-    double y = (macro.ly + macro.h / 2) * y_scale - macro.h / 2;
+  int macro_idx = 0;
+  for (Macro& pmacro : partition.macros_) {
+    // partition macros are 1:1 with macros_.
+    Macro& macro = macros_[macro_idx];
+
+    //double x = lx_ + (pmacro.lx - lx_) * x_scale;
+    //double y = ly_ + (pmacro.ly - ly_) * y_scale;
+
+    // Translate macro cluster to die center and then spread to fill.
+    // This works better than spreading origins because that leaves the
+    // macros biased toward the lower left corner.
+    double x = lx_ + (pmacro.lx - lx_ + macro.w / 2) * x_scale - macro.w / 2;
+    double y = ly_ + (pmacro.ly - ly_ + macro.h / 2) * y_scale - macro.h / 2;
+
     // Snap to routing grid.
     x = round(x / pitch_x) * pitch_x;
     y = round(y / pitch_y) * pitch_y;
-    macro.dbInstPtr->setLocation(round(x * dbu), round(y * dbu));
-    macro.dbInstPtr->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+
+    // Snap macro location to grid.
+    macro.lx = x;
+    macro.ly = y;
+
+    // Update db inst location.
+    dbInst *db_inst = macro.dbInstPtr;
+    db_inst->setLocation(round(x * dbu), round(y * dbu));
+    db_inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+    macro_idx++;
   }
 }
 
