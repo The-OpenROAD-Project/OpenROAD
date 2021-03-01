@@ -1399,6 +1399,12 @@ dbTechLayer* dbTechLayerCutSpacingRule::getSecondLayer() const
   return (dbTechLayer*) _tech->_layer_tbl->getPtr(obj->_second_layer);
 }
 
+dbTechLayer* dbTechLayerCutSpacingRule::getTechLayer() const
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  return (odb::dbTechLayer*) obj->getOwner();
+}
+
 void dbTechLayerCutSpacingRule::setType(CutSpacingType _type)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
