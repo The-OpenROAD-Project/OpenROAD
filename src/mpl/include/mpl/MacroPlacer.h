@@ -175,8 +175,7 @@ private:
   void cutRoundUp(const Layout& layout,
                   double& cutLine,
                   bool isHorizontal);
-    void setDbInstLocations(double x_scale, 
-                            double y_scale);
+    void setDbInstLocations(Partition &partition);
 
   // graph based adjacencies
   void findAdjacencies();
