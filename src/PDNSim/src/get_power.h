@@ -35,12 +35,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <string>
+#include "utility/Logger.h"
+
 namespace sta {
 class dbSta;
 }  // namespace sta
 
 namespace psm {
-
 //!  Calculates the power per instance using OpenSTA
 /*!
   Uses OpenSTA to report total power per instance and
@@ -50,13 +51,13 @@ class PowerInst
 {
  private:
   //! Instance to OpenSTA object.
-  sta::dbSta* _sta;
-
+  sta::dbSta* m_sta;
+  utl::Logger* m_logger;
  public:
   //! Function for power per instance calculation
   std::vector<std::pair<std::string, double>> executePowerPerInst(
-      sta::dbSta* sta);
+    sta::dbSta* sta, utl::Logger* logger);
 };
-// epower namespace end
+// power namespace end
 }  // namespace psm
 #endif

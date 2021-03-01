@@ -17,18 +17,10 @@
 [WARNING PSM-0021] Using voltage 0.000V for ground network.
 [WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 80.180 or core height of 79.800. Changing bump location to the center of the die at (40.090, 39.900)
 [WARNING PSM-0065] VSRC location not specified using default checkerboard pattern with one VDD everysize bumps in x-direction and one in two bumps in the y-direction
-[INFO PSM-0026] Creating G matrix.
-[INFO PSM-0028] Extracting power stripes on net VSS.
 [WARNING PSM-0030] Vsrc location at (40.090um, 39.900um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (40.500um, 33.115um).
-[INFO PSM-0031] Number of nodes on net VSS = 1245.
-[INFO PSM-0037] G matrix created sucessfully.
-[INFO PSM-0044] Executing STA for power calculation.
-[INFO PSM-0025] Created J vector.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
 [INFO PSM-0064] Number of voltage sources = 1
-[INFO PSM-0040] Connection between all PDN nodes established in net VSS.
-[INFO PSM-0009] Factorizing the G matrix.
-[INFO PSM-0011] Solving system of equations GV=J.
-[INFO PSM-0013] Solving system of equations GV=J complete.
+[INFO PSM-0040] No floating PDN stripes on net VSS.
 ########## IR report #################
 Worstcase voltage: 3.17e-04 V
 Average IR drop  : 1.88e-04 V

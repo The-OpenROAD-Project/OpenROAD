@@ -49,11 +49,11 @@ using std::string;
 using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta)
+vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta, utl::Logger*  logger)
 {
   // STA object create
-  _sta = sta;
-
+  m_sta = sta;
+  m_logger = logger;
   // environment settings
   string cornerName = "wst";
   // string cornerNameFF="bst";
@@ -64,33 +64,28 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta)
   //  // define_corners
   //  _sta->makeCorners(&cornerNameSet);
   //  Corner* corner = _sta->findCorner(cornerName.c_str());
-  Corner* corner = _sta->cmdCorner();
-  // cout << "Created cornert" << endl;
+  Corner* corner = m_sta->cmdCorner();
 
   vector<pair<string, double>> power_report;
-
-  dbNetwork*            network   = _sta->getDbNetwork();
+  dbNetwork*            network   = m_sta->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult           total_calc;
   total_calc.clear();
   while (inst_iter->hasNext()) {
     Instance* inst = inst_iter->next();
-    // cout << "Insode while for all isntance:"<<(string(network->name(inst)))
-    // << power<<endl;
     LibertyCell* cell = network->libertyCell(inst);
     if (cell) {
       PowerResult inst_power;
-      _sta->power(inst, corner, inst_power);
+      m_sta->power(inst, corner, inst_power);
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-      // cout << string(network->name(inst)) << inst_power.total() << endl;
+          debugPrint(m_logger, utl::PSM, "get power", 2, "Power of instance {} is {}",string(network->name(inst)), inst_power.total());
     }
   }
   delete inst_iter;
 
-  // cout <<"Total power:" << total.total() << endl;
-  // cout <<"Total power calculated:" << total_calc.total() << endl;
+  debugPrint(m_logger, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
   return power_report;
 }
 }  // namespace psm

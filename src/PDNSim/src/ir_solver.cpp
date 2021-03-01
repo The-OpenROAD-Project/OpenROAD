@@ -142,19 +142,22 @@ void IRSolver::SolveIR()
   Map<VectorXd>                  b(J.data(), J.size());
   VectorXd                       x;
   SparseLU<SparseMatrix<double>> solver;
-  m_logger->info(utl::PSM, 9, "Factorizing the G matrix.");
+  debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Factorizing the G matrix");
+  //m_logger->info(utl::PSM, 9, "Factorizing the G matrix.");
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
-    m_logger->error(utl::PSM, 10, "LU factorization of the GMatrix failed.");
+    m_logger->error(utl::PSM, 10, "LU factorization of the G Matrix failed.");
   }
-  m_logger->info(utl::PSM, 11, "Solving system of equations GV=J.");
+  debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J");
+  //m_logger->info(utl::PSM, 11, "Solving system of equations GV=J.");
   x = solver.solve(b);
   if (solver.info() != Success) {
     // solving failed
     m_logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
   } else {
-    m_logger->info(utl::PSM, 13, "Solving system of equations GV=J complete.");
+    debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J complete");
+    //m_logger->info(utl::PSM, 13, "Solving system of equation GV=J complete");
   }
   ofstream ir_report;
   ir_report.open(m_out_file);
@@ -464,14 +467,16 @@ bool IRSolver::CreateJ()
       m_J[i] = -1 * (node_J->GetCurrent());
     }
   }
-  m_logger->info(utl::PSM, 25, "Created J vector.");
+  debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Created J vector");
+  //m_logger->info(utl::PSM, 25, "Created J vector");
   return true;
 }
 
 //! Function to create a G matrix using the nodes
 bool IRSolver::CreateGmat(bool connection_only)
 {
-  m_logger->info(utl::PSM, 26, "Creating G matrix.");
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Creating G matrix");
+  //m_logger->info(utl::PSM, 26, "Creating G matrix.");
   vector<Node*> node_vector;
   dbTech*       tech = m_db->getTech();
   // dbSet<dbTechLayer>           layers = tech->getLayers();
@@ -494,38 +499,14 @@ bool IRSolver::CreateGmat(bool connection_only)
   m_power_net_type = power_net->getSigType();
   vector<dbNet*> power_nets;
   int            num_wires = 0;
-  m_logger->info(utl::PSM,
-                 28,
-                 "Extracting power stripes on net {}.",
-                 power_net->getName());
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Extracting power stripes on net {}", power_net->getName());
   power_nets.push_back(power_net);
 
-  // dbSet<dbNet>::iterator nIter;
-  // for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
-  //  dbNet* curDnet = *nIter;
-  //  dbSigType nType = curDnet->getSigType();
-  //  if(m_power_net == "VSS") {
-  //    if (nType == dbSigType::GROUND) {
-  //      power_nets.push_back(curDnet);
-  //    } else {
-  //      continue;
-  //    }
-  //  } else if(m_power_net == "VDD") {
-  //    if (nType == dbSigType::POWER) {
-  //      power_nets.push_back(curDnet);
-  //    } else {
-  //      continue;
-  //    }
-  //  } else {
-  //    cout << "Warning: Net not specifed as VDD or VSS. Power grid checker is
-  //    not run." <<endl; return false;
-  //  }
-  //}
   if (power_nets.size() == 0) {
     m_logger->error(
         utl::PSM,
         29,
-        "No power stipes found in design. Power grid checker will not run.");
+        "No power stripes found in design. Power grid checker will not run.");
   }
   vector<dbNet*>::iterator vIter;
   for (vIter = power_nets.begin(); vIter != power_nets.end(); ++vIter) {
@@ -739,7 +720,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   // initialize G Matrix
   m_logger->info(utl::PSM,
                  31,
-                 "Number of nodes on net {} = {}.",
+                 "Number of PDN nodes on net {} = {}.",
                  m_power_net,
                  m_Gmat->GetNumNodes());
   m_Gmat->InitializeGmatDok(num_C4);
@@ -945,17 +926,17 @@ bool IRSolver::CreateGmat(bool connection_only)
   if (err_flag_via == 0 && !connection_only) {
     m_logger->error(utl::PSM,
                     35,
-                    "Atleast one via resistance not found in DB. Check the LEF "
-                    "or set it with a odb::setResistance command.");
+                    "At least one via resistance not found in DB. Check the LEF "
+                    "or set it with set_layer_rc -via command.");
   }
   if (err_flag_layer == 0 && !connection_only) {
     m_logger->error(
         utl::PSM,
         36,
-        "Atleast one layer per unit resistance not found in DB. Check the LEF "
-        "or set it with a odb::setResistance command.");
+        "At least one layer's per-unit resistance not found in DB. Check the LEF "
+        "or set it with a set_layer_rc -layer command.");
   }
-  m_logger->info(utl::PSM, 37, "G matrix created sucessfully.");
+  debugPrint(m_logger, utl::PSM, "G Matrix", 1, "G matrix created sucessfully.");
   return true;
 }
 
@@ -1057,7 +1038,7 @@ bool IRSolver::CheckConnectivity()
   if (unconnected_node == false) {
     m_logger->info(utl::PSM,
                    40,
-                   "Connection between all PDN nodes established in net {}.",
+                   "No floating PDN stripes on net {}.",
                    m_power_net);
   }
   return !unconnected_node;
@@ -1081,8 +1062,8 @@ vector<pair<string, double>> IRSolver::GetPower()
 {
   PowerInst power_inst;
 
-  m_logger->info(utl::PSM, 44, "Executing STA for power calculation.");
-  return power_inst.executePowerPerInst(m_sta);
+  debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Executing STA for power calculation");
+  return power_inst.executePowerPerInst(m_sta, m_logger);
 }
 
 pair<double, double> IRSolver::GetSupplyVoltage()

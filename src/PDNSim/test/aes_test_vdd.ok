@@ -12,17 +12,9 @@
 [INFO ODB-0134] Finished DEF file: aes.def
 [INFO PSM-0001] Reading voltage source file: Vsrc_aes_vdd.loc.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_aes_vdd.loc.
-[INFO PSM-0026] Creating G matrix.
-[INFO PSM-0028] Extracting power stripes on net VDD.
-[INFO PSM-0031] Number of nodes on net VDD = 74368.
-[INFO PSM-0037] G matrix created sucessfully.
-[INFO PSM-0044] Executing STA for power calculation.
-[INFO PSM-0025] Created J vector.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 74368.
 [INFO PSM-0064] Number of voltage sources = 4
-[INFO PSM-0040] Connection between all PDN nodes established in net VDD.
-[INFO PSM-0009] Factorizing the G matrix.
-[INFO PSM-0011] Solving system of equations GV=J.
-[INFO PSM-0013] Solving system of equations GV=J complete.
+[INFO PSM-0040] No floating PDN stripes on net VDD.
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V
 Average IR drop  : 6.77e-04 V
