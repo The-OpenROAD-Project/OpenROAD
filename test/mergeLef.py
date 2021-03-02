@@ -46,7 +46,7 @@ for lefFile in args.inputLef[1:]:
 
 
   # Match the macros
-  pattern = r"(^MACRO (\S+).*?END\s\2)"
+  pattern = r"(^MACRO (\S+\s).*?END\s\2)"
   m = re.findall(pattern, snippet, re.M | re.DOTALL)
 
   print(os.path.basename(lefFile) + ": MACROs matched found: " + str(len(m)))

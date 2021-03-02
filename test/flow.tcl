@@ -6,8 +6,9 @@ read_sdc $sdc_file
 
 initialize_floorplan -site $site \
   -die_area $die_area \
-  -core_area $core_area \
-  -tracks $tracks_file
+  -core_area $core_area
+
+source $tracks_file
 
 # remove buffers inserted by synthesis 
 remove_buffers
@@ -77,6 +78,9 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
+
+set cts_def [make_result_file ${design}_${platform}_cts.def]
+write_def $cts_def
 
 # CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
