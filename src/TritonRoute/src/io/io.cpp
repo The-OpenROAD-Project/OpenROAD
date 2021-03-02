@@ -894,2382 +894,408 @@ void io::Parser::addFakeNets() {
   design->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
 
-int io::Parser::getLef58SpacingTable_parallelRunLength(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  SPACINGTABLE" <<endl;
-    cout <<"  PARALLELRUNLENGTH";
-  }
+void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer)
+{
+  for(auto rule : layer->getTechLayerCornerSpacingRules())
+  {
+    std::string widthName("WIDTH");
+    std::vector<frCoord> widths;
+    std::vector<std::pair<frCoord, frCoord> > spacings;
+    rule->getSpacingTable(spacings);
+    rule->getWidthTable(widths);
+    bool hasSameXY = true;
+    for(auto &[spacing1, spacing2] : spacings)
+      if(spacing1 != spacing2)
+        hasSameXY = false;
 
-  bool    isWrongDirection    = false;
-  bool    isSameMask          = false;
-
-  bool    exceptEol           = false;
-  frCoord eolWidth            = 0;
-
-  frCoord lowExcludeSpacing   = 0;
-  frCoord highExcludeSpacing  = 0;
-
-  // 2d spacing table
-  frCollection<frCoord> rowVals, colVals;
-  frCollection<frCollection<frCoord> > tblVals;
-  frCollection<frCoord> tblRowVals;
-  
-  // except within
-  map<frCoord, pair<frCoord, frCoord> > ewVals;
-
-  int stage = 0;
-  io::Parser* parser = (io::Parser*) data;
-
-  istringstream istr(sIn);
-  string word;
-  while (istr >> word) {
-    if (word == string("WRONGDIRECTION")) {
-      //isWrongDirection = true;
-      if (enableOutput) {
-        cout <<" WRONGDIRECTION";
-      }
-    } else if (word == string("SAMEMASK")) {
-      isSameMask = true;
-      if (enableOutput) {
-        cout <<" SAMEMASK";
-      }
-    } else if (word == string("EXCEPTEOL")) {
-      double tmp;
-      if (istr >> tmp) {
-        if (enableOutput) {
-          cout <<" EXCEPTEOL " <<tmp;
+    fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(widthName, widths, spacings);
+    unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+    auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
+    switch (rule->getType())
+    {
+      case odb::dbTechLayerCornerSpacingRule::CornerType::CONVEXCORNER:
+        rptr->setCornerType(frCornerTypeEnum::CONVEX);
+        rptr->setSameMask(rule->isSameMask());
+        if (rule->isCornerOnly()) {
+          rptr->setWithin(rule->getWithin());
         }
-      } else {
-        cout <<"Error: getLef58SpacingTable_parallelRunLength" <<endl;
-      }
-    } else if (word == string("EXCEPTWITHIN")) {
-      if (enableOutput) {
-        cout <<" EXCEPTWITHIN";
-      }
-      double tmp;
-      if (istr >> tmp) {
-        lowExcludeSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" " <<tmp;
+        if (rule->isExceptEol()) {
+          rptr->setEolWidth(rule->getEolWidth());
+          if (rule->isExceptJogLength()) {
+            rptr->setLength(rule->getJogLength());
+            rptr->setEdgeLength(rule->isEdgeLengthValid());
+            rptr->setIncludeLShape(rule->isIncludeShape());
+          }
         }
-      } else {
-        cout <<"Error: getLef58SpacingTable_parallelRunLength" <<endl;
-      }
-      if (istr >> tmp) {
-        highExcludeSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" " <<tmp;
+        
+        break;
+      
+      default:
+        rptr->setCornerType(frCornerTypeEnum::CONCAVE);
+        if (rule->isMinLengthValid()) {
+          rptr->setMinLength(rule->getMinLength());
         }
-      } else {
-        cout <<"Error: getLef58SpacingTable_parallelRunLength" <<endl;
-      }
-      ewVals[rowVals.size()-1] = make_pair(lowExcludeSpacing, highExcludeSpacing);
-    } else if (word == string("WIDTH")) {
-      if (tblRowVals.size()) {
-        tblVals.push_back(tblRowVals);
-        tblRowVals.clear();
-      }
-      stage = 1;
-      double tmp;
-      if (istr >> tmp) {
-        rowVals.push_back(frCoord(round(tmp * parser->tech->getDBUPerUU())));
-        if (enableOutput) {
-          cout <<endl <<"  WIDTH " <<tmp;
+        rptr->setExceptNotch(rule->isExceptNotch());
+        if (rule->isExceptNotchLengthValid()) {
+          rptr->setExceptNotchLength(rule->getExceptNotchLength());
         }
-      } else {
-        cout <<"Error: getLef58SpacingTable_parallelRunLength" <<endl;
-      }
-    } else if (word == string(";")) {
-      if (stage == 1 && tblRowVals.size()) {
-        tblVals.push_back(tblRowVals);
-        tblRowVals.clear();
-      }
-      if (enableOutput) {
-        cout <<" ;";
-      }
-    } else {
-      // get length
-      if (stage == 0) {
-        colVals.push_back(frCoord(round(stod(word) * parser->tech->getDBUPerUU())));
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-      }
-      if (stage == 1) {
-        tblRowVals.push_back(frCoord(round(stod(word) * parser->tech->getDBUPerUU())));
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-      }
+        break;
     }
+    rptr->setSameXY(hasSameXY);
+    rptr->setExceptSameNet(rule->isExceptSameNet());
+    rptr->setExceptSameMetal(rule->isExceptSameMetal());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58CornerSpacingConstraint(rptr);
   }
-
-  string rowName("WIDTH");
-  string colName("PARALLELRUNLENGTH");
-  shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > prlTbl = make_shared<
-    fr2DLookupTbl<frCoord, frCoord, frCoord> >(rowName, rowVals, colName, colVals, tblVals);
-  shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
-  spacingTableConstraint->setWrongDirection(isWrongDirection);
-  spacingTableConstraint->setSameMask(isSameMask);
-  if (exceptEol) {
-    spacingTableConstraint->setEolWidth(eolWidth);
-  }
-  
-  parser->tech->addConstraint(spacingTableConstraint);
-  tmpLayer->addConstraint(spacingTableConstraint);
-
-  return 0;
-}
-
-int io::Parser::getLef58SpacingTable(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  PROPERTY LEF58_SPACINGTABLE \"";
-  }
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
-
-  string keyword;
-  while (istr >> word) {
-    if (word == string("SPACINGTABLE")) {
-      ss.str("");
-    } else if (word == string("PARALLELRUNLENGTH")) {
-      //cout <<"found PARALLELRUNLENGTH" <<endl;
-      keyword = "PARALLELRUNLENGTH";
-    } else if (word == string(";")) {
-      ss <<" " <<word;
-      if (keyword == string("PARALLELRUNLENGTH")) {
-        getLef58SpacingTable_parallelRunLength(data, tmpLayer, ss.str());
-      }
-      //cout <<"found ;" <<endl;
-    } else {
-      //cout <<"found " <<word <<endl;
-      ss <<" " <<word;
+  for(auto rule : layer->getTechLayerSpacingTablePrlRules())
+  {
+    string rowName("WIDTH");
+    string colName("PARALLELRUNLENGTH");
+    frCollection<frCoord> rowVals, colVals;
+    frCollection<frCollection<frCoord> > tblVals;
+    map<frCoord, pair<frCoord, frCoord> > ewVals;
+    map<frUInt4, pair<frCoord, frCoord> > _ewVals;
+    rule->getTable(rowVals, colVals, tblVals, _ewVals);
+    for(auto &[key, value] : _ewVals) ewVals[key] = value;
+    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > prlTbl = make_shared<
+      fr2DLookupTbl<frCoord, frCoord, frCoord> >(rowName, rowVals, colName, colVals, tblVals);
+    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
+    spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
+    spacingTableConstraint->setSameMask(rule->isSameMask());
+    if (rule->isExceeptEol()) {
+      spacingTableConstraint->setEolWidth(rule->getEolWidth());
     }
+    tech->addConstraint(spacingTableConstraint);
+    tmpLayer->addConstraint(spacingTableConstraint);
   }
-  //cout <<ss.str() <<endl;
-  if (enableOutput) {
-    cout <<"\" ;" <<endl;
-  }
-
-  return 0;
-}
-
-
-int io::Parser::getLef58Spacing_endOfLineWithin(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  // minspacing
-  frCoord eolSpace           = 0;
-  frCoord eolWidth           = 0;
-
-  bool    hasExactWidth      = false;
-
-  bool    hasWrongDirSpacing = false;
-  frCoord wrongDirSpace      = 0;
-
-  bool    hasOppositeWidth   = false;
-  frCoord oppositeWidth      = 0;
-
-  frCoord eolWithin          = 0;
-
-  bool    hasWrongDirWithin  = false;
-  frCoord wrongDirWithin     = 0;
-
-  bool    hasSameMask        = false;
-
-  // ENDTOEND
-  bool    hasEndToEnd          = false;
-  frCoord endToEndSpace        = 0;
-  bool    hasCutSpace          = false;
-  frCoord oneCutSpace          = 0;
-  frCoord twoCutSpace          = 0;
-  bool    hasExtension         = false;
-  frCoord extension            = 0;
-  bool    hasWrongDirExtension = false;
-  frCoord wrongDirExtension    = 0;
-  bool    hasOtherEndWidth     = false;
-  frCoord otherEndWidth        = 0;
-  
-  // MINLENGTH/MAXLENGTH
-  bool    hasLength          = false;
-  bool    isMax              = false;
-  frCoord length             = 0;
-  bool    hasTwoSides        = false;
-
-  // PARALLELEDGE
-  bool    hasParallelEdge          = false;
-  bool    hasSubtractEolWidth      = false;
-  frCoord parSpace                 = 0;
-  frCoord parWithin                = 0;
-  bool    hasPrl                   = false;
-  frCoord prl                      = 0;
-  bool    hasParallelEdgeMinLength = false;
-  frCoord parallelEdgeMinLength    = 0;
-  bool    hasTwoEdges              = false;
-  bool    hasSameMetal             = false;
-  bool    hasNonEolCornerOnly      = false;
-  bool    hasParallelSameMask      = false;
-
-  bool    skip = false;
-  io::Parser* parser = (io::Parser*) data;
-
-  istringstream istr(sIn);
-  string word;
-  int stage = 0;
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      double tmp;
-      if (istr >> tmp) {
-        eolSpace = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<endl <<"  SPACING " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (word == string("ENDOFLINE")) {
-      double tmp;
-      if (istr >> tmp) {
-        eolWidth = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" ENDOFLINE " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (word == string("EXACTWIDTH")) {
-      hasExactWidth = true;
-      if (enableOutput) {
-        cout <<" EXACTWIDTH";
-      }
-      stage = 0;
-    } else if (word == string("WRONGDIRSPACING")) {
-      hasWrongDirSpacing = true;
-      double tmp;
-      if (istr >> tmp) {
-        wrongDirSpace = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" WRONGDIRSPACING " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (word == string("OPPOSITEWIDTH")) {
-      hasOppositeWidth = true;
-      double tmp;
-      if (istr >> tmp) {
-        oppositeWidth = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" OPPOSITEWIDTH " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (word == string("WITHIN")) {
-      double tmp;
-      if (istr >> tmp) {
-        eolWithin = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" WITHIN " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 1;
-    } else if (word == string("SAMEMASK")) {
-      hasSameMask = true;
-      if (enableOutput) {
-        cout <<" SAMEMASK";
-      }
-      stage = 0;
-    } else if (word == string("EXCEPTEXACTWIDTH")) {
-      if (enableOutput) {
-        cout <<" EXCEPTEXACTWIDTH(SKIP)";
-      }
-      stage = 0;
-      skip = true;
-    } else if (word == string("FILLCONCAVECORNER")) {
-      if (enableOutput) {
-        cout <<" FILLCONCAVECORNER(SKIP)";
-      }
-      stage = 0;
-      skip = true;
-    } else if (word == string("WITHCUT")) {
-      if (enableOutput) {
-        cout <<" WITHCUT(SKIP)";
-      }
-      stage = 0;
-    } else if (word == string("ENDPRLSPACING")) {
-      if (enableOutput) {
-        cout <<" ENDPRLSPACING(SKIP)";
-      }
-      stage = 0;
-      skip = true;
-    } else if (word == string("ENDTOEND")) {
-      hasEndToEnd = true;
-      double tmp;
-      if (istr >> tmp) {
-        endToEndSpace = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" ENDTOEND " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 2;
-    } else if (word == string("MAXLENGTH")) {
-      hasLength = true;
-      isMax     = true;
-      double tmp;
-      if (istr >> tmp) {
-        length = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" MAXLENGTH " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (stage != 3 && word == string("MINLENGTH")) {
-      hasLength = true;
-      isMax     = false;
-      double tmp;
-      if (istr >> tmp) {
-        length = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" MINLENGTH " <<tmp;
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      stage = 0;
-    } else if (word == string("TWOSIDES")) {
-      hasTwoSides = true;
-      if (enableOutput) {
-        cout <<" TWOSIDES";
-      }
-      stage = 0;
-    } else if (word == string("EQUALRECTWIDTH")) {
-      if (enableOutput) {
-        cout <<" EQUALRECTWIDTH(SKIP)";
-      }
-      stage = 0;
-      skip = true;
-    } else if (word == string("PARALLELEDGE")) {
-      hasParallelEdge = true;
-      string tmp;
-      // read to parSpace
-      if (istr >> tmp) {
-        if (tmp == string("SUBTRACTEOLWIDTH")) {
-          hasSubtractEolWidth = true;
-          double tmp2;
-          if (istr >> tmp2) {
-            parSpace = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" PARALLELEDGE SUBTRACTEOLWIDTH " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        } else {
-          parSpace = frCoord(round(stod(tmp) * parser->tech->getDBUPerUU()));
-          if (enableOutput) {
-            cout <<" PARALLELEDGE " <<tmp;
-          }
-        }
-      } else {
-        cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-      }
-      // read to parWithin
-      if (istr >> tmp) {
-        if (tmp == string("WITHIN")) {
-          double tmp2;
-          if (istr >> tmp2) {
-            parWithin = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" (PE)WITHIN " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        } else {
-          cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-        }
-      }
-      stage = 3;
-    } else if (word == string("ENCLOSECUT")) {
-      if (enableOutput) {
-        cout <<" ENCLOSECUT(SKIP)";
-      }
-      stage = 0;
-      skip = true;
-    } else if (word == string(";")) {
-      if (enableOutput) {
-        cout <<" ;";
-      }
-      stage = 0;
-    } else {
-      // stage = 1, read wrongDirWithin
-      if (stage == 1) {
-        hasWrongDirWithin = true;
-        cout <<flush;
-        wrongDirWithin = frCoord(round(stod(word) * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-        stage = 0;
-      // stage = 2, read end to end from onecutspace
-      } else if (stage == 2) {
-        auto tmp = word;
-        if (tmp == string("EXTENSION")) {
-          hasExtension = true;
-          double tmp2;
-          if (istr >> tmp2) {
-            extension = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" EXTENSION " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-          stage = 20;
-        } else if (tmp == string("OTHERENDWIDTH")) {
-          hasOtherEndWidth = true;
-          double tmp2;
-          if (istr >> tmp2) {
-            otherEndWidth = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" OTHERENDWIDTH " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        } else {
-          hasCutSpace = true;
-          oneCutSpace = frCoord(round(stod(tmp) * parser->tech->getDBUPerUU()));
-          if (enableOutput) {
-            cout <<" " <<tmp;
-          }
-          double tmp2;
-          if (istr >> tmp2) {
-            twoCutSpace = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        }
-      // stage = 20, read end to end wrongDirExtension
-      } else if (stage == 20) {
-        hasWrongDirExtension = true;
-        wrongDirExtension = frCoord(round(stod(word) * parser->tech->getDBUPerUU()));
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-        stage = 2;
-      // stage = 3, read paralleledge from prl
-      } else if (stage == 3) {
-        if (word == string("PRL")) {
-          hasPrl = true;
-          double tmp2;
-          if (istr >> tmp2) {
-            prl = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" PRL " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        } else if (word == string("MINLENGTH")) {
-          hasParallelEdgeMinLength = true;
-          double tmp2;
-          if (istr >> tmp2) {
-            parallelEdgeMinLength = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-            if (enableOutput) {
-              cout <<" (PE)MINLENGTH " <<tmp2;
-            }
-          } else {
-            cout <<"Error: getLef58Spacing_eolSpace" <<endl;
-          }
-        } else if (word == string("TWOEDGES")) {
-          hasTwoEdges = true;
-        } else if (word == string("SAMEMETAL")) {
-          hasSameMetal = true;
-        } else if (word == string("NONEOLCORNERONLY")) {
-          hasNonEolCornerOnly = true;
-        } else if (word == string("PARALLELSAMEMASK")) {
-          hasParallelSameMask = true;
-        } else {
-          ;
-        }
-      } else {
-        ;
-      }
+  for(auto rule : layer->getTechLayerSpacingEolRules())
+  {
+    if(rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid() || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid())
+    {
+      logger->warn(utl::DRT, 168, "unsupported LEF58_SPACING rule for layer {}",layer->getName());
+      continue;
     }
-  }
-
-  if (skip) {
-    ;
-  } else {
     auto con = make_shared<frLef58SpacingEndOfLineConstraint>();
-    con->setEol(eolSpace, eolWidth, hasExactWidth);
-    if (hasWrongDirSpacing) {
-      con->setWrongDirSpace(wrongDirSpace);
+    con->setEol(rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
+    if (rule->isWrongDirSpacingValid()) {
+      con->setWrongDirSpace(rule->getWrongDirSpace());
     }
 
     auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
     con->setWithinConstraint(within);
-    if (hasOppositeWidth) {
-      within->setOppositeWidth(oppositeWidth);
+    if (rule->isOppositeWidthValid()) {
+      within->setOppositeWidth(rule->getOppositeWidth());
     }
-    within->setEolWithin(eolWithin);
-    if (hasWrongDirWithin) {
-      within->setWrongDirWithin(wrongDirWithin);
+    within->setEolWithin(rule->getEolWithin());
+    if (rule->isWrongDirWithinValid()) {
+      within->setWrongDirWithin(rule->getWrongDirWithin());
     }
-    if (hasSameMask) {
-      within->setSameMask(hasSameMask);
+    if (rule->isSameMaskValid()) {
+      within->setSameMask(rule->isSameMaskValid());
     }
-    if (hasEndToEnd) {
+    if (rule->isEndToEndValid()) {
       auto endToEnd = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
       within->setEndToEndConstraint(endToEnd);
-      endToEnd->setEndToEndSpace(endToEndSpace);
-      if (hasCutSpace) {
-        endToEnd->setCutSpace(oneCutSpace, twoCutSpace);
-      }
-      if (hasExtension) {
-        if (hasWrongDirExtension) {
-          endToEnd->setExtension(extension, wrongDirExtension);
+      endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
+      endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
+      if (rule->isExtensionValid()) {
+        if (rule->isWrongDirExtensionValid()) {
+          endToEnd->setExtension(rule->getExtension(), rule->getWrongDirExtension());
         } else {
-          endToEnd->setExtension(extension);
+          endToEnd->setExtension(rule->getExtension());
         }
       }
-      if (hasOtherEndWidth) {
-        endToEnd->setOtherEndWidth(otherEndWidth);
+      if (rule->isOtherEndWidthValid()) {
+        endToEnd->setOtherEndWidth(rule->getOtherEndWidth());
       }
     }
-    if (hasParallelEdge) {
+    if (rule->isParallelEdgeValid()) {
       auto parallelEdge = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
       within->setParallelEdgeConstraint(parallelEdge);
-      if (hasSubtractEolWidth) {
-        parallelEdge->setSubtractEolWidth(hasSubtractEolWidth);
+      if (rule->isSubtractEolWidthValid()) {
+        parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
       }
-      parallelEdge->setPar(parSpace, parWithin);
-      if (hasPrl) {
-        parallelEdge->setPrl(prl);
+      parallelEdge->setPar(rule->getParSpace(), rule->getParWithin());
+      if (rule->isParPrlValid()) {
+        parallelEdge->setPrl(rule->getParPrl());
       }
-      if (hasParallelEdgeMinLength) {
-        parallelEdge->setMinLength(parallelEdgeMinLength);
+      if (rule->isParMinLengthValid()) {
+        parallelEdge->setMinLength(rule->getParMinLength());
       }
-      if (hasTwoEdges) {
-        parallelEdge->setTwoEdges(hasTwoEdges);
+      if (rule->isTwoEdgesValid()) {
+        parallelEdge->setTwoEdges(rule->isTwoEdgesValid());
       }
-      if (hasSameMetal) {
-        parallelEdge->setSameMetal(hasSameMetal);
+      if (rule->isSameMetalValid()) {
+        parallelEdge->setSameMetal(rule->isSameMetalValid());
       }
-      if (hasNonEolCornerOnly) {
-        parallelEdge->setNonEolCornerOnly(hasNonEolCornerOnly);
+      if (rule->isNonEolCornerOnlyValid()) {
+        parallelEdge->setNonEolCornerOnly(rule->isNonEolCornerOnlyValid());
       }
-      if (hasParallelSameMask) {
-        parallelEdge->setParallelSameMask(hasParallelSameMask);
+      if (rule->isParallelSameMaskValid()) {
+        parallelEdge->setParallelSameMask(rule->isParallelSameMaskValid());
       }
     }
-    if (hasLength) {
+    if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
       auto len = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
       within->setMaxMinLengthConstraint(len);
-      len->setLength(isMax, length, hasTwoSides);
+      if(rule->isMinLengthValid())
+        len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
+      else
+        len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
     }
-
-    parser->tech->addConstraint(con);
+    tech->addConstraint(con);
     tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);
   }
-
-  //if (enableOutput) {
-  //  cout <<endl;
-  //}
-
-  return 0;
+  if(layer->isRectOnly())
+  {
+    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(layer->isRectOnlyExceptNonCorePins());
+    tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
+    tech->addUConstraint(std::move(rectOnlyConstraint));
+  }
+  if(layer->isRightWayOnGridOnly())
+  {
+    auto rightWayOnGridOnlyConstraint = make_unique<frLef58RightWayOnGridOnlyConstraint>(layer->isRightWayOnGridOnlyCheckMask());
+    tmpLayer->setLef58RightWayOnGridOnlyConstraint(rightWayOnGridOnlyConstraint.get());
+    tech->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
+  }
+  for(auto rule : layer->getTechLayerMinStepRules())
+  {
+    auto con = make_unique<frLef58MinStepConstraint>();
+    con->setMinStepLength(rule->getMinStepLength());
+    con->setMaxEdges(rule->isMaxEdgesValid()?rule->getMaxEdges():-1);
+    con->setMinAdjacentLength(rule->isMinAdjLength1Valid()?rule->getMinAdjLength1():-1);
+    con->setEolWidth(rule->isNoBetweenEol()?rule->getEolWidth():-1);
+    tmpLayer->addLef58MinStepConstraint(con.get());
+    tech->addUConstraint(std::move(con));
+  }
 }
 
-
-int io::Parser::getLef58Spacing(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  PROPERTY LEF58_SPACING \"";
+void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer)
+{
+  for(auto rule : layer->getTechLayerCutClassRules())
+  {
+    auto cutClass = make_unique<frLef58CutClass>();
+    string name = rule->getName();
+    cutClass->setName(name);
+    cutClass->setViaWidth(rule->getWidth());
+    if (rule->isLengthValid()) {
+      cutClass->setViaLength(rule->getLength());
+    } else {
+      cutClass->setViaLength(rule->getWidth());
+    }
+    if (rule->isCutsValid()) {
+      cutClass->setNumCut(rule->getNumCuts());
+    } else {
+      cutClass->setNumCut(1);
+    }
+    tech->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
   }
-  //cout <<sIn <<endl;
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
+  for(auto rule : layer->getTechLayerCutSpacingRules())
+  {
+    switch (rule->getType())
+    {
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS:{
+      auto con = make_unique<frLef58CutSpacingConstraint>();
+      con->setCutSpacing(rule->getCutSpacing());
+      con->setCenterToCenter(rule->isCenterToCenter());
+      con->setSameNet(rule->isSameNet());
+      con->setSameMetal(rule->isSameMetal());
+      con->setSameVia(rule->isSameVia());
+      con->setAdjacentCuts(rule->getAdjacentCuts());
+      if(rule->isExactAligned())
+        con->setExactAlignedCut(rule->getNumCuts());
+      if(rule->isTwoCutsValid())
+        con->setTwoCuts(rule->getTwoCuts());
+      con->setSameCut(rule->isSameCut());
+      con->setCutWithin(rule->getWithin());
+      con->setExceptSamePGNet(rule->isExceptSamePgnet());
+      if(rule->getCutClass()!=nullptr)
+      {
+        std::string className = rule->getCutClass()->getName();
+        con->setCutClassName(className);
+        auto cutClassIdx = tmpLayer->getCutClassIdx(className);
+        if (cutClassIdx != -1)
+            con->setCutClassIdx(cutClassIdx);
+        else
+          continue;
+        con->setToAll(rule->isCutClassToAll());
+      }
+      con->setNoPrl(rule->isNoPrl());
+      con->setSideParallelOverlap(rule->isSideParallelOverlap());
+      con->setSameMask(rule->isSameMask());
 
-  string keyword;
-  string keyword2;
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      ss.str("");
-      ss <<word;
-      keyword = "";
-    } else if (word == string("EOLPERPENDICULAR")) {
-      keyword = "EOLPERPENDICULAR";
-      ss <<" " <<word;
-    } else if (word == string("AREA")) {
-      keyword = "AREA";
-      ss <<" " <<word;
-    } else if (word == string("LAYER")) {
-      keyword = "LAYER";
-      ss <<" " <<word;
-    } else if (word == string("NOTCHLENGTH")) {
-      keyword = "NOTCHLENGTH";
-      ss <<" " <<word;
-    } else if (word == string("NOTCHSPAN")) {
-      keyword = "NOTCHSPAN";
-      ss <<" " <<word;
-    } else if (word == string("ENDOFLINE")) {
-      keyword = "ENDOFLINE";
-      ss <<" " <<word;
-    } else if (word == string("CONVEXCORNERS")) {
-      keyword = "CONVEXCORNERS";
-      ss <<" " <<word;
-    } else if (word == string("TOCONCAVECORNER")) {
-      keyword2 = "TOCONCAVECORNER";
-      ss <<" " <<word;
-    } else if (word == string("TONOTCHLENGTH")) {
-      keyword2 = "TONOTCHLENGTH";
-      ss <<" " <<word;
-    } else if (word == string(";")) {
-      ss <<" " <<word;
-      if (keyword == string("ENDOFLINE")) {
-        if (keyword2 == string("")) {
-          getLef58Spacing_endOfLineWithin(data, tmpLayer, ss.str());
-        } else if (keyword2 == string("TOCONCAVECORNER")) {
-          ;
-        } else if (keyword2 == string("TONOTCHLENGTH")) {
-          ;
-        } else {
-          ;
+      tmpLayer->addLef58CutSpacingConstraint(con.get());
+      tech->addUConstraint(std::move(con));
+      break;
+    }
+    
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER:{
+      if(rule->getSecondLayer() == nullptr)
+        continue;
+      auto con = make_unique<frLef58CutSpacingConstraint>();
+      con->setCutSpacing(rule->getCutSpacing());
+      con->setCenterToCenter(rule->isCenterToCenter());
+      con->setSameNet(rule->isSameNet());
+      con->setSameMetal(rule->isSameMetal());
+      con->setSameVia(rule->isSameVia());
+      con->setSecondLayerName(rule->getSecondLayer()->getName());
+      con->setStack(rule->isStack());
+      if(rule->isOrthogonalSpacingValid())
+      {
+        con->setOrthogonalSpacing(rule->getOrthogonalSpacing());
+      }
+      if(rule->getCutClass()!=nullptr)
+      {
+        std::string className = rule->getCutClass()->getName();
+        con->setCutClassName(className);
+        auto cutClassIdx = tmpLayer->getCutClassIdx(className);
+        if (cutClassIdx != -1)
+            con->setCutClassIdx(cutClassIdx);
+        else
+          continue;
+        con->setShortEdgeOnly(rule->isShortEdgeOnly());
+        if(rule->isPrlValid())
+          con->setPrl(rule->getPrl());
+        con->setConcaveCorner(rule->isConcaveCorner());
+        if(rule->isConcaveCornerWidth())
+        {
+          con->setWidth(rule->getWidth());
+          con->setEnclosure(rule->getEnclosure());
+          con->setEdgeLength(rule->getEdgeLength());
+        }else if(rule->isConcaveCornerParallel())
+        {
+          con->setParLength(rule->getParLength());
+          con->setParWithin(rule->getParWithin());
+          con->setEnclosure(rule->getParEnclosure());
+        }else if(rule->isConcaveCornerEdgeLength())
+        {
+          con->setEdgeLength(rule->getEdgeLength());
+          con->setEdgeEnclosure(rule->getEdgeEnclosure());
+          con->setAdjEnclosure(rule->getAdjEnclosure());
         }
-      } else {
-        ; // has keyword, or SAMEMASK, or WRONGDIRECTION, or nothing
-      }
-    } else {
-      ss <<" " <<word;
-    }
-  }
-  if (enableOutput) {
-    cout <<"\" ;" <<endl;
-  }
-  return 0;
-}
-
-// only support GF14 related content
-int io::Parser::getLef58MinStep(void *data, frLayer* tmpLayer, const string &sIn) {
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout << endl << "  PROPERTY LEF58_MINSTEP \n";
-  }
-
-  bool isSkip = false;
-  istringstream istr(sIn);
-  string word;
-
-  frCoord minStepLength = -1;
-  int maxEdges = -1;
-  frCoord minAdjLength = -1;
-  frCoord eolWidth = -1;
-  io::Parser* parser = (io::Parser*) data;
-
-  while (istr >> word) {
-    if (word == string("MINSTEP")) {
-      isSkip = false;
-      double tmp;
-      if (istr >> tmp) {
-        minStepLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        isSkip = true;
-      }
-    } else if (word == string("MAXEDGES")) {
-      int tmp;
-      if (istr >> tmp) {
-        maxEdges = tmp;
-      } else {
-        isSkip = true;
-      }
-    } else if (word == string("MINADJACENTLENGTH")) {
-      double tmp;
-      if (istr >> tmp) {
-        minAdjLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        isSkip = true;
-      }
-    } else if (word == string("NOBETWEENEOL")) {
-      double tmp;
-      if (istr >> tmp) {
-        eolWidth = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        isSkip = true;
-      }
-    } else if (word == ";") {
-      if (!isSkip) {
-        auto con = make_unique<frLef58MinStepConstraint>();
-        con->setMinStepLength(minStepLength);
-        con->setMaxEdges(maxEdges);
-        con->setMinAdjacentLength(minAdjLength);
-        con->setEolWidth(eolWidth);
-        tmpLayer->addLef58MinStepConstraint(con.get());
-        parser->tech->addUConstraint(std::move(con));
-        // cout << "Adding lef58MinStep con for layer " << tmpLayer->getName() << "\n";
-      } else {
-        cout << "Warning: unsupported LEF58_MINSTEP rule branch...\n";
-        cout << sIn << endl;
-      }
-    } else {
-      isSkip = true;
-    }
-  }
-
-  
-  return 0;
-}
-
-int io::Parser::getLef58CutClass(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  PROPERTY LEF58_CUTCLASS \"";
-  }
-  istringstream istr(sIn);
-  string word;
-
-  string  name       = "";
-  frCoord viaWidth   = 0;
-  bool    hViaLength = false;
-  frCoord viaLength  = 0;
-  bool    hNumCut    = false;
-  frUInt4 numCut     = 0;
-  io::Parser* parser = (io::Parser*) data;
-
-  while (istr >> word) {
-    if (word == string("CUTCLASS")) {
-      // initialization
-      name       = "";
-      viaWidth   = 0;
-      hViaLength = false;
-      viaLength  = 0;
-      hNumCut    = false;
-      numCut     = 0;
-      if (istr >> name) {
-        ;
-      } else {
-        cout <<"Error: getLef58CutClass" <<endl;
-      }
-      if (enableOutput) {
-        cout <<endl <<"  CUTCLASS " <<name;
-      }
-    } else if (word == "WIDTH") {
-      double tmp;
-      if (istr >> tmp) {
-        viaWidth = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        cout <<"Error: getLef58CutClass" <<endl;
-      }
-      if (enableOutput) {
-        cout <<" WIDTH " <<tmp;
-      }
-    } else if (word == "LENGTH") {
-      double tmp;
-      if (istr >> tmp) {
-        hViaLength = true;
-        viaLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        cout <<"Error: getLef58CutClass" <<endl;
-      }
-      if (enableOutput) {
-        cout <<" LENGTH " <<tmp;
-      }
-    } else if (word == "CUTS") {
-      if (istr >> numCut) {
-        hNumCut = true;
-      } else {
-        cout <<"Error: getLef58CutClass" <<endl;
-      }
-      if (enableOutput) {
-        cout <<" CUTS " <<numCut;
-      }
-    } else if (word == ";") {
-      if (enableOutput) {
-        cout <<" ;";
-      }
-      // push rule here;
-      auto cutClass = make_unique<frLef58CutClass>();
-      cutClass->setName(name);
-      cutClass->setViaWidth(viaWidth);
-      if (hViaLength) {
-        cutClass->setViaLength(viaLength);
-      } else {
-        cutClass->setViaLength(viaWidth);
-      }
-      if (hNumCut) {
-        cutClass->setNumCut(numCut);
-      } else {
-        cutClass->setNumCut(1);
-      }
-      parser->tech->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
-    }
-  }
-  if (enableOutput) {
-    cout <<"\" ;" <<endl;
-  }
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacing_helper(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  //bool enableOutput = false;
-
-  string keyword = "";
-
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      keyword = "";
-      ss.str("");
-      ss <<word;
-    } else if (keyword == "" && word == string("SAMEMASK")) {
-      keyword = "SAMEMASK";
-      ss <<" " <<word;
-    } else if (word == string("MAXXY")) {
-      keyword = "MAXXY";
-      ss <<" " <<word;
-    } else if (word == string("LAYER")) {
-      keyword = "LAYER";
-      ss <<" " <<word;
-    } else if (word == string("ADJACENTCUTS")) {
-      keyword = "ADJACENTCUTS";
-      ss <<" " <<word;
-    } else if (word == string("PARALLELOVERLAP")) {
-      keyword = "PARALLELOVERLAP";
-      ss <<" " <<word;
-    } else if (word == string("PARALLELWITHIN")) {
-      keyword = "PARALLELWITHIN";
-      ss <<" " <<word;
-    } else if (word == string("SAMEMETALSHAREDEDGE")) {
-      keyword = "SAMEMETALSHAREDEDGE";
-      ss <<" " <<word;
-    } else if (word == string("AREA")) {
-      keyword = "AREA";
-      ss <<" " <<word;
-    } else {
-      ss <<" " <<word;
-    }
-  }
-
-  if (keyword == "LAYER") {
-    getLef58CutSpacing_layer(data, tmpLayer, ss.str());
-  } else if (keyword == "ADJACENTCUTS") {
-    getLef58CutSpacing_adjacentCuts(data, tmpLayer, ss.str());
-  } else {
-    cout << "Warning: unsupported LEF58_SPACING branch" << keyword << ", skipped...\n"; //skip unsupported rules
-    cout << sIn << endl;
-  }
-  
-  return 0;
-
-}
-
-int io::Parser::getLef58CutSpacing(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  PROPERTY LEF58_SPACING \"";
-  }
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      ss.str("");
-      ss <<word;
-    } else if (word == ";") {
-      ss <<" " <<word;
-      getLef58CutSpacing_helper(data, tmpLayer, ss.str());
-    } else {
-      ss <<" " <<word;
-    }
-  }
-  if (enableOutput) {
-    cout <<"\" ;" <<endl;
-  }
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacing_layer(void *data, frLayer* tmpLayer, const string &sIn) {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  bool isSkip = false;
-
-  frCoord cutSpacing = -1;
-  bool isCenterToCenter = false;
-  bool isSameNet = false;
-  bool isSameMetal = false;
-  bool isSameVia = false;
-
-  string secondLayerName;
-  bool isStack = false;
-  frCoord orthogonalSpacing = -1;
-  string className;
-  bool isShortEdgeOnly = false;
-  frCoord prl = -1;
-  bool isConcaveCorner = false;;
-  frCoord width = -1;
-  frCoord enclosure = -1;
-  frCoord edgeLength = -1;
-  frCoord parLength = -1;
-  frCoord parWithin = -1;
-  frCoord edgeEnclosure = -1;
-  frCoord adjEnclosure = -1;
-  frCoord extension = -1;
-  frCoord eolWidth = -1;
-  frCoord minLength = -1;
-  bool isMaskOverlap = false;
-  bool isWrongDirection = false;
-
-  istringstream istr(sIn);
-  string word;
-
-  string keyword = "";
-  io::Parser* parser = (io::Parser*) data;
-
-  auto con = make_unique<frLef58CutSpacingConstraint>();
-
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      double tmp;
-      if (istr >> tmp) {
-        cutSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        con->setCutSpacing(cutSpacing);
-      } else {
-        isSkip = true;
-      }
-      if (enableOutput) {
-        cout <<endl <<"  SPACING " <<tmp;
-      }
-    } else if (word == string("CENTERTOCENTER")) {
-      isCenterToCenter = true;
-      con->setCenterToCenter(isCenterToCenter);
-    } else if (word == string("SAMENET")) {
-      isSameNet = true;
-      con->setSameNet(isSameNet);
-    } else if (word == string("SAMEMETAL")) {
-      isSameMetal = true;
-      con->setSameMetal(isSameMetal);
-    } else if (word == string("SAMEVIA")) {
-      isSameVia = true;
-      con->setSameVia(isSameVia);
-    } else if (word == string("LAYER")) {
-      if (istr >> secondLayerName) {
-        con->setSecondLayerName(secondLayerName);
-      } else {
-        isSkip = true;
-      }
-      if (enableOutput) {
-        cout <<" LAYER " <<secondLayerName;
-      }
-      if (istr >> word) {
-        if (word == string("STACK")) {
-          isStack = true;
-          con->setStack(isStack);
-        } else if (word == string("ORTHOGONALSPACING")) {
-          double tmp;
-          if (istr >> tmp) {
-            orthogonalSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-            con->setOrthogonalSpacing(orthogonalSpacing);
-          } else {
-            isSkip = true;
-          }
-        } else if (word == string("CUTCLASS")) {
-          if (istr >> className) {
-            con->setCutClassName(className);
-            auto cutClassIdx = tmpLayer->getCutClassIdx(className);
-            if (cutClassIdx != -1) {
-              // cout << "cutClassIdx = " << cutClassIdx << endl;
-              con->setCutClassIdx(cutClassIdx);
-            } else {
-              isSkip = true;
-            }
-          } else {
-            isSkip = true;
-          }
-          if (enableOutput) {
-            cout <<" CUTCLASS " <<className;
-          }
-          // cut class branch
-          if (istr >> word) {
-            if (word == string("SHORTEDGEONLY")) {
-              isShortEdgeOnly = true;
-              con->setShortEdgeOnly(isShortEdgeOnly);
-              if (istr >> word) {
-                if (word == string("PRL")) {
-                  double tmp;
-                  if (istr >> tmp) {
-                    prl = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                    con->setPrl(prl);
-                  } else {
-                    isSkip = true;
-                  }
-                }
-              }
-            } else if (word == string("CONCAVECORNER")) {
-              isConcaveCorner = true;
-              con->setConcaveCorner(isConcaveCorner);
-              if (enableOutput) {
-                cout << " CONCAVECORNER";
-              }
-              if (istr >> word) {
-                if (word == string("WIDTH")) {
-                  double tmp;
-                  if (istr >> tmp) {
-                    width = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                    con->setWidth(width);
-                    if (istr >> word) {
-                      if (word == string("ENCLOSURE")) {
-                        if (istr >> tmp) {
-                          enclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                          con->setEnclosure(enclosure);
-                          if (istr >> word) {
-                            if (word == string("EDGELENGTH")) {
-                              if (istr >> tmp) {
-                                edgeLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                                con->setEdgeLength(edgeLength);
-                              } else {
-                                isSkip = true;
-                              }
-                            } else {
-                              isSkip = true;
-                            }
-                          } else {
-                            isSkip = true;
-                          }
-                        } else {
-                          isSkip = true;
-                        }
-                      } else {
-                        isSkip = true;
-                      }
-                    } else {
-                      isSkip = true;
-                    }
-                  } else {
-                    isSkip = true;
-                  }
-                } else if (word == string("PARALLEL")) {
-                  double tmp;
-                  if (istr >> tmp) {
-                    parLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                    con->setParLength(parLength);
-                    if (istr >> word) {
-                      if (word == string("WITHIN")) {
-                        if (istr >> tmp) {
-                          parWithin = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                          con->setParWithin(parWithin);
-                          if (istr >> word) {
-                            if (word == string("ENCLOSURE")) {
-                              if (istr >> tmp) {
-                                enclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                                con->setEnclosure(enclosure);
-                              } else {
-                                isSkip = true;
-                              }
-                            } else {
-                              isSkip = true;
-                            }
-                          } else {
-                            isSkip = true;
-                          }
-                        } else {
-                          isSkip = true;
-                        }
-                      } else {
-                        isSkip = true;
-                      }
-                    } else {
-                      isSkip = true;
-                    }
-                  } else {
-                    isSkip = true;
-                  }
-                } else if (word == string("EDGELENGTH")) {
-                  double tmp;
-                  if (istr >> tmp) {
-                    edgeLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                    con->setEdgeLength(edgeLength);
-                    if (istr >> word) {
-                      if (word == string("ENCLOSURE")) {
-                        if (istr >> tmp) {
-                          edgeEnclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                          con->setEdgeEnclosure(edgeEnclosure);
-                          if (istr >> tmp) {
-                            adjEnclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                            con->setAdjEnclosure(adjEnclosure);
-                          } else {
-                            isSkip = true;
-                          }
-                        } else {
-                          isSkip = true;
-                        }
-                      } else {
-                        isSkip = true;
-                      }
-                    } else {
-                      isSkip = true;
-                    }
-                  } else {
-                    isSkip = true;
-                  }
-                }
-              } else {
-                isSkip = true;
-              }
-            } else if (word == string("EXTENSION")) {
-              double tmp;
-              if (istr >> tmp) {
-                extension = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                con->setExtension(extension);
-              } else {
-                isSkip = true;
-              }
-            } else if (word == string("NONEOLCONVEXCORNER")) {
-              double tmp;
-              if (istr >> tmp) {
-                if (enableOutput) {
-                  cout << " NONEOLCONVEXCORNER " << tmp;
-                }
-                eolWidth = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                con->setEolWidth(eolWidth);
-                if (istr >> word) {
-                  if (word == string("MINLENGTH")) {
-                    if (istr >> tmp) {
-                      if (enableOutput) {
-                        cout << " MINLENGTH " << tmp;
-                      }
-                      minLength = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                      con->setMinLength(minLength);
-                    } else {
-                      isSkip = true;
-                    }
-                  } else {
-                    ;
-                  }
-                }
-              }
-            } else if (word == string("ABOVEWIDTH")) {
-              double tmp;
-              if (istr >> tmp) {
-                width = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                con->setWidth(width);
-                if (istr >> word) {
-                  if (word == string("ENCLOSURE")) {
-                    if (istr >> tmp) {
-                      enclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                      con->setEnclosure(enclosure);
-                    } else {
-                      isSkip = true;
-                    }
-                  } else {
-                    isSkip = true;
-                  }
-                }
-              } else {
-                isSkip = true;
-              }
-            } else if (word == string("MASKOVERLAP")) {
-              isMaskOverlap = true;
-              con->setMaskOverlap(isMaskOverlap);
-            } else if (word == string("WRONGDIRECTION")) {
-              isWrongDirection = true;
-              con->setWrongDirection(isWrongDirection);
-            } else {
-              isSkip = true;
-            }
-          }
+        if(rule->isExtensionValid())
+          con->setExtension(rule->getExtension());
+        if(rule->isNonEolConvexCorner())
+        {
+          con->setEolWidth(rule->getEolWidth());
+          if(rule->isMinLengthValid())
+            con->setMinLength(rule->getMinLength());
         }
-      }
-    } 
-  }
-
-  if (isSkip) {
-    cout << "Error: getLef58CutSpacing_layer" << endl;
-    cout << sIn << endl;
-  } else {
-    // cout << "addLef58CutSpacingConstraint\n";
-    tmpLayer->addLef58CutSpacingConstraint(con.get());
-    parser->tech->addUConstraint(std::move(con));
-
-  }
-  return 0;
-}
-
-// lefdef ref spacing
-int io::Parser::getLef58CutSpacing_adjacentCuts(void *data, frLayer* tmpLayer, const string &sIn) {
-  bool enableOutput = false;
-  // bool enableOutput = true;
-
-  bool isSkip = false;
-
-  frCoord  cutSpacing = -1;
-  bool isCenterToCenter = false;
-  bool isSameNet = false;
-  bool isSameMetal = false;
-  bool isSameVia = false;
-  int numAdjCuts = -1;
-  int exactAlignedCut = -1;
-  // two cuts
-  int twoCuts = -1;
-  frCoord twoCutsSpacing = -1;
-  bool isSameCut = false;
-  // within
-  frCoord cutWithin2 = -1;
-
-  bool isExceptSamePGNet;
-  frCoord exceptAllWithin;
-  bool isAbove = false;
-  bool isBelow = false;
-  frCoord enclosure = -1;
-  // cutclass
-  string cutClassName = "";
-  bool isToAll = false;
-  bool isNoPrl = false;
-  bool isSideParallelOverlap = false;
-  bool isSameMask = false;
-
-  istringstream istr(sIn);
-  string word;
-
-  string keyword = "";
-  io::Parser* parser = (io::Parser*) data;
-
-  auto con = make_unique<frLef58CutSpacingConstraint>();
-
-  while (istr >> word) {
-    if (word == string("SPACING")) {
-      double tmp;
-      if (istr >> tmp) {
-        cutSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-        con->setCutSpacing(cutSpacing);
-      } else {
-        isSkip = true;
-      }
-      if (enableOutput) {
-        cout <<endl <<"  SPACING " <<tmp;
-      }
-    } else if (word == string("CENTERTOCENTER")) {
-      isCenterToCenter = true;
-      con->setCenterToCenter(isCenterToCenter);
-    } else if (word == string("SAMENET")) {
-      isSameNet = true;
-      con->setSameNet(isSameNet);
-    } else if (word == string("SAMEMETAL")) {
-      isSameMetal = true;
-      con->setSameMetal(isSameMetal);
-    } else if (word == string("SAMEVIA")) {
-      isSameVia = true;
-      con->setSameVia(isSameVia);
-    } else if (word == string("ADJACENTCUTS")) {
-      if (istr >> numAdjCuts) {
-        con->setAdjacentCuts(numAdjCuts);
-        if (enableOutput) {
-          cout << " ADJACENTCUTS " << numAdjCuts;
+        if(rule->isAboveWidthValid())
+        {
+          rule->setWidth(rule->getAboveWidth());
+          if(rule->isAboveWidthEnclosureValid())
+            rule->setEnclosure(rule->getAboveEnclosure());
         }
-      } else {
-        isSkip = true;
+        con->setMaskOverlap(rule->isMaskOverlap());
+        con->setWrongDirection(rule->isWrongDirection());
       }
-      while (istr >> word) {
-        if (word == string("EXACTALIGNED")) {
-          if (istr >> exactAlignedCut) {
-            con->setExactAlignedCut(exactAlignedCut);
-          } else {
-            isSkip = true;
-          }
-        } else if (word == string("TWOCUTS")) {
-          if (istr >> twoCuts) {
-            con->setTwoCuts(twoCuts);
-            if (enableOutput) {
-              cout << " TWOCUTS " << twoCuts;
-            }
-            streampos pos = istr.tellg();
-            bool done = false;
-            while (!done) {
-              if (istr >> word) {
-                if (word == string("TWOCUTSSPACING")) {
-                  double tmp;
-                  if (istr >> tmp) {
-                    twoCutsSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-                    con->setTwoCutsSpacing(twoCutsSpacing);
-                    pos = istr.tellg();
-                  } else {
-                    isSkip = true;
-                  }
-                } else if (word == string("SAMECUT")) {
-                  isSameCut = true;
-                  con->setSameCut(isSameCut);
-                  pos = istr.tellg();
-                } else {
-                  done = true;
-                }
-              }
-            }
-            istr.seekg(pos);
-          } else {
-            isSkip = true;
-          }
-        } else if (word == string("WITHIN")) {
-          streampos pos = istr.tellg();
-          double tmp1;
-          if (istr >> tmp1) {
-            pos = istr.tellg();
-          } else {
-            isSkip = true;
-          }
-          // TODO: bring this back after figure out how to correctly use seekg / tellg
-          // if (istr >> tmp2) {
-          //   cutWithin1 = frCoord(round(tmp1 * parser->tech->getDBUPerUU()));
-          //   cutWithin2 = frCoord(round(tmp2 * parser->tech->getDBUPerUU()));
-          //   con->setCutWithin1(cutWithin1);
-          //   con->setCutWithin2(cutWithin2);
-          //   pos = istr.tellg();
-          // } else {
-            cutWithin2 = frCoord(round(tmp1 * parser->tech->getDBUPerUU()));
-            con->setCutWithin(cutWithin2);
-            // istr.seekg(pos);
-            if (enableOutput) {
-              cout << " WITHIN " << tmp1;
-            }
-          // }
-        } else if (word == string("EXCEPTSAMEPGNET")) {
-          isExceptSamePGNet = true;
-          con->setExceptSamePGNet(isExceptSamePGNet);
-        } else if (word == string("EXCEPTALLWITHIN")) {
-          double tmp;
-          if (istr >> tmp) {
-            exceptAllWithin = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-            con->setExceptAllWithin(exceptAllWithin);
-          } else {
-            isSkip = true;
-          }
-        } else if (word == string("ENCLOSURE")) {
-          streampos pos = istr.tellg();
-          if (istr >> word) {
-            if (word == string("ABOVE")) {
-              isAbove = true;
-              con->setAbove(isAbove);
-            } else if (word == string("BELOW")) {
-              isBelow = true;
-              con->setBelow(isBelow);
-            } else {
-              istr.seekg(pos);
-            }
-          }
-          double tmp;
-          if (istr >> tmp) {
-            enclosure = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-            con->setEnclosure(enclosure);
-          } else {
-            isSkip = true;
-          }
-        } else if (word == string("CUTCLASS")) {
-          if (istr >> cutClassName) {
-            con->setCutClassName(cutClassName);
-            auto cutClassIdx = tmpLayer->getCutClassIdx(cutClassName);
-            if (cutClassIdx != -1) {
-              // cout << "cutClassIdx = " << cutClassIdx << endl;
-              con->setCutClassIdx(cutClassIdx);
-            } else {
-              isSkip = true;
-            }
-            if (enableOutput) {
-              cout << " CUTCLASS " << cutClassName;
-            }
-          } else {
-            isSkip = true;
-          }
-          streampos pos = istr.tellg();
-          string word1, word2;
-          if (istr >> word1 && istr >> word2) {
-            if (word1 == string("TO") && word2 == string("ALL")) {
-              isToAll = true;
-              con->setToAll(isToAll);
-            } else {
-              istr.seekg(pos);
-            }
-          }
-        } else if (word == string("NOPRL")) {
-          isNoPrl = true;
-          con->setNoPrl(isNoPrl);
-        } else if (word == string("SIDEPARALLELOVERLAP")) {
-          isSideParallelOverlap = true;
-          con->setSideParallelOverlap(isSideParallelOverlap);
-        } else if (word == string("SAMEMASK")) {
-          isSameMask = true;
-          con->setSameMask(isSameMask);
-        } else {
-          isSkip = true;
-        }
-      }
+      tmpLayer->addLef58CutSpacingConstraint(con.get());
+      tech->addUConstraint(std::move(con));
+      break;
     }
-  }
-
-  if (enableOutput) {
-    cout << endl;
-  }
-
-  if (isSkip) {
-    cout << "Error: getLef58CutSpacing_adjacentCuts" << endl;
-  } else {
-    // cout << "addLef58CutSpacingConstraint\n";
-    tmpLayer->addLef58CutSpacingConstraint(con.get());
-    parser->tech->addUConstraint(std::move(con));
-  }
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacingTable(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout <<endl <<"  PROPERTY LEF58_SPACINGTABLE \"";
-  }
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
-  while (istr >> word) {
-    if (word == string("SPACINGTABLE")) {
-      ss.str("");
-      ss <<word;
-    } else if (word == ";") {
-      ss <<" " <<word;
-      getLef58CutSpacingTable_helper(data, tmpLayer, ss.str());
-    } else {
-      ss <<" " <<word;
-    }
-  }
-  if (enableOutput) {
-    cout <<"\" ;" <<endl;
-  }
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacingTable_helper(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  //bool enableOutput = false;
-  //if (enableOutput) {
-  //  cout <<endl <<"  PROPERTY LEF58_SPACINGTABLE \"" <<endl;
-  //}
-
-  string keyword = "";
-
-  istringstream istr(sIn);
-  string word;
-  stringstream ss;
-  while (istr >> word) {
-    if (word == string("SPACINGTABLE")) {
-      keyword = "";
-      ss.str("");
-      ss <<word;
-      //if (enableOutput) {
-      //  cout <<"  SPACINGTABLE";
-      //}
-    } else if (word == string("CENTERSPACING")) {
-      //if (enableOutput) {
-      //  cout <<" CENTERSPACING";
-      //}
-      keyword = "CENTERSPACING";
-      ss <<" " <<word;
-    } else if (word == string("ORTHOGONAL")) {
-      //if (enableOutput) {
-      //  cout <<" CENTERSPACING";
-      //}
-      keyword = "ORTHOGONAL";
-      ss <<" " <<word;
-    } else {
-      ss <<" " <<word;
-    }
-  }
-
-  if (keyword == "CENTERSPACING") {
-    ; //skip center spacing rules
-  } else if (keyword == "ORTHOGONAL") {
-    ; //skip orthogonal rules
-  } else {
-    getLef58CutSpacingTable_others(data, tmpLayer, ss.str());
-  }
-  
-  //if (enableOutput) {
-  //  cout <<"\" ;" <<endl;
-  //}
-
-  return 0;
-
-}
-
-int io::Parser::getLef58CutSpacingTable_default(void *data, frLayer* tmpLayer, const string &sIn, 
-  const shared_ptr<frLef58CutSpacingTableConstraint> &con) {
-  //cout <<sIn <<endl;
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  
-  frCoord defaultCutSpacing = 0;
-
-  istringstream istr(sIn);
-  string word;
-  io::Parser* parser = (io::Parser*) data;
-
-  while (istr >> word) {
-    if (word == string("DEFAULT")) {
-      double tmp;
-      if (istr >> tmp) {
-        defaultCutSpacing = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        cout <<"Error: getLef58CutSpacingTable_default" <<endl;
-      }
-      if (enableOutput) {
-        cout <<endl <<"  DEFAULT " <<tmp;
-      }
-    } else {
-      ; // skip unknown rules
-    }
-  }
-
-  con->setDefaultCutSpacing(defaultCutSpacing);
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacingTable_prl(void *data, frLayer* tmpLayer, const string &sIn, 
-    const shared_ptr<frLef58CutSpacingTableConstraint> &con) {
-  //cout <<sIn <<endl;
-  //bool enableOutput = true;
-  bool enableOutput = false;
-  
-  frCoord prl          = 0;
-  bool    isHorizontal = false;
-  bool    isVertical   = false;
-  bool    isMaxXY      = false;
-
-  istringstream istr(sIn);
-  string word;
-  io::Parser* parser = (io::Parser*) data;
-
-  while (istr >> word) {
-    if (word == string("PRL")) {
-      double tmp;
-      if (istr >> tmp) {
-        prl = frCoord(round(tmp * parser->tech->getDBUPerUU()));
-      } else {
-        cout <<"Error: getLef58CutSpacingTable_prl" <<endl;
-      }
-      if (enableOutput) {
-        cout <<" PRL " <<tmp;
-      }
-    } else if (word == string("HORIZONTAL")) {
-      isHorizontal = true;
-      if (enableOutput) {
-        cout <<" HORIZONTAL";
-      }
-    } else if (word == string("VERTICAL")) {
-      isVertical = true;
-      if (enableOutput) {
-        cout <<" VERTICAL";
-      }
-    } else if (word == string("MAXXY")) {
-      isMaxXY = true;
-      if (enableOutput) {
-        cout <<" MAXXY";
-      }
-    } else {
-      ; // skip unknown rules
-    }
-  }
-
-  auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
-  ptr->setPrl(prl);
-  ptr->setHorizontal(isHorizontal);
-  ptr->setVertical(isVertical);
-  ptr->setMaxXY(isMaxXY);
-  con->setPrlConstraint(ptr);
-
-  return 0;
-}
-
-int io::Parser::getLef58CutSpacingTable_layer(void *data, frLayer* tmpLayer, const string &sIn, 
-    const shared_ptr<frLef58CutSpacingTableConstraint> &con, frLayerNum &secondLayerNum) {
-
-  //bool enableOutput = true;
-  bool enableOutput = false;
-
-  frString secondLayerName    = "";
-  bool     isNonZeroEnclosure = false;
-
-  istringstream istr(sIn);
-  string word;
-
-  while (istr >> word) {
-    if (word == string("LAYER")) {
-      if (istr >> secondLayerName) {
-        ;
-      } else {
-        cout <<"Error: getLef58CutSpacingTable_layer" <<endl;
-      }
-      if (enableOutput) {
-        cout <<" LAYER " <<secondLayerName;
-      }
-    } else if (word == string("NONZEROENCLOSURE")) {
-      isNonZeroEnclosure = true;
-      if (enableOutput) {
-        cout <<endl <<"  NONZEROENCLOSURE";
-      }
-    } else {
-      ; // skip unknown rules
-    }
-  }
-
-  io::Parser* parser = (io::Parser*) data;
-  auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
-  //cout <<secondLayerName <<endl <<flush;
-  secondLayerNum = parser->tech->name2layer.at(secondLayerName)->getLayerNum();
-  ptr->setSecondLayerNum(secondLayerNum);
-  ptr->setNonZeroEnc(isNonZeroEnclosure);
-  con->setLayerConstraint(ptr);
-
-  return 0;
-}
-
-
-int io::Parser::getLef58CutSpacingTable_cutClass(void *data, frLayer* tmpLayer, const string &sIn, 
-    const shared_ptr<frLef58CutSpacingTableConstraint> &con, bool hasSecondLayer, frLayerNum secondLayerNum) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-
-  auto defaultCutSpacing = con->getDefaultCutSpacing();
-  // 2d spacing table
-  frCollection<frCollection<pair<frCoord, frCoord> > > tblVals;
-
-  //cout <<endl <<sIn <<endl;
-  // check numRows and numCols
-  istringstream istr1(sIn);
-  string word;
-  int numCols = 0;
-  int numRows = 0;
-  bool isPrevNum   = false;
-  while (istr1 >> word) {
-    // "-" is treated as number 0
-    if (word == "-") {
-      word = "0";
-    }
-    stringstream tmpss(word);
-    double tmpd;
-    // is a number
-    if (tmpss >> tmpd) {
-      isPrevNum = true;
-      numCols++;
-    // is a string
-    } else {
-      if (word == ";") {
-        numRows++;
-      } else if (isPrevNum) {
-        numRows++;
-        numCols = 0;
-      }
-      isPrevNum = false;
-    }
-  }
-
-  numCols /= 2;
-  //cout <<endl <<"#rows/cols = " <<numRows <<"/" <<numCols <<endl;
-  
-  vector<frString> colNames;
-  vector<int>      dupColNames; //duplicate side and all
-  
-  vector<frString> rowNames;
-  vector<int>      dupRowNames; //duplicate side and all
-  
-  vector<vector<pair<frCoord, frCoord> > > tmpTbl;
-  vector<pair<frCoord, frCoord> > tmpTblRow;
-  
-  io::Parser* parser = (io::Parser*) data;
-  istringstream istr2(sIn);
-  word = "";
-  int stage = 0; // 0 = read columns; 1 = read rows
-  int readNum = 0; // numbers read in a row
-  while (istr2 >> word) {
-    // "-" is treated as number 0
-    //if (word == ";") {
-    //  cout <<"found ;" <<endl;
-    //}
-    if (word == "-") {
-      word = to_string(defaultCutSpacing * 1.0 / parser->tech->getDBUPerUU());
-    }
-    if (word == "CUTCLASS") {
-      if (enableOutput) {
-        cout <<endl <<"  CUTCLASS";
-      }
-    // read numCols times
-    } else if ((int)colNames.size() < numCols) {
-      if (word == "SIDE" || word == "END") {
-        *(--colNames.end()) = *(--colNames.end()) + word;
-        *(--dupColNames.end()) = 1;
-      } else {
-        colNames.push_back(word);
-        dupColNames.push_back(2);
-      }
-      if (enableOutput) {
-        cout <<" " <<word;
-      }
-      //cout <<"testX" <<endl;
-    } else if (stage == 0 && (int)colNames.size() == numCols) {
-      // last word of column
-      if (word == "SIDE" || word == "END") {
-        *(--colNames.end()) = *(--colNames.end()) + word;
-        *(--dupColNames.end()) = 1;
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-      // first word of row
-      } else {
-        rowNames.push_back(word);
-        dupRowNames.push_back(2);
-        if (enableOutput) {
-          cout <<endl <<"  " <<word;
-        }
-      }
-      stage = 1;
-      //cout <<"testXX" <<endl;
-    } else if (word == ";") {
-      if (enableOutput) {
-        cout <<" ;";
-      }
-      tmpTbl.push_back(tmpTblRow);
-      //cout <<"testXXX" <<endl;
-    } else if (stage == 1) {
-      if (word == "SIDE" || word == "END") {
-        *(--rowNames.end()) = *(--rowNames.end()) + word;
-        *(--dupRowNames.end()) = 1;
-        if (enableOutput) {
-          cout <<" " <<word;
-        }
-      } else {
-        stringstream ss(word);
-        double firstNum;
-        //cout <<"test: " <<word <<endl;
-        // number
-        if (ss >> firstNum) {
-          frCoord val1 = frCoord(round(firstNum * parser->tech->getDBUPerUU()));
-          string tmpS;
-          if (istr2 >> tmpS) {
-            ;
-          } else {
-            cout <<"Error: getLef58CutSpacingTable_cutClass" <<endl;
-          }
-          stringstream tmpSS(tmpS);
-          double secondNum;
-          if (tmpSS >> secondNum) {
-            frCoord val2 = frCoord(round(secondNum * parser->tech->getDBUPerUU()));
-            tmpTblRow.push_back(make_pair(val1, val2));
-            if (enableOutput) {
-              cout <<" " <<firstNum <<" " <<secondNum;
-            }
-          } else {
-            // the number is "-", use default spacing
-            frCoord val2 = defaultCutSpacing;
-            tmpTblRow.push_back(make_pair(val1, val2));
-            if (enableOutput) {
-              cout <<" " <<firstNum <<" " <<defaultCutSpacing * 1.0 / parser->tech->getDBUPerUU();
-            }
-          }
-          readNum += 1;
-        // first word
-        } else {
-          rowNames.push_back(word);
-          dupRowNames.push_back(2);
-          if (enableOutput) {
-            cout <<endl <<"  " <<word;
-          }
-          if (readNum) {
-            tmpTbl.push_back(tmpTblRow);
-            tmpTblRow.clear();
-          }
-          readNum = 0;
-        }
-      }
-      //cout <<"testXXXX" <<endl;
-    }
-  }
-
-  //cout <<endl <<"column:";
-  //for (auto &str: colNames) {
-  //  cout <<" " <<str;
-  //}
-  //
-  //cout <<endl <<"row:";
-  //for (auto &str: rowNames) {
-  //  cout <<" " <<str;
-  //}
-
-  //cout <<endl <<"table: ";
-  //for (auto &v1: tmpTbl) {
-  //  cout <<"test here";
-  //  cout <<endl <<"    ";
-  //  for (auto &v2: v1) {
-  //    cout <<"test here";
-  //    cout <<" " <<v2.first <<" " <<v2.second;
-  //  }
-  //}
-  //cout <<flush;
-
-  vector<frString> expColNames;
-  //cout <<endl <<"new expand column:";
-  for (int i = 0; i < (int)colNames.size(); i++) {
-    if (dupColNames.at(i) == 2) {
-      string name1 = colNames.at(i) + "SIDE";
-      string name2 = colNames.at(i) + "END";
-      expColNames.push_back(name1);
-      expColNames.push_back(name2);
-      //cout <<" " <<name1 <<" " <<name2;
-    } else {
-      string name = colNames.at(i);
-      expColNames.push_back(name);
-      //cout <<" " <<name;
-    };
-  }
-  
-  vector<frString> expRowNames;
-  //cout <<endl <<"new expand rows:";
-  for (int i = 0; i < (int)rowNames.size(); i++) {
-    if (dupRowNames.at(i) == 2) {
-      string name1 = rowNames.at(i) + "SIDE";
-      string name2 = rowNames.at(i) + "END";
-      expRowNames.push_back(name1);
-      expRowNames.push_back(name2);
-      //cout <<" " <<name1 <<" " <<name2;
-    } else {
-      string name = rowNames.at(i);
-      expRowNames.push_back(name);
-      //cout <<" " <<name;
-    };
-  }
-
-  vector<vector<pair<frCoord, frCoord> > > expTmpTbl;
-  for (int i = 0; i < (int)rowNames.size(); i++) {
-    vector<pair<frCoord, frCoord> > expTmpTblRow;
-    for (int j = 0; j < (int)colNames.size(); j++) {
-      expTmpTblRow.push_back(tmpTbl.at(i).at(j));
-      if (dupColNames.at(j) == 2) {
-        expTmpTblRow.push_back(tmpTbl.at(i).at(j));
-      }
-    }
-    expTmpTbl.push_back(expTmpTblRow);
-    if (dupRowNames.at(i) == 2) {
-      expTmpTbl.push_back(expTmpTblRow);
-    }
-  }
-  //cout <<"new expand table: ";
-  //for (auto &v1: expTmpTbl) {
-  //  cout <<endl <<"    ";
-  //  for (auto &v2: v1) {
-  //    cout <<" " <<v2.first <<" " <<v2.second;
-  //  }
-  //}
-
-  vector<pair<frString, int> > expColNames_helper;
-  for (int i = 0; i < (int)expColNames.size(); i++) {
-    expColNames_helper.push_back(make_pair(expColNames.at(i), i));
-  }
-  sort(expColNames_helper.begin(), expColNames_helper.end(), 
-       [](const pair<frString, int> &a, const pair<frString, int> &b) 
-       {return a.first < b.first;});
-  sort(expColNames.begin(), expColNames.end());
-
-  //cout <<endl <<"sorted expand column:";
-  //for (auto &it: expColNames_helper) {
-  //  cout <<" " <<it.first;
-  //}
-
-  vector<pair<frString, int> > expRowNames_helper;
-  for (int i = 0; i < (int)expRowNames.size(); i++) {
-    expRowNames_helper.push_back(make_pair(expRowNames.at(i), i));
-  }
-  sort(expRowNames_helper.begin(), expRowNames_helper.end(), 
-       [](const pair<frString, int> &a, const pair<frString, int> &b) 
-       {return a.first < b.first;});
-  sort(expRowNames.begin(), expRowNames.end());
-
-  //cout <<endl <<"sorted expand row:";
-  //for (auto &it: expRowNames_helper) {
-  //  cout <<" " <<it.first;
-  //}
-
-  tblVals = expTmpTbl;
-  //cout <<endl <<"sorted tbl:";
-  for (int i = 0; i < (int)expRowNames_helper.size(); i++) {
-    //cout <<endl;
-    for (int j = 0; j < (int)expColNames_helper.size(); j++) {
-      int orig_i = expRowNames_helper.at(i).second;
-      int orig_j = expColNames_helper.at(j).second;
-      tblVals.at(i).at(j) = expTmpTbl.at(orig_i).at(orig_j);
-      //cout <<" " <<tblVals.at(i).at(j).first <<" " <<tblVals.at(i).at(j).second;
-    }
-  }
-
-  string rowName("CUTCLASS");
-  string colName("CUTCLASS");
-  auto ptr = make_shared<fr2DLookupTbl<frString, frString, pair<frCoord, frCoord> > >(rowName, 
-      expRowNames, colName, expColNames, tblVals);
-  con->setCutClassTbl(ptr);
-
-  return 0;
-}
-
-// lefdef ref 2nd spacing table, no orthogonal case
-int io::Parser::getLef58CutSpacingTable_others(void *data, frLayer* tmpLayer, const string &sIn) {
-  //bool enableOutput = true;
-  bool enableOutput = false;
-
-  istringstream istr(sIn);
-  string word;
-
-  stringstream ssDefault;
-  stringstream ssLayer;    
-  stringstream ssPrl;
-  stringstream ssCutClass; 
-  
-  string keyword = "";
-  while (istr >> word) {
-    if (word == string("SPACINGTABLE")) {
-      if (enableOutput) {
-        cout <<endl <<"  SPACINGTABLE";
-      }
-    } else if (word == string("DEFAULT")) {
-      keyword = "DEFAULT";
-      ssDefault <<word;
-    } else if (word == string("SAMEMASK")) {
-      keyword = "SAMEMASK";
-    } else if (word == string("SAMENET") || word == string("SAMEMETAL") || word == string("SAMEVIA")) {
-      keyword = "SAMENETMETALVIA";
-    } else if (word == string("LAYER")) {
-      keyword = "LAYER";
-      ssLayer <<word;
-    } else if (word == string("CENTERTOCENTER")) {
-      keyword = "CENTERTOCENTER";
-    } else if (word == string("CENTERANDEDGE")) {
-      keyword = "CENTERANDEDGE";
-    } else if (word == string("PRL")) {
-      keyword = "PRL";
-      ssPrl <<"PRL";
-    } else if (word == string("PRLTWOSIDES")) {
-      keyword = "PRLTWOSIDES";
-    } else if (word == string("ENDEXTENSION")) {
-      keyword = "ENDEXTENSION";
-    } else if (word == string("EXACTALIGNEDSPACING")) {
-      keyword = "EXACTALIGNEDSPACING";
-    } else if (word == string("NONOPPOSITEENCLOSURESPACING")) {
-      keyword = "NONOPPOSITEENCLOSURESPACING";
-    } else if (word == string("OPPOSITEENCLOSURERESIZESPACING")) {
-      keyword = "OPPOSITEENCLOSURERESIZESPACING";
-    } else if (word == string("CUTCLASS")) {
-      keyword = "CUTCLASS";
-      ssCutClass <<word;
-    } else {
-      if (keyword == "DEFAULT") {
-        ssDefault <<" " <<word;
-      } else if (keyword == "CUTCLASS") {
-        ssCutClass <<" " <<word;
-      } else if (keyword == "PRL") {
-        ssPrl <<" " <<word;
-      } else if (keyword == "LAYER") {
-        ssLayer <<" " <<word;
-      } else {
-        ;
-      }
-    }
-  }
-
-  auto con = make_shared<frLef58CutSpacingTableConstraint>();
-
-  bool hasSecondLayer       = false;
-  frLayerNum secondLayerNum = 0;
-
-  bool isFirstViaLayerHavingSecondLayerNum = false;
-
-  if (ssDefault.str() != "") {
-    getLef58CutSpacingTable_default(data, tmpLayer, ssDefault.str(), con);
-  }
-  if (ssPrl.str() != "") {
-    getLef58CutSpacingTable_prl(data, tmpLayer, ssPrl.str(), con);
-  }
-  if (ssLayer.str() != "") {
-    if (tmpLayer->getLayerNum() == 1) {
-      isFirstViaLayerHavingSecondLayerNum = true;
-    } else {
-      getLef58CutSpacingTable_layer(data, tmpLayer, ssLayer.str(), con, secondLayerNum);
-    }
-  }
-  if (ssCutClass.str() != "" && !isFirstViaLayerHavingSecondLayerNum) {
-    getLef58CutSpacingTable_cutClass(data, tmpLayer, ssCutClass.str(), con, hasSecondLayer, secondLayerNum);
-  }
-
-  if (isFirstViaLayerHavingSecondLayerNum) {
-    ;
-  } else {
-    tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
-    io::Parser* parser = (io::Parser*) data;
-    parser->tech->addConstraint(con);
-  }
-
-  return 0;
-}
-
-int io::Parser::getLef58RightWayOnGridOnly(void *data, frLayer* tmpLayer, const string &sIn) {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  bool checkMask = false;
-  if (enableOutput) {
-    cout << endl << "  PROPERTY LEF58_RIGHTWAYONGRIDONLY \"";
-  }
-  istringstream istr(sIn);
-  string word;
-  while (istr >> word) {
-    if (word == string("RIGHTWAYONGRIDONLY")) {
-      if (enableOutput) {
-        cout << "RIGHTWAYONGRIDONLY ";
-      }
-    } else if (word == string("CHECKMASK")) {
-      if (enableOutput) {
-        cout << "CHECKMASK ";
-      }
-      checkMask = true;
-    } else if (word == string(";")) {
-      if (enableOutput) {
-        cout << " ;";
-      }
-    }
-  }
-  if (enableOutput) {
-    cout << "\" ;" << endl;
-  }
-  auto rightWayOnGridOnlyConstraint = make_unique<frLef58RightWayOnGridOnlyConstraint>(checkMask);
-  tmpLayer->setLef58RightWayOnGridOnlyConstraint(rightWayOnGridOnlyConstraint.get());
-  io::Parser* parser = (io::Parser*) data;
-  parser->tech->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
-  return 0;
-}
-
-int io::Parser::getLef58RectOnly(void *data, frLayer* tmpLayer, const string &sIn) {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  bool exceptNonCorePins = false;
-  if (enableOutput) {
-    cout << endl << "  PROPERTY LEF58_RECTONLY \"";
-  }
-  istringstream istr(sIn);
-  string word;
-  while (istr >> word) {
-    if (word == string("RECTONLY")) {
-      if (enableOutput) {
-        cout << "RECTONLY ";
-      }
-    } else if (word == string("EXCEPTNONCOREPINS")) {
-      if (enableOutput) {
-        cout << "EXCEPTNONCOREPINS ";
-      }
-      exceptNonCorePins = true;
-    } else if (word == string(";")) {
-      if (enableOutput) {
-        cout << " ;";
-      }
-    }
-  }
-  if (enableOutput) {
-    cout << "\" ;" << endl;
-  }
-  auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(exceptNonCorePins);
-  tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
-  io::Parser* parser = (io::Parser*) data;
-  parser->tech->addUConstraint(std::move(rectOnlyConstraint));
-  return 0;
-}
-
-int io::Parser::getLef58CornerSpacing(void *data, frLayer *tmpLayer, const string &stringIn) {
-  istringstream istr(stringIn);
-  string word;
-  
-  int numSpacingEntry = 0;
-
-  bool hasConvexCorner    = false;
-  bool hasSameMask        = false;
-  bool hasCornerOnly      = false;
-  frUInt4 within          = 0;
-  bool hasExceptEol       = false;
-  bool hasEdgeLength      = false;
-  bool hasIncludeLShape   = false;
-  bool hasExceptJogLength = false;
-  frUInt4 eolWidth        = 0;
-  frUInt4 length          = 0;
- 
-  bool hasConcaveCorner     = false;
-  bool hasMinLength         = false;
-  frUInt4 minLength         = 0;
-  bool hasExceptNotch       = false;
-  bool hasExceptNotchLength = false;
-  frUInt4 notchLength       = -1;
- 
-  bool hasExceptSameNet   = false;
-  bool hasExceptSameMetal = false;
- 
-  std::vector< std::vector<frUInt4> > widthSpacing;
-  std::vector<frUInt4> tmpWidthSpacing;
-  bool hasSameXY = true;
- 
-  bool doCornerSpacing = false;
-  bool doConvexCorner  = false;
-  bool doConcaveCorner = false;
-  bool doWidthSpacing  = false;
-  io::Parser* parser = (io::Parser*) data;
-  
-  // check whether has notchLength specified
-  istringstream testIstr(stringIn);
-  while (testIstr >> word) {
-    if (word == "EXCEPTNOTCH") {
-      std::string tempNotchLength;
-      std::string::size_type sz;
-      testIstr >> tempNotchLength;
-      try {
-        std::stod(tempNotchLength, &sz);
-        hasExceptNotchLength = true;
-      }
-      catch (std::exception& e) {
-        hasExceptNotchLength = false;
-      }
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
+      logger->warn(utl::DRT, 160, "unsupported LEF58_SPACING rule for layer {} of type AREA",layer->getName());
+      break;
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
+      logger->warn(utl::DRT, 161, "unsupported LEF58_SPACING rule for layer {} of type MAXXY",layer->getName());
+      break;
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK:
+      logger->warn(utl::DRT, 162, "unsupported LEF58_SPACING rule for layer {} of type SAMEMASK",layer->getName());
+      break;
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
+      logger->warn(utl::DRT, 163, "unsupported LEF58_SPACING rule for layer {} of type PARALLELOVERLAP",layer->getName());
+      break;
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
+      logger->warn(utl::DRT, 164, "unsupported LEF58_SPACING rule for layer {} of type PARALLELWITHIN",layer->getName());
+      break;
+    case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE:
+      logger->warn(utl::DRT, 165, "unsupported LEF58_SPACING rule for layer {} of type SAMEMETALSHAREDEDGE",layer->getName());
+      break;
+    default:
+      logger->warn(utl::DRT, 166, "unsupported LEF58_SPACING rule for layer {}",layer->getName());
       break;
     }
   }
-
-  while (istr >> word) {
-    //cout <<" " <<word;
- 
-    if (word == ";") {
-      doCornerSpacing = false;
-      doConvexCorner  = false;
-      doConcaveCorner = false;
-      doWidthSpacing  = false;
+  for(auto rule : layer->getTechLayerCutSpacingTableDefRules())
+  {
+    if(rule->isLayerValid()&&tmpLayer->getLayerNum()==1)
       continue;
+    auto con = make_shared<frLef58CutSpacingTableConstraint>();
+    if(rule->isDefaultValid())
+      con->setDefaultCutSpacing(rule->getDefault());
+    if(rule->isPrlValid())
+    {
+      auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
+      ptr->setPrl(rule->getPrl());
+      ptr->setHorizontal(rule->isPrlHorizontal());
+      ptr->setVertical(rule->isPrlVertical());
+      ptr->setMaxXY(rule->isMaxXY());
+      con->setPrlConstraint(ptr);
     }
- 
-    if (!doCornerSpacing && word == "CORNERSPACING") {
-      doCornerSpacing = true;
-      // cout <<"CORNERSPACING";
-      continue;
-    }
-    if (doCornerSpacing &&  word == "CONVEXCORNER") {
-      doConvexCorner  = true;
-      hasConvexCorner = true;
-      doConcaveCorner = false;
-      doWidthSpacing  = false;
-      // cout <<endl <<"  CONVEXCORNER";
-      continue;
-    }
-    if (doCornerSpacing &&  word == "CONCAVECORNER") {
-      doConvexCorner  = false;
-      doConcaveCorner = true;
-      hasConcaveCorner = true;
-      doWidthSpacing  = false;
-      // cout <<endl <<"  CONCAVECORNER";
-      continue;
-    }
- 
-    if (doCornerSpacing &&  word == "EXCEPTSAMENET") {
-      doConvexCorner  = false;
-      doConcaveCorner = false;
-      doWidthSpacing  = false;
-      hasExceptSameNet   = true;
-      // cout <<endl <<"  EXCEPTSAMENET";
-      continue;
-    }
-    
-    if (doCornerSpacing &&  word == "EXCEPTSAMEMETAL") {
-      doConvexCorner  = false;
-      doConcaveCorner = false;
-      doWidthSpacing  = false;
-      hasExceptSameMetal = true;
-      // cout <<endl <<"  EXCEPTSAMEMETAL";
-      continue;
-    }
- 
-    if (doCornerSpacing &&  word == "WIDTH") {
-      doConvexCorner  = false;
-      doConcaveCorner = false;
-      doWidthSpacing  = true;
-      if (!tmpWidthSpacing.empty()) {
-        widthSpacing.push_back(tmpWidthSpacing);
-        if (numSpacingEntry == 0) {
-          numSpacingEntry = std::min(int(tmpWidthSpacing.size()), 3);
-        } else {
-          if (numSpacingEntry != (int)tmpWidthSpacing.size()) {
-            cout << "Error: LEF58_CORNERSPACING rule not well defined, please check..." << endl;
-            return 1;
-          }
-        }
+    if(rule->isLayerValid())
+    {
+      auto secondLayerName = rule->getSecondLayer()->getName();
+      auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
+      if(tech->name2layer.find(secondLayerName) == tech->name2layer.end()){
+        logger->warn(utl::DRT, 167, "layer {} is not found to layer {} LEF58_SPACINGTABLE",secondLayerName
+        ,layer->getName());
+        continue;
       }
-      tmpWidthSpacing.clear();
-      // cout <<endl <<"  WIDTH";
-      continue;
+      auto secondLayerNum = tech->name2layer.at(secondLayerName)->getLayerNum();
+      ptr->setSecondLayerNum(secondLayerNum);
+      ptr->setNonZeroEnc(rule->isNonZeroEnclosure());
+      con->setLayerConstraint(ptr);
     }
+    frCollection<frCollection<std::pair<frCoord,frCoord>>> table;
+    map<std::string, frUInt4> rowMap, tmpRowMap;
+    map<std::string, frUInt4> colMap, tmpColMap;
+    rule->getSpacingTable(table, tmpRowMap, tmpColMap);
+
+    for(auto &[key, val] : tmpRowMap)
+    {
+      std::string newKey = key;
+      size_t idx = newKey.find("/");
+      if(idx != string::npos)
+        newKey.replace(idx, 1, "");
+      rowMap[newKey] = val;
+    }
+    for(auto &[key, val] : tmpColMap)
+    {
+      std::string newKey = key;
+      size_t idx = newKey.find("/");
+      if(idx != string::npos)
+        newKey.replace(idx, 1, "");
+      colMap[newKey] = val;
+    }
+
+    vector<frString> expColNames;
+    for(auto &[col, idx] : colMap)
+      expColNames.push_back(col);
+    sort(expColNames.begin(), expColNames.end());
+
+    vector<frString> expRowNames;
+    for(auto &[row, idx] : rowMap)
+      expRowNames.push_back(row);
+    sort(expRowNames.begin(), expRowNames.end());
     
-    if (doConvexCorner && word == "SAMEMASK") {
-      hasSameMask = true;
-      // cout <<" SAMEMASK";
+    auto tblVals = table;
+    uint i = 0;
+    for(auto &[row,orig_i] : rowMap)
+    {
+      uint j = 0;
+      for(auto &[col, orig_j] : colMap)
+        tblVals.at(i).at(j++) = table.at(orig_i).at(orig_j);
+      ++i;
     }
-    if (doConvexCorner && word == "CORNERONLY") {
-      hasCornerOnly = true;
-      double tmpWithin;
-      istr >> tmpWithin;
-      within = round(tmpWithin * parser->tech->getDBUPerUU());
-      // cout <<endl <<"    CORNERONLY " <<within * 1.0 / parser->tech->getDBUPerUU();
-    }
-
-    if (doConvexCorner && word == "EXCEPTEOL") {
-      hasExceptEol = true;
-      double tmpEolWidth;
-      istr >> tmpEolWidth;
-      eolWidth = round(tmpEolWidth * parser->tech->getDBUPerUU());
-      // cout <<endl <<"    EXCEPTEOL " <<eolWidth * 1.0 / parser->tech->getDBUPerUU();
-    }
-
-    if (doConcaveCorner && hasExceptEol && word == "EXCEPTJOGLENGTH") {
-      hasExceptJogLength = true;
-      double tmpLength;
-      istr >> tmpLength;
-      length = round(tmpLength * parser->tech->getDBUPerUU());
-      // cout << " EXCEPTJOGLENGTH " << length * 1.0 / parser->tech->getDBUPerUU();
-    }
-
-    if (doConcaveCorner && hasExceptEol && hasExceptJogLength && word == "EDGELENGTH") {
-      hasEdgeLength = true;
-      // cout << " EDGELENGTH" << endl;
-    }
-
-    if (doConcaveCorner && hasExceptEol && hasExceptJogLength && word == "INCLUDELSHAPE") {
-      hasIncludeLShape = true;
-      // cout << " INCLUDELSHAPE"  << endl;
-    }
-    
-    if (doConcaveCorner && word == "MINLENGTH") {
-      hasMinLength = true;
-      double tmpMinLength;
-      istr >> tmpMinLength;
-      minLength = round(tmpMinLength * parser->tech->getDBUPerUU());
-      // cout <<endl <<"    MINLENGTH " <<minLength * 1.0 / parser->tech->getDBUPerUU();
-    }
-    if (doConcaveCorner && word == "EXCEPTNOTCH") {
-      hasExceptNotch = true;
-      if (hasExceptNotchLength) {
-        double tmpNotchLength;
-        istr >> tmpNotchLength;
-        notchLength = round(tmpNotchLength * parser->tech->getDBUPerUU());
-        // cout <<endl <<"    EXCEPTNOTCH " <<notchLength * 1.0 / parser->tech->getDBUPerUU();
-      } else {
-        // cout <<endl <<"    EXCEPTNOTCH ";
-      }
-    }
- 
-    if (doWidthSpacing &&  word == "SPACING") {
-      // cout <<" SPACING";
-      continue;
-    }
- 
-    if (doWidthSpacing &&  word != "SPACING") {
-      frUInt4 tmp = round(stod(word) * parser->tech->getDBUPerUU());
-      tmpWidthSpacing.push_back(tmp);
-      // cout <<" " <<tmp * 1.0 / parser->tech->getDBUPerUU();
-      continue;
-    }
- 
+    string rowName("CUTCLASS");
+    string colName("CUTCLASS");
+    auto ptr = make_shared<fr2DLookupTbl<frString, frString, pair<frCoord, frCoord> > >(rowName, 
+        expRowNames, colName, expColNames, tblVals);
+    con->setCutClassTbl(ptr);
+    tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
+    tech->addConstraint(con);
   }
- 
-  if (!tmpWidthSpacing.empty()) {
-    widthSpacing.push_back(tmpWidthSpacing);
-  }
-
-  if (numSpacingEntry == 3) {
-    hasSameXY = false;
-  }
-
-  // cout << endl << " numSpacingEntry = " << numSpacingEntry << endl;
-
-  // create 1D lookup table
-  std::string widthName("WIDTH");
-  std::vector<frCoord> widths;
-  std::vector<std::pair<frCoord, frCoord> > spacings;
-  for (int i = 0; i < (int)widthSpacing.size(); i++) {
-    widths.push_back(widthSpacing[i][0]);
-    if (numSpacingEntry == 3) {
-      spacings.push_back(std::make_pair(widthSpacing[i][1], widthSpacing[i][2]));
-    } else {
-      spacings.push_back(std::make_pair(widthSpacing[i][1], widthSpacing[i][1]));
-    }
-  }
-  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(widthName, widths, spacings);
-  // cout << std::min(cornerSpacingTbl.findMin().first, cornerSpacingTbl.findMin().second) 
-  //      << " " << std::max(cornerSpacingTbl.findMax().first, cornerSpacingTbl.findMax().second) << "\n";
-
-  unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
-  auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
-  if (hasConvexCorner) {
-    rptr->setCornerType(frCornerTypeEnum::CONVEX);
-    rptr->setSameMask(hasSameMask);
-    if (hasCornerOnly) {
-      rptr->setWithin(within);
-    }
-    if (hasExceptEol) {
-      rptr->setEolWidth(eolWidth);
-      if (hasExceptJogLength) {
-        rptr->setLength(length);
-        rptr->setEdgeLength(hasEdgeLength);
-        rptr->setIncludeLShape(hasIncludeLShape);
-      }
-    }
-    rptr->setExceptSameNet(hasExceptSameNet);
-    rptr->setExceptSameMetal(hasExceptSameMetal);
-    rptr->setSameXY(hasSameXY);
-  } else if (hasConcaveCorner) {
-    rptr->setCornerType(frCornerTypeEnum::CONCAVE);
-    if (hasMinLength) {
-      rptr->setMinLength(minLength);
-    }
-    rptr->setExceptNotch(hasExceptNotch);
-    if (hasExceptNotchLength) {
-      rptr->setExceptNotchLength(notchLength);
-    }
-    rptr->setExceptSameNet(hasExceptSameNet);
-    rptr->setExceptSameMetal(hasExceptSameMetal);
-    rptr->setSameXY(hasSameXY);
-  } else {
-    cout << "Error: getLef58CornerSpacing rule is not well defined, please check...\n";
-    return 1;
-  }
-  
-  parser->tech->addUConstraint(std::move(uCon));
-  tmpLayer->addLef58CornerSpacingConstraint(rptr);
-
-  return 0;
 }
 
 void io::Parser::addDefaultMasterSliceLayer()
@@ -3342,38 +1368,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setNonSufficientMetalConstraint(nsmetalConstraint.get());
 
   tech->addUConstraint(std::move(nsmetalConstraint));
-  for (auto prop : odb::dbProperty::getProperties(layer))
-    if (prop->getType() == odb::dbProperty::Type::STRING_PROP) {
-      odb::dbStringProperty* strProp = (odb::dbStringProperty*) prop;
-      if (string(strProp->getName()) == string("LEF58_PROTRUSIONWIDTH")
-          || string(strProp->getName()) == string("LEF58_ENCLOSURESPACING")
-          || string(strProp->getName()) == string("LEF58_VOLTAGESPACING")
-          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPLUSDIFF")
-          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPWL")
-          || string(strProp->getName()) == string("LEF58_ANTENNAGATEPWL")
-          || string(strProp->getName()) == string("LEF58_FORBIDDENSPACING")) {
-        ;
-      } else {
-        if (!strcmp(strProp->getName().c_str(), "LEF58_CORNERSPACING")) {
-          getLef58CornerSpacing(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACING")) {
-          getLef58Spacing(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF57_SPACING")) {
-          getLef58Spacing(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACINGTABLE")) {
-          getLef58SpacingTable(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_RIGHTWAYONGRIDONLY")) {
-          getLef58RightWayOnGridOnly(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_RECTONLY")) {
-          getLef58RectOnly(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_MINSTEP")) {
-          getLef58MinStep(this, tmpLayer, strProp->getValue());
-        } else {
-          ;
-        }
-      }
-    }
-
+  setRoutingLayerProperties(layer, tmpLayer);
   // read minArea rule
   if (layer->hasArea()) {
     frCoord minArea = frCoord(
@@ -3676,27 +1671,7 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   }
 
   // lef58
-  for (auto prop : odb::dbProperty::getProperties(layer))
-    if (prop->getType() == odb::dbProperty::Type::STRING_PROP) {
-      odb::dbStringProperty* strProp = (odb::dbStringProperty*) prop;
-
-      if (string(strProp->getName().c_str()) == string("LEF58_ENCLOSUREEDGE")
-          || string(strProp->getName().c_str()) == string("LEF58_ENCLOSURE")
-          || string(strProp->getName().c_str())
-                 == string("LEF58_ENCLOSURETABLE")) {
-        ;
-      } else {
-        if (!strcmp(strProp->getName().c_str(), "LEF58_CUTCLASS")) {
-          getLef58CutClass(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACING")) {
-          getLef58CutSpacing(this, tmpLayer, strProp->getValue());
-        } else if (!strcmp(strProp->getName().c_str(), "LEF58_SPACINGTABLE")) {
-          getLef58CutSpacingTable(this, tmpLayer, strProp->getValue());
-        } else {
-          ;
-        }
-      }
-    }
+  setCutLayerProperties(layer, tmpLayer);
 }
 
 void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
@@ -3875,12 +1850,14 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             frLayerNum layerNum = -1;
             string layer = box->getTechLayer()->getName();
             if (tech->name2layer.find(layer) == tech->name2layer.end()){
-              logger->warn(DRT,
-                           122,
-                           "layer {} is skipped for {}/{}",
-                           layer,
-                           tmpBlock->getName(),
-                           _term->getName());
+              auto type = box->getTechLayer()->getType();
+              if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+                logger->warn(DRT,
+                            122,
+                            "layer {} is skipped for {}/{}",
+                            layer,
+                            tmpBlock->getName(),
+                            _term->getName());
               continue;
             }
             else
@@ -3905,11 +1882,13 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         frLayerNum layerNum = -1;
         string layer = obs->getTechLayer()->getName();
         if (tech->name2layer.find(layer) == tech->name2layer.end()) {
-          logger->warn(DRT,
-                       123,
-                       "layer {} is skipped for {}/OBS",
-                       layer,
-                       tmpBlock->getName());
+          auto type = obs->getTechLayer()->getType();
+          if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+            logger->warn(DRT,
+                        123,
+                        "layer {} is skipped for {}/OBS",
+                        layer,
+                        tmpBlock->getName());
           continue;
         } else
           layerNum = tech->name2layer.at(layer)->getLayerNum();

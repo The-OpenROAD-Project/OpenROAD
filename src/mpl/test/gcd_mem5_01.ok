@@ -1,0 +1,58 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: gcd_mem5.def
+[INFO ODB-0128] Design: gcd_mem5
+[INFO ODB-0130]     Created 89 pins.
+[INFO ODB-0131]     Created 311 components and 1866 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 412 nets and 1244 connections.
+[INFO ODB-0134] Finished DEF file: gcd_mem5.def
+[INFO MPL-0005] Found 5 macros
+[INFO MPL-0009] West pins 20
+[INFO MPL-0009] East pins 23
+[INFO MPL-0009] North pins 0
+[INFO MPL-0009] South pins 46
+[INFO MPL-0071] Initial weighted wire length 10033.5
+Begin One Level Partition
+[INFO MPL-0076] Partition 5 macros
+[INFO MPL-0077] Using 2 cut lines
+[INFO MPL-0079] Cut line 0.00
+[INFO MPL-0079] Cut line 69.35
+End One Level Partition
+Begin Horizontal Partition
+Begin East Partition
+[INFO MPL-0076] Partition 0 macros
+[INFO MPL-0077] Using 0 cut lines
+End East Partition
+Begin West Partition
+[INFO MPL-0076] Partition 5 macros
+[INFO MPL-0077] Using 2 cut lines
+[INFO MPL-0079] Cut line 0.00
+[INFO MPL-0079] Cut line 67.20
+End West Partition
+End Horizontal Partition
+Begin Horizontal Partition
+Begin East Partition
+[INFO MPL-0076] Partition 5 macros
+[INFO MPL-0077] Using 2 cut lines
+[INFO MPL-0079] Cut line 0.00
+[INFO MPL-0079] Cut line 67.20
+End East Partition
+Begin West Partition
+[INFO MPL-0076] Partition 0 macros
+[INFO MPL-0077] Using 0 cut lines
+End West Partition
+End Horizontal Partition
+[INFO MPL-0070] Using 4 partiion sets
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
+[WARNING MPL-0072] No partition solutions found.
+No differences found.
