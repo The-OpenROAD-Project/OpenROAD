@@ -111,7 +111,8 @@ void PostCtsOpt::fixLongWire(Clock::SubNet& net,
                                    ClockInst* driver,
                                    ClockInst* sink)
 {
-  unsigned inputCap = 1, inputSlew = _options->getMaxSlew();
+  unsigned inputCap = _techChar->getActualMinInputCap();
+  unsigned inputSlew = _techChar->getMaxSlew()/2;
   DBU wireSegmentUnit = _techChar->getLengthUnit() * _options->getDbUnits();
   Point<double> driverLoc((float) driver->getX() / wireSegmentUnit,
                           (float) driver->getY() / wireSegmentUnit);
