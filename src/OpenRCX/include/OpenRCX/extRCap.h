@@ -1061,6 +1061,8 @@ class extMeasure
   int computeAndStoreRC_720(odb::dbRSeg* rseg1,
                             odb::dbRSeg* rseg2,
                             int srcCovered);
+
+  double ScaleResbyTrack(bool openEnded, double &dist_track);
   void OverSubRC(odb::dbRSeg* rseg1,
                  odb::dbRSeg* rseg2,
                  int ouCovered,
@@ -1639,6 +1641,7 @@ class extMain
   double _resistanceTable[20][20];
   double _capacitanceTable[20][20];  // 20 layers by 20 rc models
   double _minWidthTable[20];
+  uint _minDistTable[20];
   double _tmpCapTable[20];
   double _tmpSumCapTable[20];
   double _tmpResTable[20];

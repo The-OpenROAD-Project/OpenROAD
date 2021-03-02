@@ -760,6 +760,17 @@ uint extMain::getResCapTable(bool lefRC)
     m._width = w;
     m._met = n;
 
+    uint sp = layer->getSpacing();  // nm
+
+    _minDistTable[n] = sp;
+fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
+    if (sp==0) {
+      sp= layer->getPitch() - layer->getWidth();
+          _minDistTable[n] = sp;
+
+fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
+    }
+
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
       uint modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
