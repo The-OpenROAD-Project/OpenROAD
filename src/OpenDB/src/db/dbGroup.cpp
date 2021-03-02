@@ -234,7 +234,7 @@ _dbGroup::~_dbGroup()
 //
 ////////////////////////////////////////////////////////////////////
 
-char* dbGroup::getName() const
+const char* dbGroup::getName() const
 {
   _dbGroup* obj = (_dbGroup*) this;
   return obj->_name;

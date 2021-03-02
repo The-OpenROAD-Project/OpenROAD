@@ -167,7 +167,7 @@ _dbModule::~_dbModule()
 //
 ////////////////////////////////////////////////////////////////////
 
-char* dbModule::getName() const
+const char* dbModule::getName() const
 {
   _dbModule* obj = (_dbModule*) this;
   return obj->_name;

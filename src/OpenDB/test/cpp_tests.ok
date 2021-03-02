@@ -1,0 +1,61 @@
+Running test: TestGeom
+**********
+1
+Running 3 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestGeom passed
+******************
+Running test: TestLef58Properties
+**********
+1
+Running 1 test case...
+[INFO ODB-0222] Reading LEF file: /home/osama/Desktop/Workspace/Private/OpenROAD/src/OpenDB/test/data/gscl45nm.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 14 technology vias
+[INFO ODB-0225]     Created 33 library cells
+[INFO ODB-0226] Finished LEF file:  /home/osama/Desktop/Workspace/Private/OpenROAD/src/OpenDB/test/data/gscl45nm.lef
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestLef58Properties passed
+******************
+Running test: TestModule
+**********
+1
+Running 3 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestModule passed
+******************
+Running test: TestGroup
+**********
+1
+Running 9 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestGroup passed
+******************
+Running test: TestGCellGrid
+**********
+1
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestGCellGrid passed
+******************
+Running test: TestCallBacks
+**********
+1
+Running 10 test cases...
+[WARNING ODB-0062] This wire has no net
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestCallBacks passed
+******************
+pass
