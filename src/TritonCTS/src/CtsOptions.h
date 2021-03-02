@@ -179,6 +179,9 @@ class CtsOptions
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
   void setSinkBufferMaxCap(double cap) { _sinkBufferMaxCap = cap; }
   double getSinkBufferMaxCap() const { return _sinkBufferMaxCap; }
+  void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
+  double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
+
   std::string getSinkBuffer() const { return _sinkBuffer; }
   void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}
@@ -208,6 +211,7 @@ class CtsOptions
   double _maxCharSlew = 0;
   double _maxCharCap = 0;
   double _sinkBufferMaxCap = 0;
+  double _sinkBufferInputCap = 0;
   double _capPerSqr = 0;
   double _resPerSqr = 0;
   double _capInter = 0;
