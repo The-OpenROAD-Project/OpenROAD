@@ -9,6 +9,17 @@ class {{klass.name}};
 class {{klass.name}} : public dbObject
 {
  public:
+  {% for _struct in klass.structs %}
+    {% if _struct.public %}
+    struct {{ _struct.name }}
+    {
+      {% for field in _struct.fields %}
+        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
+      
+      {% endfor %}
+    };
+    {% endif %}
+  {% endfor %}
   {% for _enum in klass.enums %}
     {% if _enum.public %}
     enum {{ _enum.name }}
