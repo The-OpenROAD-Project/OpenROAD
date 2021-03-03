@@ -18,11 +18,7 @@ proc genFiles { run_dir ispd_year design } {
     file mkdir $run_dir/$design
     puts "Create param file for $design"
     set    paramFile [open "$run_dir/$design/run.param" w]
-    puts  $paramFile "lef:$bench_dir/$design/$design.input.lef"
-    puts  $paramFile "def:$bench_dir/$design/$design.input.def"
     puts  $paramFile "guide:$bench_dir/$design/$design.input.guide"
-    puts  $paramFile "output:$run_dir/$design/$design.output.def"
-    puts  $paramFile "outputTA:$design.outputTA.def"
     puts  $paramFile "outputguide:$design.output.guide.mod"
     puts  $paramFile "outputMaze:$design.output.maze.log"
     puts  $paramFile "outputDRC:$design.outputDRC.rpt"
@@ -35,6 +31,7 @@ proc genFiles { run_dir ispd_year design } {
     puts  $tclFile "read_lef $bench_dir/$design/$design.input.lef"
     puts  $tclFile "read_def $bench_dir/$design/$design.input.def"
     puts  $tclFile "detailed_route -param $run_dir/$design/run.param"
+    puts  $tclFile "write_def $run_dir/$design/$design.output.def"
     close $tclFile
 
     puts "Create run script for $design"

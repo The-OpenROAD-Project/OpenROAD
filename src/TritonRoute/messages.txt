@@ -1,7 +1,7 @@
-DRT 0001 TritonRoute.cpp:261       Error reading param file: {}
+DRT 0001 TritonRoute.cpp:258       Error reading param file: {}
 DRT 0002 TritonRoute.cpp:111       Detailed routing has not been run yet.
-DRT 0003 io.cpp:2776               load design first
-DRT 0004 io.cpp:2781               load design first
+DRT 0003 io.cpp:2746               load design first
+DRT 0004 io.cpp:2751               load design first
 DRT 0005 frRegionQuery.cpp:101     Unsupported region query add
 DRT 0006 frRegionQuery.cpp:113     Unsupported region query add
 DRT 0007 frRegionQuery.cpp:133     Unsupported region query add
@@ -99,7 +99,7 @@ DRT 0108 io.cpp:689                unsupported via in db
 DRT 0109 io.cpp:749                unsupported via in db
 DRT 0110 io.cpp:779                unsupported NET USE in def
 DRT 0111 io.cpp:808                unsupported PIN USE in db
-DRT 0115 TritonRoute.cpp:256       Setting MAX_THREADS=1 for use with the GUI.
+DRT 0115 TritonRoute.cpp:253       Setting MAX_THREADS=1 for use with the GUI.
 DRT 0116 io.cpp:865                load design first
 DRT 0117 io.cpp:868                load design first
 DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
@@ -112,7 +112,7 @@ DRT 0140 io.cpp:1456               SpacingRange unsupported
 DRT 0141 io.cpp:1458               SpacingLengthThreshold unsupported
 DRT 0142 io.cpp:1460               SpacingNotchLength unsupported
 DRT 0143 io.cpp:1462               SpacingEndOfNotchWidth unsupported
-DRT 0148 TritonRoute.cpp:225       deprecated lef param in params file
+DRT 0148 TritonRoute.cpp:222       deprecated lef param in params file
 DRT 0149 io.cpp:2136               Reading Tech And Libs
 DRT 0150 io.cpp:2152               Reading Design
 DRT 0151 io.cpp:2180               Reading Guide
@@ -125,7 +125,6 @@ DRT 0158 io.cpp:2258               Error reading guide file!
 DRT 0159 io.cpp:2263               failed to open guide file
 DRT 0160 io.cpp:1198               unsupported LEF58_SPACING rule for layer {} of type AREA
 DRT 0161 io.cpp:1201               unsupported LEF58_SPACING rule for layer {} of type MAXXY
-DRT 0161 io_parser_helper.cpp:554  Writing reference output def {}.
 DRT 0162 io.cpp:1204               unsupported LEF58_SPACING rule for layer {} of type SAMEMASK
 DRT 0162 io_pin.cpp:38             libcell analysis ...
 DRT 0163 io.cpp:1207               unsupported LEF58_SPACING rule for layer {} of type PARALLELOVERLAP
@@ -138,22 +137,24 @@ DRT 0166 io.cpp:1216               unsupported LEF58_SPACING rule for layer {}
 DRT 0166 FlexPA.cpp:128            complete pin access
 DRT 0167 io.cpp:1241               layer {} is not found to layer {} LEF58_SPACINGTABLE
 DRT 0168 io.cpp:975                unsupported LEF58_SPACING rule for layer {}
-DRT 0168 io_parser_helper.cpp:671  Init region query ...
-DRT 0169 io_parser_helper.cpp:680  Post process guides ...
-DRT 0170 io_parser_helper.cpp:849  no GCELLGRIDX
-DRT 0171 io_parser_helper.cpp:854  no GCELLGRIDY
-DRT 0172 io_parser_helper.cpp:904  no GCELLGRIDX
-DRT 0173 io_parser_helper.cpp:909  no GCELLGRIDY
-DRT 0174 io_parser_helper.cpp:931  gcell cnt x < 1
-DRT 0175 io_parser_helper.cpp:945  gcell cnt y < 1
-DRT 0176 io_parser_helper.cpp:950  GCELLGRID X {} DO {} STEP {} ;
-DRT 0177 io_parser_helper.cpp:954  GCELLGRID Y {} DO {} STEP {} ;
-DRT 0178 io_parser_helper.cpp:716  init guide query ...
-DRT 0179 io_parser_helper.cpp:719  init gr pin query ...
+DRT 0168 io_parser_helper.cpp:558  Init region query ...
+DRT 0169 io_parser_helper.cpp:567  Post process guides ...
+DRT 0170 TritonRoute.cpp:223       deprecated def param in params file
+DRT 0170 io_parser_helper.cpp:736  no GCELLGRIDX
+DRT 0171 TritonRoute.cpp:225       deprecated outputTA param in params file
+DRT 0171 io_parser_helper.cpp:741  no GCELLGRIDY
+DRT 0172 io_parser_helper.cpp:791  no GCELLGRIDX
+DRT 0173 io_parser_helper.cpp:796  no GCELLGRIDY
+DRT 0174 io_parser_helper.cpp:818  gcell cnt x < 1
+DRT 0175 io_parser_helper.cpp:832  gcell cnt y < 1
+DRT 0176 io_parser_helper.cpp:837  GCELLGRID X {} DO {} STEP {} ;
+DRT 0177 io_parser_helper.cpp:841  GCELLGRID Y {} DO {} STEP {} ;
+DRT 0178 io_parser_helper.cpp:603  init guide query ...
+DRT 0179 io_parser_helper.cpp:606  init gr pin query ...
 DRT 0180 io.cpp:2593               post processing ...
 DRT 0181 FlexTA.cpp:362            start track assignment
 DRT 0182 FlexTA.cpp:368            complete track assignment
-DRT 0185 io_parser_helper.cpp:737  post process initialize RPin region query ...
+DRT 0185 io_parser_helper.cpp:624  post process initialize RPin region query ...
 DRT 0187 FlexDR.cpp:1268           start routing data preparation
 DRT 0188 FlexDR.cpp:598            initVia2ViaMinLen_minSpc {}
 DRT 0189 FlexDR.cpp:633            initVia2ViaMinLen_minimumcut {}
@@ -169,4 +170,7 @@ DRT 0198 FlexDR.cpp:2065           complete detail routing
 DRT 0199 FlexDR.cpp:1737             number of violations = {}
 DRT 0200 FlexDR.cpp:1740             number of quick violations = {}
 DRT 0201 FlexGR.cpp:548            design isn't loaded before global routing
-DRT 0202 FlexGR.cpp:567            skipping layer {} not found in db for congestion map
+DRT 0202 FlexGR.cpp:573            skipping layer {} not found in db for congestion map
+DRT 0203 FlexGR.cpp:555            dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+DRT 0205 TritonRoute.cpp:226       deprecated output param in params file
+DRT 0206 FlexDR_conn.cpp:1166      checkConnectivity error
