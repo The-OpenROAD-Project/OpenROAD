@@ -187,7 +187,8 @@ class Netlist
   bool checkSectionForPin(IOPin& pin,
                           Section& section,
                           std::vector<Constraint>& constraints,
-                          std::vector<Slot>& slots);
+                          std::vector<Slot>& slots,
+                          int& available_slots);
   bool checkInterval(Constraint constraint, Edge edge, int pos);
 };
 

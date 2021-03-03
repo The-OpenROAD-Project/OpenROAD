@@ -159,8 +159,10 @@ int Netlist::computeIONetHPWL(int idx,
   Point& section_end = slots[section.end_slot].pos;
   Edge edge = section.edge;
 
-  if (checkSectionForPin(io_pins_[idx], section, constraints, slots)) {
-    hpwl = computeIONetHPWL(idx, section_center);
+  int available_slots = 1;
+  if (checkSectionForPin(io_pins_[idx], section, constraints, slots, available_slots)) {
+    // divide by available slots to give preference for sections with more available
+    hpwl = computeIONetHPWL(idx, section_center)/available_slots;
   } else {
     hpwl = std::numeric_limits<int>::max();
   }
@@ -223,7 +225,8 @@ bool Netlist::checkSlotForPin(IOPin& pin,
 bool Netlist::checkSectionForPin(IOPin& pin,
                                  Section& section,
                                  std::vector<Constraint>& constraints,
-                                 std::vector<Slot>& slots)
+                                 std::vector<Slot>& slots,
+                                 int& available_slots)
 {
   bool valid_slot = true;
 
@@ -238,18 +241,30 @@ bool Netlist::checkSectionForPin(IOPin& pin,
   int section_min = (section_begin < section_end) ? section_begin : section_end;
   int section_max = (section_begin > section_end) ? section_begin : section_end;
 
+  int spacing = 1;
+
+  if (section.num_slots > 0) {
+    spacing = (section_max - section_min)/(section.num_slots);
+  }
+
   for (Constraint constraint : constraints) {
     int constraint_begin = constraint.interval.getBegin();
     int constraint_end = constraint.interval.getEnd();
 
     if (pin.getDirection() == constraint.direction) {
       valid_slot = (section_min <= constraint_end &&
-                    constraint_begin <= section_end &&
+                    constraint_begin <= section_max &&
                     constraint.interval.getEdge() == edge);
+      available_slots = std::max(0,
+                                (std::min(section_max, constraint_end) -
+                                 std::max(section_min, constraint_begin) + 1))/spacing;
     } else if (pin.getName() == constraint.name) {
       valid_slot = (section_min <= constraint_end &&
-                    constraint_begin <= section_end &&
+                    constraint_begin <= section_max &&
                     constraint.interval.getEdge() == edge);
+      available_slots = std::max(0,
+                                (std::min(section_max, constraint_end) -
+                                 std::max(section_min, constraint_begin) + 1))/spacing;
     }
   }
 
