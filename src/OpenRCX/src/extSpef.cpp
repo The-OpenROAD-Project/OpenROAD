@@ -37,7 +37,7 @@
 #include <math.h>
 
 #include <algorithm>
-
+#include <iostream>
 #include "parse.h"
 #include "utility/Logger.h"
 
@@ -1583,6 +1583,23 @@ uint extSpef::getNetMapId(uint netId)
 
   return netId;
 }
+char* extSpef::addEscapeChar(char* iname) {
+  if (strchr(iname, '$') != NULL) {
+    uint ii = 0;
+    uint jj = 0;
+    while (iname[ii] != '\0') {
+      if (iname[ii] == '$')
+        _mMapName[jj++] = '\\';
+
+      _mMapName[jj++] = iname[ii++];
+    }
+    
+    _mMapName[jj] = '\0';
+    return _mMapName;
+  }
+  
+  return iname;
+}
 char* extSpef::tinkerSpefName(char* iname)
 {
   if (!_noBackSlash)
@@ -1665,6 +1682,7 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
     else {
       nname = (char*) net->getConstName();
       nname1 = tinkerSpefName(nname);
+      nname1 = addEscapeChar(nname1);
       ATH__fprintf(_outFP, "*%d %s\n", netMapId, nname1);
     }
 
@@ -1714,6 +1732,7 @@ uint extSpef::writeInstMap()
     else {
       nname = (char*) inst->getConstName();
       nname1 = tinkerSpefName(nname);
+      nname1 = addEscapeChar(nname1);
       ATH__fprintf(_outFP, "*%d %s\n", instMapId, nname1);
     }
 

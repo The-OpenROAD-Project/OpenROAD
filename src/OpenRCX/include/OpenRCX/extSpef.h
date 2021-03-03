@@ -449,6 +449,7 @@ class extSpef
 
   uint getNetMapId(uint netId);
   char* tinkerSpefName(char* iname);
+  char* addEscapeChar(char* iname);
 
   bool isITermMarked(uint node);
   void markITerm(uint node);
