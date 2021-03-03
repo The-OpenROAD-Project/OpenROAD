@@ -75,7 +75,7 @@ namespace fr {
     // getters
     virtual bool hasPin() const = 0;
     virtual taPin* getPin() const = 0;
-    frNet* getNet(){
+    frNet* getNet() const{
         return net_;
     }
     // setters

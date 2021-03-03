@@ -191,29 +191,6 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
  }
 }
 
-//void FlexDRGraphics::drawInterval(gui::Painter& painter, Interval* i, int pos, bool vertical, int hwidth, int roundSize){
-//  if (vertical)
-//      painter.drawRect({grid_graph_->xCoord(pos)-hwidth, grid_graph_->yCoord(i->low())-hwidth, 
-//                      grid_graph_->xCoord(pos)+hwidth, grid_graph_->yCoord(i->high())+hwidth});
-//  else painter.drawRect({grid_graph_->xCoord(i->low())-hwidth, grid_graph_->yCoord(pos)-hwidth, 
-//                      grid_graph_->xCoord(i->high())+hwidth, grid_graph_->yCoord(pos)+hwidth});
-//}
-
-//void FlexDRGraphics::drawPath(gui::Painter& painter, vector<FlexMazeIdx>& path, frLayerNum ln){
-//      frMIdx z = grid_graph_->getMazeZIdx(ln);
-//      int of = 15;
-//      for (int i = 0; i < path.size(); i++){
-//          FlexMazeIdx& p = path[i];
-//          if (p.z() == z){
-//              if (i+1 < path.size()){
-//                  painter.drawRect({grid_graph_->xCoord(min(p.x(), path[i+1].x()))-of, grid_graph_->yCoord(min(p.y(), path[i+1].y()))-of,
-//                                    grid_graph_->xCoord(max(p.x(), path[i+1].x()))+of, grid_graph_->yCoord(max(p.y(), path[i+1].y()))+of});
-//              }else painter.drawRect({grid_graph_->xCoord(p.x())-of, grid_graph_->yCoord(p.y())-of,
-//                                    grid_graph_->xCoord(p.x())+of, grid_graph_->yCoord(p.y())+of,});
-//          }
-//      }
-//}
-  
 void FlexDRGraphics::update(){
     if (settings_->draw) gui_->redraw();
 }

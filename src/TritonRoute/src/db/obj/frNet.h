@@ -233,7 +233,7 @@ namespace fr {
     void setNondefaultRule(frNonDefaultRule* n) {
       ndr_ = n;
     }
-    bool isNDR(){
+    bool hasNDR() const{
         return getNondefaultRule() != nullptr;
     }
   protected:

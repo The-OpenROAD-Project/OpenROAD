@@ -80,6 +80,8 @@ frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
 int END_ITERATION = 80;
 int NDR_NETS_RIPUP_THRESH = 3;
+bool AUTO_TAPER_NDR_NETS = true;
+int  TAPERBOX_RADIUS = 3;
 
 frUInt4 TAVIACOST       = 1;
 frUInt4 TAPINCOST       = 4;

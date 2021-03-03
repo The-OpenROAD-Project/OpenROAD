@@ -319,8 +319,10 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
     return false;
   }
 }
-//void print(){
-//    cout << "hiahsuihdhuas\n";
+//int print(){
+//    cout << "ASDASJHDIASHDHSA\n";
+//    int b = 1;
+//    return b;
 //}
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
                                      frCoord prl, frCoord distX, frCoord distY, bool isNDR) {
@@ -333,22 +335,16 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
-//  if (layerNum == 4 && ((gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
-//       (gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000)))
+//  if ((gtl::xh(*rect1) == 63.335*2000 && gtl::yh(*rect1) == 67.61*2000 || gtl::xh(*rect2) == 63.335*2000 && gtl::yh(*rect2) == 67.61*2000) &&
+//          (gtl::xl(*rect1) == 126930-70 && gtl::xh(*rect1) == 126930+210 //gtl::yl(*rect1) == 135020-70
+//            || gtl::xl(*rect2) == 126930+70 && gtl::xh(*rect2) == 126930+210/*gtl::yl(*rect2) == 135020-70*/))
 //      print();
-//  if ((gtl::xl(*rect1) == 142.43*2000 && gtl::xh(*rect1) == 142.77*2000 && gtl::yl(*rect1) == 74.505*2000 && gtl::yh(*rect1) == 74.645*2000 &&
-//       gtl::xh(*rect2) == 142.335*2000 && gtl::yh(*rect2) == 74.42*2000) || 
-//       (gtl::xl(*rect2) == 142.43*2000 && gtl::xh(*rect2) == 142.77*2000 && gtl::yl(*rect2) == 74.505*2000 && gtl::yh(*rect2) == 74.645*2000 &&
-//       gtl::xh(*rect1) == 142.335*2000 && gtl::yh(*rect1) == 74.42*2000) )
-//      print();
-      
+  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);  
   if (isNDR){
         frCoord ndrSpc1 = 0, ndrSpc2 = 0;
-        if (!rect1->isFixed() && net1->isNondefault())
+        if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
             ndrSpc1 = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
-        if (!rect2->isFixed() && net2->isNondefault())
+        if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
             ndrSpc2 = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
 
         reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
@@ -409,8 +405,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
     }
   }
   if (!hasRoute) {
-//      if (net1->getFrNet() && net1->getFrNet()->getName() == "net1" && net2->getFrNet() && net2->getFrNet()->getName() == "net1" && layerNum == 6) //ondefaultRule() || net2->getFrNet() && net2->getFrNet()->getNondefaultRule())
-//          cout << "2222222\n";
     return;
   }
 
@@ -709,16 +703,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2, bool
   }
 }
 
-//void print2(){
-//    cout << "ahsduhaus";
-//}
-
-void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
+void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR, bool querySpcRects) {
   //bool enableOutput = true;
   bool enableOutput = false;
-//  if (rect->getNet() && rect->getNet()->getFrNet() && rect->getNet()->getFrNet()->getName() == "net1"){
-//      print2();
-//  }
   auto layerNum = rect->getLayerNum();
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, isNDR);
   box_t queryBox;
@@ -761,6 +748,13 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
   auto &workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<gcRect*> > result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
+  if (querySpcRects){
+    vector<rq_box_value_t<gcRect> > resultS;
+    workerRegionQuery.querySpcRectangle(queryBox, layerNum, resultS);
+    for (auto &[objBox, ptr]: resultS) {
+        checkMetalSpacing_main(rect, &ptr, isNDR);
+    }
+  }
   // Short, metSpc, NSMetal here
   for (auto &[objBox, ptr]: result) {
     checkMetalSpacing_main(rect, ptr, isNDR);
@@ -778,18 +772,11 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
       }
       for (auto &pin: targetNet_->getPins(i)) {
         for (auto &maxrect: pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get());
-//          if (!targetNet_->isNondefault() && design_->getTech()->hasNondefaultRules())
-//              checkMetalSpacing_main(maxrect.get(), true);
+          checkMetalSpacing_main(maxrect.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS);
         }
-//        if (targetNet_->isNondefault()){
-//            std::vector<gcRect> rects;
-//            targetNet_->getRouteRectangles(i, rects);
-//            for (auto& r : rects){
-//                checkMetalSpacing_main(&r, true);
-//            }
-//        }
       }
+      for (auto& sr : targetNet_->getSpecialSpcRects())
+          checkMetalSpacing_main(sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
     }
   } else {
     // layer --> net --> polygon --> maxrect
@@ -803,17 +790,11 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
         for (auto &pin: net->getPins(i)) {
           for (auto &maxrect: pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get());
+            checkMetalSpacing_main(maxrect.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS);
           }
         }
-//        // nondefautl spacing
-//        if (net->isNondefault()){
-//            std::vector<gcRect> rects;
-//            net->getRouteRectangles(i, rects);
-//            for (auto& r : rects){
-//                checkMetalSpacing_main(&r, true);
-//            }
-//        }
+        for (auto& sr : net->getSpecialSpcRects())
+          checkMetalSpacing_main(sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
       }
     }
   }

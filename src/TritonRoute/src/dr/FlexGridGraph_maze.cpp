@@ -115,6 +115,8 @@ void FlexGridGraph::expand(FlexWavefrontGrid &currGrid, const frDirEnum &dir,
     }
     nextWavefrontGrid.addLayerPathArea((dir == frDirEnum::U) ? getHalfViaEncArea(currGrid.z(), false) : getHalfViaEncArea(gridZ, true));
   }
+  if (currGrid.getSrcTaperBox() && currGrid.getSrcTaperBox()->contains(nextWavefrontGrid.x(), nextWavefrontGrid.y(), nextWavefrontGrid.z()))
+      nextWavefrontGrid.setSrcTaperBox(currGrid.getSrcTaperBox());
   // update wavefront buffer
   auto tailDir = nextWavefrontGrid.shiftAddBuffer(dir);
   // non-buffer enablement is faster for ripup all
@@ -187,9 +189,7 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid &currGrid, const FlexMazeI
   //    ;
   //  }
   //}
-  if (currGrid.z() == 2 && yCoords_[currGrid.y()] == 73150 && xCoords_[currGrid.x()] == 88200){
-      cout << "a";
-    }
+  
   // N
   if (isExpandable(currGrid, frDirEnum::N)) {
     expand(currGrid, frDirEnum::N, dstMazeIdx1, dstMazeIdx2, centerPt);
@@ -457,7 +457,7 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
     }
   }
 
-  if (ndr_) nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
+  if (useNDRCosts(currGrid)) nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
   else{
         nextPathCost += getCosts(gridX, gridY, gridZ, dir, layer);
         if (enableOutput) {
@@ -645,90 +645,6 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
             cost += (hasMarkerCost(x, y, gridZ, dir) ? ggMarkerCost_*el : 0);
         }
     }
-    
-    
-//    if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr 
-//            /*&& ndr_->getSpacing(dir == frDirEnum::U ? gridZ : gridZ-1) == 0*/) 
-//        return getCosts(gridX, gridY, gridZ, dir, layer);
-//    frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-//    frCoord cost = el;
-//    cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
-//    cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
-//    cost += (isBlocked(gridX, gridY, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
-//    
-//    frMIdx startX, startY, endX, endY, bottomZ;
-//    frCoord sp;
-//    unique_ptr<frVia> via, defVia;
-//    frBox viaBox, cutBox, defViaBox, defViaCutBox, viaBox2, defViaBox2;
-//    frLayer* cutLayer;
-//    if (dir == frDirEnum::D){
-//        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()-1);
-////        endZ = gridZ - (prevDir == dir ? 1 : 0);
-//        bottomZ = gridZ - 1;
-////        top = gridZ;
-//    }else {
-//        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()+1);
-////        endZ = gridZ+1;
-//        bottomZ = gridZ;//(prevDir == dir ? endZ : gridZ);
-////        top = gridZ + 1;
-//    }
-//    defVia = make_unique<frVia>(cutLayer->getDefaultViaDef());
-//    if (bottomZ != gridZ) layer = design_->getTech()->getLayer(layer->getLayerNum()-2);
-//    
-//    via = make_unique<frVia>(ndr_->getPrefVia(bottomZ) ? ndr_->getPrefVia(bottomZ) : cutLayer->getDefaultViaDef());
-//    via->getCutBBox(cutBox);
-//    defVia->getCutBBox(defViaCutBox);
-//    cutBox.bloat(cutLayer->getCutSpacingValue()+defViaCutBox.width()/2 - 1, cutBox); //WARNING: assuming cuts are square
-////    for (gridZ = startZ; gridZ <= endZ; gridZ++){
-//        //get bloated shape
-////        if (gridZ == top) {
-////            via->getLayer2BBox(viaBox);
-////            defVia->getLayer2BBox(defViaBox);
-////            layer = design_->getTech()->getLayer(layer->getLayerNum()+2);
-////        }else {
-//            via->getLayer1BBox(viaBox);
-//            defVia->getLayer1BBox(defViaBox);
-////        }
-//        via->getLayer2BBox(viaBox2);
-//        defVia->getLayer2BBox(defViaBox2);
-//        sp = max(ndr_->getSpacing(bottomZ), getMinSpacingValue(layer, min(viaBox.width(), viaBox.length()), min(defViaBox.width(), defViaBox.length()), 0));
-//        viaBox.set(viaBox.left() - sp - defViaBox.width()/2 + 1, viaBox.bottom() - sp - defViaBox.length()/2 + 1, 
-//                   viaBox.right() + sp + defViaBox.width()/2 - 1, viaBox.top() + sp + defViaBox.length()/2 - 1);
-//        viaBox.set(min(viaBox.left(), cutBox.left()), min(viaBox.bottom(), cutBox.bottom()), 
-//                    max(viaBox.right(), cutBox.right()), max(viaBox.top(), cutBox.top()));
-//        
-//        sp = max(ndr_->getSpacing(bottomZ+1), getMinSpacingValue(design_->getTech()->getLayer(layer->getLayerNum()+2), 
-//                                                            min(viaBox2.width(), viaBox2.length()), min(defViaBox2.width(), defViaBox2.length()), 0));
-//        viaBox2.set(viaBox2.left() - sp - defViaBox2.width()/2 + 1, viaBox2.bottom() - sp - defViaBox2.length()/2 + 1, 
-//                   viaBox2.right() + sp + defViaBox2.width()/2 - 1, viaBox2.top() + sp + defViaBox2.length()/2 - 1);
-//        viaBox.set(min(viaBox.left(), viaBox2.left()), min(viaBox.bottom(), viaBox2.bottom()), max(viaBox.right(), viaBox2.right()), max(viaBox.top(), viaBox2.top()));
-//        
-//        
-//        viaBox.set(viaBox.left()+xCoords_[gridX], viaBox.bottom()+yCoords_[gridY], 
-//                viaBox.right()+xCoords_[gridX], viaBox.top()+yCoords_[gridY]);
-//        
-//        //get Indexes (iteration bounds)
-//        startX = getLowerBoundIndex(xCoords_, viaBox.left());
-//        if (xCoords_[startX] < viaBox.left()) startX++;
-//        endX = getUpperBoundIndex(xCoords_, viaBox.right());
-//        if (xCoords_[endX] > viaBox.right()) endX--;
-//        startY = getLowerBoundIndex(yCoords_, viaBox.bottom());
-//        if (yCoords_[startY] < viaBox.bottom()) startY++;
-//        endY = getUpperBoundIndex(yCoords_, viaBox.top());
-//        if (yCoords_[endY] > viaBox.top()) endY--;
-//        if (startX > endX || startY > endY) ERROR("ERROR FlexGridGraph::getViaCostsNDR");
-////        cout << "dy " << endY-startY << "dx " << endX - startX << "\n";
-//        //get costs
-//        for (frMIdx x = startX; x <= endX; x++){
-//            for (frMIdx y = startY; y <= endY; y++){
-//                cost += (hasShapeCost(x, y, bottomZ, frDirEnum::U) ? SHAPECOST*el : 0);
-////                if (gridZ == initZ){
-//                    cost += (hasDRCCost(x, y, bottomZ, frDirEnum::U) ? ggDRCCost_*el : 0);
-//                    cost += (hasMarkerCost(x, y, bottomZ, frDirEnum::U) ? ggMarkerCost_*el : 0);
-////                }
-//            }
-//        }
-////    }
     return cost;
 }
 
@@ -750,6 +666,16 @@ frCost FlexGridGraph::getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEn
                     + (!guideCost ? GUIDECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
 }
 
+bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const{
+    if (ndr_){
+        if (p.getSrcTaperBox() && p.getSrcTaperBox()->contains(p.x(), p.y(), p.z())) 
+            return false;
+        if (dstTaperBox && dstTaperBox->contains(p.x(), p.y(), p.z())) 
+            return false;
+        return true;
+    }
+    return false;
+}
 frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const{
     auto con = layer->getMinSpacing();
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint)
@@ -887,7 +813,8 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid &currGrid, vector<Flex
 }
 
 bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vector<FlexMazeIdx> &path, 
-                           FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt) {
+                           FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt,
+                           map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox) {
   //bool enableOutput = true;
   bool enableOutput = false;
   int stepCnt = 0;
@@ -929,6 +856,11 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
                                std::numeric_limits<frCoord>::max(), std::numeric_limits<frCoord>::max(), true, 
                                std::numeric_limits<frCoord>::max(),
                                currDist, 0, getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
+    if (ndr_ && AUTO_TAPER_NDR_NETS){
+        auto it = mazeIdx2TaperBox.find(idx);
+        if (it != mazeIdx2TaperBox.end()) 
+            currGrid.setSrcTaperBox(it->second);
+    }
     wavefront_.push(currGrid);
     if (enableOutput) {
       cout <<"src add to wavefront (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;
@@ -940,8 +872,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
     }
-//    if (currNet->getFrNet()->getName() == "net1233")
-//        cout << "Expanding (" << xCoords_[currGrid.x()] << ", " << yCoords_[currGrid.y()] << ", " << currGrid.z() << ") cost: " << currGrid.getCost() << "(g " << currGrid.getPathCost() << ")\n";
     if (graphics_) {
       graphics_->searchNode(this, currGrid);
     }

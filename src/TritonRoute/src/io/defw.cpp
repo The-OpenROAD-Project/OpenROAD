@@ -371,6 +371,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud) {
           //} else {
             //std::cout <<"here3" <<std::endl;
             pathSeg->getStyle(segStyle);
+            if (pathSeg->isTapered()) fprintf(fout, " TAPER ");
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
               fprintf(fout, " ( %d %d )", begin.x(), begin.y());
             } else if (segStyle.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
@@ -397,9 +398,10 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud) {
           auto viaName = via->getViaDef()->getName();
           frPoint origin;
           via->getOrigin(origin);
-          fprintf(fout, "%s ( %d %d ) %s\n", 
-                  layerName.c_str(), 
-                  origin.x(), origin.y(), viaName.c_str());
+          fprintf(fout, "%s ", layerName.c_str());
+          if (via->isTapered())
+              fprintf(fout, " TAPER ");
+          fprintf(fout, "( %d %d ) %s\n", origin.x(), origin.y(), viaName.c_str());
         } else if (connFig->typeId() == frcPatchWire) {
           auto pwire = std::dynamic_pointer_cast<frPatchWire>(connFig);
           auto layerName = userData->getTech()->getLayer(pwire->getLayerNum())->getName();

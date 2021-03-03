@@ -7,10 +7,10 @@
 #include "../../dr/FlexDR.h"
 
 void fr::drNet::incNdrRipupThresh(){
-    if (isNDR()){
+    if (hasNDR()){
        ndrRipupThresh_++; 
     }
 }
-bool fr::drNet::isNDR(){
+bool fr::drNet::hasNDR(){
     return getFrNet()->getNondefaultRule() != nullptr;
 }

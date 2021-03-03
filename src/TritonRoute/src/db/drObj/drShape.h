@@ -76,9 +76,9 @@ namespace fr {
   public:
     // constructors
     drPathSeg(): drShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), 
-                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {}
+                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false), isTapered_(false) {}
     drPathSeg(const drPathSeg &in): drShape(in), begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), 
-                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {
+                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_), isTapered_(in.isTapered_) {
     }
     drPathSeg(const frPathSeg &in);
     // getters
@@ -86,9 +86,6 @@ namespace fr {
       beginIn.set(begin_);
       endIn.set(end_);
     }
-//    void print(){
-//        std::cout << "uihasduihasdui\n";
-//    }
     
     void getStyle(frSegStyle &styleIn) const {
       styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
@@ -99,9 +96,6 @@ namespace fr {
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
       begin_.set(beginIn);
       end_.set(endIn);
-//      if (end_.x() == 252000 && end_.y() == 2000*36.385){
-//            print();
-//        }
     }
     void setStyle(const frSegStyle &styleIn) {
       style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
@@ -220,6 +214,12 @@ namespace fr {
     bool isPatchSeg() const {
       return patchSeg_;
     }
+    bool isTapered() const {
+      return isTapered_;
+    }
+    void setTapered(bool t){
+        isTapered_ = t;
+    }
   protected:
     frPoint        begin_; // begin always smaller than end, assumed
     frPoint        end_;
@@ -229,6 +229,7 @@ namespace fr {
     FlexMazeIdx    beginMazeIdx_;
     FlexMazeIdx    endMazeIdx_;
     bool           patchSeg_;
+    bool           isTapered_;
   };
 
   class drPatchWire: public drShape {

@@ -33,6 +33,7 @@
 #include "frBaseTypes.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frTerm.h"
+#include "frInst.h"
 
 namespace fr {
   class frNet;
@@ -44,7 +45,7 @@ namespace fr {
     // constructors
     frInstTerm(frInst* inst, frTerm* term): inst_(inst), term_(term), net_(nullptr), ap_() {}
     frInstTerm(const frInstTerm &in): frBlockObject(), inst_(in.inst_), term_(in.term_), 
-                                      net_(in.net_), ap_() {}
+                                      net_(in.net_), ap_(){}
     // getters
     bool hasNet() const {
       return (net_);
@@ -61,6 +62,9 @@ namespace fr {
     void addToNet(frNet* in) {
       net_ = in;
     }
+    
+    std::string getFullName();
+    
     const std::vector<frAccessPoint*>& getAccessPoints() const {
       return ap_;
     }
@@ -86,7 +90,6 @@ namespace fr {
     frTerm* term_;
     frNet*  net_;
     std::vector<frAccessPoint*> ap_; // follows pin index
-
   };
 }
 
