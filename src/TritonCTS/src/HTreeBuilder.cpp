@@ -180,12 +180,14 @@ void HTreeBuilder::initSinkRegion()
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);
   } else {
-    if (_topLevelSinksClustered.size() > 200) {
+    if (_topLevelSinksClustered.size() > 400) {
       std::vector<std::pair<float, float>> secondLevelLocs;
       std::vector<const ClockInst*> secondLevelInsts;
       initSecondLevelSinks(secondLevelLocs, secondLevelInsts);
       preSinkClustering(secondLevelLocs, secondLevelInsts,
-                        maxDiameter*2, _options->getSizeSinkClustering()/2, true); 
+                        maxDiameter*4,
+                        std::ceil(std::sqrt(_options->getSizeSinkClustering())),
+                        true);
     }
     _sinkRegion = _clock.computeSinkRegionClustered(_topLevelSinksClustered);
   }
