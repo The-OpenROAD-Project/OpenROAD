@@ -74,7 +74,7 @@ class SegmentBuilder
   {
   }
 
-  void build(std::string forceBuffer = "");
+  void build(std::string forceBuffer = "", ClockInst* sink = nullptr);
   void forceBufferInSegment(std::string master);
   Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
@@ -186,6 +186,13 @@ class HTreeBuilder : public TreeBuilder
   void run();
 
   void plotSolution();
+  unsigned computeMinDelaySegment(unsigned length,
+                                  unsigned inputSlew,
+                                  unsigned inputCap,
+                                  unsigned slewThreshold,
+                                  unsigned tolerance,
+                                  unsigned& outputSlew,
+                                  unsigned& outputCap) const;
 
  private:
   void initSinkRegion();
@@ -195,13 +202,6 @@ class HTreeBuilder : public TreeBuilder
                             double& width,
                             double& height) const;
   unsigned computeMinDelaySegment(unsigned length) const;
-  unsigned computeMinDelaySegment(unsigned length,
-                                  unsigned inputSlew,
-                                  unsigned inputCap,
-                                  unsigned slewThreshold,
-                                  unsigned tolerance,
-                                  unsigned& outputSlew,
-                                  unsigned& outputCap) const;
   unsigned computeMinDelaySegment(unsigned length,
                                   unsigned inputSlew,
                                   unsigned inputCap,
