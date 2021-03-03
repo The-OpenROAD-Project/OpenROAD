@@ -65,7 +65,6 @@ target_link_libraries(dpl
   PRIVATE
     opendb
     OpenSTA
-    dbSta
     utility
 )
 
