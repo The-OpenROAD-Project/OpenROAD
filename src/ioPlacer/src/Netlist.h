@@ -49,6 +49,8 @@ using odb::Point;
 using odb::Rect;
 
 struct Constraint;
+struct Section;
+struct Slot;
 enum class Edge;
 
 enum class Orientation
@@ -166,7 +168,7 @@ class Netlist
 
   int computeIONetHPWL(int, odb::Point);
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
-  int computeIONetHPWL(int, odb::Point, odb::Point, odb::Point, Edge, std::vector<Constraint>&);
+  int computeIONetHPWL(int, Section, std::vector<Constraint>&, std::vector<Slot>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
   void clear();
@@ -181,7 +183,11 @@ class Netlist
   bool checkSlotForPin(IOPin& pin,
                        Edge edge,
                        odb::Point& point,
-                       std::vector<Constraint> restrictions);
+                       std::vector<Constraint>& constraints);
+  bool checkSectionForPin(IOPin& pin,
+                          Section& section,
+                          std::vector<Constraint>& constraints,
+                          std::vector<Slot>& slots);
   bool checkInterval(Constraint constraint, Edge edge, int pos);
 };
 

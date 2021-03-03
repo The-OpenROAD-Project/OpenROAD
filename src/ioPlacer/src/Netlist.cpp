@@ -148,20 +148,19 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
 }
 
 int Netlist::computeIONetHPWL(int idx,
-                              Point section_begin,
-                              Point section_end,
-                              Point section_center,
-                              Edge edge,
-                              std::vector<Constraint>& constraints)
+                              Section section,
+                              std::vector<Constraint>& constraints,
+                              std::vector<Slot>& slots)
 {
   int hpwl;
 
-  if (checkSlotForPin(io_pins_[idx], edge, section_center, constraints)) {
+  Point& section_begin = slots[section.begin_slot].pos;
+  Point& section_center = section.pos;
+  Point& section_end = slots[section.end_slot].pos;
+  Edge edge = section.edge;
+
+  if (checkSectionForPin(io_pins_[idx], section, constraints, slots)) {
     hpwl = computeIONetHPWL(idx, section_center);
-  } else if (checkSlotForPin(io_pins_[idx], edge, section_begin, constraints)) {
-    hpwl = computeIONetHPWL(idx, section_begin)*1.1;
-  } else if (checkSlotForPin(io_pins_[idx], edge, section_end, constraints)) {
-    hpwl = computeIONetHPWL(idx, section_end)*1.1;
   } else {
     hpwl = std::numeric_limits<int>::max();
   }
@@ -204,18 +203,53 @@ int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
 bool Netlist::checkSlotForPin(IOPin& pin,
                               Edge edge,
                               odb::Point& point,
-                              std::vector<Constraint> constraints)
+                              std::vector<Constraint>& constraints)
 {
   bool valid_slot = true;
-
-  for (Constraint constraint : constraints) {
-    int pos
+  int pos
         = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
 
+  for (Constraint constraint : constraints) {
     if (pin.getDirection() == constraint.direction) {
       valid_slot = checkInterval(constraint, edge, pos);
     } else if (pin.getName() == constraint.name) {
       valid_slot = checkInterval(constraint, edge, pos);
+    }
+  }
+
+  return valid_slot;
+}
+
+bool Netlist::checkSectionForPin(IOPin& pin,
+                                 Section& section,
+                                 std::vector<Constraint>& constraints,
+                                 std::vector<Slot>& slots)
+{
+  bool valid_slot = true;
+
+  Edge edge = section.edge;
+
+  int section_begin = (edge == Edge::top || edge == Edge::bottom) ? 
+                      slots[section.begin_slot].pos.x() : slots[section.begin_slot].pos.y();
+  
+  int section_end = (edge == Edge::top || edge == Edge::bottom) ? 
+                      slots[section.end_slot].pos.x() : slots[section.end_slot].pos.y();
+
+  int section_min = (section_begin < section_end) ? section_begin : section_end;
+  int section_max = (section_begin > section_end) ? section_begin : section_end;
+
+  for (Constraint constraint : constraints) {
+    int constraint_begin = constraint.interval.getBegin();
+    int constraint_end = constraint.interval.getEnd();
+
+    if (pin.getDirection() == constraint.direction) {
+      valid_slot = (section_min <= constraint_end &&
+                    constraint_begin <= section_end &&
+                    constraint.interval.getEdge() == edge);
+    } else if (pin.getName() == constraint.name) {
+      valid_slot = (section_min <= constraint_end &&
+                    constraint_begin <= section_end &&
+                    constraint.interval.getEdge() == edge);
     }
   }
 
