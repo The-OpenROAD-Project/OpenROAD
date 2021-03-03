@@ -3747,12 +3747,15 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
     dbNet* net = dbNet::getNet(_block, _netId);
     const char *netName= net->getConstName();
 
+    SUB_MULT_RES = 1.0;
+    /*
     if (delta0 < 0.000001)
       SUB_MULT_RES = 1.0;
     else if (delta < 0.000001 && dist_track<=2.0 ) 
       SUB_MULT_RES = 1.0;
     else if (delta < 0.000001) 
       SUB_MULT_RES = 0.5;
+      */
     // else
       // SUB_MULT_RES = 1.0;
       
