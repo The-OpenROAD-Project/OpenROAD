@@ -213,7 +213,8 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
         assigment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
-        non_blocked_slots_--;
+        if ((slot_index + pin_cnt) <= end_slot_)
+          non_blocked_slots_--;
         pin_cnt++;
       }
       break;
