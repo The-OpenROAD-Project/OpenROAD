@@ -94,8 +94,6 @@ void io::Parser::initDefaultVias() {
 
       // generate new via def if needed
       if (needViaGen) {
-        // reference output file for writing def hack
-        REF_OUT_FILE = OUT_FILE + string(".ref");
         string viaDefName = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
         viaDefName += string("_FR");
         logger->warn(DRT, 160,
@@ -541,114 +539,6 @@ void io::Parser::initDefaultVias_N16(const string &node) {
   }
 }
 
-void io::Parser::writeRefDef() {
-  vector<frViaDef*> genViaDefs;
-  for (auto &uViaDef: tech->getVias()) {
-    auto viaDef = uViaDef.get();
-    if (viaDef->isAddedByRouter()) {
-      genViaDefs.push_back(viaDef);
-    }
-  }
-
-  if (REF_OUT_FILE != DEF_FILE) {
-    logger->info(DRT, 161, "Writing reference output def {}.",
-                 REF_OUT_FILE);
-    bool hasVia = false;
-    ifstream fin(DEF_FILE);
-    ofstream fout(REF_OUT_FILE);
-    if (!fin.is_open()) {
-      cout << "Error: cannot open input DEF\n";
-      exit(1);
-    }
-    if (!fout.is_open()) {
-      cout << "Error: cannot open reference output DEF\n";
-      exit(1);
-    }
-    string line;
-    string a;
-    int b;
-    while (getline(fin, line)) {
-      istringstream iss(line);
-      if (!(iss >> a >> b)) {
-        continue;
-      }
-      if (a == string("VIAS")) {
-        hasVia = true;
-        break;
-      }
-    }
-
-    // reset and write ref
-    fin.clear();
-    fin.seekg(0, ios::beg);
-
-    while (getline(fin, line)) {
-      bool skip = false;
-      istringstream iss(line);
-      if (iss >> a >> b) {
-        // write empty VIAS section if does not exist
-        if (!hasVia) {
-          if (a == string("COMPONENTS")) {
-            fout << "\nVIAS " << genViaDefs.size() << " ;\n";
-            for (auto viaDef: genViaDefs) {
-              frVia via(viaDef);
-              frBox layer1Box, layer2Box, cutBox;
-              via.getLayer1BBox(layer1Box);
-              via.getCutBBox(cutBox);
-              via.getLayer2BBox(layer2Box);
-
-              fout << "- " << viaDef->getName() << endl;
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer1Num())->getName() 
-                   << " ( " << layer1Box.left() << " " << layer1Box.bottom() << " )"
-                   << " ( " << layer1Box.right() << " " << layer1Box.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getCutLayerNum())->getName() 
-                   << " ( " << cutBox.left() << " " << cutBox.bottom() << " )"
-                   << " ( " << cutBox.right() << " " << cutBox.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer2Num())->getName() 
-                   << " ( " << layer2Box.left() << " " << layer2Box.bottom() << " )"
-                   << " ( " << layer2Box.right() << " " << layer2Box.top() << " )\n";
-              fout << "  ;\n";
-            }
-            fout << "END VIAS\n\n";
-          }
-        } else {
-          if (a == string("VIAS")) {
-            skip = true;
-            fout << "\nVIAS " << b + (int)genViaDefs.size() << " ;\n";
-            for (auto viaDef: genViaDefs) {
-              frVia via(viaDef);
-              frBox layer1Box, layer2Box, cutBox;
-              via.getLayer1BBox(layer1Box);
-              via.getCutBBox(cutBox);
-              via.getLayer2BBox(layer2Box);
-
-              fout << "- " << viaDef->getName() << endl;
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer1Num())->getName() 
-                   << " ( " << layer1Box.left() << " " << layer1Box.bottom() << " )"
-                   << " ( " << layer1Box.right() << " " << layer1Box.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getCutLayerNum())->getName() 
-                   << " ( " << cutBox.left() << " " << cutBox.bottom() << " )"
-                   << " ( " << cutBox.right() << " " << cutBox.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer2Num())->getName() 
-                   << " ( " << layer2Box.left() << " " << layer2Box.bottom() << " )"
-                   << " ( " << layer2Box.right() << " " << layer2Box.top() << " )\n";
-              fout << "  ;\n";
-            }
-          }
-        }
-        // append generated via 
-
-      }
-      if (!skip) {
-        fout << line << endl;
-      }
-    }
-
-    fin.close();
-    fout.close();
-  }
-}
-
 void io::Parser::postProcess() {
   initDefaultVias();
   if (DBPROCESSNODE == "N16_11m_2xa1xd3xe2y2r_utrdl") {
@@ -661,9 +551,6 @@ void io::Parser::postProcess() {
   initCutLayerWidth();
   initConstraintLayerIdx();
   tech->printDefaultVias(logger);
-
-  // write reference def for def writing hack flow if needed
-  writeRefDef();
 
   instAnalysis();
 

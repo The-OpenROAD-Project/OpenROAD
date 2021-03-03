@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "mpl/MacroPlacer.h"
+#include "graphics.h"
 
 #include <string>
 
@@ -94,7 +95,9 @@ MacroPlacer::MacroPlacer()
       ux_(0),
       uy_(0),
       verbose_(1),
-      solution_count_(0)
+      solution_count_(0),
+      gui_debug_(false),
+      gui_debug_partitions_(false)
 {
 }
 
@@ -103,6 +106,12 @@ void MacroPlacer::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log)
   db_ = db;
   sta_ = sta;
   logger_ = log;
+}
+
+void MacroPlacer::setDebug(bool partitions)
+{
+  gui_debug_ = true;
+  gui_debug_partitions_ = partitions;
 }
 
 void MacroPlacer::setHalo(double halo_x, double halo_y)
@@ -393,6 +402,11 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   }
   logger_->info(MPL, 70, "Using {} partiion sets", allSets.size() - 1);
 
+  std::unique_ptr<Graphics> graphics;
+  if (gui_debug_ && Graphics::guiActive()) {
+    graphics = std::make_unique<Graphics>(db_, logger_);
+  }
+
   solution_count_ = 0;
   bool found_best = false;
   int best_setIdx = 0;
@@ -402,6 +416,12 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     if (partition_set.size() == 1) {
       continue;
     }
+
+    if (gui_debug_) {
+      graphics->status("Pre-anneal");
+      graphics->set_partitions(partition_set, true);
+    }
+
     // For each of the 4 partitions
     bool isFailed = false;
     for (auto& curPart : partition_set) {
@@ -418,6 +438,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       // Update mckt frequently
       updateMacroLocations(curPart);
     }
+
     if (isFailed) {
       continue;
     }
@@ -426,6 +447,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     logger_->info(MPL, 71, "Solution {} weighted wire length {:g}",
                   solution_count_ + 1,
                   curWwl);
+    bool is_best = false;
     if (!found_best
         // Note that this MAXIMIZES wirelength.
         // That is they way mingyu wrote it.
@@ -435,8 +457,18 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       bestWwl = curWwl;
       best_setIdx = &partition_set - &allSets[0];
       found_best = true;
+      is_best = true;
     }
     solution_count_++;
+
+    if (gui_debug_) {
+      auto msg("Post-anneal WL: " + std::to_string(curWwl));
+      if (is_best) {
+        msg += " [BEST]";
+      }
+      graphics->status(msg);
+      graphics->set_partitions(partition_set, false);
+    }
   }
 
   if (found_best) {

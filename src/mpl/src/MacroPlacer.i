@@ -96,6 +96,12 @@ place_macros_corner_max_wl()
   macro_placer->placeMacrosCornerMaxWl(); 
 } 
 
+void set_debug_cmd(bool partitions)
+{
+  MacroPlacer* macro_placer = getMacroPlacer();
+  macro_placer->setDebug(partitions);
+}
+
 }
 
 %} // inline

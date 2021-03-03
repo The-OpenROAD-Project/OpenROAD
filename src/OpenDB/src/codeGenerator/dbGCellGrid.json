@@ -56,7 +56,7 @@
       },
       {
         "name":"_congestion_map",
-        "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, GCellData>>",
+        "type":"std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>",
         "flags":["private","no-template"]
       }
     ],
@@ -65,42 +65,43 @@
         "name":"GCellData",
         "fields":[
           {
-            "name":"_horizontal_usage",
+            "name":"horizontal_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_vertical_usage",
+            "name":"vertical_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_up_usage",
+            "name":"up_usage",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_horizontal_capacity",
+            "name":"horizontal_capacity",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_vertical_capacity",
+            "name":"vertical_capacity",
             "type":"uint",
             "flags":[],
             "default":0
           },
           {
-            "name":"_up_capacity",
+            "name":"up_capacity",
             "type":"uint",
             "flags":[],
             "default":0
           }
         ]
+        ,"public":true
       }
     ],
     "cpp_includes":["dbTechLayer.h","dbHashTable.h"]

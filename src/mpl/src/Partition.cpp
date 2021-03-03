@@ -64,19 +64,6 @@ Partition::Partition(PartClass _partClass,
 {
 }
 
-Partition::Partition(const Partition& part)
-    : partClass(part.partClass),
-      lx(part.lx),
-      ly(part.ly),
-      width(part.width),
-      height(part.height),
-      macros_(part.macros_),
-      net_tbl_(part.net_tbl_),
-      macro_placer_(part.macro_placer_),
-      logger_(part.logger_)
-{
-}
-
 #define EAST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::East))
 #define WEST_IDX (macros_.size() + coreEdgeIndex(CoreEdge::West))
 #define NORTH_IDX (macros_.size() + coreEdgeIndex(CoreEdge::North))
