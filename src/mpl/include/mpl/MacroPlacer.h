@@ -141,6 +141,7 @@ class MacroPlacer
 public:
   MacroPlacer();
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* log);
+  void setDebug(bool partitions);
 
   void setHalo(double halo_x, double halo_y);
   void setChannel(double channel_x, double channel_y);
@@ -175,8 +176,7 @@ private:
   void cutRoundUp(const Layout& layout,
                   double& cutLine,
                   bool isHorizontal);
-    void setDbInstLocations(double x_scale, 
-                            double y_scale);
+    void setDbInstLocations(Partition &partition);
 
   // graph based adjacencies
   void findAdjacencies();
@@ -221,6 +221,9 @@ private:
   double lx_, ly_, ux_, uy_;
   int verbose_;
   int solution_count_;
+
+  bool gui_debug_;
+  bool gui_debug_partitions_;
   // Number of register levels to look through for macro adjacency.
   static constexpr int reg_adjacency_depth_ = 3;
 };
