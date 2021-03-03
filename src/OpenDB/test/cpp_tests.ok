@@ -1,3 +1,22 @@
+Running test: TestCallBacks
+**********
+1
+Running 10 test cases...
+[WARNING ODB-0062] This wire has no net
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestCallBacks passed
+******************
+Running test: TestGCellGrid
+**********
+1
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestGCellGrid passed
+******************
 Running test: TestGeom
 **********
 1
@@ -6,6 +25,15 @@ Running 3 test cases...
 [1;32;49m*** No errors detected
 [0;39;49m
 TestGeom passed
+******************
+Running test: TestGroup
+**********
+1
+Running 9 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestGroup passed
 ******************
 Running test: TestLef58Properties
 **********
@@ -29,33 +57,5 @@ Running 3 test cases...
 [1;32;49m*** No errors detected
 [0;39;49m
 TestModule passed
-******************
-Running test: TestGroup
-**********
-1
-Running 9 test cases...
-
-[1;32;49m*** No errors detected
-[0;39;49m
-TestGroup passed
-******************
-Running test: TestGCellGrid
-**********
-1
-Running 1 test case...
-
-[1;32;49m*** No errors detected
-[0;39;49m
-TestGCellGrid passed
-******************
-Running test: TestCallBacks
-**********
-1
-Running 10 test cases...
-[WARNING ODB-0062] This wire has no net
-
-[1;32;49m*** No errors detected
-[0;39;49m
-TestCallBacks passed
 ******************
 pass
