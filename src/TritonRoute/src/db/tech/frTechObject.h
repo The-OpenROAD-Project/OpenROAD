@@ -73,6 +73,9 @@ namespace fr {
     frLayerNum getBottomLayerNum() const {
       return 0;
     }
+    frLayerNum getBottomRoutingLayerNum() const {
+      return 2;     //Im not sure whether it is guaranteed that this is always true
+    }
     frLayerNum getTopLayerNum() const {
       return (frLayerNum)((int)layers.size() - 1);
     }
