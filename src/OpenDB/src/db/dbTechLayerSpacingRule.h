@@ -48,8 +48,38 @@ class dbDiff;
 class _dbTechLayerSpacingRule : public _dbObject
 {
  public:
+  enum _RuleType
+  {
+    DEFAULT = 0,
+    RANGE_ONLY,
+    RANGE_USELENGTH,
+    RANGE_INFLUENCE,
+    RANGE_INFLUENCE_RANGE,
+    RANGE_RANGE,
+    LENGTHTHRESHOLD,
+    LENGTHTHRESHOLD_RANGE,
+    CUT_LAYER_BELOW,
+    ADJACENT_CUTS_INFLUENCE,
+    ENDOFLINE,
+    ENDOFLINE_PARALLEL,
+    ENDOFLINE_PARALLEL_TWOEDGES
+  };
+
+  struct _Flword
+  {
+    _RuleType _rule : 4;
+    bool      _except_same_pgnet : 1;
+    bool      _cut_stacking : 1;
+    bool      _cut_center_to_center : 1;
+    bool      _cut_same_net : 1;
+    bool      _cut_parallel_overlap : 1;
+    bool      _notch_length : 1;
+    bool      _end_of_notch_width : 1;
+    uint      _spare_bits : 21;
+  };
+
   // PERSISTENT-MEMBERS
-  TechLayerSpacingRule::_Flword _flags;
+  _Flword                       _flags;
   uint                          _spacing;
   uint                          _length_or_influence;
   uint                          _r1min;
@@ -93,7 +123,7 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
 {
-  _flags._rule                 = TechLayerSpacingRule::DEFAULT;
+  _flags._rule                 = DEFAULT;
   _flags._except_same_pgnet    = false;
   _flags._cut_stacking         = false;
   _flags._cut_center_to_center = false;
