@@ -204,7 +204,7 @@ namespace eval tap {
 
         set end_master [$db findMaster $endcap_master]
         if { $end_master == "NULL" } {
-            utl::error TAP 11 "Master $endcap_master not found"
+            utl::error TAP 10 "Master $endcap_master not found."
         }
         set end_width [$end_master getWidth]
         set min_row_width [expr 2*$end_width]
@@ -290,7 +290,7 @@ namespace eval tap {
             set endcapwidth [expr $endcap_cpp*$site_x]
 
             if { $master == "NULL" } {
-                utl::error 11 "Master $endcap_master not found"
+                utl::error TAP 11 "Master $endcap_master not found."
             }
 
             set row_name [$row getName]
@@ -305,13 +305,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 12 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 12 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
                         
                         if { $master == "NULL" } {
-                            utl::error TAP 13 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 13 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } elseif {$top_bottom == -1} {
@@ -319,13 +319,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 14 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 14 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
 
                         if { $master == "NULL" } {
-                            utl::error TAP 15 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 15 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } else {
@@ -344,7 +344,6 @@ namespace eval tap {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                utl::warn TAP 8 "Not enough space to place endcap in row $row_name. Skipping..."
                 continue
             }
 
@@ -395,7 +394,7 @@ namespace eval tap {
             }
 
             if {$llx == $loc_2_x && $lly == $loc_2_y} {
-                utl::warn TAP 9 "WARNING: row $row_name have enough space for only one endcap"
+                utl::warn TAP 9 "row $row_name have enough space for only one endcap."
             continue
             }
 
@@ -485,13 +484,10 @@ namespace eval tap {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
                     if { $master == "NULL" } {
-                        utl::error TAP 16 "Master $tapcell_master not found"
+                        utl::error TAP 16 "Master $tapcell_master not found."
                     }
 
                     set inst_name "PHY_${cnt}"
-                    set tap_width [$master getWidth]
-                    set tap_urx [expr $x + $tap_width]
-                    set end_llx [expr $urx - $endcap_width]
 
                     set x_tmp [expr {floor (1.0*$x/$site_x)*$site_x}]
                     set row_orig_fix [expr { $llx % $site_x }]
@@ -511,10 +507,15 @@ namespace eval tap {
                         }
                     }
 
-                    if {($x != $min_x) && ($x_end != $max_x)} {
+                    set tap_width [$master getWidth]
+                    set tap_urx [expr $x_tmp + $tap_width]
+                    set end_llx [expr $urx - $endcap_width]
+
+                    if {($x_tmp != $min_x) && ($x_end != $max_x)} {
                         if { $tap_urx > $end_llx } {
-                            utl::warn TAP 10 "Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
-                            continue
+                            set x_microns [ord::dbu_to_microns $x_tmp]
+                            set y_microns [ord::dbu_to_microns $lly]
+                            set x_tmp [expr $x_tmp - ($tap_urx - $end_llx)]
                         }
 
                         set new_x [expr {floor (1.0*$x_tmp/$site_x)*$site_x}]
