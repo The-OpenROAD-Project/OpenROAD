@@ -227,7 +227,7 @@ void GlobalRouter::runFastRoute(bool onlySignal)
   _routes.insert(result.begin(), result.end());
 
   computeWirelength();
-
+  _fastRoute->updateDbCongestion(_db);
   if (_reportCongest) {
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");

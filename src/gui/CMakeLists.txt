@@ -52,6 +52,5 @@ target_include_directories(gui
   PUBLIC
     include
   PRIVATE
-    ../FastRoute/include #Ugly but needed till we get FastRoute Data from OpenDb
     ${OPENSTA_HOME}/include
 )

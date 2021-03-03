@@ -39,6 +39,7 @@
 // User Code Begin includes
 #include <map>
 
+#include "db.h"
 #include "dbVector.h"
 // User Code End includes
 
@@ -50,6 +51,7 @@ class dbDiff;
 class _dbDatabase;
 // User Code Begin Classes
 class _dbTechLayer;
+
 // User Code End Classes
 
 struct dbGCellGridFlags
@@ -57,15 +59,6 @@ struct dbGCellGridFlags
   bool _x_grid_valid : 1;
   bool _y_grid_valid : 1;
   uint _spare_bits : 30;
-};
-struct GCellData
-{
-  uint _horizontal_usage    = 0;
-  uint _vertical_usage      = 0;
-  uint _up_usage            = 0;
-  uint _horizontal_capacity = 0;
-  uint _vertical_capacity   = 0;
-  uint _up_capacity         = 0;
 };
 // User Code Begin structs
 // User Code End structs
@@ -85,7 +78,8 @@ class _dbGCellGrid : public _dbObject
   dbVector<int>    _y_step;
   dbVector<int>    _x_grid;
   dbVector<int>    _y_grid;
-  std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, GCellData>>
+  std::map<dbId<_dbTechLayer>,
+           std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
       _congestion_map;
 
   // User Code Begin fields
@@ -107,8 +101,8 @@ class _dbGCellGrid : public _dbObject
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);
 // User Code Begin general
-dbIStream& operator>>(dbIStream& stream, GCellData& obj);
-dbOStream& operator<<(dbOStream& stream, const GCellData& obj);
+dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj);
+dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj);
 // User Code End general
 }  // namespace odb
 // Generator Code End 1
