@@ -419,15 +419,15 @@ void OpenDbDescriptor::highlight(void* object,
         std::set<odb::Point> driver_locs;
         std::set<odb::Point> sink_locs;
         for (auto inst_term : net->getITerms()) {
-          odb::Point rect_center ;
-          int x, y ;
+          odb::Point rect_center;
+          int x, y;
           if (!inst_term->getAvgXY(&x, &y)) {
             auto inst_term_inst = inst_term->getInst();
             odb::dbBox* bbox = inst_term_inst->getBBox();
             odb::Rect rect;
             bbox->getBox(rect);
             rect_center = odb::Point((rect.xMax() + rect.xMin()) / 2.0,
-                                  (rect.yMax() + rect.yMin()) / 2.0);
+                                     (rect.yMax() + rect.yMin()) / 2.0);
           } else
             rect_center = odb::Point(x, y);
           auto iotype = inst_term->getIoType();
@@ -437,8 +437,7 @@ void OpenDbDescriptor::highlight(void* object,
               continue;
             sink_locs.insert(rect_center);
           }
-          if (iotype == odb::dbIoType::INOUT
-              || iotype == odb::dbIoType::OUTPUT)
+          if (iotype == odb::dbIoType::INOUT || iotype == odb::dbIoType::OUTPUT)
             driver_locs.insert(rect_center);
         }
         for (auto blk_term : net->getBTerms()) {

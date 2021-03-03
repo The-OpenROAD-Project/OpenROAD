@@ -48,6 +48,7 @@
 #include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "staGui.h"
 
 namespace gui {
 
@@ -88,11 +89,6 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
-
-  // connect(this,
-  //        SIGNAL(designLoaded(odb::dbBlock*)),
-  //        timing_dialog_,
-  //        SLOT(designLoaded(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
@@ -148,6 +144,11 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&, int)),
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
+
+  connect(timing_dialog_,
+          SIGNAL(highlightTimingPath(TimingPath*)),
+          viewer_,
+          SLOT(update()));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -391,6 +392,7 @@ void MainWindow::showTimingDialog()
 {
   timing_dialog_->populateTimingPaths(nullptr);
   timing_dialog_->show();
+  Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)

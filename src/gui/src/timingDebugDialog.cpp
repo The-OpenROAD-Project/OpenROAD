@@ -34,13 +34,15 @@
 
 #include <QDebug>
 
+#include "db_sta/dbSta.hh"
 #include "staGui.h"
 
 namespace gui {
 TimingDebugDialog::TimingDebugDialog(QWidget* parent)
     : QDialog(parent),
       timing_paths_model_(nullptr),
-      path_details_model_(new TimingPathDetailModel())
+      path_details_model_(new TimingPathDetailModel()),
+      path_renderer_(new TimingPathRenderer())
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
@@ -49,17 +51,17 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
       QHeaderView::Stretch);
   timingPathTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
   pathDetailsTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  // pathDetailsTableView->setModel(path_details_model_);
 
   connect(timingPathTableView,
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(showPathDetails(const QModelIndex&)));
 
-  connect(timingPathTableView,
-          SIGNAL(doubleClicked(const QModelIndex&)),
-          this,
-          SLOT(showPathInLayout(const QModelIndex&)));
+  connect(nextPathBtn, SIGNAL(clicked()), this, SLOT(showNextPath()));
+  connect(prevPathBtn, SIGNAL(clicked()), this, SLOT(showPrevPath()));
+  connect(
+      jumpToPathEdit, SIGNAL(returnPressed()), this, SLOT(showRequestedPath()));
+  jumpToPathEdit->setFocusPolicy(Qt::StrongFocus);
 }
 
 void TimingDebugDialog::accept()
@@ -70,6 +72,8 @@ void TimingDebugDialog::accept()
 void TimingDebugDialog::reject()
 {
   QDialog::reject();
+  path_renderer_->highlight(nullptr);
+  Gui::get()->unregisterRenderer(path_renderer_);
 }
 
 void TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
@@ -78,6 +82,8 @@ void TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
     return;
   timing_paths_model_ = new TimingPathsModel();
   timingPathTableView->setModel(timing_paths_model_);
+  jumpToPathEdit->setValidator(
+      new QIntValidator(0, timing_paths_model_->rowCount()));
 }
 
 void TimingDebugDialog::showPathDetails(const QModelIndex& index)
@@ -87,12 +93,48 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   auto path = timing_paths_model_->getPathAt(index.row());
   path_details_model_->populateModel(path);
   pathDetailsTableView->setModel(path_details_model_);
+  path_renderer_->highlight(path);
+  emit highlightTimingPath(path);
 }
 
-void TimingDebugDialog::showPathInLayout(const QModelIndex& index)
+void TimingDebugDialog::showNextPath()
 {
-  // TBD
-  qDebug() << "Came to show Path In Layout of path " << index.row() + 1;
+  QItemSelectionModel* selectionModel = timingPathTableView->selectionModel();
+  int row = -1;
+  if (selectionModel->hasSelection())
+    row = selectionModel->selection().first().indexes().first().row();
+  int rowcount = timingPathTableView->model()->rowCount();
+  row = (row + 1) % rowcount;
+  QModelIndex new_index = timingPathTableView->model()->index(row, 0);
+  timingPathTableView->selectRow(new_index.row());
+  showPathDetails(new_index);
+}
+
+void TimingDebugDialog::showPrevPath()
+{
+  QItemSelectionModel* selectionModel = timingPathTableView->selectionModel();
+  int row = -1;
+  if (selectionModel->hasSelection())
+    row = selectionModel->selection().first().indexes().first().row();
+  int rowcount = timingPathTableView->model()->rowCount();
+  row = (row - 1) % rowcount;
+  QModelIndex new_index = timingPathTableView->model()->index(row, 0);
+  timingPathTableView->selectRow(new_index.row());
+  showPathDetails(new_index);
+}
+
+void TimingDebugDialog::showPathIndex(int path_idx)
+{
+  QModelIndex new_index = timingPathTableView->model()->index(path_idx, 0);
+  timingPathTableView->selectRow(new_index.row());
+  showPathDetails(new_index);
+}
+
+void TimingDebugDialog::showRequestedPath()
+{
+  QString path_str = jumpToPathEdit->text();
+  int path_idx = path_str.toInt();
+  showPathIndex(path_idx - 1);
 }
 
 }  // namespace gui

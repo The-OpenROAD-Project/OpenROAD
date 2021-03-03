@@ -49,16 +49,27 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   Q_OBJECT
  public:
   TimingDebugDialog(QWidget* parent = nullptr);
+
+  TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
+
+ signals:
+  void highlightTimingPath(TimingPath* timing_path);
+
  public slots:
   void accept();
   void reject();
   void populateTimingPaths(odb::dbBlock* block);
 
   void showPathDetails(const QModelIndex& index);
-  void showPathInLayout(const QModelIndex& index);
+
+  void showNextPath();
+  void showPrevPath();
+  void showPathIndex(int pathId = 0);
+  void showRequestedPath();
 
  private:
   TimingPathsModel* timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
+  TimingPathRenderer* path_renderer_;
 };
 }  // namespace gui

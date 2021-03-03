@@ -37,7 +37,11 @@
 
 #include <QAbstractTableModel>
 
+#include "gui/gui.h"
 #include "opendb/db.h"
+#include "sta/PathExpanded.hh"
+#include "sta/PathRef.hh"
+#include "sta/Sta.hh"
 
 namespace ord {
 class OpenRoad;
@@ -52,10 +56,12 @@ class TimingPathsModel;
 class TimingPathNode;
 class TimingPath;
 class TimingPathDetailModel;
+
 class TimingPathsModel : public QAbstractTableModel
 {
  public:
   TimingPathsModel();
+  ~TimingPathsModel();
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -122,7 +128,7 @@ class TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath() {}
+  TimingPath() : path_exp_(nullptr) {}
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
@@ -141,6 +147,9 @@ class TimingPath
   float getPathDelay() const { return pathDelay_; }
   void setPathDelay(float del) { pathDelay_ = del; }
 
+  void setPathExp(sta::PathExpanded* path_exp) { path_exp_ = path_exp; }
+  sta::PathExpanded* getPathExp() { return path_exp_; }
+
   TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
 
   std::string getStartStageName() const;
@@ -150,6 +159,7 @@ class TimingPath
 
  private:
   std::vector<TimingPathNode> path_nodes_;
+  sta::PathExpanded* path_exp_;
   std::string startClk_;
   std::string endClk_;
   float slack_;
@@ -179,7 +189,37 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   TimingPath* path_;
   const static inline std::vector<std::string> _path_details_columns
-      = {"Node", "Rising", "Required", "Arrival", "Slack", "Slew", "Load"};
-  //= {"Fanout", "Cap", "Slew", "Delay", "Time", "Description"};
+      = {"Node", "Transition", "Required", "Arrival", "Slack", "Slew", "Load"};
+};
+
+class TimingPathRenderer : public gui::Renderer
+{
+ public:
+  TimingPathRenderer();
+  ~TimingPathRenderer();
+  void highlight(TimingPath* path);
+  void highlightInstNode(TimingPathNode node);
+  void drawObjects1(gui::Painter& /* painter */);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+ private:
+  void highlightInst(odb::dbInst* inst,
+                     gui::Painter& painter,
+                     const gui::Painter::Color& color);
+  void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
+  void highlightNet(odb::dbNet* net,
+                    odb::dbObject* source_node,
+                    odb::dbObject* sink_node,
+                    gui::Painter& painter);
+
+  // Expanded path is owned by PathRenderer.
+  TimingPath* path_;
+  std::vector<odb::dbInst*> highlight_inst_nodes_;
+
+  static gui::Painter::Color inst_highlight_color_;
+  static gui::Painter::Color path_inst_color_;
+  static gui::Painter::Color term_color_;
+  static gui::Painter::Color signal_color_;
+  static gui::Painter::Color clock_color_;
 };
 }  // namespace gui
