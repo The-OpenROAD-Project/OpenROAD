@@ -1,6 +1,5 @@
 record_tests {
   import_package
-  cpp_tests
   read_lef
   dump_via_rules
   dump_vias
@@ -21,6 +20,7 @@ record_tests {
 }
 
 record_pass_fail_tests {
+  cpp_tests
   dump_netlists
   dump_netlists_withfill
 }

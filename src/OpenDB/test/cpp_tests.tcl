@@ -4,7 +4,7 @@ set test_dir [pwd]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
 set tests_path [file join $openroad_dir "build" "src" "OpenDB" "test" "cpp"]
 
-set tests_list [lsort [split [exec sh -c "find $tests_path -maxdepth 1 -name 'Test*'"] \n]]
+set tests_list [split [exec sh -c "find $tests_path -maxdepth 1 -name 'Test*'"] \n]
 
 foreach test $tests_list {
     set test_name [file tail $test]
