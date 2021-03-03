@@ -43,7 +43,6 @@
 #include <vector>
 
 #include "displayControls.h"
-#include "fastroute/GlobalRouter.h"
 #include "layoutViewer.h"
 #include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
@@ -491,6 +490,7 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 void MainWindow::setLogger(utl::Logger* logger)
 {
   script_->setLogger(logger);
+  viewer_->setLogger(logger);
 }
 
 }  // namespace gui
