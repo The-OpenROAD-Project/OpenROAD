@@ -49,8 +49,6 @@
 
 namespace dpl {
 
-using std::ifstream;
-using std::ofstream;
 using std::round;
 using std::string;
 
