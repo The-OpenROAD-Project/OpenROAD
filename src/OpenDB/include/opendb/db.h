@@ -7993,6 +7993,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   dbTechLayer* getSecondLayer() const;
 
+  dbTechLayer* getTechLayer() const;
+
   void setType(CutSpacingType _type);
 
   CutSpacingType getType() const;
@@ -8205,6 +8207,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
                                  const char* class2,
                                  bool        SIDE2);
 
+  dbTechLayer* getTechLayer() const;
+
   static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
 
   static dbTechLayerCutSpacingTableDefRule*
@@ -8343,6 +8347,16 @@ class dbGroup : public dbObject
 class dbGCellGrid : public dbObject
 {
  public:
+  struct GCellData
+  {
+    uint horizontal_usage    = 0;
+    uint vertical_usage      = 0;
+    uint up_usage            = 0;
+    uint horizontal_capacity = 0;
+    uint vertical_capacity   = 0;
+    uint up_capacity         = 0;
+  };
+
   // User Code Begin dbGCellGrid
 
   ///
@@ -8463,6 +8477,11 @@ class dbGCellGrid : public dbObject
                 uint&        up) const;
 
   void resetCongestionMap();
+
+  void resetGrid();
+
+  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
+                                                              = nullptr);
   // User Code End dbGCellGrid
 };
 

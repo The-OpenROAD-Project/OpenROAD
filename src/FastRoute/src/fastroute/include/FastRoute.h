@@ -46,6 +46,10 @@ namespace utl {
 class Logger;
 }
 
+namespace odb{
+class dbDatabase;
+}
+
 namespace grt {
 
 class FastRouteCore
@@ -85,6 +89,7 @@ class FastRouteCore
                      bool isReduce = true);
   void initAuxVar();
   NetRouteMap run();
+  void updateDbCongestion(odb::dbDatabase* db);
   void writeCongestionReport2D(std::string fileName);
   void writeCongestionReport3D(std::string fileName);
   void findCongestionInformation(std::vector<GCellCongestion>& congestionInfo);
