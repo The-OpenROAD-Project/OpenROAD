@@ -37,6 +37,7 @@
 
 #include "Clock.h"
 #include "CtsOptions.h"
+#include "HTreeBuilder.h"
 
 #include <unordered_map>
 
@@ -51,8 +52,15 @@ using utl::Logger;
 class PostCtsOpt
 {
  public:
-  PostCtsOpt(Clock& clock, CtsOptions* options, Logger* logger)
-      : _clock(&clock), _options(options), _logger(logger)
+  PostCtsOpt(TreeBuilder* builder,
+             CtsOptions* options,
+             TechChar* techChar,
+             Logger* logger)
+      : _builder((HTreeBuilder*) builder),
+        _clock(&(builder->getClock())),
+        _techChar(techChar),
+        _options(options),
+        _logger(logger)
   {
     _bufDistRatio = _options->getBufDistRatio();
   }
@@ -64,6 +72,7 @@ class PostCtsOpt
   void computeNetSourceSinkDists(const Clock::SubNet& subNet);
   void fixSourceSinkDists();
   void fixNetSourceSinkDists(Clock::SubNet& subNet);
+  void fixLongWire(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
   void createSubClockNet(Clock::SubNet& net,
                          ClockInst* driver,
                          ClockInst* sink);
@@ -71,11 +80,14 @@ class PostCtsOpt
 
   Clock* _clock;
   CtsOptions* _options;
+  TechChar* _techChar;
   Logger* _logger;
+  HTreeBuilder* _builder;
   unsigned _numViolatingSinks = 0;
   unsigned _numInsertedBuffers = 0;
   double _avgSourceSinkDist = 0.0;
   double _bufDistRatio = 0.0;
+  int bufIndex = 1;
   std::unordered_map<std::string, DBU> _sinkDistMap;
 };
 
