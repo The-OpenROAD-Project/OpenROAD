@@ -37,7 +37,7 @@
 #include <math.h>
 
 #include <algorithm>
-#include <iostream>
+
 #include "parse.h"
 #include "utility/Logger.h"
 
