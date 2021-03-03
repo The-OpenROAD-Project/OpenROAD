@@ -248,8 +248,12 @@ auto_place_pins pin_layer
 #### Pin placement
 
 Place pins to on-track locations at the boundaries of the 
-core while optimizing nets wirelength. Pin placement also 
+core while optimizing nets wire length. Pin placement also 
 creates a metal shape for each pin using min-area rules.
+
+For designs with unplaced cells, the net wire length is
+computed considering the center of the die area as the
+unplaced cells' position.
 
 Use the following command to perform pin placement:
 ```
