@@ -199,7 +199,7 @@ class TimingPathRenderer : public gui::Renderer
   ~TimingPathRenderer();
   void highlight(TimingPath* path);
   void highlightInstNode(TimingPathNode node);
-  void drawObjects1(gui::Painter& /* painter */);
+  void drawObjectsNative(gui::Painter& /* painter */);
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
  private:
