@@ -400,8 +400,8 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
         blocked_slots++;
       }
     }
-    int mid_point = (end_slot - edge_begin) / 2;
-    Section n_sec = {slots_.at(edge_begin + mid_point).pos};
+    int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
+    Section n_sec = {slots_.at(half_length_pt).pos};
     if (usage_per_section_ > 1.f) {
       logger_->warn(PPL, 35, "section usage exeeded max");
       usage_per_section_ = 1.;
@@ -434,11 +434,7 @@ void IOPlacer::createSections()
   Point lb = core_.getBoundary().ll();
   Point ub = core_.getBoundary().ur();
 
-  SlotVector& slots = slots_;
   sections_.clear();
-  int num_slots = slots.size();
-  int begin_slot = 0;
-  int end_slot = 0;
 
   createSectionsPerEdge(Edge::bottom);
   createSectionsPerEdge(Edge::right);
