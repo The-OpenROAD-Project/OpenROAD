@@ -8,9 +8,8 @@ RUN yum group install -y "Development Tools" \
     && yum install -y wget devtoolset-8 \
     && yum install -y llvm-toolset-7.0 llvm-toolset-7.0-libomp-devel \
     && yum install -y qt5-qtbase-devel \
-    && yum install -y python3-devel \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
-    python36u python36u-libs python36u-devel python36u-pip && \
+    python36u python36u-libs python38u-devel python36u-pip && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
