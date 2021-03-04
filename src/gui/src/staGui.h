@@ -42,7 +42,23 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/Sta.hh"
-
+#include "opendb/dbBlockCallBackObj.h"
+namespace odb {
+class dbBlock;
+class dbFill;
+class dbInst;
+class dbMaster;
+class dbNet;
+class dbITerm;
+class dbWire;
+class dbBTerm;
+class dbBPin;
+class dbBlockage;
+class dbObstruction;
+class dbRegion;
+class dbRow;
+class dbSWire;
+}
 namespace ord {
 class OpenRoad;
 }
@@ -81,7 +97,7 @@ class TimingPathsModel : public QAbstractTableModel
 
  private:
   void populateModel();
-  bool populatePaths(bool get_max = true, int path_count = 1000);
+  bool populatePaths(bool get_max = true, int path_count = 100);
 
   ord::OpenRoad* openroad_;
   std::vector<sta::Instance*> findInstancesNetwork(std::string pattern);
@@ -222,4 +238,44 @@ class TimingPathRenderer : public gui::Renderer
   static gui::Painter::Color signal_color_;
   static gui::Painter::Color clock_color_;
 };
+
+class guiCallbacks : public odb::dbBlockCallBackObj
+{
+public:
+  guiCallbacks(): isDirty(false) { }
+  void inDbInstCreate(odb::dbInst *inst) { cbk(); }
+  void inDbInstDestroy(odb::dbInst *inst) { cbk(); }
+  void inDbInstSwapMasterBefore(odb::dbInst *inst,
+                                odb::dbMaster *master) { cbk(); }
+  void inDbInstSwapMasterAfter(odb::dbInst *inst) { cbk(); }
+  void inDbNetCreate(odb::dbNet* n) { cbk(); }
+  void inDbNetDestroy(odb::dbNet *net) { cbk(); }
+  void inDbITermPostConnect(odb::dbITerm *iterm) { cbk(); }
+  void inDbITermPreDisconnect(odb::dbITerm *iterm) { cbk(); }
+  void inDbITermDestroy(odb::dbITerm *iterm) { cbk(); }
+  void inDbBTermPostConnect(odb::dbBTerm *bterm) { cbk(); }
+  void inDbBTermPreDisconnect(odb::dbBTerm *bterm) { cbk(); }
+  void inDbBTermDestroy(odb::dbBTerm *bterm) { cbk(); }
+  void inDbWireCreate(odb::dbWire* w) { cbk(); }
+  void inDbWireDestroy(odb::dbWire* w) { cbk(); }
+  void inDbBlockageCreate(odb::dbBlockage* b) { cbk(); }
+  void inDbObstructionCreate(odb::dbObstruction* o) { cbk(); }
+  void inDbObstructionDestroy(odb::dbObstruction* o) { cbk(); }
+  void inDbBlockStreamOutAfter(odb::dbBlock* b) { cbk(); }
+  void inDbFillCreate(odb::dbFill* f) { cbk(); }
+  void reset() {
+    isDirty = false;
+    // call reset after gui refresh
+  }
+private:
+  void cbk() {
+    if (isDirty == false) {
+      // send signal if dirty was false
+      isDirty = true;
+    }
+
+  }
+  bool isDirty;
+};
+
 }  // namespace gui

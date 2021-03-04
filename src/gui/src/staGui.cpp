@@ -272,8 +272,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
           true,      // sort_by_slack
           nullptr,   // group_names
           // setup, hold, recovery, removal,
-          true,
-          true,
+          get_max,
+          !get_max,
           false,
           false,
           // clk_gating_setup, clk_gating_hold
