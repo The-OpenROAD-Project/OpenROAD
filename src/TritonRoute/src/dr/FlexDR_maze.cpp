@@ -2644,7 +2644,6 @@ drPin* FlexDRWorker::routeNet_getNextDst(FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &c
 }
 
 void FlexDRWorker::mazePinInit() {
-  gridGraph_.resetAStarCosts();
   gridGraph_.resetPrevNodeDir();
 }
 
