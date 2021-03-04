@@ -146,8 +146,7 @@ QVariant TimingPathsModel::headerData(int section,
     if (section > 1 && section < 5) {
       sta::dbSta* sta = openroad_->getSta();
       auto time_units = sta->search()->units()->timeUnit();
-      return QString(TimingPathsModel::_path_columns[section].c_str())
-             + QString(" (") + QString(time_units->suffix()) + QString(")");
+      return QString(TimingPathsModel::_path_columns[section].c_str());
     } else
       return QString(TimingPathsModel::_path_columns[section].c_str());
   }
@@ -233,15 +232,20 @@ std::vector<sta::Pin*> TimingPathsModel::findPinsNetwork(std::string pattern)
   return static_cast<std::vector<sta::Pin*>>(all_pins);
 }
 
+void TimingPathsModel::resetModel()
+{
+  beginResetModel();
+  for (auto timing_path : timing_paths_)
+    delete timing_path;
+  timing_paths_.clear();
+  endResetModel();
+}
+
 void TimingPathsModel::populateModel()
 {
   beginResetModel();
   populatePaths();
   endResetModel();
-  qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
-           << " Paths...";
-  // if (timing_paths_.size() > 0)
-  //  timing_paths_[7]->printPath("pathReport.csv");
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
@@ -323,7 +327,7 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     timing_paths_.push_back(path);
   }
   QApplication::restoreOverrideCursor();
-  // delete path_ends;
+  delete path_ends;
   return true;
 }
 
@@ -452,11 +456,9 @@ QVariant TimingPathDetailModel::headerData(int section,
     auto cap_units = sta->search()->units()->capacitanceUnit();
     if (section > 1 && section < 6)
       return QString(
-                 TimingPathDetailModel::_path_details_columns[section].c_str())
-             + QString(" (") + QString(time_units->suffix()) + QString(")");
+          TimingPathDetailModel::_path_details_columns[section].c_str());
     return QString(
-               TimingPathDetailModel::_path_details_columns[section].c_str())
-           + QString(" (") + QString(cap_units->suffix()) + QString(")");
+        TimingPathDetailModel::_path_details_columns[section].c_str());
   }
   return QVariant();
 }
@@ -475,7 +477,6 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 
 TimingPathRenderer::~TimingPathRenderer()
 {
-  // delete path_;
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)

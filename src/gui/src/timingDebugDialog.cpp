@@ -33,6 +33,8 @@
 #include "timingDebugDialog.h"
 
 #include <QDebug>
+#include <QMessageBox>
+#include <QSortFilterProxyModel>
 
 #include "db_sta/dbSta.hh"
 #include "staGui.h"
@@ -57,10 +59,19 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(showPathDetails(const QModelIndex&)));
+  connect(timingPathTableView->horizontalHeader(),
+          SIGNAL(sectionClicked(int)),
+          this,
+          SLOT(timingPathsViewCustomSort(int)));
   connect(pathDetailsTableView,
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(highlightPathStage(const QModelIndex&)));
+
+  connect(findObjectEdit,
+          SIGNAL(returnPressed()),
+          this,
+          SLOT(findNodeInPathDetails()));
 
   connect(nextPathBtn, SIGNAL(clicked()), this, SLOT(showNextPath()));
   connect(prevPathBtn, SIGNAL(clicked()), this, SLOT(showPrevPath()));
@@ -120,6 +131,29 @@ void TimingDebugDialog::highlightPathStage(const QModelIndex& index)
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
+void TimingDebugDialog::timingPathsViewCustomSort(int col_index)
+{
+  if (col_index != 1)
+    return;
+  timing_paths_model_->sort(col_index);
+}
+
+void TimingDebugDialog::findNodeInPathDetails()
+{
+  auto search_node = findObjectEdit->text();
+  QSortFilterProxyModel proxy;
+  proxy.setSourceModel(path_details_model_);
+  proxy.setFilterKeyColumn(0);
+  proxy.setFilterFixedString(search_node);
+  QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
+  if (match_index.isValid()) {
+    pathDetailsTableView->selectRow(match_index.row());
+  } else {
+    QMessageBox::information(
+        this, "Node Search : ", search_node + " Match not found!");
+  }
+}
+
 void TimingDebugDialog::showNextPath()
 {
   QItemSelectionModel* selectionModel = timingPathTableView->selectionModel();
@@ -163,6 +197,8 @@ void TimingDebugDialog::showRequestedPath()
 void TimingDebugDialog::handleDbChange(QString change_type,
                                        std::vector<odb::dbObject*> objects)
 {
+  path_details_model_->populateModel(nullptr);
+  timing_paths_model_->resetModel();
 }
 
 }  // namespace gui

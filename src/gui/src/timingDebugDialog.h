@@ -65,6 +65,8 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
 
   void showPathDetails(const QModelIndex& index);
   void highlightPathStage(const QModelIndex& index);
+  void timingPathsViewCustomSort(int col_index);
+  void findNodeInPathDetails();
 
   void showNextPath();
   void showPrevPath();

@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1017</width>
+    <width>774</width>
     <height>737</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Timing Debug</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_8">
+  <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -43,41 +43,11 @@
         </layout>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_6">
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Slack Distribution</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QFrame" name="slackDistrFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>700</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="verticalLayout_6"/>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QTabWidget" name="tabWidget">
@@ -91,6 +61,9 @@
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="0">
             <widget class="QGraphicsView" name="slackHistogramView">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -223,6 +196,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
           <widget class="QPushButton" name="timingReportBtn">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Report...</string>
            </property>

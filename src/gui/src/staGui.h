@@ -96,6 +96,8 @@ class TimingPathsModel : public QAbstractTableModel
   void findNets(std::string pattern, std::vector<odb::dbNet*>& nets);
   void findPins(std::string pattern, std::vector<odb::dbObject*>& pins);
 
+  void resetModel();
+
  private:
   void populateModel();
   bool populatePaths(bool get_max = true, int path_count = 100);
