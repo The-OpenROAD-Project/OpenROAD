@@ -65,13 +65,6 @@ namespace fr {
     }
     // getters
     // unsafe access, no check
-    bool hasAStarCost(frMIdx x, frMIdx y, frMIdx z) const {
-      return (getAStarCost(x, y, z) != UINT_MAX);
-    }
-    frCost getAStarCost(frMIdx x, frMIdx y, frMIdx z) const {
-      return astarCosts_[getIdx(x, y, z)];
-    }
-    // unsafe access, no check
     bool isAstarVisited(frMIdx x, frMIdx y, frMIdx z) const {
       return (getPrevAstarNodeDir(x, y, z) == frDirEnum::UNKNOWN);
     }
@@ -569,9 +562,6 @@ namespace fr {
       }
     }
 
-    void setAStarCost(frMIdx x, frMIdx y, frMIdx z, frCost cost) {
-      astarCosts_[getIdx(x, y, z)] = cost;
-    }
     // unsafe access, no idx check
     void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       auto baseIdx = 3 * getIdx(x, y, z);
@@ -752,7 +742,6 @@ namespace fr {
               bool initDR, bool followGuide);
     void print() const;
     void resetStatus();
-    void resetAStarCosts();
     void resetPrevNodeDir();
     void resetSrc();
     void resetDst();
@@ -782,8 +771,6 @@ namespace fr {
     void cleanup() {
       nodes_.clear();
       nodes_.shrink_to_fit();
-      astarCosts_.clear();
-      astarCosts_.shrink_to_fit();
       srcs_.clear();
       srcs_.shrink_to_fit();
       dsts_.clear();
@@ -845,7 +832,6 @@ namespace fr {
     };
     static_assert(sizeof(Node) == 8);
     frVector<Node>                             nodes_;
-    std::vector<unsigned int>                  astarCosts_; // astar cost
     std::vector<bool>                          prevDirs_;
     std::vector<bool>                          srcs_;
     std::vector<bool>                          dsts_;
