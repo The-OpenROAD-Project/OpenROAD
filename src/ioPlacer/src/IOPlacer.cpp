@@ -373,22 +373,19 @@ void IOPlacer::defineSlots()
 
 void IOPlacer::createSectionsPerEdge(Edge edge)
 {
-  int edge_begin;
-  for (int i = 0; i < slots_.size(); i++) {
-    if (slots_[i].edge == edge) {
-      edge_begin = i;
-      break;
-    }
-  }
+  std::vector<Slot>::iterator it = std::find_if(slots_.begin(), slots_.end(),
+                                               [&](Slot s) {
+                                                  return s.edge == edge;
+                                               });
+  int edge_begin = it - slots_.begin();
 
-  int edge_end = -1;
-  for (int i = edge_begin; i < slots_.size(); i++) {
-    if (slots_[i].edge != edge) {
-      edge_end = i-1;
-      break;
-    }
-    edge_end = i;
-  }
+  it = std::find_if(slots_.begin()+edge_begin, slots_.end(),
+                                               [&](Slot s) {
+                                                  return s.edge != edge;
+                                               });
+  int edge_end = it - slots_.begin();
+  if (edge_end != slots_.size()-1)
+    edge_end--;
 
   int begin_slot = 0;
   int end_slot = 0;
