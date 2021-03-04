@@ -154,6 +154,7 @@ proc place_pins { args } {
     utl::error PPL 18 "-ver_layers is required."
   }
 
+  # set default offset from boundaries as 1u
   set offset 1
   if [info exists keys(-boundaries_offset)] {
     set offset $keys(-boundaries_offset)
