@@ -1091,7 +1091,8 @@ std::pair<int, int> dbTechLayerCutSpacingTableDefRule::getSpacing(
 
 dbTechLayer* dbTechLayerCutSpacingTableDefRule::getTechLayer() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj = (_dbTechLayerCutSpacingTableDefRule*) this;
+  _dbTechLayerCutSpacingTableDefRule* obj
+      = (_dbTechLayerCutSpacingTableDefRule*) this;
   return (odb::dbTechLayer*) obj->getOwner();
 }
 

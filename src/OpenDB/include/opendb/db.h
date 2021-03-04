@@ -7700,7 +7700,7 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   void setWidth(int _width);
 
@@ -8221,7 +8221,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 class dbModule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   dbModInst* getModInst() const;
 
@@ -8265,9 +8265,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
-  char* getName() const;
+  std::string getName() const;
 
-  char* getHierarchalName() const;
+  std::string getHierarchalName() const;
   // User Code End dbModInst
 };
 
@@ -8280,7 +8280,7 @@ class dbGroup : public dbObject
     VOLTAGE_DOMAIN
   };
 
-  char* getName() const;
+  const char* getName() const;
 
   Rect getBox() const;
 
