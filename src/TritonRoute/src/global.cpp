@@ -32,12 +32,8 @@
 using namespace std;
 using namespace fr;
 
-string DEF_FILE;
 string GUIDE_FILE;
 string OUTGUIDE_FILE;
-string OUTTA_FILE;
-string OUT_FILE;
-string REF_OUT_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;

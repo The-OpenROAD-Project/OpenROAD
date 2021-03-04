@@ -7700,7 +7700,7 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   void setWidth(int _width);
 
@@ -8207,7 +8207,6 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
                                  const char* class2,
                                  bool        SIDE2);
 
-
   dbTechLayer* getTechLayer() const;
 
   static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
@@ -8222,7 +8221,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 class dbModule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   dbModInst* getModInst() const;
 
@@ -8266,9 +8265,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
-  char* getName() const;
+  std::string getName() const;
 
-  char* getHierarchalName() const;
+  std::string getHierarchalName() const;
   // User Code End dbModInst
 };
 
@@ -8281,7 +8280,7 @@ class dbGroup : public dbObject
     VOLTAGE_DOMAIN
   };
 
-  char* getName() const;
+  const char* getName() const;
 
   Rect getBox() const;
 
@@ -8348,6 +8347,16 @@ class dbGroup : public dbObject
 class dbGCellGrid : public dbObject
 {
  public:
+  struct GCellData
+  {
+    uint horizontal_usage    = 0;
+    uint vertical_usage      = 0;
+    uint up_usage            = 0;
+    uint horizontal_capacity = 0;
+    uint vertical_capacity   = 0;
+    uint up_capacity         = 0;
+  };
+
   // User Code Begin dbGCellGrid
 
   ///
@@ -8468,6 +8477,11 @@ class dbGCellGrid : public dbObject
                 uint&        up) const;
 
   void resetCongestionMap();
+
+  void resetGrid();
+
+  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
+                                                              = nullptr);
   // User Code End dbGCellGrid
 };
 

@@ -57,6 +57,8 @@
 #include "maze3D.h"
 #include "utility/Logger.h"
 #include "pdrev/pdrev.h"
+#include "opendb/db.h"
+
 #include "route.h"
 #include "utility.h"
 
@@ -903,6 +905,43 @@ NetRouteMap FastRouteCore::getRoutes()
   }
 
   return routes;
+}
+
+void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
+{
+  auto block = db->getChip()->getBlock();
+  auto db_gcell = odb::dbGCellGrid::create(block);
+  if(db_gcell == nullptr)
+  {
+    db_gcell = block->getGCellGrid();
+    logger->warn(utl::GRT, 210, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    db_gcell->resetGrid();
+  }
+  db_gcell->addGridPatternX(xcorner, xGrid, wTile);
+  db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
+  for (int k = 0; k < numLayers; k++) {
+    auto layer = db->getTech()->findRoutingLayer(k+1);
+    if(layer == nullptr)
+    {
+      logger->warn(utl::GRT, 211, "skipping layer {} not found in db", k+1);
+      continue;
+    }
+    for (int y = 0; y < yGrid; y++) {
+      for (int x = 0; x < xGrid - 1; x++) {
+        int gridH = y * (xGrid - 1) + x + k * (xGrid - 1) * yGrid;
+        int gridV = y * xGrid + x + k * xGrid * (yGrid - 1);
+
+        unsigned short capH = h_edges3D[gridH].cap;
+        unsigned short usageH = h_edges3D[gridH].usage;
+
+        unsigned short capV = v_edges3D[gridV].cap;
+        unsigned short usageV = v_edges3D[gridV].usage;
+
+        db_gcell->setCapacity(layer, x, y, (uint) capH, (uint) capV, 0);
+        db_gcell->setUsage(layer, x, y, (uint) usageH, (uint) usageV, 0);
+      }
+    }
+  }
 }
 
 void FastRouteCore::writeCongestionReport2D(std::string fileName)
