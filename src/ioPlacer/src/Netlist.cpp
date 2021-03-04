@@ -154,9 +154,7 @@ int Netlist::computeIONetHPWL(int idx,
 {
   int hpwl;
 
-  Point& section_begin = slots[section.begin_slot].pos;
-  Point& section_center = section.pos;
-  Point& section_end = slots[section.end_slot].pos;
+  const Point& section_center = section.pos;
   Edge edge = section.edge;
 
   int available_slots = 1;
@@ -202,10 +200,10 @@ int Netlist::computeDstIOtoPins(int idx, Point slot_pos)
   return total_distance;
 }
 
-bool Netlist::checkSlotForPin(IOPin& pin,
+bool Netlist::checkSlotForPin(const IOPin& pin,
                               Edge edge,
-                              odb::Point& point,
-                              std::vector<Constraint>& constraints)
+                              const odb::Point& point,
+                              const std::vector<Constraint>& constraints) const
 {
   bool valid_slot = true;
   int pos
@@ -222,34 +220,30 @@ bool Netlist::checkSlotForPin(IOPin& pin,
   return valid_slot;
 }
 
-bool Netlist::checkSectionForPin(IOPin& pin,
-                                 Section& section,
-                                 std::vector<Constraint>& constraints,
-                                 std::vector<Slot>& slots,
-                                 int& available_slots)
+bool Netlist::checkSectionForPin(const IOPin& pin,
+                                 const Section& section,
+                                 const std::vector<Constraint>& constraints,
+                                 const std::vector<Slot>& slots,
+                                 int& available_slots) const
 {
   bool valid_slot = true;
 
   Edge edge = section.edge;
 
-  int section_begin = (edge == Edge::top || edge == Edge::bottom) ? 
+  const int section_begin = (edge == Edge::top || edge == Edge::bottom) ? 
                       slots[section.begin_slot].pos.x() : slots[section.begin_slot].pos.y();
   
-  int section_end = (edge == Edge::top || edge == Edge::bottom) ? 
+  const int section_end = (edge == Edge::top || edge == Edge::bottom) ? 
                       slots[section.end_slot].pos.x() : slots[section.end_slot].pos.y();
 
-  int section_min = (section_begin < section_end) ? section_begin : section_end;
-  int section_max = (section_begin > section_end) ? section_begin : section_end;
+  const int section_min = (section_begin < section_end) ? section_begin : section_end;
+  const int section_max = (section_begin > section_end) ? section_begin : section_end;
 
-  int spacing = 1;
-
-  if (section.num_slots > 0) {
-    spacing = (section_max - section_min)/(section.num_slots);
-  }
+  const int spacing = (section.num_slots > 0) ? (section_max - section_min)/(section.num_slots) : 1;
 
   for (Constraint constraint : constraints) {
-    int constraint_begin = constraint.interval.getBegin();
-    int constraint_end = constraint.interval.getEnd();
+    const int constraint_begin = constraint.interval.getBegin();
+    const int constraint_end = constraint.interval.getEnd();
 
     if (pin.getDirection() == constraint.direction) {
       valid_slot = (section_min <= constraint_end &&
@@ -271,7 +265,7 @@ bool Netlist::checkSectionForPin(IOPin& pin,
   return valid_slot;
 }
 
-bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos)
+bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) const
 {
   return (constraint.interval.getEdge() == edge
           && pos >= constraint.interval.getBegin()

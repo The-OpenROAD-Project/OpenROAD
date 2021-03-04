@@ -180,16 +180,16 @@ class Netlist
   std::vector<std::vector<int>> io_groups_;
   std::map<odb::dbBTerm*, int> _db_pin_idx_map;
 
-  bool checkSlotForPin(IOPin& pin,
+  bool checkSlotForPin(const IOPin& pin,
                        Edge edge,
-                       odb::Point& point,
-                       std::vector<Constraint>& constraints);
-  bool checkSectionForPin(IOPin& pin,
-                          Section& section,
-                          std::vector<Constraint>& constraints,
-                          std::vector<Slot>& slots,
-                          int& available_slots);
-  bool checkInterval(Constraint constraint, Edge edge, int pos);
+                       const odb::Point& point,
+                       const std::vector<Constraint>& constraints) const;
+  bool checkSectionForPin(const IOPin& pin,
+                          const Section& section,
+                          const std::vector<Constraint>& constraints,
+                          const std::vector<Slot>& slots,
+                          int& available_slots) const;
+  bool checkInterval(Constraint constraint, Edge edge, int pos) const;
 };
 
 }  // namespace ppl
