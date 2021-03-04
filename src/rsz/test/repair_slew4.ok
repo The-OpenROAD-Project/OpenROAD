@@ -1,0 +1,23 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: repair_slew4.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  repair_slew4.lef
+[INFO ODB-0127] Reading DEF file: repair_slew4.def
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 5 components and 20 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 3 nets and 7 connections.
+[INFO ODB-0134] Finished DEF file: repair_slew4.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u5/A                                    0.07    0.16   -0.09 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 853um.
+[INFO RSZ-0039] Resized 2 instances.

@@ -1,0 +1,72 @@
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
+[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0225]     Created 390 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0127] Reading DEF file: resize4.def
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 3 components and 22 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 3 nets and 6 connections.
+[INFO ODB-0134] Finished DEF file: resize4.def
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Slew    Delay     Time   Description
+-------------------------------------------------------------------
+   0.000    0.000    0.000   clock clk (rise edge)
+            0.000    0.000   clock network delay (ideal)
+   0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.027    0.193    0.193 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.027    0.000    0.193 v u1/A (sky130_fd_sc_hs__buf_1)
+   0.065    0.106    0.299 v u1/X (sky130_fd_sc_hs__buf_1)
+   0.065    0.000    0.299 v r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.299   data arrival time
+
+   0.000    1.000    1.000   clock clk (rise edge)
+            0.000    1.000   clock network delay (ideal)
+            0.000    1.000   clock reconvergence pessimism
+                     1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
+           -0.128    0.872   library setup time
+                     0.872   data required time
+-------------------------------------------------------------------
+                     0.872   data required time
+                    -0.299   data arrival time
+-------------------------------------------------------------------
+                     0.573   slack (MET)
+
+
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Slew    Delay     Time   Description
+-------------------------------------------------------------------
+   0.000    0.000    0.000   clock clk (rise edge)
+            0.000    0.000   clock network delay (ideal)
+   0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
+   0.027    0.193    0.193 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.027    0.000    0.193 v u1/A (sky130_fd_sc_hs__buf_1)
+   0.065    0.106    0.299 v u1/X (sky130_fd_sc_hs__buf_1)
+   0.065    0.000    0.299 v r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.299   data arrival time
+
+   0.000    1.000    1.000   clock clk (rise edge)
+            0.000    1.000   clock network delay (ideal)
+            0.000    1.000   clock reconvergence pessimism
+                     1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
+           -0.128    0.872   library setup time
+                     0.872   data required time
+-------------------------------------------------------------------
+                     0.872   data required time
+                    -0.299   data arrival time
+-------------------------------------------------------------------
+                     0.573   slack (MET)
+
+

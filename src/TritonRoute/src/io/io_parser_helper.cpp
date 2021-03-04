@@ -94,11 +94,12 @@ void io::Parser::initDefaultVias() {
 
       // generate new via def if needed
       if (needViaGen) {
-        // reference output file for writing def hack
-        REF_OUT_FILE = OUT_FILE + string(".ref");
         string viaDefName = tech->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
         viaDefName += string("_FR");
-        cout << "Warning: " << tech->getLayer(layer1Num)->getName() << " does not have viaDef align with layer direction, generating new viaDef " << viaDefName << "...\n";
+        logger->warn(DRT, 160,
+                     "Warning: {} does not have viaDef aligned with layer "
+                     "direction, generating new viaDef {}.",
+                     tech->getLayer(layer1Num)->getName(), viaDefName);
         // routing layer shape
         // rotate if needed
         if (isLayer1EncHorz != isLayer1Horz) {
@@ -132,7 +133,6 @@ void io::Parser::initDefaultVias() {
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
-        viaDef->calculatedShapeBoxes();
         tech->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
         tech->addVia(std::move(viaDef));
       }
@@ -204,7 +204,6 @@ void io::Parser::initConstraintLayerIdx() {
       }
     }
   }
-  cout << "done initConstraintLayerIdx\n" << flush;
 }
 
 // initialize cut layer width for cut OBS DRC check if not specified in LEF
@@ -540,113 +539,6 @@ void io::Parser::initDefaultVias_N16(const string &node) {
   }
 }
 
-void io::Parser::writeRefDef() {
-  vector<frViaDef*> genViaDefs;
-  for (auto &uViaDef: tech->getVias()) {
-    auto viaDef = uViaDef.get();
-    if (viaDef->isAddedByRouter()) {
-      genViaDefs.push_back(viaDef);
-    }
-  }
-
-  if (REF_OUT_FILE != DEF_FILE) {
-    cout << "Writing reference output def (" << REF_OUT_FILE << ")...\n";
-    bool hasVia = false;
-    ifstream fin(DEF_FILE);
-    ofstream fout(REF_OUT_FILE);
-    if (!fin.is_open()) {
-      cout << "Error: cannot open input DEF\n";
-      exit(1);
-    }
-    if (!fout.is_open()) {
-      cout << "Error: cannot open reference output DEF\n";
-      exit(1);
-    }
-    string line;
-    string a;
-    int b;
-    while (getline(fin, line)) {
-      istringstream iss(line);
-      if (!(iss >> a >> b)) {
-        continue;
-      }
-      if (a == string("VIAS")) {
-        hasVia = true;
-        break;
-      }
-    }
-
-    // reset and write ref
-    fin.clear();
-    fin.seekg(0, ios::beg);
-
-    while (getline(fin, line)) {
-      bool skip = false;
-      istringstream iss(line);
-      if (iss >> a >> b) {
-        // write empty VIAS section if does not exist
-        if (!hasVia) {
-          if (a == string("COMPONENTS")) {
-            fout << "\nVIAS " << genViaDefs.size() << " ;\n";
-            for (auto viaDef: genViaDefs) {
-              frVia via(viaDef);
-              frBox layer1Box, layer2Box, cutBox;
-              via.getLayer1BBox(layer1Box);
-              via.getCutBBox(cutBox);
-              via.getLayer2BBox(layer2Box);
-
-              fout << "- " << viaDef->getName() << endl;
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer1Num())->getName() 
-                   << " ( " << layer1Box.left() << " " << layer1Box.bottom() << " )"
-                   << " ( " << layer1Box.right() << " " << layer1Box.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getCutLayerNum())->getName() 
-                   << " ( " << cutBox.left() << " " << cutBox.bottom() << " )"
-                   << " ( " << cutBox.right() << " " << cutBox.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer2Num())->getName() 
-                   << " ( " << layer2Box.left() << " " << layer2Box.bottom() << " )"
-                   << " ( " << layer2Box.right() << " " << layer2Box.top() << " )\n";
-              fout << "  ;\n";
-            }
-            fout << "END VIAS\n\n";
-          }
-        } else {
-          if (a == string("VIAS")) {
-            skip = true;
-            fout << "\nVIAS " << b + (int)genViaDefs.size() << " ;\n";
-            for (auto viaDef: genViaDefs) {
-              frVia via(viaDef);
-              frBox layer1Box, layer2Box, cutBox;
-              via.getLayer1BBox(layer1Box);
-              via.getCutBBox(cutBox);
-              via.getLayer2BBox(layer2Box);
-
-              fout << "- " << viaDef->getName() << endl;
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer1Num())->getName() 
-                   << " ( " << layer1Box.left() << " " << layer1Box.bottom() << " )"
-                   << " ( " << layer1Box.right() << " " << layer1Box.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getCutLayerNum())->getName() 
-                   << " ( " << cutBox.left() << " " << cutBox.bottom() << " )"
-                   << " ( " << cutBox.right() << " " << cutBox.top() << " )\n";
-              fout << "  + RECT " << tech->getLayer(viaDef->getLayer2Num())->getName() 
-                   << " ( " << layer2Box.left() << " " << layer2Box.bottom() << " )"
-                   << " ( " << layer2Box.right() << " " << layer2Box.top() << " )\n";
-              fout << "  ;\n";
-            }
-          }
-        }
-        // append generated via 
-
-      }
-      if (!skip) {
-        fout << line << endl;
-      }
-    }
-
-    fin.close();
-    fout.close();
-  }
-}
-
 void io::Parser::postProcess() {
   initDefaultVias();
   if (DBPROCESSNODE == "N16_11m_2xa1xd3xe2y2r_utrdl") {
@@ -658,15 +550,12 @@ void io::Parser::postProcess() {
   }
   initCutLayerWidth();
   initConstraintLayerIdx();
-  tech->printDefaultVias();
-
-  // write reference def for def writing hack flow if needed
-  writeRefDef();
+  tech->printDefaultVias(logger);
 
   instAnalysis();
 
   // init region query
-  cout <<endl <<"init region query ..." <<endl;
+  logger->info(DRT, 168, "Init region query ...");
   design->getRegionQuery()->init(design->getTech()->getLayers().size());
   design->getRegionQuery()->print();
   design->getRegionQuery()->initDRObj(design->getTech()->getLayers().size()); // second init from FlexDR.cpp
@@ -675,7 +564,7 @@ void io::Parser::postProcess() {
 void io::Parser::postProcessGuide() {
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
-    cout <<endl <<"post process guides ..." <<endl;
+    logger->info(DRT, 169, "Post process guides ...");
   }
   buildGCellPatterns();
   
@@ -692,11 +581,11 @@ void io::Parser::postProcessGuide() {
     if (VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
-          cout <<"  complete " <<cnt <<" nets" <<endl;
+          logger->report("  complete {} nets", cnt);
         }
       } else {
         if (cnt % 100000 == 0) {
-          cout <<"  complete " <<cnt <<" nets" <<endl;
+          logger->report("  complete {} nets", cnt);
         }
       }
     }
@@ -711,10 +600,10 @@ void io::Parser::postProcessGuide() {
     }
   }
 
-  cout <<endl <<"init guide query ..." <<endl;
+  logger->info(DRT, 178, "init guide query ...");
   design->getRegionQuery()->initGuide(design->getTech()->getLayers().size());
   design->getRegionQuery()->printGuide();
-  cout <<endl <<"init gr pin query ..." <<endl;
+  logger->info(DRT, 179, "init gr pin query ...");
   design->getRegionQuery()->initGRPin(tmpGRPins);
 
   if (OUTGUIDE_FILE == string("")) {
@@ -732,7 +621,7 @@ void io::Parser::postProcessGuide() {
 // instantiate RPin and region query for RPin
 void io::Parser::initRPin() {
   if (VERBOSE > 0) {
-    cout << endl << "post process initialize RPin region query ..." << endl;
+    logger->info(DRT, 185, "post process initialize RPin region query ...");
   }
   initRPin_rpin();
   initRPin_rq();
@@ -754,8 +643,7 @@ void io::Parser::initRPin_rpin() {
         // MACRO does not go through PA
         if (prefAp == nullptr) {
           if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+              isPad(inst->getRefBlock()->getMacroClass()) ||
               inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints())[0].get();
           }
@@ -834,7 +722,6 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord &GCELLGRIDX, frCoord &GCELL
       tmpGCELLGRIDXCnt = cnt;
       tmpGCELLGRIDX = mapIt->first;
     }
-    //cout <<"X width=" <<mapIt->first <<"/" <<mapIt->second <<endl;
   }
   for (auto mapIt = guideGridYMap.begin(); mapIt != guideGridYMap.end(); ++mapIt) {
     auto cnt = mapIt->second;
@@ -842,19 +729,16 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord &GCELLGRIDX, frCoord &GCELL
       tmpGCELLGRIDYCnt = cnt;
       tmpGCELLGRIDY = mapIt->first;
     }
-    //cout <<"Y width=" <<mapIt->first <<"/" <<mapIt->second <<endl;
   }
   if (tmpGCELLGRIDX != -1) {
     GCELLGRIDX = tmpGCELLGRIDX;
   } else {
-    cout <<"Error: no GCELLGRIDX" <<endl;
-    exit(1);
+    logger->error(DRT, 170, "no GCELLGRIDX");
   }
   if (tmpGCELLGRIDY != -1) {
     GCELLGRIDY = tmpGCELLGRIDY;
   } else {
-    cout <<"Error: no GCELLGRIDY" <<endl;
-    exit(1);
+    logger->error(DRT, 171, "no GCELLGRIDY");
   }
 }
 
@@ -904,14 +788,12 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX, frCoord GCELLG
   if (tmpGCELLOFFSETX != -1) {
     GCELLOFFSETX = tmpGCELLOFFSETX;
   } else {
-    cout <<"Error: no GCELLGRIDX" <<endl;
-    exit(1);
+    logger->error(DRT, 172, "no GCELLGRIDX");
   } 
   if (tmpGCELLOFFSETY != -1) {
     GCELLOFFSETY = tmpGCELLOFFSETY;
   } else {
-    cout <<"Error: no GCELLGRIDX" <<endl;
-    exit(1);
+    logger->error(DRT, 173, "no GCELLGRIDY");
   }
 }
 
@@ -933,8 +815,7 @@ void io::Parser::buildGCellPatterns() {
   xgp.setStartCoord(startCoordX);
   xgp.setSpacing(GCELLGRIDX);
   if ((dieBox.right() - (frCoord)GCELLOFFSETX) / (frCoord)GCELLGRIDX < 1) {
-    cout <<"Error: gcell cnt < 1" <<endl;
-    exit(1);
+    logger->error(DRT, 174, "gcell cnt x < 1");
   }
   xgp.setCount((dieBox.right() - (frCoord)startCoordX) / (frCoord)GCELLGRIDX);
   
@@ -948,14 +829,19 @@ void io::Parser::buildGCellPatterns() {
   ygp.setStartCoord(startCoordY);
   ygp.setSpacing(GCELLGRIDY);
   if ((dieBox.top() - (frCoord)GCELLOFFSETY) / (frCoord)GCELLGRIDY < 1) {
-    cout <<"Error: gcell cnt < 1" <<endl;
-    exit(1);
+    logger->error(DRT, 175, "gcell cnt y < 1");
   }
   ygp.setCount((dieBox.top() - startCoordY) / (frCoord)GCELLGRIDY);
 
   if (VERBOSE > 0) {
-    cout <<"GCELLGRID X " <<ygp.getStartCoord() <<" DO " <<ygp.getCount() <<" STEP " <<ygp.getSpacing() <<" ;" <<endl;
-    cout <<"GCELLGRID Y " <<xgp.getStartCoord() <<" DO " <<xgp.getCount() <<" STEP " <<xgp.getSpacing() <<" ;" <<endl;
+    logger->info(DRT, 176, "GCELLGRID X {} DO {} STEP {} ;",
+                 ygp.getStartCoord(),
+                 ygp.getCount(),
+                 ygp.getSpacing());
+    logger->info(DRT, 177, "GCELLGRID Y {} DO {} STEP {} ;",
+                 xgp.getStartCoord(),
+                 xgp.getCount(),
+                 xgp.getSpacing());
   }
 
   design->getTopBlock()->setGCellPatterns({xgp, ygp});

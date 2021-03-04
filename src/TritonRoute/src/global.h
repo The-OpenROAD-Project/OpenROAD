@@ -35,13 +35,8 @@
 #include "frDesign.h"
 #include "db/obj/frBlock.h"
 
-extern std::string DEF_FILE;
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
-extern std::string LEF_FILE;
-extern std::string OUTTA_FILE;
-extern std::string OUT_FILE;
-extern std::string REF_OUT_FILE;
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
@@ -127,7 +122,6 @@ namespace fr {
   frCoord getGCELLOFFSETX();
   frCoord getGCELLOFFSETY();
   
-  void ERROR(std::string s);
 
   // These need to be in the fr namespace to support argument-dependent
   // lookup

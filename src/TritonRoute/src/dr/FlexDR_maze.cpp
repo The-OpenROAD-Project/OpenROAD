@@ -33,6 +33,7 @@
 #include <chrono>
 #include <algorithm>
 #include <random>
+#include <sstream>
 #include <boost/polygon/polygon.hpp>
 
 using namespace std;
@@ -1517,8 +1518,8 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
-                         auto areaA = (boxA.right() - boxA.left()) * (boxA.top() - boxA.bottom());
-                         auto areaB = (boxB.right() - boxB.left()) * (boxB.top() - boxB.bottom());
+                         auto areaA = boxA.area();
+                         auto areaB = boxB.area();
                          return (a->getNumPinsIn() == b->getNumPinsIn() ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB) : 
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          };
@@ -1537,8 +1538,8 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
-                         auto areaA = (boxA.right() - boxA.left()) * (boxA.top() - boxA.bottom());
-                         auto areaB = (boxB.right() - boxB.left()) * (boxB.top() - boxB.bottom());
+                         auto areaA = boxA.area();
+                         auto areaB = boxB.area();
                          bool sol = (a->getNumPinsIn() == b->getNumPinsIn() ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB) : 
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          return (a->getMarkerDist() == b->getMarkerDist() ? sol : a->getMarkerDist() < b->getMarkerDist());
@@ -2768,9 +2769,6 @@ void FlexDRWorker::routeNet_postAstarUpdate(vector<FlexMazeIdx> &path, vector<Fl
   }
 }
 
-//void print(){
-//    cout << " x \n";
-//}
 void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &points,
                                                const set<FlexMazeIdx> &apMazeIdx, 
                                                map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox) {
@@ -2808,23 +2806,13 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
     }
     auto startX = start.x(), startY = start.y(), startZ = start.z();
     auto endX = end.x(), endY = end.y(), endZ = end.z();
-//    if (net->getFrNet()->getName() == "net1" && startZ == 1 && endZ == 1 &&
-//                                    (gridGraph_.xCoord(startX) == 131.855*2000 && gridGraph_.yCoord(startY) == 58.805*2000))
-//        print();
-//    if (net->getFrNet()->getName() == "net1" && startZ == 1 && endZ == 1 &&
-//                                    (gridGraph_.xCoord(startX) == 131.9*2000 && gridGraph_.yCoord(startY) == 58.805*2000 ||
-//                                    gridGraph_.xCoord(startX) == 132.1*2000 && gridGraph_.yCoord(endY) == 58.805*2000)){
-//        print();
-//    }
-    
-    if (startZ == endZ && (startX != endX && startY == endY || startX == endX && startY != endY)) {
+    if (startZ == endZ && ((startX != endX && startY == endY) || (startX == endX && startY != endY))) {
         frMIdx midX, midY;
         bool taper = false;
         if (splitPathSeg(midX, midY, taper, startX, startY, endX, endY, startZ, srcBox, dstBox, net)){
              processPathSeg(startX, startY, midX, midY, startZ, apMazeIdx, net, startX == endX, taper, i, points);
              startX = midX; startY = midY;
              if (splitPathSeg(midX, midY, taper, startX, startY, endX, endY, startZ, srcBox, dstBox, net)){
-                 if (taper) ERROR("should not tape here");
                 processPathSeg(startX, startY, midX, midY, startZ, apMazeIdx, net, startX == endX, taper, i, points);
                 startX = midX; startY = midY;
                 taper = true;
@@ -2846,7 +2834,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
         }
         auto currVia = make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS){
-            if (isInsideTaperBox(endX, endY, startZ, endZ, points, i, mazeIdx2TaperBox)){
+            if (isInsideTaperBox(endX, endY, startZ, endZ, mazeIdx2TaperBox)){
                 currVia->setTapered(true);
             }
         }
@@ -2940,7 +2928,7 @@ void FlexDRWorker::processPathSeg(frMIdx startX, frMIdx startY, frMIdx endX, frM
     if (net->getFrNet()->getNondefaultRule()){
         if (taper) currPathSeg->setTapered(true);
         else setNDRStyle(net, currStyle, startX, endX, startY, endY, z, i-1 >= 0 ? &points[i-1] : nullptr, 
-                    i+2 < points.size() ? &points[i+2] : nullptr);
+                    i+2 < (int)points.size() ? &points[i+2] : nullptr);
     }
     currPathSeg->setStyle(currStyle);
     currPathSeg->setMazeIdx(start, end);
@@ -2952,8 +2940,8 @@ void FlexDRWorker::processPathSeg(frMIdx startX, frMIdx startY, frMIdx endX, frM
     bool prevHasCost = false;
     int endI = vertical ? endY : endX;
     for (int i = (vertical ? startY : startX); i < endI; i++) {
-      if (vertical && gridGraph_.hasDRCCost(startX, i, z, frDirEnum::E) ||
-          !vertical && gridGraph_.hasDRCCost(i, startY, z, frDirEnum::N)) {
+      if ((vertical && gridGraph_.hasDRCCost(startX, i, z, frDirEnum::E)) ||
+          (!vertical && gridGraph_.hasDRCCost(i, startY, z, frDirEnum::N))) {
         if (!prevHasCost) {
           net->addMarker();
           prevHasCost = true;
@@ -2971,7 +2959,7 @@ void FlexDRWorker::processPathSeg(frMIdx startX, frMIdx startY, frMIdx endX, frM
 void FlexDRWorker::setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
                                 frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next){
     frNonDefaultRule* ndr = net->getFrNet()->getNondefaultRule();
-    if (ndr->getWidth(z) > currStyle.getWidth()){
+    if (ndr->getWidth(z) > (int) currStyle.getWidth()){
         currStyle.setWidth(ndr->getWidth(z));
         currStyle.setBeginExt(ndr->getWidth(z)/2);
         currStyle.setEndExt(ndr->getWidth(z)/2);
@@ -3004,18 +2992,16 @@ void FlexDRWorker::setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX,
             currStyle.setEndStyle(es, max((int)currStyle.getEndExt(), (int)ndr->getWireExtension(z)));
     }
 }
-bool FlexDRWorker::isInsideTaperBox(frMIdx x, frMIdx y, frMIdx startZ, frMIdx endZ, std::vector<FlexMazeIdx> &points, int i, map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox){
-    frBox3D* bx = nullptr;
-    if (i == 0 || i+1 == points.size()-1 || i-1 == 0 && i+2 == points.size()-1){
-        auto it = mazeIdx2TaperBox.find(FlexMazeIdx(x, y, startZ));
-        if (it != mazeIdx2TaperBox.end()) bx = it->second;
-        else{
-            it = mazeIdx2TaperBox.find(FlexMazeIdx(x, y, endZ));
-            if (it != mazeIdx2TaperBox.end()) bx = it->second;
-        }
-    }
-    return bx != nullptr;
+
+bool FlexDRWorker::isInsideTaperBox(frMIdx x, frMIdx y, frMIdx startZ, frMIdx endZ, map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox){
+    FlexMazeIdx idx(x, y, startZ);
+    auto it = mazeIdx2TaperBox.find(idx);
+    if (it != mazeIdx2TaperBox.end()) return true;
+    idx.setZ(endZ);
+    it = mazeIdx2TaperBox.find(idx);
+    return it != mazeIdx2TaperBox.end();
 }
+
 void FlexDRWorker::routeNet_postRouteAddPathCost(drNet* net) {
   int cnt = 0;
   for (auto &connFig: net->getRouteConnFigs()) {
@@ -3044,6 +3030,10 @@ bool FlexDRWorker::routeNet(drNet* net) {
   ProfileTask profile("DR:routeNet");
   //bool enableOutput = true;
   bool enableOutput = false;
+  if (graphics_) {
+    graphics_->startNet(net);
+  }
+
   if (net->getPins().size() <= 1) {
     return true;
   }
@@ -3051,7 +3041,6 @@ bool FlexDRWorker::routeNet(drNet* net) {
   if (TEST_ || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
   }
-  gridGraph_.currNet = net;
   if (graphics_) {
     graphics_->startNet(net);
   }
@@ -3061,7 +3050,7 @@ bool FlexDRWorker::routeNet(drNet* net) {
   map<FlexMazeIdx, frBox3D*> mazeIdx2TaperBox;    //access points -> taper box: used to efficiently know what points are in what taper boxes
   list<pair<drPin*, frBox3D>> pinTaperBoxes;
   set<FlexMazeIdx> apMazeIdx;
-  set<FlexMazeIdx> realPinAPMazeIdx; // 
+  set<FlexMazeIdx> realPinAPMazeIdx;
   routeNet_prep(net, unConnPins, mazeIdx2unConnPins, apMazeIdx, realPinAPMazeIdx, mazeIdx2TaperBox, pinTaperBoxes);
   // prep for area map
   map<FlexMazeIdx, frCoord> areaMap;

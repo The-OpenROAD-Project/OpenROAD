@@ -43,22 +43,22 @@ PINS 10 ;
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 200190 980 ) N ;
-    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1260 ) N ;
-    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1540 ) N ;
-    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 200190 1820 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 200190 2100 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 1540 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 1260 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 1820 ) N ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
@@ -73,10 +73,10 @@ NETS 10 ;
     - req_rdy ( PIN req_rdy ) + USE SIGNAL ;
     - req_val ( PIN req_val ) + USE SIGNAL ;
     - reset ( PIN reset ) + USE SIGNAL ;
-    - resp_msg[11] ( PIN resp_msg[11] ) + USE SIGNAL ;
-    - resp_msg[10] ( PIN resp_msg[10] ) + USE SIGNAL ;
-    - resp_msg[1] ( PIN resp_msg[1] ) + USE SIGNAL ;
     - resp_msg[0] ( PIN resp_msg[0] ) + USE SIGNAL ;
+    - resp_msg[10] ( PIN resp_msg[10] ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) + USE SIGNAL ;
+    - resp_msg[1] ( PIN resp_msg[1] ) + USE SIGNAL ;
     - resp_rdy ( PIN resp_rdy ) + USE SIGNAL ;
     - resp_val ( PIN resp_val ) + USE SIGNAL ;
 END NETS

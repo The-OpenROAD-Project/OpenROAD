@@ -46,13 +46,13 @@ proc density_fill { args } {
   if { [info exists keys(-rules)] } {
     set rules_file $keys(-rules)
   } else {
-    ord::error FIN 7 "The -rules argument must be specified."
+    utl::error FIN 7 "The -rules argument must be specified."
   }
 
   if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      ord::error FIN 8 "The -area argument must be a list of 4 coordinates."
+      utl::error FIN 8 "The -area argument must be a list of 4 coordinates."
     }
     lassign $area lx ly ux uy
     sta::check_positive_integer "-area" $lx
@@ -64,6 +64,6 @@ proc density_fill { args } {
     set fill_area [ord::get_db_core]
   }
 
-  finale::density_fill_cmd $rules_file $fill_area
+  fin::density_fill_cmd $rules_file $fill_area
 }
 

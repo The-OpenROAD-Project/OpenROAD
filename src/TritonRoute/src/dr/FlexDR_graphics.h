@@ -50,9 +50,12 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
-  
-  // Debug InitialPlace
-  FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
+
+  // Debug detailed routing
+  FlexDRGraphics(frDebugSettings* settings,
+                 frDesign* design,
+                 odb::dbDatabase* db,
+                 Logger* logger);
 
   void startWorker(FlexDRWorker* worker);
 
@@ -81,20 +84,23 @@ class FlexDRGraphics : public gui::Renderer
   void pause(drNet* net);
   
  private:
-  FlexDRWorker*             worker_;
-  drNet*                    net_;
-  const FlexGridGraph*      grid_graph_;
-  int                       current_iter_;
-  frLayerNum                last_pt_layer_;
-  gui::Gui*                 gui_;     
+
+  FlexDRWorker*    worker_;
+  drNet*           net_;
+  const FlexGridGraph* grid_graph_;
+  frDebugSettings* settings_;
+  int              current_iter_;
+  frLayerNum       last_pt_layer_;
+  gui::Gui*        gui_;
+  Logger*          logger_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
-  frDebugSettings*          settings_;
-  
-  
-//  void drawPath(gui::Painter& painter, std::vector<FlexMazeIdx>& path, frLayerNum ln);
-  
+
+  // Names for the custom visibility controls in the gui
+  static const char* grid_graph_visible_;
+  static const char* route_guides_visible_;
+  static const char* routing_objs_visible_;
 };
 
 }  // namespace dr

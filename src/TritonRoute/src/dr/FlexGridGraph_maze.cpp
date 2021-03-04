@@ -418,9 +418,8 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
   if (currDir != frDirEnum::UNKNOWN && currDir != dir) {
     // next dir is a via
     if (dir == frDirEnum::U || dir == frDirEnum::D) {
-      isTLengthViaUp = (dir == frDirEnum::U);
-      // if there was a turn before
-//      if (tLength != std::numeric_limits<frCoord>::max()) {
+        isTLengthViaUp = (dir == frDirEnum::U);
+        // if there was a turn before
         if (currDir == frDirEnum::W || currDir == frDirEnum::E) {
           tLength = currGrid.getTLength();
           if (getTech()->isViaForbiddenTurnLen(gridZ, !isTLengthViaUp, true, tLength, ndr_)) {
@@ -432,7 +431,6 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
             isForbiddenTLen = true;
           }
         }
-//      }
     // curr is a planar turn
     } else {
       isTLengthViaUp = currGrid.isPrevViaUp();
@@ -534,7 +532,6 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
     if (xCoords_[endX] > x2) endX--;
     if (yCoords_[startY] < y1) startY++;
     if (yCoords_[endY] > y2) endY--;
-    if (startX > endX || startY > endY) ERROR("ERROR FlexGridGraph::getCostsNDR");
     //get costs
     for (frMIdx x = startX; x <= endX; x++){
         for (frMIdx y = startY; y <= endY; y++){
@@ -544,54 +541,6 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frD
             cost += (isBlocked(x, y, gridZ, dir) ? BLOCKCOST*layer->getMinWidth()*20 : 0);
         }
     }
-    return cost;
-}
-frCoord FlexGridGraph::getViaCostsNDR2(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const{
-//    if (!isSrc(gridX, gridY, gridZ) && !isDst(gridX, gridY, gridZ, dir) && ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ-1) == nullptr 
-//            /*&& ndr_->getSpacing(dir == frDirEnum::U ? gridZ : gridZ-1) == 0*/) 
-//        return getCosts(gridX, gridY, gridZ, dir, layer);
-    frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-    frCoord cost = getCosts(gridX, gridY, gridZ, dir, layer);
-    if (cost) return cost; //ERRADO
-    frCoord sp;
-    int bottomZ;
-    frLayer* cutLayer;
-    if (dir == frDirEnum::D){
-        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()-1);
-        bottomZ = gridZ - 1;
-    }else {
-        cutLayer = design_->getTech()->getLayer(layer->getLayerNum()+1);
-        bottomZ = gridZ;
-    }
-    if (bottomZ != gridZ) layer = design_->getTech()->getLayer(layer->getLayerNum()-2);
-    frViaDef* defVia = cutLayer->getDefaultViaDef();
-    frViaDef* via = ndr_->getPrefVia(bottomZ) ? ndr_->getPrefVia(bottomZ) : defVia;
-    
-    
-    sp = max(ndr_->getSpacing(bottomZ), getMinSpacingValue(layer, via->getLayer1ShapeBox().width(),
-                defVia->getLayer1ShapeBox().width(), defVia->getLayer1ShapeBox().length()));
-    frBox viaBox(via->getLayer1ShapeBox().left() - sp + 1 + xCoords_[gridX], 
-                 via->getLayer1ShapeBox().bottom() - sp + 1 + yCoords_[gridY], 
-                 via->getLayer1ShapeBox().right() + sp - 1 + xCoords_[gridX], 
-                 via->getLayer1ShapeBox().top() + sp - 1 + yCoords_[gridY]);
-    frRegionQuery::Objects<frBlockObject> res;
-    drWorker_->getRegionQuery()->query(viaBox, layer->getLayerNum(), res);
-    cost += (res.empty() ? 0 : SHAPECOST*el);
-    if (!res.empty()) return cost;
-    //TODO check cut layer if spacing and/or cuts diferent from default
-    layer = design_->getTech()->getLayer(layer->getLayerNum()+2);
-    
-    sp = max(ndr_->getSpacing(bottomZ+1), getMinSpacingValue(layer, via->getLayer2ShapeBox().width(),
-                defVia->getLayer2ShapeBox().width(), defVia->getLayer2ShapeBox().length()));
-    viaBox.set(via->getLayer2ShapeBox().left() - sp + 1 + xCoords_[gridX], 
-                 via->getLayer2ShapeBox().bottom() - sp + 1 + yCoords_[gridY], 
-                 via->getLayer2ShapeBox().right() + sp - 1 + xCoords_[gridX], 
-                 via->getLayer2ShapeBox().top() + sp - 1 + yCoords_[gridY]);
-    
-    res.clear();
-    drWorker_->getRegionQuery()->query(viaBox, layer->getLayerNum(), res);
-    cost += (res.empty() ? 0 : SHAPECOST*el);
-    
     return cost;
 }
 
@@ -635,6 +584,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
             break;
         case frDirEnum::W:
             endX = gridX-1;
+            break;
+        default:
             break;
     }
     //get costs
@@ -686,7 +637,7 @@ frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoor
     
     if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
       return static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
-    ERROR("ERROR FlexGridGraph::getMinSpacingValue");
+    drWorker_->getLogger()->error(utl::ToolId::DRT, 0, "ERROR FlexGridGraph::getMinSpacingValue");
 }
 
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const{

@@ -71,6 +71,7 @@ namespace fr {
     frAccessPoint* getAccessPoint(int idx = 0) const {
       return ap_[idx];
     }
+    frString getName() const;
     // setters
     void setAPSize(int size) {
       ap_.resize(size, nullptr);

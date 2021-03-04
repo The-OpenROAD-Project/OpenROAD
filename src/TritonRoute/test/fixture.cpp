@@ -33,7 +33,7 @@
 using namespace fr;
 
 Fixture::Fixture()
-  : logger(std::make_unique<Logger>(nullptr)),
+  : logger(std::make_unique<Logger>()),
     design(std::make_unique<frDesign>(logger.get()))
 {
   makeDesign();

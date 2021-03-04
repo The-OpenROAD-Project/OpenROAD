@@ -29,24 +29,23 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include <dbShape.h>
+#include <dbWireCodec.h>
 #include <stdio.h>
 
 #include "db.h"
-//#include "dbWireCodec.h"
-#include <dbWireCodec.h>
-//#include "dbShape.h"
-#include <dbLogger.h>
-#include <dbShape.h>
-
-#include "extRCap.h"
+#include "OpenRCX/extRCap.h"
+#include "utility/Logger.h"
 
 namespace rcx {
+
+using utl::RCX;
 
 static odb::dbTechLayer* m1;
 static odb::dbTechLayer* m2;
 static odb::dbTechLayer* m3;
-static odb::dbTechVia*   v12;
-static odb::dbTechVia*   v23;
+static odb::dbTechVia* v12;
+static odb::dbTechVia* v23;
 
 static void create_tech(odb::dbDatabase* db)
 {
@@ -109,10 +108,10 @@ int extMain::db_test_wires(odb::dbDatabase* db)
     db = _db;
 
   create_tech(db);
-  odb::dbChip*       chip  = odb::dbChip::create(db);
-  odb::dbBlock*      block = odb::dbBlock::create(chip, "chip");
-  odb::dbNet*        net   = odb::dbNet::create(block, "net");
-  odb::dbWire*       wire  = odb::dbWire::create(net);
+  odb::dbChip* chip = odb::dbChip::create(db);
+  odb::dbBlock* block = odb::dbBlock::create(chip, "chip");
+  odb::dbNet* net = odb::dbNet::create(block, "net");
+  odb::dbWire* wire = odb::dbWire::create(net);
   odb::dbWireEncoder encoder;
   encoder.begin(wire);
   encoder.newPath(m1, odb::dbWireType::ROUTED);
@@ -134,38 +133,38 @@ int extMain::db_test_wires(odb::dbDatabase* db)
   encoder.addPoint(3000, 18000, 6000);
   encoder.end();
 
-  odb::dbShape        shape;
+  odb::dbShape shape;
   odb::dbWireShapeItr sitr;
-  std::vector<int>    shape_id;
+  std::vector<int> shape_id;
 
   for (sitr.begin(wire); sitr.next(shape);) {
     print_shape(shape, 0, 0);
     shape_id.push_back(sitr.getShapeId());
   }
 
-  odb::notice(0, "------------------------------\n");
+  logger_->info(RCX, 253, "------------------------------");
 
   std::vector<int>::iterator itr;
 
   for (itr = shape_id.begin(); itr != shape_id.end(); ++itr) {
-    int          id = *itr;
+    int id = *itr;
     odb::dbShape shape;
     wire->getShape(id, shape);
     print_shape(shape, 0, 0);
   }
 
-  odb::notice(0, "\n\nRC PATHS ------------------------------\n");
+  logger_->info(RCX, 254, "\nRC PATHS ------------------------------");
 
-  odb::dbWirePath      path;
+  odb::dbWirePath path;
   odb::dbWirePathShape pshape;
 
   odb::dbWirePathItr pitr;
 
   for (pitr.begin(wire); pitr.getNextPath(path);) {
-    uint       prevId    = path.junction_id;
+    uint prevId = path.junction_id;
     odb::Point prevPoint = path.point;
     while (pitr.getNextShape(pshape)) {
-      uint       newId    = pshape.junction_id;
+      uint newId = pshape.junction_id;
       odb::Point newPoint = pshape.point;
 
       uint len = print_shape(pshape.shape, prevId, newId);
@@ -174,7 +173,7 @@ int extMain::db_test_wires(odb::dbDatabase* db)
       } else  // via
       {
       }
-      prevId    = newId;
+      prevId = newId;
       prevPoint = newPoint;
       /*
                                   int            junction_id; // junction id of

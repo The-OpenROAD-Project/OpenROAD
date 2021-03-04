@@ -12,27 +12,27 @@ COMPONENTS 5 ;
     - u2 AND2_X1 + PLACED ( 10000 40000 ) N ;
 END COMPONENTS
 PINS 4 ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal1 ( 0 0 ) ( 0 0 )
-        + FIXED ( 0 0 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
         + FIXED ( 10000 3333 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( 0 0 ) ( 0 0 )
+        + FIXED ( 0 0 ) N ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal1 ( 0 0 ) ( 0 0 )
         + FIXED ( 3333 10000 ) N ;
 END PINS
 SPECIALNETS 2 ;
-    - VSS ( * VSS ) + USE GROUND ;
     - VDD ( * VDD ) + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
 NETS 8 ;
+    - clk ( PIN clk ) ( r1 CK ) ( r2 CK ) ( r3 CK ) + USE SIGNAL ;
     - in1 + USE SIGNAL ;
     - in2 ( PIN in2 ) ( r2 D ) + USE SIGNAL ;
-    - clk ( PIN clk ) ( r1 CK ) ( r2 CK ) ( r3 CK ) + USE SIGNAL ;
     - out ( PIN out ) ( r3 Q ) + USE SIGNAL ;
     - r1q ( r1 Q ) ( u2 A1 ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;

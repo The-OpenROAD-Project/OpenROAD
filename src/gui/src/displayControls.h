@@ -49,6 +49,7 @@
 #include <QVBoxLayout>
 #include <vector>
 
+#include "congestionSetupDialog.h"
 #include "options.h"
 
 namespace odb {
@@ -140,9 +141,20 @@ class DisplayControls : public QDockWidget, public Options
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
+
+  void addCustomVisibilityControl(const std::string& name,
+                                  bool initially_visible = false);
+  bool checkCustomVisibilityControl(const std::string& name);
+
   bool isGridGraphVisible();
   bool areRouteGuidesVisible();
   bool areRoutingObjsVisible();
+
+  bool isCongestionVisible() const override;
+  bool showHorizontalCongestion() const override;
+  bool showVerticalCongestion() const override;
+  float getMinCongestionToShow() const override;
+  QColor getCongestionColor(float congestion) const override;
 
  signals:
   // The display options have changed and clients need to update
@@ -155,8 +167,9 @@ class DisplayControls : public QDockWidget, public Options
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
-
   void displayItemDblClicked(const QModelIndex& index);
+
+  void showCongestionSetup();
 
  private:
   // The columns in the tree view
@@ -195,6 +208,7 @@ class DisplayControls : public QDockWidget, public Options
   // Object controls
   QStandardItem* fills_;
   QStandardItem* rows_;
+  QStandardItem* congestion_map_;
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
   QStandardItem* nets_signal_;
@@ -206,6 +220,9 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* grid_graph_;
   QStandardItem* route_guides_;
   QStandardItem* routing_objs_;
+
+  std::map<std::string, QStandardItem*> custom_controls_;
+  std::map<std::string, bool> custom_visibility_;
 
   odb::dbDatabase* db_;
   bool tech_inited_;
@@ -219,14 +236,14 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_ground_visible_;
   bool nets_clock_visible_;
   
-  bool isGridGraphVisible_;
-  bool areRouteGuidesVisible_;
-  bool areRoutingObjsVisible_;
-  
+  bool congestion_visible_;
+
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
   std::map<const odb::dbTechLayer*, bool> layer_visible_;
   std::map<const odb::dbTechLayer*, bool> layer_selectable_;
+
+  CongestionSetupDialog* congestion_dialog_;
 };
 
 }  // namespace gui

@@ -1,5 +1,5 @@
 //Generator Code Begin 1
-{%for klass in schema.classes%}
+{% for klass in schema.classes %}
   {{klass.name}}Obj,
-{%endfor%}
+{% endfor %}
 //Generator Code End 1

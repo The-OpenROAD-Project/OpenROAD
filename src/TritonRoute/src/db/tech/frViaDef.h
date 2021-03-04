@@ -33,12 +33,13 @@
 #include <memory>
 #include "frBaseTypes.h"
 #include "db/obj/frShape.h"
+#include "utility/Logger.h"
 
 namespace fr{
   class frLef58CutClass {
   public:
     // constructors
-    frLef58CutClass(): name(""), viaWidth(0), viaLength(0), numCut(1) {}
+    frLef58CutClass(utl::Logger* loggerIn = nullptr): name(""), viaWidth(0), viaLength(0), numCut(1), logger(loggerIn) {}
     // getters
     void getName(std::string &in) const {
       in = name;
@@ -71,11 +72,18 @@ namespace fr{
     void setNumCut(frUInt4 in) {
       numCut = in;
     }
+    void report()
+    {
+      if(logger == nullptr)
+        return;
+      logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}", name, viaWidth, viaLength, numCut);
+    }
   protected:
     std::string name;
     frCoord  viaWidth;
     frCoord  viaLength;
     frUInt4  numCut; // this value is not equal to #multi cuts, only used for calculating resistance, currently ignored in rule checking process
+    utl::Logger* logger;
   };
 
 
@@ -150,13 +158,22 @@ namespace fr{
     }
     // setters
     void addLayer1Fig(std::unique_ptr<frShape> figIn) {
-      layer1Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer1ShapeBox.merge(box);
+        layer1Figs.push_back(std::move(figIn));
     }
     void addLayer2Fig(std::unique_ptr<frShape> figIn) {
-      layer2Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer2ShapeBox.merge(box);
+        layer2Figs.push_back(std::move(figIn));
     }
     void addCutFig(std::unique_ptr<frShape> figIn) {
-      cutFigs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        cutShapeBox.merge(box);
+        cutFigs.push_back(std::move(figIn));
     }
     void setDefault(bool isDefaultIn) {
       isDefault = isDefaultIn;
@@ -169,42 +186,6 @@ namespace fr{
     }
     void setAddedByRouter(bool in) {
       addedByRouter = in;
-    }
-    void calculatedShapeBoxes(){
-        frBox box;
-        frCoord xl = 0, yl = 0, xh = 0, yh = 0;
-        for (auto &fig: layer1Figs) {
-            fig->getBBox(box);
-            xl = std::min(xl, box.left());
-            yl = std::min(yl, box.bottom());
-            xh = std::max(xh, box.right());
-            yh = std::max(yh, box.top());
-        }
-        layer1ShapeBox.set(xl, yl, xh, yh);
-//        std::cout << "\nl1: " << layer1ShapeBox.left() << " " << layer1ShapeBox.right() << " " <<
-//                layer1ShapeBox.bottom() << " " << layer1ShapeBox.top()<<  "\n";
-        xl = 0; yl = 0; xh = 0; yh = 0;
-        for (auto &fig: layer2Figs) {
-            fig->getBBox(box);
-            xl = std::min(xl, box.left());
-            yl = std::min(yl, box.bottom());
-            xh = std::max(xh, box.right());
-            yh = std::max(yh, box.top());
-        }
-        layer2ShapeBox.set(xl, yl, xh, yh);
-//        std::cout << "\nl2: " << layer2ShapeBox.left() << " " << layer2ShapeBox.right() << " " <<
-//                layer2ShapeBox.bottom() << " " << layer2ShapeBox.top()<<  "\n";
-        xl = 0; yl = 0; xh = 0; yh = 0;
-        for (auto &fig: cutFigs) {
-            fig->getBBox(box);
-            xl = std::min(xl, box.left());
-            yl = std::min(yl, box.bottom());
-            xh = std::max(xh, box.right());
-            yh = std::max(yh, box.top());
-        }
-        cutShapeBox.set(xl, yl, xh, yh);
-//        std::cout << "\ncut: " << cutShapeBox.left() << " " << cutShapeBox.right() << " " <<
-//                cutShapeBox.bottom() << " " << cutShapeBox.top()<<  "\n";
     }
     const frBox& getLayer1ShapeBox(){
         return layer1ShapeBox;
@@ -228,9 +209,6 @@ namespace fr{
     frBox                                    layer1ShapeBox;
     frBox                                    layer2ShapeBox;
     frBox                                    cutShapeBox;
-//    frBox                                    layer1SpacingBox;
-//    frBox                                    layer2SpacingBox;
-//    frBox                                    cutSpacingBox;
   };
 }
 #endif

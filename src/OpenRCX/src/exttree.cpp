@@ -38,11 +38,12 @@
 
 #include "dbExtControl.h"
 #include "dbSearch.h"
-#include "exttree.h"
-//#include "logger.h"
-#include <dbLogger.h>
+#include "OpenRCX/exttree.h"
+#include "utility/Logger.h"
 
 namespace rcx {
+
+using utl::RCX;
 
 #ifdef EXT_SI
 void initExtSi(dbNet* victim, bool is_min, bool is_rise, tmg_db* tm);
@@ -59,22 +60,23 @@ void extRcTree::free_exttree(extTnode* driver)
   delete driver;
 }
 
-extRcTree::extRcTree(odb::dbBlock* blk)
+extRcTree::extRcTree(odb::dbBlock* blk, Logger* logger)
 {
-  _block     = blk;
+  logger_ = logger;
+  _block = blk;
   _cornerCnt = blk->getCornerCount();
-  _net       = NULL;
+  _net = NULL;
 
   _rcPool = new AthPool<extRCnode>(false, 4096);
 
   _junctionNodeTable = new Ath__array1D<extRCnode*>(1024);
-  _nodeTable         = new Ath__array1D<extRCnode*>(1024);
-  _indexTable        = new Ath__array1D<int>(1024);
-  _itermIndexTable   = new Ath__array1D<int>(1024);
-  _btermIndexTable   = new Ath__array1D<int>(1024);
-  _map               = new Ath__array1D<int>(128000);
-  _debug             = false;
-  _printChildN       = true;
+  _nodeTable = new Ath__array1D<extRCnode*>(1024);
+  _indexTable = new Ath__array1D<int>(1024);
+  _itermIndexTable = new Ath__array1D<int>(1024);
+  _btermIndexTable = new Ath__array1D<int>(1024);
+  _map = new Ath__array1D<int>(128000);
+  _debug = false;
+  _printChildN = true;
 
   _tnodeTable = NULL;
 }
@@ -97,16 +99,16 @@ void extRCnode::reset(uint cornerCnt)
   uint ii;
   for (ii = 0; ii < cornerCnt; ii++) {
     _gndcap[ii] = 0;
-    _cap[ii]    = 0;
-    _res[ii]    = 0;
+    _cap[ii] = 0;
+    _res[ii] = 0;
   }
-  _x          = 0;
-  _y          = 0;
+  _x = 0;
+  _y = 0;
   _firstChild = 0;
-  _termMap    = 0;
-  _netId      = 0;
-  _capndId    = 0;
-  _splitCnt   = 0;
+  _termMap = 0;
+  _netId = 0;
+  _capndId = 0;
+  _splitCnt = 0;
   _junctionId = 0;
 }
 extTnode::extTnode(extRCnode* m, uint cornerCnt)
@@ -114,22 +116,22 @@ extTnode::extTnode(extRCnode* m, uint cornerCnt)
   uint ii;
   for (ii = 0; ii < cornerCnt; ii++) {
     _gndcap[ii] = m->_gndcap[ii];
-    _cap[ii]    = m->_cap[ii];
-    _res[ii]    = m->_res[ii];
+    _cap[ii] = m->_cap[ii];
+    _res[ii] = m->_res[ii];
   }
-  _x          = m->_x;
-  _y          = m->_y;
-  _termMap    = m->_termMap;
-  _netId      = m->_netId;
-  _capndId    = m->_capndId;
-  _splitCnt   = 1;
+  _x = m->_x;
+  _y = m->_y;
+  _termMap = m->_termMap;
+  _netId = m->_netId;
+  _capndId = m->_capndId;
+  _splitCnt = 1;
   _junctionId = m->_junctionId;
-  _child      = NULL;
+  _child = NULL;
 }
 void extTnode::printTnodes(char* type, uint cornerCnt)
 {
   FILE* fp;
-  char  fn[40];
+  char fn[40];
   if (type) {
     sprintf(fn, "%s_net%d_tnode", type, _netId);
     fp = fopen(fn, "w");
@@ -138,15 +140,15 @@ void extTnode::printTnodes(char* type, uint cornerCnt)
   fprintf(fp, "extTnodes of Net %d:\n", _netId);
   extTnode* stackV[4096];
   extTnode* parentNode[4096];
-  int       pN = 0;
-  stackV[0]    = this;
+  int pN = 0;
+  stackV[0] = this;
   int sequence[4096];
-  int seqn         = 1;
-  sequence[0]      = seqn++;
-  int       stackN = 1;
-  int       k;
-  int       csq;
-  uint      ii;
+  int seqn = 1;
+  sequence[0] = seqn++;
+  int stackN = 1;
+  int k;
+  int csq;
+  uint ii;
   extTnode* node;
   fprintf(fp,
           "NetId %d Node graph from extTnodes --------------------\n\n",
@@ -201,11 +203,11 @@ void extTnode::printTnodes(char* type, uint cornerCnt)
     fclose(fp);
 }
 void extRcTree::getCoords(odb::dbNet* net,
-                          uint        shapeId,
-                          int*        x1,
-                          int*        y1,
-                          int*        x2,
-                          int*        y2)
+                          uint shapeId,
+                          int* x1,
+                          int* y1,
+                          int* x2,
+                          int* y2)
 {
   odb::dbShape s;
   odb::dbWire* w = net->getWire();
@@ -246,9 +248,9 @@ void extRcTree::initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet)
   _netCapNodeNum.clear();
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    odb::dbRSeg*    rc      = *rc_itr;
-    uint            srcId   = rc->getSourceNode();
-    uint            tgtId   = rc->getTargetNode();
+    odb::dbRSeg* rc = *rc_itr;
+    uint srcId = rc->getSourceNode();
+    uint tgtId = rc->getTargetNode();
     odb::dbCapNode* srcNode = odb::dbCapNode::getCapNode(_cornerBlock, srcId);
     odb::dbCapNode* tgtNode = odb::dbCapNode::getCapNode(_cornerBlock, tgtId);
 
@@ -271,9 +273,9 @@ void extRcTree::initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet)
     tgtNode->setSelect(true);
   }
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    odb::dbRSeg*    rc      = *rc_itr;
-    uint            srcId   = rc->getSourceNode();
-    uint            tgtId   = rc->getTargetNode();
+    odb::dbRSeg* rc = *rc_itr;
+    uint srcId = rc->getSourceNode();
+    uint tgtId = rc->getTargetNode();
     odb::dbCapNode* srcNode = odb::dbCapNode::getCapNode(_cornerBlock, srcId);
     odb::dbCapNode* tgtNode = odb::dbCapNode::getCapNode(_cornerBlock, tgtId);
     srcNode->setSelect(false);
@@ -299,11 +301,11 @@ void extRcTree::initLocalCapNodeTable(odb::dbSet<odb::dbRSeg>& rSet)
   }
 }
 
-extRCnode* extRcTree::init(odb::dbRSeg*             zrc,
-                           odb::dbRSeg*             rc,
+extRCnode* extRcTree::init(odb::dbRSeg* zrc,
+                           odb::dbRSeg* rc,
                            odb::dbSet<odb::dbRSeg>& rSet,
-                           bool                     recycleFlag,
-                           uint*                    id)
+                           bool recycleFlag,
+                           uint* id)
 {
   uint resSize = rSet.size();
   initLocalCapNodeTable(rSet);
@@ -325,8 +327,8 @@ extRCnode* extRcTree::init(odb::dbRSeg*             zrc,
 
   _firstBTermIndex = 0;
   _firstITermIndex = 0;
-  _itermCnt        = 0;
-  _btermCnt        = 0;
+  _itermCnt = 0;
+  _btermCnt = 0;
   if (recycleFlag) {
     for (uint ii = 0; ii < _nodeTable->getCnt(); ii++)
       _rcPool->free(_nodeTable->get(ii));
@@ -368,9 +370,9 @@ uint extRcTree::makeChildren(extRCnode* node, uint childrenCnt)
 
   return node->_firstChild;
 }
-extRCnode* extRcTree::allocNode(uint  childrenCnt,
+extRCnode* extRcTree::allocNode(uint childrenCnt,
                                 uint* id,
-                                bool  allocateChildren)
+                                bool allocateChildren)
 {
   extRCnode* node = _rcPool->alloc();
   assert(node);
@@ -410,17 +412,16 @@ uint extRcTree::getChildrenCnt(uint firstChild)
 }
 extTnode* extRcTree::makeTnode(uint nodeId, uint& n)
 {
-  extTnode*  tnode = NULL;
-  extRCnode* node  = _nodeTable->get(nodeId);
+  extTnode* tnode = NULL;
+  extRCnode* node = _nodeTable->get(nodeId);
 
   uint mapId = _map->geti(nodeId);
   if (mapId > 0) {
     tnode = _tnodeTable[mapId];
-    // notice(0, "old map[%d]= %d\n", nodeId, _map->geti(nodeId));
   } else {
     //_map[nodeId]= n;
     _map->set(nodeId, n);
-    tnode            = new extTnode(node, _cornerCnt);
+    tnode = new extTnode(node, _cornerCnt);
     _tnodeTable[n++] = tnode;
 
     tnode->_childCnt = getChildrenCnt(node->_firstChild);
@@ -458,7 +459,6 @@ uint extRcTree::makeGraph(uint netId)
       if (nodeId == 0)
         break;
 
-      // notice(0, "Child: ");
       makeTnode(nodeId, n);
 
       tnode->_child[k++] = _tnodeTable[_map->geti(nodeId)];
@@ -466,8 +466,9 @@ uint extRcTree::makeGraph(uint netId)
   }
   if (_debug) {
     //		double dbTotCap= odb::dbNet::getNet(_block,
-    // netId)->getTotalCapacitance(); notice(0, "Total Cap= %g (tree) vs. %g
-    // Rsegs\n", totCap, dbTotCap);
+    // netId)->getTotalCapacitance();
+    // logger_->info(RCX, 0, "Total Cap= {}
+    // (tree) vs. {} Rsegs", totCap, dbTotCap);
   }
   return n;
 }
@@ -479,12 +480,6 @@ void extRcTree::printTree(FILE* fp, uint netId, uint tnodeCnt)
     fprintf(fp, "node %5d : ", ii);
 
     extTnode* node = _tnodeTable[ii];
-    if (_printChildN) {
-      for (uint jj = 0; jj < node->_childCnt; jj++) {
-        fprintf(fp, "   %p ", node->_child[jj]);
-      }
-    }
-    fprintf(fp, "\n");
     for (uint jj = 0; jj < _cornerCnt; jj++)
       fprintf(fp, "\t\t\t\t\tR= %5g  C= %5g\n", node->_res[jj], node->_cap[jj]);
     fprintf(fp, "\t\t\t\t\tX= %d Y= %d\n", node->_x, node->_y);
@@ -515,16 +510,17 @@ uint extRcTree::printTree(FILE* fp, uint netId, const char* msg)
 int extRcTree::dfs(uint i, int* vis, odb::dbNet* net, uint l)
 {
   if (vis[i] != -1) {
-    warning(0,
-            "Node %d in net %d %s has two parents %d, and %d\n",
-            i,
-            net->getId(),
-            net->getConstName(),
-            vis[i],
-            l);
+    logger_->warn(RCX,
+                  160,
+                  "Node {} in net {} {} has two parents {}, and {}",
+                  i,
+                  net->getId(),
+                  net->getConstName(),
+                  vis[i],
+                  l);
     return 0;
   }
-  vis[i]       = l;
+  vis[i] = l;
   extRCnode* n = _nodeTable->get(i);
   if (!n)
     return 1;
@@ -541,7 +537,7 @@ int extRcTree::dfs(uint i, int* vis, odb::dbNet* net, uint l)
 bool extRcTree::isTree(odb::dbNet* net)
 {
   int* visited = (int*) malloc(_nodeTable->getCnt() * sizeof(int));
-  uint j       = 0;
+  uint j = 0;
   for (j = 0; j < _nodeTable->getCnt(); j++)
     visited[j] = -1;
   j = 0;
@@ -550,10 +546,11 @@ bool extRcTree::isTree(odb::dbNet* net)
       continue;
     j++;
     if (j > 1) {
-      warning(0,
-              "Routing corresponding to net %d %s is not connected\n",
-              net->getId(),
-              net->getConstName());
+      logger_->warn(RCX,
+                    161,
+                    "Routing corresponding to net {} {} is not connected",
+                    net->getId(),
+                    net->getConstName());
       return false;
     }
     if (!dfs(ii, visited, net, ii))
@@ -564,21 +561,21 @@ bool extRcTree::isTree(odb::dbNet* net)
 }
 void extRcTree::duplicateJunction(extRCnode* node, uint cnt)
 {
-  uint       jnodeId = 0;
-  extRCnode* jnode   = allocNode(cnt, &jnodeId, false);  // children
+  uint jnodeId = 0;
+  extRCnode* jnode = allocNode(cnt, &jnodeId, false);  // children
 
   jnode->_firstChild = node->_firstChild;
   for (uint jj = 0; jj < _cornerCnt; jj++) {
-    jnode->_res[jj]    = 0.0;
-    jnode->_cap[jj]    = 0.0;
+    jnode->_res[jj] = 0.0;
+    jnode->_cap[jj] = 0.0;
     jnode->_gndcap[jj] = 0.0;
   }
   jnode->_x = node->_x;
   jnode->_y = node->_y;
   // jnode->_termMap = node->_termMap;
-  jnode->_netId      = node->_netId;
-  jnode->_capndId    = node->_capndId;
-  jnode->_splitCnt   = node->_splitCnt;
+  jnode->_netId = node->_netId;
+  jnode->_capndId = node->_capndId;
+  jnode->_splitCnt = node->_splitCnt;
   jnode->_junctionId = node->_junctionId;
 
   makeChildren(node, 1);
@@ -605,7 +602,7 @@ uint extRcTree::insertZeroJunctions()
 
   for (uint ii = _driverNodeId + 1; ii < nodeCnt; ii++) {
     extRCnode* node = _nodeTable->get(ii);
-    uint       cnt  = getChildrenCnt(node);
+    uint cnt = getChildrenCnt(node);
     if (cnt < 2)
       continue;
 
@@ -613,18 +610,18 @@ uint extRcTree::insertZeroJunctions()
   }
   return _nodeTable->getCnt();
 }
-extTnode* extRcTree::makeTree(uint   netId,
+extTnode* extRcTree::makeTree(uint netId,
                               double max_cap,
-                              uint   test,
-                              bool   resetFlag,
-                              bool   addDummyJunctions,
-                              uint&  tnodeCnt,
+                              uint test,
+                              bool resetFlag,
+                              bool addDummyJunctions,
+                              uint& tnodeCnt,
                               double mcf,
-                              char*  printTag,
-                              bool   for_buffering)
+                              char* printTag,
+                              bool for_buffering)
 {
   odb::dbNet* net = odb::dbNet::getNet(_block, netId);
-  _debug          = false;
+  _debug = false;
   if (netId == 166)
     _debug = true;
   extTnode* node = makeTree(net,
@@ -639,7 +636,7 @@ extTnode* extRcTree::makeTree(uint   netId,
     if (node)
       node->printTnodes(printTag, _cornerCnt);
     else
-      notice(0, "Failed to make rcTree for net %d.\n", netId);
+      logger_->warn(RCX, 162, "Failed to make rcTree for net {}.", netId);
   }
   return node;
 }
@@ -659,13 +656,13 @@ extTnode* extRcTree::makeTree(uint   netId,
 //	driver_node->_x= X;
 //	driver_node->_y= Y;
 //        if((X == 0) && (Y == 0))
-//          notice(0, "The driver is at 0, 0\n");
+//          logger_->info(RCX, 0, "The driver is at 0, 0");
 //}
 
-extRCnode* extRcTree::makeFirstNode(odb::dbRSeg*    zrc,
-                                    odb::dbRSeg*    rc,
+extRCnode* extRcTree::makeFirstNode(odb::dbRSeg* zrc,
+                                    odb::dbRSeg* rc,
                                     odb::dbCapNode* capNode,
-                                    uint            index)
+                                    uint index)
 {
   uint nodeId = 0;
 
@@ -674,8 +671,8 @@ extRCnode* extRcTree::makeFirstNode(odb::dbRSeg*    zrc,
 
   extRCnode* node = allocNode(childCnt, &nodeId);
 
-  int X             = 0;
-  int Y             = 0;
+  int X = 0;
+  int Y = 0;
   node->_junctionId = 0;
   if (capNode->isITerm()) {
     _itermIndexTable->set(nodeId, capNode->getNode());
@@ -684,7 +681,7 @@ extRCnode* extRcTree::makeFirstNode(odb::dbRSeg*    zrc,
       node->_junctionId = _net->getWire()->getTermJid(node->_termMap);
     //		odb::dbITerm *iterm= odb::dbITerm::getITerm(_block, _itermId);
     //		if (!iterm->getAvgXY(&X, &Y)) {
-    //			warning(0, "Can not locate iterm %s/%s\n",
+    //			logger_->warn(RCX, 0, "Can not locate iterm {}/{}",
     // iterm->getInst()->getConstName(), iterm->getMTerm()->getConstName());
     //			return NULL;
     //		}
@@ -695,7 +692,7 @@ extRCnode* extRcTree::makeFirstNode(odb::dbRSeg*    zrc,
       node->_junctionId = _net->getWire()->getTermJid(node->_termMap);
     //		odb::dbBTerm *bterm= odb::dbBTerm::getBTerm(_block, _btermId);
     //		if (!bterm->getFirstPinLocation(X, Y)) { // TWG: added bpins
-    //			warning(0, "Can not locate bterm %s\n",
+    //			logger_->warn(RCX, 0, "Can not locate bterm {}",
     // bterm->getConstName()); 			return NULL;
     //		}
   } else {
@@ -704,23 +701,23 @@ extRCnode* extRcTree::makeFirstNode(odb::dbRSeg*    zrc,
       node->_junctionId = rc->getShapeId();
     //		_net->getWire()->getCoord(node->_junctionId, X, Y);
   }
-  node->_netId    = _net->getId();
-  node->_capndId  = capNode->getId();
+  node->_netId = _net->getId();
+  node->_capndId = capNode->getId();
   node->_splitCnt = 1;
   zrc->getCoords(X, Y);
   node->_x = X;
   node->_y = Y;
   if ((X == 0) & (Y == 0))
-    notice(0, "The node is at 0, 0\n");
+    logger_->info(RCX, 163, "The node is at 0, 0");
   _junctionNodeTable->set(index, node);
 
   return node;
 }
 bool extRcTree::getCoords(odb::dbNet* net,
-                          uint        shapeId,
-                          int*        ll,
-                          int*        ur,
-                          uint&       length)
+                          uint shapeId,
+                          int* ll,
+                          int* ur,
+                          uint& length)
 {
   odb::dbShape s;
   odb::dbWire* w = net->getWire();
@@ -732,9 +729,9 @@ bool extRcTree::getCoords(odb::dbNet* net,
   ur[1] = s.yMax();
 
   bool horizontal = true;
-  length          = ur[0] - ll[0];
+  length = ur[0] - ll[0];
   if ((int) length < ur[1] - ll[1]) {
-    length     = ur[1] - ll[1];
+    length = ur[1] - ll[1];
     horizontal = false;
   }
   return horizontal;
@@ -767,22 +764,22 @@ bool extRcTree::getCoords(odb::dbNet* net,
                                 firstRC= NULL;
                         }
 */
-extRCnode* extRcTree::makeNode(uint            startingNodeId,
-                               uint            endingNodeId,
+extRCnode* extRcTree::makeNode(uint startingNodeId,
+                               uint endingNodeId,
                                odb::dbCapNode* tgtNode,
-                               bool            fractionFlag,
-                               int             x,
-                               int             y,
-                               double*         res,
-                               double*         gndcap,
-                               double*         totalcap,
-                               extRCnode*      prevNode,
-                               FILE*           dbgFP)
+                               bool fractionFlag,
+                               int x,
+                               int y,
+                               double* res,
+                               double* gndcap,
+                               double* totalcap,
+                               extRCnode* prevNode,
+                               FILE* dbgFP)
 {
   uint nodeId = 0;
   // uint childCnt= tgtNode->getChildrenCnt()+1;
-  uint       childCnt = tgtNode->getChildrenCnt();
-  extRCnode* node     = allocNode(childCnt, &nodeId);
+  uint childCnt = tgtNode->getChildrenCnt();
+  extRCnode* node = allocNode(childCnt, &nodeId);
 
   if (prevNode != NULL) {  // Only if cut wire
     addChild(prevNode, nodeId);
@@ -818,16 +815,16 @@ extRCnode* extRcTree::makeNode(uint            startingNodeId,
   }
   // else TODO- when cutting a RCseg to satisfy max_cap requirements
 
-  node->_netId    = _net->getId();
-  node->_capndId  = tgtNode->getId();
+  node->_netId = _net->getId();
+  node->_capndId = tgtNode->getId();
   node->_splitCnt = 1;
-  node->_x        = x;
-  node->_y        = y;
+  node->_x = x;
+  node->_y = y;
   uint ii;
   for (ii = 0; ii < _cornerCnt; ii++) {
     node->_gndcap[ii] = 1e-3 * gndcap[ii];
-    node->_cap[ii]    = 1e-3 * totalcap[ii];
-    node->_res[ii]    = res[ii];
+    node->_cap[ii] = 1e-3 * totalcap[ii];
+    node->_res[ii] = res[ii];
   }
 
   if (dbgFP != NULL) {
@@ -848,11 +845,11 @@ extRCnode* extRcTree::makeNode(uint            startingNodeId,
 
   return prevNode;
 }
-uint extRcTree::checkAndInit(odb::dbNet*              net,
-                             bool                     resetFlag,
+uint extRcTree::checkAndInit(odb::dbNet* net,
+                             bool resetFlag,
                              odb::dbSet<odb::dbRSeg>& rSet)
 {
-  odb::dbRSeg*                      rc = NULL;
+  odb::dbRSeg* rc = NULL;
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
@@ -860,14 +857,16 @@ uint extRcTree::checkAndInit(odb::dbNet*              net,
   }
   if (rc == NULL) {  // not extracted yet or "empty" net
 
-    warning(0,
-            " net id %d has no RC segments.\n\tEither an empty net or has not "
-            "been extracted yet!\n",
-            net->getId());
+    logger_->warn(
+        RCX,
+        164,
+        "Net id {} has no RC segments.\tEither an empty net or has not "
+        "been extracted yet!",
+        net->getId());
     return 0;
   }
   odb::dbRSeg* zrc = net->getZeroRSeg();
-  uint         firstNodeId;
+  uint firstNodeId;
   if (!init(zrc, rc, rSet, resetFlag, &firstNodeId))
     return 0;
   return 1;
@@ -991,14 +990,14 @@ uint extRcTree::checkAndInit(odb::dbNet*              net,
 //	if (_btermId>0) {
 //		odb::dbBTerm *bterm= odb::dbBTerm::getBTerm(_block, _btermId);
 //		if (!bterm->getFirstPinLocation(X, Y)) { // TWG: added bpins
-//			warning(0, "Can not locate bterm %s\n",
+//			logger_->warn(RCX, 0, "Can not locate bterm {}",
 // bterm->getConstName()); 			return NULL;
 //		}
 //	}
 //	else if (_itermId>0) {
 //		odb::dbITerm *iterm= odb::dbITerm::getITerm(_block, _itermId);
 //		if (!iterm->getAvgXY(&X, &Y)) {
-//			warning(0, "Can not locate iterm %s/%s\n",
+//			logger_->warn(RCX, 0, "Can not locate iterm {}/{}",
 // iterm->getInst()->getConstName(), iterm->getMTerm()->getConstName());
 // return NULL;
 //		}
@@ -1007,7 +1006,7 @@ uint extRcTree::checkAndInit(odb::dbNet*              net,
 //	extRCnode *driver_node= _nodeTable->get(_driverNodeId);
 //
 //	if((X == 0) && (Y == 0))
-//		notice(0, "The drnode is at 0,0\n");
+//		logger_->info(RCX, 0, "The drnode is at 0,0");
 //	driver_node->_x= X;
 //	driver_node->_y= Y;
 //
@@ -1043,10 +1042,10 @@ uint extRcTree::checkAndInit(odb::dbNet*              net,
 //	else
 //		return driver_node;
 //}
-void extRcTree::printTest2(FILE*           dbgFP,
+void extRcTree::printTest2(FILE* dbgFP,
                            odb::dbCapNode* tgtNode,
-                           extRCnode*      node,
-                           uint            nodeId)
+                           extRCnode* node,
+                           uint nodeId)
 {
   if (tgtNode->isITerm()) {
     fprintf(dbgFP, "\t\t\t---> (%d) I_TERM= %d ", nodeId, node->_termMap);
@@ -1070,13 +1069,14 @@ bool extRcTree::isDangling(odb::dbCapNode* node)
 odb::dbRSeg* extRcTree::getFirstRC(odb::dbSet<odb::dbRSeg>& rSet)
 {
   if (_net->getTermCount() < 2) {
-    warning(0,
-            "\n net id %d has %d terms. can't make rcTree.\n",
-            _net->getId(),
-            _net->getTermCount());
+    logger_->warn(RCX,
+                  165,
+                  "Net id {} has {} terms. can't make rcTree.",
+                  _net->getId(),
+                  _net->getTermCount());
     return NULL;
   }
-  odb::dbRSeg*                      rc = NULL;
+  odb::dbRSeg* rc = NULL;
   odb::dbSet<odb::dbRSeg>::iterator rc_itr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
@@ -1084,10 +1084,12 @@ odb::dbRSeg* extRcTree::getFirstRC(odb::dbSet<odb::dbRSeg>& rSet)
   }
 
   if (rc == NULL) {  // not extracted yet or "empty" net
-    warning(0,
-            " net id %d has no RC segments.\n\tEither an empty net or has not "
-            "been extracted yet!\n",
-            _net->getId());
+    logger_->warn(
+        RCX,
+        164,
+        "Net id {} has no RC segments.\tEither an empty net or has not "
+        "been extracted yet!",
+        _net->getId());
     return NULL;
   }
   return rc;
@@ -1097,55 +1099,58 @@ FILE* extRcTree::openFile(odb::dbNet* net,
                           const char* permissions)
 {
   FILE* dbgFP = NULL;
-  char  name[64];
+  char name[64];
   sprintf(name, "%d.%s", net->getId(), postfix);
   dbgFP = fopen(name, permissions);
   if (dbgFP == NULL) {
-    notice(0, "cannot open file %s\n", name);
+    logger_->info(RCX, 27, "Cannot open file {}", name);
     return NULL;
   }
   return dbgFP;
 }
 
-extRCnode* extRcTree::makeTree(odb::dbNet*         net,
-                               double              max_cap,
-                               uint                test,
-                               bool                resetFlag,
-                               bool                addDummyJunctions,
-                               double              mcf,
+extRCnode* extRcTree::makeTree(odb::dbNet* net,
+                               double max_cap,
+                               uint test,
+                               bool resetFlag,
+                               bool addDummyJunctions,
+                               double mcf,
                                odb::dbBlockSearch* blk,
-                               bool                for_buffering,
-                               uint                extCorner,
-                               bool                is_rise,
-                               bool                is_min)
+                               bool for_buffering,
+                               uint extCorner,
+                               bool is_rise,
+                               bool is_min)
 {
   odb::dbExtControl* extc = _block->getExtControl();
-  _foreign                = extc->_foreign;
+  _foreign = extc->_foreign;
   if (_foreign) {
     if (for_buffering && !extc->_rsegCoord) {
-      warning(0,
-              "Extraction data is from read_spef without coordinates. Can't "
-              "make exttree.\n");
+      logger_->warn(
+          RCX,
+          168,
+          "Extraction data is from read_spef without coordinates. Can't "
+          "make exttree.");
       return NULL;
     }
   }
-  _extCorner        = extCorner;
+  _extCorner = extCorner;
   _blockCornerIndex = _extCorner;
-  _net              = net;
-  _cornerNet        = net;
-  _cornerBlock      = _block->getExtCornerBlock(extCorner);
+  _net = net;
+  _cornerNet = net;
+  _cornerBlock = _block->getExtCornerBlock(extCorner);
   _cornerBlock->preExttreeMergeRC(max_cap, 0 /*corner*/);
   if (_cornerBlock != _block) {
     _blockCornerIndex = 0;
-    _cornerNet        = odb::dbNet::getNet(_cornerBlock, net->getId());
+    _cornerNet = odb::dbNet::getNet(_cornerBlock, net->getId());
   }
 
   odb::dbSet<odb::dbRSeg> rSet = _cornerNet->getRSegs();
   if (rSet.begin() == rSet.end()) {
-    warning(0,
-            "Net %d, %s has no extraction data\n",
-            net->getId(),
-            net->getConstName());
+    logger_->warn(RCX,
+                  166,
+                  "Net {}, {} has no extraction data",
+                  net->getId(),
+                  net->getConstName());
     return NULL;
   }
 
@@ -1184,8 +1189,8 @@ extRCnode* extRcTree::makeTree(odb::dbNet*         net,
   double gndcap[ADS_MAX_CORNER];
   double totalcap[ADS_MAX_CORNER];
   double res[ADS_MAX_CORNER];
-  uint   cnt       = 1;
-  bool   firstFlag = false;
+  uint cnt = 1;
+  bool firstFlag = false;
 
 #ifdef EXT_SI
   tmg_db* tm = tmg_db::getTmgDb();
@@ -1198,11 +1203,11 @@ extRCnode* extRcTree::makeTree(odb::dbNet*         net,
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     odb::dbRSeg* rc = *rc_itr;
     if (firstRC == NULL) {  // start of RCpath
-      firstRC   = rc;
+      firstRC = rc;
       firstFlag = true;
     }
     uint startingNodeId = netLocalCn(firstRC->getSourceNode());
-    uint endingNodeId   = netLocalCn(rc->getTargetNode());
+    uint endingNodeId = netLocalCn(rc->getTargetNode());
 
     uint srcId = rc->getSourceNode();
     uint tgtId = rc->getTargetNode();
@@ -1237,7 +1242,7 @@ extRCnode* extRcTree::makeTree(odb::dbNet*         net,
         || !(tgtNodeFlag || totalcap[_blockCornerIndex] > max_cap
              || isDangling(tgtNode) || (!(_foreign) && shapeId == 0))) {
       if (_cornerBlock->getExtControl()->_exttreePreMerg)
-        warning(0, "Should not merge rc again after pre-merge \n");
+        logger_->warn(RCX, 167, "Shouldn't merge rc again after pre-merge");
       firstFlag = false;
       continue;
     }
@@ -1259,7 +1264,7 @@ extRCnode* extRcTree::makeTree(odb::dbNet*         net,
     rc->getCoords(x2, y2);
 
     bool fractionFlag = false;
-    prevNode          = makeNode(startingNodeId,
+    prevNode = makeNode(startingNodeId,
                         endingNodeId,
                         tgtNode,
                         fractionFlag,
@@ -1287,7 +1292,7 @@ extRCnode* extRcTree::makeTree(odb::dbNet*         net,
 //		 node->_termMap= tgtNode->getNode();
 //
 //		  if (_debug && blk==NULL)
-//		  notice(0, "\t-->node: %d  Iterm= %d\n", nodeId,
+//		  logger_->info(RCX, 0, "\t-->node: {}  Iterm= {}", nodeId,
 node->_termMap);
 //		  if (test>1)
 //				fprintf(dbgFP, "\t\t---> (%d) I_TERM= %d ",
@@ -1297,8 +1302,8 @@ nodeId, node->_termMap);
 //			_btermIndexTable->set(nodeId, tgtNode->getNode());
 //			node->_termMap= -tgtNode->getNode();
 //			if (_debug && blk==NULL)
-//				notice(0, "\t-->node: %d  B_TERM= %d\n", nodeId,
-node->_termMap);
+//				logger_->info(RCX, 0, "\t-->node: {}  B_TERM=
+{}", nodeId, node->_termMap);
 //			if (test>1)
 //				fprintf(dbgFP, "\t\t---> (%d) B_TERM= %d",
 nodeId, node->_termMap);
@@ -1306,8 +1311,8 @@ nodeId, node->_termMap);
 //		else {
 //			node->_junctionId = tgtNode->getNode();
 //			if (_debug && blk==NULL)
-//				notice(0, "\t-->node: %d  junction= %d\n",
-nodeId, node->_junctionId);
+//				logger_->info(RCX, 0, "\t-->node: {} junction=
+{}", nodeId, node->_junctionId);
 //			if (test>1) {
 //				if (isDangling(tgtNode))
 //					fprintf(dbgFP, "\t\t---> (%d) DANGLING=
@@ -1318,21 +1323,21 @@ nodeId, node->_junctionId);
 //			}
 //		}
 //		if (_debug && blk==NULL) {
-//			notice(0, "\ttshape %d --> %d :  has %d children\n",
-shapeId, nodeId, childCnt);
+//			logger_->info(RCX, 0, "\ttshape {} --> {} :  has {}
+children", shapeId, nodeId, childCnt);
 //		}
 //		node->_netId= net->getId();
 //        if((x2 == 0) & (y2 == 0))
 //			if (blk==NULL)
-//				notice(0, "The gnode is at 0, 0\n");
+//				logger_->info(RCX, 0, "The gnode is at 0, 0");
 //			node->_x= x2;
 //			node->_y= y2;
 //			node->_cap= 1e-3*cap;
 //			node->_res= res;
 //
 //			if (_debug && blk==NULL) {
-//				notice(0, "\tR= %g  C= %g  -- x2= %d  y2= %d --
-x1=%d x2=%d\n",
+//				logger_->info(RCX, 0, "\tR= {}  C= {}  -- x2= {}
+y2= {} -- x1={} x2={}",
 //					node->_res, node->_cap, x2, y2, x1, y1);
 //			}
 //			if (test>1) {
@@ -1383,26 +1388,26 @@ _junctionNodeTable->geti(netLocalCn(firstRC->getSourceNode()));
   //	if (_btermId>0) {
   //		odb::dbBTerm *bterm= odb::dbBTerm::getBTerm(_block, _btermId);
   //		if (!bterm->getFirstPinLocation(X, Y)) { // TWG: added bpins
-  //			warning(0, "Can not locate bterm %s\n",
+  //			logger_->warn(RCX, 0, "Can not locate bterm {}",
   // bterm->getConstName()); 			return NULL;
   //		}
   //	}
   //	else if (_itermId>0) {
   //		odb::dbITerm *iterm= odb::dbITerm::getITerm(_block, _itermId);
   //		if (!iterm->getAvgXY(&X, &Y)) {
-  //			warning(0, "Can not locate iterm %s/%s\n",
+  //			logger_->warn(RCX, 0, "Can not locate iterm {}/{}",
   // iterm->getInst()->getConstName(), iterm->getMTerm()->getConstName());
   // return NULL;
   //		}
   //	}
   extRCnode* driver_node = _nodeTable->get(_driverNodeId);
   if (!driver_node) {
-    warning(0, "The driver_node is NULL\n");
+    logger_->warn(RCX, 169, "The driver_node of the tree is NULL");
     return NULL;
   }
   if ((X == 0) && (Y == 0))
     if (blk == NULL)
-      notice(0, "The drnode is at 0,0\n");
+      logger_->info(RCX, 170, "The driver_node is at 0,0");
   driver_node->_x = X;
   driver_node->_y = Y;
 
@@ -1445,16 +1450,16 @@ _junctionNodeTable->geti(netLocalCn(firstRC->getSourceNode()));
     return driver_node;
 }
 extTnode* extRcTree::makeTree(odb::dbNet* net,
-                              double      max_cap,
-                              uint        test,
-                              bool        resetFlag,
-                              bool        addDummyJunctions,
-                              uint&       tnodeCnt,
-                              double      mcf,
-                              bool        for_buffering,
-                              uint        extCorner,
-                              bool        is_rise,
-                              bool        is_min)
+                              double max_cap,
+                              uint test,
+                              bool resetFlag,
+                              bool addDummyJunctions,
+                              uint& tnodeCnt,
+                              double mcf,
+                              bool for_buffering,
+                              uint extCorner,
+                              bool is_rise,
+                              bool is_min)
 {
   // if (net->getWire() == NULL)
   // 	return NULL;
@@ -1467,12 +1472,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     // before calling makeTree.
     if (net->isDisconnected())
       return NULL;
-  }
-  uint pcnt;
-  char tag[16];
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt0_", pcnt);
-    net->printWnP(tag);
   }
   if (makeTree(net,
                max_cap,
@@ -1489,10 +1488,6 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
     return NULL;
 
   tnodeCnt = _tnodeCnt;
-  if ((pcnt = net->getPrintCnt(odb::dbPrintControl::EXTTREE))) {
-    sprintf(tag, "zt_%d_mt1_", pcnt);
-    _tnodeTable[0]->printTnodes(tag, _cornerCnt);
-  }
   return _tnodeTable[0];
 }
 
@@ -1500,7 +1495,7 @@ extTnode* extRcTree::makeTree(odb::dbNet* net,
 
 void extRcTree::makeTree(double max_cap, uint test, bool for_buffering)
 {
-  odb::dbSet<odb::dbNet>           nets = _block->getNets();
+  odb::dbSet<odb::dbNet> nets = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
 
   //	uint cnt= 0;

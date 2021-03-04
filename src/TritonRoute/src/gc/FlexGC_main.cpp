@@ -319,11 +319,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect
     return false;
   }
 }
-//int print(){
-//    cout << "ASDASJHDIASHDHSA\n";
-//    int b = 1;
-//    return b;
-//}
+
 void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect,
                                      frCoord prl, frCoord distX, frCoord distY, bool isNDR) {
   
@@ -335,11 +331,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-//  if ((gtl::xh(*rect1) == 63.335*2000 && gtl::yh(*rect1) == 67.61*2000 || gtl::xh(*rect2) == 63.335*2000 && gtl::yh(*rect2) == 67.61*2000) &&
-//          (gtl::xl(*rect1) == 126930-70 && gtl::xh(*rect1) == 126930+210 //gtl::yl(*rect1) == 135020-70
-//            || gtl::xl(*rect2) == 126930+70 && gtl::xh(*rect2) == 126930+210/*gtl::yl(*rect2) == 135020-70*/))
-//      print();
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);  
+  
+  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
   if (isNDR){
         frCoord ndrSpc1 = 0, ndrSpc2 = 0;
         if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())

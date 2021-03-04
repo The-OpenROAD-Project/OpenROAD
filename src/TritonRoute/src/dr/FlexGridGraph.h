@@ -51,7 +51,7 @@ namespace fr {
                   graphics_(nullptr),
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
                   ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
-                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr),
+                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr), 
                   via2turnMinLen_(nullptr), ndr_(nullptr), dstTaperBox(nullptr) {}
     // getters
     frTechObject* getTech() const {
@@ -742,7 +742,6 @@ namespace fr {
     
     frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
-    frCoord getViaCostsNDR2(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
     frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
     bool useNDRCosts(const FlexWavefrontGrid& p) const;
@@ -812,7 +811,6 @@ namespace fr {
       wavefront_.cleanup();
       wavefront_.fit();
     }
-    drNet* currNet;
   protected:
     frDesign*     design_;
     FlexDRWorker* drWorker_;
@@ -869,8 +867,6 @@ namespace fr {
     frUInt4                                    ggMarkerCost_;
     // temporary variables
     FlexWavefront                              wavefront_;
-    frNonDefaultRule*                          ndr_;
-    frBox3D*                                     dstTaperBox;   //taper box for the current dest pin in the search
     const std::vector<std::pair<frCoord, frCoord> >* halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
@@ -879,6 +875,9 @@ namespace fr {
     const std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > >* via2viaMinLen_;
     const std::vector<std::vector<frCoord> >* via2viaMinLenNew_;
     const std::vector<std::vector<frCoord> >* via2turnMinLen_;
+    //ndr related
+    frNonDefaultRule*                          ndr_;
+    frBox3D*                                   dstTaperBox;   //taper box for the current dest pin in the search
 
     // internal getters
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {

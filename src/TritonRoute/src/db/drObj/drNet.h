@@ -44,7 +44,7 @@ namespace fr {
     drNet(): drBlockObject(), pins_(), extConnFigs_(), routeConnFigs_(), bestRouteConnFigs_(),
              fNetTerms_(), fNet_(nullptr), modified_(false), numMarkers_(0), numPinsIn_(0), 
              markerDist_(std::numeric_limits<frCoord>::max()), allowRipup_(true), pinBox_(), ripup_(false),
-             numReroutes_(0), inQueue_(false), routed_(false), origGuides_(), ndrRipupThresh_(0) {}
+             numReroutes_(0), ndrRipupThresh_(0), inQueue_(false), routed_(false), origGuides_() {}
     // getters
     const std::vector<std::unique_ptr<drPin> >& getPins() const {
       return pins_;

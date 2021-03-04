@@ -195,8 +195,6 @@ proc tapcell { args } {
 
 namespace eval tap {
     proc cut_rows {db endcap_master blockages halo_x halo_y} {
-        ord::report "Step 1: Cut rows..."
-
         set block [[$db getChip] getBlock]
 
         set rows_count 0
@@ -206,7 +204,7 @@ namespace eval tap {
 
         set end_master [$db findMaster $endcap_master]
         if { $end_master == "NULL" } {
-            ord::error TAP 11 "Master $endcap_master not found"
+            utl::error TAP 10 "Master $endcap_master not found."
         }
         set end_width [$end_master getWidth]
         set min_row_width [expr 2*$end_width]
@@ -266,15 +264,13 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 1 "Macro blocks found: $block_count"
-        ord::info TAP 2 "#Original rows: $rows_count"
-        ord::info TAP 3 "#Cut rows: $cut_rows_count"
+        utl::info TAP 1 "Macro blocks found: $block_count"
+        utl::info TAP 2 "Original rows: $rows_count"
+        utl::info TAP 3 "Cut rows: $cut_rows_count"
     }
 
     proc insert_endcaps {db endcap_cpp endcap_master cnrcap_masters \
                          blockages halo_x halo_y no_cell_at_top_bottom add_boundary_cell} {
-        ord::report "Step 2: Insert endcaps..."
-
         set block [[$db getChip] getBlock]
         
         set rows [$block getRows]
@@ -294,7 +290,7 @@ namespace eval tap {
             set endcapwidth [expr $endcap_cpp*$site_x]
 
             if { $master == "NULL" } {
-                ord::error 11 "Master $endcap_master not found"
+                utl::error TAP 11 "Master $endcap_master not found."
             }
 
             set row_name [$row getName]
@@ -309,13 +305,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 12 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 12 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
                         
                         if { $master == "NULL" } {
-                            ord::error TAP 13 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 13 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } elseif {$top_bottom == -1} {
@@ -323,13 +319,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 14 "Master $cnrcap_nwin_master not found"
+                            utl::error TAP 14 "Master $cnrcap_nwin_master not found."
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 15 "Master $cnrcap_nwout_master not found"
+                            utl::error TAP 15 "Master $cnrcap_nwout_master not found."
                         }
                     }
                 } else {
@@ -348,7 +344,6 @@ namespace eval tap {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                ord::warn TAP 8 "Not enough space to place endcap in row $row_name. Skipping..."
                 continue
             }
 
@@ -399,7 +394,7 @@ namespace eval tap {
             }
 
             if {$llx == $loc_2_x && $lly == $loc_2_y} {
-                ord::warn TAP 9 "WARNING: row $row_name have enough space for only one endcap"
+                utl::warn TAP 9 "row $row_name have enough space for only one endcap."
             continue
             }
 
@@ -420,14 +415,12 @@ namespace eval tap {
             incr cnt
             incr endcap_count
         }
-        ord::info TAP 4 "#Endcaps inserted: $endcap_count"
+        utl::info TAP 4 "Endcaps inserted: $endcap_count"
         return $cnt
     }
 
     proc insert_tapcells {db tapcell_master blockages dist endcap_cpp halo_x halo_y \
                           endcap_width cnt no_cell_at_top_bottom add_boundary_cell} {
-        ord::report "Step 3: Insert tapcells..."
-
         set block [[$db getChip] getBlock]
         
         set rows [$block getRows]
@@ -491,13 +484,10 @@ namespace eval tap {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
                     if { $master == "NULL" } {
-                        ord::error TAP 16 "Master $tapcell_master not found"
+                        utl::error TAP 16 "Master $tapcell_master not found."
                     }
 
                     set inst_name "PHY_${cnt}"
-                    set tap_width [$master getWidth]
-                    set tap_urx [expr $x + $tap_width]
-                    set end_llx [expr $urx - $endcap_width]
 
                     set x_tmp [expr {floor (1.0*$x/$site_x)*$site_x}]
                     set row_orig_fix [expr { $llx % $site_x }]
@@ -517,10 +507,15 @@ namespace eval tap {
                         }
                     }
 
-                    if {($x != $min_x) && ($x_end != $max_x)} {
+                    set tap_width [$master getWidth]
+                    set tap_urx [expr $x_tmp + $tap_width]
+                    set end_llx [expr $urx - $endcap_width]
+
+                    if {($x_tmp != $min_x) && ($x_end != $max_x)} {
                         if { $tap_urx > $end_llx } {
-                            ord::warn TAP 10 "Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
-                            continue
+                            set x_microns [ord::dbu_to_microns $x_tmp]
+                            set y_microns [ord::dbu_to_microns $lly]
+                            set x_tmp [expr $x_tmp - ($tap_urx - $end_llx)]
                         }
 
                         set new_x [expr {floor (1.0*$x_tmp/$site_x)*$site_x}]
@@ -540,13 +535,11 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 5 "#Tapcells inserted: $tapcell_count"
+        utl::info TAP 5 "Tapcells inserted: $tapcell_count"
         return $cnt
     }
 
     proc insert_at_top_bottom {db masters blockages tbtie_cpp endcap_cpp cnt} {
-        ord::report "Step 4.1: Insert tapcells at top/bottom between cnr cell..."
-
         set block [[$db getChip] getBlock]
         set rows [$block getRows]
 
@@ -653,13 +646,11 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 6 "Top/bottom cells inserted: $topbottom_cnt"
+        utl::info TAP 6 "Top/bottom cells inserted: $topbottom_cnt"
         return $cnt
     }
 
     proc insert_around_macros {db masters blockages cnt halo_x halo_y endcapwidth tbtie_cpp} {
-        ord::report "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
-
         set block [[$db getChip] getBlock]
         set rows [$block getRows]
 
@@ -919,7 +910,7 @@ namespace eval tap {
                 }
             }
         }
-        ord::info TAP 7 "Cells inserted near blkgs: $blkgs_cnt"
+        utl::info TAP 7 "Cells inserted near blkgs: $blkgs_cnt"
     }
 
     #proc to detect even/odd
@@ -1336,7 +1327,7 @@ namespace eval tap {
         foreach inst [$block getInsts] {
             if { [$inst isBlock] } {
                 if { ![$inst isPlaced] } {
-                    ord::warn 20 "Macro [$inst getName] is not placed"
+                    utl::warn 20 "Macro [$inst getName] is not placed"
                     continue
                 }
                 lappend blockages $inst

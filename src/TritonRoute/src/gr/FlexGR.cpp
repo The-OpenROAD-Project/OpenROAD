@@ -35,12 +35,13 @@
 #include <cmath>
 #include "db/infra/frTime.h"
 #include <omp.h>
+#include "opendb/db.h"
 
 
 using namespace std;
 using namespace fr;
 
-void FlexGR::main() {
+void FlexGR::main(odb::dbDatabase* db) {
   init();
   // resource analysis
   ra();
@@ -87,12 +88,12 @@ void FlexGR::main() {
 
   searchRepair(/*iter*/0, /*size*/10, /*offset*/0, /*mazeEndIter*/2, /*workerCongCost*/4 * CONGCOST, /*workerHistCost*/0.25 * HISTCOST, /*congThresh*/1.0, /*is2DRouting*/false, 1, /*TEST*/false);
   reportCong3D();
+  if(db != nullptr)
+    updateDbCongestion(db, cmap_.get());
 
   writeToGuide();
 
   writeGuideFile();
-
-  // end();
 }
 
 void FlexGR::searchRepairMacro(int iter, int size, int mazeEndIter, unsigned workerCongCost, 
@@ -318,7 +319,7 @@ void FlexGR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     }
   }
 
-  t.print();
+  t.print(logger_);
   cout << endl << flush;
 
 }
@@ -539,6 +540,52 @@ void FlexGR::reportCong3DGolden(FlexGRCMap *baseCMap) {
   cout << "start reporting golden 3D congestion...";
   reportCong3D(&goldenCMap3D);
   
+}
+
+void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap *cmap)
+{
+  if(db->getChip()==nullptr || db->getChip()->getBlock()==nullptr || db->getTech() == nullptr)
+    logger_->error(utl::DRT, 201, "design isn't loaded before global routing");
+  auto block = db->getChip()->getBlock();
+  auto tech = db->getTech();
+  auto gcell = block->getGCellGrid();
+  if(gcell == nullptr)
+    gcell = odb::dbGCellGrid::create(block);
+  else{
+    logger_->warn(utl::DRT, 203, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    gcell->resetGrid();
+  }
+  auto &gCellPatterns = design_->getTopBlock()->getGCellPatterns();
+  auto xgp = &(gCellPatterns.at(0));
+  auto ygp = &(gCellPatterns.at(1));
+  gcell->addGridPatternX(xgp->getStartCoord(), xgp->getCount(), xgp->getSpacing());
+  gcell->addGridPatternY(ygp->getStartCoord(), ygp->getCount(), ygp->getSpacing());
+  frBox dieBox;
+  design_->getTopBlock()->getBoundaryBBox(dieBox);
+  gcell->addGridPatternX(dieBox.right(), 1, 0);
+  gcell->addGridPatternY(dieBox.top(), 1, 0);
+  unsigned cmapLayerIdx = 0;
+  for (auto &[layerNum, dir]: cmap->getZMap()) {
+    string layerName(design_->getTech()->getLayer(layerNum)->getName());
+    auto layer = tech->findLayer(layerName.c_str());
+    if(layer == nullptr)
+    {
+      logger_->warn(utl::DRT, 202, "skipping layer {} not found in db for congestion map", layerName);
+      cmapLayerIdx++;
+      continue;
+    }
+    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
+      for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) 
+      {
+        uint horizontal_capacity = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+        uint horizontal_usage = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
+        uint vertical_capacity = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+        uint vertical_usage = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
+        gcell->setCapacity(layer, xIdx, yIdx, horizontal_capacity, vertical_capacity, 0);
+        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage, vertical_usage, 0);
+      }
+    cmapLayerIdx++;
+  }
 }
 
 void FlexGR::reportCong3D(FlexGRCMap *cmap) {
@@ -788,7 +835,7 @@ void FlexGR::ra() {
 
   if (VERBOSE > 0) {
     cout << endl;
-    t.print();
+    t.print(logger_);
   }
 
   cout << endl << endl;
@@ -862,14 +909,6 @@ void FlexGR::initGR_updateCongestion_net(frNet *net) {
       ep = loc;
     }
 
-    // auto uPathSeg = make_unique<grPathSeg>();
-    // uPathSeg->setChild(node.get());
-    // uPathSeg->setParent(node->getParent());
-    // uPathSeg->addToNet(net);
-    // uPathSeg->setPoints(bp, ep);
-    // // 2D shapes are all on layerNum == 2 to be consistent with zIdx = layerNum / 2 - 1
-    // uPathSeg->setLayerNum(2);
-
     frPoint bpIdx, epIdx;
     design_->getTopBlock()->getGCellIdx(bp, bpIdx);
     design_->getTopBlock()->getGCellIdx(ep, epIdx);
@@ -895,10 +934,6 @@ void FlexGR::initGR_updateCongestion2D_net(frNet *net) {
     if (node->getParent() == nullptr) {
       continue;
     }
-    // // only create shape and update congestion if haven't done before
-    // if (node->getConnFig()) {
-    //   continue;
-    // }
 
     if (node->getType() != frNodeTypeEnum::frcSteiner || node->getParent()->getType() != frNodeTypeEnum::frcSteiner) {
       continue;
@@ -919,14 +954,6 @@ void FlexGR::initGR_updateCongestion2D_net(frNet *net) {
       bp = parentLoc;
       ep = loc;
     }
-
-    // auto uPathSeg = make_unique<grPathSeg>();
-    // uPathSeg->setChild(node.get());
-    // uPathSeg->setParent(node->getParent());
-    // uPathSeg->addToNet(net);
-    // uPathSeg->setPoints(bp, ep);
-    // // 2D shapes are all on layerNum == 2 to be consistent with zIdx = layerNum / 2 - 1
-    // uPathSeg->setLayerNum(2);
 
     frPoint bpIdx, epIdx;
     design_->getTopBlock()->getGCellIdx(bp, bpIdx);
@@ -998,7 +1025,6 @@ bool FlexGR::initGR_patternRoute_route_iter(int iter, vector<pair<pair<frNode*, 
     auto net = startNode->getNet();
     auto &rerouteCnt = patternRoutePair.second;
     bool doRoute = false;
-    // bool doRoute = true;
     // the route has not been routed yet
     if (rerouteCnt == 0) {
       doRoute = true;
@@ -1350,8 +1376,6 @@ void FlexGR::initGR_genTopology_net(frNet *net) {
     return;
   }
   
-  // cout << net->getName() << endl;
-
   vector<frNode*> nodes(net->getNodes().size(), nullptr); // 0 is source
   map<frBlockObject*, std::vector<frNode*> > pin2Nodes; // vector order needs to align with map below
   map<frBlockObject*, std::vector<frRPin*> > pin2RPins;
@@ -1409,11 +1433,6 @@ void FlexGR::initGR_genTopology_net(frNet *net) {
     }
   }
 
-  // if (nodes[0] == nullptr) {
-  //   cout << "Error: net " << net->getName() << " does not have driver pin\n";
-  //   exit(1);
-  // }
-
   net->setRoot(nodes[0]);
   // populate pin2RPins
   for (auto &rpin: net->getRPins()) {
@@ -1450,14 +1469,6 @@ void FlexGR::initGR_genTopology_net(frNet *net) {
       node->setLayerNum(rpin->getAccessPoint()->getLayerNum());
     }
   }
-
-  // for (int i = 0; i < nodes.size(); i++) {
-  //   auto node = nodes[i];
-  //   if (!node) {
-  //     cout << "Error: " << net->getName() << " node " << i << " is 0x0\n";
-  //     exit(1);
-  //   }
-  // }
 
   // map<pair<int, int>, vector<frNode*> > gcellIdx2Nodes;
   auto &gcellIdx2Nodes = net2GCellIdx2Nodes_[net];
@@ -1531,11 +1542,6 @@ void FlexGR::initGR_genTopology_net(frNet *net) {
   }
 
   net->setRootGCellNode(gcellNodes[0]);
-
-  // cout << "gcellNodes.size() = " << gcellNodes.size() << "\n";
-  // for (auto gcellNode: gcellNodes) {
-  //   cout << "  gcellNodeIdx = " << distance(gcellNodes[0]->getIter(), gcellNode->getIter()) << "\n";
-  // }
 
   auto &steinerNodes = net2SteinerNodes_[net];
   // if (gcellNodes.size() >= 150) {
@@ -1651,8 +1657,6 @@ void FlexGR::initGR_genTopology_net(frNet *net) {
     genSTTopology_FLUTE(gcellNodes, steinerNodes);
   }
 
-
-
   // connect rpin node to gcell center node
   for (auto &[gcellNode, localNodes]: gcellNode2RPinNodes) {
     for (auto localNode: localNodes) {
@@ -1712,17 +1716,12 @@ void FlexGR::layerAssign() {
       }
     }
   };
-  // sort(sortedNets.begin(), sortedNets.end(), [](const auto& x, const auto& y){return (x.first == y.first) ? (x.second->getId() < y.second->getId()) : x.first < y.first;});
   sort(sortedNets.begin(), sortedNets.end(), sort_net());
 
   for (auto &[ratio, net]: sortedNets) {
-    // cout << net->getName() << " " << ratio << endl;
     layerAssign_net(net);
   }
 
-  // for (auto &net: design->getTopBlock()->getNets()) {
-  //   layerAssign_net(net.get());
-  // }
   cout << "done layer assignment...\n";
 }
 
@@ -1732,13 +1731,6 @@ void FlexGR::layerAssign_net(frNet *net) {
   if (net2GCellNodes_.find(net) == net2GCellNodes_.end() || net2GCellNodes_[net].size() <= 1) {
     return;
   }
-
-  // auto regionQuery = getRegionQuery();
-  // // remove existing shapes for 2D
-  // for (auto &uShape: net->getGRShapes()) {
-  //   regionQuery->removeGRObj(uShape.get());
-  // }
-  
 
   // update net2GCellNode2RPinNodes
   auto &gcellNode2RPinNodes = net2GCellNode2RPinNodes_[net];
@@ -1785,11 +1777,6 @@ void FlexGR::layerAssign_net(frNet *net) {
     node->setConnFig(nullptr);
   }
 
-  // cout << net->getName() << " " << net2GCellNodes[net].size() + net2SteinerNodes[net].size() << endl << flush;
-
-  // vector<vector<unsigned> > bestLayerCosts(net2GCellNodes[net].size() + net2SteinerNodes[net].size(), vector<unsigned>(cmap->getNumLayers(), UINT_MAX));
-  // vector<vector<unsigned> > bestLayerCombs(net2GCellNodes[net].size() + net2SteinerNodes[net].size(), vector<unsigned>(cmap->getNumLayers(), 0));
-  
   int numNodes = net->getNodes().size() - net->getRPins().size();
   vector<vector<unsigned> > bestLayerCosts(numNodes, vector<unsigned>(cmap_->getNumLayers(), UINT_MAX));
   vector<vector<unsigned> > bestLayerCombs(numNodes, vector<unsigned>(cmap_->getNumLayers(), 0));
@@ -1798,71 +1785,17 @@ void FlexGR::layerAssign_net(frNet *net) {
   // recursively compute the best layer for each node from root (post-order traversal)
   layerAssign_node_compute(net->getRootGCellNode(), net, bestLayerCosts, bestLayerCombs);
 
-  // sanity check
-  // int numRPins = 0;
-
-  // for (auto &[node, rpins]: net2GCellNode2RPinNodes[net]) {
-  //   numRPins += rpins.size();
-  // }
-
-  // unsigned nodeIdx = 0;
-  // for (auto &node: net->getNodes()) {
-  //   if (nodeIdx >= numRPins) {
-  //     if (nodeIdx > numRPins && node->getParent() == nullptr) {
-  //       cout << "Error: parent == nullptr\n";
-  //     }
-  //     if (node->getType() == frNodeTypeEnum::frcPin) {
-  //       cout << "Error: node type error\n";
-  //     }
-  //     frPoint loc1;
-  //     node->getLoc(loc1);
-  //     for (auto child: node->getChildren()) {
-  //       frPoint loc2;
-  //       child->getLoc(loc2);
-  //       if (child->getType() == frNodeTypeEnum::frcPin) {
-  //         cout << "Error: child node is pin\n";
-  //       }
-  //       if (loc1.x() == loc2.x() && loc1.y() == loc2.y()) {
-  //         cout << "Error: duplicated nodes\n";
-  //         exit(1);
-  //       }
-  //     }
-  //     // if (node->getLayerNum() == 0) {
-  //     //   cout << "Error: layerNum == 0\n";
-  //     // }
-  //   }
-  //   nodeIdx++;
-  // }
-
-
   // recursively update nodes to 3D
   frLayerNum minCostLayerNum = 0;
   unsigned minCost = UINT_MAX;
   int rootIdx = distance(net->getFirstNonRPinNode()->getIter(), net->getRootGCellNode()->getIter());
-  // if (rootIdx != 0) {
-  //   cout << "Error: rootIdx != 0\n";
-  // }
-  // cout << "@@@ debug @@@\n";
-  // for (frLayerNum layerNum = 0; layerNum < cmap->getNumLayers(); layerNum++) {
-  //   cout << " layerNum == " << layerNum << ", cost = " << bestLayerCosts[1][layerNum] << endl;
-  //   if (bestLayerCosts[rootIdx][layerNum] < minCost) {
-  //     minCostLayerNum = layerNum;
-  //     minCost = bestLayerCosts[rootIdx][layerNum];
-  //   }
-  // }
-  // cout << "@@@ end debug @@@\n";
 
   for (frLayerNum layerNum = 0; layerNum < cmap_->getNumLayers(); layerNum++) {
-    // cout << " layerNum == " << layerNum << ", cost = " << bestLayerCosts[rootIdx][layerNum] << endl;
     if (bestLayerCosts[rootIdx][layerNum] < minCost) {
       minCostLayerNum = layerNum;
       minCost = bestLayerCosts[rootIdx][layerNum];
     }
   }
-  // frPoint rootLoc;
-  // net2GCellNodes[net][0]->getLoc(rootLoc);
-  // cout << "  root layerNum == " << minCostLayerNum << endl;
-  // cout << "  root at (" << rootLoc.x() / 2000.0 << ", " << rootLoc.y() / 2000.0 << ")\n";
   layerAssign_node_commit(net->getRootGCellNode(), net, minCostLayerNum, bestLayerCombs);
 
   // create shapes and update congestion
@@ -1946,28 +1879,6 @@ void FlexGR::layerAssign_net(frNet *net) {
     }
 
   }
-
-
-  // // sanity check
-  // // int nodeIdx = 0;
-  // int numRPins = 0;
-
-  // for (auto &[node, rpins]: net2GCellNode2RPinNodes[net]) {
-  //   numRPins += rpins.size();
-  // }
-
-  // for (auto &node: net->getNodes()) {
-  //   // if (nodeIdx > numRPins) {
-  //   if (node.get() != net->getRoot()) {
-  //     if (node->getParent() == nullptr) {
-  //       cout << "Error: parent == nullptr\n";
-  //     }
-  //     // if (node->getLayerNum() == 0) {
-  //     //   cout << "Error: layerNum == 0\n";
-  //     // }
-  //   }
-  //   // nodeIdx++;
-  // }
 }
 
 // get the costs of having currNode to parent edge on all layers
@@ -1995,8 +1906,6 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
     numComb *= cmap_->getNumLayers();
   }
   int currNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), currNode->getIter());
-  // cout << "   currNodeIdx = " << currNodeIdx << endl;
-
   // iterate over all combinations and get the combination with lowest overall cost
   for (int layerNum = 0; layerNum < cmap_->getNumLayers(); layerNum++) {
     unsigned currLayerBestCost = UINT_MAX;
@@ -2019,32 +1928,6 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
           }
         }
       }
-
-
-      // if (currNode->getParent() == nullptr) {        
-      //   if (net2GCellNode2RPinNodes[net].find(currNode) != net2GCellNode2RPinNodes[net].end()) {
-      //     int upstreamMinLayerNum = INT_MAX;
-      //     int upstreamMaxLayerNum = INT_MIN;
-      //     auto &rpinNodes = net2GCellNode2RPinNodes[net][currNode];
-      //     for (auto rpinNode: rpinNodes) {
-      //       // convert to cmap layer
-      //       auto pinLayerNum = rpinNode->getLayerNum() / 2 - 1;
-      //       if (upstreamMinLayerNum > pinLayerNum) {
-      //         upstreamMinLayerNum = pinLayerNum;
-      //       }
-      //       if (upstreamMaxLayerNum < pinLayerNum) {
-      //         upstreamMaxLayerNum = pinLayerNum;
-      //       }
-      //     }
-      //     if (layerNum > upstreamMaxLayerNum) {
-      //       upstreamViaCost = layerNum - upstreamMinLayerNum;
-      //     } else if (layerNum < upstreamMinLayerNum) {
-      //       upstreamViaCost = upstreamMaxLayerNum - layerNum;
-      //     } else {
-      //       upstreamViaCost = upstreamMaxLayerNum - upstreamMinLayerNum;
-      //     }
-      //   }
-      // }
       // get downstream via cost
       unsigned downstreamViaCost = 0;
       unsigned downstreamCost = 0;
@@ -2063,36 +1946,10 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
         }
         currComb /= cmap_->getNumLayers();
 
-        // update min/max downstream layer num if pin exist
-        // if (net2GCellNode2RPinNodes[net].find(child) != net2GCellNode2RPinNodes[net].end()) {
-        //   auto &rpinNodes = net2GCellNode2RPinNodes[net][child];
-        //   for (auto rpinNode: rpinNodes) {
-        //     // convert to cmap layer
-        //     auto pinLayerNum = rpinNode->getLayerNum() / 2 - 1;
-        //     if (downstreamMinLayerNum > pinLayerNum) {
-        //       downstreamMinLayerNum = pinLayerNum;
-        //     }
-        //     if (downstreamMaxLayerNum < pinLayerNum) {
-        //       downstreamMaxLayerNum = pinLayerNum;
-        //     }
-        //   }
-        // }
-        // if (child->getType() == frNodeTypeEnum::frcPin) {
-        //   auto pinLayerNum = child->getLayerNum();
-        //   if (downstreamMinLayerNum > pinLayerNum) {
-        //     downstreamMinLayerNum = pinLayerNum;
-        //   }
-        //   if (downstreamMaxLayerNum < pinLayerNum) {
-        //     downstreamMaxLayerNum = pinLayerNum;
-        //   }
-        // }
-
         // add downstream cost
         downstreamCost += bestLayerCosts[childNodeIdx][childLayerNum];
       }
 
-      // downstreamViaCost = (zHeights[max(layerNum, max(maxPinLayerNum, downstreamMaxLayerNum)) / 2 - 1] - 
-      //                     zHeights[min(layerNum, min(minPinLayerNum, downstreamMinLayerNum)) / 2 - 1]) * VIACOST;
       // TODO: tune the via cost here
       downstreamViaCost = (max(layerNum, max(maxPinLayerNum, downstreamMaxLayerNum)) - 
                            min(layerNum, min(minPinLayerNum, downstreamMinLayerNum))) * VIACOST;
@@ -2132,9 +1989,6 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
           int yIdx = beginIdx.y();
           for (int xIdx = beginIdx.x(); xIdx < endIdx.x(); xIdx++) {
             auto supply = cmap_->getRawSupply(xIdx, yIdx, layerNum, frDirEnum::E);
-            // if (supply == 0) {
-            //   supply = 1;
-            // }
             auto demand = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::E);
             // block cost
             if (isLayerBlocked || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::E)) {
@@ -2144,14 +1998,10 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
             if (demand > supply / 4) {
               congestionCost += (demand * 10 / (supply + 1));
             }
-            // if (true) {
-            //   congestionCost += (demand * 8 / (1.0 + exp(supply - demand)) / (supply + 1));
-            // }
 
             // overflow
             if (demand >= supply) {
               congestionCost += MARKERCOST * 8;
-              // throughOverFlow = true;
             }
           }
         } else {
@@ -2161,9 +2011,6 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
           int xIdx = beginIdx.x();
           for (int yIdx = beginIdx.y(); yIdx < endIdx.y(); yIdx++) {
             auto supply = cmap_->getRawSupply(xIdx, yIdx, layerNum, frDirEnum::N);
-            // if (supply == 0) {
-            //   supply = 1;
-            // }
             auto demand = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::N);
             if (isLayerBlocked || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::N)) {
               congestionCost += BLOCKCOST * 100;
@@ -2172,26 +2019,15 @@ void FlexGR::layerAssign_node_compute(frNode *currNode,
             if (demand > supply / 4) {
               congestionCost += (demand * 10 / (supply + 1));
             }
-            // if (true) {
-            //   congestionCost += (demand * 8 / (1.0 + exp(supply - demand)) / (supply + 1));
-            // }
             // overflow
             if (demand >= supply) {
               congestionCost += MARKERCOST * 8;
-              // throughOverFlow = true;
             }
           }
         }
       }
 
-      // if (throughOverFlow) {
-      //   currLayerCost = upstreamViaCost + downstreamViaCost + 10000 * congestionCost + downstreamCost;
-      // } else {
-        currLayerCost = upstreamViaCost + downstreamCost + downstreamViaCost + congestionCost;
-      // }
-
-      // get overall cost
-      // currLayerCost = upstreamViaCost + downstreamViaCost + congestionCost + downstreamCost;
+      currLayerCost = upstreamViaCost + downstreamCost + downstreamViaCost + congestionCost;
 
       if (currLayerCost < currLayerBestCost) {
         currLayerBestCost = currLayerCost;
@@ -2314,10 +2150,6 @@ void FlexGR::layerAssign_node_commit(frNode *currNode,
       layerNum2SubNode[layerNum] = currNode;
     }
   }
-  // if (layerNum2SubNode.find(currNode->getLayerNum()) == layerNum2SubNode.end()) {
-  //   cout << "Error: currNode is not inserted as subNode\n";
-  //   exit(1);
-  // }
 
   // update connectivity between children and current sub nodes
   currNode->clearChildren();
@@ -2355,10 +2187,6 @@ void FlexGR::layerAssign_node_commit(frNode *currNode,
     for (auto rpinNode: rpinNodes) {
       // rpinNode->reset();
       if (rpinNode == net->getRoot()) {
-        // if (layerNum2SubNode[layerNum]->getParent()) {
-        //   cout << "Error: root gcellNode already has parent\n";
-        //   exit(1);
-        // }
         layerNum2SubNode[layerNum]->setParent(rpinNode);
         rpinNode->addChild(layerNum2SubNode[layerNum]);
       } else {
@@ -2368,86 +2196,6 @@ void FlexGR::layerAssign_node_commit(frNode *currNode,
     }
   }
 }
-
-// void FlexGR::initGR_patternRoute_layerAssignment() {
-//   cout << "patternRoute and layerAssignment for net...\n";
-//   for (auto &net: design_->getTopBlock()->getNets()) {
-//     initGR_patternRoute_layerAssignment_net(net.get());
-//   }
-//   cout << "done...\n";
-// }
-
-// void FlexGR::initGR_patternRoute_layerAssignment_net(frNet *net) {
-//   for (auto &node: net->getNodes()) {
-//     if (node->getChildren().empty()) {
-//       continue;
-//     }
-//     frPoint beginPt, endPt, midPt;
-//     frLayerNum beginLayerNum, endLayerNum, midLayerNum;
-//     node->getLoc(beginPt);
-//     beginLayerNum = node->getLayerNum();
-//     for (auto child: node->getChildren()) {
-//       child->getLoc(endPt);
-//       endLayerNum = child->getLayerNum();
-//       if (design->getTech()->getLayer(4)->getDir() == frcVertPrefRoutingDir) {
-//         midPt.set(beginPt.x(), endPt.y());
-//         // midLayerNum = max(4, (int)((beginLayerNum + endLayerNum) / 2));
-//         midLayerNum = 4;
-//       } else {
-//         midPt.set(endPt.x(), beginPt.y());
-//         // midLayerNum = max(6, (int)((beginLayerNum + endLayerNum) / 2));
-//         midLayerNum = 6;
-//       }
-      
-//       // via guide
-//       if (beginLayerNum != midLayerNum) {
-//         auto viaGuide1 = make_unique<frGuide>();
-//         viaGuide1->setPoints(beginPt, beginPt);
-//         viaGuide1->setBeginLayerNum(min(beginLayerNum, midLayerNum));
-//         viaGuide1->setEndLayerNum(max(beginLayerNum, midLayerNum));
-//         viaGuide1->addToNet(net);
-//         net->addGuide(viaGuide1);
-//       }
-//       auto routeGuide1 = make_unique<frGuide>();
-//       if (beginPt < midPt) {
-//         routeGuide1->setPoints(beginPt, midPt);
-//       } else {
-//         routeGuide1->setPoints(midPt, beginPt);
-//       }
-//       routeGuide1->setBeginLayerNum(midLayerNum);
-//       routeGuide1->setEndLayerNum(midLayerNum);
-//       routeGuide1->addToNet(net);
-//       net->addGuide(routeGuide1);
-
-//       auto viaGuide2 = make_unique<frGuide>();
-//       viaGuide2->setPoints(midPt, midPt);
-//       viaGuide2->setBeginLayerNum(midLayerNum);
-//       viaGuide2->setEndLayerNum(midLayerNum + 2);
-//       viaGuide2->addToNet(net);
-//       net->addGuide(viaGuide2);
-
-//       auto routeGuide2 = make_unique<frGuide>();
-//       if (midPt < endPt) {
-//         routeGuide2->setPoints(midPt, endPt);
-//       } else {
-//         routeGuide2->setPoints(endPt, midPt);
-//       }
-//       routeGuide2->setBeginLayerNum(midLayerNum + 2);
-//       routeGuide2->setEndLayerNum(midLayerNum + 2);
-//       routeGuide2->addToNet(net);
-//       net->addGuide(routeGuide2);
-
-//       if (midLayerNum + 2 != endLayerNum) {
-//         auto viaGuide3 = make_unique<frGuide>();
-//         viaGuide3->setPoints(endPt, endPt);
-//         viaGuide3->setBeginLayerNum(min(midLayerNum + 2, endLayerNum));
-//         viaGuide3->setEndLayerNum(max(midLayerNum + 2, endLayerNum));
-//         viaGuide3->addToNet(net);
-//         net->addGuide(viaGuide3);
-//       }
-//     }
-//   }
-// }
 
 void FlexGR::writeToGuide() {
   for (auto &uNet: design_->getTopBlock()->getNets()) {
@@ -2554,13 +2302,6 @@ void FlexGR::writeGuideFile() {
         frLayerNum eNum = guide->getEndLayerNum();
         // append unit guide in case of stacked via
         if (bNum != eNum) {
-          // auto startLayerName = design->getTech()->getLayer(bNum)->getName();
-          //outputGuide << bp.x() - GCELLGRIDX / 2 << " " << bp.y() - GCELLGRIDY / 2 << " "
-          //            << bp.x() + GCELLGRIDX / 2 << " " << bp.y() + GCELLGRIDY / 2 << " "
-          //            << startLayerName <<".5" << endl;
-          // outputGuide << bbox.left()  << " " << bbox.bottom() << " "
-                      // << bbox.right() << " " << bbox.top()    << " "
-                      // << startLayerName <<".5" << endl;
           for (auto lNum = min(bNum, eNum); lNum <= max(bNum, eNum); lNum += 2) {
             auto layerName = design_->getTech()->getLayer(lNum)->getName();
             outputGuide << bbox.left()  << " " << bbox.bottom() << " "
@@ -2569,9 +2310,6 @@ void FlexGR::writeGuideFile() {
           }
         } else {
           auto layerName = design_->getTech()->getLayer(bNum)->getName();
-          //outputGuide << bp.x() - GCELLGRIDX / 2 << " " << bp.y() - GCELLGRIDY / 2 << " "
-          //            << ep.x() + GCELLGRIDX / 2 << " " << ep.y() + GCELLGRIDY / 2 << " "
-          //            << layerName << endl;
           outputGuide << bbox.left()  << " " << bbox.bottom() << " "
                       << ebox.right() << " " << ebox.top()    << " "
                       << layerName << endl;

@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
-#include <qt5/QtGui/qcolor.h>
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
@@ -38,15 +37,21 @@
 
 namespace fr {
 
+const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
+const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
+const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
+
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
-                               odb::dbDatabase* db)
+                               odb::dbDatabase* db,
+                               Logger* logger)
   : worker_(nullptr),
     net_(nullptr),
     settings_(settings),
     current_iter_(-1),
     last_pt_layer_(-1),
-    gui_(gui::Gui::get())
+    gui_(gui::Gui::get()),
+    logger_(logger)
 {
   assert(MAX_THREADS == 1);
 
@@ -61,6 +66,10 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
   }
+
+  gui_->addCustomVisibilityControl(grid_graph_visible_);
+  gui_->addCustomVisibilityControl(route_guides_visible_, true);
+  gui_->addCustomVisibilityControl(routing_objs_visible_, true);
 
   gui_->registerRenderer(this);
 }
@@ -80,7 +89,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
-  if (gui_->areRoutingObjsVisible()){
+  if (gui_->checkCustomVisibilityControl(routing_objs_visible_)){
     auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
     worker_->getRouteBox(box);
@@ -119,12 +128,13 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
 
       default:
-        printf("unknown %d\n", (int)fig->typeId());
+        logger_->debug(DRT, 1, "unknown fig type {} in drawLayer",
+                       fig->typeId());
       }
     }
   }
 
-  if (gui_->areRouteGuidesVisible()){
+  if (gui_->checkCustomVisibilityControl(route_guides_visible_)){
     // Draw guides
     painter.setBrush(layer, /* alpha */ 90);
     for (auto& rect : net_->getOrigGuides()) {
@@ -146,9 +156,9 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   // Draw graphs
   if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
     frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    if (gui_->isGridGraphVisible()){
-        int of = 50;
-        bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
+    if (gui_->checkCustomVisibilityControl(grid_graph_visible_)){
+        const int offset = 50;
+        const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
         frMIdx x_dim, y_dim, z_dim;
         grid_graph_->getDim(x_dim, y_dim, z_dim);
         for (frMIdx x = 0; x < x_dim; ++x) {
@@ -157,20 +167,20 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
             grid_graph_->getPoint(pt, x, y);
 
             if (x != x_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::E) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || !prefIsVert && grid_graph_->hasGridCostE(x, y, z))) {
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
               frPoint pt2;
               grid_graph_->getPoint(pt2, x + 1, y);
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
             }
 
             if (y != y_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::N) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || prefIsVert && grid_graph_->hasGridCostN(x, y, z))) {
+                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
               frPoint pt2;
               grid_graph_->getPoint(pt2, x, y + 1);
               painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
             }
             if (grid_graph_->hasAnyPlanarCost(x, y, z))
-                painter.drawRect({grid_graph_->xCoord(x)-of, grid_graph_->yCoord(y)-of, grid_graph_->xCoord(x)+of, grid_graph_->yCoord(y)+of});
+                painter.drawRect({grid_graph_->xCoord(x)-offset, grid_graph_->yCoord(y)-offset, grid_graph_->xCoord(x)+offset, grid_graph_->yCoord(y)+offset});
           }
         }
     }
@@ -190,14 +200,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
  }
 }
-
+  
 void FlexDRGraphics::update(){
     if (settings_->draw) gui_->redraw();
 }
   
 void FlexDRGraphics::pause(drNet* net){
-    if (!settings_->allowPause || net && !settings_->netName.empty() &&
-        net->getFrNet()->getName() != settings_->netName) {
+    if (!settings_->allowPause || (net && !settings_->netName.empty() &&
+                 net->getFrNet()->getName() != settings_->netName)) {
       return;
     }
     gui_->pause();

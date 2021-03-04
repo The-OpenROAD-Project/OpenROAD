@@ -1,8 +1,4 @@
-lef:testcase/ispd18_sample/ispd18_sample.input.lef
-def:testcase/ispd18_sample/ispd18_sample.input.def
 guide:testcase/ispd18_sample/ispd18_sample.input.guide
-output:results/ispd18_sample.output.def
-outputTA:results/ispd18_sample.output_TA.def
 outputguide:results/ispd18_sample.output_guide.mod
 outputDRC:results/ispd18_sample.output_DRC.rpt
 outputMaze:results/ispd18_sample.output_Maze.log

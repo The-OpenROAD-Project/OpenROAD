@@ -207,7 +207,7 @@ namespace fr {
     bool hasNet() const override {
       return (owner_) && (owner_->typeId() == frcNet);
     }
-    
+
     void addToNet(frNet* in) override {
       owner_ = reinterpret_cast<frBlockObject*>(in);
     }

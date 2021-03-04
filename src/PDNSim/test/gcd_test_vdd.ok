@@ -10,59 +10,19 @@
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Startpoint: _870_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
-Path Group: core_clock
-Path Type: max
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _870_/CK (DFF_X1)
-   0.08    0.08 ^ _870_/Q (DFF_X1)
-   0.04    0.12 ^ _747_/Z (BUF_X1)
-   0.05    0.17 ^ _478_/ZN (XNOR2_X2)
-   0.06    0.23 ^ _480_/ZN (AND2_X1)
-   0.02    0.26 v _481_/ZN (NAND3_X1)
-   0.07    0.32 v _487_/ZN (OR3_X1)
-   0.02    0.34 ^ _502_/ZN (NAND3_X1)
-   0.01    0.35 v _518_/ZN (NAND2_X1)
-   0.04    0.39 v _532_/ZN (AND4_X1)
-   0.04    0.43 ^ _545_/ZN (AOI21_X2)
-   0.02    0.45 v _546_/ZN (NAND2_X2)
-   0.05    0.50 v _547_/ZN (OR2_X1)
-   0.03    0.54 v _548_/Z (BUF_X4)
-   0.03    0.57 v _549_/Z (BUF_X4)
-   0.03    0.60 ^ _641_/ZN (OAI21_X1)
-   0.02    0.62 v _649_/ZN (OAI21_X1)
-   0.02    0.63 ^ _650_/ZN (OAI21_X1)
-   0.03    0.67 ^ _802_/Z (CLKBUF_X1)
-   0.00    0.67 ^ _876_/D (DFF_X1)
-           0.67   data arrival time
-
-  10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ _876_/CK (DFF_X1)
-  -0.03    9.97   library setup time
-           9.97   data required time
----------------------------------------------------------
-           9.97   data required time
-          -0.67   data arrival time
----------------------------------------------------------
-           9.30   slack (MET)
-
-
 [WARNING PSM-0016] Voltage pad location (vsrc) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0019] Voltage on net VDD is not explicitly set.
 [WARNING PSM-0022] Using voltage 1.100V for VDD network.
+[WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 80.180 or core height of 79.800. Changing bump location to the center of the die at (40.090, 39.900)
+[WARNING PSM-0065] VSRC location not specified using default checkerboard pattern with one VDD everysize bumps in x-direction and one in two bumps in the y-direction
 [INFO PSM-0026] Creating G matrix.
 [INFO PSM-0028] Extracting power stripes on net VDD.
+[WARNING PSM-0030] Vsrc location at (40.090um, 39.900um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (40.500um, 53.115um).
 [INFO PSM-0031] Number of nodes on net VDD = 1527.
 [INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0064] Number of voltage sources = 1
 [INFO PSM-0040] Connection between all PDN nodes established in net VDD.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vdd.loc.
 [INFO PSM-0002] Output voltage file is specified as: ./results/gcd_voltage_vdd.rpt.
@@ -73,13 +33,14 @@ Path Type: max
 [INFO PSM-0037] G matrix created sucessfully.
 [INFO PSM-0044] Executing STA for power calculation.
 [INFO PSM-0025] Created J vector.
+[INFO PSM-0064] Number of voltage sources = 1
 [INFO PSM-0040] Connection between all PDN nodes established in net VDD.
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.
 [INFO PSM-0013] Solving system of equations GV=J complete.
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V
-Average IR drop  : 2.38e-05 V
-Worstcase IR drop: 3.14e-05 V
+Average IR drop  : 5.43e-05 V
+Worstcase IR drop: 9.81e-05 V
 ######################################
 No differences found.

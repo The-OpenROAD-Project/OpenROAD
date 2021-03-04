@@ -39,6 +39,7 @@ namespace odb {
   class dbBlock;
   class dbTech;
   class dbSBox;
+  class dbTechLayer;
 }
 namespace utl{
   class Logger;
@@ -52,16 +53,15 @@ namespace fr {
     class Parser {
     public:
       // constructors
-      Parser(frDesign* designIn, utl::Logger* loggerIn): design(designIn), tech(design->getTech()), logger(loggerIn), tmpBlock(nullptr), readLayerCnt(0),
+      Parser(frDesign* designIn, Logger* loggerIn): design(designIn), tech(design->getTech()), logger(loggerIn), tmpBlock(nullptr), readLayerCnt(0),
                                   tmpGuides(), tmpGRPins(), trackOffsetMap(), prefTrackPatterns(), numRefBlocks(0),
                                   numInsts(0), numTerms(0), numNets(0), numBlockages(0) {}
       // others
-      void readLefDb(odb::dbDatabase* db);
+      void readDb(odb::dbDatabase* db);
       void readGuide();
       void postProcess();
       void postProcessGuide();
       void initDefaultVias();
-      void writeRefDef();
       void initRPin();
       std::map<frBlock*, std::map<frOrient, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp> > >, frBlockObjectComp> &getTrackOffsetMap() {
         return trackOffsetMap;
@@ -71,29 +71,44 @@ namespace fr {
       }
 
     protected:
-      void readLef();
-      void readDb(odb::dbDatabase* db);
-      void setDieArea(odb::dbBlock* block);
-      void setTracks(odb::dbBlock* block);
-      void setInsts(odb::dbBlock* block);
-      void setObstructions(odb::dbBlock* block);
-      void setBTerms(odb::dbBlock* block);
-      void setVias(odb::dbBlock* block);
-      void setNets(odb::dbBlock* block);
-      void setNDRs(odb::dbBlock* block);
-      void getSBoxCoords(odb::dbSBox* box,
-                        frCoord& beginX,
-                        frCoord& beginY,
-                        frCoord& endX,
-                        frCoord& endY,
-                        frCoord& width);
+
+      void readDesign(odb::dbDatabase*);
+      void readTechAndLibs(odb::dbDatabase*);
+      void setMacros(odb::dbDatabase*);
+      void setTechVias(odb::dbTech*);
+      void setTechViaRules(odb::dbTech*);
+      void setDieArea(odb::dbBlock*);
+      void setTracks(odb::dbBlock*);
+      void setInsts(odb::dbBlock*);
+      void setObstructions(odb::dbBlock*);
+      void setBTerms(odb::dbBlock*);
+      void setVias(odb::dbBlock*);
+      void setNets(odb::dbBlock*);
+      void getSBoxCoords(odb::dbSBox*,
+                        frCoord&,
+                        frCoord&,
+                        frCoord&,
+                        frCoord&,
+                        frCoord&);
+      void setLayers(odb::dbTech*);
+      void addDefaultMasterSliceLayer();
+      void addDefaultCutLayer();
+      void addRoutingLayer(odb::dbTechLayer*);
+      void addCutLayer(odb::dbTechLayer*);
+      void addMasterSliceLayer(odb::dbTechLayer*);
+      void setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
+      void setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer);
+
+      void setNDRs(odb::dbDatabase* db);
+      
       frDesign*       design;
       frTechObject*   tech;
-      utl::Logger*    logger;
-
+      Logger*         logger;
       std::unique_ptr<frBlock>        tmpBlock;
+      odb::dbDatabase* db;
       // temporary variables
       int                             readLayerCnt;
+      std::string                     masterSliceLayerName;
       std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides;
       std::vector<std::pair<frBlockObject*, frPoint> > tmpGRPins;
       std::map<frBlock*, 
@@ -105,36 +120,6 @@ namespace fr {
       int numTerms;     // including instterm and term
       int numNets;      // including snet and net
       int numBlockages; // including instBlockage and blockage
-
-      // LEF/DEF parser helper
-      class Callbacks;
-      static int getLef58CornerSpacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58SpacingTable(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58SpacingTable_parallelRunLength(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58Spacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58Spacing_endOfLineWithin(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutClass(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_helper(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_parallelWithin(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_adjacentCuts(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacing_layer(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_helper(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_others(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58CutSpacingTable_prl(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                             const std::shared_ptr<frLef58CutSpacingTableConstraint> &con);
-      static int getLef58CutSpacingTable_default(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                             const std::shared_ptr<frLef58CutSpacingTableConstraint> &con);
-      static int getLef58CutSpacingTable_layer(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                               const std::shared_ptr<frLef58CutSpacingTableConstraint> &con,
-                                               frLayerNum &secondLayerNum);
-      static int getLef58CutSpacingTable_cutClass(void *data, frLayer* tmpLayer, const std::string &sIn, 
-                                                  const std::shared_ptr<frLef58CutSpacingTableConstraint> &con,
-                                                  bool hasSecondLayer, frLayerNum secondLayerNum);
-      static int getLef58RightWayOnGridOnly(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58RectOnly(void *data, frLayer* tmpLayer, const std::string &sIn);
-      static int getLef58MinStep(void *data, frLayer* tmpLayer, const std::string &sIn);
 
       // postProcess functions
       void buildGCellPatterns();
@@ -158,16 +143,12 @@ namespace fr {
                            std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap,
                            std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap,
                            bool isRetry);
-      void genGuides_gCell2PinMap(frNet* net, std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap,
-                                  std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
+      void genGuides_gCell2PinMap(frNet* net, std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap);
       void genGuides_gCell2TermMap(std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                   std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap,
                                    frTerm* term, frBlockObject* origTerm);
       bool genGuides_gCell2APInstTermMap(std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                         std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap,
                                          frInstTerm* instTerm);
       bool genGuides_gCell2APTermMap(std::map<std::pair<frPoint, frLayerNum>, std::set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                     std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap,
                                      frTerm* instTerm);
       void genGuides_initPin2GCellMap(frNet* net, std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
       void genGuides_buildNodeMap(std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt,
@@ -200,8 +181,6 @@ namespace fr {
         return design;
       }
       // others
-      void writeFromTA();
-      void writeFromDR(const std::string &str = "");
       void  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
@@ -216,7 +195,6 @@ namespace fr {
       void mergeSplitConnFigs(std::list<std::shared_ptr<frConnFig> > &connFigs);
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
-      int writeDef(bool isTA, const std::string &str = "");
       void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
       void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
 

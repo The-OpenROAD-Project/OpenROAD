@@ -1,10 +1,45 @@
+###############################################################################
+##
+## BSD 3-Clause License
+##
+## Copyright (c) 2021, University of California, San Diego.
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
+###############################################################################
+
+include("openroad")
+
 option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
 
 if( USE_CIMG_LIB )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Dcimg_use_jpeg=1")
-  set(CIMG_HOME ${REPLACE_HOME}/module/CImg)
   add_definitions(-DENABLE_CIMG_LIB=1)
-else()
 endif()
 
 # For Multithread
@@ -12,89 +47,55 @@ endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 find_package(Eigen3 REQUIRED)
-find_package(ZLIB REQUIRED)
 
 # for cimg
 if( USE_CIMG_LIB )
   find_package(X11 REQUIRED)
   find_package(JPEG REQUIRED)
   set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${X11_LIBRARIES} ${JPEG_LIBRARIES}")
-else()
 endif()
 
 
-set(REPLACE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/replace_wrap.cpp)
-set(REPLACE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ReplaceTclInitVar.cc)
-
-set (REPLACE_SRC 
-  src/MakeReplace.cpp
-  ${REPLACE_WRAP}
-  ${REPLACE_TCL_INIT}
-  src/replace.cpp
-  src/initialPlace.cpp
-  src/nesterovPlace.cpp
-  src/placerBase.cpp
-  src/nesterovBase.cpp
-  src/fft.cpp
-  src/fftsg.cpp
-  src/fftsg2d.cpp
-  src/point.cpp
-  src/plot.cpp
-  src/routeBase.cpp
-  src/graphics.cpp
-  )
-
-set (REPLACE_HEADER
-  include/replace/Replace.h
-  include/replace/MakeReplace.h
+tcl_lib(NAME      replace
+        NAMESPACE gpl
+        I_FILE    src/replace.i
+        SCRIPTS   src/replace.tcl
 )
 
-add_custom_command(OUTPUT ${REPLACE_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${REPLACE_WRAP} ${REPLACE_HOME}/src/replace.i
-  WORKING_DIRECTORY ${REPLACE_HOME}
-  DEPENDS ${REPLACE_HOME}/src/replace.i ${REPLACE_HOME}/include/replace/Replace.h 
+target_sources(replace
+  PRIVATE
+    src/MakeReplace.cpp
+    src/replace.cpp
+    src/initialPlace.cpp
+    src/nesterovPlace.cpp
+    src/placerBase.cpp
+    src/nesterovBase.cpp
+    src/fft.cpp
+    src/fftsg.cpp
+    src/fftsg2d.cpp
+    src/point.cpp
+    src/plot.cpp
+    src/routeBase.cpp
+    src/timingBase.cpp
+    src/graphics.cpp
 )
-
-add_custom_command(OUTPUT ${REPLACE_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${REPLACE_TCL_INIT} replace_tcl_inits ${REPLACE_HOME}/src/replace.tcl
-  WORKING_DIRECTORY ${REPLACE_HOME}/src
-  DEPENDS ${REPLACE_HOME}/src/replace.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-############################################################
-# Create a library 
-############################################################
-add_library( replace
-  ${REPLACE_SRC}
-)
-  
-target_include_directories( replace
+ 
+target_include_directories(replace
   PUBLIC
-  ${REPLACE_HOME}/include
-  PRIVATE
-  ${REPLACE_HOME}/src
-
-  ${FLUTE_HOME}
-
-  ${OPENSTA_HOME}/include
-
-  ${OPENDB_HOME}/include
-  ${OPENROAD_HOME}/include
-  ${FASTROUTE_HOME}/include
-  ${FASTROUTE_HOME}/src/fastroute/include
-  ${TCL_INCLUDE_PATH}
-  flute3
-  gui
+    include
 )
 
-target_link_libraries( replace
+target_link_libraries(replace
   PRIVATE
-  spdlog::spdlog
-  Eigen3::Eigen
-  gui
+    utility
+    Eigen3::Eigen
+    gui
+    opendb
+    OpenSTA
+    flute
+    rsz
+    FastRoute
 )
 
 # CIMG_USE case
@@ -107,7 +108,7 @@ if( USE_CIMG_LIB )
   target_include_directories( replace
     PUBLIC
     # For CImg
-    ${REPLACE_HOME}/module/CImg
+    module/CImg
     ${X11_INCLUDE_DIR}
     ${JPEG_INCLUDE_DIR}
   )

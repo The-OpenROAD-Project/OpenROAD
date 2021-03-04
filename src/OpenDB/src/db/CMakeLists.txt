@@ -20,8 +20,7 @@ add_library(opendb
     dbMaster.cpp 
     dbNet.cpp 
     dbSearch.cpp
-    dbTech.cpp 
-    dbTechLayer.cpp 
+    dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
     dbTechLayerAntennaRule.cpp 
     dbTechMinCutOrAreaRule.cpp 
@@ -31,7 +30,6 @@ add_library(opendb
     dbVia.cpp 
     dbWire.cpp 
     dbWireCodec.cpp 
-    dbGCellGrid.cpp 
     dbTrackGrid.cpp 
     dbBlockage.cpp 
     dbObstruction.cpp 
@@ -71,7 +69,6 @@ add_library(opendb
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
-    dbPrintControl.cpp 
     dbNullIterator.cpp 
     dbBPin.cpp 
     dbHierInstShapeItr.cpp 
@@ -97,10 +94,19 @@ add_library(opendb
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
+    dbTechLayer.cpp
     dbTechLayerSpacingEolRule.cpp
+    dbTechLayerMinStepRule.cpp
+    dbTechLayerCornerSpacingRule.cpp
+    dbTechLayerSpacingTablePrlRule.cpp
+    dbTechLayerCutClassRule.cpp
+    dbTechLayerCutSpacingRule.cpp
+    dbTechLayerCutSpacingTableOrthRule.cpp
+    dbTechLayerCutSpacingTableDefRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp
+    dbGCellGrid.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
@@ -111,27 +117,26 @@ add_library(opendb
 
 target_include_directories(opendb
     PUBLIC
-        $<INSTALL_INTERFACE:include/opendb>
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/opendb>
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/src/db
+        ${PROJECT_SOURCE_DIR}/include
+        ${TCL_INCLUDE_PATH}
 )
 
-target_compile_features(opendb PRIVATE cxx_auto_type)
-target_compile_options(opendb PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
-set_property(TARGET opendb PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(opendb
+  PROPERTIES
+    # python requirement
+    POSITION_INDEPENDENT_CODE ON
+)
+
 target_link_libraries(opendb
     PUBLIC
-        zutil 
-        zlib 
-        tm
-        lef
+        cdl
         defin
         defout
-        lefout
-        zutil
         lefin
+        lefout
+        tm
+        zlib 
+        zutil
         utility
-    PRIVATE
         tcl
 )

@@ -34,6 +34,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include <set>
 
 namespace fr {
   namespace io {
@@ -214,8 +215,8 @@ namespace fr {
     frConstraint* getMinSpacing() const {
       return minSpc;
     }
-    void setMinSpacing(frConstraint* in) {
-      if (minSpc != nullptr) {
+    void setMinSpacing(frConstraint* in, bool verbose = false) {
+      if (verbose && minSpc != nullptr) {
         std::cout <<"Warning: override minspacing rule, ";
         if (minSpc->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
           std::cout <<"original type is SPACING, ";
@@ -457,6 +458,7 @@ namespace fr {
       return (!lef58CornerSpacingConstraints.empty());
     }
 
+    void printAllConstraints(utl::Logger* logger);
   protected:
     frLayerTypeEnum                                                 type;
     frLayerNum                                                      layerNum;

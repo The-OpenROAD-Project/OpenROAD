@@ -8,6 +8,5 @@
 [INFO ODB-0127] Reading DEF file: invalid_cells.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0134] Finished DEF file: invalid_cells.def
-Step 1: Cut rows...
-[ERROR TAP-0011] Master FILLCELL_X1x not found
-TAP-0011
+[ERROR TAP-0010] Master FILLCELL_X1x not found.
+TAP-0010

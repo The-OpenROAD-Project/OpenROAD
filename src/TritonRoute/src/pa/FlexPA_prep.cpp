@@ -41,7 +41,6 @@ using namespace fr;
 
 int gcCallCnt = 0;
 
-
 void FlexPA::prepPoint_pin_mergePinShapes(vector<gtl::polygon_90_set_data<frCoord> > &pinShapes, frPin* pin, frInstTerm* instTerm, bool isShrink) {
   frInst* inst = nullptr;
   if (instTerm) {
@@ -104,13 +103,18 @@ void FlexPA::prepPoint_pin_mergePinShapes(vector<gtl::polygon_90_set_data<frCoor
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_genGrid(map<frCoord, frAccessPointEnum> &coords, const map<frCoord, frAccessPointEnum> &trackCoords,
-                                                  frCoord low, frCoord high) {
+                                                  frCoord low, frCoord high,
+                                                  bool useNearbyGrid) {
   for (auto it = trackCoords.lower_bound(low); it != trackCoords.end(); it++) {
     auto &[coord, cost] = *it;
     if (coord > high) {
       break;
     }
-    coords.insert(*it);
+    if (useNearbyGrid) {
+      coords.insert({coord, frAccessPointEnum::NearbyGrid});
+    } else {
+      coords.insert(*it);
+    }
   }
 }
   
@@ -125,7 +129,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(map<frCoord, frAccessPointEn
     if (c1 > high) {
       break;
     }
-    if (c2 == frAccessPointEnum::OnGridAP) {
+    if (c2 == frAccessPointEnum::OnGrid) {
       cnt++;
     }
   }
@@ -141,9 +145,9 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(map<frCoord, frAccessPointEn
       double dbu = getDesign()->getTopBlock()->getDBUPerUU();
       cout <<"gen center pt@ " << coord / dbu <<endl;
     }
-    coords.insert(make_pair(coord, frAccessPointEnum::CenterAP));
+    coords.insert(make_pair(coord, frAccessPointEnum::Center));
   } else {
-    coords[coord] = std::min(coords[coord], frAccessPointEnum::CenterAP);
+    coords[coord] = std::min(coords[coord], frAccessPointEnum::Center);
   }
 }
 
@@ -152,7 +156,8 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(vector<unique_ptr<frAccessPo
                                                     frLayerNum layerNum, bool allowPlanar, bool allowVia, 
                                                     frAccessPointEnum lowCost, frAccessPointEnum highCost) {
   gtl::point_data<frCoord> pt(x, y);
-  if (!gtl::contains(maxrect, pt)) {
+  if (!gtl::contains(maxrect, pt) && lowCost != frAccessPointEnum::NearbyGrid
+      && highCost != frAccessPointEnum::NearbyGrid) {
     return;
   }
   frPoint fpt(x, y);
@@ -174,7 +179,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(vector<unique_ptr<frAccessPo
         ap->setAccess(frDirEnum::S, false);
         ap->setAccess(frDirEnum::N, false);
       }
-      if (lowerLayer->getLef58RightWayOnGridOnlyConstraint() && lowCost != frAccessPointEnum::OnGridAP) {
+      if (lowerLayer->getLef58RightWayOnGridOnlyConstraint() && lowCost != frAccessPointEnum::OnGrid) {
         ap->setAccess(frDirEnum::W, false);
         ap->setAccess(frDirEnum::E, false);
       } 
@@ -185,7 +190,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(vector<unique_ptr<frAccessPo
         ap->setAccess(frDirEnum::W, false);
         ap->setAccess(frDirEnum::E, false);
       }
-      if (lowerLayer->getLef58RightWayOnGridOnlyConstraint() && lowCost != frAccessPointEnum::OnGridAP) {
+      if (lowerLayer->getLef58RightWayOnGridOnlyConstraint() && lowCost != frAccessPointEnum::OnGrid) {
         ap->setAccess(frDirEnum::S, false);
         ap->setAccess(frDirEnum::N, false);
       }
@@ -260,34 +265,34 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(map<frCoord, frAccessPointEnum>
       auto it = coords.find(coord);
       if (it == coords.end()) {
         //cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOptAP));
+        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOptAP);
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
       coord = gtl::yl(rect) + (0 - box.bottom());
       it = coords.find(coord);
       if (it == coords.end()) {
         //cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOptAP));
+        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOptAP);
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
     } else {
       auto coord = gtl::xh(rect) - (box.right() - 0);
       auto it = coords.find(coord);
       if (it == coords.end()) {
         //cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOptAP));
+        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOptAP);
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
       coord = gtl::xl(rect) + (0 - box.left());
       it = coords.find(coord);
       if (it == coords.end()) {
         //cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOptAP));
+        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOptAP);
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
     }
   }
@@ -295,8 +300,9 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(map<frCoord, frAccessPointEnum>
 void FlexPA::prepPoint_pin_genPoints_rect(vector<unique_ptr<frAccessPoint> > &aps, set<pair<frPoint, frLayerNum> > &apset,
                                           const gtl::rectangle_data<frCoord> &rect,
                                           frLayerNum layerNum, bool allowPlanar, bool allowVia, frAccessPointEnum lowerType, frAccessPointEnum upperType, bool isMacroCellPin) {
+  auto minWidthLayer1 = getDesign()->getTech()->getLayer(layerNum)->getMinWidth();
   if (std::min(gtl::delta(rect, gtl::HORIZONTAL), gtl::delta(rect, gtl::VERTICAL)) <
-      getDesign()->getTech()->getLayer(layerNum)->getMinWidth()) {
+      minWidthLayer1) {
     return;
   }
   frLayerNum secondLayerNum = 0;
@@ -307,6 +313,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(vector<unique_ptr<frAccessPoint> > &ap
   } else {
     logger_->error(DRT, 68, "prepPoint_pin_genPoints_rect cannot find secondLayerNum.");
   }
+  auto minWidthLayer2 = getDesign()->getTech()->getLayer(secondLayerNum)->getMinWidth();
   auto &layer1TrackCoords = trackCoords_[layerNum];
   auto &layer2TrackCoords = trackCoords_[secondLayerNum];
   bool isLayer1Horz = (getDesign()->getTech()->getLayer(layerNum)->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
@@ -332,59 +339,83 @@ void FlexPA::prepPoint_pin_genPoints_rect(vector<unique_ptr<frAccessPoint> > &ap
     if (isLayer1Horz) {
       prepPoint_pin_genPoints_rect_genGrid(yCoords, layer1TrackCoords, gtl::yl(rect), gtl::yh(rect));
       prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xl(rect), gtl::xh(rect));
-      if (lowerType >= frAccessPointEnum::CenterAP) {
+      if (lowerType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(yCoords, layerNum, gtl::yl(rect), gtl::yh(rect));
       }
-      if (lowerType >= frAccessPointEnum::EncOptAP) {
+      if (lowerType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(yCoords, rect, layerNum, isLayer1Horz);
       }
-      if (upperType >= frAccessPointEnum::CenterAP) {
+      if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(xCoords, layerNum, gtl::xl(rect), gtl::xh(rect));
       }
-      if (upperType >= frAccessPointEnum::EncOptAP) {
+      if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(xCoords, rect, layerNum, !isLayer1Horz);
+      }
+      if (lowerType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer1TrackCoords, gtl::yh(rect), gtl::yh(rect) + minWidthLayer1, true);
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer1TrackCoords, gtl::yl(rect) - minWidthLayer1, gtl::yl(rect), true);
+      }
+      if (upperType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xh(rect), gtl::xh(rect) + minWidthLayer2, true);
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xl(rect) - minWidthLayer2, gtl::xl(rect), true);
       }
     } else {
       prepPoint_pin_genPoints_rect_genGrid(xCoords, layer1TrackCoords, gtl::xl(rect), gtl::xh(rect));
       prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yl(rect), gtl::yh(rect));
-      if (lowerType >= frAccessPointEnum::CenterAP) {
+      if (lowerType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(xCoords, layerNum, gtl::xl(rect), gtl::xh(rect));
       }
-      if (lowerType >= frAccessPointEnum::EncOptAP) {
+      if (lowerType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(xCoords, rect, layerNum, isLayer1Horz);
       }
-      if (upperType >= frAccessPointEnum::CenterAP) {
+      if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(yCoords, layerNum, gtl::yl(rect), gtl::yh(rect));
       }
-      if (upperType >= frAccessPointEnum::EncOptAP) {
+      if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(yCoords, rect, layerNum, !isLayer1Horz);
+      }
+      if (lowerType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer1TrackCoords, gtl::xh(rect), gtl::xh(rect) + minWidthLayer1, true);
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer1TrackCoords, gtl::xl(rect) - minWidthLayer1, gtl::xl(rect), true);
+      }
+      if (upperType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yh(rect), gtl::yh(rect) + minWidthLayer2, true);
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yl(rect) - minWidthLayer2, gtl::yl(rect), true);
       }
     }
   } else {
     if (isLayer1Horz) {
-      lowerType = frAccessPointEnum::OnGridAP;
+      lowerType = frAccessPointEnum::OnGrid;
       prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xl(rect), gtl::xh(rect));
-      if (upperType >= frAccessPointEnum::CenterAP) {
+      if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(xCoords, layerNum, gtl::xl(rect), gtl::xh(rect));
       }
-      if (upperType >= frAccessPointEnum::EncOptAP) {
+      if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(xCoords, rect, layerNum, !isLayer1Horz);
+      }
+      if (upperType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xh(rect), gtl::xh(rect) + minWidthLayer2, true);
+        prepPoint_pin_genPoints_rect_genGrid(xCoords, layer2TrackCoords, gtl::xl(rect) - minWidthLayer2, gtl::xl(rect), true);
       }
       prepPoint_pin_genPoints_rect_genCenter(yCoords, layerNum, gtl::yl(rect), gtl::yh(rect));
       for (auto &[yCoord, cost]: yCoords) {
-        yCoords[yCoord] = frAccessPointEnum::OnGridAP;
+        yCoords[yCoord] = frAccessPointEnum::OnGrid;
       }
     } else {
       prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yl(rect), gtl::yh(rect));
-      if (upperType >= frAccessPointEnum::CenterAP) {
+      if (upperType >= frAccessPointEnum::Center) {
         prepPoint_pin_genPoints_rect_genCenter(yCoords, layerNum, gtl::yl(rect), gtl::yh(rect));
       }
-      if (upperType >= frAccessPointEnum::EncOptAP) {
+      if (upperType >= frAccessPointEnum::EncOpt) {
         prepPoint_pin_genPoints_rect_genEnc(yCoords, rect, layerNum, !isLayer1Horz);
+      }
+      if (upperType >= frAccessPointEnum::NearbyGrid) {
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yh(rect), gtl::yh(rect) + minWidthLayer2, true);
+        prepPoint_pin_genPoints_rect_genGrid(yCoords, layer2TrackCoords, gtl::yl(rect) - minWidthLayer2, gtl::yl(rect), true);
       }
       prepPoint_pin_genPoints_rect_genCenter(xCoords, layerNum, gtl::xl(rect), gtl::xh(rect));
       for (auto &[xCoord, cost]: xCoords) {
-        xCoords[xCoord] = frAccessPointEnum::OnGridAP;
+        xCoords[xCoord] = frAccessPointEnum::OnGrid;
       }
     }
   }
@@ -404,18 +435,18 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(vector<unique_ptr<frAccessPoint
   bool allowPlanar = true;
   bool isMacroCellPin = false;
   if (instTerm) {
-    if (instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE ||
-        instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_TIEHIGH ||
-        instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_TIELOW ||
-        instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_ANTENNACELL) {
+    auto macroClass = instTerm->getInst()->getRefBlock()->getMacroClass();
+    if (macroClass == MacroClassEnum::CORE ||
+        macroClass == MacroClassEnum::CORE_TIEHIGH ||
+        macroClass == MacroClassEnum::CORE_TIELOW ||
+        macroClass == MacroClassEnum::CORE_ANTENNACELL) {
       if ((layerNum >= VIAINPIN_BOTTOMLAYERNUM && layerNum <= VIAINPIN_TOPLAYERNUM) || 
           layerNum <= VIA_ACCESS_LAYERNUM) {
             allowPlanar = false;
       }
-    } else if (instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-               instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-               instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
-               instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+    } else if (macroClass == MacroClassEnum::BLOCK ||
+               isPad(macroClass) ||
+               macroClass == MacroClassEnum::RING) {
       isMacroCellPin = true;
     }
   } else {
@@ -427,7 +458,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(vector<unique_ptr<frAccessPoint
   // lower layer is current layer
   // righway on grid only forbid off track up via access on upper layer
   auto upperLayer = (layerNum + 2 <= getDesign()->getTech()->getTopLayerNum()) ? getDesign()->getTech()->getLayer(layerNum + 2) : nullptr;
-  if (!isMacroCellPin && upperLayer && upperLayer->getLef58RightWayOnGridOnlyConstraint() && upperType != frAccessPointEnum::OnGridAP) {
+  if (!isMacroCellPin && upperLayer && upperLayer->getLef58RightWayOnGridOnlyConstraint() && upperType != frAccessPointEnum::OnGrid) {
     return;
   }
   vector<gtl::rectangle_data<frCoord> > maxrects;
@@ -698,9 +729,14 @@ void FlexPA::prepPoint_pin_checkPoint_via(frAccessPoint* ap,
   }
 
   bool viainpin = false;
+  auto lower_type = ap->getType(true);
+  auto upper_type = ap->getType(false);
   if (layerNum >= VIAINPIN_BOTTOMLAYERNUM && layerNum <= VIAINPIN_TOPLAYERNUM) {
     viainpin = true;
-  } else if (ap->getType(true) == frAccessPointEnum::EncOptAP || ap->getType(false) == frAccessPointEnum::EncOptAP) {
+  } else if ((lower_type == frAccessPointEnum::EncOpt
+              && upper_type != frAccessPointEnum::NearbyGrid)
+             || (upper_type == frAccessPointEnum::EncOpt
+                 && lower_type != frAccessPointEnum::NearbyGrid)) {
     viainpin = true;
   }
 
@@ -832,6 +868,10 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap, frVia* via, 
   } else {
     typeGC = 2;
   }
+  if (graphics_) {
+    graphics_->setViaAP(ap, via, gcWorker.getMarkers());
+  }
+
   if (enableOutput) {
       prepPoint_pin_checkPoint_print_helper(ap, pin, instTerm, frDirEnum::U, typeGC, typeDRC, bp, ep, via->getViaDef());
       //if (typeGC == 2) {
@@ -894,8 +934,7 @@ void FlexPA::prepPoint_pin_updateStat(const vector<unique_ptr<frAccessPoint> > &
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_TIELOW ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_ANTENNACELL));
   bool isMacroCellPin = (instTerm && (instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                                      isPad(instTerm->getInst()->getRefBlock()->getMacroClass()) ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING));
   for (auto &ap: tmpAps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E) || 
@@ -931,8 +970,7 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_TIELOW || 
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_ANTENNACELL));
   bool isMacroCellPin = (instTerm && (instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                                      isPad(instTerm->getInst()->getRefBlock()->getMacroClass()) ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING));
   bool isIOPin = (instTerm == nullptr);
   vector<unique_ptr<frAccessPoint> > tmpAps;
@@ -947,7 +985,7 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
     macroCellPinGenApCnt_ += tmpAps.size();
   }
   if (graphics_) {
-    graphics_->setAPs(tmpAps);
+    graphics_->setAPs(tmpAps, lowerType, upperType);
   }
   for (auto &ap: tmpAps) {
     // for stdcell, add (i) planar access if layerNum != VIA_ACCESS_LAYERNUM, and (ii) access if exist access
@@ -1009,8 +1047,7 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_TIELOW ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::CORE_ANTENNACELL));
   bool isMacroCellPin = (instTerm && (instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                                      instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                                      isPad(instTerm->getInst()->getRefBlock()->getMacroClass()) ||
                                       instTerm->getInst()->getRefBlock()->getMacroClass() == MacroClassEnum::RING));
 
   if (graphics_) {
@@ -1024,64 +1061,23 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
     prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
   }
 
-  // 0 iter, gen on-grid, on-grid points
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::OnGridAP, frAccessPointEnum::OnGridAP)) {
-    return;
-  }
-  // 1st iter, gen 1/2-grid, on-grid points
-  //cout <<"iter1" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::HalfGridAP, frAccessPointEnum::OnGridAP)) {
-    return;
-  }
-  // 2nd iter, gen center, on-grid points
-  //cout <<"iter2" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::CenterAP, frAccessPointEnum::OnGridAP)) {
-    return;
-  }
-  // 3rd iter, gen enc-opt, on-grid points
-  //cout <<"iter3" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::EncOptAP, frAccessPointEnum::OnGridAP)) {
-    return;
-  }
-  // 4th iter, gen on-grid, 1/2-grid points
-  //cout <<"iter4" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::OnGridAP, frAccessPointEnum::HalfGridAP)) {
-    return;
-  }
-  // 5th iter, gen 1/2-grid, 1/2-grid points
-  //cout <<"iter5" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::HalfGridAP, frAccessPointEnum::HalfGridAP)) {
-    return;
-  }
-  // 6th iter, gen center, 1/2-grid points
-  //cout <<"iter6" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::CenterAP, frAccessPointEnum::HalfGridAP)) {
-    return;
-  }
-  // 7th iter, gen enc-opt, 1/2-grid points
-  //cout <<"iter7" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::EncOptAP, frAccessPointEnum::HalfGridAP)) {
-    return;
-  }
-  // 8th iter, gen on-grid, center points
-  //cout <<"iter8" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::OnGridAP, frAccessPointEnum::CenterAP)) {
-    return;
-  }
-  // 9th iter, gen 1/2-grid, center points
-  //cout <<"iter9" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::HalfGridAP, frAccessPointEnum::CenterAP)) {
-    return;
-  }
-  // 10th iter, gen center, center points
-  //cout <<"iter10" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::CenterAP, frAccessPointEnum::CenterAP)) {
-    return;
-  }
-  // 11th iter, gen enc-opt, center points
-  //cout <<"iter11" <<endl;
-  if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, frAccessPointEnum::EncOptAP, frAccessPointEnum::CenterAP)) {
-    return;
+  for (auto upper : { frAccessPointEnum::OnGrid,
+                      frAccessPointEnum::HalfGrid,
+                      frAccessPointEnum::Center,
+                      frAccessPointEnum::NearbyGrid}) {
+    for (auto lower : { frAccessPointEnum::OnGrid,
+                        frAccessPointEnum::HalfGrid,
+                        frAccessPointEnum::Center,
+                        frAccessPointEnum::EncOpt}) {
+      if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
+        // Only use NearbyGrid as a last resort (at least until
+        // nangate45/aes is resolved).
+        continue;
+      }
+      if (prepPoint_pin_helper(aps, apset, pinShapes, pin, instTerm, lower, upper)) {
+        return;
+      }
+    }
   }
 
   // instTerm aps are written back here if not early stopped
@@ -1143,8 +1139,7 @@ void FlexPA::prepPoint() {
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIELOW && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_ANTENNACELL && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::BLOCK &&
-        inst->getRefBlock()->getMacroClass() != MacroClassEnum::PAD &&
-        inst->getRefBlock()->getMacroClass() != MacroClassEnum::PAD_POWER &&
+        !isPad(inst->getRefBlock()->getMacroClass()) &&
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::RING) {
       continue;
     }

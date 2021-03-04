@@ -30,6 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+
+#include "displayControls.h"
+
+#include <QDebug>
+
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -152,12 +157,11 @@ DisplayControls::DisplayControls(QWidget* parent)
       nets_power_visible_(true),
       nets_ground_visible_(true),
       nets_clock_visible_(true),
-      isGridGraphVisible_(false),
-      areRouteGuidesVisible_(true),
-      areRoutingObjsVisible_(true)
+      congestion_visible_(false)
+
 {
   setObjectName("layers");  // for settings
-  model_->setHorizontalHeaderLabels({"", "", "V", "S"});
+  model_->setHorizontalHeaderLabels({"", "C", "V", "S"});
   view_->setModel(model_);
 
   QHeaderView* header = view_->header();
@@ -206,6 +210,12 @@ DisplayControls::DisplayControls(QWidget* parent)
     rows_visible_ = visible;
   });
 
+  // Rows
+  congestion_map_
+      = makeItem("Congestion Map", model_, Qt::Unchecked, [this](bool visible) {
+          congestion_visible_ = visible;
+        });
+
   // Track patterns
   tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
     toggleAllChildren(visible, tracks_, Visible);
@@ -229,22 +239,6 @@ DisplayControls::DisplayControls(QWidget* parent)
     fills_visible_ = visible;
   });
 
-  //Grid Graph
-  grid_graph_ = makeItem("Grid Graph", model_, Qt::Unchecked, [this](bool visible) {
-    isGridGraphVisible_ = visible;
-  });
-  
-  //Guides
-  route_guides_ = makeItem("Route Guides", model_, Qt::Checked, [this](bool visible) {
-    areRouteGuidesVisible_ = visible;
-  });
-  
-  //Routing objs
-  routing_objs_ = makeItem("Routing Objects", model_, Qt::Checked, [this](bool visible) {
-    areRoutingObjsVisible_ = visible;
-  });
-  
-  
   setWidget(view_);
   connect(model_,
           SIGNAL(itemChanged(QStandardItem*)),
@@ -255,6 +249,17 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(doubleClicked(const QModelIndex&)),
           this,
           SLOT(displayItemDblClicked(const QModelIndex&)));
+  setMinimumWidth(375);
+  congestion_dialog_ = new CongestionSetupDialog(this);
+
+  connect(congestion_dialog_,
+          SIGNAL(applyCongestionRequested()),
+          this,
+          SIGNAL(changed()));
+  connect(congestion_dialog_,
+          SIGNAL(congestionSetupChanged()),
+          this,
+          SIGNAL(changed()));
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -346,6 +351,9 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           type == dbTechLayerType::CUT ? NULL : layer);
     }
   }
+
+  for (int i = 0; i < 4; i++)
+    view_->resizeColumnToContents(i);
   emit changed();
 }
 
@@ -455,15 +463,53 @@ bool DisplayControls::areNonPrefTracksVisible()
 {
   return tracks_visible_non_pref_;
 }
-bool DisplayControls::isGridGraphVisible(){
-    return isGridGraphVisible_;
+
+bool DisplayControls::isCongestionVisible() const
+{
+  return congestion_visible_;
 }
 
-bool DisplayControls::areRouteGuidesVisible(){
-    return areRouteGuidesVisible_;
+void DisplayControls::addCustomVisibilityControl(const std::string& name,
+                                                 bool initially_visible)
+{
+  auto q_name = QString::fromStdString(name);
+  auto checked = initially_visible ? Qt::Checked : Qt::Unchecked;
+  auto item = makeItem(q_name, model_, checked, [this, name](bool visible) {
+    custom_visibility_[name] = visible;
+  });
+  custom_visibility_[name] = initially_visible;
 }
-bool DisplayControls::areRoutingObjsVisible(){
-    return areRoutingObjsVisible_;
+
+bool DisplayControls::checkCustomVisibilityControl(const std::string& name)
+{
+  return custom_visibility_[name];
+}
+
+bool DisplayControls::showHorizontalCongestion() const
+{
+  return congestion_dialog_->showHorizontalCongestion()
+         || !congestion_dialog_->showVerticalCongestion();
+}
+
+bool DisplayControls::showVerticalCongestion() const
+{
+  return congestion_dialog_->showVerticalCongestion()
+         || !congestion_dialog_->showHorizontalCongestion();
+}
+
+float DisplayControls::getMinCongestionToShow() const
+{
+  return congestion_dialog_->getMinCongestionToShow();
+}
+
+QColor DisplayControls::getCongestionColor(float congestion) const
+{
+  return congestion_dialog_->getCongestionColorForPercentage(congestion);
+}
+
+void DisplayControls::showCongestionSetup()
+{
+  return congestion_dialog_->show();
 }
 
 void DisplayControls::techInit()

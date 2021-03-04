@@ -30,8 +30,6 @@
 [INFO GPL-0019] Util(%): 0.20
 [INFO GPL-0020] StdInstsArea: 7448000
 [INFO GPL-0021] MacroInstsArea: 0
-Begin InitialPlace
-End InitialPlace
 [INFO GPL-0031] FillerInit: NumGCells: 358
 [INFO GPL-0032] FillerInit: NumGNets: 2
 [INFO GPL-0033] FillerInit: NumGPins: 4
@@ -43,8 +41,5 @@ End InitialPlace
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-Begin NesterovInit
-End NesterovInit
-[ERROR GPL-0305] RePlAce divergence detected. 
-        Please tune the parameters again
+[ERROR GPL-0305] RePlAce divergence detected.
 GPL-0305

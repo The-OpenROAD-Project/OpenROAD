@@ -71,8 +71,18 @@ namespace fr {
     }
 
     // getters
-    frString getRowName();
-    frCollection<rowClass> getRows();
+    frString getRowName() const
+    {
+      return rowName;
+    }
+    frCollection<rowClass> getRows() const
+    {
+      return rows;
+    }
+    frCollection<valClass> getValues() const
+    {
+      return vals;
+    }
 
     // others
     valClass find(const rowClass &rowVal) const {
@@ -181,14 +191,23 @@ namespace fr {
     }
 
     // getters
-    frString getRowName() const;
-    frString getColName() const;
+    frString getRowName() const
+    {
+      return rowName;
+    }
+    frString getColName() const
+    {
+      return colName;
+    }
 
     frCollection<rowClass> getRows() {
       return rows;
     }
     frCollection<colClass> getCols() {
       return cols;
+    }
+    frCollection<frCollection<valClass>> getValues() {
+      return vals;
     }
 
     // others

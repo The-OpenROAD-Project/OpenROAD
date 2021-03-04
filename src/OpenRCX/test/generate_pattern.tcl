@@ -1,6 +1,6 @@
 source helpers.tcl
 
-read_lef sky130/sky130_tech.lef 
+read_lef sky130hs/sky130hs.tlef 
 
 bench_wires -len 100 -all
 

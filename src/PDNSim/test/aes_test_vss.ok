@@ -20,12 +20,13 @@
 [INFO PSM-0037] G matrix created sucessfully.
 [INFO PSM-0044] Executing STA for power calculation.
 [INFO PSM-0025] Created J vector.
+[INFO PSM-0064] Number of voltage sources = 2
 [INFO PSM-0040] Connection between all PDN nodes established in net VSS.
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.
 [INFO PSM-0013] Solving system of equations GV=J complete.
 ########## IR report #################
-Worstcase voltage: 1.08e-03 V
-Average IR drop  : 8.91e-04 V
-Worstcase IR drop: 1.08e-03 V
+Worstcase voltage: 4.37e-03 V
+Average IR drop  : 3.15e-03 V
+Worstcase IR drop: 4.37e-03 V
 ######################################

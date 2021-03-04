@@ -33,65 +33,43 @@
 ##
 ###############################################################################
 
+include("openroad")
+
 project(FastRoute)
 
 add_subdirectory(src/fastroute)
-add_subdirectory(src/pdrev)
 
-set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
-set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
-
-add_custom_command(OUTPUT ${FASTROUTE_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix grt -I${FASTROUTE_HOME}/include -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/fastroute.i
-        WORKING_DIRECTORY ${FASTROUTE_HOME}/src
-        DEPENDS
-        ${FASTROUTE_HOME}/src/fastroute.i
-        ${FASTROUTE_HOME}/include/fastroute/GlobalRouter.h
-        ${OPENROAD_HOME}/src/Exception.i
+tcl_lib(NAME      FastRoute
+        NAMESPACE grt
+        I_FILE    src/fastroute.i
+        SCRIPTS   src/fastroute.tcl
 )
 
-add_custom_command(OUTPUT ${FASTROUTE_TCL_INIT}
-        COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${FASTROUTE_TCL_INIT} fastroute_tcl_inits ${FASTROUTE_HOME}/src/fastroute.tcl
-        WORKING_DIRECTORY ${FASTROUTE_HOME}/src
-        DEPENDS ${FASTROUTE_HOME}/src/fastroute.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+target_sources(FastRoute
+  PRIVATE
+    src/AntennaRepair.cpp
+    src/GlobalRouter.cpp
+    src/Grid.cpp
+    src/MakeFastRoute.cpp
+    src/Net.cpp
+    src/Pin.cpp
+    src/RcTreeBuilder.cpp
 )
-
-
-set(SRC_FILES
-  src/AntennaRepair.cpp
-  src/GlobalRouter.cpp
-  src/Grid.cpp
-  src/MakeFastRoute.cpp
-  src/Net.cpp
-  src/Pin.cpp
-  src/RcTreeBuilder.cpp
-  ${FASTROUTE_WRAP}
-  ${FASTROUTE_TCL_INIT}
-  )
-
-add_library(FastRoute ${SRC_FILES})
 
 target_include_directories(FastRoute
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
-  ${OPENDB_HOME}/include/
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${FASTROUTE_HOME}/src
-  ${TCL_INCLUDE_PATH}
-  ${ANTENNACHECKER_HOME}/include
-  ${OPENDP_HOME}/include
-  ${Boost_INCLUDE_DIRS}
-  )
+    include
+)
 
 target_link_libraries(FastRoute
-  PUBLIC
-  utility
-  PRIVATE
-  FastRoute4.1
-  pdrev
-  )
+    utility
+    FastRoute4.1
+    pdrev
+    antennachecker
+    dpl
+    dbSta
+    gui
+    pdrev
+    OpenSTA
+    Boost::boost
+)

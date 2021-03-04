@@ -38,13 +38,22 @@
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
 #include "flute.h"
-
+namespace odb
+{
+  class dbDatabase;
+}
 namespace fr {
 
   class FlexGR {
   public:
     // constructors
-    FlexGR(frDesign* designIn): design_(designIn), cmap_(nullptr), cmap2D_(nullptr) {}
+    FlexGR(frDesign* designIn, Logger* logger)
+      : design_(designIn),
+        cmap_(nullptr),
+        cmap2D_(nullptr),
+        logger_(logger)
+    {
+    }
 
     // getters
     frTechObject* getTech() const {
@@ -65,12 +74,13 @@ namespace fr {
     }
 
     // others
-    void main();
+    void main(odb::dbDatabase* db = nullptr);
 
   protected:
     frDesign *design_;
     std::unique_ptr<FlexGRCMap> cmap_;
     std::unique_ptr<FlexGRCMap> cmap2D_;
+    Logger*         logger_;
     std::map<frNet*, std::map<std::pair<int, int>, std::vector<frNode*> >, frBlockObjectComp> net2GCellIdx2Nodes_;
     std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2GCellNodes_;
     std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2SteinerNodes_;
@@ -142,6 +152,7 @@ namespace fr {
     void reportCong3DGolden(FlexGRCMap *baseCMap);
     void reportCong3D(FlexGRCMap *cmap);
     void reportCong3D();
+    void updateDbCongestion(odb::dbDatabase* db, FlexGRCMap *cmap);
 
     // temp
     void initGR_patternRoute_layerAssignment();
@@ -357,9 +368,6 @@ namespace fr {
     // local storage
     std::vector<std::unique_ptr<grNet> >   nets_;
     std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;
-    // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<grNode*> > > owner2extBoundPtNodes;
-    // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<grNode*> > > owner2routeBoundPtNodes;
-    // std::map<frNet*, std::map<std::pair<frPoint, frLayerNum>, vector<frNode*> > > owner2pinNodes;
 
     FlexGRGridGraph                        gridGraph_;
     FlexGRWorkerRegionQuery                rq_;
@@ -400,18 +408,7 @@ namespace fr {
     void initNets_printNet(grNet* net);
     void initNets_printFNets(std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> &netRoots);
     void initNets_printFNet(frNode* root);
-
-    // void initNetObjs(std::set<frNet*, frBlockObjectComp> &nets,
-    //                  std::map<frNet*, std::vector<std::unique_ptr<grConnFig> >, frBlockObjectComp> &netObjs);
-    // void initNetObjs_pathSeg(grPathSeg* pathSeg,
-    //                          std::set<frNet*, frBlockObjectComp> &nets,
-    //                          std::map<frNet*, std::vector<std::unique_ptr<grConnFig> >, frBlockObjectComp> &netObjs);
-    // void initNetObjs_via(frVia* via,
-    //                      std::set<frNet*, frBlockObjectComp> &nets,
-    //                      std::map<frNet*, std::vector<std::unique_ptr<grConnFig> >, frBlockObjectComp> &netRouteObjs);
-    // void initNets(std::set<frNet*, frBlockObjectComp> &nets,
-    //               std::map<frNet*, std::vector<std::unique_ptr<grConnFig> >, frBlockObjectComp> &netRouteObjs);
-    
+   
     // route
     void route();
     void route_addHistCost();
@@ -462,8 +459,6 @@ namespace fr {
     void endStitchBoundary();
     void endStitchBoundary_net(grNet* net);
     void endWriteBackCMap();
-
-
 
     // other
     frPoint getBoundaryPinGCellNodeLoc(const frPoint &boundaryPinLoc);

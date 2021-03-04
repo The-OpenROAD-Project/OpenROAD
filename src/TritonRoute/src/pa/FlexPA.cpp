@@ -62,7 +62,7 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugPA;
   graphics_ = on && FlexPAGraphics::guiActive() ?
-    std::make_unique<FlexPAGraphics>(settings, design_, db)
+    std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
     : nullptr;
 }
 
@@ -88,7 +88,7 @@ int FlexPA::main() {
   //bool enableOutput = true;
   frTime t;
   if (VERBOSE > 0) {
-    cout <<endl <<endl <<"start pin access" <<endl;
+    logger_->info(DRT, 165, "start pin access");
   }
 
   init();
@@ -110,24 +110,23 @@ int FlexPA::main() {
   }
 
   if (VERBOSE > 0) {
-    cout <<"#scanned instances     = " <<inst2unique_.size()     <<endl;
-    cout <<"#unique  instances     = " <<uniqueInstances_.size() <<endl;
-    cout <<"#stdCellGenAp          = " <<stdCellPinGenApCnt_           <<endl;
-    cout <<"#stdCellValidPlanarAp  = " <<stdCellPinValidPlanarApCnt_   <<endl;
-    cout <<"#stdCellValidViaAp     = " <<stdCellPinValidViaApCnt_      <<endl;
-    cout <<"#stdCellPinNoAp        = " <<stdCellPinNoApCnt_            <<endl;
-    cout <<"#stdCellPinCnt         = " <<stdCellPinCnt                 <<endl;
-    cout <<"#instTermValidViaApCnt = " <<instTermValidViaApCnt_        <<endl;
-    cout <<"#macroGenAp            = " <<macroCellPinGenApCnt_         <<endl;
-    cout <<"#macroValidPlanarAp    = " <<macroCellPinValidPlanarApCnt_ <<endl;
-    cout <<"#macroValidViaAp       = " <<macroCellPinValidViaApCnt_    <<endl;
-    cout <<"#macroNoAp             = " <<macroCellPinNoApCnt_          <<endl;
+    logger_->report("#scanned instances     = {}", inst2unique_.size());
+    logger_->report("#unique  instances     = {}", uniqueInstances_.size());
+    logger_->report("#stdCellGenAp          = {}", stdCellPinGenApCnt_);
+    logger_->report("#stdCellValidPlanarAp  = {}", stdCellPinValidPlanarApCnt_);
+    logger_->report("#stdCellValidViaAp     = {}", stdCellPinValidViaApCnt_);
+    logger_->report("#stdCellPinNoAp        = {}", stdCellPinNoApCnt_);
+    logger_->report("#stdCellPinCnt         = {}", stdCellPinCnt);
+    logger_->report("#instTermValidViaApCnt = {}", instTermValidViaApCnt_);
+    logger_->report("#macroGenAp            = {}", macroCellPinGenApCnt_);
+    logger_->report("#macroValidPlanarAp    = {}", macroCellPinValidPlanarApCnt_);
+    logger_->report("#macroValidViaAp       = {}", macroCellPinValidViaApCnt_);
+    logger_->report("#macroNoAp             = {}", macroCellPinNoApCnt_);
   }
 
   if (VERBOSE > 0) {
-    cout <<endl <<"complete pin access" <<endl;
-    t.print();
-    cout <<endl;
+    logger_->info(DRT, 166, "complete pin access");
+    t.print(logger_);
   }
   return 0;
 }

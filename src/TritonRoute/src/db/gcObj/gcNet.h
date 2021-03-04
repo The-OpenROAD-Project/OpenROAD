@@ -41,7 +41,7 @@ namespace fr {
     // constructors
     gcNet(int numLayers): gcBlockObject(), fixedPolygons_(numLayers), routePolygons_(numLayers), 
                           fixedRectangles_(numLayers), routeRectangles_(numLayers), pins_(numLayers),
-                          taperedRects(numLayers), nonTaperedRects(numLayers), owner_(nullptr) {}
+                          owner_(nullptr), taperedRects(numLayers), nonTaperedRects(numLayers) {}
     // setters
     void addPolygon(const frBox &box, frLayerNum layerNum, bool isFixed = false) {
       gtl::rectangle_data<frCoord> rect(box.left(), box.bottom(), box.right(), box.top());
@@ -136,17 +136,14 @@ namespace fr {
     frBlockObjectEnum typeId() const override {
       return gccNet;
     }
-    frNet* getFrNet(){
+
+    frNet* getFrNet() const{
         if (owner_->typeId() == frcNet){
-            return static_cast<frNet*>(owner_);
+          return static_cast<frNet*>(owner_);
         }
         return nullptr;
     }
-    std::string getName(){
-        if (getFrNet()) return getFrNet()->getName();
-        return "";
-    }
-    bool isNondefault(){
+    bool isNondefault() const{
         return getFrNet() && getFrNet()->getNondefaultRule();
     }
     void addTaperedRect(const frBox& bx, int zIdx){
@@ -162,14 +159,14 @@ namespace fr {
         return nonTaperedRects[z];
     }
     void addSpecialSpcRect(const frBox& bx, frLayerNum lNum, gcPin* pin, gcNet* net){
-        shared_ptr<gcRect> sp = make_shared<gcRect>();
+        unique_ptr<gcRect> sp = make_unique<gcRect>();
         sp->setLayerNum(lNum);
         sp->addToNet(net);
         sp->addToPin(pin);
         sp->setRect(bx);
         specialSpacingRects.push_back(std::move(sp));
     }
-    const vector<shared_ptr<gcRect>>& getSpecialSpcRects() const{
+    const vector<unique_ptr<gcRect>>& getSpecialSpcRects() const{
         return specialSpacingRects;
     }
   protected:
@@ -181,7 +178,9 @@ namespace fr {
     frBlockObject*                                           owner_;
     vector<vector<frBox>>                                    taperedRects;  //(only routing layer)
     vector<vector<frBox>>                                    nonTaperedRects;  //(only routing layer)
-    vector<shared_ptr<gcRect>>                               specialSpacingRects;   //a non-tapered rect within a tapered max rectangle still require nondefault spacing
+    //A non-tapered rect within a tapered max rectangle still require nondefault spacing.
+    //This list hold these rectangles
+    vector<unique_ptr<gcRect>>                               specialSpacingRects;   
     void init();
   };
 }

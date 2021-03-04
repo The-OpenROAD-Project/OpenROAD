@@ -52,9 +52,15 @@
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+
 #include "layoutViewer.h"
+
+#include "highlightGroupDialog.h"
+
 #include "mainWindow.h"
 #include "search.h"
+
+#include "utility/Logger.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -111,7 +117,7 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  virtual void setPenWidth(int width){
+  virtual void setPenWidth(int width) override {
       QPen pen(painter_->pen().color());
       pen.setCosmetic(painter_->pen().isCosmetic());
       pen.setWidth(width);
@@ -157,15 +163,15 @@ class GuiPainter : public Painter
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
-  void setTransparentBrush(){
+  void setTransparentBrush() override {
       painter_->setBrush(Qt::transparent);
   }
-  void drawCircle(int x, int y, int r){
+  void drawCircle(int x, int y, int r) override {
       painter_->drawEllipse(x-r/2, y-r/2, r, r);
   }
-  
-  void drawString(int x, int y, int of, std::string& s){
-      painter_->drawText(x+of, y+of, s.data());
+  //NOTE: it is drawing upside down
+  void drawString(int x, int y, int offset, const std::string& s) override {
+      painter_->drawText(x+offset, y+offset, s.data());
   }
  private:
   QPainter* painter_;
@@ -174,7 +180,7 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(Options* options,
                            const SelectionSet& selected,
-                           const SelectionSet& highlighted,
+                           const HighlightSet& highlighted,
                            QWidget* parent)
     : QWidget(parent),
       db_(nullptr),
@@ -186,10 +192,14 @@ LayoutViewer::LayoutViewer(Options* options,
       min_depth_(0),
       max_depth_(99),
       search_init_(false),
-      rubber_band_showing_(false)
+      rubber_band_showing_(false),
+      logger_(nullptr),
+      layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
+
+  addMenuAndActions();
 }
 
 void LayoutViewer::setDb(dbDatabase* db)
@@ -198,6 +208,11 @@ void LayoutViewer::setDb(dbDatabase* db)
     update();
   }
   db_ = db;
+}
+
+void LayoutViewer::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 dbBlock* LayoutViewer::getBlock()
@@ -330,8 +345,10 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
       Point pt_dbu = screenToDBU(event->pos());
       if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
         emit addSelected(selectAtPoint(pt_dbu));
+      } else if (qGuiApp->keyboardModifiers() & Qt::ControlModifier) {
+        emit selected(selectAtPoint(pt_dbu), true);
       } else {
-        emit selected(selectAtPoint(pt_dbu));
+        emit selected(selectAtPoint(pt_dbu), false);
       }
     }
   } else if (event->button() == Qt::RightButton) {
@@ -352,7 +369,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(event->pos());
-  qreal to_microns = 1;//block->getDbUnitsPerMicron();
+  qreal to_microns = block->getDbUnitsPerMicron();
   emit location(pt_dbu.x() / to_microns, pt_dbu.y() / to_microns);
 
   if (rubber_band_showing_) {
@@ -371,6 +388,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
     QRect rect = rubber_band_.normalized();
     if (rect.width() < 4 || rect.height() < 4) {
+      showLayoutCustomMenu(event->pos());
       return;  // ignore clicks not intended to be drags
     }
 
@@ -598,8 +616,79 @@ void LayoutViewer::drawSelected(Painter& painter)
 
 void LayoutViewer::drawHighlighted(Painter& painter)
 {
-  for (auto& highlighted : highlighted_) {
-    highlighted.highlight(painter, false /* selectFlag*/);
+  int highlight_group = 0;
+  for (auto& highlight_set : highlighted_) {
+    for (auto& highlighted : highlight_set)
+      highlighted.highlight(painter, false /* select_flag*/, highlight_group);
+    highlight_group++;
+  }
+}
+
+void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
+{
+  auto block = getBlock();
+  if(block == nullptr)
+    return;
+  auto grid = block->getGCellGrid();
+  if(grid == nullptr)
+    return;
+  std::vector<int> x_grid, y_grid;
+  uint x_grid_sz, y_grid_sz;
+  grid->getGridX(x_grid);
+  x_grid_sz = x_grid.size();
+  grid->getGridY(y_grid);
+  y_grid_sz = y_grid.size();
+  auto gcell_congestion_data = grid->getCongestionMap();
+
+  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
+    return;
+
+  bool show_hor_congestion = options_->showHorizontalCongestion();
+  bool show_ver_congestion = options_->showVerticalCongestion();
+  auto min_congestion_to_show = options_->getMinCongestionToShow();
+  for (auto &[key, cong_data] : gcell_congestion_data) {
+    uint x_idx = key.first;;
+    uint y_idx = key.second;
+
+    if(x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1)
+    {
+      if(logger_ != nullptr)
+        logger_->warn(utl::GUI, 4, "Skipping malformed GCell");
+      continue;
+    }
+
+    auto gcell_rect = odb::Rect(x_grid[x_idx], y_grid[y_idx], x_grid[x_idx+1], y_grid[y_idx+1]);
+    if (!gcell_rect.intersects(bounds))
+      continue;
+
+    auto hor_capacity = cong_data.horizontal_capacity;
+    auto hor_usage = cong_data.horizontal_usage;
+    auto ver_capacity = cong_data.vertical_capacity;
+    auto ver_usage = cong_data.vertical_usage;
+
+    //-1 indicates capacity is not well defined...
+    float hor_congestion
+        = hor_capacity != 0 ? (hor_usage * 100.0) / hor_capacity : -1;
+    float ver_congestion
+        = ver_capacity != 0 ? (ver_usage * 100.0) / ver_capacity : -1;
+
+    float congestion = ver_congestion;
+    if (show_hor_congestion && show_ver_congestion)
+      congestion = std::max(hor_congestion, ver_congestion);
+    else if (show_hor_congestion)
+      congestion = hor_congestion;
+    else
+      congestion = ver_congestion;
+
+    if (congestion == -1 || congestion < min_congestion_to_show)
+      continue;
+
+    auto gcell_color = options_->getCongestionColor(congestion);
+    Painter::Color color(
+        gcell_color.red(), gcell_color.green(), gcell_color.blue(), 100);
+    painter.setPen(color, true);
+    painter.setBrush(color);
+    painter.drawRect(gcell_rect);
   }
 }
 
@@ -796,9 +885,11 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
   }
 
-  drawHighlighted(gui_painter);
-  // Always last so on top
+  drawCongestionMap(gui_painter, bounds);
+
   drawSelected(gui_painter);
+  // Always last so on top
+  drawHighlighted(gui_painter);
 }
 
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
@@ -889,6 +980,69 @@ void LayoutViewer::fit()
   setPixelsPerDBU(pixels_per_dbu);
 }
 
+void LayoutViewer::selectHighlightConnectedInst(bool select_flag)
+{
+  int highlight_group = 0;
+  if (!select_flag) {
+    HighlightGroupDialog dlg;
+    dlg.exec();
+    highlight_group = dlg.getSelectedHighlightGroup();
+  }
+  Gui::get()->selectHighlightConnectedInsts(select_flag, highlight_group);
+}
+
+void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
+                                                bool output,
+                                                bool input)
+{
+  int highlight_group = 0;
+  if (!select_flag) {
+    HighlightGroupDialog dlg;
+    dlg.exec();
+    highlight_group = dlg.getSelectedHighlightGroup();
+  }
+  Gui::get()->selectHighlightConnectedNets(
+      select_flag, output, input, highlight_group);
+}
+
+void LayoutViewer::updateContextMenuItems()
+{
+  if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
+      == false)  // No Instance in selected set
+  {
+    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
+
+    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
+  } else {
+    menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
+
+    menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
+  }
+
+  if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
+      == false) {  // No Net in selected set
+    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(true);
+  } else {
+    menu_actions_[SELECT_CONNECTED_INST_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]->setDisabled(false);
+  }
+}
+
+void LayoutViewer::showLayoutCustomMenu(QPoint pos)
+{
+  updateContextMenuItems();
+  layout_context_menu_->popup(this->mapToGlobal(pos));
+}
+
 void LayoutViewer::designLoaded(dbBlock* block)
 {
   addOwner(block);  // register as a callback object
@@ -898,6 +1052,104 @@ void LayoutViewer::designLoaded(dbBlock* block)
 void LayoutViewer::setScroller(LayoutScroll* scroller)
 {
   scroller_ = scroller;
+}
+
+void LayoutViewer::addMenuAndActions()
+{
+  // Create Top Level Menu for the context Menu
+  auto select_menu = layout_context_menu_->addMenu(tr("Select"));
+  auto highlight_menu = layout_context_menu_->addMenu(tr("Highlight"));
+  auto congestion_menu = layout_context_menu_->addMenu(tr("Congestion"));
+  auto view_menu = layout_context_menu_->addMenu(tr("View"));
+  auto clear_menu = layout_context_menu_->addMenu(tr("Clear"));
+  // Create Actions
+
+  // Select Actions
+  menu_actions_[SELECT_CONNECTED_INST_ACT]
+      = select_menu->addAction(tr("Connected Insts"));
+  menu_actions_[SELECT_OUTPUT_NETS_ACT]
+      = select_menu->addAction(tr("Output Nets"));
+  menu_actions_[SELECT_INPUT_NETS_ACT]
+      = select_menu->addAction(tr("Input Nets"));
+  menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
+
+  // Highlight Actions
+  menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
+      = highlight_menu->addAction(tr("Connected Insts"));
+  menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]
+      = highlight_menu->addAction(tr("Output Nets"));
+  menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]
+      = highlight_menu->addAction(tr("Input Nets"));
+  menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
+      = highlight_menu->addAction(tr("All Nets"));
+
+  // View Actions
+  menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
+  menu_actions_[VIEW_ZOOMOUT_ACT] = view_menu->addAction(tr("Zoom Out"));
+  menu_actions_[VIEW_ZOOMFIT_ACT] = view_menu->addAction(tr("Fit"));
+
+  // Clear Actions
+  menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
+  menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
+  menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
+
+  // Connect Slots to Actions...
+  connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedInst(true); });
+  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(true, true, false); });
+  connect(menu_actions_[SELECT_INPUT_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(true, false, true); });
+  connect(
+      menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
+        this->selectHighlightConnectedNets(true, true, true);
+      });
+
+  connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedInst(false); });
+  connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(false, true, false); });
+  connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(false, false, true); });
+  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { this->selectHighlightConnectedNets(false, true, true); });
+
+  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
+    this->zoomIn();
+  });
+  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, this, [this]() {
+    this->zoomOut();
+  });
+  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
+    this->fit();
+  });
+
+  connect(
+      menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, [this]() {
+        Gui::get()->clearSelections();
+      });
+  connect(
+      menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, [this]() {
+        Gui::get()->clearHighlights(-1);
+      });
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+    Gui::get()->clearSelections();
+    Gui::get()->clearHighlights(-1);
+  });
 }
 
 ////// LayoutScroll ///////
@@ -982,4 +1234,6 @@ void LayoutViewer::inDbFillCreate(dbFill* fill)
   update();
 }
 
+
 }  // namespace gui
+

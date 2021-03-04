@@ -1,0 +1,380 @@
+{
+  "name": "dbTechLayerCutSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "_center_to_center",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_cut_spacing",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name": "_same_net",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_same_metal",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_same_via",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "uint",
+      "name": "_cut_spacing_type",
+      "flags": ["no-get","no-set"],
+      "bits":3
+    },
+    {
+      "type": "dbId<_dbTechLayer>",
+      "name": "_second_layer",
+      "flags": ["no-get"],
+      "parent": "dbTechLayer"
+    },
+    {
+      "type": "bool",
+      "name": "_stack",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_orthogonal_spacing_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_above_width_enclosure_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_orthogonal_spacing",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name": "_short_edge_only",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_concave_corner_width",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_concave_corner_parallel",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_concave_corner_edge_length",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_width",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_enclosure",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_edge_length",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_par_within",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_par_enclosure",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_edge_enclosure",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_adj_enclosure",
+      "flags": []
+    },
+    {
+      "type": "bool",
+      "name": "_concave_corner",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_extension_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_non_eol_convex_corner",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_eol_width_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_min_length_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_above_width_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_mask_overlap",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_wrong_direction",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "int",
+      "name": "_above_enclosure",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_above_width",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_min_length",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_extension",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_eol_width",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "_adjacent_cuts",
+      "flags": [],
+      "bits":2
+    },
+    {
+      "type": "bool",
+      "name": "_exact_aligned",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "uint",
+      "name": "_num_cuts",
+      "flags": [],
+      "comment":"// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts"
+    },
+    {
+      "type": "int",
+      "name": "_within",
+      "flags": [],
+      "comment":"// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin"
+    },
+    {
+      "type": "int",
+      "name": "_second_within",
+      "flags": [],
+      "comment":"// WITHIN cutWithin cutWithin2"
+    },
+    {
+      "type": "bool",
+      "name": "_cut_class_to_all",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_no_prl",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_same_mask",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_pgnet",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "_cut_class",
+      "flags": ["no-get"],
+      "parent": "dbTechLayer"
+    },
+    {
+      "type": "bool",
+      "name": "_side_parallel_overlap",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_net",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_metal",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_metal_overlap",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_same_via",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_above",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_except_two_edges",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_two_cuts_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_same_cut",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_long_edge_only",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_prl_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_below",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "bool",
+      "name": "_par_within_enclosure_valid",
+      "flags": [],
+      "bits":1
+    },
+    {
+      "type": "uint",
+      "name": "_two_cuts",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "_prl",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "_par_length",
+      "flags": []
+    },
+    {
+      "type": "int",
+      "name": "_cut_area",
+      "flags": []
+    }
+
+  ],
+  "constructors": [],
+  "enums":[
+    {
+      "name":"CutSpacingType",
+      "values":[
+        "NONE",
+        "MAXXY",
+        "SAMEMASK",
+        "LAYER",
+        "ADJACENTCUTS",
+        "PARALLELOVERLAP",
+        "PARALLELWITHIN",
+        "SAMEMETALSHAREDEDGE",
+        "AREA"
+      ],
+      "public":true
+    }
+  ],
+  "cpp_includes":["dbTechLayer.h"]
+}

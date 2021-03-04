@@ -37,7 +37,7 @@
 #include "db/tech/frLayer.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frViaRuleGenerate.h"
-
+#include "utility/Logger.h"
 namespace fr {
   namespace io {
     class Parser;
@@ -72,6 +72,9 @@ namespace fr {
     }
     frLayerNum getBottomLayerNum() const {
       return 0;
+    }
+    frLayerNum getBottomRoutingLayerNum() const {
+      return 2;     //Im not sure whether it is guaranteed that this is always true
     }
     frLayerNum getTopLayerNum() const {
       return (frLayerNum)((int)layers.size() - 1);
@@ -163,7 +166,7 @@ namespace fr {
         return name2via.at(name);
     }
     
-    frViaRuleGenerate* getViaRule(frString name){
+    frViaRuleGenerate* getViaRule(frString name) const{
         return name2viaRuleGenerate.at(name);
     }
     
@@ -171,68 +174,70 @@ namespace fr {
         nonDefaultRules.push_back(std::move(n));
     }
     
-    std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules(){
+    const std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules() const{
         return nonDefaultRules;
     }
     
     frNonDefaultRule* getNondefaultRule(string name){
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getName() == name) return nd.get();
+            if (nd->getName() == name)
+              return nd.get();
         }
         return nullptr;
     }
+    
     frCoord getMaxNondefaultSpacing(int z){
         frCoord spc = 0;
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getSpacing(z) > spc) spc = nd->getSpacing(z);
+            if (nd->getSpacing(z) > spc) 
+              spc = nd->getSpacing(z);
         }
         return spc;
     }
+    
     frCoord getMaxNondefaultWidth(int z){
         frCoord spc = 0;
         for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules){
-            if (nd->getWidth(z) > spc) spc = nd->getWidth(z);
+            if (nd->getWidth(z) > spc) 
+              spc = nd->getWidth(z);
         }
         return spc;
     }
+    
     bool hasNondefaultRules(){
         return !nonDefaultRules.empty();
     }
-//    frViaDef* getPrefVia(frLayerNum l, frNet* n){
-//        if (n && n->getNondefaultRule() && n->getNondefaultRule()->getPrefVia(l/2 -1))
-//            return n->getNondefaultRule()->getPrefVia(l/2 -1);
-//        return getLayer(l)->getDefaultViaDef();
-//    }
+
     // debug
-    void printAllConstraints() {
-      std::cout << "List of Constraints:\n";
-      for (auto &layer: layers) {
-        std::cout << "  Layer " << layer->getName() << "\n";
-        for (auto &constraint: layer->getConstraints()) {
-          if (std::dynamic_pointer_cast<frCutSpacingConstraint>(constraint)) {
-            std::cout << "    CUT SPACING " << std::dynamic_pointer_cast<frCutSpacingConstraint>(constraint)->getCutSpacing() * 1.0 / dbUnit << "\n";
-          }
-          if (std::dynamic_pointer_cast<frSpacingConstraint>(constraint)) {
-            std::cout << "    ROUTING SPACING " << std::dynamic_pointer_cast<frSpacingConstraint>(constraint)->getMinSpacing() * 1.0 / dbUnit << "\n"; 
-          }
-        }
+    void printAllConstraints(utl::Logger* logger) {
+      logger->report("Reporting Layer Properties");
+      for(auto &layer: layers)
+      {
+        auto type = layer->getType();
+        if(type == frLayerTypeEnum::CUT)
+          logger->report("Cut Layer {}",layer->getName());
+        else if(type == frLayerTypeEnum::ROUTING)
+          logger->report("Routing Layer {}",layer->getName());
+        layer->printAllConstraints(logger);
       }
     }
 
-    void printDefaultVias() {
-      std::cout << "List of default vias:\n";
+    void printDefaultVias(Logger* logger) {
+      logger->info(DRT, 167, "List of default vias:");
       for (auto &layer: layers) {
         if (layer->getType() == frLayerTypeEnum::CUT && layer->getLayerNum() >= 2/*BOTTOM_ROUTING_LAYER*/) {
-          std::cout << "  Layer " << layer->getName() << "\n" << std::flush;
-          std::cout << "    default via: " << layer->getDefaultViaDef()->getName() << "\n";
+          logger->report("  Layer {}", layer->getName());
+          logger->report("    default via: {}", layer->getDefaultViaDef()->getName());
         }
       }
-    }     
+    }   
 
     friend class io::Parser;
   protected:
+    
     frUInt4                                          dbUnit;
     frUInt4                                          manufacturingGrid;
+    
 
     std::map<frString, frLayer*>                     name2layer;
     std::vector<std::unique_ptr<frLayer> >           layers;

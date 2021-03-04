@@ -59,6 +59,12 @@ void detailed_route_cmd(const char* param_file)
   router->main();
 }
 
+void report_constraints()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->reportConstraints();
+}
+
 void
 set_detailed_route_debug_cmd(const char* net_name,
                              const char* pin_name,
@@ -66,7 +72,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa,
                              bool maze,
                              int gcell_x, int gcell_y,
-                             int iter)
+                             int iter,
+                             bool pa_markers)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -78,6 +85,7 @@ set_detailed_route_debug_cmd(const char* net_name,
     router->setDebugGCell(gcell_x, gcell_y);
   }
   router->setDebugIter(iter);
+  router->setDebugPaMarkers(pa_markers);
 }
 
 %} // inline

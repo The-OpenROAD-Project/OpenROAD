@@ -1,0 +1,19 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN multi_height_multi_port_rails ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 128805 25000 ) ;
+ROW ROW_0 unithd 5520 10880 FS DO 256 BY 1 STEP 460 0 ;
+ROW ROW_1 unithd 5520 13600 N DO 256 BY 1 STEP 460 0 ;
+ROW ROW_2 unithd 5520 16320 FS DO 256 BY 1 STEP 460 0 ;
+ROW ROW_3 unithd 5520 19040 N DO 256 BY 1 STEP 460 0 ;
+ROW ROW_4 unithd 5520 21760 FS DO 256 BY 1 STEP 460 0 ;
+COMPONENTS 3 ;
+    - double sky130_fd_sc_hd__buf_1_double + PLACED ( 69920 13600 ) N ;
+    - single sky130_fd_sc_hd__buf_1_single + PLACED ( 71760 16320 ) N ;
+    - triple sky130_fd_sc_hd__buf_1_triple + PLACED ( 68540 13600 ) FS ;
+END COMPONENTS
+NETS 0 ;
+END NETS
+END DESIGN

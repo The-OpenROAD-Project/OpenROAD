@@ -1,0 +1,22 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: aes_cipher_top_replace.def
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 391 pins.
+[INFO ODB-0131]     Created 21340 components and 108388 component-terminals.
+[INFO ODB-0133]     Created 19675 nets and 65708 connections.
+[INFO ODB-0134] Finished DEF file: aes_cipher_top_replace.def
+[WARNING DPL-0011] Could not find power special net.
+Placement Analysis
+---------------------------------
+total displacement      16983.1 u
+average displacement        0.8 u
+max displacement            5.9 u
+original HPWL          363775.2 u
+legalized HPWL         372201.2 u
+delta HPWL                    2 %
+
+No differences found.

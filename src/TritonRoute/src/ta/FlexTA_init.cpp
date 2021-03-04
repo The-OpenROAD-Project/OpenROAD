@@ -427,7 +427,6 @@ void FlexTAWorker::initIroute(frGuide *guide) {
   }
 
   unique_ptr<taPinFig> ps = make_unique<taPathSeg>();
-//  cout << guide->getNet()->getName() << "\n";
   ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {
@@ -800,8 +799,7 @@ void FlexTAWorker::initFixedObjs() {
           } else {
             auto inst = (static_cast<frInstBlockage*>(obj))->getInst();
             if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
-                inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+                isPad(inst->getRefBlock()->getMacroClass()) ||
                 inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
               isMacro = true;
             }

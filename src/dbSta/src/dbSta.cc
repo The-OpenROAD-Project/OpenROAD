@@ -58,7 +58,6 @@
 #include "opendb/db.h"
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
 #include "utility/Logger.h"
 
 #include "gui/gui.h"
@@ -196,7 +195,7 @@ extern "C" {
 extern int Dbsta_Init(Tcl_Interp *interp);
 }
 
-extern const char *dbsta_tcl_inits[];
+extern const char *dbSta_tcl_inits[];
 
 dbSta::dbSta() :
   Sta(),
@@ -229,7 +228,7 @@ dbSta::init(Tcl_Interp *tcl_interp,
   // Define swig TCL commands.
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  evalTclInit(tcl_interp, dbsta_tcl_inits);
+  evalTclInit(tcl_interp, dbSta_tcl_inits);
 }
 
 // Wrapper to init network db.

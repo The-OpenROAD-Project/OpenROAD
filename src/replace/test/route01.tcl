@@ -1,12 +1,7 @@
 source helpers.tcl
-set test_name medium01 
-read_lef ./nangate45.lef
-read_def ./$test_name.def
+read_lef nangate45.lef
+read_def medium01.def
 
-#  grt::set_layer_adjustment 0.5
-
-#grt::add_layer_adjustment 0 1.0
-#grt::add_layer_adjustment 1 1.0
 grt::add_layer_adjustment 2 0.4
 grt::add_layer_adjustment 3 0.4
 grt::add_layer_adjustment 4 0.2
@@ -20,6 +15,8 @@ grt::add_layer_adjustment 10 0.2
 grt::set_unidirectional_routing true
 
 # fastroute -write_route -write_est -max_routing_layer 3
-global_placement -verbose 1  -skip_initial_place  -density 0.5 -pad_left 1 -pad_right 1 -routability_rc_coefficients {1 1 0 0}
-
-exit
+global_placement -routability_driven \
+  -routability_rc_coefficients {1 1 0 0} \
+  -verbose 1 \
+  -skip_initial_place -density 0.5 \
+  -pad_left 1 -pad_right 1 

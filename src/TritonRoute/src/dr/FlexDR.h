@@ -206,7 +206,7 @@ namespace fr {
                       frUInt4 workerMarkerBloatWidth = 0, frUInt4 workerMarkerBloatDepth = 0,
                       bool enableDRC = false, int ripupMode = 1, bool followGuide = true, 
                       int fixMode = 0, bool TEST = false);
-    void end();
+    void end(bool writeMetrics = false);
 
     // utility
     void reportDRC();
@@ -501,6 +501,10 @@ namespace fr {
     // others
     int getNumQuickMarkers();
     
+    Logger* getLogger(){
+        return logger_;
+    }
+    
   protected:
     typedef struct {
       frBlockObject* block;
@@ -761,7 +765,7 @@ namespace fr {
                                             std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox);
     void        setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
                                 frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next);
-    bool        isInsideTaperBox(frMIdx x, frMIdx y, frMIdx startZ, frMIdx endZ, std::vector<FlexMazeIdx> &points, int i, map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+    bool        isInsideTaperBox(frMIdx x, frMIdx y, frMIdx startZ, frMIdx endZ, map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
     bool splitPathSeg(frMIdx& midX, frMIdx& midY, bool& taperFirstPiece, frMIdx startX, frMIdx startY, frMIdx endX, frMIdx endY, frMIdx z,
                         frBox3D* srcBox, frBox3D* dstBox, drNet* net);
     void processPathSeg(frMIdx startX, frMIdx startY, frMIdx endX, frMIdx endY, frMIdx z, const set<FlexMazeIdx> &apMazeIdx, drNet* net,

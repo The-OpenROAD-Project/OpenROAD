@@ -33,8 +33,8 @@
 #pragma once
 
 #include "odb.h"
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 namespace odb {
 
@@ -74,7 +74,6 @@ enum dbObjectType
   dbITermObj,
   dbBoxObj,
   dbViaObj,
-  dbGCellGridObj,
   dbTrackGridObj,
   dbObstructionObj,
   dbBlockageObj,
@@ -90,10 +89,19 @@ enum dbObjectType
   dbHierObj,
   dbBPinObj,
   // Generator Code Begin 1
+  dbTechLayerObj,
   dbTechLayerSpacingEolRuleObj,
+  dbTechLayerMinStepRuleObj,
+  dbTechLayerCornerSpacingRuleObj,
+  dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerCutClassRuleObj,
+  dbTechLayerCutSpacingRuleObj,
+  dbTechLayerCutSpacingTableOrthRuleObj,
+  dbTechLayerCutSpacingTableDefRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,
+  dbGCellGridObj,
   // Generator Code End 1
 
   // Lib Objects
@@ -107,7 +115,6 @@ enum dbObjectType
 
   // Tech Objects
   dbTechObj,
-  dbTechLayerObj,
   dbTechViaObj,
   dbTechNonDefaultRuleObj,  // also a design object
   dbTechLayerRuleObj,       // also a design object

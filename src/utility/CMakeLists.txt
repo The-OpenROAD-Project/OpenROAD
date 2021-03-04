@@ -13,19 +13,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-############################################################
-# Create a library 
-############################################################
-add_library( utility
-  src/Logger.cpp
-)
-  
-target_include_directories( utility
-  PUBLIC
-  ${UTILITY_HOME}/include
+include("openroad")
+
+tcl_lib(NAME      utility
+        NAMESPACE utl
+        I_FILE    src/Logger.i
 )
 
-target_link_libraries( utility
+target_sources(utility
+  PRIVATE
+    src/Logger.cpp
+    src/MakeLogger.cpp
+)
+  
+target_include_directories(utility
   PUBLIC
-  spdlog::spdlog
+    include
+)
+
+target_link_libraries(utility
+  PUBLIC
+    spdlog::spdlog
 )

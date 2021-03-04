@@ -33,8 +33,9 @@
 #pragma once
 
 #include "odb.h"
-
+#include <string>
 #include <list>
+#include <vector>
 
 namespace utl {
   class Logger;
@@ -104,6 +105,7 @@ class lefin
   bool         _override_lef_dbu;
   bool         _master_modified;
   bool         _ignore_non_routing_layers;
+  std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props; 
 
   void init();
   void setDBUPerMicron(int dbu);

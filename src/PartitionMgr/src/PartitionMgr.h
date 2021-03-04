@@ -35,12 +35,19 @@
 
 #include "HypergraphDecomposition.h"
 
+
 namespace odb {
 class dbDatabase;
 class dbChip;
 class dbBlock;
 class dbNet;
 }  // namespace odb
+
+namespace utl {
+class Logger;
+}
+
+using utl::Logger;
 
 namespace par {
 
@@ -130,7 +137,7 @@ class PartOptions
   bool _termProp = false;
   double _cutHopRatio = 1.0;
   std::string _tool = "chaco";
-  GraphType _graphModel = STAR;
+  GraphType _graphModel = HYPERGRAPH;
   std::string _evaluationFunction = "hyperedges";
   unsigned _cliqueThreshold = 50;
   unsigned _weightModel = 1;
@@ -219,6 +226,7 @@ class PartitionMgr
   PartOptions _options;
   unsigned _dbId = 0;
   unsigned _bestId = 0;
+  Logger * _logger;
   Graph _graph;
   Hypergraph _hypergraph;
   std::vector<PartSolutions> _results;
@@ -226,6 +234,7 @@ class PartitionMgr
 
  public:
   PartitionMgr() = default;
+  void init(unsigned dbId, Logger* logger);
   void runPartitioning();
   void runClustering();
   void run3PClustering();
@@ -241,10 +250,9 @@ class PartitionMgr
   PartOptions& getOptions() { return _options; }
   unsigned getCurrentId() { return (_results.size() - 1); }
   unsigned getCurrentClusId() { return (_clusResults.size() - 1); }
-  void setDbId(unsigned id) { _dbId = id; }
   void toGraph();
   void toHypergraph();
-  void hypergraph();
+  void hypergraph(bool buildGraph = false);
   unsigned generatePartitionId();
   unsigned generateClusterId();
   void computePartitionResult(unsigned partitionId, std::string function);
@@ -258,6 +266,7 @@ class PartitionMgr
   void dumpClusIdToFile(std::string name);
   void reportNetlistPartitions(unsigned partitionId);
   void readPartitioningFile(std::string filename);
+  void reportGraph();
 };
 
 }  // namespace par

@@ -32,13 +32,8 @@
 using namespace std;
 using namespace fr;
 
-string DEF_FILE;
 string GUIDE_FILE;
 string OUTGUIDE_FILE;
-string LEF_FILE;
-string OUTTA_FILE;
-string OUT_FILE;
-string REF_OUT_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
@@ -107,9 +102,6 @@ int HISTCOST = 32;
 
 namespace fr {
 
-    void ERROR(std::string s){
-        throw logic_error(s);
-    }
     
 ostream& operator<< (ostream& os, const frPoint &pIn) {
   os <<"( " <<pIn.x() <<" " <<pIn.y() <<" )";

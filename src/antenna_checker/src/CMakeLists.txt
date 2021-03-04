@@ -29,35 +29,28 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-set(ANTENNACHECKER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/AntennaChecker_wrap.cc)
-set(ANTENNACHECKER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/AntennaCheckerTclInitVar.cc)
+include("openroad")
 
-add_custom_command(OUTPUT ${ANTENNACHECKER_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ant -I${OPENROAD_HOME}/include -o ${ANTENNACHECKER_WRAP} ${ANTENNACHECKER_HOME}/src/AntennaChecker.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${CMAKE_CURRENT_BINARY_DIR}/AntennaChecker_wrap.cc
-  WORKING_DIRECTORY ${ANTENNACHECKER_HOME}/src
-  DEPENDS ${ANTENNACHECKER_HOME}/src/AntennaChecker.i
-  )
+tcl_lib(NAME      antennachecker
+        NAMESPACE ant
+        I_FILE    AntennaChecker.i
+        SCRIPTS   AntennaChecker.tcl
+)
 
-add_custom_command(OUTPUT ${ANTENNACHECKER_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${ANTENNACHECKER_TCL_INIT} antennachecker_tcl_inits AntennaChecker.tcl
-  WORKING_DIRECTORY ${ANTENNACHECKER_HOME}/src
-  DEPENDS AntennaChecker.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-add_library(antennachecker
-  MakeAntennaChecker.cc
-  AntennaChecker.cc
-  ${ANTENNACHECKER_WRAP}
-  ${ANTENNACHECKER_TCL_INIT}
-  )
+target_sources(antennachecker
+  PRIVATE
+    MakeAntennaChecker.cc
+    AntennaChecker.cc
+)
 
 target_include_directories(antennachecker
-  PUBLIC ${ANTENNACHECKER_HOME}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${OPENSTA_HOME}/app
-  ${TCL_INCLUDE_PATH}
-  )
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(antennachecker
+  PUBLIC
+    opendb
+    OpenSTA
+    utility
+)

@@ -32,24 +32,24 @@ proc define_tool_script { tool script } {
   dict set tool_scripts [string tolower $tool] $script
 }
 
-define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
-define_tool_script "init_fp" "src/init_fp/test/regression"
+define_tool_script "ifp" "src/ifp/test/regression"
 define_tool_script "dbSta" "src/dbSta/test/regression"
 define_tool_script "IoPlacer" "src/ioPlacer/test/regression"
 define_tool_script "PDNgen" "src/pdngen/test/regression"
 define_tool_script "ICeWall" "src/ICeWall/test/regression"
-define_tool_script "TritonMacroPlace" "src/TritonMacroPlace/test/regression"
-define_tool_script "Resizer" "src/resizer/test/regression"
+define_tool_script "mpl" "src/mpl/test/regression"
+define_tool_script "rsz" "src/rsz/test/regression"
 define_tool_script "Replace" "src/replace/test/regression"
 define_tool_script "TritonCTS" "src/TritonCTS/test/regression"
-define_tool_script "OpenDP" "src/opendp/test/regression"
+define_tool_script "dpl" "src/dpl/test/regression"
 define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"
 define_tool_script "antenna_checker" "src/antenna_checker/test/regression"
-define_tool_script "OpenDB" "src/OpenDB/tests/regression"
+define_tool_script "OpenDB" "src/OpenDB/test/regression"
 define_tool_script "OpenRCX" "src/OpenRCX/test/regression"
-
+define_tool_script "PartitionMgr" "src/PartitionMgr/test/regression"
+define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
@@ -130,6 +130,7 @@ if { $argv == {} } {
 
     if { !$matched } {
       puts "$arg is not an openroad test or tool name."
+      incr tool_errors
     }
   }
 }
