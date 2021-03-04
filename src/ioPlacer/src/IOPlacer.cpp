@@ -81,7 +81,6 @@ void IOPlacer::initParms()
   report_hpwl_ = false;
   slots_per_section_ = 200;
   slots_increase_factor_ = 0.01f;
-  usage_per_section_ = 1;
   usage_increase_factor_ = 0.01f;
   force_pin_spread_ = true;
   netlist_ = Netlist();
@@ -101,9 +100,6 @@ void IOPlacer::initParms()
 
   if (parms_->getSlotsFactor() > -1) {
     slots_increase_factor_ = parms_->getSlotsFactor();
-  }
-  if (parms_->getUsage() > -1) {
-    usage_per_section_ = parms_->getUsage();
   }
   if (parms_->getUsageFactor() > -1) {
     usage_increase_factor_ = parms_->getUsageFactor();
@@ -383,11 +379,8 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
                                                [&](Slot s) {
                                                   return s.edge != edge;
                                                });
-  int edge_end = it - slots_.begin();
-  if (edge_end != slots_.size()-1)
-    edge_end--;
+  int edge_end = it - slots_.begin() - 1;
 
-  int begin_slot = 0;
   int end_slot = 0;
   while (end_slot < edge_end) {
     int blocked_slots = 0;
@@ -402,25 +395,13 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
     }
     int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
     Section n_sec = {slots_.at(half_length_pt).pos};
-    if (usage_per_section_ > 1.f) {
-      logger_->warn(PPL, 35, "section usage exeeded max");
-      usage_per_section_ = 1.;
-      logger_->report("Forcing slots per section to increase");
-      if (slots_increase_factor_ != 0.0f) {
-        slots_per_section_ *= (1 + slots_increase_factor_);
-      } else if (usage_increase_factor_ != 0.0f) {
-        slots_per_section_ *= (1 + usage_increase_factor_);
-      } else {
-        slots_per_section_ *= 1.1;
-      }
-    }
     n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots");
     }
     n_sec.begin_slot = edge_begin;
     n_sec.end_slot = end_slot;
-    n_sec.max_slots = n_sec.num_slots * usage_per_section_;
+    n_sec.max_slots = n_sec.num_slots;
     n_sec.cur_slots = 0;
     n_sec.edge = edge;
 
@@ -557,7 +538,6 @@ void IOPlacer::printConfig()
   logger_->info(PPL, 4, " * Num of I/O w/o sink   {}", zero_sink_ios_.size());
   logger_->info(PPL, 5, " * Slots Per Section     {}", slots_per_section_);
   logger_->info(PPL, 6, " * Slots Increase Factor {:.1}", slots_increase_factor_);
-  logger_->info(PPL, 7, " * Usage Per Section     {:.1}", usage_per_section_);
   logger_->info(PPL, 8, " * Usage Increase Factor {:.1}", usage_increase_factor_);
   logger_->info(PPL, 9, " * Force Pin Spread      {}", force_pin_spread_);
 }
@@ -573,7 +553,6 @@ void IOPlacer::setupSections()
 
     all_assigned = assignPinsSections();
 
-    usage_per_section_ *= (1 + usage_increase_factor_);
     slots_per_section_ *= (1 + slots_increase_factor_);
     if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
       logger_->warn(PPL,

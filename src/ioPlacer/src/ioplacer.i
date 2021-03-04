@@ -74,12 +74,6 @@ set_force_spread(bool force)
 }
 
 void
-set_usage(float usage)
-{
-  getIOPlacer()->getParameters()->setUsage(usage);
-}
-
-void
 set_usage_factor(float usage)
 {
   getIOPlacer()->getParameters()->setUsageFactor(usage);

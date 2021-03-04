@@ -52,9 +52,6 @@ class Parameters
   void setSlotsFactor(float factor) { slots_factor_ = factor; }
   float getSlotsFactor() const { return slots_factor_; }
 
-  void setUsage(float usage) { usage_ = usage; }
-  float getUsage() const { return usage_; }
-
   void setUsageFactor(float factor) { usage_factor_ = factor; }
   float getUsageFactor() const { return usage_factor_; }
 

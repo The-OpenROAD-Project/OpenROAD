@@ -137,8 +137,6 @@ class IOPlacer
 
   int slots_per_section_;
   float slots_increase_factor_;
-
-  float usage_per_section_;
   float usage_increase_factor_;
 
   bool force_pin_spread_;
