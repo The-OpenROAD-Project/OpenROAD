@@ -219,7 +219,7 @@ class definReader : public definBase
                          defiUserData       data);
 
  public:
-  definReader(dbDatabase* db, utl::Logger* logger);
+  definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode = defin::DEFAULT);
   virtual ~definReader();
 
   void skipConnections();

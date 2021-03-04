@@ -35,8 +35,8 @@
 #include <vector>
 
 #include "odb.h"
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 
 namespace odb {
@@ -52,9 +52,14 @@ class defin
 {
   definReader* _reader;
 
-
  public:
-  defin(dbDatabase* db, utl::Logger* logger);
+  enum MODE
+  {
+    DEFAULT,     // creates db from scratch (from def)
+    FLOORPLAN,   // update existing COMPONENTS PINS DIEAREA TRACKS ROWS NETS SNETS
+    INCREMENTAL  // update existing COMPONENTS PINS
+  };
+  defin(dbDatabase* db, utl::Logger* logger, MODE mode = DEFAULT);
   ~defin();
 
   void skipWires();
@@ -81,5 +86,3 @@ class defin
 };
 
 }  // namespace odb
-
-
