@@ -46,6 +46,10 @@ if (Qt5_FOUND)
 else()
   message(STATUS "GUI is not enabled")
   add_library(gui src/stub.cpp)
+  target_link_libraries(gui
+    PUBLIC
+      opendb
+  )
 endif()
 
 target_include_directories(gui
