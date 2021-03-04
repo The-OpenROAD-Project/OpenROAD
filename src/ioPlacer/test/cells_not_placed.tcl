@@ -6,7 +6,7 @@ read_def cells_not_placed.def
 set_io_pin_constraint -direction INPUT -region top:*
 set_io_pin_constraint -direction OUTPUT -region bottom:*
 
-place_pins -hor_layers 2 -ver_layers 3 -boundaries_offset 1
+place_pins -hor_layers 2 -ver_layers 3
 
 set def_file [make_result_file cells_not_placed.def]
 

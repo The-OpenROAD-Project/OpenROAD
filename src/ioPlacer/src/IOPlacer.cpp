@@ -253,7 +253,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int min = vertical ? lb_x : lb_y;
   int max = vertical ? ub_x : ub_y;
 
-  int offset = parms_->getBoundariesOffset() * core_.getDatabaseUnit();
+  int offset = parms_->getCornerAvoidance() * core_.getDatabaseUnit();
 
   int i = 0;
   for (int layer : layers) {

@@ -98,8 +98,8 @@ class Parameters
     return vertical_thickness_multiplier_;
   }
 
-  void setBoundariesOffset(int offset) { boundaries_offset_ = offset; }
-  int getBoundariesOffset() const { return boundaries_offset_; }
+  void setCornerAvoidance(int length) { corner_avoidance_ = length; }
+  int getCornerAvoidance() const { return corner_avoidance_; }
 
   void setMinDistance(int min_dist) { min_dist_ = min_dist; }
   int getMinDistance() const { return min_dist_; }
@@ -118,7 +118,7 @@ class Parameters
   float horizontal_length_ = -1;
   float vertical_length_ = -1;
   double rand_seed_ = 42.0;
-  int boundaries_offset_;
+  int corner_avoidance_;
   int min_dist_;
 };
 
