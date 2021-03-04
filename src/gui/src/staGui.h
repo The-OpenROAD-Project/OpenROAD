@@ -39,10 +39,10 @@
 
 #include "gui/gui.h"
 #include "opendb/db.h"
+#include "opendb/dbBlockCallBackObj.h"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/Sta.hh"
-#include "opendb/dbBlockCallBackObj.h"
 namespace odb {
 class dbBlock;
 class dbFill;
@@ -58,7 +58,7 @@ class dbObstruction;
 class dbRegion;
 class dbRow;
 class dbSWire;
-}
+}  // namespace odb
 namespace ord {
 class OpenRoad;
 }
@@ -72,6 +72,7 @@ class TimingPathsModel;
 class TimingPathNode;
 class TimingPath;
 class TimingPathDetailModel;
+class GuiDBChangeListener;
 
 class TimingPathsModel : public QAbstractTableModel
 {
@@ -144,27 +145,24 @@ class TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath() : path_exp_(nullptr) {}
+  TimingPath() {}
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
-  void setStartClock(const char* name) { startClk_ = name; }
-  std::string getStartClock() const { return startClk_; }
-  void setEndClock(const char* name) { endClk_ = name; }
-  std::string getEndClock() const { return endClk_; }
+  void setStartClock(const char* name) { start_clk_ = name; }
+  std::string getStartClock() const { return start_clk_; }
+  void setEndClock(const char* name) { end_clk_ = name; }
+  std::string getEndClock() const { return end_clk_; }
 
   // Time will be returned in in nano seconds
-  float getPathArrivalTime() const { return arrTime_; }
-  void setArrTime(float arr) { arrTime_ = arr; }
-  float getPathRequiredTime() const { return reqTime_; }
-  void setReqTime(float req) { reqTime_ = req; }
+  float getPathArrivalTime() const { return arr_time_; }
+  void setArrTime(float arr) { arr_time_ = arr; }
+  float getPathRequiredTime() const { return req_time_; }
+  void setReqTime(float req) { req_time_ = req; }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
-  float getPathDelay() const { return pathDelay_; }
-  void setPathDelay(float del) { pathDelay_ = del; }
-
-  void setPathExp(sta::PathExpanded* path_exp) { path_exp_ = path_exp; }
-  sta::PathExpanded* getPathExp() { return path_exp_; }
+  float getPathDelay() const { return path_delay_; }
+  void setPathDelay(float del) { path_delay_ = del; }
 
   TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
 
@@ -175,13 +173,12 @@ class TimingPath
 
  private:
   std::vector<TimingPathNode> path_nodes_;
-  sta::PathExpanded* path_exp_;
-  std::string startClk_;
-  std::string endClk_;
+  std::string start_clk_;
+  std::string end_clk_;
   float slack_;
-  float pathDelay_;
-  float arrTime_;
-  float reqTime_;
+  float path_delay_;
+  float arr_time_;
+  float req_time_;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
@@ -214,14 +211,17 @@ class TimingPathRenderer : public gui::Renderer
   TimingPathRenderer();
   ~TimingPathRenderer();
   void highlight(TimingPath* path);
-  void highlightInstNode(TimingPathNode node);
-  void drawObjectsNative(gui::Painter& /* painter */);
+
+  void highlightNode(int node_id);
   virtual void drawObjects(gui::Painter& /* painter */) override;
+
+  TimingPath* getPathToRender() { return path_; }
 
  private:
   void highlightInst(odb::dbInst* inst,
                      gui::Painter& painter,
                      const gui::Painter::Color& color);
+  void highlightStage(gui::Painter& painter);
   void highlightTerm(odb::dbBTerm* term, gui::Painter& painter);
   void highlightNet(odb::dbNet* net,
                     odb::dbObject* source_node,
@@ -230,7 +230,8 @@ class TimingPathRenderer : public gui::Renderer
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
-  std::vector<odb::dbInst*> highlight_inst_nodes_;
+
+  int highlight_node_;
 
   static gui::Painter::Color inst_highlight_color_;
   static gui::Painter::Color path_inst_color_;
@@ -239,41 +240,111 @@ class TimingPathRenderer : public gui::Renderer
   static gui::Painter::Color clock_color_;
 };
 
-class guiCallbacks : public odb::dbBlockCallBackObj
+class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
-public:
-  guiCallbacks(): isDirty(false) { }
-  void inDbInstCreate(odb::dbInst *inst) { cbk(); }
-  void inDbInstDestroy(odb::dbInst *inst) { cbk(); }
-  void inDbInstSwapMasterBefore(odb::dbInst *inst,
-                                odb::dbMaster *master) { cbk(); }
-  void inDbInstSwapMasterAfter(odb::dbInst *inst) { cbk(); }
-  void inDbNetCreate(odb::dbNet* n) { cbk(); }
-  void inDbNetDestroy(odb::dbNet *net) { cbk(); }
-  void inDbITermPostConnect(odb::dbITerm *iterm) { cbk(); }
-  void inDbITermPreDisconnect(odb::dbITerm *iterm) { cbk(); }
-  void inDbITermDestroy(odb::dbITerm *iterm) { cbk(); }
-  void inDbBTermPostConnect(odb::dbBTerm *bterm) { cbk(); }
-  void inDbBTermPreDisconnect(odb::dbBTerm *bterm) { cbk(); }
-  void inDbBTermDestroy(odb::dbBTerm *bterm) { cbk(); }
-  void inDbWireCreate(odb::dbWire* w) { cbk(); }
-  void inDbWireDestroy(odb::dbWire* w) { cbk(); }
-  void inDbBlockageCreate(odb::dbBlockage* b) { cbk(); }
-  void inDbObstructionCreate(odb::dbObstruction* o) { cbk(); }
-  void inDbObstructionDestroy(odb::dbObstruction* o) { cbk(); }
-  void inDbBlockStreamOutAfter(odb::dbBlock* b) { cbk(); }
-  void inDbFillCreate(odb::dbFill* f) { cbk(); }
-  void reset() {
+  Q_OBJECT
+ public:
+  GuiDBChangeListener() : isDirty(false) {}
+
+  void inDbInstCreate(odb::dbInst* inst) override
+  {
+    callback("inDbInstCreate", inst);
+  }
+  void inDbInstDestroy(odb::dbInst* inst) override
+  {
+    callback("inDbInstDestroy", inst);
+  }
+  void inDbInstSwapMasterBefore(odb::dbInst* inst,
+                                odb::dbMaster* master) override
+  {
+    callback("inDbInstSwapMasterBefore", inst, master);
+  }
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override
+  {
+    callback("inDbInstSwapMasterAfter", inst);
+  }
+  void inDbNetCreate(odb::dbNet* net) override
+  {
+    callback("inDbNetCreate", net);
+  }
+  void inDbNetDestroy(odb::dbNet* net) override
+  {
+    callback("inDbNetDestroy", net);
+  }
+  void inDbITermPostConnect(odb::dbITerm* iterm) override
+  {
+    callback("inDbITermPostConnect", iterm);
+  }
+  void inDbITermPreDisconnect(odb::dbITerm* iterm) override
+  {
+    callback("inDbITermPreDisconnect", iterm);
+  }
+  void inDbITermDestroy(odb::dbITerm* iterm) override
+  {
+    callback("inDbITermDestroy", iterm);
+  }
+  void inDbBTermPostConnect(odb::dbBTerm* bterm) override
+  {
+    callback("inDbBTermPostConnect", bterm);
+  }
+  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override
+  {
+    callback("inDbBTermPreDisconnect", bterm);
+  }
+  void inDbBTermDestroy(odb::dbBTerm* bterm) override
+  {
+    callback("inDbBTermDestroy", bterm);
+  }
+  void inDbWireCreate(odb::dbWire* wire) override
+  {
+    callback("inDbWireCreate", wire);
+  }
+  void inDbWireDestroy(odb::dbWire* wire) override
+  {
+    callback("inDbWireDestroy", wire);
+  }
+  void inDbBlockageCreate(odb::dbBlockage* blockage) override
+  {
+    callback("inDbBlockageCreate", blockage);
+  }
+  void inDbObstructionCreate(odb::dbObstruction* obstr) override
+  {
+    callback("inDbObstructionCreate", obstr);
+  }
+  void inDbObstructionDestroy(odb::dbObstruction* obstr) override
+  {
+    callback("inDbObstructionDestroy", obstr);
+  }
+  void inDbBlockStreamOutAfter(odb::dbBlock* block) override
+  {
+    callback("inDbBlockStreamOutAfter", block);
+  }
+  void inDbFillCreate(odb::dbFill* fill) override
+  {
+    callback("inDbFillCreate", fill);
+  }
+
+ signals:
+  void dbUpdated(QString update_type,
+                 std::vector<odb::dbObject*> update_objects);
+ public slots:
+  void reset()
+  {
     isDirty = false;
     // call reset after gui refresh
   }
-private:
-  void cbk() {
+
+ private:
+  void callback(QString update_type,
+                odb::dbObject* obj1 = nullptr,
+                odb::dbObject* obj2 = nullptr)
+  {
     if (isDirty == false) {
       // send signal if dirty was false
+      std::vector<odb::dbObject*> objects{obj1, obj2};
+      emit dbUpdated(update_type, objects);
       isDirty = true;
     }
-
   }
   bool isDirty;
 };

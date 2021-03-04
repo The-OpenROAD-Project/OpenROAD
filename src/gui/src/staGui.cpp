@@ -64,7 +64,7 @@
 namespace gui {
 
 gui::Painter::Color TimingPathRenderer::inst_highlight_color_
-    = gui::Painter::cyan;
+    = gui::Painter::dark_cyan;
 gui::Painter::Color TimingPathRenderer::path_inst_color_
     = gui::Painter::magenta;
 gui::Painter::Color TimingPathRenderer::term_color_ = gui::Painter::blue;
@@ -240,8 +240,8 @@ void TimingPathsModel::populateModel()
   endResetModel();
   qDebug() << "Timing Path Model populated with : " << timing_paths_.size()
            << " Paths...";
-  if (timing_paths_.size() > 0)
-    timing_paths_[7]->printPath("pathReport.csv");
+  // if (timing_paths_.size() > 0)
+  //  timing_paths_[7]->printPath("pathReport.csv");
 }
 
 bool TimingPathsModel::populatePaths(bool get_max, int path_count)
@@ -320,7 +320,6 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
           pinObject, is_rising, arrival, path_required, slack, slew, cap));
       first_path = false;
     }
-    path->setPathExp(expanded);
     timing_paths_.push_back(path);
   }
   QApplication::restoreOverrideCursor();
@@ -471,12 +470,7 @@ void TimingPathDetailModel::populateModel(TimingPath* path)
 
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 {
-  static bool init_once = false;
-  if (!init_once) {
-    init_once = true;
-    TimingPathRenderer::inst_highlight_color_.a = 100;
-    TimingPathRenderer::path_inst_color_.a = 100;
-  }
+  TimingPathRenderer::path_inst_color_.a = 100;
 }
 
 TimingPathRenderer::~TimingPathRenderer()
@@ -487,64 +481,16 @@ TimingPathRenderer::~TimingPathRenderer()
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   path_ = path;
-  highlight_inst_nodes_.clear();
+  highlight_node_ = -1;
 }
 
-void TimingPathRenderer::highlightInstNode(TimingPathNode node)
+void TimingPathRenderer::highlightNode(int node_idx)
 {
-  if (node.pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node.pin_);
-    odb::dbInst* db_inst = db_iterm->getInst();
-    highlight_inst_nodes_.push_back(db_inst);
-  }
+  if (node_idx >= 0 && node_idx < path_->levelsCount())
+    highlight_node_ = node_idx;
 }
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
-{
-  // Native Implementation of Path Tracing
-  // drawObjectsNative(painter);
-  // return;
-  sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
-  if (path_) {
-    sta::dbNetwork* network = sta->getDbNetwork();
-    odb::Point prev_pt;
-    auto path_exp = path_->getPathExp();
-    for (int i = 0; i < path_exp->size(); i++) {
-      sta::PathRef* path = path_exp->path(i);
-      sta::TimingArc* prev_arc = path_exp->prevArc(i);
-      // Draw lines for wires on the path.
-      if (prev_arc && prev_arc->role()->isWire()) {
-        sta::PathRef* prev_path = path_exp->path(i - 1);
-        const sta::Pin* pin = path->pin(sta);
-        const sta::Pin* prev_pin = prev_path->pin(sta);
-        odb::Point pt1 = network->location(pin);
-        odb::Point pt2 = network->location(prev_pin);
-        gui::Painter::Color wire_color
-            = sta->isClock(pin) ? TimingPathRenderer::clock_color_
-                                : TimingPathRenderer::signal_color_;
-        painter.setPen(wire_color, true);
-        painter.drawLine(pt1, pt2);
-        odb::dbITerm* term = nullptr;
-        odb::dbBTerm* port = nullptr;
-        sta->getDbNetwork()->staToDb(prev_pin, term, port);
-        if (term) {
-          highlightInst(
-              term->getInst(), painter, TimingPathRenderer::path_inst_color_);
-        }
-        if (i == path_exp->size() - 1) {
-          term = nullptr;
-          port = nullptr;
-          sta->getDbNetwork()->staToDb(pin, term, port);
-          if (term)
-            highlightInst(
-                term->getInst(), painter, TimingPathRenderer::path_inst_color_);
-        }
-      }
-    }
-  }
-}
-
-void TimingPathRenderer::drawObjectsNative(gui::Painter& painter)
 {
   if (path_) {
     sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
@@ -589,12 +535,50 @@ void TimingPathRenderer::drawObjectsNative(gui::Painter& painter)
         }
       }
     }
-
-    for (auto& inst : highlight_inst_nodes_)
-      highlightInst(inst, painter, TimingPathRenderer::inst_highlight_color_);
+    if (highlight_node_ >= 0 && highlight_node_ < node_count)
+      highlightStage(painter);
   }
 }
 
+void TimingPathRenderer::highlightStage(gui::Painter& painter)
+{
+  odb::dbObject* sink_node = nullptr;
+  int src_x, src_y;
+  int dst_x, dst_y;
+  auto getSegmentEnds = [&](int node_idx, int& x, int& y) {
+    auto node = path_->getNodeAt(node_idx);
+    if (node.pin_->getObjectType() == odb::dbObjectType::dbITermObj) {
+      odb::dbITerm* db_iterm = static_cast<odb::dbITerm*>(node.pin_);
+      odb::dbInst* db_inst = db_iterm->getInst();
+      highlightInst(
+          db_inst, painter, TimingPathRenderer::inst_highlight_color_);
+      db_iterm->getAvgXY(&x, &y);
+      auto io_dir = db_iterm->getIoType();
+      if (io_dir == odb::dbIoType::INPUT || io_dir == odb::dbIoType::INOUT)
+        sink_node = db_iterm;
+    } else {
+      odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node.pin_);
+      bterm->getFirstPinLocation(x, y);
+      auto io_dir = bterm->getIoType();
+      if (io_dir == odb::dbIoType::OUTPUT || io_dir == odb::dbIoType::INOUT)
+        sink_node = bterm;
+    }
+  };
+  getSegmentEnds(highlight_node_, src_x, src_y);
+  int nxt_stage = -1;
+  if ((sink_node == nullptr && highlight_node_ < (path_->levelsCount() - 1))
+      || (sink_node != nullptr && highlight_node_ == 0))
+    nxt_stage = highlight_node_ + 1;
+  else if (highlight_node_ != 0)
+    nxt_stage = highlight_node_ - 1;
+  if (nxt_stage != -1)
+    getSegmentEnds(nxt_stage, dst_x, dst_y);
+  odb::Point pt1(src_x, src_y);
+  odb::Point pt2(dst_x, dst_y);
+
+  painter.setPen(TimingPathRenderer::inst_highlight_color_, true);
+  painter.drawLine(pt1, pt2);
+}
 // Color in the instances to make them more visible.
 void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
                                        gui::Painter& painter,
@@ -633,7 +617,9 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
     } else {
       odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(node);
       bterm->getFirstPinLocation(x, y);
-      clk_node = (bterm->getSigType() == odb::dbSigType::CLOCK);
+      sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
+      auto sta_term = sta->getDbNetwork()->dbToSta(bterm);
+      clk_node = sta->isClock(sta_term);
     }
   };
   // SigType is not populated properly in OpenDB
@@ -642,8 +628,6 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
   getSegmentEnd(source_node, src_x, src_y, clk_node);
   getSegmentEnd(sink_node, dst_x, dst_y, clk_node);
 
-  if (clk_node == false)
-    clk_node = (net->getSigType() == odb::dbSigType::CLOCK);
   odb::Point pt1(src_x, src_y);
   odb::Point pt2(dst_x, dst_y);
 

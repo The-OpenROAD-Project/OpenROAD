@@ -42,7 +42,8 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
     : QDialog(parent),
       timing_paths_model_(nullptr),
       path_details_model_(new TimingPathDetailModel()),
-      path_renderer_(new TimingPathRenderer())
+      path_renderer_(new TimingPathRenderer()),
+      dbchange_listener_(new GuiDBChangeListener)
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
@@ -56,12 +57,26 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
           SIGNAL(clicked(const QModelIndex&)),
           this,
           SLOT(showPathDetails(const QModelIndex&)));
+  connect(pathDetailsTableView,
+          SIGNAL(clicked(const QModelIndex&)),
+          this,
+          SLOT(highlightPathStage(const QModelIndex&)));
 
   connect(nextPathBtn, SIGNAL(clicked()), this, SLOT(showNextPath()));
   connect(prevPathBtn, SIGNAL(clicked()), this, SLOT(showPrevPath()));
   connect(
       jumpToPathEdit, SIGNAL(returnPressed()), this, SLOT(showRequestedPath()));
+
+  connect(dbchange_listener_,
+          SIGNAL(dbUpdated(QString, std::vector<odb::dbObject*>)),
+          this,
+          SLOT(handleDbChange(QString, std::vector<odb::dbObject*>)));
   jumpToPathEdit->setFocusPolicy(Qt::StrongFocus);
+}
+
+TimingDebugDialog::~TimingDebugDialog()
+{
+  // TBD
 }
 
 void TimingDebugDialog::accept()
@@ -95,6 +110,14 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   pathDetailsTableView->setModel(path_details_model_);
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
+}
+
+void TimingDebugDialog::highlightPathStage(const QModelIndex& index)
+{
+  if (!index.isValid() || timing_paths_model_ == nullptr)
+    return;
+  path_renderer_->highlightNode(index.row());
+  emit highlightTimingPath(path_renderer_->getPathToRender());
 }
 
 void TimingDebugDialog::showNextPath()
@@ -135,6 +158,11 @@ void TimingDebugDialog::showRequestedPath()
   QString path_str = jumpToPathEdit->text();
   int path_idx = path_str.toInt();
   showPathIndex(path_idx - 1);
+}
+
+void TimingDebugDialog::handleDbChange(QString change_type,
+                                       std::vector<odb::dbObject*> objects)
+{
 }
 
 }  // namespace gui

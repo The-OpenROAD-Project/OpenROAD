@@ -34,6 +34,8 @@
 
 #include <QDialog>
 #include <QModelIndex>
+#include <QString>
+#include <vector>
 
 #include "opendb/db.h"
 #include "staGui.h"
@@ -49,6 +51,7 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   Q_OBJECT
  public:
   TimingDebugDialog(QWidget* parent = nullptr);
+  ~TimingDebugDialog();
 
   TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
 
@@ -61,15 +64,19 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   void populateTimingPaths(odb::dbBlock* block);
 
   void showPathDetails(const QModelIndex& index);
+  void highlightPathStage(const QModelIndex& index);
 
   void showNextPath();
   void showPrevPath();
   void showPathIndex(int pathId = 0);
   void showRequestedPath();
 
+  void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
+
  private:
   TimingPathsModel* timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
   TimingPathRenderer* path_renderer_;
+  GuiDBChangeListener* dbchange_listener_;
 };
 }  // namespace gui
