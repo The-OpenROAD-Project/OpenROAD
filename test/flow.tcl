@@ -153,11 +153,11 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
-set routed_def [make_result_file ${design}_${platform}_route.def]
-set tr_lef [make_tr_lef]
-set tr_params [make_tr_params $tr_lef $filler_def $route_guide $routed_def]
+set tr_params [make_tr_params $route_guide]
 
 detailed_route -param $tr_params
+set routed_def [make_result_file ${design}_${platform}_route.def]
+write_def $routed_def
 
 set drv_count [detailed_route_num_drvs]
 

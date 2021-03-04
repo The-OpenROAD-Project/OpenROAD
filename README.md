@@ -621,7 +621,7 @@ report_checks
 TritonCTS 2.0 is available under the OpenROAD app as ``clock_tree_synthesis`` command.
 The following tcl snippet shows how to call TritonCTS. TritonCTS 2.0 performs on-the-fly characterization.
 Thus there is no need to generate characterization data. On-the-fly characterization feature could still
-be optionally controlled by parameters specified to cts_configure_characterization command.
+be optionally controlled by parameters specified to configure_cts_characterization command.
 Use set_wire_rc command to set clock routing layer.
 
 ```
@@ -632,7 +632,7 @@ read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
 set_wire_rc -clock -layer metal5
 
-cts_configure_characterization [-max_slew <max_slew>] \
+configure_cts_characterization [-max_slew <max_slew>] \
                                [-max_cap <max_cap>] \
                                [-slew_inter <slew_inter>] \
                                [-cap_inter <cap_inter>]

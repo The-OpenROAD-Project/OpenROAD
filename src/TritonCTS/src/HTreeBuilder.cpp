@@ -874,7 +874,7 @@ void HTreeBuilder::plotSolution()
   file.close();
 }
 
-void SegmentBuilder::build(std::string forceBuffer)
+void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
 {
   double lengthX = std::abs(_root.getX() - _target.getX());
   double lengthY = std::abs(_root.getY() - _target.getY());
@@ -886,6 +886,9 @@ void SegmentBuilder::build(std::string forceBuffer)
     unsigned techCharWireIdx = _techCharWires[wire];
     const WireSegment& wireSegment = _techChar->getWireSegment(techCharWireIdx);
     unsigned wireSegLen = wireSegment.getLength();
+    if (wireSegment.getNumBuffers() < 1 && sink) {
+      connectionLength += wireSegLen;
+    }
     for (int buffer = 0; buffer < wireSegment.getNumBuffers(); ++buffer) {
       double location = wireSegment.getBufferLocation(buffer) * wireSegLen;
       connectionLength += location;
@@ -908,10 +911,20 @@ void SegmentBuilder::build(std::string forceBuffer)
                                    buffMaster,
                                    x * _techCharDistUnit,
                                    y * _techCharDistUnit);
-      _drivingSubNet->addInst(newBuffer);
-      _drivingSubNet
-          = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
-      _drivingSubNet->addInst(newBuffer);
+      if (sink) {
+        _drivingSubNet->replaceSink(sink, &newBuffer);
+        _drivingSubNet
+            = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+        _drivingSubNet->addInst(newBuffer);
+        _drivingSubNet->addInst(*sink);
+        //sink = newBuffer;
+
+      } else {
+        _drivingSubNet->addInst(newBuffer);
+        _drivingSubNet
+            = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+        _drivingSubNet->addInst(newBuffer);
+      }
 
       ++_numBuffers;
     }

@@ -1,3 +1,4 @@
-GUI 0001 gui.i:83                  No database loaded
-GUI 0002 gui.i:87                  No chip loaded
-GUI 0003 gui.i:91                  No block loaded
+GUI 0001 gui.i:93                  No database loaded
+GUI 0002 gui.i:97                  No chip loaded
+GUI 0003 gui.i:101                 No block loaded
+GUI 0004 layoutViewer.cpp:657      Skipping malformed GCell
