@@ -605,8 +605,6 @@ frCost FlexGridGraph::getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEn
     bool guideCost  = hasGuide(gridX, gridY, gridZ, dir);
     frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
 
-
-
     // temporarily disable guideCost
     return getEdgeLength(gridX, gridY, gridZ, dir)
                     + (gridCost   ? GRIDCOST         * edgeLength : 0)
