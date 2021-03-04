@@ -32,7 +32,7 @@ Tools
   * bison 3.0.5
   * flex 2.6.4
   * swig 4.0
-''
+  
 Libraries
   * boost 1.68
   * tcl 8.6
@@ -247,7 +247,7 @@ auto_place_pins pin_layer
 
 #### Pin placement
 
-Place pins on the boundary of the core on the track grid to
+Place pins on the boundary of the die on the track grid to
 minimize net wire lengths. Pin placement also 
 creates a metal shape for each pin using min-area rules.
 
