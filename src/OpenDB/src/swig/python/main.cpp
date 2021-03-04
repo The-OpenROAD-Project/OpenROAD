@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include <stdio.h>
 
 extern "C"
 {
@@ -44,6 +45,16 @@ main(int argc, char* argv[])
         fprintf(stderr, "Error: could not extend in-built modules table\n");
         exit(1);
     }
+    wchar_t** args = new wchar_t*[argc];
+    for(size_t i = 0;i < argc; i++)
+    {
+        size_t sz = strlen(argv[i]);
+        args[i] = new wchar_t[sz+1];
+        args[i][sz] = '\0';
+        for(size_t j = 0;j < sz; j++)
+            args[i][j] = (wchar_t) argv[i][j];
+    }
+
     Py_Initialize();
-    Py_BytesMain(argc, argv);
+    Py_Main(argc, args);
 }
