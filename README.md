@@ -32,7 +32,7 @@ Tools
   * bison 3.0.5
   * flex 2.6.4
   * swig 4.0
-  
+
 Libraries
   * boost 1.68
   * tcl 8.6
@@ -263,7 +263,7 @@ place_pins [-hor_layers h_layers]
            [-exclude interval]
            [-random]
            [-group_pins pins]
-           [-boundaries_offset offset]
+           [-corner_avoidance length]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
@@ -275,8 +275,7 @@ where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary
-- ``-boundaries_offset offset``. Specify an offset from the die boundaries where pins
-cannot be placed.
+- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
