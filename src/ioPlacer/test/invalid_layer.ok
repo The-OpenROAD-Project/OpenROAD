@@ -9,7 +9,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0134] Finished DEF file: invalid_layer.def
 Found 0 macro blocks.
-Using 1u default corner avoidance interval length.
+Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0022] Vertical routing layer 13 not found.
 PPL-0022

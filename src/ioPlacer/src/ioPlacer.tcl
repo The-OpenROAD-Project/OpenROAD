@@ -92,7 +92,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\
                        	          [-random]\
-                                  [-corner_avoidance interval_length]\
+                                  [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
@@ -155,13 +155,13 @@ proc place_pins { args } {
   }
 
   # set default interval_length from boundaries as 1u
-  set interval_length 1
+  set distance 1
   if [info exists keys(-corner_avoidance)] {
-    set interval_length $keys(-corner_avoidance)
-    ppl::set_corner_avoidance $interval_length
+    set distance $keys(-corner_avoidance)
+    ppl::set_corner_avoidance $distance
   } else {
-    utl::report "Using ${interval_length}u default corner avoidance interval length."
-    ppl::set_corner_avoidance $interval_length
+    utl::report "Using ${distance}u default distance from corners."
+    ppl::set_corner_avoidance $distance
   }
 
   set min_dist 2
