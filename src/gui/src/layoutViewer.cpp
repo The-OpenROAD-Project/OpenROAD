@@ -60,6 +60,8 @@
 #include "mainWindow.h"
 #include "search.h"
 
+#include "utility/Logger.h"
+
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
 // and formats use the origin at the LOWER-left with y increasing
@@ -165,7 +167,7 @@ class GuiPainter : public Painter
       painter_->setBrush(Qt::transparent);
   }
   void drawCircle(int x, int y, int r) override {
-      painter_->drawEllipse(x-r/2, y-r/2, r, r);
+    painter_->drawEllipse(QPoint(x, y), r, r);
   }
   //NOTE: it is drawing upside down
   void drawString(int x, int y, int offset, const std::string& s) override {
@@ -191,6 +193,7 @@ LayoutViewer::LayoutViewer(Options* options,
       max_depth_(99),
       search_init_(false),
       rubber_band_showing_(false),
+      logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
@@ -205,6 +208,11 @@ void LayoutViewer::setDb(dbDatabase* db)
     update();
   }
   db_ = db;
+}
+
+void LayoutViewer::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 dbBlock* LayoutViewer::getBlock()
@@ -618,24 +626,45 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
-  if (gcell_congestion_data_.empty())
-    populateCongestionData();
-  if (!options_->isCongestionVisible() || gcell_congestion_data_.empty())
+  auto block = getBlock();
+  if(block == nullptr)
+    return;
+  auto grid = block->getGCellGrid();
+  if(grid == nullptr)
+    return;
+  std::vector<int> x_grid, y_grid;
+  uint x_grid_sz, y_grid_sz;
+  grid->getGridX(x_grid);
+  x_grid_sz = x_grid.size();
+  grid->getGridY(y_grid);
+  y_grid_sz = y_grid.size();
+  auto gcell_congestion_data = grid->getCongestionMap();
+
+  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
     return;
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
-  for (auto& gcell_data : gcell_congestion_data_) {
-    auto gcell_rect = gcell_data.first;
+  for (auto &[key, cong_data] : gcell_congestion_data) {
+    uint x_idx = key.first;;
+    uint y_idx = key.second;
+
+    if(x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1)
+    {
+      if(logger_ != nullptr)
+        logger_->warn(utl::GUI, 4, "Skipping malformed GCell");
+      continue;
+    }
+
+    auto gcell_rect = odb::Rect(x_grid[x_idx], y_grid[y_idx], x_grid[x_idx+1], y_grid[y_idx+1]);
     if (!gcell_rect.intersects(bounds))
       continue;
-    auto& cong_data = gcell_data.second;
 
-    auto hor_capacity = cong_data.hor_capacity_;
-    auto hor_usage = cong_data.hor_usage_;
-    auto ver_capacity = cong_data.ver_capacity_;
-    auto ver_usage = cong_data.ver_usage_;
+    auto hor_capacity = cong_data.horizontal_capacity;
+    auto hor_usage = cong_data.horizontal_usage;
+    auto ver_capacity = cong_data.vertical_capacity;
+    auto ver_usage = cong_data.vertical_usage;
 
     //-1 indicates capacity is not well defined...
     float hor_congestion
@@ -1205,31 +1234,6 @@ void LayoutViewer::inDbFillCreate(dbFill* fill)
   update();
 }
 
-
-void LayoutViewer::populateCongestionData()
-{
-  auto* openroad = ord::OpenRoad::openRoad();
-  auto fast_route = openroad->getFastRoute();
-  if (!fast_route)
-    return;
-  auto g_cells = fast_route->getCongestion();
-  if (g_cells.empty())
-    return;
-  for (auto& g_cell : g_cells) {
-    odb::Rect gcell_rect = g_cell.getGCellRect();
-    auto itr = gcell_congestion_data_.find(gcell_rect);
-    if (itr == gcell_congestion_data_.end()) {
-      gcell_congestion_data_[gcell_rect] = GCellData();
-      itr = gcell_congestion_data_.find(gcell_rect);
-    }
-
-    itr->second.hor_capacity_ += g_cell.getHorCapacity();
-    itr->second.hor_usage_ += g_cell.getHorUsage();
-
-    itr->second.ver_capacity_ += g_cell.getVerCapacity();
-    itr->second.ver_usage_ += g_cell.getVerUsage();
-  }
-}
 
 }  // namespace gui
 

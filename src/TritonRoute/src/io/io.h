@@ -62,7 +62,6 @@ namespace fr {
       void postProcess();
       void postProcessGuide();
       void initDefaultVias();
-      void writeRefDef();
       void initRPin();
       std::map<frBlock*, std::map<frOrient, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp> > >, frBlockObjectComp> &getTrackOffsetMap() {
         return trackOffsetMap;
@@ -71,8 +70,7 @@ namespace fr {
         return prefTrackPatterns;
       }
 
-    protected:
-
+    private:
       void readDesign(odb::dbDatabase*);
       void readTechAndLibs(odb::dbDatabase*);
       void setMacros(odb::dbDatabase*);
@@ -153,7 +151,7 @@ namespace fr {
                                      frTerm* instTerm);
       void genGuides_initPin2GCellMap(frNet* net, std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
       void genGuides_buildNodeMap(std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt,
-                                  std::vector<frRect> &rects, std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
+                                  const std::vector<frRect> &rects, const std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
       bool genGuides_astar(frNet *net,
                            std::vector<bool> &adjVisited, std::vector<int> &adjPrevIdx, 
                            std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt, bool forceFeedThrough, bool retry);
@@ -182,8 +180,6 @@ namespace fr {
         return design;
       }
       // others
-      void writeFromTA();
-      void writeFromDR(const std::string &str = "");
       void  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
@@ -198,7 +194,6 @@ namespace fr {
       void mergeSplitConnFigs(std::list<std::shared_ptr<frConnFig> > &connFigs);
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
-      int writeDef(bool isTA, const std::string &str = "");
       void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
       void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
 

@@ -50,7 +50,7 @@ proc detailed_placement { args } {
     dpl::detailed_placement_cmd $max_displacement
     dpl::report_legalization_stats
   } else {
-    utl::error "no rows defined in design. Use initialize_floorplan to add rows."
+    utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
@@ -155,7 +155,7 @@ proc get_masters_arg { arg_name arg } {
     }
   }
   if { !$matched } {
-    utl::warn DPL 26 "$name did not match any masters."
+    utl::warn "DPL" 28 "$name did not match any masters."
   }
   return $masters
 }
@@ -167,7 +167,7 @@ proc get_inst_bbox { inst_name } {
     set bbox [$inst getBBox]
     return "[$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]"
   } else {
-    error "cannot find instance $inst_name"
+    utl::error "DPL" 29 "cannot find instance $inst_name"
   }
 }
 
@@ -182,7 +182,7 @@ proc get_inst_grid_bbox { inst_name } {
     set bbox [$inst getBBox]
     return "[format_grid [$bbox xMin] $width] [format_grid [$bbox yMin] $height] [format_grid [$bbox xMax] $width] [format_grid [$bbox yMax] $height]"
   } else {
-    error "cannot find instance $inst_name"
+    utl::error "DPL" 30 "cannot find instance $inst_name"
   }
 }
 

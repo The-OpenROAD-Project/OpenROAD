@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, The OpenRoad Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,83 +29,32 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+#include <stdio.h>
 
-#include "db.h"
-#include "defiUtil.hpp"
-#include "definBase.h"
-
-namespace odb {
-
-definBase::definBase()
+extern "C"
 {
-  _mode        = defin::DEFAULT;
-  _tech        = nullptr;
-  _block       = nullptr;
-  _logger      = nullptr;
-  _errors      = 0;
-  _dist_factor = 10;
+    extern PyObject* PyInit__opendbpy();
 }
 
-void definBase::init()
+int
+main(int argc, char* argv[])
 {
-  _mode        = defin::DEFAULT;
-  _tech        = nullptr;
-  _block       = nullptr;
-  _logger      = nullptr;
-  _errors      = 0;
-  _dist_factor = 10;
-}
+    if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+        fprintf(stderr, "Error: could not extend in-built modules table\n");
+        exit(1);
+    }
+    wchar_t** args = new wchar_t*[argc];
+    for(size_t i = 0;i < argc; i++)
+    {
+        size_t sz = strlen(argv[i]);
+        args[i] = new wchar_t[sz+1];
+        args[i][sz] = '\0';
+        for(size_t j = 0;j < sz; j++)
+            args[i][j] = (wchar_t) argv[i][j];
+    }
 
-void definBase::units(int d)
-{
-  int dbu      = _tech->getDbUnitsPerMicron();
-  _dist_factor = dbu / d;
+    Py_Initialize();
+    Py_Main(argc, args);
 }
-
-void definBase::setTech(dbTech* tech)
-{
-  _tech        = tech;
-  int dbu      = _tech->getDbUnitsPerMicron();
-  _dist_factor = dbu / 100;
-}
-
-void definBase::setBlock(dbBlock* block)
-{
-  _block  = block;
-}
-
-void definBase::setLogger(utl::Logger* logger)
-{
-  _logger  = logger;
-}
-
-void definBase::setMode(defin::MODE mode)
-{
-  _mode = mode;
-}
-
-dbOrientType definBase::translate_orientation(int orient)
-{
-  switch (orient) {
-    case DEF_ORIENT_N:
-      return dbOrientType::R0;
-    case DEF_ORIENT_S:
-      return dbOrientType::R180;
-    case DEF_ORIENT_E:
-      return dbOrientType::R270;
-    case DEF_ORIENT_W:
-      return dbOrientType::R90;
-    case DEF_ORIENT_FN:
-      return dbOrientType::MY;
-    case DEF_ORIENT_FS:
-      return dbOrientType::MX;
-    case DEF_ORIENT_FE:
-      return dbOrientType::MYR90;
-    case DEF_ORIENT_FW:
-      return dbOrientType::MXR90;
-  }
-  assert(0);
-  return dbOrientType::R0;
-}
-
-}  // namespace odb

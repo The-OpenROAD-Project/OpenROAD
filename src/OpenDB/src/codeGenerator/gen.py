@@ -204,6 +204,9 @@ for klass in schema['classes']:
         elif field['isDbVector']:
             field['setterArgumentType'] = field['getterReturnType'] = field['type'].replace(
                 'dbVector', "std::vector")
+        elif field['type'] == 'char *':
+            field['setterArgumentType'] = field['type'];
+            field['getterReturnType'] = 'const char *'
         else:
             field['setterArgumentType'] = field['getterReturnType'] = \
                 field['type']
