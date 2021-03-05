@@ -1,0 +1,171 @@
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_fd_pr.tlef
+[INFO ODB-0223]     Created 14 technology layers
+[INFO ODB-0224]     Created 30 technology vias
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_fd_pr.tlef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__com_bus_slice_10um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__com_bus_slice_10um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__com_bus_slice_10um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__com_bus_slice_1um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__com_bus_slice_1um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__com_bus_slice_1um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__com_bus_slice_20um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__com_bus_slice_20um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__com_bus_slice_20um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__com_bus_slice_5um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__com_bus_slice_5um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__com_bus_slice_5um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__corner_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__corner_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__corner_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__disconnect_vccd_slice_5um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__disconnect_vccd_slice_5um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__disconnect_vccd_slice_5um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__disconnect_vdda_slice_5um.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__disconnect_vdda_slice_5um.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__disconnect_vdda_slice_5um.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__gpiov2_pad_wrapped.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__gpiov2_pad_wrapped.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__gpiov2_pad_wrapped.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vccd_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vccd_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vccd_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vccd_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vccd_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vccd_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vdda_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vdda_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vdda_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vdda_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vdda_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vdda_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vddio_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vddio_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vddio_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vddio_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vddio_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vddio_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssa_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssa_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssa_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssa_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssa_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssa_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssd_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssd_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssd_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssd_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssd_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssd_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssio_hvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssio_hvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssio_hvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_ef_io__vssio_lvc_pad.lef
+[WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/sky130_ef_io__vssio_lvc_pad.lef at line 2.
+
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_ef_io__vssio_lvc_pad.lef
+[INFO ODB-0222] Reading LEF file: caravel_sky130/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  caravel_sky130/sky130_fd_io__top_xres4v2.lef
+[INFO ODB-0127] Reading DEF file: caravel_sky130/chip_io.def
+[INFO ODB-0128] Design: chip_io
+[INFO ODB-0130]     Created 722 pins.
+[INFO ODB-0131]     Created 818 components and 11059 component-terminals.
+[INFO ODB-0133]     Created 767 nets and 1080 connections.
+[INFO ODB-0134] Finished DEF file: caravel_sky130/chip_io.def
+Loading library data
+Extracting footprint
+[WARNING PAD-0099] No power nets found in design
+[WARNING PAD-0099] No ground nets found in design
+No differences found.
+Checking result
+[WARNING ORD-1000] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__corner_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
+[WARNING ORD-1000] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
+[INFO IFP-0001] Added 1899 rows of 7776 sites.
+[WARNING PAD-0018] No term VSSA found on brk_vdda_0
+[WARNING PAD-0018] No term VSSA found on brk_vdda_1
+[WARNING PAD-0018] No term VSSA found on brk_vdda_2
+[WARNING PAD-0018] No term VCCD found on brk_vccd_0
+[WARNING PAD-0018] No term VCCD found on brk_vccd_1
+[WARNING PAD-0018] No term VCCD found on brk_vccd_2
+[WARNING PAD-0018] No term VSSD found on brk_vccd_0
+[WARNING PAD-0018] No term VSSD found on brk_vccd_1
+[WARNING PAD-0018] No term VSSD found on brk_vccd_2
+[WARNING PAD-0018] No term VDDA found on brk_vdda_0
+[WARNING PAD-0018] No term VDDA found on brk_vdda_1
+[WARNING PAD-0018] No term VDDA found on brk_vdda_2
+No differences found.
