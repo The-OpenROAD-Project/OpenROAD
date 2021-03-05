@@ -3027,9 +3027,6 @@ bool FlexDRWorker::routeNet(drNet* net) {
   if (TEST_ || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
   }
-  if (graphics_) {
-    graphics_->startNet(net);
-  }
 
   set<drPin*, frBlockObjectComp> unConnPins;
   map<FlexMazeIdx, set<drPin*, frBlockObjectComp> > mazeIdx2unConnPins;
