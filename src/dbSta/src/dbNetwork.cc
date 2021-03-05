@@ -392,6 +392,7 @@ dbNetwork::setBlock(dbBlock *block)
 {
   db_ = block->getDataBase();
   block_ = block;
+  readDbNetlistAfter();
 }
 
 void
