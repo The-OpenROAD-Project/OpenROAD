@@ -115,7 +115,6 @@ public:
   void highlight(PathRef *path);
 
   using Sta::netSlack;
-  using Sta::isClock;
   using Sta::replaceCell;
 
 protected:

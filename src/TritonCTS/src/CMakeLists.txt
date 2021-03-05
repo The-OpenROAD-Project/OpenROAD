@@ -73,7 +73,7 @@ target_link_libraries(TritonCTS
     opendb
     dbSta
     OpenSTA
-    resizer
+    rsz
     flute
     pdrev
     utility

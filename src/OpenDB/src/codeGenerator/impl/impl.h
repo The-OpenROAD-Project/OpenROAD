@@ -59,13 +59,15 @@ namespace odb {
   //User Code End Classes
 
   {% for _struct in klass.structs %}
+    {% if not _struct.public %}
     struct {{ _struct.name }}
     {
       {% for field in _struct.fields %}
-        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
-    
+        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
+      
       {% endfor %}
     };
+    {% endif %}
   {% endfor %}
   //User Code Begin structs
   //User Code End structs

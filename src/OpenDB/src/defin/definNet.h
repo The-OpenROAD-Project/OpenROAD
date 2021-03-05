@@ -78,6 +78,7 @@ class definNet : public definBase
 
  public:
   int _net_cnt;
+  uint _update_cnt;
   int _net_iterm_cnt;
 
   /// Net interface methods

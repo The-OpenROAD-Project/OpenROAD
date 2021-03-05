@@ -29,7 +29,7 @@ add_subdirectory(src/zutil)
 add_subdirectory(src/zlib)
 add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
-add_subdirectory(tests/cpp)
+add_subdirectory(test/cpp)
 ############################################################################
 ################################# SWIG #####################################
 ############################################################################

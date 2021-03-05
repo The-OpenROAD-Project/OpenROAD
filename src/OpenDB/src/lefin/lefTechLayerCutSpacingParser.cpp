@@ -82,13 +82,16 @@ void addSameMaskSubRule(odb::lefTechLayerCutSpacingParser* parser)
 void addLayerSubRule(
     std::string name,
     odb::lefTechLayerCutSpacingParser*                                parser,
-    odb::dbTechLayer*                                                 layer)
+    odb::dbTechLayer*                                                 layer,
+    std::vector<std::pair<odb::dbObject*, std::string>>&              incomplete_props)
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
   auto secondLayer = layer->getTech()->findLayer(name.c_str());
   if (secondLayer != nullptr)
     parser->curRule->setSecondLayer(secondLayer);
+  else
+    incomplete_props.push_back({parser->curRule, name});
 }
 
 void addAdjacentCutsSubRule(
@@ -323,7 +326,8 @@ bool parse(Iterator                           first,
            Iterator                           last,
            odb::lefTechLayerCutSpacingParser* parser,
            odb::dbTechLayer*                  layer,
-           odb::lefin*                        lefin)
+           odb::lefin*                        lefin,
+           std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[(alpha >> *(char_ - ' ' - '\n'))];
@@ -363,7 +367,7 @@ bool parse(Iterator                           first,
   );
   qi::rule<std::string::iterator, space_type> LAYER
       = (
-        lit("LAYER") >> _string[boost::bind(&addLayerSubRule, _1, parser, layer)]
+        lit("LAYER") >> _string[boost::bind(&addLayerSubRule, _1, parser, layer, boost::ref(incomplete_props))]
          >> -(
            lit("STACK")[boost::bind(&setBool, parser, &odb::dbTechLayerCutSpacingRule::setStack, true)]
            |
@@ -433,8 +437,11 @@ bool parse(Iterator                           first,
 
   bool valid = qi::phrase_parse(first, last, LEF58_SPACING, space);
 
-  if (!valid && parser->curRule != nullptr)
+  if (!valid && parser->curRule != nullptr){
+    if(!incomplete_props.empty() && incomplete_props.back().first == parser->curRule)
+      incomplete_props.pop_back();
     odb::dbTechLayerCutSpacingRule::destroy(parser->curRule);
+  }
   return valid && first == last;
 }
 }  // namespace lefTechLayerCutSpacing
@@ -443,9 +450,10 @@ namespace odb {
 
 bool lefTechLayerCutSpacingParser::parse(std::string       s,
                                          odb::dbTechLayer* layer,
-                                         odb::lefin*       l)
+                                         odb::lefin*       l,
+                                         std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  return lefTechLayerCutSpacing::parse(s.begin(), s.end(), this, layer, l);
+  return lefTechLayerCutSpacing::parse(s.begin(), s.end(), this, layer, l, incomplete_props);
 }
 
 }  // namespace odb

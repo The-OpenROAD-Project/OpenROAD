@@ -100,6 +100,7 @@ namespace fr {
                                                             frBlockObjectComp> &refBlock2PinLayerRange);
     void initUniqueInstance_main(const std::map<frBlock*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp> &refBlock2PinLayerRange,
                                  const std::vector<frTrackPattern*> &prefTrackPatterns);
+    bool isNDRInst(frInst& inst);
     void initPinAccess();
     void initTrackCoords();
     void initViaRawPriority();

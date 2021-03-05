@@ -53,6 +53,15 @@ namespace fr {
       yIdx_ = yIn;
       zIdx_ = zIn;
     }
+    void setX(frMIdx xIn) {
+      xIdx_ = xIn;
+    }
+    void setY(frMIdx yIn) {
+      yIdx_ = yIn;
+    }
+    void setZ(frMIdx zIn) {
+      zIdx_ = zIn;
+    }
     void set(const FlexMazeIdx &in) {
       xIdx_ = in.x();
       yIdx_ = in.y();

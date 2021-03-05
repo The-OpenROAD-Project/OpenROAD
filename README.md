@@ -199,7 +199,6 @@ Each of these designs use the common script `flow.tcl`.
 ```
 initialize_floorplan
   [-site site_name]               LEF site name for ROWS
-  [-tracks tracks_file]           routing track specification
   -die_area "lx ly ux uy"         die area in microns
   [-core_area "lx ly ux uy"]      core area in microns
 or
@@ -216,8 +215,6 @@ explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
-If no -tracks file is used the routing layers from the LEF are used.
-
 ```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
@@ -228,6 +225,19 @@ If no -tracks file is used the routing layers from the LEF are used.
         ( core_width + core_space_left + core_space_right, 
           core_height + core_space_bottom + core_space_top )
 ```
+
+Use the `make_tracks` command to add routing tracks to a floorplan.
+```
+make_tracks [layer]
+            [-x_pitch x_pitch]
+            [-y_pitch y_pitch]
+            [-x_offset x_offset]
+            [-y_offset y_offset]
+```
+
+With no arguments `make_tracks` adds X and Y tracks for each routing layer.
+With a `-layer` argument `make_tracks` adds X and Y tracks for layer with
+options to override the LEF technology X and Y pitch and offset.
 
 Place pins around core boundary.
 
@@ -248,16 +258,18 @@ place_pins [-hor_layers h_layers]
            [-random_seed seed]
            [-exclude interval]
            [-random]
+           [-group_pins pins]
 ```
-- ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
+- ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
-- ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
+- ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
 of pins placed in vertical tracks. Can be a single layer or a list of layer indices
-- ``-random_seed``. Set the seed for random operations.
-- ``-exclude``. Set an interval in one of the four edges of the die boundary
+- ``-random_seed``. Specify the seed for random operations.
+- ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
+- ``-group_pins``. Specify a list of pins to be placed together on the die boundary
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -305,17 +317,9 @@ You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scrip
 RePlAce global placement.
 
 ```
-global_placement [-timing_driven]
-                 [-bin_grid_count grid_count]
-```
-- **timing_driven**: Enable timing-driven mode
-- **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
-
-Use the `set_wire_rc` command to set resistance and capacitance of
-estimated wires used for timing.
-
-```
 global_placement
+    [-timing_driven]
+    [-routability_driven]
     [-skip_initial_place]
     [-disable_timing_driven]
     [-disable_routability_driven]
@@ -343,8 +347,10 @@ global_placement
     [-verbose_level level]
 ```
 
+- **timing_driven**: Enable timing-driven mode
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
 * __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with pre-placed solutions. 
+- **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
 
 ### Tuning Parameters
 * __bin_grid_count__ : Set bin grid's counts. Default: Defined by internal algorithm. [64,128,256,512,..., int]
@@ -358,6 +364,10 @@ global_placement
 * __initial_place_max_fanout__ : Set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default: 200 [1-, int]
 * __verbose_level__ : Set verbose level for RePlAce. Default: 1 [0-10, int]
 
+`-timing_driven` does a virtual 'repair_design' to find slacks and
+weight nets with low slack.  Use the `set_wire_rc` command to set
+resistance and capacitance of estimated wires used for timing.
+
 #### Macro Placement
 
 ParquetFP based macro cell placer. Run `global_placement` before macro placement.
@@ -369,14 +379,19 @@ packed using ParquetFP-based annealing. The best resulting floorplan
 according to a heuristic evaluation function kept.
 
 ```
-macro_placement -halo {halo_x halo_y}
-                -channel {channel_x channel_y}\
+macro_placement [-halo {halo_x halo_y}]
+                [-channel {channel_x channel_y}]
                 [-fence_region {lx ly ux uy}]
+                [-snap_layer snap_layer_number]
 ```
 
--fence_region - restrict macro placements to a region (microns)
 -halo horizontal/vertical halo around macros (microns)
--channel horizontal/vertical and channel width between macros (microns)
+-channel horizontal/vertical channel width between macros (microns)
+-fence_region - restrict macro placements to a region (microns). Defaults to the core area.
+-snap_layer_number - snap macro origins to this routing layer track
+
+Macros will be placed with max(halo * 2, channel) spacing between macros and the
+fence/die boundary.
 
 #### Detailed Placement
 
@@ -606,7 +621,7 @@ report_checks
 TritonCTS 2.0 is available under the OpenROAD app as ``clock_tree_synthesis`` command.
 The following tcl snippet shows how to call TritonCTS. TritonCTS 2.0 performs on-the-fly characterization.
 Thus there is no need to generate characterization data. On-the-fly characterization feature could still
-be optionally controlled by parameters specified to cts_configure_characterization command.
+be optionally controlled by parameters specified to configure_cts_characterization command.
 Use set_wire_rc command to set clock routing layer.
 
 ```
@@ -617,7 +632,7 @@ read_verilog "myverilog.v"
 read_sdc "mysdc.sdc"
 set_wire_rc -clock -layer metal5
 
-cts_configure_characterization [-max_slew <max_slew>] \
+configure_cts_characterization [-max_slew <max_slew>] \
                                [-max_cap <max_cap>] \
                                [-slew_inter <slew_inter>] \
                                [-cap_inter <cap_inter>]

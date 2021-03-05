@@ -65,6 +65,7 @@ class definComponent : public definBase
 
  public:
   int _inst_cnt;
+  int _update_cnt;
   int _iterm_cnt;
 
   /// Component interface methods

@@ -1,0 +1,604 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 200260 201600 ) ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal1 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal4 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal5 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal5 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal6 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal6 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal10 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
+COMPONENTS 294 ;
+    - _394_ NOR2_X1 + PLACED ( 60993 116073 ) N ;
+    - _397_ NOR2_X1 + PLACED ( 126191 122352 ) N ;
+    - _500_ OR2_X2 + PLACED ( 55625 103638 ) N ;
+    - _501_ OAI21_X1 + PLACED ( 46306 165842 ) N ;
+    - _502_ INV_X4 + PLACED ( 49231 128341 ) N ;
+    - _503_ NOR3_X1 + PLACED ( 47009 131437 ) N ;
+    - _504_ NOR2_X1 + PLACED ( 45817 130343 ) N ;
+    - _505_ NOR3_X1 + PLACED ( 50047 126785 ) N ;
+    - _506_ NAND2_X1 + PLACED ( 53668 108634 ) N ;
+    - _507_ INV_X2 + PLACED ( 56590 108342 ) N ;
+    - _508_ NAND2_X4 + PLACED ( 135303 107409 ) N ;
+    - _509_ NAND2_X2 + PLACED ( 163269 137391 ) N ;
+    - _510_ NAND2_X2 + PLACED ( 152410 147366 ) N ;
+    - _511_ NOR2_X2 + PLACED ( 163897 136131 ) N ;
+    - _512_ INV_X1 + PLACED ( 131410 132509 ) N ;
+    - _513_ NOR2_X1 + PLACED ( 132401 125208 ) N ;
+    - _514_ INV_X1 + PLACED ( 150244 123956 ) N ;
+    - _515_ NAND2_X1 + PLACED ( 149677 125167 ) N ;
+    - _516_ NAND2_X1 + PLACED ( 149704 123504 ) N ;
+    - _517_ NOR2_X1 + PLACED ( 150298 116921 ) N ;
+    - _518_ NAND4_X4 + PLACED ( 143922 108537 ) N ;
+    - _519_ NAND2_X4 + PLACED ( 133915 110640 ) N ;
+    - _520_ INV_X2 + PLACED ( 61202 113481 ) N ;
+    - _521_ NOR2_X1 + PLACED ( 127091 110373 ) N ;
+    - _522_ NAND2_X4 + PLACED ( 132168 113030 ) N ;
+    - _523_ NOR4_X1 + PLACED ( 99600 125879 ) N ;
+    - _524_ NOR4_X1 + PLACED ( 73211 145034 ) N ;
+    - _525_ NOR4_X1 + PLACED ( 132366 134774 ) N ;
+    - _526_ NOR4_X1 + PLACED ( 119757 127885 ) N ;
+    - _527_ NAND4_X1 + PLACED ( 123416 129073 ) N ;
+    - _528_ OR2_X1 + PLACED ( 132597 128291 ) N ;
+    - _529_ NOR2_X1 + PLACED ( 66646 173547 ) N ;
+    - _530_ NOR3_X1 + PLACED ( 135191 173547 ) N ;
+    - _531_ AND2_X1 + PLACED ( 135323 173339 ) N ;
+    - _532_ AOI21_X1 + PLACED ( 137895 173124 ) N ;
+    - _533_ INV_X1 + PLACED ( 136528 173218 ) N ;
+    - _535_ OAI21_X1 + PLACED ( 136600 173310 ) N ;
+    - _536_ INV_X1 + PLACED ( 135916 173547 ) N ;
+    - _537_ XNOR2_X1 + PLACED ( 151412 121417 ) N ;
+    - _538_ INV_X1 + PLACED ( 150086 124847 ) N ;
+    - _539_ OAI21_X1 + PLACED ( 150556 125452 ) N ;
+    - _540_ XNOR2_X1 + PLACED ( 164587 133724 ) N ;
+    - _541_ NAND3_X1 + PLACED ( 161231 138306 ) N ;
+    - _542_ NAND2_X1 + PLACED ( 165800 143072 ) N ;
+    - _543_ XNOR2_X1 + PLACED ( 167993 145666 ) N ;
+    - _544_ NAND2_X1 + PLACED ( 161930 124215 ) N ;
+    - _545_ INV_X1 + PLACED ( 151363 147262 ) N ;
+    - _546_ OAI21_X1 + PLACED ( 152702 146347 ) N ;
+    - _547_ INV_X1 + PLACED ( 158729 125444 ) N ;
+    - _548_ NAND2_X2 + PLACED ( 161831 122041 ) N ;
+    - _549_ XOR2_X1 + PLACED ( 163663 101007 ) N ;
+    - _550_ NAND2_X1 + PLACED ( 160815 99339 ) N ;
+    - _551_ NAND2_X1 + PLACED ( 158440 101877 ) N ;
+    - _552_ XOR2_X1 + PLACED ( 160831 103694 ) N ;
+    - _553_ NAND2_X1 + PLACED ( 152504 90932 ) N ;
+    - _554_ INV_X1 + PLACED ( 152964 85541 ) N ;
+    - _555_ AOI21_X2 + PLACED ( 150629 86277 ) N ;
+    - _556_ XOR2_X1 + PLACED ( 144544 81823 ) N ;
+    - _557_ NAND2_X1 + PLACED ( 142132 77986 ) N ;
+    - _558_ NAND2_X1 + PLACED ( 131288 84247 ) N ;
+    - _559_ NAND2_X1 + PLACED ( 136264 76102 ) N ;
+    - _560_ XNOR2_X1 + PLACED ( 135571 74307 ) N ;
+    - _561_ NAND2_X2 + PLACED ( 159332 88517 ) N ;
+    - _562_ NAND2_X1 + PLACED ( 153293 84073 ) N ;
+    - _563_ NOR2_X1 + PLACED ( 153270 79134 ) N ;
+    - _564_ OAI21_X1 + PLACED ( 134948 77555 ) N ;
+    - _565_ NOR2_X1 + PLACED ( 151683 77483 ) N ;
+    - _566_ NAND2_X2 + PLACED ( 153374 78908 ) N ;
+    - _567_ XNOR2_X1 + PLACED ( 117817 79181 ) N ;
+    - _568_ NAND2_X1 + PLACED ( 114857 74577 ) N ;
+    - _569_ NAND2_X1 + PLACED ( 109841 74095 ) N ;
+    - _570_ XNOR2_X1 + PLACED ( 112803 72975 ) N ;
+    - _571_ NAND2_X1 + PLACED ( 103423 74416 ) N ;
+    - _572_ INV_X1 + PLACED ( 93324 72355 ) N ;
+    - _573_ NAND2_X1 + PLACED ( 92999 74367 ) N ;
+    - _574_ INV_X1 + PLACED ( 90338 79159 ) N ;
+    - _575_ AOI21_X1 + PLACED ( 116331 87394 ) N ;
+    - _576_ XOR2_X1 + PLACED ( 62048 90551 ) N ;
+    - _577_ OAI21_X1 + PLACED ( 66321 92401 ) N ;
+    - _578_ XNOR2_X1 + PLACED ( 66449 93585 ) N ;
+    - _579_ INV_X1 + PLACED ( 122623 93782 ) N ;
+    - _580_ NAND2_X1 + PLACED ( 118795 90685 ) N ;
+    - _581_ NAND2_X1 + PLACED ( 74609 89811 ) N ;
+    - _582_ AOI22_X1 + PLACED ( 79256 88718 ) N ;
+    - _583_ NAND2_X2 + PLACED ( 80093 91408 ) N ;
+    - _584_ XOR2_X1 + PLACED ( 53882 173547 ) N ;
+    - _585_ AOI21_X1 + PLACED ( 55496 172428 ) N ;
+    - _586_ XNOR2_X1 + PLACED ( 57431 173547 ) N ;
+    - _587_ NAND2_X1 + PLACED ( 56100 151599 ) N ;
+    - _588_ OAI21_X1 + PLACED ( 41818 165025 ) N ;
+    - _589_ INV_X1 + PLACED ( 43296 156023 ) N ;
+    - _590_ NAND2_X2 + PLACED ( 48601 151579 ) N ;
+    - _591_ XNOR2_X1 + PLACED ( 51885 147940 ) N ;
+    - _592_ NAND2_X1 + PLACED ( 48954 137168 ) N ;
+    - _593_ NAND2_X1 + PLACED ( 51759 136393 ) N ;
+    - _594_ NAND2_X1 + PLACED ( 56787 133908 ) N ;
+    - _595_ NAND3_X1 + PLACED ( 50782 135914 ) N ;
+    - _596_ AND2_X1 + PLACED ( 62128 138489 ) N ;
+    - _597_ NAND3_X4 + PLACED ( 134218 109394 ) N ;
+    - _599_ OR2_X1 + PLACED ( 96966 110654 ) N ;
+    - _600_ INV_X4 + PLACED ( 142815 126314 ) N ;
+    - _602_ NAND2_X1 + PLACED ( 88399 111273 ) N ;
+    - _603_ NAND2_X1 + PLACED ( 96525 111018 ) N ;
+    - _604_ NAND2_X1 + PLACED ( 32023 90293 ) N ;
+    - _605_ NAND4_X1 + PLACED ( 92284 110228 ) N ;
+    - _606_ OR2_X4 + PLACED ( 79795 110605 ) N ;
+    - _607_ NAND2_X4 + PLACED ( 152749 115344 ) N ;
+    - _609_ AOI21_X1 + PLACED ( 49460 94015 ) N ;
+    - _610_ NAND3_X4 + PLACED ( 78494 109976 ) N ;
+    - _611_ NAND2_X1 + PLACED ( 79583 113265 ) N ;
+    - _612_ NAND2_X4 + PLACED ( 78952 112086 ) N ;
+    - _613_ INV_X2 + PLACED ( 81996 122225 ) N ;
+    - _614_ OR2_X1 + PLACED ( 148880 140605 ) N ;
+    - _615_ NAND2_X1 + PLACED ( 158694 135839 ) N ;
+    - _616_ AOI21_X1 + PLACED ( 49582 97798 ) N ;
+    - _617_ NAND3_X1 + PLACED ( 150439 137955 ) N ;
+    - _618_ NAND2_X1 + PLACED ( 147887 163108 ) N ;
+    - _619_ NAND2_X1 + PLACED ( 149243 162987 ) N ;
+    - _620_ INV_X1 + PLACED ( 137283 167168 ) N ;
+    - _621_ OR2_X1 + PLACED ( 146499 157053 ) N ;
+    - _622_ NAND2_X1 + PLACED ( 151758 158115 ) N ;
+    - _623_ AOI21_X1 + PLACED ( 49141 105306 ) N ;
+    - _624_ NAND3_X1 + PLACED ( 144660 158680 ) N ;
+    - _625_ NAND2_X1 + PLACED ( 138572 159959 ) N ;
+    - _626_ NAND2_X1 + PLACED ( 139186 161267 ) N ;
+    - _627_ INV_X1 + PLACED ( 136299 168960 ) N ;
+    - _628_ OR2_X1 + PLACED ( 109246 108684 ) N ;
+    - _629_ NAND2_X1 + PLACED ( 160449 106524 ) N ;
+    - _630_ AOI21_X1 + PLACED ( 49829 109572 ) N ;
+    - _631_ NAND3_X1 + PLACED ( 108422 108981 ) N ;
+    - _633_ OR2_X1 + PLACED ( 107508 110417 ) N ;
+    - _634_ NAND2_X1 + PLACED ( 109075 110686 ) N ;
+    - _635_ INV_X1 + PLACED ( 112942 112992 ) N ;
+    - _636_ OR2_X1 + PLACED ( 118382 111246 ) N ;
+    - _637_ NAND2_X1 + PLACED ( 158727 110161 ) N ;
+    - _639_ AOI21_X1 + PLACED ( 49978 113203 ) N ;
+    - _640_ NAND3_X1 + PLACED ( 117135 111439 ) N ;
+    - _641_ INV_X1 + PLACED ( 118790 106738 ) N ;
+    - _642_ NAND2_X1 + PLACED ( 114121 109101 ) N ;
+    - _643_ NAND2_X1 + PLACED ( 114817 111988 ) N ;
+    - _644_ INV_X1 + PLACED ( 114911 118839 ) N ;
+    - _645_ OR2_X1 + PLACED ( 126920 95966 ) N ;
+    - _646_ NAND2_X1 + PLACED ( 139524 92356 ) N ;
+    - _647_ AOI21_X1 + PLACED ( 48796 106441 ) N ;
+    - _648_ NAND3_X1 + PLACED ( 126802 99211 ) N ;
+    - _649_ OR2_X1 + PLACED ( 123245 104199 ) N ;
+    - _650_ NAND2_X1 + PLACED ( 124534 104795 ) N ;
+    - _651_ INV_X1 + PLACED ( 122199 111420 ) N ;
+    - _652_ NOR2_X1 + PLACED ( 103134 107679 ) N ;
+    - _653_ AOI21_X1 + PLACED ( 49121 111019 ) N ;
+    - _654_ OAI21_X1 + PLACED ( 93944 108455 ) N ;
+    - _655_ INV_X1 + PLACED ( 97341 108477 ) N ;
+    - _656_ NAND2_X1 + PLACED ( 136629 92409 ) N ;
+    - _657_ AOI21_X2 + PLACED ( 102649 108326 ) N ;
+    - _658_ OR2_X1 + PLACED ( 102516 89726 ) N ;
+    - _659_ NAND2_X1 + PLACED ( 117907 92469 ) N ;
+    - _660_ AOI21_X1 + PLACED ( 125060 72494 ) N ;
+    - _661_ NAND3_X1 + PLACED ( 113808 91077 ) N ;
+    - _662_ OR2_X1 + PLACED ( 104662 93395 ) N ;
+    - _663_ NAND2_X1 + PLACED ( 107373 93924 ) N ;
+    - _664_ INV_X1 + PLACED ( 98787 102001 ) N ;
+    - _665_ NOR2_X1 + PLACED ( 96303 93475 ) N ;
+    - _666_ AOI21_X1 + PLACED ( 85596 76025 ) N ;
+    - _667_ OAI21_X1 + PLACED ( 90991 87232 ) N ;
+    - _668_ INV_X1 + PLACED ( 94069 90491 ) N ;
+    - _669_ NAND2_X1 + PLACED ( 107171 92483 ) N ;
+    - _670_ AOI21_X2 + PLACED ( 96150 93201 ) N ;
+    - _671_ NOR2_X1 + PLACED ( 64196 113370 ) N ;
+    - _672_ AOI21_X1 + PLACED ( 73848 74921 ) N ;
+    - _673_ OAI21_X1 + PLACED ( 70699 105427 ) N ;
+    - _674_ INV_X1 + PLACED ( 67752 109530 ) N ;
+    - _675_ NAND2_X1 + PLACED ( 62744 113620 ) N ;
+    - _676_ AOI21_X2 + PLACED ( 64416 113674 ) N ;
+    - _677_ NOR2_X1 + PLACED ( 88146 98421 ) N ;
+    - _678_ AOI21_X1 + PLACED ( 87449 74529 ) N ;
+    - _679_ OAI21_X1 + PLACED ( 85478 89701 ) N ;
+    - _680_ INV_X1 + PLACED ( 86850 92687 ) N ;
+    - _681_ NAND2_X1 + PLACED ( 80231 99454 ) N ;
+    - _682_ AOI21_X2 + PLACED ( 87112 98815 ) N ;
+    - _683_ NOR2_X1 + PLACED ( 64134 170371 ) N ;
+    - _684_ AOI21_X1 + PLACED ( 52303 84567 ) N ;
+    - _685_ OAI21_X1 + PLACED ( 55472 154503 ) N ;
+    - _686_ INV_X1 + PLACED ( 56752 165790 ) N ;
+    - _687_ NAND2_X1 + PLACED ( 64799 173488 ) N ;
+    - _688_ AOI21_X2 + PLACED ( 64060 172792 ) N ;
+    - _689_ NOR2_X1 + PLACED ( 64794 170317 ) N ;
+    - _690_ AOI21_X1 + PLACED ( 77081 75593 ) N ;
+    - _691_ OAI21_X1 + PLACED ( 69595 156547 ) N ;
+    - _692_ INV_X1 + PLACED ( 70330 168766 ) N ;
+    - _693_ NAND2_X1 + PLACED ( 69788 173547 ) N ;
+    - _694_ AOI21_X2 + PLACED ( 69632 173257 ) N ;
+    - _695_ NOR2_X1 + PLACED ( 59712 147757 ) N ;
+    - _696_ AOI21_X1 + PLACED ( 48094 105949 ) N ;
+    - _697_ OAI21_X1 + PLACED ( 57516 145444 ) N ;
+    - _698_ INV_X1 + PLACED ( 59235 147617 ) N ;
+    - _699_ NAND2_X1 + PLACED ( 60072 149087 ) N ;
+    - _700_ AOI21_X2 + PLACED ( 59264 148564 ) N ;
+    - _701_ NOR2_X1 + PLACED ( 66466 133538 ) N ;
+    - _702_ NAND3_X1 + PLACED ( 62114 135834 ) N ;
+    - _703_ AOI21_X1 + PLACED ( 79247 81500 ) N ;
+    - _704_ OAI21_X1 + PLACED ( 73778 127357 ) N ;
+    - _705_ INV_X1 + PLACED ( 71370 131124 ) N ;
+    - _706_ AOI21_X2 + PLACED ( 67271 135058 ) N ;
+    - _707_ AOI21_X4 + PLACED ( 129700 115462 ) N ;
+    - _710_ NAND2_X1 + PLACED ( 36782 132131 ) N ;
+    - _711_ OAI21_X1 + PLACED ( 133163 133762 ) N ;
+    - _712_ NAND2_X1 + PLACED ( 133588 141280 ) N ;
+    - _714_ OAI21_X1 + PLACED ( 131850 143480 ) N ;
+    - _715_ NAND2_X1 + PLACED ( 40463 109694 ) N ;
+    - _716_ OAI21_X1 + PLACED ( 80033 115723 ) N ;
+    - _717_ NAND2_X1 + PLACED ( 89509 124797 ) N ;
+    - _718_ OAI21_X1 + PLACED ( 90633 126559 ) N ;
+    - _719_ NAND2_X1 + PLACED ( 33531 135413 ) N ;
+    - _720_ OAI21_X1 + PLACED ( 137437 143400 ) N ;
+    - _721_ NAND2_X1 + PLACED ( 136175 147427 ) N ;
+    - _722_ OAI21_X1 + PLACED ( 134837 147991 ) N ;
+    - _723_ NAND2_X1 + PLACED ( 74323 104602 ) N ;
+    - _724_ OAI21_X1 + PLACED ( 136826 146224 ) N ;
+    - _725_ NAND2_X1 + PLACED ( 136084 148906 ) N ;
+    - _726_ OAI21_X1 + PLACED ( 135022 149515 ) N ;
+    - _728_ MUX2_X1 + PLACED ( 109204 115122 ) N ;
+    - _729_ NAND2_X1 + PLACED ( 106814 124498 ) N ;
+    - _730_ OAI21_X1 + PLACED ( 110532 126272 ) N ;
+    - _731_ NAND2_X1 + PLACED ( 106853 64831 ) N ;
+    - _732_ OAI21_X1 + PLACED ( 111952 106948 ) N ;
+    - _733_ NAND2_X1 + PLACED ( 113903 126110 ) N ;
+    - _734_ OAI21_X1 + PLACED ( 111049 127497 ) N ;
+    - _735_ MUX2_X1 + PLACED ( 118018 85139 ) N ;
+    - _736_ NAND2_X1 + PLACED ( 118886 128078 ) N ;
+    - _737_ OAI21_X1 + PLACED ( 116850 129686 ) N ;
+    - _738_ NAND2_X1 + PLACED ( 65810 76419 ) N ;
+    - _739_ OAI21_X1 + PLACED ( 94890 91014 ) N ;
+    - _740_ NAND2_X1 + PLACED ( 95205 122718 ) N ;
+    - _741_ OAI21_X1 + PLACED ( 95086 125152 ) N ;
+    - _742_ MUX2_X1 + PLACED ( 95421 89612 ) N ;
+    - _743_ NAND2_X1 + PLACED ( 97782 119957 ) N ;
+    - _744_ OAI21_X1 + PLACED ( 97888 123065 ) N ;
+    - _745_ NAND2_X1 + PLACED ( 101801 63588 ) N ;
+    - _746_ OAI21_X1 + PLACED ( 98238 68054 ) N ;
+    - _747_ NAND2_X1 + PLACED ( 95913 125181 ) N ;
+    - _748_ OAI21_X1 + PLACED ( 94663 126652 ) N ;
+    - _749_ MUX2_X1 + PLACED ( 65030 109932 ) N ;
+    - _750_ NAND2_X1 + PLACED ( 76583 129360 ) N ;
+    - _751_ OAI21_X1 + PLACED ( 78207 131339 ) N ;
+    - _752_ MUX2_X1 + PLACED ( 77791 111710 ) N ;
+    - _753_ NAND2_X1 + PLACED ( 83637 125449 ) N ;
+    - _754_ OAI21_X1 + PLACED ( 85226 127263 ) N ;
+    - _755_ MUX2_X1 + PLACED ( 37910 155323 ) N ;
+    - _756_ NAND2_X1 + PLACED ( 71676 160089 ) N ;
+    - _757_ OAI21_X1 + PLACED ( 72834 160794 ) N ;
+    - _758_ MUX2_X1 + PLACED ( 60818 152856 ) N ;
+    - _759_ NAND2_X1 + PLACED ( 71572 157269 ) N ;
+    - _760_ OAI21_X1 + PLACED ( 72892 158705 ) N ;
+    - _761_ MUX2_X1 + PLACED ( 37714 143019 ) N ;
+    - _762_ NAND2_X1 + PLACED ( 73499 144676 ) N ;
+    - _763_ OAI21_X1 + PLACED ( 74103 145954 ) N ;
+    - _764_ NAND2_X1 + PLACED ( 36813 111662 ) N ;
+    - _765_ OAI21_X1 + PLACED ( 62100 122842 ) N ;
+    - _766_ NAND2_X1 + PLACED ( 76843 129253 ) N ;
+    - _767_ OAI21_X1 + PLACED ( 78200 131517 ) N ;
+    - _784_ DFF_X1 + PLACED ( 109588 173547 ) N ;
+    - _785_ DFF_X1 + PLACED ( 116628 173547 ) N ;
+    - _786_ DFF_X1 + PLACED ( 92455 148409 ) N ;
+    - _787_ DFF_X1 + PLACED ( 117943 152395 ) N ;
+    - _788_ DFF_X1 + PLACED ( 105910 173547 ) N ;
+    - _789_ DFF_X1 + PLACED ( 88949 173547 ) N ;
+    - _790_ DFF_X1 + PLACED ( 118089 163399 ) N ;
+    - _791_ DFF_X1 + PLACED ( 118087 162490 ) N ;
+    - _792_ DFF_X1 + PLACED ( 118414 162807 ) N ;
+    - _793_ DFF_X1 + PLACED ( 117932 163183 ) N ;
+    - _794_ DFF_X1 + PLACED ( 94920 173547 ) N ;
+    - _795_ DFF_X1 + PLACED ( 94956 173547 ) N ;
+    - _796_ DFF_X1 + PLACED ( 95119 173212 ) N ;
+    - _797_ DFF_X1 + PLACED ( 95221 173107 ) N ;
+    - _798_ DFF_X1 + PLACED ( 95238 173547 ) N ;
+    - _799_ DFF_X1 + PLACED ( 95253 173547 ) N ;
+    - _800_ DFF_X1 + PLACED ( 91634 148792 ) N ;
+    - _801_ DFF_X1 + PLACED ( 91688 148416 ) N ;
+    - _802_ DFF_X1 + PLACED ( 86272 147694 ) N ;
+    - _803_ DFF_X1 + PLACED ( 91934 147845 ) N ;
+    - _804_ DFF_X1 + PLACED ( 107650 151492 ) N ;
+    - _805_ DFF_X1 + PLACED ( 118545 149010 ) N ;
+    - _806_ DFF_X1 + PLACED ( 116776 151391 ) N ;
+    - _807_ DFF_X1 + PLACED ( 99689 148314 ) N ;
+    - _808_ DFF_X1 + PLACED ( 118140 148367 ) N ;
+    - _809_ DFF_X1 + PLACED ( 94155 147837 ) N ;
+    - _810_ DFF_X1 + PLACED ( 95019 147409 ) N ;
+    - _811_ DFF_X1 + PLACED ( 93069 147839 ) N ;
+    - _812_ DFF_X1 + PLACED ( 90920 147905 ) N ;
+    - _813_ DFF_X1 + PLACED ( 91004 147891 ) N ;
+    - _814_ DFF_X1 + PLACED ( 93272 164731 ) N ;
+    - _815_ DFF_X1 + PLACED ( 92598 163671 ) N ;
+    - _816_ DFF_X1 + PLACED ( 90768 148322 ) N ;
+    - _817_ DFF_X1 + PLACED ( 90840 147889 ) N ;
+END COMPONENTS
+PINS 54 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 74290 201530 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86940 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106540 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105140 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103740 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102340 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100940 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99540 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98140 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 96740 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95340 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93940 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85540 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 92540 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91140 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89740 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88340 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 61740 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60340 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58940 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 57540 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 56140 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54740 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 53340 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 51940 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 50540 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 49140 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 47740 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 46340 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 44940 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 43540 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 42140 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 40740 ) N ;
+    - req_rdy + NET net2 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 72390 201530 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70490 201530 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 68590 201530 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 66690 201530 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 64790 201530 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 62890 201530 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 60990 201530 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 59090 201530 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 57190 201530 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 55290 201530 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 106540 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 107940 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 109340 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 110740 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 112140 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 113540 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 114940 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 116340 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 117740 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 103740 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 200190 105140 ) N ;
+END PINS
+NETS 54 ;
+    - clk ( PIN clk ) ( _817_ CK ) ( _816_ CK ) ( _815_ CK ) ( _814_ CK ) ( _813_ CK ) ( _812_ CK )
+      ( _811_ CK ) ( _810_ CK ) ( _809_ CK ) ( _808_ CK ) ( _807_ CK ) ( _806_ CK ) ( _805_ CK ) ( _804_ CK )
+      ( _803_ CK ) ( _802_ CK ) ( _801_ CK ) ( _800_ CK ) ( _799_ CK ) ( _798_ CK ) ( _797_ CK ) ( _796_ CK )
+      ( _795_ CK ) ( _794_ CK ) ( _793_ CK ) ( _792_ CK ) ( _791_ CK ) ( _790_ CK ) ( _789_ CK ) ( _788_ CK )
+      ( _787_ CK ) ( _786_ CK ) ( _785_ CK ) ( _784_ CK ) + USE CLOCK ;
+    - net2 ( PIN req_rdy ) ( _765_ B2 ) ( _723_ A1 ) ( _752_ S ) ( _716_ B2 ) ( _732_ B2 ) ( _728_ S )
+      ( _735_ S ) ( _739_ B2 ) ( _742_ S ) ( _738_ A1 ) ( _746_ B2 ) ( _745_ A1 ) ( _731_ A1 ) ( _711_ B2 )
+      ( _720_ B2 ) ( _724_ B2 ) ( _719_ A1 ) ( _394_ ZN ) ( _761_ S ) ( _758_ S ) ( _755_ S ) ( _710_ A1 )
+      ( _715_ A1 ) ( _764_ A1 ) ( _604_ A1 ) ( _749_ S ) + USE SIGNAL ;
+    - req_msg[0] ( PIN req_msg[0] ) ( _710_ A2 ) + USE SIGNAL ;
+    - req_msg[10] ( PIN req_msg[10] ) ( _749_ B ) + USE SIGNAL ;
+    - req_msg[11] ( PIN req_msg[11] ) ( _752_ B ) + USE SIGNAL ;
+    - req_msg[12] ( PIN req_msg[12] ) ( _755_ B ) + USE SIGNAL ;
+    - req_msg[13] ( PIN req_msg[13] ) ( _758_ B ) + USE SIGNAL ;
+    - req_msg[14] ( PIN req_msg[14] ) ( _761_ B ) + USE SIGNAL ;
+    - req_msg[15] ( PIN req_msg[15] ) ( _764_ A2 ) + USE SIGNAL ;
+    - req_msg[16] ( PIN req_msg[16] ) ( _604_ A2 ) + USE SIGNAL ;
+    - req_msg[17] ( PIN req_msg[17] ) ( _609_ B2 ) + USE SIGNAL ;
+    - req_msg[18] ( PIN req_msg[18] ) ( _616_ B2 ) + USE SIGNAL ;
+    - req_msg[19] ( PIN req_msg[19] ) ( _623_ B2 ) + USE SIGNAL ;
+    - req_msg[1] ( PIN req_msg[1] ) ( _715_ A2 ) + USE SIGNAL ;
+    - req_msg[20] ( PIN req_msg[20] ) ( _630_ B2 ) + USE SIGNAL ;
+    - req_msg[21] ( PIN req_msg[21] ) ( _639_ B2 ) + USE SIGNAL ;
+    - req_msg[22] ( PIN req_msg[22] ) ( _647_ B2 ) + USE SIGNAL ;
+    - req_msg[23] ( PIN req_msg[23] ) ( _653_ B2 ) + USE SIGNAL ;
+    - req_msg[24] ( PIN req_msg[24] ) ( _660_ B2 ) + USE SIGNAL ;
+    - req_msg[25] ( PIN req_msg[25] ) ( _666_ B2 ) + USE SIGNAL ;
+    - req_msg[26] ( PIN req_msg[26] ) ( _672_ B2 ) + USE SIGNAL ;
+    - req_msg[27] ( PIN req_msg[27] ) ( _678_ B2 ) + USE SIGNAL ;
+    - req_msg[28] ( PIN req_msg[28] ) ( _684_ B2 ) + USE SIGNAL ;
+    - req_msg[29] ( PIN req_msg[29] ) ( _690_ B2 ) + USE SIGNAL ;
+    - req_msg[2] ( PIN req_msg[2] ) ( _719_ A2 ) + USE SIGNAL ;
+    - req_msg[30] ( PIN req_msg[30] ) ( _696_ B2 ) + USE SIGNAL ;
+    - req_msg[31] ( PIN req_msg[31] ) ( _703_ B2 ) + USE SIGNAL ;
+    - req_msg[3] ( PIN req_msg[3] ) ( _723_ A2 ) + USE SIGNAL ;
+    - req_msg[4] ( PIN req_msg[4] ) ( _728_ B ) + USE SIGNAL ;
+    - req_msg[5] ( PIN req_msg[5] ) ( _731_ A2 ) + USE SIGNAL ;
+    - req_msg[6] ( PIN req_msg[6] ) ( _735_ B ) + USE SIGNAL ;
+    - req_msg[7] ( PIN req_msg[7] ) ( _738_ A2 ) + USE SIGNAL ;
+    - req_msg[8] ( PIN req_msg[8] ) ( _742_ B ) + USE SIGNAL ;
+    - req_msg[9] ( PIN req_msg[9] ) ( _745_ A2 ) + USE SIGNAL ;
+    - req_val ( PIN req_val ) ( _529_ A1 ) + USE SIGNAL ;
+    - reset ( PIN reset ) ( _532_ A ) ( _530_ A3 ) + USE SIGNAL ;
+    - resp_msg[0] ( PIN resp_msg[0] ) ( _515_ ZN ) ( _517_ A1 ) ( _602_ A2 ) + USE SIGNAL ;
+    - resp_msg[10] ( PIN resp_msg[10] ) ( _576_ Z ) ( _675_ A2 ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) ( _578_ ZN ) ( _681_ A1 ) + USE SIGNAL ;
+    - resp_msg[12] ( PIN resp_msg[12] ) ( _584_ Z ) ( _687_ A2 ) + USE SIGNAL ;
+    - resp_msg[13] ( PIN resp_msg[13] ) ( _586_ ZN ) ( _693_ A1 ) + USE SIGNAL ;
+    - resp_msg[14] ( PIN resp_msg[14] ) ( _591_ ZN ) ( _699_ A1 ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) ( _596_ ZN ) + USE SIGNAL ;
+    - resp_msg[1] ( PIN resp_msg[1] ) ( _537_ ZN ) ( _607_ A2 ) + USE SIGNAL ;
+    - resp_msg[2] ( PIN resp_msg[2] ) ( _540_ ZN ) ( _615_ A2 ) + USE SIGNAL ;
+    - resp_msg[3] ( PIN resp_msg[3] ) ( _543_ ZN ) ( _622_ A2 ) + USE SIGNAL ;
+    - resp_msg[4] ( PIN resp_msg[4] ) ( _549_ Z ) ( _629_ A2 ) + USE SIGNAL ;
+    - resp_msg[5] ( PIN resp_msg[5] ) ( _552_ Z ) ( _637_ A2 ) + USE SIGNAL ;
+    - resp_msg[6] ( PIN resp_msg[6] ) ( _556_ Z ) ( _646_ A2 ) + USE SIGNAL ;
+    - resp_msg[7] ( PIN resp_msg[7] ) ( _560_ ZN ) ( _656_ A2 ) + USE SIGNAL ;
+    - resp_msg[8] ( PIN resp_msg[8] ) ( _567_ ZN ) ( _659_ A2 ) + USE SIGNAL ;
+    - resp_msg[9] ( PIN resp_msg[9] ) ( _570_ ZN ) ( _669_ A2 ) + USE SIGNAL ;
+    - resp_rdy ( PIN resp_rdy ) ( _532_ B2 ) + USE SIGNAL ;
+    - resp_val ( PIN resp_val ) ( _532_ B1 ) ( _530_ A1 ) ( _397_ ZN ) + USE SIGNAL ;
+END NETS
+END DESIGN

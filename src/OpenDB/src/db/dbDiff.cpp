@@ -694,20 +694,6 @@ void dbDiff::diff(const char*        field,
   }
 }
 
-void dbDiff::diff(const char*                     field,
-                  TechLayerSpacingRule::_RuleType lhs,
-                  TechLayerSpacingRule::_RuleType rhs)
-{
-  if (lhs != rhs) {
-    report("< %s: ", field);
-    (*this) << TechLayerSpacingRule::getString(lhs);
-    (*this) << "\n";
-    report("> %s: ", field);
-    (*this) << TechLayerSpacingRule::getString(rhs);
-    (*this) << "\n";
-  }
-}
-
 void dbDiff::diff(const char*               field,
                   TechMinCutRule::_RuleType lhs,
                   TechMinCutRule::_RuleType rhs)
@@ -921,15 +907,6 @@ void dbDiff::out(char side, const char* field, dbDirection::Value value)
 {
   report("%c %s: ", side, field);
   (*this) << dbDirection(value).getString();
-  (*this) << "\n";
-}
-
-void dbDiff::out(char                            side,
-                 const char*                     field,
-                 TechLayerSpacingRule::_RuleType value)
-{
-  report("%c %s: ", side, field);
-  (*this) << TechLayerSpacingRule::getString(value);
   (*this) << "\n";
 }
 

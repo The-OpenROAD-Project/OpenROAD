@@ -264,8 +264,7 @@ void io::Parser::genGuides_split(vector<frRect> &rects, vector<map<frCoord, boos
 }
 
 
-void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                         map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap, 
+void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>> &gCell2PinMap,
                                          frTerm* term, frBlockObject* origTerm) {
   bool enableOutput = false;
   for (auto &uPin: term->getPins()) {
@@ -274,63 +273,21 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
       if (fig->typeId() == frcRect) {
         auto shape = static_cast<frRect*>(fig);
         auto lNum  = shape->getLayerNum();
-        auto layer = design->getTech()->getLayer(lNum);
         frBox box;
         shape->getBBox(box);
         if (enableOutput) {
           cout <<"  box " <<box <<endl;
         }
-        frPoint idx;
-        frPoint pt(box.left() - 1, box.bottom() - 1);
-        design->getTopBlock()->getGCellIdx(pt, idx);
-        frCoord x1 = idx.x();
-        frCoord y1 = idx.y();
-        pt.set(box.upperRight());
-        design->getTopBlock()->getGCellIdx(pt, idx);
-        frCoord x2 = idx.x();
-        frCoord y2 = idx.y();
-        // ispd18_test4 and ispd18_test5 have zero overlap guide
-        // excludes double-zero overlap area on the upper-right corner due to initDR requirements
-        bool condition2 = false; // upper right corner has zero-length overlapped with gcell
-        frBox gcellBox;
-        frPoint tmpIdx;
-        design->getTopBlock()->getGCellIdx(box.lowerLeft(), tmpIdx);
-        design->getTopBlock()->getGCellBox(tmpIdx, gcellBox);
-        if (box.lowerLeft() == gcellBox.lowerLeft()) {
-          condition2 = true;
-        }
+        frPoint idx_ll;
+        design->getTopBlock()->getGCellIdx(box.lowerLeft(), idx_ll);
+        frPoint idx_ur;
+        design->getTopBlock()->getGCellIdx(box.upperRight(), idx_ur);
 
-        bool condition3 = false; // GR implies wrongway connection but technology does not allow
-        if ((layer->getDir() == frcVertPrefRoutingDir && (!USENONPREFTRACKS /*|| layer->getLef58RectOnlyConstraint()*/) && box.left() == gcellBox.left()) ||
-            (layer->getDir() == frcHorzPrefRoutingDir && (!USENONPREFTRACKS /*|| layer->getLef58RectOnlyConstraint()*/) && box.bottom() == gcellBox.bottom())) {
-          condition3 = true;
-        }
-        for (int x = x1; x <= x2; x++) {
-          for (int y = y1; y <= y2; y++) {
-            if (condition2 && x == tmpIdx.x() - 1 && y == tmpIdx.y() - 1) {
-              if (VERBOSE > 0) {
-                frString name =
-                  (origTerm->typeId() == frcInstTerm) ?
-                  ((frInstTerm *) origTerm)->getName() :
-                  term->getName();
-                cout <<"Warning: genGuides_gCell2TermMap avoid condition2, may result in guide open: "
-                     << name << endl;
-              }
-            } else if (condition3 && ((x == tmpIdx.x() -1 && layer->getDir() == frcVertPrefRoutingDir) || 
-                                      (y == tmpIdx.y() -1 && layer->getDir() == frcHorzPrefRoutingDir) )) {
-              if (VERBOSE > 0) {
-                frString name =
-                  (origTerm->typeId() == frcInstTerm) ?
-                  ((frInstTerm *) origTerm)->getName() :
-                  term->getName();
-                cout <<"Warning: genGuides_gCell2TermMap avoid condition3, may result in guide open: "
-                     << name << endl;
-              }
-            } else {
-              gCell2PinMap[make_pair(frPoint(x, y), lNum)].insert(origTerm);
-              if (enableOutput) {
-                cout <<" (x,y,lNum) = (" <<x <<", " <<y <<", " <<lNum <<")" <<endl;
-              }
+        for (int x = idx_ll.x(); x <= idx_ur.x(); x++) {
+          for (int y = idx_ll.y(); y <= idx_ur.y(); y++) {
+            gCell2PinMap[make_pair(frPoint(x, y), lNum)].insert(origTerm);
+            if (enableOutput) {
+              cout <<" (x,y,lNum) = (" <<x <<", " <<y <<", " <<lNum <<")" <<endl;
             }
           }
         }
@@ -342,8 +299,7 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
   }
 }
 
-void io::Parser::genGuides_gCell2PinMap(frNet* net, map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap,
-    map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap) {
+void io::Parser::genGuides_gCell2PinMap(frNet* net, map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap) {
   bool enableOutput = false;
   //bool enableOutput = true;
   for (auto &instTerm: net->getInstTerms()) {
@@ -356,11 +312,11 @@ void io::Parser::genGuides_gCell2PinMap(frNet* net, map<pair<frPoint, frLayerNum
     auto uTerm = make_unique<frTerm>(*origTerm, xform);
     auto term = uTerm.get();
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-      if (!genGuides_gCell2APInstTermMap(gCell2PinMap, pin2GCellMap, instTerm)) {
-        genGuides_gCell2TermMap(gCell2PinMap, pin2GCellMap, term, instTerm);
+      if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
+        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, pin2GCellMap, term, instTerm);
+      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
     }
   }
   for (auto &term: net->getTerms()) {
@@ -368,17 +324,16 @@ void io::Parser::genGuides_gCell2PinMap(frNet* net, map<pair<frPoint, frLayerNum
       cout <<"    term PIN/" <<term->getName() <<endl;
     }
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-      if (!genGuides_gCell2APTermMap(gCell2PinMap, pin2GCellMap, term)) {
-        genGuides_gCell2TermMap(gCell2PinMap, pin2GCellMap, term, term);
+      if (!genGuides_gCell2APTermMap(gCell2PinMap, term)) {
+        genGuides_gCell2TermMap(gCell2PinMap, term, term);
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, pin2GCellMap, term, term);
+      genGuides_gCell2TermMap(gCell2PinMap, term, term);
     }
   }
 }
 
 bool io::Parser::genGuides_gCell2APInstTermMap(map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                               map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap, 
                                                frInstTerm* instTerm) {
   // bool enableOutput = false;
   bool isSuccess = false;
@@ -439,8 +394,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(map<pair<frPoint, frLayerNum>, se
   return isSuccess;
 }
 
-bool io::Parser::genGuides_gCell2APTermMap(map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > &gCell2PinMap, 
-                                           map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap, 
+bool io::Parser::genGuides_gCell2APTermMap(map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp>> &gCell2PinMap,
                                            frTerm* term) {
   // bool enableOutput = false;
   bool isSuccess = false;
@@ -597,7 +551,7 @@ void io::Parser::genGuides(frNet *net, vector<frRect> &rects) {
   // gcell to pin map
   map<pair<frPoint, frLayerNum>, set<frBlockObject*, frBlockObjectComp> > gCell2PinMap;
   map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> pin2GCellMap; 
-  genGuides_gCell2PinMap(net, gCell2PinMap, pin2GCellMap);
+  genGuides_gCell2PinMap(net, gCell2PinMap);
   genGuides_initPin2GCellMap(net, pin2GCellMap);
 
   bool retry = false;
@@ -828,7 +782,7 @@ void io::Parser::genGuides_final(frNet *net, vector<frRect> &rects, vector<bool>
 }
 
 void io::Parser::genGuides_buildNodeMap(map<pair<frPoint, frLayerNum>, set<int> > &nodeMap, int &gCnt, int &nCnt,
-                                        vector<frRect> &rects, map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap) {
+                                        const vector<frRect> &rects, const map<frBlockObject*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap) {
   bool enableOutput = false;
   for (int i = 0; i < (int)rects.size(); i++) {
     auto &rect = rects[i];

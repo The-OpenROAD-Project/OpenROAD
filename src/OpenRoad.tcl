@@ -42,10 +42,10 @@ proc read_lef { args } {
 
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
-    utl::error ORD 1 "$filename does not exist."
+    utl::error "ORD" 1 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    utl::error ORD 2 "$filename is not readable."
+    utl::error "ORD" 2 "$filename is not readable."
   }
 
   set make_tech [info exists flags(-tech)]
@@ -58,24 +58,29 @@ proc read_lef { args } {
   ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
 }
 
-sta::define_cmd_args "read_def" {[-order_wires] [-continue_on_errors] filename}
+sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental] [-order_wires] [-continue_on_errors] filename}
 
 proc read_def { args } {
-  sta::parse_key_args "read_def" args keys {} flags {-order_wires -continue_on_errors}
+  sta::parse_key_args "read_def" args keys {} flags {-floorplan_initialize -incremental -order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
-    utl::error ORD 3 "$filename does not exist."
+    utl::error "ORD" 3 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    utl::error ORD 4 "$filename is not readable."
+    utl::error "ORD" 4 "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
-    utl::error ORD 5 "no technology has been read."
+    utl::error "ORD" 5 "no technology has been read."
   }
   set order_wires [info exists flags(-order_wires)]
   set continue_on_errors [info exists flags(-continue_on_errors)]
-  ord::read_def_cmd $filename $order_wires $continue_on_errors
+  set floorplan_init [info exists flags(-floorplan_initialize)]
+  set incremental [info exists flags(-incremental)]
+  if { $floorplan_init && $incremental } {
+    utl::error ORD 16 "incremental and floorplan_initialization options are both set. At most one should be used."
+  }
+  ord::read_def_cmd $filename $order_wires $continue_on_errors $floorplan_init $incremental
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}
@@ -91,7 +96,7 @@ proc write_def { args } {
 	     || $version == "5.5" \
 	     || $version == "5.4" \
 	     || $version == "5.3") } {
-      utl::error ORD 6 "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+      utl::error "ORD" 6 "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
     }
   }
 
@@ -119,10 +124,10 @@ proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
-    utl::error ORD 7 "$filename does not exist."
+    utl::error "ORD" 7 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    utl::error ORD 8 "$filename is not readable."
+    utl::error "ORD" 8 "$filename is not readable."
   }
   ord::read_db_cmd $filename
 }
@@ -146,11 +151,11 @@ proc set_layer_rc {args} {
     flags {}
 
   if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
-    utl::error ORD 9 "layer or via must be specified."
+    utl::error "ORD" 9 "layer or via must be specified."
   }
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error ORD 10 "Exactly one of layer or via must be specified."
+    utl::error "ORD" 10 "Exactly one of layer or via must be specified."
   }
 
   set tech [ord::get_db_tech]
@@ -161,11 +166,11 @@ proc set_layer_rc {args} {
     set techLayer [$tech findLayer $keys(-via)]
   }
   if { $techLayer == "NULL" } {
-    utl::error ORD 16 "layer not found."
+    utl::error "ORD" 16 "layer not found."
   }
 
   if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-    utl::error ORD 12 "use -capacitance <value> or -resistance <value>."
+    utl::error "ORD" 12 "use -capacitance <value> or -resistance <value>."
   }
 
   if { [info exists keys(-via)] } {
@@ -223,7 +228,7 @@ namespace eval ord {
 
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
-    utl::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+    utl::error "ORD" 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
   }
 }
 
