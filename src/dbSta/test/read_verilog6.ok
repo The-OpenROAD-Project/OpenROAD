@@ -6,5 +6,6 @@
 [INFO ODB-0222] Reading LEF file: read_verilog6.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  read_verilog6.lef
-Warning: read_verilog6.v line 11, module AND2_X10 not found.  Creating black box for u2.
-[WARNING ORD-1000] LEF master BUF_X10 has no liberty cell.
+[WARNING STA-0198] read_verilog6.v line 11, module AND2_X10 not found.  Creating black box for u2.
+[WARNING ORD-1011] LEF master BUF_X10 has no liberty cell.
+[WARNING ORD-1001] instance u2 LEF master AND2_X10 not found.

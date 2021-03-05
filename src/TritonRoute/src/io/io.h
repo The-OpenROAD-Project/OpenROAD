@@ -70,8 +70,7 @@ namespace fr {
         return prefTrackPatterns;
       }
 
-    protected:
-
+    private:
       void readDesign(odb::dbDatabase*);
       void readTechAndLibs(odb::dbDatabase*);
       void setMacros(odb::dbDatabase*);
@@ -152,7 +151,7 @@ namespace fr {
                                      frTerm* instTerm);
       void genGuides_initPin2GCellMap(frNet* net, std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
       void genGuides_buildNodeMap(std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt,
-                                  std::vector<frRect> &rects, std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
+                                  const std::vector<frRect> &rects, const std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
       bool genGuides_astar(frNet *net,
                            std::vector<bool> &adjVisited, std::vector<int> &adjPrevIdx, 
                            std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt, bool forceFeedThrough, bool retry);

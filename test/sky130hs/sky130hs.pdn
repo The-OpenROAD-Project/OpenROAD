@@ -1,7 +1,6 @@
 # Floorplan information - core boundary coordinates, std. cell row height,
 # minimum track pitch as defined in LEF
 
-set ::halo 4
 
 # POWER or GROUND #Std. cell rails starting with power or ground rails at the bottom of the core area
 set ::rails_start_with "POWER" ;
@@ -16,10 +15,12 @@ set ::ground_nets "VSS"
 
 set pdngen::global_connections {
   VDD {
-    {inst_name .* pin_name vpwr}
+    {inst_name .* pin_name VPWR}
+    {inst_name .* pin_name VPB}
   }
   VSS {
-    {inst_name .* pin_name vgnd}
+    {inst_name .* pin_name VGND}
+    {inst_name .* pin_name VNB}
   }
 }
 ##===> Power grid strategy
@@ -28,33 +29,30 @@ set pdngen::global_connections {
 pdngen::specify_grid stdcell {
     name grid
     rails {
-        met1 {width 0.49 pitch 6.66 offset 0}
+        met1 {width 0.48 offset 0}
     }
     straps {
-        met4 {width 0.96 pitch 56.0 offset 2}
+        met4 {width 1.600 pitch 27.140 offset 13.570}
+        met5 {width 1.600 pitch 27.200 offset 13.600}
     }
-    connect {{met1 met4}}
+    connect {{met1 met4} {met4 met5}}
 }
 
 pdngen::specify_grid macro {
     orient {R0 R180 MX MY}
-    power_pins "vpwr"
-    ground_pins "vgnd"
-    blockages "met1 met2 met3 met4"
-    straps {
-        met5 {width 0.93 pitch 40.0 offset 2}
-        met6 {width 0.93 pitch 40.0 offset 2}
-    }
-    connect {{met4_PIN_ver met5} {met5 met6} {met6 met7}}
+    power_pins "VPWR"
+    ground_pins "VGND"
+    blockages "li1 met1 met2 met3 met4"
+    connect {{met4_PIN_ver met5}}
 }
 
+# Need a different strategy for rotated rams to connect to rotated pins
+# No clear way to do this for a 5 metal layer process
 pdngen::specify_grid macro {
     orient {R90 R270 MXR90 MYR90}
-    power_pins "vpwr"
-    ground_pins "vgnd"
-    blockages "met1 met2 met3 met4"
-    straps {
-        met6 {width 0.93 pitch 40.0 offset 2}
-    }
-    connect {{met4_PIN_hor met6} {met6 met7}}
+    power_pins "VPWR"
+    ground_pins "VGND"
+    blockages "li1 met1 met2 met3 met4"
+    connect {{met4_PIN_hor met5}}
 }
+

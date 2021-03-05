@@ -1680,8 +1680,8 @@ void FlexDRWorker::route_2_init_getNets_sort(vector<drNet*> &rerouteNets) {
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
-                         auto areaA = (boxA.right() - boxA.left()) * (boxA.top() - boxA.bottom());
-                         auto areaB = (boxB.right() - boxB.left()) * (boxB.top() - boxB.bottom());
+                         auto areaA = boxA.area();
+                         auto areaB = boxB.area();
                          return (a->getNumPinsIn() == b->getNumPinsIn() ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB) : 
                                                           a->getNumPinsIn() < b->getNumPinsIn());
                          };
@@ -3039,9 +3039,6 @@ bool FlexDRWorker::routeNet(drNet* net) {
   
   if (TEST_ || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
-  }
-  if (graphics_) {
-    graphics_->startNet(net);
   }
 
   set<drPin*, frBlockObjectComp> unConnPins;

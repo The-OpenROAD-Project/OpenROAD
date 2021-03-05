@@ -1393,7 +1393,6 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*> &terms) 
                       <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") origin";
         }
         auto bNum = ap->getLayerNum();
-        auto bLayer = getDesign()->getTech()->getLayer(bNum);
         bp.transform(shiftXform);
 
         auto dAp  = make_unique<drAccessPattern>();
@@ -1418,24 +1417,13 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*> &terms) 
             dAp->setAccessViaDef(frDirEnum::U, &(ap->getViaDefs()));
           }
         }
-        if (getRouteBox().contains(bp)) {
-          if (isInitDR() && getRouteBox().right() == bp.x() && getRouteBox().top() == bp.y()) {
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") skipped";
-            }
-          } else if ((getRouteBox().right() == bp.x() && bLayer->getDir() == frcVertPrefRoutingDir && bLayer->getLef58RectOnlyConstraint()) || 
-                     (getRouteBox().top() == bp.y() && bLayer->getDir() == frcHorzPrefRoutingDir && bLayer->getLef58RectOnlyConstraint())) {
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") skipped";
-            }
-          } else {
-            dPin->addAccessPattern(std::move(dAp));
-            if (enableOutput) {
-              cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-                          <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") added";
-            }
+        // The worker doesn't own tracks on its top & right edges.
+        if (getRouteBox().contains(bp) && getRouteBox().right() != bp.x()
+            && getRouteBox().top() != bp.y()) {
+          dPin->addAccessPattern(std::move(dAp));
+          if (enableOutput) {
+            cout <<" (" <<bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+                 <<bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") added";
           }
         } else {
           if (enableOutput) {
@@ -3538,24 +3526,6 @@ void FlexDRWorker::initMazeCost() {
   initMazeCost_connFig();
   // init Maze Cost by planar access terms (prevent early wrongway / turn)
   initMazeCost_planarTerm();
-}
-
-void FlexDRWorker::initMazeCost_pin_helper(const frBox &box, frCoord bloatDist, frMIdx zIdx, bool isAddPathCost) {
-  FlexMazeIdx mIdx1, mIdx2;
-  frBox bloatBox;
-  box.bloat(bloatDist, bloatBox);
-  gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-  for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
-    for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-      if (isAddPathCost) {
-        gridGraph_.addShapeCostPlanar(i, j, zIdx);
-        gridGraph_.addShapeCostVia(i, j, zIdx);
-      } else {
-        gridGraph_.subShapeCostPlanar(i, j, zIdx);
-        gridGraph_.subShapeCostVia(i, j, zIdx);
-      }
-    }
-  }
 }
 
 // init maze cost for snet objs and blockages

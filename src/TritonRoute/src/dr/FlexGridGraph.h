@@ -271,10 +271,6 @@ namespace fr {
       }
       return (sol);
     }
-    bool hasAnyPlanarCost(frMIdx x, frMIdx y, frMIdx z) const{
-        auto& nd = nodes_[getIdx(x, y, z)];
-        return nd.drcCostPlanar || nd.markerCostPlanar || nd.shapeCostPlanar;
-    }
     frCoord xCoord(frMIdx x) const{
         return xCoords_[x];
     }
