@@ -392,7 +392,7 @@ dbNetwork::setBlock(dbBlock *block)
 {
   db_ = block->getDataBase();
   block_ = block;
-  makeTopCell();
+  readDbNetlistAfter();
 }
 
 void
@@ -819,43 +819,6 @@ dbNetwork::net(const Term *term) const
 
 ////////////////////////////////////////////////////////////////
 
-class DbConstantPinIterator : public ConstantPinIterator
-{
-public:
-  DbConstantPinIterator(const Network *network);
-  bool hasNext();
-  void next(Pin *&pin, LogicValue &value);
-  
-private:
-};
-
-DbConstantPinIterator::
-DbConstantPinIterator(const Network *)
-{
-}
-
-bool
-DbConstantPinIterator::hasNext()
-{
-  return false;
-}
-
-void
-DbConstantPinIterator::next(Pin *&pin,
-			    LogicValue &value)
-{
-  value = LogicValue::zero;
-  pin = nullptr;
-}
-
-ConstantPinIterator *
-dbNetwork::constantPinIterator()
-{
-  return new DbConstantPinIterator(this);
-}
-
-////////////////////////////////////////////////////////////////
-
 bool
 dbNetwork::isLinked() const
 {
@@ -882,7 +845,7 @@ dbNetwork::readDefAfter(dbBlock* block)
 {
   db_ = block->getDataBase();
   block_ = block;
-  makeTopCell();
+  readDbNetlistAfter();
 }
 
 // Make ConcreteLibrary/Cell/Port objects for the
@@ -896,7 +859,7 @@ dbNetwork::readDbAfter(odb::dbDatabase *db)
     block_ = chip->getBlock();
     for (dbLib *lib : db_->getLibs())
       makeLibrary(lib);
-    makeTopCell();
+    readDbNetlistAfter();
   }
 }
 
@@ -941,12 +904,19 @@ dbNetwork::makeCell(Library *library,
 	lib_port->setExtPort(mterm);
       }
       else if (!dir->isPowerGround())
-	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
+	logger_->warn(ORD, 1013, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
     }
   }
   groupBusPorts(cell);
+}
+
+void
+dbNetwork::readDbNetlistAfter()
+{
+  makeTopCell();
+  findConstantNets();
 }
 
 void
@@ -963,6 +933,17 @@ dbNetwork::makeTopCell()
     
   }
   groupBusPorts(top_cell_);
+}
+
+void
+dbNetwork::findConstantNets()
+{
+  for (dbNet *dnet : block_->getNets()) {
+    if (dnet->getSigType() == dbSigType::GROUND)
+      addConstantNet(dbToSta(dnet), LogicValue::zero);
+    else if (dnet->getSigType() == dbSigType::POWER)
+      addConstantNet(dbToSta(dnet), LogicValue::one);
+  }
 }
 
 // Setup mapping from Cell/Port to LibertyCell/LibertyPort.
