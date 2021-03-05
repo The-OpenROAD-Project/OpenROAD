@@ -647,7 +647,6 @@ namespace fr {
     void initMazeCost_pin(drNet *net, bool isAddPathCost);
     void initMazeCost_fixedObj();
     void initMazeCost_terms(const std::set<frBlockObject*> &objs, bool isAddPathCost, bool isSkipVia = false);
-    void initMazeCost_pin_helper(const frBox &box, frCoord bloatDist, frMIdx zIdx, bool isAddPathCost = true);
     void initMazeCost_ap(); // disable maze edge
     void initMazeCost_marker();
     void initMazeCost_marker_fixMode_0(const frMarker &marker);

@@ -3528,24 +3528,6 @@ void FlexDRWorker::initMazeCost() {
   initMazeCost_planarTerm();
 }
 
-void FlexDRWorker::initMazeCost_pin_helper(const frBox &box, frCoord bloatDist, frMIdx zIdx, bool isAddPathCost) {
-  FlexMazeIdx mIdx1, mIdx2;
-  frBox bloatBox;
-  box.bloat(bloatDist, bloatBox);
-  gridGraph_.getIdxBox(mIdx1, mIdx2, bloatBox);
-  for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
-    for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
-      if (isAddPathCost) {
-        gridGraph_.addShapeCostPlanar(i, j, zIdx);
-        gridGraph_.addShapeCostVia(i, j, zIdx);
-      } else {
-        gridGraph_.subShapeCostPlanar(i, j, zIdx);
-        gridGraph_.subShapeCostVia(i, j, zIdx);
-      }
-    }
-  }
-}
-
 // init maze cost for snet objs and blockages
 void FlexDRWorker::initMazeCost_fixedObj() {
   frRegionQuery::Objects<frBlockObject> result;
