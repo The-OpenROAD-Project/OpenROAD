@@ -359,10 +359,13 @@ Verilog2db::getMaster(Cell *cell)
       // Check for corresponding liberty cell.
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell == nullptr)
-	logger_->warn(ORD, 1000, "LEF master {} has no liberty cell.", cell_name);
+	logger_->warn(ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
       return master;
     }
     else {
+      LibertyCell *lib_cell = network_->libertyCell(cell);
+      if (lib_cell)
+        logger_->warn(ORD, 1012, "Liberty cell has no LEF master.", cell_name);
       // OpenSTA read_verilog warns about missing cells.
       master_map_[cell] = nullptr;
       return nullptr;

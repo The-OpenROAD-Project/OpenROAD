@@ -903,7 +903,7 @@ dbNetwork::makeCell(Library *library,
 	lib_port->setExtPort(mterm);
       }
       else if (!dir->isPowerGround())
-	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
+	logger_->warn(ORD, 1013, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
     }
