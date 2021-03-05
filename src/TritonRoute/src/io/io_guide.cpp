@@ -273,7 +273,6 @@ void io::Parser::genGuides_gCell2TermMap(map<pair<frPoint, frLayerNum>, set<frBl
       if (fig->typeId() == frcRect) {
         auto shape = static_cast<frRect*>(fig);
         auto lNum  = shape->getLayerNum();
-        auto layer = design->getTech()->getLayer(lNum);
         frBox box;
         shape->getBBox(box);
         if (enableOutput) {
