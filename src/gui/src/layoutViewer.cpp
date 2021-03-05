@@ -167,7 +167,7 @@ class GuiPainter : public Painter
       painter_->setBrush(Qt::transparent);
   }
   void drawCircle(int x, int y, int r) override {
-      painter_->drawEllipse(x-r/2, y-r/2, r, r);
+    painter_->drawEllipse(QPoint(x, y), r, r);
   }
   //NOTE: it is drawing upside down
   void drawString(int x, int y, int offset, const std::string& s) override {
