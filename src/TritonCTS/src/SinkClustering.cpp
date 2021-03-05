@@ -184,8 +184,6 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
   std::vector<std::vector<unsigned>> thetaSolution;
 
-  std::cout << initnclusters <<" " << maxClusterSize <<std::endl;
-
 
   int currentIndex = 0;
   
@@ -207,9 +205,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
     }
   }
 
-  std::cout << "Done" << std::endl;
-
-  assert(thetaSolution.size() == initnclusters);
+  // assert(thetaSolution.size() == initnclusters);
 
 
   std::vector<std::vector<unsigned>> clusterSolution;
@@ -230,7 +226,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
     {
 
       int npoints = pointsToCluster.size();
-      int clusMethod = HCLUST_METHOD_COMPLETE;
+      int clusMethod = HCLUSTMETHODCOMPLETE;
       // distance computation
       double* distMatrix = new double[(npoints*(npoints-1))/2];
       unsigned k = 0;
@@ -243,20 +239,16 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
         }
       }
 
-      std::cout << "TODO: DIST COMPUTATION DONE" << std::endl;
-      std::cout << "TODO: points " << npoints << std::endl;
-
       int* merge = new int[2*(npoints-1)];
       double* height = new double[npoints-1];
 
-      int runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
-      std::cout << "TODO: runInt " << runInt << std::endl;
+      int runInt = hclustFast(npoints, distMatrix, clusMethod, merge, height);
 
       delete[] distMatrix;
 
       int* labels = new int[npoints];
-      // cutree_k(npoints, merge, 2, labels);
-      cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+      // cutreeK(npoints, merge, 2, labels);
+      cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
       delete[] height;
       delete[] merge;
 
@@ -330,7 +322,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
       bigCluster++;
 
       int npoints = clusterSolution[l].size();
-      int clusMethod = HCLUST_METHOD_COMPLETE;
+      int clusMethod = HCLUSTMETHODCOMPLETE;
       // distance computation
       double* distMatrix = new double[(npoints*(npoints-1))/2];
       unsigned k = 0;
@@ -342,12 +334,11 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
           ++k;
         }
       }
-      std::cout << "TODO: points " << npoints << std::endl;
 
       int* merge = new int[2*(npoints-1)];
       double* height = new double[npoints-1];
 
-      int runInt = hclust_fast(npoints, distMatrix, clusMethod, merge, height);
+      int runInt = hclustFast(npoints, distMatrix, clusMethod, merge, height);
 
       delete[] distMatrix;
       delete[] height;
@@ -356,8 +347,8 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
       int initNewclusters = ceil((float)npoints/groupSize);
 
-      cutree_k(npoints, merge, initNewclusters, labels);
-      // cutree_cdist(npoints, merge, height, _maxInternalDiameter, labels);
+      cutreeK(npoints, merge, initNewclusters, labels);
+      // cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
 
       int numberClusters = 0;
       for (unsigned i = 0; i < npoints; i++){
@@ -365,7 +356,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
       }
       ++numberClusters;
 
-      assert(numberClusters==initNewclusters);
+      // assert(numberClusters==initNewclusters);
 
       std::vector<std::vector<unsigned>> tempSolution;
 
@@ -392,10 +383,6 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
   _bestSolution = clusterSolution;
 
 
-
-  std::cout << "TODO: Clustering COMPUTATION DONE " << bigCluster << " " << maxSizeCluster << " " << " " << clusterSolution.size() << std::endl;
-  
-
   // if (_logger->debugCheck(CTS, "Stree", 1))
   //   writePlotFile(groupSize);
 
@@ -413,18 +400,22 @@ void SinkClustering::run()
 
 void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
 {
-  
-  // _scaleFactor = scaleFactor;
 
-  // normalizePoints(maxDiameter);
-  // computeAllThetas();
-  // sortPoints();
-  // findBestMatching(groupSize);
-  // if (_logger->debugCheck(CTS, "Stree", 1))
-  //   writePlotFile(groupSize);
+  if(_options->isAgglomerativeEnabled()){
+    newrun(groupSize, maxDiameter, scaleFactor);
+  }
+  else{
+    // Default
+    _scaleFactor = scaleFactor;
 
-  newrun(groupSize, maxDiameter, scaleFactor);
-  
+    normalizePoints(maxDiameter);
+    computeAllThetas();
+    sortPoints();
+    findBestMatching(groupSize);
+    if (_logger->debugCheck(CTS, "Stree", 1))
+      writePlotFile(groupSize);
+
+  }
 }
 
 void SinkClustering::writePlotFile()

@@ -3,34 +3,6 @@
 
   Copyright © 2011 Daniel Müllner
   <http://danifold.net>
-
-  This library implements various fast algorithms for hierarchical,
-  agglomerative clustering methods:
-
-  (1) Algorithms for the "stored matrix approach": the input is the array of
-      pairwise dissimilarities.
-
-      MST_linkage_core: single linkage clustering with the "minimum spanning
-      tree algorithm (Rohlfs)
-
-      NN_chain_core: nearest-neighbor-chain algorithm, suitable for single,
-      complete, average, weighted and Ward linkage (Murtagh)
-
-      generic_linkage: generic algorithm, suitable for all distance update
-      formulas (Müllner)
-
-  (2) Algorithms for the "stored data approach": the input are points in a
-      vector space.
-
-      MST_linkage_core_vector: single linkage clustering for vector data
-
-      generic_linkage_vector: generic algorithm for vector data, suitable for
-      the Ward, centroid and median methods.
-
-      generic_linkage_vector_alternative: alternative scheme for updating the
-      nearest neighbors. This method seems faster than "generic_linkage_vector"
-      for the centroid and median methods but slower for the Ward method.
-
   All these implementation treat infinity values correctly. They throw an
   exception if a NaN distance value occurs.
 */
@@ -44,20 +16,6 @@
 #include <string> // for std::string
 
 #include <cfloat> // also for DBL_MAX, DBL_MIN
-#ifndef DBL_MANT_DIG
-#error The constant DBL_MANT_DIG could not be defined.
-#endif
-#define T_FLOAT_MANT_DIG DBL_MANT_DIG
-
-#ifndef LONG_MAX
-#include <climits>
-#endif
-#ifndef LONG_MAX
-#error The constant LONG_MAX could not be defined.
-#endif
-#ifndef INT_MAX
-#error The constant INT_MAX could not be defined.
-#endif
 
 #ifndef INT32_MAX
 #ifdef _MSC_VER
@@ -109,51 +67,38 @@ typedef __int64 int64_t;
 #pragma GCC visibility push(hidden)
 #endif
 
-typedef int_fast32_t t_index;
-#ifndef INT32_MAX
-#define MAX_INDEX 0x7fffffffL
-#else
-#define MAX_INDEX INT32_MAX
-#endif
-#if (LONG_MAX < MAX_INDEX)
-#error The integer format "t_index" must not have a greater range than "long int".
-#endif
-#if (INT_MAX > MAX_INDEX)
-#error The integer format "int" must not have a greater range than "t_index".
-#endif
-typedef double t_float;
-
+typedef int_fast32_t tIndex;
 
 // Started Changes
 
 // Started Changes
-enum method_codes {
+enum methodCodes {
   // non-Euclidean methods
-  METHOD_METR_COMPLETE         = 1,
+  METHODMETRCOMPLETE         = 1,
 };
 
 // self-destructing array pointer
 template <typename type>
-class auto_array_ptr{
+class autoArrayPtr{
 private:
   type * ptr;
-  auto_array_ptr(auto_array_ptr const &); // non construction-copyable
-  auto_array_ptr& operator=(auto_array_ptr const &); // non copyable
+  autoArrayPtr(autoArrayPtr const &); // non construction-copyable
+  autoArrayPtr& operator=(autoArrayPtr const &); // non copyable
 public:
-  auto_array_ptr()
+  autoArrayPtr()
     : ptr(NULL)
   { }
   template <typename index>
-  auto_array_ptr(index const size)
+  autoArrayPtr(index const size)
     : ptr(new type[size])
   { }
   template <typename index, typename value>
-  auto_array_ptr(index const size, value const val)
+  autoArrayPtr(index const size, value const val)
     : ptr(new type[size])
   {
     FILL_N(ptr, size, val);
   }
-  ~auto_array_ptr() {
+  ~autoArrayPtr() {
     delete [] ptr; }
   void free() {
     delete [] ptr;
@@ -172,33 +117,33 @@ public:
 };
 
 struct node {
-  t_index node1, node2;
-  t_float dist;
+  tIndex node1, node2;
+  double dist;
 };
 
 inline bool operator< (const node a, const node b) {
   return (a.dist < b.dist);
 }
 
-class cluster_result {
+class clusterResult {
 private:
-  auto_array_ptr<node> Z;
-  t_index pos;
+  autoArrayPtr<node> Z;
+  tIndex pos;
 
 public:
-  cluster_result(const t_index size)
+  clusterResult(const tIndex size)
     : Z(size)
     , pos(0)
   {}
 
-  void append(const t_index node1, const t_index node2, const t_float dist) {
+  void append(const tIndex node1, const tIndex node2, const double dist) {
     Z[pos].node1 = node1;
     Z[pos].node2 = node2;
     Z[pos].dist  = dist;
     ++pos;
   }
 
-  node * operator[] (const t_index idx) const { return Z + idx; }
+  node * operator[] (const tIndex idx) const { return Z + idx; }
 
   /* Define several methods to postprocess the distances. All these functions
      are monotone, so they do not change the sorted order of distances. */
@@ -209,43 +154,38 @@ public:
     }
   }
 
-  void sqrt(const t_float) const { // ignore the argument
+  void sqrt(const double) const { // ignore the argument
     sqrt();
   }
 
-  void sqrtdouble(const t_float) const { // ignore the argument
+  void sqrtdouble(const double) const { // ignore the argument
     for (node * ZZ=Z; ZZ!=Z+pos; ++ZZ) {
       ZZ->dist = std::sqrt(2*ZZ->dist);
     }
   }
 
-  #ifdef R_pow
-  #define my_pow R_pow
-  #else
-  #define my_pow std::pow
-  #endif
-
-  void power(const t_float p) const {
-    t_float const q = 1/p;
+  
+  void power(const double p) const {
+    double const q = 1/p;
     for (node * ZZ=Z; ZZ!=Z+pos; ++ZZ) {
-      ZZ->dist = my_pow(ZZ->dist,q);
+      ZZ->dist = std::pow(ZZ->dist,q);
     }
   }
 
-  void plusone(const t_float) const { // ignore the argument
+  void plusone(const double) const { // ignore the argument
     for (node * ZZ=Z; ZZ!=Z+pos; ++ZZ) {
       ZZ->dist += 1;
     }
   }
 
-  void divide(const t_float denom) const {
+  void divide(const double denom) const {
     for (node * ZZ=Z; ZZ!=Z+pos; ++ZZ) {
       ZZ->dist /= denom;
     }
   }
 };
 
-class doubly_linked_list {
+class doublyLinkedList {
   /*
     Class for a doubly linked list. Initially, the list is the integer range
     [0, size]. We provide a forward iterator and a method to delete an index
@@ -256,21 +196,21 @@ class doubly_linked_list {
     for (i=somevalue; L<size; i=L.succ[I])
   */
 public:
-  t_index start;
-  auto_array_ptr<t_index> succ;
+  tIndex start;
+  autoArrayPtr<tIndex> succ;
 
 private:
-  auto_array_ptr<t_index> pred;
+  autoArrayPtr<tIndex> pred;
   // Not necessarily private, we just do not need it in this instance.
 
 public:
-  doubly_linked_list(const t_index size)
+  doublyLinkedList(const tIndex size)
     // Initialize to the given size.
     : start(0)
     , succ(size+1)
     , pred(size+1)
   {
-    for (t_index i=0; i<size; ++i) {
+    for (tIndex i=0; i<size; ++i) {
       pred[i+1] = i;
       succ[i] = i+1;
     }
@@ -278,9 +218,9 @@ public:
     //succ[size] is never accessed!
   }
 
-  ~doubly_linked_list() {}
+  ~doublyLinkedList() {}
 
-  void remove(const t_index idx) {
+  void remove(const tIndex idx) {
     // Remove an index from the list.
     if (idx==start) {
       start = succ[idx];
@@ -292,7 +232,7 @@ public:
     succ[idx] = 0; // Mark as inactive
   }
 
-  bool is_inactive(t_index idx) const {
+  bool isInactive(tIndex idx) const {
     return (succ[idx]==0);
   }
 };
@@ -312,27 +252,27 @@ public:
   nodes[i] is zero. To make subsequent searches faster, the entry for
   idx and all its parents is updated with the root element.
  */
-class union_find {
+class unionFind {
 private:
-  auto_array_ptr<t_index> parent;
-  t_index nextparent;
+  autoArrayPtr<tIndex> parent;
+  tIndex nextparent;
 
 public:
-  union_find(const t_index size)
+  unionFind(const tIndex size)
     : parent(size>0 ? 2*size-1 : 0, 0)
     , nextparent(size)
   { }
 
-  t_index Find (t_index idx) const {
+  tIndex Find (tIndex idx) const {
     if (parent[idx] != 0 ) { // a ? b
-      t_index p = idx;
+      tIndex p = idx;
       idx = parent[idx];
       if (parent[idx] != 0 ) { // a ? b ? c
         do {
           idx = parent[idx];
         } while (parent[idx] != 0);
         do {
-          t_index tmp = parent[p];
+          tIndex tmp = parent[p];
           parent[p] = idx;
           p = tmp;
         } while (parent[p] != idx);
@@ -341,20 +281,20 @@ public:
     return idx;
   }
 
-  void Union (const t_index node1, const t_index node2) {
+  void Union (const tIndex node1, const tIndex node2) {
     parent[node1] = parent[node2] = nextparent++;
   }
 };
 
 /* Functions for the update of the dissimilarity array */
 
-inline static void f_complete( t_float * const b, const t_float a ) {
+inline static void fComplete( double * const b, const double a ) {
   if (*b < a) *b = a;
 }
 
 
-template <method_codes method, typename t_members>
-static void NN_chain_core(const t_index N, t_float * const D, t_members * const members, cluster_result & Z2) {
+template <methodCodes method, typename tMembers>
+static void NNChainCore(const tIndex N, double * const D, tMembers * const members, clusterResult & Z2) {
 /*
     N: integer
     D: condensed distance matrix N*(N-1)/2
@@ -365,19 +305,19 @@ static void NN_chain_core(const t_index N, t_float * const D, t_members * const 
     Fionn Murtagh, Multidimensional Clustering Algorithms,
     Vienna, Würzburg: Physica-Verlag, 1985.
 */
-  t_index i;
+  tIndex i;
 
-  auto_array_ptr<t_index> NN_chain(N);
-  t_index NN_chain_tip = 0;
+  autoArrayPtr<tIndex> NNChain(N);
+  tIndex NNChainTip = 0;
 
-  t_index idx1, idx2;
+  tIndex idx1, idx2;
 
-  t_float size1, size2;
-  doubly_linked_list active_nodes(N);
+  double size1, size2;
+  doublyLinkedList activeNodes(N);
 
-  t_float min;
+  double min;
 
-  for (t_float const * DD=D; DD!=D+(static_cast<std::ptrdiff_t>(N)*(N-1)>>1);
+  for (double const * DD=D; DD!=D+(static_cast<std::ptrdiff_t>(N)*(N-1)>>1);
        ++DD) {
 #if HAVE_DIAGNOSTIC
 #pragma GCC diagnostic push
@@ -389,14 +329,14 @@ static void NN_chain_core(const t_index N, t_float * const D, t_members * const 
 #endif
   }
 
-  for (t_index j=0; j<N-1; ++j) {
-    if (NN_chain_tip <= 3) {
-      NN_chain[0] = idx1 = active_nodes.start;
-      NN_chain_tip = 1;
+  for (tIndex j=0; j<N-1; ++j) {
+    if (NNChainTip <= 3) {
+      NNChain[0] = idx1 = activeNodes.start;
+      NNChainTip = 1;
 
-      idx2 = active_nodes.succ[idx1];
+      idx2 = activeNodes.succ[idx1];
       min = D_(idx1,idx2);
-      for (i=active_nodes.succ[idx2]; i<N; i=active_nodes.succ[i]) {
+      for (i=activeNodes.succ[idx2]; i<N; i=activeNodes.succ[i]) {
         if (D_(idx1,i) < min) {
           min = D_(idx1,i);
           idx2 = i;
@@ -404,22 +344,22 @@ static void NN_chain_core(const t_index N, t_float * const D, t_members * const 
       }
     }  // a: idx1   b: idx2
     else {
-      NN_chain_tip -= 3;
-      idx1 = NN_chain[NN_chain_tip-1];
-      idx2 = NN_chain[NN_chain_tip];
+      NNChainTip -= 3;
+      idx1 = NNChain[NNChainTip-1];
+      idx2 = NNChain[NNChainTip];
       min = idx1<idx2 ? D_(idx1,idx2) : D_(idx2,idx1);
     }  // a: idx1   b: idx2
 
     do {
-      NN_chain[NN_chain_tip] = idx2;
+      NNChain[NNChainTip] = idx2;
 
-      for (i=active_nodes.start; i<idx2; i=active_nodes.succ[i]) {
+      for (i=activeNodes.start; i<idx2; i=activeNodes.succ[i]) {
         if (D_(i,idx2) < min) {
           min = D_(i,idx2);
           idx1 = i;
         }
       }
-      for (i=active_nodes.succ[idx2]; i<N; i=active_nodes.succ[i]) {
+      for (i=activeNodes.succ[idx2]; i<N; i=activeNodes.succ[i]) {
         if (D_(idx2,i) < min) {
           min = D_(idx2,i);
           idx1 = i;
@@ -427,37 +367,37 @@ static void NN_chain_core(const t_index N, t_float * const D, t_members * const 
       }
 
       idx2 = idx1;
-      idx1 = NN_chain[NN_chain_tip++];
+      idx1 = NNChain[NNChainTip++];
 
-    } while (idx2 != NN_chain[NN_chain_tip-2]);
+    } while (idx2 != NNChain[NNChainTip-2]);
 
     Z2.append(idx1, idx2, min);
 
     if (idx1>idx2) {
-      t_index tmp = idx1;
+      tIndex tmp = idx1;
       idx1 = idx2;
       idx2 = tmp;
     }
 
-    // Remove the smaller index from the valid indices (active_nodes).
-    active_nodes.remove(idx1);
+    // Remove the smaller index from the valid indices (activeNodes).
+    activeNodes.remove(idx1);
 
     switch (method) {
-    case METHOD_METR_COMPLETE:
+    case METHODMETRCOMPLETE:
       /*
       Complete linkage.
 
       Characteristic: new distances are never shorter than the old distances.
       */
       // Update the distance matrix in the range [start, idx1).
-      for (i=active_nodes.start; i<idx1; i=active_nodes.succ[i])
-        f_complete(&D_(i, idx2), D_(i, idx1) );
+      for (i=activeNodes.start; i<idx1; i=activeNodes.succ[i])
+        fComplete(&D_(i, idx2), D_(i, idx1) );
       // Update the distance matrix in the range (idx1, idx2).
-      for (; i<idx2; i=active_nodes.succ[i])
-        f_complete(&D_(i, idx2), D_(idx1, i) );
+      for (; i<idx2; i=activeNodes.succ[i])
+        fComplete(&D_(i, idx2), D_(idx1, i) );
       // Update the distance matrix in the range (idx2, N).
-      for (i=active_nodes.succ[idx2]; i<N; i=active_nodes.succ[i])
-        f_complete(&D_(idx2, i), D_(idx1, i) );
+      for (i=activeNodes.succ[idx2]; i<N; i=activeNodes.succ[i])
+        fComplete(&D_(idx2, i), D_(idx1, i) );
       break;
 
     default:
@@ -472,12 +412,12 @@ static void NN_chain_core(const t_index N, t_float * const D, t_members * const 
 // Copyright: Daniel Müllner, 2011 <http://danifold.net>
 //
 
-struct pos_node {
-  t_index pos;
+struct posNode {
+  tIndex pos;
   int node;
 };
 
-void order_nodes(const int N, const int * const merge, const t_index * const node_size, int * const order) {
+void orderNodes(const int N, const int * const merge, const tIndex * const nodeSize, int * const order) {
   /* Parameters:
      N         : number of data points
      merge     : (N-1)×2 array which specifies the node indices which are
@@ -485,20 +425,20 @@ void order_nodes(const int N, const int * const merge, const t_index * const nod
                  Negative entries -1...-N point to singleton nodes, while
                  positive entries 1...(N-1) point to nodes which are themselves
                  parents of other nodes.
-     node_size : array of node sizes - makes it easier
+     nodeSize : array of node sizes - makes it easier
      order     : output array of size N
 
      Runtime: ?(N)
   */
-  auto_array_ptr<pos_node> queue(N/2);
+  autoArrayPtr<posNode> queue(N/2);
 
   int parent;
   int child;
-  t_index pos = 0;
+  tIndex pos = 0;
 
   queue[0].pos = 0;
   queue[0].node = N-2;
-  t_index idx = 1;
+  tIndex idx = 1;
 
   do {
     --idx;
@@ -516,7 +456,7 @@ void order_nodes(const int N, const int * const merge, const t_index * const nod
       queue[idx].pos = pos;
       queue[idx].node = child-1; // convert index-1 based to index-0 based
       ++idx;
-      pos += node_size[child-1];
+      pos += nodeSize[child-1];
     }
     // Second child
     child = merge[parent+N-1];
@@ -531,21 +471,21 @@ void order_nodes(const int N, const int * const merge, const t_index * const nod
   } while (idx>0);
 }
 
-#define size_(r_) ( ((r_<N) ? 1 : node_size[r_-N]) )
+#define size_(r_) ( ((r_<N) ? 1 : nodeSize[r_-N]) )
 
 template <const bool sorted>
-void generate_R_dendrogram(int * const merge, double * const height, int * const order, cluster_result & Z2, const int N) {
+void generateRDendrogram(int * const merge, double * const height, int * const order, clusterResult & Z2, const int N) {
   // The array "nodes" is a union-find data structure for the cluster
-  // identites (only needed for unsorted cluster_result input).
-  union_find nodes(sorted ? 0 : N);
+  // identites (only needed for unsorted clusterResult input).
+  unionFind nodes(sorted ? 0 : N);
   if (!sorted) {
     std::stable_sort(Z2[0], Z2[N-1]);
   }
 
-  t_index node1, node2;
-  auto_array_ptr<t_index> node_size(N-1);
+  tIndex node1, node2;
+  autoArrayPtr<tIndex> nodeSize(N-1);
 
-  for (t_index i=0; i<N-1; ++i) {
+  for (tIndex i=0; i<N-1; ++i) {
     // Get two data points whose clusters are merged in step i.
     // Find the cluster identifiers for these points.
     if (sorted) {
@@ -561,7 +501,7 @@ void generate_R_dendrogram(int * const merge, double * const height, int * const
     }
     // Sort the nodes in the output array.
     if (node1>node2) {
-      t_index tmp = node1;
+      tIndex tmp = node1;
       node1 = node2;
       node2 = tmp;
     }
@@ -576,10 +516,10 @@ void generate_R_dendrogram(int * const merge, double * const height, int * const
     merge[i+N-1] = (node2<N) ? -static_cast<int>(node2)-1
                               : static_cast<int>(node2)-N+1;
     height[i] = Z2[i]->dist;
-    node_size[i] = size_(node1) + size_(node2);
+    nodeSize[i] = size_(node1) + size_(node2);
   }
 
-  order_nodes(N, merge, node_size, order);
+  orderNodes(N, merge, nodeSize, order);
 }
 
 

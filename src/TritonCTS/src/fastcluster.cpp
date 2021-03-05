@@ -28,7 +28,7 @@
 // Output arguments:
 //   labels = allocated integer array of size n for result
 //
-void cutree_k(int n, const int* merge, int nclust, int* labels) {
+void cutreeK(int n, const int* merge, int nclust, int* labels) {
 
   int k,m1,m2,j,l;
 
@@ -39,13 +39,13 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
 
   // assign to each observable the number of its last merge step
   // beware: indices of observables in merge start at 1 (R convention)
-  std::vector<int> last_merge(n, 0);
+  std::vector<int> lastMerge(n, 0);
   for (k=1; k<=(n-nclust); k++) {
     // (m1,m2) = merge[k,]
     m1 = merge[k-1];
     m2 = merge[n-1+k-1];
     if (m1 < 0 && m2 < 0) { // both single observables
-      last_merge[-m1-1] = last_merge[-m2-1] = k;
+      lastMerge[-m1-1] = lastMerge[-m2-1] = k;
 	}
 	else if (m1 < 0 || m2 < 0) { // one is a cluster
       int temp = -m1;
@@ -61,16 +61,16 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
 
 	    // merging single observable and cluster
 	    for(l = 0; l < n; l++){
-		    if (last_merge[l] == m1){
-          last_merge[l] = k;
+		    if (lastMerge[l] == m1){
+          lastMerge[l] = k;
         }
       }
-	    last_merge[temp-1] = k;
+	    lastMerge[temp-1] = k;
 	}
 	else { // both cluster
 	    for(l=0; l < n; l++) {
-		if( last_merge[l] == m1 || last_merge[l] == m2 )
-		    last_merge[l] = k;
+		if( lastMerge[l] == m1 || lastMerge[l] == m2 )
+		    lastMerge[l] = k;
 	    }
     }
   }
@@ -80,13 +80,13 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
   int label = 0;
   std::vector<int> z(n,-1);
   for (j=0; j<n; j++) {
-    if (last_merge[j] == 0) { // still singleton
+    if (lastMerge[j] == 0) { // still singleton
       labels[j] = label++;
     } else {
-      if (z[last_merge[j]] < 0) {
-        z[last_merge[j]] = label++;
+      if (z[lastMerge[j]] < 0) {
+        z[lastMerge[j]] = label++;
       }
-      labels[j] = z[last_merge[j]];
+      labels[j] = z[lastMerge[j]];
     }
   }
 
@@ -107,7 +107,7 @@ void cutree_k(int n, const int* merge, int nclust, int* labels) {
 // Output arguments:
 //   labels = allocated integer array of size n for result
 //
-void cutree_cdist(int n, const int* merge, double* height, double cdist, int* labels) {
+void cutreeCdist(int n, const int* merge, double* height, double cdist, int* labels) {
 
   int k;
 
@@ -117,9 +117,7 @@ void cutree_cdist(int n, const int* merge, double* height, double cdist, int* la
     }
   }
 
-  std::cout << "TODO: 0 step :" << n-k << " " << n << std::endl;
-
-  cutree_k(n, merge, n-k, labels);
+  cutreeK(n, merge, n-k, labels);
 }
 
 
@@ -147,20 +145,20 @@ void cutree_cdist(int n, const int* merge, double* height, double cdist, int* la
 //   0 = ok
 //   1 = invalid method
 //
-int hclust_fast(int n, double* distmat, int method, int* merge, double* height) {
+int hclustFast(int n, double* distmat, int method, int* merge, double* height) {
   
   // call appropriate culstering function
-  cluster_result Z2(n-1);
-  if (method == HCLUST_METHOD_COMPLETE) {
+  clusterResult Z2(n-1);
+  if (method == HCLUSTMETHODCOMPLETE) {
     // complete link
-    NN_chain_core<METHOD_METR_COMPLETE, t_float>(n, distmat, NULL, Z2);
+    NNChainCore<METHODMETRCOMPLETE, double>(n, distmat, NULL, Z2);
   }
   else {
     return 1;
   }
 
   int* order = new int[n];
-  generate_R_dendrogram<false>(merge, height, order, Z2, n);
+  generateRDendrogram<false>(merge, height, order, Z2, n);
   
 
   delete[] order; // only needed for visualization

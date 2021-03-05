@@ -168,6 +168,8 @@ class CtsOptions
   }
   bool isVertexBuffersEnabled() const { return _vertexBuffersEnable; }
   void setVertexBuffersEnabled(bool enable) { _vertexBuffersEnable = enable; }
+  bool isAgglomerativeEnabled() const { return _agglomerativeEnable; }
+  void setAgglomerativeEnabled(bool enable) { _agglomerativeEnable = enable; }
   bool isSimpleSegmentEnabled() const { return _simpleSegmentsEnable; }
   void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
   double getMaxDiameter() const { return _maxDiameter; }
@@ -199,6 +201,7 @@ class CtsOptions
   bool _sinkClusteringUseMaxCap = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
+  bool _agglomerativeEnable = false;
   double _vertexBufDistance = 240;
   double _bufDistance = 100;
   double _clusteringCapacity = 0.6;
