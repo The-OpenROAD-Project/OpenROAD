@@ -181,7 +181,6 @@ class CtsOptions
   double getSinkBufferMaxCap() const { return _sinkBufferMaxCap; }
   void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
   double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
-
   std::string getSinkBuffer() const { return _sinkBuffer; }
   void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}

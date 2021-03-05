@@ -660,7 +660,7 @@ void HTreeBuilder::initSecondLevelSinks(
     std::vector<const ClockInst*> &sinkInsts)
 {
   sinkLocations.clear();
-  for(auto buf : _topLevelSinksClustered) {
+  for (auto buf : _topLevelSinksClustered) {
     sinkLocations.emplace_back(buf.first, buf.second);
     Point<double> bufPos(buf.first, buf.second);
     sinkInsts.emplace_back(_mapLocationToSink[bufPos]);
