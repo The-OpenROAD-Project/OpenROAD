@@ -47,7 +47,7 @@ extern const char *dpl_tcl_inits[];
 
 extern "C" {
 extern int
-Opendp_Init(Tcl_Interp *interp);
+Dpl_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -69,7 +69,7 @@ initOpendp(OpenRoad *openroad)
 {
   Tcl_Interp *tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Opendp_Init(tcl_interp);
+  Dpl_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpl_tcl_inits);
   openroad->getOpendp()->init(openroad->getDb(),

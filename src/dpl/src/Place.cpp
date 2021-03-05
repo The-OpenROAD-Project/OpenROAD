@@ -42,7 +42,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
 
 #include "utility/Logger.h"
 #include "openroad/OpenRoad.hh"

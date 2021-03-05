@@ -104,9 +104,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 ################################################################
 
-# Disable OpenDB stand-alone executable builds.
-set(BUILD_PYTHON false)
-
 # Build flow tools
 add_subdirectory(ifp)
 add_subdirectory(OpenDB)

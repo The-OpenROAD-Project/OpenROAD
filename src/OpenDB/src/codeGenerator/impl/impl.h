@@ -59,6 +59,7 @@ namespace odb {
   //User Code End Classes
 
   {% for _struct in klass.structs %}
+    {% if not _struct.public %}
     struct {{ _struct.name }}
     {
       {% for field in _struct.fields %}
@@ -66,6 +67,7 @@ namespace odb {
       
       {% endfor %}
     };
+    {% endif %}
   {% endfor %}
   //User Code Begin structs
   //User Code End structs

@@ -210,7 +210,7 @@ void TritonCTS::runPostCtsOpt()
   _logger->report(" ****************");
 
   for (TreeBuilder* builder : *_builders) {
-    PostCtsOpt opt(builder->getClock(), _options, _logger);
+    PostCtsOpt opt(builder, _options, _techChar, _logger);
     opt.run();
   }
 }

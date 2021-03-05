@@ -4,4 +4,5 @@ record_tests {
   gcd_nangate45
   gcd_sky130
   invalid_cells
+  avoid_overlap
 }

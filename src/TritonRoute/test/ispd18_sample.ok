@@ -8,7 +8,6 @@
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: testcase/ispd18_sample/ispd18_sample.input.def
-[WARNING DRT-0148] deprecated lef param in params file
 [WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 [WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
 [WARNING DRT-0145] new SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule
@@ -38,7 +37,6 @@
     default via: Via7_FR
   Layer Via8
     default via: VIA8_0_VH
-[INFO DRT-0161] Writing reference output def results/ispd18_sample.output.def.ref.
 [INFO DRT-0168] Init region query ...
 [INFO DRT-0033] FR_MASTERSLICE shape region query size = 0
 [INFO DRT-0033] FR_VIA shape region query size = 0
