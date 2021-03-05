@@ -83,7 +83,6 @@ public:
   void makeLibrary(dbLib *lib);
   void makeCell(Library *library,
 		dbMaster *master);
-  void makeTopCell();
 
   virtual void location(const Pin *pin,
 			// Return values.
@@ -188,8 +187,6 @@ public:
   virtual NetTermIterator *termIterator(const Net *net) const;
   virtual Net *highestConnectedNet(Net *net) const;
 
-  virtual ConstantPinIterator *constantPinIterator();
-
   ////////////////////////////////////////////////////////////////
   // Edit functions
   virtual Instance *makeInstance(LibertyCell *cell,
@@ -238,6 +235,9 @@ public:
   using NetworkReader::makeCell;
 
 protected:
+  void readDbNetlistAfter();
+  void makeTopCell();
+  void findConstantNets();
   virtual void visitConnectedPins(const Net *net,
                                   PinVisitor &visitor,
                                   ConstNetSet &visited_nets) const;
