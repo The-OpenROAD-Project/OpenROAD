@@ -97,6 +97,7 @@ class TimingPathsModel : public QAbstractTableModel
   void findPins(std::string pattern, std::vector<odb::dbObject*>& pins);
 
   void resetModel();
+  void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
   void populateModel();
@@ -147,7 +148,7 @@ class TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath() {}
+  TimingPath(int path_index) : path_index_(path_index) {}
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
@@ -166,6 +167,8 @@ class TimingPath
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
 
+  int getPathIndex() const { return path_index_; }
+
   TimingPathNode getNodeAt(int index) const { return path_nodes_[index]; }
 
   std::string getStartStageName() const;
@@ -181,6 +184,7 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
+  int path_index_;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel

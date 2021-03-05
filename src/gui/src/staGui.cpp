@@ -121,7 +121,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
   auto timing_path = timing_paths_[row_index];
   switch (col_index) {
     case 0:  // Path Id
-      return QString::number(row_index + 1);
+      return QString::number(timing_path->getPathIndex());
     case 1:  // Clock
       return QString(timing_path->getStartClock().c_str());
     case 2:  // Required Time
@@ -241,6 +241,25 @@ void TimingPathsModel::resetModel()
   endResetModel();
 }
 
+void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
+{
+  beginResetModel();
+  (void) col_index;
+  if (sort_order == Qt::AscendingOrder)
+    std::stable_sort(timing_paths_.begin(),
+                     timing_paths_.end(),
+                     [](const TimingPath* path1, TimingPath* path2) {
+                       return path1->getStartClock() < path2->getStartClock();
+                     });
+  else
+    std::stable_sort(timing_paths_.begin(),
+                     timing_paths_.end(),
+                     [](const TimingPath* path1, TimingPath* path2) {
+                       return path1->getStartClock() > path2->getStartClock();
+                     });
+  endResetModel();
+}
+
 void TimingPathsModel::populateModel()
 {
   beginResetModel();
@@ -285,10 +304,11 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
           false);
 
   bool first_path = true;
+  int path_index = 0;
   for (auto& path_end : *path_ends) {
     sta::PathExpanded* expanded = new sta::PathExpanded(path_end->path(), sta_);
 
-    TimingPath* path = new TimingPath();
+    TimingPath* path = new TimingPath(path_index++);
     path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
     path->setEndClock(path_end->targetClk(sta_)->name());
     path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay()

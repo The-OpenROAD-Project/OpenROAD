@@ -135,7 +135,12 @@ void TimingDebugDialog::timingPathsViewCustomSort(int col_index)
 {
   if (col_index != 1)
     return;
-  timing_paths_model_->sort(col_index);
+  auto sort_order
+      = timingPathTableView->horizontalHeader()->sortIndicatorOrder()
+                == Qt::AscendingOrder
+            ? Qt::DescendingOrder
+            : Qt::AscendingOrder;
+  timing_paths_model_->sort(col_index, sort_order);
 }
 
 void TimingDebugDialog::findNodeInPathDetails()
