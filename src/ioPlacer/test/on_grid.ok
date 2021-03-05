@@ -1,0 +1,28 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0127] Reading DEF file: on_grid.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 190 components and 1097 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 143 connections.
+[INFO ODB-0134] Finished DEF file: on_grid.def
+Found 0 macro blocks.
+Using 5u default boundaries offset.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0010] Tentative 0 to setup sections
+[INFO PPL-0001]  * Num of slots          996
+[INFO PPL-0002]  * Num of I/O            54
+[INFO PPL-0003]  * Num of I/O w/sink     54
+[INFO PPL-0004]  * Num of I/O w/o sink   0
+[INFO PPL-0005]  * Slots Per Section     200
+[INFO PPL-0006]  * Slots Increase Factor 0.01
+[INFO PPL-0007]  * Usage Per Section     0.8
+[INFO PPL-0008]  * Usage Increase Factor 0.01
+[INFO PPL-0009]  * Force Pin Spread      true
+Successfully assigned I/O pins
+No differences found.

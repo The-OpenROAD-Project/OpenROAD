@@ -6,6 +6,7 @@ record_tests {
   no_instance_pins
   no_pins
   no_tracks
+  on_grid
   random1
   random2
   exclude1
