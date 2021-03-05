@@ -43,7 +43,7 @@
 #include <string>
 #include <tuple>
 #include "utility/Logger.h"
-#include "fastcluster.h"
+#include "SinkAgglDriver.h"
 
 namespace cts {
 

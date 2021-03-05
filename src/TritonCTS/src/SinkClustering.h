@@ -38,7 +38,7 @@
 #include "Util.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
-#include "fastcluster.h"
+#include "SinkAgglDriver.h"
 
 #include <limits>
 #include <map>

@@ -56,8 +56,8 @@ target_sources(TritonCTS
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp
-    fastcluster.cpp
-    fastcluster_dm.cpp
+    SinkAgglDriver.cpp
+    SinkAgglEngine.cpp
 )
 
 target_include_directories(TritonCTS

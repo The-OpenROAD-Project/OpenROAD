@@ -184,6 +184,12 @@ set_clustering_diameter(double distance)
 }
 
 void
+set_sink_clustering_use_agglomerative(bool use_agglomerative)
+{
+  getTritonCts()->getParms()->setAgglomerativeEnabled(use_agglomerative);
+}
+
+void
 set_num_static_layers(unsigned num)
 {
   getTritonCts()->getParms()->setNumStaticLayers(num);
