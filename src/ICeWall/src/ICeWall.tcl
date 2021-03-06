@@ -457,7 +457,7 @@ namespace eval ICeWall {
     variable footprint
 
     if {![dict exists $footprint scaled_core_area]} {
-      utl::error "PAD"  99 "Scaled core area not defined"
+      utl::error "PAD"  16 "Scaled core area not defined"
     }
 
     return [dict get $footprint scaled_core_area]
@@ -939,7 +939,7 @@ namespace eval ICeWall {
           if {[llength [set pad_connections [$net getBTerms]]] == 1} {
             set_padcell_signal_name $padcell [$pad_connections getName]
           } else {
-            utl::error "PAD" 99 "Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1"
+            utl::error "PAD" 17 "Found [llength $pad_connections] top level connections to $pin_name of padcell i$padcell (inst:[$inst getName]), expecting only 1"
           }
         }
       } else {
@@ -1675,10 +1675,10 @@ namespace eval ICeWall {
       set error_found 0
       if {[array names pads $side] == ""} {
         set error_found 1
-        utl::warn "PAD" 99 "Cannot find any pads on $side side"
+        utl::warn "PAD" 42 "Cannot find any pads on $side side"
       }
       if {$error_found == 1} {
-        utl::error "PAD" 99 "Pads must be defined on all sides of the die for successful extraction"
+        utl::error "PAD" 43 "Pads must be defined on all sides of the die for successful extraction"
       }
     }
 
@@ -1802,7 +1802,7 @@ namespace eval ICeWall {
 
     # debug "start"
     if {[catch {set ch [open $signal_map_file "w"]} msg]} {
-       err 99 "Cannot open file $signal_map_file"
+       utl::error 44 "Cannot open file $signal_map_file"
     }
 
     foreach padcell [dict keys [dict get $footprint padcell]] {
@@ -1819,7 +1819,7 @@ namespace eval ICeWall {
 
     # debug "start"
     if {[catch {set ch [open $footprint_file "w"]} msg]} {
-      err 99 "Cannot open file $footprint_file"
+      utl::error 45 "Cannot open file $footprint_file"
     }
 
     puts $ch "source \$::env(FOOTPRINT_LIBRARY)"
@@ -1859,12 +1859,12 @@ namespace eval ICeWall {
       # debug "power_nets $power_nets"
       puts $ch "  power_nets \"$power_nets\""
     } else {
-      utl::warn "PAD" 99 "No power nets found in design"
+      utl::warn "PAD" 46 "No power nets found in design"
     }
     if {[llength [set ground_nets [get_ground_nets]]] > 0} {
       puts $ch "  ground_nets \"$ground_nets\""
     } else {
-      utl::warn "PAD" 99 "No ground nets found in design"
+      utl::warn "PAD" 47 "No ground nets found in design"
     }
     if {[dict exists $footprint place]} {
       puts $ch "  place \{"
@@ -2072,7 +2072,7 @@ namespace eval ICeWall {
         set net [odb::dbNet_create $block "_UNASSIGNED_$idx"]
         set term [odb::dbBTerm_create $net "_UNASSIGNED_$idx"]
       } else {
-        utl::warn "PAD" 5 "Cannot find a terminal [get_padcell_pin_name $padcell] for $padcell to associate with bondpad [$inst getName]"
+        utl::warn "PAD" 12 "Cannot find a terminal [get_padcell_pin_name $padcell] for $padcell to associate with bondpad [$inst getName]"
         return
       }
     }
@@ -2114,7 +2114,7 @@ namespace eval ICeWall {
           connect_to_bondpad_or_bump $inst $centre $padcell
         } else {
           if {[set inst [get_padcell_inst $padcell]] == "NULL"} {
-            utl::warn "PAD" 99 "No padcell instance found for $padcell"
+            utl::warn "PAD" 48 "No padcell instance found for $padcell"
             continue
           }
           add_physical_pin $padcell [get_padcell_inst $padcell]
@@ -2850,7 +2850,7 @@ namespace eval ICeWall {
       set bbox {}
       set padcells_on_side [get_footprint_padcells_by_side $side_name]
       if {[llength $padcells_on_side] == 0} {
-        ord::error "PAD" 98 "No cells found on $side side"
+        ord::error "PAD" 15 "No cells found on $side side"
       }
       foreach padcell [get_footprint_padcells_by_side $side_name] {
         set name [get_padcell_inst_name $padcell]

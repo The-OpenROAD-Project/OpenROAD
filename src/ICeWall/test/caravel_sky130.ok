@@ -142,8 +142,8 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/
 [INFO ODB-0134] Finished DEF file: caravel_sky130/chip_io.def
 Loading library data
 Extracting footprint
-[WARNING PAD-0099] No power nets found in design
-[WARNING PAD-0099] No ground nets found in design
+[WARNING PAD-0046] No power nets found in design
+[WARNING PAD-0047] No ground nets found in design
 No differences found.
 Checking result
 [WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
