@@ -146,16 +146,23 @@ Extracting footprint
 [WARNING PAD-0099] No ground nets found in design
 No differences found.
 Checking result
-[WARNING ORD-1000] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__corner_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
-[WARNING ORD-1000] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__corner_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
+[WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [INFO IFP-0001] Added 1899 rows of 7776 sites.
+[WARNING PDN-0035] No track information found for layer li1
+[WARNING PDN-0035] No track information found for layer met1
+[WARNING PDN-0035] No track information found for layer met2
+[WARNING PDN-0035] No track information found for layer met3
+[WARNING PDN-0035] No track information found for layer met4
+[WARNING PDN-0035] No track information found for layer met5
+[WARNING PDN-0035] No track information found for layer rdl
 [WARNING PAD-0018] No term VSSA found on brk_vdda_0
 [WARNING PAD-0018] No term VSSA found on brk_vdda_1
 [WARNING PAD-0018] No term VSSA found on brk_vdda_2
