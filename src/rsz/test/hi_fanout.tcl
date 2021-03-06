@@ -11,10 +11,12 @@ UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( 0 0 ) ( 200000 200000 ) ;
 }
 
-set middle {
+set middle1 {
 PINS 1 ;
 - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL 
-  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
++ LAYER }
+
+set middle2 { ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -29,14 +31,16 @@ END SPECIALNETS
 proc write_hi_fanout_def { filename fanout } {
   write_hi_fanout_def1 $filename $fanout \
     "drvr" "DFF_X1" "CK" "Q" \
-    "load" "DFF_X1" "CK" "D"
+    "load" "DFF_X1" "CK" "D" \
+    "metal1"
 }
 
 # drvr_inst/drvr_port -> load0/D rload1/load_in .... load<fanout>/load_in
 proc write_hi_fanout_def1 { filename fanout
                             drvr_inst drvr_cell drvr_clk drvr_out
-                            load_inst load_cell load_clk load_in } {
-  global header middle
+                            load_inst load_cell load_clk load_in
+                            port_layer } {
+  global header middle1 middle2
 
   set stream [open $filename "w"]
   puts $stream $header
@@ -50,10 +54,12 @@ proc write_hi_fanout_def1 { filename fanout
   }
   puts $stream "END COMPONENTS"
 
-  puts $stream $middle
+  puts -nonewline $stream $middle1
+  puts -nonewline $stream $port_layer
+  puts $stream $middle2
 
   puts $stream "NETS 2 ;"
-  puts $stream "- clk1 ( PIN clk1 )"
+  puts -nonewline $stream "- clk1 ( PIN clk1 )"
   if { $drvr_clk != "" } {
     puts -nonewline $stream " ( $drvr_inst $drvr_clk )"
   }
@@ -66,8 +72,8 @@ proc write_hi_fanout_def1 { filename fanout
       }
       incr i
     }
-    puts $stream " ;"
   }
+  puts $stream " ;"
 
   puts $stream "- net0 ( $drvr_inst $drvr_out )"
   set i 0

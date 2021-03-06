@@ -1,0 +1,75 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0127] Reading DEF file: ./results/repair_slew6.def
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 51 components and 256 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 2 nets and 51 connections.
+[INFO ODB-0134] Finished DEF file: ./results/repair_slew6.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+rdrv/Y                                  1.48    2.97   -1.49 (VIOLATED)
+r0/D                                    1.50    2.97   -1.47 (VIOLATED)
+r1/D                                    1.50    2.97   -1.47 (VIOLATED)
+r10/D                                   1.50    2.97   -1.47 (VIOLATED)
+r11/D                                   1.50    2.97   -1.47 (VIOLATED)
+r12/D                                   1.50    2.97   -1.47 (VIOLATED)
+r13/D                                   1.50    2.97   -1.47 (VIOLATED)
+r14/D                                   1.50    2.97   -1.47 (VIOLATED)
+r15/D                                   1.50    2.97   -1.47 (VIOLATED)
+r16/D                                   1.50    2.97   -1.47 (VIOLATED)
+r17/D                                   1.50    2.97   -1.47 (VIOLATED)
+r18/D                                   1.50    2.97   -1.47 (VIOLATED)
+r19/D                                   1.50    2.97   -1.47 (VIOLATED)
+r2/D                                    1.50    2.97   -1.47 (VIOLATED)
+r20/D                                   1.50    2.97   -1.47 (VIOLATED)
+r21/D                                   1.50    2.97   -1.47 (VIOLATED)
+r22/D                                   1.50    2.97   -1.47 (VIOLATED)
+r23/D                                   1.50    2.97   -1.47 (VIOLATED)
+r24/D                                   1.50    2.97   -1.47 (VIOLATED)
+r25/D                                   1.50    2.97   -1.47 (VIOLATED)
+r26/D                                   1.50    2.97   -1.47 (VIOLATED)
+r27/D                                   1.50    2.97   -1.47 (VIOLATED)
+r28/D                                   1.50    2.97   -1.47 (VIOLATED)
+r29/D                                   1.50    2.97   -1.47 (VIOLATED)
+r3/D                                    1.50    2.97   -1.47 (VIOLATED)
+r30/D                                   1.50    2.97   -1.47 (VIOLATED)
+r31/D                                   1.50    2.97   -1.47 (VIOLATED)
+r32/D                                   1.50    2.97   -1.47 (VIOLATED)
+r33/D                                   1.50    2.97   -1.47 (VIOLATED)
+r34/D                                   1.50    2.97   -1.47 (VIOLATED)
+r35/D                                   1.50    2.97   -1.47 (VIOLATED)
+r36/D                                   1.50    2.97   -1.47 (VIOLATED)
+r37/D                                   1.50    2.97   -1.47 (VIOLATED)
+r38/D                                   1.50    2.97   -1.47 (VIOLATED)
+r39/D                                   1.50    2.97   -1.47 (VIOLATED)
+r4/D                                    1.50    2.97   -1.47 (VIOLATED)
+r40/D                                   1.50    2.97   -1.47 (VIOLATED)
+r41/D                                   1.50    2.97   -1.47 (VIOLATED)
+r42/D                                   1.50    2.97   -1.47 (VIOLATED)
+r43/D                                   1.50    2.97   -1.47 (VIOLATED)
+r44/D                                   1.50    2.97   -1.47 (VIOLATED)
+r45/D                                   1.50    2.97   -1.47 (VIOLATED)
+r46/D                                   1.50    2.97   -1.47 (VIOLATED)
+r47/D                                   1.50    2.97   -1.47 (VIOLATED)
+r48/D                                   1.50    2.97   -1.47 (VIOLATED)
+r49/D                                   1.50    2.97   -1.47 (VIOLATED)
+r5/D                                    1.50    2.97   -1.47 (VIOLATED)
+r6/D                                    1.50    2.97   -1.47 (VIOLATED)
+r7/D                                    1.50    2.97   -1.47 (VIOLATED)
+r8/D                                    1.50    2.97   -1.47 (VIOLATED)
+r9/D                                    1.50    2.97   -1.47 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 7039um.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.
