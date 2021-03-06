@@ -14,7 +14,7 @@ max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-r1/Q                                     10     35    -25 (VIOLATED)
+drvr/Q                                   10     35    -25 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 642um.
 [INFO RSZ-0035] Found 1 fanout violations.

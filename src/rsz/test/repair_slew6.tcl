@@ -1,4 +1,4 @@
-# repair_design max_slew liberty pin max_transition
+# repair_design weak driver for hi fanout
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
@@ -9,7 +9,7 @@ read_liberty repair_slew2.lib
 read_lef repair_slew2.lef
 
 set def_file [make_result_file "repair_slew2.def"]
-write_hi_fanout_def1 $def_file 20 "rdrv" "DFF_MAX_SLEW" "CK" "Q" "r" "DFF_X1" "CK" "D"
+write_hi_fanout_def1 $def_file 20 "r1" "DFF_MAX_SLEW" "CK" "Q"
 read_def $def_file
 create_clock -period 1 clk1
 
