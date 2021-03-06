@@ -38,16 +38,20 @@ namespace odb {
 
 definBase::definBase()
 {
-  _tech        = NULL;
-  _block       = NULL;
+  _mode        = defin::DEFAULT;
+  _tech        = nullptr;
+  _block       = nullptr;
+  _logger      = nullptr;
   _errors      = 0;
   _dist_factor = 10;
 }
 
 void definBase::init()
 {
-  _tech        = NULL;
-  _block       = NULL;
+  _mode        = defin::DEFAULT;
+  _tech        = nullptr;
+  _block       = nullptr;
+  _logger      = nullptr;
   _errors      = 0;
   _dist_factor = 10;
 }
@@ -73,6 +77,11 @@ void definBase::setBlock(dbBlock* block)
 void definBase::setLogger(utl::Logger* logger)
 {
   _logger  = logger;
+}
+
+void definBase::setMode(defin::MODE mode)
+{
+  _mode = mode;
 }
 
 dbOrientType definBase::translate_orientation(int orient)

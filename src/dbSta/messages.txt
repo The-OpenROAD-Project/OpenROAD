@@ -1,12 +1,13 @@
-ORD messages
-1000 "LEF master %s has no liberty cell."
-1001 "LEF macro {} pin {} missing from liberty cell.",
-1002 "Liberty cell {} pin {} missing from LEF macro"
-1003 "deletePin not implemented for dbITerm"
-1004 "unimplemented network function mergeInto"
-1005 "unimplemented network function mergeInto"
-1006 "pin is not ITerm or BTerm"
-1007 "unhandled port direction"
-1008 "unknown master term type"
-1009 "missing top_cell_name argument and no current_design."
-1010 "no technology has been read."
+STA 1000 dbSta.cc:557              instance {} swap master {} is not equivalent
+ORD 1001 dbReadVerilog.cc:257      instance {} LEF master {} not found.
+ORD 1003 dbNetwork.cc:1137         deletePin not implemented for dbITerm
+ORD 1004 dbNetwork.cc:1173         unimplemented network function mergeInto
+ORD 1005 dbNetwork.cc:1179         unimplemented network function mergeInto
+ORD 1006 dbNetwork.cc:1215         pin is not ITerm or BTerm
+ORD 1007 dbNetwork.cc:1283         unhandled port direction
+ORD 1008 dbNetwork.cc:1353         unknown master term type
+ORD 1009 dbReadVerilog.tcl:51      missing top_cell_name argument and no current_design.
+ORD 1010 dbReadVerilog.tcl:58      no technology has been read.
+ORD 1011 dbReadVerilog.cc:362      LEF master {} has no liberty cell.
+ORD 1012 dbReadVerilog.cc:368      Liberty cell has no LEF master.
+ORD 1013 dbNetwork.cc:906          LEF macro {} pin {} missing from liberty cell.

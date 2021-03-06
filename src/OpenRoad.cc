@@ -59,11 +59,11 @@
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
 
-#include "init_fp//MakeInitFloorplan.hh"
+#include "ifp//MakeInitFloorplan.hh"
 #include "ioplacer/MakeIoplacer.h"
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
-#include "opendp/MakeOpendp.h"
+#include "dpl/MakeOpendp.h"
 #include "finale/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
@@ -271,9 +271,16 @@ OpenRoad::readLef(const char *filename,
 void
 OpenRoad::readDef(const char *filename,
 		  bool order_wires,
-		  bool continue_on_errors)
+		  bool continue_on_errors,
+      bool floorplan_init,
+      bool incremental)
 {
-  odb::defin def_reader(db_,logger_);
+  odb::defin::MODE mode = odb::defin::DEFAULT;
+  if(floorplan_init)
+    mode = odb::defin::FLOORPLAN;
+  else if(incremental)
+    mode = odb::defin::INCREMENTAL;
+  odb::defin def_reader(db_, logger_, mode);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);

@@ -43,6 +43,10 @@ void FlexRP::prep() {
   prep_viaForbiddenPlanarLen();
   prep_lineForbiddenLen();
   prep_viaForbiddenThrough();
+  for (auto& ndr : tech_->nonDefaultRules){
+      prep_via2viaForbiddenLen(ndr.get());
+      prep_viaForbiddenTurnLen(ndr.get());
+  }
 }
 
 void FlexRP::prep_viaForbiddenThrough() {
@@ -234,7 +238,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_minStep(const frLayerNum &lNum,
   return;
 }
 
-void FlexRP::prep_viaForbiddenTurnLen() {
+void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr) {
   // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
@@ -247,15 +251,19 @@ void FlexRP::prep_viaForbiddenTurnLen() {
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-      downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+        if (ndr && ndr->getPrefVia((lNum-2)/2 - 1))
+            downVia = ndr->getPrefVia((lNum-2)/2 - 1);
+        else downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+        if (ndr && ndr->getPrefVia((lNum+2)/2 - 1))
+            upVia = ndr->getPrefVia((lNum+2)/2 - 1);
+        else upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    prep_viaForbiddenTurnLen_helper(lNum, i, 0, downVia, true );
-    prep_viaForbiddenTurnLen_helper(lNum, i, 1, downVia, false);
-    prep_viaForbiddenTurnLen_helper(lNum, i, 2, upVia,   true );
-    prep_viaForbiddenTurnLen_helper(lNum, i, 3, upVia,   false);
+    prep_viaForbiddenTurnLen_helper(lNum, i, 0, downVia, true, ndr);
+    prep_viaForbiddenTurnLen_helper(lNum, i, 1, downVia, false, ndr);
+    prep_viaForbiddenTurnLen_helper(lNum, i, 2, upVia,   true, ndr);
+    prep_viaForbiddenTurnLen_helper(lNum, i, 3, upVia,   false, ndr);
 
     i++;
   }
@@ -266,7 +274,8 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum &lNum,
                                              const int &tableLayerIdx,
                                              const int &tableEntryIdx,
                                              frViaDef* viaDef,
-                                             bool isCurrDirX) {
+                                             bool isCurrDirX,
+                                             frNonDefaultRule* ndr) {
   if (!viaDef) {
     return;
   }
@@ -274,7 +283,7 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum &lNum,
   auto tech = getDesign()->getTech();
   
   vector<pair<frCoord, frCoord> > forbiddenRanges;
-  prep_viaForbiddenTurnLen_minSpc(lNum, viaDef, isCurrDirX, forbiddenRanges);
+  prep_viaForbiddenTurnLen_minSpc(lNum, viaDef, isCurrDirX, forbiddenRanges, ndr);
 
   // merge forbidden ranges
   boost::icl::interval_set<frCoord> forbiddenIntvSet;
@@ -288,19 +297,22 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum &lNum,
     auto endCoord = it->upper();
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
-
-  tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  if (ndr) ndr->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  else tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum &lNum,
                                              frViaDef *viaDef,
                                              bool isCurrDirX,
-                                             vector<pair<frCoord, frCoord> > &forbiddenRanges) {
+                                             vector<pair<frCoord, frCoord> > &forbiddenRanges,
+                                             frNonDefaultRule* ndr) {
   if (!viaDef) {
     return;
   }
 
   frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
+  frCoord width = defaultWidth;
+  if (ndr) width = max(width, ndr->getWidth(lNum/2-1));
 
   frVia via1(viaDef);
   frBox viaBox1;
@@ -313,20 +325,21 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum &lNum,
   bool isVia1Fat = isCurrDirX ? (viaBox1.top() - viaBox1.bottom() > defaultWidth) : (viaBox1.right() - viaBox1.left() > defaultWidth);
   auto prl1      = isCurrDirX ? (viaBox1.top() - viaBox1.bottom()) : (viaBox1.right() - viaBox1.left());
 
-  frCoord minNonOverlapDist = isCurrDirX ? ((viaBox1.right() - viaBox1.left() + defaultWidth) / 2) : 
-                                           ((viaBox1.top() - viaBox1.bottom() + defaultWidth) / 2);
+  frCoord minNonOverlapDist = isCurrDirX ? ((viaBox1.right() - viaBox1.left() + width) / 2) : 
+                                           ((viaBox1.top() - viaBox1.bottom() + width) / 2);
   frCoord minReqDist = INT_MIN;
-  if (isVia1Fat) {
+  if (isVia1Fat || ndr) {
     auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
     if (con) {
       if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
         minReqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
       } else if (con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
-        minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(max(width1, defaultWidth), prl1);
+        minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(max(width1, width), prl1);
       } else if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
-        minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, defaultWidth, prl1);
+        minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width, prl1);
       }
     }
+    if (ndr) minReqDist = max(minReqDist, ndr->getSpacing(lNum/2-1));
     if (minReqDist != INT_MIN) {
       minReqDist += minNonOverlapDist;
     }
@@ -336,7 +349,7 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum &lNum,
   }
 }
 
-void FlexRP::prep_via2viaForbiddenLen() {
+void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr) {
   // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
@@ -349,19 +362,23 @@ void FlexRP::prep_via2viaForbiddenLen() {
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-      downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+        if (ndr && ndr->getPrefVia((lNum - 2)/2 -1))
+            downVia = ndr->getPrefVia((lNum - 2)/2 -1);
+        else downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+        if (ndr && ndr->getPrefVia((lNum + 2)/2 -1))
+            upVia = ndr->getPrefVia((lNum + 2)/2 -1);
+        else upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    prep_via2viaForbiddenLen_helper(lNum, i, 0, downVia, downVia, true );
-    prep_via2viaForbiddenLen_helper(lNum, i, 1, downVia, downVia, false);
-    prep_via2viaForbiddenLen_helper(lNum, i, 2, downVia, upVia,   true );
-    prep_via2viaForbiddenLen_helper(lNum, i, 3, downVia, upVia,   false);
-    prep_via2viaForbiddenLen_helper(lNum, i, 4, upVia,   downVia, true );
-    prep_via2viaForbiddenLen_helper(lNum, i, 5, upVia,   downVia, false);
-    prep_via2viaForbiddenLen_helper(lNum, i, 6, upVia,   upVia,   true );
-    prep_via2viaForbiddenLen_helper(lNum, i, 7, upVia,   upVia,   false);
+    prep_via2viaForbiddenLen_helper(lNum, i, 0, downVia, downVia, true, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 1, downVia, downVia, false, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 2, downVia, upVia,   true, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 3, downVia, upVia,   false, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 4, upVia,   downVia, true, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 5, upVia,   downVia, false, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 6, upVia,   upVia,   true, ndr);
+    prep_via2viaForbiddenLen_helper(lNum, i, 7, upVia,   upVia,   false, ndr);
 
     i++;
   }
@@ -374,11 +391,12 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum &lNum,
                                              const int &tableEntryIdx,
                                              frViaDef* viaDef1,
                                              frViaDef* viaDef2,
-                                             bool isCurrDirX) {
+                                             bool isCurrDirX,
+                                             frNonDefaultRule* ndr) {
   auto tech = getDesign()->getTech();
   // non-shape-based rule
   vector<pair<frCoord, frCoord> > forbiddenRanges;
-  prep_via2viaForbiddenLen_minSpc(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+  prep_via2viaForbiddenLen_minSpc(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges, ndr);
   prep_via2viaForbiddenLen_minimumCut(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
   prep_via2viaForbiddenLen_cutSpc(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
   prep_via2viaForbiddenLen_lef58CutSpc(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
@@ -395,27 +413,29 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum &lNum,
     auto endCoord = it->upper();
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
+  if (ndr) ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  else {
+        tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 
-  tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+        // shape-base rule
+        forbiddenRanges.clear();
+        forbiddenIntvSet = boost::icl::interval_set<frCoord>();
+        prep_via2viaForbiddenLen_minStep(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
 
-  // shape-base rule
-  forbiddenRanges.clear();
-  forbiddenIntvSet = boost::icl::interval_set<frCoord>();
-  prep_via2viaForbiddenLen_minStep(lNum, viaDef1, viaDef2, isCurrDirX, forbiddenRanges);
+        // merge forbidden ranges
+        for (auto &range: forbiddenRanges) {
+          forbiddenIntvSet.insert(boost::icl::interval<frCoord>::closed(range.first, range.second));
+        }
 
-  // merge forbidden ranges
-  for (auto &range: forbiddenRanges) {
-    forbiddenIntvSet.insert(boost::icl::interval<frCoord>::closed(range.first, range.second));
+        forbiddenRanges.clear();
+        for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
+          auto beginCoord = it->lower();
+          auto endCoord = it->upper();
+          forbiddenRanges.push_back(make_pair(beginCoord, endCoord - 1));
+        }
+
+        tech->via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
-
-  forbiddenRanges.clear();
-  for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
-    auto beginCoord = it->lower();
-    auto endCoord = it->upper();
-    forbiddenRanges.push_back(make_pair(beginCoord, endCoord - 1));
-  }
-
-  tech->via2ViaForbiddenOverlapLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 // only partial support of GF14
@@ -792,7 +812,8 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
                                              frViaDef* viaDef1,
                                              frViaDef* viaDef2,
                                              bool isCurrDirX,
-                                             vector<pair<frCoord, frCoord> > &forbiddenRanges) {
+                                             vector<pair<frCoord, frCoord> > &forbiddenRanges,
+                                             frNonDefaultRule* ndr) {
   if (!viaDef1 || !viaDef2) {
     return;
   }
@@ -838,6 +859,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, min(prl1, prl2));
       }
     }
+    if (ndr) minReqDist = max(minReqDist, ndr->getSpacing(lNum/2-1));
     if (minReqDist != INT_MIN) {
       minReqDist += minNonOverlapDist;
     }
@@ -870,6 +892,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       } else if (con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl1);
       }
+      if (ndr) minReqDist = max(minReqDist, ndr->getSpacing(lNum/2-1));
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOverlapDist;
       }

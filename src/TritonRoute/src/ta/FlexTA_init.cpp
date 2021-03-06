@@ -427,6 +427,7 @@ void FlexTAWorker::initIroute(frGuide *guide) {
   }
 
   unique_ptr<taPinFig> ps = make_unique<taPathSeg>();
+  ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {
     rptr->setPoints(frPoint(maxBegin, trackLoc), frPoint(minEnd, trackLoc));
@@ -434,18 +435,34 @@ void FlexTAWorker::initIroute(frGuide *guide) {
     rptr->setPoints(frPoint(trackLoc, maxBegin), frPoint(trackLoc, minEnd));
   }
   rptr->setLayerNum(layerNum);
-  rptr->setStyle(getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle());
+  if (guide->getNet() && guide->getNet()->getNondefaultRule()){
+        frNonDefaultRule* ndr = guide->getNet()->getNondefaultRule();
+        auto style = getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle();
+        style.setWidth(max((int)style.getWidth(), ndr->getWidth(layerNum/2 -1)));
+        rptr->setStyle(style);
+  }else 
+      rptr->setStyle(getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle());
   // owner set when add to taPin
   iroute->addPinFig(std::move(ps));
-
+  frViaDef* viaDef;
   for (auto coord: upViaCoordSet) {
-    unique_ptr<taPinFig> via = make_unique<taVia>(getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef());
+    if (guide->getNet()->getNondefaultRule() && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum+2)/2 -1))
+        viaDef = guide->getNet()->getNondefaultRule()->getPrefVia((layerNum+2)/2 -1);
+    else 
+        viaDef = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
+    unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? frPoint(coord, trackLoc) : frPoint(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
   for (auto coord: downViaCoordSet) {
-    unique_ptr<taPinFig> via = make_unique<taVia>(getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef());
+    if (guide->getNet()->getNondefaultRule() && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum/2 -1))
+      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum/2 -1);
+    else 
+        viaDef = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
+    unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? frPoint(coord, trackLoc) : frPoint(trackLoc, coord));
     iroute->addPinFig(std::move(via));

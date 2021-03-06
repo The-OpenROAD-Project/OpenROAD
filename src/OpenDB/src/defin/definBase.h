@@ -37,6 +37,7 @@
 #include "odb.h"
 #include "defiMisc.hpp"
 #include "definTypes.h"
+#include "defin.h"
 #include "dbTypes.h"
 #include "geom.h"
 
@@ -52,6 +53,7 @@ class dbTech;
 class definBase
 {
  public:
+  defin::MODE _mode;
   dbTech*  _tech;
   dbBlock* _block;
   utl::Logger* _logger;
@@ -64,6 +66,7 @@ class definBase
   void         setBlock(dbBlock* block);
   void         setLogger(utl::Logger* logger);
   void         units(int d);
+  void         setMode(defin::MODE mode);
   virtual void init();
 
   int dbdist(int value) { return (int) (value * _dist_factor); }

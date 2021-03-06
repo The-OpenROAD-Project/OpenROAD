@@ -53,7 +53,7 @@ namespace fr {
   public:
     // getters
     virtual bool hasNet() const = 0;
-    virtual frNet* getNet() const = 0;
+    
     // setters
     virtual void addToNet(frNet* in) = 0;
     virtual void removeFromNet() = 0;
@@ -75,11 +75,17 @@ namespace fr {
     // getters
     virtual bool hasPin() const = 0;
     virtual taPin* getPin() const = 0;
+    frNet* getNet() const{
+        return net_;
+    }
     // setters
     virtual void addToPin(taPin* in) = 0;
     virtual void removeFromPin() = 0;
     // others
-
+    
+    void setNet(frNet* n){
+        net_ = n;
+    }
     /* from frConnFig
      * hasNet
      * getNet
@@ -93,6 +99,7 @@ namespace fr {
      * overlaps
      */
   protected:
+    frNet*         net_ = nullptr;
     taPinFig(): taConnFig() {}
   };
 

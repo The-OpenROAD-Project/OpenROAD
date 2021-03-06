@@ -40,6 +40,7 @@
 #include <string>
 #include <tuple>
 #include <variant>
+#include <string.h>
 
 #include "opendb/db.h"
 
@@ -221,8 +222,9 @@ class Painter
   virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
 
   // Set the pen to an RGBA value
-  virtual void setPen(const Color& color, bool cosmetic = false) = 0;
+  virtual void setPen(const Color& color, bool cosmetic = false, int width=1) = 0;
 
+  virtual void setPenWidth(int width) = 0;
   // Set the brush to whatever the user has chosen for this layer
   // The alpha value may be overridden
   virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
@@ -234,17 +236,24 @@ class Painter
   // pen/brush
   virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
 
-  // Draw a rect with coordinates in DBU with the current pen/brush
-  virtual void drawRect(const odb::Rect& rect) = 0;
-
+  // Draw a rect with coordinates in DBU with the current pen/brush; draws a round rect if roundX > 0 or roundY > 0
+  virtual void drawRect(const odb::Rect& rect, int roundX=0, int roundY=0) = 0;
+  
   // Draw a line with coordinates in DBU with the current pen
   virtual void drawLine(const odb::Point& p1, const odb::Point& p2) = 0;
-
+ 
+  virtual void drawCircle(int x, int y, int r) = 0;
+  
+  virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
+  
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)
   {
     drawLine(odb::Point(xl, yl), odb::Point(xh, yh));
   }
+  
+  virtual void setTransparentBrush() = 0;
+  
 };
 
 // This is an interface for classes that wish to be called to render
@@ -334,11 +343,19 @@ class Gui
   // Show a message in the status bar
   void status(const std::string& message);
 
+  // Add a custom visibilty control to the 'Display Control' panel.
+  // Useful for debug renderers to control their display.
+  void addCustomVisibilityControl(const std::string& name,
+                                  bool initially_visible = false);
+
+  // Get the visibility for a custom control in the 'Display Control' panel.
+  bool checkCustomVisibilityControl(const std::string& name);
+
   const std::set<Renderer*>& renderers() { return renderers_; }
 
   // Will return nullptr if openroad was invoked without -gui
   static Gui* get();
-
+ 
  private:
   Gui() = default;
 

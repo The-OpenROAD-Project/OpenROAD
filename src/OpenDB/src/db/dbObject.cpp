@@ -663,7 +663,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbITerm",
                                  "dbBox",
                                  "dbVia",
-                                 "dbGCellGrid",
                                  "dbTrackGrid",
                                  "dbObstruction",
                                  "dbBlockage",
@@ -691,6 +690,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbModule",
                                  "dbModInst",
                                  "dbGroup",
+                                 "dbGCellGrid",
                                  // Generator Code End 1
 
                                  // Lib Objects

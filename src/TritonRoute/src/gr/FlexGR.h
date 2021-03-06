@@ -38,7 +38,10 @@
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
 #include "flute.h"
-
+namespace odb
+{
+  class dbDatabase;
+}
 namespace fr {
 
   class FlexGR {
@@ -71,7 +74,7 @@ namespace fr {
     }
 
     // others
-    void main();
+    void main(odb::dbDatabase* db = nullptr);
 
   protected:
     frDesign *design_;
@@ -149,6 +152,7 @@ namespace fr {
     void reportCong3DGolden(FlexGRCMap *baseCMap);
     void reportCong3D(FlexGRCMap *cmap);
     void reportCong3D();
+    void updateDbCongestion(odb::dbDatabase* db, FlexGRCMap *cmap);
 
     // temp
     void initGR_patternRoute_layerAssignment();

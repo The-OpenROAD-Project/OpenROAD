@@ -227,7 +227,7 @@ void GlobalRouter::runFastRoute(bool onlySignal)
   _routes.insert(result.begin(), result.end());
 
   computeWirelength();
-
+  _fastRoute->updateDbCongestion(_db);
   if (_reportCongest) {
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
@@ -1102,6 +1102,12 @@ void GlobalRouter::computeObstructionsAdjustments()
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
       for (odb::Rect& obs : layerObstructions) {
+        if (obs.xMax() <= _grid->getLowerLeftX() || obs.xMin() >= _grid->getUpperRightX() ||
+	          obs.yMax() <= _grid->getLowerLeftY() || obs.yMin() >= _grid->getUpperRightY()) {
+          _logger->info(GRT, 209, "Ignoring an obstruction on layer {} outside the die area.", layer);
+      		continue;
+      	}
+
         odb::Rect firstTileBox;
         odb::Rect lastTileBox;
 

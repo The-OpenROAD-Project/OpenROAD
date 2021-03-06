@@ -1,20 +1,10 @@
-metal1 X 0.095 0.19
-metal1 Y 0.07  0.14
-metal2 X 0.095 0.19
-metal2 Y 0.07  0.14
-metal3 X 0.095 0.19
-metal3 Y 0.07  0.14
-metal4 X 0.095 0.28
-metal4 Y 0.07  0.28
-metal5 X 0.095 0.28
-metal5 Y 0.07  0.28
-metal6 X 0.095 0.28
-metal6 Y 0.07  0.28
-metal7 X 0.095 0.8
-metal7 Y 0.07  0.8
-metal8 X 0.095 0.8
-metal8 Y 0.07  0.8
-metal9 X 0.095 1.6
-metal9 Y 0.07  1.6
-metal10 X 0.095 1.6
-metal10 Y 0.07 1.6
+make_tracks metal1 -x_offset 0.095 -x_pitch 0.19 -y_offset 0.07 -y_pitch 0.14
+make_tracks metal2 -x_offset 0.095 -x_pitch 0.19 -y_offset 0.07 -y_pitch  0.14
+make_tracks metal3 -x_offset 0.095 -x_pitch 0.19 -y_offset 0.07 -y_pitch  0.14
+make_tracks metal4 -x_offset 0.095 -x_pitch 0.28 -y_offset 0.07 -y_pitch  0.28
+make_tracks metal5 -x_offset 0.095 -x_pitch 0.28 -y_offset 0.07 -y_pitch  0.28
+make_tracks metal6 -x_offset 0.095 -x_pitch 0.28 -y_offset 0.07 -y_pitch  0.28
+make_tracks metal7 -x_offset 0.095 -x_pitch 0.8 -y_offset 0.07 -y_pitch  0.8
+make_tracks metal8 -x_offset 0.095 -x_pitch 0.8 -y_offset 0.07 -y_pitch  0.8
+make_tracks metal9 -x_offset 0.095 -x_pitch 1.6 -y_offset 0.07 -y_pitch  1.6
+make_tracks metal10 -x_offset 0.095 -x_pitch 1.6 -y_offset 0.07 -y_pitch 1.6
