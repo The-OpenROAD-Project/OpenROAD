@@ -1507,10 +1507,12 @@ namespace eval ICeWall {
       set line [regsub {\#.} $line {}]
       if {[llength $line] == 0} {continue}
       # debug "$line"
-      
+      set line [regsub -all {\s+} $line " "] 
+      set line [regsub -all {\s+$} $line ""]
+
       set pad_name [lindex [split $line] 0]
       set signal_name [lindex [split $line] 1]
-      
+      # debug "padcell: $pad_name, signal_name: $signal_name"
       if {[set_padcell_signal_name $pad_name $signal_name] == ""} {
         lappend errors "Pad id $pad_name not found in footprint"
       } else {
