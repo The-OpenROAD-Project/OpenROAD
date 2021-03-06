@@ -21,4 +21,4 @@ rdrv/Q                                  0.02    0.06   -0.04 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0038] Inserted 5 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
