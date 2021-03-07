@@ -2212,13 +2212,13 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     // This should use incremental requireds.
     sta_->findRequireds();
-    prev_worst_slack = worst_slack;
     sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
     debugPrint(debug_, "retime", 1, "pass %d worst_slack = %s",
                pass,
                delayAsString(worst_slack, sta_, 3));
     if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
       // Allow slack to increase a few passes to get out of local minima.
+      // Do not update prev_worst_slack so it saves the high water mark.
       decreasing_slack_passes++;
       if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
@@ -2232,6 +2232,7 @@ Resizer::repairSetup(float slack_margin)
       }
     }
     else {
+      prev_worst_slack = worst_slack;
       decreasing_slack_passes = 0;
       // Progress, start journal so we can back up to here.
       journalBegin();
