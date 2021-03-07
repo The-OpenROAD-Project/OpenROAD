@@ -1,7 +1,7 @@
 source "helpers.tcl"
 
-read_lef caravel_sky130/lef/sky130_fd_pr.tlef
-read_lef caravel_sky130/lef/sky130_fd_sc_hd_merged.lef
+read_lef ../../../test/sky130hd/sky130hd.tlef
+read_lef ../../../test/sky130hd/sky130_fd_sc_hd_merged.lef
 read_lef caravel_sky130/lef/sky130_ef_io__com_bus_slice_10um.lef
 read_lef caravel_sky130/lef/sky130_ef_io__com_bus_slice_1um.lef
 read_lef caravel_sky130/lef/sky130_ef_io__com_bus_slice_20um.lef
@@ -26,7 +26,7 @@ read_lef caravel_sky130/lef/sky130_ef_io__vssio_lvc_pad.lef
 read_lef caravel_sky130/lef/sky130_fd_io__top_xres4v2.lef
 
 read_liberty caravel_sky130/lib/sky130_dummy_io.lib  
-read_liberty caravel_sky130/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_liberty ../../../test/sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 
 read_def caravel_sky130/chip_io.def
 
