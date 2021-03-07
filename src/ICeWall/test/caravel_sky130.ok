@@ -1,10 +1,10 @@
-[INFO ODB-0222] Reading LEF file: caravel_sky130/lef/sky130_fd_pr.tlef
-[INFO ODB-0223]     Created 14 technology layers
-[INFO ODB-0224]     Created 30 technology vias
-[INFO ODB-0226] Finished LEF file:  caravel_sky130/lef/sky130_fd_pr.tlef
-[INFO ODB-0222] Reading LEF file: caravel_sky130/lef/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: ../../../test/sky130hd/sky130_fd_sc_hd_merged.lef
 [INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  caravel_sky130/lef/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0226] Finished LEF file:  ../../../test/sky130hd/sky130_fd_sc_hd_merged.lef
 [INFO ODB-0222] Reading LEF file: caravel_sky130/lef/sky130_ef_io__com_bus_slice_10um.lef
 [WARNING ODB-0220] Warning: WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
 The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/sky130_ef_io__com_bus_slice_10um.lef at line 2.
@@ -162,7 +162,6 @@ Checking result
 [WARNING PDN-0035] No track information found for layer met3
 [WARNING PDN-0035] No track information found for layer met4
 [WARNING PDN-0035] No track information found for layer met5
-[WARNING PDN-0035] No track information found for layer rdl
 [WARNING PAD-0018] No term VSSA found on brk_vdda_0
 [WARNING PAD-0018] No term VSSA found on brk_vdda_1
 [WARNING PAD-0018] No term VSSA found on brk_vdda_2
