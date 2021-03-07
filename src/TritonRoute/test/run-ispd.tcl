@@ -7,7 +7,7 @@ set parallel_jobs 4
 proc genFiles { run_dir ispd_year design } {
     # host setup
     set currentdir  [file normalize [file dirname [file normalize [info script]]]/../ ]
-    set program     "$currentdir/../../master_build/src/openroad"
+    set program     "$currentdir/../../build/src/openroad"
     set bench_dir   "$::env(HOME)/ispd/tests"
 
     # TritonRoute setup
