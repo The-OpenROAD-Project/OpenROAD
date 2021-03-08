@@ -14,7 +14,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r1/Q                                   60.73   84.04  -23.31 (VIOLATED)
+drvr/Q                                 60.73   83.83  -23.10 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0036] Found 1 capacitance violations.
