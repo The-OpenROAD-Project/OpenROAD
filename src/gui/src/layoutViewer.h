@@ -129,6 +129,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
+  void updateShapes(); //reseting shapes_ and reinitializing it
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);

@@ -428,7 +428,7 @@ bool parse(Iterator                                first,
   qi::rule<std::string::iterator, space_type> EXACTALIGNEDSPACING
       = (lit("EXACTALIGNEDSPACING")
          >> -(string("HORIZONTAL") | string("VERTICAL"))
-         >> +(lit("TO") >> _string >> double_))[boost::bind(
+         >> +(_string >> double_))[boost::bind(
           &setExactAlignedSpacing, _1, parser, lefin)];
 
   qi::rule<std::string::iterator, space_type> NONOPPOSITEENCLOSURESPACING

@@ -43,6 +43,9 @@ namespace odb {
 namespace utl {
   class Logger;
 }
+namespace gui {
+  class Gui;
+}
 namespace triton_route {
   class TritonRoute {
   public:
@@ -76,6 +79,7 @@ namespace triton_route {
     odb::dbDatabase *db_;
     utl::Logger *logger_;
     int num_drvs_;
+    gui::Gui* gui_;
     
     void init();
     void prep();
