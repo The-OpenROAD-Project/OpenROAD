@@ -11,7 +11,7 @@ namespace odb {
 class lefTechLayerSpacingEolParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static void parse(std::string, dbTechLayer*, lefin*);
 };
 
 class lefTechLayerMinStepParser
