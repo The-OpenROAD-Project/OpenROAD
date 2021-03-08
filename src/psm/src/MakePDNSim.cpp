@@ -34,15 +34,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <tcl.h>
 #include "sta/StaMain.hh"
 #include "openroad/OpenRoad.hh"
-#include "pdnsim/pdnsim.h"
-#include "pdnsim/MakePDNSim.hh"
+#include "psm/pdnsim.h"
+#include "psm/MakePDNSim.hh"
 
 namespace sta {
-extern const char* pdnsim_tcl_inits[];
+extern const char* psm_tcl_inits[];
 }
 
 extern "C" {
-extern int Pdnsim_Init(Tcl_Interp* interp);
+extern int Psm_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -55,8 +55,8 @@ psm::PDNSim* makePDNSim()
 void initPDNSim(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Pdnsim_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::pdnsim_tcl_inits);
+  Psm_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::psm_tcl_inits);
   openroad->getPDNSim()->init(
       openroad->getLogger(), openroad->getDb(), openroad->getSta());
 }

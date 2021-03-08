@@ -123,7 +123,7 @@ add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
-add_subdirectory(PDNSim)
+add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 add_subdirectory(gui)
@@ -173,7 +173,7 @@ target_link_libraries(openroad
   gui
   TritonRoute
   mpl
-  pdnsim
+  psm
   antennachecker
   PartitionMgr
   utility

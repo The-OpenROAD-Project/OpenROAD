@@ -1,9 +1,9 @@
-%module pdnsim
+%module psm
 
 %include "../../Exception.i"
 %{
 #include "openroad/OpenRoad.hh"
-#include "pdnsim/pdnsim.h"
+#include "psm/pdnsim.h"
 
 namespace ord {
 psm::PDNSim*

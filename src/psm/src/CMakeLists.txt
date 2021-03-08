@@ -33,13 +33,13 @@ include("openroad")
 
 find_package(Eigen3 REQUIRED)
 
-tcl_lib(NAME      pdnsim
+tcl_lib(NAME      psm
         NAMESPACE psm
         I_FILE    pdnsim.i
         SCRIPTS   pdnsim.tcl
 )
 
-target_sources(pdnsim
+target_sources(psm
   PRIVATE
   node.cpp
   gmat.cpp
@@ -50,12 +50,12 @@ target_sources(pdnsim
   MakePDNSim.cpp
 )
 
-target_include_directories( pdnsim
+target_include_directories( psm
   PUBLIC
     ../include
 )
 
-target_link_libraries(pdnsim
+target_link_libraries(psm
   PRIVATE
     utility
     opendb

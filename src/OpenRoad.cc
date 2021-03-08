@@ -72,7 +72,7 @@
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
-#include "pdnsim/MakePDNSim.hh"
+#include "psm/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 
