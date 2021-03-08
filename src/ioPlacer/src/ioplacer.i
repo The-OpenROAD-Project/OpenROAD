@@ -74,12 +74,6 @@ set_force_spread(bool force)
 }
 
 void
-set_usage(float usage)
-{
-  getIOPlacer()->getParameters()->setUsage(usage);
-}
-
-void
 set_usage_factor(float usage)
 {
   getIOPlacer()->getParameters()->setUsageFactor(usage);
@@ -200,9 +194,9 @@ set_ver_thick_multiplier(float length)
 }
 
 void
-set_boundaries_offset(int offset)
+set_corner_avoidance(int offset)
 {
-  getIOPlacer()->getParameters()->setBoundariesOffset(offset);
+  getIOPlacer()->getParameters()->setCornerAvoidance(offset);
 }
 
 void

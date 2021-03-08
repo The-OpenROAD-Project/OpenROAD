@@ -247,9 +247,13 @@ auto_place_pins pin_layer
 
 #### Pin placement
 
-Place pins to on-track locations at the boundaries of the 
-core while optimizing nets wirelength. Pin placement also 
+Place pins on the boundary of the die on the track grid to
+minimize net wire lengths. Pin placement also 
 creates a metal shape for each pin using min-area rules.
+
+For designs with unplaced cells, the net wire length is
+computed considering the center of the die area as the
+unplaced cells' position.
 
 Use the following command to perform pin placement:
 ```
@@ -259,6 +263,7 @@ place_pins [-hor_layers h_layers]
            [-exclude interval]
            [-random]
            [-group_pins pins]
+           [-corner_avoidance length]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
@@ -270,6 +275,7 @@ where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary
+- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,

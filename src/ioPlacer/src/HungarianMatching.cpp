@@ -66,7 +66,7 @@ void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
 {
   hungarian_matrix_.resize(non_blocked_slots_);
   int slot_index = 0;
-  for (int i = begin_slot_; i < end_slot_; ++i) {
+  for (int i = begin_slot_; i <= end_slot_; ++i) {
     int pinIndex = 0;
     Point newPos = slots_[i].pos;
     if (slots_[i].blocked) {
@@ -213,7 +213,8 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
         assigment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
-        non_blocked_slots_--;
+        if ((slot_index + pin_cnt) <= end_slot_)
+          non_blocked_slots_--;
         pin_cnt++;
       }
       break;
