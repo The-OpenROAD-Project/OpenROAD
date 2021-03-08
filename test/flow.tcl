@@ -40,13 +40,15 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
+# If/when this enables routing driven also the layer adjustments have to
+# move to here.
 global_placement -timing_driven -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
 # checkpoint
-set global_place_def [make_result_file ${design}_${platform}_global_place.def]
-write_def $global_place_def
+set global_place_db [make_result_file ${design}_${platform}_global_place.db]
+write_db $global_place_db
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
@@ -62,7 +64,8 @@ set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 
 # post resize timing report (ideal clocks)
-report_worst_slack
+report_worst_slack -min
+report_worst_slack -max
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
@@ -86,7 +89,8 @@ set_propagated_clock [all_clocks]
 repair_timing
 
 # Post timing repair using placement based parasitics.
-report_worst_slack
+report_worst_slack -min
+report_worst_slack -max
 report_tns
 
 detailed_placement
@@ -104,8 +108,7 @@ global_route -guide_file $route_guide \
   -layers $global_routing_layers \
   -clock_layers $global_routing_clock_layers \
   -unidirectional_routing \
-  -overflow_iterations 100 \
-  -verbose 2
+  -overflow_iterations 100
 
 ################################################################
 # Final Report
@@ -115,7 +118,8 @@ estimate_parasitics -global_routing
 
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-report_worst_slack
+report_worst_slack -min
+report_worst_slack -max
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_clock_skew
