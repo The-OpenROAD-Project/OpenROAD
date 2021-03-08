@@ -23,7 +23,7 @@ if { [have_macros] } {
   global_placement -density $global_place_density
   macro_placement -halo $macro_place_halo -channel $macro_place_channel
 }
-write_def [make_result_file ${design}_${platform}_floorplan.def]
+
 ################################################################
 # Tapcell insertion
 eval tapcell $tapcell_args
@@ -49,7 +49,7 @@ set global_place_def [make_result_file ${design}_${platform}_global_place.def]
 write_def $global_place_def
 
 ################################################################
-# Resize
+# Repair max slew/cap/fanout violations and normalize slews
 
 estimate_parasitics -placement
 
@@ -60,16 +60,15 @@ repair_tie_fanout -separation $tie_separation $tiehi_port
 
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
-optimize_mirroring
-check_placement -verbose
 
 # post resize timing report (ideal clocks)
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
+report_worst_slack
+report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
 ################################################################
 # Clock Tree Synthesis
+
 # Clone clock tree inverters next to register loads
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
@@ -79,31 +78,20 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
-set cts_def [make_result_file ${design}_${platform}_cts.def]
-write_def $cts_def
+################################################################
+# Setup/hold timing repair
 
-# CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_timing
 
-report_clock_skew
-
-detailed_placement
-
-# post cts timing report (propagated clocks)
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
-
-set cts_def [make_result_file ${design}_${platform}_cts.def]
-write_def $cts_def
+# Post timing repair using placement based parasitics.
+report_worst_slack
+report_tns
 
 detailed_placement
 filler_placement $filler_cells
-check_placement
-
-set filler_def [make_result_file ${design}_${platform}_filler.def]
-write_def $filler_def
+check_placement -verbose
 
 ################################################################
 # Global routing
@@ -130,6 +118,7 @@ report_checks -path_delay min_max -format full_clock_expanded \
 report_worst_slack
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
+report_clock_skew
 report_power
 
 report_floating_nets -verbose
@@ -153,7 +142,7 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
-set tr_params [make_tr_params $route_guide]
+set tr_params [make_tr_params $route_guide 0]
 
 detailed_route -param $tr_params
 set routed_def [make_result_file ${design}_${platform}_route.def]
