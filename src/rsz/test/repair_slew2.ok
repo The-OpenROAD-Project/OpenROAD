@@ -3,6 +3,9 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: repair_slew2.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  repair_slew2.lef
 [INFO ODB-0127] Reading DEF file: ./results/repair_slew2.def
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
@@ -14,8 +17,8 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r1/Q                                    0.02    0.06   -0.04 (VIOLATED)
+rdrv/Q                                  0.02    0.06   -0.04 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
