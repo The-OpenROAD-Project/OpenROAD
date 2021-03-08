@@ -57,7 +57,6 @@ target_sources(TritonCTS
     TritonCTS.cpp
     clustering.cpp
     SinkAgglDriver.cpp
-    SinkAgglEngine.cpp
 )
 
 target_include_directories(TritonCTS

@@ -78,7 +78,7 @@ class SinkClustering
   void addCap(float cap) { _pointsCap.emplace_back(cap);}
   void run();
   void run(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor);
-  void newrun(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor);
+  void runAgglomerative(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor);
   unsigned getNumPoints() const { return _points.size(); }
 
   const std::vector<Matching>& allMatchings() const { return _matchings; }

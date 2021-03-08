@@ -169,7 +169,7 @@ void SinkClustering::findBestMatching()
 }
 
 
-void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
+void SinkClustering::runAgglomerative(unsigned groupSize, float maxDiameter, cts::DBU scaleFactor)
 {
   _scaleFactor = scaleFactor;
   normalizePoints(maxDiameter);
@@ -205,8 +205,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
     }
   }
 
-  // assert(thetaSolution.size() == initnclusters);
-
+  SinkAgglClustering agglClus;
 
   std::vector<std::vector<unsigned>> clusterSolution;
   std::vector<unsigned> pointsToCluster;
@@ -242,13 +241,13 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
       int* merge = new int[2*(npoints-1)];
       double* height = new double[npoints-1];
 
-      int runInt = hclustFast(npoints, distMatrix, clusMethod, merge, height);
+      int runInt = agglClus.hclustFast(npoints, distMatrix, clusMethod, merge, height);
 
       delete[] distMatrix;
 
       int* labels = new int[npoints];
       // cutreeK(npoints, merge, 2, labels);
-      cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
+      agglClus.cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
       delete[] height;
       delete[] merge;
 
@@ -338,7 +337,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
       int* merge = new int[2*(npoints-1)];
       double* height = new double[npoints-1];
 
-      int runInt = hclustFast(npoints, distMatrix, clusMethod, merge, height);
+      int runInt = agglClus.hclustFast(npoints, distMatrix, clusMethod, merge, height);
 
       delete[] distMatrix;
       delete[] height;
@@ -347,7 +346,7 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
       int initNewclusters = ceil((float)npoints/groupSize);
 
-      cutreeK(npoints, merge, initNewclusters, labels);
+      agglClus.cutreeK(npoints, merge, initNewclusters, labels);
       // cutreeCdist(npoints, merge, height, _maxInternalDiameter, labels);
 
       int numberClusters = 0;
@@ -382,10 +381,6 @@ void SinkClustering::newrun(unsigned groupSize, float maxDiameter, cts::DBU scal
 
   _bestSolution = clusterSolution;
 
-
-  // if (_logger->debugCheck(CTS, "Stree", 1))
-  //   writePlotFile(groupSize);
-
 }
 
 void SinkClustering::run()
@@ -402,7 +397,7 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, cts::DBU scaleFa
 {
 
   if(_options->isAgglomerativeEnabled()){
-    newrun(groupSize, maxDiameter, scaleFactor);
+    runAgglomerative(groupSize, maxDiameter, scaleFactor);
   }
   else{
     // Default

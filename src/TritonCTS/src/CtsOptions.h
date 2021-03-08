@@ -201,7 +201,7 @@ class CtsOptions
   bool _sinkClusteringUseMaxCap = true;
   bool _simpleSegmentsEnable = false;
   bool _vertexBuffersEnable = false;
-  bool _agglomerativeEnable = true;
+  bool _agglomerativeEnable = false;
   double _vertexBufDistance = 240;
   double _bufDistance = 100;
   double _clusteringCapacity = 0.6;
