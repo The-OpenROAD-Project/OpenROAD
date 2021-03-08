@@ -166,7 +166,7 @@ library (repair_max_slew2) {
    Cell Description	: Pos.edge D-Flip-Flop with drive strength X1
   *******************************************************************************************/
 
-  cell (DFF_X1) {
+  cell (DFF_MAX_SLEW) {
 
 	drive_strength     	: 1;
 
