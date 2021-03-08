@@ -10,5 +10,7 @@ target_include_directories(opendb_swig_common
 
 target_link_libraries(opendb_swig_common
   PUBLIC
+    defin
+    lefin
     utility
 )
