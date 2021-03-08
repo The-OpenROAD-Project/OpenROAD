@@ -62,9 +62,6 @@ namespace fr {
     void addToNet(frNet* in) {
       net_ = in;
     }
-    
-    std::string getFullName();
-    
     const std::vector<frAccessPoint*>& getAccessPoints() const {
       return ap_;
     }

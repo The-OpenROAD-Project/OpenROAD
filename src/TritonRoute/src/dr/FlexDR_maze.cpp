@@ -2866,41 +2866,48 @@ void FlexDRWorker::routeNet_postAstarWritePath(drNet* net, vector<FlexMazeIdx> &
 bool FlexDRWorker::splitPathSeg(frMIdx& midX, frMIdx& midY, bool& taperFirstPiece, frMIdx startX, frMIdx startY, 
                                 frMIdx endX, frMIdx endY, frMIdx z, frBox3D* srcBox, frBox3D* dstBox, drNet* net){
     taperFirstPiece = false;
-    if (net->hasNDR() && AUTO_TAPER_NDR_NETS){
-        frBox3D* bx = nullptr;
-        if (srcBox && srcBox->contains(startX, startY, z)) bx = srcBox;
-        else if (dstBox && dstBox->contains(startX, startY, z)) bx = dstBox;
+    if (!net->hasNDR() || !AUTO_TAPER_NDR_NETS){
+        return false;
+    }
+    frBox3D* bx = nullptr;
+    if (srcBox && srcBox->contains(startX, startY, z)) {
+        bx = srcBox;
+    } else if (dstBox && dstBox->contains(startX, startY, z)) {
+        bx = dstBox;
+    }
+    if (bx) {
+        taperFirstPiece = true;
+        if (bx->contains(endX, endY, z, 1, 1)) {
+            return false;
+        } else {
+            if (startX == endX) {
+                midX = startX;
+                midY = bx->top()+1;
+            } else {
+                midX = bx->right()+1;
+                midY = startY;
+            }
+            return true;
+        }
+    } else {
+        if (srcBox && srcBox->contains(endX, endY, z)) {
+            bx = srcBox;
+        } else if (dstBox && dstBox->contains(endX, endY, z)) {
+            bx = dstBox;
+        }
         if (bx) {
-            taperFirstPiece = true;
-            if (bx->contains(endX, endY, z, 1, 1)){
+            if (bx->contains(startX, startY, z, 1, 1)) {
+                taperFirstPiece = true;
                 return false;
-            }else{
-                if (startX == endX){
+            } else {
+                if (startX == endX) {
                     midX = startX;
-                    midY = bx->top()+1;
-                }else{
-                    midX = bx->right()+1;
+                    midY = bx->bottom()-1;
+                } else {
+                    midX = bx->left()-1;
                     midY = startY;
                 }
                 return true;
-            }
-        }else{
-            if (srcBox && srcBox->contains(endX, endY, z)) bx = srcBox;
-            else if (dstBox && dstBox->contains(endX, endY, z)) bx = dstBox;
-            if (bx) {
-                if (bx->contains(startX, startY, z, 1, 1)){
-                    taperFirstPiece = true;
-                    return false;
-                }else{
-                    if (startX == endX){
-                        midX = startX;
-                        midY = bx->bottom()-1;
-                    }else{
-                        midX = bx->left()-1;
-                        midY = startY;
-                    }
-                    return true;
-                }
             }
         }
     }

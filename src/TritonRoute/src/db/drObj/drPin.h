@@ -89,7 +89,7 @@ namespace fr {
     std::string getName(){
         if (hasFrTerm()){
             if (term_->typeId() == frcInstTerm)
-                return static_cast<frInstTerm*>(term_)->getFullName();
+                return static_cast<frInstTerm*>(term_)->getName();
             return static_cast<frTerm*>(term_)->getName();
         }
         return "";
