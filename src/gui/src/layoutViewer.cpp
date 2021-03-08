@@ -965,6 +965,17 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 }
 
+void LayoutViewer::updateShapes()
+{
+  // This is not very smart - we just clear all the search structure
+  // rather than try to surgically update it.
+  if (search_init_) {
+    search_.clear();
+    search_init_ = false;
+  }
+  update();
+}
+
 void LayoutViewer::fit()
 {
   dbBlock* block = getBlock();
