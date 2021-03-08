@@ -66,8 +66,22 @@ void gui::Gui::redraw()
 {
 }
 
+void gui::Gui::updateShapes()
+{
+}
+
 void gui::Gui::pause()
 {
+}
+
+void gui::Gui::addCustomVisibilityControl(const std::string& name,
+                                          bool initially_visible)
+{
+}
+
+bool gui::Gui::checkCustomVisibilityControl(const std::string& name)
+{
+  return false;
 }
 
 void Gui::status(const std::string& /* message */)

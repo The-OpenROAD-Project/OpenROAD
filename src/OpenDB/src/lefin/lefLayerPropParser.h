@@ -11,7 +11,7 @@ namespace odb {
 class lefTechLayerSpacingEolParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static void parse(std::string, dbTechLayer*, lefin*);
 };
 
 class lefTechLayerMinStepParser
@@ -78,7 +78,7 @@ class lefTechLayerCutSpacingParser
 {
  public:
   odb::dbTechLayerCutSpacingRule* curRule;
-  bool                            parse(std::string, dbTechLayer*, lefin*);
+  bool                            parse(std::string, dbTechLayer*, lefin*, std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
 class lefTechLayerCutSpacingTableParser
@@ -87,7 +87,7 @@ class lefTechLayerCutSpacingTableParser
   odb::dbTechLayerCutSpacingTableDefRule* curRule;
   odb::dbTechLayer*                       layer;
   lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly) { layer = inly; };
-  bool parse(std::string, lefin*);
+  bool parse(std::string, lefin*, std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
 }  // namespace odb

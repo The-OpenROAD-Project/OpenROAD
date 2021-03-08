@@ -76,8 +76,7 @@ void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
   _node_id = 0;
   _node_map.clear();
 
-  _parasitic
-      = _parasitics->makeParasiticNetwork(_sta_net, false, _analysisPoint);
+  _parasitic = _parasitics->makeParasiticNetwork(_sta_net, false, _analysisPoint);
   makePinRoutePts(pins);
   makeRouteParasitics(net, routes);
   makeParasiticsToGrid(pins);
@@ -88,8 +87,7 @@ void RcTreeBuilder::makePinRoutePts(std::vector<Pin>& pins)
 {
   for (Pin& pin : pins) {
     sta::Pin* sta_pin = staPin(pin);
-    sta::ParasiticNode* pin_node
-        = _parasitics->ensureParasiticNode(_parasitic, sta_pin);
+    sta::ParasiticNode* pin_node = _parasitics->ensureParasiticNode(_parasitic, sta_pin);
     RoutePt route_pt = routePt(pin);
     _node_map[route_pt] = pin_node;
   }
@@ -179,8 +177,7 @@ void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
         nullptr, pin_node, grid_node, res, _analysisPoint);
     _parasitics->incrCap(grid_node, cap / 2.0, _analysisPoint);
   } else {
-    std::string pin_name = pin.getName();
-    _logger->warn(GRT, 26, "missing route to pin {}.", pin_name.c_str());
+    _logger->warn(GRT, 26, "missing route to pin {}.", pin.getName());
   }
 }
 

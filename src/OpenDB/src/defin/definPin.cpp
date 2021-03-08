@@ -43,6 +43,7 @@ namespace odb {
 
 definPin::definPin()
     : _bterm_cnt(0),
+      _update_cnt(0),
       _cur_bterm(NULL),
       _status(dbPlacementStatus::NONE),
       _orient(dbOrientType::R0),
@@ -73,6 +74,7 @@ void definPin::pinsBegin(int /* unused: n */)
 {
   _block->getBusDelimeters(_left_bus, _right_bus);
   _bterm_cnt = 0;
+  _update_cnt = 0;
   _ground_pins.clear();
   _supply_pins.clear();
 }
@@ -87,8 +89,14 @@ void definPin::pinBegin(const char* name, const char* net_name)
   const char* s = strstr(name, ".extra");
 
   if (s == NULL) {
-    _cur_bterm = dbBTerm::create(net, name);
-    _bterm_cnt++;
+    if(_mode != defin::DEFAULT){
+      _cur_bterm = _block->findBTerm(name);
+      if(_cur_bterm != nullptr)
+        _update_cnt++;
+    } else{
+      _cur_bterm = dbBTerm::create(net, name);
+      _bterm_cnt++;
+    }
   } else  // extra pin statement
   {
     const char* busleft  = strchr(s, _left_bus);

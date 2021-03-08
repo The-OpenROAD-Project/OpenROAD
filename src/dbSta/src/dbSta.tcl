@@ -51,21 +51,25 @@ proc highlight_path { args } {
     # Default to max path.
     set min_max "max"
   }
-  check_argc_eq2 "highlight_path" $args
-
-  set pin_arg [lindex $args 0]
-  set tr [parse_rise_fall_arg [lindex $args 1]]
-
-  set pin [get_port_pin_error "pin" $pin_arg]
-  if { [$pin is_hierarchical] } {
-    sta_error "pin '$pin_arg' is hierarchical."
+  if { [llength $args] == 0 } {
+    highlight_path_cmd "NULL"
   } else {
-    foreach vertex [$pin vertices] {
-      if { $vertex != "NULL" } {
-        set worst_path [vertex_worst_arrival_path_rf $vertex $tr $min_max]
-        if { $worst_path != "NULL" } {
-          highlight_path_cmd $worst_path
-          delete_path_ref $worst_path
+    check_argc_eq2 "highlight_path" $args
+
+    set pin_arg [lindex $args 0]
+    set tr [parse_rise_fall_arg [lindex $args 1]]
+
+    set pin [get_port_pin_error "pin" $pin_arg]
+    if { [$pin is_hierarchical] } {
+      sta_error "pin '$pin_arg' is hierarchical."
+    } else {
+      foreach vertex [$pin vertices] {
+        if { $vertex != "NULL" } {
+          set worst_path [vertex_worst_arrival_path_rf $vertex $tr $min_max]
+          if { $worst_path != "NULL" } {
+            highlight_path_cmd $worst_path
+            delete_path_ref $worst_path
+          }
         }
       }
     }

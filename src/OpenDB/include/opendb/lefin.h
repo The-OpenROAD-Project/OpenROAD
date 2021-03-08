@@ -35,10 +35,9 @@
 #include "odb.h"
 #include <string>
 #include <list>
+#include <vector>
+#include "utility/Logger.h"
 
-namespace utl {
-  class Logger;
-}
 
 namespace LefDefParser {
 class lefiArray;
@@ -104,6 +103,7 @@ class lefin
   bool         _override_lef_dbu;
   bool         _master_modified;
   bool         _ignore_non_routing_layers;
+  std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props; 
 
   void init();
   void setDBUPerMicron(int dbu);
@@ -203,8 +203,17 @@ class lefin
   void viaRule(lefiViaRule* viaRule);
   void viaGenerateRule(lefiViaRule* viaRule);
   void done(void* ptr);
-  void error(const char* msg);
-  void warning(const char* msg);
+  template <typename... Args>
+  inline void warning(int id, std::string msg, const Args&... args)
+  {
+    _logger->warn(utl::ODB, id, msg, args...);
+  }
+  template <typename... Args>
+  inline void errorTolerant(int id, std::string msg, const Args&... args)
+  {
+    _logger->warn(utl::ODB, id, msg, args...);
+    ++_errors;
+  }
   void lineNumber(int lineNo);
 
   lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);

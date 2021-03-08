@@ -109,7 +109,6 @@ target_sources(TritonRoute
     src/io/io.cpp
     src/io/io_guide.cpp
     src/io/io_parser_helper.cpp
-    src/io/defw.cpp
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp
     src/pa/FlexPA_prep.cpp

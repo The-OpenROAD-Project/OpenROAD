@@ -67,11 +67,9 @@ void FlexGridGraph::initGrids(const map<frCoord, map<frLayerNum, frTrackPattern*
   nodes_.clear();
   nodes_.resize(xDim*yDim*zDim, Node());
   // new
-  astarCosts_.clear();
   prevDirs_.clear();
   srcs_.clear();
   dsts_.clear();
-  astarCosts_.resize(xDim*yDim*zDim, UINT_MAX);
   prevDirs_.resize(xDim*yDim*zDim*3, 0);
   srcs_.resize(xDim*yDim*zDim, 0);
   dsts_.resize(xDim*yDim*zDim, 0);
@@ -402,7 +400,6 @@ void FlexGridGraph::initTracks(map<frCoord, map<frLayerNum, frTrackPattern* > > 
 void FlexGridGraph::resetStatus() {
   resetSrc();
   resetDst();
-  resetAStarCosts();
   resetPrevNodeDir();
 }
 
@@ -412,10 +409,6 @@ void FlexGridGraph::resetSrc() {
 
 void FlexGridGraph::resetDst() {
   dsts_.assign(dsts_.size(), 0);
-}
-
-void FlexGridGraph::resetAStarCosts() {
-  astarCosts_.assign(astarCosts_.size(), UINT_MAX);
 }
 
 void FlexGridGraph::resetPrevNodeDir() {
