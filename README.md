@@ -507,10 +507,11 @@ repair_design [-max_wire_length max_length]
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
-delay in the wire. It also resizes gates to normalize slews.  Use
-`-max_wire_length` to specify the maximum length of wires.  The
-resistance/capacitance values in `set_wire_rc` are used to find the
-wire delays.
+delay in the wire. It also resizes gates to normalize slews. 
+The resistance/capacitance values in `set_wire_rc` are used to find the
+wire delays. Use `-max_wire_length` to specify the maximum length of wires.
+The maximum wire length defaults to a value that minimizes the wire delay for the wire
+resistance/capacitance values specified by `set_wire_rc`.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```

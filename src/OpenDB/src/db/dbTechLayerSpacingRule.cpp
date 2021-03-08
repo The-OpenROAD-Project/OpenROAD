@@ -483,8 +483,8 @@ void dbTechLayerSpacingRule::setLengthThreshold(uint threshold)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
-         && (_lsp->_flags._rule != CUT_LAYER_BELOW)
-         && (_lsp->_flags._rule != ADJACENT_CUTS_INFLUENCE));
+         && (_lsp->_flags._rule != _dbTechLayerSpacingRule::CUT_LAYER_BELOW)
+         && (_lsp->_flags._rule != _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE));
 
   // Not already LENGTHTHRESHOLD or LENGTHTHRESHOLD_RANGE
   if (_lsp->_flags._rule == _dbTechLayerSpacingRule::DEFAULT)
@@ -538,8 +538,8 @@ void dbTechLayerSpacingRule::setInfluence(uint influence)
   assert((_lsp->_flags._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-         && (_lsp->_flags._rule != CUT_LAYER_BELOW)
-         && (_lsp->_flags._rule != ADJACENT_CUTS_INFLUENCE)
+         && (_lsp->_flags._rule != _dbTechLayerSpacingRule::CUT_LAYER_BELOW)
+         && (_lsp->_flags._rule != _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE)
          && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_RANGE));
 
   // Not already RANGE_INFLUENCE or RANGE_INFLUENCE_RANGE
@@ -656,7 +656,7 @@ void dbTechLayerSpacingRule::setAdjacentCuts(uint numcuts,
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
 
   assert((_lsp->_flags._rule == _dbTechLayerSpacingRule::DEFAULT)
-         || (_lsp->_flags._rule == ADJACENT_CUTS_INFLUENCE));
+         || (_lsp->_flags._rule == _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE));
 
   _lsp->_flags._rule              = _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE;
   _lsp->_flags._except_same_pgnet = except_same_pgnet;
@@ -669,7 +669,7 @@ void dbTechLayerSpacingRule::setCutLayer4Spacing(dbTechLayer* cutly)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert((_lsp->_flags._rule == _dbTechLayerSpacingRule::DEFAULT)
-         || (_lsp->_flags._rule == CUT_LAYER_BELOW));
+         || (_lsp->_flags._rule == _dbTechLayerSpacingRule::CUT_LAYER_BELOW));
 
   dbTechLayer* tmply = (dbTechLayer*) _lsp->getOwner();
   ZASSERT(cutly->getNumber() < tmply->getNumber());
