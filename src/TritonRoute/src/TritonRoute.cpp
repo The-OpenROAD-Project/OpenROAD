@@ -252,11 +252,6 @@ void TritonRoute::readParams(const string &fileName)
     fin.close();
   }
 
-  if (MAX_THREADS > 1 && debug_->is_on()) {
-    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the GUI.");
-    MAX_THREADS = 1;
-  }
-
   if (readParamCnt < 2) {
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
   }

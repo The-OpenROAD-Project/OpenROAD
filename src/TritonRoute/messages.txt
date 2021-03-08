@@ -1,4 +1,4 @@
-DRT 0001 TritonRoute.cpp:258       Error reading param file: {}
+DRT 0001 TritonRoute.cpp:253       Error reading param file: {}
 DRT 0002 TritonRoute.cpp:111       Detailed routing has not been run yet.
 DRT 0003 io.cpp:2746               load design first
 DRT 0004 io.cpp:2751               load design first
@@ -99,11 +99,11 @@ DRT 0108 io.cpp:689                unsupported via in db
 DRT 0109 io.cpp:749                unsupported via in db
 DRT 0110 io.cpp:779                unsupported NET USE in def
 DRT 0111 io.cpp:808                unsupported PIN USE in db
-DRT 0115 TritonRoute.cpp:253       Setting MAX_THREADS=1 for use with the GUI.
+DRT 0115 FlexPA_graphics.cpp:65    Setting MAX_THREADS=1 for use with the PA GUI.
 DRT 0116 io.cpp:865                load design first
 DRT 0117 io.cpp:868                load design first
 DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
-DRT 0119 FlexPA_graphics.cpp:199   marker {} at ({}, {}) ({}, {})
+DRT 0119 FlexPA_graphics.cpp:202   marker {} at ({}, {}) ({}, {})
 DRT 0120 io.cpp:1824               unsupported PIN USE in lef
 DRT 0125 io.cpp:2055               unsupported via {}
 DRT 0128 io.cpp:1928               unsupported viarule {}
@@ -131,13 +131,13 @@ DRT 0163 io.cpp:1207               unsupported LEF58_SPACING rule for layer {} o
 DRT 0163 io_pin.cpp:86             instance analysis ...
 DRT 0164 io.cpp:1210               unsupported LEF58_SPACING rule for layer {} of type PARALLELWITHIN
 DRT 0164 io_pin.cpp:150            # unique instances = {}
-DRT 0165 io.cpp:1213               unsupported LEF58_SPACING rule for layer {} of type SAMEMETALSHAREDEDGE
 DRT 0165 FlexPA.cpp:91             start pin access
-DRT 0166 io.cpp:1216               unsupported LEF58_SPACING rule for layer {}
+DRT 0165 io.cpp:1213               unsupported LEF58_SPACING rule for layer {} of type SAMEMETALSHAREDEDGE
 DRT 0166 FlexPA.cpp:128            complete pin access
+DRT 0166 io.cpp:1216               unsupported LEF58_SPACING rule for layer {}
 DRT 0167 io.cpp:1241               layer {} is not found to layer {} LEF58_SPACINGTABLE
-DRT 0168 io.cpp:975                unsupported LEF58_SPACING rule for layer {}
 DRT 0168 io_parser_helper.cpp:558  Init region query ...
+DRT 0168 io.cpp:975                unsupported LEF58_SPACING rule for layer {}
 DRT 0169 io_parser_helper.cpp:567  Post process guides ...
 DRT 0170 TritonRoute.cpp:223       deprecated def param in params file
 DRT 0170 io_parser_helper.cpp:736  no GCELLGRIDX
@@ -155,22 +155,23 @@ DRT 0180 io.cpp:2593               post processing ...
 DRT 0181 FlexTA.cpp:362            start track assignment
 DRT 0182 FlexTA.cpp:368            complete track assignment
 DRT 0185 io_parser_helper.cpp:624  post process initialize RPin region query ...
-DRT 0187 FlexDR.cpp:1268           start routing data preparation
-DRT 0188 FlexDR.cpp:598            initVia2ViaMinLen_minSpc {}
-DRT 0189 FlexDR.cpp:633            initVia2ViaMinLen_minimumcut {}
-DRT 0190 FlexDR.cpp:640            initVia2ViaMinLen_minimumcut {}
-DRT 0191 FlexDR.cpp:983            initVia2ViaMinLenNew_minSpc {} 
-DRT 0192 FlexDR.cpp:1022           initVia2ViaMinLenNew_minimumcut {}
-DRT 0193 FlexDR.cpp:1061           initVia2ViaMinLenNew_cutSpc {}
-DRT 0194 FlexDR.cpp:1975           start detail routing ...
-DRT 0195 FlexDR.cpp:1539           start {}{} optimization iteration ...
-DRT 0196 FlexDR.cpp:1492             number of violations = {}
-DRT 0197 FlexDR.cpp:1495             number of quick violations = {}
-DRT 0198 FlexDR.cpp:2065           complete detail routing
-DRT 0199 FlexDR.cpp:1737             number of violations = {}
-DRT 0200 FlexDR.cpp:1740             number of quick violations = {}
+DRT 0187 FlexDR.cpp:1269           start routing data preparation
+DRT 0188 FlexDR.cpp:599            initVia2ViaMinLen_minSpc {}
+DRT 0189 FlexDR.cpp:634            initVia2ViaMinLen_minimumcut {}
+DRT 0190 FlexDR.cpp:641            initVia2ViaMinLen_minimumcut {}
+DRT 0191 FlexDR.cpp:984            initVia2ViaMinLenNew_minSpc {} 
+DRT 0192 FlexDR.cpp:1023           initVia2ViaMinLenNew_minimumcut {}
+DRT 0193 FlexDR.cpp:1062           initVia2ViaMinLenNew_cutSpc {}
+DRT 0194 FlexDR.cpp:1976           start detail routing ...
+DRT 0195 FlexDR.cpp:1540           start {}{} optimization iteration ...
+DRT 0196 FlexDR.cpp:1493             number of violations = {}
+DRT 0197 FlexDR.cpp:1496             number of quick violations = {}
+DRT 0198 FlexDR.cpp:2066           complete detail routing
+DRT 0199 FlexDR.cpp:1738             number of violations = {}
+DRT 0200 FlexDR.cpp:1741             number of quick violations = {}
 DRT 0201 FlexGR.cpp:548            design isn't loaded before global routing
 DRT 0202 FlexGR.cpp:573            skipping layer {} not found in db for congestion map
 DRT 0203 FlexGR.cpp:555            dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 DRT 0205 TritonRoute.cpp:226       deprecated output param in params file
 DRT 0206 FlexDR_conn.cpp:1166      checkConnectivity error
+DRT 0207 FlexDR_graphics.cpp:60    Setting MAX_THREADS=1 for use with the DR GUI.

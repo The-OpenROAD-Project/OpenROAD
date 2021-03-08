@@ -56,8 +56,6 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     gui_(gui::Gui::get()),
     logger_(logger)
 {
-  assert(MAX_THREADS == 1);
-
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
@@ -388,6 +386,13 @@ void FlexDRGraphics::startIter(int iter)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
+    // If you specified a gcell then only one worker can process that
+    // gcell and we don't need to limit the threading.
+    if (MAX_THREADS > 1 && settings_->gcellX < 0) {
+      logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
+      MAX_THREADS = 1;
+    }
+
     status("Start iter: " + std::to_string(iter));
     if (settings_->allowPause) {
       gui_->pause();
