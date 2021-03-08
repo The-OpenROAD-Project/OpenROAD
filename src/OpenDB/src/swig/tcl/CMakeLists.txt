@@ -2,8 +2,9 @@ include("openroad")
 
 tcl_lib(NAME          opendbtcl
         NAMESPACE     odb
-        I_FILE        opendbtcl.i
+        I_FILE        ../common/opendb.i
         SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/opendb
+                      ${PROJECT_SOURCE_DIR}/src/swig/tcl
 )
 
 target_include_directories(opendbtcl
@@ -17,7 +18,8 @@ target_link_libraries(opendbtcl
         utility
         tcl
         cdl
-	Boost::boost
+        opendb_swig_common
+        Boost::boost
 )
 
 # Executable

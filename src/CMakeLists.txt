@@ -163,6 +163,7 @@ target_link_libraries(openroad
   OpenSTA
   opendb
   opendbtcl
+  opendbpy
   OpenRCX
   TritonCTS
   FastRoute

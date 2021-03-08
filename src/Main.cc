@@ -50,6 +50,8 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
@@ -65,6 +67,11 @@ using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
+
+extern "C"
+{
+    extern PyObject* PyInit__opendbpy();
+}
 
 static int cmd_argc;
 static char **cmd_argv;
@@ -94,12 +101,21 @@ main(int argc,
   }
 
   log_filename = findCmdLineKey(argc, argv, "-log");
-  if (log_filename)
+  if (log_filename) {
     remove(log_filename);
+  }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
-  if (metrics_filename)
+  if (metrics_filename) {
     remove(metrics_filename);
+  }
+
+  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not extend in-built modules table\n");
+    exit(1);
+  }
+
+  Py_Initialize();
 
   cmd_argc = argc;
   cmd_argv = argv;

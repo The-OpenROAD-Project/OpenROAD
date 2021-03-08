@@ -34,8 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-%module fastroute
-
 %{
 #include "fastroute/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"

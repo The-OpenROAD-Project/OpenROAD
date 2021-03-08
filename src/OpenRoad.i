@@ -1,5 +1,3 @@
-%module openroad
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
@@ -450,6 +448,13 @@ units_initialized()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->unitsInitialized();
+}
+
+void
+python_cmd(const char* py_command)
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->pythonCommand(py_command);
 }
 
 namespace ord {

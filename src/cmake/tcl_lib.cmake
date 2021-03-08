@@ -53,6 +53,9 @@ function(tcl_lib)
                                         -prefix ${ARG_NAMESPACE}
                                         -w317,325,378,401,402,467,472,503,509)
 
+  set_property(SOURCE ${ARG_I_FILE}
+               PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
+
   swig_add_library(${ARG_NAME}
     LANGUAGE tcl
     TYPE     STATIC

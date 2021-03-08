@@ -32,7 +32,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module openrcx
 %{
 #include "openroad/OpenRoad.hh"
 #include "OpenRCX/ext.h"

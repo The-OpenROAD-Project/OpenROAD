@@ -10,11 +10,13 @@ message(STATUS "Enabling OpenDB Python SWIG Module")
 include_directories(${Python3_INCLUDE_DIRS})
 
 set(OPENDB_PYTHON_SWIG_FILES
-    ${PROJECT_SOURCE_DIR}/src/swig/python/opendbpy.i
+    ${PROJECT_SOURCE_DIR}/src/swig/common/opendb.i
 )
 
 set_source_files_properties(${OPENDB_PYTHON_SWIG_FILES} 
-    PROPERTIES CPLUSPLUS ON
+    PROPERTIES SWIG_MODULE_NAME    opendbpy
+               CPLUSPLUS           ON
+               INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/src/swig/python
 )
 
 include_directories(${PROJECT_SOURCE_DIR}/include/opendb)
@@ -30,6 +32,7 @@ swig_add_library(opendbpy
 swig_link_libraries(opendbpy
     PUBLIC
         opendb
+        opendb_swig_common
         utility
         Python3::Python
 )
