@@ -33,30 +33,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+%module tap
 
+%{
+
+#include "tap/tapcell.h"
 #include "openroad/OpenRoad.hh"
-#include "tapcell/tapcell.h"
-#include "tapcell/MakeTapcell.h"
-
-namespace ord {
 
 tap::Tapcell *
-makeTapcell()
+getTapcell()
 {
-  return new tap::Tapcell;
+  return ord::OpenRoad::openRoad()->getTapcell();
 }
 
-void
-deleteTapcell(tap::Tapcell *tapcell)
-{
-  delete tapcell;
-}
-
-void
-initTapcell(OpenRoad *openroad)
-{
-  openroad->getTapcell()->init(openroad->tclInterp(),
-			    openroad->getDb());
-}
-
-}
+%}

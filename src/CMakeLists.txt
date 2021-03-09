@@ -117,7 +117,7 @@ add_subdirectory(finale)
 add_subdirectory(ioPlacer)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
-add_subdirectory(tapcell)
+add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
@@ -166,7 +166,7 @@ target_link_libraries(openroad
   OpenRCX
   TritonCTS
   FastRoute
-  tapcell
+  tap
   gui
   TritonRoute
   mpl
