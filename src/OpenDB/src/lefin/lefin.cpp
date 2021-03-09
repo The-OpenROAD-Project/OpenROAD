@@ -590,8 +590,7 @@ void lefin::layer(lefiLayer* layer)
     bool supported = true;
     if (type.getValue() == dbTechLayerType::ROUTING) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
-        valid = lefTechLayerSpacingEolParser::parse(
-            layer->propValue(iii), l, this);
+        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
@@ -599,8 +598,17 @@ void lefin::layer(lefiLayer* layer)
         valid = lefTechLayerCornerSpacingParser::parse(
             layer->propValue(iii), l, this);
       else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
-        lefTechLayerSpacingTablePrlParser parser;
-        valid = parser.parse(layer->propValue(iii), l, this);
+        if (std::string(layer->propValue(iii)).find("PARALLELRUNLENGTH")
+            == std::string::npos)
+          warning(256,
+                  "unsupported {} property for layer {} :\"{}\"",
+                  layer->propName(iii),
+                  layer->name(),
+                  layer->propValue(iii));
+        else {
+          lefTechLayerSpacingTablePrlParser parser;
+          valid = parser.parse(layer->propValue(iii), l, this);
+        }
       } else if (!strcmp(layer->propName(iii), "LEF58_RIGHTWAYONGRIDONLY"))
         valid = lefTechLayerRightWayOnGridOnlyParser::parse(
             layer->propValue(iii), l, this);
@@ -1919,17 +1927,6 @@ void lefin::viaGenerateRule(lefiViaRule* viaRule)
 
 void lefin::done(void* /* unused: ptr */)
 {
-}
-
-void lefin::error(const char* msg)
-{
-  _logger->warn(utl::ODB, 219, "Error: {}", msg);
-  ++_errors;
-}
-
-void lefin::warning(const char* msg)
-{
-  _logger->warn(utl::ODB, 220, "Warning: {}", msg);
 }
 
 void lefin::lineNumber(int lineNo)

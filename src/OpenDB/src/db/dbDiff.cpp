@@ -694,20 +694,6 @@ void dbDiff::diff(const char*        field,
   }
 }
 
-void dbDiff::diff(const char*               field,
-                  TechMinCutRule::_RuleType lhs,
-                  TechMinCutRule::_RuleType rhs)
-{
-  if (lhs != rhs) {
-    report("< %s: ", field);
-    (*this) << TechMinCutRule::getString(lhs);
-    (*this) << "\n";
-    report("> %s: ", field);
-    (*this) << TechMinCutRule::getString(rhs);
-    (*this) << "\n";
-  }
-}
-
 void dbDiff::out(char side, const char* field, bool value)
 {
   report("%c %s: ", side, field);
@@ -907,13 +893,6 @@ void dbDiff::out(char side, const char* field, dbDirection::Value value)
 {
   report("%c %s: ", side, field);
   (*this) << dbDirection(value).getString();
-  (*this) << "\n";
-}
-
-void dbDiff::out(char side, const char* field, TechMinCutRule::_RuleType value)
-{
-  report("%c %s: ", side, field);
-  (*this) << TechMinCutRule::getString(value);
   (*this) << "\n";
 }
 

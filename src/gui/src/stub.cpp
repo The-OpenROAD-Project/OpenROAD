@@ -66,6 +66,10 @@ void gui::Gui::redraw()
 {
 }
 
+void gui::Gui::updateShapes()
+{
+}
+
 void gui::Gui::pause()
 {
 }

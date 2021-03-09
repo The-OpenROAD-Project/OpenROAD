@@ -242,7 +242,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr) {
   // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-
+  int bottom = BOTTOM_ROUTING_LAYER;
   int i = 0; 
   for  (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
@@ -250,11 +250,11 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr) {
     }
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
-    if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-        if (ndr && ndr->getPrefVia((lNum-2)/2 - 1))
-            downVia = ndr->getPrefVia((lNum-2)/2 - 1);
-        else downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-    }
+    if (ndr && bottom < lNum && ndr->getPrefVia((lNum-2)/2 - 1))
+        downVia = ndr->getPrefVia((lNum-2)/2 - 1);
+    else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) 
+        downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+  
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
         if (ndr && ndr->getPrefVia((lNum+2)/2 - 1))
             upVia = ndr->getPrefVia((lNum+2)/2 - 1);
@@ -353,7 +353,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr) {
   // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-
+  int bottom = BOTTOM_ROUTING_LAYER;
   int i = 0; 
   for  (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
@@ -361,11 +361,10 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr) {
     }
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
-    if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
-        if (ndr && ndr->getPrefVia((lNum - 2)/2 -1))
-            downVia = ndr->getPrefVia((lNum - 2)/2 -1);
-        else downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-    }
+    if (ndr && bottom < lNum && ndr->getPrefVia((lNum - 2)/2 -1))
+        downVia = ndr->getPrefVia((lNum - 2)/2 -1);
+    else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1)
+        downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
         if (ndr && ndr->getPrefVia((lNum + 2)/2 -1))
             upVia = ndr->getPrefVia((lNum + 2)/2 -1);

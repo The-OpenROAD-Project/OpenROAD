@@ -13,6 +13,9 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_alternative.hpp>
+#include <boost/algorithm/string/classification.hpp> 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim_all.hpp>
 #include <iostream>
 #include <string>
 
@@ -464,11 +467,24 @@ bool parse(Iterator          first,
 
 namespace odb {
 
-bool lefTechLayerSpacingEolParser::parse(std::string  s,
+void lefTechLayerSpacingEolParser::parse(std::string  s,
                                          dbTechLayer* layer,
                                          odb::lefin*  l)
 {
-  return lefTechLayerSpacingEol::parse(s.begin(), s.end(), layer, l);
+  std::vector<std::string> rules;
+  boost::split(rules, s, boost::is_any_of(";"));
+  for(auto rule : rules)
+  {
+    boost::algorithm::trim(rule);
+    if(rule.empty())
+      continue;
+    if(rule.find("ENDOFLINE") == std::string::npos){
+      l->warning(254, "unsupported LEF58_SPACING property for layer {} :\"{}\"", layer->getName(), rule);
+      continue;
+    }
+    if(!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l))
+      l->warning(255, "parse mismatch in layer propery LEF58_SPACING for layer {} :\"{}\"", layer->getName(), rule);
+  }
 }
 
 }  // namespace odb

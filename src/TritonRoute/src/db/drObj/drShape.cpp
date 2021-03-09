@@ -36,9 +36,10 @@ using namespace fr;
 
 drPathSeg::drPathSeg(const frPathSeg &in): layer_(in.getLayerNum()), 
                                            owner_(nullptr), 
-                                           beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {
+                                           beginMazeIdx_(), endMazeIdx_(), patchSeg_(false), isTapered_(false) {
   in.getPoints(begin_, end_);
   in.getStyle(style_);
+  setTapered(in.isTapered());
 }
 
 drPatchWire::drPatchWire(const frPatchWire &in): layer_(in.getLayerNum()), 
