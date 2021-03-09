@@ -2661,7 +2661,10 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
             auto layerName
                 = getTech()->getLayer(pathSeg->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
-            _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            if (pathSeg->isTapered() || !net->getNonDefaultRule())
+                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            else 
+                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"), net->getNonDefaultRule()->getLayerRule(layer));
             frPoint begin, end;
             frSegStyle segStyle;
             pathSeg->getPoints(begin, end);
@@ -2694,7 +2697,10 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                                  ->getName();
             auto viaName = via->getViaDef()->getName();
             auto layer = tech->findLayer(layerName.c_str());
-            _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            if (!net->getNonDefaultRule() || via->isTapered())
+                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            else 
+                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"), net->getNonDefaultRule()->getLayerRule(layer));
             frPoint origin;
             via->getOrigin(origin);
             _wire_encoder.addPoint(origin.x(), origin.y());

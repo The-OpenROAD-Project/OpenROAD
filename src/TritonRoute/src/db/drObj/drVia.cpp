@@ -37,4 +37,6 @@ using namespace fr;
 drVia::drVia(const frVia &in): viaDef_(in.getViaDef()), owner_(nullptr), 
                                beginMazeIdx_(), endMazeIdx_() {
   in.getOrigin(origin_);
+  setTapered(in.isTapered());
 }
+

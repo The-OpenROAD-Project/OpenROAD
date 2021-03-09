@@ -147,6 +147,27 @@ namespace fr {
   protected:
     frPoint ll_, ur_;
   };
+  
+  class frBox3D : public frBox {
+  public:
+      frBox3D(): frBox(), zl_(0), zh_(0){}
+      frBox3D(int llx, int lly, int urx, int ury, int zl, int zh): frBox(llx, lly, urx, ury), zl_(zl), zh_(zh){}
+      frBox3D(const frBox3D &in) = default;
+      bool contains(int x, int y, int z, int bloatX=0, int bloatY=0, int bloatZ=0) const{
+          return zl_-bloatZ <= z && zh_+bloatZ >= z && 
+                  left()-bloatX <= x && right()+bloatX >= x && 
+                  bottom()-bloatY <= y && top()+bloatY >= y;
+      }
+      int zLow() const{
+          return zl_;
+      }
+      int zHigh() const{
+          return zh_;
+      }
+  private:
+      int zl_;
+      int zh_;
+  };
 }
 
 #endif

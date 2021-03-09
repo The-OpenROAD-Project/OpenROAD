@@ -137,8 +137,6 @@ class IOPlacer
 
   int slots_per_section_;
   float slots_increase_factor_;
-
-  float usage_per_section_;
   float usage_increase_factor_;
 
   bool force_pin_spread_;
@@ -167,6 +165,7 @@ class IOPlacer
   void randomPlacement(const RandomMode);
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
+  void createSectionsPerEdge(Edge edge);
   void createSections();
   void setupSections();
   bool assignPinsSections();

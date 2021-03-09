@@ -43,11 +43,13 @@ namespace fr {
       FlexGCWorker* getGCWorker() const;
       void addPolygonEdge(gcSegment* edge);
       void addMaxRectangle(gcRect* rect);
+      void addSpcRectangle(gcRect* rect);
       void removePolygonEdge(gcSegment* connFig);
       void removeMaxRectangle(gcRect* connFig);
       void queryPolygonEdge(const box_t &box, frLayerNum layerNum, std::vector<std::pair<segment_t, gcSegment*> > &result);
       void queryPolygonEdge(const frBox &box, frLayerNum layerNum, std::vector<std::pair<segment_t, gcSegment*> > &result);
       void queryMaxRectangle(const box_t &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
+      void querySpcRectangle(const box_t &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect> > &result);
       void queryMaxRectangle(const frBox &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
       void queryMaxRectangle(const gtl::rectangle_data<frCoord> &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
       void init(int numLayers);
@@ -143,7 +145,7 @@ namespace fr {
     // init
     gcNet* getNet(frBlockObject* obj);
     void initObj(const frBox &box, frLayerNum layerNum, frBlockObject* obj, bool isFixed);
-    void initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
+    gcNet* initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
     void initDesign();
     bool initDesign_skipObj(frBlockObject* obj);
     void initDRWorker();
@@ -171,7 +173,7 @@ namespace fr {
     void checkMetalSpacing();
     frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum, bool isNDR=true);
     void myBloat(const gtl::rectangle_data<frCoord> &rect, frCoord val, box_t &box);
-    void checkMetalSpacing_main(gcRect* rect, bool isNDR=true);
+    void checkMetalSpacing_main(gcRect* rect, bool isNDR=true, bool querySpcRects=false);
     void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool isNDR=true);
     void checkMetalSpacing_short(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
     bool checkMetalSpacing_short_skipOBSPin(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);

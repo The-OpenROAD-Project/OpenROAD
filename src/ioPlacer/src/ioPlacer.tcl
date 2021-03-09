@@ -92,7 +92,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\
                        	          [-random]\
-                                  [-boundaries_offset offset]\
+                                  [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
                                   [-exclude region]\
                                   [-group_pins pin_list]
@@ -107,7 +107,7 @@ proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude -group_pins} \
+  keys {-hor_layers -ver_layers -random_seed -corner_avoidance -min_distance -exclude -group_pins} \
   flags {-random}
 
   set dbTech [ord::get_db_tech]
@@ -154,13 +154,14 @@ proc place_pins { args } {
     utl::error PPL 18 "-ver_layers is required."
   }
 
-  set offset 5
-  if [info exists keys(-boundaries_offset)] {
-    set offset $keys(-boundaries_offset)
-    ppl::set_boundaries_offset $offset
+  # set default interval_length from boundaries as 1u
+  set distance 1
+  if [info exists keys(-corner_avoidance)] {
+    set distance $keys(-corner_avoidance)
+    ppl::set_corner_avoidance $distance
   } else {
-    utl::report "Using ${offset}u default boundaries offset."
-    ppl::set_boundaries_offset $offset
+    utl::report "Using ${distance}u default distance from corners."
+    ppl::set_corner_avoidance $distance
   }
 
   set min_dist 2
