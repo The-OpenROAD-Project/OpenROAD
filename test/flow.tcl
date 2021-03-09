@@ -14,7 +14,7 @@ source $tracks_file
 remove_buffers
 
 ################################################################
-# IO Placement
+# IO Placement (random)
 place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
@@ -47,6 +47,10 @@ global_placement -timing_driven -density $global_place_density \
 # checkpoint
 set global_place_def [make_result_file ${design}_${platform}_global_place.def]
 write_def $global_place_def
+
+################################################################
+# IO Placement
+place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
 # Resize
