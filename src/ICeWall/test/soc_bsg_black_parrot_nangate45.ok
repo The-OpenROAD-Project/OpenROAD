@@ -8,5 +8,5 @@
 [INFO ODB-0226] Finished LEF file:  dummy_pads.lef
 [INFO IFP-0001] Added 1886 rows of 13894 sites.
 [WARNING PAD-0011] Expected instance u_dr_dm_1_o for padcell sig0 not found
-[WARNING PAD-0005] Cannot find a terminal p_dr_dm_1_o for sig0 to associate with bondpad bp_u_dr_dm_1_o
+[WARNING PAD-0012] Cannot find a terminal p_dr_dm_1_o for sig0 to associate with bondpad bp_u_dr_dm_1_o
 No differences found.
