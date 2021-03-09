@@ -34,10 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-%module fastroute
+%module grt
 
 %{
-#include "fastroute/GlobalRouter.h"
+#include "grt/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Liberty.hh"
 

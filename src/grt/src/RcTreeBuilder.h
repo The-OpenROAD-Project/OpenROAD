@@ -33,68 +33,79 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Pin.h"
+#pragma once
 
-#include "fastroute/GlobalRouter.h"
+#include "FastRoute.h"
+#include "Grid.h"
+#include "Net.h"
+#include "db_sta/dbSta.hh"
+#include "grt/GlobalRouter.h"
+#include "sta/Clock.hh"
+#include "sta/Set.hh"
+
+namespace sta {
+class Net;
+class dbNetwork;
+class Parasitics;
+class Parasitic;
+class Corner;
+class OperatingConditions;
+class ParasiticAnalysisPt;
+class Units;
+}  // namespace sta
+
+namespace ord {
+class OpenRoad;
+}
+
+namespace utl {
+class Logger;
+}
 
 namespace grt {
 
-Pin::Pin(odb::dbITerm* iterm,
-         const odb::Point& position,
-         const std::vector<int>& layers,
-         const PinOrientation orientation,
-         const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-         bool connectedToPad)
-    : _iterm(iterm),
-      _position(position),
-      _layers(layers),
-      _orientation(orientation),
-      _boxesPerLayer(boxesPerLayer),
-      _isPort(false),
-      _connectedToPad(connectedToPad)
-{
-  std::sort(_layers.begin(), _layers.end());
-}
+typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 
-Pin::Pin(odb::dbBTerm* bterm,
-         const odb::Point& position,
-         const std::vector<int>& layers,
-         const PinOrientation orientation,
-         const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
-         bool connectedToPad)
-    : _bterm(bterm),
-      _position(position),
-      _layers(layers),
-      _orientation(orientation),
-      _boxesPerLayer(boxesPerLayer),
-      _isPort(true),
-      _connectedToPad(connectedToPad)
+class RcTreeBuilder
 {
-  std::sort(_layers.begin(), _layers.end());
-}
+ public:
+  RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter);
+  void estimateParasitcs(odb::dbNet* net,
+                         std::vector<Pin>& pins,
+                         std::vector<GSegment>& routes);
 
-odb::dbITerm* Pin::getITerm() const
-{
-  if (_isPort)
-    return nullptr;
-  else
-    return _iterm;
-}
+ protected:
+  void makePinRoutePts(std::vector<Pin>& pins);
+  RoutePt routePt(Pin& pin);
+  sta::Pin* staPin(Pin& pin);
+  void makeRouteParasitics(odb::dbNet* net, std::vector<GSegment>& routes);
+  sta::ParasiticNode* ensureParasiticNode(int x, int y, int layer);
+  void makeParasiticsToGrid(std::vector<Pin>& pins);
+  void makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node);
+  void reduceParasiticNetwork();
+  void layerRC(int wire_length_dbu,
+               int layer,
+               // Return values.
+               float& res,
+               float& cap);
 
-odb::dbBTerm* Pin::getBTerm() const
-{
-  if (_isPort)
-    return _bterm;
-  else
-    return nullptr;
-}
+  // Variables common to all nets.
+  GlobalRouter* _grouter;
+  utl::Logger *_logger;
+  sta::dbSta* _sta;
+  sta::dbNetwork* _network;
+  sta::Parasitics* _parasitics;
+  sta::Corner* _corner;
+  sta::MinMax* _min_max;
+  sta::ParasiticAnalysisPt* _analysisPoint;
 
-std::string Pin::getName() const
-{
-  if (_isPort)
-    return _bterm->getName();
-  else
-    return getITermName(_iterm);
-}
+  // Net variables
+  sta::Net* _sta_net;
+  sta::Parasitic* _parasitic;
+  // Counter for internal parasitic node IDs.
+  int _node_id;
+  // x/y/layer -> parasitic node
+  NodeRoutePtMap _node_map;
+};
 
 }  // namespace grt
