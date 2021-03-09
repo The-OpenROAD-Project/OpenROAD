@@ -264,10 +264,11 @@ namespace fr {
   class gcRect: public gtl::rectangle_data<frCoord>, public gcShape {
   public:
     // constructors
-    gcRect() : gtl::rectangle_data<frCoord>(), gcShape(), layer_(-1), pin_(nullptr), net_(nullptr), fixed_(false) {}
-    gcRect(const gcRect& in): gtl::rectangle_data<frCoord>(in), gcShape(in), layer_(in.layer_), pin_(in.pin_), net_(in.net_), fixed_(in.fixed_) {}
+    gcRect() : gtl::rectangle_data<frCoord>(), gcShape(), layer_(-1), pin_(nullptr), net_(nullptr), fixed_(false), tapered_(false) {}
+    gcRect(const gcRect& in): gtl::rectangle_data<frCoord>(in), gcShape(in), layer_(in.layer_), pin_(in.pin_), net_(in.net_), 
+                                fixed_(in.fixed_), tapered_(in.tapered_) {}
     gcRect(const gtl::rectangle_data<frCoord> &shapeIn, frLayerNum layerIn, gcPin* pinIn, gcNet* netIn, bool fixedIn):
-      gtl::rectangle_data<frCoord>(shapeIn), layer_(layerIn), pin_(pinIn), net_(netIn), fixed_(fixedIn) {}
+      gtl::rectangle_data<frCoord>(shapeIn), layer_(layerIn), pin_(pinIn), net_(netIn), fixed_(fixedIn), tapered_(false) {}
     // setters
     void setRect(const gtl::rectangle_data<frCoord> &in) {
       gtl::rectangle_data<frCoord>::operator =(in);
@@ -364,12 +365,24 @@ namespace fr {
     void removeFromNet() override {
       net_ = nullptr;
     }
-
+    
+    bool isTapered(){
+        return tapered_;
+    }
+    
+    void setTapered(bool t){
+        tapered_ = t;
+    }
+    
+    bool intersects(const frBox& bx){
+        return gtl::xl(*this) <= bx.right() && gtl::xh(*this) >= bx.left() && gtl::yl(*this) <= bx.top() && gtl::yh(*this) >= bx.bottom();
+    }
   protected:
     frLayerNum                   layer_;
     gcPin*                       pin_;
     gcNet*                       net_;
     bool                         fixed_;
+    bool                         tapered_;
   };
 
   class gcPolygon: public gtl::polygon_90_with_holes_data<frCoord>, public gcShape {

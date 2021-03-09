@@ -2215,6 +2215,7 @@ namespace fr {
         }
         return vias_[z][0];
     }
+    
     void setWidth(frCoord w, int z){
         if (z >= (int) widths_.size()) {
           widths_.resize(z+1, 0);
