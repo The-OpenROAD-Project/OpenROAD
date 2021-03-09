@@ -53,6 +53,7 @@ struct Slot
   bool used;
   odb::Point pos;
   int layer;
+  Edge edge;
 };
 
 using SlotVector = std::vector<Slot>;

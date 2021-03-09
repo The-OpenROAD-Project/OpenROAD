@@ -968,28 +968,6 @@ class dbClMeasureType
   Value _value;
 };
 
-
-
-namespace TechMinCutRule {
-
-enum _RuleType
-{
-  NONE = 0,
-  MINIMUM_CUT,
-  MINIMUM_CUT_ABOVE,
-  MINIMUM_CUT_BELOW
-};
-
-struct _Flword
-{
-  _RuleType _rule : 3;
-  uint      _cuts_length : 1;
-  uint      _spare_bits : 28;
-};
-
-const char* getString(_RuleType type);
-}  // namespace TechMinCutRule
-
 //
 // For DB journal entries, need to record actions (add/delete objects) and
 // owner information

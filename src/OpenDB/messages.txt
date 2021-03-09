@@ -109,28 +109,26 @@ ODB 0175 lefin.cpp:177             illegal: non-orthogonal-path at Pin
 ODB 0179 lefin.cpp:481             invalid BUSBITCHARS ({})
 
 ODB 0180 lefin.cpp:559             duplicate LAYER ({}) ignored
-ODB 0191 lefin.cpp:1208            error: undefined VIA {}
-ODB 0193 lefin.cpp:1235            error: undefined LAYER {}
-ODB 0212 lefin.cpp:1729            error: missing LAYER {}
-ODB 0214 lefin.cpp:1789            duplicate VIARULE ({}) ignoring...
-ODB 0217 lefin.cpp:1848            duplicate VIARULE ({}) ignoring...
-ODB 0219 lefin.cpp:1926            Error: {}
-ODB 0220 lefin.cpp:1932            Warning: {}
-ODB 0221 lefin.cpp:1937            {} lines parsed!
-ODB 0222 lefin.cpp:1942            Reading LEF file: {}
-ODB 0224 lefin.cpp:1995                Created {} technology vias
-ODB 0225 lefin.cpp:1997                Created {} library cells
-ODB 0226 lefin.cpp:1999            Finished LEF file:  {}
-ODB 0227 lefin.cpp:2010            Error: technology already exists
-ODB 0228 lefin.cpp:2038            Error: technolgy does not exists
-ODB 0229 lefin.cpp:2043            Error: library ({}) already exists
-ODB 0231 lefin.cpp:2078            Error: technology already exists
-ODB 0233 lefin.cpp:2123            Error: technology already exists
-ODB 0234 lefin.cpp:2139            Reading LEF file:  {} ...
-ODB 0235 lefin.cpp:2141            Error reading {}
-ODB 0236 lefin.cpp:2148            Finished LEF file:  {}
-ODB 0238 lefin.cpp:2156                Created {} technology vias
-ODB 0239 lefin.cpp:2159                Created {} library cells
+ODB 0191 lefin.cpp:1211            error: undefined VIA {}
+ODB 0193 lefin.cpp:1238            error: undefined LAYER {}
+ODB 0212 lefin.cpp:1732            error: missing LAYER {}
+ODB 0214 lefin.cpp:1792            duplicate VIARULE ({}) ignoring...
+ODB 0217 lefin.cpp:1851            duplicate VIARULE ({}) ignoring...
+ODB 0221 lefin.cpp:1929            {} lines parsed!
+ODB 0222 lefin.cpp:1934            Reading LEF file: {}
+ODB 0224 lefin.cpp:1987                Created {} technology vias
+ODB 0225 lefin.cpp:1989                Created {} library cells
+ODB 0226 lefin.cpp:1991            Finished LEF file:  {}
+ODB 0227 lefin.cpp:2002            Error: technology already exists
+ODB 0228 lefin.cpp:2030            Error: technolgy does not exists
+ODB 0229 lefin.cpp:2035            Error: library ({}) already exists
+ODB 0231 lefin.cpp:2070            Error: technology already exists
+ODB 0233 lefin.cpp:2115            Error: technology already exists
+ODB 0234 lefin.cpp:2131            Reading LEF file:  {} ...
+ODB 0235 lefin.cpp:2133            Error reading {}
+ODB 0236 lefin.cpp:2140            Finished LEF file:  {}
+ODB 0238 lefin.cpp:2148                Created {} technology vias
+ODB 0239 lefin.cpp:2151                Created {} library cells
 ODB 0240 reader.cpp:547            error: Cannot open LEF file {}
 ODB 0242 create_box.cpp:163        error: Can not determine which direction to continue path,
 ODB 0245 create_box.cpp:219        error: Net {}: Can not determine which direction to continue path,
