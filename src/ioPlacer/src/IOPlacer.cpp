@@ -617,6 +617,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
   const int x = pin.getX();
   const int y = pin.getY();
   const int l = pin.getLayer();
+  const int mfg_grid = tech_->getManufacturingGrid();
+  
   int lower_x_bound = core_.getBoundary().ll().x();
   int lower_y_bound = core_.getBoundary().ll().y();
   int upper_x_bound = core_.getBoundary().ur().x();
@@ -656,6 +658,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
       ext = parms_->getVerticalLengthExtend() * core_.getDatabaseUnit();
     }
 
+    if (height % mfg_grid != 0) {
+      height = mfg_grid*std::ceil((float)height/mfg_grid);
+    }
+
     if (pin.getOrientation() == Orientation::north) {
       pin.setLowerBound(pin.getX() - half_width, pin.getY() - ext);
       pin.setUpperBound(pin.getX() + half_width, pin.getY() + height);
@@ -680,6 +686,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
     if (parms_->getHorizontalLength() != -1) {
       height = parms_->getHorizontalLength() * core_.getDatabaseUnit();
+    }
+
+    if (height % mfg_grid != 0) {
+      height = mfg_grid*std::ceil((float)height/mfg_grid);
     }
 
     if (pin.getOrientation() == Orientation::east) {
@@ -1034,15 +1044,11 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 
     odb::dbBPin* bpin = odb::dbBPin::create(bterm);
 
-    int size = upper_bound.x() - lower_bound.x();
-
     int x_min = lower_bound.x();
     int y_min = lower_bound.y();
     int x_max = upper_bound.x();
     int y_max = upper_bound.y();
 
-    int origin_x = x_max - int((x_max - x_min) / 2);
-    int origin_y = y_max - int((y_max - y_min) / 2);
     odb::dbBox::create(bpin, layer, x_min, y_min, x_max, y_max);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
