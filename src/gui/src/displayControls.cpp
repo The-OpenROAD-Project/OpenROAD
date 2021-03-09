@@ -30,11 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
 #include "displayControls.h"
 
 #include <QDebug>
-
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -157,7 +155,8 @@ DisplayControls::DisplayControls(QWidget* parent)
       nets_power_visible_(true),
       nets_ground_visible_(true),
       nets_clock_visible_(true),
-      congestion_visible_(false)
+      congestion_visible_(false),
+      pin_markers_visible_(true)
 
 {
   setObjectName("layers");  // for settings
@@ -214,6 +213,10 @@ DisplayControls::DisplayControls(QWidget* parent)
   congestion_map_
       = makeItem("Congestion Map", model_, Qt::Unchecked, [this](bool visible) {
           congestion_visible_ = visible;
+        });
+  pin_markers_
+      = makeItem("Pin Markers", model_, Qt::Checked, [this](bool visible) {
+          pin_markers_visible_ = visible;
         });
 
   // Track patterns
@@ -422,16 +425,16 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
   switch (net->getSigType()) {
-  case dbSigType::SIGNAL:
-    return nets_signal_visible_;
-  case dbSigType::POWER:
-    return nets_power_visible_;
-  case dbSigType::GROUND:
-    return nets_ground_visible_;
-  case dbSigType::CLOCK:
-    return nets_clock_visible_;
-  default:
-    return true;
+    case dbSigType::SIGNAL:
+      return nets_signal_visible_;
+    case dbSigType::POWER:
+      return nets_power_visible_;
+    case dbSigType::GROUND:
+      return nets_ground_visible_;
+    case dbSigType::CLOCK:
+      return nets_clock_visible_;
+    default:
+      return true;
   }
 }
 
@@ -467,6 +470,11 @@ bool DisplayControls::areNonPrefTracksVisible()
 bool DisplayControls::isCongestionVisible() const
 {
   return congestion_visible_;
+}
+
+bool DisplayControls::isPinMarkersVisible() const
+{
+  return pin_markers_visible_;
 }
 
 void DisplayControls::addCustomVisibilityControl(const std::string& name,

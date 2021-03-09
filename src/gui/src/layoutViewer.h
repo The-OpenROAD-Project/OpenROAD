@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QFrame>
+#include <QLine>
 #include <QMainWindow>
 #include <QMap>
 #include <QMenu>
@@ -48,7 +49,7 @@
 #include "search.h"
 
 namespace utl {
-  class Logger;
+class Logger;
 }
 
 namespace odb {
@@ -184,6 +185,12 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
   void drawCongestionMap(Painter& painter, const odb::Rect& bounds);
+  void drawPinMarkers(QPainter* painter,
+                      const odb::Rect& bounds,
+                      odb::dbBlock* block);
+  void drawRulers(QPainter* painter,
+                  const odb::Rect& bounds,
+                  odb::dbBlock* block);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
@@ -192,13 +199,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   void addMenuAndActions();
 
-
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
+  std::vector<QLine> rulers_;
   LayoutScroll* scroller_;
   qreal pixels_per_dbu_;
+  qreal fit_pixels_per_dbu_;
   int min_depth_;
   int max_depth_;
   Search search_;
@@ -207,7 +215,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
   utl::Logger* logger_;
-
 
   QMenu* layout_context_menu_;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
