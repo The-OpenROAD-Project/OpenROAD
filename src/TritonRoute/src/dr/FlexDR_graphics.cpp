@@ -44,6 +44,16 @@ const char* FlexDRGraphics::drc_cost_visible_ = "DRC Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::shape_cost_visible_  = "Shape Cost";
 
+static std::string workerOrigin(FlexDRWorker* worker)
+{
+  frPoint ll = worker->getRouteBox().lowerLeft();
+  frPoint origin;
+  worker->getDesign()->getTopBlock()->getGCellIdx(ll, origin);
+  return "(" + std::to_string(origin.x()) 
+    + ", " + std::to_string(origin.y()) + ")";
+
+}
+
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
@@ -290,8 +300,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   frPoint origin;
   in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
                                               origin);
-  status("Start worker: gcell origin ("
-         + std::to_string(origin.x()) + ", " + std::to_string(origin.y()) + ") "
+  status("Start worker: gcell origin " + workerOrigin(in) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -349,14 +358,17 @@ void FlexDRGraphics::startNet(drNet* net)
     return;
   }
 
-  status("Start net: " + net->getFrNet()->getName());
+  status("Start net: " + net->getFrNet()->getName()
+         + " " + workerOrigin(worker_));
   net_ = net;
   last_pt_layer_ = -1;
   
   frBox box;
   worker_->getExtBox(box);
   gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-  if (settings_->allowPause) gui_->pause();
+  if (settings_->allowPause) {
+    gui_->pause();
+  }
 }
 
 void FlexDRGraphics::endNet(drNet* net)
@@ -374,8 +386,13 @@ void FlexDRGraphics::endNet(drNet* net)
   status("End net: " + net->getFrNet()->getName() + " searched "
          + std::to_string(point_cnt) + " points");
 
-  if (settings_->draw) gui_->redraw();
-  if (settings_->allowPause) gui_->pause();
+  if (settings_->draw) {
+    gui_->redraw();
+  }
+
+  if (settings_->allowPause) {
+    gui_->pause();
+  }
 
   for (auto& points : points_by_layer_) {
     points.clear();
