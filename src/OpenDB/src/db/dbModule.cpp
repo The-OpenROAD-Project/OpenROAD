@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbModule.h"
 
 #include "db.h"
@@ -161,6 +161,10 @@ _dbModule::~_dbModule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbModule - Methods
@@ -293,4 +297,4 @@ dbModInst* dbModule::findModInst(const char* name)
 
 // User Code End dbModulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -105,4 +105,4 @@ dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj);
 dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj);
 // User Code End general
 }  // namespace odb
-// Generator Code End 1
+// Generator Code End Header

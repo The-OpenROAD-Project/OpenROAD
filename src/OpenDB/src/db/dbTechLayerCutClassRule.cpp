@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbTechLayerCutClassRule.h"
 
 #include "db.h"
@@ -52,22 +52,22 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (_flags._length_valid != rhs._flags._length_valid)
+  if (_flags.length_valid_ != rhs._flags.length_valid_)
     return false;
 
-  if (_flags._cuts_valid != rhs._flags._cuts_valid)
+  if (_flags.cuts_valid_ != rhs._flags.cuts_valid_)
     return false;
 
   if (_name != rhs._name)
     return false;
 
-  if (_width != rhs._width)
+  if (width_ != rhs.width_)
     return false;
 
-  if (_length != rhs._length)
+  if (length_ != rhs.length_)
     return false;
 
-  if (_num_cuts != rhs._num_cuts)
+  if (num_cuts_ != rhs.num_cuts_)
     return false;
 
   if (_next_entry != rhs._next_entry)
@@ -91,12 +91,12 @@ void _dbTechLayerCutClassRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._length_valid);
-  DIFF_FIELD(_flags._cuts_valid);
+  DIFF_FIELD(_flags.length_valid_);
+  DIFF_FIELD(_flags.cuts_valid_);
   DIFF_FIELD(_name);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_length);
-  DIFF_FIELD(_num_cuts);
+  DIFF_FIELD(width_);
+  DIFF_FIELD(length_);
+  DIFF_FIELD(num_cuts_);
   DIFF_FIELD_NO_DEEP(_next_entry);
   // User Code Begin differences
   // User Code End differences
@@ -107,12 +107,12 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
                                    const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._length_valid);
-  DIFF_OUT_FIELD(_flags._cuts_valid);
+  DIFF_OUT_FIELD(_flags.length_valid_);
+  DIFF_OUT_FIELD(_flags.cuts_valid_);
   DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_length);
-  DIFF_OUT_FIELD(_num_cuts);
+  DIFF_OUT_FIELD(width_);
+  DIFF_OUT_FIELD(length_);
+  DIFF_OUT_FIELD(num_cuts_);
   DIFF_OUT_FIELD_NO_DEEP(_next_entry);
 
   // User Code Begin out
@@ -130,13 +130,13 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
     _dbDatabase*                    db,
     const _dbTechLayerCutClassRule& r)
 {
-  _flags._length_valid = r._flags._length_valid;
-  _flags._cuts_valid   = r._flags._cuts_valid;
+  _flags.length_valid_ = r._flags.length_valid_;
+  _flags.cuts_valid_   = r._flags.cuts_valid_;
   _flags._spare_bits   = r._flags._spare_bits;
   _name                = r._name;
-  _width               = r._width;
-  _length              = r._length;
-  _num_cuts            = r._num_cuts;
+  width_               = r.width_;
+  length_              = r.length_;
+  num_cuts_            = r.num_cuts_;
   _next_entry          = r._next_entry;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
@@ -147,9 +147,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
   stream >> obj._name;
-  stream >> obj._width;
-  stream >> obj._length;
-  stream >> obj._num_cuts;
+  stream >> obj.width_;
+  stream >> obj.length_;
+  stream >> obj.num_cuts_;
   stream >> obj._next_entry;
   // User Code Begin >>
   // User Code End >>
@@ -160,9 +160,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
   stream << obj._name;
-  stream << obj._width;
-  stream << obj._length;
-  stream << obj._num_cuts;
+  stream << obj.width_;
+  stream << obj.length_;
+  stream << obj.num_cuts_;
   stream << obj._next_entry;
   // User Code Begin <<
   // User Code End <<
@@ -176,6 +176,10 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutClassRule - Methods
@@ -188,71 +192,71 @@ const char* dbTechLayerCutClassRule::getName() const
   return obj->_name;
 }
 
-void dbTechLayerCutClassRule::setWidth(int _width)
+void dbTechLayerCutClassRule::setWidth(int width_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_width = _width;
+  obj->width_ = width_;
 }
 
 int dbTechLayerCutClassRule::getWidth() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return obj->_width;
+  return obj->width_;
 }
 
-void dbTechLayerCutClassRule::setLength(int _length)
+void dbTechLayerCutClassRule::setLength(int length_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_length = _length;
+  obj->length_ = length_;
 }
 
 int dbTechLayerCutClassRule::getLength() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return obj->_length;
+  return obj->length_;
 }
 
-void dbTechLayerCutClassRule::setNumCuts(int _num_cuts)
+void dbTechLayerCutClassRule::setNumCuts(int num_cuts_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_num_cuts = _num_cuts;
+  obj->num_cuts_ = num_cuts_;
 }
 
 int dbTechLayerCutClassRule::getNumCuts() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return obj->_num_cuts;
+  return obj->num_cuts_;
 }
 
-void dbTechLayerCutClassRule::setLengthValid(bool _length_valid)
+void dbTechLayerCutClassRule::setLengthValid(bool length_valid_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_flags._length_valid = _length_valid;
+  obj->_flags.length_valid_ = length_valid_;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->_flags._length_valid;
+  return obj->_flags.length_valid_;
 }
 
-void dbTechLayerCutClassRule::setCutsValid(bool _cuts_valid)
+void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_flags._cuts_valid = _cuts_valid;
+  obj->_flags.cuts_valid_ = cuts_valid_;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->_flags._cuts_valid;
+  return obj->_flags.cuts_valid_;
 }
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods
@@ -286,4 +290,4 @@ void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 }
 // User Code End dbTechLayerCutClassRulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

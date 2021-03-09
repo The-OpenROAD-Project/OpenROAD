@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -57,7 +57,7 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbVector<std::pair<int, int>> _spacing_tbl;  //{cutWithin, orthoSpacing}
+  dbVector<std::pair<int, int>> spacing_tbl_;  //{cutWithin, orthoSpacing}
 
   // User Code Begin fields
   // User Code End fields
@@ -86,4 +86,4 @@ dbOStream& operator<<(dbOStream&                                 stream,
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

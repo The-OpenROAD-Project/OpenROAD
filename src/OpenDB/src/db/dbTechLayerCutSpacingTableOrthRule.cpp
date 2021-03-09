@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
 #include "db.h"
@@ -97,7 +97,7 @@ _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
 dbIStream& operator>>(dbIStream&                           stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj)
 {
-  stream >> obj._spacing_tbl;
+  stream >> obj.spacing_tbl_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -105,7 +105,7 @@ dbIStream& operator>>(dbIStream&                           stream,
 dbOStream& operator<<(dbOStream&                                 stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj)
 {
-  stream << obj._spacing_tbl;
+  stream << obj.spacing_tbl_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -116,6 +116,10 @@ _dbTechLayerCutSpacingTableOrthRule::~_dbTechLayerCutSpacingTableOrthRule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableOrthRule - Methods
@@ -127,7 +131,7 @@ void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
-  tbl = obj->_spacing_tbl;
+  tbl = obj->spacing_tbl_;
 }
 
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
@@ -136,7 +140,7 @@ void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
-  obj->_spacing_tbl = tbl;
+  obj->spacing_tbl_ = tbl;
 }
 
 dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
@@ -168,4 +172,4 @@ void dbTechLayerCutSpacingTableOrthRule::destroy(
 
 // User Code End dbTechLayerCutSpacingTableOrthRulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -52,9 +52,9 @@ class _dbDatabase;
 
 struct dbTechLayerSpacingTablePrlRuleFlags
 {
-  bool _wrong_direction : 1;
-  bool _same_mask : 1;
-  bool _exceept_eol : 1;
+  bool wrong_direction_ : 1;
+  bool same_mask_ : 1;
+  bool exceept_eol_ : 1;
   uint _spare_bits : 29;
 };
 // User Code Begin structs
@@ -67,11 +67,11 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   // User Code End enums
 
   dbTechLayerSpacingTablePrlRuleFlags _flags;
-  int                                 _eol_width;
-  dbVector<int>                       _length_tbl;
-  dbVector<int>                       _width_tbl;
-  dbVector<dbVector<int>>             _spacing_tbl;
-  dbVector<std::tuple<int, int, int>> _influence_tbl;
+  int                                 eol_width_;
+  dbVector<int>                       length_tbl_;
+  dbVector<int>                       width_tbl_;
+  dbVector<dbVector<int>>             spacing_tbl_;
+  dbVector<std::tuple<int, int, int>> influence_tbl_;
 
   // User Code Begin fields
   std::map<uint, std::pair<int, int>> _within_tbl;
@@ -104,4 +104,4 @@ dbOStream& operator<<(dbOStream&                             stream,
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin 1
+//Generator Code Begin Header
 #pragma once
 
 #include "dbIterator.h"
@@ -68,4 +68,4 @@ namespace odb {
 
   
 }
-//GeneratorCodeEnd 1
+//Generator Code End Header

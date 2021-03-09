@@ -3,229 +3,232 @@
   "type": "dbObject",
   "fields": [
     {
-      "name":"_default_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "default_valid_",
+      "type": "bit"
     },
     {
-      "name":"_same_mask",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "same_mask_",
+      "type": "bit"
     },
     {
-      "name":"_same_net",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "same_net_",
+      "type": "bit"
     },
     {
-      "name":"_same_metal",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "same_metal_",
+      "type": "bit"
     },
     {
-      "name":"_same_via",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "same_via_",
+      "type": "bit"
     },
     {
-      "name":"_layer_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "layer_valid_",
+      "type": "bit"
     },
     {
-      "name":"_no_stack",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "no_stack_",
+      "type": "bit"
     },
     {
-      "name":"_non_zero_enclosure",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "non_zero_enclosure_",
+      "type": "bit"
     },
     {
-      "name":"_prl_for_aligned_cut",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "prl_for_aligned_cut_",
+      "type": "bit"
     },
     {
-      "name":"_center_to_center_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "center_to_center_valid_",
+      "type": "bit"
     },
     {
-      "name":"_center_and_edge_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "center_and_edge_valid_",
+      "type": "bit"
     },
     {
-      "name":"_no_prl",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "no_prl_",
+      "type": "bit"
     },
     {
-      "name":"_prl_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "prl_valid_",
+      "type": "bit"
     },
     {
-      "name":"_max_x_y",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "max_x_y_",
+      "type": "bit"
     },
     {
-      "name":"_end_extension_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "end_extension_valid_",
+      "type": "bit"
     },
     {
-      "name":"_side_extension_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "side_extension_valid_",
+      "type": "bit"
     },
     {
-      "name":"_exact_aligned_spacing_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "exact_aligned_spacing_valid_",
+      "type": "bit"
     },
     {
-      "name":"_horizontal",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "horizontal_",
+      "type": "bit"
     },
     {
-      "name":"_prl_horizontal",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "prl_horizontal_",
+      "type": "bit"
     },
     {
-      "name":"_vertical",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "vertical_",
+      "type": "bit"
     },
     {
-      "name":"_prl_vertical",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "prl_vertical_",
+      "type": "bit"
     },
     {
-      "name":"_non_opposite_enclosure_spacing_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "non_opposite_enclosure_spacing_valid_",
+      "type": "bit"
     },
     {
-      "name":"_opposite_enclosure_resize_spacing_valid",
-      "type":"bool",
-      "flags":[],
-      "bits":1
+      "name": "opposite_enclosure_resize_spacing_valid_",
+      "type": "bit"
     },
     {
-      "name":"_default",
-      "type":"int",
-      "flags":[]
+      "name": "default_",
+      "type": "int"
     },
     {
       "type": "dbId<_dbTechLayer>",
-      "name": "_second_layer",
-      "flags": ["no-get"],
+      "name": "second_layer_",
+      "flags": [
+        "no-get"
+      ],
       "parent": "dbTechLayer"
     },
     {
-      "name":"_prl_for_aligned_cut_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "prl_for_aligned_cut_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_center_to_center_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "center_to_center_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_center_and_edge_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "center_and_edge_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_prl",
-      "type":"int",
-      "flags":[]
+      "name": "prl_",
+      "type": "int"
     },
     {
-      "name":"_prl_tbl",
-      "type":"dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "prl_tbl_",
+      "type": "dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_extension",
-      "type":"int",
-      "flags":[]
+      "name": "extension_",
+      "type": "int"
     },
     {
-      "name":"_end_extension_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "end_extension_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_side_extension_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "side_extension_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_exact_aligned_spacing_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "exact_aligned_spacing_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_non_opp_enc_spacing_tbl",
-      "type":"dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "non_opp_enc_spacing_tbl_",
+      "type": "dbVector<std::pair<dbId<_dbTechLayerCutClassRule>,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_opp_enc_spacing_tbl",
-      "type":"dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,int,int,int>>",
-      "flags":["no-template","no-get","no-set"]
+      "name": "opp_enc_spacing_tbl_",
+      "type": "dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,int,int,int>>",
+      "flags": [
+        "no-template",
+        "no-get",
+        "no-set"
+      ]
     },
     {
-      "name":"_spacing_tbl",
-      "type":"dbVector<dbVector<std::pair<int,int>>>",
-      "flags":["no-set","no-get","no-template"]
+      "name": "spacing_tbl_",
+      "type": "dbVector<dbVector<std::pair<int,int>>>",
+      "flags": [
+        "no-set",
+        "no-get",
+        "no-template"
+      ]
     },
     {
-      "name":"_row_map",
-      "type":"std::map<std::string, uint>",
-      "flags":["no-set","no-get","no-template"]
+      "name": "row_map_",
+      "type": "std::map<std::string, uint>",
+      "flags": [
+        "no-set",
+        "no-get",
+        "no-template"
+      ]
     },
     {
-      "name":"_col_map",
-      "type":"std::map<std::string, uint>",
-      "flags":["no-set","no-get","no-template"]
+      "name": "col_map_",
+      "type": "std::map<std::string, uint>",
+      "flags": [
+        "no-set",
+        "no-get",
+        "no-template"
+      ]
     }
   ],
   "constructors": [],
-  "enums":[],
+  "enums": [],
   "h_includes": [
     "dbVector.h"
   ],
-  "cpp_includes":["dbTechLayer.h"]
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
 }

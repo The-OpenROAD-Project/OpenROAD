@@ -130,7 +130,7 @@ def getHashTableType(type_name):
     return type_name[12:-1] + "*"
 
 
-def isDbVector(type_name):
+def isPassByRef(type_name):
     return type_name.find("dbVector") == 0
 
 

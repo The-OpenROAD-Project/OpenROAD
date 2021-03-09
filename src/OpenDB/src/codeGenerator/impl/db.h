@@ -1,9 +1,9 @@
-//Generator Code Begin 2
+//Generator Code Begin classes
 {% for klass in schema.classes %}
 class {{klass.name}};
 {% endfor %}
-//Generator Code End 2
-//Generator Code Begin 5
+//Generator Code End classes
+//Generator Code Begin Declaration
 {% for klass in schema.classes %}
 
 class {{klass.name}} : public dbObject
@@ -38,7 +38,7 @@ class {{klass.name}} : public dbObject
     {% if 'no-get' not in field.flags %}
       {% if field.dbSetGetter %}
         dbSet<{{field.type}}> get{{field.functional_name}}() const;
-      {% elif field.isDbVector %}
+      {% elif field.isPassByRef %}
         void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
       {% elif field.isHashTable %}
         {{field.getterReturnType}} {{field.getterFunctionName}}(const char* name) const;
@@ -74,4 +74,4 @@ class {{klass.name}} : public dbObject
 };
 
 {% endfor %}
-//Generator Code End 5
+//Generator Code End Declaration

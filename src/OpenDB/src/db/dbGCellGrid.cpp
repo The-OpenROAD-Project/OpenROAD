@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbGCellGrid.h"
 
 #include "db.h"
@@ -185,13 +185,9 @@ _dbGCellGrid::~_dbGCellGrid()
   // User Code Begin Destructor
   // User Code End Destructor
 }
-////////////////////////////////////////////////////////////////////
-//
-// dbGCellGrid - Methods
-//
-////////////////////////////////////////////////////////////////////
 
-// User Code Begin dbGCellGridPublicMethods
+// User Code Begin PrivateMethods
+
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
   stream >> obj.horizontal_usage;
@@ -222,6 +218,16 @@ bool _dbGCellGrid::gcellExists(dbId<_dbTechLayer> lid,
          && _congestion_map.at(lid).find({x_idx, y_idx})
                 != _congestion_map.at(lid).end();
 }
+
+// User Code End PrivateMethods
+
+////////////////////////////////////////////////////////////////////
+//
+// dbGCellGrid - Methods
+//
+////////////////////////////////////////////////////////////////////
+
+// User Code Begin dbGCellGridPublicMethods
 
 void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 {
@@ -662,4 +668,4 @@ dbGCellGrid::getCongestionMap(dbTechLayer* layer)
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

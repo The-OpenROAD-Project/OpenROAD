@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbTechLayerCornerSpacingRule.h"
 
 #include "db.h"
@@ -50,59 +50,59 @@ template class dbTable<_dbTechLayerCornerSpacingRule>;
 bool _dbTechLayerCornerSpacingRule::operator==(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
-  if (_flags._corner_type != rhs._flags._corner_type)
+  if (_flags.corner_type_ != rhs._flags.corner_type_)
     return false;
 
-  if (_flags._same_mask != rhs._flags._same_mask)
+  if (_flags.same_mask_ != rhs._flags.same_mask_)
     return false;
 
-  if (_flags._corner_only != rhs._flags._corner_only)
+  if (_flags.corner_only_ != rhs._flags.corner_only_)
     return false;
 
-  if (_flags._except_eol != rhs._flags._except_eol)
+  if (_flags.except_eol_ != rhs._flags.except_eol_)
     return false;
 
-  if (_flags._except_jog_length != rhs._flags._except_jog_length)
+  if (_flags.except_jog_length_ != rhs._flags.except_jog_length_)
     return false;
 
-  if (_flags._edge_length_valid != rhs._flags._edge_length_valid)
+  if (_flags.edge_length_valid_ != rhs._flags.edge_length_valid_)
     return false;
 
-  if (_flags._include_shape != rhs._flags._include_shape)
+  if (_flags.include_shape_ != rhs._flags.include_shape_)
     return false;
 
-  if (_flags._min_length_valid != rhs._flags._min_length_valid)
+  if (_flags.min_length_valid_ != rhs._flags.min_length_valid_)
     return false;
 
-  if (_flags._except_notch != rhs._flags._except_notch)
+  if (_flags.except_notch_ != rhs._flags.except_notch_)
     return false;
 
-  if (_flags._except_notch_length_valid
-      != rhs._flags._except_notch_length_valid)
+  if (_flags.except_notch_length_valid_
+      != rhs._flags.except_notch_length_valid_)
     return false;
 
-  if (_flags._except_same_net != rhs._flags._except_same_net)
+  if (_flags.except_same_net_ != rhs._flags.except_same_net_)
     return false;
 
-  if (_flags._except_same_metal != rhs._flags._except_same_metal)
+  if (_flags.except_same_metal_ != rhs._flags.except_same_metal_)
     return false;
 
-  if (_within != rhs._within)
+  if (within_ != rhs.within_)
     return false;
 
-  if (_eol_width != rhs._eol_width)
+  if (eol_width_ != rhs.eol_width_)
     return false;
 
-  if (_jog_length != rhs._jog_length)
+  if (jog_length_ != rhs.jog_length_)
     return false;
 
-  if (_edge_length != rhs._edge_length)
+  if (edge_length_ != rhs.edge_length_)
     return false;
 
-  if (_min_length != rhs._min_length)
+  if (min_length_ != rhs.min_length_)
     return false;
 
-  if (_except_notch_length != rhs._except_notch_length)
+  if (except_notch_length_ != rhs.except_notch_length_)
     return false;
 
   // User Code Begin ==
@@ -123,24 +123,24 @@ void _dbTechLayerCornerSpacingRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._corner_type);
-  DIFF_FIELD(_flags._same_mask);
-  DIFF_FIELD(_flags._corner_only);
-  DIFF_FIELD(_flags._except_eol);
-  DIFF_FIELD(_flags._except_jog_length);
-  DIFF_FIELD(_flags._edge_length_valid);
-  DIFF_FIELD(_flags._include_shape);
-  DIFF_FIELD(_flags._min_length_valid);
-  DIFF_FIELD(_flags._except_notch);
-  DIFF_FIELD(_flags._except_notch_length_valid);
-  DIFF_FIELD(_flags._except_same_net);
-  DIFF_FIELD(_flags._except_same_metal);
-  DIFF_FIELD(_within);
-  DIFF_FIELD(_eol_width);
-  DIFF_FIELD(_jog_length);
-  DIFF_FIELD(_edge_length);
-  DIFF_FIELD(_min_length);
-  DIFF_FIELD(_except_notch_length);
+  DIFF_FIELD(_flags.corner_type_);
+  DIFF_FIELD(_flags.same_mask_);
+  DIFF_FIELD(_flags.corner_only_);
+  DIFF_FIELD(_flags.except_eol_);
+  DIFF_FIELD(_flags.except_jog_length_);
+  DIFF_FIELD(_flags.edge_length_valid_);
+  DIFF_FIELD(_flags.include_shape_);
+  DIFF_FIELD(_flags.min_length_valid_);
+  DIFF_FIELD(_flags.except_notch_);
+  DIFF_FIELD(_flags.except_notch_length_valid_);
+  DIFF_FIELD(_flags.except_same_net_);
+  DIFF_FIELD(_flags.except_same_metal_);
+  DIFF_FIELD(within_);
+  DIFF_FIELD(eol_width_);
+  DIFF_FIELD(jog_length_);
+  DIFF_FIELD(edge_length_);
+  DIFF_FIELD(min_length_);
+  DIFF_FIELD(except_notch_length_);
   // User Code Begin differences
   // User Code End differences
   DIFF_END
@@ -150,24 +150,24 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
                                         const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._corner_type);
-  DIFF_OUT_FIELD(_flags._same_mask);
-  DIFF_OUT_FIELD(_flags._corner_only);
-  DIFF_OUT_FIELD(_flags._except_eol);
-  DIFF_OUT_FIELD(_flags._except_jog_length);
-  DIFF_OUT_FIELD(_flags._edge_length_valid);
-  DIFF_OUT_FIELD(_flags._include_shape);
-  DIFF_OUT_FIELD(_flags._min_length_valid);
-  DIFF_OUT_FIELD(_flags._except_notch);
-  DIFF_OUT_FIELD(_flags._except_notch_length_valid);
-  DIFF_OUT_FIELD(_flags._except_same_net);
-  DIFF_OUT_FIELD(_flags._except_same_metal);
-  DIFF_OUT_FIELD(_within);
-  DIFF_OUT_FIELD(_eol_width);
-  DIFF_OUT_FIELD(_jog_length);
-  DIFF_OUT_FIELD(_edge_length);
-  DIFF_OUT_FIELD(_min_length);
-  DIFF_OUT_FIELD(_except_notch_length);
+  DIFF_OUT_FIELD(_flags.corner_type_);
+  DIFF_OUT_FIELD(_flags.same_mask_);
+  DIFF_OUT_FIELD(_flags.corner_only_);
+  DIFF_OUT_FIELD(_flags.except_eol_);
+  DIFF_OUT_FIELD(_flags.except_jog_length_);
+  DIFF_OUT_FIELD(_flags.edge_length_valid_);
+  DIFF_OUT_FIELD(_flags.include_shape_);
+  DIFF_OUT_FIELD(_flags.min_length_valid_);
+  DIFF_OUT_FIELD(_flags.except_notch_);
+  DIFF_OUT_FIELD(_flags.except_notch_length_valid_);
+  DIFF_OUT_FIELD(_flags.except_same_net_);
+  DIFF_OUT_FIELD(_flags.except_same_metal_);
+  DIFF_OUT_FIELD(within_);
+  DIFF_OUT_FIELD(eol_width_);
+  DIFF_OUT_FIELD(jog_length_);
+  DIFF_OUT_FIELD(edge_length_);
+  DIFF_OUT_FIELD(min_length_);
+  DIFF_OUT_FIELD(except_notch_length_);
 
   // User Code Begin out
   // User Code End out
@@ -184,25 +184,25 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
     _dbDatabase*                         db,
     const _dbTechLayerCornerSpacingRule& r)
 {
-  _flags._corner_type               = r._flags._corner_type;
-  _flags._same_mask                 = r._flags._same_mask;
-  _flags._corner_only               = r._flags._corner_only;
-  _flags._except_eol                = r._flags._except_eol;
-  _flags._except_jog_length         = r._flags._except_jog_length;
-  _flags._edge_length_valid         = r._flags._edge_length_valid;
-  _flags._include_shape             = r._flags._include_shape;
-  _flags._min_length_valid          = r._flags._min_length_valid;
-  _flags._except_notch              = r._flags._except_notch;
-  _flags._except_notch_length_valid = r._flags._except_notch_length_valid;
-  _flags._except_same_net           = r._flags._except_same_net;
-  _flags._except_same_metal         = r._flags._except_same_metal;
+  _flags.corner_type_               = r._flags.corner_type_;
+  _flags.same_mask_                 = r._flags.same_mask_;
+  _flags.corner_only_               = r._flags.corner_only_;
+  _flags.except_eol_                = r._flags.except_eol_;
+  _flags.except_jog_length_         = r._flags.except_jog_length_;
+  _flags.edge_length_valid_         = r._flags.edge_length_valid_;
+  _flags.include_shape_             = r._flags.include_shape_;
+  _flags.min_length_valid_          = r._flags.min_length_valid_;
+  _flags.except_notch_              = r._flags.except_notch_;
+  _flags.except_notch_length_valid_ = r._flags.except_notch_length_valid_;
+  _flags.except_same_net_           = r._flags.except_same_net_;
+  _flags.except_same_metal_         = r._flags.except_same_metal_;
   _flags._spare_bits                = r._flags._spare_bits;
-  _within                           = r._within;
-  _eol_width                        = r._eol_width;
-  _jog_length                       = r._jog_length;
-  _edge_length                      = r._edge_length;
-  _min_length                       = r._min_length;
-  _except_notch_length              = r._except_notch_length;
+  within_                           = r.within_;
+  eol_width_                        = r.eol_width_;
+  jog_length_                       = r.jog_length_;
+  edge_length_                      = r.edge_length_;
+  min_length_                       = r.min_length_;
+  except_notch_length_              = r.except_notch_length_;
   // User Code Begin CopyConstructor
   _width_tbl   = r._width_tbl;
   _spacing_tbl = r._spacing_tbl;
@@ -213,12 +213,12 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 {
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
-  stream >> obj._within;
-  stream >> obj._eol_width;
-  stream >> obj._jog_length;
-  stream >> obj._edge_length;
-  stream >> obj._min_length;
-  stream >> obj._except_notch_length;
+  stream >> obj.within_;
+  stream >> obj.eol_width_;
+  stream >> obj.jog_length_;
+  stream >> obj.edge_length_;
+  stream >> obj.min_length_;
+  stream >> obj.except_notch_length_;
   // User Code Begin >>
   stream >> obj._width_tbl;
   stream >> obj._spacing_tbl;
@@ -230,12 +230,12 @@ dbOStream& operator<<(dbOStream&                           stream,
 {
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
-  stream << obj._within;
-  stream << obj._eol_width;
-  stream << obj._jog_length;
-  stream << obj._edge_length;
-  stream << obj._min_length;
-  stream << obj._except_notch_length;
+  stream << obj.within_;
+  stream << obj.eol_width_;
+  stream << obj.jog_length_;
+  stream << obj.edge_length_;
+  stream << obj.min_length_;
+  stream << obj.except_notch_length_;
   // User Code Begin <<
   stream << obj._width_tbl;
   stream << obj._spacing_tbl;
@@ -248,244 +248,248 @@ _dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCornerSpacingRule - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerCornerSpacingRule::setWithin(int _within)
+void dbTechLayerCornerSpacingRule::setWithin(int within_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_within = _within;
+  obj->within_ = within_;
 }
 
 int dbTechLayerCornerSpacingRule::getWithin() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_within;
+  return obj->within_;
 }
 
-void dbTechLayerCornerSpacingRule::setEolWidth(int _eol_width)
+void dbTechLayerCornerSpacingRule::setEolWidth(int eol_width_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_eol_width = _eol_width;
+  obj->eol_width_ = eol_width_;
 }
 
 int dbTechLayerCornerSpacingRule::getEolWidth() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_eol_width;
+  return obj->eol_width_;
 }
 
-void dbTechLayerCornerSpacingRule::setJogLength(int _jog_length)
+void dbTechLayerCornerSpacingRule::setJogLength(int jog_length_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_jog_length = _jog_length;
+  obj->jog_length_ = jog_length_;
 }
 
 int dbTechLayerCornerSpacingRule::getJogLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_jog_length;
+  return obj->jog_length_;
 }
 
-void dbTechLayerCornerSpacingRule::setEdgeLength(int _edge_length)
+void dbTechLayerCornerSpacingRule::setEdgeLength(int edge_length_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_edge_length = _edge_length;
+  obj->edge_length_ = edge_length_;
 }
 
 int dbTechLayerCornerSpacingRule::getEdgeLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_edge_length;
+  return obj->edge_length_;
 }
 
-void dbTechLayerCornerSpacingRule::setMinLength(int _min_length)
+void dbTechLayerCornerSpacingRule::setMinLength(int min_length_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_min_length = _min_length;
+  obj->min_length_ = min_length_;
 }
 
 int dbTechLayerCornerSpacingRule::getMinLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_min_length;
+  return obj->min_length_;
 }
 
 void dbTechLayerCornerSpacingRule::setExceptNotchLength(
-    int _except_notch_length)
+    int except_notch_length_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_except_notch_length = _except_notch_length;
+  obj->except_notch_length_ = except_notch_length_;
 }
 
 int dbTechLayerCornerSpacingRule::getExceptNotchLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  return obj->_except_notch_length;
+  return obj->except_notch_length_;
 }
 
-void dbTechLayerCornerSpacingRule::setSameMask(bool _same_mask)
+void dbTechLayerCornerSpacingRule::setSameMask(bool same_mask_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._same_mask = _same_mask;
+  obj->_flags.same_mask_ = same_mask_;
 }
 
 bool dbTechLayerCornerSpacingRule::isSameMask() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._same_mask;
+  return obj->_flags.same_mask_;
 }
 
-void dbTechLayerCornerSpacingRule::setCornerOnly(bool _corner_only)
+void dbTechLayerCornerSpacingRule::setCornerOnly(bool corner_only_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._corner_only = _corner_only;
+  obj->_flags.corner_only_ = corner_only_;
 }
 
 bool dbTechLayerCornerSpacingRule::isCornerOnly() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._corner_only;
+  return obj->_flags.corner_only_;
 }
 
-void dbTechLayerCornerSpacingRule::setExceptEol(bool _except_eol)
+void dbTechLayerCornerSpacingRule::setExceptEol(bool except_eol_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_eol = _except_eol;
+  obj->_flags.except_eol_ = except_eol_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptEol() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_eol;
+  return obj->_flags.except_eol_;
 }
 
-void dbTechLayerCornerSpacingRule::setExceptJogLength(bool _except_jog_length)
+void dbTechLayerCornerSpacingRule::setExceptJogLength(bool except_jog_length_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_jog_length = _except_jog_length;
+  obj->_flags.except_jog_length_ = except_jog_length_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptJogLength() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_jog_length;
+  return obj->_flags.except_jog_length_;
 }
 
-void dbTechLayerCornerSpacingRule::setEdgeLengthValid(bool _edge_length_valid)
+void dbTechLayerCornerSpacingRule::setEdgeLengthValid(bool edge_length_valid_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._edge_length_valid = _edge_length_valid;
+  obj->_flags.edge_length_valid_ = edge_length_valid_;
 }
 
 bool dbTechLayerCornerSpacingRule::isEdgeLengthValid() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._edge_length_valid;
+  return obj->_flags.edge_length_valid_;
 }
 
-void dbTechLayerCornerSpacingRule::setIncludeShape(bool _include_shape)
+void dbTechLayerCornerSpacingRule::setIncludeShape(bool include_shape_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._include_shape = _include_shape;
+  obj->_flags.include_shape_ = include_shape_;
 }
 
 bool dbTechLayerCornerSpacingRule::isIncludeShape() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._include_shape;
+  return obj->_flags.include_shape_;
 }
 
-void dbTechLayerCornerSpacingRule::setMinLengthValid(bool _min_length_valid)
+void dbTechLayerCornerSpacingRule::setMinLengthValid(bool min_length_valid_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._min_length_valid = _min_length_valid;
+  obj->_flags.min_length_valid_ = min_length_valid_;
 }
 
 bool dbTechLayerCornerSpacingRule::isMinLengthValid() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._min_length_valid;
+  return obj->_flags.min_length_valid_;
 }
 
-void dbTechLayerCornerSpacingRule::setExceptNotch(bool _except_notch)
+void dbTechLayerCornerSpacingRule::setExceptNotch(bool except_notch_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_notch = _except_notch;
+  obj->_flags.except_notch_ = except_notch_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptNotch() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_notch;
+  return obj->_flags.except_notch_;
 }
 
 void dbTechLayerCornerSpacingRule::setExceptNotchLengthValid(
-    bool _except_notch_length_valid)
+    bool except_notch_length_valid_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_notch_length_valid = _except_notch_length_valid;
+  obj->_flags.except_notch_length_valid_ = except_notch_length_valid_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptNotchLengthValid() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_notch_length_valid;
+  return obj->_flags.except_notch_length_valid_;
 }
 
-void dbTechLayerCornerSpacingRule::setExceptSameNet(bool _except_same_net)
+void dbTechLayerCornerSpacingRule::setExceptSameNet(bool except_same_net_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_same_net = _except_same_net;
+  obj->_flags.except_same_net_ = except_same_net_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptSameNet() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_same_net;
+  return obj->_flags.except_same_net_;
 }
 
-void dbTechLayerCornerSpacingRule::setExceptSameMetal(bool _except_same_metal)
+void dbTechLayerCornerSpacingRule::setExceptSameMetal(bool except_same_metal_)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._except_same_metal = _except_same_metal;
+  obj->_flags.except_same_metal_ = except_same_metal_;
 }
 
 bool dbTechLayerCornerSpacingRule::isExceptSameMetal() const
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return obj->_flags._except_same_metal;
+  return obj->_flags.except_same_metal_;
 }
 
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods
@@ -515,7 +519,7 @@ void dbTechLayerCornerSpacingRule::setType(CornerType _type)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->_flags._corner_type = (uint) _type;
+  obj->_flags.corner_type_ = (uint) _type;
 }
 
 dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
@@ -523,7 +527,7 @@ dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  return (dbTechLayerCornerSpacingRule::CornerType) obj->_flags._corner_type;
+  return (dbTechLayerCornerSpacingRule::CornerType) obj->_flags.corner_type_;
 }
 
 dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
@@ -552,4 +556,4 @@ void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* rule)
 }
 // User Code End dbTechLayerCornerSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

@@ -8,7 +8,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from helper import addOnceToDict, getClassIndex, getTableName, isBitFields, \
     getStruct, isRef, getRefType, isHashTable, getHashTableType, \
-    getTemplateType, components, getFunctionalName, isDbVector, std
+    getTemplateType, components, getFunctionalName, isPassByRef, std
 from parser import Parser
 
 parser = argparse.ArgumentParser(description='Code generator')
@@ -135,6 +135,9 @@ for klass in schema['classes']:
     klass['hasTables'] = False
     flag_num_bits = 0
     for field in klass['fields']:
+        if field['type'] == 'bit':
+            field['type'] = 'bool'
+            field['bits'] = 1
         if 'bits' in field:
             struct['fields'].append(field)
             flag_num_bits += int(field['bits'])
@@ -147,7 +150,8 @@ for klass in schema['classes']:
         field['refType'] = getRefType(field['type'])
         field['isHashTable'] = isHashTable(field['type'])
         field['hashTableType'] = getHashTableType(field['type'])
-        field['isDbVector'] = isDbVector(field['type'])
+        field['isPassByRef'] = isPassByRef(field['type'])
+        field.setdefault('flags',[])
         if 'private' in field['flags']:
             field['flags'].append('no-set')
             field['flags'].append('no-get')
@@ -201,7 +205,7 @@ for klass in schema['classes']:
                 field['setterArgumentType'][2:-1]
         elif 'bits' in field and field['bits'] == 1:
             field['setterArgumentType'] = field['getterReturnType'] = 'bool'
-        elif field['isDbVector']:
+        elif field['isPassByRef']:
             field['setterArgumentType'] = field['getterReturnType'] = field['type'].replace(
                 'dbVector', "std::vector")
         elif field['type'] == 'char *':

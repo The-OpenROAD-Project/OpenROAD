@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -180,4 +180,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

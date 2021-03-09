@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -50,8 +50,8 @@ class _dbDatabase;
 
 struct dbTechLayerCutClassRuleFlags
 {
-  bool _length_valid : 1;
-  bool _cuts_valid : 1;
+  bool length_valid_ : 1;
+  bool cuts_valid_ : 1;
   uint _spare_bits : 30;
 };
 // User Code Begin structs
@@ -65,9 +65,9 @@ class _dbTechLayerCutClassRule : public _dbObject
 
   dbTechLayerCutClassRuleFlags   _flags;
   char*                          _name;
-  int                            _width;
-  int                            _length;
-  int                            _num_cuts;
+  int                            width_;
+  int                            length_;
+  int                            num_cuts_;
   dbId<_dbTechLayerCutClassRule> _next_entry;
 
   // User Code Begin fields
@@ -93,4 +93,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbTechLayer.h"
 
 #include "db.h"
@@ -809,6 +809,10 @@ _dbTechLayer::~_dbTechLayer()
     delete _v55inf_tbl;
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayer - Methods
@@ -1940,4 +1944,4 @@ dbTechLayer* dbTechLayer::getTechLayer(dbTech* tech_, uint dbid_)
 
 // User Code End dbTechLayerPublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -52,45 +52,45 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutSpacingRuleFlags
 {
-  bool _center_to_center : 1;
-  bool _same_net : 1;
-  bool _same_metal : 1;
-  bool _same_via : 1;
-  uint _cut_spacing_type : 3;
-  bool _stack : 1;
-  bool _orthogonal_spacing_valid : 1;
-  bool _above_width_enclosure_valid : 1;
-  bool _short_edge_only : 1;
-  bool _concave_corner_width : 1;
-  bool _concave_corner_parallel : 1;
-  bool _concave_corner_edge_length : 1;
-  bool _concave_corner : 1;
-  bool _extension_valid : 1;
-  bool _non_eol_convex_corner : 1;
-  bool _eol_width_valid : 1;
-  bool _min_length_valid : 1;
-  bool _above_width_valid : 1;
-  bool _mask_overlap : 1;
-  bool _wrong_direction : 1;
-  uint _adjacent_cuts : 2;
-  bool _exact_aligned : 1;
-  bool _cut_class_to_all : 1;
-  bool _no_prl : 1;
-  bool _same_mask : 1;
-  bool _except_same_pgnet : 1;
-  bool _side_parallel_overlap : 1;
-  bool _except_same_net : 1;
-  bool _except_same_metal : 1;
-  bool _except_same_metal_overlap : 1;
-  bool _except_same_via : 1;
-  bool _above : 1;
-  bool _except_two_edges : 1;
-  bool _two_cuts_valid : 1;
-  bool _same_cut : 1;
-  bool _long_edge_only : 1;
-  bool _prl_valid : 1;
-  bool _below : 1;
-  bool _par_within_enclosure_valid : 1;
+  bool center_to_center_ : 1;
+  bool same_net_ : 1;
+  bool same_metal_ : 1;
+  bool same_via_ : 1;
+  uint cut_spacing_type_ : 3;
+  bool stack_ : 1;
+  bool orthogonal_spacing_valid_ : 1;
+  bool above_width_enclosure_valid_ : 1;
+  bool short_edge_only_ : 1;
+  bool concave_corner_width_ : 1;
+  bool concave_corner_parallel_ : 1;
+  bool concave_corner_edge_length_ : 1;
+  bool concave_corner_ : 1;
+  bool extension_valid_ : 1;
+  bool non_eol_convex_corner_ : 1;
+  bool eol_width_valid_ : 1;
+  bool min_length_valid_ : 1;
+  bool above_width_valid_ : 1;
+  bool mask_overlap_ : 1;
+  bool wrong_direction_ : 1;
+  uint adjacent_cuts_ : 2;
+  bool exact_aligned_ : 1;
+  bool cut_class_to_all_ : 1;
+  bool no_prl_ : 1;
+  bool same_mask_ : 1;
+  bool except_same_pgnet_ : 1;
+  bool side_parallel_overlap_ : 1;
+  bool except_same_net_ : 1;
+  bool except_same_metal_ : 1;
+  bool except_same_metal_overlap_ : 1;
+  bool except_same_via_ : 1;
+  bool above_ : 1;
+  bool except_two_edges_ : 1;
+  bool two_cuts_valid_ : 1;
+  bool same_cut_ : 1;
+  bool long_edge_only_ : 1;
+  bool prl_valid_ : 1;
+  bool below_ : 1;
+  bool par_within_enclosure_valid_ : 1;
   uint _spare_bits : 22;
 };
 // User Code Begin structs
@@ -103,30 +103,30 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   // User Code End enums
 
   dbTechLayerCutSpacingRuleFlags _flags;
-  int                            _cut_spacing;
-  dbId<_dbTechLayer>             _second_layer;
-  int                            _orthogonal_spacing;
-  int                            _width;
-  int                            _enclosure;
-  int                            _edge_length;
-  int                            _par_within;
-  int                            _par_enclosure;
-  int                            _edge_enclosure;
-  int                            _adj_enclosure;
-  int                            _above_enclosure;
-  int                            _above_width;
-  int                            _min_length;
-  int                            _extension;
-  int                            _eol_width;
-  uint _num_cuts;  // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
-  int  _within;    // WITHIN cutWithin | PARALLELWITHIN within |
+  int                            cut_spacing_;
+  dbId<_dbTechLayer>             second_layer_;
+  int                            orthogonal_spacing_;
+  int                            width_;
+  int                            enclosure_;
+  int                            edge_length_;
+  int                            par_within_;
+  int                            par_enclosure_;
+  int                            edge_enclosure_;
+  int                            adj_enclosure_;
+  int                            above_enclosure_;
+  int                            above_width_;
+  int                            min_length_;
+  int                            extension_;
+  int                            eol_width_;
+  uint num_cuts_;  // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
+  int  within_;    // WITHIN cutWithin | PARALLELWITHIN within |
                    // SAMEMETALSHAREDEDGE parwithin
-  int                            _second_within;  // WITHIN cutWithin cutWithin2
-  dbId<_dbTechLayerCutClassRule> _cut_class;
-  uint                           _two_cuts;
-  uint                           _prl;
-  uint                           _par_length;
-  int                            _cut_area;
+  int                            second_within_;  // WITHIN cutWithin cutWithin2
+  dbId<_dbTechLayerCutClassRule> cut_class_;
+  uint                           two_cuts_;
+  uint                           prl_;
+  uint                           par_length_;
+  int                            cut_area_;
 
   // User Code Begin fields
   // User Code End fields
@@ -151,4 +151,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

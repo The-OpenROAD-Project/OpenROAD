@@ -1,5 +1,5 @@
-//Generator Code Begin 1
+//Generator Code Begin ObjectNames
 {% for klass in schema.classes %}
                                  "{{klass.name}}",
 {% endfor %}
-//Generator Code End 1
+//Generator Code End ObjectNames

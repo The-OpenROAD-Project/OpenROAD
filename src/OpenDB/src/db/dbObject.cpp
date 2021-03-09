@@ -677,7 +677,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbRegion",
                                  "dbHier",
                                  "dbBPin",
-                                 // Generator Code Begin 1
+                                 // Generator Code Begin ObjectNames
                                  "dbTechLayer",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerMinStepRule",
@@ -691,7 +691,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbModInst",
                                  "dbGroup",
                                  "dbGCellGrid",
-                                 // Generator Code End 1
+                                 // Generator Code End ObjectNames
 
                                  // Lib Objects
                                  "dbLib",

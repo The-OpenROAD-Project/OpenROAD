@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -51,18 +51,18 @@ class _dbDatabase;
 
 struct dbTechLayerCornerSpacingRuleFlags
 {
-  uint _corner_type : 1;
-  bool _same_mask : 1;
-  bool _corner_only : 1;
-  bool _except_eol : 1;
-  bool _except_jog_length : 1;
-  bool _edge_length_valid : 1;
-  bool _include_shape : 1;
-  bool _min_length_valid : 1;
-  bool _except_notch : 1;
-  bool _except_notch_length_valid : 1;
-  bool _except_same_net : 1;
-  bool _except_same_metal : 1;
+  uint corner_type_ : 1;
+  bool same_mask_ : 1;
+  bool corner_only_ : 1;
+  bool except_eol_ : 1;
+  bool except_jog_length_ : 1;
+  bool edge_length_valid_ : 1;
+  bool include_shape_ : 1;
+  bool min_length_valid_ : 1;
+  bool except_notch_ : 1;
+  bool except_notch_length_valid_ : 1;
+  bool except_same_net_ : 1;
+  bool except_same_metal_ : 1;
   uint _spare_bits : 20;
 };
 // User Code Begin structs
@@ -75,12 +75,12 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   // User Code End enums
 
   dbTechLayerCornerSpacingRuleFlags _flags;
-  int                               _within;
-  int                               _eol_width;
-  int                               _jog_length;
-  int                               _edge_length;
-  int                               _min_length;
-  int                               _except_notch_length;
+  int                               within_;
+  int                               eol_width_;
+  int                               jog_length_;
+  int                               edge_length_;
+  int                               min_length_;
+  int                               except_notch_length_;
 
   // User Code Begin fields
   dbVector<int>                 _width_tbl;
@@ -109,4 +109,4 @@ dbOStream& operator<<(dbOStream&                           stream,
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

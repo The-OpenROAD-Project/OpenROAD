@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbTechLayerSpacingTablePrlRule.h"
 
 #include "db.h"
@@ -50,16 +50,16 @@ template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 bool _dbTechLayerSpacingTablePrlRule::operator==(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  if (_flags._wrong_direction != rhs._flags._wrong_direction)
+  if (_flags.wrong_direction_ != rhs._flags.wrong_direction_)
     return false;
 
-  if (_flags._same_mask != rhs._flags._same_mask)
+  if (_flags.same_mask_ != rhs._flags.same_mask_)
     return false;
 
-  if (_flags._exceept_eol != rhs._flags._exceept_eol)
+  if (_flags.exceept_eol_ != rhs._flags.exceept_eol_)
     return false;
 
-  if (_eol_width != rhs._eol_width)
+  if (eol_width_ != rhs.eol_width_)
     return false;
 
   // User Code Begin ==
@@ -80,10 +80,10 @@ void _dbTechLayerSpacingTablePrlRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._wrong_direction);
-  DIFF_FIELD(_flags._same_mask);
-  DIFF_FIELD(_flags._exceept_eol);
-  DIFF_FIELD(_eol_width);
+  DIFF_FIELD(_flags.wrong_direction_);
+  DIFF_FIELD(_flags.same_mask_);
+  DIFF_FIELD(_flags.exceept_eol_);
+  DIFF_FIELD(eol_width_);
   // User Code Begin differences
   // User Code End differences
   DIFF_END
@@ -93,10 +93,10 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
                                           const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._wrong_direction);
-  DIFF_OUT_FIELD(_flags._same_mask);
-  DIFF_OUT_FIELD(_flags._exceept_eol);
-  DIFF_OUT_FIELD(_eol_width);
+  DIFF_OUT_FIELD(_flags.wrong_direction_);
+  DIFF_OUT_FIELD(_flags.same_mask_);
+  DIFF_OUT_FIELD(_flags.exceept_eol_);
+  DIFF_OUT_FIELD(eol_width_);
 
   // User Code Begin out
   // User Code End out
@@ -114,11 +114,11 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase*                           db,
     const _dbTechLayerSpacingTablePrlRule& r)
 {
-  _flags._wrong_direction = r._flags._wrong_direction;
-  _flags._same_mask       = r._flags._same_mask;
-  _flags._exceept_eol     = r._flags._exceept_eol;
+  _flags.wrong_direction_ = r._flags.wrong_direction_;
+  _flags.same_mask_       = r._flags.same_mask_;
+  _flags.exceept_eol_     = r._flags.exceept_eol_;
   _flags._spare_bits      = r._flags._spare_bits;
-  _eol_width              = r._eol_width;
+  eol_width_              = r.eol_width_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -127,11 +127,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream >> *_flags_bit_field;
-  stream >> obj._eol_width;
-  stream >> obj._length_tbl;
-  stream >> obj._width_tbl;
-  stream >> obj._spacing_tbl;
-  stream >> obj._influence_tbl;
+  stream >> obj.eol_width_;
+  stream >> obj.length_tbl_;
+  stream >> obj.width_tbl_;
+  stream >> obj.spacing_tbl_;
+  stream >> obj.influence_tbl_;
   // User Code Begin >>
   stream >> obj._within_tbl;
   // User Code End >>
@@ -142,11 +142,11 @@ dbOStream& operator<<(dbOStream&                             stream,
 {
   uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
   stream << *_flags_bit_field;
-  stream << obj._eol_width;
-  stream << obj._length_tbl;
-  stream << obj._width_tbl;
-  stream << obj._spacing_tbl;
-  stream << obj._influence_tbl;
+  stream << obj.eol_width_;
+  stream << obj.length_tbl_;
+  stream << obj.width_tbl_;
+  stream << obj.spacing_tbl_;
+  stream << obj.influence_tbl_;
   // User Code Begin <<
   stream << obj._within_tbl;
   // User Code End <<
@@ -158,33 +158,37 @@ _dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerSpacingTablePrlRule - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerSpacingTablePrlRule::setEolWidth(int _eol_width)
+void dbTechLayerSpacingTablePrlRule::setEolWidth(int eol_width_)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_eol_width = _eol_width;
+  obj->eol_width_ = eol_width_;
 }
 
 int dbTechLayerSpacingTablePrlRule::getEolWidth() const
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  return obj->_eol_width;
+  return obj->eol_width_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool _wrong_direction)
+void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool wrong_direction_)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags._wrong_direction = _wrong_direction;
+  obj->_flags.wrong_direction_ = wrong_direction_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
@@ -192,15 +196,15 @@ bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags._wrong_direction;
+  return obj->_flags.wrong_direction_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setSameMask(bool _same_mask)
+void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask_)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags._same_mask = _same_mask;
+  obj->_flags.same_mask_ = same_mask_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isSameMask() const
@@ -208,15 +212,15 @@ bool dbTechLayerSpacingTablePrlRule::isSameMask() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags._same_mask;
+  return obj->_flags.same_mask_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool _exceept_eol)
+void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol_)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags._exceept_eol = _exceept_eol;
+  obj->_flags.exceept_eol_ = exceept_eol_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
@@ -224,22 +228,22 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags._exceept_eol;
+  return obj->_flags.exceept_eol_;
 }
 
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
 
 uint _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
 {
-  auto pos = --(std::lower_bound(_width_tbl.begin(), _width_tbl.end(), width));
-  return std::max(0, (int) std::distance(_width_tbl.begin(), pos));
+  auto pos = --(std::lower_bound(width_tbl_.begin(), width_tbl_.end(), width));
+  return std::max(0, (int) std::distance(width_tbl_.begin(), pos));
 }
 
 uint _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
 {
   auto pos
-      = --(std::lower_bound(_length_tbl.begin(), _length_tbl.end(), length));
-  return std::max(0, (int) std::distance(_length_tbl.begin(), pos));
+      = --(std::lower_bound(length_tbl_.begin(), length_tbl_.end(), length));
+  return std::max(0, (int) std::distance(length_tbl_.begin(), pos));
 }
 
 void dbTechLayerSpacingTablePrlRule::setTable(
@@ -250,12 +254,12 @@ void dbTechLayerSpacingTablePrlRule::setTable(
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  obj->_width_tbl  = width_tbl;
-  obj->_length_tbl = length_tbl;
+  obj->width_tbl_  = width_tbl;
+  obj->length_tbl_ = length_tbl;
   for (auto spacing : spacing_tbl) {
     dbVector<int> tmp;
     tmp = spacing;
-    obj->_spacing_tbl.push_back(tmp);
+    obj->spacing_tbl_.push_back(tmp);
   }
   obj->_within_tbl = excluded_map;
 }
@@ -268,10 +272,10 @@ void dbTechLayerSpacingTablePrlRule::getTable(
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  width_tbl    = obj->_width_tbl;
-  length_tbl   = obj->_length_tbl;
+  width_tbl    = obj->width_tbl_;
+  length_tbl   = obj->length_tbl_;
   excluded_map = obj->_within_tbl;
-  for (auto spacing : obj->_spacing_tbl) {
+  for (auto spacing : obj->spacing_tbl_) {
     spacing_tbl.push_back(spacing);
   }
 }
@@ -281,7 +285,7 @@ void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  obj->_influence_tbl = influence_tbl;
+  obj->influence_tbl_ = influence_tbl;
 }
 
 dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
@@ -319,7 +323,7 @@ int dbTechLayerSpacingTablePrlRule::getSpacing(const int width,
       = (_dbTechLayerSpacingTablePrlRule*) this;
   uint rowIdx = obj->getWidthIdx(width);
   uint colIdx = obj->getLengthIdx(length);
-  return obj->_spacing_tbl[rowIdx][colIdx];
+  return obj->spacing_tbl_[rowIdx][colIdx];
 }
 
 bool dbTechLayerSpacingTablePrlRule::hasExceptWithin(int width) const
@@ -341,4 +345,4 @@ std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
 
 // User Code End dbTechLayerSpacingTablePrlRulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbGroup.h"
 
 #include "db.h"
@@ -228,6 +228,10 @@ _dbGroup::~_dbGroup()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbGroup - Methods
@@ -585,4 +589,4 @@ dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
 
 // User Code End dbGroupPublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

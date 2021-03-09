@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -50,13 +50,13 @@ class _dbDatabase;
 
 struct dbTechLayerMinStepRuleFlags
 {
-  bool _max_edges_valid : 1;
-  bool _min_adj_length1_valid : 1;
-  bool _no_between_eol : 1;
-  bool _min_adj_length2_valid : 1;
-  bool _convex_corner : 1;
-  bool _min_between_length_valid : 1;
-  bool _except_same_corners : 1;
+  bool max_edges_valid_ : 1;
+  bool min_adj_length1_valid_ : 1;
+  bool no_between_eol_ : 1;
+  bool min_adj_length2_valid_ : 1;
+  bool convex_corner_ : 1;
+  bool min_between_length_valid_ : 1;
+  bool except_same_corners_ : 1;
   uint _spare_bits : 25;
 };
 // User Code Begin structs
@@ -69,12 +69,12 @@ class _dbTechLayerMinStepRule : public _dbObject
   // User Code End enums
 
   dbTechLayerMinStepRuleFlags _flags;
-  int                         _min_step_length;
-  uint                        _max_edges;
-  int                         _min_adj_length1;
-  int                         _min_adj_length2;
-  int                         _eol_width;
-  int                         _min_between_length;
+  int                         min_step_length_;
+  uint                        max_edges_;
+  int                         min_adj_length1_;
+  int                         min_adj_length2_;
+  int                         eol_width_;
+  int                         min_between_length_;
 
   // User Code Begin fields
   // User Code End fields
@@ -99,4 +99,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
 // User Code Begin general
 // User Code End general
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

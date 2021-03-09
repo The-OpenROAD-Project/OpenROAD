@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin cpp
 #include "dbModInst.h"
 
 #include "db.h"
@@ -175,6 +175,10 @@ _dbModInst::~_dbModInst()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbModInst - Methods
@@ -297,4 +301,4 @@ std::string dbModInst::getHierarchalName() const
 }
 // User Code End dbModInstPublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End cpp

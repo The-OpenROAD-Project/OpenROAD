@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin 1
+//Generator Code Begin cpp
 #include "{{klass.name}}.h"
 #include "db.h"
 #include "dbDiff.hpp"
@@ -311,6 +311,10 @@ namespace odb {
     //User Code Begin Destructor
     //User Code End Destructor
   }
+
+  //User Code Begin PrivateMethods
+  //User Code End PrivateMethods
+
   ////////////////////////////////////////////////////////////////////
   //
   // {{klass.name}} - Methods
@@ -342,7 +346,7 @@ namespace odb {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.type}}>(obj, obj->{{field.name}});
         }
-      {% elif field.isDbVector %}
+      {% elif field.isPassByRef %}
         void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
         {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
@@ -404,8 +408,9 @@ namespace odb {
       {% endfor %}
     {% endif %}
   {% endfor %}
-  
+
+
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
 }
-//Generator Code End 1
+//Generator Code End cpp
