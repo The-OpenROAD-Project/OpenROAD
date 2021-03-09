@@ -860,7 +860,7 @@ namespace fr {
     const std::vector<std::vector<frCoord> >* via2turnMinLen_;
     //ndr related
     frNonDefaultRule*                          ndr_;
-    frBox3D*                                   dstTaperBox;   //taper box for the current dest pin in the search
+    const frBox3D*                             dstTaperBox;   //taper box for the current dest pin in the search
 
     // internal getters
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {
