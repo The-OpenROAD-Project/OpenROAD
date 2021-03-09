@@ -56,8 +56,8 @@ class _dbTechLayer;
 
 struct dbGCellGridFlags
 {
-  bool _x_grid_valid : 1;
-  bool _y_grid_valid : 1;
+  bool x_grid_valid_ : 1;
+  bool y_grid_valid_ : 1;
   uint spare_bits_ : 30;
 };
 // User Code Begin structs
@@ -70,17 +70,17 @@ class _dbGCellGrid : public _dbObject
   // User Code End enums
 
   dbGCellGridFlags flags_;
-  dbVector<int>    _x_origin;
-  dbVector<int>    _x_count;
-  dbVector<int>    _x_step;
-  dbVector<int>    _y_origin;
-  dbVector<int>    _y_count;
-  dbVector<int>    _y_step;
-  dbVector<int>    _x_grid;
-  dbVector<int>    _y_grid;
+  dbVector<int>    x_origin_;
+  dbVector<int>    x_count_;
+  dbVector<int>    x_step_;
+  dbVector<int>    y_origin_;
+  dbVector<int>    y_count_;
+  dbVector<int>    y_step_;
+  dbVector<int>    x_grid_;
+  dbVector<int>    y_grid_;
   std::map<dbId<_dbTechLayer>,
            std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
-      _congestion_map;
+      congestion_map_;
 
   // User Code Begin fields
   // User Code End fields

@@ -3,77 +3,77 @@
   "parent": "dbObject",
   "fields": [
     {
-      "name": "_x_origin",
+      "name": "x_origin_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_x_count",
+      "name": "x_count_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_x_step",
+      "name": "x_step_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_y_origin",
+      "name": "y_origin_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_y_count",
+      "name": "y_count_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_y_step",
+      "name": "y_step_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_x_grid",
+      "name": "x_grid_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_y_grid",
+      "name": "y_grid_",
       "type": "dbVector<int>",
       "flags": [
         "private"
       ]
     },
     {
-      "name": "_x_grid_valid",
+      "name": "x_grid_valid_",
       "flags": [
         "private"
       ],
       "type": "bit"
     },
     {
-      "name": "_y_grid_valid",
+      "name": "y_grid_valid_",
       "flags": [
         "private"
       ],
       "type": "bit"
     },
     {
-      "name": "_congestion_map",
+      "name": "congestion_map_",
       "type": "std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>",
       "flags": [
         "private",
