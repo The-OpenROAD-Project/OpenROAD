@@ -617,7 +617,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
   const int x = pin.getX();
   const int y = pin.getY();
   const int l = pin.getLayer();
-  const int manufacturin_grid = tech_->getManufacturingGrid();
+  const int mfg_grid = tech_->getManufacturingGrid();
   
   int lower_x_bound = core_.getBoundary().ll().x();
   int lower_y_bound = core_.getBoundary().ll().y();
@@ -658,8 +658,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
       ext = parms_->getVerticalLengthExtend() * core_.getDatabaseUnit();
     }
 
-    if (height % manufacturin_grid != 0) {
-      height = manufacturin_grid*std::ceil((float)height/manufacturin_grid);
+    if (height % mfg_grid != 0) {
+      height = mfg_grid*std::ceil((float)height/mfg_grid);
     }
 
     if (pin.getOrientation() == Orientation::north) {
@@ -688,8 +688,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
       height = parms_->getHorizontalLength() * core_.getDatabaseUnit();
     }
 
-    if (height % manufacturin_grid != 0) {
-      height = manufacturin_grid*std::ceil((float)height/manufacturin_grid);
+    if (height % mfg_grid != 0) {
+      height = mfg_grid*std::ceil((float)height/mfg_grid);
     }
 
     if (pin.getOrientation() == Orientation::east) {
