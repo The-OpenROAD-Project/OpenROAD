@@ -76,9 +76,9 @@ namespace fr {
   public:
     // constructors
     drPathSeg(): drShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), 
-                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {}
+                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false), isTapered_(false) {}
     drPathSeg(const drPathSeg &in): drShape(in), begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), 
-                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {
+                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_), isTapered_(in.isTapered_) {
     }
     drPathSeg(const frPathSeg &in);
     // getters
@@ -214,6 +214,12 @@ namespace fr {
     bool isPatchSeg() const {
       return patchSeg_;
     }
+    bool isTapered() const {
+      return isTapered_;
+    }
+    void setTapered(bool t){
+        isTapered_ = t;
+    }
   protected:
     frPoint        begin_; // begin always smaller than end, assumed
     frPoint        end_;
@@ -223,6 +229,7 @@ namespace fr {
     FlexMazeIdx    beginMazeIdx_;
     FlexMazeIdx    endMazeIdx_;
     bool           patchSeg_;
+    bool           isTapered_;
   };
 
   class drPatchWire: public drShape {

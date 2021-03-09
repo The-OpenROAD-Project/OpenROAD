@@ -38,6 +38,7 @@ frPathSeg::frPathSeg(const drPathSeg &in) {
   layer_ = in.getLayerNum();
   in.getStyle(style_);
   owner_ = nullptr;
+  setTapered(in.isTapered());
 }
 
 frPathSeg::frPathSeg(const taPathSeg &in) {
@@ -45,6 +46,7 @@ frPathSeg::frPathSeg(const taPathSeg &in) {
   layer_ = in.getLayerNum();
   in.getStyle(style_);
   owner_ = nullptr;
+  setTapered(false);
 }
 
 frPatchWire::frPatchWire(const drPatchWire &in) {

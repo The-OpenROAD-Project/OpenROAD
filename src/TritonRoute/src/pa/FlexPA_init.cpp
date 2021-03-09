@@ -137,7 +137,7 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
   vector<frCoord> offset;
   int cnt = 0;
   for (auto &inst: design_->getTopBlock()->getInsts()) {
-      if (isNDRInst(*inst)){
+      if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)){
           ndrInsts.push_back(inst.get());
           continue;
       }

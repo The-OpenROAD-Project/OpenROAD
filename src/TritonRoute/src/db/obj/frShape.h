@@ -429,8 +429,8 @@ namespace fr {
   class frPathSeg: public frShape {
   public:
     // constructors
-    frPathSeg(): frShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr) {}
-    frPathSeg(const frPathSeg &in): begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_) {}
+    frPathSeg(): frShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), tapered_(false) {}
+    frPathSeg(const frPathSeg &in): begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), tapered_(in.tapered_) {}
     frPathSeg(const drPathSeg &in);
     frPathSeg(const taPathSeg &in);
     // getters
@@ -549,12 +549,19 @@ namespace fr {
     frListIter<std::unique_ptr<frShape> > getIter() const override {
       return iter_;
     }
+    void setTapered(bool t){
+        tapered_ = t;
+    }
+    bool isTapered() const{
+        return tapered_;
+    }
   protected:
     frPoint        begin_; // begin always smaller than end, assumed
     frPoint        end_;
     frLayerNum     layer_;
     frSegStyle     style_;
     frBlockObject* owner_;
+    bool           tapered_;
     frListIter<std::unique_ptr<frShape> > iter_;
   };
 }
