@@ -70,7 +70,7 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
           frSegStyle style;
           pathSeg->getStyle(style);
           if (end.y() != gridBBox.bottom()) {
-            style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+            style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           }
           ps->setStyle(style);
 
@@ -92,10 +92,10 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
         frSegStyle style;
         pathSeg->getStyle(style);
         if (begin.y() < gridBBox.bottom()) {
-          style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
         }
         if (end.y() > gridBBox.top()) {
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
         }
         ps->setStyle(style);
 
@@ -118,7 +118,7 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
           frSegStyle style;
           pathSeg->getStyle(style);
           if (begin.y() != gridBBox.top()) {
-            style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+            style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           }
           ps->setStyle(style);
 
@@ -159,7 +159,7 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
           frSegStyle style;
           pathSeg->getStyle(style);
           if (end.x() != gridBBox.left()) {
-            style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+            style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           }
           ps->setStyle(style);
 
@@ -181,10 +181,10 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
         frSegStyle style;
         pathSeg->getStyle(style);
         if (begin.x() < gridBBox.left()) {
-          style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
         }
         if (end.x() > gridBBox.right()) {
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
         }
         ps->setStyle(style);
 
@@ -206,7 +206,7 @@ void FlexDRWorker::initNetObjs_pathSeg(frPathSeg* pathSeg,
           frSegStyle style;
           pathSeg->getStyle(style);
           if (begin.x() != gridBBox.right()) {
-            style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+            style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           }
           ps->setStyle(style);
 

@@ -141,6 +141,12 @@ namespace fr {
       backTraceBuffer_ |= newBS;
       return retBS;
     }
+    void setSrcTaperBox(const frBox3D* b){
+        srcTaperBox = b;
+    }
+    const frBox3D* getSrcTaperBox() const{
+        return srcTaperBox;
+    }
   protected:
     frMIdx xIdx_, yIdx_, zIdx_;
     frCost pathCost_; // path cost
@@ -152,6 +158,7 @@ namespace fr {
     bool    prevViaUp_;
     frCoord tLength_; // length since last turn
     std::bitset<WAVEFRONTBITSIZE> backTraceBuffer_;
+    const frBox3D* srcTaperBox = nullptr;
   };
 
   class myPriorityQueue: public std::priority_queue<FlexWavefrontGrid> {

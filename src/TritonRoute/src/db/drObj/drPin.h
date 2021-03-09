@@ -31,9 +31,12 @@
 
 #include "db/drObj/drBlockObject.h"
 #include "db/drObj/drAccessPattern.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frTerm.h"
 
 namespace fr {
   class drNet;
+  using namespace std;
   class drPin: public drBlockObject {
   public:
     // constructors
@@ -62,10 +65,34 @@ namespace fr {
     drNet* getNet() const {
       return net_;
     }
-
+    bool isInstPin(){
+        return hasFrTerm() && term_->typeId() == frcInstTerm;
+    }
+    void getAPBbox(FlexMazeIdx& l, FlexMazeIdx& h){
+        FlexMazeIdx mi;
+        l.set(std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max());
+        h.set(std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min());
+        for (auto &ap: getAccessPatterns()) {
+            ap->getMazeIdx(mi);
+            l.set(min(l.x(), mi.x()),
+                    min(l.y(), mi.y()),
+                    min(l.z(), mi.z()));
+            h.set(max(h.x(), mi.x()),
+                    max(h.y(), mi.y()),
+                    max(h.z(), mi.z()));
+        }
+    }
     // others
     frBlockObjectEnum typeId() const override {
       return drcPin;
+    }
+    std::string getName(){
+        if (hasFrTerm()){
+            if (term_->typeId() == frcInstTerm)
+                return static_cast<frInstTerm*>(term_)->getName();
+            return static_cast<frTerm*>(term_)->getName();
+        }
+        return "";
     }
   protected:
     frBlockObject*                                 term_;  // either frTerm or frInstTerm

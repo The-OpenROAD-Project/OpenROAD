@@ -238,9 +238,28 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner) {
     currNet->addPolygon(box, pwire->getLayerNum(), false);
   }
 }
+void addNonTaperedPatches(gcNet* gNet, const std::vector<unique_ptr<drConnFig>>& figs){
+    frBox box;
+    for (auto &obj: figs) {
+      if (obj->typeId() == drcPatchWire) {
+        auto pwire = static_cast<drPatchWire*>(obj.get());
+        pwire->getBBox(box);
+        int z = pwire->getLayerNum()/2-1;
+        for (auto& nt : gNet->getNonTaperedRects(z)) {   
+            if (nt.overlaps(box)){
+                gNet->addNonTaperedRect(box, z);
+                break;
+            }
+        }
+      }
+    }
+}
+void addNonTaperedPatches(gcNet* gNet, drNet* dNet){
+    addNonTaperedPatches(gNet, dNet->getExtConnFigs());
+    addNonTaperedPatches(gNet, dNet->getRouteConnFigs());
+}
 
-
-void FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
+gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
@@ -275,6 +294,10 @@ void FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
     //   cout <<  ") (" << box.left() << ", " << box.bottom() << ") - (" << box.right() << ", " << box.top() << ")\n";
     // }
     currNet->addPolygon(box, pathSeg->getLayerNum());
+    if (pathSeg->isTapered()) 
+        currNet->addTaperedRect(box, pathSeg->getLayerNum()/2-1);
+    else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+        currNet->addNonTaperedRect(box, pathSeg->getLayerNum()/2-1);
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
@@ -282,6 +305,10 @@ void FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
     for (auto &fig: via->getViaDef()->getLayer1Figs()) {
       fig->getBBox(box);
       box.transform(xform);
+      if (via->isTapered()) 
+          currNet->addTaperedRect(box, layerNum/2-1);
+      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+        currNet->addNonTaperedRect(box, layerNum/2-1);
       currNet->addPolygon(box, layerNum);
     }
     // push cut layer rect
@@ -294,9 +321,12 @@ void FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto &fig: via->getViaDef()->getLayer2Figs()) {
-      frBox bbox;
       fig->getBBox(box);
       box.transform(xform);
+      if (via->isTapered()) 
+          currNet->addTaperedRect(box, layerNum/2-1);
+      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+        currNet->addNonTaperedRect(box, layerNum/2-1);
       currNet->addPolygon(box, layerNum);
     }
   } else if (obj->typeId() == drcPatchWire) {
@@ -304,6 +334,7 @@ void FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet) {
     pwire->getBBox(box);
     currNet->addPolygon(box, pwire->getLayerNum());
   }
+  return currNet;
 }
 
 void FlexGCWorker::Impl::initDRWorker() {
@@ -319,15 +350,17 @@ void FlexGCWorker::Impl::initDRWorker() {
     if (it == owner2nets_.end()) {
       addNet(uDRNet->getFrNet());
     }
+    gcNet* gNet = nullptr;
     //auto net = uDRNet->getFrNet();
     for (auto &uConnFig: uDRNet->getExtConnFigs()) {
-      initDRObj(uConnFig.get());
+      gNet = initDRObj(uConnFig.get());
       cnt++;
     }
     for (auto &uConnFig: uDRNet->getRouteConnFigs()) {
-      initDRObj(uConnFig.get());
+      gNet = initDRObj(uConnFig.get());
       cnt++;
     }
+    addNonTaperedPatches(gNet, uDRNet.get());
   }
   if (enableOutput) {
     cout << "#route obj = " <<cnt << "\n";
@@ -683,6 +716,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(gcNet*
   }
 }
 
+
 void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(gcNet* net, gcPin* pin, const gtl::rectangle_data<frCoord>& rect, frLayerNum i,
                                                      const vector<set<pair<frPoint, frPoint> > > &fixedMaxRectangles) {
   auto rectangle = make_unique<gcRect>();
@@ -700,6 +734,18 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(gcNet* net, gcPin* pi
     // route max rectangles
     rectangle->setFixed(false);
     //cntRoute++;
+    int k = i/2-1;
+    for (auto& r : net->getTaperedRects(k)) {
+        if (rectangle->intersects(r)){
+            rectangle->setTapered(true);
+            for (auto& nt : net->getNonTaperedRects(k)){
+                if (rectangle->intersects(nt)){
+                    net->addSpecialSpcRect(nt, i, rectangle->getPin(), rectangle->getNet());
+                }
+            }
+            break;
+        }
+    }
   }
   pin->addMaxRectangle(std::move(rectangle));
 }
@@ -851,6 +897,7 @@ void FlexGCWorker::Impl::updateGCWorker() {
         for (auto &uConnFig: dnet->getRouteConnFigs()) {
           initDRObj(uConnFig.get(), net);
         }
+        addNonTaperedPatches(net, dnet);
       }
     } else {
       logger_->error(DRT, 53, "updateGCWorker cannot find frNet in DRWorker.");
