@@ -75,7 +75,7 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
   bool prl_vertical_ : 1;
   bool non_opposite_enclosure_spacing_valid_ : 1;
   bool opposite_enclosure_resize_spacing_valid_ : 1;
-  uint _spare_bits : 9;
+  uint spare_bits_ : 9;
 };
 // User Code Begin structs
 // User Code End structs
@@ -86,7 +86,7 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerCutSpacingTableDefRuleFlags _flags;
+  dbTechLayerCutSpacingTableDefRuleFlags flags_;
   int                                    default_;
   dbId<_dbTechLayer>                     second_layer_;
   dbVector<

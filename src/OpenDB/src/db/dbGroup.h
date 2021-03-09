@@ -56,7 +56,7 @@ struct dbGroupFlags
 {
   uint _type : 2;
   uint _box : 1;
-  uint _spare_bits : 29;
+  uint spare_bits_ : 29;
 };
 // User Code Begin structs
 // User Code End structs
@@ -67,7 +67,7 @@ class _dbGroup : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbGroupFlags           _flags;
+  dbGroupFlags           flags_;
   char*                  _name;
   Rect                   _box;
   dbId<_dbGroup>         _next_entry;

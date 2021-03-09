@@ -91,7 +91,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool prl_valid_ : 1;
   bool below_ : 1;
   bool par_within_enclosure_valid_ : 1;
-  uint _spare_bits : 22;
+  uint spare_bits_ : 22;
 };
 // User Code Begin structs
 // User Code End structs
@@ -102,7 +102,7 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerCutSpacingRuleFlags _flags;
+  dbTechLayerCutSpacingRuleFlags flags_;
   int                            cut_spacing_;
   dbId<_dbTechLayer>             second_layer_;
   int                            orthogonal_spacing_;

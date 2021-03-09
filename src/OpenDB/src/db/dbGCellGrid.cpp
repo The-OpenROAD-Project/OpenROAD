@@ -54,10 +54,10 @@ template class dbTable<_dbGCellGrid>;
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
-  if (_flags._x_grid_valid != rhs._flags._x_grid_valid)
+  if (flags_._x_grid_valid != rhs.flags_._x_grid_valid)
     return false;
 
-  if (_flags._y_grid_valid != rhs._flags._y_grid_valid)
+  if (flags_._y_grid_valid != rhs.flags_._y_grid_valid)
     return false;
 
   // User Code Begin ==
@@ -95,8 +95,8 @@ void _dbGCellGrid::differences(dbDiff&             diff,
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._x_grid_valid);
-  DIFF_FIELD(_flags._y_grid_valid);
+  DIFF_FIELD(flags_._x_grid_valid);
+  DIFF_FIELD(flags_._y_grid_valid);
   // User Code Begin differences
   DIFF_VECTOR(_x_origin);
   DIFF_VECTOR(_x_count);
@@ -110,8 +110,8 @@ void _dbGCellGrid::differences(dbDiff&             diff,
 void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._x_grid_valid);
-  DIFF_OUT_FIELD(_flags._y_grid_valid);
+  DIFF_OUT_FIELD(flags_._x_grid_valid);
+  DIFF_OUT_FIELD(flags_._y_grid_valid);
 
   // User Code Begin out
   DIFF_OUT_VECTOR(_x_origin);
@@ -125,16 +125,16 @@ void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
 }
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
-  *_flags_bit_field          = 0;
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 {
-  _flags._x_grid_valid = r._flags._x_grid_valid;
-  _flags._y_grid_valid = r._flags._y_grid_valid;
-  _flags._spare_bits   = r._flags._spare_bits;
+  flags_._x_grid_valid = r.flags_._x_grid_valid;
+  flags_._y_grid_valid = r.flags_._y_grid_valid;
+  flags_.spare_bits_   = r.flags_.spare_bits_;
   // User Code Begin CopyConstructor
   _x_origin = r._x_origin;
   _x_count  = r._x_count;
@@ -147,8 +147,8 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream >> *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream >> *flags__bit_field;
   stream >> obj._x_origin;
   stream >> obj._x_count;
   stream >> obj._x_step;
@@ -164,8 +164,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream << *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream << *flags__bit_field;
   stream << obj._x_origin;
   stream << obj._x_count;
   stream << obj._x_step;
@@ -232,7 +232,7 @@ bool _dbGCellGrid::gcellExists(dbId<_dbTechLayer> lid,
 void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  if (grid->_flags._x_grid_valid) {
+  if (grid->flags_._x_grid_valid) {
     x_grid = grid->_x_grid;
     return;
   }
@@ -250,7 +250,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
       x += step;
     }
   }
-  grid->_flags._x_grid_valid = true;
+  grid->flags_._x_grid_valid = true;
   // empty grid
   if (grid->_x_grid.begin() == grid->_x_grid.end()) {
     x_grid = grid->_x_grid;
@@ -270,7 +270,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
 void dbGCellGrid::getGridY(std::vector<int>& y_grid)
 {
   _dbGCellGrid* grid = (_dbGCellGrid*) this;
-  if (grid->_flags._y_grid_valid) {
+  if (grid->flags_._y_grid_valid) {
     y_grid = grid->_y_grid;
     return;
   }
@@ -290,7 +290,7 @@ void dbGCellGrid::getGridY(std::vector<int>& y_grid)
       y += step;
     }
   }
-  grid->_flags._y_grid_valid = true;
+  grid->flags_._y_grid_valid = true;
   // empty grid
   if (grid->_y_grid.begin() == grid->_y_grid.end()) {
     y_grid = grid->_y_grid;
@@ -318,7 +318,7 @@ void dbGCellGrid::addGridPatternX(int origin_x, int line_count, int step)
   grid->_x_origin.push_back(origin_x);
   grid->_x_count.push_back(line_count);
   grid->_x_step.push_back(step);
-  grid->_flags._x_grid_valid = false;
+  grid->flags_._x_grid_valid = false;
   resetCongestionMap();
 }
 
@@ -328,7 +328,7 @@ void dbGCellGrid::addGridPatternY(int origin_y, int line_count, int step)
   grid->_y_origin.push_back(origin_y);
   grid->_y_count.push_back(line_count);
   grid->_y_step.push_back(step);
-  grid->_flags._y_grid_valid = false;
+  grid->flags_._y_grid_valid = false;
   resetCongestionMap();
 }
 
@@ -638,8 +638,8 @@ void dbGCellGrid::resetGrid()
   _grid->_x_grid.clear();
   _grid->_y_grid.clear();
   _grid->_congestion_map.clear();
-  _grid->_flags._x_grid_valid = true;
-  _grid->_flags._y_grid_valid = true;
+  _grid->flags_._x_grid_valid = true;
+  _grid->flags_._y_grid_valid = true;
 }
 
 std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>

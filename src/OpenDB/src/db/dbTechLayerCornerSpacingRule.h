@@ -63,7 +63,7 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool except_notch_length_valid_ : 1;
   bool except_same_net_ : 1;
   bool except_same_metal_ : 1;
-  uint _spare_bits : 20;
+  uint spare_bits_ : 20;
 };
 // User Code Begin structs
 // User Code End structs
@@ -74,7 +74,7 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerCornerSpacingRuleFlags _flags;
+  dbTechLayerCornerSpacingRuleFlags flags_;
   int                               within_;
   int                               eol_width_;
   int                               jog_length_;

@@ -59,10 +59,10 @@ template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
 {
-  if (_flags._type != rhs._flags._type)
+  if (flags_._type != rhs.flags_._type)
     return false;
 
-  if (_flags._box != rhs._flags._box)
+  if (flags_._box != rhs.flags_._box)
     return false;
 
   if (_name != rhs._name)
@@ -103,7 +103,7 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
   // User Code Begin <
   if (strcmp(_name, rhs._name) >= 0)
     return false;
-  if (_flags._type >= rhs._flags._type)
+  if (flags_._type >= rhs.flags_._type)
     return false;
   if (_box >= rhs._box)
     return false;
@@ -116,8 +116,8 @@ void _dbGroup::differences(dbDiff&         diff,
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_flags._box);
+  DIFF_FIELD(flags_._type);
+  DIFF_FIELD(flags_._box);
   DIFF_FIELD(_name);
   DIFF_FIELD(_box);
   DIFF_FIELD(_next_entry);
@@ -138,8 +138,8 @@ void _dbGroup::differences(dbDiff&         diff,
 void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_flags._box);
+  DIFF_OUT_FIELD(flags_._type);
+  DIFF_OUT_FIELD(flags_._box);
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_box);
   DIFF_OUT_FIELD(_next_entry);
@@ -160,16 +160,16 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 }
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
-  *_flags_bit_field          = 0;
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 {
-  _flags._type       = r._flags._type;
-  _flags._box        = r._flags._box;
-  _flags._spare_bits = r._flags._spare_bits;
+  flags_._type       = r.flags_._type;
+  flags_._box        = r.flags_._box;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
   _name              = r._name;
   _box               = r._box;
   _next_entry        = r._next_entry;
@@ -186,8 +186,8 @@ _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream >> *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream >> *flags__bit_field;
   stream >> obj._name;
   stream >> obj._box;
   stream >> obj._next_entry;
@@ -204,8 +204,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream << *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream << *flags__bit_field;
   stream << obj._name;
   stream << obj._box;
   stream << obj._next_entry;
@@ -271,27 +271,27 @@ void dbGroup::setType(dbGroupType _type)
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  obj->_flags._type = (uint) _type;
+  obj->flags_._type = (uint) _type;
 }
 
 dbGroup::dbGroupType dbGroup::getType() const
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  return (dbGroup::dbGroupType) obj->_flags._type;
+  return (dbGroup::dbGroupType) obj->flags_._type;
 }
 
 void dbGroup::setBox(Rect _box)
 {
   _dbGroup* obj    = (_dbGroup*) this;
-  obj->_flags._box = 1;
+  obj->flags_._box = 1;
   obj->_box        = _box;
 }
 
 bool dbGroup::hasBox()
 {
   _dbGroup* obj = (_dbGroup*) this;
-  return obj->_flags._box;
+  return obj->flags_._box;
 }
 
 void dbGroup::addModInst(dbModInst* modinst)
@@ -521,7 +521,7 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
   _dbGroup* _group = _block->_group_tbl->create();
   _group->_name    = strdup(name);
   ZALLOCATED(_group->_name);
-  _group->_flags._type = PHYSICAL_CLUSTER;
+  _group->flags_._type = PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
   return (dbGroup*) _group;
 }
@@ -539,8 +539,8 @@ dbGroup* dbGroup::create(dbBlock*    block,
   _dbGroup* _group = _block->_group_tbl->create();
   _group->_name    = strdup(name);
   ZALLOCATED(_group->_name);
-  _group->_flags._type = VOLTAGE_DOMAIN;
-  _group->_flags._box  = 1;
+  _group->flags_._type = VOLTAGE_DOMAIN;
+  _group->flags_._box  = 1;
   _block->_group_hash.insert(_group);
   _group->_box.init(x1, y1, x2, y2);
   return (dbGroup*) _group;
@@ -555,7 +555,7 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
   _dbGroup* _group = _block->_group_tbl->create();
   _group->_name    = strdup(name);
   ZALLOCATED(_group->_name);
-  _group->_flags._type = PHYSICAL_CLUSTER;
+  _group->flags_._type = PHYSICAL_CLUSTER;
   _block->_group_hash.insert(_group);
   parent->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;

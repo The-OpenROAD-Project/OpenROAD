@@ -68,22 +68,22 @@ class _dbTechLayerAntennaRule;
 
 struct dbTechLayerFlags
 {
-  dbTechLayerType::Value        _type : 4;
-  dbTechLayerDir::Value         _direction : 4;
-  dbTechLayerMinStepType::Value _minstep_type : 2;
-  uint                          _has_max_width : 1;
-  uint                          _has_thickness : 1;
-  uint                          _has_area : 1;
-  uint                          _has_protrusion : 1;
-  uint                          _has_alias : 1;
-  uint                          _has_xy_pitch : 1;
-  uint                          _has_xy_offset : 1;
-  bool                          _rect_only : 1;
-  bool                          _right_way_on_grid_only : 1;
-  bool                          _right_way_on_grid_only_check_mask : 1;
-  bool                          _rect_only_except_non_core_pins : 1;
-  uint                          _lef58_type : 3;
-  uint                          _spare_bits : 8;
+  dbTechLayerType::Value        type_ : 4;
+  dbTechLayerDir::Value         direction_ : 4;
+  dbTechLayerMinStepType::Value minstep_type_ : 2;
+  uint                          has_max_width_ : 1;
+  uint                          has_thickness_ : 1;
+  uint                          has_area_ : 1;
+  uint                          has_protrusion_ : 1;
+  uint                          has_alias_ : 1;
+  uint                          has_xy_pitch_ : 1;
+  uint                          has_xy_offset_ : 1;
+  bool                          rect_only_ : 1;
+  bool                          right_way_on_grid_only_ : 1;
+  bool                          right_way_on_grid_only_check_mask_ : 1;
+  bool                          rect_only_except_non_core_pins_ : 1;
+  uint                          lef58_type_ : 3;
+  uint                          spare_bits_ : 8;
 };
 // User Code Begin structs
 // User Code End structs
@@ -94,24 +94,24 @@ class _dbTechLayer : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerFlags _flags;
+  dbTechLayerFlags flags_;
 
-  dbTable<_dbTechLayerCutClassRule>*    _cut_class_rules_tbl;
-  dbHashTable<_dbTechLayerCutClassRule> _cut_class_rules_hash;
+  dbTable<_dbTechLayerCutClassRule>*    cut_class_rules_tbl_;
+  dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
 
-  dbTable<_dbTechLayerSpacingEolRule>* _spacing_eol_rules_tbl;
+  dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingRule>* _cut_spacing_rules_tbl;
+  dbTable<_dbTechLayerCutSpacingRule>* cut_spacing_rules_tbl_;
 
-  dbTable<_dbTechLayerMinStepRule>* _minstep_rules_tbl;
+  dbTable<_dbTechLayerMinStepRule>* minstep_rules_tbl_;
 
-  dbTable<_dbTechLayerCornerSpacingRule>* _corner_spacing_rules_tbl;
+  dbTable<_dbTechLayerCornerSpacingRule>* corner_spacing_rules_tbl_;
 
-  dbTable<_dbTechLayerSpacingTablePrlRule>* _spacing_table_prl_rules_tbl;
+  dbTable<_dbTechLayerSpacingTablePrlRule>* spacing_table_prl_rules_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingTableOrthRule>* _cut_spacing_table_orth_tbl;
+  dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingTableDefRule>* _cut_spacing_table_def_tbl;
+  dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
 
   // User Code Begin fields
 

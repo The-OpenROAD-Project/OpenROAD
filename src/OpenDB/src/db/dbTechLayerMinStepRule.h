@@ -57,7 +57,7 @@ struct dbTechLayerMinStepRuleFlags
   bool convex_corner_ : 1;
   bool min_between_length_valid_ : 1;
   bool except_same_corners_ : 1;
-  uint _spare_bits : 25;
+  uint spare_bits_ : 25;
 };
 // User Code Begin structs
 // User Code End structs
@@ -68,7 +68,7 @@ class _dbTechLayerMinStepRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerMinStepRuleFlags _flags;
+  dbTechLayerMinStepRuleFlags flags_;
   int                         min_step_length_;
   uint                        max_edges_;
   int                         min_adj_length1_;

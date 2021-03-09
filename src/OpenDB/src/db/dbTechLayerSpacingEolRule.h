@@ -92,7 +92,7 @@ struct dbTechLayerSpacingEolRuleFlags
   bool min_adjacent_length_valid_ : 1;
   bool two_min_adj_length_valid_ : 1;
   bool to_notch_length_valid_ : 1;
-  uint _spare_bits : 23;
+  uint spare_bits_ : 23;
 };
 // User Code Begin structs
 // User Code End structs
@@ -103,7 +103,7 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerSpacingEolRuleFlags _flags;
+  dbTechLayerSpacingEolRuleFlags flags_;
   int                            eol_space_;
   int                            eol_width_;
   int                            wrong_dir_space_;

@@ -50,13 +50,13 @@ template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 bool _dbTechLayerSpacingTablePrlRule::operator==(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  if (_flags.wrong_direction_ != rhs._flags.wrong_direction_)
+  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_)
     return false;
 
-  if (_flags.same_mask_ != rhs._flags.same_mask_)
+  if (flags_.same_mask_ != rhs.flags_.same_mask_)
     return false;
 
-  if (_flags.exceept_eol_ != rhs._flags.exceept_eol_)
+  if (flags_.exceept_eol_ != rhs.flags_.exceept_eol_)
     return false;
 
   if (eol_width_ != rhs.eol_width_)
@@ -80,9 +80,9 @@ void _dbTechLayerSpacingTablePrlRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags.wrong_direction_);
-  DIFF_FIELD(_flags.same_mask_);
-  DIFF_FIELD(_flags.exceept_eol_);
+  DIFF_FIELD(flags_.wrong_direction_);
+  DIFF_FIELD(flags_.same_mask_);
+  DIFF_FIELD(flags_.exceept_eol_);
   DIFF_FIELD(eol_width_);
   // User Code Begin differences
   // User Code End differences
@@ -93,9 +93,9 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
                                           const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags.wrong_direction_);
-  DIFF_OUT_FIELD(_flags.same_mask_);
-  DIFF_OUT_FIELD(_flags.exceept_eol_);
+  DIFF_OUT_FIELD(flags_.wrong_direction_);
+  DIFF_OUT_FIELD(flags_.same_mask_);
+  DIFF_OUT_FIELD(flags_.exceept_eol_);
   DIFF_OUT_FIELD(eol_width_);
 
   // User Code Begin out
@@ -105,8 +105,8 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
-  *_flags_bit_field          = 0;
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -114,10 +114,10 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase*                           db,
     const _dbTechLayerSpacingTablePrlRule& r)
 {
-  _flags.wrong_direction_ = r._flags.wrong_direction_;
-  _flags.same_mask_       = r._flags.same_mask_;
-  _flags.exceept_eol_     = r._flags.exceept_eol_;
-  _flags._spare_bits      = r._flags._spare_bits;
+  flags_.wrong_direction_ = r.flags_.wrong_direction_;
+  flags_.same_mask_       = r.flags_.same_mask_;
+  flags_.exceept_eol_     = r.flags_.exceept_eol_;
+  flags_.spare_bits_      = r.flags_.spare_bits_;
   eol_width_              = r.eol_width_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
@@ -125,8 +125,8 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream >> *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream >> *flags__bit_field;
   stream >> obj.eol_width_;
   stream >> obj.length_tbl_;
   stream >> obj.width_tbl_;
@@ -140,8 +140,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 dbOStream& operator<<(dbOStream&                             stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream << *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream << *flags__bit_field;
   stream << obj.eol_width_;
   stream << obj.length_tbl_;
   stream << obj.width_tbl_;
@@ -188,7 +188,7 @@ void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool wrong_direction_)
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags.wrong_direction_ = wrong_direction_;
+  obj->flags_.wrong_direction_ = wrong_direction_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
@@ -196,7 +196,7 @@ bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags.wrong_direction_;
+  return obj->flags_.wrong_direction_;
 }
 
 void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask_)
@@ -204,7 +204,7 @@ void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask_)
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags.same_mask_ = same_mask_;
+  obj->flags_.same_mask_ = same_mask_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isSameMask() const
@@ -212,7 +212,7 @@ bool dbTechLayerSpacingTablePrlRule::isSameMask() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags.same_mask_;
+  return obj->flags_.same_mask_;
 }
 
 void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol_)
@@ -220,7 +220,7 @@ void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol_)
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->_flags.exceept_eol_ = exceept_eol_;
+  obj->flags_.exceept_eol_ = exceept_eol_;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
@@ -228,7 +228,7 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  return obj->_flags.exceept_eol_;
+  return obj->flags_.exceept_eol_;
 }
 
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
@@ -293,7 +293,7 @@ dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
 {
   _dbTechLayer*                    layer = (_dbTechLayer*) _layer;
   _dbTechLayerSpacingTablePrlRule* newrule
-      = layer->_spacing_table_prl_rules_tbl->create();
+      = layer->spacing_table_prl_rules_tbl_->create();
   return ((dbTechLayerSpacingTablePrlRule*) newrule);
 }
 
@@ -304,7 +304,7 @@ dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingTablePrlRule*)
-      layer->_spacing_table_prl_rules_tbl->getPtr(dbid);
+      layer->spacing_table_prl_rules_tbl_->getPtr(dbid);
 }
 
 void dbTechLayerSpacingTablePrlRule::destroy(
@@ -312,7 +312,7 @@ void dbTechLayerSpacingTablePrlRule::destroy(
 {
   _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
   dbProperty::destroyProperties(rule);
-  layer->_spacing_table_prl_rules_tbl->destroy(
+  layer->spacing_table_prl_rules_tbl_->destroy(
       (_dbTechLayerSpacingTablePrlRule*) rule);
 }
 

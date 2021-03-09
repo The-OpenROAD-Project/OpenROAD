@@ -6872,19 +6872,19 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
       const;
 
-  void setRectOnly(bool _rect_only);
+  void setRectOnly(bool rect_only_);
 
   bool isRectOnly() const;
 
-  void setRightWayOnGridOnly(bool _right_way_on_grid_only);
+  void setRightWayOnGridOnly(bool right_way_on_grid_only_);
 
   bool isRightWayOnGridOnly() const;
 
-  void setRightWayOnGridOnlyCheckMask(bool _right_way_on_grid_only_check_mask);
+  void setRightWayOnGridOnlyCheckMask(bool right_way_on_grid_only_check_mask_);
 
   bool isRightWayOnGridOnlyCheckMask() const;
 
-  void setRectOnlyExceptNonCorePins(bool _rect_only_except_non_core_pins);
+  void setRectOnlyExceptNonCorePins(bool rect_only_except_non_core_pins_);
 
   bool isRectOnlyExceptNonCorePins() const;
 

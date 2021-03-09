@@ -58,7 +58,7 @@ struct dbGCellGridFlags
 {
   bool _x_grid_valid : 1;
   bool _y_grid_valid : 1;
-  uint _spare_bits : 30;
+  uint spare_bits_ : 30;
 };
 // User Code Begin structs
 // User Code End structs
@@ -69,7 +69,7 @@ class _dbGCellGrid : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbGCellGridFlags _flags;
+  dbGCellGridFlags flags_;
   dbVector<int>    _x_origin;
   dbVector<int>    _x_count;
   dbVector<int>    _x_step;

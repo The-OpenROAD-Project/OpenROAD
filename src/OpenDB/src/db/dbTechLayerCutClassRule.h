@@ -52,7 +52,7 @@ struct dbTechLayerCutClassRuleFlags
 {
   bool length_valid_ : 1;
   bool cuts_valid_ : 1;
-  uint _spare_bits : 30;
+  uint spare_bits_ : 30;
 };
 // User Code Begin structs
 // User Code End structs
@@ -63,7 +63,7 @@ class _dbTechLayerCutClassRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerCutClassRuleFlags   _flags;
+  dbTechLayerCutClassRuleFlags   flags_;
   char*                          _name;
   int                            width_;
   int                            length_;

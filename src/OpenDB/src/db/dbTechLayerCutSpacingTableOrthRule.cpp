@@ -148,7 +148,7 @@ dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
 {
   _dbTechLayer*                        _parent = (_dbTechLayer*) parent;
   _dbTechLayerCutSpacingTableOrthRule* newrule
-      = _parent->_cut_spacing_table_orth_tbl->create();
+      = _parent->cut_spacing_table_orth_tbl_->create();
   return ((dbTechLayerCutSpacingTableOrthRule*) newrule);
 }
 
@@ -159,14 +159,14 @@ dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableOrthRule*)
-      _parent->_cut_spacing_table_orth_tbl->getPtr(dbid);
+      _parent->cut_spacing_table_orth_tbl_->getPtr(dbid);
 }
 void dbTechLayerCutSpacingTableOrthRule::destroy(
     dbTechLayerCutSpacingTableOrthRule* rule)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) rule->getImpl()->getOwner();
   dbProperty::destroyProperties(rule);
-  _parent->_cut_spacing_table_orth_tbl->destroy(
+  _parent->cut_spacing_table_orth_tbl_->destroy(
       (_dbTechLayerCutSpacingTableOrthRule*) rule);
 }
 

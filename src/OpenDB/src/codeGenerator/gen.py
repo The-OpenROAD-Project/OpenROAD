@@ -108,7 +108,7 @@ if "relations" in schema:
         if relation.get('hash', False):
             inParentHashField = {}
 
-            inParentHashField['name'] = inParentField['name'][:-3] + "hash"
+            inParentHashField['name'] = inParentField['name'][:-4] + "hash_"
             inParentHashField['type'] = "dbHashTable<_" + \
                 relation['second'] + ">"
             inParentHashField['components'] = [inParentHashField['name']]
@@ -222,7 +222,7 @@ for klass in schema['classes']:
     total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
-            "name": "_spare_bits",
+            "name": "spare_bits_",
             "type": "uint",
             "bits": 32 - (flag_num_bits % 32),
             "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"]
@@ -233,12 +233,12 @@ for klass in schema['classes']:
     if len(struct['fields']) > 0:
 
         struct['in_class'] = True
-        struct['in_class_name'] = '_flags'
+        struct['in_class_name'] = 'flags_'
         klass['structs'].insert(0, struct)
         klass['fields'].insert(0, {
-            'name': '_flags',
+            'name': 'flags_',
             'type': struct['name'],
-            'components': components(klass['structs'], '_flags', struct['name']),
+            'components': components(klass['structs'], 'flags_', struct['name']),
             'bitFields': True,
             'isStruct': True,
             'numBits': total_num_bits,

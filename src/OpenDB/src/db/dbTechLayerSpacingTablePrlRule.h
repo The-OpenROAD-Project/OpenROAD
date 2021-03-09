@@ -55,7 +55,7 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool wrong_direction_ : 1;
   bool same_mask_ : 1;
   bool exceept_eol_ : 1;
-  uint _spare_bits : 29;
+  uint spare_bits_ : 29;
 };
 // User Code Begin structs
 // User Code End structs
@@ -66,7 +66,7 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   // User Code Begin enums
   // User Code End enums
 
-  dbTechLayerSpacingTablePrlRuleFlags _flags;
+  dbTechLayerSpacingTablePrlRuleFlags flags_;
   int                                 eol_width_;
   dbVector<int>                       length_tbl_;
   dbVector<int>                       width_tbl_;

@@ -50,25 +50,25 @@ template class dbTable<_dbTechLayerMinStepRule>;
 bool _dbTechLayerMinStepRule::operator==(
     const _dbTechLayerMinStepRule& rhs) const
 {
-  if (_flags.max_edges_valid_ != rhs._flags.max_edges_valid_)
+  if (flags_.max_edges_valid_ != rhs.flags_.max_edges_valid_)
     return false;
 
-  if (_flags.min_adj_length1_valid_ != rhs._flags.min_adj_length1_valid_)
+  if (flags_.min_adj_length1_valid_ != rhs.flags_.min_adj_length1_valid_)
     return false;
 
-  if (_flags.no_between_eol_ != rhs._flags.no_between_eol_)
+  if (flags_.no_between_eol_ != rhs.flags_.no_between_eol_)
     return false;
 
-  if (_flags.min_adj_length2_valid_ != rhs._flags.min_adj_length2_valid_)
+  if (flags_.min_adj_length2_valid_ != rhs.flags_.min_adj_length2_valid_)
     return false;
 
-  if (_flags.convex_corner_ != rhs._flags.convex_corner_)
+  if (flags_.convex_corner_ != rhs.flags_.convex_corner_)
     return false;
 
-  if (_flags.min_between_length_valid_ != rhs._flags.min_between_length_valid_)
+  if (flags_.min_between_length_valid_ != rhs.flags_.min_between_length_valid_)
     return false;
 
-  if (_flags.except_same_corners_ != rhs._flags.except_same_corners_)
+  if (flags_.except_same_corners_ != rhs.flags_.except_same_corners_)
     return false;
 
   if (min_step_length_ != rhs.min_step_length_)
@@ -107,13 +107,13 @@ void _dbTechLayerMinStepRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags.max_edges_valid_);
-  DIFF_FIELD(_flags.min_adj_length1_valid_);
-  DIFF_FIELD(_flags.no_between_eol_);
-  DIFF_FIELD(_flags.min_adj_length2_valid_);
-  DIFF_FIELD(_flags.convex_corner_);
-  DIFF_FIELD(_flags.min_between_length_valid_);
-  DIFF_FIELD(_flags.except_same_corners_);
+  DIFF_FIELD(flags_.max_edges_valid_);
+  DIFF_FIELD(flags_.min_adj_length1_valid_);
+  DIFF_FIELD(flags_.no_between_eol_);
+  DIFF_FIELD(flags_.min_adj_length2_valid_);
+  DIFF_FIELD(flags_.convex_corner_);
+  DIFF_FIELD(flags_.min_between_length_valid_);
+  DIFF_FIELD(flags_.except_same_corners_);
   DIFF_FIELD(min_step_length_);
   DIFF_FIELD(max_edges_);
   DIFF_FIELD(min_adj_length1_);
@@ -129,13 +129,13 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
                                   const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags.max_edges_valid_);
-  DIFF_OUT_FIELD(_flags.min_adj_length1_valid_);
-  DIFF_OUT_FIELD(_flags.no_between_eol_);
-  DIFF_OUT_FIELD(_flags.min_adj_length2_valid_);
-  DIFF_OUT_FIELD(_flags.convex_corner_);
-  DIFF_OUT_FIELD(_flags.min_between_length_valid_);
-  DIFF_OUT_FIELD(_flags.except_same_corners_);
+  DIFF_OUT_FIELD(flags_.max_edges_valid_);
+  DIFF_OUT_FIELD(flags_.min_adj_length1_valid_);
+  DIFF_OUT_FIELD(flags_.no_between_eol_);
+  DIFF_OUT_FIELD(flags_.min_adj_length2_valid_);
+  DIFF_OUT_FIELD(flags_.convex_corner_);
+  DIFF_OUT_FIELD(flags_.min_between_length_valid_);
+  DIFF_OUT_FIELD(flags_.except_same_corners_);
   DIFF_OUT_FIELD(min_step_length_);
   DIFF_OUT_FIELD(max_edges_);
   DIFF_OUT_FIELD(min_adj_length1_);
@@ -149,8 +149,8 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
-  *_flags_bit_field          = 0;
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -158,14 +158,14 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
     _dbDatabase*                   db,
     const _dbTechLayerMinStepRule& r)
 {
-  _flags.max_edges_valid_          = r._flags.max_edges_valid_;
-  _flags.min_adj_length1_valid_    = r._flags.min_adj_length1_valid_;
-  _flags.no_between_eol_           = r._flags.no_between_eol_;
-  _flags.min_adj_length2_valid_    = r._flags.min_adj_length2_valid_;
-  _flags.convex_corner_            = r._flags.convex_corner_;
-  _flags.min_between_length_valid_ = r._flags.min_between_length_valid_;
-  _flags.except_same_corners_      = r._flags.except_same_corners_;
-  _flags._spare_bits               = r._flags._spare_bits;
+  flags_.max_edges_valid_          = r.flags_.max_edges_valid_;
+  flags_.min_adj_length1_valid_    = r.flags_.min_adj_length1_valid_;
+  flags_.no_between_eol_           = r.flags_.no_between_eol_;
+  flags_.min_adj_length2_valid_    = r.flags_.min_adj_length2_valid_;
+  flags_.convex_corner_            = r.flags_.convex_corner_;
+  flags_.min_between_length_valid_ = r.flags_.min_between_length_valid_;
+  flags_.except_same_corners_      = r.flags_.except_same_corners_;
+  flags_.spare_bits_               = r.flags_.spare_bits_;
   min_step_length_                 = r.min_step_length_;
   max_edges_                       = r.max_edges_;
   min_adj_length1_                 = r.min_adj_length1_;
@@ -178,8 +178,8 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream >> *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream >> *flags__bit_field;
   stream >> obj.min_step_length_;
   stream >> obj.max_edges_;
   stream >> obj.min_adj_length1_;
@@ -192,8 +192,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream << *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream << *flags__bit_field;
   stream << obj.min_step_length_;
   stream << obj.max_edges_;
   stream << obj.min_adj_length1_;
@@ -302,70 +302,70 @@ void dbTechLayerMinStepRule::setMaxEdgesValid(bool max_edges_valid_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.max_edges_valid_ = max_edges_valid_;
+  obj->flags_.max_edges_valid_ = max_edges_valid_;
 }
 
 bool dbTechLayerMinStepRule::isMaxEdgesValid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.max_edges_valid_;
+  return obj->flags_.max_edges_valid_;
 }
 
 void dbTechLayerMinStepRule::setMinAdjLength1Valid(bool min_adj_length1_valid_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.min_adj_length1_valid_ = min_adj_length1_valid_;
+  obj->flags_.min_adj_length1_valid_ = min_adj_length1_valid_;
 }
 
 bool dbTechLayerMinStepRule::isMinAdjLength1Valid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.min_adj_length1_valid_;
+  return obj->flags_.min_adj_length1_valid_;
 }
 
 void dbTechLayerMinStepRule::setNoBetweenEol(bool no_between_eol_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.no_between_eol_ = no_between_eol_;
+  obj->flags_.no_between_eol_ = no_between_eol_;
 }
 
 bool dbTechLayerMinStepRule::isNoBetweenEol() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.no_between_eol_;
+  return obj->flags_.no_between_eol_;
 }
 
 void dbTechLayerMinStepRule::setMinAdjLength2Valid(bool min_adj_length2_valid_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.min_adj_length2_valid_ = min_adj_length2_valid_;
+  obj->flags_.min_adj_length2_valid_ = min_adj_length2_valid_;
 }
 
 bool dbTechLayerMinStepRule::isMinAdjLength2Valid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.min_adj_length2_valid_;
+  return obj->flags_.min_adj_length2_valid_;
 }
 
 void dbTechLayerMinStepRule::setConvexCorner(bool convex_corner_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.convex_corner_ = convex_corner_;
+  obj->flags_.convex_corner_ = convex_corner_;
 }
 
 bool dbTechLayerMinStepRule::isConvexCorner() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.convex_corner_;
+  return obj->flags_.convex_corner_;
 }
 
 void dbTechLayerMinStepRule::setMinBetweenLengthValid(
@@ -373,35 +373,35 @@ void dbTechLayerMinStepRule::setMinBetweenLengthValid(
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.min_between_length_valid_ = min_between_length_valid_;
+  obj->flags_.min_between_length_valid_ = min_between_length_valid_;
 }
 
 bool dbTechLayerMinStepRule::isMinBetweenLengthValid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.min_between_length_valid_;
+  return obj->flags_.min_between_length_valid_;
 }
 
 void dbTechLayerMinStepRule::setExceptSameCorners(bool except_same_corners_)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->_flags.except_same_corners_ = except_same_corners_;
+  obj->flags_.except_same_corners_ = except_same_corners_;
 }
 
 bool dbTechLayerMinStepRule::isExceptSameCorners() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->_flags.except_same_corners_;
+  return obj->flags_.except_same_corners_;
 }
 
 // User Code Begin dbTechLayerMinStepRulePublicMethods
 dbTechLayerMinStepRule* dbTechLayerMinStepRule::create(dbTechLayer* _layer)
 {
   _dbTechLayer*            layer   = (_dbTechLayer*) _layer;
-  _dbTechLayerMinStepRule* newrule = layer->_minstep_rules_tbl->create();
+  _dbTechLayerMinStepRule* newrule = layer->minstep_rules_tbl_->create();
   return ((dbTechLayerMinStepRule*) newrule);
 }
 
@@ -410,13 +410,13 @@ dbTechLayerMinStepRule* dbTechLayerMinStepRule::getTechLayerMinStepRule(
     uint         dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  return (dbTechLayerMinStepRule*) layer->_minstep_rules_tbl->getPtr(dbid);
+  return (dbTechLayerMinStepRule*) layer->minstep_rules_tbl_->getPtr(dbid);
 }
 void dbTechLayerMinStepRule::destroy(dbTechLayerMinStepRule* rule)
 {
   _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
   dbProperty::destroyProperties(rule);
-  layer->_minstep_rules_tbl->destroy((_dbTechLayerMinStepRule*) rule);
+  layer->minstep_rules_tbl_->destroy((_dbTechLayerMinStepRule*) rule);
 }
 // User Code End dbTechLayerMinStepRulePublicMethods
 }  // namespace odb

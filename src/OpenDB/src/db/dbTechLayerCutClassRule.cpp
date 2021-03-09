@@ -52,10 +52,10 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (_flags.length_valid_ != rhs._flags.length_valid_)
+  if (flags_.length_valid_ != rhs.flags_.length_valid_)
     return false;
 
-  if (_flags.cuts_valid_ != rhs._flags.cuts_valid_)
+  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_)
     return false;
 
   if (_name != rhs._name)
@@ -91,8 +91,8 @@ void _dbTechLayerCutClassRule::differences(
 {
   DIFF_BEGIN
 
-  DIFF_FIELD(_flags.length_valid_);
-  DIFF_FIELD(_flags.cuts_valid_);
+  DIFF_FIELD(flags_.length_valid_);
+  DIFF_FIELD(flags_.cuts_valid_);
   DIFF_FIELD(_name);
   DIFF_FIELD(width_);
   DIFF_FIELD(length_);
@@ -107,8 +107,8 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
                                    const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags.length_valid_);
-  DIFF_OUT_FIELD(_flags.cuts_valid_);
+  DIFF_OUT_FIELD(flags_.length_valid_);
+  DIFF_OUT_FIELD(flags_.cuts_valid_);
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(width_);
   DIFF_OUT_FIELD(length_);
@@ -121,8 +121,8 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &_flags;
-  *_flags_bit_field          = 0;
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field          = 0;
   // User Code Begin constructor
   // User Code End constructor
 }
@@ -130,9 +130,9 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
     _dbDatabase*                    db,
     const _dbTechLayerCutClassRule& r)
 {
-  _flags.length_valid_ = r._flags.length_valid_;
-  _flags.cuts_valid_   = r._flags.cuts_valid_;
-  _flags._spare_bits   = r._flags._spare_bits;
+  flags_.length_valid_ = r.flags_.length_valid_;
+  flags_.cuts_valid_   = r.flags_.cuts_valid_;
+  flags_.spare_bits_   = r.flags_.spare_bits_;
   _name                = r._name;
   width_               = r.width_;
   length_              = r.length_;
@@ -144,8 +144,8 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream >> *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream >> *flags__bit_field;
   stream >> obj._name;
   stream >> obj.width_;
   stream >> obj.length_;
@@ -157,8 +157,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* _flags_bit_field = (uint32_t*) &obj._flags;
-  stream << *_flags_bit_field;
+  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
+  stream << *flags__bit_field;
   stream << obj._name;
   stream << obj.width_;
   stream << obj.length_;
@@ -235,28 +235,28 @@ void dbTechLayerCutClassRule::setLengthValid(bool length_valid_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_flags.length_valid_ = length_valid_;
+  obj->flags_.length_valid_ = length_valid_;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->_flags.length_valid_;
+  return obj->flags_.length_valid_;
 }
 
 void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid_)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->_flags.cuts_valid_ = cuts_valid_;
+  obj->flags_.cuts_valid_ = cuts_valid_;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->_flags.cuts_valid_;
+  return obj->flags_.cuts_valid_;
 }
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods
@@ -266,10 +266,10 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
   if (_layer->findTechLayerCutClassRule(name) != nullptr)
     return nullptr;
   _dbTechLayer*             layer   = (_dbTechLayer*) _layer;
-  _dbTechLayerCutClassRule* newrule = layer->_cut_class_rules_tbl->create();
+  _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
   newrule->_name                    = strdup(name);
   ZALLOCATED(newrule->_name);
-  layer->_cut_class_rules_hash.insert(newrule);
+  layer->cut_class_rules_hash_.insert(newrule);
   return ((dbTechLayerCutClassRule*) newrule);
 }
 
@@ -278,15 +278,15 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
     uint         dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  return (dbTechLayerCutClassRule*) layer->_cut_class_rules_tbl->getPtr(dbid);
+  return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(dbid);
 }
 void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 {
   _dbTechLayerCutClassRule* _rule = (_dbTechLayerCutClassRule*) rule;
   _dbTechLayer*             layer = (_dbTechLayer*) _rule->getOwner();
-  layer->_cut_class_rules_hash.remove(_rule);
+  layer->cut_class_rules_hash_.remove(_rule);
   dbProperty::destroyProperties(rule);
-  layer->_cut_class_rules_tbl->destroy((_dbTechLayerCutClassRule*) rule);
+  layer->cut_class_rules_tbl_->destroy((_dbTechLayerCutClassRule*) rule);
 }
 // User Code End dbTechLayerCutClassRulePublicMethods
 }  // namespace odb
