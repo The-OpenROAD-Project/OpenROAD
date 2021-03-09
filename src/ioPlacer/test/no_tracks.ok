@@ -5,7 +5,7 @@
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO IFP-0001] Added 33 rows of 248 sites.
 Found 0 macro blocks.
-Using 5u default boundaries offset.
+Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0020] Horizontal routing layer 2 not found.
 PPL-0020

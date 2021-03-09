@@ -21,7 +21,7 @@ set_io_pin_constraint \
 
 place_pins -hor_layer 3 \
            -ver_layer 2 \
-           -boundaries_offset 0 \
+           -corner_avoidance 0 \
            -min_distance 5 \
            -group_pins {req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1]} \
            -group_pins {req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] req_msg[29] req_msg[2] req_msg[30] req_msg[31] req_msg[3] req_msg[4] req_msg[5] req_msg[6] req_msg[7] req_msg[8] req_msg[9]} \
