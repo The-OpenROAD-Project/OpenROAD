@@ -14,7 +14,7 @@ source $tracks_file
 remove_buffers
 
 ################################################################
-# IO Placement
+# IO Placement (random)
 place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
@@ -45,6 +45,9 @@ set_dont_use $dont_use
 global_placement -timing_driven -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
+
+# IO Placement
+place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 # checkpoint
 set global_place_db [make_result_file ${design}_${platform}_global_place.db]

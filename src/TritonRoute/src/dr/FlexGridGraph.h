@@ -50,9 +50,9 @@ namespace fr {
                   design_(designIn), drWorker_(workerIn),
                   graphics_(nullptr),
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
-                  ggDRCCost_(0), ggMarkerCost_(0), ndr_(nullptr),
-                  halfViaEncArea_(nullptr), via2viaMinLen_(nullptr),
-                  via2viaMinLenNew_(nullptr), via2turnMinLen_(nullptr) {}
+                  ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
+                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr), 
+                  via2turnMinLen_(nullptr), ndr_(nullptr), dstTaperBox(nullptr) {}
     // getters
     frTechObject* getTech() const {
       return design_->getTech();
@@ -723,13 +723,21 @@ namespace fr {
         ndr_ = ndr;
     }
 
+    void setDstTaperBox(frBox3D* t){
+        dstTaperBox = t;
+    }
+
     frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
     frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
-
+    bool useNDRCosts(const FlexWavefrontGrid& p) const;
+    
     frNonDefaultRule* getNDR() const{
         return ndr_;
+    }
+    const frBox3D* getDstTaperBox() const{
+        return dstTaperBox;
     }
     // functions
     void init(const frBox &routeBBox, const frBox &extBBox,
@@ -742,7 +750,8 @@ namespace fr {
     void resetSrc();
     void resetDst();
     bool search(std::vector<FlexMazeIdx> &connComps, drPin* nextPin, std::vector<FlexMazeIdx> &path,
-                FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt);
+                FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt,
+                std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
     void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn) {
       ggDRCCost_    = drcCostIn;
       ggMarkerCost_ = markerCostIn;
@@ -841,7 +850,6 @@ namespace fr {
     frUInt4                                    ggMarkerCost_;
     // temporary variables
     FlexWavefront                              wavefront_;
-    frNonDefaultRule*                          ndr_;
     const std::vector<std::pair<frCoord, frCoord> >* halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
@@ -850,6 +858,9 @@ namespace fr {
     const std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > >* via2viaMinLen_;
     const std::vector<std::vector<frCoord> >* via2viaMinLenNew_;
     const std::vector<std::vector<frCoord> >* via2turnMinLen_;
+    //ndr related
+    frNonDefaultRule*                          ndr_;
+    const frBox3D*                             dstTaperBox;   //taper box for the current dest pin in the search
 
     // internal getters
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {

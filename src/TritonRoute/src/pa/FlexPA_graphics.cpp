@@ -49,8 +49,6 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     pa_via_(nullptr),
     pa_markers_(nullptr)
 {
-  assert(MAX_THREADS == 1);
-
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
@@ -61,6 +59,11 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     if (odb_layer) {
       layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
+  }
+
+  if (MAX_THREADS > 1) {
+    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the PA GUI.");
+    MAX_THREADS = 1;
   }
 
   gui_->registerRenderer(this);

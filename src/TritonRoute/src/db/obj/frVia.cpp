@@ -37,4 +37,5 @@ frVia::frVia(const drVia &in)
 {
   in.getOrigin(origin_);
   viaDef_ = in.getViaDef();
+  setTapered(in.isTapered());
 }

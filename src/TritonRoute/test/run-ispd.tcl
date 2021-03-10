@@ -36,6 +36,7 @@ proc genFiles { run_dir ispd_year design } {
 
     puts "Create run script for $design"
     set    runFile [open "$run_dir/$design/run.sh" w]
+    puts  $runFile "set -e"
     puts  $runFile "cd $run_dir/$design"
     puts  $runFile "$program -exit run.tcl > $run_dir/$design/run.log"
     puts  $runFile "echo"
@@ -86,10 +87,16 @@ foreach design $design_list_ispd19 {
 cd $run_dir
 
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
-
-eval exec -ignorestderr parallel -j $parallel_jobs ./{}/run.sh ::: $design_list >@stdout
-
+set status [catch { eval exec -ignorestderr parallel -j $parallel_jobs --halt never --joblog $run_dir/log ./{}/run.sh ::: $design_list >@stdout } ]
 foreach design $design_list {
     exec tar czvf "${design}.tar.gz" "${design}"
 }
+puts "======================="
+if $status {
+    puts "Fail"
+} else {
+    puts "Success"    
+}
+puts "======================="
+exit $status
 
