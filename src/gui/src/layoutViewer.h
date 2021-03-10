@@ -102,6 +102,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   LayoutViewer(Options* options,
                const SelectionSet& selected,
                const HighlightSet& highlighted,
+               const std::vector<QLine>& rulers,
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
@@ -189,9 +190,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawPinMarkers(QPainter* painter,
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
-  void drawRulers(QPainter* painter,
-                  const odb::Rect& bounds,
-                  odb::dbBlock* block);
+  void drawRulers(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
@@ -204,7 +203,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Options* options_;
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
-  std::vector<QLine> rulers_;
+  const std::vector<QLine>& rulers_;
   LayoutScroll* scroller_;
   qreal pixels_per_dbu_;
   qreal fit_pixels_per_dbu_;

@@ -183,12 +183,14 @@ class GuiPainter : public Painter
 LayoutViewer::LayoutViewer(Options* options,
                            const SelectionSet& selected,
                            const HighlightSet& highlighted,
+                           const std::vector<QLine>& rulers,
                            QWidget* parent)
     : QWidget(parent),
       db_(nullptr),
       options_(options),
       selected_(selected),
       highlighted_(highlighted),
+      rulers_(rulers),
       scroller_(nullptr),
       pixels_per_dbu_(1.0),
       fit_pixels_per_dbu_(1.0),
@@ -390,7 +392,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     unsetCursor();
 
     QRect rect = rubber_band_.normalized();
-    if (rect.width() < 4 || rect.height() < 4) {
+    if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)
+        && (rect.width() < 4 || rect.height() < 4)) {
       showLayoutCustomMenu(event->pos());
       return;  // ignore clicks not intended to be drags
     }
@@ -407,6 +410,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
+      if (rect.width() < 10 && rect.height() < 10)
+        return;
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
         QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
@@ -416,14 +421,15 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
         else
           ruler = QLine(pt2, pt1);
       } else {
-        QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMax());
-        QPoint pt2(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
+        QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
+        QPoint pt2(rubber_band_dbu.xMin(), rubber_band_dbu.yMax());
         if (pt1.y() < pt2.y())
           ruler = QLine(pt1, pt2);
         else
           ruler = QLine(pt1, pt2);
       }
-      rulers_.push_back(ruler);
+      Gui::get()->addRuler(
+          ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
       return;
     }
     zoomTo(rubber_band_dbu);
@@ -647,6 +653,17 @@ void LayoutViewer::drawHighlighted(Painter& painter)
   }
 }
 
+void LayoutViewer::drawRulers(Painter& painter)
+{
+  auto ruler_color = Painter::ruler_color;
+  painter.setPen(ruler_color, true);
+  painter.setBrush(ruler_color);
+  for (auto& ruler : rulers_) {
+    painter.drawLine(
+        ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
+  }
+}
+
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
   auto block = getBlock();
@@ -765,7 +782,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
 
     // Draw an orientation tag in corner if useful in size
-    if (master->getHeight() >= 1 * pixel) {
+    if (master->getHeight() >= 5 * pixel) {
       qreal tag_size = 0.1 * master_h;
       painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
                         QPointF(0.0, tag_size));
@@ -781,7 +798,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     // Skip the cut layer if the cuts will be too small to see
     const bool is_cut = layer->getType() == dbTechLayerType::CUT;
-    if (is_cut && layer->getWidth() < 1 * pixel) {
+    if (is_cut && layer->getWidth() < 5 * pixel) {
       continue;
     }
 
@@ -853,7 +870,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMin(),
                                      bounds.xMax(),
                                      bounds.yMax(),
-                                     1 * pixel);
+                                     5 * pixel);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -886,7 +903,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       bounds.yMin(),
                                       bounds.xMax(),
                                       bounds.yMax(),
-                                      1 * pixel);
+                                      5 * pixel);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -914,6 +931,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
   drawSelected(gui_painter);
   // Always last so on top
   drawHighlighted(gui_painter);
+
+  drawRulers(gui_painter);
 }
 
 void LayoutViewer::drawPinMarkers(QPainter* painter,
@@ -989,24 +1008,6 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
   }
 }
 
-void LayoutViewer::drawRulers(QPainter* painter,
-                              const odb::Rect& bounds,
-                              odb::dbBlock* block)
-{
-  QColor ruler_color("aqua");
-  painter->setPen(ruler_color);
-  painter->setBrush(ruler_color);
-  int dbu_height = getBounds(block).yMax();
-  for (auto& ruler : rulers_) {
-    if (ruler.dy() == 0)
-      painter->drawRect(
-          ruler.p1().x(), ruler.p1().y(), ruler.dx(), dbu_height * 0.001);
-    else
-      painter->drawRect(
-          ruler.p1().x(), ruler.p1().y(), dbu_height * 0.001, ruler.dy());
-  }
-}
-
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
 {
   return Point(point.x() / pixels_per_dbu_,
@@ -1074,16 +1075,12 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   if (options_->isPinMarkersVisible())
     drawPinMarkers(&painter, dbu_bounds, block);
 
-  drawRulers(&painter, dbu_bounds, block);
-
   painter.restore();
 
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
-    // r = rubber_band_.normalized();
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
-      // qDebug() << "Control Key is pressed draw line...";
       auto norm_rect = rubber_band_.normalized();
       QLine ruler;
       if (norm_rect.width() > norm_rect.height()) {
@@ -1285,8 +1282,7 @@ void LayoutViewer::addMenuAndActions()
         Gui::get()->clearHighlights(-1);
       });
   connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, [this]() {
-    rulers_.clear();
-    update();
+    Gui::get()->clearRulers();
   });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     Gui::get()->clearSelections();

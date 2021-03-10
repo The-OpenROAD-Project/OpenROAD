@@ -82,6 +82,12 @@ void highlight_net(const char* name, int highlightGroup=0)
   gui->addNetToHighlightSet(name, highlightGroup);
 }
 
+void drawRuler(int x0, int y0, int x1, int y1)
+{
+  auto gui = gui::Gui::get();
+  gui->addRuler(x0, y0, x1, y1);  
+}
+
 // converts from microns to DBU
 void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
