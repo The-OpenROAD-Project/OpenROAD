@@ -1,5 +1,3 @@
-%module dbsta
-
 %{
 
 #include "opendb/db.h"

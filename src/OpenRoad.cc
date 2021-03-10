@@ -36,6 +36,8 @@
 #include "openroad/OpenRoad.hh"
 
 #include <iostream>
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "utility/MakeLogger.h"
 #include "utility/Logger.h"
@@ -69,7 +71,7 @@
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
-#include "tapcell/MakeTapcell.h"
+#include "tap/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"
@@ -82,7 +84,7 @@ extern const char *openroad_swig_tcl_inits[];
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_Init(Tcl_Interp *interp);
+extern int Openroad_swig_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 }
 
@@ -209,7 +211,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   partitionMgr_ = makePartitionMgr();
 
   // Init components.
-  Openroad_Init(tcl_interp);
+  Openroad_swig_Init(tcl_interp);
   // Import TCL scripts.
   evalTclInit(tcl_interp, sta::openroad_swig_tcl_inits);
 
@@ -434,6 +436,10 @@ OpenRoad::Observer::~Observer()
   }
 }
 
+void OpenRoad::pythonCommand(const char* py_command)
+{
+  PyRun_SimpleString(py_command);
+}
 
 ////////////////////////////////////////////////////////////////
 

@@ -1,8 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2021, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,30 +33,49 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+%{
 
-#include "openroad/OpenRoad.hh"
-#include "tapcell/tapcell.h"
-#include "tapcell/MakeTapcell.h"
+#include "opendb/db.h"
 
-namespace ord {
+using odb::dbDatabase;
+using odb::dbBlock;
+using odb::dbTech;
 
-tap::Tapcell *
-makeTapcell()
-{
-  return new tap::Tapcell;
-}
+// Defined by OpenRoad.i inlines
+const char *
+openroad_version();
 
-void
-deleteTapcell(tap::Tapcell *tapcell)
-{
-  delete tapcell;
-}
+const char *
+openroad_git_sha1();
 
-void
-initTapcell(OpenRoad *openroad)
-{
-  openroad->getTapcell()->init(openroad->tclInterp(),
-			    openroad->getDb());
-}
+odb::dbDatabase *
+get_db();
 
-}
+odb::dbTech *
+get_db_tech();
+
+bool
+db_has_tech();
+
+odb::dbBlock *
+get_db_block();
+
+%}
+
+const char *
+openroad_version();
+
+const char *
+openroad_git_sha1();
+
+odb::dbDatabase *
+get_db();
+
+odb::dbTech *
+get_db_tech();
+
+bool
+db_has_tech();
+
+odb::dbBlock *
+get_db_block();

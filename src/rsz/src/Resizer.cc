@@ -148,7 +148,7 @@ using sta::Unit;
 using odb::dbMasterType;
 
 extern "C" {
-extern int Resizer_Init(Tcl_Interp *interp);
+extern int Rsz_Init(Tcl_Interp *interp);
 }
 
 Resizer::Resizer() :
@@ -197,7 +197,7 @@ Resizer::init(OpenRoad *openroad,
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
-  Resizer_Init(interp);
+  Rsz_Init(interp);
   // Eval encoded sta TCL sources.
   evalTclInit(interp, sta::rsz_tcl_inits);
 }

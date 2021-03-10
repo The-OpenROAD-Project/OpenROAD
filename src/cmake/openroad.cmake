@@ -1,1 +1,1 @@
-include("tcl_lib")
+include("swig_lib")
