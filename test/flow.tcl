@@ -81,7 +81,21 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
+################################################################
+# Setup/hold timing repair
+
+estimate_parasitics -placement
+set_propagated_clock [all_clocks]
+repair_timing
+
+# Post timing repair using placement based parasitics.
+report_worst_slack -min
+report_worst_slack -max
+report_tns
+
 detailed_placement
+filler_placement $filler_cells
+check_placement -verbose
 
 ################################################################
 # Global routing
@@ -97,29 +111,7 @@ global_route -guide_file $route_guide \
   -overflow_iterations 100
 
 ################################################################
-# Setup/hold timing repair
-
-estimate_parasitics -global_routing
-set_propagated_clock [all_clocks]
-repair_timing
-
-detailed_placement
-optimize_mirroring
-filler_placement $filler_cells
-check_placement -verbose
-
-################################################################
 # Final Report
-
-# Global routing invalidated is by repair_timing.
-# Fastroute does not use db callbacks to recognize the change and
-# leaves dirty route guides.
-grt::clear_fastroute
-global_route -guide_file $route_guide \
-  -layers $global_routing_layers \
-  -clock_layers $global_routing_clock_layers \
-  -unidirectional_routing \
-  -overflow_iterations 100
 
 # Use global routing based parasitics inlieu of rc extraction
 estimate_parasitics -global_routing
