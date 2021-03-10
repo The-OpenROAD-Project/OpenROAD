@@ -33,8 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "fastroute/GlobalRouter.h"
-#include "fastroute/GRoute.h"
+#include "grt/GlobalRouter.h"
+#include "grt/GRoute.h"
 
 #include <algorithm>
 #include <cmath>

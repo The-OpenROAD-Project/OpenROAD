@@ -67,7 +67,7 @@
 #include "finale/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
-#include "fastroute/MakeFastRoute.h"
+#include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
 #include "tap/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"

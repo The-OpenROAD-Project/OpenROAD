@@ -35,17 +35,17 @@
 
 include("openroad")
 
-project(FastRoute)
+project(grt)
 
 add_subdirectory(src/fastroute)
 
-tcl_lib(NAME      FastRoute
+tcl_lib(NAME      grt
         NAMESPACE grt
         I_FILE    src/fastroute.i
         SCRIPTS   src/fastroute.tcl
 )
 
-target_sources(FastRoute
+target_sources(grt
   PRIVATE
     src/AntennaRepair.cpp
     src/GlobalRouter.cpp
@@ -56,12 +56,12 @@ target_sources(FastRoute
     src/RcTreeBuilder.cpp
 )
 
-target_include_directories(FastRoute
+target_include_directories(grt
   PUBLIC
     include
 )
 
-target_link_libraries(FastRoute
+target_link_libraries(grt
     utility
     FastRoute4.1
     pdrev

@@ -116,7 +116,7 @@ add_subdirectory(dpl)
 add_subdirectory(finale)
 add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
-add_subdirectory(FastRoute)
+add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
@@ -165,7 +165,7 @@ target_link_libraries(openroad
   opendbtcl
   OpenRCX
   TritonCTS
-  FastRoute
+  grt
   tap
   gui
   TritonRoute

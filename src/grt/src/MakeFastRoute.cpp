@@ -33,20 +33,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "fastroute/MakeFastRoute.h"
+#include "grt/MakeFastRoute.h"
 
 #include "FastRoute.h"
-#include "fastroute/GlobalRouter.h"
+#include "grt/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* FastRoute_tcl_inits[];
+extern const char* grt_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Fastroute_Init(Tcl_Interp* interp);
+extern int Grt_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -65,8 +65,8 @@ void initFastRoute(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Fastroute_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::FastRoute_tcl_inits);
+  Grt_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::grt_tcl_inits);
   openroad->getFastRoute()->init(openroad);
 }
 
