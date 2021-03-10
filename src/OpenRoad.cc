@@ -60,7 +60,7 @@
 #include "flute3/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
-#include "ioplacer/MakeIoplacer.h"
+#include "ppl/MakeIoplacer.h"
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"

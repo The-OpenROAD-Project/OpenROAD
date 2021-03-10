@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ioplacer/IOPlacer.h"
+#include "ppl/IOPlacer.h"
 
 #include <algorithm>
 #include <random>

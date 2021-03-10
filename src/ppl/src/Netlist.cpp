@@ -36,7 +36,7 @@
 #include "Netlist.h"
 
 #include "Slots.h"
-#include "ioplacer/IOPlacer.h"
+#include "ppl/IOPlacer.h"
 
 namespace ppl {
 
