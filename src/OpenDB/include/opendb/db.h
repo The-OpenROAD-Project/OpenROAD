@@ -6872,19 +6872,19 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
       const;
 
-  void setRectOnly(bool rect_only_);
+  void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
 
-  void setRightWayOnGridOnly(bool right_way_on_grid_only_);
+  void setRightWayOnGridOnly(bool right_way_on_grid_only);
 
   bool isRightWayOnGridOnly() const;
 
-  void setRightWayOnGridOnlyCheckMask(bool right_way_on_grid_only_check_mask_);
+  void setRightWayOnGridOnlyCheckMask(bool right_way_on_grid_only_check_mask);
 
   bool isRightWayOnGridOnlyCheckMask() const;
 
-  void setRectOnlyExceptNonCorePins(bool rect_only_except_non_core_pins_);
+  void setRectOnlyExceptNonCorePins(bool rect_only_except_non_core_pins);
 
   bool isRectOnlyExceptNonCorePins() const;
 
@@ -7172,299 +7172,299 @@ class dbTechLayer : public dbObject
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
-  void setEolSpace(int eol_space_);
+  void setEolSpace(int eol_space);
 
   int getEolSpace() const;
 
-  void setEolWidth(int eol_width_);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setWrongDirSpace(int wrong_dir_space_);
+  void setWrongDirSpace(int wrong_dir_space);
 
   int getWrongDirSpace() const;
 
-  void setOppositeWidth(int opposite_width_);
+  void setOppositeWidth(int opposite_width);
 
   int getOppositeWidth() const;
 
-  void setEolWithin(int eol_within_);
+  void setEolWithin(int eol_within);
 
   int getEolWithin() const;
 
-  void setWrongDirWithin(int wrong_dir_within_);
+  void setWrongDirWithin(int wrong_dir_within);
 
   int getWrongDirWithin() const;
 
-  void setExactWidth(int exact_width_);
+  void setExactWidth(int exact_width);
 
   int getExactWidth() const;
 
-  void setOtherWidth(int other_width_);
+  void setOtherWidth(int other_width);
 
   int getOtherWidth() const;
 
-  void setFillTriangle(int fill_triangle_);
+  void setFillTriangle(int fill_triangle);
 
   int getFillTriangle() const;
 
-  void setCutClass(int cut_class_);
+  void setCutClass(int cut_class);
 
   int getCutClass() const;
 
-  void setWithCutSpace(int with_cut_space_);
+  void setWithCutSpace(int with_cut_space);
 
   int getWithCutSpace() const;
 
-  void setEnclosureEndWidth(int enclosure_end_width_);
+  void setEnclosureEndWidth(int enclosure_end_width);
 
   int getEnclosureEndWidth() const;
 
-  void setEnclosureEndWithin(int enclosure_end_within_);
+  void setEnclosureEndWithin(int enclosure_end_within);
 
   int getEnclosureEndWithin() const;
 
-  void setEndPrlSpace(int end_prl_space_);
+  void setEndPrlSpace(int end_prl_space);
 
   int getEndPrlSpace() const;
 
-  void setEndPrl(int end_prl_);
+  void setEndPrl(int end_prl);
 
   int getEndPrl() const;
 
-  void setEndToEndSpace(int end_to_end_space_);
+  void setEndToEndSpace(int end_to_end_space);
 
   int getEndToEndSpace() const;
 
-  void setOneCutSpace(int one_cut_space_);
+  void setOneCutSpace(int one_cut_space);
 
   int getOneCutSpace() const;
 
-  void setTwoCutSpace(int two_cut_space_);
+  void setTwoCutSpace(int two_cut_space);
 
   int getTwoCutSpace() const;
 
-  void setExtension(int extension_);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setWrongDirExtension(int wrong_dir_extension_);
+  void setWrongDirExtension(int wrong_dir_extension);
 
   int getWrongDirExtension() const;
 
-  void setOtherEndWidth(int other_end_width_);
+  void setOtherEndWidth(int other_end_width);
 
   int getOtherEndWidth() const;
 
-  void setMaxLength(int max_length_);
+  void setMaxLength(int max_length);
 
   int getMaxLength() const;
 
-  void setMinLength(int min_length_);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setParSpace(int par_space_);
+  void setParSpace(int par_space);
 
   int getParSpace() const;
 
-  void setParWithin(int par_within_);
+  void setParWithin(int par_within);
 
   int getParWithin() const;
 
-  void setParPrl(int par_prl_);
+  void setParPrl(int par_prl);
 
   int getParPrl() const;
 
-  void setParMinLength(int par_min_length_);
+  void setParMinLength(int par_min_length);
 
   int getParMinLength() const;
 
-  void setEncloseDist(int enclose_dist_);
+  void setEncloseDist(int enclose_dist);
 
   int getEncloseDist() const;
 
-  void setCutToMetalSpace(int cut_to_metal_space_);
+  void setCutToMetalSpace(int cut_to_metal_space);
 
   int getCutToMetalSpace() const;
 
-  void setMinAdjLength(int min_adj_length_);
+  void setMinAdjLength(int min_adj_length);
 
   int getMinAdjLength() const;
 
-  void setMinAdjLength1(int min_adj_length1_);
+  void setMinAdjLength1(int min_adj_length1);
 
   int getMinAdjLength1() const;
 
-  void setMinAdjLength2(int min_adj_length2_);
+  void setMinAdjLength2(int min_adj_length2);
 
   int getMinAdjLength2() const;
 
-  void setNotchLength(int notch_length_);
+  void setNotchLength(int notch_length);
 
   int getNotchLength() const;
 
-  void setExactWidthValid(bool exact_width_valid_);
+  void setExactWidthValid(bool exact_width_valid);
 
   bool isExactWidthValid() const;
 
-  void setWrongDirSpacingValid(bool wrong_dir_spacing_valid_);
+  void setWrongDirSpacingValid(bool wrong_dir_spacing_valid);
 
   bool isWrongDirSpacingValid() const;
 
-  void setOppositeWidthValid(bool opposite_width_valid_);
+  void setOppositeWidthValid(bool opposite_width_valid);
 
   bool isOppositeWidthValid() const;
 
-  void setWithinValid(bool within_valid_);
+  void setWithinValid(bool within_valid);
 
   bool isWithinValid() const;
 
-  void setWrongDirWithinValid(bool wrong_dir_within_valid_);
+  void setWrongDirWithinValid(bool wrong_dir_within_valid);
 
   bool isWrongDirWithinValid() const;
 
-  void setSameMaskValid(bool same_mask_valid_);
+  void setSameMaskValid(bool same_mask_valid);
 
   bool isSameMaskValid() const;
 
-  void setExceptExactWidthValid(bool except_exact_width_valid_);
+  void setExceptExactWidthValid(bool except_exact_width_valid);
 
   bool isExceptExactWidthValid() const;
 
-  void setFillConcaveCornerValid(bool fill_concave_corner_valid_);
+  void setFillConcaveCornerValid(bool fill_concave_corner_valid);
 
   bool isFillConcaveCornerValid() const;
 
-  void setWithcutValid(bool withcut_valid_);
+  void setWithcutValid(bool withcut_valid);
 
   bool isWithcutValid() const;
 
-  void setCutClassValid(bool cut_class_valid_);
+  void setCutClassValid(bool cut_class_valid);
 
   bool isCutClassValid() const;
 
-  void setWithCutAboveValid(bool with_cut_above_valid_);
+  void setWithCutAboveValid(bool with_cut_above_valid);
 
   bool isWithCutAboveValid() const;
 
-  void setEnclosureEndValid(bool enclosure_end_valid_);
+  void setEnclosureEndValid(bool enclosure_end_valid);
 
   bool isEnclosureEndValid() const;
 
-  void setEnclosureEndWithinValid(bool enclosure_end_within_valid_);
+  void setEnclosureEndWithinValid(bool enclosure_end_within_valid);
 
   bool isEnclosureEndWithinValid() const;
 
-  void setEndPrlSpacingValid(bool end_prl_spacing_valid_);
+  void setEndPrlSpacingValid(bool end_prl_spacing_valid);
 
   bool isEndPrlSpacingValid() const;
 
-  void setPrlValid(bool prl_valid_);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setEndToEndValid(bool end_to_end_valid_);
+  void setEndToEndValid(bool end_to_end_valid);
 
   bool isEndToEndValid() const;
 
-  void setCutSpacesValid(bool cut_spaces_valid_);
+  void setCutSpacesValid(bool cut_spaces_valid);
 
   bool isCutSpacesValid() const;
 
-  void setExtensionValid(bool extension_valid_);
+  void setExtensionValid(bool extension_valid);
 
   bool isExtensionValid() const;
 
-  void setWrongDirExtensionValid(bool wrong_dir_extension_valid_);
+  void setWrongDirExtensionValid(bool wrong_dir_extension_valid);
 
   bool isWrongDirExtensionValid() const;
 
-  void setOtherEndWidthValid(bool other_end_width_valid_);
+  void setOtherEndWidthValid(bool other_end_width_valid);
 
   bool isOtherEndWidthValid() const;
 
-  void setMaxLengthValid(bool max_length_valid_);
+  void setMaxLengthValid(bool max_length_valid);
 
   bool isMaxLengthValid() const;
 
-  void setMinLengthValid(bool min_length_valid_);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setTwoSidesValid(bool two_sides_valid_);
+  void setTwoSidesValid(bool two_sides_valid);
 
   bool isTwoSidesValid() const;
 
-  void setEqualRectWidthValid(bool equal_rect_width_valid_);
+  void setEqualRectWidthValid(bool equal_rect_width_valid);
 
   bool isEqualRectWidthValid() const;
 
-  void setParallelEdgeValid(bool parallel_edge_valid_);
+  void setParallelEdgeValid(bool parallel_edge_valid);
 
   bool isParallelEdgeValid() const;
 
-  void setSubtractEolWidthValid(bool subtract_eol_width_valid_);
+  void setSubtractEolWidthValid(bool subtract_eol_width_valid);
 
   bool isSubtractEolWidthValid() const;
 
-  void setParPrlValid(bool par_prl_valid_);
+  void setParPrlValid(bool par_prl_valid);
 
   bool isParPrlValid() const;
 
-  void setParMinLengthValid(bool par_min_length_valid_);
+  void setParMinLengthValid(bool par_min_length_valid);
 
   bool isParMinLengthValid() const;
 
-  void setTwoEdgesValid(bool two_edges_valid_);
+  void setTwoEdgesValid(bool two_edges_valid);
 
   bool isTwoEdgesValid() const;
 
-  void setSameMetalValid(bool same_metal_valid_);
+  void setSameMetalValid(bool same_metal_valid);
 
   bool isSameMetalValid() const;
 
-  void setNonEolCornerOnlyValid(bool non_eol_corner_only_valid_);
+  void setNonEolCornerOnlyValid(bool non_eol_corner_only_valid);
 
   bool isNonEolCornerOnlyValid() const;
 
-  void setParallelSameMaskValid(bool parallel_same_mask_valid_);
+  void setParallelSameMaskValid(bool parallel_same_mask_valid);
 
   bool isParallelSameMaskValid() const;
 
-  void setEncloseCutValid(bool enclose_cut_valid_);
+  void setEncloseCutValid(bool enclose_cut_valid);
 
   bool isEncloseCutValid() const;
 
-  void setBelowValid(bool below_valid_);
+  void setBelowValid(bool below_valid);
 
   bool isBelowValid() const;
 
-  void setAboveValid(bool above_valid_);
+  void setAboveValid(bool above_valid);
 
   bool isAboveValid() const;
 
-  void setCutSpacingValid(bool cut_spacing_valid_);
+  void setCutSpacingValid(bool cut_spacing_valid);
 
   bool isCutSpacingValid() const;
 
-  void setAllCutsValid(bool all_cuts_valid_);
+  void setAllCutsValid(bool all_cuts_valid);
 
   bool isAllCutsValid() const;
 
-  void setToConcaveCornerValid(bool to_concave_corner_valid_);
+  void setToConcaveCornerValid(bool to_concave_corner_valid);
 
   bool isToConcaveCornerValid() const;
 
-  void setMinAdjacentLengthValid(bool min_adjacent_length_valid_);
+  void setMinAdjacentLengthValid(bool min_adjacent_length_valid);
 
   bool isMinAdjacentLengthValid() const;
 
-  void setTwoMinAdjLengthValid(bool two_min_adj_length_valid_);
+  void setTwoMinAdjLengthValid(bool two_min_adj_length_valid);
 
   bool isTwoMinAdjLengthValid() const;
 
-  void setToNotchLengthValid(bool to_notch_length_valid_);
+  void setToNotchLengthValid(bool to_notch_length_valid);
 
   bool isToNotchLengthValid() const;
 
@@ -7482,55 +7482,55 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
-  void setMinStepLength(int min_step_length_);
+  void setMinStepLength(int min_step_length);
 
   int getMinStepLength() const;
 
-  void setMaxEdges(uint max_edges_);
+  void setMaxEdges(uint max_edges);
 
   uint getMaxEdges() const;
 
-  void setMinAdjLength1(int min_adj_length1_);
+  void setMinAdjLength1(int min_adj_length1);
 
   int getMinAdjLength1() const;
 
-  void setMinAdjLength2(int min_adj_length2_);
+  void setMinAdjLength2(int min_adj_length2);
 
   int getMinAdjLength2() const;
 
-  void setEolWidth(int eol_width_);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setMinBetweenLength(int min_between_length_);
+  void setMinBetweenLength(int min_between_length);
 
   int getMinBetweenLength() const;
 
-  void setMaxEdgesValid(bool max_edges_valid_);
+  void setMaxEdgesValid(bool max_edges_valid);
 
   bool isMaxEdgesValid() const;
 
-  void setMinAdjLength1Valid(bool min_adj_length1_valid_);
+  void setMinAdjLength1Valid(bool min_adj_length1_valid);
 
   bool isMinAdjLength1Valid() const;
 
-  void setNoBetweenEol(bool no_between_eol_);
+  void setNoBetweenEol(bool no_between_eol);
 
   bool isNoBetweenEol() const;
 
-  void setMinAdjLength2Valid(bool min_adj_length2_valid_);
+  void setMinAdjLength2Valid(bool min_adj_length2_valid);
 
   bool isMinAdjLength2Valid() const;
 
-  void setConvexCorner(bool convex_corner_);
+  void setConvexCorner(bool convex_corner);
 
   bool isConvexCorner() const;
 
-  void setMinBetweenLengthValid(bool min_between_length_valid_);
+  void setMinBetweenLengthValid(bool min_between_length_valid);
 
   bool isMinBetweenLengthValid() const;
 
-  void setExceptSameCorners(bool except_same_corners_);
+  void setExceptSameCorners(bool except_same_corners);
 
   bool isExceptSameCorners() const;
 
@@ -7553,71 +7553,71 @@ class dbTechLayerCornerSpacingRule : public dbObject
     CONCAVECORNER
   };
 
-  void setWithin(int within_);
+  void setWithin(int within);
 
   int getWithin() const;
 
-  void setEolWidth(int eol_width_);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setJogLength(int jog_length_);
+  void setJogLength(int jog_length);
 
   int getJogLength() const;
 
-  void setEdgeLength(int edge_length_);
+  void setEdgeLength(int edge_length);
 
   int getEdgeLength() const;
 
-  void setMinLength(int min_length_);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setExceptNotchLength(int except_notch_length_);
+  void setExceptNotchLength(int except_notch_length);
 
   int getExceptNotchLength() const;
 
-  void setSameMask(bool same_mask_);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setCornerOnly(bool corner_only_);
+  void setCornerOnly(bool corner_only);
 
   bool isCornerOnly() const;
 
-  void setExceptEol(bool except_eol_);
+  void setExceptEol(bool except_eol);
 
   bool isExceptEol() const;
 
-  void setExceptJogLength(bool except_jog_length_);
+  void setExceptJogLength(bool except_jog_length);
 
   bool isExceptJogLength() const;
 
-  void setEdgeLengthValid(bool edge_length_valid_);
+  void setEdgeLengthValid(bool edge_length_valid);
 
   bool isEdgeLengthValid() const;
 
-  void setIncludeShape(bool include_shape_);
+  void setIncludeShape(bool include_shape);
 
   bool isIncludeShape() const;
 
-  void setMinLengthValid(bool min_length_valid_);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setExceptNotch(bool except_notch_);
+  void setExceptNotch(bool except_notch);
 
   bool isExceptNotch() const;
 
-  void setExceptNotchLengthValid(bool except_notch_length_valid_);
+  void setExceptNotchLengthValid(bool except_notch_length_valid);
 
   bool isExceptNotchLengthValid() const;
 
-  void setExceptSameNet(bool except_same_net_);
+  void setExceptSameNet(bool except_same_net);
 
   bool isExceptSameNet() const;
 
-  void setExceptSameMetal(bool except_same_metal_);
+  void setExceptSameMetal(bool except_same_metal);
 
   bool isExceptSameMetal() const;
 
@@ -7644,19 +7644,19 @@ class dbTechLayerCornerSpacingRule : public dbObject
 class dbTechLayerSpacingTablePrlRule : public dbObject
 {
  public:
-  void setEolWidth(int eol_width_);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setWrongDirection(bool wrong_direction_);
+  void setWrongDirection(bool wrong_direction);
 
   bool isWrongDirection() const;
 
-  void setSameMask(bool same_mask_);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setExceeptEol(bool exceept_eol_);
+  void setExceeptEol(bool exceept_eol);
 
   bool isExceeptEol() const;
 
@@ -7695,23 +7695,23 @@ class dbTechLayerCutClassRule : public dbObject
  public:
   const char* getName() const;
 
-  void setWidth(int width_);
+  void setWidth(int width);
 
   int getWidth() const;
 
-  void setLength(int length_);
+  void setLength(int length);
 
   int getLength() const;
 
-  void setNumCuts(int num_cuts_);
+  void setNumCuts(int num_cuts);
 
   int getNumCuts() const;
 
-  void setLengthValid(bool length_valid_);
+  void setLengthValid(bool length_valid);
 
   bool isLengthValid() const;
 
-  void setCutsValid(bool cuts_valid_);
+  void setCutsValid(bool cuts_valid);
 
   bool isCutsValid() const;
 
@@ -7741,243 +7741,243 @@ class dbTechLayerCutSpacingRule : public dbObject
     AREA
   };
 
-  void setCutSpacing(int cut_spacing_);
+  void setCutSpacing(int cut_spacing);
 
   int getCutSpacing() const;
 
-  void setSecondLayer(dbTechLayer* second_layer_);
+  void setSecondLayer(dbTechLayer* second_layer);
 
-  void setOrthogonalSpacing(int orthogonal_spacing_);
+  void setOrthogonalSpacing(int orthogonal_spacing);
 
   int getOrthogonalSpacing() const;
 
-  void setWidth(int width_);
+  void setWidth(int width);
 
   int getWidth() const;
 
-  void setEnclosure(int enclosure_);
+  void setEnclosure(int enclosure);
 
   int getEnclosure() const;
 
-  void setEdgeLength(int edge_length_);
+  void setEdgeLength(int edge_length);
 
   int getEdgeLength() const;
 
-  void setParWithin(int par_within_);
+  void setParWithin(int par_within);
 
   int getParWithin() const;
 
-  void setParEnclosure(int par_enclosure_);
+  void setParEnclosure(int par_enclosure);
 
   int getParEnclosure() const;
 
-  void setEdgeEnclosure(int edge_enclosure_);
+  void setEdgeEnclosure(int edge_enclosure);
 
   int getEdgeEnclosure() const;
 
-  void setAdjEnclosure(int adj_enclosure_);
+  void setAdjEnclosure(int adj_enclosure);
 
   int getAdjEnclosure() const;
 
-  void setAboveEnclosure(int above_enclosure_);
+  void setAboveEnclosure(int above_enclosure);
 
   int getAboveEnclosure() const;
 
-  void setAboveWidth(int above_width_);
+  void setAboveWidth(int above_width);
 
   int getAboveWidth() const;
 
-  void setMinLength(int min_length_);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setExtension(int extension_);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setEolWidth(int eol_width_);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setNumCuts(uint num_cuts_);
+  void setNumCuts(uint num_cuts);
 
   uint getNumCuts() const;
 
-  void setWithin(int within_);
+  void setWithin(int within);
 
   int getWithin() const;
 
-  void setSecondWithin(int second_within_);
+  void setSecondWithin(int second_within);
 
   int getSecondWithin() const;
 
-  void setCutClass(dbTechLayerCutClassRule* cut_class_);
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
 
-  void setTwoCuts(uint two_cuts_);
+  void setTwoCuts(uint two_cuts);
 
   uint getTwoCuts() const;
 
-  void setPrl(uint prl_);
+  void setPrl(uint prl);
 
   uint getPrl() const;
 
-  void setParLength(uint par_length_);
+  void setParLength(uint par_length);
 
   uint getParLength() const;
 
-  void setCutArea(int cut_area_);
+  void setCutArea(int cut_area);
 
   int getCutArea() const;
 
-  void setCenterToCenter(bool center_to_center_);
+  void setCenterToCenter(bool center_to_center);
 
   bool isCenterToCenter() const;
 
-  void setSameNet(bool same_net_);
+  void setSameNet(bool same_net);
 
   bool isSameNet() const;
 
-  void setSameMetal(bool same_metal_);
+  void setSameMetal(bool same_metal);
 
   bool isSameMetal() const;
 
-  void setSameVia(bool same_via_);
+  void setSameVia(bool same_via);
 
   bool isSameVia() const;
 
-  void setStack(bool stack_);
+  void setStack(bool stack);
 
   bool isStack() const;
 
-  void setOrthogonalSpacingValid(bool orthogonal_spacing_valid_);
+  void setOrthogonalSpacingValid(bool orthogonal_spacing_valid);
 
   bool isOrthogonalSpacingValid() const;
 
-  void setAboveWidthEnclosureValid(bool above_width_enclosure_valid_);
+  void setAboveWidthEnclosureValid(bool above_width_enclosure_valid);
 
   bool isAboveWidthEnclosureValid() const;
 
-  void setShortEdgeOnly(bool short_edge_only_);
+  void setShortEdgeOnly(bool short_edge_only);
 
   bool isShortEdgeOnly() const;
 
-  void setConcaveCornerWidth(bool concave_corner_width_);
+  void setConcaveCornerWidth(bool concave_corner_width);
 
   bool isConcaveCornerWidth() const;
 
-  void setConcaveCornerParallel(bool concave_corner_parallel_);
+  void setConcaveCornerParallel(bool concave_corner_parallel);
 
   bool isConcaveCornerParallel() const;
 
-  void setConcaveCornerEdgeLength(bool concave_corner_edge_length_);
+  void setConcaveCornerEdgeLength(bool concave_corner_edge_length);
 
   bool isConcaveCornerEdgeLength() const;
 
-  void setConcaveCorner(bool concave_corner_);
+  void setConcaveCorner(bool concave_corner);
 
   bool isConcaveCorner() const;
 
-  void setExtensionValid(bool extension_valid_);
+  void setExtensionValid(bool extension_valid);
 
   bool isExtensionValid() const;
 
-  void setNonEolConvexCorner(bool non_eol_convex_corner_);
+  void setNonEolConvexCorner(bool non_eol_convex_corner);
 
   bool isNonEolConvexCorner() const;
 
-  void setEolWidthValid(bool eol_width_valid_);
+  void setEolWidthValid(bool eol_width_valid);
 
   bool isEolWidthValid() const;
 
-  void setMinLengthValid(bool min_length_valid_);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setAboveWidthValid(bool above_width_valid_);
+  void setAboveWidthValid(bool above_width_valid);
 
   bool isAboveWidthValid() const;
 
-  void setMaskOverlap(bool mask_overlap_);
+  void setMaskOverlap(bool mask_overlap);
 
   bool isMaskOverlap() const;
 
-  void setWrongDirection(bool wrong_direction_);
+  void setWrongDirection(bool wrong_direction);
 
   bool isWrongDirection() const;
 
-  void setAdjacentCuts(uint adjacent_cuts_);
+  void setAdjacentCuts(uint adjacent_cuts);
 
   uint getAdjacentCuts() const;
 
-  void setExactAligned(bool exact_aligned_);
+  void setExactAligned(bool exact_aligned);
 
   bool isExactAligned() const;
 
-  void setCutClassToAll(bool cut_class_to_all_);
+  void setCutClassToAll(bool cut_class_to_all);
 
   bool isCutClassToAll() const;
 
-  void setNoPrl(bool no_prl_);
+  void setNoPrl(bool no_prl);
 
   bool isNoPrl() const;
 
-  void setSameMask(bool same_mask_);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setExceptSamePgnet(bool except_same_pgnet_);
+  void setExceptSamePgnet(bool except_same_pgnet);
 
   bool isExceptSamePgnet() const;
 
-  void setSideParallelOverlap(bool side_parallel_overlap_);
+  void setSideParallelOverlap(bool side_parallel_overlap);
 
   bool isSideParallelOverlap() const;
 
-  void setExceptSameNet(bool except_same_net_);
+  void setExceptSameNet(bool except_same_net);
 
   bool isExceptSameNet() const;
 
-  void setExceptSameMetal(bool except_same_metal_);
+  void setExceptSameMetal(bool except_same_metal);
 
   bool isExceptSameMetal() const;
 
-  void setExceptSameMetalOverlap(bool except_same_metal_overlap_);
+  void setExceptSameMetalOverlap(bool except_same_metal_overlap);
 
   bool isExceptSameMetalOverlap() const;
 
-  void setExceptSameVia(bool except_same_via_);
+  void setExceptSameVia(bool except_same_via);
 
   bool isExceptSameVia() const;
 
-  void setAbove(bool above_);
+  void setAbove(bool above);
 
   bool isAbove() const;
 
-  void setExceptTwoEdges(bool except_two_edges_);
+  void setExceptTwoEdges(bool except_two_edges);
 
   bool isExceptTwoEdges() const;
 
-  void setTwoCutsValid(bool two_cuts_valid_);
+  void setTwoCutsValid(bool two_cuts_valid);
 
   bool isTwoCutsValid() const;
 
-  void setSameCut(bool same_cut_);
+  void setSameCut(bool same_cut);
 
   bool isSameCut() const;
 
-  void setLongEdgeOnly(bool long_edge_only_);
+  void setLongEdgeOnly(bool long_edge_only);
 
   bool isLongEdgeOnly() const;
 
-  void setPrlValid(bool prl_valid_);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setBelow(bool below_);
+  void setBelow(bool below);
 
   bool isBelow() const;
 
-  void setParWithinEnclosureValid(bool par_within_enclosure_valid_);
+  void setParWithinEnclosureValid(bool par_within_enclosure_valid);
 
   bool isParWithinEnclosureValid() const;
 
@@ -8022,111 +8022,111 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
-  void setDefault(int default_);
+  void setDefault(int spacing);
 
   int getDefault() const;
 
-  void setSecondLayer(dbTechLayer* second_layer_);
+  void setSecondLayer(dbTechLayer* second_layer);
 
-  void setPrl(int prl_);
+  void setPrl(int prl);
 
   int getPrl() const;
 
-  void setExtension(int extension_);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setDefaultValid(bool default_valid_);
+  void setDefaultValid(bool default_valid);
 
   bool isDefaultValid() const;
 
-  void setSameMask(bool same_mask_);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setSameNet(bool same_net_);
+  void setSameNet(bool same_net);
 
   bool isSameNet() const;
 
-  void setSameMetal(bool same_metal_);
+  void setSameMetal(bool same_metal);
 
   bool isSameMetal() const;
 
-  void setSameVia(bool same_via_);
+  void setSameVia(bool same_via);
 
   bool isSameVia() const;
 
-  void setLayerValid(bool layer_valid_);
+  void setLayerValid(bool layer_valid);
 
   bool isLayerValid() const;
 
-  void setNoStack(bool no_stack_);
+  void setNoStack(bool no_stack);
 
   bool isNoStack() const;
 
-  void setNonZeroEnclosure(bool non_zero_enclosure_);
+  void setNonZeroEnclosure(bool non_zero_enclosure);
 
   bool isNonZeroEnclosure() const;
 
-  void setPrlForAlignedCut(bool prl_for_aligned_cut_);
+  void setPrlForAlignedCut(bool prl_for_aligned_cut);
 
   bool isPrlForAlignedCut() const;
 
-  void setCenterToCenterValid(bool center_to_center_valid_);
+  void setCenterToCenterValid(bool center_to_center_valid);
 
   bool isCenterToCenterValid() const;
 
-  void setCenterAndEdgeValid(bool center_and_edge_valid_);
+  void setCenterAndEdgeValid(bool center_and_edge_valid);
 
   bool isCenterAndEdgeValid() const;
 
-  void setNoPrl(bool no_prl_);
+  void setNoPrl(bool no_prl);
 
   bool isNoPrl() const;
 
-  void setPrlValid(bool prl_valid_);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setMaxXY(bool max_x_y_);
+  void setMaxXY(bool max_x_y);
 
   bool isMaxXY() const;
 
-  void setEndExtensionValid(bool end_extension_valid_);
+  void setEndExtensionValid(bool end_extension_valid);
 
   bool isEndExtensionValid() const;
 
-  void setSideExtensionValid(bool side_extension_valid_);
+  void setSideExtensionValid(bool side_extension_valid);
 
   bool isSideExtensionValid() const;
 
-  void setExactAlignedSpacingValid(bool exact_aligned_spacing_valid_);
+  void setExactAlignedSpacingValid(bool exact_aligned_spacing_valid);
 
   bool isExactAlignedSpacingValid() const;
 
-  void setHorizontal(bool horizontal_);
+  void setHorizontal(bool horizontal);
 
   bool isHorizontal() const;
 
-  void setPrlHorizontal(bool prl_horizontal_);
+  void setPrlHorizontal(bool prl_horizontal);
 
   bool isPrlHorizontal() const;
 
-  void setVertical(bool vertical_);
+  void setVertical(bool vertical);
 
   bool isVertical() const;
 
-  void setPrlVertical(bool prl_vertical_);
+  void setPrlVertical(bool prl_vertical);
 
   bool isPrlVertical() const;
 
   void setNonOppositeEnclosureSpacingValid(
-      bool non_opposite_enclosure_spacing_valid_);
+      bool non_opposite_enclosure_spacing_valid);
 
   bool isNonOppositeEnclosureSpacingValid() const;
 
   void setOppositeEnclosureResizeSpacingValid(
-      bool opposite_enclosure_resize_spacing_valid_);
+      bool opposite_enclosure_resize_spacing_valid);
 
   bool isOppositeEnclosureResizeSpacingValid() const;
 
@@ -8277,7 +8277,7 @@ class dbGroup : public dbObject
 
   Rect getBox() const;
 
-  void setParentGroup(dbGroup* _parent_group);
+  void setParentGroup(dbGroup* parent_group);
 
   dbGroup* getParentGroup() const;
 

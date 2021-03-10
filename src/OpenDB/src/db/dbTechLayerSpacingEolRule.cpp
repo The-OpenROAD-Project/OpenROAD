@@ -678,11 +678,11 @@ _dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerSpacingEolRule::setEolSpace(int eol_space_)
+void dbTechLayerSpacingEolRule::setEolSpace(int eol_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->eol_space_ = eol_space_;
+  obj->eol_space_ = eol_space;
 }
 
 int dbTechLayerSpacingEolRule::getEolSpace() const
@@ -691,11 +691,11 @@ int dbTechLayerSpacingEolRule::getEolSpace() const
   return obj->eol_space_;
 }
 
-void dbTechLayerSpacingEolRule::setEolWidth(int eol_width_)
+void dbTechLayerSpacingEolRule::setEolWidth(int eol_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->eol_width_ = eol_width_;
+  obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerSpacingEolRule::getEolWidth() const
@@ -704,11 +704,11 @@ int dbTechLayerSpacingEolRule::getEolWidth() const
   return obj->eol_width_;
 }
 
-void dbTechLayerSpacingEolRule::setWrongDirSpace(int wrong_dir_space_)
+void dbTechLayerSpacingEolRule::setWrongDirSpace(int wrong_dir_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->wrong_dir_space_ = wrong_dir_space_;
+  obj->wrong_dir_space_ = wrong_dir_space;
 }
 
 int dbTechLayerSpacingEolRule::getWrongDirSpace() const
@@ -717,11 +717,11 @@ int dbTechLayerSpacingEolRule::getWrongDirSpace() const
   return obj->wrong_dir_space_;
 }
 
-void dbTechLayerSpacingEolRule::setOppositeWidth(int opposite_width_)
+void dbTechLayerSpacingEolRule::setOppositeWidth(int opposite_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->opposite_width_ = opposite_width_;
+  obj->opposite_width_ = opposite_width;
 }
 
 int dbTechLayerSpacingEolRule::getOppositeWidth() const
@@ -730,11 +730,11 @@ int dbTechLayerSpacingEolRule::getOppositeWidth() const
   return obj->opposite_width_;
 }
 
-void dbTechLayerSpacingEolRule::setEolWithin(int eol_within_)
+void dbTechLayerSpacingEolRule::setEolWithin(int eol_within)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->eol_within_ = eol_within_;
+  obj->eol_within_ = eol_within;
 }
 
 int dbTechLayerSpacingEolRule::getEolWithin() const
@@ -743,11 +743,11 @@ int dbTechLayerSpacingEolRule::getEolWithin() const
   return obj->eol_within_;
 }
 
-void dbTechLayerSpacingEolRule::setWrongDirWithin(int wrong_dir_within_)
+void dbTechLayerSpacingEolRule::setWrongDirWithin(int wrong_dir_within)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->wrong_dir_within_ = wrong_dir_within_;
+  obj->wrong_dir_within_ = wrong_dir_within;
 }
 
 int dbTechLayerSpacingEolRule::getWrongDirWithin() const
@@ -756,11 +756,11 @@ int dbTechLayerSpacingEolRule::getWrongDirWithin() const
   return obj->wrong_dir_within_;
 }
 
-void dbTechLayerSpacingEolRule::setExactWidth(int exact_width_)
+void dbTechLayerSpacingEolRule::setExactWidth(int exact_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->exact_width_ = exact_width_;
+  obj->exact_width_ = exact_width;
 }
 
 int dbTechLayerSpacingEolRule::getExactWidth() const
@@ -769,11 +769,11 @@ int dbTechLayerSpacingEolRule::getExactWidth() const
   return obj->exact_width_;
 }
 
-void dbTechLayerSpacingEolRule::setOtherWidth(int other_width_)
+void dbTechLayerSpacingEolRule::setOtherWidth(int other_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->other_width_ = other_width_;
+  obj->other_width_ = other_width;
 }
 
 int dbTechLayerSpacingEolRule::getOtherWidth() const
@@ -782,11 +782,11 @@ int dbTechLayerSpacingEolRule::getOtherWidth() const
   return obj->other_width_;
 }
 
-void dbTechLayerSpacingEolRule::setFillTriangle(int fill_triangle_)
+void dbTechLayerSpacingEolRule::setFillTriangle(int fill_triangle)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->fill_triangle_ = fill_triangle_;
+  obj->fill_triangle_ = fill_triangle;
 }
 
 int dbTechLayerSpacingEolRule::getFillTriangle() const
@@ -795,11 +795,11 @@ int dbTechLayerSpacingEolRule::getFillTriangle() const
   return obj->fill_triangle_;
 }
 
-void dbTechLayerSpacingEolRule::setCutClass(int cut_class_)
+void dbTechLayerSpacingEolRule::setCutClass(int cut_class)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->cut_class_ = cut_class_;
+  obj->cut_class_ = cut_class;
 }
 
 int dbTechLayerSpacingEolRule::getCutClass() const
@@ -808,11 +808,11 @@ int dbTechLayerSpacingEolRule::getCutClass() const
   return obj->cut_class_;
 }
 
-void dbTechLayerSpacingEolRule::setWithCutSpace(int with_cut_space_)
+void dbTechLayerSpacingEolRule::setWithCutSpace(int with_cut_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->with_cut_space_ = with_cut_space_;
+  obj->with_cut_space_ = with_cut_space;
 }
 
 int dbTechLayerSpacingEolRule::getWithCutSpace() const
@@ -821,11 +821,11 @@ int dbTechLayerSpacingEolRule::getWithCutSpace() const
   return obj->with_cut_space_;
 }
 
-void dbTechLayerSpacingEolRule::setEnclosureEndWidth(int enclosure_end_width_)
+void dbTechLayerSpacingEolRule::setEnclosureEndWidth(int enclosure_end_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->enclosure_end_width_ = enclosure_end_width_;
+  obj->enclosure_end_width_ = enclosure_end_width;
 }
 
 int dbTechLayerSpacingEolRule::getEnclosureEndWidth() const
@@ -834,11 +834,11 @@ int dbTechLayerSpacingEolRule::getEnclosureEndWidth() const
   return obj->enclosure_end_width_;
 }
 
-void dbTechLayerSpacingEolRule::setEnclosureEndWithin(int enclosure_end_within_)
+void dbTechLayerSpacingEolRule::setEnclosureEndWithin(int enclosure_end_within)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->enclosure_end_within_ = enclosure_end_within_;
+  obj->enclosure_end_within_ = enclosure_end_within;
 }
 
 int dbTechLayerSpacingEolRule::getEnclosureEndWithin() const
@@ -847,11 +847,11 @@ int dbTechLayerSpacingEolRule::getEnclosureEndWithin() const
   return obj->enclosure_end_within_;
 }
 
-void dbTechLayerSpacingEolRule::setEndPrlSpace(int end_prl_space_)
+void dbTechLayerSpacingEolRule::setEndPrlSpace(int end_prl_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->end_prl_space_ = end_prl_space_;
+  obj->end_prl_space_ = end_prl_space;
 }
 
 int dbTechLayerSpacingEolRule::getEndPrlSpace() const
@@ -860,11 +860,11 @@ int dbTechLayerSpacingEolRule::getEndPrlSpace() const
   return obj->end_prl_space_;
 }
 
-void dbTechLayerSpacingEolRule::setEndPrl(int end_prl_)
+void dbTechLayerSpacingEolRule::setEndPrl(int end_prl)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->end_prl_ = end_prl_;
+  obj->end_prl_ = end_prl;
 }
 
 int dbTechLayerSpacingEolRule::getEndPrl() const
@@ -873,11 +873,11 @@ int dbTechLayerSpacingEolRule::getEndPrl() const
   return obj->end_prl_;
 }
 
-void dbTechLayerSpacingEolRule::setEndToEndSpace(int end_to_end_space_)
+void dbTechLayerSpacingEolRule::setEndToEndSpace(int end_to_end_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->end_to_end_space_ = end_to_end_space_;
+  obj->end_to_end_space_ = end_to_end_space;
 }
 
 int dbTechLayerSpacingEolRule::getEndToEndSpace() const
@@ -886,11 +886,11 @@ int dbTechLayerSpacingEolRule::getEndToEndSpace() const
   return obj->end_to_end_space_;
 }
 
-void dbTechLayerSpacingEolRule::setOneCutSpace(int one_cut_space_)
+void dbTechLayerSpacingEolRule::setOneCutSpace(int one_cut_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->one_cut_space_ = one_cut_space_;
+  obj->one_cut_space_ = one_cut_space;
 }
 
 int dbTechLayerSpacingEolRule::getOneCutSpace() const
@@ -899,11 +899,11 @@ int dbTechLayerSpacingEolRule::getOneCutSpace() const
   return obj->one_cut_space_;
 }
 
-void dbTechLayerSpacingEolRule::setTwoCutSpace(int two_cut_space_)
+void dbTechLayerSpacingEolRule::setTwoCutSpace(int two_cut_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->two_cut_space_ = two_cut_space_;
+  obj->two_cut_space_ = two_cut_space;
 }
 
 int dbTechLayerSpacingEolRule::getTwoCutSpace() const
@@ -912,11 +912,11 @@ int dbTechLayerSpacingEolRule::getTwoCutSpace() const
   return obj->two_cut_space_;
 }
 
-void dbTechLayerSpacingEolRule::setExtension(int extension_)
+void dbTechLayerSpacingEolRule::setExtension(int extension)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->extension_ = extension_;
+  obj->extension_ = extension;
 }
 
 int dbTechLayerSpacingEolRule::getExtension() const
@@ -925,11 +925,11 @@ int dbTechLayerSpacingEolRule::getExtension() const
   return obj->extension_;
 }
 
-void dbTechLayerSpacingEolRule::setWrongDirExtension(int wrong_dir_extension_)
+void dbTechLayerSpacingEolRule::setWrongDirExtension(int wrong_dir_extension)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->wrong_dir_extension_ = wrong_dir_extension_;
+  obj->wrong_dir_extension_ = wrong_dir_extension;
 }
 
 int dbTechLayerSpacingEolRule::getWrongDirExtension() const
@@ -938,11 +938,11 @@ int dbTechLayerSpacingEolRule::getWrongDirExtension() const
   return obj->wrong_dir_extension_;
 }
 
-void dbTechLayerSpacingEolRule::setOtherEndWidth(int other_end_width_)
+void dbTechLayerSpacingEolRule::setOtherEndWidth(int other_end_width)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->other_end_width_ = other_end_width_;
+  obj->other_end_width_ = other_end_width;
 }
 
 int dbTechLayerSpacingEolRule::getOtherEndWidth() const
@@ -951,11 +951,11 @@ int dbTechLayerSpacingEolRule::getOtherEndWidth() const
   return obj->other_end_width_;
 }
 
-void dbTechLayerSpacingEolRule::setMaxLength(int max_length_)
+void dbTechLayerSpacingEolRule::setMaxLength(int max_length)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->max_length_ = max_length_;
+  obj->max_length_ = max_length;
 }
 
 int dbTechLayerSpacingEolRule::getMaxLength() const
@@ -964,11 +964,11 @@ int dbTechLayerSpacingEolRule::getMaxLength() const
   return obj->max_length_;
 }
 
-void dbTechLayerSpacingEolRule::setMinLength(int min_length_)
+void dbTechLayerSpacingEolRule::setMinLength(int min_length)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->min_length_ = min_length_;
+  obj->min_length_ = min_length;
 }
 
 int dbTechLayerSpacingEolRule::getMinLength() const
@@ -977,11 +977,11 @@ int dbTechLayerSpacingEolRule::getMinLength() const
   return obj->min_length_;
 }
 
-void dbTechLayerSpacingEolRule::setParSpace(int par_space_)
+void dbTechLayerSpacingEolRule::setParSpace(int par_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->par_space_ = par_space_;
+  obj->par_space_ = par_space;
 }
 
 int dbTechLayerSpacingEolRule::getParSpace() const
@@ -990,11 +990,11 @@ int dbTechLayerSpacingEolRule::getParSpace() const
   return obj->par_space_;
 }
 
-void dbTechLayerSpacingEolRule::setParWithin(int par_within_)
+void dbTechLayerSpacingEolRule::setParWithin(int par_within)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->par_within_ = par_within_;
+  obj->par_within_ = par_within;
 }
 
 int dbTechLayerSpacingEolRule::getParWithin() const
@@ -1003,11 +1003,11 @@ int dbTechLayerSpacingEolRule::getParWithin() const
   return obj->par_within_;
 }
 
-void dbTechLayerSpacingEolRule::setParPrl(int par_prl_)
+void dbTechLayerSpacingEolRule::setParPrl(int par_prl)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->par_prl_ = par_prl_;
+  obj->par_prl_ = par_prl;
 }
 
 int dbTechLayerSpacingEolRule::getParPrl() const
@@ -1016,11 +1016,11 @@ int dbTechLayerSpacingEolRule::getParPrl() const
   return obj->par_prl_;
 }
 
-void dbTechLayerSpacingEolRule::setParMinLength(int par_min_length_)
+void dbTechLayerSpacingEolRule::setParMinLength(int par_min_length)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->par_min_length_ = par_min_length_;
+  obj->par_min_length_ = par_min_length;
 }
 
 int dbTechLayerSpacingEolRule::getParMinLength() const
@@ -1029,11 +1029,11 @@ int dbTechLayerSpacingEolRule::getParMinLength() const
   return obj->par_min_length_;
 }
 
-void dbTechLayerSpacingEolRule::setEncloseDist(int enclose_dist_)
+void dbTechLayerSpacingEolRule::setEncloseDist(int enclose_dist)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->enclose_dist_ = enclose_dist_;
+  obj->enclose_dist_ = enclose_dist;
 }
 
 int dbTechLayerSpacingEolRule::getEncloseDist() const
@@ -1042,11 +1042,11 @@ int dbTechLayerSpacingEolRule::getEncloseDist() const
   return obj->enclose_dist_;
 }
 
-void dbTechLayerSpacingEolRule::setCutToMetalSpace(int cut_to_metal_space_)
+void dbTechLayerSpacingEolRule::setCutToMetalSpace(int cut_to_metal_space)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->cut_to_metal_space_ = cut_to_metal_space_;
+  obj->cut_to_metal_space_ = cut_to_metal_space;
 }
 
 int dbTechLayerSpacingEolRule::getCutToMetalSpace() const
@@ -1055,11 +1055,11 @@ int dbTechLayerSpacingEolRule::getCutToMetalSpace() const
   return obj->cut_to_metal_space_;
 }
 
-void dbTechLayerSpacingEolRule::setMinAdjLength(int min_adj_length_)
+void dbTechLayerSpacingEolRule::setMinAdjLength(int min_adj_length)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->min_adj_length_ = min_adj_length_;
+  obj->min_adj_length_ = min_adj_length;
 }
 
 int dbTechLayerSpacingEolRule::getMinAdjLength() const
@@ -1068,11 +1068,11 @@ int dbTechLayerSpacingEolRule::getMinAdjLength() const
   return obj->min_adj_length_;
 }
 
-void dbTechLayerSpacingEolRule::setMinAdjLength1(int min_adj_length1_)
+void dbTechLayerSpacingEolRule::setMinAdjLength1(int min_adj_length1)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->min_adj_length1_ = min_adj_length1_;
+  obj->min_adj_length1_ = min_adj_length1;
 }
 
 int dbTechLayerSpacingEolRule::getMinAdjLength1() const
@@ -1081,11 +1081,11 @@ int dbTechLayerSpacingEolRule::getMinAdjLength1() const
   return obj->min_adj_length1_;
 }
 
-void dbTechLayerSpacingEolRule::setMinAdjLength2(int min_adj_length2_)
+void dbTechLayerSpacingEolRule::setMinAdjLength2(int min_adj_length2)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->min_adj_length2_ = min_adj_length2_;
+  obj->min_adj_length2_ = min_adj_length2;
 }
 
 int dbTechLayerSpacingEolRule::getMinAdjLength2() const
@@ -1094,11 +1094,11 @@ int dbTechLayerSpacingEolRule::getMinAdjLength2() const
   return obj->min_adj_length2_;
 }
 
-void dbTechLayerSpacingEolRule::setNotchLength(int notch_length_)
+void dbTechLayerSpacingEolRule::setNotchLength(int notch_length)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->notch_length_ = notch_length_;
+  obj->notch_length_ = notch_length;
 }
 
 int dbTechLayerSpacingEolRule::getNotchLength() const
@@ -1107,11 +1107,11 @@ int dbTechLayerSpacingEolRule::getNotchLength() const
   return obj->notch_length_;
 }
 
-void dbTechLayerSpacingEolRule::setExactWidthValid(bool exact_width_valid_)
+void dbTechLayerSpacingEolRule::setExactWidthValid(bool exact_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.exact_width_valid_ = exact_width_valid_;
+  obj->flags_.exact_width_valid_ = exact_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isExactWidthValid() const
@@ -1122,11 +1122,11 @@ bool dbTechLayerSpacingEolRule::isExactWidthValid() const
 }
 
 void dbTechLayerSpacingEolRule::setWrongDirSpacingValid(
-    bool wrong_dir_spacing_valid_)
+    bool wrong_dir_spacing_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.wrong_dir_spacing_valid_ = wrong_dir_spacing_valid_;
+  obj->flags_.wrong_dir_spacing_valid_ = wrong_dir_spacing_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWrongDirSpacingValid() const
@@ -1136,12 +1136,11 @@ bool dbTechLayerSpacingEolRule::isWrongDirSpacingValid() const
   return obj->flags_.wrong_dir_spacing_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setOppositeWidthValid(
-    bool opposite_width_valid_)
+void dbTechLayerSpacingEolRule::setOppositeWidthValid(bool opposite_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.opposite_width_valid_ = opposite_width_valid_;
+  obj->flags_.opposite_width_valid_ = opposite_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isOppositeWidthValid() const
@@ -1151,11 +1150,11 @@ bool dbTechLayerSpacingEolRule::isOppositeWidthValid() const
   return obj->flags_.opposite_width_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setWithinValid(bool within_valid_)
+void dbTechLayerSpacingEolRule::setWithinValid(bool within_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.within_valid_ = within_valid_;
+  obj->flags_.within_valid_ = within_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWithinValid() const
@@ -1166,11 +1165,11 @@ bool dbTechLayerSpacingEolRule::isWithinValid() const
 }
 
 void dbTechLayerSpacingEolRule::setWrongDirWithinValid(
-    bool wrong_dir_within_valid_)
+    bool wrong_dir_within_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.wrong_dir_within_valid_ = wrong_dir_within_valid_;
+  obj->flags_.wrong_dir_within_valid_ = wrong_dir_within_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWrongDirWithinValid() const
@@ -1180,11 +1179,11 @@ bool dbTechLayerSpacingEolRule::isWrongDirWithinValid() const
   return obj->flags_.wrong_dir_within_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setSameMaskValid(bool same_mask_valid_)
+void dbTechLayerSpacingEolRule::setSameMaskValid(bool same_mask_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.same_mask_valid_ = same_mask_valid_;
+  obj->flags_.same_mask_valid_ = same_mask_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isSameMaskValid() const
@@ -1195,11 +1194,11 @@ bool dbTechLayerSpacingEolRule::isSameMaskValid() const
 }
 
 void dbTechLayerSpacingEolRule::setExceptExactWidthValid(
-    bool except_exact_width_valid_)
+    bool except_exact_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.except_exact_width_valid_ = except_exact_width_valid_;
+  obj->flags_.except_exact_width_valid_ = except_exact_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isExceptExactWidthValid() const
@@ -1210,11 +1209,11 @@ bool dbTechLayerSpacingEolRule::isExceptExactWidthValid() const
 }
 
 void dbTechLayerSpacingEolRule::setFillConcaveCornerValid(
-    bool fill_concave_corner_valid_)
+    bool fill_concave_corner_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.fill_concave_corner_valid_ = fill_concave_corner_valid_;
+  obj->flags_.fill_concave_corner_valid_ = fill_concave_corner_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isFillConcaveCornerValid() const
@@ -1224,11 +1223,11 @@ bool dbTechLayerSpacingEolRule::isFillConcaveCornerValid() const
   return obj->flags_.fill_concave_corner_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setWithcutValid(bool withcut_valid_)
+void dbTechLayerSpacingEolRule::setWithcutValid(bool withcut_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.withcut_valid_ = withcut_valid_;
+  obj->flags_.withcut_valid_ = withcut_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWithcutValid() const
@@ -1238,11 +1237,11 @@ bool dbTechLayerSpacingEolRule::isWithcutValid() const
   return obj->flags_.withcut_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setCutClassValid(bool cut_class_valid_)
+void dbTechLayerSpacingEolRule::setCutClassValid(bool cut_class_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.cut_class_valid_ = cut_class_valid_;
+  obj->flags_.cut_class_valid_ = cut_class_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isCutClassValid() const
@@ -1252,11 +1251,11 @@ bool dbTechLayerSpacingEolRule::isCutClassValid() const
   return obj->flags_.cut_class_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setWithCutAboveValid(bool with_cut_above_valid_)
+void dbTechLayerSpacingEolRule::setWithCutAboveValid(bool with_cut_above_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.with_cut_above_valid_ = with_cut_above_valid_;
+  obj->flags_.with_cut_above_valid_ = with_cut_above_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWithCutAboveValid() const
@@ -1266,11 +1265,11 @@ bool dbTechLayerSpacingEolRule::isWithCutAboveValid() const
   return obj->flags_.with_cut_above_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setEnclosureEndValid(bool enclosure_end_valid_)
+void dbTechLayerSpacingEolRule::setEnclosureEndValid(bool enclosure_end_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.enclosure_end_valid_ = enclosure_end_valid_;
+  obj->flags_.enclosure_end_valid_ = enclosure_end_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEnclosureEndValid() const
@@ -1281,11 +1280,11 @@ bool dbTechLayerSpacingEolRule::isEnclosureEndValid() const
 }
 
 void dbTechLayerSpacingEolRule::setEnclosureEndWithinValid(
-    bool enclosure_end_within_valid_)
+    bool enclosure_end_within_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.enclosure_end_within_valid_ = enclosure_end_within_valid_;
+  obj->flags_.enclosure_end_within_valid_ = enclosure_end_within_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEnclosureEndWithinValid() const
@@ -1296,11 +1295,11 @@ bool dbTechLayerSpacingEolRule::isEnclosureEndWithinValid() const
 }
 
 void dbTechLayerSpacingEolRule::setEndPrlSpacingValid(
-    bool end_prl_spacing_valid_)
+    bool end_prl_spacing_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.end_prl_spacing_valid_ = end_prl_spacing_valid_;
+  obj->flags_.end_prl_spacing_valid_ = end_prl_spacing_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEndPrlSpacingValid() const
@@ -1310,11 +1309,11 @@ bool dbTechLayerSpacingEolRule::isEndPrlSpacingValid() const
   return obj->flags_.end_prl_spacing_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setPrlValid(bool prl_valid_)
+void dbTechLayerSpacingEolRule::setPrlValid(bool prl_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.prl_valid_ = prl_valid_;
+  obj->flags_.prl_valid_ = prl_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isPrlValid() const
@@ -1324,11 +1323,11 @@ bool dbTechLayerSpacingEolRule::isPrlValid() const
   return obj->flags_.prl_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setEndToEndValid(bool end_to_end_valid_)
+void dbTechLayerSpacingEolRule::setEndToEndValid(bool end_to_end_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.end_to_end_valid_ = end_to_end_valid_;
+  obj->flags_.end_to_end_valid_ = end_to_end_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEndToEndValid() const
@@ -1338,11 +1337,11 @@ bool dbTechLayerSpacingEolRule::isEndToEndValid() const
   return obj->flags_.end_to_end_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setCutSpacesValid(bool cut_spaces_valid_)
+void dbTechLayerSpacingEolRule::setCutSpacesValid(bool cut_spaces_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.cut_spaces_valid_ = cut_spaces_valid_;
+  obj->flags_.cut_spaces_valid_ = cut_spaces_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isCutSpacesValid() const
@@ -1352,11 +1351,11 @@ bool dbTechLayerSpacingEolRule::isCutSpacesValid() const
   return obj->flags_.cut_spaces_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setExtensionValid(bool extension_valid_)
+void dbTechLayerSpacingEolRule::setExtensionValid(bool extension_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.extension_valid_ = extension_valid_;
+  obj->flags_.extension_valid_ = extension_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isExtensionValid() const
@@ -1367,11 +1366,11 @@ bool dbTechLayerSpacingEolRule::isExtensionValid() const
 }
 
 void dbTechLayerSpacingEolRule::setWrongDirExtensionValid(
-    bool wrong_dir_extension_valid_)
+    bool wrong_dir_extension_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.wrong_dir_extension_valid_ = wrong_dir_extension_valid_;
+  obj->flags_.wrong_dir_extension_valid_ = wrong_dir_extension_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isWrongDirExtensionValid() const
@@ -1382,11 +1381,11 @@ bool dbTechLayerSpacingEolRule::isWrongDirExtensionValid() const
 }
 
 void dbTechLayerSpacingEolRule::setOtherEndWidthValid(
-    bool other_end_width_valid_)
+    bool other_end_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.other_end_width_valid_ = other_end_width_valid_;
+  obj->flags_.other_end_width_valid_ = other_end_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isOtherEndWidthValid() const
@@ -1396,11 +1395,11 @@ bool dbTechLayerSpacingEolRule::isOtherEndWidthValid() const
   return obj->flags_.other_end_width_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setMaxLengthValid(bool max_length_valid_)
+void dbTechLayerSpacingEolRule::setMaxLengthValid(bool max_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.max_length_valid_ = max_length_valid_;
+  obj->flags_.max_length_valid_ = max_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isMaxLengthValid() const
@@ -1410,11 +1409,11 @@ bool dbTechLayerSpacingEolRule::isMaxLengthValid() const
   return obj->flags_.max_length_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setMinLengthValid(bool min_length_valid_)
+void dbTechLayerSpacingEolRule::setMinLengthValid(bool min_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.min_length_valid_ = min_length_valid_;
+  obj->flags_.min_length_valid_ = min_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isMinLengthValid() const
@@ -1424,11 +1423,11 @@ bool dbTechLayerSpacingEolRule::isMinLengthValid() const
   return obj->flags_.min_length_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setTwoSidesValid(bool two_sides_valid_)
+void dbTechLayerSpacingEolRule::setTwoSidesValid(bool two_sides_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.two_sides_valid_ = two_sides_valid_;
+  obj->flags_.two_sides_valid_ = two_sides_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isTwoSidesValid() const
@@ -1439,11 +1438,11 @@ bool dbTechLayerSpacingEolRule::isTwoSidesValid() const
 }
 
 void dbTechLayerSpacingEolRule::setEqualRectWidthValid(
-    bool equal_rect_width_valid_)
+    bool equal_rect_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.equal_rect_width_valid_ = equal_rect_width_valid_;
+  obj->flags_.equal_rect_width_valid_ = equal_rect_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEqualRectWidthValid() const
@@ -1453,11 +1452,11 @@ bool dbTechLayerSpacingEolRule::isEqualRectWidthValid() const
   return obj->flags_.equal_rect_width_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setParallelEdgeValid(bool parallel_edge_valid_)
+void dbTechLayerSpacingEolRule::setParallelEdgeValid(bool parallel_edge_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.parallel_edge_valid_ = parallel_edge_valid_;
+  obj->flags_.parallel_edge_valid_ = parallel_edge_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isParallelEdgeValid() const
@@ -1468,11 +1467,11 @@ bool dbTechLayerSpacingEolRule::isParallelEdgeValid() const
 }
 
 void dbTechLayerSpacingEolRule::setSubtractEolWidthValid(
-    bool subtract_eol_width_valid_)
+    bool subtract_eol_width_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.subtract_eol_width_valid_ = subtract_eol_width_valid_;
+  obj->flags_.subtract_eol_width_valid_ = subtract_eol_width_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isSubtractEolWidthValid() const
@@ -1482,11 +1481,11 @@ bool dbTechLayerSpacingEolRule::isSubtractEolWidthValid() const
   return obj->flags_.subtract_eol_width_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setParPrlValid(bool par_prl_valid_)
+void dbTechLayerSpacingEolRule::setParPrlValid(bool par_prl_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.par_prl_valid_ = par_prl_valid_;
+  obj->flags_.par_prl_valid_ = par_prl_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isParPrlValid() const
@@ -1496,11 +1495,11 @@ bool dbTechLayerSpacingEolRule::isParPrlValid() const
   return obj->flags_.par_prl_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setParMinLengthValid(bool par_min_length_valid_)
+void dbTechLayerSpacingEolRule::setParMinLengthValid(bool par_min_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.par_min_length_valid_ = par_min_length_valid_;
+  obj->flags_.par_min_length_valid_ = par_min_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isParMinLengthValid() const
@@ -1510,11 +1509,11 @@ bool dbTechLayerSpacingEolRule::isParMinLengthValid() const
   return obj->flags_.par_min_length_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setTwoEdgesValid(bool two_edges_valid_)
+void dbTechLayerSpacingEolRule::setTwoEdgesValid(bool two_edges_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.two_edges_valid_ = two_edges_valid_;
+  obj->flags_.two_edges_valid_ = two_edges_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isTwoEdgesValid() const
@@ -1524,11 +1523,11 @@ bool dbTechLayerSpacingEolRule::isTwoEdgesValid() const
   return obj->flags_.two_edges_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setSameMetalValid(bool same_metal_valid_)
+void dbTechLayerSpacingEolRule::setSameMetalValid(bool same_metal_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.same_metal_valid_ = same_metal_valid_;
+  obj->flags_.same_metal_valid_ = same_metal_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isSameMetalValid() const
@@ -1539,11 +1538,11 @@ bool dbTechLayerSpacingEolRule::isSameMetalValid() const
 }
 
 void dbTechLayerSpacingEolRule::setNonEolCornerOnlyValid(
-    bool non_eol_corner_only_valid_)
+    bool non_eol_corner_only_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.non_eol_corner_only_valid_ = non_eol_corner_only_valid_;
+  obj->flags_.non_eol_corner_only_valid_ = non_eol_corner_only_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isNonEolCornerOnlyValid() const
@@ -1554,11 +1553,11 @@ bool dbTechLayerSpacingEolRule::isNonEolCornerOnlyValid() const
 }
 
 void dbTechLayerSpacingEolRule::setParallelSameMaskValid(
-    bool parallel_same_mask_valid_)
+    bool parallel_same_mask_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.parallel_same_mask_valid_ = parallel_same_mask_valid_;
+  obj->flags_.parallel_same_mask_valid_ = parallel_same_mask_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isParallelSameMaskValid() const
@@ -1568,11 +1567,11 @@ bool dbTechLayerSpacingEolRule::isParallelSameMaskValid() const
   return obj->flags_.parallel_same_mask_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setEncloseCutValid(bool enclose_cut_valid_)
+void dbTechLayerSpacingEolRule::setEncloseCutValid(bool enclose_cut_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.enclose_cut_valid_ = enclose_cut_valid_;
+  obj->flags_.enclose_cut_valid_ = enclose_cut_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isEncloseCutValid() const
@@ -1582,11 +1581,11 @@ bool dbTechLayerSpacingEolRule::isEncloseCutValid() const
   return obj->flags_.enclose_cut_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setBelowValid(bool below_valid_)
+void dbTechLayerSpacingEolRule::setBelowValid(bool below_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.below_valid_ = below_valid_;
+  obj->flags_.below_valid_ = below_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isBelowValid() const
@@ -1596,11 +1595,11 @@ bool dbTechLayerSpacingEolRule::isBelowValid() const
   return obj->flags_.below_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setAboveValid(bool above_valid_)
+void dbTechLayerSpacingEolRule::setAboveValid(bool above_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.above_valid_ = above_valid_;
+  obj->flags_.above_valid_ = above_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isAboveValid() const
@@ -1610,11 +1609,11 @@ bool dbTechLayerSpacingEolRule::isAboveValid() const
   return obj->flags_.above_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setCutSpacingValid(bool cut_spacing_valid_)
+void dbTechLayerSpacingEolRule::setCutSpacingValid(bool cut_spacing_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.cut_spacing_valid_ = cut_spacing_valid_;
+  obj->flags_.cut_spacing_valid_ = cut_spacing_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isCutSpacingValid() const
@@ -1624,11 +1623,11 @@ bool dbTechLayerSpacingEolRule::isCutSpacingValid() const
   return obj->flags_.cut_spacing_valid_;
 }
 
-void dbTechLayerSpacingEolRule::setAllCutsValid(bool all_cuts_valid_)
+void dbTechLayerSpacingEolRule::setAllCutsValid(bool all_cuts_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.all_cuts_valid_ = all_cuts_valid_;
+  obj->flags_.all_cuts_valid_ = all_cuts_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isAllCutsValid() const
@@ -1639,11 +1638,11 @@ bool dbTechLayerSpacingEolRule::isAllCutsValid() const
 }
 
 void dbTechLayerSpacingEolRule::setToConcaveCornerValid(
-    bool to_concave_corner_valid_)
+    bool to_concave_corner_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.to_concave_corner_valid_ = to_concave_corner_valid_;
+  obj->flags_.to_concave_corner_valid_ = to_concave_corner_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isToConcaveCornerValid() const
@@ -1654,11 +1653,11 @@ bool dbTechLayerSpacingEolRule::isToConcaveCornerValid() const
 }
 
 void dbTechLayerSpacingEolRule::setMinAdjacentLengthValid(
-    bool min_adjacent_length_valid_)
+    bool min_adjacent_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.min_adjacent_length_valid_ = min_adjacent_length_valid_;
+  obj->flags_.min_adjacent_length_valid_ = min_adjacent_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isMinAdjacentLengthValid() const
@@ -1669,11 +1668,11 @@ bool dbTechLayerSpacingEolRule::isMinAdjacentLengthValid() const
 }
 
 void dbTechLayerSpacingEolRule::setTwoMinAdjLengthValid(
-    bool two_min_adj_length_valid_)
+    bool two_min_adj_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.two_min_adj_length_valid_ = two_min_adj_length_valid_;
+  obj->flags_.two_min_adj_length_valid_ = two_min_adj_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isTwoMinAdjLengthValid() const
@@ -1684,11 +1683,11 @@ bool dbTechLayerSpacingEolRule::isTwoMinAdjLengthValid() const
 }
 
 void dbTechLayerSpacingEolRule::setToNotchLengthValid(
-    bool to_notch_length_valid_)
+    bool to_notch_length_valid)
 {
   _dbTechLayerSpacingEolRule* obj = (_dbTechLayerSpacingEolRule*) this;
 
-  obj->flags_.to_notch_length_valid_ = to_notch_length_valid_;
+  obj->flags_.to_notch_length_valid_ = to_notch_length_valid;
 }
 
 bool dbTechLayerSpacingEolRule::isToNotchLengthValid() const

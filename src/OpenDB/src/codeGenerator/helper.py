@@ -133,7 +133,6 @@ def getHashTableType(type_name):
 def isPassByRef(type_name):
     return type_name.find("dbVector") == 0
 
-
 def _isTemplateType(type_name):
     openBracket = type_name.find("<")
     if openBracket == -1:

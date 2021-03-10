@@ -248,11 +248,11 @@ Rect dbGroup::getBox() const
   return obj->_box;
 }
 
-void dbGroup::setParentGroup(dbGroup* _parent_group)
+void dbGroup::setParentGroup(dbGroup* parent_group)
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  obj->_parent_group = _parent_group->getImpl()->getOID();
+  obj->_parent_group = parent_group->getImpl()->getOID();
 }
 
 dbGroup* dbGroup::getParentGroup() const

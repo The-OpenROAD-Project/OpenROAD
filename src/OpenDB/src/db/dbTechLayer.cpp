@@ -882,11 +882,11 @@ dbTechLayer::getTechLayerCutSpacingTableDefRules() const
       obj, obj->cut_spacing_table_def_tbl_);
 }
 
-void dbTechLayer::setRectOnly(bool rect_only_)
+void dbTechLayer::setRectOnly(bool rect_only)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  obj->flags_.rect_only_ = rect_only_;
+  obj->flags_.rect_only_ = rect_only;
 }
 
 bool dbTechLayer::isRectOnly() const
@@ -896,11 +896,11 @@ bool dbTechLayer::isRectOnly() const
   return obj->flags_.rect_only_;
 }
 
-void dbTechLayer::setRightWayOnGridOnly(bool right_way_on_grid_only_)
+void dbTechLayer::setRightWayOnGridOnly(bool right_way_on_grid_only)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  obj->flags_.right_way_on_grid_only_ = right_way_on_grid_only_;
+  obj->flags_.right_way_on_grid_only_ = right_way_on_grid_only;
 }
 
 bool dbTechLayer::isRightWayOnGridOnly() const
@@ -911,12 +911,12 @@ bool dbTechLayer::isRightWayOnGridOnly() const
 }
 
 void dbTechLayer::setRightWayOnGridOnlyCheckMask(
-    bool right_way_on_grid_only_check_mask_)
+    bool right_way_on_grid_only_check_mask)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
   obj->flags_.right_way_on_grid_only_check_mask_
-      = right_way_on_grid_only_check_mask_;
+      = right_way_on_grid_only_check_mask;
 }
 
 bool dbTechLayer::isRightWayOnGridOnlyCheckMask() const
@@ -927,11 +927,11 @@ bool dbTechLayer::isRightWayOnGridOnlyCheckMask() const
 }
 
 void dbTechLayer::setRectOnlyExceptNonCorePins(
-    bool rect_only_except_non_core_pins_)
+    bool rect_only_except_non_core_pins)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
-  obj->flags_.rect_only_except_non_core_pins_ = rect_only_except_non_core_pins_;
+  obj->flags_.rect_only_except_non_core_pins_ = rect_only_except_non_core_pins;
 }
 
 bool dbTechLayer::isRectOnlyExceptNonCorePins() const

@@ -151,6 +151,8 @@ for klass in schema['classes']:
         field['isHashTable'] = isHashTable(field['type'])
         field['hashTableType'] = getHashTableType(field['type'])
         field['isPassByRef'] = isPassByRef(field['type'])
+        if 'argument' not in field:
+            field['argument'] = field['name'].strip('_')
         field.setdefault('flags',[])
         if 'private' in field['flags']:
             field['flags'].append('no-set')

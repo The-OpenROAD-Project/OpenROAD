@@ -166,12 +166,12 @@ _dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerSpacingTablePrlRule::setEolWidth(int eol_width_)
+void dbTechLayerSpacingTablePrlRule::setEolWidth(int eol_width)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->eol_width_ = eol_width_;
+  obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerSpacingTablePrlRule::getEolWidth() const
@@ -181,12 +181,12 @@ int dbTechLayerSpacingTablePrlRule::getEolWidth() const
   return obj->eol_width_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool wrong_direction_)
+void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool wrong_direction)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->flags_.wrong_direction_ = wrong_direction_;
+  obj->flags_.wrong_direction_ = wrong_direction;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
@@ -197,12 +197,12 @@ bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
   return obj->flags_.wrong_direction_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask_)
+void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->flags_.same_mask_ = same_mask_;
+  obj->flags_.same_mask_ = same_mask;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isSameMask() const
@@ -213,12 +213,12 @@ bool dbTechLayerSpacingTablePrlRule::isSameMask() const
   return obj->flags_.same_mask_;
 }
 
-void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol_)
+void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
 
-  obj->flags_.exceept_eol_ = exceept_eol_;
+  obj->flags_.exceept_eol_ = exceept_eol;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const

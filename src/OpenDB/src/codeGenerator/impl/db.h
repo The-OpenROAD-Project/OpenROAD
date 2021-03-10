@@ -32,7 +32,7 @@ class {{klass.name}} : public dbObject
   {% endfor %}
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.name}} );
+      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
@@ -55,7 +55,7 @@ class {{klass.name}} : public dbObject
     {% if  _struct.in_class %}
       {% for field in _struct.fields %}
         {% if 'no-set' not in field.flags %}
-        void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.name}} );
+        void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
       
         {% endif %}
         {% if 'no-get' not in field.flags %}

@@ -190,11 +190,11 @@ const char* dbTechLayerCutClassRule::getName() const
   return obj->_name;
 }
 
-void dbTechLayerCutClassRule::setWidth(int width_)
+void dbTechLayerCutClassRule::setWidth(int width)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->width_ = width_;
+  obj->width_ = width;
 }
 
 int dbTechLayerCutClassRule::getWidth() const
@@ -203,11 +203,11 @@ int dbTechLayerCutClassRule::getWidth() const
   return obj->width_;
 }
 
-void dbTechLayerCutClassRule::setLength(int length_)
+void dbTechLayerCutClassRule::setLength(int length)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->length_ = length_;
+  obj->length_ = length;
 }
 
 int dbTechLayerCutClassRule::getLength() const
@@ -216,11 +216,11 @@ int dbTechLayerCutClassRule::getLength() const
   return obj->length_;
 }
 
-void dbTechLayerCutClassRule::setNumCuts(int num_cuts_)
+void dbTechLayerCutClassRule::setNumCuts(int num_cuts)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->num_cuts_ = num_cuts_;
+  obj->num_cuts_ = num_cuts;
 }
 
 int dbTechLayerCutClassRule::getNumCuts() const
@@ -229,11 +229,11 @@ int dbTechLayerCutClassRule::getNumCuts() const
   return obj->num_cuts_;
 }
 
-void dbTechLayerCutClassRule::setLengthValid(bool length_valid_)
+void dbTechLayerCutClassRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.length_valid_ = length_valid_;
+  obj->flags_.length_valid_ = length_valid;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
@@ -243,11 +243,11 @@ bool dbTechLayerCutClassRule::isLengthValid() const
   return obj->flags_.length_valid_;
 }
 
-void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid_)
+void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.cuts_valid_ = cuts_valid_;
+  obj->flags_.cuts_valid_ = cuts_valid;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const

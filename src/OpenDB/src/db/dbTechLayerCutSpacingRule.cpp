@@ -552,11 +552,11 @@ _dbTechLayerCutSpacingRule::~_dbTechLayerCutSpacingRule()
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerCutSpacingRule::setCutSpacing(int cut_spacing_)
+void dbTechLayerCutSpacingRule::setCutSpacing(int cut_spacing)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->cut_spacing_ = cut_spacing_;
+  obj->cut_spacing_ = cut_spacing;
 }
 
 int dbTechLayerCutSpacingRule::getCutSpacing() const
@@ -565,18 +565,18 @@ int dbTechLayerCutSpacingRule::getCutSpacing() const
   return obj->cut_spacing_;
 }
 
-void dbTechLayerCutSpacingRule::setSecondLayer(dbTechLayer* second_layer_)
+void dbTechLayerCutSpacingRule::setSecondLayer(dbTechLayer* second_layer)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->second_layer_ = second_layer_->getImpl()->getOID();
+  obj->second_layer_ = second_layer->getImpl()->getOID();
 }
 
-void dbTechLayerCutSpacingRule::setOrthogonalSpacing(int orthogonal_spacing_)
+void dbTechLayerCutSpacingRule::setOrthogonalSpacing(int orthogonal_spacing)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->orthogonal_spacing_ = orthogonal_spacing_;
+  obj->orthogonal_spacing_ = orthogonal_spacing;
 }
 
 int dbTechLayerCutSpacingRule::getOrthogonalSpacing() const
@@ -585,11 +585,11 @@ int dbTechLayerCutSpacingRule::getOrthogonalSpacing() const
   return obj->orthogonal_spacing_;
 }
 
-void dbTechLayerCutSpacingRule::setWidth(int width_)
+void dbTechLayerCutSpacingRule::setWidth(int width)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->width_ = width_;
+  obj->width_ = width;
 }
 
 int dbTechLayerCutSpacingRule::getWidth() const
@@ -598,11 +598,11 @@ int dbTechLayerCutSpacingRule::getWidth() const
   return obj->width_;
 }
 
-void dbTechLayerCutSpacingRule::setEnclosure(int enclosure_)
+void dbTechLayerCutSpacingRule::setEnclosure(int enclosure)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->enclosure_ = enclosure_;
+  obj->enclosure_ = enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getEnclosure() const
@@ -611,11 +611,11 @@ int dbTechLayerCutSpacingRule::getEnclosure() const
   return obj->enclosure_;
 }
 
-void dbTechLayerCutSpacingRule::setEdgeLength(int edge_length_)
+void dbTechLayerCutSpacingRule::setEdgeLength(int edge_length)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->edge_length_ = edge_length_;
+  obj->edge_length_ = edge_length;
 }
 
 int dbTechLayerCutSpacingRule::getEdgeLength() const
@@ -624,11 +624,11 @@ int dbTechLayerCutSpacingRule::getEdgeLength() const
   return obj->edge_length_;
 }
 
-void dbTechLayerCutSpacingRule::setParWithin(int par_within_)
+void dbTechLayerCutSpacingRule::setParWithin(int par_within)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->par_within_ = par_within_;
+  obj->par_within_ = par_within;
 }
 
 int dbTechLayerCutSpacingRule::getParWithin() const
@@ -637,11 +637,11 @@ int dbTechLayerCutSpacingRule::getParWithin() const
   return obj->par_within_;
 }
 
-void dbTechLayerCutSpacingRule::setParEnclosure(int par_enclosure_)
+void dbTechLayerCutSpacingRule::setParEnclosure(int par_enclosure)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->par_enclosure_ = par_enclosure_;
+  obj->par_enclosure_ = par_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getParEnclosure() const
@@ -650,11 +650,11 @@ int dbTechLayerCutSpacingRule::getParEnclosure() const
   return obj->par_enclosure_;
 }
 
-void dbTechLayerCutSpacingRule::setEdgeEnclosure(int edge_enclosure_)
+void dbTechLayerCutSpacingRule::setEdgeEnclosure(int edge_enclosure)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->edge_enclosure_ = edge_enclosure_;
+  obj->edge_enclosure_ = edge_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getEdgeEnclosure() const
@@ -663,11 +663,11 @@ int dbTechLayerCutSpacingRule::getEdgeEnclosure() const
   return obj->edge_enclosure_;
 }
 
-void dbTechLayerCutSpacingRule::setAdjEnclosure(int adj_enclosure_)
+void dbTechLayerCutSpacingRule::setAdjEnclosure(int adj_enclosure)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->adj_enclosure_ = adj_enclosure_;
+  obj->adj_enclosure_ = adj_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getAdjEnclosure() const
@@ -676,11 +676,11 @@ int dbTechLayerCutSpacingRule::getAdjEnclosure() const
   return obj->adj_enclosure_;
 }
 
-void dbTechLayerCutSpacingRule::setAboveEnclosure(int above_enclosure_)
+void dbTechLayerCutSpacingRule::setAboveEnclosure(int above_enclosure)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->above_enclosure_ = above_enclosure_;
+  obj->above_enclosure_ = above_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getAboveEnclosure() const
@@ -689,11 +689,11 @@ int dbTechLayerCutSpacingRule::getAboveEnclosure() const
   return obj->above_enclosure_;
 }
 
-void dbTechLayerCutSpacingRule::setAboveWidth(int above_width_)
+void dbTechLayerCutSpacingRule::setAboveWidth(int above_width)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->above_width_ = above_width_;
+  obj->above_width_ = above_width;
 }
 
 int dbTechLayerCutSpacingRule::getAboveWidth() const
@@ -702,11 +702,11 @@ int dbTechLayerCutSpacingRule::getAboveWidth() const
   return obj->above_width_;
 }
 
-void dbTechLayerCutSpacingRule::setMinLength(int min_length_)
+void dbTechLayerCutSpacingRule::setMinLength(int min_length)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->min_length_ = min_length_;
+  obj->min_length_ = min_length;
 }
 
 int dbTechLayerCutSpacingRule::getMinLength() const
@@ -715,11 +715,11 @@ int dbTechLayerCutSpacingRule::getMinLength() const
   return obj->min_length_;
 }
 
-void dbTechLayerCutSpacingRule::setExtension(int extension_)
+void dbTechLayerCutSpacingRule::setExtension(int extension)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->extension_ = extension_;
+  obj->extension_ = extension;
 }
 
 int dbTechLayerCutSpacingRule::getExtension() const
@@ -728,11 +728,11 @@ int dbTechLayerCutSpacingRule::getExtension() const
   return obj->extension_;
 }
 
-void dbTechLayerCutSpacingRule::setEolWidth(int eol_width_)
+void dbTechLayerCutSpacingRule::setEolWidth(int eol_width)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->eol_width_ = eol_width_;
+  obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerCutSpacingRule::getEolWidth() const
@@ -741,11 +741,11 @@ int dbTechLayerCutSpacingRule::getEolWidth() const
   return obj->eol_width_;
 }
 
-void dbTechLayerCutSpacingRule::setNumCuts(uint num_cuts_)
+void dbTechLayerCutSpacingRule::setNumCuts(uint num_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->num_cuts_ = num_cuts_;
+  obj->num_cuts_ = num_cuts;
 }
 
 uint dbTechLayerCutSpacingRule::getNumCuts() const
@@ -754,11 +754,11 @@ uint dbTechLayerCutSpacingRule::getNumCuts() const
   return obj->num_cuts_;
 }
 
-void dbTechLayerCutSpacingRule::setWithin(int within_)
+void dbTechLayerCutSpacingRule::setWithin(int within)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->within_ = within_;
+  obj->within_ = within;
 }
 
 int dbTechLayerCutSpacingRule::getWithin() const
@@ -767,11 +767,11 @@ int dbTechLayerCutSpacingRule::getWithin() const
   return obj->within_;
 }
 
-void dbTechLayerCutSpacingRule::setSecondWithin(int second_within_)
+void dbTechLayerCutSpacingRule::setSecondWithin(int second_within)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->second_within_ = second_within_;
+  obj->second_within_ = second_within;
 }
 
 int dbTechLayerCutSpacingRule::getSecondWithin() const
@@ -780,18 +780,18 @@ int dbTechLayerCutSpacingRule::getSecondWithin() const
   return obj->second_within_;
 }
 
-void dbTechLayerCutSpacingRule::setCutClass(dbTechLayerCutClassRule* cut_class_)
+void dbTechLayerCutSpacingRule::setCutClass(dbTechLayerCutClassRule* cut_class)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->cut_class_ = cut_class_->getImpl()->getOID();
+  obj->cut_class_ = cut_class->getImpl()->getOID();
 }
 
-void dbTechLayerCutSpacingRule::setTwoCuts(uint two_cuts_)
+void dbTechLayerCutSpacingRule::setTwoCuts(uint two_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->two_cuts_ = two_cuts_;
+  obj->two_cuts_ = two_cuts;
 }
 
 uint dbTechLayerCutSpacingRule::getTwoCuts() const
@@ -800,11 +800,11 @@ uint dbTechLayerCutSpacingRule::getTwoCuts() const
   return obj->two_cuts_;
 }
 
-void dbTechLayerCutSpacingRule::setPrl(uint prl_)
+void dbTechLayerCutSpacingRule::setPrl(uint prl)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->prl_ = prl_;
+  obj->prl_ = prl;
 }
 
 uint dbTechLayerCutSpacingRule::getPrl() const
@@ -813,11 +813,11 @@ uint dbTechLayerCutSpacingRule::getPrl() const
   return obj->prl_;
 }
 
-void dbTechLayerCutSpacingRule::setParLength(uint par_length_)
+void dbTechLayerCutSpacingRule::setParLength(uint par_length)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->par_length_ = par_length_;
+  obj->par_length_ = par_length;
 }
 
 uint dbTechLayerCutSpacingRule::getParLength() const
@@ -826,11 +826,11 @@ uint dbTechLayerCutSpacingRule::getParLength() const
   return obj->par_length_;
 }
 
-void dbTechLayerCutSpacingRule::setCutArea(int cut_area_)
+void dbTechLayerCutSpacingRule::setCutArea(int cut_area)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->cut_area_ = cut_area_;
+  obj->cut_area_ = cut_area;
 }
 
 int dbTechLayerCutSpacingRule::getCutArea() const
@@ -839,11 +839,11 @@ int dbTechLayerCutSpacingRule::getCutArea() const
   return obj->cut_area_;
 }
 
-void dbTechLayerCutSpacingRule::setCenterToCenter(bool center_to_center_)
+void dbTechLayerCutSpacingRule::setCenterToCenter(bool center_to_center)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.center_to_center_ = center_to_center_;
+  obj->flags_.center_to_center_ = center_to_center;
 }
 
 bool dbTechLayerCutSpacingRule::isCenterToCenter() const
@@ -853,11 +853,11 @@ bool dbTechLayerCutSpacingRule::isCenterToCenter() const
   return obj->flags_.center_to_center_;
 }
 
-void dbTechLayerCutSpacingRule::setSameNet(bool same_net_)
+void dbTechLayerCutSpacingRule::setSameNet(bool same_net)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.same_net_ = same_net_;
+  obj->flags_.same_net_ = same_net;
 }
 
 bool dbTechLayerCutSpacingRule::isSameNet() const
@@ -867,11 +867,11 @@ bool dbTechLayerCutSpacingRule::isSameNet() const
   return obj->flags_.same_net_;
 }
 
-void dbTechLayerCutSpacingRule::setSameMetal(bool same_metal_)
+void dbTechLayerCutSpacingRule::setSameMetal(bool same_metal)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.same_metal_ = same_metal_;
+  obj->flags_.same_metal_ = same_metal;
 }
 
 bool dbTechLayerCutSpacingRule::isSameMetal() const
@@ -881,11 +881,11 @@ bool dbTechLayerCutSpacingRule::isSameMetal() const
   return obj->flags_.same_metal_;
 }
 
-void dbTechLayerCutSpacingRule::setSameVia(bool same_via_)
+void dbTechLayerCutSpacingRule::setSameVia(bool same_via)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.same_via_ = same_via_;
+  obj->flags_.same_via_ = same_via;
 }
 
 bool dbTechLayerCutSpacingRule::isSameVia() const
@@ -895,11 +895,11 @@ bool dbTechLayerCutSpacingRule::isSameVia() const
   return obj->flags_.same_via_;
 }
 
-void dbTechLayerCutSpacingRule::setStack(bool stack_)
+void dbTechLayerCutSpacingRule::setStack(bool stack)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.stack_ = stack_;
+  obj->flags_.stack_ = stack;
 }
 
 bool dbTechLayerCutSpacingRule::isStack() const
@@ -910,11 +910,11 @@ bool dbTechLayerCutSpacingRule::isStack() const
 }
 
 void dbTechLayerCutSpacingRule::setOrthogonalSpacingValid(
-    bool orthogonal_spacing_valid_)
+    bool orthogonal_spacing_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.orthogonal_spacing_valid_ = orthogonal_spacing_valid_;
+  obj->flags_.orthogonal_spacing_valid_ = orthogonal_spacing_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isOrthogonalSpacingValid() const
@@ -925,11 +925,11 @@ bool dbTechLayerCutSpacingRule::isOrthogonalSpacingValid() const
 }
 
 void dbTechLayerCutSpacingRule::setAboveWidthEnclosureValid(
-    bool above_width_enclosure_valid_)
+    bool above_width_enclosure_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.above_width_enclosure_valid_ = above_width_enclosure_valid_;
+  obj->flags_.above_width_enclosure_valid_ = above_width_enclosure_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isAboveWidthEnclosureValid() const
@@ -939,11 +939,11 @@ bool dbTechLayerCutSpacingRule::isAboveWidthEnclosureValid() const
   return obj->flags_.above_width_enclosure_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setShortEdgeOnly(bool short_edge_only_)
+void dbTechLayerCutSpacingRule::setShortEdgeOnly(bool short_edge_only)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.short_edge_only_ = short_edge_only_;
+  obj->flags_.short_edge_only_ = short_edge_only;
 }
 
 bool dbTechLayerCutSpacingRule::isShortEdgeOnly() const
@@ -953,12 +953,11 @@ bool dbTechLayerCutSpacingRule::isShortEdgeOnly() const
   return obj->flags_.short_edge_only_;
 }
 
-void dbTechLayerCutSpacingRule::setConcaveCornerWidth(
-    bool concave_corner_width_)
+void dbTechLayerCutSpacingRule::setConcaveCornerWidth(bool concave_corner_width)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.concave_corner_width_ = concave_corner_width_;
+  obj->flags_.concave_corner_width_ = concave_corner_width;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerWidth() const
@@ -969,11 +968,11 @@ bool dbTechLayerCutSpacingRule::isConcaveCornerWidth() const
 }
 
 void dbTechLayerCutSpacingRule::setConcaveCornerParallel(
-    bool concave_corner_parallel_)
+    bool concave_corner_parallel)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.concave_corner_parallel_ = concave_corner_parallel_;
+  obj->flags_.concave_corner_parallel_ = concave_corner_parallel;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerParallel() const
@@ -984,11 +983,11 @@ bool dbTechLayerCutSpacingRule::isConcaveCornerParallel() const
 }
 
 void dbTechLayerCutSpacingRule::setConcaveCornerEdgeLength(
-    bool concave_corner_edge_length_)
+    bool concave_corner_edge_length)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.concave_corner_edge_length_ = concave_corner_edge_length_;
+  obj->flags_.concave_corner_edge_length_ = concave_corner_edge_length;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerEdgeLength() const
@@ -998,11 +997,11 @@ bool dbTechLayerCutSpacingRule::isConcaveCornerEdgeLength() const
   return obj->flags_.concave_corner_edge_length_;
 }
 
-void dbTechLayerCutSpacingRule::setConcaveCorner(bool concave_corner_)
+void dbTechLayerCutSpacingRule::setConcaveCorner(bool concave_corner)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.concave_corner_ = concave_corner_;
+  obj->flags_.concave_corner_ = concave_corner;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCorner() const
@@ -1012,11 +1011,11 @@ bool dbTechLayerCutSpacingRule::isConcaveCorner() const
   return obj->flags_.concave_corner_;
 }
 
-void dbTechLayerCutSpacingRule::setExtensionValid(bool extension_valid_)
+void dbTechLayerCutSpacingRule::setExtensionValid(bool extension_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.extension_valid_ = extension_valid_;
+  obj->flags_.extension_valid_ = extension_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isExtensionValid() const
@@ -1027,11 +1026,11 @@ bool dbTechLayerCutSpacingRule::isExtensionValid() const
 }
 
 void dbTechLayerCutSpacingRule::setNonEolConvexCorner(
-    bool non_eol_convex_corner_)
+    bool non_eol_convex_corner)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.non_eol_convex_corner_ = non_eol_convex_corner_;
+  obj->flags_.non_eol_convex_corner_ = non_eol_convex_corner;
 }
 
 bool dbTechLayerCutSpacingRule::isNonEolConvexCorner() const
@@ -1041,11 +1040,11 @@ bool dbTechLayerCutSpacingRule::isNonEolConvexCorner() const
   return obj->flags_.non_eol_convex_corner_;
 }
 
-void dbTechLayerCutSpacingRule::setEolWidthValid(bool eol_width_valid_)
+void dbTechLayerCutSpacingRule::setEolWidthValid(bool eol_width_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.eol_width_valid_ = eol_width_valid_;
+  obj->flags_.eol_width_valid_ = eol_width_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isEolWidthValid() const
@@ -1055,11 +1054,11 @@ bool dbTechLayerCutSpacingRule::isEolWidthValid() const
   return obj->flags_.eol_width_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setMinLengthValid(bool min_length_valid_)
+void dbTechLayerCutSpacingRule::setMinLengthValid(bool min_length_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.min_length_valid_ = min_length_valid_;
+  obj->flags_.min_length_valid_ = min_length_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isMinLengthValid() const
@@ -1069,11 +1068,11 @@ bool dbTechLayerCutSpacingRule::isMinLengthValid() const
   return obj->flags_.min_length_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setAboveWidthValid(bool above_width_valid_)
+void dbTechLayerCutSpacingRule::setAboveWidthValid(bool above_width_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.above_width_valid_ = above_width_valid_;
+  obj->flags_.above_width_valid_ = above_width_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isAboveWidthValid() const
@@ -1083,11 +1082,11 @@ bool dbTechLayerCutSpacingRule::isAboveWidthValid() const
   return obj->flags_.above_width_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setMaskOverlap(bool mask_overlap_)
+void dbTechLayerCutSpacingRule::setMaskOverlap(bool mask_overlap)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.mask_overlap_ = mask_overlap_;
+  obj->flags_.mask_overlap_ = mask_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isMaskOverlap() const
@@ -1097,11 +1096,11 @@ bool dbTechLayerCutSpacingRule::isMaskOverlap() const
   return obj->flags_.mask_overlap_;
 }
 
-void dbTechLayerCutSpacingRule::setWrongDirection(bool wrong_direction_)
+void dbTechLayerCutSpacingRule::setWrongDirection(bool wrong_direction)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.wrong_direction_ = wrong_direction_;
+  obj->flags_.wrong_direction_ = wrong_direction;
 }
 
 bool dbTechLayerCutSpacingRule::isWrongDirection() const
@@ -1111,11 +1110,11 @@ bool dbTechLayerCutSpacingRule::isWrongDirection() const
   return obj->flags_.wrong_direction_;
 }
 
-void dbTechLayerCutSpacingRule::setAdjacentCuts(uint adjacent_cuts_)
+void dbTechLayerCutSpacingRule::setAdjacentCuts(uint adjacent_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.adjacent_cuts_ = adjacent_cuts_;
+  obj->flags_.adjacent_cuts_ = adjacent_cuts;
 }
 
 uint dbTechLayerCutSpacingRule::getAdjacentCuts() const
@@ -1125,11 +1124,11 @@ uint dbTechLayerCutSpacingRule::getAdjacentCuts() const
   return obj->flags_.adjacent_cuts_;
 }
 
-void dbTechLayerCutSpacingRule::setExactAligned(bool exact_aligned_)
+void dbTechLayerCutSpacingRule::setExactAligned(bool exact_aligned)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.exact_aligned_ = exact_aligned_;
+  obj->flags_.exact_aligned_ = exact_aligned;
 }
 
 bool dbTechLayerCutSpacingRule::isExactAligned() const
@@ -1139,11 +1138,11 @@ bool dbTechLayerCutSpacingRule::isExactAligned() const
   return obj->flags_.exact_aligned_;
 }
 
-void dbTechLayerCutSpacingRule::setCutClassToAll(bool cut_class_to_all_)
+void dbTechLayerCutSpacingRule::setCutClassToAll(bool cut_class_to_all)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.cut_class_to_all_ = cut_class_to_all_;
+  obj->flags_.cut_class_to_all_ = cut_class_to_all;
 }
 
 bool dbTechLayerCutSpacingRule::isCutClassToAll() const
@@ -1153,11 +1152,11 @@ bool dbTechLayerCutSpacingRule::isCutClassToAll() const
   return obj->flags_.cut_class_to_all_;
 }
 
-void dbTechLayerCutSpacingRule::setNoPrl(bool no_prl_)
+void dbTechLayerCutSpacingRule::setNoPrl(bool no_prl)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.no_prl_ = no_prl_;
+  obj->flags_.no_prl_ = no_prl;
 }
 
 bool dbTechLayerCutSpacingRule::isNoPrl() const
@@ -1167,11 +1166,11 @@ bool dbTechLayerCutSpacingRule::isNoPrl() const
   return obj->flags_.no_prl_;
 }
 
-void dbTechLayerCutSpacingRule::setSameMask(bool same_mask_)
+void dbTechLayerCutSpacingRule::setSameMask(bool same_mask)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.same_mask_ = same_mask_;
+  obj->flags_.same_mask_ = same_mask;
 }
 
 bool dbTechLayerCutSpacingRule::isSameMask() const
@@ -1181,11 +1180,11 @@ bool dbTechLayerCutSpacingRule::isSameMask() const
   return obj->flags_.same_mask_;
 }
 
-void dbTechLayerCutSpacingRule::setExceptSamePgnet(bool except_same_pgnet_)
+void dbTechLayerCutSpacingRule::setExceptSamePgnet(bool except_same_pgnet)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_same_pgnet_ = except_same_pgnet_;
+  obj->flags_.except_same_pgnet_ = except_same_pgnet;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSamePgnet() const
@@ -1196,11 +1195,11 @@ bool dbTechLayerCutSpacingRule::isExceptSamePgnet() const
 }
 
 void dbTechLayerCutSpacingRule::setSideParallelOverlap(
-    bool side_parallel_overlap_)
+    bool side_parallel_overlap)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.side_parallel_overlap_ = side_parallel_overlap_;
+  obj->flags_.side_parallel_overlap_ = side_parallel_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isSideParallelOverlap() const
@@ -1210,11 +1209,11 @@ bool dbTechLayerCutSpacingRule::isSideParallelOverlap() const
   return obj->flags_.side_parallel_overlap_;
 }
 
-void dbTechLayerCutSpacingRule::setExceptSameNet(bool except_same_net_)
+void dbTechLayerCutSpacingRule::setExceptSameNet(bool except_same_net)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_same_net_ = except_same_net_;
+  obj->flags_.except_same_net_ = except_same_net;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameNet() const
@@ -1224,11 +1223,11 @@ bool dbTechLayerCutSpacingRule::isExceptSameNet() const
   return obj->flags_.except_same_net_;
 }
 
-void dbTechLayerCutSpacingRule::setExceptSameMetal(bool except_same_metal_)
+void dbTechLayerCutSpacingRule::setExceptSameMetal(bool except_same_metal)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_same_metal_ = except_same_metal_;
+  obj->flags_.except_same_metal_ = except_same_metal;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameMetal() const
@@ -1239,11 +1238,11 @@ bool dbTechLayerCutSpacingRule::isExceptSameMetal() const
 }
 
 void dbTechLayerCutSpacingRule::setExceptSameMetalOverlap(
-    bool except_same_metal_overlap_)
+    bool except_same_metal_overlap)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_same_metal_overlap_ = except_same_metal_overlap_;
+  obj->flags_.except_same_metal_overlap_ = except_same_metal_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameMetalOverlap() const
@@ -1253,11 +1252,11 @@ bool dbTechLayerCutSpacingRule::isExceptSameMetalOverlap() const
   return obj->flags_.except_same_metal_overlap_;
 }
 
-void dbTechLayerCutSpacingRule::setExceptSameVia(bool except_same_via_)
+void dbTechLayerCutSpacingRule::setExceptSameVia(bool except_same_via)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_same_via_ = except_same_via_;
+  obj->flags_.except_same_via_ = except_same_via;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameVia() const
@@ -1267,11 +1266,11 @@ bool dbTechLayerCutSpacingRule::isExceptSameVia() const
   return obj->flags_.except_same_via_;
 }
 
-void dbTechLayerCutSpacingRule::setAbove(bool above_)
+void dbTechLayerCutSpacingRule::setAbove(bool above)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.above_ = above_;
+  obj->flags_.above_ = above;
 }
 
 bool dbTechLayerCutSpacingRule::isAbove() const
@@ -1281,11 +1280,11 @@ bool dbTechLayerCutSpacingRule::isAbove() const
   return obj->flags_.above_;
 }
 
-void dbTechLayerCutSpacingRule::setExceptTwoEdges(bool except_two_edges_)
+void dbTechLayerCutSpacingRule::setExceptTwoEdges(bool except_two_edges)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.except_two_edges_ = except_two_edges_;
+  obj->flags_.except_two_edges_ = except_two_edges;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptTwoEdges() const
@@ -1295,11 +1294,11 @@ bool dbTechLayerCutSpacingRule::isExceptTwoEdges() const
   return obj->flags_.except_two_edges_;
 }
 
-void dbTechLayerCutSpacingRule::setTwoCutsValid(bool two_cuts_valid_)
+void dbTechLayerCutSpacingRule::setTwoCutsValid(bool two_cuts_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.two_cuts_valid_ = two_cuts_valid_;
+  obj->flags_.two_cuts_valid_ = two_cuts_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isTwoCutsValid() const
@@ -1309,11 +1308,11 @@ bool dbTechLayerCutSpacingRule::isTwoCutsValid() const
   return obj->flags_.two_cuts_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setSameCut(bool same_cut_)
+void dbTechLayerCutSpacingRule::setSameCut(bool same_cut)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.same_cut_ = same_cut_;
+  obj->flags_.same_cut_ = same_cut;
 }
 
 bool dbTechLayerCutSpacingRule::isSameCut() const
@@ -1323,11 +1322,11 @@ bool dbTechLayerCutSpacingRule::isSameCut() const
   return obj->flags_.same_cut_;
 }
 
-void dbTechLayerCutSpacingRule::setLongEdgeOnly(bool long_edge_only_)
+void dbTechLayerCutSpacingRule::setLongEdgeOnly(bool long_edge_only)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.long_edge_only_ = long_edge_only_;
+  obj->flags_.long_edge_only_ = long_edge_only;
 }
 
 bool dbTechLayerCutSpacingRule::isLongEdgeOnly() const
@@ -1337,11 +1336,11 @@ bool dbTechLayerCutSpacingRule::isLongEdgeOnly() const
   return obj->flags_.long_edge_only_;
 }
 
-void dbTechLayerCutSpacingRule::setPrlValid(bool prl_valid_)
+void dbTechLayerCutSpacingRule::setPrlValid(bool prl_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.prl_valid_ = prl_valid_;
+  obj->flags_.prl_valid_ = prl_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isPrlValid() const
@@ -1351,11 +1350,11 @@ bool dbTechLayerCutSpacingRule::isPrlValid() const
   return obj->flags_.prl_valid_;
 }
 
-void dbTechLayerCutSpacingRule::setBelow(bool below_)
+void dbTechLayerCutSpacingRule::setBelow(bool below)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.below_ = below_;
+  obj->flags_.below_ = below;
 }
 
 bool dbTechLayerCutSpacingRule::isBelow() const
@@ -1366,11 +1365,11 @@ bool dbTechLayerCutSpacingRule::isBelow() const
 }
 
 void dbTechLayerCutSpacingRule::setParWithinEnclosureValid(
-    bool par_within_enclosure_valid_)
+    bool par_within_enclosure_valid)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.par_within_enclosure_valid_ = par_within_enclosure_valid_;
+  obj->flags_.par_within_enclosure_valid_ = par_within_enclosure_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isParWithinEnclosureValid() const

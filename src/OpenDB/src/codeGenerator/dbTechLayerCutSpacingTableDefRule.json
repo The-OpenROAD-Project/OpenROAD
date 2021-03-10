@@ -96,7 +96,8 @@
     },
     {
       "name": "default_",
-      "type": "int"
+      "type": "int",
+      "argument":"spacing"
     },
     {
       "type": "dbId<_dbTechLayer>",

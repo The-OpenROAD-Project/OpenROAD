@@ -321,17 +321,17 @@ namespace odb {
   {% for field in klass.fields %}
   
     {% if 'no-set' not in field.flags %}
-      void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+      void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
       {
     
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
     
         {% if field.isRef %}
     
-          obj->{{field.name}}={{field.name}}->getImpl()->getOID();
+          obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
     
         {% else %}
-          obj->{{field.name}}={{field.name}};
+          obj->{{field.name}}={{field.argument}};
     
         {% endif %}
       }
@@ -383,12 +383,12 @@ namespace odb {
       {% for field in _struct.fields %}
       
       {% if 'no-set' not in field.flags %}
-        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
         {
       
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
       
-          obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
+          obj->{{_struct.in_class_name}}.{{field.name}}={{field.argument}};
       
         }
       {% endif %}
