@@ -129,6 +129,14 @@ main(int argc,
     gui_mode = true;
     return gui::startGui(cmd_argc, cmd_argv);
   }
+  if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    wchar_t** args = new wchar_t*[argc];
+    for(int i = 0; i < cmd_argc; i++)
+    {
+        args[i] = Py_DecodeLocale(cmd_argv[i], nullptr);
+    }
+    return Py_Main(cmd_argc, args);
+  }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
@@ -246,6 +254,7 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+  printf("  -python            start with python interpreter [limited to db operations]\n");
   printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }
