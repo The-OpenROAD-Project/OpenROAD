@@ -46,7 +46,7 @@
 
 #include "Net.h"
 #include "Pin.h"
-#include "fastroute/GlobalRouter.h"
+#include "grt/GlobalRouter.h"
 #include "utility/Logger.h"
 
 namespace grt {

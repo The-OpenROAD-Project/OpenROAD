@@ -95,7 +95,7 @@ target_link_libraries(replace
     OpenSTA
     flute
     rsz
-    FastRoute
+    grt
 )
 
 # CIMG_USE case
