@@ -35,10 +35,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      tapcell
-        NAMESPACE tap
-        I_FILE    tapcell.i
-        SCRIPTS   tapcell.tcl
+swig_lib(NAME      tapcell
+         NAMESPACE tap
+         I_FILE    tapcell.i
+         SCRIPTS   tapcell.tcl
 )
 
 target_sources(tapcell

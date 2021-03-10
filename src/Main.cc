@@ -70,6 +70,7 @@ using sta::is_regular_file;
 
 extern "C"
 {
+    extern PyObject* PyInit__openroad_swig_py();
     extern PyObject* PyInit__opendbpy();
 }
 
@@ -110,8 +111,13 @@ main(int argc,
     remove(metrics_filename);
   }
 
-  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
-    fprintf(stderr, "Error: could not extend in-built modules table\n");
+  if (PyImport_AppendInittab("opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not add module opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_AppendInittab("openroadpy", PyInit__openroad_swig_py) == -1) {
+    fprintf(stderr, "Error: could not add module openroadpy\n");
     exit(1);
   }
 

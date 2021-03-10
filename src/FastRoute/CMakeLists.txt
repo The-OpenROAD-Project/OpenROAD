@@ -39,10 +39,10 @@ project(FastRoute)
 
 add_subdirectory(src/fastroute)
 
-tcl_lib(NAME      FastRoute
-        NAMESPACE grt
-        I_FILE    src/fastroute.i
-        SCRIPTS   src/fastroute.tcl
+swig_lib(NAME      FastRoute
+         NAMESPACE grt
+         I_FILE    src/fastroute.i
+         SCRIPTS   src/fastroute.tcl
 )
 
 target_sources(FastRoute

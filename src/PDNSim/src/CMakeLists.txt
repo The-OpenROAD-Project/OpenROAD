@@ -33,10 +33,10 @@ include("openroad")
 
 find_package(Eigen3 REQUIRED)
 
-tcl_lib(NAME      pdnsim
-        NAMESPACE psm
-        I_FILE    pdnsim.i
-        SCRIPTS   pdnsim.tcl
+swig_lib(NAME      pdnsim
+         NAMESPACE psm
+         I_FILE    pdnsim.i
+         SCRIPTS   pdnsim.tcl
 )
 
 target_sources(pdnsim

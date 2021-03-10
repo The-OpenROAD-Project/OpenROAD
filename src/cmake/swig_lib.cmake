@@ -10,13 +10,13 @@
 # generated code in it.  Additional c++ source will be added to the
 # target with target_sources() afterwards.
 
-function(tcl_lib)
+function(swig_lib)
 
   # Parse args
   set(options "")
-  set(oneValueArgs I_FILE NAME NAMESPACE)
+  set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE)
   set(multiValueArgs SWIG_INCLUDES SCRIPTS)
-  
+
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
       "${options}"
@@ -27,18 +27,23 @@ function(tcl_lib)
 
   # Validate args
   if (DEFINED ARG_UNPARSED_ARGUMENTS)
-     message(FATAL_ERROR "Unknown argument(s) to tcl_commands: ${ARG_UNPARSED_ARGUMENTS}")
+     message(FATAL_ERROR "Unknown argument(s) to swig_lib: ${ARG_UNPARSED_ARGUMENTS}")
   endif()
 
   if (DEFINED ARG_KEYWORDS_MISSING_VALUES)
-     message(FATAL_ERROR "Missing value for argument(s) to tcl_commands: ${ARG_KEYWORDS_MISSING_VALUES}")
+     message(FATAL_ERROR "Missing value for argument(s) to swig_lib: ${ARG_KEYWORDS_MISSING_VALUES}")
   endif()
 
   foreach(arg I_FILE NAME NAMESPACE)
     if (NOT DEFINED ARG_${arg})
-       message(FATAL_ERROR "${arg} argument must be provided to tcl_commands")
+       message(FATAL_ERROR "${arg} argument must be provided to swig_lib")
     endif()
   endforeach()
+
+  # Default to tcl if unspecified
+  if (NOT DEFINED ARG_LANGUAGE)
+    set(ARG_LANGUAGE tcl)
+  endif()
 
   set_source_files_properties(${ARG_I_FILE} PROPERTIES CPLUSPLUS ON)
 
@@ -47,17 +52,20 @@ function(tcl_lib)
                  PROPERTY INCLUDE_DIRECTORIES ${ARG_SWIG_INCLUDES})
   endif()
 
+  if (${ARG_LANGUAGE} STREQUAL "tcl")
+    set(LANGUAGE_OPTIONS -namespace -prefix ${ARG_NAMESPACE})
+  endif()
+
   # Setup swig of I_FILE.
   set_property(SOURCE ${ARG_I_FILE}
-               PROPERTY COMPILE_OPTIONS -namespace
-                                        -prefix ${ARG_NAMESPACE}
+               PROPERTY COMPILE_OPTIONS ${LANGUAGE_OPTIONS}
                                         -w317,325,378,401,402,467,472,503,509)
 
   set_property(SOURCE ${ARG_I_FILE}
                PROPERTY SWIG_MODULE_NAME ${ARG_NAME})
 
   swig_add_library(${ARG_NAME}
-    LANGUAGE tcl
+    LANGUAGE ${ARG_LANGUAGE}
     TYPE     STATIC
     SOURCES  ${ARG_I_FILE}
   )
@@ -76,9 +84,25 @@ function(tcl_lib)
   # These includes are always needed.
   target_include_directories(${ARG_NAME}
     PRIVATE
-      ${TCL_INCLUDE_PATH}
       ${OPENROAD_HOME}/include
   )
+
+  if (${ARG_LANGUAGE} STREQUAL tcl)
+    target_include_directories(${ARG_NAME}
+      PRIVATE
+        ${TCL_INCLUDE_PATH}
+    )
+  elseif (${ARG_LANGUAGE} STREQUAL python)
+    target_include_directories(${ARG_NAME}
+      PRIVATE
+        ${Python3_INCLUDE_DIRS}
+    )
+
+    swig_link_libraries(${ARG_NAME}
+      PUBLIC
+        Python3::Python
+    )
+  endif()
 
   # Generate the encoded of the tcl files.
   if (DEFINED ARG_SCRIPTS)
@@ -92,7 +116,7 @@ function(tcl_lib)
 
     target_sources(${ARG_NAME}
       PRIVATE
-        ${TCL_INIT}                  
+        ${TCL_INIT}
     )
-  endif()     
+  endif()
 endfunction()

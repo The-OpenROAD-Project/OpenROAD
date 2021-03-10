@@ -39,10 +39,10 @@ project(TritonCTS)
 
 find_package(LEMON REQUIRED)
 
-tcl_lib(NAME      TritonCTS
-        NAMESPACE cts
-        I_FILE    tritoncts.i
-        SCRIPTS   tritoncts.tcl
+swig_lib(NAME      TritonCTS
+         NAMESPACE cts
+         I_FILE    tritoncts.i
+         SCRIPTS   tritoncts.tcl
 )
 
 target_sources(TritonCTS

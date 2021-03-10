@@ -61,20 +61,34 @@ find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
+find_package(Python3 COMPONENTS Development REQUIRED)
 
 ################################################################
 
-tcl_lib(NAME      openroad_swig
-        NAMESPACE ord
-        I_FILE    OpenRoad.i
-        SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
-                  OpenRoad.tcl
-                  ${ICEWALL_HOME}/src/ICeWall.tcl
-                  ${PDNGEN_HOME}/src/PdnGen.tcl
-                  ${OPENDB_HOME}/src/db/OpenDB.tcl
+swig_lib(NAME      openroad_swig
+         NAMESPACE ord
+         I_FILE    OpenRoad.i
+         SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
+                   OpenRoad.tcl
+                   ${ICEWALL_HOME}/src/ICeWall.tcl
+                   ${PDNGEN_HOME}/src/PdnGen.tcl
+                   ${OPENDB_HOME}/src/db/OpenDB.tcl
 )
 
 target_link_libraries(openroad_swig
+  PRIVATE
+    dbSta
+    opendb
+    OpenSTA
+)
+
+swig_lib(NAME      openroad_swig_py
+         NAMESPACE ord
+         LANGUAGE  python
+         I_FILE    OpenRoad-py.i
+)
+
+target_link_libraries(openroad_swig_py
   PRIVATE
     dbSta
     opendb
@@ -153,6 +167,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   openroad_swig
+  openroad_swig_py
   replace
   dpl
   finale

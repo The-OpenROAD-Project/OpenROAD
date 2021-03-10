@@ -210,10 +210,11 @@ using odb::dbTech;
 
 ////////////////////////////////////////////////////////////////
 //
-// C++ functions visible as TCL functions.
+// C++ functions visible as SWIG functions.
 //
 ////////////////////////////////////////////////////////////////
 
+#ifdef SWIGTCL
 %include "Exception.i"
 
 %typemap(in) vector<LibertyCell*> * {
@@ -225,6 +226,7 @@ using odb::dbTech;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }
+#endif
 
 %inline %{
 
