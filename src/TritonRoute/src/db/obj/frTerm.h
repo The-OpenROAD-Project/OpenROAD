@@ -42,14 +42,15 @@ namespace fr {
   class frTerm: public frBlockObject {
   public:
     // constructors
-    frTerm(const frString &name): frBlockObject(), name_(name), block_(nullptr), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm), direction_(frTermDirectionEnum::UNKNOWN) {
+    frTerm(const frString &name): frBlockObject(), name_(name), block_(nullptr), net_(nullptr), pins_(), 
+            type_(frTermEnum::frcNormalTerm), direction_(frTermDirectionEnum::UNKNOWN) {
     }
     frTerm(const frTerm &in): frBlockObject(), name_(in.name_), block_(in.block_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin);
         addPin(std::move(tmp));
-      }
+      } 
     }
     frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), block_(in.block_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {

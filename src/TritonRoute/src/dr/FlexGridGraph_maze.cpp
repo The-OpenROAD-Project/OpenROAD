@@ -115,6 +115,8 @@ void FlexGridGraph::expand(FlexWavefrontGrid &currGrid, const frDirEnum &dir,
     }
     nextWavefrontGrid.addLayerPathArea((dir == frDirEnum::U) ? getHalfViaEncArea(currGrid.z(), false) : getHalfViaEncArea(gridZ, true));
   }
+  if (currGrid.getSrcTaperBox() && currGrid.getSrcTaperBox()->contains(nextWavefrontGrid.x(), nextWavefrontGrid.y(), nextWavefrontGrid.z()))
+      nextWavefrontGrid.setSrcTaperBox(currGrid.getSrcTaperBox());
   // update wavefront buffer
   auto tailDir = nextWavefrontGrid.shiftAddBuffer(dir);
   // non-buffer enablement is faster for ripup all
@@ -454,7 +456,7 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
     }
   }
 
-  if (ndr_) nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
+  if (useNDRCosts(currGrid)) nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
   else{
         nextPathCost += getCosts(gridX, gridY, gridZ, dir, layer);
         if (enableOutput) {
@@ -584,6 +586,8 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, 
         case frDirEnum::W:
             endX = gridX-1;
             break;
+        default:
+            break;
     }
     //get costs
     for (frMIdx x = startX; x <= endX; x++){
@@ -615,6 +619,16 @@ frCost FlexGridGraph::getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEn
                     + (!guideCost ? GUIDECOST        * edgeLength : 0);
 }
 
+bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const{
+    if (ndr_){
+        if (p.getSrcTaperBox() && p.getSrcTaperBox()->contains(p.x(), p.y(), p.z())) 
+            return false;
+        if (dstTaperBox && dstTaperBox->contains(p.x(), p.y(), p.z())) 
+            return false;
+        return true;
+    }
+    return false;
+}
 frCoord FlexGridGraph::getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const{
     auto con = layer->getMinSpacing();
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint)
@@ -751,8 +765,9 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid &currGrid, vector<Flex
 
 }
 
-bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vector<FlexMazeIdx> &path,
-                           FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt) {
+bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vector<FlexMazeIdx> &path, 
+                           FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt,
+                           map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox) {
   //bool enableOutput = true;
   bool enableOutput = false;
   int stepCnt = 0;
@@ -794,6 +809,11 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
                                std::numeric_limits<frCoord>::max(), std::numeric_limits<frCoord>::max(), true,
                                std::numeric_limits<frCoord>::max(),
                                currDist, 0, getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
+    if (ndr_ && AUTO_TAPER_NDR_NETS){
+        auto it = mazeIdx2TaperBox.find(idx);
+        if (it != mazeIdx2TaperBox.end()) 
+            currGrid.setSrcTaperBox(it->second);
+    }
     wavefront_.push(currGrid);
     if (enableOutput) {
       cout <<"src add to wavefront (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;

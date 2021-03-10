@@ -1,0 +1,156 @@
+source $::env(FOOTPRINT_LIBRARY)
+
+Footprint definition {
+  Type Wirebond
+
+  die_area "0.0 0.0 3588.0 5188.0"
+  core_area "5.52 10.88 3582.48 5176.16"
+  offsets "0.0 0.0 0.0 0.0"
+  tracks track.info
+  pin_layer "met5"
+  pad_pin_name "%s"
+  pad_inst_name "%s"
+  padcell {
+    connect_0 {type connect cell {origin {x 257.0 y 197.965} orient R180}}
+    connect_1 {type connect cell {origin {x 277.0 y 197.965} orient R180}}
+    connect_2 {type connect cell {origin {x 297.0 y 197.965} orient R180}}
+    connect_3 {type connect cell {origin {x 317.0 y 197.965} orient R180}}
+    connect_4 {type connect cell {origin {x 337.0 y 197.965} orient R180}}
+    connect_5 {type connect cell {origin {x 357.0 y 197.965} orient R180}}
+    vssa_hvc_0 {type vssa_hvc cell {origin {x 469.0 y 197.965} orient R180}}
+    connect_6 {type connect cell {origin {x 526.0 y 197.965} orient R180}}
+    connect_7 {type connect cell {origin {x 546.0 y 197.965} orient R180}}
+    connect_8 {type connect cell {origin {x 566.0 y 197.965} orient R180}}
+    connect_9 {type connect cell {origin {x 586.0 y 197.965} orient R180}}
+    connect_10 {type connect cell {origin {x 606.0 y 197.965} orient R180}}
+    connect_11 {type connect cell {origin {x 626.0 y 197.965} orient R180}}
+    xres_0 {type xres cell {origin {x 738.0 y 200.0} orient R180}}
+    connect_12 {type connect cell {origin {x 795.0 y 197.965} orient R180}}
+    connect_13 {type connect cell {origin {x 815.0 y 197.965} orient R180}}
+    connect_14 {type connect cell {origin {x 835.0 y 197.965} orient R180}}
+    connect_15 {type connect cell {origin {x 855.0 y 197.965} orient R180}}
+    connect_16 {type connect cell {origin {x 875.0 y 197.965} orient R180}}
+    connect_17 {type connect cell {origin {x 895.0 y 197.965} orient R180}}
+    sig_0 {type sig cell {origin {x 1012.0 y 210.965} orient R180}}
+    connect_18 {type connect cell {origin {x 1069.0 y 197.965} orient R180}}
+    connect_19 {type connect cell {origin {x 1089.0 y 197.965} orient R180}}
+    connect_20 {type connect cell {origin {x 1109.0 y 197.965} orient R180}}
+    connect_21 {type connect cell {origin {x 1129.0 y 197.965} orient R180}}
+    connect_22 {type connect cell {origin {x 1149.0 y 197.965} orient R180}}
+    connect_23 {type connect cell {origin {x 1169.0 y 197.965} orient R180}}
+    vssd_lvc_0 {type vssd_lvc cell {origin {x 1281.0 y 197.965} orient R180}}
+    connect_24 {type connect cell {origin {x 1338.0 y 197.965} orient R180}}
+    connect_25 {type connect cell {origin {x 1358.0 y 197.965} orient R180}}
+    connect_26 {type connect cell {origin {x 1378.0 y 197.965} orient R180}}
+    connect_27 {type connect cell {origin {x 1398.0 y 197.965} orient R180}}
+    connect_28 {type connect cell {origin {x 1418.0 y 197.965} orient R180}}
+    connect_29 {type connect cell {origin {x 1438.0 y 197.965} orient R180}}
+    sig_1 {type sig cell {origin {x 1555.0 y 210.965} orient R180}}
+    connect_30 {type connect cell {origin {x 1612.0 y 197.965} orient R180}}
+    connect_31 {type connect cell {origin {x 1632.0 y 197.965} orient R180}}
+    connect_32 {type connect cell {origin {x 1652.0 y 197.965} orient R180}}
+    connect_33 {type connect cell {origin {x 1672.0 y 197.965} orient R180}}
+    connect_34 {type connect cell {origin {x 1692.0 y 197.965} orient R180}}
+    connect_35 {type connect cell {origin {x 1712.0 y 197.965} orient R180}}
+    sig_2 {type sig cell {origin {x 1829.0 y 210.965} orient R180}}
+    connect_36 {type connect cell {origin {x 1886.0 y 197.965} orient R180}}
+    connect_37 {type connect cell {origin {x 1906.0 y 197.965} orient R180}}
+    connect_38 {type connect cell {origin {x 1926.0 y 197.965} orient R180}}
+    connect_39 {type connect cell {origin {x 1946.0 y 197.965} orient R180}}
+    connect_40 {type connect cell {origin {x 1966.0 y 197.965} orient R180}}
+    connect_41 {type connect cell {origin {x 1986.0 y 197.965} orient R180}}
+    sig_3 {type sig cell {origin {x 2103.0 y 210.965} orient R180}}
+    connect_42 {type connect cell {origin {x 2160.0 y 197.965} orient R180}}
+    connect_43 {type connect cell {origin {x 2180.0 y 197.965} orient R180}}
+    connect_44 {type connect cell {origin {x 2200.0 y 197.965} orient R180}}
+    connect_45 {type connect cell {origin {x 2220.0 y 197.965} orient R180}}
+    connect_46 {type connect cell {origin {x 2240.0 y 197.965} orient R180}}
+    connect_47 {type connect cell {origin {x 2260.0 y 197.965} orient R180}}
+    vdda_hvc_0 {type vdda_hvc cell {origin {x 3189.0 y 197.965} orient R270}}
+    vssio_hvc_0 {type vssio_hvc cell {origin {x 2920.0 y 197.965} orient R270}}
+    connect_48 {type connect cell {origin {x 2434.0 y 197.965} orient R270}}
+    connect_49 {type connect cell {origin {x 2454.0 y 197.965} orient R270}}
+    connect_50 {type connect cell {origin {x 2474.0 y 197.965} orient R270}}
+    connect_51 {type connect cell {origin {x 2494.0 y 197.965} orient R270}}
+    connect_52 {type connect cell {origin {x 2514.0 y 197.965} orient R270}}
+    connect_53 {type connect cell {origin {x 2534.0 y 197.965} orient R270}}
+    connect_54 {type connect cell {origin {x 2708.0 y 197.965} orient R270}}
+    connect_55 {type connect cell {origin {x 2728.0 y 197.965} orient R270}}
+    connect_56 {type connect cell {origin {x 2748.0 y 197.965} orient R270}}
+    connect_57 {type connect cell {origin {x 2768.0 y 197.965} orient R270}}
+    connect_58 {type connect cell {origin {x 2788.0 y 197.965} orient R270}}
+    connect_59 {type connect cell {origin {x 2808.0 y 197.965} orient R270}}
+    connect_60 {type connect cell {origin {x 2977.0 y 197.965} orient R270}}
+    connect_61 {type connect cell {origin {x 2997.0 y 197.965} orient R270}}
+    connect_62 {type connect cell {origin {x 3017.0 y 197.965} orient R270}}
+    connect_63 {type connect cell {origin {x 3037.0 y 197.965} orient R270}}
+    connect_64 {type connect cell {origin {x 3057.0 y 197.965} orient R270}}
+    connect_65 {type connect cell {origin {x 3077.0 y 197.965} orient R270}}
+    connect_66 {type connect cell {origin {x 3246.0 y 197.965} orient R270}}
+    connect_67 {type connect cell {origin {x 3266.0 y 197.965} orient R270}}
+    connect_68 {type connect cell {origin {x 3286.0 y 197.965} orient R270}}
+    connect_69 {type connect cell {origin {x 3306.0 y 197.965} orient R270}}
+    connect_70 {type connect cell {origin {x 3326.0 y 197.965} orient R270}}
+    connect_71 {type connect cell {origin {x 3346.0 y 197.965} orient R270}}
+    sig_4 {type sig cell {origin {x 2377.0 y 210.965} orient R270}}
+    sig_5 {type sig cell {origin {x 2651.0 y 210.965} orient R270}}
+    brk_vdda_0 {type brk_vdda cell {origin {x 3390.035 y 350.0} orient R270}}
+    brk_vccd_0 {type brk_vccd cell {origin {x 3390.035 y 355.0} orient R270}}
+    sig_6 {type sig cell {origin {x 3377.035 y 580.0} orient R270}}
+    sig_7 {type sig cell {origin {x 3377.035 y 806.0} orient R270}}
+    sig_8 {type sig cell {origin {x 3377.035 y 1031.0} orient R270}}
+    sig_9 {type sig cell {origin {x 3377.035 y 1257.0} orient R270}}
+    sig_10 {type sig cell {origin {x 3377.035 y 1482.0} orient R270}}
+    sig_11 {type sig cell {origin {x 3377.035 y 1707.0} orient R270}}
+    sig_12 {type sig cell {origin {x 3377.035 y 1933.0} orient R270}}
+    vssa_hvc_1 {type vssa_hvc cell {origin {x 3390.035 y 2153.0} orient R270}}
+    vssd_lvc_1 {type vssd_lvc cell {origin {x 3390.035 y 2374.0} orient R270}}
+    vdda_hvc_1 {type vdda_hvc cell {origin {x 3390.035 y 2594.0} orient R270}}
+    sig_13 {type sig cell {origin {x 3377.035 y 2819.0} orient R270}}
+    sig_14 {type sig cell {origin {x 3377.035 y 3045.0} orient R270}}
+    sig_15 {type sig cell {origin {x 3377.035 y 3270.0} orient R270}}
+    sig_16 {type sig cell {origin {x 3377.035 y 3496.0} orient R270}}
+    sig_17 {type sig cell {origin {x 3377.035 y 3721.0} orient R270}}
+    sig_18 {type sig cell {origin {x 3377.035 y 3946.0} orient R270}}
+    vdda_hvc_2 {type vdda_hvc cell {origin {x 3390.035 y 4167.0} orient R270}}
+    sig_19 {type sig cell {origin {x 3377.035 y 4392.0} orient R270}}
+    vccd_lvc_0 {type vccd_lvc cell {origin {x 3390.035 y 4613.0} orient R270}}
+    sig_20 {type sig cell {origin {x 3377.035 y 4838.0} orient R270}}
+    sig_21 {type sig cell {origin {x 3130.0 y 4977.035} orient R270}}
+    sig_22 {type sig cell {origin {x 2621.0 y 4977.035} orient R270}}
+    sig_23 {type sig cell {origin {x 2364.0 y 4977.035} orient R270}}
+    vssa_hvc_2 {type vssa_hvc cell {origin {x 2878.0 y 4990.035} orient R270}}
+    brk_vccd_1 {type brk_vccd cell {origin {x 2181.0 y 4990.035} orient R0}}
+    brk_vdda_1 {type brk_vdda cell {origin {x 2176.0 y 4990.035} orient R0}}
+    sig_24 {type sig cell {origin {x 1919.0 y 4977.035} orient R0}}
+    vssio_hvc_1 {type vssio_hvc cell {origin {x 1667.0 y 4990.035} orient R0}}
+    sig_25 {type sig cell {origin {x 1410.0 y 4977.035} orient R0}}
+    sig_26 {type sig cell {origin {x 1152.0 y 4977.035} orient R0}}
+    sig_27 {type sig cell {origin {x 895.0 y 4977.035} orient R0}}
+    sig_28 {type sig cell {origin {x 638.0 y 4977.035} orient R0}}
+    sig_29 {type sig cell {origin {x 381.0 y 4977.035} orient R0}}
+    sig_30 {type sig cell {origin {x 210.965 y 4771.0} orient R90}}
+    vccd_lvc_1 {type vccd_lvc cell {origin {x 197.965 y 4560.0} orient R90}}
+    vddio_hvc_0 {type vddio_hvc cell {origin {x 197.965 y 4349.0} orient R90}}
+    vssa_hvc_3 {type vssa_hvc cell {origin {x 197.965 y 4138.0} orient R90}}
+    sig_31 {type sig cell {origin {x 210.965 y 3922.0} orient R90}}
+    sig_32 {type sig cell {origin {x 210.965 y 3706.0} orient R90}}
+    sig_33 {type sig cell {origin {x 210.965 y 3490.0} orient R90}}
+    sig_34 {type sig cell {origin {x 210.965 y 3274.0} orient R90}}
+    sig_35 {type sig cell {origin {x 210.965 y 3058.0} orient R90}}
+    sig_36 {type sig cell {origin {x 210.965 y 2842.0} orient R90}}
+    sig_37 {type sig cell {origin {x 210.965 y 2626.0} orient R90}}
+    vdda_hvc_3 {type vdda_hvc cell {origin {x 197.965 y 2415.0} orient R90}}
+    vssd_lvc_2 {type vssd_lvc cell {origin {x 197.965 y 2204.0} orient R90}}
+    sig_38 {type sig cell {origin {x 210.965 y 1988.0} orient R90}}
+    sig_39 {type sig cell {origin {x 210.965 y 1772.0} orient R90}}
+    sig_40 {type sig cell {origin {x 210.965 y 1556.0} orient R90}}
+    sig_41 {type sig cell {origin {x 210.965 y 1340.0} orient R90}}
+    sig_42 {type sig cell {origin {x 210.965 y 1124.0} orient R90}}
+    sig_43 {type sig cell {origin {x 210.965 y 908.0} orient R90}}
+    brk_vccd_2 {type brk_vccd cell {origin {x 197.965 y 767.0} orient R90}}
+    brk_vdda_2 {type brk_vdda cell {origin {x 197.965 y 762.0} orient R90}}
+    vddio_hvc_1 {type vddio_hvc cell {origin {x 197.965 y 551.0} orient R90}}
+    vccd_lvc_2 {type vccd_lvc cell {origin {x 197.965 y 340.0} orient R90}}
+  }
+}

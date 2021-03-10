@@ -40,6 +40,7 @@
 #include "sta/StaMain.hh"
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"
+#include "gui/gui.h"
 
 using namespace std;
 using namespace fr;
@@ -56,7 +57,8 @@ extern int Tritonroute_Init(Tcl_Interp* interp);
 
 TritonRoute::TritonRoute()
   : debug_(std::make_unique<frDebugSettings>()),
-    num_drvs_(-1)
+    num_drvs_(-1),
+    gui_(gui::Gui::get())
 {
 }
 
@@ -198,7 +200,8 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
-
+  if(gui_ != nullptr)
+    gui_->updateShapes();
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -247,11 +250,6 @@ void TritonRoute::readParams(const string &fileName)
       }
     }
     fin.close();
-  }
-
-  if (MAX_THREADS > 1 && debug_->is_on()) {
-    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the GUI.");
-    MAX_THREADS = 1;
   }
 
   if (readParamCnt < 2) {

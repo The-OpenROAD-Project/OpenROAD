@@ -455,13 +455,13 @@ static int doneCB(lefrCallbackType_e /* unused: c */,
 static void errorCB(const char* msg)
 {
   lefin* lef = (lefin*) lefrGetUserData();
-  lef->error(msg);
+  lef->errorTolerant(219, "Error: {}", msg);
 }
 
 static void warningCB(const char* msg)
 {
   lefin* lef = (lefin*) lefrGetUserData();
-  lef->warning(msg);
+  lef->warning(220, msg);
 }
 
 static void lineNumberCB(int line)

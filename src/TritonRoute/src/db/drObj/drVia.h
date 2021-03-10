@@ -40,10 +40,10 @@ namespace fr {
   class drVia: public drRef {
   public:
     // constructors
-    drVia(): viaDef_(nullptr), owner_(nullptr) {}
-    drVia(frViaDef* in): drRef(), origin_(), viaDef_(in), owner_(nullptr), beginMazeIdx_(), endMazeIdx_() {}
+    drVia(): viaDef_(nullptr), owner_(nullptr), tapered_(false) {}
+    drVia(frViaDef* in): drRef(), origin_(), viaDef_(in), owner_(nullptr), beginMazeIdx_(), endMazeIdx_(), tapered_(false) {}
     drVia(const drVia &in): drRef(in), origin_(in.origin_), viaDef_(in.viaDef_), owner_(in.owner_), 
-                            beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_) {}
+                            beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), tapered_(in.tapered_) {}
     drVia(const frVia &in);
     // getters
     frViaDef* getViaDef() const {
@@ -285,13 +285,22 @@ namespace fr {
       beginMazeIdx_.set(bi);
       endMazeIdx_.set(ei);
     }
+    
+    void setTapered(bool t) {
+        tapered_ = t;
+    }
 
+    bool isTapered() const {
+        return tapered_;
+    }
+    
   protected:
     frPoint        origin_;
     frViaDef*      viaDef_;
     drBlockObject* owner_;
     FlexMazeIdx    beginMazeIdx_;
     FlexMazeIdx    endMazeIdx_;
+    bool           tapered_;
   };
 }
 

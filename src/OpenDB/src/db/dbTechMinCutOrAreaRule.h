@@ -49,12 +49,26 @@ class _dbTechMinCutRule : public _dbObject
 {
  public:
   // PERSISTENT-MEMBERS
-  TechMinCutRule::_Flword _flags;
-  uint                    _num_cuts;
-  uint                    _width;
-  int                     _cut_distance;
-  uint                    _length;
-  uint                    _distance;
+  enum _RuleType
+  {
+    NONE,
+    MINIMUM_CUT,
+    MINIMUM_CUT_ABOVE,
+    MINIMUM_CUT_BELOW
+  };
+
+  struct _Flword
+  {
+    _RuleType _rule : 3;
+    uint      _cuts_length : 1;
+    uint      _spare_bits : 28;
+  };
+  _Flword _flags;
+  uint    _num_cuts;
+  uint    _width;
+  int     _cut_distance;
+  uint    _length;
+  uint    _distance;
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
@@ -84,7 +98,7 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  _flags._rule        = TechMinCutRule::NONE;
+  _flags._rule        = _dbTechMinCutRule::NONE;
   _flags._cuts_length = 0;
   _flags._spare_bits  = 0;
   _num_cuts           = 0;
