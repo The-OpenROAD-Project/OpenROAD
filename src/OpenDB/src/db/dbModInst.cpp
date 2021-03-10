@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbModInst.h"
 
 #include "db.h"
@@ -41,13 +41,11 @@
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbGroup.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
@@ -98,8 +96,8 @@ void _dbModInst::differences(dbDiff&           diff,
   DIFF_FIELD(_master);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_group);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbModInst::out(dbDiff& diff, char side, const char* field) const
@@ -113,20 +111,20 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_group);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
-  // User Code Begin constructor
+  // User Code Begin Constructor
   _name        = 0;
   _parent      = 0;
   _module_next = 0;
   _master      = 0;
   _group       = 0;
   _group_next  = 0;
-  // User Code End constructor
+  // User Code End Constructor
 }
 _dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
 {
@@ -301,4 +299,4 @@ std::string dbModInst::getHierarchalName() const
 }
 // User Code End dbModInstPublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

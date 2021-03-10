@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerCutClassRule.h"
 
 #include "db.h"
@@ -40,13 +40,11 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbHashTable.hpp"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerCutClassRule>;
 
 bool _dbTechLayerCutClassRule::operator==(
@@ -98,8 +96,8 @@ void _dbTechLayerCutClassRule::differences(
   DIFF_FIELD(length_);
   DIFF_FIELD(num_cuts_);
   DIFF_FIELD_NO_DEEP(_next_entry);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerCutClassRule::out(dbDiff&     diff,
@@ -115,16 +113,16 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(num_cuts_);
   DIFF_OUT_FIELD_NO_DEEP(_next_entry);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
     _dbDatabase*                    db,
@@ -290,4 +288,4 @@ void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 }
 // User Code End dbTechLayerCutClassRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

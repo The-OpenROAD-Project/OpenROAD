@@ -36,9 +36,9 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbVector.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -58,14 +58,14 @@ struct dbGroupFlags
   uint _box : 1;
   uint spare_bits_ : 29;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbGroup : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   dbGroupFlags           flags_;
   char*                  _name;
@@ -79,9 +79,9 @@ class _dbGroup : public _dbObject
   dbVector<dbId<_dbNet>> _power_nets;
   dbVector<dbId<_dbNet>> _ground_nets;
 
-  // User Code Begin fields
+  // User Code Begin Fields
   dbVector<dbId<_dbNet>> _nets;
-  // User Code End fields
+  // User Code End Fields
   _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);
   ~_dbGroup();
@@ -90,12 +90,12 @@ class _dbGroup : public _dbObject
   bool operator<(const _dbGroup& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbGroup& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

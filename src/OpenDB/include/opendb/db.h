@@ -124,7 +124,7 @@ class dbTechV55InfluenceEntry;
 class dbTechSameNetRule;
 class dbViaParams;
 
-// Generator Code Begin classes
+// Generator Code Begin ClassDeclarations
 class dbTechLayer;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerMinStepRule;
@@ -138,7 +138,7 @@ class dbModule;
 class dbModInst;
 class dbGroup;
 class dbGCellGrid;
-// Generator Code End classes
+// Generator Code End ClassDeclarations
 
 // Extraction Objects
 class dbExtControl;
@@ -6835,7 +6835,7 @@ class dbViaParams : private _dbViaParams
   void setBottomLayer(dbTechLayer* layer);
 };
 
-// Generator Code Begin Declaration
+// Generator Code Begin ClassDefinition
 
 class dbTechLayer : public dbObject
 {
@@ -8478,6 +8478,6 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
-// Generator Code End Declaration
+// Generator Code End ClassDefinition
 
 }  // namespace odb

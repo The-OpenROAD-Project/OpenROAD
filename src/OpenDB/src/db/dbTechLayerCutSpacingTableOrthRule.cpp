@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
 #include "db.h"
@@ -39,13 +39,11 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbTechLayer.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
@@ -69,8 +67,8 @@ void _dbTechLayerCutSpacingTableOrthRule::differences(
 {
   DIFF_BEGIN
 
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
@@ -78,13 +76,13 @@ void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
                                               const char* field) const {
     DIFF_OUT_BEGIN
 
-        // User Code Begin out
-        // User Code End out
+        // User Code Begin Out
+        // User Code End Out
         DIFF_END} _dbTechLayerCutSpacingTableOrthRule::
     _dbTechLayerCutSpacingTableOrthRule(_dbDatabase* db)
 {
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase*                               db,
@@ -172,4 +170,4 @@ void dbTechLayerCutSpacingTableOrthRule::destroy(
 
 // User Code End dbTechLayerCutSpacingTableOrthRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

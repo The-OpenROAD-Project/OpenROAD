@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerSpacingTablePrlRule.h"
 
 #include "db.h"
@@ -39,12 +39,10 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 
 bool _dbTechLayerSpacingTablePrlRule::operator==(
@@ -84,8 +82,8 @@ void _dbTechLayerSpacingTablePrlRule::differences(
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.exceept_eol_);
   DIFF_FIELD(eol_width_);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
@@ -98,8 +96,8 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(flags_.exceept_eol_);
   DIFF_OUT_FIELD(eol_width_);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
@@ -107,8 +105,8 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase*                           db,
@@ -345,4 +343,4 @@ std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
 
 // User Code End dbTechLayerSpacingTablePrlRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

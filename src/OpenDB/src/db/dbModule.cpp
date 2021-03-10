@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbModule.h"
 
 #include "db.h"
@@ -40,18 +40,16 @@
 #include "dbHashTable.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin includes
+// User Code Begin Includes
 #include <string>
 
 #include "dbInst.h"
 #include "dbModInst.h"
 #include "dbModuleInstItr.h"
 #include "dbModuleModInstItr.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
@@ -94,8 +92,8 @@ void _dbModule::differences(dbDiff&          diff,
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_mod_inst);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbModule::out(dbDiff& diff, char side, const char* field) const
@@ -107,18 +105,18 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_mod_inst);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbModule::_dbModule(_dbDatabase* db)
 {
-  // User Code Begin constructor
+  // User Code Begin Constructor
   _name     = 0;
   _insts    = 0;
   _modinsts = 0;
   _mod_inst = 0;
-  // User Code End constructor
+  // User Code End Constructor
 }
 _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
 {
@@ -297,4 +295,4 @@ dbModInst* dbModule::findModInst(const char* name)
 
 // User Code End dbModulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

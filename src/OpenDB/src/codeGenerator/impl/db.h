@@ -1,9 +1,9 @@
-//Generator Code Begin classes
+//Generator Code Begin ClassDeclarations
 {% for klass in schema.classes %}
 class {{klass.name}};
 {% endfor %}
-//Generator Code End classes
-//Generator Code Begin Declaration
+//Generator Code End ClassDeclarations
+//Generator Code Begin ClassDefinition
 {% for klass in schema.classes %}
 
 class {{klass.name}} : public dbObject
@@ -74,4 +74,4 @@ class {{klass.name}} : public dbObject
 };
 
 {% endfor %}
-//Generator Code End Declaration
+//Generator Code End ClassDefinition

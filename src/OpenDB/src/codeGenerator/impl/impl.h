@@ -39,8 +39,8 @@
 {% for include in klass.h_includes %}
   #include "{{include}}"
 {% endfor %}
-//User Code Begin includes
-//User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
   
@@ -69,8 +69,8 @@ namespace odb {
     };
     {% endif %}
   {% endfor %}
-  //User Code Begin structs
-  //User Code End structs
+  // User Code Begin Structs
+  // User Code End Structs
 
 
   class _{{klass.name}} : public _dbObject
@@ -86,8 +86,8 @@ namespace odb {
         };
       {% endif %}
     {% endfor %}
-    //User Code Begin enums
-    //User Code End enums
+    // User Code Begin Enums
+    // User Code End Enums
         
     {% for field in klass.fields %}
       {% if field.table %} 
@@ -98,8 +98,8 @@ namespace odb {
       {% endif %}
     {% endfor %}
 
-    //User Code Begin fields
-    //User Code End fields
+    // User Code Begin Fields
+    // User Code End Fields
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
     {% for constructor in klass.constructors %}
@@ -114,12 +114,12 @@ namespace odb {
     {% if klass.hasTables %}
     dbObjectTable* getObjectTable(dbObjectType type);
     {% endif %}
-    //User Code Begin methods
-    //User Code End methods
+    // User Code Begin Methods
+    // User Code End Methods
   };
 dbIStream& operator>>(dbIStream& stream, _{{klass.name}}& obj);
 dbOStream& operator<<(dbOStream& stream, const _{{klass.name}}& obj);
-//User Code Begin general
-//User Code End general
+// User Code Begin General
+// User Code End General
 }
 //Generator Code End Header

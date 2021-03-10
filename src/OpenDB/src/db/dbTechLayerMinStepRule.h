@@ -36,8 +36,8 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -59,14 +59,14 @@ struct dbTechLayerMinStepRuleFlags
   bool except_same_corners_ : 1;
   uint spare_bits_ : 25;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerMinStepRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   dbTechLayerMinStepRuleFlags flags_;
   int                         min_step_length_;
@@ -76,8 +76,8 @@ class _dbTechLayerMinStepRule : public _dbObject
   int                         eol_width_;
   int                         min_between_length_;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
   _dbTechLayerMinStepRule(_dbDatabase*);
   ~_dbTechLayerMinStepRule();
@@ -91,12 +91,12 @@ class _dbTechLayerMinStepRule : public _dbObject
                    const char*                    field,
                    const _dbTechLayerMinStepRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

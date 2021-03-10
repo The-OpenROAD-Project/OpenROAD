@@ -35,8 +35,8 @@
 
 #include "dbIterator.h"
 #include "odb.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -48,8 +48,8 @@ class dbTable;
 class dbModuleInstItr : public dbIterator
 {
   dbTable<_dbInst>* _inst_tbl;
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
  public:
   dbModuleInstItr(dbTable<_dbInst>* inst_tbl) { _inst_tbl = inst_tbl; }
 
@@ -62,8 +62,8 @@ class dbModuleInstItr : public dbIterator
   uint      end(dbObject* parent);
   uint      next(uint id, ...);
   dbObject* getObject(uint id, ...);
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 
 }  // namespace odb

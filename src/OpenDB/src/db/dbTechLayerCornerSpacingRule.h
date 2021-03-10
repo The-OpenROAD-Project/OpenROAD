@@ -36,9 +36,9 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbVector.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -65,14 +65,14 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool except_same_metal_ : 1;
   uint spare_bits_ : 20;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   dbTechLayerCornerSpacingRuleFlags flags_;
   int                               within_;
@@ -82,10 +82,10 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   int                               min_length_;
   int                               except_notch_length_;
 
-  // User Code Begin fields
+  // User Code Begin Fields
   dbVector<int>                 _width_tbl;
   dbVector<std::pair<int, int>> _spacing_tbl;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
@@ -100,13 +100,13 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
                    const char*                          field,
                    const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
 dbOStream& operator<<(dbOStream&                           stream,
                       const _dbTechLayerCornerSpacingRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

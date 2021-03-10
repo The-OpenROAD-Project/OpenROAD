@@ -36,10 +36,10 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include <map>
 #include <tuple>
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -57,14 +57,14 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool exceept_eol_ : 1;
   uint spare_bits_ : 29;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   dbTechLayerSpacingTablePrlRuleFlags flags_;
   int                                 eol_width_;
@@ -73,9 +73,9 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   dbVector<dbVector<int>>             spacing_tbl_;
   dbVector<std::tuple<int, int, int>> influence_tbl_;
 
-  // User Code Begin fields
+  // User Code Begin Fields
   std::map<uint, std::pair<int, int>> _within_tbl;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
@@ -90,18 +90,18 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
                    const char*                            field,
                    const _dbTechLayerSpacingTablePrlRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
+  // User Code Begin Methods
 
   uint getWidthIdx(const int width) const;
 
   uint getLengthIdx(const int length) const;
 
-  // User Code End methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
 dbOStream& operator<<(dbOStream&                             stream,
                       const _dbTechLayerSpacingTablePrlRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

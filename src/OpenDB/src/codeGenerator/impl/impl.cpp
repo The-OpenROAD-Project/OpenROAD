@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "{{klass.name}}.h"
 #include "db.h"
 #include "dbDiff.hpp"
@@ -41,12 +41,10 @@
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}
-//User Code Begin includes
-//User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 namespace odb {
 
-//User Code Begin definitions
-//User Code End definitions
   template class dbTable<_{{klass.name}}>; 
     
   bool _{{klass.name}}::operator==(const _{{klass.name}}& rhs) const
@@ -153,8 +151,8 @@ namespace odb {
         {% endfor %}
       {% endif %}
     {% endfor %}
-    //User Code Begin differences
-    //User Code End differences
+    // User Code Begin Differences
+    // User Code End Differences
     DIFF_END
   }
   void _{{klass.name}}::out(dbDiff& diff, char side, const char* field) const
@@ -184,8 +182,8 @@ namespace odb {
       {% endif %}
     {% endfor %}
 
-    //User Code Begin out
-    //User Code End out
+    // User Code Begin Out
+    // User Code End Out
     DIFF_END
   }
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
@@ -205,8 +203,8 @@ namespace odb {
         {{field.name}}.setTable({{field.table_name}});
       {% endif %}
     {% endfor %}
-    //User Code Begin constructor
-    //User Code End constructor
+    // User Code Begin Constructor
+    // User Code End Constructor
   }
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db, const _{{klass.name}}& r)
   {
@@ -413,4 +411,4 @@ namespace odb {
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
 }
-//Generator Code End cpp
+// Generator Code End Cpp

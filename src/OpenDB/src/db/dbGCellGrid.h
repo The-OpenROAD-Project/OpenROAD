@@ -36,12 +36,12 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include <map>
 
 #include "db.h"
 #include "dbVector.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -60,14 +60,14 @@ struct dbGCellGridFlags
   bool y_grid_valid_ : 1;
   uint spare_bits_ : 30;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbGCellGrid : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   dbGCellGridFlags flags_;
   dbVector<int>    x_origin_;
@@ -82,8 +82,8 @@ class _dbGCellGrid : public _dbObject
            std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
       congestion_map_;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
   ~_dbGCellGrid();
@@ -94,15 +94,15 @@ class _dbGCellGrid : public _dbObject
                    const char*         field,
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
+  // User Code Begin Methods
   bool gcellExists(dbId<_dbTechLayer> lid, uint x_idx, uint y_idx) const;
-  // User Code End methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);
-// User Code Begin general
+// User Code Begin General
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj);
 dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj);
-// User Code End general
+// User Code End General
 }  // namespace odb
 // Generator Code End Header

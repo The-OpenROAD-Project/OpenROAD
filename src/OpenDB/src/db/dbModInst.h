@@ -36,8 +36,8 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -50,14 +50,14 @@ class _dbGroup;
 // User Code Begin Classes
 // User Code End Classes
 
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbModInst : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
   char*            _name;
   dbId<_dbModInst> _next_entry;
@@ -67,8 +67,8 @@ class _dbModInst : public _dbObject
   dbId<_dbModInst> _group_next;
   dbId<_dbGroup>   _group;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbModInst(_dbDatabase*, const _dbModInst& r);
   _dbModInst(_dbDatabase*);
   ~_dbModInst();
@@ -79,12 +79,12 @@ class _dbModInst : public _dbObject
                    const char*       field,
                    const _dbModInst& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

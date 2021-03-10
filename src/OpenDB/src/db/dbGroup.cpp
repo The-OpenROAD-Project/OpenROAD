@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbGroup.h"
 
 #include "db.h"
@@ -47,14 +47,12 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
@@ -126,13 +124,13 @@ void _dbGroup::differences(dbDiff&         diff,
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_groups);
-  // User Code Begin differences
+  // User Code Begin Differences
 
   DIFF_VECTOR(_power_nets);
 
   DIFF_VECTOR(_ground_nets);
 
-  // User Code End differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbGroup::out(dbDiff& diff, char side, const char* field) const
@@ -149,21 +147,21 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_groups);
 
-  // User Code Begin out
+  // User Code Begin Out
 
   DIFF_OUT_VECTOR(_power_nets);
 
   DIFF_OUT_VECTOR(_ground_nets);
 
-  // User Code End out
+  // User Code End Out
   DIFF_END
 }
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 {
@@ -589,4 +587,4 @@ dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
 
 // User Code End dbGroupPublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

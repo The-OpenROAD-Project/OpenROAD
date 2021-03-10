@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbGCellGrid.h"
 
 #include "db.h"
@@ -40,16 +40,14 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include <algorithm>
 
 #include "dbBlock.h"
 #include "dbSet.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbGCellGrid>;
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
@@ -97,14 +95,14 @@ void _dbGCellGrid::differences(dbDiff&             diff,
 
   DIFF_FIELD(flags_.x_grid_valid_);
   DIFF_FIELD(flags_.y_grid_valid_);
-  // User Code Begin differences
+  // User Code Begin Differences
   DIFF_VECTOR(x_origin_);
   DIFF_VECTOR(x_count_);
   DIFF_VECTOR(x_step_);
   DIFF_VECTOR(y_origin_);
   DIFF_VECTOR(y_count_);
   DIFF_VECTOR(y_step_);
-  // User Code End differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
@@ -113,22 +111,22 @@ void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(flags_.x_grid_valid_);
   DIFF_OUT_FIELD(flags_.y_grid_valid_);
 
-  // User Code Begin out
+  // User Code Begin Out
   DIFF_OUT_VECTOR(x_origin_);
   DIFF_OUT_VECTOR(x_count_);
   DIFF_OUT_VECTOR(x_step_);
   DIFF_OUT_VECTOR(y_origin_);
   DIFF_OUT_VECTOR(y_count_);
   DIFF_OUT_VECTOR(y_step_);
-  // User Code End out
+  // User Code End Out
   DIFF_END
 }
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 {
@@ -668,4 +666,4 @@ dbGCellGrid::getCongestionMap(dbTechLayer* layer)
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

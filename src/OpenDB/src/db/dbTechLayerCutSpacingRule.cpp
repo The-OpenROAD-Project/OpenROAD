@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingRule.h"
 
 #include "db.h"
@@ -39,14 +39,12 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbTech.h"
 #include "dbTechLayerCutClassRule.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerCutSpacingRule>;
 
 bool _dbTechLayerCutSpacingRule::operator==(
@@ -322,8 +320,8 @@ void _dbTechLayerCutSpacingRule::differences(
   DIFF_FIELD(prl_);
   DIFF_FIELD(par_length_);
   DIFF_FIELD(cut_area_);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
@@ -394,16 +392,16 @@ void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(par_length_);
   DIFF_OUT_FIELD(cut_area_);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
 {
   uint64_t* flags__bit_field = (uint64_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
     _dbDatabase*                      db,
@@ -1449,4 +1447,4 @@ void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* rule)
 }
 // User Code End dbTechLayerCutSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

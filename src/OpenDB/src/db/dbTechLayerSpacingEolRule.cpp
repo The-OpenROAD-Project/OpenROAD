@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerSpacingEolRule.h"
 
 #include "db.h"
@@ -39,14 +39,12 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbTech.h"
 #include "dbTechLayer.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerSpacingEolRule>;
 
 bool _dbTechLayerSpacingEolRule::operator==(
@@ -371,8 +369,8 @@ void _dbTechLayerSpacingEolRule::differences(
   DIFF_FIELD(min_adj_length1_);
   DIFF_FIELD(min_adj_length2_);
   DIFF_FIELD(notch_length_);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
@@ -455,15 +453,15 @@ void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(min_adj_length2_);
   DIFF_OUT_FIELD(notch_length_);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
   uint64_t* flags__bit_field = (uint64_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
+  // User Code Begin Constructor
   eol_space_            = 0;
   eol_width_            = 0;
   wrong_dir_space_      = 0;
@@ -497,7 +495,7 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
   min_adj_length1_      = 0;
   min_adj_length2_      = 0;
   notch_length_         = 0;
-  // User Code End constructor
+  // User Code End Constructor
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
     _dbDatabase*                      db,
@@ -1729,4 +1727,4 @@ void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
 
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

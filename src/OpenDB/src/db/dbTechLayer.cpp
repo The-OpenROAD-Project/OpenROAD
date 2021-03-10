@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayer.h"
 
 #include "db.h"
@@ -47,18 +47,16 @@
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbTechMinCutOrAreaRule.h"
 #include "lefout.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
@@ -295,7 +293,7 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_TABLE(spacing_table_prl_rules_tbl_);
   DIFF_TABLE(cut_spacing_table_orth_tbl_);
   DIFF_TABLE(cut_spacing_table_def_tbl_);
-  // User Code Begin differences
+  // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
   DIFF_FIELD(flags_.minstep_type_);
@@ -336,7 +334,7 @@ void _dbTechLayer::differences(dbDiff&             diff,
   DIFF_MATRIX(_two_widths_sp_spacing);
   DIFF_FIELD(_oxide1);
   DIFF_FIELD(_oxide2);
-  // User Code End differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
@@ -364,7 +362,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(cut_spacing_table_orth_tbl_);
   DIFF_OUT_TABLE(cut_spacing_table_def_tbl_);
 
-  // User Code Begin out
+  // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
   DIFF_OUT_FIELD(flags_.direction_);
   DIFF_OUT_FIELD(flags_.minstep_type_);
@@ -405,7 +403,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_MATRIX(_two_widths_sp_spacing);
   DIFF_OUT_FIELD(_oxide1);
   DIFF_OUT_FIELD(_oxide2);
-  // User Code End out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
@@ -462,7 +460,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerCutSpacingTableDefRuleObj);
   ZALLOCATED(cut_spacing_table_def_tbl_);
-  // User Code Begin constructor
+  // User Code Begin Constructor
   flags_.type_         = dbTechLayerType::ROUTING;
   flags_.direction_    = dbTechLayerDir::NONE;
   flags_.minstep_type_ = dbTechLayerMinStepType();
@@ -527,7 +525,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       8,
       3);
   ZALLOCATED(_v55inf_tbl);
-  // User Code End constructor
+  // User Code End Constructor
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
@@ -1944,4 +1942,4 @@ dbTechLayer* dbTechLayer::getTechLayer(dbTech* tech_, uint dbid_)
 
 // User Code End dbTechLayerPublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp

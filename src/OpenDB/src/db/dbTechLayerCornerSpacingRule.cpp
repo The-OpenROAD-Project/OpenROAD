@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin cpp
+// Generator Code Begin Cpp
 #include "dbTechLayerCornerSpacingRule.h"
 
 #include "db.h"
@@ -39,12 +39,10 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerCornerSpacingRule>;
 
 bool _dbTechLayerCornerSpacingRule::operator==(
@@ -141,8 +139,8 @@ void _dbTechLayerCornerSpacingRule::differences(
   DIFF_FIELD(edge_length_);
   DIFF_FIELD(min_length_);
   DIFF_FIELD(except_notch_length_);
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
@@ -169,16 +167,16 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
   DIFF_OUT_FIELD(min_length_);
   DIFF_OUT_FIELD(except_notch_length_);
 
-  // User Code Begin out
-  // User Code End out
+  // User Code Begin Out
+  // User Code End Out
   DIFF_END
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field          = 0;
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
     _dbDatabase*                         db,
@@ -556,4 +554,4 @@ void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* rule)
 }
 // User Code End dbTechLayerCornerSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End cpp
+   // Generator Code End Cpp
