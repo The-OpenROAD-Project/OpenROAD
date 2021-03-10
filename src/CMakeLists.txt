@@ -114,7 +114,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(finale)
-add_subdirectory(ioPlacer)
+add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
@@ -157,7 +157,7 @@ target_link_libraries(openroad
   dpl
   finale
   rsz
-  ioPlacer
+  ppl
   flute
   dbSta
   OpenSTA

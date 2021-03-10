@@ -34,7 +34,7 @@ proc define_tool_script { tool script } {
 
 define_tool_script "ifp" "src/ifp/test/regression"
 define_tool_script "dbSta" "src/dbSta/test/regression"
-define_tool_script "IoPlacer" "src/ioPlacer/test/regression"
+define_tool_script "ppl" "src/ppl/test/regression"
 define_tool_script "PDNgen" "src/pdngen/test/regression"
 define_tool_script "ICeWall" "src/ICeWall/test/regression"
 define_tool_script "mpl" "src/mpl/test/regression"
