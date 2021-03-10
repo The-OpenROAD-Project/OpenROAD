@@ -33,10 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%module ioplacer
+%module ppl
 
 %{
-#include "ioplacer/IOPlacer.h"
+#include "ppl/IOPlacer.h"
 #include "Parameters.h"
 #include "openroad/OpenRoad.hh"
 
@@ -206,7 +206,7 @@ set_min_distance(int minDist)
 }
 
 void
-clear_ioplacer()
+clear()
 {
   getIOPlacer()->clear();
 }

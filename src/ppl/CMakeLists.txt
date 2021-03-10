@@ -35,17 +35,17 @@
 
 include("openroad")
 
-project(ioPlacer)
+project(ppl)
 
 add_subdirectory(src/munkres)
 
-tcl_lib(NAME      ioPlacer
+tcl_lib(NAME      ppl
         NAMESPACE ppl
         I_FILE    src/ioplacer.i
         SCRIPTS   src/ioPlacer.tcl
 )
 
-target_sources(ioPlacer
+target_sources(ppl
   PRIVATE
     src/Core.cpp
     src/HungarianMatching.cpp
@@ -55,14 +55,14 @@ target_sources(ioPlacer
 )
 
 
-target_include_directories(ioPlacer
+target_include_directories(ppl
   PUBLIC
     include
   PRIVATE
     src
 )
 
-target_link_libraries(ioPlacer
+target_link_libraries(ppl
   PUBLIC
     Munkres
     OpenSTA
