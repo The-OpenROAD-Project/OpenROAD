@@ -245,7 +245,7 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
     if { $y_offset == 0 } {
       set y_offset $y_pitch
     }
-    if { [$die_area dx] > $x_offset } {
+    if { $x_offset > [$die_area dx] } {
       utl::error "IFP" 21 "-x_offset > die width."
     }
     set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
@@ -254,7 +254,7 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
     if { $x_offset == 0 } {
       set x_offset $x_pitch
     }
-    if { [$die_area dy] > $y_offset } {
+    if { $y_offset > [$die_area dy] } {
       utl::error "IFP" 22 "-y_offset > die height."
     }
     set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
