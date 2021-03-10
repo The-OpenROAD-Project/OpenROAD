@@ -407,22 +407,22 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
-      // Add a Ruler on the Canvas
-      // qDebug() << "Rubber Band for Ruler : [(" << rubber_band_dbu.xMin() <<
-      // ","
-      //         << rubber_band_dbu.yMin() << "), (" << rubber_band_dbu.xMax()
-      //         << "," << rubber_band_dbu.yMax() << ")]";
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
         QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
         QPoint pt2(rubber_band_dbu.xMax(), rubber_band_dbu.yMin());
-        ruler = QLine(pt1, pt2);
+        if (pt1.x() < pt2.x())
+          ruler = QLine(pt1, pt2);
+        else
+          ruler = QLine(pt2, pt1);
       } else {
         QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMax());
         QPoint pt2(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
-        ruler = QLine(pt1, pt2);
+        if (pt1.y() < pt2.y())
+          ruler = QLine(pt1, pt2);
+        else
+          ruler = QLine(pt1, pt2);
       }
-
       rulers_.push_back(ruler);
       return;
     }
@@ -765,7 +765,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
 
     // Draw an orientation tag in corner if useful in size
-    if (master->getHeight() >= 5 * pixel) {
+    if (master->getHeight() >= 1 * pixel) {
       qreal tag_size = 0.1 * master_h;
       painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
                         QPointF(0.0, tag_size));
@@ -788,7 +788,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     // Draw the instances' shapes
     for (auto inst : insts) {
       dbMaster* master = inst->getMaster();
-      if (master->getHeight() < 5 * pixel) {
+      if (master->getHeight() < 1 * pixel) {
         continue;
       }
 
@@ -853,7 +853,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                      bounds.yMin(),
                                      bounds.xMax(),
                                      bounds.yMax(),
-                                     5 * pixel);
+                                     1 * pixel);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -886,7 +886,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       bounds.yMin(),
                                       bounds.xMax(),
                                       bounds.yMax(),
-                                      5 * pixel);
+                                      1 * pixel);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -993,13 +993,18 @@ void LayoutViewer::drawRulers(QPainter* painter,
                               const odb::Rect& bounds,
                               odb::dbBlock* block)
 {
-  QColor ruler_color("yellow");
+  QColor ruler_color("aqua");
   painter->setPen(ruler_color);
   painter->setBrush(ruler_color);
-  for (auto& ruler : rulers_)
-    painter->drawLine(ruler);
-
-  // TBD
+  int dbu_height = getBounds(block).yMax();
+  for (auto& ruler : rulers_) {
+    if (ruler.dy() == 0)
+      painter->drawRect(
+          ruler.p1().x(), ruler.p1().y(), ruler.dx(), dbu_height * 0.001);
+    else
+      painter->drawRect(
+          ruler.p1().x(), ruler.p1().y(), dbu_height * 0.001, ruler.dy());
+  }
 }
 
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
@@ -1088,7 +1093,6 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
         ruler = QLine(norm_rect.topLeft(), norm_rect.bottomLeft());
         painter.drawLine(ruler);
       }
-      // rulers_.push_back(ruler);
     } else {
       painter.drawRect(rubber_band_.normalized());
     }
@@ -1224,6 +1228,7 @@ void LayoutViewer::addMenuAndActions()
   // Clear Actions
   menu_actions_[CLEAR_SELECTIONS_ACT] = clear_menu->addAction(tr("Selections"));
   menu_actions_[CLEAR_HIGHLIGHTS_ACT] = clear_menu->addAction(tr("Highlights"));
+  menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -1279,6 +1284,10 @@ void LayoutViewer::addMenuAndActions()
       menu_actions_[CLEAR_HIGHLIGHTS_ACT], &QAction::triggered, this, [this]() {
         Gui::get()->clearHighlights(-1);
       });
+  connect(menu_actions_[CLEAR_RULERS_ACT], &QAction::triggered, this, [this]() {
+    rulers_.clear();
+    update();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     Gui::get()->clearSelections();
     Gui::get()->clearHighlights(-1);

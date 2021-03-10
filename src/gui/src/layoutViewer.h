@@ -96,6 +96,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
     CLEAR_SELECTIONS_ACT,
     CLEAR_HIGHLIGHTS_ACT,
+    CLEAR_RULERS_ACT,
     CLEAR_ALL_ACT
   };
   LayoutViewer(Options* options,
