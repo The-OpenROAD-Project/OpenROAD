@@ -436,6 +436,14 @@ namespace eval tap {
         
         set tapcell_count 0
 
+        set first_row_orient "R0"
+        foreach row $rows {
+            if {[top_or_bottom $row $min_y $max_y] == -1} {
+                set first_row_orient [$row getOrient]
+                break
+            }
+        }
+
         foreach row $rows {
             set site_x [[$row getSite] getWidth]
             set llx [[$row getBBox] xMin]
@@ -448,7 +456,7 @@ namespace eval tap {
             set offsets ""
             set pitch -1
 
-            if {[even $row]} {
+            if {[even $row $first_row_orient]} {
                 set offset [ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } else {
@@ -917,18 +925,8 @@ namespace eval tap {
     }
 
     #proc to detect even/odd
-    proc even {row} {
-        set db [ord::get_db]
-        set block [[$db getChip] getBlock]
-
-        set site_y [[$row getSite] getHeight]
-
-        set lly [[$row getBBox] yMin]
-        set core_box_lly [[$block getBBox] yMin]
-        set lly_idx [expr ($lly-$core_box_lly)/$site_y]
-        set lly_idx_int [expr int($lly_idx)]
-
-        if {[expr $lly_idx_int % 2]==0} {
+    proc even {row first_row_orient} {
+        if {[$row getOrient] == $first_row_orient} {
             return 1
         } else {
             return 0
