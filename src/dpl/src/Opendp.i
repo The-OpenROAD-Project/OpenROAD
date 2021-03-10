@@ -32,8 +32,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module dpl
- 
 %{
 #include "openroad/OpenRoad.hh"
 #include "dpl/Opendp.h"

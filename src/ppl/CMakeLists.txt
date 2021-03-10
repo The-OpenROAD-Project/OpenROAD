@@ -39,10 +39,10 @@ project(ppl)
 
 add_subdirectory(src/munkres)
 
-tcl_lib(NAME      ppl
-        NAMESPACE ppl
-        I_FILE    src/ioplacer.i
-        SCRIPTS   src/ioPlacer.tcl
+swig_lib(NAME      ppl
+         NAMESPACE ppl
+         I_FILE    src/ioplacer.i
+         SCRIPTS   src/ioPlacer.tcl
 )
 
 target_sources(ppl

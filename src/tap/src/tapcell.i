@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, OpenROAD
-// All rights reserved.
-//
 // BSD 3-Clause License
+//
+// Copyright (c) 2019, University of California, San Diego.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,76 +35,13 @@
 
 %{
 
-#include "utility/Logger.h"
+#include "tap/tapcell.h"
+#include "openroad/OpenRoad.hh"
 
-namespace ord {
-// Defined in OpenRoad.i
-utl::Logger *
-getLogger();
+tap::Tapcell *
+getTapcell()
+{
+  return ord::OpenRoad::openRoad()->getTapcell();
 }
-
-using utl::ToolId;
-using utl::Logger;
-using ord::getLogger;
 
 %}
-
-%typemap(in) utl::ToolId {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  $1 = utl::Logger::findToolId(arg);
-}
-
-// Catch exceptions in inline functions.
-%include "../../Exception.i"
-
-%inline %{
-
-namespace utl {
-
-void
-report(const char *msg)
-{
-  Logger *logger = getLogger();
-  logger->report(msg);
-}
-
-void
-info(utl::ToolId tool,
-     int id,
-     const char *msg)
-{
-  Logger *logger = getLogger();
-  logger->info(tool, id, msg);
-}
-
-void
-warn(utl::ToolId tool,
-     int id,
-     const char *msg)
-{
-  Logger *logger = getLogger();
-  logger->warn(tool, id, msg);
-}
-
-void
-error(utl::ToolId tool,
-      int id,
-      const char *msg)
-{
-  Logger *logger = getLogger();
-  logger->error(tool, id, msg);
-}
-
-void
-critical(utl::ToolId tool,
-         int id,
-         const char *msg)
-{
-  Logger *logger = getLogger();
-  logger->critical(tool, id, msg);
-}
-
-} // namespace
-
-%} // inline
