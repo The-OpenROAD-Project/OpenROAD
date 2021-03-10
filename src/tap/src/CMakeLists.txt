@@ -35,24 +35,24 @@
 
 include("openroad")
 
-tcl_lib(NAME      tapcell
+tcl_lib(NAME      tap
         NAMESPACE tap
         I_FILE    tapcell.i
         SCRIPTS   tapcell.tcl
 )
 
-target_sources(tapcell
+target_sources(tap
   PRIVATE
     tapcell.cpp
     MakeTapcell.cpp
 )
 
-target_include_directories(tapcell
+target_include_directories(tap
   PUBLIC
     ../include
 )
 
-target_link_libraries(tapcell
+target_link_libraries(tap
   PRIVATE
     utility
     opendb

@@ -117,7 +117,7 @@ add_subdirectory(finale)
 add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
 add_subdirectory(grt)
-add_subdirectory(tapcell)
+add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
@@ -166,7 +166,7 @@ target_link_libraries(openroad
   OpenRCX
   TritonCTS
   grt
-  tapcell
+  tap
   gui
   TritonRoute
   mpl

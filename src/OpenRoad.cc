@@ -69,7 +69,7 @@
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
-#include "tapcell/MakeTapcell.h"
+#include "tap/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"

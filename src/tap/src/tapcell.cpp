@@ -33,17 +33,41 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%module tapcell
 
-%{
+#include "tap/tapcell.h"
+#include "sta/StaMain.hh"
 
-#include "tapcell/tapcell.h"
-#include "openroad/OpenRoad.hh"
-
-tap::Tapcell *
-getTapcell()
-{
-  return ord::OpenRoad::openRoad()->getTapcell();
+namespace sta {
+// Tcl files encoded into strings.
+extern const char *tap_tcl_inits[];
 }
 
-%}
+namespace tap {
+
+extern "C" {
+extern int Tap_Init(Tcl_Interp *interp);
+}
+
+Tapcell::Tapcell()
+  : db_(nullptr)
+{
+}
+
+Tapcell::~Tapcell()
+{
+}
+
+void
+Tapcell::init(Tcl_Interp *tcl_interp,
+	   odb::dbDatabase *db)
+{
+  db_ = db;
+
+  // Define swig TCL commands.
+  Tap_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
+}
+
+
+}
