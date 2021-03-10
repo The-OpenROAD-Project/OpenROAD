@@ -34,18 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Parameters.h"
-#include "ioplacer/IOPlacer.h"
-#include "ioplacer/MakeIoplacer.h"
+#include "ppl/IOPlacer.h"
+#include "ppl/MakeIoplacer.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* ioPlacer_tcl_inits[];
+extern const char* ppl_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Ioplacer_Init(Tcl_Interp* interp);
+extern int Ppl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -64,8 +64,8 @@ void initIoplacer(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Ioplacer_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::ioPlacer_tcl_inits);
+  Ppl_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::ppl_tcl_inits);
 
   openroad->getIOPlacer()->init(openroad->getDb(), openroad->getLogger());
 }

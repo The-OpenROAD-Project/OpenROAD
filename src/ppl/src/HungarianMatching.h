@@ -45,7 +45,7 @@
 #include "Hungarian.h"
 #include "Netlist.h"
 #include "Slots.h"
-#include "ioplacer/IOPlacer.h"
+#include "ppl/IOPlacer.h"
 
 namespace utl {
 class Logger;
