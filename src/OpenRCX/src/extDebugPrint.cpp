@@ -381,9 +381,10 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 
   return true;
 }
-bool extMeasure::DebugStart()
+bool extMeasure::DebugStart(bool allNets)
 {
-  if (!IsDebugNet())
+
+  if (!IsDebugNet()&&!allNets)
     return false;
   if (_dist < 0) {
     debugPrint(logger_,
