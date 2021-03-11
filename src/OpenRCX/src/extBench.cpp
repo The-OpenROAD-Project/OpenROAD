@@ -253,6 +253,8 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
   measure._diag = false;
 
   sprintf(_patternName, "O%d", opt->_wireCnt + 1);
+  if (opt->_res_patterns)
+    sprintf(_patternName, "R%d", opt->_wireCnt + 1);
 
   // openCapLogFile();
   uint cnt = 0;
