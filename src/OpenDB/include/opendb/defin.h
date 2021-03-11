@@ -56,7 +56,8 @@ class defin
   enum MODE
   {
     DEFAULT,     // creates db from scratch (from def)
-    FLOORPLAN,   // update existing COMPONENTS PINS DIEAREA TRACKS ROWS NETS SNETS
+    FLOORPLAN,   // update existing COMPONENTS PINS DIEAREA TRACKS ROWS NETS
+                 // SNETS
     INCREMENTAL  // update existing COMPONENTS PINS
   };
   defin(dbDatabase* db, utl::Logger* logger, MODE mode = DEFAULT);
@@ -77,9 +78,9 @@ class defin
   dbChip* createChip(std::vector<dbLib*>& search_libs, const char* def_file);
 
   /// Create a new hierachical block
-  dbBlock* createBlock(dbBlock*             parent,
+  dbBlock* createBlock(dbBlock* parent,
                        std::vector<dbLib*>& search_libs,
-                       const char*          def_file);
+                       const char* def_file);
 
   /// Replace the wires of this block.
   bool replaceWires(dbBlock* block, const char* def_file);

@@ -47,43 +47,43 @@ uint dbObject::getId() const
 
 void dbObject::getDbName(char name[max_name_length]) const
 {
-  const dbObject*  parent;
-  const dbObject*  child;
-  const dbObject*  stack[16];
-  const dbObject** end  = &stack[16];
+  const dbObject* parent;
+  const dbObject* child;
+  const dbObject* stack[16];
+  const dbObject** end = &stack[16];
   const dbObject** sptr = end;
 
   for (child = this; child; child = parent) {
-    parent    = child->getImpl()->getOwner();
+    parent = child->getImpl()->getOwner();
     *(--sptr) = child;
   }
 
   char* cptr = name;
-  *cptr++    = '/';
+  *cptr++ = '/';
 
   for (; sptr < end; ++sptr) {
     const dbObject* obj = *sptr;
-    uint            id;
+    uint id;
 
     const _dbObject* impl = getImpl();
 
     switch (impl->getType()) {
       case dbDatabaseObj: {
-        *cptr++         = 'D';
+        *cptr++ = 'D';
         _dbDatabase* db = (_dbDatabase*) obj;
-        id              = db->_unique_id;
+        id = db->_unique_id;
         break;
       }
 
       // Design Objects
       case dbChipObj:
         *cptr++ = 'C';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbBlockObj:
         *cptr++ = 'B';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbInstHdrObj:
@@ -92,97 +92,97 @@ void dbObject::getDbName(char name[max_name_length]) const
 
       case dbInstObj:
         *cptr++ = 'I';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbNetObj:
         *cptr++ = 'N';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbBTermObj:
         *cptr++ = 'T';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbITermObj:
         *cptr++ = 'Y';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbBoxObj:
         *cptr++ = 'X';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbViaObj:
         *cptr++ = 'V';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbGCellGridObj:
         *cptr++ = 'G';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTrackGridObj:
         *cptr++ = 'K';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbObstructionObj:
         *cptr++ = 'O';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbBlockageObj:
         *cptr++ = 'E';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbWireObj:
         *cptr++ = 'W';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbSWireObj:
         *cptr++ = 'S';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbSBoxObj:
         *cptr++ = 'Q';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbCapNodeObj:  // DKF
         *cptr++ = 'n';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbRSegObj:  // DKF
         *cptr++ = 's';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbCCSegObj:
         *cptr++ = 'c';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbRowObj:
         *cptr++ = 'x';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbFillObj:
         *cptr++ = 'F';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbRegionObj:
         *cptr++ = 'a';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbHierObj:
@@ -191,136 +191,136 @@ void dbObject::getDbName(char name[max_name_length]) const
 
       case dbBPinObj:
         *cptr++ = 'p';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       // Lib Objects
       case dbLibObj:
         *cptr++ = 'L';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbSiteObj:
         *cptr++ = 'U';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbMasterObj:
         *cptr++ = 'M';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbMPinObj:
         *cptr++ = 'P';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbMTermObj:
         *cptr++ = 'T';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTargetObj:
         *cptr++ = 't';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechAntennaPinModelObj:
         *cptr++ = 'Z';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       // Tech Objects
       case dbTechObj:
         *cptr++ = 'H';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechLayerObj:
         *cptr++ = 'A';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechViaObj:
         *cptr++ = 'V';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechNonDefaultRuleObj:
         *cptr++ = 'd';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechLayerRuleObj:
         *cptr++ = 'l';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechSameNetRuleObj:
         *cptr++ = 'q';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechLayerSpacingRuleObj:
         *cptr++ = 'r';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechLayerSpacingEolRuleObj:
         *cptr++ = 'k';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechMinCutRuleObj:
         *cptr++ = 'e';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechMinEncRuleObj:
         *cptr++ = 'f';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechV55InfluenceEntryObj:
         *cptr++ = 'g';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechLayerAntennaRuleObj:
         *cptr++ = 'R';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechViaRuleObj:
         *cptr++ = 'y';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechViaGenerateRuleObj:
         *cptr++ = 'z';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbTechViaLayerRuleObj:
         *cptr++ = 'u';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbPropertyObj:
         *cptr++ = 'o';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
       case dbModuleObj:
         *cptr++ = 'm';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
       case dbModInstObj:
         *cptr++ = 'i';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
       case dbGroupObj:
         *cptr++ = 'b';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
       case dbTechLayerMinStepRuleObj:
       case dbTechLayerCornerSpacingRuleObj:
@@ -330,7 +330,7 @@ void dbObject::getDbName(char name[max_name_length]) const
       case dbTechLayerCutSpacingTableDefRuleObj:
       case dbTechLayerCutSpacingTableOrthRuleObj:
         *cptr++ = 'J';
-        id      = impl->getOID();
+        id = impl->getOID();
         break;
 
       case dbNameObj:
@@ -349,7 +349,7 @@ void dbObject::getDbName(char name[max_name_length]) const
 inline uint getOid(const char*& name)
 {
   char* end;
-  uint  id = strtoul(name, &end, 10);
+  uint id = strtoul(name, &end, 10);
   ZASSERT(name != end);
   name = end;
   return id;
@@ -359,8 +359,8 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
 {
   ZASSERT(name[0] == '/');
   ++name;
-  int       c;
-  uint      oid;
+  int c;
+  uint oid;
   dbObject* obj = NULL;
 
   while ((c = *name++) != '\0') {
@@ -387,7 +387,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
 
       case 'D':  // Database
         oid = getOid(name);
-        ZASSERT(oid == (uint)((_dbDatabase*) db_)->_unique_id);
+        ZASSERT(oid == (uint) ((_dbDatabase*) db_)->_unique_id);
         obj = db_;
         break;
 
@@ -487,7 +487,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
 
       case 'X':  // box
       {
-        oid               = getOid(name);
+        oid = getOid(name);
         dbObjectType type = obj->getImpl()->getType();
 
         if (type == dbBlockObj)
@@ -558,9 +558,9 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
 
       case 'o':  // property
       {
-        oid                             = getOid(name);
+        oid = getOid(name);
         dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(obj);
-        obj                             = propTable->getPtr(oid);
+        obj = propTable->getPtr(oid);
         break;
       }
 

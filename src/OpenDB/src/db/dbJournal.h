@@ -36,7 +36,7 @@
 #include "odb.h"
 
 namespace utl {
-  class Logger;
+class Logger;
 }
 
 namespace odb {
@@ -51,11 +51,11 @@ class dbITerm;
 
 class dbJournal
 {
-  dbJournalLog  _log;
-  dbBlock*      _block;
-  utl::Logger*  _logger;
-  bool          _start_action;
-  uint          _action_idx;
+  dbJournalLog _log;
+  dbBlock* _block;
+  utl::Logger* _logger;
+  bool _start_action;
+  uint _action_idx;
   unsigned char _cur_action;
 
   void redo_createObject();
@@ -72,7 +72,7 @@ class dbJournal
   void redo_updateCapNodeField();
   void redo_updateCCSegField();
   void redo_updateBTermField();
-  
+
   void undo_createObject();
   void undo_deleteObject();
   void undo_connectObject();
@@ -140,32 +140,32 @@ class dbJournal
   //    <ACTION-OFFSET>
   //
   void updateField(dbObject* obj,
-                   int       field_id,
-                   bool      prev_value,
-                   bool      new_value);
+                   int field_id,
+                   bool prev_value,
+                   bool new_value);
   void updateField(dbObject* obj,
-                   int       field_id,
-                   char      prev_value,
-                   char      new_value);
-  void updateField(dbObject*     obj,
-                   int           field_id,
+                   int field_id,
+                   char prev_value,
+                   char new_value);
+  void updateField(dbObject* obj,
+                   int field_id,
                    unsigned char prev_value,
                    unsigned char new_value);
   void updateField(dbObject* obj, int field_id, int prev_value, int new_value);
-  void updateField(dbObject*    obj,
-                   int          field_id,
+  void updateField(dbObject* obj,
+                   int field_id,
                    unsigned int prev_value,
                    unsigned int new_value);
   void updateField(dbObject* obj,
-                   int       field_id,
-                   float     prev_value,
-                   float     new_value);
+                   int field_id,
+                   float prev_value,
+                   float new_value);
   void updateField(dbObject* obj,
-                   int       field_id,
-                   double    prev_value,
-                   double    new_value);
-  void updateField(dbObject*   obj,
-                   int         field_id,
+                   int field_id,
+                   double prev_value,
+                   double new_value);
+  void updateField(dbObject* obj,
+                   int field_id,
                    const char* prev_value,
                    const char* new_value);
 

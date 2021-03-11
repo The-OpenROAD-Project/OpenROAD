@@ -59,13 +59,13 @@ class _dbModInst : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  char*            _name;
+  char* _name;
   dbId<_dbModInst> _next_entry;
-  dbId<_dbModule>  _parent;
+  dbId<_dbModule> _parent;
   dbId<_dbModInst> _module_next;
-  dbId<_dbModule>  _master;
+  dbId<_dbModule> _master;
   dbId<_dbModInst> _group_next;
-  dbId<_dbGroup>   _group;
+  dbId<_dbGroup> _group;
 
   // User Code Begin Fields
   // User Code End Fields
@@ -75,8 +75,8 @@ class _dbModInst : public _dbObject
   bool operator==(const _dbModInst& rhs) const;
   bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModInst& rhs) const;
-  void differences(dbDiff&           diff,
-                   const char*       field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbModInst& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods

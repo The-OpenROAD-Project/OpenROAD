@@ -35,22 +35,23 @@
 
 #pragma once
 
-#include "odb.h"
-#include "db.h"
 #include <stdio.h>
 #include <unistd.h>
 
 #include <list>
 #include <string>
 
+#include "db.h"
+#include "odb.h"
+
 namespace odb {
 
 class cdl
 {
-  public:
-    static bool writeCdl(dbBlock* block, const char* fileName, bool includeFillers=0);
+ public:
+  static bool writeCdl(dbBlock* block,
+                       const char* fileName,
+                       bool includeFillers = 0);
 };
 
 }  // namespace odb
-
-

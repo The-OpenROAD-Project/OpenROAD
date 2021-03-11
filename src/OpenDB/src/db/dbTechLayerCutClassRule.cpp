@@ -83,8 +83,8 @@ bool _dbTechLayerCutClassRule::operator<(
   return true;
 }
 void _dbTechLayerCutClassRule::differences(
-    dbDiff&                         diff,
-    const char*                     field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerCutClassRule& rhs) const
 {
   DIFF_BEGIN
@@ -100,8 +100,8 @@ void _dbTechLayerCutClassRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerCutClassRule::out(dbDiff&     diff,
-                                   char        side,
+void _dbTechLayerCutClassRule::out(dbDiff& diff,
+                                   char side,
                                    const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -120,22 +120,22 @@ void _dbTechLayerCutClassRule::out(dbDiff&     diff,
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
-    _dbDatabase*                    db,
+    _dbDatabase* db,
     const _dbTechLayerCutClassRule& r)
 {
   flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.cuts_valid_   = r.flags_.cuts_valid_;
-  flags_.spare_bits_   = r.flags_.spare_bits_;
-  _name                = r._name;
-  width_               = r.width_;
-  length_              = r.length_;
-  num_cuts_            = r.num_cuts_;
-  _next_entry          = r._next_entry;
+  flags_.cuts_valid_ = r.flags_.cuts_valid_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  _name = r._name;
+  width_ = r.width_;
+  length_ = r.length_;
+  num_cuts_ = r.num_cuts_;
+  _next_entry = r._next_entry;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -259,13 +259,13 @@ bool dbTechLayerCutClassRule::isCutsValid() const
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
-                                                         const char*  name)
+                                                         const char* name)
 {
   if (_layer->findTechLayerCutClassRule(name) != nullptr)
     return nullptr;
-  _dbTechLayer*             layer   = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
-  newrule->_name                    = strdup(name);
+  newrule->_name = strdup(name);
   ZALLOCATED(newrule->_name);
   layer->cut_class_rules_hash_.insert(newrule);
   return ((dbTechLayerCutClassRule*) newrule);
@@ -273,7 +273,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
 
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
     dbTechLayer* inly,
-    uint         dbid)
+    uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(dbid);
@@ -281,7 +281,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
 void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 {
   _dbTechLayerCutClassRule* _rule = (_dbTechLayerCutClassRule*) rule;
-  _dbTechLayer*             layer = (_dbTechLayer*) _rule->getOwner();
+  _dbTechLayer* layer = (_dbTechLayer*) _rule->getOwner();
   layer->cut_class_rules_hash_.remove(_rule);
   dbProperty::destroyProperties(rule);
   layer->cut_class_rules_tbl_->destroy((_dbTechLayerCutClassRule*) rule);

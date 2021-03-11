@@ -121,12 +121,12 @@ class dbBlockCallBackObj;
 
 struct _dbBTermPin
 {
-  _dbBTerm*                _bterm;
-  int                      _x;
-  int                      _y;
-  uint                     _pin;
+  _dbBTerm* _bterm;
+  int _x;
+  int _y;
+  uint _pin;
   dbPlacementStatus::Value _status;
-  dbOrientType::Value      _orient;
+  dbOrientType::Value _orient;
 };
 
 struct _dbBlockFlags
@@ -150,106 +150,106 @@ class _dbBlock : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbBlockFlags              _flags;
-  int                        _def_units;
-  int                        _dbu_per_micron;  // cached value from dbTech
-  char                       _hier_delimeter;
-  char                       _left_bus_delimeter;
-  char                       _right_bus_delimeter;
-  unsigned char              _num_ext_corners;
-  uint                       _corners_per_block;
-  char*                      _corner_name_list;
-  char*                      _name;
-  Rect                       _die_area;
-  dbId<_dbChip>              _chip;
-  dbId<_dbBox>               _bbox;
-  dbId<_dbBlock>             _parent;
-  dbId<_dbBlock>             _next_block;
-  dbId<_dbGCellGrid>         _gcell_grid;
-  dbId<_dbBlock>             _parent_block;  // Up hierarchy: TWG
-  dbId<_dbInst>              _parent_inst;   // Up hierarchy: TWG
-  dbId<_dbModule>            _top_module;
-  dbHashTable<_dbNet>        _net_hash;
-  dbHashTable<_dbInst>       _inst_hash;
-  dbHashTable<_dbModule>     _module_hash;
-  dbHashTable<_dbModInst>    _modinst_hash;
-  dbHashTable<_dbGroup>      _group_hash;
+  _dbBlockFlags _flags;
+  int _def_units;
+  int _dbu_per_micron;  // cached value from dbTech
+  char _hier_delimeter;
+  char _left_bus_delimeter;
+  char _right_bus_delimeter;
+  unsigned char _num_ext_corners;
+  uint _corners_per_block;
+  char* _corner_name_list;
+  char* _name;
+  Rect _die_area;
+  dbId<_dbChip> _chip;
+  dbId<_dbBox> _bbox;
+  dbId<_dbBlock> _parent;
+  dbId<_dbBlock> _next_block;
+  dbId<_dbGCellGrid> _gcell_grid;
+  dbId<_dbBlock> _parent_block;  // Up hierarchy: TWG
+  dbId<_dbInst> _parent_inst;    // Up hierarchy: TWG
+  dbId<_dbModule> _top_module;
+  dbHashTable<_dbNet> _net_hash;
+  dbHashTable<_dbInst> _inst_hash;
+  dbHashTable<_dbModule> _module_hash;
+  dbHashTable<_dbModInst> _modinst_hash;
+  dbHashTable<_dbGroup> _group_hash;
   dbIntHashTable<_dbInstHdr> _inst_hdr_hash;
-  dbHashTable<_dbBTerm>      _bterm_hash;
-  uint                       _maxCapNodeId;
-  uint                       _maxRSegId;
-  uint                       _maxCCSegId;
-  int                        _minExtModelIndex;
-  int                        _maxExtModelIndex;
-  dbVector<dbId<_dbBlock> >  _children;
-  uint                       _currentCcAdjOrder;
+  dbHashTable<_dbBTerm> _bterm_hash;
+  uint _maxCapNodeId;
+  uint _maxRSegId;
+  uint _maxCCSegId;
+  int _minExtModelIndex;
+  int _maxExtModelIndex;
+  dbVector<dbId<_dbBlock>> _children;
+  uint _currentCcAdjOrder;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
-  dbTable<_dbBTerm>*              _bterm_tbl;
-  dbTable<_dbITerm>*              _iterm_tbl;
-  dbTable<_dbNet>*                _net_tbl;
-  dbTable<_dbInstHdr>*            _inst_hdr_tbl;
-  dbTable<_dbInst>*               _inst_tbl;
-  dbTable<_dbBox>*                _box_tbl;
-  dbTable<_dbVia>*                _via_tbl;
-  dbTable<_dbGCellGrid>*          _gcell_grid_tbl;
-  dbTable<_dbTrackGrid>*          _track_grid_tbl;
-  dbTable<_dbObstruction>*        _obstruction_tbl;
-  dbTable<_dbBlockage>*           _blockage_tbl;
-  dbTable<_dbWire>*               _wire_tbl;
-  dbTable<_dbSWire>*              _swire_tbl;
-  dbTable<_dbSBox>*               _sbox_tbl;
-  dbTable<_dbRow>*                _row_tbl;
-  dbTable<_dbFill>*               _fill_tbl;
-  dbTable<_dbRegion>*             _region_tbl;
-  dbTable<_dbHier>*               _hier_tbl;
-  dbTable<_dbBPin>*               _bpin_tbl;
+  dbTable<_dbBTerm>* _bterm_tbl;
+  dbTable<_dbITerm>* _iterm_tbl;
+  dbTable<_dbNet>* _net_tbl;
+  dbTable<_dbInstHdr>* _inst_hdr_tbl;
+  dbTable<_dbInst>* _inst_tbl;
+  dbTable<_dbBox>* _box_tbl;
+  dbTable<_dbVia>* _via_tbl;
+  dbTable<_dbGCellGrid>* _gcell_grid_tbl;
+  dbTable<_dbTrackGrid>* _track_grid_tbl;
+  dbTable<_dbObstruction>* _obstruction_tbl;
+  dbTable<_dbBlockage>* _blockage_tbl;
+  dbTable<_dbWire>* _wire_tbl;
+  dbTable<_dbSWire>* _swire_tbl;
+  dbTable<_dbSBox>* _sbox_tbl;
+  dbTable<_dbRow>* _row_tbl;
+  dbTable<_dbFill>* _fill_tbl;
+  dbTable<_dbRegion>* _region_tbl;
+  dbTable<_dbHier>* _hier_tbl;
+  dbTable<_dbBPin>* _bpin_tbl;
   dbTable<_dbTechNonDefaultRule>* _non_default_rule_tbl;
-  dbTable<_dbTechLayerRule>*      _layer_rule_tbl;
-  dbTable<_dbProperty>*           _prop_tbl;
-  dbTable<_dbModule>*             _module_tbl;
-  dbTable<_dbModInst>*            _modinst_tbl;
-  dbTable<_dbGroup>*              _group_tbl;
-  _dbNameCache*                   _name_cache;
+  dbTable<_dbTechLayerRule>* _layer_rule_tbl;
+  dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbModule>* _module_tbl;
+  dbTable<_dbModInst>* _modinst_tbl;
+  dbTable<_dbGroup>* _group_tbl;
+  _dbNameCache* _name_cache;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
   dbPagedVector<float, 4096, 12>* _c_val_tbl;
   dbPagedVector<float, 4096, 12>* _cc_val_tbl;
-  dbTable<_dbCapNode>*            _cap_node_tbl;
-  dbTable<_dbRSeg>*               _r_seg_tbl;
-  dbTable<_dbCCSeg>*              _cc_seg_tbl;
-  dbExtControl*                   _extControl;
+  dbTable<_dbCapNode>* _cap_node_tbl;
+  dbTable<_dbRSeg>* _r_seg_tbl;
+  dbTable<_dbCCSeg>* _cc_seg_tbl;
+  dbExtControl* _extControl;
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
-  dbNetBTermItr*      _net_bterm_itr;
-  dbNetITermItr*      _net_iterm_itr;
-  dbInstITermItr*     _inst_iterm_itr;
-  dbBoxItr*           _box_itr;
-  dbSWireItr*         _swire_itr;
-  dbSBoxItr*          _sbox_itr;
-  dbCapNodeItr*       _cap_node_itr;
-  dbRSegItr*          _r_seg_itr;
-  dbCCSegItr*         _cc_seg_itr;
-  dbRegionInstItr*    _region_inst_itr;
-  dbModuleInstItr*    _module_inst_itr;
+  dbNetBTermItr* _net_bterm_itr;
+  dbNetITermItr* _net_iterm_itr;
+  dbInstITermItr* _inst_iterm_itr;
+  dbBoxItr* _box_itr;
+  dbSWireItr* _swire_itr;
+  dbSBoxItr* _sbox_itr;
+  dbCapNodeItr* _cap_node_itr;
+  dbRSegItr* _r_seg_itr;
+  dbCCSegItr* _cc_seg_itr;
+  dbRegionInstItr* _region_inst_itr;
+  dbModuleInstItr* _module_inst_itr;
   dbModuleModInstItr* _module_modinst_itr;
-  dbGroupItr*         _group_itr;
-  dbGroupInstItr*     _group_inst_itr;
-  dbGroupModInstItr*  _group_modinst_itr;
+  dbGroupItr* _group_itr;
+  dbGroupInstItr* _group_inst_itr;
+  dbGroupModInstItr* _group_modinst_itr;
   dbGroupPowerNetItr* _group_power_net_itr;
-  dbGroupGroundNetItr*_group_ground_net_itr;
-  dbBPinItr*          _bpin_itr;
-  dbRegionItr*        _region_itr;
-  dbPropertyItr*      _prop_itr;
-  dbBlockSearch*      _searchDb;
+  dbGroupGroundNetItr* _group_ground_net_itr;
+  dbBPinItr* _bpin_itr;
+  dbRegionItr* _region_itr;
+  dbPropertyItr* _prop_itr;
+  dbBlockSearch* _searchDb;
 
-  float         _WNS[2];
-  float         _TNS[2];
+  float _WNS[2];
+  float _TNS[2];
   unsigned char _num_ext_dbs;
 
   std::list<dbBlockCallBackObj*> _callbacks;
-  void*                          _extmi;
-  FILE*                          _ptFile;
+  void* _extmi;
+  FILE* _ptFile;
 
   dbJournal* _journal;
   dbJournal* _journal_pending;
@@ -264,10 +264,10 @@ class _dbBlock : public _dbObject
   void add_geom_shape(GeomShape* shape);
   void remove_rect(const Rect& rect);
   void invalidate_bbox() { _flags._valid_bbox = 0; }
-  void initialize(_dbChip*    chip,
-                  _dbBlock*   parent,
+  void initialize(_dbChip* chip,
+                  _dbBlock* parent,
                   const char* name,
-                  char        delimeter);
+                  char delimeter);
 
   bool operator==(const _dbBlock& rhs) const;
   bool operator!=(const _dbBlock& rhs) const { return !operator==(rhs); }

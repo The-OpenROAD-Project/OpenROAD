@@ -33,10 +33,10 @@
 #include <stdio.h>
 
 #include "db.h"
+#include "dbLogger.h"
 #include "dbRtTree.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "dbLogger.h"
 
 using namespace odb;
 
@@ -46,8 +46,8 @@ static void print_encoding(dbWire* wire);
 static dbTechLayer* m1;
 static dbTechLayer* m2;
 static dbTechLayer* m3;
-static dbTechVia*   v12;
-static dbTechVia*   v23;
+static dbTechVia* v12;
+static dbTechVia* v23;
 
 static void create_tech(dbDatabase* db)
 {
@@ -100,10 +100,10 @@ static void print_shape( dbShape & shape )
 int db_test_wires(dbDatabase* db)
 {
   create_tech(db);
-  dbChip*       chip  = dbChip::create(db);
-  dbBlock*      block = dbBlock::create(chip, "chip");
-  dbNet*        net   = dbNet::create(block, "net");
-  dbWire*       wire  = dbWire::create(net);
+  dbChip* chip = dbChip::create(db);
+  dbBlock* block = dbBlock::create(chip, "chip");
+  dbNet* net = dbNet::create(block, "net");
+  dbWire* wire = dbWire::create(net);
   dbWireEncoder encoder;
   encoder.begin(wire);
   encoder.newPath(m1, dbWireType::ROUTED);
@@ -165,9 +165,9 @@ int db_test_wires(dbDatabase* db)
 
   G.decode(wire);
   dbRtEdge* edge = G.getEdge(j4);
-  dbRtNode* src  = edge->getSource();
-  dbRtNode* tgt  = edge->getTarget();
-  dbRtNode* mid  = G.createNode(5000, 10000, src->getLayer());
+  dbRtNode* src = edge->getSource();
+  dbRtNode* tgt = edge->getTarget();
+  dbRtNode* mid = G.createNode(5000, 10000, src->getLayer());
   G.deleteEdge(edge);
   G.createSegment(src, mid);
   G.createSegment(mid, tgt);
@@ -196,7 +196,7 @@ int db_test_wires(dbDatabase* db)
 
   dbBlock* child = dbBlock::create(block, "chip");
   dbBlock::copyViaTable(child, block);
-  dbNet*  testNet  = dbNet::create(child, "test");
+  dbNet* testNet = dbNet::create(child, "test");
   dbWire* testWire = dbWire::create(testNet);
   dbWire::copy(testWire, wire, true, false);
   notice(0, "---- testWire encoding ---------------\n\n");
@@ -308,9 +308,9 @@ void print_encoding(dbWire* wire)
         break;
 
       case dbWireDecoder::TECH_VIA: {
-        dbTechVia*  tech_via = decoder.getTechVia();
-        std::string vname    = tech_via->getName();
-        int         j        = decoder.getJunctionId();
+        dbTechVia* tech_via = decoder.getTechVia();
+        std::string vname = tech_via->getName();
+        int j = decoder.getJunctionId();
         notice(0, "J%d VIA %s\n", j, vname.c_str());
         break;
       }

@@ -61,15 +61,15 @@ void dbGroupItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint      id      = _parent->_groups;
-  uint      list    = 0;
+  uint id = _parent->_groups;
+  uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child    = _group_tbl->getPtr(id);
-    uint      n         = _child->_group_next;
+    _dbGroup* _child = _group_tbl->getPtr(id);
+    uint n = _child->_group_next;
     _child->_group_next = list;
-    list                = id;
-    id                  = n;
+    list = id;
+    id = n;
   }
   _parent->_groups = list;
   // User Code End reverse

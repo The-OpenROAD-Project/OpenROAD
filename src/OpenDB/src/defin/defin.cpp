@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "defin.h"
+
 #include "db.h"
 #include "definReader.h"
 
 namespace odb {
 
-defin::defin(dbDatabase* db,utl::Logger* logger, MODE mode)
+defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
   _reader = new definReader(db, logger, mode);
 }
@@ -104,9 +105,9 @@ dbChip* defin::createChip(std::vector<dbLib*>& libs, const char* def_file)
   return _reader->createChip(libs, def_file);
 }
 
-dbBlock* defin::createBlock(dbBlock*             parent,
+dbBlock* defin::createBlock(dbBlock* parent,
                             std::vector<dbLib*>& libs,
-                            const char*          def_file)
+                            const char* def_file)
 {
   if (libs.size() == 0)
     return NULL;

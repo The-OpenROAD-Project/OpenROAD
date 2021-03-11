@@ -57,11 +57,11 @@ class _dbChip : public _dbObject
   dbId<_dbBlock> _top;
 
   // NON-PERSISTANT-MEMBERS
-  dbTable<_dbBlock>*    _block_tbl;
+  dbTable<_dbBlock>* _block_tbl;
   dbTable<_dbProperty>* _prop_tbl;
-  _dbNameCache*         _name_cache;
-  dbBlockItr*           _block_itr;
-  dbPropertyItr*        _prop_itr;
+  _dbNameCache* _name_cache;
+  dbBlockItr* _block_itr;
+  dbPropertyItr* _prop_itr;
 
   _dbChip(_dbDatabase* db);
   _dbChip(_dbDatabase* db, const _dbChip& c);

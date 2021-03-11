@@ -87,8 +87,8 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   // User Code End Enums
 
   dbTechLayerCutSpacingTableDefRuleFlags flags_;
-  int                                    default_;
-  dbId<_dbTechLayer>                     second_layer_;
+  int default_;
+  dbId<_dbTechLayer> second_layer_;
   dbVector<
       std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
       prl_for_aligned_cut_tbl_;
@@ -102,8 +102,8 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,
                       dbId<_dbTechLayerCutClassRule>,
                       int>>
-                                                           prl_tbl_;
-  int                                                      extension_;
+      prl_tbl_;
+  int extension_;
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> end_extension_tbl_;
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> side_extension_tbl_;
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
@@ -111,10 +111,10 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
       non_opp_enc_spacing_tbl_;
   dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>, int, int, int>>
-                                          opp_enc_spacing_tbl_;
+      opp_enc_spacing_tbl_;
   dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
-  std::map<std::string, uint>             row_map_;
-  std::map<std::string, uint>             col_map_;
+  std::map<std::string, uint> row_map_;
+  std::map<std::string, uint> col_map_;
 
   // User Code Begin Fields
   // User Code End Fields
@@ -129,16 +129,16 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
-  void differences(dbDiff&                                   diff,
-                   const char*                               field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
 };
-dbIStream& operator>>(dbIStream&                          stream,
+dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);
-dbOStream& operator<<(dbOStream&                                stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj);
 // User Code Begin General
 // User Code End General

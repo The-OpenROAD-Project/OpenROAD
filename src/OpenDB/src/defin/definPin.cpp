@@ -31,13 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definPin.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "db.h"
 #include "dbShape.h"
 #include "dbTransform.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -89,43 +90,43 @@ void definPin::pinBegin(const char* name, const char* net_name)
   const char* s = strstr(name, ".extra");
 
   if (s == NULL) {
-    if(_mode != defin::DEFAULT){
+    if (_mode != defin::DEFAULT) {
       _cur_bterm = _block->findBTerm(name);
-      if(_cur_bterm != nullptr)
+      if (_cur_bterm != nullptr)
         _update_cnt++;
-    } else{
+    } else {
       _cur_bterm = dbBTerm::create(net, name);
       _bterm_cnt++;
     }
   } else  // extra pin statement
   {
-    const char* busleft  = strchr(s, _left_bus);
+    const char* busleft = strchr(s, _left_bus);
     const char* busright = strchr(s, _right_bus);
-    char*       bname    = NULL;
+    char* bname = NULL;
 
     // DEF 5.6
     if (busleft && busright) {
       // 5.6 PIN Name of form pinName.extraN[indexh]
       int len1 = (s - name);
       int len2 = (busright - busleft + 1);
-      bname    = (char*) malloc(len1 + len2 + 1);
+      bname = (char*) malloc(len1 + len2 + 1);
       strncpy(bname, name, len1);
       strcat(bname, busleft);
 
     } else if (busleft) {
       ++_errors;
-      _logger->warn(utl::ODB, 117,  "PIN {} missing right bus character.", name);
+      _logger->warn(utl::ODB, 117, "PIN {} missing right bus character.", name);
       return;
     }
 
     else if (busright) {
       ++_errors;
-      _logger->warn(utl::ODB, 118,  "PIN {} missing left bus character.", name);
+      _logger->warn(utl::ODB, 118, "PIN {} missing left bus character.", name);
       return;
     } else {
       // PIN Name of form pinName.extraN
       int len = s - name;
-      bname   = (char*) malloc(len + 1);
+      bname = (char*) malloc(len + 1);
       strncpy(bname, name, len);
       bname[len] = 0;
     }
@@ -165,7 +166,10 @@ void definPin::pinDirection(dbIoType type)
   _cur_bterm->setIoType(type);
 }
 
-void definPin::pinPlacement(defPlacement status, int x, int y, dbOrientType orient)
+void definPin::pinPlacement(defPlacement status,
+                            int x,
+                            int y,
+                            dbOrientType orient)
 {
   if (_cur_bterm == NULL)
     return;
@@ -195,26 +199,30 @@ void definPin::pinPlacement(defPlacement status, int x, int y, dbOrientType orie
 void definPin::pinMinSpacing(int spacing)
 {
   if (_has_effective_width) {
-    _logger->warn(utl::ODB, 119, 
-"error: Cannot specify effective width and minimum spacing ""together.");
+    _logger->warn(utl::ODB,
+                  119,
+                  "error: Cannot specify effective width and minimum spacing "
+                  "together.");
     ++_errors;
     return;
   }
 
-  _min_spacing     = dbdist(spacing);
+  _min_spacing = dbdist(spacing);
   _has_min_spacing = true;
 }
 
 void definPin::pinEffectiveWidth(int width)
 {
   if (_has_min_spacing) {
-    _logger->warn(utl::ODB, 120, 
-"error: Cannot specify effective width and minimum spacing ""together.");
+    _logger->warn(utl::ODB,
+                  120,
+                  "error: Cannot specify effective width and minimum spacing "
+                  "together.");
     ++_errors;
     return;
   }
 
-  _effective_width     = dbdist(width);
+  _effective_width = dbdist(width);
   _has_effective_width = true;
 }
 
@@ -226,7 +234,8 @@ void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
   _layer = _tech->findLayer(layer_name);
 
   if (_layer == NULL) {
-    _logger->warn(utl::ODB, 121,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 121, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }
@@ -258,35 +267,35 @@ void definPin::pinSupplyPin(const char* supplyPin)
   _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
 }
 
-void definPin::portBegin(){
+void definPin::portBegin()
+{
   _rects.clear();
   _polygons.clear();
-  _has_min_spacing     = false;
+  _has_min_spacing = false;
   _has_effective_width = false;
-  _has_placement       = false;
+  _has_placement = false;
   _status = dbPlacementStatus::NONE;
-  _orient = dbOrientType::R0; 
+  _orient = dbOrientType::R0;
   _orig_x = 0;
   _orig_y = 0;
 }
 
-void definPin::portEnd(){
+void definPin::portEnd()
+{
   dbBPin* pin = 0;
 
-  if(!_rects.empty() || !_polygons.empty()){
+  if (!_rects.empty() || !_polygons.empty()) {
     pin = dbBPin::create(_cur_bterm);
     pin->setPlacementStatus(_status);
-    
-    if(_has_min_spacing)
+
+    if (_has_min_spacing)
       pin->setMinSpacing(_min_spacing);
-      
-    if(_has_effective_width)
+
+    if (_has_effective_width)
       pin->setEffectiveWidth(_effective_width);
-
   }
-  
-  if (!_rects.empty()) {
 
+  if (!_rects.empty()) {
     for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr)
       addRect(*itr, pin);
   }
@@ -306,9 +315,9 @@ void definPin::pinEnd()
 
 void definPin::addRect(PinRect& r, dbBPin* pin)
 {
-  Point     origin(0, 0);
+  Point origin(0, 0);
   dbOrientType orient(_orient);
-  dbTransform  transform(orient, origin);
+  dbTransform transform(orient, origin);
   transform.apply(r._rect);
 
   // Translate to placed location
@@ -360,7 +369,7 @@ void definPin::pinsEnd()
       p._bterm->setGroundPin(ground);
     } else {
       ++_errors;
-      _logger->warn(utl::ODB, 122,  "error: Cannot find PIN {}", p._pin.c_str());
+      _logger->warn(utl::ODB, 122, "error: Cannot find PIN {}", p._pin.c_str());
     }
   }
 
@@ -373,7 +382,7 @@ void definPin::pinsEnd()
       p._bterm->setSupplyPin(supply);
     } else {
       ++_errors;
-      _logger->warn(utl::ODB, 123,  "error: Cannot find PIN {}", p._pin.c_str());
+      _logger->warn(utl::ODB, 123, "error: Cannot find PIN {}", p._pin.c_str());
     }
   }
 }

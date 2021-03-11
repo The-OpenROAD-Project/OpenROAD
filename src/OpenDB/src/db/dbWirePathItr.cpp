@@ -32,6 +32,7 @@
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
@@ -39,7 +40,6 @@
 #include "dbWireCodec.h"
 #include "dbWireOpcode.h"
 #include "utility/Logger.h"
-#include "dbDatabase.h"
 
 namespace odb {
 
@@ -52,14 +52,14 @@ namespace odb {
 //////////////////////////////////////////////////////////////////////////////////
 dbWirePathItr::dbWirePathItr()
 {
-  _opcode       = dbWireDecoder::END_DECODE;
-  _prev_x       = 0;
-  _prev_y       = 0;
-  _prev_ext     = 0;
+  _opcode = dbWireDecoder::END_DECODE;
+  _prev_x = 0;
+  _prev_y = 0;
+  _prev_ext = 0;
   _has_prev_ext = false;
-  _dw           = 0;
-  _rule         = NULL;
-  _wire         = NULL;
+  _dw = 0;
+  _rule = NULL;
+  _wire = NULL;
 }
 
 dbWirePathItr::~dbWirePathItr()
@@ -69,14 +69,14 @@ dbWirePathItr::~dbWirePathItr()
 void dbWirePathItr::begin(dbWire* wire)
 {
   _decoder.begin(wire);
-  _opcode       = _decoder.next();
-  _prev_x       = 0;
-  _prev_y       = 0;
-  _prev_ext     = 0;
+  _opcode = _decoder.next();
+  _prev_x = 0;
+  _prev_y = 0;
+  _prev_ext = 0;
   _has_prev_ext = false;
-  _dw           = 0;
-  _rule         = NULL;
-  _wire         = wire;
+  _dw = 0;
+  _rule = NULL;
+  _wire = wire;
 }
 
 #define DB_WIRE_PATH_ITR_INVALID_OPCODE 0
@@ -87,21 +87,21 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
       || (_opcode == dbWireDecoder::SHORT)
       || (_opcode == dbWireDecoder::VWIRE)) {
     dbTechLayerRule* lyr_rule = NULL;
-    _rule                     = NULL;
+    _rule = NULL;
 
     if (_opcode == dbWireDecoder::JUNCTION) {
       path.junction_id = _decoder.getJunctionValue();
-      path.is_branch   = true;
+      path.is_branch = true;
     } else {
       path.is_branch = false;
     }
 
     if ((_opcode == dbWireDecoder::SHORT)
         || (_opcode == dbWireDecoder::VWIRE)) {
-      path.is_short       = true;
+      path.is_short = true;
       path.short_junction = _decoder.getJunctionValue();
     } else {
-      path.is_short       = false;
+      path.is_short = false;
       path.short_junction = 0;
     }
 
@@ -115,7 +115,7 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
 
     if (_opcode == dbWireDecoder::POINT) {
       _decoder.getPoint(_prev_x, _prev_y);
-      _prev_ext     = 0;
+      _prev_ext = 0;
       _has_prev_ext = false;
 
       if (path.is_branch == false)
@@ -129,7 +129,7 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
 
     } else if (_opcode == dbWireDecoder::RULE) {
       lyr_rule = _decoder.getRule();
-      _rule    = lyr_rule->getNonDefaultRule();
+      _rule = lyr_rule->getNonDefaultRule();
       goto get_point;  // rules preceded a point...
     } else {
       assert(DB_WIRE_PATH_ITR_INVALID_OPCODE);
@@ -142,24 +142,24 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
     dbWireDecoder::OpCode next_opcode = _decoder.peek();
 
     if (next_opcode == dbWireDecoder::BTERM) {
-      _opcode    = _decoder.next();
+      _opcode = _decoder.next();
       path.bterm = _decoder.getBTerm();
     }
 
     else if (next_opcode == dbWireDecoder::ITERM) {
-      _opcode    = _decoder.next();
+      _opcode = _decoder.next();
       path.iterm = _decoder.getITerm();
     }
 
     next_opcode = _decoder.peek();
 
     if (next_opcode == dbWireDecoder::BTERM) {
-      _opcode    = _decoder.next();
+      _opcode = _decoder.next();
       path.bterm = _decoder.getBTerm();
     }
 
     else if (next_opcode == dbWireDecoder::ITERM) {
-      _opcode    = _decoder.next();
+      _opcode = _decoder.next();
       path.iterm = _decoder.getITerm();
     }
 
@@ -241,9 +241,9 @@ nextOpCode:
                          s.layer);
       getTerms(s);
 
-      _prev_x       = cur_x;
-      _prev_y       = cur_y;
-      _prev_ext     = 0;
+      _prev_x = cur_x;
+      _prev_y = cur_y;
+      _prev_ext = 0;
       _has_prev_ext = false;
       break;
     }
@@ -259,9 +259,9 @@ nextOpCode:
       // a new path-segment
       //
       if ((cur_x == _prev_x) && (cur_y == _prev_y)) {
-        _prev_ext     = cur_ext;
+        _prev_ext = cur_ext;
         _has_prev_ext = true;
-        _opcode       = _decoder.next();
+        _opcode = _decoder.next();
         goto nextOpCode;
       }
 
@@ -281,9 +281,9 @@ nextOpCode:
                          s.layer);
       getTerms(s);
 
-      _prev_x       = cur_x;
-      _prev_y       = cur_y;
-      _prev_ext     = cur_ext;
+      _prev_x = cur_x;
+      _prev_y = cur_y;
+      _prev_ext = cur_ext;
       _has_prev_ext = true;
       break;
     }
@@ -291,12 +291,12 @@ nextOpCode:
     case dbWireDecoder::VIA: {
       dbVia* via = _decoder.getVia();
       dbBox* box = via->getBBox();
-      Rect   b;
+      Rect b;
       box->getBox(b);
-      int  xmin = b.xMin() + _prev_x;
-      int  ymin = b.yMin() + _prev_y;
-      int  xmax = b.xMax() + _prev_x;
-      int  ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + _prev_x;
+      int ymin = b.yMin() + _prev_y;
+      int xmax = b.xMax() + _prev_x;
+      int ymax = b.yMax() + _prev_y;
       Rect r(xmin, ymin, xmax, ymax);
       s.junction_id = _decoder.getJunctionId();
       s.point.setX(_prev_x);
@@ -310,21 +310,21 @@ nextOpCode:
         if (lyr_rule)
           _dw = lyr_rule->getWidth() >> 1;
       }
-      _prev_ext     = 0;
-      _prev_ext     = 0;
+      _prev_ext = 0;
+      _prev_ext = 0;
       _has_prev_ext = false;
       break;
     }
 
     case dbWireDecoder::TECH_VIA: {
       dbTechVia* via = _decoder.getTechVia();
-      dbBox*     box = via->getBBox();
-      Rect       b;
+      dbBox* box = via->getBBox();
+      Rect b;
       box->getBox(b);
-      int  xmin = b.xMin() + _prev_x;
-      int  ymin = b.yMin() + _prev_y;
-      int  xmax = b.xMax() + _prev_x;
-      int  ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + _prev_x;
+      int ymin = b.yMin() + _prev_y;
+      int xmax = b.xMax() + _prev_x;
+      int ymax = b.yMax() + _prev_y;
       Rect r(xmin, ymin, xmax, ymax);
       s.junction_id = _decoder.getJunctionId();
       s.point.setX(_prev_x);
@@ -338,15 +338,15 @@ nextOpCode:
         if (lyr_rule)
           _dw = lyr_rule->getWidth() >> 1;
       }
-      _prev_ext     = 0;
+      _prev_ext = 0;
       _has_prev_ext = false;
       break;
     }
 
     case dbWireDecoder::RULE: {
       dbTechLayerRule* rule = _decoder.getRule();
-      _dw                   = rule->getWidth() >> 1;
-      _opcode               = _decoder.next();
+      _dw = rule->getWidth() >> 1;
+      _opcode = _decoder.next();
       goto nextOpCode;
     }
 
@@ -366,67 +366,93 @@ nextOpCode:
 //
 // Routines for struct dbWirePath here
 //
-void dbWirePath::dump(utl::Logger* logger,const char* group, int level) const
+void dbWirePath::dump(utl::Logger* logger, const char* group, int level) const
 {
-  debugPrint(logger, utl::ODB, group, level,
-        "Path id: {}  at {} {}  ",
-        junction_id,
-        point.getX(),
-        point.getY());
-  if (layer){
+  debugPrint(logger,
+             utl::ODB,
+             group,
+             level,
+             "Path id: {}  at {} {}  ",
+             junction_id,
+             point.getX(),
+             point.getY());
+  if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  }else
+  } else
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
 
   if (rule)
-    debugPrint(logger, utl::ODB, group, level, "non-default rule {} ", rule->getName());
+    debugPrint(logger,
+               utl::ODB,
+               group,
+               level,
+               "non-default rule {} ",
+               rule->getName());
 
   if (iterm)
-    debugPrint(logger, utl::ODB, group, level,
-          "Connects to Iterm {}  ",
-          iterm->getMTerm()->getName());
+    debugPrint(logger,
+               utl::ODB,
+               group,
+               level,
+               "Connects to Iterm {}  ",
+               iterm->getMTerm()->getName());
 
   if (bterm)
-    debugPrint(logger, utl::ODB, group, level, "Connects to Bterm {}  ", bterm->getName());
+    debugPrint(logger,
+               utl::ODB,
+               group,
+               level,
+               "Connects to Bterm {}  ",
+               bterm->getName());
 
   if (is_branch)
     debugPrint(logger, utl::ODB, group, level, "is branch  ");
 
   if (is_short)
-    debugPrint(logger, utl::ODB, group, level, "is short to {} ", short_junction);
+    debugPrint(
+        logger, utl::ODB, group, level, "is short to {} ", short_junction);
 }
 
 //
 // Routines for struct dbWirePathShape here
 //
-void dbWirePathShape::dump(utl::Logger* logger, const char* group, int level) const
+void dbWirePathShape::dump(utl::Logger* logger,
+                           const char* group,
+                           int level) const
 {
-  debugPrint(logger, utl::ODB, group, level,
-        "WireShape id: {}  at {} {}  ",
-        junction_id,
-        point.getX(),
-        point.getY());
+  debugPrint(logger,
+             utl::ODB,
+             group,
+             level,
+             "WireShape id: {}  at {} {}  ",
+             junction_id,
+             point.getX(),
+             point.getY());
 
-  if (layer){
+  if (layer) {
     debugPrint(logger, utl::ODB, group, level, "layer {}  ", layer->getName());
-  }
-  else
+  } else
     debugPrint(logger, utl::ODB, group, level, "NO LAYER  ");
 
   if (iterm)
-    debugPrint(logger, utl::ODB, group, level,
-          "Connects to Iterm {} {}  ",
-          iterm->getId(),
-          iterm->getMTerm()->getName());
+    debugPrint(logger,
+               utl::ODB,
+               group,
+               level,
+               "Connects to Iterm {} {}  ",
+               iterm->getId(),
+               iterm->getMTerm()->getName());
 
   if (bterm)
-    debugPrint(logger, utl::ODB, group, level,
-          "Connects to Bterm {} {}  ",
-          bterm->getId(),
-          bterm->getName());
+    debugPrint(logger,
+               utl::ODB,
+               group,
+               level,
+               "Connects to Bterm {} {}  ",
+               bterm->getId(),
+               bterm->getName());
 
   shape.dump(logger, group, level);
-
 }
 
 //
@@ -434,12 +460,15 @@ void dbWirePathShape::dump(utl::Logger* logger, const char* group, int level) co
 //
 void dbShape::dump(utl::Logger* logger, const char* group, int level) const
 {
-  debugPrint(logger, utl::ODB, group, level,
-        "Shape at ({} {}) ({} {}) of type ",
-        xMin(),
-        yMin(),
-        xMax(),
-        yMax());
+  debugPrint(logger,
+             utl::ODB,
+             group,
+             level,
+             "Shape at ({} {}) ({} {}) of type ",
+             xMin(),
+             yMin(),
+             xMax(),
+             yMax());
 
   switch (getType()) {
     case VIA: {
@@ -448,14 +477,22 @@ void dbShape::dump(utl::Logger* logger, const char* group, int level) const
     }
 
     case TECH_VIA: {
-      debugPrint(logger, utl::ODB, group, level, "Tech Via {}  ", getTechVia()->getName());
+      debugPrint(logger,
+                 utl::ODB,
+                 group,
+                 level,
+                 "Tech Via {}  ",
+                 getTechVia()->getName());
       break;
     }
 
     case SEGMENT: {
-      debugPrint(logger, utl::ODB, group, level,
-            "Wire Segment on layer {}  ",
-            getTechLayer()->getName());
+      debugPrint(logger,
+                 utl::ODB,
+                 group,
+                 level,
+                 "Wire Segment on layer {}  ",
+                 getTechLayer()->getName());
       break;
     }
     default:
@@ -472,15 +509,22 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
     return;
   utl::Logger* logger = innet->getImpl()->getLogger();
 
-  const char* prfx  = "dumpWirePaths:";
-  dbWire*     wire0 = innet->getWire();
+  const char* prfx = "dumpWirePaths:";
+  dbWire* wire0 = innet->getWire();
   if (!wire0) {
-    logger->warn(utl::ODB, 87, "{} No wires for net {}", prfx, innet->getName());
+    logger->warn(
+        utl::ODB, 87, "{} No wires for net {}", prfx, innet->getName());
     return;
   }
-  debugPrint(logger, utl::ODB, group, level, "{} Dumping wire paths for net {}",prfx, innet->getName());
-  dbWirePathItr          pitr;
-  struct dbWirePath      curpath;
+  debugPrint(logger,
+             utl::ODB,
+             group,
+             level,
+             "{} Dumping wire paths for net {}",
+             prfx,
+             innet->getName());
+  dbWirePathItr pitr;
+  struct dbWirePath curpath;
   struct dbWirePathShape curshp;
   pitr.begin(wire0);
 

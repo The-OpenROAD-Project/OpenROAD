@@ -52,22 +52,22 @@ class _dbLib;
 struct dbRowFlags
 {
   dbOrientType::Value _orient : 4;
-  dbRowDir::Value     _dir : 2;
-  uint                _spare_bits : 26;
+  dbRowDir::Value _dir : 2;
+  uint _spare_bits : 26;
 };
 
 class _dbRow : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  dbRowFlags   _flags;
-  char*        _name;
-  dbId<_dbLib>  _lib;
+  dbRowFlags _flags;
+  char* _name;
+  dbId<_dbLib> _lib;
   dbId<_dbSite> _site;
-  int          _x;
-  int          _y;
-  int          _site_cnt;
-  int          _spacing;
+  int _x;
+  int _y;
+  int _site_cnt;
+  int _spacing;
 
   _dbRow(_dbDatabase*, const _dbRow& r);
   _dbRow(_dbDatabase*);
@@ -98,14 +98,14 @@ inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
 
 inline _dbRow::_dbRow(_dbDatabase*)
 {
-  _flags._orient     = dbOrientType::R0;
-  _flags._dir        = dbRowDir::HORIZONTAL;
+  _flags._orient = dbOrientType::R0;
+  _flags._dir = dbRowDir::HORIZONTAL;
   _flags._spare_bits = 0;
-  _name              = NULL;
-  _x                 = 0;
-  _y                 = 0;
-  _site_cnt          = 0;
-  _spacing           = 0;
+  _name = NULL;
+  _x = 0;
+  _y = 0;
+  _site_cnt = 0;
+  _spacing = 0;
 }
 
 inline _dbRow::~_dbRow()

@@ -61,8 +61,8 @@ bool _dbTechLayerCutSpacingTableOrthRule::operator<(
   return true;
 }
 void _dbTechLayerCutSpacingTableOrthRule::differences(
-    dbDiff&                                    diff,
-    const char*                                field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
   DIFF_BEGIN
@@ -71,8 +71,8 @@ void _dbTechLayerCutSpacingTableOrthRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
-                                              char        side,
+void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff& diff,
+                                              char side,
                                               const char* field) const {
     DIFF_OUT_BEGIN
 
@@ -85,14 +85,14 @@ void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
   // User Code End Constructor
 }
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
-    _dbDatabase*                               db,
+    _dbDatabase* db,
     const _dbTechLayerCutSpacingTableOrthRule& r)
 {
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
 
-dbIStream& operator>>(dbIStream&                           stream,
+dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj)
 {
   stream >> obj.spacing_tbl_;
@@ -100,7 +100,7 @@ dbIStream& operator>>(dbIStream&                           stream,
   // User Code End >>
   return stream;
 }
-dbOStream& operator<<(dbOStream&                                 stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj)
 {
   stream << obj.spacing_tbl_;
@@ -144,7 +144,7 @@ void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
 dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer*                        _parent = (_dbTechLayer*) parent;
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
   _dbTechLayerCutSpacingTableOrthRule* newrule
       = _parent->cut_spacing_table_orth_tbl_->create();
   return ((dbTechLayerCutSpacingTableOrthRule*) newrule);
@@ -153,7 +153,7 @@ dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
 dbTechLayerCutSpacingTableOrthRule*
 dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
     dbTechLayer* parent,
-    uint         dbid)
+    uint dbid)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableOrthRule*)

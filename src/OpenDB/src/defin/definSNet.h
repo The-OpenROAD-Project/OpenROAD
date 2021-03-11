@@ -35,9 +35,9 @@
 #include <map>
 #include <vector>
 
-#include "odb.h"
 #include "db.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -47,24 +47,24 @@ class dbTechLayer;
 
 class definSNet : public definBase
 {
-  bool            _skip_special_wires;
-  bool            _skip_shields;
-  bool            _skip_block_wires;
-  bool            _skip_fill_wires;
-  bool            _replace_wires;
-  bool            _names_are_ids;
-  dbNet*          _cur_net;
-  dbTechLayer*    _cur_layer;
-  dbSWire*        _swire;
-  dbWireType      _wire_type;
+  bool _skip_special_wires;
+  bool _skip_shields;
+  bool _skip_block_wires;
+  bool _skip_fill_wires;
+  bool _replace_wires;
+  bool _names_are_ids;
+  dbNet* _cur_net;
+  dbTechLayer* _cur_layer;
+  dbSWire* _swire;
+  dbWireType _wire_type;
   dbWireShapeType _wire_shape_type;
-  dbNet*          _shield_net;
-  int             _prev_x;
-  int             _prev_y;
-  int             _prev_ext;
-  bool            _has_prev_ext;
-  int             _width;
-  int             _point_cnt;
+  dbNet* _shield_net;
+  int _prev_x;
+  int _prev_y;
+  int _prev_ext;
+  bool _has_prev_ext;
+  int _width;
+  int _point_cnt;
 
  public:
   int _snet_cnt;
@@ -74,7 +74,7 @@ class definSNet : public definBase
   virtual void begin(const char* name);
   virtual void connection(const char* iname,
                           const char* pname,
-                          bool        synthesized);
+                          bool synthesized);
   virtual void use(dbSigType type);
   virtual void rect(const char* layer, int x1, int y1, int x2, int y2);
   virtual void polygon(const char* layer, std::vector<defPoint>& points);
@@ -85,10 +85,10 @@ class definSNet : public definBase
   virtual void pathPoint(int x, int y, int ext);
   virtual void pathVia(const char* via);
   virtual void pathViaArray(const char* via,
-                            int         numX,
-                            int         numY,
-                            int         stepX,
-                            int         stepY);
+                            int numX,
+                            int numY,
+                            int stepX,
+                            int stepY);
   virtual void pathEnd();
   virtual void wireEnd();
   virtual void source(dbSourceType source);
@@ -114,5 +114,3 @@ class definSNet : public definBase
 };
 
 }  // namespace odb
-
-

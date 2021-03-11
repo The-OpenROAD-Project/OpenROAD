@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include "odb.h"
 #include "definBase.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -44,7 +44,7 @@ class dbTechLayerRule;
 class definNonDefaultRule : public definBase
 {
   dbTechNonDefaultRule* _cur_rule;
-  dbTechLayerRule*      _cur_layer_rule;
+  dbTechLayerRule* _cur_layer_rule;
 
  public:
   virtual void beginRule(const char* name);
@@ -67,5 +67,3 @@ class definNonDefaultRule : public definBase
 };
 
 }  // namespace odb
-
-

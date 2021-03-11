@@ -72,8 +72,8 @@ bool _dbTechLayerSpacingTablePrlRule::operator<(
   return true;
 }
 void _dbTechLayerSpacingTablePrlRule::differences(
-    dbDiff&                                diff,
-    const char*                            field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
   DIFF_BEGIN
@@ -86,8 +86,8 @@ void _dbTechLayerSpacingTablePrlRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerSpacingTablePrlRule::out(dbDiff&     diff,
-                                          char        side,
+void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
+                                          char side,
                                           const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -104,19 +104,19 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
-    _dbDatabase*                           db,
+    _dbDatabase* db,
     const _dbTechLayerSpacingTablePrlRule& r)
 {
   flags_.wrong_direction_ = r.flags_.wrong_direction_;
-  flags_.same_mask_       = r.flags_.same_mask_;
-  flags_.exceept_eol_     = r.flags_.exceept_eol_;
-  flags_.spare_bits_      = r.flags_.spare_bits_;
-  eol_width_              = r.eol_width_;
+  flags_.same_mask_ = r.flags_.same_mask_;
+  flags_.exceept_eol_ = r.flags_.exceept_eol_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  eol_width_ = r.eol_width_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -135,7 +135,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   // User Code End >>
   return stream;
 }
-dbOStream& operator<<(dbOStream&                             stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -245,14 +245,14 @@ uint _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
 }
 
 void dbTechLayerSpacingTablePrlRule::setTable(
-    std::vector<int>                    width_tbl,
-    std::vector<int>                    length_tbl,
-    std::vector<std::vector<int>>       spacing_tbl,
+    std::vector<int> width_tbl,
+    std::vector<int> length_tbl,
+    std::vector<std::vector<int>> spacing_tbl,
     std::map<uint, std::pair<int, int>> excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  obj->width_tbl_  = width_tbl;
+  obj->width_tbl_ = width_tbl;
   obj->length_tbl_ = length_tbl;
   for (auto spacing : spacing_tbl) {
     dbVector<int> tmp;
@@ -263,15 +263,15 @@ void dbTechLayerSpacingTablePrlRule::setTable(
 }
 
 void dbTechLayerSpacingTablePrlRule::getTable(
-    std::vector<int>&                    width_tbl,
-    std::vector<int>&                    length_tbl,
-    std::vector<std::vector<int>>&       spacing_tbl,
+    std::vector<int>& width_tbl,
+    std::vector<int>& length_tbl,
+    std::vector<std::vector<int>>& spacing_tbl,
     std::map<uint, std::pair<int, int>>& excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  width_tbl    = obj->width_tbl_;
-  length_tbl   = obj->length_tbl_;
+  width_tbl = obj->width_tbl_;
+  length_tbl = obj->length_tbl_;
   excluded_map = obj->_within_tbl;
   for (auto spacing : obj->spacing_tbl_) {
     spacing_tbl.push_back(spacing);
@@ -289,7 +289,7 @@ void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(
 dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
     dbTechLayer* _layer)
 {
-  _dbTechLayer*                    layer = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerSpacingTablePrlRule* newrule
       = layer->spacing_table_prl_rules_tbl_->create();
   return ((dbTechLayerSpacingTablePrlRule*) newrule);
@@ -298,7 +298,7 @@ dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
 dbTechLayerSpacingTablePrlRule*
 dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
     dbTechLayer* inly,
-    uint         dbid)
+    uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingTablePrlRule*)

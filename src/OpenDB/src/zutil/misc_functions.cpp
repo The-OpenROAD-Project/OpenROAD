@@ -30,17 +30,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <fstream>
-#include <iostream>
-
-#include <signal.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
+
+#include <fstream>
+#include <iostream>
 #if sun == 1
 #include <fcntl.h>
 #include <procfs.h>
@@ -83,10 +83,10 @@ int AthGetProcessMem(uint64* size, uint64* res)
 #define page_size 1024
   // for Solaris, read /proc/pid/psinfo and get the right fields
   psinfo_t psi;
-  char     buff[1024];
-  int      pid = getpid();
-  int      fd  = -1;
-  int      sz;
+  char buff[1024];
+  int pid = getpid();
+  int fd = -1;
+  int sz;
 
   sprintf(buff, "/proc/%d/psinfo", pid);
   fd = open(buff, O_RDONLY);
@@ -101,7 +101,7 @@ int AthGetProcessMem(uint64* size, uint64* res)
   }
 
   *size = psi.pr_size * page_size;
-  *res  = psi.pr_rssize * page_size;
+  *res = psi.pr_rssize * page_size;
 
   return 0;
 
@@ -109,11 +109,11 @@ int AthGetProcessMem(uint64* size, uint64* res)
 #define page_size 4096
   // for Linux, parse the first two fields from /proc/pid/statm
   char buff[1024];
-  int  pid = getpid();
+  int pid = getpid();
   sprintf(buff, "/proc/%d/statm", pid);
 
-  FILE* f   = fopen(buff, "r");
-  int   cnt = fscanf(f, "%llu %llu", size, res);
+  FILE* f = fopen(buff, "r");
+  int cnt = fscanf(f, "%llu %llu", size, res);
   fclose(f);
 
   if (2 != cnt) {
@@ -121,7 +121,7 @@ int AthGetProcessMem(uint64* size, uint64* res)
   }
 
   *size = *size * page_size;
-  *res  = *res * page_size;
+  *res = *res * page_size;
 
   return 0;
 
@@ -130,7 +130,7 @@ int AthGetProcessMem(uint64* size, uint64* res)
   return 0;
 }
 
-uint64 max_res  = 0;
+uint64 max_res = 0;
 uint64 max_size = 0;
 
 void AthSignalInstaller(int signo, void (*signal_handler)(int))
@@ -172,7 +172,7 @@ void AthMemCounterp(int /* unused: signo */)
   AthMaxMem(size, res);
 
   double psize = ((double) size) / MS;
-  double pres  = ((double) res) / MS;
+  double pres = ((double) res) / MS;
   if (psize > 1024.0) {
     fprintf(stdout,
             "AthMemCounter (size/res): %.2f GB / %.2f GB\n",
@@ -187,8 +187,8 @@ void AthMemCounterp(int /* unused: signo */)
 int AthResourceLog(const char* title, int ss)
 {
   static struct tms ctp;
-  static time_t     wtp = 0;
-  static double     mmp = 0.0;
+  static time_t wtp = 0;
+  static double mmp = 0.0;
 
   // mallinfo does not work on 64 bit.
   // tttt_use_mallinfo is set 0.
@@ -204,7 +204,7 @@ int AthResourceLog(const char* title, int ss)
 #ifdef OLD_MALLOC
   static struct mallinfo mminfo;
   mminfo = mallinfo();
-  mmn    = (double) ((uint) mminfo.arena) + (double) ((uint) mminfo.hblkhd);
+  mmn = (double) ((uint) mminfo.arena) + (double) ((uint) mminfo.hblkhd);
 #else
   if (AthGetProcessMem(&size, &res) != 0) {
     return 0;
@@ -222,7 +222,7 @@ int AthResourceLog(const char* title, int ss)
   }
 
   struct tms ctn;
-  time_t       wtn, wtd;
+  time_t wtn, wtd;
   time(&wtn);
   times(&ctn);
   int ticks = sysconf(_SC_CLK_TCK);
@@ -258,10 +258,9 @@ int AthResourceLog(const char* title, int ss)
 
   // reset maximums after they were printed
   max_size = size;
-  max_res  = res;
+  max_res = res;
 
   return 1;
-
 }
 
 int Ath__double2int(double v)

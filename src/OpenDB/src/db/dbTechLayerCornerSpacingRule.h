@@ -75,15 +75,15 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   // User Code End Enums
 
   dbTechLayerCornerSpacingRuleFlags flags_;
-  int                               within_;
-  int                               eol_width_;
-  int                               jog_length_;
-  int                               edge_length_;
-  int                               min_length_;
-  int                               except_notch_length_;
+  int within_;
+  int eol_width_;
+  int jog_length_;
+  int edge_length_;
+  int min_length_;
+  int except_notch_length_;
 
   // User Code Begin Fields
-  dbVector<int>                 _width_tbl;
+  dbVector<int> _width_tbl;
   dbVector<std::pair<int, int>> _spacing_tbl;
   // User Code End Fields
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
@@ -96,15 +96,15 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCornerSpacingRule& rhs) const;
-  void differences(dbDiff&                              diff,
-                   const char*                          field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
-dbOStream& operator<<(dbOStream&                           stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj);
 // User Code Begin General
 // User Code End General

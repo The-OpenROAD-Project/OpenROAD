@@ -146,8 +146,8 @@ bool _dbTechLayerCutSpacingTableDefRule::operator<(
   return true;
 }
 void _dbTechLayerCutSpacingTableDefRule::differences(
-    dbDiff&                                   diff,
-    const char*                               field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
   DIFF_BEGIN
@@ -183,8 +183,8 @@ void _dbTechLayerCutSpacingTableDefRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerCutSpacingTableDefRule::out(dbDiff&     diff,
-                                             char        side,
+void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
+                                             char side,
                                              const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -224,49 +224,49 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
-    _dbDatabase*                              db,
+    _dbDatabase* db,
     const _dbTechLayerCutSpacingTableDefRule& r)
 {
-  flags_.default_valid_               = r.flags_.default_valid_;
-  flags_.same_mask_                   = r.flags_.same_mask_;
-  flags_.same_net_                    = r.flags_.same_net_;
-  flags_.same_metal_                  = r.flags_.same_metal_;
-  flags_.same_via_                    = r.flags_.same_via_;
-  flags_.layer_valid_                 = r.flags_.layer_valid_;
-  flags_.no_stack_                    = r.flags_.no_stack_;
-  flags_.non_zero_enclosure_          = r.flags_.non_zero_enclosure_;
-  flags_.prl_for_aligned_cut_         = r.flags_.prl_for_aligned_cut_;
-  flags_.center_to_center_valid_      = r.flags_.center_to_center_valid_;
-  flags_.center_and_edge_valid_       = r.flags_.center_and_edge_valid_;
-  flags_.no_prl_                      = r.flags_.no_prl_;
-  flags_.prl_valid_                   = r.flags_.prl_valid_;
-  flags_.max_x_y_                     = r.flags_.max_x_y_;
-  flags_.end_extension_valid_         = r.flags_.end_extension_valid_;
-  flags_.side_extension_valid_        = r.flags_.side_extension_valid_;
+  flags_.default_valid_ = r.flags_.default_valid_;
+  flags_.same_mask_ = r.flags_.same_mask_;
+  flags_.same_net_ = r.flags_.same_net_;
+  flags_.same_metal_ = r.flags_.same_metal_;
+  flags_.same_via_ = r.flags_.same_via_;
+  flags_.layer_valid_ = r.flags_.layer_valid_;
+  flags_.no_stack_ = r.flags_.no_stack_;
+  flags_.non_zero_enclosure_ = r.flags_.non_zero_enclosure_;
+  flags_.prl_for_aligned_cut_ = r.flags_.prl_for_aligned_cut_;
+  flags_.center_to_center_valid_ = r.flags_.center_to_center_valid_;
+  flags_.center_and_edge_valid_ = r.flags_.center_and_edge_valid_;
+  flags_.no_prl_ = r.flags_.no_prl_;
+  flags_.prl_valid_ = r.flags_.prl_valid_;
+  flags_.max_x_y_ = r.flags_.max_x_y_;
+  flags_.end_extension_valid_ = r.flags_.end_extension_valid_;
+  flags_.side_extension_valid_ = r.flags_.side_extension_valid_;
   flags_.exact_aligned_spacing_valid_ = r.flags_.exact_aligned_spacing_valid_;
-  flags_.horizontal_                  = r.flags_.horizontal_;
-  flags_.prl_horizontal_              = r.flags_.prl_horizontal_;
-  flags_.vertical_                    = r.flags_.vertical_;
-  flags_.prl_vertical_                = r.flags_.prl_vertical_;
+  flags_.horizontal_ = r.flags_.horizontal_;
+  flags_.prl_horizontal_ = r.flags_.prl_horizontal_;
+  flags_.vertical_ = r.flags_.vertical_;
+  flags_.prl_vertical_ = r.flags_.prl_vertical_;
   flags_.non_opposite_enclosure_spacing_valid_
       = r.flags_.non_opposite_enclosure_spacing_valid_;
   flags_.opposite_enclosure_resize_spacing_valid_
       = r.flags_.opposite_enclosure_resize_spacing_valid_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
-  default_           = r.default_;
-  second_layer_      = r.second_layer_;
-  prl_               = r.prl_;
-  extension_         = r.extension_;
+  default_ = r.default_;
+  second_layer_ = r.second_layer_;
+  prl_ = r.prl_;
+  extension_ = r.extension_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
 
-dbIStream& operator>>(dbIStream&                          stream,
+dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -291,7 +291,7 @@ dbIStream& operator>>(dbIStream&                          stream,
   // User Code End >>
   return stream;
 }
-dbOStream& operator<<(dbOStream&                                stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -784,7 +784,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
 dbTechLayerCutSpacingTableDefRule::getPrlForAlignedCutTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-                                      res;
+      res;
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
@@ -812,7 +812,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
 dbTechLayerCutSpacingTableDefRule::getCenterToCenterTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-                                      res;
+      res;
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
@@ -840,7 +840,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
 dbTechLayerCutSpacingTableDefRule::getCenterAndEdgeTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*>>
-                                      res;
+      res;
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
@@ -855,7 +855,7 @@ dbTechLayerCutSpacingTableDefRule::getCenterAndEdgeTable() const
 void dbTechLayerCutSpacingTableDefRule::addPrlEntry(
     dbTechLayerCutClassRule* from,
     dbTechLayerCutClassRule* to,
-    int                      ccPrl)
+    int ccPrl)
 {
   if (from == nullptr || to == nullptr)
     return;
@@ -870,7 +870,7 @@ dbTechLayerCutSpacingTableDefRule::getPrlTable() const
 {
   std::vector<
       std::tuple<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*, int>>
-                                      res;
+      res;
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
@@ -885,7 +885,7 @@ dbTechLayerCutSpacingTableDefRule::getPrlTable() const
 
 void dbTechLayerCutSpacingTableDefRule::addEndExtensionEntry(
     dbTechLayerCutClassRule* cls,
-    int                      ext)
+    int ext)
 {
   if (cls == nullptr)
     return;
@@ -898,7 +898,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, int>>
 dbTechLayerCutSpacingTableDefRule::getEndExtensionTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, int>> res;
-  _dbTechLayerCutSpacingTableDefRule*                   obj
+  _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   for (auto& [cls, ext] : obj->end_extension_tbl_) {
@@ -911,7 +911,7 @@ dbTechLayerCutSpacingTableDefRule::getEndExtensionTable() const
 
 void dbTechLayerCutSpacingTableDefRule::addSideExtensionEntry(
     dbTechLayerCutClassRule* cls,
-    int                      ext)
+    int ext)
 {
   if (cls == nullptr)
     return;
@@ -924,7 +924,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, int>>
 dbTechLayerCutSpacingTableDefRule::getSideExtensionTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, int>> res;
-  _dbTechLayerCutSpacingTableDefRule*                   obj
+  _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   for (auto& [cls, ext] : obj->side_extension_tbl_) {
@@ -937,7 +937,7 @@ dbTechLayerCutSpacingTableDefRule::getSideExtensionTable() const
 
 void dbTechLayerCutSpacingTableDefRule::addExactElignedEntry(
     dbTechLayerCutClassRule* cls,
-    int                      spacing)
+    int spacing)
 {
   if (cls == nullptr)
     return;
@@ -951,7 +951,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, int>>
 dbTechLayerCutSpacingTableDefRule::getExactAlignedTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, int>> res;
-  _dbTechLayerCutSpacingTableDefRule*                   obj
+  _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   for (auto& [cls, spacing] : obj->exact_aligned_spacing_tbl_) {
@@ -964,7 +964,7 @@ dbTechLayerCutSpacingTableDefRule::getExactAlignedTable() const
 
 void dbTechLayerCutSpacingTableDefRule::addNonOppEncSpacingEntry(
     dbTechLayerCutClassRule* cls,
-    int                      spacing)
+    int spacing)
 {
   if (cls == nullptr)
     return;
@@ -977,7 +977,7 @@ std::vector<std::pair<dbTechLayerCutClassRule*, int>>
 dbTechLayerCutSpacingTableDefRule::getNonOppEncSpacingTable() const
 {
   std::vector<std::pair<dbTechLayerCutClassRule*, int>> res;
-  _dbTechLayerCutSpacingTableDefRule*                   obj
+  _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   for (auto& [cls, spacing] : obj->non_opp_enc_spacing_tbl_) {
@@ -990,9 +990,9 @@ dbTechLayerCutSpacingTableDefRule::getNonOppEncSpacingTable() const
 
 void dbTechLayerCutSpacingTableDefRule::addOppEncSpacingEntry(
     dbTechLayerCutClassRule* cls,
-    int                      rsz1,
-    int                      rsz2,
-    int                      spacing)
+    int rsz1,
+    int rsz2,
+    int spacing)
 {
   if (cls == nullptr)
     return;
@@ -1006,7 +1006,7 @@ std::vector<std::tuple<dbTechLayerCutClassRule*, int, int, int>>
 dbTechLayerCutSpacingTableDefRule::getOppEncSpacingTable() const
 {
   std::vector<std::tuple<dbTechLayerCutClassRule*, int, int, int>> res;
-  _dbTechLayerCutSpacingTableDefRule*                              obj
+  _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   for (auto& [cls, rsz1, rsz2, spacing] : obj->opp_enc_spacing_tbl_) {
@@ -1026,14 +1026,14 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getSecondLayer() const
   if (obj->second_layer_ == 0)
     return nullptr;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
-  _dbTech*      _tech = (_dbTech*) layer->getOwner();
+  _dbTech* _tech = (_dbTech*) layer->getOwner();
   return (dbTechLayer*) _tech->_layer_tbl->getPtr(obj->second_layer_);
 }
 
 void dbTechLayerCutSpacingTableDefRule::setSpacingTable(
     std::vector<std::vector<std::pair<int, int>>> table,
-    std::map<std::string, uint>                   row_map,
-    std::map<std::string, uint>                   col_map)
+    std::map<std::string, uint> row_map,
+    std::map<std::string, uint> col_map)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1048,8 +1048,8 @@ void dbTechLayerCutSpacingTableDefRule::setSpacingTable(
 
 void dbTechLayerCutSpacingTableDefRule::getSpacingTable(
     std::vector<std::vector<std::pair<int, int>>>& table,
-    std::map<std::string, uint>&                   row_map,
-    std::map<std::string, uint>&                   col_map)
+    std::map<std::string, uint>& row_map,
+    std::map<std::string, uint>& col_map)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1063,9 +1063,9 @@ void dbTechLayerCutSpacingTableDefRule::getSpacingTable(
 
 std::pair<int, int> dbTechLayerCutSpacingTableDefRule::getSpacing(
     const char* class1,
-    bool        SIDE1,
+    bool SIDE1,
     const char* class2,
-    bool        SIDE2)
+    bool SIDE2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1101,7 +1101,7 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getTechLayer() const
 dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer*                       _parent = (_dbTechLayer*) parent;
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
   _dbTechLayerCutSpacingTableDefRule* newrule
       = _parent->cut_spacing_table_def_tbl_->create();
   return ((dbTechLayerCutSpacingTableDefRule*) newrule);
@@ -1110,7 +1110,7 @@ dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
 dbTechLayerCutSpacingTableDefRule*
 dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
     dbTechLayer* parent,
-    uint         dbid)
+    uint dbid)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableDefRule*)

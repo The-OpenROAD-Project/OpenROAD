@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include "odb.h"
 #include "db.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -42,7 +42,7 @@ class dbVia;
 
 class definVia : public definBase
 {
-  dbVia*       _cur_via;
+  dbVia* _cur_via;
   dbViaParams* _params;
 
  public:
@@ -67,5 +67,3 @@ class definVia : public definBase
 };
 
 }  // namespace odb
-
-

@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -61,5 +61,3 @@ class definRegion : public definBase
 };
 
 }  // namespace odb
-
-

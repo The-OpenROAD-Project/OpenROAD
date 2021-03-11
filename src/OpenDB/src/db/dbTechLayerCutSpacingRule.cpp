@@ -252,8 +252,8 @@ bool _dbTechLayerCutSpacingRule::operator<(
   return true;
 }
 void _dbTechLayerCutSpacingRule::differences(
-    dbDiff&                           diff,
-    const char*                       field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerCutSpacingRule& rhs) const
 {
   DIFF_BEGIN
@@ -324,8 +324,8 @@ void _dbTechLayerCutSpacingRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
-                                     char        side,
+void _dbTechLayerCutSpacingRule::out(dbDiff& diff,
+                                     char side,
                                      const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -399,77 +399,77 @@ void _dbTechLayerCutSpacingRule::out(dbDiff&     diff,
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
 {
   uint64_t* flags__bit_field = (uint64_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
-    _dbDatabase*                      db,
+    _dbDatabase* db,
     const _dbTechLayerCutSpacingRule& r)
 {
-  flags_.center_to_center_            = r.flags_.center_to_center_;
-  flags_.same_net_                    = r.flags_.same_net_;
-  flags_.same_metal_                  = r.flags_.same_metal_;
-  flags_.same_via_                    = r.flags_.same_via_;
-  flags_.cut_spacing_type_            = r.flags_.cut_spacing_type_;
-  flags_.stack_                       = r.flags_.stack_;
-  flags_.orthogonal_spacing_valid_    = r.flags_.orthogonal_spacing_valid_;
+  flags_.center_to_center_ = r.flags_.center_to_center_;
+  flags_.same_net_ = r.flags_.same_net_;
+  flags_.same_metal_ = r.flags_.same_metal_;
+  flags_.same_via_ = r.flags_.same_via_;
+  flags_.cut_spacing_type_ = r.flags_.cut_spacing_type_;
+  flags_.stack_ = r.flags_.stack_;
+  flags_.orthogonal_spacing_valid_ = r.flags_.orthogonal_spacing_valid_;
   flags_.above_width_enclosure_valid_ = r.flags_.above_width_enclosure_valid_;
-  flags_.short_edge_only_             = r.flags_.short_edge_only_;
-  flags_.concave_corner_width_        = r.flags_.concave_corner_width_;
-  flags_.concave_corner_parallel_     = r.flags_.concave_corner_parallel_;
-  flags_.concave_corner_edge_length_  = r.flags_.concave_corner_edge_length_;
-  flags_.concave_corner_              = r.flags_.concave_corner_;
-  flags_.extension_valid_             = r.flags_.extension_valid_;
-  flags_.non_eol_convex_corner_       = r.flags_.non_eol_convex_corner_;
-  flags_.eol_width_valid_             = r.flags_.eol_width_valid_;
-  flags_.min_length_valid_            = r.flags_.min_length_valid_;
-  flags_.above_width_valid_           = r.flags_.above_width_valid_;
-  flags_.mask_overlap_                = r.flags_.mask_overlap_;
-  flags_.wrong_direction_             = r.flags_.wrong_direction_;
-  flags_.adjacent_cuts_               = r.flags_.adjacent_cuts_;
-  flags_.exact_aligned_               = r.flags_.exact_aligned_;
-  flags_.cut_class_to_all_            = r.flags_.cut_class_to_all_;
-  flags_.no_prl_                      = r.flags_.no_prl_;
-  flags_.same_mask_                   = r.flags_.same_mask_;
-  flags_.except_same_pgnet_           = r.flags_.except_same_pgnet_;
-  flags_.side_parallel_overlap_       = r.flags_.side_parallel_overlap_;
-  flags_.except_same_net_             = r.flags_.except_same_net_;
-  flags_.except_same_metal_           = r.flags_.except_same_metal_;
-  flags_.except_same_metal_overlap_   = r.flags_.except_same_metal_overlap_;
-  flags_.except_same_via_             = r.flags_.except_same_via_;
-  flags_.above_                       = r.flags_.above_;
-  flags_.except_two_edges_            = r.flags_.except_two_edges_;
-  flags_.two_cuts_valid_              = r.flags_.two_cuts_valid_;
-  flags_.same_cut_                    = r.flags_.same_cut_;
-  flags_.long_edge_only_              = r.flags_.long_edge_only_;
-  flags_.prl_valid_                   = r.flags_.prl_valid_;
-  flags_.below_                       = r.flags_.below_;
-  flags_.par_within_enclosure_valid_  = r.flags_.par_within_enclosure_valid_;
-  flags_.spare_bits_                  = r.flags_.spare_bits_;
-  cut_spacing_                        = r.cut_spacing_;
-  second_layer_                       = r.second_layer_;
-  orthogonal_spacing_                 = r.orthogonal_spacing_;
-  width_                              = r.width_;
-  enclosure_                          = r.enclosure_;
-  edge_length_                        = r.edge_length_;
-  par_within_                         = r.par_within_;
-  par_enclosure_                      = r.par_enclosure_;
-  edge_enclosure_                     = r.edge_enclosure_;
-  adj_enclosure_                      = r.adj_enclosure_;
-  above_enclosure_                    = r.above_enclosure_;
-  above_width_                        = r.above_width_;
-  min_length_                         = r.min_length_;
-  extension_                          = r.extension_;
-  eol_width_                          = r.eol_width_;
-  num_cuts_                           = r.num_cuts_;
-  within_                             = r.within_;
-  second_within_                      = r.second_within_;
-  cut_class_                          = r.cut_class_;
-  two_cuts_                           = r.two_cuts_;
-  prl_                                = r.prl_;
-  par_length_                         = r.par_length_;
-  cut_area_                           = r.cut_area_;
+  flags_.short_edge_only_ = r.flags_.short_edge_only_;
+  flags_.concave_corner_width_ = r.flags_.concave_corner_width_;
+  flags_.concave_corner_parallel_ = r.flags_.concave_corner_parallel_;
+  flags_.concave_corner_edge_length_ = r.flags_.concave_corner_edge_length_;
+  flags_.concave_corner_ = r.flags_.concave_corner_;
+  flags_.extension_valid_ = r.flags_.extension_valid_;
+  flags_.non_eol_convex_corner_ = r.flags_.non_eol_convex_corner_;
+  flags_.eol_width_valid_ = r.flags_.eol_width_valid_;
+  flags_.min_length_valid_ = r.flags_.min_length_valid_;
+  flags_.above_width_valid_ = r.flags_.above_width_valid_;
+  flags_.mask_overlap_ = r.flags_.mask_overlap_;
+  flags_.wrong_direction_ = r.flags_.wrong_direction_;
+  flags_.adjacent_cuts_ = r.flags_.adjacent_cuts_;
+  flags_.exact_aligned_ = r.flags_.exact_aligned_;
+  flags_.cut_class_to_all_ = r.flags_.cut_class_to_all_;
+  flags_.no_prl_ = r.flags_.no_prl_;
+  flags_.same_mask_ = r.flags_.same_mask_;
+  flags_.except_same_pgnet_ = r.flags_.except_same_pgnet_;
+  flags_.side_parallel_overlap_ = r.flags_.side_parallel_overlap_;
+  flags_.except_same_net_ = r.flags_.except_same_net_;
+  flags_.except_same_metal_ = r.flags_.except_same_metal_;
+  flags_.except_same_metal_overlap_ = r.flags_.except_same_metal_overlap_;
+  flags_.except_same_via_ = r.flags_.except_same_via_;
+  flags_.above_ = r.flags_.above_;
+  flags_.except_two_edges_ = r.flags_.except_two_edges_;
+  flags_.two_cuts_valid_ = r.flags_.two_cuts_valid_;
+  flags_.same_cut_ = r.flags_.same_cut_;
+  flags_.long_edge_only_ = r.flags_.long_edge_only_;
+  flags_.prl_valid_ = r.flags_.prl_valid_;
+  flags_.below_ = r.flags_.below_;
+  flags_.par_within_enclosure_valid_ = r.flags_.par_within_enclosure_valid_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  cut_spacing_ = r.cut_spacing_;
+  second_layer_ = r.second_layer_;
+  orthogonal_spacing_ = r.orthogonal_spacing_;
+  width_ = r.width_;
+  enclosure_ = r.enclosure_;
+  edge_length_ = r.edge_length_;
+  par_within_ = r.par_within_;
+  par_enclosure_ = r.par_enclosure_;
+  edge_enclosure_ = r.edge_enclosure_;
+  adj_enclosure_ = r.adj_enclosure_;
+  above_enclosure_ = r.above_enclosure_;
+  above_width_ = r.above_width_;
+  min_length_ = r.min_length_;
+  extension_ = r.extension_;
+  eol_width_ = r.eol_width_;
+  num_cuts_ = r.num_cuts_;
+  within_ = r.within_;
+  second_within_ = r.second_within_;
+  cut_class_ = r.cut_class_;
+  two_cuts_ = r.two_cuts_;
+  prl_ = r.prl_;
+  par_length_ = r.par_length_;
+  cut_area_ = r.cut_area_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -1396,7 +1396,7 @@ dbTechLayer* dbTechLayerCutSpacingRule::getSecondLayer() const
   if (obj->second_layer_ == 0)
     return nullptr;
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
-  _dbTech*      _tech = (_dbTech*) layer->getOwner();
+  _dbTech* _tech = (_dbTech*) layer->getOwner();
   return (dbTechLayer*) _tech->_layer_tbl->getPtr(obj->second_layer_);
 }
 
@@ -1425,14 +1425,14 @@ dbTechLayerCutSpacingRule::CutSpacingType dbTechLayerCutSpacingRule::getType()
 dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
     dbTechLayer* _layer)
 {
-  _dbTechLayer*               layer   = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutSpacingRule* newrule = layer->cut_spacing_rules_tbl_->create();
   return ((dbTechLayerCutSpacingRule*) newrule);
 }
 
 dbTechLayerCutSpacingRule*
 dbTechLayerCutSpacingRule::getTechLayerCutSpacingRule(dbTechLayer* inly,
-                                                      uint         dbid)
+                                                      uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutSpacingRule*) layer->cut_spacing_rules_tbl_->getPtr(

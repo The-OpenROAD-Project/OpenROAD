@@ -115,8 +115,8 @@ bool _dbTechLayerCornerSpacingRule::operator<(
   return true;
 }
 void _dbTechLayerCornerSpacingRule::differences(
-    dbDiff&                              diff,
-    const char*                          field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
   DIFF_BEGIN
@@ -143,8 +143,8 @@ void _dbTechLayerCornerSpacingRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
-                                        char        side,
+void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
+                                        char side,
                                         const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -174,35 +174,35 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff&     diff,
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
-    _dbDatabase*                         db,
+    _dbDatabase* db,
     const _dbTechLayerCornerSpacingRule& r)
 {
-  flags_.corner_type_               = r.flags_.corner_type_;
-  flags_.same_mask_                 = r.flags_.same_mask_;
-  flags_.corner_only_               = r.flags_.corner_only_;
-  flags_.except_eol_                = r.flags_.except_eol_;
-  flags_.except_jog_length_         = r.flags_.except_jog_length_;
-  flags_.edge_length_valid_         = r.flags_.edge_length_valid_;
-  flags_.include_shape_             = r.flags_.include_shape_;
-  flags_.min_length_valid_          = r.flags_.min_length_valid_;
-  flags_.except_notch_              = r.flags_.except_notch_;
+  flags_.corner_type_ = r.flags_.corner_type_;
+  flags_.same_mask_ = r.flags_.same_mask_;
+  flags_.corner_only_ = r.flags_.corner_only_;
+  flags_.except_eol_ = r.flags_.except_eol_;
+  flags_.except_jog_length_ = r.flags_.except_jog_length_;
+  flags_.edge_length_valid_ = r.flags_.edge_length_valid_;
+  flags_.include_shape_ = r.flags_.include_shape_;
+  flags_.min_length_valid_ = r.flags_.min_length_valid_;
+  flags_.except_notch_ = r.flags_.except_notch_;
   flags_.except_notch_length_valid_ = r.flags_.except_notch_length_valid_;
-  flags_.except_same_net_           = r.flags_.except_same_net_;
-  flags_.except_same_metal_         = r.flags_.except_same_metal_;
-  flags_.spare_bits_                = r.flags_.spare_bits_;
-  within_                           = r.within_;
-  eol_width_                        = r.eol_width_;
-  jog_length_                       = r.jog_length_;
-  edge_length_                      = r.edge_length_;
-  min_length_                       = r.min_length_;
-  except_notch_length_              = r.except_notch_length_;
+  flags_.except_same_net_ = r.flags_.except_same_net_;
+  flags_.except_same_metal_ = r.flags_.except_same_metal_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  within_ = r.within_;
+  eol_width_ = r.eol_width_;
+  jog_length_ = r.jog_length_;
+  edge_length_ = r.edge_length_;
+  min_length_ = r.min_length_;
+  except_notch_length_ = r.except_notch_length_;
   // User Code Begin CopyConstructor
-  _width_tbl   = r._width_tbl;
+  _width_tbl = r._width_tbl;
   _spacing_tbl = r._spacing_tbl;
   // User Code End CopyConstructor
 }
@@ -223,7 +223,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
   // User Code End >>
   return stream;
 }
-dbOStream& operator<<(dbOStream&                           stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -503,13 +503,13 @@ void dbTechLayerCornerSpacingRule::getSpacingTable(
     std::vector<std::pair<int, int>>& tbl)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  tbl                                = obj->_spacing_tbl;
+  tbl = obj->_spacing_tbl;
 }
 
 void dbTechLayerCornerSpacingRule::getWidthTable(std::vector<int>& tbl)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  tbl                                = obj->_width_tbl;
+  tbl = obj->_width_tbl;
 }
 
 void dbTechLayerCornerSpacingRule::setType(CornerType _type)
@@ -530,7 +530,7 @@ dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
 dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
     dbTechLayer* _layer)
 {
-  _dbTechLayer*                  layer = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCornerSpacingRule* newrule
       = layer->corner_spacing_rules_tbl_->create();
   return ((dbTechLayerCornerSpacingRule*) newrule);
@@ -538,7 +538,7 @@ dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
 
 dbTechLayerCornerSpacingRule*
 dbTechLayerCornerSpacingRule::getTechLayerCornerSpacingRule(dbTechLayer* inly,
-                                                            uint         dbid)
+                                                            uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCornerSpacingRule*)

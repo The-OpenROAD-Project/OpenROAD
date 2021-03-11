@@ -70,14 +70,14 @@ class _dbGCellGrid : public _dbObject
   // User Code End Enums
 
   dbGCellGridFlags flags_;
-  dbVector<int>    x_origin_;
-  dbVector<int>    x_count_;
-  dbVector<int>    x_step_;
-  dbVector<int>    y_origin_;
-  dbVector<int>    y_count_;
-  dbVector<int>    y_step_;
-  dbVector<int>    x_grid_;
-  dbVector<int>    y_grid_;
+  dbVector<int> x_origin_;
+  dbVector<int> x_count_;
+  dbVector<int> x_step_;
+  dbVector<int> y_origin_;
+  dbVector<int> y_count_;
+  dbVector<int> y_step_;
+  dbVector<int> x_grid_;
+  dbVector<int> y_grid_;
   std::map<dbId<_dbTechLayer>,
            std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
       congestion_map_;
@@ -90,8 +90,8 @@ class _dbGCellGrid : public _dbObject
   bool operator==(const _dbGCellGrid& rhs) const;
   bool operator!=(const _dbGCellGrid& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGCellGrid& rhs) const;
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
