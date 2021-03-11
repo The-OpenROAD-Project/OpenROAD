@@ -657,7 +657,7 @@ void dbBTerm::destroy(dbBTerm* bterm_)
                1,
                "ECO: dbBTerm:destroy");
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbInstObj);
+    block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm_->getId());
     block->_journal->endAction();
   }
