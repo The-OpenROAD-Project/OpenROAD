@@ -148,7 +148,7 @@ using sta::Unit;
 using odb::dbMasterType;
 
 extern "C" {
-extern int Resizer_Init(Tcl_Interp *interp);
+extern int Rsz_Init(Tcl_Interp *interp);
 }
 
 Resizer::Resizer() :
@@ -197,7 +197,7 @@ Resizer::init(OpenRoad *openroad,
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
-  Resizer_Init(interp);
+  Rsz_Init(interp);
   // Eval encoded sta TCL sources.
   evalTclInit(interp, sta::rsz_tcl_inits);
 }
@@ -328,8 +328,7 @@ Resizer::removeBuffer(Instance *buffer)
   if (in_net_ports && out_net_ports) {
     // Verilog uses nets as ports, so the surviving net has to be
     // the one connected the port.
-    logger_->warn(RSZ, 46,
-                  "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
+    logger_->warn(RSZ, 43, "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
                   sdc_network_->pathName(in_net),
                   sdc_network_->pathName(out_net));
     return false;

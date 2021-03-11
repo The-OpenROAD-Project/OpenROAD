@@ -226,7 +226,9 @@ utilization as show below:
           core_height + core_space_bottom + core_space_top )
 ```
 
+The `initialize_floorplan` command removes existing tracks.
 Use the `make_tracks` command to add routing tracks to a floorplan.
+
 ```
 make_tracks [layer]
             [-x_pitch x_pitch]
@@ -473,7 +475,7 @@ remove_buffers
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
 
 ```
-estimate_parasitics -placement
+estimate_parasitics -placement|-global_routing
 ```
 
 Estimate RC parasitics based on placed component pin locations. If
@@ -483,7 +485,10 @@ wire. Use the `set_units` command to check units or `set_cmd_units` to
 change units. They should represent "average" routing layer resistance
 and capacitance. If the set_wire_rc command is not called before
 resizing, the default_wireload model specified in the first liberty
-file or with the SDC set_wire_load command is used to make parasitics.
+file or with the SDC set_wire_load command is used to make parasitics.  
+
+After the `global_route` command has been called the global routing topology
+and layers can be used to estimate parasitics  with the `-global_routing` flag.
 
 ```
 set_dont_use lib_cells

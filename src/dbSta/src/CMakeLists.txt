@@ -15,26 +15,26 @@
 
 include("openroad")
 
-tcl_lib(NAME          dbSta
-        NAMESPACE     sta
-        I_FILE        dbSta.i
-        SWIG_INCLUDES ${OPENSTA_HOME}
-        SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
-                      ${OPENSTA_HOME}/tcl/Liberty.tcl
-                      ${OPENSTA_HOME}/tcl/Network.tcl
-                      ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
-                      ${OPENSTA_HOME}/tcl/Sdc.tcl
-                      ${OPENSTA_HOME}/tcl/Search.tcl
-                      ${OPENSTA_HOME}/tcl/Cmds.tcl
-                      ${OPENSTA_HOME}/tcl/Variables.tcl
-                      ${OPENSTA_HOME}/tcl/Sta.tcl
-                      ${OPENSTA_HOME}/tcl/Power.tcl
-                      ${OPENSTA_HOME}/tcl/Splash.tcl
-                      ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
-                      ${OPENSTA_HOME}/parasitics/Parasitics.tcl
-                      ${OPENSTA_HOME}/sdf/Sdf.tcl
-                      ${DBSTA_HOME}/src/dbReadVerilog.tcl
-                      ${DBSTA_HOME}/src/dbSta.tcl
+swig_lib(NAME          dbSta
+         NAMESPACE     sta
+         I_FILE        dbSta.i
+         SWIG_INCLUDES ${OPENSTA_HOME}
+         SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
+                        ${OPENSTA_HOME}/tcl/Liberty.tcl
+                       ${OPENSTA_HOME}/tcl/Network.tcl
+                       ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
+                       ${OPENSTA_HOME}/tcl/Sdc.tcl
+                       ${OPENSTA_HOME}/tcl/Search.tcl
+                       ${OPENSTA_HOME}/tcl/Cmds.tcl
+                       ${OPENSTA_HOME}/tcl/Variables.tcl
+                       ${OPENSTA_HOME}/tcl/Sta.tcl
+                       ${OPENSTA_HOME}/tcl/Power.tcl
+                       ${OPENSTA_HOME}/tcl/Splash.tcl
+                       ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
+                       ${OPENSTA_HOME}/parasitics/Parasitics.tcl
+                       ${OPENSTA_HOME}/sdf/Sdf.tcl
+                       ${DBSTA_HOME}/src/dbReadVerilog.tcl
+                       ${DBSTA_HOME}/src/dbSta.tcl
 )
 
 target_sources(dbSta

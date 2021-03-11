@@ -35,10 +35,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      rsz
-        NAMESPACE rsz
-        I_FILE    Resizer.i
-        SCRIPTS   Resizer.tcl
+swig_lib(NAME      rsz
+         NAMESPACE rsz
+         I_FILE    Resizer.i
+         SCRIPTS   Resizer.tcl
 )
 
 target_sources(rsz

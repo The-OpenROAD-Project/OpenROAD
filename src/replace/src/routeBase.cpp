@@ -35,7 +35,7 @@
 #include "nesterovBase.h"
 
 #include "opendb/db.h"
-#include "fastroute/GlobalRouter.h"
+#include "grt/GlobalRouter.h"
 #include "utility/Logger.h"
 
 #include <string>
