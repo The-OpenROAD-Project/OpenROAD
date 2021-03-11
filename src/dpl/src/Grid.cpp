@@ -275,7 +275,7 @@ void
 Opendp::erasePixel(Cell *cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
-    int x_end = gridEndX(cell);
+    int x_end = gridPaddedEndX(cell);
     int y_end = gridEndY(cell);
     for (int x = gridPaddedX(cell); x < x_end; x++) {
       for (int y = gridY(cell); y < y_end; y++) {

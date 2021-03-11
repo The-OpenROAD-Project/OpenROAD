@@ -28,14 +28,23 @@
 #include <boost/polygon/polygon.hpp>
 
 #include "opendb/db.h"
+#include "opendb/defout.h"
 
 bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2);
 
 bool db_def_diff(odb::dbDatabase* db1, const char* def_filename);
 
+odb::dbLib* read_lef(odb::dbDatabase* db, const char* path);
+
 int write_lef(odb::dbLib* lib, const char* path);
 
 int write_tech_lef(odb::dbTech* tech, const char* path);
+
+odb::dbChip* read_def(odb::dbDatabase* db, std::string path);
+
+int write_def(odb::dbBlock* block, const char* path,
+              odb::defout::Version version = odb::defout::Version::DEF_5_8);
+
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path);
 
