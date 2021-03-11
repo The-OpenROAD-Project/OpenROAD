@@ -74,8 +74,8 @@ bool _dbSite::operator==(const _dbSite& rhs) const
   return true;
 }
 
-void _dbSite::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbSite::differences(dbDiff& diff,
+                          const char* field,
                           const _dbSite& rhs) const
 {
   DIFF_BEGIN
@@ -124,14 +124,14 @@ _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
 
 _dbSite::_dbSite(_dbDatabase*)
 {
-  _name                = NULL;
-  _height              = 0;
-  _width               = 0;
-  _flags._x_symmetry   = 0;
-  _flags._y_symmetry   = 0;
+  _name = NULL;
+  _height = 0;
+  _width = 0;
+  _flags._x_symmetry = 0;
+  _flags._y_symmetry = 0;
   _flags._R90_symmetry = 0;
-  _flags._class        = dbSiteClass::CORE;
-  _flags._spare_bits   = 0;
+  _flags._class = dbSiteClass::CORE;
+  _flags._spare_bits = 0;
 }
 
 _dbSite::~_dbSite()
@@ -167,7 +167,7 @@ uint dbSite::getWidth()
 void dbSite::setWidth(uint w)
 {
   _dbSite* site = (_dbSite*) this;
-  site->_width  = w;
+  site->_width = w;
 }
 
 uint dbSite::getHeight()
@@ -184,7 +184,7 @@ void dbSite::setHeight(uint h)
 
 void dbSite::setSymmetryX()
 {
-  _dbSite* site            = (_dbSite*) this;
+  _dbSite* site = (_dbSite*) this;
   site->_flags._x_symmetry = 1;
 }
 
@@ -196,7 +196,7 @@ bool dbSite::getSymmetryX()
 
 void dbSite::setSymmetryY()
 {
-  _dbSite* site            = (_dbSite*) this;
+  _dbSite* site = (_dbSite*) this;
   site->_flags._y_symmetry = 1;
 }
 
@@ -208,7 +208,7 @@ bool dbSite::getSymmetryY()
 
 void dbSite::setSymmetryR90()
 {
-  _dbSite* site              = (_dbSite*) this;
+  _dbSite* site = (_dbSite*) this;
   site->_flags._R90_symmetry = 1;
 }
 
@@ -226,7 +226,7 @@ dbSiteClass dbSite::getClass()
 
 void dbSite::setClass(dbSiteClass type)
 {
-  _dbSite* site       = (_dbSite*) this;
+  _dbSite* site = (_dbSite*) this;
   site->_flags._class = type.getValue();
 }
 
@@ -240,9 +240,9 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
   if (lib_->findSite(name_))
     return NULL;
 
-  _dbLib*  lib  = (_dbLib*) lib_;
+  _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
-  site->_name   = strdup(name_);
+  site->_name = strdup(name_);
   ZALLOCATED(site->_name);
   lib->_site_hash.insert(site);
   return (dbSite*) site;

@@ -58,21 +58,21 @@ class _dbTechLayerRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechLayerRuleFlags       _flags;
-  uint                        _width;
-  uint                        _spacing;
-  double                      _resistance;
-  double                      _capacitance;
-  double                      _edge_capacitance;
-  uint                        _wire_extension;
+  _dbTechLayerRuleFlags _flags;
+  uint _width;
+  uint _spacing;
+  double _resistance;
+  double _capacitance;
+  double _edge_capacitance;
+  uint _wire_extension;
   dbId<_dbTechNonDefaultRule> _non_default_rule;
-  dbId<_dbTechLayer>          _layer;
+  dbId<_dbTechLayer> _layer;
 
   _dbTechLayerRule(_dbDatabase*);
   _dbTechLayerRule(_dbDatabase*, const _dbTechLayerRule& r);
   ~_dbTechLayerRule();
 
-  _dbTech*  getTech();
+  _dbTech* getTech();
   _dbBlock* getBlock();
 
   bool operator==(const _dbTechLayerRule& rhs) const;
@@ -91,8 +91,8 @@ class _dbTechLayerRule : public _dbObject
     return _non_default_rule < rhs._non_default_rule;
   }
 
-  void differences(dbDiff&                 diff,
-                   const char*             field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

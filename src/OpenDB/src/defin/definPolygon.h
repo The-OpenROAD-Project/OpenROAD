@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "odb.h"
-#include "geom.h"
-
 #include <vector>
+
+#include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -50,5 +50,3 @@ class definPolygon
 };
 
 }  // namespace odb
-
-

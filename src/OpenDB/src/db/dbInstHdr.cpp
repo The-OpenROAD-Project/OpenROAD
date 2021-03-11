@@ -71,8 +71,8 @@ bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
   return true;
 }
 
-void _dbInstHdr::differences(dbDiff&           diff,
-                             const char*       field,
+void _dbInstHdr::differences(dbDiff& diff,
+                             const char* field,
                              const _dbInstHdr& rhs) const
 {
   DIFF_BEGIN
@@ -107,9 +107,9 @@ void _dbInstHdr::out(dbDiff& diff, char side, const char* field) const
 
 _dbInstHdr::_dbInstHdr(_dbDatabase*)
 {
-  _id        = 0;
+  _id = 0;
   _mterm_cnt = 0;
-  _inst_cnt  = 0;
+  _inst_cnt = 0;
 }
 
 _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
@@ -164,24 +164,24 @@ dbBlock* dbInstHdr::getBlock()
 
 dbLib* dbInstHdr::getLib()
 {
-  _dbInstHdr*  inst_hdr = (_dbInstHdr*) this;
-  _dbDatabase* db       = getDatabase();
+  _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
+  _dbDatabase* db = getDatabase();
   return (dbLib*) db->_lib_tbl->getPtr(inst_hdr->_lib);
 }
 
 dbMaster* dbInstHdr::getMaster()
 {
-  _dbInstHdr*  inst_hdr = (_dbInstHdr*) this;
-  _dbDatabase* db       = getDatabase();
-  _dbLib*      lib      = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
+  _dbDatabase* db = getDatabase();
+  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
   return (dbMaster*) lib->_master_tbl->getPtr(inst_hdr->_master);
 }
 
 dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
 {
-  _dbBlock*  block  = (_dbBlock*) block_;
+  _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
-  _dbLib*    lib    = (_dbLib*) master->getOwner();
+  _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (!master->_flags._frozen)
     return NULL;
@@ -191,11 +191,11 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
 
   _dbInstHdr* inst_hdr;
   // initialize the inst_hdr structure
-  inst_hdr             = block->_inst_hdr_tbl->create();
+  inst_hdr = block->_inst_hdr_tbl->create();
   inst_hdr->_mterm_cnt = master->_mterm_cnt;
-  inst_hdr->_id        = master->_id;
-  inst_hdr->_lib       = lib->getOID();
-  inst_hdr->_master    = master->getOID();
+  inst_hdr->_id = master->_id;
+  inst_hdr->_lib = lib->getOID();
+  inst_hdr->_master = master->getOID();
 
   // insert the inst_hdr into the block inst_hdr hash table.
   block->_inst_hdr_hash.insert(inst_hdr);
@@ -216,12 +216,12 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   inst_hdr->_mterms.resize(master->_mterm_cnt);
 
   // mterms, this set is ordered: {output, inout, input}
-  dbSet<dbMTerm>           mterms = master_->getMTerms();
+  dbSet<dbMTerm> mterms = master_->getMTerms();
   dbSet<dbMTerm>::iterator itr;
-  int                      i = 0;
+  int i = 0;
 
   for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    dbMTerm* mterm         = *itr;
+    dbMTerm* mterm = *itr;
     inst_hdr->_mterms[i++] = mterm->getImpl()->getOID();
   }
 
@@ -231,7 +231,7 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
 void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
 {
   _dbInstHdr* inst_hdr = (_dbInstHdr*) inst_hdr_;
-  _dbBlock*   block    = (_dbBlock*) inst_hdr->getOwner();
+  _dbBlock* block = (_dbBlock*) inst_hdr->getOwner();
 
   assert(inst_hdr->_inst_cnt == 0);
   block->_inst_hdr_hash.remove(inst_hdr);

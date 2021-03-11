@@ -68,10 +68,10 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
 
 _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*)
 {
-  _flags._spare_bits   = 0;
+  _flags._spare_bits = 0;
   _flags._hard_spacing = 0;
-  _flags._block_rule   = 0;
-  _name                = NULL;
+  _flags._block_rule = 0;
+  _name = NULL;
 }
 
 _dbTechNonDefaultRule::~_dbTechNonDefaultRule()
@@ -154,8 +154,8 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
   return true;
 }
 
-void _dbTechNonDefaultRule::differences(dbDiff&                      diff,
-                                        const char*                  field,
+void _dbTechNonDefaultRule::differences(dbDiff& diff,
+                                        const char* field,
                                         const _dbTechNonDefaultRule& rhs) const
 {
   DIFF_BEGIN
@@ -173,8 +173,8 @@ void _dbTechNonDefaultRule::differences(dbDiff&                      diff,
   DIFF_END
 }
 
-void _dbTechNonDefaultRule::out(dbDiff&     diff,
-                                char        side,
+void _dbTechNonDefaultRule::out(dbDiff& diff,
+                                char side,
                                 const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -239,9 +239,9 @@ bool dbTechNonDefaultRule::isBlockRule()
 
 dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
 {
-  _dbTechNonDefaultRule* rule  = (_dbTechNonDefaultRule*) this;
-  _dbTechLayer*          layer = (_dbTechLayer*) layer_;
-  dbId<_dbTechLayerRule> id    = rule->_layer_rules[layer->_number];
+  _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) layer_;
+  dbId<_dbTechLayerRule> id = rule->_layer_rules[layer->_number];
 
   if (id == 0)
     return NULL;
@@ -256,20 +256,20 @@ dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
 void dbTechNonDefaultRule::getLayerRules(
     std::vector<dbTechLayerRule*>& layer_rules)
 {
-  _dbTechNonDefaultRule*     rule           = (_dbTechNonDefaultRule*) this;
+  _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
   dbTable<_dbTechLayerRule>* layer_rule_tbl = NULL;
 
   if (rule->_flags._block_rule == 0) {
-    _dbTech* tech  = rule->getTech();
+    _dbTech* tech = rule->getTech();
     layer_rule_tbl = tech->_layer_rule_tbl;
   } else {
     _dbBlock* block = rule->getBlock();
-    layer_rule_tbl  = block->_layer_rule_tbl;
+    layer_rule_tbl = block->_layer_rule_tbl;
   }
 
   layer_rules.clear();
 
-  dbVector<dbId<_dbTechLayerRule> >::iterator itr;
+  dbVector<dbId<_dbTechLayerRule>>::iterator itr;
 
   for (itr = rule->_layer_rules.begin(); itr != rule->_layer_rules.end();
        ++itr) {
@@ -290,7 +290,7 @@ void dbTechNonDefaultRule::getVias(std::vector<dbTechVia*>& vias)
   _dbTech* tech = rule->getTech();
   vias.clear();
 
-  dbVector<dbId<_dbTechVia> >::iterator itr;
+  dbVector<dbId<_dbTechVia>>::iterator itr;
 
   for (itr = rule->_vias.begin(); itr != rule->_vias.end(); ++itr) {
     dbId<_dbTechVia> id = *itr;
@@ -306,9 +306,9 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
   if (ndrule->_flags._block_rule == 1)  // not supported on block rules
     return NULL;
 
-  _dbTech*                 tech = ndrule->getTech();
-  _dbTechLayer*            l1   = (_dbTechLayer*) l1_;
-  _dbTechLayer*            l2   = (_dbTechLayer*) l2_;
+  _dbTech* tech = ndrule->getTech();
+  _dbTechLayer* l1 = (_dbTechLayer*) l1_;
+  _dbTechLayer* l2 = (_dbTechLayer*) l2_;
   dbId<_dbTechSameNetRule> rule
       = ndrule->_samenet_matrix(l1->_number, l2->_number);
 
@@ -328,7 +328,7 @@ void dbTechNonDefaultRule::getSameNetRules(
 
   _dbTech* tech = ndrule->getTech();
   rules.clear();
-  dbVector<dbId<_dbTechSameNetRule> >::iterator itr;
+  dbVector<dbId<_dbTechSameNetRule>>::iterator itr;
 
   for (itr = ndrule->_samenet_rules.begin();
        itr != ndrule->_samenet_rules.end();
@@ -347,7 +347,7 @@ bool dbTechNonDefaultRule::getHardSpacing()
 void dbTechNonDefaultRule::setHardSpacing(bool value)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  rule->_flags._hard_spacing  = value;
+  rule->_flags._hard_spacing = value;
 }
 
 void dbTechNonDefaultRule::addUseVia(dbTechVia* via)
@@ -359,13 +359,13 @@ void dbTechNonDefaultRule::addUseVia(dbTechVia* via)
 void dbTechNonDefaultRule::getUseVias(std::vector<dbTechVia*>& vias)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  _dbTech*               tech = rule->getTech();
+  _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechVia> >::iterator itr;
+  dbVector<dbId<_dbTechVia>>::iterator itr;
 
   for (itr = rule->_use_vias.begin(); itr != rule->_use_vias.end(); ++itr) {
     dbId<_dbTechVia> vid = *itr;
-    dbTechVia*       via = dbTechVia::getTechVia((dbTech*) tech, vid);
+    dbTechVia* via = dbTechVia::getTechVia((dbTech*) tech, vid);
     vias.push_back(via);
   }
 }
@@ -380,13 +380,13 @@ void dbTechNonDefaultRule::getUseViaRules(
     std::vector<dbTechViaGenerateRule*>& rules)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  _dbTech*               tech = rule->getTech();
+  _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechViaGenerateRule> >::iterator itr;
+  dbVector<dbId<_dbTechViaGenerateRule>>::iterator itr;
 
   for (itr = rule->_use_rules.begin(); itr != rule->_use_rules.end(); ++itr) {
     dbId<_dbTechViaGenerateRule> rid = *itr;
-    dbTechViaGenerateRule*       rule
+    dbTechViaGenerateRule* rule
         = dbTechViaGenerateRule::getTechViaGenerateRule((dbTech*) tech, rid);
     rules.push_back(rule);
   }
@@ -396,9 +396,9 @@ void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, int count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint                                    id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer> >::iterator itr;
-  uint                                    idx = 0;
+  uint id = cut_layer->getId();
+  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  uint idx = 0;
 
   for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
        ++itr, ++idx) {
@@ -418,9 +418,9 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint                                    id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer> >::iterator itr;
-  uint                                    idx = 0;
+  uint id = cut_layer->getId();
+  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  uint idx = 0;
 
   for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
        ++itr, ++idx) {
@@ -435,15 +435,15 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
   return false;
 }
 
-dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech*     tech_,
+dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
                                                    const char* name_)
 {
   if (tech_->findNonDefaultRule(name_))
     return NULL;
 
-  _dbTech*               tech = (_dbTech*) tech_;
+  _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
-  rule->_name                 = strdup(name_);
+  rule->_name = strdup(name_);
   ZALLOCATED(rule->_name);
   rule->_layer_rules.resize(tech->_layer_cnt);
 
@@ -454,15 +454,15 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech*     tech_,
   return (dbTechNonDefaultRule*) rule;
 }
 
-dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock*    block_,
+dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
                                                    const char* name_)
 {
   if (block_->findNonDefaultRule(name_))
     return NULL;
 
-  _dbBlock*              block = (_dbBlock*) block_;
-  _dbTech*               tech  = (_dbTech*) block->getDb()->getTech();
-  _dbTechNonDefaultRule* rule  = block->_non_default_rule_tbl->create();
+  _dbBlock* block = (_dbBlock*) block_;
+  _dbTech* tech = (_dbTech*) block->getDb()->getTech();
+  _dbTechNonDefaultRule* rule = block->_non_default_rule_tbl->create();
 
   rule->_name = strdup(name_);
   ZALLOCATED(rule->_name);
@@ -477,7 +477,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock*    block_,
 }
 
 dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(dbTech* tech_,
-                                                                  uint    dbid_)
+                                                                  uint dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(dbid_);
@@ -485,7 +485,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(dbTech* tech_,
 
 dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(
     dbBlock* block_,
-    uint     dbid_)
+    uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(dbid_);

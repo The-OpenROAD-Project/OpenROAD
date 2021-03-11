@@ -56,21 +56,21 @@ class dbDiff;
 
 struct _dbInstFlags
 {
-  dbOrientType::Value      _orient : 4;
+  dbOrientType::Value _orient : 4;
   dbPlacementStatus::Value _status : 4;
-  uint                     _user_flag_1 : 1;
-  uint                     _user_flag_2 : 1;
-  uint                     _user_flag_3 : 1;
-  uint                     _size_only : 1;
-  uint                     _dont_touch : 1;
-  uint                     _dont_size : 1;
-  dbSourceType::Value      _source : 4;
-  uint                     _eco_create : 1;
-  uint                     _eco_destroy : 1;
-  uint                     _eco_modify : 1;
-  uint                     _input_cone : 1;
-  uint                     _inside_cone : 1;
-  uint                     _level : 9;
+  uint _user_flag_1 : 1;
+  uint _user_flag_2 : 1;
+  uint _user_flag_3 : 1;
+  uint _size_only : 1;
+  uint _dont_touch : 1;
+  uint _dont_size : 1;
+  dbSourceType::Value _source : 4;
+  uint _eco_create : 1;
+  uint _eco_destroy : 1;
+  uint _eco_modify : 1;
+  uint _input_cone : 1;
+  uint _inside_cone : 1;
+  uint _level : 9;
 };
 
 class _dbInst : public _dbObject
@@ -83,24 +83,24 @@ class _dbInst : public _dbObject
     INVALIDATETIMING
   };
 
-  _dbInstFlags     _flags;
-  char*            _name;
-  int              _x;
-  int              _y;
-  int              _weight;
-  dbId<_dbInst>    _next_entry;
+  _dbInstFlags _flags;
+  char* _name;
+  int _x;
+  int _y;
+  int _weight;
+  dbId<_dbInst> _next_entry;
   dbId<_dbInstHdr> _inst_hdr;
-  dbId<_dbBox>     _bbox;
-  dbId<_dbRegion>  _region;
-  dbId<_dbModule>  _module;
-  dbId<_dbGroup>   _group;
-  dbId<_dbInst>    _region_next;
-  dbId<_dbInst>    _module_next;
-  dbId<_dbInst>    _group_next;
-  dbId<_dbInst>    _region_prev;
-  dbId<_dbHier>    _hierarchy;
-  dbVector<uint>   _iterms;
-  dbId<_dbBox>     _halo;
+  dbId<_dbBox> _bbox;
+  dbId<_dbRegion> _region;
+  dbId<_dbModule> _module;
+  dbId<_dbGroup> _group;
+  dbId<_dbInst> _region_next;
+  dbId<_dbInst> _module_next;
+  dbId<_dbInst> _group_next;
+  dbId<_dbInst> _region_prev;
+  dbId<_dbHier> _hierarchy;
+  dbVector<uint> _iterms;
+  dbId<_dbBox> _halo;
 
   _dbInst(_dbDatabase*);
   _dbInst(_dbDatabase*, const _dbInst& i);
@@ -111,6 +111,7 @@ class _dbInst : public _dbObject
   bool operator<(const _dbInst& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbInst& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  static void setInstBBox(_dbInst* inst);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbInst& inst);

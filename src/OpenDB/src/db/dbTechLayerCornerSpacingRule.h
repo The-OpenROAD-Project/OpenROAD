@@ -30,15 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbVector.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -51,41 +51,41 @@ class _dbDatabase;
 
 struct dbTechLayerCornerSpacingRuleFlags
 {
-  uint _corner_type : 1;
-  bool _same_mask : 1;
-  bool _corner_only : 1;
-  bool _except_eol : 1;
-  bool _except_jog_length : 1;
-  bool _edge_length_valid : 1;
-  bool _include_shape : 1;
-  bool _min_length_valid : 1;
-  bool _except_notch : 1;
-  bool _except_notch_length_valid : 1;
-  bool _except_same_net : 1;
-  bool _except_same_metal : 1;
-  uint _spare_bits : 20;
+  uint corner_type_ : 1;
+  bool same_mask_ : 1;
+  bool corner_only_ : 1;
+  bool except_eol_ : 1;
+  bool except_jog_length_ : 1;
+  bool edge_length_valid_ : 1;
+  bool include_shape_ : 1;
+  bool min_length_valid_ : 1;
+  bool except_notch_ : 1;
+  bool except_notch_length_valid_ : 1;
+  bool except_same_net_ : 1;
+  bool except_same_metal_ : 1;
+  uint spare_bits_ : 20;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerCornerSpacingRuleFlags _flags;
-  int                               _within;
-  int                               _eol_width;
-  int                               _jog_length;
-  int                               _edge_length;
-  int                               _min_length;
-  int                               _except_notch_length;
+  dbTechLayerCornerSpacingRuleFlags flags_;
+  int within_;
+  int eol_width_;
+  int jog_length_;
+  int edge_length_;
+  int min_length_;
+  int except_notch_length_;
 
-  // User Code Begin fields
-  dbVector<int>                 _width_tbl;
+  // User Code Begin Fields
+  dbVector<int> _width_tbl;
   dbVector<std::pair<int, int>> _spacing_tbl;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
@@ -96,17 +96,17 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCornerSpacingRule& rhs) const;
-  void differences(dbDiff&                              diff,
-                   const char*                          field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
-dbOStream& operator<<(dbOStream&                           stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

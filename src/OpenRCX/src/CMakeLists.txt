@@ -33,10 +33,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      OpenRCX
-        NAMESPACE rcx
-        I_FILE    ext.i
-        SCRIPTS   OpenRCX.tcl
+swig_lib(NAME      OpenRCX
+         NAMESPACE rcx
+         I_FILE    ext.i
+         SCRIPTS   OpenRCX.tcl
 )
 
 

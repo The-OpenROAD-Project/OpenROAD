@@ -30,13 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbIterator.h"
 #include "odb.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -48,23 +48,23 @@ class dbTable;
 class dbGroupInstItr : public dbIterator
 {
   dbTable<_dbInst>* _inst_tbl;
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
  public:
   dbGroupInstItr(dbTable<_dbInst>* inst_tbl) { _inst_tbl = inst_tbl; }
 
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint id, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
   dbObject* getObject(uint id, ...);
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 
 }  // namespace odb
-   // GeneratorCodeEnd 1
+   // Generator Code End Header

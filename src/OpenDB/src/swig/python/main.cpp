@@ -30,31 +30,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #define PY_SSIZE_T_CLEAN
-#include "Python.h"
 #include <stdio.h>
 
-extern "C"
-{
-    extern PyObject* PyInit__opendbpy();
+#include "Python.h"
+
+extern "C" {
+extern PyObject* PyInit__opendbpy();
 }
 
-int
-main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
-    if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
-        fprintf(stderr, "Error: could not extend in-built modules table\n");
-        exit(1);
-    }
-    wchar_t** args = new wchar_t*[argc];
-    for(size_t i = 0;i < argc; i++)
-    {
-        size_t sz = strlen(argv[i]);
-        args[i] = new wchar_t[sz+1];
-        args[i][sz] = '\0';
-        for(size_t j = 0;j < sz; j++)
-            args[i][j] = (wchar_t) argv[i][j];
-    }
+  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not extend in-built modules table\n");
+    exit(1);
+  }
+  wchar_t** args = new wchar_t*[argc];
+  for (size_t i = 0; i < argc; i++) {
+    args[i] = Py_DecodeLocale(argv[i], nullptr);
+  }
 
-    Py_Initialize();
-    Py_Main(argc, args);
+  Py_Initialize();
+  Py_Main(argc, args);
 }

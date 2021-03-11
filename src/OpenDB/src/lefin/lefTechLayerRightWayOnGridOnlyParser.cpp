@@ -21,8 +21,8 @@
 #include "lefin.h"
 
 namespace lefTechLayerRightWayOnGridOnly {
-namespace qi      = boost::spirit::qi;
-namespace ascii   = boost::spirit::ascii;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 
 using boost::fusion::at_c;
@@ -37,10 +37,10 @@ using ascii::space;
 using phoenix::ref;
 
 template <typename Iterator>
-bool parse(Iterator          first,
-           Iterator          last,
+bool parse(Iterator first,
+           Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin*       lefin)
+           odb::lefin* lefin)
 {
   qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule
       = (lit("RIGHTWAYONGRIDONLY")[boost::bind(
@@ -56,9 +56,9 @@ bool parse(Iterator          first,
 
 namespace odb {
 
-bool lefTechLayerRightWayOnGridOnlyParser::parse(std::string  s,
+bool lefTechLayerRightWayOnGridOnlyParser::parse(std::string s,
                                                  dbTechLayer* layer,
-                                                 odb::lefin*  l)
+                                                 odb::lefin* l)
 {
   return lefTechLayerRightWayOnGridOnly::parse(s.begin(), s.end(), layer, l);
 }

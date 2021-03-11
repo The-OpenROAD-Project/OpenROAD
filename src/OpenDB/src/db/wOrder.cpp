@@ -36,10 +36,10 @@
 #include <stdlib.h>
 
 #include "db.h"
+#include "dbLogger.h"
 #include "dbMap.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "dbLogger.h"
 #include "tmg_conn.h"
 
 namespace odb {
@@ -51,20 +51,20 @@ namespace odb {
 static tmg_conn* _conn = NULL;
 
 void orderWires(dbBlock* block,
-                bool     force,
-                int      cutLength,
-                int      maxLength,
-                bool     quiet)
+                bool force,
+                int cutLength,
+                int maxLength,
+                bool quiet)
 {
   bool no_patch = true;
   if (_conn == NULL)
     _conn = new tmg_conn();
   _conn->resetSplitCnt();
-  bool                   verbose    = false;
-  bool                   no_convert = false;
-  dbSet<dbNet>           nets       = block->getNets();
+  bool verbose = false;
+  bool no_convert = false;
+  dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
-  dbNet*                 net;
+  dbNet* net;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     net = *net_itr;
     if (net->getSigType() == dbSigType::POWER
@@ -82,13 +82,13 @@ void orderWires(dbBlock* block,
     notice(0, "Split top of %d T shapes.\n", splitcnt);
 }
 
-void orderWires(dbBlock*    block,
+void orderWires(dbBlock* block,
                 const char* net_name_or_id,
-                bool        force,
-                bool        verbose,
-                bool        quiet,
-                int         cutLength,
-                int         maxLength)
+                bool force,
+                bool verbose,
+                bool quiet,
+                int cutLength,
+                int maxLength)
 {
   bool no_patch = true;
   if (_conn == NULL)
@@ -141,10 +141,10 @@ void findDisconnects(dbBlock* block, bool verbose)
 {
   if (_conn == NULL)
     _conn = new tmg_conn();
-  uint                   disc = 0;
-  dbSet<dbNet>           nets = block->getNets();
+  uint disc = 0;
+  dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
-  dbNet*                 net;
+  dbNet* net;
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     net = *net_itr;
     if (net->getSigType() == dbSigType::POWER
@@ -172,35 +172,35 @@ void findDisconnects(dbBlock* block, bool verbose)
 typedef struct tmg_wire_link
 {
   tmg_wire_link* next;
-  dbWire*        wire;
+  dbWire* wire;
 } tmg_wire_link;
 
 class tmg_wire_link_pool
 {
  private:
-  int             blkSize;
-  int             blkN;
-  int             curblk;
-  tmg_wire_link*  curp;
-  tmg_wire_link*  endp;
+  int blkSize;
+  int blkN;
+  int curblk;
+  tmg_wire_link* curp;
+  tmg_wire_link* endp;
   tmg_wire_link** V;
 
  public:
   tmg_wire_link_pool();
   ~tmg_wire_link_pool();
-  void           init();
+  void init();
   tmg_wire_link* get();
 };
 
 tmg_wire_link_pool::tmg_wire_link_pool()
 {
-  V       = (tmg_wire_link**) malloc(4096 * sizeof(tmg_wire_link*));
+  V = (tmg_wire_link**) malloc(4096 * sizeof(tmg_wire_link*));
   blkSize = 4096;
-  V[0]    = (tmg_wire_link*) malloc(blkSize * sizeof(tmg_wire_link));
-  blkN    = 1;
-  curblk  = 0;
-  curp    = V[0];
-  endp    = V[0] + blkSize;
+  V[0] = (tmg_wire_link*) malloc(blkSize * sizeof(tmg_wire_link));
+  blkN = 1;
+  curblk = 0;
+  curp = V[0];
+  endp = V[0] + blkSize;
 }
 
 tmg_wire_link_pool::~tmg_wire_link_pool()
@@ -214,8 +214,8 @@ tmg_wire_link_pool::~tmg_wire_link_pool()
 void tmg_wire_link_pool::init()
 {
   curblk = 0;
-  curp   = V[0];
-  endp   = V[0] + blkSize;
+  curp = V[0];
+  endp = V[0] + blkSize;
 }
 
 tmg_wire_link* tmg_wire_link_pool::get()
@@ -240,9 +240,9 @@ tmg_wire_link* tmg_wire_link_pool::get()
 class orderWiresTable
 {
  public:
-  dbBlock*                      _block;
+  dbBlock* _block;
   dbMap<dbNet, tmg_wire_link*>* _t;
-  tmg_wire_link_pool            _link_pool;
+  tmg_wire_link_pool _link_pool;
 
  public:
   orderWiresTable(dbBlock* block);
@@ -254,7 +254,7 @@ static orderWiresTable* _wtab = NULL;
 orderWiresTable::orderWiresTable(dbBlock* block)
 {
   _block = block;
-  _t     = new dbMap<dbNet, tmg_wire_link*>(block->getNets());
+  _t = new dbMap<dbNet, tmg_wire_link*>(block->getNets());
 }
 
 orderWiresTable::~orderWiresTable()
@@ -268,12 +268,12 @@ void orderWiresTableInit(dbBlock* block)
   } else if (block != _wtab->_block) {
     delete _wtab->_t;
     _wtab->_block = block;
-    _wtab->_t     = new dbMap<dbNet, tmg_wire_link*>(block->getNets());
+    _wtab->_t = new dbMap<dbNet, tmg_wire_link*>(block->getNets());
   } else {
-    dbSet<dbNet>           nets = _wtab->_block->getNets();
+    dbSet<dbNet> nets = _wtab->_block->getNets();
     dbSet<dbNet>::iterator it;
     for (it = nets.begin(); it != nets.end(); ++it) {
-      dbNet* net        = *it;
+      dbNet* net = *it;
       (*_wtab->_t)[net] = NULL;
     }
   }
@@ -282,12 +282,12 @@ void orderWiresTableInit(dbBlock* block)
 void orderWiresTableAdd(dbNet* net, dbWire* wire)
 {
   tmg_wire_link* wl = _wtab->_link_pool.get();
-  wl->wire          = wire;
+  wl->wire = wire;
   // wl->next = (*_wtab->_t)[net];
   // (*_wtab->_t)[net] = wl;
   dbMap<dbNet, tmg_wire_link*>& x = (*_wtab->_t);
-  wl->next                        = x[net];
-  x[net]                          = wl;
+  wl->next = x[net];
+  x[net] = wl;
 }
 
 void orderWiresTableRun(dbNet* one_net, bool verbose)
@@ -296,10 +296,10 @@ void orderWiresTableRun(dbNet* one_net, bool verbose)
     return;
   if (_conn == NULL)
     _conn = new tmg_conn();
-  dbMap<dbNet, tmg_wire_link*>& V    = (*_wtab->_t);
-  dbSet<dbNet>                  nets = _wtab->_block->getNets();
-  dbSet<dbNet>::iterator        it;
-  tmg_wire_link*                wl;
+  dbMap<dbNet, tmg_wire_link*>& V = (*_wtab->_t);
+  dbSet<dbNet> nets = _wtab->_block->getNets();
+  dbSet<dbNet>::iterator it;
+  tmg_wire_link* wl;
   for (it = nets.begin(); it != nets.end(); ++it) {
     dbNet* net = *it;
     if (one_net && net != one_net)

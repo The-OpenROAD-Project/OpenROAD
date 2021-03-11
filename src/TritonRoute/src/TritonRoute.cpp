@@ -52,7 +52,7 @@ extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
-extern int Triton_route_Init(Tcl_Interp* interp);
+extern int Tritonroute_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
@@ -121,7 +121,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   logger_ = logger;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
-  Triton_route_Init(tcl_interp);
+  Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 

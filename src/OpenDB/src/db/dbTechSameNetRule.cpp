@@ -61,8 +61,8 @@ bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
   return true;
 }
 
-void _dbTechSameNetRule::differences(dbDiff&                   diff,
-                                     const char*               field,
+void _dbTechSameNetRule::differences(dbDiff& diff,
+                                     const char* field,
                                      const _dbTechSameNetRule& rhs) const
 {
   DIFF_BEGIN
@@ -92,14 +92,14 @@ void _dbTechSameNetRule::out(dbDiff& diff, char side, const char* field) const
 dbTechLayer* dbTechSameNetRule::getLayer1()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  _dbTech*            tech = (_dbTech*) rule->getOwner();
+  _dbTech* tech = (_dbTech*) rule->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer_1);
 }
 
 dbTechLayer* dbTechSameNetRule::getLayer2()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  _dbTech*            tech = (_dbTech*) rule->getOwner();
+  _dbTech* tech = (_dbTech*) rule->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer_2);
 }
 
@@ -112,7 +112,7 @@ int dbTechSameNetRule::getSpacing()
 void dbTechSameNetRule::setSpacing(int spacing)
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  rule->_spacing           = spacing;
+  rule->_spacing = spacing;
 }
 
 void dbTechSameNetRule::setAllowStackedVias(bool value)
@@ -136,8 +136,8 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
 {
   _dbTechLayer* layer1 = (_dbTechLayer*) layer1_;
   _dbTechLayer* layer2 = (_dbTechLayer*) layer2_;
-  dbTech*       tech_  = (dbTech*) layer1->getOwner();
-  _dbTech*      tech   = (_dbTech*) tech_;
+  dbTech* tech_ = (dbTech*) layer1->getOwner();
+  _dbTech* tech = (_dbTech*) tech_;
   assert(tech_ == (dbTech*) layer2->getOwner());
 
   if (tech->_samenet_rules.size() == 0)
@@ -147,8 +147,8 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
     return NULL;
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
-  rule->_layer_1           = layer1->getOID();
-  rule->_layer_2           = layer2->getOID();
+  rule->_layer_1 = layer1->getOID();
+  rule->_layer_2 = layer2->getOID();
   tech->_samenet_matrix(layer1->_number, layer2->_number) = rule->getOID();
   tech->_samenet_matrix(layer2->_number, layer1->_number) = rule->getOID();
   tech->_samenet_rules.push_back(rule->getOID());
@@ -156,14 +156,14 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
 }
 
 dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
-                                             dbTechLayer*          layer1_,
-                                             dbTechLayer*          layer2_)
+                                             dbTechLayer* layer1_,
+                                             dbTechLayer* layer2_)
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) ndrule_;
-  _dbTechLayer*          layer1 = (_dbTechLayer*) layer1_;
-  _dbTechLayer*          layer2 = (_dbTechLayer*) layer2_;
-  dbTech*                tech_  = (dbTech*) layer1->getOwner();
-  _dbTech*               tech   = (_dbTech*) tech_;
+  _dbTechLayer* layer1 = (_dbTechLayer*) layer1_;
+  _dbTechLayer* layer2 = (_dbTechLayer*) layer2_;
+  dbTech* tech_ = (dbTech*) layer1->getOwner();
+  _dbTech* tech = (_dbTech*) tech_;
   assert(tech_ == (dbTech*) layer2->getOwner());
   assert(tech_ == (dbTech*) ndrule->getOwner());
 
@@ -174,8 +174,8 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
     return NULL;
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
-  rule->_layer_1           = layer1->getOID();
-  rule->_layer_2           = layer2->getOID();
+  rule->_layer_1 = layer1->getOID();
+  rule->_layer_2 = layer2->getOID();
   ndrule->_samenet_matrix(layer1->_number, layer2->_number) = rule->getOID();
   ndrule->_samenet_matrix(layer2->_number, layer1->_number) = rule->getOID();
   ndrule->_samenet_rules.push_back(rule->getOID());
@@ -183,7 +183,7 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
 }
 
 dbTechSameNetRule* dbTechSameNetRule::getTechSameNetRule(dbTech* tech_,
-                                                         uint    dbid_)
+                                                         uint dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(dbid_);

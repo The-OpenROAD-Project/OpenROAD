@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+
 #include "db.h"
 #include "dbMap.h"
 
@@ -125,20 +126,20 @@ void create_db()
   dbITerm::connect(i3, n6, i3->getMaster()->findMTerm("b"));
   dbITerm::connect(i3, n7, i3->getMaster()->findMTerm("o"));
 
-  dbSet<dbNet>      nets = block->getNets();
+  dbSet<dbNet> nets = block->getNets();
   dbMap<dbNet, int> weights(nets);
 
-  int                    i = 0;
+  int i = 0;
   dbSet<dbNet>::iterator itr;
 
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net   = *itr;
+    dbNet* net = *itr;
     weights[net] = 100 + i++;
   }
 
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
-    int    w   = weights[net];
+    int w = weights[net];
     printf("net(%d) w = %d\n", net->getId(), w);
   }
 

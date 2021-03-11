@@ -57,10 +57,10 @@ if( USE_CIMG_LIB )
 endif()
 
 
-tcl_lib(NAME      replace
-        NAMESPACE gpl
-        I_FILE    src/replace.i
-        SCRIPTS   src/replace.tcl
+swig_lib(NAME      replace
+         NAMESPACE gpl
+         I_FILE    src/replace.i
+         SCRIPTS   src/replace.tcl
 )
 
 target_sources(replace

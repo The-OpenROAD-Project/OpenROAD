@@ -30,9 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbBlockage.h"
+
 #include "db.h"
 #include "dbBlock.h"
-#include "dbBlockage.h"
+#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
 #include "dbDiff.h"
@@ -41,7 +43,6 @@
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -92,11 +93,11 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
 
   if (b0->equal(*b1)) {
     if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      int       r        = strcmp(lhs_inst->_name, rhs_inst->_name);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      int r = strcmp(lhs_inst->_name, rhs_inst->_name);
 
       if (r < 0)
         return true;
@@ -131,8 +132,8 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
   return false;
 }
 
-void _dbBlockage::differences(dbDiff&            diff,
-                              const char*        field,
+void _dbBlockage::differences(dbDiff& diff,
+                              const char* field,
                               const _dbBlockage& rhs) const
 {
   _dbBlock* lhs_blk = (_dbBlock*) getOwner();
@@ -145,18 +146,18 @@ void _dbBlockage::differences(dbDiff&            diff,
     DIFF_FIELD(_inst);
   } else {
     if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
       diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
     } else if (_inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
       diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
     } else if (rhs._inst) {
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
       diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
     }
   }
@@ -178,8 +179,8 @@ void _dbBlockage::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_FIELD(_inst);
   } else {
     if (_inst) {
-      _dbBlock* blk  = (_dbBlock*) getOwner();
-      _dbInst*  inst = blk->_inst_tbl->getPtr(_inst);
+      _dbBlock* blk = (_dbBlock*) getOwner();
+      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
       diff.out(side, "_inst", inst->_name);
     } else {
       diff.out(side, "_inst", "(NULL)");
@@ -212,7 +213,7 @@ dbInst* dbBlockage::getInstance()
 
 void dbBlockage::setPushedDown()
 {
-  _dbBlockage* bkg         = (_dbBlockage*) this;
+  _dbBlockage* bkg = (_dbBlockage*) this;
   bkg->_flags._pushed_down = 1;
 }
 
@@ -224,7 +225,7 @@ bool dbBlockage::isPushedDown()
 
 void dbBlockage::setSoft()
 {
-  _dbBlockage* bkg  = (_dbBlockage*) this;
+  _dbBlockage* bkg = (_dbBlockage*) this;
   bkg->_flags._soft = 1;
 }
 
@@ -236,7 +237,7 @@ bool dbBlockage::isSoft()
 
 void dbBlockage::setMaxDensity(float max_density)
 {
-  _dbBlockage* bkg  = (_dbBlockage*) this;
+  _dbBlockage* bkg = (_dbBlockage*) this;
   bkg->_max_density = max_density;
 }
 
@@ -252,14 +253,14 @@ dbBlock* dbBlockage::getBlock()
 }
 
 dbBlockage* dbBlockage::create(dbBlock* block_,
-                               int      x1,
-                               int      y1,
-                               int      x2,
-                               int      y2,
-                               dbInst*  inst_)
+                               int x1,
+                               int y1,
+                               int x2,
+                               int y2,
+                               dbInst* inst_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  _dbInst*  inst  = (_dbInst*) inst_;
+  _dbInst* inst = (_dbInst*) inst_;
 
   _dbBlockage* bkg = block->_blockage_tbl->create();
 
@@ -269,13 +270,13 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   _dbBox* box = block->_box_tbl->create();
   box->_shape._rect.init(x1, y1, x2, y2);
   box->_flags._owner_type = dbBoxOwner::BLOCKAGE;
-  box->_owner             = bkg->getOID();
-  bkg->_bbox              = box->getOID();
+  box->_owner = bkg->getOID();
+  bkg->_bbox = box->getOID();
 
   // Update bounding box of block
   _dbBox* bbox = (_dbBox*) block->_box_tbl->getPtr(block->_bbox);
   bbox->_shape._rect.merge(box->_shape._rect);
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbBlockageCreate((dbBlockage*) bkg);
   return (dbBlockage*) bkg;
 }

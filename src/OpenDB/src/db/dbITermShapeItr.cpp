@@ -38,25 +38,25 @@ namespace odb {
 
 dbITermShapeItr::dbITermShapeItr(bool expand_vias)
 {
-  _mterm       = NULL;
-  _state       = 0;
-  _iterm       = NULL;
-  _mpin        = NULL;
-  _via         = NULL;
-  _via_x       = 0;
-  _via_y       = 0;
+  _mterm = NULL;
+  _state = 0;
+  _iterm = NULL;
+  _mpin = NULL;
+  _via = NULL;
+  _via_x = 0;
+  _via_y = 0;
   _expand_vias = expand_vias;
 }
 
 void dbITermShapeItr::begin(dbITerm* iterm)
 {
-  _iterm       = iterm;
+  _iterm = iterm;
   dbInst* inst = iterm->getInst();
-  _mterm       = iterm->getMTerm();
+  _mterm = iterm->getMTerm();
   int x, y;
   inst->getOrigin(x, y);
   _transform = dbTransform(inst->getOrient(), Point(x, y));
-  _state     = 0;
+  _state = 0;
 }
 
 void dbITermShapeItr::getShape(dbBox* box, dbShape& shape)
@@ -86,9 +86,9 @@ next_state:
 
   switch (_state) {
     case INIT: {
-      _mpins    = _mterm->getMPins();
+      _mpins = _mterm->getMPins();
       _mpin_itr = _mpins.begin();
-      _state    = MPIN_ITR;
+      _state = MPIN_ITR;
       goto next_state;
     }
 
@@ -98,9 +98,9 @@ next_state:
       else {
         _mpin = *_mpin_itr;
         ++_mpin_itr;
-        _boxes   = _mpin->getGeometry();
+        _boxes = _mpin->getGeometry();
         _box_itr = _boxes.begin();
-        _state   = MBOX_ITR;
+        _state = MBOX_ITR;
       }
 
       goto next_state;
@@ -122,9 +122,9 @@ next_state:
           box->getViaXY(_via_x, _via_y);
           _via = box->getTechVia();
           assert(_via);
-          _via_boxes   = _via->getBoxes();
+          _via_boxes = _via->getBoxes();
           _via_box_itr = _via_boxes.begin();
-          _state       = VIA_BOX_ITR;
+          _state = VIA_BOX_ITR;
         }
       }
 
@@ -152,10 +152,10 @@ void dbITermShapeItr::getViaBox(dbBox* box, dbShape& shape)
 {
   Rect b;
   box->getBox(b);
-  int  xmin = b.xMin() + _via_x;
-  int  ymin = b.yMin() + _via_y;
-  int  xmax = b.xMax() + _via_x;
-  int  ymax = b.yMax() + _via_y;
+  int xmin = b.xMin() + _via_x;
+  int ymin = b.yMin() + _via_y;
+  int xmax = b.xMax() + _via_x;
+  int ymax = b.yMax() + _via_y;
   Rect r(xmin, ymin, xmax, ymax);
   _transform.apply(r);
   shape.setViaBox(_via, box->getTechLayer(), r);

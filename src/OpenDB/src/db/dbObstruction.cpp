@@ -30,18 +30,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbObstruction.h"
+
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbInst.h"
-#include "dbObstruction.h"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-#include "dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -58,14 +59,14 @@ _dbObstruction::_dbObstruction(_dbDatabase*, const _dbObstruction& o)
 
 _dbObstruction::_dbObstruction(_dbDatabase*)
 {
-  _flags._slot_obs            = 0;
-  _flags._fill_obs            = 0;
-  _flags._pushed_down         = 0;
-  _flags._has_min_spacing     = 0;
+  _flags._slot_obs = 0;
+  _flags._fill_obs = 0;
+  _flags._pushed_down = 0;
+  _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
-  _flags._spare_bits          = 0;
-  _min_spacing                = 0;
-  _effective_width            = 0;
+  _flags._spare_bits = 0;
+  _min_spacing = 0;
+  _effective_width = 0;
 }
 
 _dbObstruction::~_dbObstruction()
@@ -121,8 +122,8 @@ bool _dbObstruction::operator==(const _dbObstruction& rhs) const
   return true;
 }
 
-void _dbObstruction::differences(dbDiff&               diff,
-                                 const char*           field,
+void _dbObstruction::differences(dbDiff& diff,
+                                 const char* field,
                                  const _dbObstruction& rhs) const
 {
   _dbBlock* lhs_blk = (_dbBlock*) getOwner();
@@ -141,18 +142,18 @@ void _dbObstruction::differences(dbDiff&               diff,
     DIFF_FIELD(_inst);
   } else {
     if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
       diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
     } else if (_inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
       diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
     } else if (rhs._inst) {
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
       diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
     }
   }
@@ -178,8 +179,8 @@ void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_FIELD(_inst);
   } else {
     if (_inst) {
-      _dbBlock* blk  = (_dbBlock*) getOwner();
-      _dbInst*  inst = blk->_inst_tbl->getPtr(_inst);
+      _dbBlock* blk = (_dbBlock*) getOwner();
+      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
       diff.out(side, "_inst", inst->_name);
     } else {
       diff.out(side, "_inst", "(NULL)");
@@ -194,19 +195,19 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
 {
   _dbBlock* lhs_block = (_dbBlock*) getOwner();
   _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-  _dbBox*   lhs_box   = lhs_block->_box_tbl->getPtr(_bbox);
-  _dbBox*   rhs_box   = rhs_block->_box_tbl->getPtr(rhs._bbox);
+  _dbBox* lhs_box = lhs_block->_box_tbl->getPtr(_bbox);
+  _dbBox* rhs_box = rhs_block->_box_tbl->getPtr(rhs._bbox);
 
   if (*lhs_box < *rhs_box)
     return true;
 
   if (lhs_box->equal(*rhs_box)) {
     if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk  = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk  = (_dbBlock*) rhs.getOwner();
-      _dbInst*  lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst*  rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      int       r        = strcmp(lhs_inst->_name, rhs_inst->_name);
+      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+      int r = strcmp(lhs_inst->_name, rhs_inst->_name);
 
       if (r < 0)
         return true;
@@ -273,8 +274,8 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
 
 dbBox* dbObstruction::getBBox()
 {
-  _dbObstruction* obs   = (_dbObstruction*) this;
-  _dbBlock*       block = (_dbBlock*) obs->getOwner();
+  _dbObstruction* obs = (_dbObstruction*) this;
+  _dbBlock* block = (_dbBlock*) obs->getOwner();
   return (dbBox*) block->_box_tbl->getPtr(obs->_bbox);
 }
 
@@ -291,7 +292,7 @@ dbInst* dbObstruction::getInstance()
 
 void dbObstruction::setSlotObstruction()
 {
-  _dbObstruction* obs   = (_dbObstruction*) this;
+  _dbObstruction* obs = (_dbObstruction*) this;
   obs->_flags._slot_obs = 1;
 }
 
@@ -303,7 +304,7 @@ bool dbObstruction::isSlotObstruction()
 
 void dbObstruction::setFillObstruction()
 {
-  _dbObstruction* obs   = (_dbObstruction*) this;
+  _dbObstruction* obs = (_dbObstruction*) this;
   obs->_flags._fill_obs = 1;
 }
 
@@ -315,7 +316,7 @@ bool dbObstruction::isFillObstruction()
 
 void dbObstruction::setPushedDown()
 {
-  _dbObstruction* obs      = (_dbObstruction*) this;
+  _dbObstruction* obs = (_dbObstruction*) this;
   obs->_flags._pushed_down = 1;
 }
 
@@ -333,9 +334,9 @@ bool dbObstruction::hasEffectiveWidth()
 
 void dbObstruction::setEffectiveWidth(int w)
 {
-  _dbObstruction* obs              = (_dbObstruction*) this;
+  _dbObstruction* obs = (_dbObstruction*) this;
   obs->_flags._has_effective_width = 1U;
-  obs->_effective_width            = w;
+  obs->_effective_width = w;
 }
 
 int dbObstruction::getEffectiveWidth()
@@ -352,9 +353,9 @@ bool dbObstruction::hasMinSpacing()
 
 void dbObstruction::setMinSpacing(int w)
 {
-  _dbObstruction* obs          = (_dbObstruction*) this;
+  _dbObstruction* obs = (_dbObstruction*) this;
   obs->_flags._has_min_spacing = 1U;
-  obs->_min_spacing            = w;
+  obs->_min_spacing = w;
 }
 
 int dbObstruction::getMinSpacing()
@@ -368,17 +369,17 @@ dbBlock* dbObstruction::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbObstruction* dbObstruction::create(dbBlock*     block_,
+dbObstruction* dbObstruction::create(dbBlock* block_,
                                      dbTechLayer* layer_,
-                                     int          x1,
-                                     int          y1,
-                                     int          x2,
-                                     int          y2,
-                                     dbInst*      inst_)
+                                     int x1,
+                                     int y1,
+                                     int x2,
+                                     int y2,
+                                     dbInst* inst_)
 {
-  _dbBlock*     block = (_dbBlock*) block_;
+  _dbBlock* block = (_dbBlock*) block_;
   _dbTechLayer* layer = (_dbTechLayer*) layer_;
-  _dbInst*      inst  = (_dbInst*) inst_;
+  _dbInst* inst = (_dbInst*) inst_;
 
   _dbObstruction* obs = block->_obstruction_tbl->create();
 
@@ -388,22 +389,22 @@ dbObstruction* dbObstruction::create(dbBlock*     block_,
   _dbBox* box = block->_box_tbl->create();
   box->_shape._rect.init(x1, y1, x2, y2);
   box->_flags._owner_type = dbBoxOwner::OBSTRUCTION;
-  box->_owner             = obs->getOID();
-  box->_flags._layer_id   = layer->getOID();
-  obs->_bbox              = box->getOID();
+  box->_owner = obs->getOID();
+  box->_flags._layer_id = layer->getOID();
+  obs->_bbox = box->getOID();
 
   // Update bounding box of block
   block->add_rect(box->_shape._rect);
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbObstructionCreate((dbObstruction*) obs);
   return (dbObstruction*) obs;
 }
 
 void dbObstruction::destroy(dbObstruction* obstruction)
 {
-  _dbObstruction* obs   = (_dbObstruction*) obstruction;
-  _dbBlock*       block = (_dbBlock*) obs->getOwner();
-  for(auto callback:block->_callbacks)
+  _dbObstruction* obs = (_dbObstruction*) obstruction;
+  _dbBlock* block = (_dbBlock*) obs->getOwner();
+  for (auto callback : block->_callbacks)
     callback->inDbObstructionDestroy(obstruction);
   dbProperty::destroyProperties(obs);
   block->_obstruction_tbl->destroy(obs);

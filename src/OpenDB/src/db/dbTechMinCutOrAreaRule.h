@@ -60,15 +60,15 @@ class _dbTechMinCutRule : public _dbObject
   struct _Flword
   {
     _RuleType _rule : 3;
-    uint      _cuts_length : 1;
-    uint      _spare_bits : 28;
+    uint _cuts_length : 1;
+    uint _spare_bits : 28;
   };
   _Flword _flags;
-  uint    _num_cuts;
-  uint    _width;
-  int     _cut_distance;
-  uint    _length;
-  uint    _distance;
+  uint _num_cuts;
+  uint _width;
+  int _cut_distance;
+  uint _length;
+  uint _distance;
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
@@ -79,8 +79,8 @@ class _dbTechMinCutRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                  diff,
-                   const char*              field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechMinCutRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -98,14 +98,14 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  _flags._rule        = _dbTechMinCutRule::NONE;
+  _flags._rule = _dbTechMinCutRule::NONE;
   _flags._cuts_length = 0;
-  _flags._spare_bits  = 0;
-  _num_cuts           = 0;
-  _width              = 0;
-  _cut_distance       = -1;
-  _length             = 0;
-  _distance           = 0;
+  _flags._spare_bits = 0;
+  _num_cuts = 0;
+  _width = 0;
+  _cut_distance = -1;
+  _length = 0;
+  _distance = 0;
 }
 
 inline _dbTechMinCutRule::~_dbTechMinCutRule()
@@ -137,8 +137,8 @@ class _dbTechMinEncRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                  diff,
-                   const char*              field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechMinEncRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -151,10 +151,10 @@ inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
-  _flags._has_width  = 0;
+  _flags._has_width = 0;
   _flags._spare_bits = 0;
-  _area              = 0;
-  _width             = 0;
+  _area = 0;
+  _width = 0;
 }
 
 inline _dbTechMinEncRule::~_dbTechMinEncRule()

@@ -50,6 +50,8 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
@@ -65,6 +67,12 @@ using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
+
+extern "C"
+{
+    extern PyObject* PyInit__openroad_swig_py();
+    extern PyObject* PyInit__opendbpy();
+}
 
 static int cmd_argc;
 static char **cmd_argv;
@@ -94,18 +102,40 @@ main(int argc,
   }
 
   log_filename = findCmdLineKey(argc, argv, "-log");
-  if (log_filename)
+  if (log_filename) {
     remove(log_filename);
+  }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
-  if (metrics_filename)
+  if (metrics_filename) {
     remove(metrics_filename);
+  }
+
+  if (PyImport_AppendInittab("opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not add module opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_AppendInittab("openroadpy", PyInit__openroad_swig_py) == -1) {
+    fprintf(stderr, "Error: could not add module openroadpy\n");
+    exit(1);
+  }
+
+  Py_Initialize();
 
   cmd_argc = argc;
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
     return gui::startGui(cmd_argc, cmd_argv);
+  }
+  if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    wchar_t** args = new wchar_t*[argc];
+    for(int i = 0; i < cmd_argc; i++)
+    {
+        args[i] = Py_DecodeLocale(cmd_argv[i], nullptr);
+    }
+    return Py_Main(cmd_argc, args);
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -224,6 +254,7 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+  printf("  -python            start with python interpreter [limited to db operations]\n");
   printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }

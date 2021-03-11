@@ -60,16 +60,16 @@ bool dbCCSegItr::orderReversed()
 void dbCCSegItr::reverse(dbObject* parent)
 {
   _dbCapNode* node = (_dbCapNode*) parent;
-  uint        id   = node->_cc_segs;
-  uint        pid  = parent->getId();
-  uint        list = 0;
+  uint id = node->_cc_segs;
+  uint pid = parent->getId();
+  uint list = 0;
 
   while (id != 0) {
-    _dbCCSeg* seg  = _seg_tbl->getPtr(id);
-    uint      n    = seg->next(pid);
+    _dbCCSeg* seg = _seg_tbl->getPtr(id);
+    uint n = seg->next(pid);
     seg->next(pid) = list;
-    list           = id;
-    id             = n;
+    list = id;
+    id = n;
   }
 
   node->_cc_segs = list;

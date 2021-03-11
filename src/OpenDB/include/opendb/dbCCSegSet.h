@@ -44,8 +44,8 @@ class dbSetIterator<dbCCSeg>
   friend class dbSet<dbCCSeg>;
 
   dbIterator* _itr;
-  uint        _cur;
-  uint        _pid;
+  uint _cur;
+  uint _pid;
 
   dbSetIterator(dbIterator* itr, uint id, uint pid)
   {
@@ -55,10 +55,10 @@ class dbSetIterator<dbCCSeg>
   }
 
  public:
-  typedef dbCCSeg*                value_type;
-  typedef std::ptrdiff_t          difference_type;
-  typedef dbCCSeg**               pointer;
-  typedef dbCCSeg*&               reference;
+  typedef dbCCSeg* value_type;
+  typedef std::ptrdiff_t difference_type;
+  typedef dbCCSeg** pointer;
+  typedef dbCCSeg*& reference;
   typedef std::input_iterator_tag iterator_category;
 
   dbSetIterator()
@@ -107,31 +107,31 @@ template <>
 class dbSet<dbCCSeg>
 {
   dbIterator* _itr;
-  dbObject*   _parent;
-  uint        _pid;
+  dbObject* _parent;
+  uint _pid;
 
  public:
   typedef dbSetIterator<dbCCSeg> iterator;
 
   dbSet()
   {
-    _itr    = NULL;
+    _itr = NULL;
     _parent = NULL;
-    _pid    = 0;
+    _pid = 0;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)
   {
     _parent = parent;
-    _itr    = itr;
-    _pid    = parent->getId();
+    _itr = itr;
+    _pid = parent->getId();
   }
 
   dbSet(const dbSet<dbCCSeg>& c)
   {
-    _itr    = c._itr;
+    _itr = c._itr;
     _parent = c._parent;
-    _pid    = c._pid;
+    _pid = c._pid;
   }
 
   ///
@@ -173,5 +173,3 @@ class dbSet<dbCCSeg>
 };
 
 }  // namespace odb
-
-
