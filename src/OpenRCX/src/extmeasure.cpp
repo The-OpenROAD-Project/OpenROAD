@@ -1083,7 +1083,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != NULL) {
     in1->rename(net->getConstName());
-    // debug("LayoutPattern", "P", "M%d  %8d %8d   %8d %8d DX=%d DY=%d  %s\n",
+   // fprintf(stdout, "M%d  %8d %8d   %8d %8d DX=%d DY=%d  %s\n",
     // _met, ll[0], ll[1], ur[0], ur[1], ur[0]-ll[0], ur[1]-ll[1], netName);
   }
 
@@ -1690,6 +1690,17 @@ int extMeasure::calcDist(int* ll, int* ur)
   */
   return 0;
 }
+SEQ* extMeasure::addSeq(int* ll, int* ur)
+                     
+{
+  SEQ* s = _pixelTable->salloc();
+  for (uint ii = 0; ii < 2; ii++) {
+    s->_ll[ii] = ll[ii];
+    s->_ur[ii] = ur[ii];
+  }
+  s->type = 0;
+  return s;
+}
 void extMeasure::addSeq(int* ll,
                         int* ur,
                         Ath__array1D<SEQ*>* seqTable,
@@ -1704,7 +1715,7 @@ void extMeasure::addSeq(int* ll,
     s->_ur[ii] = ur[ii];
   }
   s->type = 0;
-
+  if (seqTable!=NULL)
   seqTable->add(s);
 }
 void extMeasure::addSeq(Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
@@ -2524,7 +2535,6 @@ uint extMeasure::computeDiag(SEQ* s,
     DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
-
 #ifdef HI_ACC_1
     bool verticalOverlap = false;
     if (_dist < 0 && !skip_high_acc) {
@@ -2620,7 +2630,7 @@ int extMeasure::computeDiagOU(SEQ* s,
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
 #endif
-    bool add_all_diag = true;
+    bool add_all_diag = false;
     if (!add_all_diag) {
       for (uint jj = 0; jj < tmpTable.getCnt(); jj++)
         len += computeDiag(tmpTable.get(jj),
@@ -3744,8 +3754,8 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
     if (delta0 < 0)
       delta0 = -delta0;
 
-    dbNet* net = dbNet::getNet(_block, _netId);
-    const char *netName= net->getConstName();
+    //dbNet* net = dbNet::getNet(_block, _netId);
+    //const char *netName= net->getConstName();
 
     SUB_MULT_RES = 1.0;
     /*
@@ -3801,6 +3811,12 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
 
 int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 {
+// fprintf(stdout, "------------------------------------------------------\n");
+bool DEBUG1=false;
+  if (DEBUG1) {
+    segInfo("SRC", _netSrcId, _rsegSrcId);
+    segInfo("DST", _netTgtId, _rsegTgtId);
+}
   // Copy from computeAndStoreRC_720
   bool SUBTRACT_DIAG = false;
   bool no_ou = true;
@@ -4100,8 +4116,22 @@ void extMeasure::measureRC(int* options)
   //  _dist= 64;
 
   _netId = _extMain->_debug_net_id;
+
   DebugStart();
+
   int totCovered = computeAndStoreRC(rseg1, rseg2, prevCovered);
+  SEQ *s= addSeq(_ll, _ur);
+  
+  bool DEBUG1=false;
+  if (DEBUG1) {
+     fprintf(stdout, " ---------------------------------------------------------------------------------\n");
+      fprintf(stdout, "     %7d %7d %7d %7d    M%d  D%d  L%d   N%d N%d \n",
+                    _ll[0], _ur[0], _ll[1], _ur[1], _met, _dist, _len, _netSrcId, _netTgtId);
+     fprintf(stdout, " ---------------------------------------------------------------------------------\n");
+     // if (_dist>0)
+   _diagLen += computeResDist(s, 1, 4, _met, NULL);
+  }
+
   if (IsDebugNet())
     debugPrint(logger_,
                RCX,
