@@ -4,78 +4,60 @@
   "fields": [
     {
       "type": "int",
-      "name": "_min_step_length",
-      "flags": []
+      "name": "min_step_length_"
     },
     {
       "type": "uint",
-      "name": "_max_edges",
-      "flags": []
+      "name": "max_edges_"
     },
     {
-      "type": "bool",
-      "name":"_max_edges_valid",
-      "flags":[],
-      "bits":1
+      "type": "bit",
+      "name": "max_edges_valid_"
     },
     {
       "type": "int",
-      "name": "_min_adj_length1",
-      "flags": []
+      "name": "min_adj_length1_"
     },
     {
-      "type": "bool",
-      "name":"_min_adj_length1_valid",
-      "flags":[],
-      "bits":1
+      "type": "bit",
+      "name": "min_adj_length1_valid_"
     },
     {
       "type": "int",
-      "name": "_min_adj_length2",
-      "flags": []
+      "name": "min_adj_length2_"
     },
     {
       "type": "int",
-      "name": "_eol_width",
-      "flags": []
+      "name": "eol_width_"
     },
     {
-      "type": "bool",
-      "name":"_no_between_eol",
-      "flags":[],
-      "bits":1
+      "type": "bit",
+      "name": "no_between_eol_"
     },
     {
-      "type": "bool",
-      "name":"_min_adj_length2_valid",
-      "flags":[],
-      "bits":1
+      "type": "bit",
+      "name": "min_adj_length2_valid_"
     },
     {
-      "type" : "bool",
-      "name" : "_convex_corner",
-      "flags" : [],
-      "bits" : 1
+      "type": "bit",
+      "name": "convex_corner_"
     },
     {
       "type": "int",
-      "name": "_min_between_length",
-      "flags": []
+      "name": "min_between_length_"
     },
     {
-      "type": "bool",
-      "name":"_min_between_length_valid",
-      "flags":[],
-      "bits":1
+      "type": "bit",
+      "name": "min_between_length_valid_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_corners",
-      "flags": [],
-      "bits" : 1
+      "type": "bit",
+      "name": "except_same_corners_"
     }
   ],
   "constructors": [],
   "enums": [],
-  "cpp_includes":["dbTechLayer.h"]
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
 }

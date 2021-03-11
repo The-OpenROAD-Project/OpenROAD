@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
 #include "db.h"
@@ -39,13 +39,11 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbTechLayer.h"
-// User Code End includes
+// User Code End Includes
 namespace odb {
 
-// User Code Begin definitions
-// User Code End definitions
 template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
@@ -69,8 +67,8 @@ void _dbTechLayerCutSpacingTableOrthRule::differences(
 {
   DIFF_BEGIN
 
-  // User Code Begin differences
-  // User Code End differences
+  // User Code Begin Differences
+  // User Code End Differences
   DIFF_END
 }
 void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
@@ -78,13 +76,13 @@ void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff&     diff,
                                               const char* field) const {
     DIFF_OUT_BEGIN
 
-        // User Code Begin out
-        // User Code End out
+        // User Code Begin Out
+        // User Code End Out
         DIFF_END} _dbTechLayerCutSpacingTableOrthRule::
     _dbTechLayerCutSpacingTableOrthRule(_dbDatabase* db)
 {
-  // User Code Begin constructor
-  // User Code End constructor
+  // User Code Begin Constructor
+  // User Code End Constructor
 }
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase*                               db,
@@ -97,7 +95,7 @@ _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
 dbIStream& operator>>(dbIStream&                           stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj)
 {
-  stream >> obj._spacing_tbl;
+  stream >> obj.spacing_tbl_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -105,7 +103,7 @@ dbIStream& operator>>(dbIStream&                           stream,
 dbOStream& operator<<(dbOStream&                                 stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj)
 {
-  stream << obj._spacing_tbl;
+  stream << obj.spacing_tbl_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -116,6 +114,10 @@ _dbTechLayerCutSpacingTableOrthRule::~_dbTechLayerCutSpacingTableOrthRule()
   // User Code Begin Destructor
   // User Code End Destructor
 }
+
+// User Code Begin PrivateMethods
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableOrthRule - Methods
@@ -127,7 +129,7 @@ void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
-  tbl = obj->_spacing_tbl;
+  tbl = obj->spacing_tbl_;
 }
 
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
@@ -136,7 +138,7 @@ void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
-  obj->_spacing_tbl = tbl;
+  obj->spacing_tbl_ = tbl;
 }
 
 dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
@@ -144,7 +146,7 @@ dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
 {
   _dbTechLayer*                        _parent = (_dbTechLayer*) parent;
   _dbTechLayerCutSpacingTableOrthRule* newrule
-      = _parent->_cut_spacing_table_orth_tbl->create();
+      = _parent->cut_spacing_table_orth_tbl_->create();
   return ((dbTechLayerCutSpacingTableOrthRule*) newrule);
 }
 
@@ -155,17 +157,17 @@ dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableOrthRule*)
-      _parent->_cut_spacing_table_orth_tbl->getPtr(dbid);
+      _parent->cut_spacing_table_orth_tbl_->getPtr(dbid);
 }
 void dbTechLayerCutSpacingTableOrthRule::destroy(
     dbTechLayerCutSpacingTableOrthRule* rule)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) rule->getImpl()->getOwner();
   dbProperty::destroyProperties(rule);
-  _parent->_cut_spacing_table_orth_tbl->destroy(
+  _parent->cut_spacing_table_orth_tbl_->destroy(
       (_dbTechLayerCutSpacingTableOrthRule*) rule);
 }
 
 // User Code End dbTechLayerCutSpacingTableOrthRulePublicMethods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Cpp

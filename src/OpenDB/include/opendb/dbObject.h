@@ -88,7 +88,7 @@ enum dbObjectType
   dbRegionObj,
   dbHierObj,
   dbBPinObj,
-  // Generator Code Begin 1
+  // Generator Code Begin DbObjectType
   dbTechLayerObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerMinStepRuleObj,
@@ -102,7 +102,7 @@ enum dbObjectType
   dbModInstObj,
   dbGroupObj,
   dbGCellGridObj,
-  // Generator Code End 1
+  // Generator Code End DbObjectType
 
   // Lib Objects
   dbLibObj,

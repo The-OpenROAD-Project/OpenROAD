@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "dbGroupModInstItr.h"
 
 #include "dbGroup.h"
 #include "dbModInst.h"
 #include "dbTable.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -118,7 +118,7 @@ dbObject* dbGroupModInstItr::getObject(uint id, ...)
 {
   return _modinst_tbl->getPtr(id);
 }
-// User Code Begin methods
-// User Code End methods
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Cpp

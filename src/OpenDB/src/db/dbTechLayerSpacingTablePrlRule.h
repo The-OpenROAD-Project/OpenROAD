@@ -30,16 +30,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include <map>
 #include <tuple>
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -52,30 +52,30 @@ class _dbDatabase;
 
 struct dbTechLayerSpacingTablePrlRuleFlags
 {
-  bool _wrong_direction : 1;
-  bool _same_mask : 1;
-  bool _exceept_eol : 1;
-  uint _spare_bits : 29;
+  bool wrong_direction_ : 1;
+  bool same_mask_ : 1;
+  bool exceept_eol_ : 1;
+  uint spare_bits_ : 29;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerSpacingTablePrlRuleFlags _flags;
-  int                                 _eol_width;
-  dbVector<int>                       _length_tbl;
-  dbVector<int>                       _width_tbl;
-  dbVector<dbVector<int>>             _spacing_tbl;
-  dbVector<std::tuple<int, int, int>> _influence_tbl;
+  dbTechLayerSpacingTablePrlRuleFlags flags_;
+  int                                 eol_width_;
+  dbVector<int>                       length_tbl_;
+  dbVector<int>                       width_tbl_;
+  dbVector<dbVector<int>>             spacing_tbl_;
+  dbVector<std::tuple<int, int, int>> influence_tbl_;
 
-  // User Code Begin fields
+  // User Code Begin Fields
   std::map<uint, std::pair<int, int>> _within_tbl;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
@@ -90,18 +90,18 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
                    const char*                            field,
                    const _dbTechLayerSpacingTablePrlRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
+  // User Code Begin Methods
 
   uint getWidthIdx(const int width) const;
 
   uint getLengthIdx(const int length) const;
 
-  // User Code End methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
 dbOStream& operator<<(dbOStream&                             stream,
                       const _dbTechLayerSpacingTablePrlRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header
