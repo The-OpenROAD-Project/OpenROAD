@@ -968,61 +968,6 @@ class dbClMeasureType
   Value _value;
 };
 
-namespace TechLayerSpacingRule {
-
-enum _RuleType
-{
-  DEFAULT = 0,
-  RANGE_ONLY,
-  RANGE_USELENGTH,
-  RANGE_INFLUENCE,
-  RANGE_INFLUENCE_RANGE,
-  RANGE_RANGE,
-  LENGTHTHRESHOLD,
-  LENGTHTHRESHOLD_RANGE,
-  CUT_LAYER_BELOW,
-  ADJACENT_CUTS_INFLUENCE,
-  ENDOFLINE,
-  ENDOFLINE_PARALLEL,
-  ENDOFLINE_PARALLEL_TWOEDGES
-};
-
-struct _Flword
-{
-  _RuleType _rule : 4;
-  bool      _except_same_pgnet : 1;
-  bool      _cut_stacking : 1;
-  bool      _cut_center_to_center : 1;
-  bool      _cut_same_net : 1;
-  bool      _cut_parallel_overlap : 1;
-  bool      _notch_length : 1;
-  bool      _end_of_notch_width : 1;
-  uint      _spare_bits : 21;
-};
-
-const char* getString(_RuleType type);
-}  // namespace TechLayerSpacingRule
-
-namespace TechMinCutRule {
-
-enum _RuleType
-{
-  NONE = 0,
-  MINIMUM_CUT,
-  MINIMUM_CUT_ABOVE,
-  MINIMUM_CUT_BELOW
-};
-
-struct _Flword
-{
-  _RuleType _rule : 3;
-  uint      _cuts_length : 1;
-  uint      _spare_bits : 28;
-};
-
-const char* getString(_RuleType type);
-}  // namespace TechMinCutRule
-
 //
 // For DB journal entries, need to record actions (add/delete objects) and
 // owner information

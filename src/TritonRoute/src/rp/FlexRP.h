@@ -77,14 +77,14 @@ namespace fr {
                                            frViaDef *viaDef, bool isCurrDirX);
     void prep_viaForbiddenPlanarLen_minStep(const frLayerNum &lNum, frViaDef *viaDef, bool isCurrDirX, 
                                             std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
-    void prep_viaForbiddenTurnLen();
+    void prep_viaForbiddenTurnLen(frNonDefaultRule* ndr=nullptr);
     void prep_viaForbiddenTurnLen_helper(const frLayerNum &lNum, const int &tableLayerIdx, const int &tableEntryIdx,
-                                         frViaDef *viaDef, bool isCurrDirX);
+                                         frViaDef *viaDef, bool isCurrDirX, frNonDefaultRule* ndr=nullptr);
     void prep_viaForbiddenTurnLen_minSpc(const frLayerNum &lNum, frViaDef *viaDef, bool isCurrDirX,
-                                         std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
-    void prep_via2viaForbiddenLen();
+                                         std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges, frNonDefaultRule* ndr=nullptr);
+    void prep_via2viaForbiddenLen(frNonDefaultRule* ndr=nullptr);
     void prep_via2viaForbiddenLen_helper(const frLayerNum &lNum, const int &tableLayerIdx, const int &tableEntryIdx,
-                                         frViaDef *viaDef1, frViaDef *viaDef2, bool isCurrDirX);
+                                         frViaDef *viaDef1, frViaDef *viaDef2, bool isCurrDirX, frNonDefaultRule* ndr=nullptr);
     void prep_via2viaForbiddenLen_minStep(const frLayerNum &lNum, frViaDef *viaDef1, frViaDef *viaDef2,
                                           bool isCurrDirX, std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
     void prep_via2viaForbiddenLen_minimumCut(const frLayerNum &lNum, frViaDef *viaDef1, frViaDef *viaDef2,
@@ -92,7 +92,7 @@ namespace fr {
     void prep_via2viaForbiddenLen_cutSpc(const frLayerNum &lNum, frViaDef *viaDef1, frViaDef *viaDef2,
                                          bool isCurrDirX, std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
     void prep_via2viaForbiddenLen_minSpc(frLayerNum lNum, frViaDef *viaDef1, frViaDef *viaDef2,
-                                         bool isCurrDirX, std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
+                                         bool isCurrDirX, std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges, frNonDefaultRule* ndr=nullptr);
     void prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum &lNum, frViaDef *viaDef1, frViaDef *viaDef2,
                                               bool isCurrDirX, std::vector<std::pair<frCoord, frCoord> > &forbiddenRanges);
     void prep_via2viaForbiddenLen_lef58CutSpc_helper(const frBox &enclosureBox1, const frBox &enclosureBox2, const frBox &cutBox,

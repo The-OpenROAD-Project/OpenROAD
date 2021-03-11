@@ -32,12 +32,8 @@
 using namespace std;
 using namespace fr;
 
-string DEF_FILE;
 string GUIDE_FILE;
 string OUTGUIDE_FILE;
-string OUTTA_FILE;
-string OUT_FILE;
-string REF_OUT_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
 string CMAP_FILE;
@@ -78,6 +74,9 @@ frLayerNum ONGRIDONLY_VIA_TOPLAYERNUM             = std::numeric_limits<frLayerN
 frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
 int END_ITERATION = 80;
+int NDR_NETS_RIPUP_THRESH = 3;
+bool AUTO_TAPER_NDR_NETS = true;
+int  TAPERBOX_RADIUS = 3;
 
 frUInt4 TAVIACOST       = 1;
 frUInt4 TAPINCOST       = 4;
@@ -103,6 +102,7 @@ int HISTCOST = 32;
 
 namespace fr {
 
+    
 ostream& operator<< (ostream& os, const frPoint &pIn) {
   os <<"( " <<pIn.x() <<" " <<pIn.y() <<" )";
   return os;

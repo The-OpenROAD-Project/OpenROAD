@@ -182,7 +182,7 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 //
 ////////////////////////////////////////////////////////////////////
 
-char* dbTechLayerCutClassRule::getName() const
+const char* dbTechLayerCutClassRule::getName() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
   return obj->_name;

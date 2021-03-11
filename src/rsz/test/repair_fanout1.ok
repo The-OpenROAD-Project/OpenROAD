@@ -1,0 +1,28 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: ./results/repair_fanout1.def
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 36 components and 216 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 72 connections.
+[INFO ODB-0133]     Created 2 nets and 72 connections.
+[INFO ODB-0134] Finished DEF file: ./results/repair_fanout1.def
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+drvr/Q                                   10     35    -25 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 642um.
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+repeater1/Z                              10     10      0 (MET)
+

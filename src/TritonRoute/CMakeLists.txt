@@ -48,10 +48,10 @@ find_package(Boost 1.68.0)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
 
-tcl_lib(NAME      TritonRoute
-        NAMESPACE drt
-        I_FILE    src/TritonRoute.i
-        SCRIPTS   src/TritonRoute.tcl
+swig_lib(NAME      TritonRoute
+         NAMESPACE drt
+         I_FILE    src/TritonRoute.i
+         SCRIPTS   src/TritonRoute.tcl
 )
 
 set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
@@ -70,6 +70,7 @@ target_sources(TritonRoute
     src/dr/FlexDR_conn.cpp
     src/dr/FlexDR_init.cpp
     src/dr/FlexDR.cpp
+    src/db/drObj/drNet.cpp
     src/dr/FlexDR_maze.cpp
     src/dr/FlexGridGraph_maze.cpp
     src/dr/FlexGridGraph.cpp
@@ -108,7 +109,6 @@ target_sources(TritonRoute
     src/io/io.cpp
     src/io/io_guide.cpp
     src/io/io_parser_helper.cpp
-    src/io/defw.cpp
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp
     src/pa/FlexPA_prep.cpp

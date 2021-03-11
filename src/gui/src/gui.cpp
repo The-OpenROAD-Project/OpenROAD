@@ -42,10 +42,15 @@
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
+
+#include "gui/gui.h"
+
 #include "geom.h"
+
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
+#include "displayControls.h"
 
 namespace gui {
 
@@ -108,6 +113,11 @@ void Gui::pause()
   main_window->pause();
 }
 
+void Gui::updateShapes()
+{
+  main_window->updateShapes();
+}
+
 void Gui::addSelectedNet(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -141,16 +151,16 @@ void Gui::addSelectedNets(const char* pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
 
-    for (auto* net : block->getNets()) {
+  for (auto* net : block->getNets()) {
       if (re.exactMatch(net->getConstName())) {
-        nets.emplace(net, OpenDbDescriptor::get());
-      }
+      nets.emplace(net, OpenDbDescriptor::get());
     }
+  }
   } else if (match_case == false) {
     for (auto* net : block->getNets()) {
       if (boost::iequals(pattern, net->getConstName()))
         nets.emplace(net, OpenDbDescriptor::get());
-    }
+}
   } else {
     for (auto* net : block->getNets()) {
       if (pattern == net->getConstName()) {
@@ -195,25 +205,25 @@ void Gui::addSelectedInsts(const char* pattern,
     QRegExp re(pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
-    for (auto* inst : block->getInsts()) {
+  for (auto* inst : block->getInsts()) {
       if (re.exactMatch(inst->getConstName())) {
-        insts.emplace(inst, OpenDbDescriptor::get());
-      }
+      insts.emplace(inst, OpenDbDescriptor::get());
     }
+  }
   } else if (match_case == false) {
     for (auto* inst : block->getInsts()) {
       if (boost::iequals(inst->getConstName(), pattern))
         insts.emplace(inst, OpenDbDescriptor::get());
-    }
+}
   } else {
     for (auto* inst : block->getInsts()) {
-      if (pattern == inst->getConstName()) {
-        insts.emplace(inst, OpenDbDescriptor::get());
-        break;  // There can't be two insts with the same name
-      }
-    }
+        if (pattern == inst->getConstName()) {
+            insts.emplace(inst, OpenDbDescriptor::get());
+            break;  // There can't be two insts with the same name
+        }
+    }   
   }
-
+  
   main_window->addSelected(insts);
   if (add_to_highlight_set == true)
     main_window->addHighlighted(insts, highlight_group);
@@ -278,6 +288,18 @@ void Gui::clearSelections()
 void Gui::clearHighlights(int highlight_group)
 {
   main_window->clearHighlighted(highlight_group);
+}
+
+void Gui::addCustomVisibilityControl(const std::string& name,
+                                     bool initially_visible)
+{
+  main_window->getControls()->addCustomVisibilityControl(name,
+                                                         initially_visible);
+}
+
+bool Gui::checkCustomVisibilityControl(const std::string& name)
+{
+  return main_window->getControls()->checkCustomVisibilityControl(name);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -385,8 +407,8 @@ void OpenDbDescriptor::highlight(void* object,
 {
   auto highlight_color = Painter::persistHighlight;
   if (select_flag == true) {
-    painter.setPen(Painter::highlight, true);
-    painter.setBrush(Painter::transparent);
+  painter.setPen(Painter::highlight, true);
+  painter.setBrush(Painter::transparent);
   } else {
     if (highlight_group >= 0 && highlight_group < 7) {
       highlight_color = Painter::highlightColors[highlight_group];

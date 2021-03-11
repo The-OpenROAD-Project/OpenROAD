@@ -1,0 +1,22 @@
+[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/NangateOpenCellLibrary.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+[INFO ODB-0222] Reading LEF file: nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
+[INFO ODB-0127] Reading DEF file: gcd_fakeram.def
+[INFO ODB-0128] Design: gcd_mem1
+[INFO ODB-0130]     Created 61 pins.
+[INFO ODB-0131]     Created 1 components and 32 component-terminals.
+[INFO ODB-0134] Finished DEF file: gcd_fakeram.def
+Step 1: Cut rows...
+[INFO TAP-0001] Macro blocks found: 1
+[INFO TAP-0002] #Original rows: 30
+[INFO TAP-0003] #Cut rows: 27
+Step 2: Insert endcaps...
+[INFO TAP-0004] #Endcaps inserted: 60
+Step 3: Insert tapcells...
+[INFO TAP-0005] #Tapcells inserted: 19
+No differences found.

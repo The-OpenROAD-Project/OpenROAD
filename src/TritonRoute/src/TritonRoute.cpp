@@ -40,6 +40,7 @@
 #include "sta/StaMain.hh"
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"
+#include "gui/gui.h"
 
 using namespace std;
 using namespace fr;
@@ -51,12 +52,13 @@ extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
-extern int Triton_route_Init(Tcl_Interp* interp);
+extern int Tritonroute_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
   : debug_(std::make_unique<frDebugSettings>()),
-    num_drvs_(-1)
+    num_drvs_(-1),
+    gui_(gui::Gui::get())
 {
 }
 
@@ -119,7 +121,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   logger_ = logger;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
-  Triton_route_Init(tcl_interp);
+  Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 
@@ -158,14 +160,12 @@ void TritonRoute::prep() {
 
 void TritonRoute::gr() {
   FlexGR gr(getDesign(), logger_);
-  gr.main();
+  gr.main(db_);
 }
 
 void TritonRoute::ta() {
   FlexTA ta(getDesign(), logger_);
   ta.main();
-  io::Writer writer(getDesign(), logger_);
-  writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
@@ -176,8 +176,7 @@ void TritonRoute::dr() {
 }
 
 void TritonRoute::endFR() {
-  io::Writer writer(getDesign(), logger_);
-  writer.writeFromDR();
+  io::Writer writer(getDesign(),logger_);
   writer.updateDb(db_);
 }
 
@@ -195,13 +194,14 @@ int TritonRoute::main() {
     ENABLE_VIA_GEN = true;
     parser.readGuide();
     parser.initDefaultVias();
-    parser.writeRefDef();
     parser.postProcessGuide();
   }
   prep();
   ta();
   dr();
   endFR();
+  if(gui_ != nullptr)
+    gui_->updateShapes();
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -222,11 +222,11 @@ void TritonRoute::readParams(const string &fileName)
         string field = line.substr(0, pos);
         string value = line.substr(pos + 1);
         stringstream ss(value);
-        if (field == "lef")           { logger_->warn(DRT, 148, "deprecated lef param in params file"); }
-        else if (field == "def")      { DEF_FILE = value; REF_OUT_FILE = DEF_FILE; ++readParamCnt;}
+        if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
+        else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
         else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
-        else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}
-        else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}
+        else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated outputTA param in params file");}
+        else if (field == "output")   { logger_->warn(utl::DRT, 205, "deprecated output param in params file");}
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
         else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
@@ -252,12 +252,7 @@ void TritonRoute::readParams(const string &fileName)
     fin.close();
   }
 
-  if (MAX_THREADS > 1 && debug_->is_on()) {
-    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the GUI.");
-    MAX_THREADS = 1;
-  }
-
-  if (readParamCnt < 5) {
+  if (readParamCnt < 2) {
     logger_->error(DRT, 1, "Error reading param file: {}", fileName);
   }
 }

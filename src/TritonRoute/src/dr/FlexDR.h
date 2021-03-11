@@ -501,6 +501,10 @@ namespace fr {
     // others
     int getNumQuickMarkers();
     
+    Logger* getLogger(){
+        return logger_;
+    }
+    
   protected:
     typedef struct {
       frBlockObject* block;
@@ -642,7 +646,6 @@ namespace fr {
     void initMazeCost_pin(drNet *net, bool isAddPathCost);
     void initMazeCost_fixedObj();
     void initMazeCost_terms(const std::set<frBlockObject*> &objs, bool isAddPathCost, bool isSkipVia = false);
-    void initMazeCost_pin_helper(const frBox &box, frCoord bloatDist, frMIdx zIdx, bool isAddPathCost = true);
     void initMazeCost_ap(); // disable maze edge
     void initMazeCost_marker();
     void initMazeCost_marker_fixMode_0(const frMarker &marker);
@@ -702,7 +705,7 @@ namespace fr {
                                   std::queue<RouteQueueEntry> &rerouteQueue);
     void route_queue_update_queue(const std::vector<std::unique_ptr<frMarker> > &markers,
                                   std::queue<RouteQueueEntry> &rerouteQueue);
-
+    bool canRipup(drNet* n);
     // route
     void route();
     void addPathCost(drConnFig *connFig);
@@ -710,8 +713,8 @@ namespace fr {
     void modPathCost(drConnFig *connFig, int type);
     // minSpc
     void modMinSpacingCost(drNet* net, const frBox &box, frMIdx z, int type, bool isCurrPs);
-    void modMinSpacingCostPlaner(const frBox &box, frMIdx z, int type, bool isBlockage = false);
-    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false);
+    void modMinSpacingCostPlanar(const frBox &box, frMIdx z, int type, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
+    void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
     frCoord pt2boxDistSquare(const frPoint &pt, const frBox &box);
     frCoord box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
     frCoord box2boxDistSquareNew(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
@@ -741,7 +744,9 @@ namespace fr {
     bool routeNet(drNet* net);
     void routeNet_prep(drNet* net, std::set<drPin*, frBlockObjectComp> &pins, 
                        std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
-                       std::set<FlexMazeIdx> &apMazeIdx, std::set<FlexMazeIdx> &realPinAPMazeIdx);
+                       std::set<FlexMazeIdx> &apMazeIdx, std::set<FlexMazeIdx> &realPinAPMazeIdx,
+                       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+                       list<pair<drPin*, frBox3D>>& pinTaperBoxes);
     void routeNet_prepAreaMap(drNet* net, std::map<FlexMazeIdx, frCoord> &areaMap);
     void routeNet_setSrc(std::set<drPin*, frBlockObjectComp> &unConnPins, 
                          std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
@@ -749,13 +754,23 @@ namespace fr {
                          frPoint &centerPt);
     void mazePinInit();
     drPin* routeNet_getNextDst(FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, 
-                               std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins);
+                               std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
+                               list<pair<drPin*, frBox3D>>& pinTaperBoxes);
     void        routeNet_postAstarUpdate(std::vector<FlexMazeIdx> &path, std::vector<FlexMazeIdx> &connComps,
                                          std::set<drPin*, frBlockObjectComp> &unConnPins, 
                                          std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp> > &mazeIdx2unConnPins,
                                          bool isFirstConn);
-    void        routeNet_postAstarWritePath(drNet* net, std::vector<FlexMazeIdx> &points, const std::set<FlexMazeIdx> &apMazeIdx);
+    void        routeNet_postAstarWritePath(drNet* net, std::vector<FlexMazeIdx> &points, const std::set<FlexMazeIdx> &apMazeIdx,
+                                            std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox);
+    void        setNDRStyle(drNet* net, frSegStyle& currStyle, frMIdx startX, frMIdx endX, frMIdx startY, frMIdx endY,
+                                frMIdx z, FlexMazeIdx* prev, FlexMazeIdx* next);
+    bool        isInsideTaperBox(frMIdx x, frMIdx y, frMIdx startZ, frMIdx endZ, map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+    bool splitPathSeg(frMIdx& midX, frMIdx& midY, bool& taperFirstPiece, frMIdx startX, frMIdx startY, frMIdx endX, frMIdx endY, frMIdx z,
+                        frBox3D* srcBox, frBox3D* dstBox, drNet* net);
+    void processPathSeg(frMIdx startX, frMIdx startY, frMIdx endX, frMIdx endY, frMIdx z, const set<FlexMazeIdx> &apMazeIdx, drNet* net,
+                        bool vertical, bool taper, int i, vector<FlexMazeIdx>& points);
     void        routeNet_postAstarPatchMinAreaVio(drNet* net, const std::vector<FlexMazeIdx> &path, const std::map<FlexMazeIdx, frCoord> &areaMap);
+    frCoord     getHalfViaEncArea(frMIdx z, bool isLayer1, drNet* net);
     void        routeNet_postAstarAddPatchMetal(drNet* net, const FlexMazeIdx &bpIdx, const FlexMazeIdx &epIdx, frCoord gapArea, frCoord patchWidth, bool bpPatchStyle = true, bool epPatchStyle = false);
     int         routeNet_postAstarAddPathMetal_isClean(const FlexMazeIdx &bpIdx, bool isPatchHorz, bool isPatchLeft, frCoord patchLength);
     void        routeNet_postAstarAddPatchMetal_addPWire(drNet* net, const FlexMazeIdx &bpIdx, bool isPatchHorz, bool isPatchLeft, frCoord patchLength, frCoord patchWidth);

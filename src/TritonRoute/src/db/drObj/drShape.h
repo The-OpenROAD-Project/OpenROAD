@@ -76,15 +76,17 @@ namespace fr {
   public:
     // constructors
     drPathSeg(): drShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), 
-                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {}
+                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false), isTapered_(false) {}
     drPathSeg(const drPathSeg &in): drShape(in), begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), 
-                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {}
+                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_), isTapered_(in.isTapered_) {
+    }
     drPathSeg(const frPathSeg &in);
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
       beginIn.set(begin_);
       endIn.set(end_);
     }
+    
     void getStyle(frSegStyle &styleIn) const {
       styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
       styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
@@ -99,6 +101,18 @@ namespace fr {
       style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
       style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
       style_.setWidth(styleIn.getWidth());
+    }
+    frCoord getBeginX() const{
+        return begin_.x();
+    }
+    frCoord getBeginY() const{
+        return begin_.y();
+    }
+    frCoord getEndX() const{
+        return end_.x();
+    }
+    frCoord getEndY() const{
+        return end_.y();
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -200,6 +214,12 @@ namespace fr {
     bool isPatchSeg() const {
       return patchSeg_;
     }
+    bool isTapered() const {
+      return isTapered_;
+    }
+    void setTapered(bool t){
+        isTapered_ = t;
+    }
   protected:
     frPoint        begin_; // begin always smaller than end, assumed
     frPoint        end_;
@@ -209,6 +229,7 @@ namespace fr {
     FlexMazeIdx    beginMazeIdx_;
     FlexMazeIdx    endMazeIdx_;
     bool           patchSeg_;
+    bool           isTapered_;
   };
 
   class drPatchWire: public drShape {

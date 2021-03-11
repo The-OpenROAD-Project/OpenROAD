@@ -173,12 +173,6 @@ class dbDiff : public dbObject
             dbClMeasureType::Value lhs,
             dbClMeasureType::Value rhs);
   void diff(const char* field, dbDirection::Value lhs, dbDirection::Value rhs);
-  void diff(const char*                     field,
-            TechLayerSpacingRule::_RuleType lhs,
-            TechLayerSpacingRule::_RuleType rhs);
-  void diff(const char*               field,
-            TechMinCutRule::_RuleType lhs,
-            TechMinCutRule::_RuleType rhs);
 
   void out(char side, const char* field, bool value);
   void out(char side, const char* field, char value);
@@ -209,8 +203,6 @@ class dbDiff : public dbObject
   void out(char side, const char* field, dbOnOffType::Value value);
   void out(char side, const char* field, dbClMeasureType::Value value);
   void out(char side, const char* field, dbDirection::Value value);
-  void out(char side, const char* field, TechLayerSpacingRule::_RuleType value);
-  void out(char side, const char* field, TechMinCutRule::_RuleType value);
 };
 
 #define DIFF_BEGIN \

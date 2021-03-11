@@ -245,9 +245,9 @@ class Logger
 
 // Use this macro for any debug messages.  It avoids evaluating message and varargs
 // when no message is issued.
-#define debugPrint(logger, tool, group, level, message, ...)   \
-  if (logger->debugCheck(tool, group, level)) {                \
-    logger->debug(tool, level, message, ##__VA_ARGS__); \
+#define debugPrint(logger, tool, group, level, ...)   \
+  if (logger->debugCheck(tool, group, level)) {       \
+    logger->debug(tool, level, ##__VA_ARGS__);        \
   }
 
 #undef FOREACH_TOOL

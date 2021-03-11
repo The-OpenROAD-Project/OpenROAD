@@ -41,6 +41,7 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 
 namespace odb {
 class dbDatabase;
@@ -141,16 +142,21 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Show a message in the status bar
   void status(const std::string& message);
-
+  
   // Show Find Dialog Box
   void showFindDialog();
 
+  DisplayControls* getControls() const{
+      return controls_;
+  }
+  
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
   void selectHighlightConnectedNets(bool select_flag,
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+  void updateShapes();
 
  private:
   void createMenus();
