@@ -152,7 +152,7 @@ sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_offset x_offset]\
                                       [-y_offset y_offset]}
 
-# Look Ma, not c++!
+# Look Ma, no c++!
 proc make_tracks { args } {
   sta::parse_key_args "make_tracks" args \
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
@@ -237,10 +237,9 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   } else {
     set die_area [$block getDieArea]
     set grid [$block findTrackGrid $layer]
-    if { $grid != "NULL" } {
-      [odb::dbTrackGrid_destroy $grid]
+    if { $grid == "NULL" } {
+      set grid [odb::dbTrackGrid_create $block $layer]
     }
-    set grid [odb::dbTrackGrid_create $block $layer]
 
     if { $y_offset == 0 } {
       set y_offset $y_pitch

@@ -226,7 +226,9 @@ utilization as show below:
           core_height + core_space_bottom + core_space_top )
 ```
 
+The `initialize_floorplan` command removes existing tracks.
 Use the `make_tracks` command to add routing tracks to a floorplan.
+
 ```
 make_tracks [layer]
             [-x_pitch x_pitch]
