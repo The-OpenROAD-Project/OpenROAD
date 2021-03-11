@@ -316,8 +316,8 @@ uint extDistRCTable::writeRules(FILE* fp,
   uint cnt = table->getCnt();
   if (cnt > 0) {
     extDistRC* rc1 = table->get(cnt - 1);
-    // DF 030921 TO_UNCOMMENT if (rc1 != NULL)
-     // rc1->set(rc1->_sep, 0, rc1->_coupling + rc1->_fringe, 0.0, rc1->_res);
+    if (rc1 != NULL)
+      rc1->set(rc1->_sep, 0, rc1->_coupling + rc1->_fringe, 0.0, rc1->_res);
   }
 
   fprintf(fp, "DIST count %d width %g\n", cnt, w);
@@ -4062,7 +4062,7 @@ void extMetRCTable::mkWidthAndSpaceMappings()
     if (_resOver[ii] != NULL)
       _resOver[ii]->makeWSmapping();
     else
-      logger_->info(RCX, 215, "Can't find <OVER> Res rules for {}", ii);
+      logger_->info(RCX, 215, "Can't find <RESOVER> Res rules for {}", ii);
 
     if (_capUnder[ii] != NULL)
       _capUnder[ii]->makeWSmapping();
@@ -4077,6 +4077,7 @@ void extMetRCTable::mkWidthAndSpaceMappings()
 }
 void extRCModel::writeRules(char* name, bool binary)
 {
+  bool writeRes= false;
   //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
@@ -4100,6 +4101,7 @@ void extRCModel::writeRules(char* name, bool binary)
 
     for (uint ii = 1; ii < _layerCnt; ii++) {
 
+      if (writeRes) {
       if (_modelTable[m]->_resOver[ii] != NULL)
         cnt += _modelTable[m]->_resOver[ii]->writeRulesOver_res(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_resOver[ii] != NULL))
@@ -4112,7 +4114,7 @@ void extRCModel::writeRules(char* name, bool binary)
             m,
             ii);
       }
-      
+      }
       if (_modelTable[m]->_capOver[ii] != NULL)
         cnt += _modelTable[m]->_capOver[ii]->writeRulesOver(fp, binary);
       else if ((m > 0) && (_modelTable[0]->_capOver[ii] != NULL))
