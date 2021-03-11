@@ -357,10 +357,10 @@ namespace eval tap {
             set loc_2_x [expr $urx - $master_x]
             set loc_2_y [expr $ury - $master_y]
 
-            set row_blockages [lindex $top_bottom_blockages $row_idx]
-            set blocked_region [in_blocked_region $llx $row $row_blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+            set row_top_bottom_blockages [lindex $top_bottom_blockages $row_idx]
+            set blocked_region [in_blocked_region $llx $row $row_top_bottom_blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
             if {$add_boundary_cell && $blocked_region} {    
-                if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
+                if {[right_above_below_macros $row_top_bottom_blockages $row $halo_x $halo_y] == 1} {
                     if { $ori == "MX" } {
                         set master [$db findMaster $cnrcap_nwin_master]
                     } else {
@@ -384,9 +384,9 @@ namespace eval tap {
             incr cnt
             incr endcap_count
 
-            set blocked_region [in_blocked_region $loc_2_x $row $row_blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+            set blocked_region [in_blocked_region $loc_2_x $row $row_top_bottom_blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
             if {$add_boundary_cell && $blocked_region} {
-                if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
+                if {[right_above_below_macros $row_top_bottom_blockages $row $halo_x $halo_y] == 1} {
                     if { $ori == "MX" } {
                         set master [$db findMaster $cnrcap_nwin_master]
                     } else {
@@ -471,6 +471,9 @@ namespace eval tap {
                 lappend offsets $offset
             }
 
+            set row_top_bottom_blockages [lindex $top_bottom_blockages $row_idx]
+            set row_overlap_blockages [lindex $overlapping_blockages $row_idx]
+
             if {[top_or_bottom $row $min_y $max_y]} {
                 if {$no_cell_at_top_bottom} {
                     continue
@@ -479,7 +482,7 @@ namespace eval tap {
                 set pitch [ord::microns_to_dbu $dist]
                 set offset [ord::microns_to_dbu $dist]
                 lappend offsets $offset
-            } elseif {[right_above_below_macros $blockages $row $halo_x $halo_y]} {
+            } elseif {[right_above_below_macros $row_top_bottom_blockages $row $halo_x $halo_y]} {
                 if {$add_boundary_cell} {
                     set offsets ""
                     set pitch [ord::microns_to_dbu [expr $dist*2]]
@@ -498,8 +501,6 @@ namespace eval tap {
             }
 
             set endcapwidth [expr $endcap_cpp*$site_x]
-            set row_top_bottom_blockages [lindex $top_bottom_blockages $row_idx]
-            set row_overlap_blockages [lindex $overlapping_blockages $row_idx]
             foreach offset $offsets {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
