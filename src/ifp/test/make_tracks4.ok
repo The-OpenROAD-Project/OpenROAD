@@ -1,0 +1,10 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO IFP-0001] Added 128 rows of 948 sites.
+[ERROR IFP-0021] -x_offset > die width.
+IFP-0021
+[ERROR IFP-0022] -y_offset > die height.
+IFP-0022
