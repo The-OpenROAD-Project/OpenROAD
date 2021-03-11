@@ -164,6 +164,22 @@ int write_db(odb::dbDatabase* db, const char* db_path)
   return 1;
 }
 
+int 
+writeEco(odb::dbBlock* block, const char* filename)
+{
+
+  odb::dbDatabase::writeEco(block, filename);
+  return 1;
+}
+
+int 
+readEco(odb::dbBlock* block, const char* filename)
+{
+  odb::dbDatabase::readEco(block, filename);
+  return 1;
+}
+
+
 Polygon90Set* newSetFromRect(int xLo, int yLo, int xHi, int yHi)
 {
   using Pt = Polygon90::point_type;

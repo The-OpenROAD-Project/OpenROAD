@@ -71,7 +71,8 @@ class dbJournal
   void redo_updateRSegField();
   void redo_updateCapNodeField();
   void redo_updateCCSegField();
-
+  void redo_updateBTermField();
+  
   void undo_createObject();
   void undo_deleteObject();
   void undo_connectObject();

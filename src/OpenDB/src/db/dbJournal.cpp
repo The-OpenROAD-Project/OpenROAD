@@ -35,6 +35,7 @@
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbITerm.h"
+#include "dbBTerm.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbNet.h"
@@ -293,6 +294,21 @@ void dbJournal::redo_createObject()
       break;
     }
 
+    case dbBTermObj: {
+      uint        dbNet_id;
+      std::string name; 
+      _log.pop(dbNet_id);
+      _log.pop(name);
+
+      dbNet* net = dbNet::getNet(_block, dbNet_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: create dbBTermObj {}, Net: {}",
+            name,
+            dbNet_id);
+      dbBTerm::create(net, name.c_str());
+      break;
+    }
+
     case dbInstObj: {
       uint        lib_id;
       uint        master_id;
@@ -388,6 +404,14 @@ void dbJournal::redo_deleteObject()
       break;
     }
 
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2, "REDO ECO: destroy dbBTerm, bterm_id {}", bterm_id);
+      dbBTerm::destroy(bterm);
+      break;
+    }
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);
@@ -472,6 +496,20 @@ void dbJournal::redo_connectObject()
       break;
     }
 
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      dbNet* net = dbNet::getNet(_block, net_id);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: connect dbBTermObj, bterm_id {}, net_id {}",
+            bterm_id,
+            net_id);
+      bterm->connect(net);
+      break;
+    }
     default:
       break;
   }
@@ -491,6 +529,16 @@ void dbJournal::redo_disconnectObject()
             "REDO ECO: disconnect dbITermObj, iterm_id {}",
             iterm_id);
       dbITerm::disconnect(iterm);
+      break;
+    }
+
+    case dbBTermObj: {
+      
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      bterm->disconnect();
+
       break;
     }
 
@@ -524,7 +572,7 @@ void dbJournal::redo_swapObject()
       _log.pop(master_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
       debugPrint(_logger, utl::ODB, "DB_ECO", 2,
-            "REDO ECO: swapMaster inst {}, prev lib/master: {}/{}, new "
+            "ECO: swapMaster inst {}, prev lib/master: {}/{}, new "
             "lib/master: {}/{}",
             inst_id,
             prev_lib_id,
@@ -556,6 +604,10 @@ void dbJournal::redo_updateField()
 
     case dbInstObj:
       redo_updateInstField();
+      break;
+
+    case dbBTermObj:
+      redo_updateBTermField();
       break;
 
     case dbITermObj:
@@ -756,8 +808,10 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_x);
       int prev_y;
       _log.pop(prev_y);
-      _log.pop(inst->_x);
-      _log.pop(inst->_y);
+      int current_x;
+      _log.pop(current_x);
+      int current_y;
+      _log.pop(current_y);
       debugPrint(_logger, utl::ODB, "DB_ECO", 2,
             "REDO ECO: dbInst {}, origin: {},{} to {},{}",
             inst_id,
@@ -765,6 +819,7 @@ void dbJournal::redo_updateInstField()
             prev_y,
             inst->_x,
             inst->_y);
+      ((dbInst*)inst)->setOrigin(current_x, current_y);
       break;
     }
 
@@ -779,6 +834,31 @@ void dbJournal::redo_updateInstField()
   }
 }
 
+
+void dbJournal::redo_updateBTermField(){
+
+  uint bterm_id;
+  _log.pop(bterm_id);
+  _dbBTerm* bterm = (_dbBTerm*) dbBTerm::getBTerm(_block, bterm_id);
+
+  int field;
+  _log.pop(field);
+
+  switch ((_dbBTerm::Field) field) {
+    case _dbBTerm::FLAGS: {
+      uint prev_flags;
+      _log.pop(prev_flags);
+      uint* flags = (uint*) &bterm->_flags;
+      _log.pop(*flags);
+      debugPrint(_logger, utl::ODB, "DB_ECO", 2,
+            "REDO ECO: dbBTerm {}, updateBTermField: {} to {}",
+            bterm_id,
+            prev_flags,
+            *flags);
+      break;
+    }
+  }
+}
 void dbJournal::redo_updateITermField()
 {
   uint iterm_id;

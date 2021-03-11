@@ -396,12 +396,12 @@ class dbDatabase : public dbObject
   /// Read the eco changes from the specified stream to be applied to the
   /// specified block.
   ///
-  static void readEco(dbBlock* block, FILE* stream);
+  static void readEco(dbBlock* block, const char* filename);
 
   ///
   /// Write the eco netlist changes to the specified stream.
   ///
-  static void writeEco(dbBlock* block, FILE* stream);
+  static void writeEco(dbBlock* block, const char* filename);
   static int  checkEco(dbBlock* block);
 
   ///

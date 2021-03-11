@@ -50,6 +50,9 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path);
 
 int write_db(odb::dbDatabase* db, const char* db_path);
 
+int writeEco(odb::dbBlock* block, const char* filename);
+
+int readEco(odb::dbBlock* block, const char* filename);
 // This is a very basic polygon API for scripting.  In C++ you should
 // directly use the Boost Polygon classes.
 
