@@ -28,7 +28,6 @@
 #include <array>
 
 #include "opendb/defin.h"
-#include "opendb/defout.h"
 #include "opendb/lefin.h"
 #include "opendb/lefout.h"
 #include "swig_common.h"
@@ -84,6 +83,41 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
     return db_diff(db1, db2);
   else
     return false;
+}
+
+odb::dbLib*
+read_lef(odb::dbDatabase* db, const char* path)
+{
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::lefin lefParser(db, logger, false);
+  const char *libname = basename(const_cast<char*>(path));
+  if (!db->getTech()) {
+    return lefParser.createTechAndLib(libname, path);
+  } else {
+    return lefParser.createLib(libname, path);
+  }
+}
+
+odb::dbChip*
+read_def(odb::dbDatabase* db, std::string path)
+{
+  utl::Logger* logger = new utl::Logger(NULL);
+  std::vector<odb::dbLib *> libs;
+  for (auto* lib : db->getLibs()) {
+    libs.push_back(lib);
+  }
+  odb::defin defParser(db, logger);
+  return defParser.createChip(libs, path.c_str());
+}
+
+int
+write_def(odb::dbBlock* block, const char* path,
+	      odb::defout::Version version)
+{
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::defout writer(logger);
+  writer.setVersion(version);
+  return writer.writeBlock(block, path);
 }
 
 int write_lef(odb::dbLib* lib, const char* path)
