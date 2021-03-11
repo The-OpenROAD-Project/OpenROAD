@@ -10,6 +10,7 @@ record_tests {
   make_tracks2
   make_tracks3
   make_tracks4
+  make_tracks5
   auto_place_pins1
 }
 
