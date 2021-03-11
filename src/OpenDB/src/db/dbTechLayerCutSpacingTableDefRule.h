@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -52,72 +52,72 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutSpacingTableDefRuleFlags
 {
-  bool _default_valid : 1;
-  bool _same_mask : 1;
-  bool _same_net : 1;
-  bool _same_metal : 1;
-  bool _same_via : 1;
-  bool _layer_valid : 1;
-  bool _no_stack : 1;
-  bool _non_zero_enclosure : 1;
-  bool _prl_for_aligned_cut : 1;
-  bool _center_to_center_valid : 1;
-  bool _center_and_edge_valid : 1;
-  bool _no_prl : 1;
-  bool _prl_valid : 1;
-  bool _max_x_y : 1;
-  bool _end_extension_valid : 1;
-  bool _side_extension_valid : 1;
-  bool _exact_aligned_spacing_valid : 1;
-  bool _horizontal : 1;
-  bool _prl_horizontal : 1;
-  bool _vertical : 1;
-  bool _prl_vertical : 1;
-  bool _non_opposite_enclosure_spacing_valid : 1;
-  bool _opposite_enclosure_resize_spacing_valid : 1;
-  uint _spare_bits : 9;
+  bool default_valid_ : 1;
+  bool same_mask_ : 1;
+  bool same_net_ : 1;
+  bool same_metal_ : 1;
+  bool same_via_ : 1;
+  bool layer_valid_ : 1;
+  bool no_stack_ : 1;
+  bool non_zero_enclosure_ : 1;
+  bool prl_for_aligned_cut_ : 1;
+  bool center_to_center_valid_ : 1;
+  bool center_and_edge_valid_ : 1;
+  bool no_prl_ : 1;
+  bool prl_valid_ : 1;
+  bool max_x_y_ : 1;
+  bool end_extension_valid_ : 1;
+  bool side_extension_valid_ : 1;
+  bool exact_aligned_spacing_valid_ : 1;
+  bool horizontal_ : 1;
+  bool prl_horizontal_ : 1;
+  bool vertical_ : 1;
+  bool prl_vertical_ : 1;
+  bool non_opposite_enclosure_spacing_valid_ : 1;
+  bool opposite_enclosure_resize_spacing_valid_ : 1;
+  uint spare_bits_ : 9;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerCutSpacingTableDefRuleFlags _flags;
-  int                                    _default;
-  dbId<_dbTechLayer>                     _second_layer;
+  dbTechLayerCutSpacingTableDefRuleFlags flags_;
+  int                                    default_;
+  dbId<_dbTechLayer>                     second_layer_;
   dbVector<
       std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      _prl_for_aligned_cut_tbl;
+      prl_for_aligned_cut_tbl_;
   dbVector<
       std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      _center_to_center_tbl;
+      center_to_center_tbl_;
   dbVector<
       std::pair<dbId<_dbTechLayerCutClassRule>, dbId<_dbTechLayerCutClassRule>>>
-      _center_and_edge_tbl;
-  int _prl;
+      center_and_edge_tbl_;
+  int prl_;
   dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>,
                       dbId<_dbTechLayerCutClassRule>,
                       int>>
-                                                           _prl_tbl;
-  int                                                      _extension;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> _end_extension_tbl;
-  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> _side_extension_tbl;
+                                                           prl_tbl_;
+  int                                                      extension_;
+  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> end_extension_tbl_;
+  dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>> side_extension_tbl_;
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
-      _exact_aligned_spacing_tbl;
+      exact_aligned_spacing_tbl_;
   dbVector<std::pair<dbId<_dbTechLayerCutClassRule>, int>>
-      _non_opp_enc_spacing_tbl;
+      non_opp_enc_spacing_tbl_;
   dbVector<std::tuple<dbId<_dbTechLayerCutClassRule>, int, int, int>>
-                                          _opp_enc_spacing_tbl;
-  dbVector<dbVector<std::pair<int, int>>> _spacing_tbl;
-  std::map<std::string, uint>             _row_map;
-  std::map<std::string, uint>             _col_map;
+                                          opp_enc_spacing_tbl_;
+  dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
+  std::map<std::string, uint>             row_map_;
+  std::map<std::string, uint>             col_map_;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbTechLayerCutSpacingTableDefRule(
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableDefRule& r);
@@ -133,14 +133,14 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
                    const char*                               field,
                    const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream&                          stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);
 dbOStream& operator<<(dbOStream&                                stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

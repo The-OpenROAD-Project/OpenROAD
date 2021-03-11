@@ -3,366 +3,276 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bool",
-      "name": "_center_to_center",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "center_to_center_"
     },
     {
       "type": "int",
-      "name": "_cut_spacing",
-      "flags": []
+      "name": "cut_spacing_"
     },
     {
-      "type": "bool",
-      "name": "_same_net",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "same_net_"
     },
     {
-      "type": "bool",
-      "name": "_same_metal",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "same_metal_"
     },
     {
-      "type": "bool",
-      "name": "_same_via",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "same_via_"
     },
     {
       "type": "uint",
-      "name": "_cut_spacing_type",
-      "flags": ["no-get","no-set"],
-      "bits":3
+      "name": "cut_spacing_type_",
+      "flags": [
+        "no-get",
+        "no-set"
+      ],
+      "bits": 3
     },
     {
       "type": "dbId<_dbTechLayer>",
-      "name": "_second_layer",
-      "flags": ["no-get"],
+      "name": "second_layer_",
+      "flags": [
+        "no-get"
+      ],
       "parent": "dbTechLayer"
     },
     {
-      "type": "bool",
-      "name": "_stack",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "stack_"
     },
     {
-      "type": "bool",
-      "name": "_orthogonal_spacing_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "orthogonal_spacing_valid_"
     },
     {
-      "type": "bool",
-      "name": "_above_width_enclosure_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "above_width_enclosure_valid_"
     },
     {
       "type": "int",
-      "name": "_orthogonal_spacing",
-      "flags": []
+      "name": "orthogonal_spacing_"
     },
     {
-      "type": "bool",
-      "name": "_short_edge_only",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "short_edge_only_"
     },
     {
-      "type": "bool",
-      "name": "_concave_corner_width",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "concave_corner_width_"
     },
     {
-      "type": "bool",
-      "name": "_concave_corner_parallel",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "concave_corner_parallel_"
     },
     {
-      "type": "bool",
-      "name": "_concave_corner_edge_length",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "concave_corner_edge_length_"
     },
     {
       "type": "int",
-      "name": "_width",
-      "flags": []
+      "name": "width_"
     },
     {
       "type": "int",
-      "name": "_enclosure",
-      "flags": []
+      "name": "enclosure_"
     },
     {
       "type": "int",
-      "name": "_edge_length",
-      "flags": []
+      "name": "edge_length_"
     },
     {
       "type": "int",
-      "name": "_par_within",
-      "flags": []
+      "name": "par_within_"
     },
     {
       "type": "int",
-      "name": "_par_enclosure",
-      "flags": []
+      "name": "par_enclosure_"
     },
     {
       "type": "int",
-      "name": "_edge_enclosure",
-      "flags": []
+      "name": "edge_enclosure_"
     },
     {
       "type": "int",
-      "name": "_adj_enclosure",
-      "flags": []
+      "name": "adj_enclosure_"
     },
     {
-      "type": "bool",
-      "name": "_concave_corner",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "concave_corner_"
     },
     {
-      "type": "bool",
-      "name": "_extension_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "extension_valid_"
     },
     {
-      "type": "bool",
-      "name": "_non_eol_convex_corner",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "non_eol_convex_corner_"
     },
     {
-      "type": "bool",
-      "name": "_eol_width_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "eol_width_valid_"
     },
     {
-      "type": "bool",
-      "name": "_min_length_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "min_length_valid_"
     },
     {
-      "type": "bool",
-      "name": "_above_width_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "above_width_valid_"
     },
     {
-      "type": "bool",
-      "name": "_mask_overlap",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "mask_overlap_"
     },
     {
-      "type": "bool",
-      "name": "_wrong_direction",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "wrong_direction_"
     },
     {
       "type": "int",
-      "name": "_above_enclosure",
-      "flags": []
+      "name": "above_enclosure_"
     },
     {
       "type": "int",
-      "name": "_above_width",
-      "flags": []
+      "name": "above_width_"
     },
     {
       "type": "int",
-      "name": "_min_length",
-      "flags": []
+      "name": "min_length_"
     },
     {
       "type": "int",
-      "name": "_extension",
-      "flags": []
+      "name": "extension_"
     },
     {
       "type": "int",
-      "name": "_eol_width",
-      "flags": []
+      "name": "eol_width_"
     },
     {
       "type": "uint",
-      "name": "_adjacent_cuts",
-      "flags": [],
-      "bits":2
+      "name": "adjacent_cuts_",
+      "bits": 2
     },
     {
-      "type": "bool",
-      "name": "_exact_aligned",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "exact_aligned_"
     },
     {
       "type": "uint",
-      "name": "_num_cuts",
-      "flags": [],
-      "comment":"// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts"
+      "name": "num_cuts_",
+      "comment": "// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts"
     },
     {
       "type": "int",
-      "name": "_within",
-      "flags": [],
-      "comment":"// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin"
+      "name": "within_",
+      "comment": "// WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin"
     },
     {
       "type": "int",
-      "name": "_second_within",
-      "flags": [],
-      "comment":"// WITHIN cutWithin cutWithin2"
+      "name": "second_within_",
+      "comment": "// WITHIN cutWithin cutWithin2"
     },
     {
-      "type": "bool",
-      "name": "_cut_class_to_all",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "cut_class_to_all_"
     },
     {
-      "type": "bool",
-      "name": "_no_prl",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "no_prl_"
     },
     {
-      "type": "bool",
-      "name": "_same_mask",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "same_mask_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_pgnet",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_same_pgnet_"
     },
     {
       "type": "dbId<_dbTechLayerCutClassRule>",
-      "name": "_cut_class",
-      "flags": ["no-get"],
+      "name": "cut_class_",
+      "flags": [
+        "no-get"
+      ],
       "parent": "dbTechLayer"
     },
     {
-      "type": "bool",
-      "name": "_side_parallel_overlap",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "side_parallel_overlap_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_net",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_same_net_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_metal",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_same_metal_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_metal_overlap",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_same_metal_overlap_"
     },
     {
-      "type": "bool",
-      "name": "_except_same_via",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_same_via_"
     },
     {
-      "type": "bool",
-      "name": "_above",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "above_"
     },
     {
-      "type": "bool",
-      "name": "_except_two_edges",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "except_two_edges_"
     },
     {
-      "type": "bool",
-      "name": "_two_cuts_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "two_cuts_valid_"
     },
     {
-      "type": "bool",
-      "name": "_same_cut",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "same_cut_"
     },
     {
-      "type": "bool",
-      "name": "_long_edge_only",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "long_edge_only_"
     },
     {
-      "type": "bool",
-      "name": "_prl_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "prl_valid_"
     },
     {
-      "type": "bool",
-      "name": "_below",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "below_"
     },
     {
-      "type": "bool",
-      "name": "_par_within_enclosure_valid",
-      "flags": [],
-      "bits":1
+      "type": "bit",
+      "name": "par_within_enclosure_valid_"
     },
     {
       "type": "uint",
-      "name": "_two_cuts",
-      "flags": []
+      "name": "two_cuts_"
     },
     {
       "type": "uint",
-      "name": "_prl",
-      "flags": []
+      "name": "prl_"
     },
     {
       "type": "uint",
-      "name": "_par_length",
-      "flags": []
+      "name": "par_length_"
     },
     {
       "type": "int",
-      "name": "_cut_area",
-      "flags": []
+      "name": "cut_area_"
     }
-
   ],
   "constructors": [],
-  "enums":[
+  "enums": [
     {
-      "name":"CutSpacingType",
-      "values":[
+      "name": "CutSpacingType",
+      "values": [
         "NONE",
         "MAXXY",
         "SAMEMASK",
@@ -373,8 +283,10 @@
         "SAMEMETALSHAREDEDGE",
         "AREA"
       ],
-      "public":true
+      "public": true
     }
   ],
-  "cpp_includes":["dbTechLayer.h"]
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
 }
