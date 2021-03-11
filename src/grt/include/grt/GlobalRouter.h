@@ -62,6 +62,7 @@ class dbDatabase;
 class dbTech;
 class dbBlock;
 class dbDatabase;
+class dbTechLayer;
 }  // namespace odb
 
 namespace sta {
@@ -284,7 +285,9 @@ class GlobalRouter
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
   void saveCapacities(int previousMinLayer, int previousMaxLayer);
-  void getCapacities(int previousMinLayer, int previousMaxLayer);
+  void restoreCapacities(int previousMinLayer, int previousMaxLayer);
+  int getEdgeResource(int x1, int y1, int x2, int y2,
+                      odb::dbTechLayer* tech_layer, odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
   void updateDirtyNets();
 
@@ -369,8 +372,8 @@ class GlobalRouter
   int _clockCost;
 
   // Antenna variables
-  int*** oldHUsages;
-  int*** oldVUsages;
+  int*** oldHUsages_;
+  int*** oldVUsages_;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;

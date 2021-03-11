@@ -207,7 +207,7 @@ void GlobalRouter::applyAdjustments()
                              regionAdjst.getAdjustment());
   }
 
-  getCapacities(_minLayerForClock, _maxLayerForClock);
+  restoreCapacities(_minLayerForClock, _maxLayerForClock);
 
   _fastRoute->initAuxVar();
 }
@@ -227,7 +227,6 @@ void GlobalRouter::runFastRoute(bool onlySignal)
   _routes.insert(result.begin(), result.end());
 
   computeWirelength();
-  _fastRoute->updateDbCongestion(_db);
   if (_reportCongest) {
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
@@ -270,7 +269,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
-    getCapacities(_minRoutingLayer, _maxRoutingLayer);
+    restoreCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsRouting();
 
     NetRouteMap newRoute = findRouting(antennaNets);
@@ -304,6 +303,7 @@ void GlobalRouter::routeClockNets()
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
 {
   NetRouteMap routes = _fastRoute->run();
+  _fastRoute->updateDbCongestion(_db);
   addRemainingGuides(routes, nets);
   connectPadPins(routes);
   for (auto& net_route : routes) {
@@ -393,45 +393,48 @@ void GlobalRouter::saveCapacities(int previousMinLayer,
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  oldHUsages = new int**[_grid->getNumLayers()];
+  auto gcellGrid = _block->getGCellGrid();
+
+  oldHUsages_ = new int**[_grid->getNumLayers()];
   for (int l = 0; l < _grid->getNumLayers(); l++) {
-    oldHUsages[l] = new int*[yGrids];
+    oldHUsages_[l] = new int*[yGrids];
     for (int i = 0; i < yGrids; i++) {
-      oldHUsages[l][i] = new int[xGrids];
+      oldHUsages_[l][i] = new int[xGrids];
     }
   }
 
-  oldVUsages = new int**[_grid->getNumLayers()];
+  oldVUsages_ = new int**[_grid->getNumLayers()];
   for (int l = 0; l < _grid->getNumLayers(); l++) {
-    oldVUsages[l] = new int*[xGrids];
+    oldVUsages_[l] = new int*[xGrids];
     for (int i = 0; i < xGrids; i++) {
-      oldVUsages[l][i] = new int[yGrids];
+      oldVUsages_[l][i] = new int[yGrids];
     }
   }
 
   int oldTotalCap = 0;
   for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
+    auto techLayer = _db->getTech()->findRoutingLayer(layer);
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
-        oldCap = _fastRoute->getEdgeCurrentResource(
-            x - 1, y - 1, layer, x, y - 1, layer);
+        oldCap = getEdgeResource(
+            x - 1, y - 1, x, y - 1, techLayer, gcellGrid);
         oldTotalCap += oldCap;
-        oldHUsages[layer - 1][y - 1][x - 1] = oldCap;
+        oldHUsages_[layer - 1][y - 1][x - 1] = oldCap;
       }
     }
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
-        oldCap = _fastRoute->getEdgeCurrentResource(
-            x - 1, y - 1, layer, x - 1, y, layer);
+        oldCap = getEdgeResource(
+            x - 1, y - 1, x - 1, y, techLayer, gcellGrid);
         oldTotalCap += oldCap;
-        oldVUsages[layer - 1][x - 1][y - 1] = oldCap;
+        oldVUsages_[layer - 1][x - 1][y - 1] = oldCap;
       }
     }
   }
 }
 
-void GlobalRouter::getCapacities(int previousMinLayer,
+void GlobalRouter::restoreCapacities(int previousMinLayer,
                                              int previousMaxLayer)
 {
   int oldCap;
@@ -442,7 +445,7 @@ void GlobalRouter::getCapacities(int previousMinLayer,
   for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
-        oldCap = oldHUsages[layer - 1][y - 1][x - 1];
+        oldCap = oldHUsages_[layer - 1][y - 1][x - 1];
         newTotalCap += oldCap;
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
@@ -451,7 +454,7 @@ void GlobalRouter::getCapacities(int previousMinLayer,
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
-        oldCap = oldVUsages[layer - 1][x - 1][y - 1];
+        oldCap = oldVUsages_[layer - 1][x - 1][y - 1];
         newTotalCap += oldCap;
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
@@ -460,12 +463,31 @@ void GlobalRouter::getCapacities(int previousMinLayer,
   }
 }
 
+int GlobalRouter::getEdgeResource(int x1, int y1, int x2, int y2,
+                                  odb::dbTechLayer* tech_layer,
+                                  odb::dbGCellGrid* gcell_grid)
+{
+  int resource;
+
+  if (y1 == y2) {
+    resource = gcell_grid->getHorizontalCapacity(tech_layer, x1, y1) -
+               gcell_grid->getHorizontalUsage(tech_layer, x1, y1);
+  } else if (x1 == x2) {
+    resource = gcell_grid->getVerticalCapacity(tech_layer, x1, y1) -
+               gcell_grid->getVerticalUsage(tech_layer, x1, y1);
+  }
+
+  return resource;
+}
+
 void GlobalRouter::removeDirtyNetsRouting()
 {
+  auto gcellGrid = _block->getGCellGrid();
   for (odb::dbNet* db_net : _dirtyNets) {
     GRoute& netRoute = _routes[db_net];
     int segsCnt = 0;
     for (GSegment& segment : netRoute) {
+      auto techLayer = _db->getTech()->findRoutingLayer(segment.initLayer);
       if (!(segment.initLayer != segment.finalLayer
             || (segment.isVia()))) {
         odb::Point initOnGrid = _grid->getPositionOnGrid(
@@ -487,8 +509,7 @@ void GlobalRouter::removeDirtyNetsRouting()
           for (int x = minX; x < maxX; x++) {
             int newCap
                 = _fastRoute->getEdgeCurrentResource(
-                      x, y, segment.initLayer, x + 1, y, segment.initLayer)
-                  + 1;
+                      x, y, segment.initLayer, x + 1, y, segment.initLayer) + 1;
             _fastRoute->addAdjustment(x,
                                       y,
                                       segment.initLayer,
@@ -512,8 +533,7 @@ void GlobalRouter::removeDirtyNetsRouting()
           for (int y = minY; y < maxY; y++) {
             int newCap
                 = _fastRoute->getEdgeCurrentResource(
-                      x, y, segment.initLayer, x, y + 1, segment.initLayer)
-                  + 1;
+                      x, y, segment.initLayer, x, y + 1, segment.initLayer) + 1;
             _fastRoute->addAdjustment(x,
                                       y,
                                       segment.initLayer,
