@@ -26,6 +26,7 @@
  */
 
 #include <array>
+#include <libgen.h>
 
 #include "opendb/defin.h"
 #include "opendb/lefin.h"
