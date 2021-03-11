@@ -64,6 +64,7 @@ target_sources(OpenRCX
     netRC.cpp
     powerConn.cpp
     MakeOpenRCX.cpp
+    extmeasure_res.cpp
 )
 
 target_include_directories(OpenRCX
