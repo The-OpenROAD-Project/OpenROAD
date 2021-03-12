@@ -86,6 +86,7 @@ swig_lib(NAME      openroad_swig_py
          NAMESPACE ord
          LANGUAGE  python
          I_FILE    OpenRoad-py.i
+         SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
 )
 
 target_link_libraries(openroad_swig_py

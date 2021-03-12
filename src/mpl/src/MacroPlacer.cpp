@@ -192,8 +192,8 @@ void MacroPlacer::reportEdgePinCounts()
   }
 }
 
-// Use parquefp on all the macros.
-void MacroPlacer::placeMacrosCenterSpread()
+// Use parquefp on all the macros in the lower left corner.
+void MacroPlacer::placeMacrosCornerMinWL()
 {
   init();
 
@@ -228,11 +228,6 @@ void MacroPlacer::placeMacrosCenterSpread()
 
 void MacroPlacer::setDbInstLocations(Partition &partition)
 {
-  double width = ux_ - lx_;
-  double height = uy_ - ly_;
-  double x_scale = width / partition.solution_width;
-  double y_scale = height / partition.solution_height;
-
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
   const float pitch_x = static_cast<float>(snap_layer_->getPitchX()) / dbu;
@@ -243,14 +238,8 @@ void MacroPlacer::setDbInstLocations(Partition &partition)
     // partition macros are 1:1 with macros_.
     Macro& macro = macros_[macro_idx];
 
-    //double x = lx_ + (pmacro.lx - lx_) * x_scale;
-    //double y = ly_ + (pmacro.ly - ly_) * y_scale;
-
-    // Translate macro cluster to die center and then spread to fill.
-    // This works better than spreading origins because that leaves the
-    // macros biased toward the lower left corner.
-    double x = lx_ + (pmacro.lx - lx_ + macro.w / 2) * x_scale - macro.w / 2;
-    double y = ly_ + (pmacro.ly - ly_ + macro.h / 2) * y_scale - macro.h / 2;
+    double x = pmacro.lx;
+    double y = pmacro.ly;
 
     // Snap to routing grid.
     x = round(x / pitch_x) * pitch_x;
@@ -271,7 +260,8 @@ void MacroPlacer::setDbInstLocations(Partition &partition)
 ////////////////////////////////////////////////////////////////
 
 // Use some undocumented method with cut lines to break the design
-// into regions and try all combinations. Pick the one that maximizes (yes, really)
+// into regions and try all combinations of something or other.
+// Pick the one that maximizes (yes, really)
 // wire lengths of connections between the macros to force them to the corners.
 void MacroPlacer::placeMacrosCornerMaxWl()
 {
@@ -370,7 +360,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
           allSets.push_back(partition_set);
         }
       } else {
-        // for all possible partiion combinations
+        // for all possible partition combinations
         for (size_t i = 0; i < east_partitions.size(); i++) {
           for (size_t j = 0; j < west_partitions.size(); j++) {
             vector<Partition> partition_set;
@@ -400,7 +390,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
       // Vertical partition support MIA
     }
   }
-  logger_->info(MPL, 70, "Using {} partiion sets", allSets.size() - 1);
+  logger_->info(MPL, 70, "Using {} partition sets", allSets.size() - 1);
 
   std::unique_ptr<Graphics> graphics;
   if (gui_debug_ && Graphics::guiActive()) {
@@ -426,7 +416,8 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     bool isFailed = false;
     for (auto& curPart : partition_set) {
       // Annealing based on ParquetFP Engine
-      if (!curPart.anneal()) {
+      bool success = curPart.anneal();
+      if (!success) {
         logger_->warn(MPL, 61, "Parquet area {:g} x {:g} exceeds the partition area {:g} x {:g}.",
                       curPart.solution_width,
                       curPart.solution_height,
@@ -563,42 +554,42 @@ MacroPlacer::getPartitions(const Layout& layout,
 
   vector<pair<Partition, Partition>> partitions;
 
-  double maxWidth = -1e30;
-  double maxHeight = -1e30;
+  double maxWidth = 0.0;
+  double maxHeight = 0.0;
 
   // segments
-  // first: partition macro index
-  // second: lx or ly value
-  vector<std::pair<int, double>> segStor;
+  // In a sane implementation this would be a vector of Macro*
+  // and use a function to return the origin x/y. -cherry
+  vector<std::pair<int, double>> segments;
 
   // in parent partition, traverse macros
   for (const Macro& macro : partition.macros_) {
-    segStor.push_back(
+    segments.push_back(
         std::make_pair(&macro - &partition.macros_[0],
                        (horizontal) ? macro.lx : macro.ly));
 
-    maxWidth = std::max(maxWidth, macro.w);
-    maxHeight = std::max(maxHeight, macro.h);
+    maxWidth = std::max(maxWidth, paddedWidth(macro));
+    maxHeight = std::max(maxHeight, paddedHeight(macro));
   }
 
   double cutLineLimit = (horizontal) ? maxWidth * 0.25 : maxHeight * 0.25;
-  double prevPushLimit = -1e30;
-  bool isFirst = true;
-  vector<double> cutLineStor;
+  vector<double> cutlines;
 
   // less than 4
   if (partition.macros_.size() <= 4) {
-    sort(segStor.begin(), segStor.end(), segLxLyLess);
+    sort(segments.begin(), segments.end(), segLxLyLess);
 
+    double prevPushLimit = -1e30;
+    bool isFirst = true;
     // first : macros_ index
     // second : macro lower coordinates
-    for (auto& segPair : segStor) {
+    for (auto& segPair : segments) {
       if (isFirst) {
-        cutLineStor.push_back(segPair.second);
+        cutlines.push_back(segPair.second);
         prevPushLimit = segPair.second;
         isFirst = false;
       } else if (std::abs(segPair.second - prevPushLimit) > cutLineLimit) {
-        cutLineStor.push_back(segPair.second);
+        cutlines.push_back(segPair.second);
         prevPushLimit = segPair.second;
       }
     }
@@ -607,13 +598,13 @@ MacroPlacer::getPartitions(const Layout& layout,
   else {
     int hardLimit = round(std::sqrt(partition.macros_.size() / 3.0));
     for (int i = 0; i <= hardLimit; i++) {
-      cutLineStor.push_back(
+      cutlines.push_back(
           (horizontal)
               ? layout.lx() + (layout.ux() - layout.lx()) / hardLimit * i
               : layout.ly() + (layout.uy() - layout.ly()) / hardLimit * i);
     }
   }
-  logger_->info(MPL, 77, "Using {} cut lines", cutLineStor.size());
+  logger_->info(MPL, 77, "Using {} cut lines", cutlines.size());
 
   // Macro checker array
   // 0 for uninitialize
@@ -622,7 +613,7 @@ MacroPlacer::getPartitions(const Layout& layout,
   // 3 for both
   vector<int> chkArr(partition.macros_.size());
 
-  for (auto& cutLine : cutLineStor) {
+  for (auto& cutLine : cutlines) {
     cutRoundUp(layout, cutLine, horizontal);
 
     logger_->info(MPL, 79, "Cut line {:.2f}", cutLine);
@@ -637,11 +628,11 @@ MacroPlacer::getPartitions(const Layout& layout,
       int i = &macro - &partition.macros_[0];
       if (horizontal) {
         // lower is possible
-        if (macro.w <= cutLine) {
+        if (paddedWidth(macro) <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (macro.w <= partition.lx + partition.width - cutLine) {
+        if (paddedWidth(macro) <= partition.lx + partition.width - cutLine) {
           chkArr[i] += 2;
         }
         // none of them
@@ -651,11 +642,11 @@ MacroPlacer::getPartitions(const Layout& layout,
         }
       } else {
         // lower is possible
-        if (macro.h <= cutLine) {
+        if (paddedHeight(macro) <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (macro.h <= partition.ly + partition.height - cutLine) {
+        if (paddedHeight(macro) <= partition.ly + partition.height - cutLine) {
           chkArr[i] += 2;
         }
         // none of
@@ -769,6 +760,18 @@ MacroPlacer::getPartitions(const Layout& layout,
     partitions.push_back(curPart);
   }
   return partitions;
+}
+
+double MacroPlacer::paddedWidth(const Macro &macro)
+{
+  MacroSpacings &spacings = getSpacings(macro);
+  return macro.w + spacings.getSpacingX() * 2;
+}
+
+double MacroPlacer::paddedHeight(const Macro &macro)
+{
+  MacroSpacings &spacings = getSpacings(macro);
+  return macro.h + spacings.getSpacingY() * 2;
 }
 
 void MacroPlacer::findMacros()
@@ -1303,7 +1306,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
 ////////////////////////////////////////////////////////////////
 
 MacroSpacings &
-MacroPlacer::getSpacings(Macro &macro)
+MacroPlacer::getSpacings(const Macro &macro)
 {
   auto itr = macro_spacings_.find(macro.dbInstPtr);
   if (itr == macro_spacings_.end())

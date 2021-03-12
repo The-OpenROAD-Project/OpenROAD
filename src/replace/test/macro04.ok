@@ -6,18 +6,16 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x7.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x7.lef
-[INFO ODB-0127] Reading DEF file: gcd_mem1.def
+[INFO ODB-0127] Reading DEF file: macro04.def
 [INFO ODB-0128] Design: gcd_mem1
 [INFO ODB-0130]     Created 61 pins.
 [INFO ODB-0131]     Created 307 components and 1738 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 1124 connections.
-[INFO ODB-0134] Finished DEF file: gcd_mem1.def
-[INFO MPL-0005] Found 1 macros
-[INFO MPL-0009] West pins 22
-[INFO MPL-0009] East pins 9
-[INFO MPL-0009] North pins 12
-[INFO MPL-0009] South pins 18
-[INFO MPL-0071] Initial weighted wire length 689.719
-[INFO MPL-0071] Placed weighted wire length 745.141
-No differences found.
+[INFO ODB-0134] Finished DEF file: macro04.def
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 88160 58800
+[ERROR GPL-0119] instance mem0 height is larger than core.
+GPL-0119

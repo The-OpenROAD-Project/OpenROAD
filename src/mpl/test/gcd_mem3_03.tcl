@@ -1,4 +1,4 @@
-# gcd 3 macros -style center_spread
+# gcd 3 macros -style corner_min_wl
 source helpers.tcl
 
 read_liberty Nangate45/Nangate45_typ.lib
@@ -10,7 +10,7 @@ read_lef Nangate45/fakeram45_64x7.lef
 read_def gcd_mem3.def
 read_sdc gcd.sdc
 
-macro_placement -style center_spread -channel {2.0 2.0}
+macro_placement -style corner_min_wl -channel {2.0 2.0}
 
 set def_file [make_result_file gcd_mem3_03.def]
 write_def $def_file

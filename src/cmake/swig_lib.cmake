@@ -105,19 +105,19 @@ function(swig_lib)
     )
   endif()
 
-  # Generate the encoded of the tcl files.
+  # Generate the encoded of the script files.
   if (DEFINED ARG_SCRIPTS)
-    set(TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/${ARG_NAME}-TclInitVar.cc)
+    set(LANG_INIT ${CMAKE_CURRENT_BINARY_DIR}/${ARG_NAME}-${ARG_LANGUAGE}InitVar.cc)
 
-    add_custom_command(OUTPUT ${TCL_INIT}
-      COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TCL_INIT} ${ARG_NAME}_tcl_inits ${ARG_SCRIPTS}
+    add_custom_command(OUTPUT ${LANG_INIT}
+      COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${LANG_INIT} ${ARG_NAME}_${ARG_LANGUAGE}_inits ${ARG_SCRIPTS}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${ARG_SCRIPTS}
     )
 
     target_sources(${ARG_NAME}
       PRIVATE
-        ${TCL_INIT}
+        ${LANG_INIT}
     )
   endif()
 endfunction()
