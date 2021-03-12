@@ -17,5 +17,5 @@
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
 [INFO GPL-0005] CoreAreaUxUy: 88160 58800
-[ERROR GPL-0116] instance mem0 height is larger than core.
-GPL-0116
+[ERROR GPL-0119] instance mem0 height is larger than core.
+GPL-0119
