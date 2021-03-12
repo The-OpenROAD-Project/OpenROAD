@@ -192,8 +192,8 @@ void MacroPlacer::reportEdgePinCounts()
   }
 }
 
-// Use parquefp on all the macros.
-void MacroPlacer::placeMacrosCenterSpread()
+// Use parquefp on all the macros in the lower left corner.
+void MacroPlacer::placeMacrosCornerMinWL()
 {
   init();
 
@@ -228,11 +228,6 @@ void MacroPlacer::placeMacrosCenterSpread()
 
 void MacroPlacer::setDbInstLocations(Partition &partition)
 {
-  double width = ux_ - lx_;
-  double height = uy_ - ly_;
-  double x_scale = width / partition.solution_width;
-  double y_scale = height / partition.solution_height;
-
   odb::dbTech* tech = db_->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
   const float pitch_x = static_cast<float>(snap_layer_->getPitchX()) / dbu;
@@ -243,14 +238,8 @@ void MacroPlacer::setDbInstLocations(Partition &partition)
     // partition macros are 1:1 with macros_.
     Macro& macro = macros_[macro_idx];
 
-    //double x = lx_ + (pmacro.lx - lx_) * x_scale;
-    //double y = ly_ + (pmacro.ly - ly_) * y_scale;
-
-    // Translate macro cluster to die center and then spread to fill.
-    // This works better than spreading origins because that leaves the
-    // macros biased toward the lower left corner.
-    double x = lx_ + (pmacro.lx - lx_ + macro.w / 2) * x_scale - macro.w / 2;
-    double y = ly_ + (pmacro.ly - ly_ + macro.h / 2) * y_scale - macro.h / 2;
+    double x = pmacro.lx;
+    double y = pmacro.ly;
 
     // Snap to routing grid.
     x = round(x / pitch_x) * pitch_x;
@@ -271,7 +260,8 @@ void MacroPlacer::setDbInstLocations(Partition &partition)
 ////////////////////////////////////////////////////////////////
 
 // Use some undocumented method with cut lines to break the design
-// into regions and try all combinations. Pick the one that maximizes (yes, really)
+// into regions and try all combinations of something or other.
+// Pick the one that maximizes (yes, really)
 // wire lengths of connections between the macros to force them to the corners.
 void MacroPlacer::placeMacrosCornerMaxWl()
 {
@@ -578,8 +568,8 @@ MacroPlacer::getPartitions(const Layout& layout,
         std::make_pair(&macro - &partition.macros_[0],
                        (horizontal) ? macro.lx : macro.ly));
 
-    maxWidth = std::max(maxWidth, macro.w);
-    maxHeight = std::max(maxHeight, macro.h);
+    maxWidth = std::max(maxWidth, paddedWidth(macro));
+    maxHeight = std::max(maxHeight, paddedHeight(macro));
   }
 
   double cutLineLimit = (horizontal) ? maxWidth * 0.25 : maxHeight * 0.25;
@@ -638,11 +628,11 @@ MacroPlacer::getPartitions(const Layout& layout,
       int i = &macro - &partition.macros_[0];
       if (horizontal) {
         // lower is possible
-        if (macro.w <= cutLine) {
+        if (paddedWidth(macro) <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (macro.w <= partition.lx + partition.width - cutLine) {
+        if (paddedWidth(macro) <= partition.lx + partition.width - cutLine) {
           chkArr[i] += 2;
         }
         // none of them
@@ -652,11 +642,11 @@ MacroPlacer::getPartitions(const Layout& layout,
         }
       } else {
         // lower is possible
-        if (macro.h <= cutLine) {
+        if (paddedHeight(macro) <= cutLine) {
           chkArr[i] += 1;
         }
         // upper is possible
-        if (macro.h <= partition.ly + partition.height - cutLine) {
+        if (paddedHeight(macro) <= partition.ly + partition.height - cutLine) {
           chkArr[i] += 2;
         }
         // none of
@@ -770,21 +760,6 @@ MacroPlacer::getPartitions(const Layout& layout,
     partitions.push_back(curPart);
   }
   return partitions;
-}
-
-// ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
-// Simulate them by expanding the macro size.
-// Halo and 1/2 channel on both left/right top/bottom.
-double MacroPlacer::paddedOriginX(const Macro &macro)
-{
-  MacroSpacings &spacings = getSpacings(macro);
-  return macro.lx - spacings.getSpacingX();
-}
-
-double MacroPlacer::paddedOriginY(const Macro &macro)
-{
-  MacroSpacings &spacings = getSpacings(macro);
-  return macro.ly - spacings.getSpacingY();
 }
 
 double MacroPlacer::paddedWidth(const Macro &macro)

@@ -149,7 +149,7 @@ public:
   void setFenceRegion(double lx, double ly, double ux, double uy);
   void setSnapLayer(odb::dbTechLayer *snap_layer);
 
-  void placeMacrosCenterSpread();
+  void placeMacrosCornerMinWL();
   void placeMacrosCornerMaxWl();
   int getSolutionCount();
 
@@ -158,8 +158,6 @@ public:
   int weight(int idx11, int idx12);
   int macroIndex(odb::dbInst *inst);
   MacroSpacings &getSpacings(const Macro &macro);
-  double paddedOriginX(const Macro &macro);
-  double paddedOriginY(const Macro &macro);
   double paddedWidth(const Macro &macro);
   double paddedHeight(const Macro &macro);
 

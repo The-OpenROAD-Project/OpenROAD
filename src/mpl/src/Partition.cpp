@@ -234,6 +234,9 @@ bool Partition::anneal()
     //////////////////////////////////////////////////////
     // Make node structures for macros.
     for (auto& macro : macros_) {
+      // ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
+      // Simulate them by expanding the macro size.
+      // Halo and 1/2 channel on both left/right top/bottom.
       double padded_width = macro_placer_->paddedWidth(macro);
       double padded_height = macro_placer_->paddedHeight(macro);
       double aspect_ratio = padded_width / padded_height;
@@ -243,8 +246,6 @@ bool Partition::anneal()
                      aspect_ratio,
                      &macro - &macros_[0],
                      false);
-      // Note that pfp::Node::putHaloX, putHaloY, putChannelX, putChannelY
-      // do absolutely nothing.
 
       node.addSubBlockIndex(&macro - &macros_[0]);
       pfp_nodes->putNewNode(node);
