@@ -74,6 +74,7 @@ void HTreeBuilder::preSinkClustering(
     const std::pair<float, float>& point = points[pointIdx];
     matching.addPoint(point.first, point.second);
     if (sinkInsts[pointIdx]->getInputCap() == 0) {
+      // Comes here in second level since first level buf cap is not set
       matching.addCap(_options->getSinkBufferInputCap());
     } else {
       matching.addCap(sinkInsts[pointIdx]->getInputCap());
@@ -111,17 +112,13 @@ void HTreeBuilder::preSinkClustering(
       DBU centerX
           = normCenterX * _wireSegmentUnit;  // geometric center of cluster
       DBU centerY = normCenterY * _wireSegmentUnit;
-      std::string baseName = "clkbuf_leaf_";
-      if (secondLevel)
-        baseName = "clkbuf_leaf2_";
+      std::string baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer
           = _clock.addClockBuffer(baseName + std::to_string(clusterCount),
                                   _options->getSinkBuffer(),
                                   centerX,
                                   centerY);
-      baseName = "clknet_leaf_";
-      if (secondLevel)
-        baseName = "clknet_leaf2_";
+      baseName = secondLevel ? "clknet_leaf2_" : "clknet_leaf_";
       Clock::SubNet& clockSubNet
           = _clock.addSubNet(baseName + std::to_string(clusterCount));
       // Subnet that connects the new -sink- buffer to each specific sink
@@ -180,7 +177,7 @@ void HTreeBuilder::initSinkRegion()
 
     _sinkRegion = sinkRegionDbu.normalize(1.0 / _wireSegmentUnit);
   } else {
-    if (_topLevelSinksClustered.size() > 400) {
+    if (_topLevelSinksClustered.size() > 400 && _options->getSinkClusteringLevels() > 0) {
       std::vector<std::pair<float, float>> secondLevelLocs;
       std::vector<const ClockInst*> secondLevelInsts;
       initSecondLevelSinks(secondLevelLocs, secondLevelInsts);
