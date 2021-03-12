@@ -143,21 +143,18 @@ void IRSolver::SolveIR()
   VectorXd                       x;
   SparseLU<SparseMatrix<double>> solver;
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Factorizing the G matrix");
-  //m_logger->info(utl::PSM, 9, "Factorizing the G matrix.");
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
     m_logger->error(utl::PSM, 10, "LU factorization of the G Matrix failed.");
   }
   debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J");
-  //m_logger->info(utl::PSM, 11, "Solving system of equations GV=J.");
   x = solver.solve(b);
   if (solver.info() != Success) {
     // solving failed
     m_logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
   } else {
     debugPrint(m_logger, utl::PSM, "IR Solver", 1, "Solving system of equations GV=J complete");
-    //m_logger->info(utl::PSM, 13, "Solving system of equation GV=J complete");
   }
   ofstream ir_report;
   ir_report.open(m_out_file);
@@ -476,7 +473,6 @@ bool IRSolver::CreateJ()
 bool IRSolver::CreateGmat(bool connection_only)
 {
   debugPrint(m_logger, utl::PSM, "G Matrix", 1, "Creating G matrix");
-  //m_logger->info(utl::PSM, 26, "Creating G matrix.");
   vector<Node*> node_vector;
   dbTech*       tech = m_db->getTech();
   // dbSet<dbTechLayer>           layers = tech->getLayers();
@@ -694,9 +690,7 @@ bool IRSolver::CreateGmat(bool connection_only)
       double  old_size = ((double) size) / ((double) unit_micron);
       m_logger->warn(utl::PSM,
                      30,
-                     "Vsrc location at ({:4.3f}um, {:4.3f}um) and size "
-                     "={:4.3f}um, is not located on a power stripe. Moving to "
-                     "closest stripe at ({:4.3f}um, {:4.3f}um).",
+                     "Vsrc location at ({:4.3f}um, {:4.3f}um) and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
                      old_loc1,
                      old_loc2,
                      old_size,
@@ -724,8 +718,6 @@ bool IRSolver::CreateGmat(bool connection_only)
                  m_power_net,
                  m_Gmat->GetNumNodes());
   m_Gmat->InitializeGmatDok(num_C4);
-  int err_flag_via   = 1;
-  int err_flag_layer = 1;
   for (vIter = power_nets.begin(); vIter != power_nets.end();
        ++vIter) {  // only 1 is expected?
     dbNet*                   curDnet = *vIter;
@@ -771,10 +763,9 @@ bool IRSolver::CreateGmat(bool connection_only)
 
           double R = via_layer->getUpperLayer()->getResistance();
           R        = R / (num_via_rows * num_via_cols);
-          if (R == 0.0) {
-            err_flag_via = 0;
-            // R = get<2>(m_layer_res[l]); /// Must figure out via resistance
-            // value cout << "Via Resistance" << R << endl;
+          if (!CheckValidR(R) && !connection_only) {
+            m_logger->error(utl::PSM,
+                35, "{} resistance not found in DB. Check the LEF or set it with set_layer_rc command.", via_layer->getName());
           }
           bool    top_or_bottom = ((l == m_bottom_layer) || (l == m_top_layer));
           Node*   node_bot      = m_Gmat->GetNode(x, y, l, top_or_bottom);
@@ -826,9 +817,9 @@ bool IRSolver::CreateGmat(bool connection_only)
           l                               = via_layer->getRoutingLevel();
           if (l != m_bottom_layer) {
             double rho = via_layer->getResistance();
-            if (rho <= 1e-12) {
-              rho            = 0;
-              err_flag_layer = 0;
+            if (!CheckValidR(rho) && !connection_only) {
+              m_logger->error( utl::PSM,
+                    36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -855,9 +846,9 @@ bool IRSolver::CreateGmat(bool connection_only)
           l         = via_layer->getRoutingLevel();
           if (l != m_top_layer) {
             double rho = via_layer->getResistance();
-            if (rho <= 1e-12) {
-              rho            = 0;
-              err_flag_layer = 0;
+            if (!CheckValidR(rho) && !connection_only) {
+              m_logger->error( utl::PSM,
+                    36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",via_layer->getName());
             }
             int x_loc1, x_loc2, y_loc1, y_loc2;
             if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
@@ -884,9 +875,9 @@ bool IRSolver::CreateGmat(bool connection_only)
           dbTechLayer* wire_layer = curWire->getTechLayer();
           int          l          = wire_layer->getRoutingLevel();
           double       rho        = wire_layer->getResistance();
-          if (rho <= 1e-12) {
-            rho            = 0;
-            err_flag_layer = 0;
+          if (!CheckValidR(rho) && !connection_only) {
+            m_logger->error( utl::PSM,
+                  36, "Layer {} per-unit resistance not found in DB. Check the LEF or set it with a set_layer_rc -layer command.",wire_layer->getName());
           }
           dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
           if (l == m_bottom_layer) {  // ensure that the bootom layer(rail) is
@@ -923,21 +914,18 @@ bool IRSolver::CreateGmat(bool connection_only)
       }
     }
   }
-  if (err_flag_via == 0 && !connection_only) {
-    m_logger->error(utl::PSM,
-                    35,
-                    "At least one via resistance not found in DB. Check the LEF "
-                    "or set it with set_layer_rc -via command.");
-  }
-  if (err_flag_layer == 0 && !connection_only) {
-    m_logger->error(
-        utl::PSM,
-        36,
-        "At least one layer's per-unit resistance not found in DB. Check the LEF "
-        "or set it with a set_layer_rc -layer command.");
-  }
   debugPrint(m_logger, utl::PSM, "G Matrix", 1, "G matrix created sucessfully.");
   return true;
+}
+
+
+bool IRSolver::CheckValidR(double R) {
+  if (R < 1e-12) {
+    return false; 
+  } 
+  else { 
+    return true;
+  }
 }
 
 bool IRSolver::CheckConnectivity()
@@ -996,50 +984,22 @@ bool IRSolver::CheckConnectivity()
       NodeLoc node_loc = (*node_list_it)->GetLoc();
       float   loc_x    = ((float) node_loc.first) / ((float) unit_micron);
       float   loc_y    = ((float) node_loc.second) / ((float) unit_micron);
-
-      // if(uncon_err_cnt>25 && uncon_err_flag ==0 ) {
-      //  uncon_err_flag =1;
-      //  cout<<"Error display limit reached, suppressing further unconnected
-      //  node error messages"<<endl;
-      //} else if( uncon_err_flag ==0) {
       unconnected_node = true;
-      m_logger->warn(utl::PSM,
-                     38,
-                     "Unconnected PDN node on net {} at location ({:4.3f}um, "
-                     "{:4.3f}um), layer: {}.",
-                     m_power_net,
-                     loc_x,
-                     loc_y,
-                     (*node_list_it)->GetLayerNum());
-      //}
-      // if(uncon_inst_cnt>25 && uncon_inst_flag ==0 ) {
-      //  uncon_inst_flag =1;
-      //  cout<<"Error display limit reached, suppressing further unconnected
-      //  instance error messages"<<endl;
-      //} else if( uncon_inst_flag ==0) {
+      m_logger->warn(utl::PSM, 38, "Unconnected PDN node on net {} at location ({:4.3f}um, {:4.3f}um), layer: {}.",
+                     m_power_net, loc_x, loc_y,(*node_list_it)->GetLayerNum());
       if ((*node_list_it)->HasInstances()) {
         vector<dbInst*>           insts = (*node_list_it)->GetInstances();
         vector<dbInst*>::iterator inst_it;
         for (inst_it = insts.begin(); inst_it != insts.end(); inst_it++) {
           uncon_inst_cnt++;
-          m_logger->warn(utl::PSM,
-                         39,
-                         "Unconnected Instance {} at location ({:4.3f}um, "
-                         "{:4.3f}um) layer: {}.",
-                         (*inst_it)->getName(),
-                         loc_x,
-                         loc_y,
-                         (*node_list_it)->GetLayerNum());
+          m_logger->warn(utl::PSM, 39,"Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.", 
+            (*inst_it)->getName(), loc_x, loc_y, (*node_list_it)->GetLayerNum());
         }
       }
-      //}
     }
   }
   if (unconnected_node == false) {
-    m_logger->info(utl::PSM,
-                   40,
-                   "No floating PDN stripes on net {}.",
-                   m_power_net);
+    m_logger->info(utl::PSM, 40, "All PDN stripes on net {} are connected.", m_power_net);
   }
   return !unconnected_node;
 }

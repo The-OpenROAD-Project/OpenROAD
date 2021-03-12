@@ -15,6 +15,6 @@
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vdd.loc.
 [INFO PSM-0031] Number of PDN nodes on net VDD = 1527.
 [INFO PSM-0064] Number of voltage sources = 1
-[INFO PSM-0040] No floating PDN stripes on net VDD.
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
 [INFO PSM-0006] Spice file is written at: ./results/gcd_spice_vdd.sp.
 No differences found.

@@ -80,7 +80,7 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta, utl
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-          debugPrint(m_logger, utl::PSM, "get power", 2, "Power of instance {} is {}",string(network->name(inst)), inst_power.total());
+      debugPrint(m_logger, utl::PSM, "get power", 2, "Power of instance {} is {}", network->name(inst), inst_power.total());
     }
   }
   delete inst_iter;

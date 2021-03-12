@@ -103,6 +103,7 @@ class IRSolver
   std::pair<double, double>                   GetSupplyVoltage();
 
   bool CheckConnectivity();
+  bool CheckValidR(double R);
 
   int GetConnectionTest();
 

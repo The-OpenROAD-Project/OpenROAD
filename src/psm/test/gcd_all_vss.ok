@@ -20,7 +20,7 @@
 [WARNING PSM-0030] Vsrc location at (40.090um, 39.900um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (40.500um, 33.115um).
 [INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
 [INFO PSM-0064] Number of voltage sources = 1
-[INFO PSM-0040] No floating PDN stripes on net VSS.
+[INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
 [INFO PSM-0002] Output voltage file is specified as: ./results/gcd_voltage_vss.rpt.
 [INFO PSM-0004] EM calculation is enabled.
@@ -28,7 +28,7 @@
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
 [INFO PSM-0064] Number of voltage sources = 1
-[INFO PSM-0040] No floating PDN stripes on net VSS.
+[INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
 Worstcase voltage: 3.21e-04 V
 Average IR drop  : 1.92e-04 V
@@ -44,7 +44,7 @@ Number of resistors: 1244
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0031] Number of PDN nodes on net VSS = 1245.
 [INFO PSM-0064] Number of voltage sources = 1
-[INFO PSM-0040] No floating PDN stripes on net VSS.
+[INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0006] Spice file is written at: ./results/gcd_spice_vss.sp.
 No differences found.
 Differences found at line 2.

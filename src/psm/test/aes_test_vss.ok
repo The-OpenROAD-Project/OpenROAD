@@ -16,7 +16,7 @@
 [WARNING PSM-0030] Vsrc location at (208.000um, 348.000um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (207.900um, 353.115um).
 [INFO PSM-0031] Number of PDN nodes on net VSS = 74090.
 [INFO PSM-0064] Number of voltage sources = 2
-[INFO PSM-0040] No floating PDN stripes on net VSS.
+[INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
 Worstcase voltage: 4.37e-03 V
 Average IR drop  : 3.15e-03 V
