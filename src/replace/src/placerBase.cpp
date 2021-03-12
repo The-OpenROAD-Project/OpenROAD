@@ -706,7 +706,7 @@ PlacerBase::init() {
   block->getDieArea(dieRect);
 
   if (!dieRect.contains(coreRect))
-    log_->error(GPL, 115, "core area outside of die.");
+    log_->error(GPL, 118, "core area outside of die.");
 
   die_ = Die(dieRect, coreRect);
  
@@ -732,9 +732,9 @@ PlacerBase::init() {
 
     dbBox *bbox = inst->getBBox();
     if (bbox->getDY() > die_.coreDy())
-      log_->error(GPL, 116, "instance {} height is larger than core.", inst->getName());
+      log_->error(GPL, 119, "instance {} height is larger than core.", inst->getName());
     if (bbox->getDX() > die_.coreDx())
-      log_->error(GPL, 117, "instance {} width is larger than core.", inst->getName());
+      log_->error(GPL, 120, "instance {} width is larger than core.", inst->getName());
   }
 
   // insts fill with fake instances (fragmented row or blockage)
