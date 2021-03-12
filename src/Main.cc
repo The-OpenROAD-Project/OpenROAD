@@ -108,8 +108,6 @@ initPython()
 
   Py_Initialize();
 
-  PyObject* module = PyModule_New("opendbpy");
-
   char *unencoded = sta::unencode(sta::opendbpy_python_inits);
   if (PyRun_SimpleString(unencoded)) {
     PyErr_Print();
