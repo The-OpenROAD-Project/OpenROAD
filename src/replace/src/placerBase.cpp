@@ -581,11 +581,6 @@ Die::Die(const odb::Rect& dieRect,
          const odb::Rect& coreRect) : Die() {
   setDieBox(dieRect);
   setCoreBox(coreRect);
-
-  assert(dieLx_ <= coreLx_);
-  assert(dieLy_ <= coreLy_);
-  assert(dieUx_ >= coreUx_);
-  assert(dieUy_ >= coreUy_);
 }
 
 Die::~Die() {
@@ -709,6 +704,10 @@ PlacerBase::init() {
   block->getCoreArea(coreRect);
   odb::Rect dieRect;
   block->getDieArea(dieRect);
+
+  if (!dieRect.contains(coreRect))
+    log_->error(GPL, 118, "core area outside of die.");
+
   die_ = Die(dieRect, coreRect);
  
   // siteSize update 
@@ -730,6 +729,12 @@ PlacerBase::init() {
         pbVars_.padLeft * siteSizeX_,
         pbVars_.padRight * siteSizeX_ );
     instStor_.push_back( myInst );
+
+    dbBox *bbox = inst->getBBox();
+    if (bbox->getDY() > die_.coreDy())
+      log_->error(GPL, 119, "instance {} height is larger than core.", inst->getName());
+    if (bbox->getDX() > die_.coreDx())
+      log_->error(GPL, 120, "instance {} width is larger than core.", inst->getName());
   }
 
   // insts fill with fake instances (fragmented row or blockage)

@@ -1,36 +1,36 @@
-GPL 0002 placerBase.cpp:701        DBU: {}
-GPL 0003 placerBase.cpp:719        SiteSize: {} {}
-GPL 0004 placerBase.cpp:720        CoreAreaLxLy: {} {}
-GPL 0005 placerBase.cpp:721        CoreAreaUxUy: {} {}
-GPL 0006 placerBase.cpp:1038       NumInstances: {}
-GPL 0007 placerBase.cpp:1039       NumPlaceInstances: {}
-GPL 0008 placerBase.cpp:1040       NumFixedInstances: {}
-GPL 0009 placerBase.cpp:1041       NumDummyInstances: {}
-GPL 0010 placerBase.cpp:1042       NumNets: {}
-GPL 0011 placerBase.cpp:1043       NumPins: {}
-GPL 0012 placerBase.cpp:1065       DieAreaLxLy: {} {}
-GPL 0013 placerBase.cpp:1066       DieAreaUxUy: {} {}
-GPL 0014 placerBase.cpp:1067       CoreAreaLxLy: {} {}
-GPL 0015 placerBase.cpp:1068       CoreAreaUxUy: {} {}
-GPL 0016 placerBase.cpp:1075       CoreArea: {}
-GPL 0017 placerBase.cpp:1076       NonPlaceInstsArea: {}
-GPL 0018 placerBase.cpp:1078       PlaceInstsArea: {}
-GPL 0019 placerBase.cpp:1079       Util(%): {:.2f}
-GPL 0020 placerBase.cpp:1081       StdInstsArea: {}
-GPL 0021 placerBase.cpp:1082       MacroInstsArea: {}
-GPL 0023 nesterovBase.cpp:718      TargetDensity: {:.2f}
-GPL 0024 nesterovBase.cpp:719      AveragePlaceInstArea: {}
-GPL 0025 nesterovBase.cpp:720      IdealBinArea: {}
-GPL 0026 nesterovBase.cpp:721      IdealBinCnt: {}
-GPL 0027 nesterovBase.cpp:722      TotalBinArea: {}
-GPL 0028 nesterovBase.cpp:745      BinCnt: {} {}
-GPL 0029 nesterovBase.cpp:752      BinSize: {} {}
-GPL 0030 nesterovBase.cpp:786      NumBins: {}
-GPL 0031 nesterovBase.cpp:1132     FillerInit: NumGCells: {}
-GPL 0032 nesterovBase.cpp:1133     FillerInit: NumGNets: {}
-GPL 0033 nesterovBase.cpp:1134     FillerInit: NumGPins: {}
-GPL 0034 nesterovBase.cpp:1512     gCellFiller: {}
-GPL 0035 nesterovBase.cpp:1532     NewTotalFillerArea: {}
+GPL 0002 placerBase.cpp:696        DBU: {}
+GPL 0003 placerBase.cpp:718        SiteSize: {} {}
+GPL 0004 placerBase.cpp:719        CoreAreaLxLy: {} {}
+GPL 0005 placerBase.cpp:720        CoreAreaUxUy: {} {}
+GPL 0006 placerBase.cpp:1043       NumInstances: {}
+GPL 0007 placerBase.cpp:1044       NumPlaceInstances: {}
+GPL 0008 placerBase.cpp:1045       NumFixedInstances: {}
+GPL 0009 placerBase.cpp:1046       NumDummyInstances: {}
+GPL 0010 placerBase.cpp:1047       NumNets: {}
+GPL 0011 placerBase.cpp:1048       NumPins: {}
+GPL 0012 placerBase.cpp:1070       DieAreaLxLy: {} {}
+GPL 0013 placerBase.cpp:1071       DieAreaUxUy: {} {}
+GPL 0014 placerBase.cpp:1072       CoreAreaLxLy: {} {}
+GPL 0015 placerBase.cpp:1073       CoreAreaUxUy: {} {}
+GPL 0016 placerBase.cpp:1080       CoreArea: {}
+GPL 0017 placerBase.cpp:1081       NonPlaceInstsArea: {}
+GPL 0018 placerBase.cpp:1083       PlaceInstsArea: {}
+GPL 0019 placerBase.cpp:1084       Util(%): {:.2f}
+GPL 0020 placerBase.cpp:1086       StdInstsArea: {}
+GPL 0021 placerBase.cpp:1087       MacroInstsArea: {}
+GPL 0023 nesterovBase.cpp:691      TargetDensity: {:.2f}
+GPL 0024 nesterovBase.cpp:692      AveragePlaceInstArea: {}
+GPL 0025 nesterovBase.cpp:693      IdealBinArea: {}
+GPL 0026 nesterovBase.cpp:694      IdealBinCnt: {}
+GPL 0027 nesterovBase.cpp:695      TotalBinArea: {}
+GPL 0028 nesterovBase.cpp:718      BinCnt: {} {}
+GPL 0029 nesterovBase.cpp:725      BinSize: {} {}
+GPL 0030 nesterovBase.cpp:759      NumBins: {}
+GPL 0031 nesterovBase.cpp:1105     FillerInit: NumGCells: {}
+GPL 0032 nesterovBase.cpp:1106     FillerInit: NumGNets: {}
+GPL 0033 nesterovBase.cpp:1107     FillerInit: NumGPins: {}
+GPL 0034 nesterovBase.cpp:1485     gCellFiller: {}
+GPL 0035 nesterovBase.cpp:1505     NewTotalFillerArea: {}
 GPL 0036 routeBase.cpp:433         TileLxL: {} {}
 GPL 0037 routeBase.cpp:434         TileSize: {} {}
 GPL 0038 routeBase.cpp:435         TileCnt: {} {}
@@ -70,8 +70,16 @@ GPL 0071 routeBase.cpp:1512        1.0rcK: {}
 GPL 0072 routeBase.cpp:1513        2.0rcK: {}
 GPL 0073 routeBase.cpp:1514        5.0rcK: {}
 GPL 0074 routeBase.cpp:1522        FinalRC: {}
-GPL 0075 nesterovPlace.cpp:525     Backtracking limit reached so a small step will be taken
-GPL 0100 timingBase.cpp:187        WNS {:.3g}
-GPL 0102 timingBase.cpp:190        No slacks found. Timing-driven mode disabled.
-GPL 0103 timingBase.cpp:247        Reweighted {} nets.
-GPL 0114 timingBase.cpp:182        No net slacks found. Timing-driven mode disabled.
+GPL 0075 nesterovPlace.cpp:522     Backtracking limit reached so a small step will be taken
+GPL 0100 timingBase.cpp:162        worst slack {:.3g}
+GPL 0102 timingBase.cpp:165        No slacks found. Timing-driven mode disabled.
+GPL 0103 timingBase.cpp:186        Weighted {} nets.
+GPL 0114 timingBase.cpp:154        No net slacks found. Timing-driven mode disabled.
+GPL 0115 replace.tcl:101           -disable_timing_driven is deprecated.
+GPL 0116 replace.tcl:107           -disable_routability_driven is deprecated.
+GPL 0118 placerBase.cpp:709        core area outside of die.
+GPL 0119 placerBase.cpp:735        instance {} height is larger than core.
+GPL 0120 placerBase.cpp:737        instance {} width is larger than core.
+GPL 0121 replace.tcl:97            No liberty libraries found.
+GPL 0301 placerBase.cpp:1090       Utilization exceeds 100%.
+GPL 0304 nesterovPlace.cpp:236     RePlAce diverged on initial iteration.
