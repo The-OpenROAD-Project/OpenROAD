@@ -45,7 +45,8 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
       timing_paths_model_(nullptr),
       path_details_model_(new TimingPathDetailModel()),
       path_renderer_(new TimingPathRenderer()),
-      dbchange_listener_(new GuiDBChangeListener)
+      dbchange_listener_(new GuiDBChangeListener),
+      timing_report_dlg_(new TimingReportDialog())
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
@@ -82,6 +83,8 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
           SIGNAL(dbUpdated(QString, std::vector<odb::dbObject*>)),
           this,
           SLOT(handleDbChange(QString, std::vector<odb::dbObject*>)));
+  connect(
+      timingReportBtn, SIGNAL(clicked()), this, SLOT(showTimingReportDialog()));
   jumpToPathEdit->setFocusPolicy(Qt::StrongFocus);
 }
 
@@ -102,14 +105,23 @@ void TimingDebugDialog::reject()
   Gui::get()->unregisterRenderer(path_renderer_);
 }
 
-void TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
+bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
 {
   if (timing_paths_model_ != nullptr)
-    return;
-  timing_paths_model_ = new TimingPathsModel();
+    return true;
+  bool setup_hold = true;
+  int path_count = 100;
+  if (timing_report_dlg_->exec() == QDialog::Accepted) {
+    setup_hold = timing_report_dlg_->isSetupAnalysis();
+    path_count = timing_report_dlg_->getPathCount();
+  } else {
+    return false;
+  }
+  timing_paths_model_ = new TimingPathsModel(setup_hold, path_count);
   timingPathTableView->setModel(timing_paths_model_);
   jumpToPathEdit->setValidator(
       new QIntValidator(0, timing_paths_model_->rowCount()));
+  return true;
 }
 
 void TimingDebugDialog::showPathDetails(const QModelIndex& index)
@@ -197,6 +209,21 @@ void TimingDebugDialog::showRequestedPath()
   QString path_str = jumpToPathEdit->text();
   int path_idx = path_str.toInt();
   showPathIndex(path_idx - 1);
+}
+
+void TimingDebugDialog::showTimingReportDialog()
+{
+  bool setup_hold = true;
+  int path_count = 100;
+  if (timing_report_dlg_->exec() == QDialog::Accepted) {
+    setup_hold = timing_report_dlg_->isSetupAnalysis();
+    path_count = timing_report_dlg_->getPathCount();
+    path_details_model_->populateModel(nullptr);
+    path_renderer_->highlight(nullptr);
+    Gui::get()->unregisterRenderer(path_renderer_);
+    timing_paths_model_->populateModel(setup_hold, path_count);
+    Gui::get()->registerRenderer(path_renderer_);
+  }
 }
 
 void TimingDebugDialog::handleDbChange(QString change_type,

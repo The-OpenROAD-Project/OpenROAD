@@ -85,9 +85,10 @@ float getRequiredTime(sta::dbSta* staRoot,
   return req;
 }
 
-TimingPathsModel::TimingPathsModel() : openroad_(ord::OpenRoad::openRoad())
+TimingPathsModel::TimingPathsModel(bool get_max, int path_count)
+    : openroad_(ord::OpenRoad::openRoad())
 {
-  populateModel();
+  populateModel(get_max, path_count);
 }
 
 TimingPathsModel::~TimingPathsModel()
@@ -260,10 +261,13 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   endResetModel();
 }
 
-void TimingPathsModel::populateModel()
+void TimingPathsModel::populateModel(bool setup_hold, int path_count)
 {
   beginResetModel();
-  populatePaths();
+  for (auto timing_path : timing_paths_)
+    delete timing_path;
+  timing_paths_.clear();
+  populatePaths(setup_hold, path_count);
   endResetModel();
 }
 
@@ -421,6 +425,8 @@ std::string TimingPathNode::getNetName() const
 
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 {
+  if (!path_)
+    return 0;
   return path_->levelsCount();
 }
 
@@ -431,7 +437,7 @@ int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
-  if (!index.isValid() || role != Qt::DisplayRole) {
+  if (!index.isValid() || role != Qt::DisplayRole || !path_) {
     return QVariant();
   }
 
@@ -507,7 +513,7 @@ void TimingPathRenderer::highlight(TimingPath* path)
 
 void TimingPathRenderer::highlightNode(int node_idx)
 {
-  if (node_idx >= 0 && node_idx < path_->levelsCount())
+  if (path_ && node_idx >= 0 && node_idx < path_->levelsCount())
     highlight_node_ = node_idx;
 }
 
@@ -563,6 +569,8 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter)
 {
+  if (!path_)
+    return;
   odb::dbObject* sink_node = nullptr;
   int src_x, src_y;
   int dst_x, dst_y;
@@ -605,6 +613,8 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
                                        gui::Painter& painter,
                                        const gui::Painter::Color& inst_color)
 {
+  if (!path_)
+    return;
   odb::dbBox* bbox = db_inst->getBBox();
   odb::Rect rect;
   bbox->getBox(rect);
@@ -615,6 +625,8 @@ void TimingPathRenderer::highlightInst(odb::dbInst* db_inst,
 void TimingPathRenderer::highlightTerm(odb::dbBTerm* term,
                                        gui::Painter& painter)
 {
+  if (!path_)
+    return;
   odb::dbShape port_shape;
   if (term->getFirstPin(port_shape)) {
     odb::Rect rect;
@@ -629,6 +641,8 @@ void TimingPathRenderer::highlightNet(odb::dbNet* net,
                                       odb::dbObject* sink_node,
                                       gui::Painter& painter)
 {
+  if (!path_)
+    return;
   int src_x, src_y;
   int dst_x, dst_y;
   auto getSegmentEnd = [](odb::dbObject* node, int& x, int& y, bool& clk_node) {

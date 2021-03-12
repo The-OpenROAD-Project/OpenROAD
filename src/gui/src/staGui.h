@@ -77,7 +77,7 @@ class GuiDBChangeListener;
 class TimingPathsModel : public QAbstractTableModel
 {
  public:
-  TimingPathsModel();
+  TimingPathsModel(bool get_max = true, int path_count = 100);
   ~TimingPathsModel();
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -98,9 +98,9 @@ class TimingPathsModel : public QAbstractTableModel
 
   void resetModel();
   void sort(int col_index, Qt::SortOrder sort_order) override;
+  void populateModel(bool get_max = true, int path_count = 100);
 
  private:
-  void populateModel();
   bool populatePaths(bool get_max = true, int path_count = 100);
 
   ord::OpenRoad* openroad_;

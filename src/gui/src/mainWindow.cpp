@@ -390,9 +390,10 @@ void MainWindow::showFindDialog()
 
 void MainWindow::showTimingDialog()
 {
-  timing_dialog_->populateTimingPaths(nullptr);
-  timing_dialog_->show();
-  Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
+  if (timing_dialog_->populateTimingPaths(nullptr)) {
+    timing_dialog_->show();
+    Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
+  }
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)

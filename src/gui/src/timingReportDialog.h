@@ -33,55 +33,26 @@
 #pragma once
 
 #include <QDialog>
-#include <QModelIndex>
-#include <QString>
-#include <vector>
 
-#include "opendb/db.h"
-#include "staGui.h"
-#include "timingReportDialog.h"
-#include "ui_timingDebug.h"
+#include "ui_reportTiming.h"
 
 namespace ord {
 class OpenRoad;
 }
 
 namespace gui {
-class TimingDebugDialog : public QDialog, public Ui::TimingDialog
+class TimingReportDialog : public QDialog, public Ui::ReportTimingDlg
 {
   Q_OBJECT
  public:
-  TimingDebugDialog(QWidget* parent = nullptr);
-  ~TimingDebugDialog();
+  TimingReportDialog(QWidget* parent = nullptr);
+  ~TimingReportDialog();
 
-  TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
-
- signals:
-  void highlightTimingPath(TimingPath* timing_path);
+  bool isSetupAnalysis() const { return setupRadioButton->isChecked(); }
+  int getPathCount() { return pathCount->text().toInt(); }
 
  public slots:
   void accept();
   void reject();
-  bool populateTimingPaths(odb::dbBlock* block);
-
-  void showPathDetails(const QModelIndex& index);
-  void highlightPathStage(const QModelIndex& index);
-  void timingPathsViewCustomSort(int col_index);
-  void findNodeInPathDetails();
-
-  void showNextPath();
-  void showPrevPath();
-  void showPathIndex(int pathId = 0);
-  void showRequestedPath();
-  void showTimingReportDialog();
-
-  void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
-
- private:
-  TimingPathsModel* timing_paths_model_;
-  TimingPathDetailModel* path_details_model_;
-  TimingPathRenderer* path_renderer_;
-  GuiDBChangeListener* dbchange_listener_;
-  TimingReportDialog* timing_report_dlg_;
 };
 }  // namespace gui

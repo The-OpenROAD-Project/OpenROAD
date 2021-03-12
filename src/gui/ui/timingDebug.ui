@@ -52,34 +52,8 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
-         <widget class="QWidget" name="selTab_2">
-          <attribute name="title">
-           <string>Slack Histogram</string>
-          </attribute>
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="0">
-            <widget class="QGraphicsView" name="slackHistogramView">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>550</width>
-               <height>50</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
          <widget class="QWidget" name="hltTab_2">
           <attribute name="title">
            <string>Path Details</string>
@@ -197,10 +171,10 @@
          <item>
           <widget class="QPushButton" name="timingReportBtn">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
-            <string>Report...</string>
+            <string>Report Timing...</string>
            </property>
           </widget>
          </item>

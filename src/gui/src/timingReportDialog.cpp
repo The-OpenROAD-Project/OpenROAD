@@ -1,7 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, OpenROAD
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,58 +30,31 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
-#include <QDialog>
-#include <QModelIndex>
-#include <QString>
-#include <vector>
-
-#include "opendb/db.h"
-#include "staGui.h"
 #include "timingReportDialog.h"
-#include "ui_timingDebug.h"
 
-namespace ord {
-class OpenRoad;
-}
+#include <QDebug>
+#include <QMessageBox>
+#include <QValidator>
 
 namespace gui {
-class TimingDebugDialog : public QDialog, public Ui::TimingDialog
+TimingReportDialog::TimingReportDialog(QWidget* parent) : QDialog(parent)
 {
-  Q_OBJECT
- public:
-  TimingDebugDialog(QWidget* parent = nullptr);
-  ~TimingDebugDialog();
+  setupUi(this);
+  pathCount->setValidator(new QIntValidator(0, 10000));
+}
 
-  TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
+TimingReportDialog::~TimingReportDialog()
+{
+}
 
- signals:
-  void highlightTimingPath(TimingPath* timing_path);
+void TimingReportDialog::accept()
+{
+  QDialog::accept();
+}
 
- public slots:
-  void accept();
-  void reject();
-  bool populateTimingPaths(odb::dbBlock* block);
+void TimingReportDialog::reject()
+{
+  QDialog::reject();
+}
 
-  void showPathDetails(const QModelIndex& index);
-  void highlightPathStage(const QModelIndex& index);
-  void timingPathsViewCustomSort(int col_index);
-  void findNodeInPathDetails();
-
-  void showNextPath();
-  void showPrevPath();
-  void showPathIndex(int pathId = 0);
-  void showRequestedPath();
-  void showTimingReportDialog();
-
-  void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
-
- private:
-  TimingPathsModel* timing_paths_model_;
-  TimingPathDetailModel* path_details_model_;
-  TimingPathRenderer* path_renderer_;
-  GuiDBChangeListener* dbchange_listener_;
-  TimingReportDialog* timing_report_dlg_;
-};
 }  // namespace gui
