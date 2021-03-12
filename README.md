@@ -468,6 +468,22 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 no distance units are not specied in the liberty file microns are
 used.
 
+The resistance and capacitance values in the OpenROAD database can be
+changed using the `set_layer_rc` command. This is useful if they are
+not in the LEF file or to override the values in the LEF.
+
+```
+set_layer_rc [-layer layer]
+             [-via via_layer]
+             [-capacitance cap]
+             [-resistance res] }
+```
+
+The units for capacitance are from the first Liberty file read.
+For example, usually pF/um^2 or fF/um^2 for capacitance and
+kohms/square or ohms/square for resistance. Via resistances are
+specified with the `via` keyword.
+
 ```
 remove_buffers
 ```
