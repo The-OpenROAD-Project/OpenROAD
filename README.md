@@ -399,7 +399,7 @@ macro_placement [-halo {halo_x halo_y}]
 -snap_layer_number - snap macro origins to this routing layer track
 
 Macros will be placed with max(halo * 2, channel) spacing between macros and the
-fence/die boundary.
+fence/die boundary. If not solutions are found, try reducing the channel/halo.
 
 #### Detailed Placement
 
