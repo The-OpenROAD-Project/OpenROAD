@@ -157,7 +157,12 @@ public:
   double getWeightedWL();
   int weight(int idx11, int idx12);
   int macroIndex(odb::dbInst *inst);
-  MacroSpacings &getSpacings(Macro &macro);
+  MacroSpacings &getSpacings(const Macro &macro);
+  double paddedOriginX(const Macro &macro);
+  double paddedOriginY(const Macro &macro);
+  double paddedWidth(const Macro &macro);
+  double paddedHeight(const Macro &macro);
+
   Macro& macro(int idx) { return macros_[idx]; }
   size_t macroCount() { return macros_.size(); }
 
