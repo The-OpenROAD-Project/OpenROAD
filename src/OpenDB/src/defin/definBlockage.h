@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -43,16 +43,16 @@ class dbInst;
 class definBlockage : public definBase
 {
   dbTechLayer* _layer;
-  dbInst*      _inst;
-  bool         _slots;
-  bool         _fills;
-  bool         _pushdown;
-  bool         _soft;
-  bool         _has_min_spacing;
-  bool         _has_effective_width;
-  int          _min_spacing;
-  int          _effective_width;
-  float        _max_density;
+  dbInst* _inst;
+  bool _slots;
+  bool _fills;
+  bool _pushdown;
+  bool _soft;
+  bool _has_min_spacing;
+  bool _has_effective_width;
+  int _min_spacing;
+  int _effective_width;
+  float _max_density;
 
  public:
   // Routing Blockage interface methods
@@ -82,5 +82,3 @@ class definBlockage : public definBase
 };
 
 }  // namespace odb
-
-

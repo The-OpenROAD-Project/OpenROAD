@@ -55,29 +55,29 @@ class Ath__box
   uint _type : 3;
 
  public:
-  int       _xlo;
-  int       _ylo;
-  int       _xhi;
-  int       _yhi;
+  int _xlo;
+  int _ylo;
+  int _xhi;
+  int _yhi;
   Ath__box* _next;
 
  public:
   Ath__box();
   uint getLen();
   uint getDir();
-  int  getYhi(int bound);
-  int  getXhi(int bound);
-  int  getXlo(int bound);
-  int  getYlo(int bound);
-  int  getMidY(int loBound, int hiBound);
-  int  getMidX(int loBound, int hiBound);
+  int getYhi(int bound);
+  int getXhi(int bound);
+  int getXlo(int bound);
+  int getYlo(int bound);
+  int getMidY(int loBound, int hiBound);
+  int getMidX(int loBound, int hiBound);
   void addExtra(uint dd);
   uint getWidth(uint* dir);
-  uint getStats(uint  level,
+  uint getStats(uint level,
                 uint* dir,
                 uint* minWidth,
                 uint* maxWidth,
-                uint  minLen);
+                uint minLen);
   void writeCoordsDB(FILE* fp);
   void readCoordsDB(FILE* fp);
   uint boxCnt();
@@ -87,8 +87,8 @@ class Ath__box
   void set(int x1, int y1, int x2, int y2, uint units = 1);
   uint getDX();
   uint getDY();
-  int  getMidX();
-  int  getMidY();
+  int getMidX();
+  int getMidY();
   void printDefXYlo(FILE* fp);
   uint getLength();
   void setIdentity(Ath__box* bb);
@@ -98,10 +98,10 @@ class Ath__box
   void resetMaxBox();
   void pinBoxDef(FILE* fp,
                  char* layerName,
-                 int   x,
-                 int   y,
+                 int x,
+                 int y,
                  char* orient,
-                 int   defUnits);
+                 int defUnits);
   void printPoints(FILE* fp, uint defUnits);
   void setMaxBox(int x1, int y1, int x2, int y2);
   void set(Ath__box* bb);
@@ -121,14 +121,12 @@ class Ath__box
 class Ath__trans
 {
  public:
-  int  _origX;
-  int  _origY;
+  int _origX;
+  int _origY;
   char _orient[3];
 
   void set(int x, int y, char* orient);
   void transform(Ath__box* bb);
-  int  getX(int x);
-  int  getY(int y);
+  int getX(int x);
+  int getY(int y);
 };
-
-

@@ -75,9 +75,6 @@ class dbStringProperty;
 class dbIntProperty;
 class dbDoubleProperty;
 
-// Generator Code Begin 1
-// Generator Code End 1
-
 // Design objects
 class dbChip;
 class dbBlock;
@@ -102,21 +99,6 @@ class dbTechAntennaPinModel;
 class dbBlockCallBackObj;
 class dbRegion;
 class dbBPin;
-// Generator Code Begin 2
-class dbTechLayer;
-class dbTechLayerSpacingEolRule;
-class dbTechLayerMinStepRule;
-class dbTechLayerCornerSpacingRule;
-class dbTechLayerSpacingTablePrlRule;
-class dbTechLayerCutClassRule;
-class dbTechLayerCutSpacingRule;
-class dbTechLayerCutSpacingTableOrthRule;
-class dbTechLayerCutSpacingTableDefRule;
-class dbModule;
-class dbModInst;
-class dbGroup;
-class dbGCellGrid;
-// Generator Code End 2
 
 // Lib objects
 class dbLib;
@@ -125,8 +107,6 @@ class dbMaster;
 class dbMTerm;
 class dbMPin;
 class dbTarget;
-// Generator Code Begin 3
-// Generator Code End 3
 
 // Tech objects
 class dbTech;
@@ -142,10 +122,23 @@ class dbTechMinCutRule;
 class dbTechMinEncRule;
 class dbTechV55InfluenceEntry;
 class dbTechSameNetRule;
-// Generator Code Begin 4
-// Generator Code End 4
-
 class dbViaParams;
+
+// Generator Code Begin ClassDeclarations
+class dbTechLayer;
+class dbTechLayerSpacingEolRule;
+class dbTechLayerMinStepRule;
+class dbTechLayerCornerSpacingRule;
+class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerCutClassRule;
+class dbTechLayerCutSpacingRule;
+class dbTechLayerCutSpacingTableOrthRule;
+class dbTechLayerCutSpacingTableDefRule;
+class dbModule;
+class dbModInst;
+class dbGroup;
+class dbGCellGrid;
+// Generator Code End ClassDeclarations
 
 // Extraction Objects
 class dbExtControl;
@@ -160,8 +153,8 @@ class dbProperty : public dbObject
   {
     // Do not change the order or the values of this enum.
     STRING_PROP = 0,
-    BOOL_PROP   = 1,
-    INT_PROP    = 2,
+    BOOL_PROP = 1,
+    INT_PROP = 2,
     DOUBLE_PROP = 3
   };
 
@@ -184,8 +177,8 @@ class dbProperty : public dbObject
   /// Destroy a specific property
   static void destroy(dbProperty* prop);
   /// Destroy all properties of the specific object
-  static void                        destroyProperties(dbObject* obj);
-  static dbSet<dbProperty>           getProperties(dbObject* object);
+  static void destroyProperties(dbObject* obj);
+  static dbSet<dbProperty> getProperties(dbObject* object);
   static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
   // 5.8
   static void writeProperties(dbObject* object, FILE* out);
@@ -227,7 +220,7 @@ class dbStringProperty : public dbProperty
 
   /// Create a string property. Returns NULL if a property with the same name
   /// already exists.
-  static dbStringProperty* create(dbObject*   object,
+  static dbStringProperty* create(dbObject* object,
                                   const char* name,
                                   const char* value);
 
@@ -271,9 +264,9 @@ class dbDoubleProperty : public dbProperty
 
   /// Create a double property. Returns NULL if a property with the same name
   /// already exists.
-  static dbDoubleProperty* create(dbObject*   object,
+  static dbDoubleProperty* create(dbObject* object,
                                   const char* name,
-                                  double      value);
+                                  double value);
 
   /// Find the named property of type double. Returns NULL if the property does
   /// not exist.
@@ -403,13 +396,13 @@ class dbDatabase : public dbObject
   /// Read the eco changes from the specified stream to be applied to the
   /// specified block.
   ///
-  static void readEco(dbBlock* block, FILE* stream);
+  static void readEco(dbBlock* block, const char* filename);
 
   ///
   /// Write the eco netlist changes to the specified stream.
   ///
-  static void writeEco(dbBlock* block, FILE* stream);
-  static int  checkEco(dbBlock* block);
+  static void writeEco(dbBlock* block, const char* filename);
+  static int checkEco(dbBlock* block);
 
   ///
   /// Commit any pending netlist changes.
@@ -451,8 +444,8 @@ class dbDatabase : public dbObject
   ///
   static bool diff(dbDatabase* db0,
                    dbDatabase* db1,
-                   FILE*       file,
-                   int         indent_per_level);
+                   FILE* file,
+                   int indent_per_level);
   ///
   /// Translate a database-id back to a pointer.
   ///
@@ -577,32 +570,32 @@ class dbBox : public dbObject
   /// Add a physical pin to a dbBPin.
   /// Returns NULL if this dbBPin already has a pin.
   ///
-  static dbBox* create(dbBPin*      bpin,
+  static dbBox* create(dbBPin* bpin,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2);
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2);
 
   ///
   /// Add a box to a block-via.
   ///
-  static dbBox* create(dbVia*       via,
+  static dbBox* create(dbVia* via,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2);
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2);
 
   ///
   /// Add an obstruction to a master.
   ///
-  static dbBox* create(dbMaster*    master,
+  static dbBox* create(dbMaster* master,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2);
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2);
 
   ///
   /// Add a via obstrction to a master.
@@ -613,12 +606,12 @@ class dbBox : public dbObject
   ///
   /// Add a wire-shape to a master-pin.
   ///
-  static dbBox* create(dbMPin*      pin,
+  static dbBox* create(dbMPin* pin,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2);
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2);
 
   ///
   /// Add a via obstrction to a master-pin.
@@ -629,12 +622,12 @@ class dbBox : public dbObject
   ///
   /// Add a shape to a tech-via;
   ///
-  static dbBox* create(dbTechVia*   via,
+  static dbBox* create(dbTechVia* via,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2);
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2);
 
   ///
   /// Add a boundary to a region
@@ -675,9 +668,9 @@ class dbSBox : public dbBox
   /// Direction of segment
   enum Direction
   {
-    UNDEFINED  = 0,
+    UNDEFINED = 0,
     HORIZONTAL = 1,
-    VERTICAL   = 2,
+    VERTICAL = 2,
     OCTILINEAR = 3
   };
 
@@ -718,34 +711,34 @@ class dbSBox : public dbBox
   /// These requirements are a result that the current DEF semantics (5.5) use
   /// PATH statements to output these rectangles, the paths must have even
   /// widths.
-  static dbSBox* create(dbSWire*        swire,
-                        dbTechLayer*    layer,
-                        int             x1,
-                        int             y1,
-                        int             x2,
-                        int             y2,
+  static dbSBox* create(dbSWire* swire,
+                        dbTechLayer* layer,
+                        int x1,
+                        int y1,
+                        int x2,
+                        int y2,
                         dbWireShapeType type,
-                        Direction       dir   = UNDEFINED,
-                        int             width = 0);
+                        Direction dir = UNDEFINED,
+                        int width = 0);
 
   ///
   /// Add a block-via to a dbSWire
   /// This function may fail and return NULL if this via has no shapes.
   ///
-  static dbSBox* create(dbSWire*        swire,
-                        dbVia*          via,
-                        int             x,
-                        int             y,
+  static dbSBox* create(dbSWire* swire,
+                        dbVia* via,
+                        int x,
+                        int y,
                         dbWireShapeType type);
 
   ///
   /// Add a tech-via to a dbSWire.
   /// This function may fail and return NULL if this via has no shapes.
   ///
-  static dbSBox* create(dbSWire*        swire,
-                        dbTechVia*      via,
-                        int             x,
-                        int             y,
+  static dbSBox* create(dbSWire* swire,
+                        dbTechVia* via,
+                        int x,
+                        int y,
                         dbWireShapeType type);
 
   ///
@@ -1049,9 +1042,9 @@ class dbBlock : public dbObject
   ///
   /// Copy RC values from one extDb to another.
   ///
-  void copyExtDb(uint   fr,
-                 uint   to,
-                 uint   extDbCnt,
+  void copyExtDb(uint fr,
+                 uint to,
+                 uint extDbCnt,
                  double resFactor,
                  double ccFactor,
                  double gndcFactor);
@@ -1069,8 +1062,8 @@ class dbBlock : public dbObject
   ///
   /// adjust CC's of nets
   ///
-  bool adjustCC(float                adjFactor,
-                double               ccThreshHold,
+  bool adjustCC(float adjFactor,
+                double ccThreshHold,
                 std::vector<dbNet*>& nets,
                 std::vector<dbNet*>& halonets);
 
@@ -1199,7 +1192,7 @@ class dbBlock : public dbObject
   ///
   void getCoreArea(Rect& rect);
 
-  void  setPtFile(FILE* ptf);
+  void setPtFile(FILE* ptf);
   FILE* getPtFile();
   ///
   /// Set the extmain instance.
@@ -1319,55 +1312,55 @@ class dbBlock : public dbObject
   /// destroy old parasitics of nets
   ///
   void destroyOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>*   capnn,
-                            std::vector<uint>*   rsegn);
+                            std::vector<uint>* capnn,
+                            std::vector<uint>* rsegn);
   void destroyOldCornerParasitics(std::vector<dbNet*>& nets,
-                                  std::vector<uint>&   capnn,
-                                  std::vector<uint>&   rsegn);
+                                  std::vector<uint>& capnn,
+                                  std::vector<uint>& rsegn);
 
   ///
   /// restore old parasitics of nets
   ///
   void restoreOldParasitics(std::vector<dbNet*>& nets,
-                            bool                 coupled_rc,
+                            bool coupled_rc,
                             std::vector<dbNet*>& ccHaloNets,
-                            std::vector<uint>*   capnn,
-                            std::vector<uint>*   rsegn);
-  void restoreOldCornerParasitics(dbBlock*             pBlock,
+                            std::vector<uint>* capnn,
+                            std::vector<uint>* rsegn);
+  void restoreOldCornerParasitics(dbBlock* pBlock,
                                   std::vector<dbNet*>& nets,
-                                  bool                 coupled_rc,
+                                  bool coupled_rc,
                                   std::vector<dbNet*>& ccHaloNets,
-                                  std::vector<uint>&   capnn,
-                                  std::vector<uint>&   rsegn);
+                                  std::vector<uint>& capnn,
+                                  std::vector<uint>& rsegn);
 
   ///
   /// keep old parasitics of nets and replace by zeroRc's'
   ///
   void replaceOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>&   capnn,
-                            std::vector<uint>&   rsegn);
+                            std::vector<uint>& capnn,
+                            std::vector<uint>& rsegn);
 
   ///
   /// restore old parasitics
   ///
   void restoreOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>&   capnn,
-                            std::vector<uint>&   rsegn);
+                            std::vector<uint>& capnn,
+                            std::vector<uint>& rsegn);
 
   ///
   /// keep old parasitics of nets
   ///
   void keepOldParasitics(std::vector<dbNet*>& nets,
-                         bool                 coupled_rc,
+                         bool coupled_rc,
                          std::vector<dbNet*>& ccHaloNets,
-                         std::vector<uint>*   capnn,
-                         std::vector<uint>*   rsegn);
-  void keepOldCornerParasitics(dbBlock*             pBlock,
+                         std::vector<uint>* capnn,
+                         std::vector<uint>* rsegn);
+  void keepOldCornerParasitics(dbBlock* pBlock,
                                std::vector<dbNet*>& nets,
-                               bool                 coupled_rc,
+                               bool coupled_rc,
                                std::vector<dbNet*>& ccHaloNets,
-                               std::vector<uint>&   capnn,
-                               std::vector<uint>&   rsegn);
+                               std::vector<uint>& capnn,
+                               std::vector<uint>& rsegn);
 
   ///
   /// merge rsegs before doing exttree
@@ -1423,8 +1416,8 @@ class dbBlock : public dbObject
   ///
   ///  Mark inst backwards usinh user flag 2
   ///
-  int markBackwardsUser2(dbInst*               firstInst,
-                         bool                  mark,
+  int markBackwardsUser2(dbInst* firstInst,
+                         bool mark,
                          std::vector<dbInst*>& resultTable);
 
   ///
@@ -1432,22 +1425,22 @@ class dbBlock : public dbObject
   ///
   int markBackwardsUser2(std::vector<dbInst*>& startingInsts,
                          std::vector<dbInst*>& instsToBeLeveled,
-                         bool                  mark,
+                         bool mark,
                          std::vector<dbInst*>& resultTable);
 
   ///
   ///  Mark net backwards using user flag 2
   ///
-  int markBackwardsUser2(dbNet*                net,
-                         bool                  mark,
+  int markBackwardsUser2(dbNet* net,
+                         bool mark,
                          std::vector<dbInst*>& resultTable);
 
   ///
   ///  Mark net backwards using user flag 2
   ///
-  int markBackwardsUser2(dbNet*                net,
+  int markBackwardsUser2(dbNet* net,
                          std::vector<dbInst*>& instsToMark,
-                         bool                  mark,
+                         bool mark,
                          std::vector<dbInst*>& resultTable);
 
   ///
@@ -1506,17 +1499,17 @@ class dbBlock : public dbObject
   /// Create a chip's top-block. Returns NULL of a top-block already
   /// exists.
   ///
-  static dbBlock* create(dbChip*     chip,
+  static dbBlock* create(dbChip* chip,
                          const char* name,
-                         char        hier_delimeter = 0);
+                         char hier_delimeter = 0);
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
   /// Returns NULL if a block with the same name exists.
   ///
-  static dbBlock* create(dbBlock*    block,
+  static dbBlock* create(dbBlock* block,
                          const char* name,
-                         char        hier_delimeter = 0);
+                         char hier_delimeter = 0);
 
   ///
   /// duplicate - Make a duplicate of the specified "child" block. If name ==
@@ -1555,8 +1548,8 @@ class dbBlock : public dbObject
   ///
   static bool differences(dbBlock* block1,
                           dbBlock* block2,
-                          FILE*    out,
-                          int      indent_per_level = 4);
+                          FILE* out,
+                          int indent_per_level = 4);
 
  private:
   void ComputeBBox();
@@ -1764,7 +1757,7 @@ class dbBTerm : public dbObject
   static dbBTerm* getBTerm(dbBlock* block, uint oid);
 
   uint32_t staVertexId();
-  void     staSetVertexId(uint32_t id);
+  void staSetVertexId(uint32_t id);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2283,17 +2276,17 @@ class dbNet : public dbObject
   ///
   /// adjust CC's of this net
   ///
-  bool adjustCC(uint                   adjOrder,
-                float                  adjFactor,
-                double                 ccThreshHold,
+  bool adjustCC(uint adjOrder,
+                float adjFactor,
+                double ccThreshHold,
                 std::vector<dbCCSeg*>& adjustedCC,
-                std::vector<dbNet*>&   halonets);
+                std::vector<dbNet*>& halonets);
 
   ///
   /// undo adjusted CC
   ///
   void undoAdjustedCC(std::vector<dbCCSeg*>& adjustedCC,
-                      std::vector<dbNet*>&   halonets);
+                      std::vector<dbNet*>& halonets);
 
   ///
   /// add cc capacitance to gnd capacitance of capNodes of this net
@@ -2358,30 +2351,30 @@ class dbNet : public dbObject
   ///
   /// donate parasitics
   ///
-  void donateRC(dbITerm*               donorterm,
-                dbITerm*               rcvterm,
-                dbRSeg*&               rtrseg,
-                dbRSeg*&               lastrrseg,
-                dbCapNode*&            lastrcapnd,
-                uint&                  ricapndCnt,
-                dbRSeg*&               fstdrseg,
-                dbRSeg*&               dtrseg,
-                dbCapNode*&            fstdcapnd,
+  void donateRC(dbITerm* donorterm,
+                dbITerm* rcvterm,
+                dbRSeg*& rtrseg,
+                dbRSeg*& lastrrseg,
+                dbCapNode*& lastrcapnd,
+                uint& ricapndCnt,
+                dbRSeg*& fstdrseg,
+                dbRSeg*& dtrseg,
+                dbCapNode*& fstdcapnd,
                 std::vector<dbCCSeg*>* gndcc,
-                dbRSeg*&               bridgeRseg);
+                dbRSeg*& bridgeRseg);
 
   ///
   /// reverse donate parasitics
   ///
-  void unDonateRC(dbRSeg*                rtrseg,
-                  dbRSeg*                lastrrseg,
-                  dbITerm*               it,
-                  dbCapNode*             lastrcapnd,
-                  uint                   ricapndCnt,
-                  dbRSeg*                dtrseg,
-                  dbRSeg*                fstdrseg,
-                  dbCapNode*             fstdcapnd,
-                  dbITerm*               ot,
+  void unDonateRC(dbRSeg* rtrseg,
+                  dbRSeg* lastrrseg,
+                  dbITerm* it,
+                  dbCapNode* lastrcapnd,
+                  uint ricapndCnt,
+                  dbRSeg* dtrseg,
+                  dbRSeg* fstdrseg,
+                  dbCapNode* fstdcapnd,
+                  dbITerm* ot,
                   std::vector<dbCCSeg*>* gndcc);
 
   ///
@@ -2506,8 +2499,8 @@ class dbNet : public dbObject
   ///
   /// Get the nets having coupling caps with this net
   ///
-  void getCouplingNets(uint              corner,
-                       double            ccThreshold,
+  void getCouplingNets(uint corner,
+                       double ccThreshold,
                        std::set<dbNet*>& cnets);
 
   ///
@@ -2594,9 +2587,9 @@ class dbNet : public dbObject
   /// Create a new net.
   /// Returns NULL if a net with this name already exists
   ///
-  static dbNet* create(dbBlock*    block,
+  static dbNet* create(dbBlock* block,
                        const char* name,
-                       bool        skipExistingCheck = false);
+                       bool skipExistingCheck = false);
 
   ///
   /// Delete this net from this block.
@@ -2611,8 +2604,8 @@ class dbNet : public dbObject
   ///
   /// set level for fanout instances
   ///
-  uint setLevelAtFanout(uint                  level,
-                        bool                  fromPI,
+  uint setLevelAtFanout(uint level,
+                        bool fromPI,
                         std::vector<dbInst*>& instVector);
 
   ///
@@ -2996,7 +2989,7 @@ class dbInst : public dbObject
   /// dbSigType::SIGNAL.
   ///
   void getConnectivity(std::vector<dbInst*>& neighbors,
-                       dbSigType::Value      value = dbSigType::SIGNAL);
+                       dbSigType::Value value = dbSigType::SIGNAL);
 
   ///
   /// Bind the hierarchical (child) block to this instance.
@@ -3155,10 +3148,10 @@ class dbInst : public dbObject
   /// Returns NULL if an instance with this name already exists.
   /// Returns NULL if the master is not FROZEN.
   ///
-  static dbInst* create(dbBlock*    block,
-                        dbMaster*   master,
+  static dbInst* create(dbBlock* block,
+                        dbMaster* master,
                         const char* name,
-                        dbRegion*   region);
+                        dbRegion* region);
 
   ///
   /// Delete the instance from the block.
@@ -3374,7 +3367,7 @@ class dbITerm : public dbObject
   static dbITerm* getITerm(dbBlock* block, uint oid);
 
   uint32_t staVertexId();
-  void     staSetVertexId(uint32_t id);
+  void staSetVertexId(uint32_t id);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3496,18 +3489,18 @@ class dbVia : public dbObject
   /// Created a rotated version of the specified block-via.
   /// Returns NULL if a via with this name already exists.
   ///
-  static dbVia* create(dbBlock*     block,
-                       const char*  name,
-                       dbVia*       via,
+  static dbVia* create(dbBlock* block,
+                       const char* name,
+                       dbVia* via,
                        dbOrientType type);
 
   ///
   /// Created a rotated version of the specified tech-via.
   /// Returns NULL if a via with this name already exists.
   ///
-  static dbVia* create(dbBlock*     block,
-                       const char*  name,
-                       dbTechVia*   via,
+  static dbVia* create(dbBlock* block,
+                       const char* name,
+                       dbTechVia* via,
                        dbOrientType type);
 
   /// Copy all the VIA's from the src-block to the dst-block.
@@ -3692,8 +3685,8 @@ class dbWire : public dbObject
   ///
   static void copy(dbWire* dst,
                    dbWire* src,
-                   bool    removeITermsBTerms = true,
-                   bool    copyVias           = true);
+                   bool removeITermsBTerms = true,
+                   bool copyVias = true);
 
   ///
   /// Copy the src wire to the desintation wire. Filter vias and segments that
@@ -3704,11 +3697,11 @@ class dbWire : public dbObject
   ///    vias that do not exists in the dst-block are copied to the src-block.
   ///
   ///
-  static void copy(dbWire*     dst,
-                   dbWire*     src,
+  static void copy(dbWire* dst,
+                   dbWire* src,
                    const Rect& bbox,
-                   bool        removeITermsBTerms = true,
-                   bool        copyVias           = true);
+                   bool removeITermsBTerms = true,
+                   bool copyVias = true);
 
   ///
   /// Create a wire.
@@ -3733,10 +3726,10 @@ class dbWire : public dbObject
 
  private:
   void addOneSeg(unsigned char op,
-                 int           value,
-                 uint          jj,
-                 int*          did,
-                 dbRSeg**      new_rsegs);
+                 int value,
+                 uint jj,
+                 int* did,
+                 dbRSeg** new_rsegs);
   void addOneSeg(unsigned char op, int value);
   void donateWireSeg(dbWire* w1, dbRSeg** new_rsegs);
 
@@ -3970,13 +3963,13 @@ class dbObstruction : public dbObject
   ///
   /// Create a routing obstruction.
   ///
-  static dbObstruction* create(dbBlock*     block,
+  static dbObstruction* create(dbBlock* block,
                                dbTechLayer* layer,
-                               int          x1,
-                               int          y1,
-                               int          x2,
-                               int          y2,
-                               dbInst*      inst = NULL);
+                               int x1,
+                               int y1,
+                               int x2,
+                               int y2,
+                               dbInst* inst = NULL);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4042,11 +4035,11 @@ class dbBlockage : public dbObject
   /// Create a placement obstruction.
   ///
   static dbBlockage* create(dbBlock* block,
-                            int      x1,
-                            int      y1,
-                            int      x2,
-                            int      y2,
-                            dbInst*  inst = NULL);
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2,
+                            dbInst* inst = NULL);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4144,10 +4137,10 @@ class dbCapNode : public dbObject
   ///
   /// adjust CC's of this capNode
   ///
-  void adjustCC(uint                   adjOrder,
-                float                  adjFactor,
+  void adjustCC(uint adjOrder,
+                float adjFactor,
                 std::vector<dbCCSeg*>& adjustedCC,
-                std::vector<dbNet*>&   halonets);
+                std::vector<dbNet*>& halonets);
 
   ///
   /// Get the capacitance of this capNode segment for this process corner.
@@ -4549,10 +4542,10 @@ class dbRSeg : public dbObject
   /// The default values for each process corner is 0.0.
   ///
   static dbRSeg* create(dbNet* net,
-                        int    x,
-                        int    y,
-                        uint   path_dir,
-                        bool   allocate_cap);
+                        int x,
+                        int y,
+                        uint path_dir,
+                        bool allocate_cap);
 
   ///
   /// Destroy a rc-segment.
@@ -4739,7 +4732,7 @@ class dbCCSeg : public dbObject
   ///
   static dbCCSeg* create(dbCapNode* nodeA,
                          dbCapNode* nodeB,
-                         bool       mergeParallel = false);
+                         bool mergeParallel = false);
 
   ///
   /// Destroy a cc-segment.
@@ -4829,15 +4822,15 @@ class dbRow : public dbObject
   ///
   /// Create a new row.
   ///
-  static dbRow* create(dbBlock*     block,
-                       const char*  name,
-                       dbSite*      site,
-                       int          origin_x,
-                       int          origin_y,
+  static dbRow* create(dbBlock* block,
+                       const char* name,
+                       dbSite* site,
+                       int origin_x,
+                       int origin_y,
                        dbOrientType orient,
-                       dbRowDir     direction,
-                       int          num_sites,
-                       int          spacing);
+                       dbRowDir direction,
+                       int num_sites,
+                       int spacing);
 
   ///
   /// Destroy a row.
@@ -4887,14 +4880,14 @@ class dbFill : public dbObject
   ///
   /// Create a new fill.
   ///
-  static dbFill* create(dbBlock*     block,
-                        bool         needs_opc,
-                        uint         mask_number,
+  static dbFill* create(dbBlock* block,
+                        bool needs_opc,
+                        uint mask_number,
                         dbTechLayer* layer,
-                        int          x1,
-                        int          y1,
-                        int          x2,
-                        int          y2);
+                        int x1,
+                        int y1,
+                        int x2,
+                        int y2);
 
   ///
   /// Destroy a fill.
@@ -5105,7 +5098,7 @@ class dbLib : public dbObject
   ///
   static dbLib* create(dbDatabase* db,
                        const char* name,
-                       char        hierarchy_delimeter = 0);
+                       char hierarchy_delimeter = 0);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -5407,10 +5400,10 @@ class dbMaster : public dbObject
   ///
   bool isFrozen();
 
-  int  getOutputIndex();
+  int getOutputIndex();
   void setOutputIndex(int v);
   void setClockedIndex(int v);
-  int  getClockedIndex();
+  int getClockedIndex();
 
   ///
   /// Set _sequential of this master.
@@ -5468,7 +5461,7 @@ class dbMaster : public dbObject
   static dbMaster* getMaster(dbLib* lib, uint oid);
 
   void* staCell();
-  void  staSetCell(void* cell);
+  void staSetCell(void* cell);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5548,17 +5541,17 @@ class dbMTerm : public dbObject
   /// Access and write antenna rule models -- get functions will return NULL
   /// if model not created.
   ///
-  bool                   hasDefaultAntennaModel() const;
-  bool                   hasOxide2AntennaModel() const;
+  bool hasDefaultAntennaModel() const;
+  bool hasOxide2AntennaModel() const;
   dbTechAntennaPinModel* getDefaultAntennaModel() const;
   dbTechAntennaPinModel* getOxide2AntennaModel() const;
-  void                   writeAntennaLef(lefout& writer) const;
+  void writeAntennaLef(lefout& writer) const;
 
   // From LEF's ANTENNADIFFAREA on the MACRO's PIN
   void getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data);
 
   void* staPort();
-  void  staSetPort(void* port);
+  void staSetPort(void* port);
 
   ///
   /// Return the index of this mterm on this master.
@@ -5570,10 +5563,10 @@ class dbMTerm : public dbObject
   /// Create a new master terminal.
   /// Returns NULL if a master terminal with this name already exists
   ///
-  static dbMTerm* create(dbMaster*   master,
+  static dbMTerm* create(dbMaster* master,
                          const char* name,
-                         dbIoType    io_type  = dbIoType(),
-                         dbSigType   sig_type = dbSigType());
+                         dbIoType io_type = dbIoType(),
+                         dbSigType sig_type = dbSigType());
 
   ///
   /// Translate a database-id back to a pointer.
@@ -5733,7 +5726,7 @@ class dbTech : public dbObject
   ///
   /// Get the LEF version in this technology as a number or as a string.
   ///
-  double      getLefVersion() const;
+  double getLefVersion() const;
   const char* getLefVersionStr() const;
 
   ///
@@ -5744,33 +5737,33 @@ class dbTech : public dbObject
   ///
   ///  Get and set the NOWIREEXTENSIONATPIN construct
   ///
-  bool        hasNoWireExtAtPin() const;
+  bool hasNoWireExtAtPin() const;
   dbOnOffType getNoWireExtAtPin() const;
-  void        setNoWireExtAtPin(dbOnOffType intyp);
+  void setNoWireExtAtPin(dbOnOffType intyp);
 
   ///
   ///  Get and set the NAMESCASESENSITIVE construct
   ///
   dbOnOffType getNamesCaseSensitive() const;
-  void        setNamesCaseSensitive(dbOnOffType intyp);
+  void setNamesCaseSensitive(dbOnOffType intyp);
 
   ///
   /// Handle LEF CLEARANCEMEASURE construct
   ///
-  bool            hasClearanceMeasure() const;
+  bool hasClearanceMeasure() const;
   dbClMeasureType getClearanceMeasure() const;
-  void            setClearanceMeasure(dbClMeasureType inmeas);
+  void setClearanceMeasure(dbClMeasureType inmeas);
 
   ///
   /// Handle LEF USEMINSPACING for pins and obstruction separately.
   ///
-  bool        hasUseMinSpacingObs() const;
+  bool hasUseMinSpacingObs() const;
   dbOnOffType getUseMinSpacingObs() const;
-  void        setUseMinSpacingObs(dbOnOffType inval);
+  void setUseMinSpacingObs(dbOnOffType inval);
 
-  bool        hasUseMinSpacingPin() const;
+  bool hasUseMinSpacingPin() const;
   dbOnOffType getUseMinSpacingPin() const;
-  void        setUseMinSpacingPin(dbOnOffType inval);
+  void setUseMinSpacingPin(dbOnOffType inval);
 
   ///
   ///  Handle MANUFACTURINGGRID construct
@@ -5778,7 +5771,7 @@ class dbTech : public dbObject
   ///  NOT microns or LEF/DEF units
   ///
   bool hasManufacturingGrid() const;
-  int  getManufacturingGrid() const;
+  int getManufacturingGrid() const;
   void setManufacturingGrid(int ingrd);
 
   ///
@@ -5998,8 +5991,8 @@ class dbTechVia : public dbObject
   /// Returns NULL if a via with this name already exists.
   ///
   static dbTechVia* clone(dbTechNonDefaultRule* rule,
-                          dbTechVia*            invia_,
-                          const char*           new_name);
+                          dbTechVia* invia_,
+                          const char* new_name);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6189,16 +6182,16 @@ class dbTechViaLayerRule : public dbObject
   ///
   /// Create a new via-layer_rule.
   ///
-  static dbTechViaLayerRule* create(dbTech*        tech,
+  static dbTechViaLayerRule* create(dbTech* tech,
                                     dbTechViaRule* rule,
-                                    dbTechLayer*   layer);
+                                    dbTechLayer* layer);
 
   ///
   /// Create a new via-layer_rule.
   ///
-  static dbTechViaLayerRule* create(dbTech*                tech,
+  static dbTechViaLayerRule* create(dbTech* tech,
                                     dbTechViaGenerateRule* rule,
-                                    dbTechLayer*           layer);
+                                    dbTechLayer* layer);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6239,9 +6232,9 @@ class dbTechViaGenerateRule : public dbObject
   /// Create a new via.
   /// Returns NULL if a via-rule with this name already exists.
   ///
-  static dbTechViaGenerateRule* create(dbTech*     tech,
+  static dbTechViaGenerateRule* create(dbTech* tech,
                                        const char* name,
-                                       bool        is_default);
+                                       bool is_default);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6327,7 +6320,7 @@ class dbTechLayerSpacingRule : public dbObject
   ///
   static dbTechLayerSpacingRule* create(dbTechLayer* inly);
   static dbTechLayerSpacingRule* getTechLayerSpacingRule(dbTechLayer* inly,
-                                                         uint         dbid);
+                                                         uint dbid);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6343,18 +6336,18 @@ class dbTechLayerSpacingRule : public dbObject
 class dbTechMinCutRule : public dbObject
 {
  public:
-  bool                     getMinimumCuts(uint& numcuts, uint& width) const;
-  void                     setMinimumCuts(uint numcuts,
-                                          uint width,
-                                          bool above_only,
-                                          bool below_only);
-  bool                     getCutDistance(uint& cut_distance) const;
-  void                     setCutDistance(uint cut_distance);
-  bool                     getLengthForCuts(uint& length, uint& distance) const;
-  void                     setLengthForCuts(uint length, uint distance);
-  bool                     isAboveOnly() const;
-  bool                     isBelowOnly() const;
-  void                     writeLef(lefout& writer) const;
+  bool getMinimumCuts(uint& numcuts, uint& width) const;
+  void setMinimumCuts(uint numcuts,
+                      uint width,
+                      bool above_only,
+                      bool below_only);
+  bool getCutDistance(uint& cut_distance) const;
+  void setCutDistance(uint cut_distance);
+  bool getLengthForCuts(uint& length, uint& distance) const;
+  void setLengthForCuts(uint length, uint distance);
+  bool isAboveOnly() const;
+  bool isBelowOnly() const;
+  void writeLef(lefout& writer) const;
   static dbTechMinCutRule* create(dbTechLayer* inly);
   static dbTechMinCutRule* getMinCutRule(dbTechLayer* inly, uint dbid);
 };
@@ -6402,7 +6395,7 @@ class dbTechV55InfluenceEntry : public dbObject
 
   static dbTechV55InfluenceEntry* create(dbTechLayer* inly);
   static dbTechV55InfluenceEntry* getV55InfluenceEntry(dbTechLayer* inly,
-                                                       uint         dbid);
+                                                       uint dbid);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6717,7 +6710,7 @@ class dbTechLayerRule : public dbObject
   /// Returns NULL if a layer-rule for this layer already exists.
   ///
   static dbTechLayerRule* create(dbTechNonDefaultRule* rule,
-                                 dbTechLayer*          layer);
+                                 dbTechLayer* layer);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6778,8 +6771,8 @@ class dbTechSameNetRule : public dbObject
   /// Returns NULL if a rule already exists between these layers.
   ///
   static dbTechSameNetRule* create(dbTechNonDefaultRule* rule,
-                                   dbTechLayer*          layer1,
-                                   dbTechLayer*          layer2);
+                                   dbTechLayer* layer1,
+                                   dbTechLayer* layer2);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -6801,22 +6794,22 @@ class dbViaParams : private _dbViaParams
   dbViaParams(const dbViaParams& p);
   ~dbViaParams();
 
-  int          getXCutSize() const;
-  int          getYCutSize() const;
-  int          getXCutSpacing() const;
-  int          getYCutSpacing() const;
-  int          getXTopEnclosure() const;
-  int          getYTopEnclosure() const;
-  int          getXBottomEnclosure() const;
-  int          getYBottomEnclosure() const;
-  int          getNumCutRows() const;
-  int          getNumCutCols() const;
-  int          getXOrigin() const;
-  int          getYOrigin() const;
-  int          getXTopOffset() const;
-  int          getYTopOffset() const;
-  int          getXBottomOffset() const;
-  int          getYBottomOffset() const;
+  int getXCutSize() const;
+  int getYCutSize() const;
+  int getXCutSpacing() const;
+  int getYCutSpacing() const;
+  int getXTopEnclosure() const;
+  int getYTopEnclosure() const;
+  int getXBottomEnclosure() const;
+  int getYBottomEnclosure() const;
+  int getNumCutRows() const;
+  int getNumCutCols() const;
+  int getXOrigin() const;
+  int getYOrigin() const;
+  int getXTopOffset() const;
+  int getYTopOffset() const;
+  int getXBottomOffset() const;
+  int getYBottomOffset() const;
   dbTechLayer* getTopLayer() const;
   dbTechLayer* getCutLayer() const;
   dbTechLayer* getBottomLayer() const;
@@ -6842,7 +6835,7 @@ class dbViaParams : private _dbViaParams
   void setBottomLayer(dbTechLayer* layer);
 };
 
-// Generator Code Begin 5
+// Generator Code Begin ClassDefinition
 
 class dbTechLayer : public dbObject
 {
@@ -6879,19 +6872,19 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
       const;
 
-  void setRectOnly(bool _rect_only);
+  void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
 
-  void setRightWayOnGridOnly(bool _right_way_on_grid_only);
+  void setRightWayOnGridOnly(bool right_way_on_grid_only);
 
   bool isRightWayOnGridOnly() const;
 
-  void setRightWayOnGridOnlyCheckMask(bool _right_way_on_grid_only_check_mask);
+  void setRightWayOnGridOnlyCheckMask(bool right_way_on_grid_only_check_mask);
 
   bool isRightWayOnGridOnlyCheckMask() const;
 
-  void setRectOnlyExceptNonCorePins(bool _rect_only_except_non_core_pins);
+  void setRectOnlyExceptNonCorePins(bool rect_only_except_non_core_pins);
 
   bool isRectOnlyExceptNonCorePins() const;
 
@@ -6935,7 +6928,7 @@ class dbTechLayer : public dbObject
   ///
   /// Get the minimum object-to-object spacing.
   ///
-  int  getSpacing();
+  int getSpacing();
   void setSpacing(int spacing);
 
   ///
@@ -7006,11 +6999,11 @@ class dbTechLayer : public dbObject
   /// Access and write antenna rule models -- get functions will return NULL
   /// if model not created.
   ///
-  bool                    hasDefaultAntennaRule() const;
-  bool                    hasOxide2AntennaRule() const;
+  bool hasDefaultAntennaRule() const;
+  bool hasOxide2AntennaRule() const;
   dbTechLayerAntennaRule* getDefaultAntennaRule() const;
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
-  void                    writeAntennaRulesLef(lefout& writer) const;
+  void writeAntennaRulesLef(lefout& writer) const;
 
   ///
   ///
@@ -7025,16 +7018,16 @@ class dbTechLayer : public dbObject
   ///
   /// Get/Set the minimum feature size (pitch).
   ///
-  int  getPitch();
-  int  getPitchX();
-  int  getPitchY();
+  int getPitch();
+  int getPitchX();
+  int getPitchY();
   void setPitch(int pitch);
   void setPitchXY(int pitch_x, int pitch_y);
   bool hasXYPitch();
 
-  int  getOffset();
-  int  getOffsetX();
-  int  getOffsetY();
+  int getOffset();
+  int getOffsetX();
+  int getOffsetY();
   void setOffset(int pitch);
   void setOffsetXY(int pitch_x, int pitch_y);
   bool hasXYOffset();
@@ -7050,9 +7043,9 @@ class dbTechLayer : public dbObject
   ///  Get/set AREA parameter.  This interface is used when a
   ///  reasonable default exists.
   ///
-  bool   hasArea() const;
+  bool hasArea() const;
   double getArea() const;
-  void   setArea(double area);
+  void setArea(double area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
@@ -7077,7 +7070,7 @@ class dbTechLayer : public dbObject
   void setMinStep(uint min_step);
 
   dbTechLayerMinStepType getMinStepType() const;
-  void                   setMinStepType(dbTechLayerMinStepType type);
+  void setMinStepType(dbTechLayerMinStepType type);
 
   bool hasMinStepMaxLength() const;
   uint getMinStepMaxLength() const;
@@ -7105,26 +7098,26 @@ class dbTechLayer : public dbObject
   /// Get/Set the layer-direction
   ///
   dbTechLayerDir getDirection();
-  void           setDirection(dbTechLayerDir direction);
+  void setDirection(dbTechLayerDir direction);
 
   ///
   /// Get/Set the resistance (ohms per square for routing layers;
   ///                         ohms per cut on via layers)
   ///
   double getResistance();
-  void   setResistance(double res);
+  void setResistance(double res);
 
   ///
   /// Get/Set the capacitance (pF per square micron)
   ///
   double getCapacitance();
-  void   setCapacitance(double cap);
+  void setCapacitance(double cap);
 
   ///
   /// Get/Set the edge capacitance (pF per micron)
   ///
   double getEdgeCapacitance();
-  void   setEdgeCapacitance(double cap);
+  void setEdgeCapacitance(double cap);
 
   ///
   /// Get/Set the wire extension
@@ -7165,8 +7158,8 @@ class dbTechLayer : public dbObject
   /// Create a new layer. The mask order is implicit in the create order.
   /// Returns NULL if a layer with this name already exists
   ///
-  static dbTechLayer* create(dbTech*         tech,
-                             const char*     name,
+  static dbTechLayer* create(dbTech* tech,
+                             const char* name,
                              dbTechLayerType type);
 
   ///
@@ -7179,299 +7172,299 @@ class dbTechLayer : public dbObject
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
-  void setEolSpace(int _eol_space);
+  void setEolSpace(int eol_space);
 
   int getEolSpace() const;
 
-  void setEolWidth(int _eol_width);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setWrongDirSpace(int _wrong_dir_space);
+  void setWrongDirSpace(int wrong_dir_space);
 
   int getWrongDirSpace() const;
 
-  void setOppositeWidth(int _opposite_width);
+  void setOppositeWidth(int opposite_width);
 
   int getOppositeWidth() const;
 
-  void setEolWithin(int _eol_within);
+  void setEolWithin(int eol_within);
 
   int getEolWithin() const;
 
-  void setWrongDirWithin(int _wrong_dir_within);
+  void setWrongDirWithin(int wrong_dir_within);
 
   int getWrongDirWithin() const;
 
-  void setExactWidth(int _exact_width);
+  void setExactWidth(int exact_width);
 
   int getExactWidth() const;
 
-  void setOtherWidth(int _other_width);
+  void setOtherWidth(int other_width);
 
   int getOtherWidth() const;
 
-  void setFillTriangle(int _fill_triangle);
+  void setFillTriangle(int fill_triangle);
 
   int getFillTriangle() const;
 
-  void setCutClass(int _cut_class);
+  void setCutClass(int cut_class);
 
   int getCutClass() const;
 
-  void setWithCutSpace(int _with_cut_space);
+  void setWithCutSpace(int with_cut_space);
 
   int getWithCutSpace() const;
 
-  void setEnclosureEndWidth(int _enclosure_end_width);
+  void setEnclosureEndWidth(int enclosure_end_width);
 
   int getEnclosureEndWidth() const;
 
-  void setEnclosureEndWithin(int _enclosure_end_within);
+  void setEnclosureEndWithin(int enclosure_end_within);
 
   int getEnclosureEndWithin() const;
 
-  void setEndPrlSpace(int _end_prl_space);
+  void setEndPrlSpace(int end_prl_space);
 
   int getEndPrlSpace() const;
 
-  void setEndPrl(int _end_prl);
+  void setEndPrl(int end_prl);
 
   int getEndPrl() const;
 
-  void setEndToEndSpace(int _end_to_end_space);
+  void setEndToEndSpace(int end_to_end_space);
 
   int getEndToEndSpace() const;
 
-  void setOneCutSpace(int _one_cut_space);
+  void setOneCutSpace(int one_cut_space);
 
   int getOneCutSpace() const;
 
-  void setTwoCutSpace(int _two_cut_space);
+  void setTwoCutSpace(int two_cut_space);
 
   int getTwoCutSpace() const;
 
-  void setExtension(int _extension);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setWrongDirExtension(int _wrong_dir_extension);
+  void setWrongDirExtension(int wrong_dir_extension);
 
   int getWrongDirExtension() const;
 
-  void setOtherEndWidth(int _other_end_width);
+  void setOtherEndWidth(int other_end_width);
 
   int getOtherEndWidth() const;
 
-  void setMaxLength(int _max_length);
+  void setMaxLength(int max_length);
 
   int getMaxLength() const;
 
-  void setMinLength(int _min_length);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setParSpace(int _par_space);
+  void setParSpace(int par_space);
 
   int getParSpace() const;
 
-  void setParWithin(int _par_within);
+  void setParWithin(int par_within);
 
   int getParWithin() const;
 
-  void setParPrl(int _par_prl);
+  void setParPrl(int par_prl);
 
   int getParPrl() const;
 
-  void setParMinLength(int _par_min_length);
+  void setParMinLength(int par_min_length);
 
   int getParMinLength() const;
 
-  void setEncloseDist(int _enclose_dist);
+  void setEncloseDist(int enclose_dist);
 
   int getEncloseDist() const;
 
-  void setCutToMetalSpace(int _cut_to_metal_space);
+  void setCutToMetalSpace(int cut_to_metal_space);
 
   int getCutToMetalSpace() const;
 
-  void setMinAdjLength(int _min_adj_length);
+  void setMinAdjLength(int min_adj_length);
 
   int getMinAdjLength() const;
 
-  void setMinAdjLength1(int _min_adj_length1);
+  void setMinAdjLength1(int min_adj_length1);
 
   int getMinAdjLength1() const;
 
-  void setMinAdjLength2(int _min_adj_length2);
+  void setMinAdjLength2(int min_adj_length2);
 
   int getMinAdjLength2() const;
 
-  void setNotchLength(int _notch_length);
+  void setNotchLength(int notch_length);
 
   int getNotchLength() const;
 
-  void setExactWidthValid(bool _exact_width_valid);
+  void setExactWidthValid(bool exact_width_valid);
 
   bool isExactWidthValid() const;
 
-  void setWrongDirSpacingValid(bool _wrong_dir_spacing_valid);
+  void setWrongDirSpacingValid(bool wrong_dir_spacing_valid);
 
   bool isWrongDirSpacingValid() const;
 
-  void setOppositeWidthValid(bool _opposite_width_valid);
+  void setOppositeWidthValid(bool opposite_width_valid);
 
   bool isOppositeWidthValid() const;
 
-  void setWithinValid(bool _within_valid);
+  void setWithinValid(bool within_valid);
 
   bool isWithinValid() const;
 
-  void setWrongDirWithinValid(bool _wrong_dir_within_valid);
+  void setWrongDirWithinValid(bool wrong_dir_within_valid);
 
   bool isWrongDirWithinValid() const;
 
-  void setSameMaskValid(bool _same_mask_valid);
+  void setSameMaskValid(bool same_mask_valid);
 
   bool isSameMaskValid() const;
 
-  void setExceptExactWidthValid(bool _except_exact_width_valid);
+  void setExceptExactWidthValid(bool except_exact_width_valid);
 
   bool isExceptExactWidthValid() const;
 
-  void setFillConcaveCornerValid(bool _fill_concave_corner_valid);
+  void setFillConcaveCornerValid(bool fill_concave_corner_valid);
 
   bool isFillConcaveCornerValid() const;
 
-  void setWithcutValid(bool _withcut_valid);
+  void setWithcutValid(bool withcut_valid);
 
   bool isWithcutValid() const;
 
-  void setCutClassValid(bool _cut_class_valid);
+  void setCutClassValid(bool cut_class_valid);
 
   bool isCutClassValid() const;
 
-  void setWithCutAboveValid(bool _with_cut_above_valid);
+  void setWithCutAboveValid(bool with_cut_above_valid);
 
   bool isWithCutAboveValid() const;
 
-  void setEnclosureEndValid(bool _enclosure_end_valid);
+  void setEnclosureEndValid(bool enclosure_end_valid);
 
   bool isEnclosureEndValid() const;
 
-  void setEnclosureEndWithinValid(bool _enclosure_end_within_valid);
+  void setEnclosureEndWithinValid(bool enclosure_end_within_valid);
 
   bool isEnclosureEndWithinValid() const;
 
-  void setEndPrlSpacingValid(bool _end_prl_spacing_valid);
+  void setEndPrlSpacingValid(bool end_prl_spacing_valid);
 
   bool isEndPrlSpacingValid() const;
 
-  void setPrlValid(bool _prl_valid);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setEndToEndValid(bool _end_to_end_valid);
+  void setEndToEndValid(bool end_to_end_valid);
 
   bool isEndToEndValid() const;
 
-  void setCutSpacesValid(bool _cut_spaces_valid);
+  void setCutSpacesValid(bool cut_spaces_valid);
 
   bool isCutSpacesValid() const;
 
-  void setExtensionValid(bool _extension_valid);
+  void setExtensionValid(bool extension_valid);
 
   bool isExtensionValid() const;
 
-  void setWrongDirExtensionValid(bool _wrong_dir_extension_valid);
+  void setWrongDirExtensionValid(bool wrong_dir_extension_valid);
 
   bool isWrongDirExtensionValid() const;
 
-  void setOtherEndWidthValid(bool _other_end_width_valid);
+  void setOtherEndWidthValid(bool other_end_width_valid);
 
   bool isOtherEndWidthValid() const;
 
-  void setMaxLengthValid(bool _max_length_valid);
+  void setMaxLengthValid(bool max_length_valid);
 
   bool isMaxLengthValid() const;
 
-  void setMinLengthValid(bool _min_length_valid);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setTwoSidesValid(bool _two_sides_valid);
+  void setTwoSidesValid(bool two_sides_valid);
 
   bool isTwoSidesValid() const;
 
-  void setEqualRectWidthValid(bool _equal_rect_width_valid);
+  void setEqualRectWidthValid(bool equal_rect_width_valid);
 
   bool isEqualRectWidthValid() const;
 
-  void setParallelEdgeValid(bool _parallel_edge_valid);
+  void setParallelEdgeValid(bool parallel_edge_valid);
 
   bool isParallelEdgeValid() const;
 
-  void setSubtractEolWidthValid(bool _subtract_eol_width_valid);
+  void setSubtractEolWidthValid(bool subtract_eol_width_valid);
 
   bool isSubtractEolWidthValid() const;
 
-  void setParPrlValid(bool _par_prl_valid);
+  void setParPrlValid(bool par_prl_valid);
 
   bool isParPrlValid() const;
 
-  void setParMinLengthValid(bool _par_min_length_valid);
+  void setParMinLengthValid(bool par_min_length_valid);
 
   bool isParMinLengthValid() const;
 
-  void setTwoEdgesValid(bool _two_edges_valid);
+  void setTwoEdgesValid(bool two_edges_valid);
 
   bool isTwoEdgesValid() const;
 
-  void setSameMetalValid(bool _same_metal_valid);
+  void setSameMetalValid(bool same_metal_valid);
 
   bool isSameMetalValid() const;
 
-  void setNonEolCornerOnlyValid(bool _non_eol_corner_only_valid);
+  void setNonEolCornerOnlyValid(bool non_eol_corner_only_valid);
 
   bool isNonEolCornerOnlyValid() const;
 
-  void setParallelSameMaskValid(bool _parallel_same_mask_valid);
+  void setParallelSameMaskValid(bool parallel_same_mask_valid);
 
   bool isParallelSameMaskValid() const;
 
-  void setEncloseCutValid(bool _enclose_cut_valid);
+  void setEncloseCutValid(bool enclose_cut_valid);
 
   bool isEncloseCutValid() const;
 
-  void setBelowValid(bool _below_valid);
+  void setBelowValid(bool below_valid);
 
   bool isBelowValid() const;
 
-  void setAboveValid(bool _above_valid);
+  void setAboveValid(bool above_valid);
 
   bool isAboveValid() const;
 
-  void setCutSpacingValid(bool _cut_spacing_valid);
+  void setCutSpacingValid(bool cut_spacing_valid);
 
   bool isCutSpacingValid() const;
 
-  void setAllCutsValid(bool _all_cuts_valid);
+  void setAllCutsValid(bool all_cuts_valid);
 
   bool isAllCutsValid() const;
 
-  void setToConcaveCornerValid(bool _to_concave_corner_valid);
+  void setToConcaveCornerValid(bool to_concave_corner_valid);
 
   bool isToConcaveCornerValid() const;
 
-  void setMinAdjacentLengthValid(bool _min_adjacent_length_valid);
+  void setMinAdjacentLengthValid(bool min_adjacent_length_valid);
 
   bool isMinAdjacentLengthValid() const;
 
-  void setTwoMinAdjLengthValid(bool _two_min_adj_length_valid);
+  void setTwoMinAdjLengthValid(bool two_min_adj_length_valid);
 
   bool isTwoMinAdjLengthValid() const;
 
-  void setToNotchLengthValid(bool _to_notch_length_valid);
+  void setToNotchLengthValid(bool to_notch_length_valid);
 
   bool isToNotchLengthValid() const;
 
@@ -7480,7 +7473,7 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   static dbTechLayerSpacingEolRule* getTechLayerSpacingEolRule(
       dbTechLayer* inly,
-      uint         dbid);
+      uint dbid);
 
   static void destroy(dbTechLayerSpacingEolRule* rule);
   // User Code End dbTechLayerSpacingEolRule
@@ -7489,55 +7482,55 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
-  void setMinStepLength(int _min_step_length);
+  void setMinStepLength(int min_step_length);
 
   int getMinStepLength() const;
 
-  void setMaxEdges(uint _max_edges);
+  void setMaxEdges(uint max_edges);
 
   uint getMaxEdges() const;
 
-  void setMinAdjLength1(int _min_adj_length1);
+  void setMinAdjLength1(int min_adj_length1);
 
   int getMinAdjLength1() const;
 
-  void setMinAdjLength2(int _min_adj_length2);
+  void setMinAdjLength2(int min_adj_length2);
 
   int getMinAdjLength2() const;
 
-  void setEolWidth(int _eol_width);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setMinBetweenLength(int _min_between_length);
+  void setMinBetweenLength(int min_between_length);
 
   int getMinBetweenLength() const;
 
-  void setMaxEdgesValid(bool _max_edges_valid);
+  void setMaxEdgesValid(bool max_edges_valid);
 
   bool isMaxEdgesValid() const;
 
-  void setMinAdjLength1Valid(bool _min_adj_length1_valid);
+  void setMinAdjLength1Valid(bool min_adj_length1_valid);
 
   bool isMinAdjLength1Valid() const;
 
-  void setNoBetweenEol(bool _no_between_eol);
+  void setNoBetweenEol(bool no_between_eol);
 
   bool isNoBetweenEol() const;
 
-  void setMinAdjLength2Valid(bool _min_adj_length2_valid);
+  void setMinAdjLength2Valid(bool min_adj_length2_valid);
 
   bool isMinAdjLength2Valid() const;
 
-  void setConvexCorner(bool _convex_corner);
+  void setConvexCorner(bool convex_corner);
 
   bool isConvexCorner() const;
 
-  void setMinBetweenLengthValid(bool _min_between_length_valid);
+  void setMinBetweenLengthValid(bool min_between_length_valid);
 
   bool isMinBetweenLengthValid() const;
 
-  void setExceptSameCorners(bool _except_same_corners);
+  void setExceptSameCorners(bool except_same_corners);
 
   bool isExceptSameCorners() const;
 
@@ -7545,7 +7538,7 @@ class dbTechLayerMinStepRule : public dbObject
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);
 
   static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
-                                                         uint         dbid);
+                                                         uint dbid);
 
   static void destroy(dbTechLayerMinStepRule* rule);
   // User Code End dbTechLayerMinStepRule
@@ -7560,71 +7553,71 @@ class dbTechLayerCornerSpacingRule : public dbObject
     CONCAVECORNER
   };
 
-  void setWithin(int _within);
+  void setWithin(int within);
 
   int getWithin() const;
 
-  void setEolWidth(int _eol_width);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setJogLength(int _jog_length);
+  void setJogLength(int jog_length);
 
   int getJogLength() const;
 
-  void setEdgeLength(int _edge_length);
+  void setEdgeLength(int edge_length);
 
   int getEdgeLength() const;
 
-  void setMinLength(int _min_length);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setExceptNotchLength(int _except_notch_length);
+  void setExceptNotchLength(int except_notch_length);
 
   int getExceptNotchLength() const;
 
-  void setSameMask(bool _same_mask);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setCornerOnly(bool _corner_only);
+  void setCornerOnly(bool corner_only);
 
   bool isCornerOnly() const;
 
-  void setExceptEol(bool _except_eol);
+  void setExceptEol(bool except_eol);
 
   bool isExceptEol() const;
 
-  void setExceptJogLength(bool _except_jog_length);
+  void setExceptJogLength(bool except_jog_length);
 
   bool isExceptJogLength() const;
 
-  void setEdgeLengthValid(bool _edge_length_valid);
+  void setEdgeLengthValid(bool edge_length_valid);
 
   bool isEdgeLengthValid() const;
 
-  void setIncludeShape(bool _include_shape);
+  void setIncludeShape(bool include_shape);
 
   bool isIncludeShape() const;
 
-  void setMinLengthValid(bool _min_length_valid);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setExceptNotch(bool _except_notch);
+  void setExceptNotch(bool except_notch);
 
   bool isExceptNotch() const;
 
-  void setExceptNotchLengthValid(bool _except_notch_length_valid);
+  void setExceptNotchLengthValid(bool except_notch_length_valid);
 
   bool isExceptNotchLengthValid() const;
 
-  void setExceptSameNet(bool _except_same_net);
+  void setExceptSameNet(bool except_same_net);
 
   bool isExceptSameNet() const;
 
-  void setExceptSameMetal(bool _except_same_metal);
+  void setExceptSameMetal(bool except_same_metal);
 
   bool isExceptSameMetal() const;
 
@@ -7643,7 +7636,7 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   static dbTechLayerCornerSpacingRule* getTechLayerCornerSpacingRule(
       dbTechLayer* inly,
-      uint         dbid);
+      uint dbid);
   static void destroy(dbTechLayerCornerSpacingRule* rule);
   // User Code End dbTechLayerCornerSpacingRule
 };
@@ -7651,38 +7644,38 @@ class dbTechLayerCornerSpacingRule : public dbObject
 class dbTechLayerSpacingTablePrlRule : public dbObject
 {
  public:
-  void setEolWidth(int _eol_width);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setWrongDirection(bool _wrong_direction);
+  void setWrongDirection(bool wrong_direction);
 
   bool isWrongDirection() const;
 
-  void setSameMask(bool _same_mask);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setExceeptEol(bool _exceept_eol);
+  void setExceeptEol(bool exceept_eol);
 
   bool isExceeptEol() const;
 
   // User Code Begin dbTechLayerSpacingTablePrlRule
   static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(
       dbTechLayer* inly,
-      uint         dbid);
+      uint dbid);
 
   static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
 
   static void destroy(dbTechLayerSpacingTablePrlRule* rule);
 
-  void setTable(std::vector<int>                    width_tbl,
-                std::vector<int>                    length_tbl,
-                std::vector<std::vector<int>>       spacing_tbl,
+  void setTable(std::vector<int> width_tbl,
+                std::vector<int> length_tbl,
+                std::vector<std::vector<int>> spacing_tbl,
                 std::map<uint, std::pair<int, int>> excluded_map);
-  void getTable(std::vector<int>&                    width_tbl,
-                std::vector<int>&                    length_tbl,
-                std::vector<std::vector<int>>&       spacing_tbl,
+  void getTable(std::vector<int>& width_tbl,
+                std::vector<int>& length_tbl,
+                std::vector<std::vector<int>>& spacing_tbl,
                 std::map<uint, std::pair<int, int>>& excluded_map);
 
   void setSpacingTableInfluence(
@@ -7700,31 +7693,31 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
-  void setWidth(int _width);
+  void setWidth(int width);
 
   int getWidth() const;
 
-  void setLength(int _length);
+  void setLength(int length);
 
   int getLength() const;
 
-  void setNumCuts(int _num_cuts);
+  void setNumCuts(int num_cuts);
 
   int getNumCuts() const;
 
-  void setLengthValid(bool _length_valid);
+  void setLengthValid(bool length_valid);
 
   bool isLengthValid() const;
 
-  void setCutsValid(bool _cuts_valid);
+  void setCutsValid(bool cuts_valid);
 
   bool isCutsValid() const;
 
   // User Code Begin dbTechLayerCutClassRule
   static dbTechLayerCutClassRule* getTechLayerCutClassRule(dbTechLayer* inly,
-                                                           uint         dbid);
+                                                           uint dbid);
 
   static dbTechLayerCutClassRule* create(dbTechLayer* _layer, const char* name);
 
@@ -7748,243 +7741,243 @@ class dbTechLayerCutSpacingRule : public dbObject
     AREA
   };
 
-  void setCutSpacing(int _cut_spacing);
+  void setCutSpacing(int cut_spacing);
 
   int getCutSpacing() const;
 
-  void setSecondLayer(dbTechLayer* _second_layer);
+  void setSecondLayer(dbTechLayer* second_layer);
 
-  void setOrthogonalSpacing(int _orthogonal_spacing);
+  void setOrthogonalSpacing(int orthogonal_spacing);
 
   int getOrthogonalSpacing() const;
 
-  void setWidth(int _width);
+  void setWidth(int width);
 
   int getWidth() const;
 
-  void setEnclosure(int _enclosure);
+  void setEnclosure(int enclosure);
 
   int getEnclosure() const;
 
-  void setEdgeLength(int _edge_length);
+  void setEdgeLength(int edge_length);
 
   int getEdgeLength() const;
 
-  void setParWithin(int _par_within);
+  void setParWithin(int par_within);
 
   int getParWithin() const;
 
-  void setParEnclosure(int _par_enclosure);
+  void setParEnclosure(int par_enclosure);
 
   int getParEnclosure() const;
 
-  void setEdgeEnclosure(int _edge_enclosure);
+  void setEdgeEnclosure(int edge_enclosure);
 
   int getEdgeEnclosure() const;
 
-  void setAdjEnclosure(int _adj_enclosure);
+  void setAdjEnclosure(int adj_enclosure);
 
   int getAdjEnclosure() const;
 
-  void setAboveEnclosure(int _above_enclosure);
+  void setAboveEnclosure(int above_enclosure);
 
   int getAboveEnclosure() const;
 
-  void setAboveWidth(int _above_width);
+  void setAboveWidth(int above_width);
 
   int getAboveWidth() const;
 
-  void setMinLength(int _min_length);
+  void setMinLength(int min_length);
 
   int getMinLength() const;
 
-  void setExtension(int _extension);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setEolWidth(int _eol_width);
+  void setEolWidth(int eol_width);
 
   int getEolWidth() const;
 
-  void setNumCuts(uint _num_cuts);
+  void setNumCuts(uint num_cuts);
 
   uint getNumCuts() const;
 
-  void setWithin(int _within);
+  void setWithin(int within);
 
   int getWithin() const;
 
-  void setSecondWithin(int _second_within);
+  void setSecondWithin(int second_within);
 
   int getSecondWithin() const;
 
-  void setCutClass(dbTechLayerCutClassRule* _cut_class);
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
 
-  void setTwoCuts(uint _two_cuts);
+  void setTwoCuts(uint two_cuts);
 
   uint getTwoCuts() const;
 
-  void setPrl(uint _prl);
+  void setPrl(uint prl);
 
   uint getPrl() const;
 
-  void setParLength(uint _par_length);
+  void setParLength(uint par_length);
 
   uint getParLength() const;
 
-  void setCutArea(int _cut_area);
+  void setCutArea(int cut_area);
 
   int getCutArea() const;
 
-  void setCenterToCenter(bool _center_to_center);
+  void setCenterToCenter(bool center_to_center);
 
   bool isCenterToCenter() const;
 
-  void setSameNet(bool _same_net);
+  void setSameNet(bool same_net);
 
   bool isSameNet() const;
 
-  void setSameMetal(bool _same_metal);
+  void setSameMetal(bool same_metal);
 
   bool isSameMetal() const;
 
-  void setSameVia(bool _same_via);
+  void setSameVia(bool same_via);
 
   bool isSameVia() const;
 
-  void setStack(bool _stack);
+  void setStack(bool stack);
 
   bool isStack() const;
 
-  void setOrthogonalSpacingValid(bool _orthogonal_spacing_valid);
+  void setOrthogonalSpacingValid(bool orthogonal_spacing_valid);
 
   bool isOrthogonalSpacingValid() const;
 
-  void setAboveWidthEnclosureValid(bool _above_width_enclosure_valid);
+  void setAboveWidthEnclosureValid(bool above_width_enclosure_valid);
 
   bool isAboveWidthEnclosureValid() const;
 
-  void setShortEdgeOnly(bool _short_edge_only);
+  void setShortEdgeOnly(bool short_edge_only);
 
   bool isShortEdgeOnly() const;
 
-  void setConcaveCornerWidth(bool _concave_corner_width);
+  void setConcaveCornerWidth(bool concave_corner_width);
 
   bool isConcaveCornerWidth() const;
 
-  void setConcaveCornerParallel(bool _concave_corner_parallel);
+  void setConcaveCornerParallel(bool concave_corner_parallel);
 
   bool isConcaveCornerParallel() const;
 
-  void setConcaveCornerEdgeLength(bool _concave_corner_edge_length);
+  void setConcaveCornerEdgeLength(bool concave_corner_edge_length);
 
   bool isConcaveCornerEdgeLength() const;
 
-  void setConcaveCorner(bool _concave_corner);
+  void setConcaveCorner(bool concave_corner);
 
   bool isConcaveCorner() const;
 
-  void setExtensionValid(bool _extension_valid);
+  void setExtensionValid(bool extension_valid);
 
   bool isExtensionValid() const;
 
-  void setNonEolConvexCorner(bool _non_eol_convex_corner);
+  void setNonEolConvexCorner(bool non_eol_convex_corner);
 
   bool isNonEolConvexCorner() const;
 
-  void setEolWidthValid(bool _eol_width_valid);
+  void setEolWidthValid(bool eol_width_valid);
 
   bool isEolWidthValid() const;
 
-  void setMinLengthValid(bool _min_length_valid);
+  void setMinLengthValid(bool min_length_valid);
 
   bool isMinLengthValid() const;
 
-  void setAboveWidthValid(bool _above_width_valid);
+  void setAboveWidthValid(bool above_width_valid);
 
   bool isAboveWidthValid() const;
 
-  void setMaskOverlap(bool _mask_overlap);
+  void setMaskOverlap(bool mask_overlap);
 
   bool isMaskOverlap() const;
 
-  void setWrongDirection(bool _wrong_direction);
+  void setWrongDirection(bool wrong_direction);
 
   bool isWrongDirection() const;
 
-  void setAdjacentCuts(uint _adjacent_cuts);
+  void setAdjacentCuts(uint adjacent_cuts);
 
   uint getAdjacentCuts() const;
 
-  void setExactAligned(bool _exact_aligned);
+  void setExactAligned(bool exact_aligned);
 
   bool isExactAligned() const;
 
-  void setCutClassToAll(bool _cut_class_to_all);
+  void setCutClassToAll(bool cut_class_to_all);
 
   bool isCutClassToAll() const;
 
-  void setNoPrl(bool _no_prl);
+  void setNoPrl(bool no_prl);
 
   bool isNoPrl() const;
 
-  void setSameMask(bool _same_mask);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setExceptSamePgnet(bool _except_same_pgnet);
+  void setExceptSamePgnet(bool except_same_pgnet);
 
   bool isExceptSamePgnet() const;
 
-  void setSideParallelOverlap(bool _side_parallel_overlap);
+  void setSideParallelOverlap(bool side_parallel_overlap);
 
   bool isSideParallelOverlap() const;
 
-  void setExceptSameNet(bool _except_same_net);
+  void setExceptSameNet(bool except_same_net);
 
   bool isExceptSameNet() const;
 
-  void setExceptSameMetal(bool _except_same_metal);
+  void setExceptSameMetal(bool except_same_metal);
 
   bool isExceptSameMetal() const;
 
-  void setExceptSameMetalOverlap(bool _except_same_metal_overlap);
+  void setExceptSameMetalOverlap(bool except_same_metal_overlap);
 
   bool isExceptSameMetalOverlap() const;
 
-  void setExceptSameVia(bool _except_same_via);
+  void setExceptSameVia(bool except_same_via);
 
   bool isExceptSameVia() const;
 
-  void setAbove(bool _above);
+  void setAbove(bool above);
 
   bool isAbove() const;
 
-  void setExceptTwoEdges(bool _except_two_edges);
+  void setExceptTwoEdges(bool except_two_edges);
 
   bool isExceptTwoEdges() const;
 
-  void setTwoCutsValid(bool _two_cuts_valid);
+  void setTwoCutsValid(bool two_cuts_valid);
 
   bool isTwoCutsValid() const;
 
-  void setSameCut(bool _same_cut);
+  void setSameCut(bool same_cut);
 
   bool isSameCut() const;
 
-  void setLongEdgeOnly(bool _long_edge_only);
+  void setLongEdgeOnly(bool long_edge_only);
 
   bool isLongEdgeOnly() const;
 
-  void setPrlValid(bool _prl_valid);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setBelow(bool _below);
+  void setBelow(bool below);
 
   bool isBelow() const;
 
-  void setParWithinEnclosureValid(bool _par_within_enclosure_valid);
+  void setParWithinEnclosureValid(bool par_within_enclosure_valid);
 
   bool isParWithinEnclosureValid() const;
 
@@ -8001,7 +7994,7 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   static dbTechLayerCutSpacingRule* getTechLayerCutSpacingRule(
       dbTechLayer* inly,
-      uint         dbid);
+      uint dbid);
 
   static dbTechLayerCutSpacingRule* create(dbTechLayer* _layer);
 
@@ -8029,111 +8022,111 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
-  void setDefault(int _default);
+  void setDefault(int spacing);
 
   int getDefault() const;
 
-  void setSecondLayer(dbTechLayer* _second_layer);
+  void setSecondLayer(dbTechLayer* second_layer);
 
-  void setPrl(int _prl);
+  void setPrl(int prl);
 
   int getPrl() const;
 
-  void setExtension(int _extension);
+  void setExtension(int extension);
 
   int getExtension() const;
 
-  void setDefaultValid(bool _default_valid);
+  void setDefaultValid(bool default_valid);
 
   bool isDefaultValid() const;
 
-  void setSameMask(bool _same_mask);
+  void setSameMask(bool same_mask);
 
   bool isSameMask() const;
 
-  void setSameNet(bool _same_net);
+  void setSameNet(bool same_net);
 
   bool isSameNet() const;
 
-  void setSameMetal(bool _same_metal);
+  void setSameMetal(bool same_metal);
 
   bool isSameMetal() const;
 
-  void setSameVia(bool _same_via);
+  void setSameVia(bool same_via);
 
   bool isSameVia() const;
 
-  void setLayerValid(bool _layer_valid);
+  void setLayerValid(bool layer_valid);
 
   bool isLayerValid() const;
 
-  void setNoStack(bool _no_stack);
+  void setNoStack(bool no_stack);
 
   bool isNoStack() const;
 
-  void setNonZeroEnclosure(bool _non_zero_enclosure);
+  void setNonZeroEnclosure(bool non_zero_enclosure);
 
   bool isNonZeroEnclosure() const;
 
-  void setPrlForAlignedCut(bool _prl_for_aligned_cut);
+  void setPrlForAlignedCut(bool prl_for_aligned_cut);
 
   bool isPrlForAlignedCut() const;
 
-  void setCenterToCenterValid(bool _center_to_center_valid);
+  void setCenterToCenterValid(bool center_to_center_valid);
 
   bool isCenterToCenterValid() const;
 
-  void setCenterAndEdgeValid(bool _center_and_edge_valid);
+  void setCenterAndEdgeValid(bool center_and_edge_valid);
 
   bool isCenterAndEdgeValid() const;
 
-  void setNoPrl(bool _no_prl);
+  void setNoPrl(bool no_prl);
 
   bool isNoPrl() const;
 
-  void setPrlValid(bool _prl_valid);
+  void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
 
-  void setMaxXY(bool _max_x_y);
+  void setMaxXY(bool max_x_y);
 
   bool isMaxXY() const;
 
-  void setEndExtensionValid(bool _end_extension_valid);
+  void setEndExtensionValid(bool end_extension_valid);
 
   bool isEndExtensionValid() const;
 
-  void setSideExtensionValid(bool _side_extension_valid);
+  void setSideExtensionValid(bool side_extension_valid);
 
   bool isSideExtensionValid() const;
 
-  void setExactAlignedSpacingValid(bool _exact_aligned_spacing_valid);
+  void setExactAlignedSpacingValid(bool exact_aligned_spacing_valid);
 
   bool isExactAlignedSpacingValid() const;
 
-  void setHorizontal(bool _horizontal);
+  void setHorizontal(bool horizontal);
 
   bool isHorizontal() const;
 
-  void setPrlHorizontal(bool _prl_horizontal);
+  void setPrlHorizontal(bool prl_horizontal);
 
   bool isPrlHorizontal() const;
 
-  void setVertical(bool _vertical);
+  void setVertical(bool vertical);
 
   bool isVertical() const;
 
-  void setPrlVertical(bool _prl_vertical);
+  void setPrlVertical(bool prl_vertical);
 
   bool isPrlVertical() const;
 
   void setNonOppositeEnclosureSpacingValid(
-      bool _non_opposite_enclosure_spacing_valid);
+      bool non_opposite_enclosure_spacing_valid);
 
   bool isNonOppositeEnclosureSpacingValid() const;
 
   void setOppositeEnclosureResizeSpacingValid(
-      bool _opposite_enclosure_resize_spacing_valid);
+      bool opposite_enclosure_resize_spacing_valid);
 
   bool isOppositeEnclosureResizeSpacingValid() const;
 
@@ -8158,7 +8151,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   void addPrlEntry(dbTechLayerCutClassRule* from,
                    dbTechLayerCutClassRule* to,
-                   int                      ccPrl);
+                   int ccPrl);
 
   std::vector<
       std::tuple<dbTechLayerCutClassRule*, dbTechLayerCutClassRule*, int>>
@@ -8185,9 +8178,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   getNonOppEncSpacingTable() const;
 
   void addOppEncSpacingEntry(dbTechLayerCutClassRule* cls,
-                             int                      rsz1,
-                             int                      rsz2,
-                             int                      spacing);
+                             int rsz1,
+                             int rsz2,
+                             int spacing);
 
   std::vector<std::tuple<dbTechLayerCutClassRule*, int, int, int>>
   getOppEncSpacingTable() const;
@@ -8195,17 +8188,17 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   dbTechLayer* getSecondLayer() const;
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
-                       std::map<std::string, uint>                   row_map,
-                       std::map<std::string, uint>                   col_map);
+                       std::map<std::string, uint> row_map,
+                       std::map<std::string, uint> col_map);
 
   void getSpacingTable(std::vector<std::vector<std::pair<int, int>>>& table,
-                       std::map<std::string, uint>&                   row_map,
-                       std::map<std::string, uint>&                   col_map);
+                       std::map<std::string, uint>& row_map,
+                       std::map<std::string, uint>& col_map);
 
   std::pair<int, int> getSpacing(const char* class1,
-                                 bool        SIDE1,
+                                 bool SIDE1,
                                  const char* class2,
-                                 bool        SIDE2);
+                                 bool SIDE2);
 
   dbTechLayer* getTechLayer() const;
 
@@ -8221,7 +8214,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 class dbModule : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   dbModInst* getModInst() const;
 
@@ -8255,8 +8248,8 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
-  static dbModInst* create(dbModule*   parentModule,
-                           dbModule*   masterModule,
+  static dbModInst* create(dbModule* parentModule,
+                           dbModule* masterModule,
                            const char* name);
 
   static void destroy(dbModInst* modinst);
@@ -8265,9 +8258,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
-  char* getName() const;
+  std::string getName() const;
 
-  char* getHierarchalName() const;
+  std::string getHierarchalName() const;
   // User Code End dbModInst
 };
 
@@ -8280,11 +8273,11 @@ class dbGroup : public dbObject
     VOLTAGE_DOMAIN
   };
 
-  char* getName() const;
+  const char* getName() const;
 
   Rect getBox() const;
 
-  void setParentGroup(dbGroup* _parent_group);
+  void setParentGroup(dbGroup* parent_group);
 
   dbGroup* getParentGroup() const;
 
@@ -8328,12 +8321,12 @@ class dbGroup : public dbObject
 
   static dbGroup* create(dbBlock* block, const char* name);
 
-  static dbGroup* create(dbBlock*    block,
+  static dbGroup* create(dbBlock* block,
                          const char* name,
-                         int         x1,
-                         int         y1,
-                         int         x2,
-                         int         y2);
+                         int x1,
+                         int y1,
+                         int x2,
+                         int y2);
 
   static dbGroup* create(dbGroup* parent, const char* name);
 
@@ -8349,12 +8342,12 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint horizontal_usage    = 0;
-    uint vertical_usage      = 0;
-    uint up_usage            = 0;
+    uint horizontal_usage = 0;
+    uint vertical_usage = 0;
+    uint up_usage = 0;
     uint horizontal_capacity = 0;
-    uint vertical_capacity   = 0;
-    uint up_capacity         = 0;
+    uint vertical_capacity = 0;
+    uint up_capacity = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -8431,14 +8424,14 @@ class dbGCellGrid : public dbObject
   uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   void setHorizontalCapacity(dbTechLayer* layer,
-                             uint         x_idx,
-                             uint         y_idx,
-                             uint         capacity);
+                             uint x_idx,
+                             uint y_idx,
+                             uint capacity);
 
   void setVerticalCapacity(dbTechLayer* layer,
-                           uint         x_idx,
-                           uint         y_idx,
-                           uint         capacity);
+                           uint x_idx,
+                           uint y_idx,
+                           uint capacity);
 
   void setUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, uint capacity);
 
@@ -8449,32 +8442,32 @@ class dbGCellGrid : public dbObject
   void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
 
   void setCapacity(dbTechLayer* layer,
-                   uint         x_idx,
-                   uint         y_idx,
-                   uint         horizontal,
-                   uint         vertical,
-                   uint         up);
+                   uint x_idx,
+                   uint y_idx,
+                   uint horizontal,
+                   uint vertical,
+                   uint up);
 
   void setUsage(dbTechLayer* layer,
-                uint         x_idx,
-                uint         y_idx,
-                uint         horizontal,
-                uint         vertical,
-                uint         up);
+                uint x_idx,
+                uint y_idx,
+                uint horizontal,
+                uint vertical,
+                uint up);
 
   void getCapacity(dbTechLayer* layer,
-                   uint         x_idx,
-                   uint         y_idx,
-                   uint&        horizontal,
-                   uint&        vertical,
-                   uint&        up) const;
+                   uint x_idx,
+                   uint y_idx,
+                   uint& horizontal,
+                   uint& vertical,
+                   uint& up) const;
 
   void getUsage(dbTechLayer* layer,
-                uint         x_idx,
-                uint         y_idx,
-                uint&        horizontal,
-                uint&        vertical,
-                uint&        up) const;
+                uint x_idx,
+                uint y_idx,
+                uint& horizontal,
+                uint& vertical,
+                uint& up) const;
 
   void resetCongestionMap();
 
@@ -8485,6 +8478,6 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
-// Generator Code End 5
+// Generator Code End ClassDefinition
 
 }  // namespace odb

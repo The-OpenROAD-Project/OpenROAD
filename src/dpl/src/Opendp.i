@@ -32,15 +32,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module opendp
- 
 %{
 #include "openroad/OpenRoad.hh"
-#include "db_sta/dbNetwork.hh"
 #include "dpl/Opendp.h"
 
 using dpl::StringSeq;
-using sta::Instance;
 
 StringSeq *
 tclListSeqString(Tcl_Obj *const source,

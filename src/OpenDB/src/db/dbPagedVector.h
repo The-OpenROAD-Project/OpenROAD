@@ -54,7 +54,7 @@ template <class T, const uint page_size = 128, const uint page_shift = 7>
 class dbPagedVector
 {
  private:
-  T**          _pages;
+  T** _pages;
   unsigned int _page_cnt;
   unsigned int _page_tbl_size;
   unsigned int _next_idx;
@@ -83,20 +83,20 @@ class dbPagedVector
 
   unsigned int size() const { return _next_idx; }
   unsigned int getIdx(uint chunkSize, const T& ival);  // DKF - to delete
-  void         freeIdx(uint idx);                      // DKF - to delete
-  void         clear();
+  void freeIdx(uint idx);                              // DKF - to delete
+  void clear();
 
   T& operator[](unsigned int id)
   {
     ZASSERT(id < _next_idx);
-    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
+    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
     unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
   const T& operator[](unsigned int id) const
   {
     ZASSERT(id < _next_idx);
-    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
+    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
     unsigned int offset = id & (page_size - 1);
     return _pages[page][offset];
   }
@@ -106,8 +106,8 @@ class dbPagedVector
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                                        diff,
-                   const char*                                    field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const dbPagedVector<T, page_size, page_shift>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -128,17 +128,17 @@ unsigned int dbPagedVector<T, P, S>::getIdx(uint chunkSize, const T& ival)
     if (idx == (uint) _freedIdxTail)
       _freedIdxHead = -1;
     else {
-      unsigned int page   = (idx & ~(P - 1)) >> S;
+      unsigned int page = (idx & ~(P - 1)) >> S;
       unsigned int offset = idx & (P - 1);
-      uint*        fidxp  = (uint*) (&_pages[page][offset]);
-      _freedIdxHead       = (int) *fidxp;
+      uint* fidxp = (uint*) (&_pages[page][offset]);
+      _freedIdxHead = (int) *fidxp;
     }
   }
   for (uint dd = 0; dd < chunkSize; dd++) {
     uint id = idx + dd;
     ZASSERT(id < _next_idx);
-    unsigned int page    = (id & ~(P - 1)) >> S;
-    unsigned int offset  = id & (P - 1);
+    unsigned int page = (id & ~(P - 1)) >> S;
+    unsigned int offset = id & (P - 1);
     _pages[page][offset] = ival;
   }
   return idx;
@@ -151,33 +151,33 @@ void dbPagedVector<T, P, S>::freeIdx(uint idx)
     _freedIdxHead = idx;
     _freedIdxTail = idx;
   } else {
-    unsigned int page   = (_freedIdxTail & ~(P - 1)) >> S;
+    unsigned int page = (_freedIdxTail & ~(P - 1)) >> S;
     unsigned int offset = _freedIdxTail & (P - 1);
-    uint*        fidxp  = (uint*) (&_pages[page][offset]);
-    *fidxp              = idx;
-    _freedIdxTail       = idx;
+    uint* fidxp = (uint*) (&_pages[page][offset]);
+    *fidxp = idx;
+    _freedIdxTail = idx;
   }
 }
 
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector()
 {
-  _pages         = NULL;
-  _page_cnt      = 0;
+  _pages = NULL;
+  _page_cnt = 0;
   _page_tbl_size = 0;
-  _next_idx      = 0;
-  _freedIdxHead  = -1;
+  _next_idx = 0;
+  _freedIdxHead = -1;
 }
 
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector(const dbPagedVector<T, P, S>& V)
 {
-  _pages         = NULL;
-  _page_cnt      = 0;
+  _pages = NULL;
+  _page_cnt = 0;
   _page_tbl_size = 0;
-  _next_idx      = 0;
-  _freedIdxHead  = -1;
-  uint sz        = V.size();
+  _next_idx = 0;
+  _freedIdxHead = -1;
+  uint sz = V.size();
 
   uint i;
   for (i = 0; i < sz; ++i) {
@@ -197,11 +197,11 @@ void dbPagedVector<T, P, S>::clear()
     delete[] _pages;
   }
 
-  _pages         = NULL;
-  _page_cnt      = 0;
+  _pages = NULL;
+  _page_cnt = 0;
   _page_tbl_size = 0;
-  _next_idx      = 0;
-  _freedIdxHead  = -1;
+  _next_idx = 0;
+  _freedIdxHead = -1;
 }
 
 template <class T, const uint P, const uint S>
@@ -213,7 +213,7 @@ dbPagedVector<T, P, S>::~dbPagedVector()
 template <class T, const uint P, const uint S>
 void dbPagedVector<T, P, S>::resizePageTbl()
 {
-  T**          old_tbl      = _pages;
+  T** old_tbl = _pages;
   unsigned int old_tbl_size = _page_tbl_size;
 
   if (_page_tbl_size == 1)
@@ -264,7 +264,7 @@ void dbPagedVector<T, P, S>::push_back(const T& item)
   unsigned int offset = _next_idx & (P - 1);
   ++_next_idx;
 
-  T* objects      = _pages[page];
+  T* objects = _pages[page];
   objects[offset] = item;
 }
 
@@ -291,13 +291,13 @@ inline bool dbPagedVector<T, P, S>::operator==(
 
 template <class T, const uint P, const uint S>
 inline void dbPagedVector<T, P, S>::differences(
-    dbDiff&                       diff,
-    const char*                   field,
+    dbDiff& diff,
+    const char* field,
     const dbPagedVector<T, P, S>& rhs) const
 {
-  uint         sz1 = size();
-  uint         sz2 = rhs.size();
-  unsigned int i   = 0;
+  uint sz1 = size();
+  uint sz2 = rhs.size();
+  unsigned int i = 0;
 
   for (; i < sz1 && i < sz2; ++i) {
     const T& o1 = (*this)[i];
@@ -333,12 +333,12 @@ inline void dbPagedVector<T, P, S>::differences(
 }
 
 template <class T, const uint P, const uint S>
-inline void dbPagedVector<T, P, S>::out(dbDiff&     diff,
-                                        char        side,
+inline void dbPagedVector<T, P, S>::out(dbDiff& diff,
+                                        char side,
                                         const char* field) const
 {
-  uint         sz1 = size();
-  unsigned int i   = 0;
+  uint sz1 = size();
+  unsigned int i = 0;
 
   for (; i < sz1; ++i) {
     const T& o1 = (*this)[i];
@@ -370,7 +370,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbPagedVector<T, P, S>& v)
 
   uint sz;
   stream >> sz;
-  T    t;
+  T t;
   uint i;
 
   for (i = 0; i < sz; ++i) {

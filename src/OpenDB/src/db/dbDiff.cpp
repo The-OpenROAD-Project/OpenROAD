@@ -38,10 +38,10 @@ namespace odb {
 
 dbDiff::dbDiff(FILE* f)
 {
-  _f                = f;
-  _indent_level     = 0;
-  _deep_diff        = false;
-  _has_differences  = false;
+  _f = f;
+  _indent_level = 0;
+  _deep_diff = false;
+  _has_differences = false;
   _indent_per_level = 4;
 }
 
@@ -53,8 +53,8 @@ dbDiff::~dbDiff()
 
 void dbDiff::indent()
 {
-  int  i;
-  int  n = _indent_level * _indent_per_level;
+  int i;
+  int n = _indent_level * _indent_per_level;
   char c = ' ';
 
   if (_f) {
@@ -68,7 +68,7 @@ void dbDiff::report(const char* fmt, ...)
   write_headers();
   indent();
 
-  char  buffer[16384];
+  char buffer[16384];
   char* p = buffer;
 
   buffer[16384 - 1] = 0;
@@ -98,10 +98,10 @@ void dbDiff::begin(const char* field, const char* objname, uint oid)
   }
 }
 
-void dbDiff::begin(const char  side,
+void dbDiff::begin(const char side,
                    const char* field,
                    const char* objname,
-                   uint        oid)
+                   uint oid)
 {
   if (field) {
     if (!deepDiff())
@@ -490,7 +490,7 @@ void dbDiff::diff(const char* field, const char* lhs, const char* rhs)
   }
 }
 
-void dbDiff::diff(const char*         field,
+void dbDiff::diff(const char* field,
                   dbOrientType::Value lhs,
                   dbOrientType::Value rhs)
 {
@@ -528,7 +528,7 @@ void dbDiff::diff(const char* field, dbIoType::Value lhs, dbIoType::Value rhs)
   }
 }
 
-void dbDiff::diff(const char*              field,
+void dbDiff::diff(const char* field,
                   dbPlacementStatus::Value lhs,
                   dbPlacementStatus::Value rhs)
 {
@@ -542,7 +542,7 @@ void dbDiff::diff(const char*              field,
   }
 }
 
-void dbDiff::diff(const char*         field,
+void dbDiff::diff(const char* field,
                   dbMasterType::Value lhs,
                   dbMasterType::Value rhs)
 {
@@ -556,7 +556,7 @@ void dbDiff::diff(const char*         field,
   }
 }
 
-void dbDiff::diff(const char*            field,
+void dbDiff::diff(const char* field,
                   dbTechLayerType::Value lhs,
                   dbTechLayerType::Value rhs)
 {
@@ -570,7 +570,7 @@ void dbDiff::diff(const char*            field,
   }
 }
 
-void dbDiff::diff(const char*           field,
+void dbDiff::diff(const char* field,
                   dbTechLayerDir::Value lhs,
                   dbTechLayerDir::Value rhs)
 {
@@ -596,7 +596,7 @@ void dbDiff::diff(const char* field, dbRowDir::Value lhs, dbRowDir::Value rhs)
   }
 }
 
-void dbDiff::diff(const char*       field,
+void dbDiff::diff(const char* field,
                   dbBoxOwner::Value lhs,
                   dbBoxOwner::Value rhs)
 {
@@ -610,7 +610,7 @@ void dbDiff::diff(const char*       field,
   }
 }
 
-void dbDiff::diff(const char*       field,
+void dbDiff::diff(const char* field,
                   dbWireType::Value lhs,
                   dbWireType::Value rhs)
 {
@@ -624,7 +624,7 @@ void dbDiff::diff(const char*       field,
   }
 }
 
-void dbDiff::diff(const char*            field,
+void dbDiff::diff(const char* field,
                   dbWireShapeType::Value lhs,
                   dbWireShapeType::Value rhs)
 {
@@ -638,7 +638,7 @@ void dbDiff::diff(const char*            field,
   }
 }
 
-void dbDiff::diff(const char*        field,
+void dbDiff::diff(const char* field,
                   dbSiteClass::Value lhs,
                   dbSiteClass::Value rhs)
 {
@@ -652,7 +652,7 @@ void dbDiff::diff(const char*        field,
   }
 }
 
-void dbDiff::diff(const char*        field,
+void dbDiff::diff(const char* field,
                   dbOnOffType::Value lhs,
                   dbOnOffType::Value rhs)
 {
@@ -666,7 +666,7 @@ void dbDiff::diff(const char*        field,
   }
 }
 
-void dbDiff::diff(const char*            field,
+void dbDiff::diff(const char* field,
                   dbClMeasureType::Value lhs,
                   dbClMeasureType::Value rhs)
 {
@@ -680,7 +680,7 @@ void dbDiff::diff(const char*            field,
   }
 }
 
-void dbDiff::diff(const char*        field,
+void dbDiff::diff(const char* field,
                   dbDirection::Value lhs,
                   dbDirection::Value rhs)
 {
@@ -690,34 +690,6 @@ void dbDiff::diff(const char*        field,
     (*this) << "\n";
     report("> %s: ", field);
     (*this) << dbDirection(rhs).getString();
-    (*this) << "\n";
-  }
-}
-
-void dbDiff::diff(const char*                     field,
-                  TechLayerSpacingRule::_RuleType lhs,
-                  TechLayerSpacingRule::_RuleType rhs)
-{
-  if (lhs != rhs) {
-    report("< %s: ", field);
-    (*this) << TechLayerSpacingRule::getString(lhs);
-    (*this) << "\n";
-    report("> %s: ", field);
-    (*this) << TechLayerSpacingRule::getString(rhs);
-    (*this) << "\n";
-  }
-}
-
-void dbDiff::diff(const char*               field,
-                  TechMinCutRule::_RuleType lhs,
-                  TechMinCutRule::_RuleType rhs)
-{
-  if (lhs != rhs) {
-    report("< %s: ", field);
-    (*this) << TechMinCutRule::getString(lhs);
-    (*this) << "\n";
-    report("> %s: ", field);
-    (*this) << TechMinCutRule::getString(rhs);
     (*this) << "\n";
   }
 }
@@ -921,22 +893,6 @@ void dbDiff::out(char side, const char* field, dbDirection::Value value)
 {
   report("%c %s: ", side, field);
   (*this) << dbDirection(value).getString();
-  (*this) << "\n";
-}
-
-void dbDiff::out(char                            side,
-                 const char*                     field,
-                 TechLayerSpacingRule::_RuleType value)
-{
-  report("%c %s: ", side, field);
-  (*this) << TechLayerSpacingRule::getString(value);
-  (*this) << "\n";
-}
-
-void dbDiff::out(char side, const char* field, TechMinCutRule::_RuleType value)
-{
-  report("%c %s: ", side, field);
-  (*this) << TechMinCutRule::getString(value);
   (*this) << "\n";
 }
 

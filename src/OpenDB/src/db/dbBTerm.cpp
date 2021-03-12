@@ -36,19 +36,22 @@
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbITerm.h"
+#include "dbJournal.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTransform.h"
-#include "dbBlockCallBackObj.h"
+#include "utility/Logger.h"
 
 namespace odb {
 
@@ -56,17 +59,17 @@ template class dbTable<_dbBTerm>;
 
 _dbBTerm::_dbBTerm(_dbDatabase*)
 {
-  _flags._io_type    = dbIoType::INPUT;
-  _flags._sig_type   = dbSigType::SIGNAL;
-  _flags._orient     = 0;
-  _flags._status     = 0;
-  _flags._spef       = 0;
-  _flags._special    = 0;
-  _flags._mark       = 0;
+  _flags._io_type = dbIoType::INPUT;
+  _flags._sig_type = dbSigType::SIGNAL;
+  _flags._orient = 0;
+  _flags._status = 0;
+  _flags._spef = 0;
+  _flags._special = 0;
+  _flags._mark = 0;
   _flags._spare_bits = 0;
-  _ext_id            = 0;
-  _name              = 0;
-  _sta_vertex_id     = 0;
+  _ext_id = 0;
+  _name = 0;
+  _sta_vertex_id = 0;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -154,8 +157,8 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
   return true;
 }
 
-void _dbBTerm::differences(dbDiff&         diff,
-                           const char*     field,
+void _dbBTerm::differences(dbDiff& diff,
+                           const char* field,
                            const _dbBTerm& rhs) const
 {
   _dbBlock* lhs_blk = (_dbBlock*) getOwner();
@@ -296,8 +299,22 @@ bool dbBTerm::rename(const char* name)
 
 void dbBTerm::setSigType(dbSigType type)
 {
-  _dbBTerm* bterm         = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+  uint prev_flags = flagsToUInt(bterm);
+
   bterm->_flags._sig_type = type.getValue();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: setSigType {}",
+               type.getValue());
+    block->_journal->updateField(
+        this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+  }
 }
 
 dbSigType dbBTerm::getSigType()
@@ -308,8 +325,22 @@ dbSigType dbBTerm::getSigType()
 
 void dbBTerm::setIoType(dbIoType type)
 {
-  _dbBTerm* bterm        = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+  uint prev_flags = flagsToUInt(bterm);
+
   bterm->_flags._io_type = type.getValue();
+
+  if (block->_journal) {
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: setIoType {}",
+               type.getValue());
+    block->_journal->updateField(
+        this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+  }
 }
 
 dbIoType dbBTerm::getIoType()
@@ -320,7 +351,7 @@ dbIoType dbBTerm::getIoType()
 
 void dbBTerm::setSpefMark(uint v)
 {
-  _dbBTerm* bterm     = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_flags._spef = v;
 }
 bool dbBTerm::isSetSpefMark()
@@ -335,12 +366,12 @@ bool dbBTerm::isSpecial() const
 }
 void dbBTerm::setSpecial()
 {
-  _dbBTerm* bterm        = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_flags._special = 1;
 }
 void dbBTerm::setMark(uint v)
 {
-  _dbBTerm* bterm     = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_flags._mark = v;
 }
 bool dbBTerm::isSetMark()
@@ -351,7 +382,7 @@ bool dbBTerm::isSetMark()
 void dbBTerm::setExtId(uint v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  bterm->_ext_id  = v;
+  bterm->_ext_id = v;
 }
 uint dbBTerm::getExtId()
 {
@@ -364,7 +395,7 @@ dbNet* dbBTerm::getNet()
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_net) {
     _dbBlock* block = (_dbBlock*) getBlock();
-    _dbNet*   net   = block->_net_tbl->getPtr(bterm->_net);
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
     return (dbNet*) net;
   } else
     return nullptr;
@@ -373,8 +404,24 @@ dbNet* dbBTerm::getNet()
 void dbBTerm::connect(dbNet* net_)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  _dbNet*   net   = (_dbNet*) net_;
+  _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Bterm {} to net {}",
+               bterm->getId(),
+               net_->getId());
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    block->_journal->pushParam(net_->getId());
+    block->_journal->endAction();
+  }
+
   if (bterm->_net)
     bterm->disconnectNet(bterm, block);
   bterm->connectNet(net, block);
@@ -385,6 +432,20 @@ void dbBTerm::disconnect()
   _dbBTerm* bterm = (_dbBTerm*) this;
   if (bterm->_net) {
     _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect Iterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      block->_journal->endAction();
+    }
+
     bterm->disconnectNet(bterm, block);
   }
 }
@@ -392,7 +453,7 @@ void dbBTerm::disconnect()
 dbSet<dbBPin> dbBTerm::getBPins()
 {
   //_dbBTerm * bterm = (_dbBTerm *) this;
-  _dbBlock*     block = (_dbBlock*) getBlock();
+  _dbBlock* block = (_dbBlock*) getBlock();
   dbSet<dbBPin> bpins(this, block->_bpin_itr);
   return bpins;
 }
@@ -405,7 +466,7 @@ dbITerm* dbBTerm::getITerm()
   if (bterm->_parent_block == 0)
     return NULL;
 
-  _dbChip*  chip   = (_dbChip*) block->getOwner();
+  _dbChip* chip = (_dbChip*) block->getOwner();
   _dbBlock* parent = chip->_block_tbl->getPtr(bterm->_parent_block);
   return (dbITerm*) parent->_iterm_tbl->getPtr(bterm->_parent_iterm);
 }
@@ -417,14 +478,15 @@ dbBlock* dbBTerm::getBlock()
 
 bool dbBTerm::getFirstPin(dbShape& shape)
 {
-  dbSet<dbBPin>           bpins = getBPins();
+  dbSet<dbBPin> bpins = getBPins();
   dbSet<dbBPin>::iterator bpin_itr;
   for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
     dbBPin* bpin = *bpin_itr;
-    
-    for(dbBox* box : bpin->getBoxes()){
+
+    for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
-          || bpin->getPlacementStatus() == dbPlacementStatus::NONE || box == NULL)
+          || bpin->getPlacementStatus() == dbPlacementStatus::NONE
+          || box == NULL)
         continue;
 
       if (box->isVia())  // This is not possible...
@@ -442,7 +504,7 @@ bool dbBTerm::getFirstPin(dbShape& shape)
 
 dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
 {
-  dbSet<dbBPin>           bpins = getBPins();
+  dbSet<dbBPin> bpins = getBPins();
   auto bpin_itr = bpins.begin();
   if (bpin_itr != bpins.end()) {
     dbBPin* bpin = *bpin_itr;
@@ -454,19 +516,19 @@ dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
 
 bool dbBTerm::getFirstPinLocation(int& x, int& y)
 {
-  dbSet<dbBPin>           bpins = getBPins();
+  dbSet<dbBPin> bpins = getBPins();
   dbSet<dbBPin>::iterator bpin_itr;
   for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
     dbBPin* bpin = *bpin_itr;
 
     dbSet<dbBox> boxes = bpin->getBoxes();
     dbSet<dbBox>::iterator boxItr;
-  
-    for( boxItr = boxes.begin(); boxItr != boxes.end(); ++boxItr )
-    {
+
+    for (boxItr = boxes.begin(); boxItr != boxes.end(); ++boxItr) {
       dbBox* box = *boxItr;
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
-          || bpin->getPlacementStatus() == dbPlacementStatus::NONE || box == NULL)
+          || bpin->getPlacementStatus() == dbPlacementStatus::NONE
+          || box == NULL)
         continue;
 
       if (box->isVia())  // This is not possible...
@@ -499,7 +561,7 @@ dbBTerm* dbBTerm::getGroundPin()
 
 void dbBTerm::setGroundPin(dbBTerm* pin)
 {
-  _dbBTerm* bterm    = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_ground_pin = pin->getImpl()->getOID();
 }
 
@@ -517,24 +579,37 @@ dbBTerm* dbBTerm::getSupplyPin()
 
 void dbBTerm::setSupplyPin(dbBTerm* pin)
 {
-  _dbBTerm* bterm    = (_dbBTerm*) this;
+  _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_supply_pin = pin->getImpl()->getOID();
 }
 
 dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 {
-  _dbNet*   net   = (_dbNet*) net_;
+  _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   if (block->_bterm_hash.hasMember(name))
     return NULL;
 
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: dbBTerm:create");
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(net->getId());
+    block->_journal->pushParam(name);
+    block->_journal->endAction();
+  }
+
   _dbBTerm* bterm = block->_bterm_tbl->create();
-  bterm->_name    = strdup(name);
+  bterm->_name = strdup(name);
   ZALLOCATED(bterm->_name);
   block->_bterm_hash.insert(bterm);
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermCreate((dbBTerm*)bterm); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermCreate((dbBTerm*) bterm);
   bterm->connectNet(net, block);
 
   return (dbBTerm*) bterm;
@@ -542,40 +617,51 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 {
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermPreConnect((dbBTerm*)this,(dbNet*)net); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermPreConnect((dbBTerm*) this, (dbNet*) net);
   _net = net->getOID();
   if (net->_bterms != 0) {
-    _dbBTerm* tail    = block->_bterm_tbl->getPtr(net->_bterms);
-    _next_bterm       = net->_bterms;
+    _dbBTerm* tail = block->_bterm_tbl->getPtr(net->_bterms);
+    _next_bterm = net->_bterms;
     tail->_prev_bterm = getOID();
-  }
-  else
+  } else
     _next_bterm = 0;
   _prev_bterm = 0;
   net->_bterms = getOID();
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermPostConnect((dbBTerm*)this); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermPostConnect((dbBTerm*) this);
 }
 
 void dbBTerm::destroy(dbBTerm* bterm_)
 {
   _dbBTerm* bterm = (_dbBTerm*) bterm_;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
-  
+
   // delete bpins
-  dbSet<dbBPin>           bpins = bterm_->getBPins();
+  dbSet<dbBPin> bpins = bterm_->getBPins();
   dbSet<dbBPin>::iterator itr;
 
   for (itr = bpins.begin(); itr != bpins.end();) {
     itr = dbBPin::destroy(itr);
   }
-  if(bterm->_net)
+  if (bterm->_net)
     bterm->disconnectNet(bterm, block);
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermDestroy(bterm_); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermDestroy(bterm_);
   // remove from hash-table
-  
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: dbBTerm:destroy");
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm_->getId());
+    block->_journal->endAction();
+  }
+
   block->_bterm_hash.remove(bterm);
   dbProperty::destroyProperties(bterm);
   block->_bterm_tbl->destroy(bterm);
@@ -584,37 +670,37 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 {
   // unlink bterm from the net
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermPreDisconnect((dbBTerm*)this); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermPreDisconnect((dbBTerm*) this);
   _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-  uint    id  = bterm->getOID();
+  uint id = bterm->getOID();
 
   if (net->_bterms == id) {
     net->_bterms = bterm->_next_bterm;
 
     if (net->_bterms != 0) {
-      _dbBTerm* t    = block->_bterm_tbl->getPtr(net->_bterms);
+      _dbBTerm* t = block->_bterm_tbl->getPtr(net->_bterms);
       t->_prev_bterm = 0;
     }
   } else {
     if (bterm->_next_bterm != 0) {
-      _dbBTerm* next    = block->_bterm_tbl->getPtr(bterm->_next_bterm);
+      _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_bterm);
       next->_prev_bterm = bterm->_prev_bterm;
     }
 
     if (bterm->_prev_bterm != 0) {
-      _dbBTerm* prev    = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
+      _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
       prev->_next_bterm = bterm->_next_bterm;
     }
   }
   _net = 0;
-  for(auto callback:block->_callbacks)
-    callback->inDbBTermPostDisConnect((dbBTerm*)this, (dbNet*)net); 
+  for (auto callback : block->_callbacks)
+    callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
 {
-  dbBTerm*                 bt   = *itr;
+  dbBTerm* bt = *itr;
   dbSet<dbBTerm>::iterator next = ++itr;
   destroy(bt);
   return next;
@@ -634,7 +720,7 @@ uint32_t dbBTerm::staVertexId()
 
 void dbBTerm::staSetVertexId(uint32_t id)
 {
-  _dbBTerm* iterm       = (_dbBTerm*) this;
+  _dbBTerm* iterm = (_dbBTerm*) this;
   iterm->_sta_vertex_id = id;
 }
 

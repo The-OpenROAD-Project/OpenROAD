@@ -114,7 +114,7 @@ Begin West Partition
 [INFO MPL-0079] Cut line 11.20
 End West Partition
 End Horizontal Partition
-[INFO MPL-0070] Using 2 partiion sets
+[INFO MPL-0070] Using 2 partition sets
 [WARNING MPL-0061] Parquet area 38.34 x 36 exceeds the partition area 35.91 x 50.4.
 [INFO MPL-0071] Solution 1 weighted wire length 924.77
 [INFO MPL-0073] Best weighted wire length 924.77

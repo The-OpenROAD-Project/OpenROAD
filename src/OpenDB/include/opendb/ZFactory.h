@@ -66,7 +66,7 @@ class ZFactoryImpl : public ZFactory
  public:
   int create(const ZContext& context, ZInterfaceID iid, void** p)
   {
-    IMPL* o     = new IMPL;
+    IMPL* o = new IMPL;
     o->_context = context;
 
     if (o->QueryInterface(iid, p) == Z_OK)
@@ -79,5 +79,3 @@ class ZFactoryImpl : public ZFactory
 };
 
 }  // namespace odb
-
-

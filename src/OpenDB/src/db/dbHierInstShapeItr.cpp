@@ -75,10 +75,10 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
 
   if (!isFiltered(filter, INST_OBS | INST_VIA)) {
     _callback->beginObstructions(master);
-    dbSet<dbBox>           boxes = master->getObstructions();
+    dbSet<dbBox> boxes = master->getObstructions();
     dbSet<dbBox>::iterator itr;
-    bool                   filter_via = isFiltered(filter, INST_VIA);
-    bool                   filter_obs = isFiltered(filter, INST_OBS);
+    bool filter_via = isFiltered(filter, INST_VIA);
+    bool filter_obs = isFiltered(filter, INST_OBS);
 
     dbShape s;
 
@@ -115,22 +115,22 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
   }
 
   if (!isFiltered(filter, INST_PIN)) {
-    dbSet<dbMTerm>           mterms = master->getMTerms();
+    dbSet<dbMTerm> mterms = master->getMTerms();
     dbSet<dbMTerm>::iterator mitr;
-    dbShape                  s;
+    dbShape s;
 
     for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
       dbMTerm* mterm = *mitr;
       _callback->beginMTerm(mterm);
 
-      dbSet<dbMPin>           mpins = mterm->getMPins();
+      dbSet<dbMPin> mpins = mterm->getMPins();
       dbSet<dbMPin>::iterator pitr;
 
       for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
         dbMPin* pin = *pitr;
         _callback->beginMPin(pin);
 
-        dbSet<dbBox>           geoms = pin->getGeometry();
+        dbSet<dbBox> geoms = pin->getGeometry();
         dbSet<dbBox>::iterator gitr;
 
         for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
@@ -169,24 +169,22 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
   inst->getOrigin(x, y);
   push_transform(dbTransform(inst->getOrient(), Point(x, y)));
   dbBlock* child = inst->getChild();
-  dbShape  shape;
+  dbShape shape;
 
   if (!isFiltered(filter, BLOCK_PIN)) {
-    dbSet<dbBTerm>           bterms = child->getBTerms();
+    dbSet<dbBTerm> bterms = child->getBTerms();
     dbSet<dbBTerm>::iterator bitr;
 
     for (bitr = bterms.begin(); bitr != bterms.end(); ++bitr) {
-      dbBTerm*                bterm = *bitr;
-      dbSet<dbBPin>           bpins = bterm->getBPins();
+      dbBTerm* bterm = *bitr;
+      dbSet<dbBPin> bpins = bterm->getBPins();
       dbSet<dbBPin>::iterator pitr;
 
       for (pitr = bpins.begin(); pitr != bpins.end(); ++pitr) {
         dbBPin* pin = *pitr;
         _callback->beginBPin(pin);
 
-        
-        for (dbBox* box : pin->getBoxes())
-        {
+        for (dbBox* box : pin->getBoxes()) {
           getShape(box, shape);
           if (!_callback->nextBoxShape(box, shape)) {
             _transforms.pop_back();
@@ -195,7 +193,6 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
             return false;
           }
         }
-        
 
         _callback->endBPin();
       }
@@ -203,12 +200,12 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
   }
 
   if (!isFiltered(filter, BLOCK_OBS)) {
-    dbSet<dbObstruction>           obstructions = child->getObstructions();
+    dbSet<dbObstruction> obstructions = child->getObstructions();
     dbSet<dbObstruction>::iterator oitr;
 
     for (oitr = obstructions.begin(); oitr != obstructions.end(); ++oitr) {
       dbObstruction* obs = *oitr;
-      dbBox*         box = obs->getBBox();
+      dbBox* box = obs->getBBox();
       getShape(box, shape);
       _callback->beginObstruction(obs);
 
@@ -223,7 +220,7 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     }
   }
 
-  dbSet<dbInst>           insts = child->getInsts();
+  dbSet<dbInst> insts = child->getInsts();
   dbSet<dbInst>::iterator iitr;
 
   for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
@@ -235,7 +232,7 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     }
   }
 
-  dbSet<dbNet>           nets = child->getNets();
+  dbSet<dbNet> nets = child->getNets();
   dbSet<dbNet>::iterator nitr;
 
   for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
@@ -276,13 +273,13 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
 }
 
 bool dbHierInstShapeItr::drawNet(unsigned filter,
-                                 dbNet*   net,
-                                 bool&    draw_via,
-                                 bool&    draw_segment)
+                                 dbNet* net,
+                                 bool& draw_via,
+                                 bool& draw_segment)
 {
   dbSigType type = net->getSigType();
-  draw_via       = false;
-  draw_segment   = false;
+  draw_via = false;
+  draw_segment = false;
 
   switch (type) {
     case dbSigType::SCAN:
@@ -342,17 +339,17 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
     }
   }
 
-  draw_via     = true;
+  draw_via = true;
   draw_segment = true;
   return true;
 }
 
 bool dbHierInstShapeItr::iterate_swires(unsigned filter,
-                                        dbNet*   net,
-                                        bool     draw_vias,
-                                        bool     draw_segments)
+                                        dbNet* net,
+                                        bool draw_vias,
+                                        bool draw_segments)
 {
-  dbSet<dbSWire>           swires = net->getSWires();
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
@@ -367,8 +364,8 @@ bool dbHierInstShapeItr::iterate_swires(unsigned filter,
 
 bool dbHierInstShapeItr::iterate_swire(unsigned filter,
                                        dbSWire* swire,
-                                       bool     draw_vias,
-                                       bool     draw_segments)
+                                       bool draw_vias,
+                                       bool draw_segments)
 {
   _callback->beginSWire(swire);
 
@@ -377,9 +374,9 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
     return true;
   }
 
-  dbSet<dbSBox>           boxes = swire->getWires();
+  dbSet<dbSBox> boxes = swire->getWires();
   dbSet<dbSBox>::iterator itr;
-  dbShape                 shape;
+  dbShape shape;
 
   for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
     dbBox* box = *itr;
@@ -410,9 +407,9 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
 }
 
 bool dbHierInstShapeItr::iterate_wire(unsigned filter,
-                                      dbNet*   net,
-                                      bool     draw_vias,
-                                      bool     draw_segments)
+                                      dbNet* net,
+                                      bool draw_vias,
+                                      bool draw_segments)
 {
   dbWire* wire = net->getWire();
 
@@ -426,7 +423,7 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
     return true;
   }
 
-  dbShape        shape;
+  dbShape shape;
   dbWireShapeItr itr;
 
   for (itr.begin(wire); itr.next(shape);) {

@@ -133,6 +133,7 @@ int FlexDRWorker::main_mt() {
                                      <<endl;
     cout <<ss.str() <<flush;
   }
+
   return 0;
 }
 
@@ -1994,7 +1995,7 @@ int FlexDR::main() {
   int iterNum = 0;
   searchRepair(iterNum++/*  0 */,  7,  0, 3, DRCCOST, 0/*MAARKERCOST*/,  0, 0, true, 1, true, 9); // true search and repair
   searchRepair(iterNum++/*  1 */,  7, -2, 3, DRCCOST, DRCCOST/*MAARKERCOST*/,  0, 0, true, 1, true, 9); // true search and repair
-  searchRepair(iterNum++/*  1 */,  7, -5, 3, DRCCOST, DRCCOST/*MAARKERCOST*/,  0, 0, true, 1, true, 9); // true search and repair
+  searchRepair(iterNum++/*  2 */,  7, -5, 3, DRCCOST, DRCCOST/*MAARKERCOST*/,  0, 0, true, 1, true, 9); // true search and repair
   searchRepair(iterNum++/*  3 */,  7,  0, 8, DRCCOST, MARKERCOST,  0, 0, true, 0, false, 9); // true search and repair
   searchRepair(iterNum++/*  4 */,  7, -1, 8, DRCCOST, MARKERCOST,  0, 0, true, 0, false, 9); // true search and repair
   searchRepair(iterNum++/*  5 */,  7, -2, 8, DRCCOST, MARKERCOST,  0, 0, true, 0, false, 9); // true search and repair

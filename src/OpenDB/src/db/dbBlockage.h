@@ -56,22 +56,22 @@ class _dbBlockage : public _dbObject
 {
  public:
   _dbBlockageFlags _flags;
-  dbId<_dbInst>    _inst;
-  dbId<_dbBox>     _bbox;
-  float            _max_density;
+  dbId<_dbInst> _inst;
+  dbId<_dbBox> _bbox;
+  float _max_density;
 
   _dbBlockage(_dbDatabase* db);
   _dbBlockage(_dbDatabase* db, const _dbBlockage& b);
   ~_dbBlockage();
 
   _dbInst* getInst();
-  _dbBox*  getBBox() const;
+  _dbBox* getBBox() const;
 
   bool operator==(const _dbBlockage& rhs) const;
   bool operator!=(const _dbBlockage& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBlockage& rhs) const;
-  void differences(dbDiff&            diff,
-                   const char*        field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbBlockage& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -79,9 +79,9 @@ class _dbBlockage : public _dbObject
 inline _dbBlockage::_dbBlockage(_dbDatabase*)
 {
   _flags._pushed_down = 0;
-  _flags._spare_bits  = 0;
-  _flags._soft        = 0;
-  _max_density        = 0.0;
+  _flags._spare_bits = 0;
+  _flags._soft = 0;
+  _max_density = 0.0;
 }
 
 inline _dbBlockage::_dbBlockage(_dbDatabase*, const _dbBlockage& b)

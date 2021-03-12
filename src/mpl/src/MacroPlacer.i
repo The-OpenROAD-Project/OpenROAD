@@ -31,8 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module mpl
-
 %{
 
 #include "openroad/OpenRoad.hh"
@@ -83,10 +81,10 @@ set_snap_layer(odb::dbTechLayer *snap_layer)
 }
 
 void
-place_macros_center_spread()
+place_macros_corner_min_wl()
 {
   MacroPlacer* macro_placer = getMacroPlacer();
-  macro_placer->placeMacrosCenterSpread(); 
+  macro_placer->placeMacrosCornerMinWL(); 
 } 
 
 void

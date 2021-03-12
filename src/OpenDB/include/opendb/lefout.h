@@ -32,8 +32,9 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
-#include <string> 
+
 #include "dbObject.h"
 #include "odb.h"
 
@@ -56,31 +57,31 @@ class dbProperty;
 
 class lefout
 {
-  FILE*  _out;
-  bool   _use_master_ids;
-  bool   _use_alias;
-  bool   _write_marked_masters;
+  FILE* _out;
+  bool _use_master_ids;
+  bool _use_alias;
+  bool _write_marked_masters;
   double _dist_factor;
   double _area_factor;
 
-  void        writeBoxes(void* boxes, const char* indent);
-  void        writeTech(dbTech* tech);
-  void        writeLayer(dbTechLayer* layer);
-  void        writeVia(dbTechVia* via);
-  void        writeHeader(dbLib* lib);
-  void        writeLib(dbLib* lib);
-  void        writeMaster(dbMaster* master);
-  void        writeMTerm(dbMTerm* mterm);
-  void        writeSite(dbSite* site);
-  void        writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule);
-  void        writeLayerRule(dbTechLayerRule* rule);
-  void        writeSameNetRule(dbTechSameNetRule* rule);
-  void        writeTechViaRule(dbTechViaRule* rule);
-  void        writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
-  void        writePropertyDefinition(dbProperty* prop);
-  void        writePropertyDefinitions(dbLib* lib);
+  void writeBoxes(void* boxes, const char* indent);
+  void writeTech(dbTech* tech);
+  void writeLayer(dbTechLayer* layer);
+  void writeVia(dbTechVia* via);
+  void writeHeader(dbLib* lib);
+  void writeLib(dbLib* lib);
+  void writeMaster(dbMaster* master);
+  void writeMTerm(dbMTerm* mterm);
+  void writeSite(dbSite* site);
+  void writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule);
+  void writeLayerRule(dbTechLayerRule* rule);
+  void writeSameNetRule(dbTechSameNetRule* rule);
+  void writeTechViaRule(dbTechViaRule* rule);
+  void writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
+  void writePropertyDefinition(dbProperty* prop);
+  void writePropertyDefinitions(dbLib* lib);
   inline void writeObjectPropertyDefinitions(
-      dbObject*                               obj,
+      dbObject* obj,
       std::unordered_map<std::string, short>& propertiesMap);
 
  public:
@@ -90,10 +91,10 @@ class lefout
 
   lefout()
   {
-    _out                  = nullptr;
+    _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
-    _dist_factor                                         = 0.001;
-    _area_factor                                         = 0.000001;
+    _dist_factor = 0.001;
+    _area_factor = 0.000001;
   }
 
   ~lefout() {}

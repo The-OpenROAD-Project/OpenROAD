@@ -32,8 +32,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module finale
- 
 %{
 #include "openroad/OpenRoad.hh"
 #include "finale/Finale.h"

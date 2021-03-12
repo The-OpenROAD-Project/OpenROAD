@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,13 +46,13 @@ namespace fr {
   public:
     // constructors
     //FlexGridGraph() {}
-    FlexGridGraph(frDesign* designIn, FlexDRWorker* workerIn): 
+    FlexGridGraph(frDesign* designIn, FlexDRWorker* workerIn):
                   design_(designIn), drWorker_(workerIn),
                   graphics_(nullptr),
                   xCoords_(), yCoords_(), zCoords_(), zHeights_(),
-                  ggDRCCost_(0), ggMarkerCost_(0), ndr_(nullptr),
-                  halfViaEncArea_(nullptr), via2viaMinLen_(nullptr), 
-                  via2viaMinLenNew_(nullptr), via2turnMinLen_(nullptr) {}
+                  ggDRCCost_(0), ggMarkerCost_(0), halfViaEncArea_(nullptr),
+                  via2viaMinLen_(nullptr), via2viaMinLenNew_(nullptr), 
+                  via2turnMinLen_(nullptr), ndr_(nullptr), dstTaperBox(nullptr) {}
     // getters
     frTechObject* getTech() const {
       return design_->getTech();
@@ -65,21 +65,14 @@ namespace fr {
     }
     // getters
     // unsafe access, no check
-    bool hasAStarCost(frMIdx x, frMIdx y, frMIdx z) const {
-      return (getAStarCost(x, y, z) != UINT_MAX);
-    }
-    frCost getAStarCost(frMIdx x, frMIdx y, frMIdx z) const {
-      return astarCosts_[getIdx(x, y, z)];
-    }
-    // unsafe access, no check
     bool isAstarVisited(frMIdx x, frMIdx y, frMIdx z) const {
       return (getPrevAstarNodeDir(x, y, z) == frDirEnum::UNKNOWN);
     }
     // unsafe access, no check
     frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const {
       auto baseIdx = 3 * getIdx(x, y, z);
-      return (frDirEnum)(((unsigned short)(prevDirs_[baseIdx]    ) << 2) + 
-                         ((unsigned short)(prevDirs_[baseIdx + 1]) << 1) + 
+      return (frDirEnum)(((unsigned short)(prevDirs_[baseIdx]    ) << 2) +
+                         ((unsigned short)(prevDirs_[baseIdx + 1]) << 1) +
                          ((unsigned short)(prevDirs_[baseIdx + 2]) << 0));
     }
     // unsafe access, no check
@@ -219,13 +212,13 @@ namespace fr {
       bool sol = false;
       correct(x, y, z, dir);
       switch(dir) {
-        case frDirEnum::E: 
+        case frDirEnum::E:
           sol = hasGridCostE(x, y, z);
           break;
         case frDirEnum::N:
           sol = hasGridCostN(x, y, z);
           break;
-        default: 
+        default:
           sol = hasGridCostU(x, y, z);
       }
       return sol;
@@ -278,10 +271,6 @@ namespace fr {
       }
       return (sol);
     }
-    bool hasAnyPlanarCost(frMIdx x, frMIdx y, frMIdx z) const{
-        auto& nd = nodes_[getIdx(x, y, z)];
-        return nd.drcCostPlanar || nd.markerCostPlanar || nd.shapeCostPlanar;
-    }
     frCoord xCoord(frMIdx x) const{
         return xCoords_[x];
     }
@@ -322,7 +311,7 @@ namespace fr {
         getPoint(pt1, x1, y1);
         if (box.contains(pt) && box.contains(pt1)) {
           // initDR must not use top and rightmost track
-          if (initDR && 
+          if (initDR &&
               ((box.right() == pt.x() && box.right() == pt1.x()) ||
                (box.top()   == pt.y() && box.top()   == pt1.y()))) {
             sol = false;
@@ -569,9 +558,6 @@ namespace fr {
       }
     }
 
-    void setAStarCost(frMIdx x, frMIdx y, frMIdx z, frCost cost) {
-      astarCosts_[getIdx(x, y, z)] = cost;
-    }
     // unsafe access, no idx check
     void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       auto baseIdx = 3 * getIdx(x, y, z);
@@ -736,14 +722,22 @@ namespace fr {
     void setNDR(frNonDefaultRule* ndr){
         ndr_ = ndr;
     }
-    
+
+    void setDstTaperBox(frBox3D* t){
+        dstTaperBox = t;
+    }
+
     frCoord getCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getViaCostsNDR(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frDirEnum prevDir, frLayer* layer) const;
     frCoord getMinSpacingValue(frLayer* layer, frCoord width1, frCoord width2, frCoord prl) const;
     frCost getCosts(frMIdx gridX, frMIdx gridY, frMIdx gridZ, frDirEnum dir, frLayer* layer) const;
+    bool useNDRCosts(const FlexWavefrontGrid& p) const;
     
     frNonDefaultRule* getNDR() const{
         return ndr_;
+    }
+    const frBox3D* getDstTaperBox() const{
+        return dstTaperBox;
     }
     // functions
     void init(const frBox &routeBBox, const frBox &extBBox,
@@ -752,12 +746,12 @@ namespace fr {
               bool initDR, bool followGuide);
     void print() const;
     void resetStatus();
-    void resetAStarCosts();
     void resetPrevNodeDir();
     void resetSrc();
     void resetDst();
     bool search(std::vector<FlexMazeIdx> &connComps, drPin* nextPin, std::vector<FlexMazeIdx> &path,
-                FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt);
+                FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt,
+                std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
     void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn) {
       ggDRCCost_    = drcCostIn;
       ggMarkerCost_ = markerCostIn;
@@ -772,7 +766,7 @@ namespace fr {
       return ((*via2viaMinLen_)[z].first)[((unsigned)isPrevViaUp << 1) + (unsigned)isCurrViaUp];
     }
     frCoord getVia2ViaMinLenNew(frMIdx z, bool isPrevViaUp, bool isCurrViaUp, bool isCurrDirY) const {
-      return (*via2viaMinLenNew_)[z][((unsigned)isPrevViaUp << 2) + 
+      return (*via2viaMinLenNew_)[z][((unsigned)isPrevViaUp << 2) +
                                     ((unsigned)isCurrViaUp << 1) +
                                      (unsigned)isCurrDirY];
     }
@@ -782,8 +776,6 @@ namespace fr {
     void cleanup() {
       nodes_.clear();
       nodes_.shrink_to_fit();
-      astarCosts_.clear();
-      astarCosts_.shrink_to_fit();
       srcs_.clear();
       srcs_.shrink_to_fit();
       dsts_.clear();
@@ -845,7 +837,6 @@ namespace fr {
     };
     static_assert(sizeof(Node) == 8);
     frVector<Node>                             nodes_;
-    std::vector<unsigned int>                  astarCosts_; // astar cost
     std::vector<bool>                          prevDirs_;
     std::vector<bool>                          srcs_;
     std::vector<bool>                          dsts_;
@@ -859,7 +850,6 @@ namespace fr {
     frUInt4                                    ggMarkerCost_;
     // temporary variables
     FlexWavefront                              wavefront_;
-    frNonDefaultRule*                          ndr_;
     const std::vector<std::pair<frCoord, frCoord> >* halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
@@ -868,11 +858,20 @@ namespace fr {
     const std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > >* via2viaMinLen_;
     const std::vector<std::vector<frCoord> >* via2viaMinLenNew_;
     const std::vector<std::vector<frCoord> >* via2turnMinLen_;
+    //ndr related
+    frNonDefaultRule*                          ndr_;
+    const frBox3D*                             dstTaperBox;   //taper box for the current dest pin in the search
 
     // internal getters
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {
-      return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords_.size() + zIdx * xCoords_.size() * yCoords_.size()): 
-                               (yIdx + xIdx * yCoords_.size() + zIdx * xCoords_.size() * yCoords_.size());
+      auto xSize = xCoords_.size();
+      auto ySize = yCoords_.size();
+
+      frMIdx zDirModifier =
+          (getZDir(zIdx)) ? (xIdx + yIdx * xSize) : (yIdx + xIdx * ySize);
+      frMIdx partialCoordinates = zIdx * xSize * ySize;
+
+      return zDirModifier + partialCoordinates;
     }
 
     frUInt4 addToByte(frUInt4 augend, frUInt4 summand) {
@@ -948,7 +947,7 @@ namespace fr {
     }
     frMIdx getLowerBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
     frMIdx getUpperBoundIndex(const frVector<frCoord>& tracks, frCoord v) const;
-    
+
     void getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     void getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const;
     bool isValid(frMIdx x, frMIdx y, frMIdx z) const {
@@ -979,9 +978,9 @@ namespace fr {
     frCost getEstCost(const FlexMazeIdx &src, const FlexMazeIdx &dstMazeIdx1, const FlexMazeIdx &dstMazeIdx2, const frDirEnum &dir) const;
     frCost getNextPathCost(const FlexWavefrontGrid &currGrid, const frDirEnum &dir) const;
     frDirEnum getLastDir(const std::bitset<WAVEFRONTBITSIZE> &buffer) const;
-    void traceBackPath(const FlexWavefrontGrid &currGrid, std::vector<FlexMazeIdx> &path, 
+    void traceBackPath(const FlexWavefrontGrid &currGrid, std::vector<FlexMazeIdx> &path,
                        std::vector<FlexMazeIdx> &root, FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2) const;
-    void expandWavefront(FlexWavefrontGrid &currGrid, const FlexMazeIdx &dstMazeIdx1, 
+    void expandWavefront(FlexWavefrontGrid &currGrid, const FlexMazeIdx &dstMazeIdx1,
                          const FlexMazeIdx &dstMazeIdx2, const frPoint &centerPt);
     bool isExpandable(const FlexWavefrontGrid &currGrid, frDirEnum dir) const;
     //bool isOpposite(const frDirEnum &dir1, const frDirEnum &dir2);

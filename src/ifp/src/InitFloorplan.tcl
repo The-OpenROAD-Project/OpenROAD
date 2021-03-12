@@ -152,7 +152,7 @@ sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_offset x_offset]\
                                       [-y_offset y_offset]}
 
-# Look Ma, not c++!
+# Look Ma, no c++!
 proc make_tracks { args } {
   sta::parse_key_args "make_tracks" args \
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
@@ -232,24 +232,33 @@ namespace eval ifp {
 
 proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   set block [ord::get_db_block]
-  set die_area [$block getDieArea]
-  set grid [$block findTrackGrid $layer]
-  if { $grid != "NULL" } {
-    [odb::dbTrackGrid_destroy $grid]
-  }
-  set grid [odb::dbTrackGrid_create $block $layer]
+  if { $block == "NULL"} {
+    utl::error IFP 21 "No block defined."
+  } else {
+    set die_area [$block getDieArea]
+    set grid [$block findTrackGrid $layer]
+    if { $grid == "NULL" } {
+      set grid [odb::dbTrackGrid_create $block $layer]
+    }
 
-  if { $y_offset == 0 } {
-    set y_offset $y_pitch
-  }
-  set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
-  $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
+    if { $y_offset == 0 } {
+      set y_offset $y_pitch
+    }
+    if { $x_offset > [$die_area dx] } {
+      utl::error "IFP" 21 "-x_offset > die width."
+    }
+    set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
+    $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
 
-  if { $x_offset == 0 } {
-    set x_offset $x_pitch
+    if { $x_offset == 0 } {
+      set x_offset $x_pitch
+    }
+    if { $y_offset > [$die_area dy] } {
+      utl::error "IFP" 22 "-y_offset > die height."
+    }
+    set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
+    $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
   }
-  set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
-  $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch
 }
 
 proc microns_to_mfg_grid { microns } {

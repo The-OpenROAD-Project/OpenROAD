@@ -21,8 +21,8 @@
 #include "lefin.h"
 
 namespace lefTechLayerType {
-namespace qi      = boost::spirit::qi;
-namespace ascii   = boost::spirit::ascii;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 
 using boost::fusion::at_c;
@@ -36,22 +36,36 @@ using qi::double_;
 using qi::int_;
 
 template <typename Iterator>
-bool parse(Iterator          first,
-           Iterator          last,
+bool parse(Iterator first,
+           Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin*       lefin)
+           odb::lefin* lefin)
 {
   qi::rule<std::string::iterator, space_type> TypeRule
       = (lit("TYPE")
-         >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::NWELL)]
-             | lit("PWELL")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::PWELL)]
-             | lit("ABOVEDIEEDGE")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::ABOVEDIEEDGE)]
-             | lit("BELOWDIEEDGE")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::BELOWDIEEDGE)]
-             | lit("DIFFUSION")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::DIFFUSION)]
-             | lit("TRIMPOLY")[boost::bind(&odb::dbTechLayer::setLef58Type, layer, odb::dbTechLayer::LEF58_TYPE::TRIMPOLY)]
-        )
-        >> lit(";")
-      );
+         >> (lit("NWELL")[boost::bind(&odb::dbTechLayer::setLef58Type,
+                                      layer,
+                                      odb::dbTechLayer::LEF58_TYPE::NWELL)]
+             | lit("PWELL")[boost::bind(&odb::dbTechLayer::setLef58Type,
+                                        layer,
+                                        odb::dbTechLayer::LEF58_TYPE::PWELL)]
+             | lit("ABOVEDIEEDGE")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::ABOVEDIEEDGE)]
+             | lit("BELOWDIEEDGE")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::BELOWDIEEDGE)]
+             | lit("DIFFUSION")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::DIFFUSION)]
+             | lit("TRIMPOLY")[boost::bind(
+                 &odb::dbTechLayer::setLef58Type,
+                 layer,
+                 odb::dbTechLayer::LEF58_TYPE::TRIMPOLY)])
+         >> lit(";"));
 
   bool valid = qi::phrase_parse(first, last, TypeRule, space);
 
@@ -61,9 +75,9 @@ bool parse(Iterator          first,
 
 namespace odb {
 
-bool lefTechLayerTypeParser::parse(std::string  s,
+bool lefTechLayerTypeParser::parse(std::string s,
                                    dbTechLayer* layer,
-                                   odb::lefin*  l)
+                                   odb::lefin* l)
 {
   return lefTechLayerType::parse(s.begin(), s.end(), layer, l);
 }

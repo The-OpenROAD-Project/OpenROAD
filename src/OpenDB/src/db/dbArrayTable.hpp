@@ -33,11 +33,12 @@
 #pragma once
 
 #include <string.h>
+
 #include <new>
 
-#include "dbDiff.h"
 #include "ZException.h"
 #include "dbArrayTable.h"
+#include "dbDiff.h"
 #include "dbStream.h"
 
 namespace odb {
@@ -47,13 +48,13 @@ inline void dbArrayTable<T>::pushQ(uint& Q, _dbFreeObject* e)
   if (Q == 0) {
     e->_prev = 0;
     e->_next = 0;
-    Q        = e->getImpl()->getOID();
+    Q = e->getImpl()->getOID();
   } else {
-    e->_prev            = 0;
-    e->_next            = Q;
+    e->_prev = 0;
+    e->_next = Q;
     _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
-    head->_prev         = e->getImpl()->getOID();
-    Q                   = e->getImpl()->getOID();
+    head->_prev = e->getImpl()->getOID();
+    Q = e->getImpl()->getOID();
   }
 }
 
@@ -61,11 +62,11 @@ template <class T>
 inline _dbFreeObject* dbArrayTable<T>::popQ(uint& Q)
 {
   _dbFreeObject* e = (_dbFreeObject*) getFreeObj(Q);
-  Q                = e->_next;
+  Q = e->_next;
 
   if (Q) {
     _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
-    head->_prev         = 0;
+    head->_prev = 0;
   }
 
   return e;
@@ -81,17 +82,17 @@ inline void dbArrayTable<T>::unlinkQ(uint& Q, _dbFreeObject* e)
 
     if (Q) {
       _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
-      head->_prev         = 0;
+      head->_prev = 0;
     }
   } else {
     if (e->_next) {
       _dbFreeObject* next = (_dbFreeObject*) getFreeObj(e->_next);
-      next->_prev         = e->_prev;
+      next->_prev = e->_prev;
     }
 
     if (e->_prev) {
       _dbFreeObject* prev = (_dbFreeObject*) getFreeObj(e->_prev);
-      prev->_next         = e->_next;
+      prev->_next = e->_next;
     }
   }
 }
@@ -102,8 +103,8 @@ void dbArrayTable<T>::clear()
   uint i;
   for (i = 0; i < _page_cnt; ++i) {
     dbArrayTablePage* page = _pages[i];
-    const T*          t    = (T*) page->_objects;
-    const T*          e    = &t[page_size()];
+    const T* t = (T*) page->_objects;
+    const T* e = &t[page_size()];
 
     for (; t < e; t++) {
       if (t->_oid & DB_ALLOC_BIT)
@@ -116,36 +117,36 @@ void dbArrayTable<T>::clear()
   if (_pages)
     delete[] _pages;
 
-  _page_cnt      = 0;
+  _page_cnt = 0;
   _page_tbl_size = 0;
-  _alloc_cnt     = 0;
-  _free_list     = 0;
-  _pages         = NULL;
+  _alloc_cnt = 0;
+  _free_list = 0;
+  _pages = NULL;
 }
 
 template <class T>
 dbArrayTable<T>::dbArrayTable(_dbDatabase* db,
-                              dbObject*    owner,
-                              GetObjTbl_t  m,
+                              dbObject* owner,
+                              GetObjTbl_t m,
                               dbObjectType type,
-                              uint         array_size,
-                              uint         page_size,
-                              uint         page_shift)
+                              uint array_size,
+                              uint page_size,
+                              uint page_shift)
     : dbObjectTable(db, owner, m, type, sizeof(T))
 {
-  _page_mask         = page_size - 1;
-  _page_shift        = page_shift;
-  _page_cnt          = 0;
-  _page_tbl_size     = 0;
-  _alloc_cnt         = 0;
+  _page_mask = page_size - 1;
+  _page_shift = page_shift;
+  _page_cnt = 0;
+  _page_tbl_size = 0;
+  _alloc_cnt = 0;
   _objects_per_alloc = array_size;
-  _free_list         = 0;
-  _pages             = NULL;
+  _free_list = 0;
+  _pages = NULL;
 }
 
 template <class T>
-dbArrayTable<T>::dbArrayTable(_dbDatabase*           db,
-                              dbObject*              owner,
+dbArrayTable<T>::dbArrayTable(_dbDatabase* db,
+                              dbObject* owner,
                               const dbArrayTable<T>& t)
     : dbObjectTable(db, owner, t._getObjectTable, t._type, sizeof(T)),
       _page_mask(t._page_mask),
@@ -169,9 +170,9 @@ dbArrayTable<T>::~dbArrayTable()
 template <class T>
 void dbArrayTable<T>::resizePageTbl()
 {
-  uint               i;
-  dbArrayTablePage** old_tbl      = _pages;
-  uint               old_tbl_size = _page_tbl_size;
+  uint i;
+  dbArrayTablePage** old_tbl = _pages;
+  uint old_tbl_size = _page_tbl_size;
   _page_tbl_size *= 2;
 
   _pages = new dbArrayTablePage*[_page_tbl_size];
@@ -189,7 +190,7 @@ void dbArrayTable<T>::resizePageTbl()
 template <class T>
 void dbArrayTable<T>::newPage()
 {
-  uint              size = page_size() * sizeof(T) + sizeof(dbObjectPage);
+  uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
   dbArrayTablePage* page = (dbArrayTablePage*) malloc(size);
   ZALLOCATED(page);
   memset(page, 0, size);
@@ -205,10 +206,10 @@ void dbArrayTable<T>::newPage()
   }
 
   ++_page_cnt;
-  page->_table     = this;
+  page->_table = this;
   page->_page_addr = page_id << _page_shift;
-  page->_alloccnt  = 0;
-  _pages[page_id]  = page;
+  page->_alloccnt = 0;
+  _pages[page_id] = page;
 
   // The objects are put on the list in reverse order, so they can be removed
   // in low-to-high order.
@@ -218,7 +219,7 @@ void dbArrayTable<T>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid          = (uint)((char*) t - (char*) b);
+      o->_oid = (uint) ((char*) t - (char*) b);
 
       if (t != b)  // don't link zero-object
         pushQ(_free_list, o);
@@ -229,7 +230,7 @@ void dbArrayTable<T>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->_oid          = (uint)((char*) t - (char*) b);
+      o->_oid = (uint) ((char*) t - (char*) b);
       pushQ(_free_list, o);
     }
   }
@@ -305,7 +306,7 @@ void dbArrayTable<T>::destroy(T* t)
 }
 
 template <class T>
-void dbArrayTable<T>::writePage(dbOStream&              stream,
+void dbArrayTable<T>::writePage(dbOStream& stream,
                                 const dbArrayTablePage* page) const
 {
   const T* t = (T*) page->_objects;
@@ -329,8 +330,8 @@ void dbArrayTable<T>::writePage(dbOStream&              stream,
 template <class T>
 void dbArrayTable<T>::readPage(dbIStream& stream, dbArrayTablePage* page)
 {
-  T* t            = (T*) page->_objects;
-  T* e            = &t[page_size()];
+  T* t = (T*) page->_objects;
+  T* e = &t[page_size()];
   page->_alloccnt = 0;
 
   for (; t < e; t++) {
@@ -338,14 +339,14 @@ void dbArrayTable<T>::readPage(dbIStream& stream, dbArrayTablePage* page)
     stream >> allocated;
 
     if (!allocated) {
-      t->_oid          = (uint)((char*) t - page->_objects);
+      t->_oid = (uint) ((char*) t - page->_objects);
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream >> o->_next;
       stream >> o->_prev;
     } else {
       new (t) T(_db);
       stream >> *t;
-      t->_oid = (uint)((char*) t - page->_objects);
+      t->_oid = (uint) ((char*) t - page->_objects);
       t->_oid |= DB_ALLOC_BIT;
       page->_alloccnt++;
     }
@@ -375,18 +376,18 @@ void dbArrayTable<T>::copy_pages(const dbArrayTable<T>& t)
 template <class T>
 void dbArrayTable<T>::copy_page(uint page_id, dbArrayTablePage* page)
 {
-  uint              size = page_size() * sizeof(T) + sizeof(dbObjectPage);
-  dbArrayTablePage* p    = (dbArrayTablePage*) malloc(size);
+  uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
+  dbArrayTablePage* p = (dbArrayTablePage*) malloc(size);
   ZALLOCATED(p);
   memset(p, 0, size);
-  p->_table       = this;
-  p->_page_addr   = page_id << _page_shift;
-  p->_alloccnt    = page->_alloccnt;
+  p->_table = this;
+  p->_page_addr = page_id << _page_shift;
+  p->_alloccnt = page->_alloccnt;
   _pages[page_id] = p;
 
   const T* t = (T*) page->_objects;
   const T* e = &t[page_size()];
-  T*       o = (T*) p->_objects;
+  T* o = (T*) p->_objects;
 
   for (; t < e; t++, o++) {
     if (t->_oid & DB_ALLOC_BIT) {
@@ -444,8 +445,8 @@ dbIStream& operator>>(dbIStream& stream, dbArrayTable<T>& table)
     ZALLOCATED(page);
     memset(page, 0, size);
     page->_page_addr = i << table._page_shift;
-    page->_table     = &table;
-    table._pages[i]  = page;
+    page->_table = &table;
+    table._pages[i] = page;
     table.readPage(stream, page);
   }
 
@@ -505,7 +506,7 @@ bool dbArrayTable<T>::operator==(const dbArrayTable<T>& rhs) const
 }
 
 template <class T>
-void dbArrayTable<T>::differences(dbDiff&                diff,
+void dbArrayTable<T>::differences(dbDiff& diff,
                                   const dbArrayTable<T>& rhs) const
 {
   const dbArrayTable<T>& lhs = *this;
@@ -518,7 +519,7 @@ void dbArrayTable<T>::differences(dbDiff&                diff,
   uint lhs_max = lhs._page_cnt * page_sz;
   uint rhs_max = rhs._page_cnt * page_sz;
 
-  uint        i;
+  uint i;
   const char* name = dbObject::getObjName(_type);
 
   for (i = 1; (i < lhs_max) && (i < rhs_max); ++i) {

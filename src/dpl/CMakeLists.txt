@@ -38,10 +38,10 @@
 
 include("openroad")
 
-tcl_lib(NAME         dpl
-        NAMESPACE    dpl
-        I_FILE       src/Opendp.i
-        SCRIPTS      src/Opendp.tcl
+swig_lib(NAME         dpl
+         NAMESPACE    dpl
+         I_FILE       src/Opendp.i
+         SCRIPTS      src/Opendp.tcl
 )
 
 target_sources(dpl
@@ -65,7 +65,6 @@ target_link_libraries(dpl
   PRIVATE
     opendb
     OpenSTA
-    dbSta
     utility
 )
 

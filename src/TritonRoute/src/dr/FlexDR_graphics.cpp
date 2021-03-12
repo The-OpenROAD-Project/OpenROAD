@@ -40,6 +40,19 @@ namespace fr {
 const char* FlexDRGraphics::grid_graph_visible_ = "Grid Graph";
 const char* FlexDRGraphics::route_guides_visible_ = "Route Guides";
 const char* FlexDRGraphics::routing_objs_visible_ = "Routing Objects";
+const char* FlexDRGraphics::drc_cost_visible_ = "DRC Cost";
+const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
+const char* FlexDRGraphics::shape_cost_visible_  = "Shape Cost";
+
+static std::string workerOrigin(FlexDRWorker* worker)
+{
+  frPoint ll = worker->getRouteBox().lowerLeft();
+  frPoint origin;
+  worker->getDesign()->getTopBlock()->getGCellIdx(ll, origin);
+  return "(" + std::to_string(origin.x()) 
+    + ", " + std::to_string(origin.y()) + ")";
+
+}
 
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
                                frDesign* design,
@@ -53,8 +66,6 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
     gui_(gui::Gui::get()),
     logger_(logger)
 {
-  assert(MAX_THREADS == 1);
-
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
@@ -68,6 +79,9 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   }
 
   gui_->addCustomVisibilityControl(grid_graph_visible_);
+  gui_->addCustomVisibilityControl(drc_cost_visible_);
+  gui_->addCustomVisibilityControl(marker_cost_visible_);
+  gui_->addCustomVisibilityControl(shape_cost_visible_);
   gui_->addCustomVisibilityControl(route_guides_visible_, true);
   gui_->addCustomVisibilityControl(routing_objs_visible_, true);
 
@@ -154,36 +168,61 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw graphs
-  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
-    frMIdx z = grid_graph_->getMazeZIdx(layerNum);
-    if (gui_->checkCustomVisibilityControl(grid_graph_visible_)){
-        const int offset = 50;
-        const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
-        frMIdx x_dim, y_dim, z_dim;
-        grid_graph_->getDim(x_dim, y_dim, z_dim);
-        for (frMIdx x = 0; x < x_dim; ++x) {
-          for (frMIdx y = 0; y < y_dim; ++y) {
-            frPoint pt;
-            grid_graph_->getPoint(pt, x, y);
+  const bool draw_drc = gui_->checkCustomVisibilityControl(drc_cost_visible_);
+  const bool draw_marker = gui_->checkCustomVisibilityControl(marker_cost_visible_);
+  const bool draw_shape = gui_->checkCustomVisibilityControl(shape_cost_visible_);
+  const bool draw_graph = gui_->checkCustomVisibilityControl(grid_graph_visible_);
+  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING
+      && (draw_graph || draw_drc || draw_marker || draw_shape)) {
+    const frMIdx z = grid_graph_->getMazeZIdx(layerNum);
+    const int offset = 25;
+    const bool prefIsVert = layer->getDirection().getValue() == layer->getDirection().VERTICAL;
 
-            if (x != x_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::E) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::E) || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
-              frPoint pt2;
-              grid_graph_->getPoint(pt2, x + 1, y);
-              painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
-            }
+    frMIdx x_dim, y_dim, z_dim;
+    grid_graph_->getDim(x_dim, y_dim, z_dim);
 
-            if (y != y_dim-1 && (/*!grid_graph_->hasEdge(x, y, z, frDirEnum::N) || */
-                    grid_graph_->isBlocked(x, y, z, frDirEnum::N) || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
-              frPoint pt2;
-              grid_graph_->getPoint(pt2, x, y + 1);
-              painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
-            }
-            if (grid_graph_->hasAnyPlanarCost(x, y, z))
-                painter.drawRect({grid_graph_->xCoord(x)-offset, grid_graph_->yCoord(y)-offset, grid_graph_->xCoord(x)+offset, grid_graph_->yCoord(y)+offset});
-          }
+    for (frMIdx x = 0; x < x_dim; ++x) {
+      for (frMIdx y = 0; y < y_dim; ++y) {
+        frPoint pt;
+        grid_graph_->getPoint(pt, x, y);
+
+        if (draw_graph && x != x_dim-1 && 
+            (!grid_graph_->hasEdge(x, y, z, frDirEnum::E)
+             || grid_graph_->isBlocked(x, y, z, frDirEnum::E)
+             || (!prefIsVert && grid_graph_->hasGridCostE(x, y, z)))) {
+          frPoint pt2;
+          grid_graph_->getPoint(pt2, x + 1, y);
+          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
         }
+
+        if (draw_graph && y != y_dim-1 && 
+            (!grid_graph_->hasEdge(x, y, z, frDirEnum::N) 
+             || grid_graph_->isBlocked(x, y, z, frDirEnum::N)
+             || (prefIsVert && grid_graph_->hasGridCostN(x, y, z)))) {
+          frPoint pt2;
+          grid_graph_->getPoint(pt2, x, y + 1);
+          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+        }
+        // Planar doesn't distinguish E vs N so just use one
+        bool planar = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::E))
+          || (draw_marker && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::E))
+          || (draw_shape && grid_graph_->hasShapeCost(x, y, z, frDirEnum::E));
+        if (planar) {
+            painter.drawRect({grid_graph_->xCoord(x)-offset, 
+                  grid_graph_->yCoord(y)-offset, 
+                  grid_graph_->xCoord(x)+offset, 
+                  grid_graph_->yCoord(y)+offset});
+        }
+        bool via = (draw_drc && grid_graph_->hasDRCCost(x, y, z, frDirEnum::U))
+          || (draw_marker && grid_graph_->hasMarkerCost(x, y, z, frDirEnum::U))
+          || (draw_shape && grid_graph_->hasShapeCost(x, y, z, frDirEnum::U));
+        if (via) {
+            painter.drawCircle(grid_graph_->xCoord(x), grid_graph_->yCoord(y),
+                               offset / 2);
+        }
+      }
     }
+ }
    
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
@@ -198,7 +237,6 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                        {box.right(), box.bottom()});
     }
   }
- }
 }
   
 void FlexDRGraphics::update(){
@@ -262,8 +300,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   frPoint origin;
   in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
                                               origin);
-  status("Start worker: gcell origin ("
-         + std::to_string(origin.x()) + ", " + std::to_string(origin.y()) + ") "
+  status("Start worker: gcell origin " + workerOrigin(in) + " "
          + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
@@ -321,14 +358,17 @@ void FlexDRGraphics::startNet(drNet* net)
     return;
   }
 
-  status("Start net: " + net->getFrNet()->getName());
+  status("Start net: " + net->getFrNet()->getName()
+         + " " + workerOrigin(worker_));
   net_ = net;
   last_pt_layer_ = -1;
   
   frBox box;
   worker_->getExtBox(box);
   gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-  if (settings_->allowPause) gui_->pause();
+  if (settings_->allowPause) {
+    gui_->pause();
+  }
 }
 
 void FlexDRGraphics::endNet(drNet* net)
@@ -346,8 +386,13 @@ void FlexDRGraphics::endNet(drNet* net)
   status("End net: " + net->getFrNet()->getName() + " searched "
          + std::to_string(point_cnt) + " points");
 
-  if (settings_->draw) gui_->redraw();
-  if (settings_->allowPause) gui_->pause();
+  if (settings_->draw) {
+    gui_->redraw();
+  }
+
+  if (settings_->allowPause) {
+    gui_->pause();
+  }
 
   for (auto& points : points_by_layer_) {
     points.clear();
@@ -358,8 +403,17 @@ void FlexDRGraphics::startIter(int iter)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
+    // If you specified a gcell then only one worker can process that
+    // gcell and we don't need to limit the threading.
+    if (MAX_THREADS > 1 && settings_->gcellX < 0) {
+      logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
+      MAX_THREADS = 1;
+    }
+
     status("Start iter: " + std::to_string(iter));
-    if (settings_->allowPause) gui_->pause();
+    if (settings_->allowPause) {
+      gui_->pause();
+    }
   }
 }
 

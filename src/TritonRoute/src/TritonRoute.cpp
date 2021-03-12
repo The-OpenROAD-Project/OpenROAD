@@ -40,6 +40,7 @@
 #include "sta/StaMain.hh"
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"
+#include "gui/gui.h"
 
 using namespace std;
 using namespace fr;
@@ -51,12 +52,13 @@ extern const char *TritonRoute_tcl_inits[];
 }
 
 extern "C" {
-extern int Triton_route_Init(Tcl_Interp* interp);
+extern int Tritonroute_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
   : debug_(std::make_unique<frDebugSettings>()),
-    num_drvs_(-1)
+    num_drvs_(-1),
+    gui_(gui::Gui::get())
 {
 }
 
@@ -119,7 +121,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   logger_ = logger;
   design_ = std::make_unique<frDesign>(logger_);
   // Define swig TCL commands.
-  Triton_route_Init(tcl_interp);
+  Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
   }
 
@@ -198,7 +200,8 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
-
+  if(gui_ != nullptr)
+    gui_->updateShapes();
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
@@ -247,11 +250,6 @@ void TritonRoute::readParams(const string &fileName)
       }
     }
     fin.close();
-  }
-
-  if (MAX_THREADS > 1 && debug_->is_on()) {
-    logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the GUI.");
-    MAX_THREADS = 1;
   }
 
   if (readParamCnt < 2) {

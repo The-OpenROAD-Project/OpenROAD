@@ -36,20 +36,20 @@
 #include <stdlib.h>
 
 #include "db.h"
+#include "dbLogger.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "dbLogger.h"
 
 namespace odb {
 
 void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 {
-  *iterm                          = NULL;
-  *bterm                          = NULL;
-  dbSet<dbITerm>           iterms = net->getITerms();
+  *iterm = NULL;
+  *bterm = NULL;
+  dbSet<dbITerm> iterms = net->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
-  dbITerm*                 it;
-  dbITerm*                 it_inout = NULL;
+  dbITerm* it;
+  dbITerm* it_inout = NULL;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     it = *iterm_itr;
     if (it->getIoType() == dbIoType::OUTPUT) {
@@ -59,10 +59,10 @@ void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
     if (it->getIoType() == dbIoType::INOUT && !it_inout)
       it_inout = it;
   }
-  dbSet<dbBTerm>           bterms = net->getBTerms();
+  dbSet<dbBTerm> bterms = net->getBTerms();
   dbSet<dbBTerm>::iterator bterm_itr;
-  dbBTerm*                 bt;
-  dbBTerm*                 bt_inout = NULL;
+  dbBTerm* bt;
+  dbBTerm* bt_inout = NULL;
   for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
     bt = *bterm_itr;
     if (bt->getIoType() == dbIoType::INPUT) {
@@ -95,28 +95,28 @@ void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 tmg_conn::tmg_conn()
 {
   _rcV.reserve(1024);
-  _ptNmax   = 1024;
-  _ptV      = (tmg_rcpt*) malloc(_ptNmax * sizeof(tmg_rcpt));
+  _ptNmax = 1024;
+  _ptV = (tmg_rcpt*) malloc(_ptNmax * sizeof(tmg_rcpt));
   _termNmax = 1024;
-  _termV    = (tmg_rcterm*) malloc(_termNmax * sizeof(tmg_rcterm));
-  _tstackV  = (tmg_rcterm**) malloc(_termNmax * sizeof(tmg_rcterm*));
+  _termV = (tmg_rcterm*) malloc(_termNmax * sizeof(tmg_rcterm));
+  _tstackV = (tmg_rcterm**) malloc(_termNmax * sizeof(tmg_rcterm*));
   _csVV = (tmg_connect_shape**) malloc(_termNmax * sizeof(tmg_connect_shape*));
   _csNV = (int*) malloc(_termNmax * sizeof(int));
   int j;
   for (j = 0; j < _termNmax; j++)
     _csVV[j] = (tmg_connect_shape*) malloc(32 * sizeof(tmg_connect_shape));
-  _shortNmax          = 1024;
-  _shortV             = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
-  _search             = NULL;
-  _graph              = NULL;
-  _max_length         = 0;
-  _cut_length         = 0;
-  _cut_end_extMin     = 1;
+  _shortNmax = 1024;
+  _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
+  _search = NULL;
+  _graph = NULL;
+  _max_length = 0;
+  _cut_length = 0;
+  _cut_end_extMin = 1;
   _need_short_wire_id = 0;
-  _first_for_clear    = NULL;
-  _preserveSWire      = false;
-  _swireNetCnt        = 0;
-  _gVerbose           = false;
+  _first_for_clear = NULL;
+  _preserveSWire = false;
+  _swireNetCnt = 0;
+  _gVerbose = false;
 }
 
 int tmg_conn::ptDist(int fr, int to)
@@ -136,56 +136,56 @@ void tmg_conn::allocPt()
 void tmg_conn::addRc(dbShape& s, int ifr, int ito)
 {
   tmg_rc x;
-  x._ifr   = ifr;
-  x._ito   = ito;
+  x._ifr = ifr;
+  x._ito = ito;
   // x._shape = s;
   x._shape._rect.reset(s.xMin(), s.yMin(), s.xMax(), s.yMax());
-  x._shape._layer     = s.getTechLayer();
-  x._shape._tech_via  = s.getTechVia();
+  x._shape._layer = s.getTechLayer();
+  x._shape._tech_via = s.getTechVia();
   x._shape._block_via = s.getVia();
-  x._shape._rule      = NULL;
+  x._shape._rule = NULL;
   if (x._shape._tech_via || x._shape._block_via) {
-    x._vert  = 0;
+    x._vert = 0;
     x._width = 0;
   } else if (_ptV[ifr]._x != _ptV[ito]._x) {
-    x._vert  = 0;
+    x._vert = 0;
     x._width = s.yMax() - s.yMin();
   } else if (_ptV[ifr]._y != _ptV[ito]._y) {
-    x._vert  = 1;
+    x._vert = 1;
     x._width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
     // notice(0, "an isolated square patch of metal\n");
-    x._vert  = 0;
+    x._vert = 0;
     x._width = s.xMax() - s.xMin();
   } else {
     notice(0, "warning, nonsquare shape with same points\n");
-    x._vert  = 0;
+    x._vert = 0;
     x._width = 0;
   }
   x._default_ext = x._width / 2;
   _rcV.push_back(x);
 }
 
-void tmg_conn::addRc(int        k,
+void tmg_conn::addRc(int k,
                      tmg_rc_sh& s,
-                     int        ifr,
-                     int        ito,
-                     int        xmin,
-                     int        ymin,
-                     int        xmax,
-                     int        ymax)
+                     int ifr,
+                     int ito,
+                     int xmin,
+                     int ymin,
+                     int xmax,
+                     int ymax)
 {
   tmg_rc x;
-  x._ifr   = ifr;
-  x._ito   = ito;
+  x._ifr = ifr;
+  x._ito = ito;
   x._shape._rect.reset(xmin, ymin, xmax, ymax);
-  x._shape._layer     = s._layer;
-  x._shape._tech_via  = s._tech_via;
+  x._shape._layer = s._layer;
+  x._shape._tech_via = s._tech_via;
   x._shape._block_via = s._block_via;
-  x._shape._rule      = s._rule;
-  x._vert             = _rcV[k]._vert;
-  x._width            = _rcV[k]._width;
-  x._default_ext      = x._width / 2;
+  x._shape._rule = s._rule;
+  x._vert = _rcV[k]._vert;
+  x._width = _rcV[k]._width;
+  x._default_ext = x._width / 2;
   _rcV.push_back(x);
 }
 
@@ -198,13 +198,13 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
     return NULL;
   }
   tmg_rc x;
-  x._ifr              = ifr;
-  x._ito              = ito;
-  x._shape._layer     = layer;
-  x._shape._tech_via  = NULL;
+  x._ifr = ifr;
+  x._ito = ito;
+  x._shape._layer = layer;
+  x._shape._tech_via = NULL;
   x._shape._block_via = NULL;
-  x._width            = layer->getWidth();  // trouble for nondefault
-  x._vert             = (_ptV[ifr]._y != _ptV[ito]._y);
+  x._width = layer->getWidth();  // trouble for nondefault
+  x._vert = (_ptV[ifr]._y != _ptV[ito]._y);
   int xlo, ylo, xhi, yhi;
   if (x._vert) {
     xlo = _ptV[ifr]._x;
@@ -227,7 +227,7 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
       xhi = _ptV[ifr]._x;
     }
   }
-  int hw          = x._width / 2;
+  int hw = x._width / 2;
   x._default_ext = hw;
   x._shape._rect.reset(xlo - hw, ylo - hw, xhi + hw, yhi + hw);
   _rcV.push_back(x);
@@ -248,10 +248,10 @@ void tmg_conn::addITerm(dbITerm* iterm)
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
-  x->_iterm     = iterm;
-  x->_bterm     = NULL;
-  x->_pt        = NULL;
-  x->_first_pt  = NULL;
+  x->_iterm = iterm;
+  x->_bterm = NULL;
+  x->_pt = NULL;
+  x->_first_pt = NULL;
 }
 
 void tmg_conn::addBTerm(dbBTerm* bterm)
@@ -269,10 +269,10 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
-  x->_iterm     = NULL;
-  x->_bterm     = bterm;
-  x->_pt        = NULL;
-  x->_first_pt  = NULL;
+  x->_iterm = NULL;
+  x->_bterm = bterm;
+  x->_pt = NULL;
+  x->_first_pt = NULL;
 }
 
 void tmg_conn::addShort(int i0, int i1)
@@ -282,9 +282,9 @@ void tmg_conn::addShort(int i0, int i1)
     _shortV = (tmg_rcshort*) realloc(_shortV, _shortNmax * sizeof(tmg_rcshort));
   }
   tmg_rcshort* x = _shortV + _shortN++;
-  x->_i0         = i0;
-  x->_i1         = i1;
-  x->_skip       = false;
+  x->_i0 = i0;
+  x->_i1 = i1;
+  x->_skip = false;
   if (_ptV[i0]._fre)
     _ptV[i0]._fre = 0;
   else
@@ -311,24 +311,24 @@ static void print_shape(tmg_rc_sh& s)
 void tmg_conn::loadNet(dbNet* net)
 {
   // notice(0, "tmg_conn::loadNet(%s)\n",net->getName().c_str());
-  _net             = net;
+  _net = net;
   _rcV.clear();
-  _ptN             = 0;
-  _termN           = 0;
-  _shortN          = 0;
+  _ptN = 0;
+  _termN = 0;
+  _shortN = 0;
   _first_for_clear = NULL;
 
-  dbSet<dbITerm>           iterms = net->getITerms();
+  dbSet<dbITerm> iterms = net->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
-  dbITerm*                 iterm;
+  dbITerm* iterm;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     iterm = *iterm_itr;
     addITerm(iterm);
   }
 
-  dbSet<dbBTerm>           bterms = net->getBTerms();
+  dbSet<dbBTerm> bterms = net->getBTerms();
   dbSet<dbBTerm>::iterator bterm_itr;
-  dbBTerm*                 bterm;
+  dbBTerm* bterm;
   for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
     bterm = *bterm_itr;
     addBTerm(bterm);
@@ -337,38 +337,38 @@ void tmg_conn::loadNet(dbNet* net)
 
 void tmg_conn::loadSWire(dbNet* net)
 {
-  _hasSWire             = false;
+  _hasSWire = false;
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.size() == 0)
     return;
 
   _hasSWire = true;
   dbSet<dbSWire>::iterator its;
-  dbSWire*                 sw;
-  dbSet<dbSBox>            sboxes;
-  dbSet<dbSBox>::iterator  itb;
-  dbSBox*                  sbox;
-  dbShape                  shape;
-  Rect                     rect;
-  int                      x1, y1, x2, y2;
-  dbTechLayer*             layer1 = NULL;
-  dbTechLayer*             layer2 = NULL;
-  dbTechVia*               tech_via;
-  dbVia*                   via;
-  tmg_rcpt*                pt;
+  dbSWire* sw;
+  dbSet<dbSBox> sboxes;
+  dbSet<dbSBox>::iterator itb;
+  dbSBox* sbox;
+  dbShape shape;
+  Rect rect;
+  int x1, y1, x2, y2;
+  dbTechLayer* layer1 = NULL;
+  dbTechLayer* layer2 = NULL;
+  dbTechVia* tech_via;
+  dbVia* via;
+  tmg_rcpt* pt;
   for (its = swires.begin(); its != swires.end(); ++its) {
-    sw     = *its;
+    sw = *its;
     sboxes = sw->getWires();
     for (itb = sboxes.begin(); itb != sboxes.end(); ++itb) {
       sbox = *itb;
       sbox->getBox(rect);
       if (sbox->isVia()) {
-        x1       = (rect.xMin() + rect.xMax()) / 2;
-        x2       = x1;
-        y1       = (rect.yMin() + rect.yMax()) / 2;
-        y2       = y1;
+        x1 = (rect.xMin() + rect.xMax()) / 2;
+        x2 = x1;
+        y1 = (rect.yMin() + rect.yMax()) / 2;
+        y2 = y1;
         tech_via = sbox->getTechVia();
-        via      = sbox->getBlockVia();
+        via = sbox->getBlockVia();
         if (tech_via) {
           layer1 = tech_via->getTopLayer();
           layer2 = tech_via->getBottomLayer();
@@ -397,15 +397,15 @@ void tmg_conn::loadSWire(dbNet* net)
 
       if (_ptN + 2 >= _ptNmax)
         allocPt();
-      pt                  = _ptV + _ptN;
-      pt->_x              = x1;
-      pt->_y              = y1;
-      pt->_layer          = layer1;
-      pt->_tindex         = -1;
-      pt->_t_alt          = NULL;
-      pt->_next_for_term  = NULL;
-      pt->_pinpt          = 0;
-      pt->_c2pinpt        = 0;
+      pt = _ptV + _ptN;
+      pt->_x = x1;
+      pt->_y = y1;
+      pt->_layer = layer1;
+      pt->_tindex = -1;
+      pt->_t_alt = NULL;
+      pt->_next_for_term = NULL;
+      pt->_pinpt = 0;
+      pt->_c2pinpt = 0;
       pt->_next_for_clear = NULL;
       if (_ptN == 0 || pt->_layer != _ptV[_ptN - 1]._layer
           || pt->_x != _ptV[_ptN - 1]._x || pt->_y != _ptV[_ptN - 1]._y)
@@ -413,15 +413,15 @@ void tmg_conn::loadSWire(dbNet* net)
 
       if (_ptN + 2 >= _ptNmax)
         allocPt();
-      pt                  = _ptV + _ptN;
-      pt->_x              = x2;
-      pt->_y              = y2;
-      pt->_layer          = layer2;
-      pt->_tindex         = -1;
-      pt->_t_alt          = NULL;
-      pt->_next_for_term  = NULL;
-      pt->_pinpt          = 0;
-      pt->_c2pinpt        = 0;
+      pt = _ptV + _ptN;
+      pt->_x = x2;
+      pt->_y = y2;
+      pt->_layer = layer2;
+      pt->_tindex = -1;
+      pt->_t_alt = NULL;
+      pt->_next_for_term = NULL;
+      pt->_pinpt = 0;
+      pt->_c2pinpt = 0;
       pt->_next_for_clear = NULL;
       addRc(shape, _ptN - 1, _ptN);
       _rcV.back()._shape._rule = NULL;
@@ -432,24 +432,24 @@ void tmg_conn::loadSWire(dbNet* net)
 
 void tmg_conn::loadWire(dbWire* wire)
 {
-  dbWirePathItr   pitr;
-  dbWirePath      path;
+  dbWirePathItr pitr;
+  dbWirePath path;
   dbWirePathShape pathShape;
-  tmg_rcpt*       pt;
+  tmg_rcpt* pt;
   _ptN = 0;
   pitr.begin(wire);
   while (pitr.getNextPath(path)) {
     if (_ptN + 2 >= _ptNmax)
       allocPt();
-    pt                  = _ptV + _ptN;
-    pt->_x              = path.point.getX();
-    pt->_y              = path.point.getY();
-    pt->_layer          = path.layer;
-    pt->_tindex         = -1;
-    pt->_t_alt          = NULL;
-    pt->_next_for_term  = NULL;
-    pt->_pinpt          = 0;
-    pt->_c2pinpt        = 0;
+    pt = _ptV + _ptN;
+    pt->_x = path.point.getX();
+    pt->_y = path.point.getY();
+    pt->_layer = path.layer;
+    pt->_tindex = -1;
+    pt->_t_alt = NULL;
+    pt->_next_for_term = NULL;
+    pt->_pinpt = 0;
+    pt->_c2pinpt = 0;
     pt->_next_for_clear = NULL;
     if (_ptN == 0 || pt->_layer != _ptV[_ptN - 1]._layer
         || pt->_x != _ptV[_ptN - 1]._x || pt->_y != _ptV[_ptN - 1]._y)
@@ -457,15 +457,15 @@ void tmg_conn::loadWire(dbWire* wire)
     while (pitr.getNextShape(pathShape)) {
       if (_ptN + 2 >= _ptNmax)
         allocPt();
-      pt                  = _ptV + _ptN;
-      pt->_x              = pathShape.point.getX();
-      pt->_y              = pathShape.point.getY();
-      pt->_layer          = pathShape.layer;
-      pt->_tindex         = -1;
-      pt->_t_alt          = NULL;
-      pt->_next_for_term  = NULL;
-      pt->_pinpt          = 0;
-      pt->_c2pinpt        = 0;
+      pt = _ptV + _ptN;
+      pt->_x = pathShape.point.getX();
+      pt->_y = pathShape.point.getY();
+      pt->_layer = pathShape.layer;
+      pt->_tindex = -1;
+      pt->_t_alt = NULL;
+      pt->_next_for_term = NULL;
+      pt->_pinpt = 0;
+      pt->_c2pinpt = 0;
       pt->_next_for_clear = NULL;
       addRc(pathShape.shape, _ptN - 1, _ptN);
       _rcV.back()._shape._rule = path.rule;
@@ -494,18 +494,18 @@ void tmg_conn::loadWire(dbWire* wire)
 #endif
 }
 
-void tmg_conn::splitBySj(bool       verbose,
-                         int        j,
+void tmg_conn::splitBySj(bool verbose,
+                         int j,
                          tmg_rc_sh* sj,
-                         int        rt,
-                         int        sjxMin,
-                         int        sjyMin,
-                         int        sjxMax,
-                         int        sjyMax)
+                         int rt,
+                         int sjxMin,
+                         int sjyMin,
+                         int sjxMax,
+                         int sjyMax)
 {
-  int       k, klast, nxmin, nymin, nxmax, nymax, endTo;
+  int k, klast, nxmin, nymin, nxmax, nymax, endTo;
   tmg_rcpt* pt;
-  int       isVia = sj->isVia() ? 1 : 0;
+  int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, sjxMin, sjyMin, sjxMax, sjyMax, isVia);
   klast = -1;
   while (_search->searchNext(&k))
@@ -518,10 +518,10 @@ void tmg_conn::splitBySj(bool       verbose,
       if (sk->isVia())
         continue;
       dbTechLayer* tlayer = _ptV[_rcV[k]._ifr]._layer;
-      nxmin               = sk->xMin();
-      nxmax               = sk->xMax();
-      nymin               = sk->yMin();
-      nymax               = sk->yMax();
+      nxmin = sk->xMin();
+      nxmax = sk->xMax();
+      nymin = sk->yMin();
+      nymax = sk->yMax();
       if (_ptN + 2 >= _ptNmax)
         allocPt();
       pt = _ptV + _ptN;
@@ -588,17 +588,17 @@ void tmg_conn::splitBySj(bool       verbose,
         pt->_x = _ptV[_rcV[j]._ifr]._x;
         pt->_y = _ptV[_rcV[k]._ifr]._y;
       }
-      klast               = k;
-      pt->_layer          = tlayer;
-      pt->_tindex         = -1;
-      pt->_t_alt          = NULL;
-      pt->_next_for_term  = NULL;
-      pt->_pinpt          = 0;
-      pt->_c2pinpt        = 0;
+      klast = k;
+      pt->_layer = tlayer;
+      pt->_tindex = -1;
+      pt->_t_alt = NULL;
+      pt->_next_for_term = NULL;
+      pt->_pinpt = 0;
+      pt->_c2pinpt = 0;
       pt->_next_for_clear = NULL;
-      pt->_sring          = NULL;
-      endTo               = _rcV[k]._ito;
-      _rcV[k]._ito        = _ptN;
+      pt->_sring = NULL;
+      endTo = _rcV[k]._ito;
+      _rcV[k]._ito = _ptN;
       // create new tmg_rc
       addRc(k, _rcV[k]._shape, _ptN, endTo, nxmin, nymin, nxmax, nymax);
       _ptN++;
@@ -618,33 +618,33 @@ void tmg_conn::splitTtop(bool verbose)
 {
   // split top of T shapes (for GALET created def file)
   dbTechLayer *layb, *layt;
-  int          rt, rt_b, rt_t;
-  int          via_x, via_y;
+  int rt, rt_b, rt_t;
+  int via_x, via_y;
   dbSet<dbBox> boxes;
 
   int beginSplitCnt = _vertSplitCnt + _horzSplitCnt;
   for (unsigned long j = 0; j < _rcV.size(); j++) {
     tmg_rc_sh* sj = &(_rcV[j]._shape);
     if (sj->isVia()) {
-      via_x         = _ptV[_rcV[j]._ifr]._x;
-      via_y         = _ptV[_rcV[j]._ifr]._y;
-      layb          = NULL;
-      layt          = NULL;
+      via_x = _ptV[_rcV[j]._ifr]._x;
+      via_y = _ptV[_rcV[j]._ifr]._y;
+      layb = NULL;
+      layt = NULL;
       dbTechVia* tv = sj->getTechVia();
       if (tv) {
-        layb  = tv->getBottomLayer();
-        layt  = tv->getTopLayer();
+        layb = tv->getBottomLayer();
+        layt = tv->getTopLayer();
         boxes = tv->getBoxes();
       } else {
         dbVia* vv = sj->getVia();
-        layb      = vv->getBottomLayer();
-        layt      = vv->getTopLayer();
-        boxes     = vv->getBoxes();
+        layb = vv->getBottomLayer();
+        layt = vv->getTopLayer();
+        boxes = vv->getBoxes();
       }
       rt_b = layb->getRoutingLevel();
       rt_t = layt->getRoutingLevel();
       dbSet<dbBox>::iterator bitr;
-      dbBox*                 b;
+      dbBox* b;
       for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
         b = *bitr;
         if (b->getTechLayer() == layb) {
@@ -710,7 +710,7 @@ void tmg_conn::setSring()
         if (x == pto)
           continue;
         x->_sring = pto;
-        x         = pto;
+        x = pto;
         while (x->_sring != pto)
           x = x->_sring;
         x->_sring = pfr;
@@ -720,13 +720,13 @@ void tmg_conn::setSring()
 
 void tmg_conn::detachTilePins()
 {
-  int         j, k, rtlb, rtli;
-  int         x1, y1, x2, y2;
+  int j, k, rtlb, rtli;
+  int x1, y1, x2, y2;
   tmg_rcterm* tx;
-  dbBTerm*    bterm;
-  dbShape     pin;
-  Rect        rectb, recti;
-  dbTechVia*  tv;
+  dbBTerm* bterm;
+  dbShape pin;
+  Rect rectb, recti;
+  dbTechVia* tv;
   _slicedTilePinCnt = 0;
   bool sliceDone;
   for (j = 0; j < _termN; j++) {
@@ -737,24 +737,24 @@ void tmg_conn::detachTilePins()
     if (!bterm->getFirstPin(pin) || pin.isVia())
       continue;
     pin.getBox(rectb);
-    rtlb      = pin.getTechLayer()->getRoutingLevel();
+    rtlb = pin.getTechLayer()->getRoutingLevel();
     sliceDone = false;
     for (k = 0; !sliceDone && k < _termN; k++) {
       tx = _termV + k;
       if (tx->_bterm)
         continue;
       dbMTerm* mterm = tx->_iterm->getMTerm();
-      int      px, py;
+      int px, py;
       tx->_iterm->getInst()->getOrigin(px, py);
-      Point                   origin = Point(px, py);
-      dbOrientType            orient = tx->_iterm->getInst()->getOrient();
-      dbTransform             transform(orient, origin);
-      dbSet<dbMPin>           mpins = mterm->getMPins();
+      Point origin = Point(px, py);
+      dbOrientType orient = tx->_iterm->getInst()->getOrient();
+      dbTransform transform(orient, origin);
+      dbSet<dbMPin> mpins = mterm->getMPins();
       dbSet<dbMPin>::iterator mpin_itr;
       for (mpin_itr = mpins.begin(); !sliceDone && mpin_itr != mpins.end();
            mpin_itr++) {
-        dbMPin*                mpin  = *mpin_itr;
-        dbSet<dbBox>           boxes = mpin->getGeometry();
+        dbMPin* mpin = *mpin_itr;
+        dbSet<dbBox> boxes = mpin->getGeometry();
         dbSet<dbBox>::iterator box_itr;
         for (box_itr = boxes.begin(); !sliceDone && box_itr != boxes.end();
              box_itr++) {
@@ -762,7 +762,7 @@ void tmg_conn::detachTilePins()
           box->getBox(recti);
           transform.apply(recti);
           if (box->isVia()) {
-            tv   = box->getTechVia();
+            tv = box->getTechVia();
             rtli = tv->getTopLayer()->getRoutingLevel();
             if (rtli <= 1)
               continue;
@@ -795,12 +795,12 @@ void tmg_conn::detachTilePins()
             y1 = recti.yMax();
           else if (y1 < recti.yMin() && y2 < recti.yMax())
             y2 = recti.yMin();
-          _stbtx1[_slicedTilePinCnt]            = x1 + 1;
-          _stbty1[_slicedTilePinCnt]            = y1 + 1;
-          _stbtx2[_slicedTilePinCnt]            = x2 - 1;
-          _stbty2[_slicedTilePinCnt]            = y2 - 1;
+          _stbtx1[_slicedTilePinCnt] = x1 + 1;
+          _stbty1[_slicedTilePinCnt] = y1 + 1;
+          _stbtx2[_slicedTilePinCnt] = x2 - 1;
+          _stbty2[_slicedTilePinCnt] = y2 - 1;
           _slicedTileBTerm[_slicedTilePinCnt++] = bterm;
-          sliceDone                             = true;
+          sliceDone = true;
         }
       }
     }
@@ -831,20 +831,20 @@ void tmg_conn::findConnections(bool verbose)
   if (!_search)
     _search = new tmg_conn_search();
   _search->clear();
-  int          k, klast, rt;
-  dbTechVia*   tv;
+  int k, klast, rt;
+  dbTechVia* tv;
   dbTechLayer *layb, *layt;
-  int          rt_b, rt_t;
-  int          via_x, via_y;
+  int rt_b, rt_t;
+  int via_x, via_y;
   dbSet<dbBox> boxes;
 
   for (int j = 0; j < _ptN; j++) {
-    _ptV[j]._fre            = 1;
-    _ptV[j]._jct            = 0;
-    _ptV[j]._pinpt          = 0;
-    _ptV[j]._c2pinpt        = 0;
+    _ptV[j]._fre = 1;
+    _ptV[j]._jct = 0;
+    _ptV[j]._pinpt = 0;
+    _ptV[j]._c2pinpt = 0;
     _ptV[j]._next_for_clear = NULL;
-    _ptV[j]._sring          = NULL;
+    _ptV[j]._sring = NULL;
   }
   _first_for_clear = NULL;
   for (unsigned long j = 0; j < _rcV.size() - 1; j++)
@@ -861,23 +861,23 @@ void tmg_conn::findConnections(bool verbose)
 
       layb = NULL;
       layt = NULL;
-      tv   = s->getTechVia();
+      tv = s->getTechVia();
       if (tv) {
-        layb  = tv->getBottomLayer();
-        layt  = tv->getTopLayer();
+        layb = tv->getBottomLayer();
+        layt = tv->getTopLayer();
         boxes = tv->getBoxes();
       } else {
         dbVia* vv = s->getVia();
-        layb      = vv->getBottomLayer();
-        layt      = vv->getTopLayer();
-        boxes     = vv->getBoxes();
+        layb = vv->getBottomLayer();
+        layt = vv->getTopLayer();
+        boxes = vv->getBoxes();
       }
       // if (!layb || !layt) continue;
       rt_b = layb->getRoutingLevel();
       rt_t = layt->getRoutingLevel();
       dbSet<dbBox>::iterator bitr;
       dbSet<dbBox>::iterator bend = boxes.end();
-      dbBox*                 b;
+      dbBox* b;
       for (bitr = boxes.begin(); bitr != bend; ++bitr) {
         b = *bitr;
         if (b->getTechLayer() == layb) {
@@ -913,31 +913,31 @@ void tmg_conn::findConnections(bool verbose)
 
   // find self-intersections of wires
   for (int j = 0; j < (int) _rcV.size() - 1; j++) {
-    tmg_rc_sh* s         = &(_rcV[j]._shape);
-    int        conn_next = (_rcV[j]._ito == _rcV[j + 1]._ifr);
+    tmg_rc_sh* s = &(_rcV[j]._shape);
+    int conn_next = (_rcV[j]._ito == _rcV[j + 1]._ifr);
     if (s->isVia()) {
       via_x = _ptV[_rcV[j]._ifr]._x;
       via_y = _ptV[_rcV[j]._ifr]._y;
 
-      layb          = NULL;
-      layt          = NULL;
+      layb = NULL;
+      layt = NULL;
       dbTechVia* tv = s->getTechVia();
       if (tv) {
-        layb  = tv->getBottomLayer();
-        layt  = tv->getTopLayer();
+        layb = tv->getBottomLayer();
+        layt = tv->getTopLayer();
         boxes = tv->getBoxes();
       } else {
         dbVia* vv = s->getVia();
-        layb      = vv->getBottomLayer();
-        layt      = vv->getTopLayer();
-        boxes     = vv->getBoxes();
+        layb = vv->getBottomLayer();
+        layt = vv->getTopLayer();
+        boxes = vv->getBoxes();
       }
       // if (!layb || !layt) continue;
       rt_b = layb->getRoutingLevel();
       rt_t = layt->getRoutingLevel();
       dbSet<dbBox>::iterator bitr;
       dbSet<dbBox>::iterator bend = boxes.end();
-      dbBox*                 b;
+      dbBox* b;
       for (bitr = boxes.begin(); bitr != bend; ++bitr) {
         b = *bitr;
         if (b->getTechLayer() == layb) {
@@ -994,28 +994,28 @@ void tmg_conn::findConnections(bool verbose)
   // connect pins
   Rect rect;
   for (int j = 0; j < _termN; j++) {
-    _csV          = _csVV[j];
-    _csN          = 0;
+    _csV = _csVV[j];
+    _csN = 0;
     tmg_rcterm* x = _termV + j;
     if (x->_iterm) {
       dbMTerm* mterm = x->_iterm->getMTerm();
-      int      px, py;
+      int px, py;
       x->_iterm->getInst()->getOrigin(px, py);
-      Point                   origin = Point(px, py);
-      dbOrientType            orient = x->_iterm->getInst()->getOrient();
-      dbTransform             transform(orient, origin);
-      dbSet<dbMPin>           mpins = mterm->getMPins();
+      Point origin = Point(px, py);
+      dbOrientType orient = x->_iterm->getInst()->getOrient();
+      dbTransform transform(orient, origin);
+      dbSet<dbMPin> mpins = mterm->getMPins();
       dbSet<dbMPin>::iterator mpin_itr;
       for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-        dbMPin*                mpin  = *mpin_itr;
-        dbSet<dbBox>           boxes = mpin->getGeometry();
+        dbMPin* mpin = *mpin_itr;
+        dbSet<dbBox> boxes = mpin->getGeometry();
         dbSet<dbBox>::iterator box_itr;
-        int                    ipass;
+        int ipass;
         for (ipass = 0; ipass < 2; ipass++)
           for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
             dbBox* box = *box_itr;
             if (ipass == 1 && box->isVia()) {
-              tv   = box->getTechVia();
+              tv = box->getTechVia();
               rt_t = tv->getTopLayer()->getRoutingLevel();
               if (rt_t <= 1)
                 continue;  // skipping V01
@@ -1038,8 +1038,8 @@ void tmg_conn::findConnections(bool verbose)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k     = k;
-                  _csV[_csN].rect  = rect;
+                  _csV[_csN].k = k;
+                  _csV[_csN].rect = rect;
                   _csV[_csN].rtlev = rt_t;
                   _csN++;
                 }
@@ -1060,8 +1060,8 @@ void tmg_conn::findConnections(bool verbose)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k     = k;
-                  _csV[_csN].rect  = rect;
+                  _csV[_csN].k = k;
+                  _csV[_csN].rect = rect;
                   _csV[_csN].rtlev = rt_b;
                   _csN++;
                 }
@@ -1086,8 +1086,8 @@ void tmg_conn::findConnections(bool verbose)
                     continue;
                   if (_csN == 32)
                     break;
-                  _csV[_csN].k     = k;
-                  _csV[_csN].rect  = rect;
+                  _csV[_csN].k = k;
+                  _csV[_csN].rect = rect;
                   _csV[_csN].rtlev = rt;
                   _csN++;
                 }
@@ -1129,8 +1129,8 @@ void tmg_conn::findConnections(bool verbose)
                 continue;
               if (_csN == 32)
                 break;
-              _csV[_csN].k     = k;
-              _csV[_csN].rect  = rect;
+              _csV[_csN].k = k;
+              _csV[_csN].rect = rect;
               _csV[_csN].rtlev = rt;
               _csN++;
             }
@@ -1141,11 +1141,11 @@ void tmg_conn::findConnections(bool verbose)
   }
 
   for (int j = 0; j < _ptN; j++) {
-    tmg_rcpt* pc        = _ptV + j;
-    pc->_pinpt          = 0;
-    pc->_c2pinpt        = 0;
+    tmg_rcpt* pc = _ptV + j;
+    pc->_pinpt = 0;
+    pc->_c2pinpt = 0;
     pc->_next_for_clear = NULL;
-    pc->_sring          = NULL;
+    pc->_sring = NULL;
   }
   setSring();
 
@@ -1183,13 +1183,13 @@ void tmg_conn::findConnections(bool verbose)
 
 void tmg_conn::connectShapes(int j, int k)
 {
-  tmg_rc_sh* sa  = &(_rcV[j]._shape);
-  tmg_rc_sh* sb  = &(_rcV[k]._shape);
-  int        afr = _rcV[j]._ifr;
-  int        ato = _rcV[j]._ito;
-  int        bfr = _rcV[k]._ifr;
-  int        bto = _rcV[k]._ito;
-  int        xlo, ylo, xhi, yhi, xc, yc;
+  tmg_rc_sh* sa = &(_rcV[j]._shape);
+  tmg_rc_sh* sb = &(_rcV[k]._shape);
+  int afr = _rcV[j]._ifr;
+  int ato = _rcV[j]._ito;
+  int bfr = _rcV[k]._ifr;
+  int bto = _rcV[k]._ito;
+  int xlo, ylo, xhi, yhi, xc, yc;
   xlo = sa->xMin();
   if (sb->xMin() > xlo)
     xlo = sb->xMin();
@@ -1202,8 +1202,8 @@ void tmg_conn::connectShapes(int j, int k)
   yhi = sa->yMax();
   if (sb->yMax() < yhi)
     yhi = sb->yMax();
-  xc             = (xlo + xhi) / 2;
-  yc             = (ylo + yhi) / 2;
+  xc = (xlo + xhi) / 2;
+  yc = (ylo + yhi) / 2;
   int choose_afr = 0;
   int choose_bfr = 0;
   if (sa->isVia() && sb->isVia()) {
@@ -1222,25 +1222,25 @@ void tmg_conn::connectShapes(int j, int k)
     }
   } else if (sa->isVia()) {
     choose_afr = (_ptV[afr]._layer == _ptV[bfr]._layer);
-    xc         = _ptV[afr]._x;
-    yc         = _ptV[afr]._y;  // same for afr and ato
-    int dbfr   = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
-    int dbto   = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
+    xc = _ptV[afr]._x;
+    yc = _ptV[afr]._y;  // same for afr and ato
+    int dbfr = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
+    int dbto = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
     choose_bfr = (dbfr < dbto);
   } else if (sb->isVia()) {
     choose_bfr = (_ptV[afr]._layer == _ptV[bfr]._layer);
-    xc         = _ptV[bfr]._x;
-    yc         = _ptV[bfr]._y;
-    int dafr   = abs(_ptV[afr]._x - xc) + abs(_ptV[afr]._y - yc);
-    int dato   = abs(_ptV[ato]._x - xc) + abs(_ptV[ato]._y - yc);
+    xc = _ptV[bfr]._x;
+    yc = _ptV[bfr]._y;
+    int dafr = abs(_ptV[afr]._x - xc) + abs(_ptV[afr]._y - yc);
+    int dato = abs(_ptV[ato]._x - xc) + abs(_ptV[ato]._y - yc);
     choose_afr = (dafr < dato);
   } else {
     // get distances to the center of intersection region, (xc,yc)
-    int dafr   = abs(_ptV[afr]._x - xc) + abs(_ptV[afr]._y - yc);
-    int dato   = abs(_ptV[ato]._x - xc) + abs(_ptV[ato]._y - yc);
+    int dafr = abs(_ptV[afr]._x - xc) + abs(_ptV[afr]._y - yc);
+    int dato = abs(_ptV[ato]._x - xc) + abs(_ptV[ato]._y - yc);
     choose_afr = (dafr < dato);
-    int dbfr   = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
-    int dbto   = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
+    int dbfr = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
+    int dbto = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
     choose_bfr = (dbfr < dbto);
   }
   int i0, i1;
@@ -1248,8 +1248,8 @@ void tmg_conn::connectShapes(int j, int k)
   i1 = (choose_bfr ? bfr : bto);
   if (i1 < i0) {
     int itmp = i0;
-    i0       = i1;
-    i1       = itmp;
+    i0 = i1;
+    i1 = itmp;
   }
   addShort(i0, i1);
   _ptV[i0]._fre = 0;
@@ -1258,11 +1258,11 @@ void tmg_conn::connectShapes(int j, int k)
 
 static void addPointToTerm(tmg_rcpt* pt, tmg_rcterm* x)
 {
-  tmg_rcpt* tpt  = x->_pt;
+  tmg_rcpt* tpt = x->_pt;
   tmg_rcpt* ptpt = NULL;
   while (tpt && (pt->_x > tpt->_x || (pt->_x == tpt->_x && pt->_y > tpt->_y))) {
     ptpt = tpt;
-    tpt  = tpt->_next_for_term;
+    tpt = tpt->_next_for_term;
   }
   if (ptpt)
     ptpt->_next_for_term = pt;
@@ -1274,7 +1274,7 @@ static void addPointToTerm(tmg_rcpt* pt, tmg_rcterm* x)
 static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
 {
   if (x->_pt == pt) {
-    x->_pt             = pt->_next_for_term;
+    x->_pt = pt->_next_for_term;
     pt->_next_for_term = NULL;
     return;
   }
@@ -1287,7 +1287,7 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
   if (!tpt)
     return;  // error, not found
   ptpt->_next_for_term = tpt->_next_for_term;
-  pt->_next_for_term   = NULL;
+  pt->_next_for_term = NULL;
 }
 
 void tmg_conn::connectTerm(int j, bool soft)
@@ -1297,30 +1297,30 @@ void tmg_conn::connectTerm(int j, bool soft)
   if (!_csN)
     return;
   tmg_rcterm* x = _termV + j;
-  int         ii;
-  tmg_rcpt*   pc;
+  int ii;
+  tmg_rcpt* pc;
   for (pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
-    pc->_pinpt   = 0;
+    pc->_pinpt = 0;
     pc->_c2pinpt = 0;
   }
   _first_for_clear = NULL;
 
   for (ii = 0; ii < _csN; ii++) {
-    int       k   = _csV[ii].k;
+    int k = _csV[ii].k;
     tmg_rcpt* pfr = _ptV + _rcV[k]._ifr;
     tmg_rcpt* pto = _ptV + _rcV[k]._ito;
-    Point     afr(pfr->_x, pfr->_y);
+    Point afr(pfr->_x, pfr->_y);
     if (_csV[ii].rtlev == pfr->_layer->getRoutingLevel()
         && _csV[ii].rect.intersects(afr)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pfr;
+        _first_for_clear = pfr;
       }
       if (!(pto->_pinpt || pto->_c2pinpt)) {
         pto->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pto;
+        _first_for_clear = pto;
       }
-      pfr->_pinpt   = 1;
+      pfr->_pinpt = 1;
       pfr->_c2pinpt = 1;
       pto->_c2pinpt = 1;
     }
@@ -1329,13 +1329,13 @@ void tmg_conn::connectTerm(int j, bool soft)
         && _csV[ii].rect.intersects(ato)) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pfr;
+        _first_for_clear = pfr;
       }
       if (!(pto->_pinpt || pto->_c2pinpt)) {
         pto->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pto;
+        _first_for_clear = pto;
       }
-      pto->_pinpt   = 1;
+      pto->_pinpt = 1;
       pto->_c2pinpt = 1;
       pfr->_c2pinpt = 1;
     }
@@ -1355,7 +1355,7 @@ void tmg_conn::connectTerm(int j, bool soft)
             if (!(x->_pinpt || x->_c2pinpt)) {
               // notice(0,"add x %d\n",x-_ptV);
               x->_next_for_clear = _first_for_clear;
-              _first_for_clear   = x;
+              _first_for_clear = x;
             }
             x->_c2pinpt = 1;
           }
@@ -1371,7 +1371,7 @@ void tmg_conn::connectTerm(int j, bool soft)
         if (!(pto->_pinpt || pto->_c2pinpt)) {
           // notice(0,"add pto %d\n",pto-_ptV);
           pto->_next_for_clear = _first_for_clear;
-          _first_for_clear     = pto;
+          _first_for_clear = pto;
         }
         pto->_c2pinpt = 1;
       }
@@ -1379,7 +1379,7 @@ void tmg_conn::connectTerm(int j, bool soft)
         if (!(pfr->_pinpt || pfr->_c2pinpt)) {
           // notice(0,"add pfr %d\n",pfr-_ptV);
           pfr->_next_for_clear = _first_for_clear;
-          _first_for_clear     = pfr;
+          _first_for_clear = pfr;
         }
         pfr->_c2pinpt = 1;
       }
@@ -1387,20 +1387,20 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int       k   = _csV[ii].k;
+    int k = _csV[ii].k;
     tmg_rcpt* pfr = _ptV + _rcV[k]._ifr;
     tmg_rcpt* pto = _ptV + _rcV[k]._ito;
     if (pfr->_c2pinpt) {
       if (!(pto->_pinpt || pto->_c2pinpt)) {
         pto->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pto;
+        _first_for_clear = pto;
       }
       pto->_c2pinpt = 1;
     }
     if (pto->_c2pinpt) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
-        _first_for_clear     = pfr;
+        _first_for_clear = pfr;
       }
       pfr->_c2pinpt = 1;
     }
@@ -1428,19 +1428,19 @@ void tmg_conn::connectTerm(int j, bool soft)
 #endif
 
   for (ii = 0; ii < _csN; ii++) {
-    int       k   = _csV[ii].k;
-    int       bfr = _rcV[k]._ifr;
-    int       bto = _rcV[k]._ito;
+    int k = _csV[ii].k;
+    int bfr = _rcV[k]._ifr;
+    int bto = _rcV[k]._ito;
     tmg_rcpt *pt, *pother;
-    bool      cfr = _ptV[bfr]._pinpt;
-    bool      cto = _ptV[bto]._pinpt;
+    bool cfr = _ptV[bfr]._pinpt;
+    bool cto = _ptV[bto]._pinpt;
     if (soft && !cfr && !cto) {
       if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
         connectTermSoft(j, _csV[ii].rtlev, _csV[ii].rect, _csV[ii].k);
       continue;
     }
     if (cfr && !cto) {
-      pt     = _ptV + bfr;
+      pt = _ptV + bfr;
       pother = _ptV + bto;
       if (pt->_tindex == j)
         continue;
@@ -1466,7 +1466,7 @@ void tmg_conn::connectTerm(int j, bool soft)
       addPointToTerm(pt, x);
 
     } else if (cto && !cfr) {
-      pt     = _ptV + bto;
+      pt = _ptV + bto;
       pother = _ptV + bfr;
       if (pt->_tindex == j)
         continue;
@@ -1495,12 +1495,12 @@ void tmg_conn::connectTerm(int j, bool soft)
       if (_ptV[bfr]._tindex == j || _ptV[bto]._tindex == j)
         continue;
       if (_ptV[bfr]._tindex >= 0 && _ptV[bto]._tindex < 0) {
-        pt          = _ptV + bto;
+        pt = _ptV + bto;
         pt->_tindex = j;
         addPointToTerm(pt, x);
         continue;
       }
-      pt     = _ptV + bfr;
+      pt = _ptV + bfr;
       pother = _ptV + bto;
       if (pt->_tindex >= 0 && pt->_t_alt && pt->_t_alt->_tindex < 0) {
         int oldt = pt->_tindex;
@@ -1530,7 +1530,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     // }
   }
   for (pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
-    pc->_pinpt   = 0;
+    pc->_pinpt = 0;
     pc->_c2pinpt = 0;
   }
   _first_for_clear = NULL;
@@ -1538,11 +1538,11 @@ void tmg_conn::connectTerm(int j, bool soft)
 
 void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
 {
-  tmg_rcterm* x   = _termV + j;
-  tmg_rc_sh*  sb  = &(_rcV[k]._shape);
-  int         bfr = _rcV[k]._ifr;
-  int         bto = _rcV[k]._ito;
-  int         xlo, ylo, xhi, yhi, xc, yc;
+  tmg_rcterm* x = _termV + j;
+  tmg_rc_sh* sb = &(_rcV[k]._shape);
+  int bfr = _rcV[k]._ifr;
+  int bto = _rcV[k]._ito;
+  int xlo, ylo, xhi, yhi, xc, yc;
   xlo = rect.xMin();
   if (sb->xMin() > xlo)
     xlo = sb->xMin();
@@ -1555,21 +1555,21 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   yhi = rect.yMax();
   if (sb->yMax() < yhi)
     yhi = sb->yMax();
-  xc              = (xlo + xhi) / 2;
-  yc              = (ylo + yhi) / 2;
-  int  choose_bfr = 0;
-  bool has_alt    = true;
+  xc = (xlo + xhi) / 2;
+  yc = (ylo + yhi) / 2;
+  int choose_bfr = 0;
+  bool has_alt = true;
   if (sb->isVia()) {
     choose_bfr = (rt == _ptV[bfr]._layer->getRoutingLevel());
-    has_alt    = false;
+    has_alt = false;
   } else {
-    int dbfr   = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
-    int dbto   = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
+    int dbfr = abs(_ptV[bfr]._x - xc) + abs(_ptV[bfr]._y - yc);
+    int dbto = abs(_ptV[bto]._x - xc) + abs(_ptV[bto]._y - yc);
     choose_bfr = (dbfr < dbto);
     if (abs(dbfr - dbto) > 5000)
       has_alt = false;
   }
-  tmg_rcpt* pt     = _ptV + (choose_bfr ? bfr : bto);
+  tmg_rcpt* pt = _ptV + (choose_bfr ? bfr : bto);
   tmg_rcpt* pother = _ptV + (choose_bfr ? bto : bfr);
   if (pt->_tindex == j) {
     // notice(0, "already connected\n");
@@ -1589,7 +1589,7 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
     if (pother->_tindex == j)
       return;  // already connected
     if (pother->_tindex < 0) {
-      pt      = pother;
+      pt = pother;
       has_alt = false;
     }
   }
@@ -1603,7 +1603,7 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   if (pt->_tindex >= 0 && pother->_tindex < 0 && pt->_layer == pother->_layer) {
     int dist = abs(pt->_x - pother->_x) + abs(pt->_y - pother->_y);
     if (dist < 5000) {  // increased from 500, wfs 120105
-      pt      = pother;
+      pt = pother;
       has_alt = false;
     }
   }
@@ -1700,7 +1700,7 @@ int tmg_conn::getStartNode()
   dbBTerm* bt_drv;
   tmg_getDriveTerm(_net, &it_drv, &bt_drv);
   tmg_rcterm* x;
-  int         j;
+  int j;
   for (j = 0; j < _termN; j++) {
     x = _termV + j;
     if (x->_iterm == it_drv && x->_bterm == bt_drv) {
@@ -1713,13 +1713,13 @@ int tmg_conn::getStartNode()
 }
 
 void tmg_conn::analyzeNet(dbNet* net,
-                          bool   force,
-                          bool   verbose,
-                          bool   quiet,
-                          bool   no_convert,
-                          int    cutLength,
-                          int    maxLength,
-                          bool   no_patch)
+                          bool force,
+                          bool verbose,
+                          bool quiet,
+                          bool no_convert,
+                          int cutLength,
+                          int maxLength,
+                          bool no_patch)
 {
   _max_length = 1000 * maxLength;
   _cut_length = 1000 * cutLength;
@@ -1792,7 +1792,7 @@ void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
 
 bool tmg_conn::checkConnected()
 {
-  int         j;
+  int j;
   tmg_rcterm *x, *xstart;
   for (j = 0; j < _termN; j++) {
     x = _termV + j;
@@ -1802,16 +1802,16 @@ bool tmg_conn::checkConnected()
   if (_termN == 0)
     return true;
   int jstart = getStartNode();
-  x          = NULL;
-  xstart     = NULL;
+  x = NULL;
+  xstart = NULL;
   if (_ptV[jstart]._tindex >= 0) {
-    x      = _termV + _ptV[jstart]._tindex;
+    x = _termV + _ptV[jstart]._tindex;
     xstart = x;
   }
-  int          jfr, jto, k;
-  bool         is_short, is_loop;
-  int          tstack0 = 0;
-  int          tstackN = 0;
+  int jfr, jto, k;
+  bool is_short, is_loop;
+  int tstack0 = 0;
+  int tstackN = 0;
   tmg_rcterm** tstackV = _tstackV;
   if (x)
     tstackV[tstackN++] = x;
@@ -1829,7 +1829,7 @@ bool tmg_conn::checkConnected()
           // removing multi-connection at driver
           removePointFromTerm(_ptV + jto, _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
-          _ptV[jto]._t_alt  = NULL;
+          _ptV[jto]._t_alt = NULL;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
           tstackV[tstackN++] = x;
@@ -1881,7 +1881,7 @@ bool tmg_conn::checkConnected()
 
 void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
 {
-  _connected          = true;
+  _connected = true;
   _need_short_wire_id = 0;
   if (!_ptN)
     return;
@@ -1898,7 +1898,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
   }
   tmg_rcterm *x, *xstart;
   for (j = 0; j < _termN; j++) {
-    x            = _termV + j;
+    x = _termV + j;
     x->_first_pt = NULL;
     if (verbose) {
       notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - _ptV) : 0);
@@ -1928,20 +1928,20 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
   if (_termN == 0)
     return;
 
-  _net_rule  = _net->getNonDefaultRule();
+  _net_rule = _net->getNonDefaultRule();
   _path_rule = _net_rule;
 
   int jstart = getStartNode();
-  x          = NULL;
-  xstart     = NULL;
+  x = NULL;
+  xstart = NULL;
   if (_ptV[jstart]._tindex >= 0) {
-    x      = _termV + _ptV[jstart]._tindex;
+    x = _termV + _ptV[jstart]._tindex;
     xstart = x;
   }
-  int          jfr, jto, k;
-  bool         is_short, is_loop;
-  int          tstack0 = 0;
-  int          tstackN = 0;
+  int jfr, jto, k;
+  bool is_short, is_loop;
+  int tstack0 = 0;
+  int tstackN = 0;
   tmg_rcterm** tstackV = _tstackV;
   if (x)
     tstackV[tstackN++] = x;
@@ -1967,7 +1967,7 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
           // removing multi-connection at driver
           removePointFromTerm(_ptV + jto, _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
-          _ptV[jto]._t_alt  = NULL;
+          _ptV[jto]._t_alt = NULL;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
           tstackV[tstackN++] = x;
@@ -2029,15 +2029,15 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
       last_term_index = j;
       if (j < _termN) {
         // disconnected, start new path from another term
-        _connected         = false;
-        _last_id           = -1;
+        _connected = false;
+        _last_id = -1;
         tstackV[tstackN++] = x;
-        pt                 = x->_pt;
+        pt = x->_pt;
       } else {
         jstart = getDisconnectedStart();
         if (jstart < 0)
           break;  // normal exit, no more subtrees
-        pt       = _ptV + jstart;
+        pt = _ptV + jstart;
         _last_id = -1;
       }
     }
@@ -2058,8 +2058,8 @@ void tmg_conn::treeReorder(bool verbose, bool quiet, bool no_convert)
 
 int tmg_conn::getExtension(int ipt, tmg_rc* rc)
 {
-  int       ext = rc->_default_ext;
-  tmg_rcpt* p   = _ptV + ipt;
+  int ext = rc->_default_ext;
+  tmg_rcpt* p = _ptV + ipt;
   tmg_rcpt* pto;
   if (ipt == rc->_ifr)
     pto = _ptV + rc->_ito;
@@ -2083,9 +2083,9 @@ int tmg_conn::getExtension(int ipt, tmg_rc* rc)
 
 int tmg_conn::addPoint(int ipt, tmg_rc* rc)
 {
-  int       wire_id, ext;
+  int wire_id, ext;
   tmg_rcpt* p = _ptV + ipt;
-  ext         = getExtension(ipt, rc);
+  ext = getExtension(ipt, rc);
   if (ext == rc->_default_ext) {
     // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
@@ -2098,12 +2098,12 @@ int tmg_conn::addPoint(int ipt, tmg_rc* rc)
 
 int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
 {
-  int       wire_id, ext;
+  int wire_id, ext;
   tmg_rcpt* p = _ptV + ipt;
-  ext         = getExtension(ipt, rc);
+  ext = getExtension(ipt, rc);
   if (_max_length) {
-    int fx   = _ptV[ifr]._x;
-    int fy   = _ptV[ifr]._y;
+    int fx = _ptV[ifr]._x;
+    int fy = _ptV[ifr]._y;
     int delt = ext * 2 + _max_length;
     if (fx < p->_x) {
       while (p->_x - fx > delt) {
@@ -2128,14 +2128,14 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
     }
   }
   if (_cut_length) {
-    int  fx   = _ptV[ifr]._x;
-    int  fy   = _ptV[ifr]._y;
-    int  tx   = _ptV[ipt]._x;
-    int  ty   = _ptV[ipt]._y;
-    int  delt = ext * _cut_end_extMin;
-    int  dx   = 0;
-    int  dy   = 0;
-    int  sx, sy;
+    int fx = _ptV[ifr]._x;
+    int fy = _ptV[ifr]._y;
+    int tx = _ptV[ipt]._x;
+    int ty = _ptV[ipt]._y;
+    int delt = ext * _cut_end_extMin;
+    int dx = 0;
+    int dy = 0;
+    int sx, sy;
     bool onseg;
     if (fx < tx) {
       dx = _cut_length;
@@ -2189,9 +2189,9 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
 {
   // for first wire after a via, need to add a point
   // only if the extension is not the default ext
-  int       wire_id = 0, ext;
-  tmg_rcpt* p       = _ptV + ipt;
-  ext               = getExtension(ipt, rc);
+  int wire_id = 0, ext;
+  tmg_rcpt* p = _ptV + ipt;
+  ext = getExtension(ipt, rc);
   if (ext != rc->_default_ext) {
     // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
@@ -2201,10 +2201,10 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
 
 void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 {
-  int         verbose = 0;
-  tmg_rc*     rc      = &_rcV[k];
+  int verbose = 0;
+  tmg_rc* rc = &_rcV[k];
   tmg_rcterm* x;
-  int         xfr, yfr, xto, yto;
+  int xfr, yfr, xto, yto;
   xfr = _ptV[fr]._x;
   yfr = _ptV[fr]._y;
   xto = _ptV[to]._x;
@@ -2245,7 +2245,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     if (xfr != xto || yfr != yto) {
       // notice(0, "changing bad short to disconnect\n");
       _ptV[to]._dbwire_id = -1;
-      _last_id            = _ptV[fr]._dbwire_id;
+      _last_id = _ptV[fr]._dbwire_id;
       return;
     }
     if (_ptV[fr]._dbwire_id < 0) {
@@ -2262,13 +2262,13 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
           "Internal Error: tmg_conn::addToWire: value of k is negative: %d\n",
           k);
 
-  int              ext;
-  int              fr_id    = _ptV[fr]._dbwire_id;
+  int ext;
+  int fr_id = _ptV[fr]._dbwire_id;
   dbTechLayerRule* lyr_rule = NULL;
   if (rc->_shape._rule)
     lyr_rule = rc->_shape._rule->getLayerRule(_ptV[fr]._layer);
   if (fr_id < 0) {
-    _path_rule            = rc->_shape._rule;
+    _path_rule = rc->_shape._rule;
     _firstSegmentAfterVia = 0;
     if (_last_id >= 0) {
       // term feedthru
@@ -2312,7 +2312,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
         _encoder.newPath(fr_id);
     } else {
       _firstSegmentAfterVia = 0;
-      ext                   = getExtension(fr, rc);
+      ext = getExtension(fr, rc);
       if (ext != rc->_default_ext) {
         if (_path_rule)
           _encoder.newPathExt(fr_id, ext, lyr_rule);
@@ -2347,7 +2347,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
         _encoder.newPath(fr_id);
     } else {
       _firstSegmentAfterVia = 0;
-      ext                   = getExtension(fr, rc);
+      ext = getExtension(fr, rc);
       if (ext != rc->_default_ext) {
         if (_path_rule)
           _encoder.newPathExt(fr_id, ext, lyr_rule);
@@ -2398,7 +2398,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     // move an ambiguous connection to the later point
     // this is for receiver; we should not get here for driver
     tmg_rcpt* pother = _ptV[to]._t_alt;
-    pother->_tindex  = _ptV[to]._tindex;
+    pother->_tindex = _ptV[to]._tindex;
     _ptV[to]._tindex = -1;
   }
 
@@ -2415,7 +2415,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   }
 
   _ptV[to]._dbwire_id = to_id;
-  _last_id            = to_id;
+  _last_id = to_id;
   if (verbose)
     notice(0, "to   id=%d\n", to_id);
 

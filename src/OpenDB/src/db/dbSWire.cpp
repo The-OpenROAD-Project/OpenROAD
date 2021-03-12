@@ -34,6 +34,7 @@
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbSBox.h"
@@ -41,7 +42,6 @@
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -78,9 +78,9 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
   if ((_shield != 0) && (rhs._shield != 0)) {
     _dbBlock* lhs_blk = (_dbBlock*) getOwner();
     _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-    _dbNet*   lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-    _dbNet*   rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-    int       r       = strcmp(lhs_net->_name, rhs_net->_name);
+    _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
+    _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
+    int r = strcmp(lhs_net->_name, rhs_net->_name);
 
     if (r < 0)
       return true;
@@ -96,8 +96,8 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
   return false;
 }
 
-void _dbSWire::differences(dbDiff&         diff,
-                           const char*     field,
+void _dbSWire::differences(dbDiff& diff,
+                           const char* field,
                            const _dbSWire& rhs) const
 {
   _dbBlock* lhs_block = (_dbBlock*) getOwner();
@@ -113,16 +113,16 @@ void _dbSWire::differences(dbDiff&         diff,
     if ((_shield != 0) && (rhs._shield != 0)) {
       _dbBlock* lhs_blk = (_dbBlock*) getOwner();
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbNet*   lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-      _dbNet*   rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
+      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
+      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
       diff.diff("_shield", lhs_net->_name, rhs_net->_name);
     } else if (_shield != 0) {
       _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbNet*   lhs_net = lhs_blk->_net_tbl->getPtr(_net);
+      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
       diff.out(dbDiff::LEFT, "_shield", lhs_net->_name);
     } else if (rhs._shield != 0) {
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbNet*   rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
+      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
       diff.out(dbDiff::RIGHT, "_shield", rhs_net->_name);
     }
   }
@@ -144,7 +144,7 @@ void _dbSWire::out(dbDiff& diff, char side, const char* field) const
   } else {
     if (_shield != 0) {
       _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbNet*   net = blk->_net_tbl->getPtr(_net);
+      _dbNet* net = blk->_net_tbl->getPtr(_net);
       diff.out(side, "_shield", net->_name);
     }
   }
@@ -161,7 +161,7 @@ dbBlock* dbSWire::getBlock()
 
 dbNet* dbSWire::getNet()
 {
-  _dbSWire* wire  = (_dbSWire*) this;
+  _dbSWire* wire = (_dbSWire*) this;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return (dbNet*) block->_net_tbl->getPtr(wire->_net);
 }
@@ -185,59 +185,59 @@ dbNet* dbSWire::getShield()
 
 dbSet<dbSBox> dbSWire::getWires()
 {
-  _dbSWire* wire  = (_dbSWire*) this;
+  _dbSWire* wire = (_dbSWire*) this;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return dbSet<dbSBox>(wire, block->_sbox_itr);
 }
 
 dbSWire* dbSWire::create(dbNet* net_, dbWireType type, dbNet* shield_)
 {
-  _dbNet*   net    = (_dbNet*) net_;
-  _dbNet*   shield = (_dbNet*) shield_;
-  _dbBlock* block  = (_dbBlock*) net->getOwner();
+  _dbNet* net = (_dbNet*) net_;
+  _dbNet* shield = (_dbNet*) shield_;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  _dbSWire* wire          = block->_swire_tbl->create();
+  _dbSWire* wire = block->_swire_tbl->create();
   wire->_flags._wire_type = type.getValue();
-  wire->_net              = net->getOID();
-  wire->_next_swire       = net->_swires;
-  net->_swires            = wire->getOID();
+  wire->_net = net->getOID();
+  wire->_next_swire = net->_swires;
+  net->_swires = wire->getOID();
 
   if (shield)
     wire->_shield = shield->getOID();
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbSWireCreate((dbSWire*) wire);
   return (dbSWire*) wire;
 }
 
 static void destroySBoxes(_dbSWire* wire)
 {
-  _dbBlock*     block = (_dbBlock*) wire->getOwner();
-  dbId<_dbSBox> id    = wire->_wires;
-  if(id==0)
+  _dbBlock* block = (_dbBlock*) wire->getOwner();
+  dbId<_dbSBox> id = wire->_wires;
+  if (id == 0)
     return;
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbSWirePreDestroySBoxes((dbSWire*) wire);
   while (id != 0) {
     _dbSBox* box = block->_sbox_tbl->getPtr(id);
-    uint     nid = box->_next_box;
+    uint nid = box->_next_box;
     dbProperty::destroyProperties(box);
     block->_sbox_tbl->destroy(box);
     id = nid;
   }
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbSWirePostDestroySBoxes((dbSWire*) wire);
 }
 
 void dbSWire::destroy(dbSWire* wire_)
 {
-  _dbSWire*      wire  = (_dbSWire*) wire_;
-  _dbBlock*      block = (_dbBlock*) wire->getOwner();
-  _dbNet*        net   = block->_net_tbl->getPtr(wire->_net);
-  _dbSWire*      prev  = NULL;
+  _dbSWire* wire = (_dbSWire*) wire_;
+  _dbBlock* block = (_dbBlock*) wire->getOwner();
+  _dbNet* net = block->_net_tbl->getPtr(wire->_net);
+  _dbSWire* prev = NULL;
   dbId<_dbSWire> id;
   // destroy the sboxes
   destroySBoxes(wire);
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbSWireDestroy(wire_);
   // unlink the swire
   for (id = net->_swires; id != 0; id = prev->_next_swire) {
@@ -259,7 +259,7 @@ void dbSWire::destroy(dbSWire* wire_)
 
 dbSet<dbSWire>::iterator dbSWire::destroy(dbSet<dbSWire>::iterator& itr)
 {
-  dbSWire*                 w    = *itr;
+  dbSWire* w = *itr;
   dbSet<dbSWire>::iterator next = ++itr;
   destroy(w);
   return next;

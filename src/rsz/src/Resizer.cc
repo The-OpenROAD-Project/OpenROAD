@@ -148,7 +148,7 @@ using sta::Unit;
 using odb::dbMasterType;
 
 extern "C" {
-extern int Resizer_Init(Tcl_Interp *interp);
+extern int Rsz_Init(Tcl_Interp *interp);
 }
 
 Resizer::Resizer() :
@@ -197,7 +197,7 @@ Resizer::init(OpenRoad *openroad,
   db_network_ = sta->getDbNetwork();
   copyState(sta);
   // Define swig TCL commands.
-  Resizer_Init(interp);
+  Rsz_Init(interp);
   // Eval encoded sta TCL sources.
   evalTclInit(interp, sta::rsz_tcl_inits);
 }
@@ -328,8 +328,7 @@ Resizer::removeBuffer(Instance *buffer)
   if (in_net_ports && out_net_ports) {
     // Verilog uses nets as ports, so the surviving net has to be
     // the one connected the port.
-    logger_->warn(RSZ, 46,
-                  "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
+    logger_->warn(RSZ, 43, "Cannot remove buffers between net {} and {} because both nets have ports connected to them.",
                   sdc_network_->pathName(in_net),
                   sdc_network_->pathName(out_net));
     return false;
@@ -767,7 +766,14 @@ Resizer::repairNet(Net *net,
     ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
-    double max_cap = INF;
+    LibertyPort *buffer_input_port, *buffer_output_port;
+    buffer_lowest_drive_->bufferPorts(buffer_input_port, buffer_output_port);
+    float buf_cap_limit;
+    bool buf_cap_limit_exists;
+    buffer_output_port->capacitanceLimit(MinMax::max(),
+                                         buf_cap_limit, buf_cap_limit_exists);
+
+    double drvr_max_cap = INF;
     float max_fanout = INF;
     bool repair_slew = false;
     bool repair_cap = false;
@@ -780,7 +786,7 @@ Resizer::repairNet(Net *net,
       sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(),
                              corner1, tr, cap, max_cap1, cap_slack);
       if (cap_slack < 0.0) {
-        max_cap = max_cap1;
+        drvr_max_cap = max_cap1;
         cap_violations++;
         repair_cap = true;
       }
@@ -809,7 +815,7 @@ Resizer::repairNet(Net *net,
         if (drvr_port) {
           // Find max load cap that corresponds to max_slew.
           double max_cap1 = findSlewLoadCap(drvr_port, max_slew);
-          max_cap = min(max_cap, max_cap1);
+          drvr_max_cap = min(drvr_max_cap, max_cap1);
           debugPrint(debug_, "repair_net", 2, "slew=%s max_slew=%s max_cap=%s",
                      delayAsString(slew, this, 3),
                      delayAsString(max_slew, this, 3),
@@ -818,10 +824,23 @@ Resizer::repairNet(Net *net,
         }
       }
     }
+
     if (repair_slew
         || repair_cap
         || repair_fanout
         || repair_wire) {
+      bool using_buffer_cap_limit = false;
+      double max_cap = drvr_max_cap;
+      if ((repair_cap || repair_slew)
+          && buf_cap_limit_exists
+          && buf_cap_limit > max_cap) {
+        // Don't repair beyond what a min size buffer could drive, since
+        // we can insert one at the driver output instead of over optimizing
+        // the net for a weak driver.
+        max_cap = buf_cap_limit;
+        using_buffer_cap_limit = true;
+      }
+
       Point drvr_loc = db_network_->location(drvr->pin());
       debugPrint(debug_, "repair_net", 1, "driver %s (%s %s) l=%s",
                  sdc_network_->pathName(drvr_pin),
@@ -829,13 +848,23 @@ Resizer::repairNet(Net *net,
                  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
       SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
-      int ignore1;
-      float ignore2, ignore3;
-      PinSeq ignore4;
+      int wire_length;
+      float pin_cap, fanout;
+      PinSeq load_pins;
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
                 max_cap, max_fanout, max_length, 0,
-                ignore1, ignore2, ignore3, ignore4);
+                wire_length, pin_cap, fanout, load_pins);
       repair_count++;
+
+      double drvr_load = pin_cap + dbuToMeters(wire_length) * wire_cap_;
+      if (using_buffer_cap_limit
+          && drvr_load > drvr_max_cap) {
+        // The remaining cap is more than the driver can handle.
+        // We know the min buffer/repeater is capable of driving it,
+        // so insert one.
+        makeRepeater("drvr", tree, drvr_pt, net, buffer_lowest_drive_, 0,
+                     wire_length, pin_cap, fanout, load_pins);
+      }
     }
     if (resize_drvr
         && resizeToTargetSlew(drvr_pin))
@@ -2182,13 +2211,13 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     // This should use incremental requireds.
     sta_->findRequireds();
-    prev_worst_slack = worst_slack;
     sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
     debugPrint(debug_, "retime", 1, "pass %d worst_slack = %s",
                pass,
                delayAsString(worst_slack, sta_, 3));
     if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
       // Allow slack to increase a few passes to get out of local minima.
+      // Do not update prev_worst_slack so it saves the high water mark.
       decreasing_slack_passes++;
       if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
@@ -2202,6 +2231,7 @@ Resizer::repairSetup(float slack_margin)
       }
     }
     else {
+      prev_worst_slack = worst_slack;
       decreasing_slack_passes = 0;
       // Progress, start journal so we can back up to here.
       journalBegin();

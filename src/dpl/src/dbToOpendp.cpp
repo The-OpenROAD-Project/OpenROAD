@@ -43,11 +43,9 @@
 
 namespace dpl {
 
-using std::ifstream;
 using std::max;
 using std::min;
 using std::numeric_limits;
-using std::ofstream;
 using std::string;
 using std::vector;
 

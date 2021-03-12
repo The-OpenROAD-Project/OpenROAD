@@ -43,8 +43,8 @@ class dbOStream;
 class dbJournalLog
 {
   dbPagedVector<unsigned char> _data;
-  int                          _idx;
-  int                          _debug;
+  int _idx;
+  int _debug;
 
   unsigned char next() { return _data[_idx++]; }
 
@@ -75,15 +75,15 @@ class dbJournalLog
   bool end() { return _idx == (int) _data.size(); }
   void set(uint idx) { _idx = idx; }
 
-  void              pop(bool& value);
-  void              pop(char& value);
-  void              pop(unsigned char& value);
-  void              pop(int& value);
-  void              pop(unsigned int& value);
-  void              pop(float& value);
-  void              pop(double& value);
-  void              pop(char*& value);
-  void              pop(std::string& value);
+  void pop(bool& value);
+  void pop(char& value);
+  void pop(unsigned char& value);
+  void pop(int& value);
+  void pop(unsigned int& value);
+  void pop(float& value);
+  void pop(double& value);
+  void pop(char*& value);
+  void pop(std::string& value);
   friend dbIStream& operator>>(dbIStream& stream, dbJournalLog& log);
   friend dbOStream& operator<<(dbOStream& stream, const dbJournalLog& log);
 };

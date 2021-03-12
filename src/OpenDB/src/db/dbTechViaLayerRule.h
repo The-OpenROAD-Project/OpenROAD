@@ -68,17 +68,17 @@ class _dbTechViaLayerRule : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbTechViaLayerRuleFlags _flags;
-  int                      _overhang1;
-  int                      _overhang2;
-  int                      _min_width;
-  int                      _max_width;
-  int                      _overhang;
-  int                      _metal_overhang;
-  int                      _spacing_x;
-  int                      _spacing_y;
-  double                   _resistance;
-  Rect                     _rect;
-  dbId<_dbTechLayer>       _layer;
+  int _overhang1;
+  int _overhang2;
+  int _min_width;
+  int _max_width;
+  int _overhang;
+  int _metal_overhang;
+  int _spacing_x;
+  int _spacing_y;
+  double _resistance;
+  Rect _rect;
+  dbId<_dbTechLayer> _layer;
 
   _dbTechViaLayerRule(_dbDatabase*, const _dbTechViaLayerRule& v);
   _dbTechViaLayerRule(_dbDatabase*);
@@ -89,8 +89,8 @@ class _dbTechViaLayerRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                    diff,
-                   const char*                field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechViaLayerRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

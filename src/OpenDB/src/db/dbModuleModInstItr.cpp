@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "dbModuleModInstItr.h"
 
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -61,15 +61,15 @@ void dbModuleModInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbModule* module = (_dbModule*) parent;
-  uint       id     = module->_modinsts;
-  uint       list   = 0;
+  uint id = module->_modinsts;
+  uint list = 0;
 
   while (id != 0) {
-    _dbModInst* modinst   = _modinst_tbl->getPtr(id);
-    uint        n         = modinst->_module_next;
+    _dbModInst* modinst = _modinst_tbl->getPtr(id);
+    uint n = modinst->_module_next;
     modinst->_module_next = list;
-    list                  = id;
-    id                    = n;
+    list = id;
+    id = n;
   }
   module->_modinsts = list;
   // User Code End reverse
@@ -118,7 +118,7 @@ dbObject* dbModuleModInstItr::getObject(uint id, ...)
 {
   return _modinst_tbl->getPtr(id);
 }
-// User Code Begin methods
-// User Code End methods
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Cpp

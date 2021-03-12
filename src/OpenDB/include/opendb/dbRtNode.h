@@ -34,10 +34,10 @@
 
 #include <vector>
 
-#include "odbDList.h"
 #include "dbRtEdge.h"
 #include "geom.h"
 #include "odb.h"
+#include "odbDList.h"
 
 namespace odb {
 
@@ -58,22 +58,22 @@ class dbRtNodeEdgeIterator
   dbRtNodeEdgeIterator()
   {
     _node = NULL;
-    _cur  = NULL;
+    _cur = NULL;
   }
   dbRtNodeEdgeIterator(dbRtNode* node, dbRtEdge* cur)
   {
     _node = node;
-    _cur  = cur;
+    _cur = cur;
   }
   dbRtNodeEdgeIterator(const dbRtNodeEdgeIterator& i)
   {
     _node = i._node;
-    _cur  = i._cur;
+    _cur = i._cur;
   }
   dbRtNodeEdgeIterator& operator=(const dbRtNodeEdgeIterator& i)
   {
     _node = i._node;
-    _cur  = i._cur;
+    _cur = i._cur;
     return *this;
   }
 
@@ -85,7 +85,7 @@ class dbRtNodeEdgeIterator
   {
     return _cur != i._cur;
   }
-  dbRtEdge*             operator*() { return _cur; }
+  dbRtEdge* operator*() { return _cur; }
   dbRtNodeEdgeIterator& operator++()
   {
     incr();
@@ -103,30 +103,30 @@ class dbRtNodeEdgeIterator
 class dbRtNode
 {
  private:
-  int                    _x;
-  int                    _y;
-  int                    _jct_id;
-  dbTechLayer*           _layer;
+  int _x;
+  int _y;
+  int _jct_id;
+  dbTechLayer* _layer;
   std::vector<dbObject*> _objects;
-  dbRtTree*              _rt_tree;
-  dbRtEdge*              _head;
-  dbRtEdge*              _tail;
-  DListEntry<dbRtNode>   _rt_node;
-  bool                   _visited;
+  dbRtTree* _rt_tree;
+  dbRtEdge* _head;
+  dbRtEdge* _tail;
+  DListEntry<dbRtNode> _rt_node;
+  bool _visited;
 
   void add_edge(dbRtEdge* edge)
   {
     assert(edge->_src == this || edge->_tgt == this);
 
     if (_head == NULL) {
-      _head = _tail    = edge;
+      _head = _tail = edge;
       edge->next(this) = NULL;
       edge->prev(this) = NULL;
     } else {
-      edge->prev(this)  = _tail;
+      edge->prev(this) = _tail;
       _tail->next(this) = edge;
-      edge->next(this)  = NULL;
-      _tail             = edge;
+      edge->next(this) = NULL;
+      _tail = edge;
     }
   }
 
@@ -147,7 +147,7 @@ class dbRtNode
   }
 
  public:
-  typedef dbRtNodeEdgeIterator             edge_iterator;
+  typedef dbRtNodeEdgeIterator edge_iterator;
   typedef std::vector<dbObject*>::iterator object_iterator;
 
   dbRtNode(int x, int y, dbTechLayer* layer)

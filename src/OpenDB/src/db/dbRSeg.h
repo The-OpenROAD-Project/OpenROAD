@@ -73,14 +73,14 @@ class _dbRSeg : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbRSegFlags _flags;
-  uint         _source;  // rc-network node-id
-  uint         _target;  // rc-network node-id
+  uint _source;  // rc-network node-id
+  uint _target;  // rc-network node-id
   union
   {
     uint _shape_id;  // DKF: shape-id to be combined with _net
-    int  _xcoord;
+    int _xcoord;
   };
-  int           _ycoord;
+  int _ycoord;
   dbId<_dbRSeg> _next;
 
   _dbRSeg(_dbDatabase*, const _dbRSeg& s);
@@ -112,8 +112,8 @@ inline _dbRSeg::_dbRSeg(_dbDatabase*, const _dbRSeg& s)
 inline _dbRSeg::_dbRSeg(_dbDatabase*)
 {
   _flags._spare_bits_29 = 0;
-  _flags._update_cap    = 0;
-  _flags._path_dir      = 0;
+  _flags._update_cap = 0;
+  _flags._path_dir = 0;
   _flags._allocated_cap = 0;
 
   _source = 0;

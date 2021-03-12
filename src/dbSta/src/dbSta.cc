@@ -115,10 +115,32 @@ public:
                     const char *fmt,
                     ...)
     __attribute__((format (printf, 3, 4)));
+  virtual void fileWarn(int id,
+                        const char *filename,
+                        int line,
+                        const char *fmt, ...)
+    __attribute__((format (printf, 5, 6)));
+  virtual void vfileWarn(int id,
+                         const char *filename,
+                         int line,
+                         const char *fmt,
+                         va_list args);
+
   virtual void error(int id,
                      const char *fmt,
                      ...)
     __attribute__((format (printf, 3, 4)));
+  virtual void fileError(int id,
+                         const char *filename,
+                         int line,
+                         const char *fmt, ...)
+    __attribute__((format (printf, 5, 6)));
+  virtual void vfileError(int id,
+                          const char *filename,
+                          int line,
+                          const char *fmt,
+                          va_list args);
+
   virtual void critical(int id,
                         const char *fmt,
                         ...)
@@ -430,6 +452,47 @@ dbStaReport::printString(const char *buffer,
 }
 
 void
+dbStaReport::warn(int id,
+                  const char *fmt,
+                  ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer(fmt, args);
+  logger_->warn(STA, id, buffer_);
+  va_end(args);
+}
+
+void
+dbStaReport::fileWarn(int id,
+                      const char *filename,
+                      int line,
+                      const char *fmt,
+                      ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer("%s line %d, ", filename, line);
+  printToBufferAppend(fmt, args);
+  logger_->warn(STA, id, buffer_);
+  va_end(args);
+}
+
+void
+dbStaReport::vfileWarn(int id,
+                       const char *filename,
+                       int line,
+                       const char *fmt,
+                       va_list args)
+{
+  printToBuffer("%s line %d, ", filename, line);
+  printToBufferAppend(fmt, args);
+  logger_->warn(STA, id, buffer_);
+}
+
+void
 dbStaReport::error(int id,
                    const char *fmt,
                    ...)
@@ -443,16 +506,31 @@ dbStaReport::error(int id,
 }
 
 void
-dbStaReport::warn(int id,
-                  const char *fmt,
-                  ...)
+dbStaReport::fileError(int id,
+                       const char *filename,
+                       int line,
+                       const char *fmt,
+                       ...)
 {
   va_list args;
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  logger_->warn(STA, id, buffer_);
+  printToBuffer("%s line %d, ", filename, line);
+  printToBufferAppend(fmt, args);
+  logger_->error(STA, id, buffer_);
   va_end(args);
+}
+
+void
+dbStaReport::vfileError(int id,
+                        const char *filename,
+                        int line,
+                        const char *fmt,
+                        va_list args)
+{
+  printToBuffer("%s line %d, ", filename, line);
+  printToBufferAppend(fmt, args);
+  logger_->error(STA, id, buffer_);
 }
 
 void
@@ -512,7 +590,7 @@ dbStaCbk::inDbInstSwapMasterBefore(dbInst *inst,
   if (sta::equivCells(from_lib_cell, to_lib_cell))
     sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
   else
-    logger_->error(STA, 1000, "instance %s swap master %s is not equivalent",
+    logger_->error(STA, 1000, "instance {} swap master {} is not equivalent",
                    inst->getConstName(),
                    master->getConstName());
 }

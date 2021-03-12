@@ -1,5 +1,5 @@
-//Generator Code Begin 1
+//Generator Code Begin DbObjectType
 {% for klass in schema.classes %}
   {{klass.name}}Obj,
 {% endfor %}
-//Generator Code End 1
+//Generator Code End DbObjectType

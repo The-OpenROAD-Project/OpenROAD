@@ -34,11 +34,11 @@
 
 #include <vector>
 
-#include "odbDList.h"
 #include "dbRtEdge.h"
 #include "dbRtNode.h"
 #include "dbTypes.h"
 #include "odb.h"
+#include "odbDList.h"
 
 namespace odb {
 
@@ -93,57 +93,57 @@ class dbRtTree
   //    Returns NULL, if the "tgt" node already has an in-edge.
   //    Returns NULL, if the src and tgt layers are not the respective upper and
   //    lower layers of this via.
-  dbRtVia* createVia(dbRtNode*         src,
-                     dbRtNode*         tgt,
-                     dbVia*            via,
+  dbRtVia* createVia(dbRtNode* src,
+                     dbRtNode* tgt,
+                     dbVia* via,
                      dbWireType::Value type = dbWireType::NONE,
-                     dbTechLayerRule*  rule = NULL);
+                     dbTechLayerRule* rule = NULL);
 
   // Create a tech-via edge.
   //    Returns NULL, if the "tgt" node already has an in-edge.
   //    Returns NULL, if the src and tgt layers are not the respective upper and
   //    lower layers of this via.
-  dbRtTechVia* createTechVia(dbRtNode*         src,
-                             dbRtNode*         tgt,
-                             dbTechVia*        via,
+  dbRtTechVia* createTechVia(dbRtNode* src,
+                             dbRtNode* tgt,
+                             dbTechVia* via,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule*  rule = NULL);
+                             dbTechLayerRule* rule = NULL);
 
   // Create a segment edge with the default (EXTENDED) end style.
   //    Returns NULL, if the "tgt" node already has an in-edge.
   //    Returns NULL, if the src and tgt layer are not the same.
   //    Returns NULL, if the src and tgt point do not form an orthogonal
   //    segment.
-  dbRtSegment* createSegment(dbRtNode*         src,
-                             dbRtNode*         tgt,
+  dbRtSegment* createSegment(dbRtNode* src,
+                             dbRtNode* tgt,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule*  rule = NULL);
+                             dbTechLayerRule* rule = NULL);
 
   // Create a segment edge.
   //    Returns NULL, if the "tgt" node already has an in-edge.
   //    Returns NULL, if the src and tgt layer are not the same.
   //    Returns NULL, if the src and tgt point do not form an orthogonal
   //    segment.
-  dbRtSegment* createSegment(dbRtNode*         src,
-                             dbRtNode*         tgt,
-                             dbRtEndStyle      src_style,
-                             dbRtEndStyle      tgt_style,
+  dbRtSegment* createSegment(dbRtNode* src,
+                             dbRtNode* tgt,
+                             dbRtEndStyle src_style,
+                             dbRtEndStyle tgt_style,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule*  rule = NULL);
+                             dbTechLayerRule* rule = NULL);
 
   // Create a short edge.
   //    Returns NULL, if the "tgt" node already has an in-edge.
-  dbRtShort* createShort(dbRtNode*         src,
-                         dbRtNode*         tgt,
+  dbRtShort* createShort(dbRtNode* src,
+                         dbRtNode* tgt,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule*  rule = NULL);
+                         dbTechLayerRule* rule = NULL);
 
   // Create a vwire edge.
   //    Returns NULL, if the "tgt" node already has an in-edge.
-  dbRtVWire* createVWire(dbRtNode*         src,
-                         dbRtNode*         tgt,
+  dbRtVWire* createVWire(dbRtNode* src,
+                         dbRtNode* tgt,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule*  rule = NULL);
+                         dbTechLayerRule* rule = NULL);
 
   // Node iterator
   typedef DList<dbRtNode, &dbRtNode::rtNode>::iterator node_iterator;
@@ -198,7 +198,7 @@ class dbRtTree
   // specified tree
   static dbRtNode* duplicate(dbRtTree* G,
                              dbRtNode* node,
-                             bool      copy_objects = true);
+                             bool copy_objects = true);
 
   // Make a duplicate copy of this edge between src and target in the specified
   // tree
@@ -208,15 +208,15 @@ class dbRtTree
                              dbRtNode* tgt);
 
  private:
-  void encodePath(dbWireEncoder&          encoder,
+  void encodePath(dbWireEncoder& encoder,
                   std::vector<dbRtEdge*>& path,
-                  dbRtNode*               src,
-                  dbWireType::Value       cur_type,
-                  dbTechLayerRule*        cur_rule,
-                  bool                    encode_bterms_iterms);
-  void encodePath(dbWireEncoder&          encoder,
+                  dbRtNode* src,
+                  dbWireType::Value cur_type,
+                  dbTechLayerRule* cur_rule,
+                  bool encode_bterms_iterms);
+  void encodePath(dbWireEncoder& encoder,
                   std::vector<dbRtEdge*>& path,
-                  bool                    encode_bterms_iterms);
+                  bool encode_bterms_iterms);
   void add_node(dbRtNode* node);
   void add_edge(dbRtEdge* edge);
   void remove_node(dbRtNode* node);
@@ -226,22 +226,22 @@ class dbRtTree
   static void copyNode(dbRtTree* G,
                        dbRtNode* node,
                        dbRtNode* src,
-                       bool      copy_edge_map);
+                       bool copy_edge_map);
   static void copyEdge(dbRtTree* G,
                        dbRtNode* src,
                        dbRtNode* tgt,
                        dbRtEdge* edge,
-                       bool      copy_edge_map);
+                       bool copy_edge_map);
 
-  std::vector<dbRtEdge*>             _edge_map;
+  std::vector<dbRtEdge*> _edge_map;
   DList<dbRtNode, &dbRtNode::rtNode> _nodes;
   DList<dbRtEdge, &dbRtEdge::rtEdge> _edges;
 };
 
-inline dbRtSegment* dbRtTree::createSegment(dbRtNode*         src,
-                                            dbRtNode*         tgt,
+inline dbRtSegment* dbRtTree::createSegment(dbRtNode* src,
+                                            dbRtNode* tgt,
                                             dbWireType::Value type,
-                                            dbTechLayerRule*  rule)
+                                            dbTechLayerRule* rule)
 {
   return createSegment(src, tgt, dbRtEndStyle(), dbRtEndStyle(), type, rule);
 }

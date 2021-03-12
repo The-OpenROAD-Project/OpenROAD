@@ -54,7 +54,6 @@
 #include "dbTable.hpp"
 #include "utility/Logger.h"
 
-
 namespace odb {
 
 template class dbTable<_dbITerm>;
@@ -98,7 +97,7 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
 
   _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
   _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-  int      r        = strcmp(lhs_inst->_name, rhs_inst->_name);
+  int r = strcmp(lhs_inst->_name, rhs_inst->_name);
 
   if (r < 0)
     return true;
@@ -111,8 +110,8 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
   return strcmp(lhs_mterm->_name, rhs_mterm->_name) < 0;
 }
 
-void _dbITerm::differences(dbDiff&         diff,
-                           const char*     field,
+void _dbITerm::differences(dbDiff& diff,
+                           const char* field,
                            const _dbITerm& rhs) const
 {
   if (!diff.deepDiff()) {
@@ -128,10 +127,10 @@ void _dbITerm::differences(dbDiff&         diff,
     DIFF_FIELD(_prev_net_iterm);
     DIFF_END
   } else {
-    _dbBlock* lhs_blk   = (_dbBlock*) getOwner();
-    _dbBlock* rhs_blk   = (_dbBlock*) rhs.getOwner();
-    _dbInst*  lhs_inst  = lhs_blk->_inst_tbl->getPtr(_inst);
-    _dbInst*  rhs_inst  = rhs_blk->_inst_tbl->getPtr(rhs._inst);
+    _dbBlock* lhs_blk = (_dbBlock*) getOwner();
+    _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
+    _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
+    _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
     _dbMTerm* lhs_mterm = getMTerm();
     _dbMTerm* rhs_mterm = rhs.getMTerm();
     ZASSERT(strcmp(lhs_inst->_name, rhs_inst->_name) == 0);
@@ -193,20 +192,20 @@ void _dbITerm::out(dbDiff& diff, char side, const char* field) const
 
 _dbMTerm* _dbITerm::getMTerm() const
 {
-  _dbBlock*      block    = (_dbBlock*) getOwner();
-  _dbInst*       inst     = block->_inst_tbl->getPtr(_inst);
-  _dbInstHdr*    inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
-  _dbDatabase*   db       = getDatabase();
-  _dbLib*        lib      = db->_lib_tbl->getPtr(inst_hdr->_lib);
-  _dbMaster*     master   = lib->_master_tbl->getPtr(inst_hdr->_master);
-  dbId<_dbMTerm> mterm    = inst_hdr->_mterms[_flags._mterm_idx];
+  _dbBlock* block = (_dbBlock*) getOwner();
+  _dbInst* inst = block->_inst_tbl->getPtr(_inst);
+  _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
+  _dbDatabase* db = getDatabase();
+  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
+  dbId<_dbMTerm> mterm = inst_hdr->_mterms[_flags._mterm_idx];
   return master->_mterm_tbl->getPtr(mterm);
 }
 
 _dbInst* _dbITerm::getInst() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
-  _dbInst*  inst  = block->_inst_tbl->getPtr(_inst);
+  _dbInst* inst = block->_inst_tbl->getPtr(_inst);
   return inst;
 }
 
@@ -220,7 +219,7 @@ dbInst* dbITerm::getInst()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst*  inst  = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
   return (dbInst*) inst;
 }
 
@@ -238,14 +237,14 @@ dbNet* dbITerm::getNet()
 
 dbMTerm* dbITerm::getMTerm()
 {
-  _dbITerm*      iterm    = (_dbITerm*) this;
-  _dbBlock*      block    = (_dbBlock*) iterm->getOwner();
-  _dbInst*       inst     = block->_inst_tbl->getPtr(iterm->_inst);
-  _dbInstHdr*    inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
-  _dbDatabase*   db       = iterm->getDatabase();
-  _dbLib*        lib      = db->_lib_tbl->getPtr(inst_hdr->_lib);
-  _dbMaster*     master   = lib->_master_tbl->getPtr(inst_hdr->_master);
-  dbId<_dbMTerm> mterm    = inst_hdr->_mterms[iterm->_flags._mterm_idx];
+  _dbITerm* iterm = (_dbITerm*) this;
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
+  _dbDatabase* db = iterm->getDatabase();
+  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+  _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
+  dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->_flags._mterm_idx];
   return (dbMTerm*) master->_mterm_tbl->getPtr(mterm);
 }
 
@@ -253,15 +252,15 @@ dbBTerm* dbITerm::getBTerm()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst*  inst  = block->_inst_tbl->getPtr(iterm->_inst);
+  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
 
   if (inst->_hierarchy == 0)
     return NULL;
 
   _dbHier* hier = block->_hier_tbl->getPtr(inst->_hierarchy);
 
-  _dbChip*       chip  = (_dbChip*) block->getOwner();
-  _dbBlock*      child = chip->_block_tbl->getPtr(hier->_child_block);
+  _dbChip* chip = (_dbChip*) block->getOwner();
+  _dbBlock* child = chip->_block_tbl->getPtr(hier->_child_block);
   dbId<_dbBTerm> bterm = hier->_child_bterms[iterm->_flags._mterm_idx];
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
@@ -272,7 +271,7 @@ dbBlock* dbITerm::getBlock()
 }
 void dbITerm::setClocked(bool v)
 {
-  _dbITerm* iterm        = (_dbITerm*) this;
+  _dbITerm* iterm = (_dbITerm*) this;
   iterm->_flags._clocked = v;
 }
 bool dbITerm::isClocked()
@@ -283,7 +282,7 @@ bool dbITerm::isClocked()
 }
 void dbITerm::setMark(uint v)
 {
-  _dbITerm* iterm     = (_dbITerm*) this;
+  _dbITerm* iterm = (_dbITerm*) this;
   iterm->_flags._mark = v;
 }
 bool dbITerm::isSetMark()
@@ -311,8 +310,14 @@ void dbITerm::setSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, setSpecial", getId());
-    block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: Iterm {}, setSpecial",
+               getId());
+    block->_journal->updateField(
+        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
 }
@@ -321,7 +326,8 @@ void dbITerm::clearSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags = flagsToUInt(iterm);
+  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags =
+  // flagsToUInt(iterm);
 #ifdef FULL_ECO
   uint prev_flags = flagsToUInt(iterm);
 #endif
@@ -330,8 +336,14 @@ void dbITerm::clearSpecial()
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, clearSpecial\n", getId());
-    block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: Iterm {}, clearSpecial\n",
+               getId());
+    block->_journal->updateField(
+        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
 }
@@ -340,7 +352,8 @@ void dbITerm::setSpef(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags = flagsToUInt(iterm);
+  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags =
+  // flagsToUInt(iterm);
 #ifdef FULL_ECO
   uint prev_flags = flagsToUInt(iterm);
 #endif
@@ -349,8 +362,14 @@ void dbITerm::setSpef(uint v)
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),utl::ODB, "DB_ECO", 1,"ECO: Iterm {}, setSpef", getId());
-    block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: Iterm {}, setSpef",
+               getId());
+    block->_journal->updateField(
+        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
 }
@@ -364,7 +383,7 @@ bool dbITerm::isSpef()
 void dbITerm::setExtId(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  iterm->_ext_id  = v;
+  iterm->_ext_id = v;
 }
 
 uint dbITerm::getExtId()
@@ -384,16 +403,22 @@ void dbITerm::setConnected()
   _dbITerm* iterm = (_dbITerm*) this;
   // dimitri_fix: need to FIX on FULL_ECO uint prev_flags = flagsToUInt(iterm);
 #ifdef FULL_ECO
-  _dbBlock* block      = (_dbBlock*) getOwner();
-  uint      prev_flags = flagsToUInt(iterm);
+  _dbBlock* block = (_dbBlock*) getOwner();
+  uint prev_flags = flagsToUInt(iterm);
 #endif
 
   iterm->_flags._connected = 1;
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, setConnected", getId());
-    block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: Iterm {}, setConnected",
+               getId());
+    block->_journal->updateField(
+        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
 }
@@ -403,16 +428,22 @@ void dbITerm::clearConnected()
   _dbITerm* iterm = (_dbITerm*) this;
   // uint prev_flags = flagsToUInt(iterm);
 #ifdef FULL_ECO
-  _dbBlock* block      = (_dbBlock*) getOwner();
-  uint      prev_flags = flagsToUInt(iterm);
+  _dbBlock* block = (_dbBlock*) getOwner();
+  uint prev_flags = flagsToUInt(iterm);
 #endif
 
   iterm->_flags._connected = 0;
 
 #ifdef FULL_ECO
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: Iterm {}, clearConnected", getId());
-    block->_journal->updateField(this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: Iterm {}, clearConnected",
+               getId());
+    block->_journal->updateField(
+        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
   }
 #endif
 }
@@ -431,23 +462,26 @@ dbITerm* dbITerm::connect(dbInst* inst_, dbNet* net_, dbMTerm* mterm_)
 void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
 {
   _dbITerm* iterm = (_dbITerm*) iterm_;
-  _dbNet*   net   = (_dbNet*) net_;
+  _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
-  //Do Nothing if already connected
-  if (iterm->_net==net->getOID())
+  // Do Nothing if already connected
+  if (iterm->_net == net->getOID())
     return;
-  for(auto callback:block->_callbacks)
-    callback->inDbITermPreConnect(iterm_,net_);
-    
+  for (auto callback : block->_callbacks)
+    callback->inDbITermPreConnect(iterm_, net_);
+
   if (iterm->_net != 0)
     disconnect(iterm_);
 
   if (block->_journal) {
-    debugPrint(iterm->getImpl()->getLogger(),utl::ODB, "DB_ECO", 1,
-          "ECO: connect Iterm {} to net {}",
-          iterm_->getId(),
-          net_->getId());
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Iterm {} to net {}",
+               iterm_->getId(),
+               net_->getId());
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(iterm_->getId());
@@ -458,10 +492,10 @@ void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
   iterm->_net = net->getOID();
 
   if (net->_iterms != 0) {
-    _dbITerm* tail         = block->_iterm_tbl->getPtr(net->_iterms);
+    _dbITerm* tail = block->_iterm_tbl->getPtr(net->_iterms);
     iterm->_next_net_iterm = net->_iterms;
     iterm->_prev_net_iterm = 0;
-    tail->_prev_net_iterm  = iterm->getOID();
+    tail->_prev_net_iterm = iterm->getOID();
   } else {
     iterm->_next_net_iterm = 0;
     iterm->_prev_net_iterm = 0;
@@ -469,7 +503,7 @@ void dbITerm::connect(dbITerm* iterm_, dbNet* net_)
 
   net->_iterms = iterm->getOID();
 
-  for(auto callback:block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbITermPostConnect(iterm_);
 }
 
@@ -481,11 +515,16 @@ void dbITerm::disconnect(dbITerm* iterm_)
     return;
 
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbNet*   net   = block->_net_tbl->getPtr(iterm->_net);
-  for(auto callback:block->_callbacks)
+  _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
+  for (auto callback : block->_callbacks)
     callback->inDbITermPreDisconnect(iterm_);
   if (block->_journal) {
-    debugPrint(iterm->getImpl()->getLogger(),utl::ODB, "DB_ECO", 1, "ECO: disconnect Iterm {}", iterm_->getId());
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: disconnect Iterm {}",
+               iterm_->getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(iterm_->getId());
@@ -498,29 +537,29 @@ void dbITerm::disconnect(dbITerm* iterm_)
     net->_iterms = iterm->_next_net_iterm;
 
     if (net->_iterms != 0) {
-      _dbITerm* t        = block->_iterm_tbl->getPtr(net->_iterms);
+      _dbITerm* t = block->_iterm_tbl->getPtr(net->_iterms);
       t->_prev_net_iterm = 0;
     }
   } else {
     if (iterm->_next_net_iterm != 0) {
-      _dbITerm* next        = block->_iterm_tbl->getPtr(iterm->_next_net_iterm);
+      _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_net_iterm);
       next->_prev_net_iterm = iterm->_prev_net_iterm;
     }
 
     if (iterm->_prev_net_iterm != 0) {
-      _dbITerm* prev        = block->_iterm_tbl->getPtr(iterm->_prev_net_iterm);
+      _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_net_iterm);
       prev->_next_net_iterm = iterm->_next_net_iterm;
     }
   }
 
   iterm->_net = 0;
-  for(auto callback:block->_callbacks)
-    callback->inDbITermPostDisconnect(iterm_,(dbNet*)net);
+  for (auto callback : block->_callbacks)
+    callback->inDbITermPostDisconnect(iterm_, (dbNet*) net);
 }
 
 dbSet<dbITerm>::iterator dbITerm::disconnect(dbSet<dbITerm>::iterator& itr)
 {
-  dbITerm*                 it   = *itr;
+  dbITerm* it = *itr;
   dbSet<dbITerm>::iterator next = ++itr;
   disconnect(it);
   return next;
@@ -538,9 +577,9 @@ dbIoType dbITerm::getIoType()
 }
 bool dbITerm::isOutputSignal(bool io)
 {
-  _dbMTerm* mterm  = (_dbMTerm*) getMTerm();
-  dbSigType sType  = dbSigType(mterm->_flags._sig_type);
-  dbIoType  ioType = dbIoType(mterm->_flags._io_type);
+  _dbMTerm* mterm = (_dbMTerm*) getMTerm();
+  dbSigType sType = dbSigType(mterm->_flags._sig_type);
+  dbIoType ioType = dbIoType(mterm->_flags._io_type);
 
   if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER))
     return false;
@@ -555,9 +594,9 @@ bool dbITerm::isOutputSignal(bool io)
 }
 bool dbITerm::isInputSignal(bool io)
 {
-  _dbMTerm* mterm  = (_dbMTerm*) getMTerm();
-  dbSigType sType  = dbSigType(mterm->_flags._sig_type);
-  dbIoType  ioType = dbIoType(mterm->_flags._io_type);
+  _dbMTerm* mterm = (_dbMTerm*) getMTerm();
+  dbSigType sType = dbSigType(mterm->_flags._sig_type);
+  dbIoType ioType = dbIoType(mterm->_flags._io_type);
 
   if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER))
     return false;
@@ -580,26 +619,26 @@ dbITerm* dbITerm::getITerm(dbBlock* block_, uint dbid)
 bool dbITerm::getAvgXY(int* x, int* y)
 {
   dbMTerm* mterm = getMTerm();
-  int      nn    = 0;
-  double   xx    = 0.0;
-  double   yy    = 0.0;
-  int      px;
-  int      py;
-  dbInst*  inst = getInst();
+  int nn = 0;
+  double xx = 0.0;
+  double yy = 0.0;
+  int px;
+  int py;
+  dbInst* inst = getInst();
   inst->getOrigin(px, py);
-  Point        origin = Point(px, py);
+  Point origin = Point(px, py);
   dbOrientType orient = inst->getOrient();
-  dbTransform  transform(orient, origin);
+  dbTransform transform(orient, origin);
 
-  dbSet<dbMPin>           mpins = mterm->getMPins();
+  dbSet<dbMPin> mpins = mterm->getMPins();
   dbSet<dbMPin>::iterator mpin_itr;
   for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-    dbMPin*                mpin  = *mpin_itr;
-    dbSet<dbBox>           boxes = mpin->getGeometry();
+    dbMPin* mpin = *mpin_itr;
+    dbSet<dbBox> boxes = mpin->getGeometry();
     dbSet<dbBox>::iterator box_itr;
     for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
       dbBox* box = *box_itr;
-      Rect   rect;
+      Rect rect;
       box->getBox(rect);
       transform.apply(rect);
       xx += rect.xMin() + rect.xMax();
@@ -608,10 +647,12 @@ bool dbITerm::getAvgXY(int* x, int* y)
     }
   }
   if (!nn) {
-    getImpl()->getLogger()->warn(utl::ODB, 34,
-            "Can not find physical location of iterm {}/{}",
-            getInst()->getConstName(),
-            getMTerm()->getConstName());
+    getImpl()->getLogger()->warn(
+        utl::ODB,
+        34,
+        "Can not find physical location of iterm {}/{}",
+        getInst()->getConstName(),
+        getMTerm()->getConstName());
     return false;
   }
   xx /= nn;
@@ -623,13 +664,14 @@ bool dbITerm::getAvgXY(int* x, int* y)
 void dbITerm::print(FILE* fp, const char* trail)
 {
   if (fp == NULL) {
-    getImpl()->getLogger()->info(utl::ODB, 35,
-           "{} {} {} {}{}",
-           getId(),
-           getMTerm()->getConstName(),
-           getMTerm()->getMaster()->getConstName(),
-           getInst()->getConstName(),
-           trail);
+    getImpl()->getLogger()->info(utl::ODB,
+                                 35,
+                                 "{} {} {} {}{}",
+                                 getId(),
+                                 getMTerm()->getConstName(),
+                                 getMTerm()->getMaster()->getConstName(),
+                                 getInst()->getConstName(),
+                                 trail);
   } else {
     fprintf(fp,
             "%d %s %s %s%s",
@@ -649,7 +691,7 @@ uint32_t dbITerm::staVertexId()
 
 void dbITerm::staSetVertexId(uint32_t id)
 {
-  _dbITerm* iterm       = (_dbITerm*) this;
+  _dbITerm* iterm = (_dbITerm*) this;
   iterm->_sta_vertex_id = id;
 }
 
