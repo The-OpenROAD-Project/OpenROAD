@@ -87,8 +87,8 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbMPin::differences(dbDiff& diff,
+                          const char* field,
                           const _dbMPin& rhs) const
 {
   DIFF_BEGIN
@@ -115,7 +115,7 @@ void _dbMPin::out(dbDiff& diff, char side, const char* field) const
 
 dbMTerm* dbMPin::getMTerm()
 {
-  _dbMPin*   pin    = (_dbMPin*) this;
+  _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   return (dbMTerm*) master->_mterm_tbl->getPtr(pin->_mterm);
 }
@@ -127,19 +127,19 @@ dbMaster* dbMPin::getMaster()
 
 dbSet<dbBox> dbMPin::getGeometry()
 {
-  _dbMPin*   pin    = (_dbMPin*) this;
+  _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   return dbSet<dbBox>(pin, master->_box_itr);
 }
 
 dbMPin* dbMPin::create(dbMTerm* mterm_)
 {
-  _dbMTerm*  mterm  = (_dbMTerm*) mterm_;
+  _dbMTerm* mterm = (_dbMTerm*) mterm_;
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
-  _dbMPin*   mpin   = master->_mpin_tbl->create();
-  mpin->_mterm      = mterm->getOID();
-  mpin->_next_mpin  = mterm->_pins;
-  mterm->_pins      = mpin->getOID();
+  _dbMPin* mpin = master->_mpin_tbl->create();
+  mpin->_mterm = mterm->getOID();
+  mpin->_next_mpin = mterm->_pins;
+  mterm->_pins = mpin->getOID();
   return (dbMPin*) mpin;
 }
 

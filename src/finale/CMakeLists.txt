@@ -33,10 +33,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      finale
-        NAMESPACE fin
-        I_FILE    src/finale.i
-        SCRIPTS   src/finale.tcl
+swig_lib(NAME      finale
+         NAMESPACE fin
+         I_FILE    src/finale.i
+         SCRIPTS   src/finale.tcl
 )
 
 target_sources(finale

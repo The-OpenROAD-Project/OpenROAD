@@ -33,6 +33,7 @@
 #pragma once
 
 #include <algorithm>
+
 #include "dbSet.h"
 
 namespace odb {
@@ -42,10 +43,10 @@ namespace odb {
 //
 // diff_object - Diff the object if this is a deep-diff, otherwise diff the
 template <class T>
-inline void diff_object(dbDiff&     diff,
+inline void diff_object(dbDiff& diff,
                         const char* field,
-                        dbId<T>     lhs,
-                        dbId<T>     rhs,
+                        dbId<T> lhs,
+                        dbId<T> rhs,
                         dbTable<T>* lhs_tbl,
                         dbTable<T>* rhs_tbl)
 {
@@ -67,10 +68,10 @@ inline void diff_object(dbDiff&     diff,
 }
 
 template <class T>
-inline void diff_object(dbDiff&          diff,
-                        const char*      field,
-                        dbId<T>          lhs,
-                        dbId<T>          rhs,
+inline void diff_object(dbDiff& diff,
+                        const char* field,
+                        dbId<T> lhs,
+                        dbId<T> rhs,
                         dbArrayTable<T>* lhs_tbl,
                         dbArrayTable<T>* rhs_tbl)
 {
@@ -92,10 +93,10 @@ inline void diff_object(dbDiff&          diff,
 }
 
 template <class T>
-inline void diff_out_object(dbDiff&     diff,
-                            char        side,
+inline void diff_out_object(dbDiff& diff,
+                            char side,
                             const char* field,
-                            dbId<T>     id,
+                            dbId<T> id,
                             dbTable<T>* tbl)
 {
   if (diff.deepDiff() == false)
@@ -108,10 +109,10 @@ inline void diff_out_object(dbDiff&     diff,
 }
 
 template <class T>
-inline void diff_out_object(dbDiff&          diff,
-                            char             side,
-                            const char*      field,
-                            dbId<T>          id,
+inline void diff_out_object(dbDiff& diff,
+                            char side,
+                            const char* field,
+                            dbId<T> id,
                             dbArrayTable<T>* tbl)
 {
   if (diff.deepDiff() == false)
@@ -129,12 +130,12 @@ inline void diff_out_object(dbDiff&          diff,
 //            diff'ed.
 //
 template <class T>
-inline void diff_set(dbDiff&     diff,
+inline void diff_set(dbDiff& diff,
                      const char* field,
-                     dbId<T>     lhs,
-                     dbId<T>     rhs,
-                     dbObject*   lhs_owner,
-                     dbObject*   rhs_owner,
+                     dbId<T> lhs,
+                     dbId<T> rhs,
+                     dbObject* lhs_owner,
+                     dbObject* rhs_owner,
                      dbIterator* lhs_itr,
                      dbIterator* rhs_itr)
 {
@@ -143,13 +144,13 @@ inline void diff_set(dbDiff&     diff,
   } else {
     typename dbSet<T>::iterator itr;
 
-    dbSet<T>        lhs_set(lhs_owner, lhs_itr);
+    dbSet<T> lhs_set(lhs_owner, lhs_itr);
     std::vector<T*> lhs_vec;
 
     for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr)
       lhs_vec.push_back(*itr);
 
-    dbSet<T>        rhs_set(rhs_owner, rhs_itr);
+    dbSet<T> rhs_set(rhs_owner, rhs_itr);
     std::vector<T*> rhs_vec;
 
     for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
@@ -161,11 +162,11 @@ inline void diff_set(dbDiff&     diff,
 }
 
 template <class T>
-inline void diff_out_set(dbDiff&     diff,
-                         char        side,
+inline void diff_out_set(dbDiff& diff,
+                         char side,
                          const char* field,
-                         dbId<T>     id,
-                         dbObject*   owner,
+                         dbId<T> id,
+                         dbObject* owner,
                          dbIterator* set_itr)
 {
   if (diff.deepDiff() == false) {
@@ -187,7 +188,7 @@ inline void diff_out_set(dbDiff&     diff,
 // set_symmetric_diff - Diff the two tables
 //
 template <class T>
-inline void set_symmetric_diff(dbDiff&     diff,
+inline void set_symmetric_diff(dbDiff& diff,
                                const char* field,
                                dbTable<T>& lhs,
                                dbTable<T>& rhs)
@@ -205,8 +206,8 @@ inline void set_symmetric_diff(dbDiff&     diff,
 // set_symmetric_diff - Diff the two tables
 //
 template <class T>
-inline void set_symmetric_diff(dbDiff&          diff,
-                               const char*      field,
+inline void set_symmetric_diff(dbDiff& diff,
+                               const char* field,
                                dbArrayTable<T>& lhs,
                                dbArrayTable<T>& rhs)
 {
@@ -224,8 +225,8 @@ inline void set_symmetric_diff(dbDiff&          diff,
 // the "operator<" defined and a the equal method defined.
 //
 template <class T>
-inline void set_symmetric_diff(dbDiff&          diff,
-                               const char*      field,
+inline void set_symmetric_diff(dbDiff& diff,
+                               const char* field,
                                std::vector<T*>& lhs,
                                std::vector<T*>& rhs)
 {
@@ -234,7 +235,7 @@ inline void set_symmetric_diff(dbDiff&          diff,
   std::sort(rhs.begin(), rhs.end(), dbDiffCmp<T>());
 
   typename std::vector<T*>::iterator end;
-  std::vector<T*>                    symmetric_diff;
+  std::vector<T*> symmetric_diff;
 
   symmetric_diff.resize(lhs.size() + rhs.size());
 
@@ -288,8 +289,8 @@ inline void set_symmetric_diff(dbDiff&          diff,
 // the "operator<" defined.
 //
 template <class T>
-inline void set_symmetric_diff(dbDiff&               diff,
-                               const char*           field,
+inline void set_symmetric_diff(dbDiff& diff,
+                               const char* field,
                                const std::vector<T>& lhs_v,
                                const std::vector<T>& rhs_v)
 {
@@ -300,7 +301,7 @@ inline void set_symmetric_diff(dbDiff&               diff,
   std::sort(rhs.begin(), rhs.end());
 
   typename std::vector<T>::iterator end;
-  std::vector<T>                    symmetric_diff;
+  std::vector<T> symmetric_diff;
 
   symmetric_diff.resize(lhs.size() + rhs.size());
 
@@ -344,5 +345,3 @@ inline void set_symmetric_diff(dbDiff&               diff,
 }
 
 }  // namespace odb
-
-

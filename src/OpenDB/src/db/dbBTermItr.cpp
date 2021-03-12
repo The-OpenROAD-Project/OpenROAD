@@ -60,26 +60,26 @@ bool dbNetBTermItr::orderReversed()
 
 void dbNetBTermItr::reverse(dbObject* parent)
 {
-  _dbNet* net  = (_dbNet*) parent;
-  uint    id   = net->_bterms;
-  uint    list = 0;
+  _dbNet* net = (_dbNet*) parent;
+  uint id = net->_bterms;
+  uint list = 0;
 
   while (id != 0) {
-    _dbBTerm* bterm    = _bterm_tbl->getPtr(id);
-    uint      n        = bterm->_next_bterm;
+    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
+    uint n = bterm->_next_bterm;
     bterm->_next_bterm = list;
-    list               = id;
-    id                 = n;
+    list = id;
+    id = n;
   }
 
   uint prev = 0;
-  id        = list;
+  id = list;
 
   while (id != 0) {
-    _dbBTerm* bterm    = _bterm_tbl->getPtr(id);
+    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
     bterm->_prev_bterm = prev;
-    prev               = id;
-    id                 = bterm->_next_bterm;
+    prev = id;
+    id = bterm->_next_bterm;
   }
 
   net->_bterms = list;

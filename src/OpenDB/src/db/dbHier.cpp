@@ -61,8 +61,8 @@ bool _dbHier::operator==(const _dbHier& rhs) const
   return true;
 }
 
-void _dbHier::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbHier::differences(dbDiff& diff,
+                          const char* field,
                           const _dbHier& rhs) const
 {
   DIFF_BEGIN
@@ -114,11 +114,11 @@ dbIStream& operator>>(dbIStream& stream, _dbHier& hier)
 
 _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 {
-  _dbInst*  inst   = (_dbInst*) inst_;
-  _dbBlock* child  = (_dbBlock*) child_;
+  _dbInst* inst = (_dbInst*) inst_;
+  _dbBlock* child = (_dbBlock*) child_;
   _dbBlock* parent = (_dbBlock*) inst->getOwner();
 
-  _dbMaster*     master = (_dbMaster*) inst_->getMaster();
+  _dbMaster* master = (_dbMaster*) inst_->getMaster();
   dbSet<dbBTerm> bterms = ((dbBlock*) child)->getBTerms();
   dbSet<dbMTerm> mterms = ((dbMaster*) master)->getMTerms();
 
@@ -127,8 +127,8 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
     return NULL;
 
   // initialize the hier structure
-  _dbHier* hier      = parent->_hier_tbl->create();
-  hier->_inst        = inst->getOID();
+  _dbHier* hier = parent->_hier_tbl->create();
+  hier->_inst = inst->getOID();
   hier->_child_block = child->getOID();
   hier->_child_bterms.resize(child->_bterm_tbl->size());
 
@@ -150,8 +150,8 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 
   // create "up-hier" mapping to iterms
   for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    _dbBTerm* bterm      = (_dbBTerm*) *itr;
-    _dbMTerm* mterm      = master->_mterm_hash.find(bterm->_name);
+    _dbBTerm* bterm = (_dbBTerm*) *itr;
+    _dbMTerm* mterm = master->_mterm_hash.find(bterm->_name);
     bterm->_parent_block = parent->getOID();
     bterm->_parent_iterm = inst->_iterms[mterm->_order_id];
   }
@@ -161,7 +161,7 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 
   // point child-block to parent inst
   child->_parent_block = parent->getOID();
-  child->_parent_inst  = inst->getOID();
+  child->_parent_inst = inst->getOID();
 
   return hier;
 }
@@ -169,26 +169,26 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 void _dbHier::destroy(_dbHier* hier)
 {
   _dbBlock* parent = (_dbBlock*) hier->getOwner();
-  _dbChip*  chip   = (_dbChip*) parent->getOwner();
-  _dbBlock* child  = chip->_block_tbl->getPtr(hier->_child_block);
-  _dbInst*  inst   = parent->_inst_tbl->getPtr(hier->_inst);
+  _dbChip* chip = (_dbChip*) parent->getOwner();
+  _dbBlock* child = chip->_block_tbl->getPtr(hier->_child_block);
+  _dbInst* inst = parent->_inst_tbl->getPtr(hier->_inst);
 
   // unbind inst from hier
   inst->_hierarchy = 0;
 
   // unbind child bterms from hier
-  dbSet<dbBTerm>           bterms = ((dbBlock*) child)->getBTerms();
+  dbSet<dbBTerm> bterms = ((dbBlock*) child)->getBTerms();
   dbSet<dbBTerm>::iterator itr;
 
   for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-    _dbBTerm* bterm      = (_dbBTerm*) *itr;
+    _dbBTerm* bterm = (_dbBTerm*) *itr;
     bterm->_parent_block = 0;
     bterm->_parent_iterm = 0;
   }
 
   // unbind child block to inst
   child->_parent_block = 0;
-  child->_parent_inst  = 0;
+  child->_parent_inst = 0;
 
   // destroy the hier object...
   parent->_hier_tbl->destroy(hier);

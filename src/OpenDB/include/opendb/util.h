@@ -44,7 +44,7 @@ unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);
 
 namespace odb {
-int AthResourceLog(const char *title, int smallScale=0);
+int AthResourceLog(const char* title, int smallScale = 0);
 }  // namespace odb
 
 // Simple list
@@ -54,7 +54,7 @@ class AthList
  private:
   struct t_elem
   {
-    T       m_data;
+    T m_data;
     t_elem* m_next;
   };
   t_elem* m_start;
@@ -76,13 +76,13 @@ class AthList
     t_elem* new_t_elem = new t_elem;
     new_t_elem->m_next = m_start;
     new_t_elem->m_data = a;
-    m_start            = new_t_elem;
+    m_start = new_t_elem;
   };
 
   struct iterator
   {
     AthList<T>* actual_class;
-    t_elem*     ptr_to_elem;
+    t_elem* ptr_to_elem;
 
     iterator next(void)
     {
@@ -104,7 +104,7 @@ class AthList
   {
     iterator ret_val;
     ret_val.actual_class = this;
-    ret_val.ptr_to_elem  = m_start;
+    ret_val.ptr_to_elem = m_start;
     return ret_val;
   }
 };
@@ -115,15 +115,15 @@ class AthArray
 {
  private:
   unsigned int m_alloc_size;
-  T**          m_ptr;
+  T** m_ptr;
   unsigned int m_num_allocated_elem;
   unsigned int m_num_mallocated_elem;
   unsigned int m_num_mallocated_first_level;
-  void         find_indexes(unsigned int  num,
-                            unsigned int& first_level,
-                            unsigned int& second_level)
+  void find_indexes(unsigned int num,
+                    unsigned int& first_level,
+                    unsigned int& second_level)
   {
-    first_level  = num / m_alloc_size;
+    first_level = num / m_alloc_size;
     second_level = num % m_alloc_size;
   }
 
@@ -132,14 +132,14 @@ class AthArray
   {
     if (alloc_size < 2)
       alloc_size = 2;
-    m_alloc_size                 = alloc_size;
+    m_alloc_size = alloc_size;
     m_num_mallocated_first_level = alloc_size;
     m_ptr = (T**) malloc(sizeof(T*) * m_num_mallocated_first_level);
     unsigned int i;
     for (i = 0; i < m_num_mallocated_first_level; i++) {
       m_ptr[i] = NULL;
     }
-    m_num_allocated_elem  = 0;
+    m_num_allocated_elem = 0;
     m_num_mallocated_elem = 0;
   }
 
@@ -169,9 +169,9 @@ class AthArray
     }
     // Allocate more elements if needed
     if (m_ptr[first_level_idx] == NULL) {
-      unsigned int size      = sizeof(T);
+      unsigned int size = sizeof(T);
       m_ptr[first_level_idx] = (T*) malloc(size * m_alloc_size);
-      m_num_mallocated_elem  = m_num_mallocated_first_level * m_alloc_size;
+      m_num_mallocated_elem = m_num_mallocated_first_level * m_alloc_size;
     }
     *ii = first_level_idx;
     *jj = second_level_idx;
@@ -190,7 +190,7 @@ class AthArray
     allocNext(&first_level_idx, &second_level_idx);
 
     m_ptr[first_level_idx][second_level_idx] = elem;
-    int n                                    = m_num_allocated_elem++;
+    int n = m_num_allocated_elem++;
     return n;
   }
 
@@ -223,25 +223,25 @@ template <class T>
 class AthPool
 {
  private:
-  AthArray<T>*      m_heap;
+  AthArray<T>* m_heap;
   Ath__array1D<T*>* _freeTable;
-  AthArray<T*>*     _dbgTable;
-  bool              _memDbg;
-  char              _className[256];
+  AthArray<T*>* _dbgTable;
+  bool _memDbg;
+  char _className[256];
 
  public:
-  AthPool(bool         dbgMem,
+  AthPool(bool dbgMem,
           unsigned int freeAllocSize,
           unsigned int alloc_size = 4096)
   {
-    m_heap     = new AthArray<T>(alloc_size);
+    m_heap = new AthArray<T>(alloc_size);
     _freeTable = new Ath__array1D<T*>(freeAllocSize);
 
-    _memDbg   = false;
+    _memDbg = false;
     _dbgTable = NULL;
     if (dbgMem) {
       _dbgTable = new AthArray<T*>(alloc_size);
-      _memDbg   = true;
+      _memDbg = true;
     }
   }
   ~AthPool()
@@ -266,7 +266,7 @@ class AthPool
       } else {
         m_heap->add();
         uint n = m_heap->getLast() - 1;
-        a      = &(*m_heap)[n];
+        a = &(*m_heap)[n];
 
         if (id != NULL)
           *id = n;
@@ -314,17 +314,17 @@ class AthHash
 
   void init_list_of_primes(void)
   {
-    m_listOfPrimes     = new unsigned int[16];
-    m_listOfPrimes[0]  = 49978783;
-    m_listOfPrimes[1]  = 18409199;
-    m_listOfPrimes[2]  = 1299827;
-    m_listOfPrimes[3]  = 1176221;
-    m_listOfPrimes[4]  = 981493;
-    m_listOfPrimes[5]  = 779377;
-    m_listOfPrimes[6]  = 530279;
-    m_listOfPrimes[7]  = 143567;
-    m_listOfPrimes[8]  = 30389;
-    m_listOfPrimes[9]  = 6869;
+    m_listOfPrimes = new unsigned int[16];
+    m_listOfPrimes[0] = 49978783;
+    m_listOfPrimes[1] = 18409199;
+    m_listOfPrimes[2] = 1299827;
+    m_listOfPrimes[3] = 1176221;
+    m_listOfPrimes[4] = 981493;
+    m_listOfPrimes[5] = 779377;
+    m_listOfPrimes[6] = 530279;
+    m_listOfPrimes[7] = 143567;
+    m_listOfPrimes[8] = 30389;
+    m_listOfPrimes[9] = 6869;
     m_listOfPrimes[10] = 1049;
     m_listOfPrimes[11] = 149;
     m_listOfPrimes[12] = 11;
@@ -347,7 +347,7 @@ class AthHash
   unsigned int hashFunction(char* key, unsigned int, unsigned int prime)
   {
     unsigned int hash = 0;
-    int          c;
+    int c;
 
     while ((c = *key++) != '\0')
       hash = c + (hash << 6) + (hash << 16) - hash;
@@ -370,19 +370,19 @@ unsigned int prime)
   struct t_elem
   {
     char* key;
-    T     data;
+    T data;
   };
   int _allocKeyFlag;
   // AthList<t_elem> *m_data;
  public:
   AthList<t_elem>* m_data;
-  unsigned int     m_prime;
+  unsigned int m_prime;
 
   AthHash(unsigned int size = 100, int store = 1)
   {
     init_list_of_primes();
-    m_prime       = l_find_largest_prime_below_number(size);
-    m_data        = new AthList<t_elem>[m_prime];
+    m_prime = l_find_largest_prime_below_number(size);
+    m_data = new AthList<t_elem>[m_prime];
     _allocKeyFlag = store;
   }
 
@@ -404,7 +404,7 @@ unsigned int prime)
   void add(char* key, T data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
-    t_elem       new_t_elem;
+    t_elem new_t_elem;
     new_t_elem.data = data;
     if (_allocKeyFlag > 0)
       new_t_elem.key = strdup(key);
@@ -430,9 +430,9 @@ unsigned int prime)
   }
   struct iterator
   {
-    unsigned int                       m_first_level_idx;
+    unsigned int m_first_level_idx;
     typename AthList<t_elem>::iterator m_list_iterator;
-    AthHash<T>*                        m_ptr_to_hash;
+    AthHash<T>* m_ptr_to_hash;
 
     iterator next()
     {
@@ -465,7 +465,7 @@ unsigned int prime)
 
   iterator start(void)
   {
-    iterator     tmp_iter;
+    iterator tmp_iter;
     unsigned int i;
     for (i = 0; i < m_prime; i++) {
       tmp_iter.m_list_iterator = m_data[i].start();
@@ -473,9 +473,7 @@ unsigned int prime)
         break;
     }
     tmp_iter.m_first_level_idx = i;
-    tmp_iter.m_ptr_to_hash     = this;
+    tmp_iter.m_ptr_to_hash = this;
     return tmp_iter;
   }
 };
-
-

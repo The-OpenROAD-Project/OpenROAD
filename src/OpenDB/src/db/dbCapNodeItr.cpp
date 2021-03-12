@@ -57,16 +57,16 @@ bool dbCapNodeItr::orderReversed()
 
 void dbCapNodeItr::reverse(dbObject* parent)
 {
-  _dbNet* net  = (_dbNet*) parent;
-  uint    id   = net->_cap_nodes;
-  uint    list = 0;
+  _dbNet* net = (_dbNet*) parent;
+  uint id = net->_cap_nodes;
+  uint list = 0;
 
   while (id != 0) {
     _dbCapNode* seg = _seg_tbl->getPtr(id);
-    uint        n   = seg->_next;
-    seg->_next      = list;
-    list            = id;
-    id              = n;
+    uint n = seg->_next;
+    seg->_next = list;
+    list = id;
+    id = n;
   }
 
   net->_cap_nodes = list;

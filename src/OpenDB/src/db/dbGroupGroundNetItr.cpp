@@ -35,9 +35,9 @@
 #include <algorithm>
 
 #include "dbBlock.h"
-#include "dbTable.h"
 #include "dbGroup.h"
 #include "dbNet.h"
+#include "dbTable.h"
 
 namespace odb {
 

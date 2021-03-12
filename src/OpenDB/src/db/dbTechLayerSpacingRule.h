@@ -68,27 +68,27 @@ class _dbTechLayerSpacingRule : public _dbObject
   struct _Flword
   {
     _RuleType _rule : 4;
-    bool      _except_same_pgnet : 1;
-    bool      _cut_stacking : 1;
-    bool      _cut_center_to_center : 1;
-    bool      _cut_same_net : 1;
-    bool      _cut_parallel_overlap : 1;
-    bool      _notch_length : 1;
-    bool      _end_of_notch_width : 1;
-    uint      _spare_bits : 21;
+    bool _except_same_pgnet : 1;
+    bool _cut_stacking : 1;
+    bool _cut_center_to_center : 1;
+    bool _cut_same_net : 1;
+    bool _cut_parallel_overlap : 1;
+    bool _notch_length : 1;
+    bool _end_of_notch_width : 1;
+    uint _spare_bits : 21;
   };
 
   // PERSISTENT-MEMBERS
-  _Flword                       _flags;
-  uint                          _spacing;
-  uint                          _length_or_influence;
-  uint                          _r1min;
-  uint                          _r1max;
-  uint                          _r2min;
-  uint                          _r2max;
-  uint                          _cut_area;
-  dbId<_dbTechLayer>            _layer;
-  dbId<_dbTechLayer>            _cut_layer_below;
+  _Flword _flags;
+  uint _spacing;
+  uint _length_or_influence;
+  uint _r1min;
+  uint _r1max;
+  uint _r2min;
+  uint _r2max;
+  uint _cut_area;
+  dbId<_dbTechLayer> _layer;
+  dbId<_dbTechLayer> _cut_layer_below;
 
   _dbTechLayerSpacingRule(_dbDatabase*, const _dbTechLayerSpacingRule& r);
   _dbTechLayerSpacingRule(_dbDatabase*);
@@ -99,8 +99,8 @@ class _dbTechLayerSpacingRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -123,20 +123,20 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
 {
-  _flags._rule                 = DEFAULT;
-  _flags._except_same_pgnet    = false;
-  _flags._cut_stacking         = false;
+  _flags._rule = DEFAULT;
+  _flags._except_same_pgnet = false;
+  _flags._cut_stacking = false;
   _flags._cut_center_to_center = false;
-  _flags._cut_same_net         = false;
+  _flags._cut_same_net = false;
   _flags._cut_parallel_overlap = false;
-  _flags._spare_bits           = 0;
-  _spacing                     = 0;
-  _length_or_influence         = 0;
-  _r1min                       = 0;
-  _r1max                       = 0;
-  _r2min                       = 0;
-  _r2max                       = 0;
-  _cut_area                    = 0;
+  _flags._spare_bits = 0;
+  _spacing = 0;
+  _length_or_influence = 0;
+  _r1min = 0;
+  _r1max = 0;
+  _r2min = 0;
+  _r2max = 0;
+  _cut_area = 0;
 }
 
 inline _dbTechLayerSpacingRule::~_dbTechLayerSpacingRule()
@@ -163,8 +163,8 @@ class _dbTechV55InfluenceEntry : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                         diff,
-                   const char*                     field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechV55InfluenceEntry& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -179,8 +179,8 @@ inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */)
 {
-  _width   = 0;
-  _within  = 0;
+  _width = 0;
+  _within = 0;
   _spacing = 0;
 }
 
@@ -188,7 +188,7 @@ inline _dbTechV55InfluenceEntry::~_dbTechV55InfluenceEntry()
 {
 }
 
-dbOStream& operator<<(dbOStream&                      stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechV55InfluenceEntry& infitem);
 dbIStream& operator>>(dbIStream& stream, _dbTechV55InfluenceEntry& infitem);
 

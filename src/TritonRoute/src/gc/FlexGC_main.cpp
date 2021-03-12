@@ -335,9 +335,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, con
   auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
   if (isNDR){
         frCoord ndrSpc1 = 0, ndrSpc2 = 0;
-        if (!rect1->isFixed() && net1->isNondefault())
+        if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
             ndrSpc1 = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
-        if (!rect2->isFixed() && net2->isNondefault())
+        if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
             ndrSpc2 = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum/2-1);
 
         reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
@@ -696,7 +696,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1, gcRect* ptr2, bool
   }
 }
 
-void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
+void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR, bool querySpcRects) {
   //bool enableOutput = true;
   bool enableOutput = false;
   auto layerNum = rect->getLayerNum();
@@ -741,6 +741,13 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect, bool isNDR) {
   auto &workerRegionQuery = getWorkerRegionQuery();
   vector<rq_box_value_t<gcRect*> > result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
+  if (querySpcRects){
+    vector<rq_box_value_t<gcRect> > resultS;
+    workerRegionQuery.querySpcRectangle(queryBox, layerNum, resultS);
+    for (auto &[objBox, ptr]: resultS) {
+        checkMetalSpacing_main(rect, &ptr, isNDR);
+    }
+  }
   // Short, metSpc, NSMetal here
   for (auto &[objBox, ptr]: result) {
     checkMetalSpacing_main(rect, ptr, isNDR);
@@ -758,9 +765,11 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
       }
       for (auto &pin: targetNet_->getPins(i)) {
         for (auto &maxrect: pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get());
+          checkMetalSpacing_main(maxrect.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS);
         }
       }
+      for (auto& sr : targetNet_->getSpecialSpcRects())
+          checkMetalSpacing_main(sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
     }
   } else {
     // layer --> net --> polygon --> maxrect
@@ -774,9 +783,11 @@ void FlexGCWorker::Impl::checkMetalSpacing() {
         for (auto &pin: net->getPins(i)) {
           for (auto &maxrect: pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get());
+            checkMetalSpacing_main(maxrect.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS);
           }
         }
+        for (auto& sr : net->getSpecialSpcRects())
+          checkMetalSpacing_main(sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
       }
     }
   }

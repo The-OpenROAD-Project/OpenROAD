@@ -15,9 +15,9 @@
 
 include("openroad")
 
-tcl_lib(NAME      utility
-        NAMESPACE utl
-        I_FILE    src/Logger.i
+swig_lib(NAME      utility
+         NAMESPACE utl
+         I_FILE    src/Logger.i
 )
 
 target_sources(utility

@@ -53,32 +53,32 @@ class dbDiff;
 class dbInstHdr : public _dbObject
 {
  public:
-  dbBlock*  getBlock();
-  dbLib*    getLib();
+  dbBlock* getBlock();
+  dbLib* getLib();
   dbMaster* getMaster();
 
   static dbInstHdr* create(dbBlock* block, dbMaster* master);
-  static void       destroy(dbInstHdr* hdr);
+  static void destroy(dbInstHdr* hdr);
 };
 
 class _dbInstHdr : public _dbObject
 {
  public:
-  int                       _mterm_cnt;
-  uint                      _id;
-  dbId<_dbInstHdr>          _next_entry;
-  dbId<_dbLib>              _lib;
-  dbId<_dbMaster>           _master;
-  dbVector<dbId<_dbMTerm> > _mterms;
-  int                       _inst_cnt;  // number of instances of this InstHdr
+  int _mterm_cnt;
+  uint _id;
+  dbId<_dbInstHdr> _next_entry;
+  dbId<_dbLib> _lib;
+  dbId<_dbMaster> _master;
+  dbVector<dbId<_dbMTerm>> _mterms;
+  int _inst_cnt;  // number of instances of this InstHdr
 
   _dbInstHdr(_dbDatabase* db);
   _dbInstHdr(_dbDatabase* db, const _dbInstHdr& i);
   ~_dbInstHdr();
   bool operator==(const _dbInstHdr& rhs) const;
   bool operator!=(const _dbInstHdr& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&           diff,
-                   const char*       field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbInstHdr& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

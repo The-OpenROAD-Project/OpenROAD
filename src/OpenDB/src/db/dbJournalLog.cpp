@@ -170,44 +170,44 @@ void dbJournalLog::pop(int& value)
 {
   CHECK_TYPE(LOG_INT);
   unsigned char* v = (unsigned char*) &value;
-  v[0]             = next();
-  v[1]             = next();
-  v[2]             = next();
-  v[3]             = next();
+  v[0] = next();
+  v[1] = next();
+  v[2] = next();
+  v[3] = next();
 }
 
 void dbJournalLog::pop(unsigned int& value)
 {
   CHECK_TYPE(LOG_UINT);
   unsigned char* v = (unsigned char*) &value;
-  v[0]             = next();
-  v[1]             = next();
-  v[2]             = next();
-  v[3]             = next();
+  v[0] = next();
+  v[1] = next();
+  v[2] = next();
+  v[3] = next();
 }
 
 void dbJournalLog::pop(float& value)
 {
   CHECK_TYPE(LOG_FLOAT);
   unsigned char* v = (unsigned char*) &value;
-  v[0]             = next();
-  v[1]             = next();
-  v[2]             = next();
-  v[3]             = next();
+  v[0] = next();
+  v[1] = next();
+  v[2] = next();
+  v[3] = next();
 }
 
 void dbJournalLog::pop(double& value)
 {
   CHECK_TYPE(LOG_DOUBLE);
   unsigned char* v = (unsigned char*) &value;
-  v[0]             = next();
-  v[1]             = next();
-  v[2]             = next();
-  v[3]             = next();
-  v[4]             = next();
-  v[5]             = next();
-  v[6]             = next();
-  v[7]             = next();
+  v[0] = next();
+  v[1] = next();
+  v[2] = next();
+  v[3] = next();
+  v[4] = next();
+  v[5] = next();
+  v[6] = next();
+  v[7] = next();
 }
 
 void dbJournalLog::pop(char*& value)

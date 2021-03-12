@@ -1,5 +1,3 @@
-%module psm
-
 %include "../../Exception.i"
 %{
 #include "openroad/OpenRoad.hh"

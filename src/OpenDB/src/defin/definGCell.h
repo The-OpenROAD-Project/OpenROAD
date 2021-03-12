@@ -32,15 +32,14 @@
 
 #pragma once
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
 class definGCell : public definBase
 {
  public:
-
   /// GCell interface methods
   virtual void gcell(defDirection dir, int orig, int count, int step);
 
@@ -50,5 +49,3 @@ class definGCell : public definBase
 };
 
 }  // namespace odb
-
-

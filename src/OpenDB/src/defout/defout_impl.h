@@ -32,18 +32,17 @@
 
 #pragma once
 
-#include "odb.h"
-#include "dbMap.h"
-#include "db.h"
-
 #include <list>
 #include <map>
 #include <string>
+
+#include "db.h"
+#include "dbMap.h"
 #include "defout.h"
-namespace utl
-{
-  class Logger;
-} 
+#include "odb.h"
+namespace utl {
+class Logger;
+}
 
 namespace odb {
 
@@ -68,23 +67,23 @@ class defout_impl
     SPECIALNET
   };
 
-  double                      _dist_factor;
-  FILE*                       _out;
-  bool                        _use_net_inst_ids;
-  bool                        _use_master_ids;
-  bool                        _use_alias;
-  std::list<dbNet*>           _select_net_list;
-  std::list<dbInst*>          _select_inst_list;
-  dbMap<dbNet, char>*         _select_net_map;
-  dbMap<dbInst, char>*        _select_inst_map;
-  dbTechNonDefaultRule*       _non_default_rule;
-  int                         _version;
+  double _dist_factor;
+  FILE* _out;
+  bool _use_net_inst_ids;
+  bool _use_master_ids;
+  bool _use_alias;
+  std::list<dbNet*> _select_net_list;
+  std::list<dbInst*> _select_inst_list;
+  dbMap<dbNet, char>* _select_net_map;
+  dbMap<dbInst, char>* _select_inst_map;
+  dbTechNonDefaultRule* _non_default_rule;
+  int _version;
   std::map<std::string, bool> _prop_defs[9];
-  utl::Logger*                _logger;
+  utl::Logger* _logger;
 
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
-  int defdist(uint value) { return (uint)(((double) value) * _dist_factor); }
+  int defdist(uint value) { return (uint) (((double) value) * _dist_factor); }
 
   void writePropertyDefinitions(dbBlock* block);
   void writeRows(dbBlock* block);
@@ -119,12 +118,12 @@ class defout_impl
   defout_impl(utl::Logger* logger)
   {
     _use_net_inst_ids = false;
-    _use_master_ids   = false;
-    _use_alias        = false;
-    _select_net_map   = NULL;
-    _select_inst_map  = NULL;
-    _version          = defout::DEF_5_8;
-    _logger           = logger;
+    _use_master_ids = false;
+    _use_alias = false;
+    _select_net_map = NULL;
+    _select_inst_map = NULL;
+    _version = defout::DEF_5_8;
+    _logger = logger;
   }
 
   ~defout_impl() {}

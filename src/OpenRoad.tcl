@@ -222,6 +222,11 @@ proc set_debug_level {args} {
   ord::set_debug_level $tool $group $level
 }
 
+sta::define_cmd_args "python" { args }
+proc python {args} {
+  ord::python_cmd $args
+}
+
 ################################################################
 
 namespace eval ord {

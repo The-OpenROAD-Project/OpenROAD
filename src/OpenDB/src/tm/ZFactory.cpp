@@ -31,7 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ZFactory.h"
+
 #include <map>
+
 #include "ZObject.h"
 
 namespace odb {
@@ -39,9 +41,9 @@ namespace odb {
 static std::map<int, ZFactory*> _factories;
 
 int adsCreateComponent(const ZContext& context,
-                       ZComponentID    cid,
-                       ZInterfaceID    iid,
-                       void**          result)
+                       ZComponentID cid,
+                       ZInterfaceID iid,
+                       void** result)
 {
   ZFactory* factory = _factories[cid];
   assert(factory != NULL);

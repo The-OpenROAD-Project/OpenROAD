@@ -46,6 +46,7 @@ class dbOStream;
 class dbSite;
 class dbLib;
 class dbDiff;
+class _dbTechLayer;
 
 struct dbFillFlags
 {
@@ -60,7 +61,7 @@ class _dbFill : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   dbFillFlags _flags;
-  Rect        _rect;
+  Rect _rect;
 
   _dbFill(_dbDatabase*, const _dbFill& r);
   _dbFill(_dbDatabase*);
@@ -81,8 +82,8 @@ inline _dbFill::_dbFill(_dbDatabase*, const _dbFill& r)
 
 inline _dbFill::_dbFill(_dbDatabase*)
 {
-  _flags._opc      = false;
-  _flags._mask_id  = 0;
+  _flags._opc = false;
+  _flags._mask_id = 0;
   _flags._layer_id = 0;
   _flags._spare_bits = 0;
 }

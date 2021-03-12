@@ -48,14 +48,14 @@ class dbRegionItr : public dbIterator
  public:
   dbRegionItr(dbTable<_dbRegion>* region_tbl) { _region_tbl = region_tbl; }
 
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint id, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
   dbObject* getObject(uint id, ...);
 };
 

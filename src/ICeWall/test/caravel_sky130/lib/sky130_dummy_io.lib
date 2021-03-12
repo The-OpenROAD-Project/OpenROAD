@@ -1,0 +1,493 @@
+library (sky130_io_dummy_tt) {
+  comment : "";
+  delay_model : table_lookup;
+  capacitive_load_unit (1,ff);
+  current_unit : "1mA";
+  leakage_power_unit : "1mW";
+  pulling_resistance_unit : "1kohm";
+  time_unit : "1ps";
+  voltage_unit : "1V";
+  voltage_map (VCCD, 0.8);
+  voltage_map (VDDA, 0.8);
+  voltage_map (VDDIO, 1.8);
+  voltage_map (VSSC, 0);
+  voltage_map (VSSA, 0);
+  voltage_map (VSSIO, 0);
+  default_cell_leakage_power : 0;
+  default_fanout_load : 1;
+  default_inout_pin_cap : 1;
+  default_input_pin_cap : 1;
+  default_leakage_power_density : 0;
+  default_max_fanout : 30;
+  default_max_transition : 5000;
+  default_output_pin_cap : 0;
+  in_place_swap_mode : match_footprint;
+  input_threshold_pct_fall : 50;
+  input_threshold_pct_rise : 50;
+  nom_process : 1;
+  nom_temperature : 25;
+  nom_voltage : 0.8;
+  output_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  slew_derate_from_library : 1;
+  slew_lower_threshold_pct_fall : 20;
+  slew_lower_threshold_pct_rise : 20;
+  slew_upper_threshold_pct_fall : 80;
+  slew_upper_threshold_pct_rise : 80;
+  input_voltage (default_VCCD_VSSC_input) {
+    vih : 1.8;
+    vil : 0;
+    vimax : 1.8;
+    vimin : 0;
+  }
+  output_voltage (default_VCCD_VSSC_output) {
+    voh : 1.8;
+    vol : 0;
+    vomax : 1.8;
+    vomin : 0;
+  }
+  input_voltage (default_VDDIO_VSSIO_input) {
+    vih : 3.3;
+    vil : 0;
+    vimax : 3.3;
+    vimin : 0;
+  }
+  output_voltage (default_VDDIO_VSSIO_output) {
+    voh : 3.3;
+    vol : 0;
+    vomax : 3.3;
+    vomin : 0;
+  }
+  operating_conditions ("typ") {
+    process : 1;
+    temperature : 25;
+    voltage : 1.8;
+    tree_type: "balanced_tree";
+  }
+  wire_load (DEFAULT) {
+    area : 1;
+    capacitance : 0;
+    resistance : 0;
+    slope : 0.05;
+    fanout_length (1, 0.100);
+    fanout_length (8, 1.000);
+  }
+  default_operating_conditions : "typ";
+  bus_naming_style : "%s[%d]";
+  type (bus_DM_2_0) {
+    base_type : array;
+    data_type : bit;
+    bit_width : 3;
+    bit_from  : 2;
+    bit_to    : 0;
+    downto    : true;
+  }
+  lu_table_template (delay_template_2x2) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("10, 200");
+    index_2 ("500, 30000");
+  }
+  cell (sky130_fd_io__top_gpiov2) {
+    area : 16000;
+    dont_touch : true;
+    dont_use : true;
+    timing_model_type : abstracted;
+    pad_cell : true;
+    pg_pin (VCCD) {
+      pg_type : primary_power;
+      voltage_name : "VCCD";
+    }
+    pg_pin (VDDIO) {
+      pg_type : primary_power;
+      voltage_name : "VDDIO";
+    }
+    pg_pin (VSSC) {
+      pg_type : primary_ground;
+      voltage_name : "VSSC";
+    }
+    pg_pin (VSSIO) {
+      pg_type : primary_ground;
+      voltage_name : "VSSIO";
+    }
+    pg_pin (VSSIO_Q) {
+      pg_type : primary_ground;
+      voltage_name : "VSSIO_Q";
+    }
+    leakage_power () {
+      value : 0.0;
+      related_pg_pin : VDDIO;
+    }
+    leakage_power () {
+      value : 0.0;
+      related_pg_pin : VCCD;
+    }
+    pin (AMUXBUS_A) {
+      direction : inout;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (AMUXBUS_B) {
+      direction : inout;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ANALOG_EN) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ANALOG_POL) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ANALOG_SEL) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ENABLE_H) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ENABLE_INP_H) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ENABLE_VDDA_H) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ENABLE_VDDIO) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (ENABLE_VSWITCH_H) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (HLD_H_N) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (HLD_OVR) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (IB_MODE_SEL) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (INP_DIS) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (IN_H) {
+      direction : output;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (OE_N) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (PAD_A_ESD_0_H) {
+      direction : inout;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (PAD_A_ESD_1_H) {
+      direction : inout;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (PAD_A_NOESD_H) {
+      direction : inout;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (SLOW) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (TIE_HI_ESD) {
+      direction : output;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (TIE_LO_ESD) {
+      direction : output;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (VTRIP_SEL) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      output_voltage : default_VDDC_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_capacitance : 500;
+      max_transition : 200;
+      capacitance : 10;
+    }
+    pin (PAD) {
+      direction : inout;
+      function : "(OUT)";
+      three_state : "!OE_N";
+      input_voltage : default_VDDIO_VSSIO_input;
+      is_pad : true;
+      output_voltage : default_VDDIO_VSSIO_output;
+      related_ground_pin : VSSIO;
+      related_power_pin : VDDIO;
+      max_capacitance : 30000;
+      max_transition : 2000;
+      capacitance : 2000;
+      timing () {
+        related_pin : "OUT";
+        timing_sense : positive_unate;
+        timing_type : combinational;
+        cell_rise (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "1000, 1000", \
+            "1000, 1000" \
+          );
+        }
+        rise_transition (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "200, 200", \
+            "200, 200" \
+          );
+        }
+        cell_fall (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "1000, 1000", \
+            "1000, 1000" \
+          );
+        }
+        fall_transition (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "200, 200", \
+            "200, 200" \
+          );
+        }
+      }
+    }
+    pin (IN) {
+      direction : output;
+      function : "(PAD)";
+      output_voltage : default_VCCD_VSSC_output;
+      related_ground_pin : VSSC;
+      related_power_pin : VCCD;
+      max_capacitance : 500;
+      max_transition : 200;
+      timing () {
+        related_pin : "PAD";
+        timing_type : combinational;
+        cell_rise (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "1000, 1000", \
+            "1000, 1000" \
+          );
+        }
+        rise_transition (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "200, 200", \
+            "200, 200" \
+          );
+        }
+        cell_fall (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "1000, 1000", \
+            "1000, 1000" \
+          );
+        }
+        fall_transition (delay_template_2x2) {
+          index_1 ("10, 200");
+          index_2 ("2000, 30000");
+          values ( \
+            "200, 200", \
+            "200, 200" \
+          );
+        }
+      }
+    }
+    pin (OUT) {
+      direction : input;
+      input_voltage : default_VDDC_VSSC_input;
+      related_ground_pin : VSSC;
+      related_power_pin : VDDC;
+      max_transition : 200;
+      capacitance : 12.2211;
+      rise_capacitance : 12.1358;
+      rise_capacitance_range (11.5819, 12.4454);
+      fall_capacitance : 12.2211;
+      fall_capacitance_range (11.6201, 12.5072);
+    }
+    bus (DM) {
+      bus_type : bus_DM_2_0;
+      pin (DM[2]) {
+        direction : input;
+        input_voltage : default_VDDC_VSSC_input;
+        related_ground_pin : VSSC;
+        related_power_pin : VDDC;
+        max_capacitance : 500;
+        max_transition : 200;
+        capacitance : 10;
+      }
+      pin (DM[1]) {
+        direction : input;
+        input_voltage : default_VDDC_VSSC_input;
+        related_ground_pin : VSSC;
+        related_power_pin : VDDC;
+        max_capacitance : 500;
+        max_transition : 200;
+        capacitance : 10;
+      }
+      pin (DM[0]) {
+        direction : input;
+        input_voltage : default_VDDC_VSSC_input;
+        related_ground_pin : VSSC;
+        related_power_pin : VDDC;
+        max_capacitance : 500;
+        max_transition : 200;
+        capacitance : 10;
+      }
+    }
+  }
+}

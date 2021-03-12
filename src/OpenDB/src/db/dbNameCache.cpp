@@ -89,8 +89,8 @@ bool _dbName::operator<(const _dbName& rhs) const
   return strcmp(_name, rhs._name) < 0;
 }
 
-void _dbName::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbName::differences(dbDiff& diff,
+                          const char* field,
                           const _dbName& rhs) const
 {
   DIFF_BEGIN
@@ -130,7 +130,7 @@ dbIStream& operator>>(dbIStream& stream, _dbName& name)
 /////////////////
 
 _dbNameCache::_dbNameCache(_dbDatabase* db,
-                           dbObject*    owner,
+                           dbObject* owner,
                            dbObjectTable* (dbObject::*m)(dbObjectType))
 {
   _name_tbl = new dbTable<_dbName>(db, owner, m, dbNameObj);
@@ -139,8 +139,8 @@ _dbNameCache::_dbNameCache(_dbDatabase* db,
   _name_hash.setTable(_name_tbl);
 }
 
-_dbNameCache::_dbNameCache(_dbDatabase*        db,
-                           dbObject*           owner,
+_dbNameCache::_dbNameCache(_dbDatabase* db,
+                           dbObject* owner,
                            const _dbNameCache& cache)
     : _name_hash(cache._name_hash)
 {
@@ -166,8 +166,8 @@ bool _dbNameCache::operator==(const _dbNameCache& rhs) const
   return true;
 }
 
-void _dbNameCache::differences(dbDiff&             diff,
-                               const char*         field,
+void _dbNameCache::differences(dbDiff& diff,
+                               const char* field,
                                const _dbNameCache& rhs) const
 {
   diff.begin_object("<> %s\n", field);
@@ -207,7 +207,7 @@ uint _dbNameCache::addName(const char* name)
   _dbName* n = _name_hash.find(name);
 
   if (n == NULL) {
-    n        = _name_tbl->create();
+    n = _name_tbl->create();
     n->_name = strdup(name);
     ZALLOCATED(n->_name);
     _name_hash.insert(n);

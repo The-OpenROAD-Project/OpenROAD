@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbTechLayerAntennaRule.h"
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
@@ -37,7 +39,6 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "dbTechLayerAntennaRule.h"
 #include "lefout.h"
 
 namespace odb {
@@ -61,8 +62,8 @@ bool _ARuleFactor::operator==(const _ARuleFactor& rhs) const
   return true;
 }
 
-void _ARuleFactor::differences(dbDiff&             diff,
-                               const char*         field,
+void _ARuleFactor::differences(dbDiff& diff,
+                               const char* field,
                                const _ARuleFactor& rhs) const
 {
   if (field)
@@ -104,8 +105,8 @@ bool _ARuleRatio::operator==(const _ARuleRatio& rhs) const
   return true;
 }
 
-void _ARuleRatio::differences(dbDiff&            diff,
-                              const char*        field,
+void _ARuleRatio::differences(dbDiff& diff,
+                              const char* field,
                               const _ARuleRatio& rhs) const
 {
   if (field)
@@ -172,8 +173,8 @@ bool _dbTechLayerAntennaRule::operator==(
 }
 
 void _dbTechLayerAntennaRule::differences(
-    dbDiff&                        diff,
-    const char*                    field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerAntennaRule& rhs) const
 {
   DIFF_BEGIN
@@ -191,8 +192,8 @@ void _dbTechLayerAntennaRule::differences(
   DIFF_END
 }
 
-void _dbTechLayerAntennaRule::out(dbDiff&     diff,
-                                  char        side,
+void _dbTechLayerAntennaRule::out(dbDiff& diff,
+                                  char side,
                                   const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -223,8 +224,8 @@ bool _dbTechAntennaAreaElement::operator==(
 }
 
 void _dbTechAntennaAreaElement::differences(
-    dbDiff&                          diff,
-    const char*                      field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechAntennaAreaElement& rhs) const
 {
   if (field)
@@ -237,8 +238,8 @@ void _dbTechAntennaAreaElement::differences(
   diff.end_object();
 }
 
-void _dbTechAntennaAreaElement::out(dbDiff&     diff,
-                                    char        side,
+void _dbTechAntennaAreaElement::out(dbDiff& diff,
+                                    char side,
                                     const char* field) const
 {
   if (field)
@@ -272,8 +273,8 @@ bool _dbTechAntennaPinModel::operator==(const _dbTechAntennaPinModel& rhs) const
 }
 
 void _dbTechAntennaPinModel::differences(
-    dbDiff&                       diff,
-    const char*                   field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechAntennaPinModel& rhs) const
 {
   DIFF_BEGIN
@@ -285,8 +286,8 @@ void _dbTechAntennaPinModel::differences(
   DIFF_END
 }
 
-void _dbTechAntennaPinModel::out(dbDiff&     diff,
-                                 char        side,
+void _dbTechAntennaPinModel::out(dbDiff& diff,
+                                 char side,
                                  const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -307,9 +308,9 @@ void _dbTechAntennaPinModel::out(dbDiff&     diff,
 void _ARuleFactor::setFactor(double factor, bool diffuse)
 {
   assert(factor > 0.0);
-  _factor        = factor;
+  _factor = factor;
   _diff_use_only = diffuse;
-  _explicit      = true;
+  _explicit = true;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _ARuleFactor& arf)
@@ -352,7 +353,7 @@ void _ARuleRatio::setDiff(const vector<double>& diff_idx,
                           const vector<double>& ratios)
 {
   assert((_diff_idx.size() == 0) && (_diff_ratio.size() == 0));
-  _diff_idx   = diff_idx;
+  _diff_idx = diff_idx;
   _diff_ratio = ratios;
 }
 
@@ -380,7 +381,7 @@ dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt)
 
 _dbTechAntennaAreaElement::_dbTechAntennaAreaElement()
 {
-  _area  = -1.0;
+  _area = -1.0;
   _lyidx = dbIdValidation::invalidId();
 }
 
@@ -483,7 +484,7 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   if (ant_rule->_par_area_val._diff_ratio.size() > 1) {
     fprintf(writer.out(), "    ANTENNADIFFAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_par_area_val._diff_idx.begin(),
-        ratio_itr   = ant_rule->_par_area_val._diff_ratio.begin();
+        ratio_itr = ant_rule->_par_area_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_par_area_val._diff_idx.end()
          && ratio_itr != ant_rule->_par_area_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
@@ -505,7 +506,7 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   if (ant_rule->_cum_area_val._diff_ratio.size() > 1) {
     fprintf(writer.out(), "    ANTENNACUMDIFFAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_cum_area_val._diff_idx.begin(),
-        ratio_itr   = ant_rule->_cum_area_val._diff_ratio.begin();
+        ratio_itr = ant_rule->_cum_area_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_cum_area_val._diff_idx.end()
          && ratio_itr != ant_rule->_cum_area_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
@@ -527,7 +528,7 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   if (ant_rule->_par_sidearea_val._diff_ratio.size() > 1) {
     fprintf(writer.out(), "    ANTENNADIFFSIDEAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_par_sidearea_val._diff_idx.begin(),
-        ratio_itr   = ant_rule->_par_sidearea_val._diff_ratio.begin();
+        ratio_itr = ant_rule->_par_sidearea_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_par_sidearea_val._diff_idx.end()
          && ratio_itr != ant_rule->_par_sidearea_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
@@ -549,7 +550,7 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   if (ant_rule->_cum_sidearea_val._diff_ratio.size() > 1) {
     fprintf(writer.out(), "    ANTENNACUMDIFFSIDEAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_cum_sidearea_val._diff_idx.begin(),
-        ratio_itr   = ant_rule->_cum_sidearea_val._diff_ratio.begin();
+        ratio_itr = ant_rule->_cum_sidearea_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_cum_sidearea_val._diff_idx.end()
          && ratio_itr != ant_rule->_cum_sidearea_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
@@ -560,7 +561,7 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   if (ant_rule->_area_diff_reduce_val._diff_ratio.size() > 1) {
     fprintf(writer.out(), "    ANTENNAAREADIFFREDUCEPWL ( ");
     for (diffdx_itr = ant_rule->_area_diff_reduce_val._diff_idx.begin(),
-        ratio_itr   = ant_rule->_area_diff_reduce_val._diff_ratio.begin();
+        ratio_itr = ant_rule->_area_diff_reduce_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_area_diff_reduce_val._diff_idx.end()
          && ratio_itr != ant_rule->_area_diff_reduce_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
@@ -645,29 +646,29 @@ double dbTechLayerAntennaRule::getCSR() const
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPAR() const
 {
-  auto  ant_rule = (const _dbTechLayerAntennaRule*) this;
-  auto& rule     = ant_rule->_par_area_val;
+  auto ant_rule = (const _dbTechLayerAntennaRule*) this;
+  auto& rule = ant_rule->_par_area_val;
   return pwl_pair{rule._diff_idx, rule._diff_ratio};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCAR() const
 {
-  auto  ant_rule = (const _dbTechLayerAntennaRule*) this;
-  auto& rule     = ant_rule->_cum_area_val;
+  auto ant_rule = (const _dbTechLayerAntennaRule*) this;
+  auto& rule = ant_rule->_cum_area_val;
   return pwl_pair{rule._diff_idx, rule._diff_ratio};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPSR() const
 {
-  auto  ant_rule = (const _dbTechLayerAntennaRule*) this;
-  auto& rule     = ant_rule->_par_sidearea_val;
+  auto ant_rule = (const _dbTechLayerAntennaRule*) this;
+  auto& rule = ant_rule->_par_sidearea_val;
   return pwl_pair{rule._diff_idx, rule._diff_ratio};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCSR() const
 {
-  auto  ant_rule = (const _dbTechLayerAntennaRule*) this;
-  auto& rule     = ant_rule->_cum_sidearea_val;
+  auto ant_rule = (const _dbTechLayerAntennaRule*) this;
+  auto& rule = ant_rule->_cum_sidearea_val;
   return pwl_pair{rule._diff_idx, rule._diff_ratio};
 }
 
@@ -760,7 +761,7 @@ void dbTechLayerAntennaRule::setDiffCSR(const vector<double>& diff_idx,
 }
 
 dbTechLayerAntennaRule* dbTechLayerAntennaRule::getAntennaRule(dbTech* _tech,
-                                                               uint    dbid)
+                                                               uint dbid)
 {
   _dbTech* tech = (_dbTech*) _tech;
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(dbid);
@@ -774,7 +775,7 @@ bool dbTechLayerAntennaRule::hasAntennaCumRoutingPlusCut() const
 
 void dbTechLayerAntennaRule::setAntennaCumRoutingPlusCut(bool value)
 {
-  _dbTechLayerAntennaRule* ant_rule        = (_dbTechLayerAntennaRule*) this;
+  _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
   ant_rule->_has_antenna_cumroutingpluscut = value;
 }
 
@@ -787,7 +788,7 @@ double dbTechLayerAntennaRule::getGatePlusDiffFactor() const
 void dbTechLayerAntennaRule::setGatePlusDiffFactor(double factor)
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
-  ant_rule->_gate_plus_diff_factor  = factor;
+  ant_rule->_gate_plus_diff_factor = factor;
 }
 
 double dbTechLayerAntennaRule::getAreaMinusDiffFactor() const
@@ -806,7 +807,7 @@ dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getAreaDiffReduce()
     const
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
-  auto&                    rule     = ant_rule->_area_diff_reduce_val;
+  auto& rule = ant_rule->_area_diff_reduce_val;
   return pwl_pair{rule._diff_idx, rule._diff_ratio};
 }
 
@@ -850,14 +851,14 @@ dbIStream& operator>>(dbIStream& stream, _dbTechAntennaAreaElement*& aae)
 //
 void _dbTechAntennaAreaElement::create(
     dbVector<_dbTechAntennaAreaElement*>& incon,
-    double                                inarea,
-    dbTechLayer*                          inly)
+    double inarea,
+    dbTechLayer* inly)
 {
   if (inarea < 0.0)
     return;
 
   _dbTechAntennaAreaElement* aae = new _dbTechAntennaAreaElement;
-  aae->_area                     = inarea;
+  aae->_area = inarea;
   if (inly)
     aae->_lyidx = inly->getId();
 
@@ -868,8 +869,8 @@ void _dbTechAntennaAreaElement::create(
 // Write out antenna element info given header string and file.
 //
 void _dbTechAntennaAreaElement::writeLef(const char* header,
-                                         dbTech*     tech,
-                                         lefout&     writer) const
+                                         dbTech* tech,
+                                         lefout& writer) const
 {
   fprintf(writer.out(), "        %s %g ", header, _area);
   if (_lyidx != dbIdValidation::invalidId())
@@ -956,7 +957,7 @@ void dbTechAntennaPinModel::addMaxAreaCAREntry(double inval, dbTechLayer* refly)
   _dbTechAntennaAreaElement::create(xmod->_max_area_car, inval, refly);
 }
 
-void dbTechAntennaPinModel::addMaxSideAreaCAREntry(double       inval,
+void dbTechAntennaPinModel::addMaxSideAreaCAREntry(double inval,
                                                    dbTechLayer* refly)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
@@ -970,14 +971,14 @@ void dbTechAntennaPinModel::addMaxCutCAREntry(double inval, dbTechLayer* refly)
 }
 
 void _dbTechAntennaPinModel::getAntennaValues(
-    _dbDatabase*                                  db,
-    const dbVector<_dbTechAntennaAreaElement*>&   elements,
+    _dbDatabase* db,
+    const dbVector<_dbTechAntennaAreaElement*>& elements,
     std::vector<std::pair<double, dbTechLayer*>>& result)
 {
   _dbTech* tech = (_dbTech*) ((dbDatabase*) db)->getTech();
 
   for (auto elem : elements) {
-    dbTechLayer*       layer   = nullptr;
+    dbTechLayer* layer = nullptr;
     dbId<_dbTechLayer> layerId = elem->getLayerId();
     if (layerId.isValid()) {
       layer = (dbTechLayer*) tech->_layer_tbl->getPtr(layerId);
@@ -1042,7 +1043,7 @@ void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 
 dbTechAntennaPinModel* dbTechAntennaPinModel::getAntennaPinModel(
     dbMaster* _master,
-    uint      dbid)
+    uint dbid)
 {
   _dbMaster* master = (_dbMaster*) _master;
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(dbid);

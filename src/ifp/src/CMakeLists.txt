@@ -35,10 +35,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      ifp
-        NAMESPACE ifp
-        I_FILE    InitFloorplan.i
-        SCRIPTS   InitFloorplan.tcl
+swig_lib(NAME      ifp
+         NAMESPACE ifp
+         I_FILE    InitFloorplan.i
+         SCRIPTS   InitFloorplan.tcl
 )
 
 target_sources(ifp

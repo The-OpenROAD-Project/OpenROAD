@@ -70,8 +70,8 @@ bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
 }
 
 void _dbTechViaGenerateRule::differences(
-    dbDiff&                       diff,
-    const char*                   field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechViaGenerateRule& rhs) const
 {
   DIFF_BEGIN
@@ -81,8 +81,8 @@ void _dbTechViaGenerateRule::differences(
   DIFF_END
 }
 
-void _dbTechViaGenerateRule::out(dbDiff&     diff,
-                                 char        side,
+void _dbTechViaGenerateRule::out(dbDiff& diff,
+                                 char side,
                                  const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -104,8 +104,8 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
 
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*)
 {
-  _name              = 0;
-  _flags._default    = 0;
+  _name = 0;
+  _flags._default = 0;
   _flags._spare_bits = 0;
 }
 
@@ -160,7 +160,7 @@ uint dbTechViaGenerateRule::getViaLayerRuleCount()
 dbTechViaLayerRule* dbTechViaGenerateRule::getViaLayerRule(uint idx)
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
-  dbTech*                 tech = (dbTech*) rule->getOwner();
+  dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_layer_rules.size())
     return NULL;
@@ -169,16 +169,16 @@ dbTechViaLayerRule* dbTechViaGenerateRule::getViaLayerRule(uint idx)
   return dbTechViaLayerRule::getTechViaLayerRule(tech, id);
 }
 
-dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech*     tech_,
+dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
                                                      const char* name,
-                                                     bool        is_default)
+                                                     bool is_default)
 {
   if (tech_->findViaGenerateRule(name))
     return NULL;
 
-  _dbTech*                tech = (_dbTech*) tech_;
+  _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->_via_generate_rule_tbl->create();
-  rule->_name                  = strdup(name);
+  rule->_name = strdup(name);
   ZALLOCATED(rule->_name);
   rule->_flags._default = is_default;
   return (dbTechViaGenerateRule*) rule;
@@ -186,7 +186,7 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech*     tech_,
 
 dbTechViaGenerateRule* dbTechViaGenerateRule::getTechViaGenerateRule(
     dbTech* tech_,
-    uint    dbid_)
+    uint dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaGenerateRule*) tech->_via_generate_rule_tbl->getPtr(dbid_);

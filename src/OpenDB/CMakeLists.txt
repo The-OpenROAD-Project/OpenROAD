@@ -36,15 +36,9 @@ add_subdirectory(test/cpp)
 
 include(${SWIG_USE_FILE})
 
-option(BUILD_PYTHON "Build Python SWIG module" ON)
-if(BUILD_PYTHON)
-    add_subdirectory(src/swig/python)
-endif()
-
-option(BUILD_TCL "Build TCL SWIG module" ON)
-if(BUILD_TCL)
-    add_subdirectory(src/swig/tcl)
-endif()
+add_subdirectory(src/swig/common)
+add_subdirectory(src/swig/python)
+add_subdirectory(src/swig/tcl)
 
 ############################################################################
 ############################### DOXYGEN ####################################

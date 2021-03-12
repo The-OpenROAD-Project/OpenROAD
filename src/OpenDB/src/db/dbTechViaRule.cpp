@@ -69,8 +69,8 @@ bool _dbTechViaRule::operator==(const _dbTechViaRule& rhs) const
   return true;
 }
 
-void _dbTechViaRule::differences(dbDiff&               diff,
-                                 const char*           field,
+void _dbTechViaRule::differences(dbDiff& diff,
+                                 const char* field,
                                  const _dbTechViaRule& rhs) const
 {
   DIFF_BEGIN
@@ -103,7 +103,7 @@ _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*)
 {
-  _name              = 0;
+  _name = 0;
   _flags._spare_bits = 0;
 }
 
@@ -160,7 +160,7 @@ uint dbTechViaRule::getViaCount()
 dbTechVia* dbTechViaRule::getVia(uint idx)
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
-  dbTech*         tech = (dbTech*) rule->getOwner();
+  dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_vias.size())
     return NULL;
@@ -178,7 +178,7 @@ uint dbTechViaRule::getViaLayerRuleCount()
 dbTechViaLayerRule* dbTechViaRule::getViaLayerRule(uint idx)
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
-  dbTech*         tech = (dbTech*) rule->getOwner();
+  dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_layer_rules.size())
     return NULL;
@@ -192,9 +192,9 @@ dbTechViaRule* dbTechViaRule::create(dbTech* tech_, const char* name)
   if (tech_->findViaRule(name))
     return NULL;
 
-  _dbTech*        tech = (_dbTech*) tech_;
+  _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaRule* rule = tech->_via_rule_tbl->create();
-  rule->_name          = strdup(name);
+  rule->_name = strdup(name);
   ZALLOCATED(rule->_name);
   return (dbTechViaRule*) rule;
 }

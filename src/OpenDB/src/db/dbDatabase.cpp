@@ -70,8 +70,8 @@ namespace odb {
 
 template class dbTable<_dbDatabase>;
 
-static dbTable<_dbDatabase>* db_tbl       = NULL;
-static uint                  db_unique_id = 0;
+static dbTable<_dbDatabase>* db_tbl = NULL;
+static uint db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
@@ -108,8 +108,8 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   return true;
 }
 
-void _dbDatabase::differences(dbDiff&            diff,
-                              const char*        field,
+void _dbDatabase::differences(dbDiff& diff,
+                              const char* field,
                               const _dbDatabase& rhs) const
 {
   DIFF_BEGIN
@@ -170,14 +170,14 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 {
-  _magic1       = ADS_DB_MAGIC1;
-  _magic2       = ADS_DB_MAGIC2;
+  _magic1 = ADS_DB_MAGIC1;
+  _magic2 = ADS_DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
-  _master_id    = 0;
-  _file         = NULL;
-  _logger       = nullptr;
-  _unique_id    = db_unique_id++;
+  _master_id = 0;
+  _file = NULL;
+  _logger = nullptr;
+  _unique_id = db_unique_id++;
 
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
@@ -209,14 +209,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 {
-  _magic1       = ADS_DB_MAGIC1;
-  _magic2       = ADS_DB_MAGIC2;
+  _magic1 = ADS_DB_MAGIC1;
+  _magic2 = ADS_DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
-  _master_id    = 0;
-  _file         = NULL;
-  _logger       = nullptr;
-  _unique_id    = id;
+  _master_id = 0;
+  _file = NULL;
+  _logger = nullptr;
+  _unique_id = id;
 
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
@@ -333,7 +333,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 
   stream >> db._master_id;
 
-
   stream >> db._chip;
   stream >> db._tech;
   stream >> *db._tech_tbl;
@@ -343,13 +342,13 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   stream >> *db._name_cache;
 
   // Fix up the owner id of properties of this db, this value changes.
-  dbSet<_dbProperty>           props(&db, db._prop_tbl);
+  dbSet<_dbProperty> props(&db, db._prop_tbl);
   dbSet<_dbProperty>::iterator itr;
-  uint                         oid = db.getId();
+  uint oid = db.getId();
 
   for (itr = props.begin(); itr != props.end(); ++itr) {
     _dbProperty* p = *itr;
-    p->_owner      = oid;
+    p->_owner = oid;
   }
 
   // Set the revision of the database to the current revision
@@ -372,7 +371,7 @@ dbSet<dbLib> dbDatabase::getLibs()
 
 dbLib* dbDatabase::findLib(const char* name)
 {
-  dbSet<dbLib>           libs = getLibs();
+  dbSet<dbLib> libs = getLibs();
   dbSet<dbLib>::iterator itr;
 
   for (itr = libs.begin(); itr != libs.end(); ++itr) {
@@ -387,10 +386,10 @@ dbLib* dbDatabase::findLib(const char* name)
 
 dbMaster* dbDatabase::findMaster(const char* name)
 {
-  dbSet<dbLib>           libs = getLibs();
+  dbSet<dbLib> libs = getLibs();
   dbSet<dbLib>::iterator it;
   for (it = libs.begin(); it != libs.end(); it++) {
-    dbLib*    lib    = *it;
+    dbLib* lib = *it;
     dbMaster* master = lib->findMaster(name);
     if (master)
       return master;
@@ -433,14 +432,14 @@ dbTech* dbDatabase::getTech()
 void dbDatabase::read(FILE* file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream    stream(db, file);
+  dbIStream stream(db, file);
   stream >> *db;
 }
 
 void dbDatabase::readTech(FILE* file)
 {
-  _dbDatabase* db   = (_dbDatabase*) this;
-  _dbTech*     tech = (_dbTech*) getTech();
+  _dbDatabase* db = (_dbDatabase*) this;
+  _dbTech* tech = (_dbTech*) getTech();
 
   if (tech == NULL)
     tech = (_dbTech*) dbTech::create(this);
@@ -456,7 +455,7 @@ void dbDatabase::readTech(FILE* file)
 void dbDatabase::readLib(FILE* file, dbLib* lib)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  _dbLib*      l  = (_dbLib*) lib;
+  _dbLib* l = (_dbLib*) lib;
 
   l->~_dbLib();
   new (l) _dbLib(db);
@@ -468,14 +467,14 @@ void dbDatabase::readLib(FILE* file, dbLib* lib)
 void dbDatabase::readLibs(FILE* file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream    stream(db, file);
+  dbIStream stream(db, file);
   stream >> *db->_lib_tbl;
 }
 
 void dbDatabase::readBlock(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  _dbBlock*    b  = (_dbBlock*) block;
+  _dbBlock* b = (_dbBlock*) block;
   b->~_dbBlock();
   new (b) _dbBlock(db);
   dbIStream stream(db, file);
@@ -485,7 +484,7 @@ void dbDatabase::readBlock(FILE* file, dbBlock* block)
 void dbDatabase::readNets(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream    stream(db, file);
+  dbIStream stream(db, file);
 
   std::list<dbBlockCallBackObj*>* cbs = &(((_dbBlock*) block)->_callbacks);
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -499,14 +498,14 @@ void dbDatabase::readNets(FILE* file, dbBlock* block)
 void dbDatabase::readWires(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream    stream(db, file);
+  dbIStream stream(db, file);
   stream >> *((_dbBlock*) block)->_wire_tbl;
 }
 
 void dbDatabase::readParasitics(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream    stream(db, file);
+  dbIStream stream(db, file);
   stream >> ((_dbBlock*) block)->_num_ext_corners;
   stream >> ((_dbBlock*) block)->_corner_name_list;
   stream >> *((_dbBlock*) block)->_r_val_tbl;
@@ -523,8 +522,8 @@ void dbDatabase::readParasitics(FILE* file, dbBlock* block)
 
 void dbDatabase::readChip(FILE* file)
 {
-  _dbDatabase* db   = (_dbDatabase*) this;
-  _dbChip*     chip = (_dbChip*) getChip();
+  _dbDatabase* db = (_dbDatabase*) this;
+  _dbChip* chip = (_dbChip*) getChip();
   chip->~_dbChip();
   new (chip) _dbChip(db);
   dbIStream stream(db, file);
@@ -534,15 +533,15 @@ void dbDatabase::readChip(FILE* file)
 void dbDatabase::write(FILE* file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *db;
   fflush(file);
 }
 
 void dbDatabase::writeTech(FILE* file)
 {
-  _dbDatabase* db   = (_dbDatabase*) this;
-  _dbTech*     tech = (_dbTech*) getTech();
+  _dbDatabase* db = (_dbDatabase*) this;
+  _dbTech* tech = (_dbTech*) getTech();
 
   if (tech == NULL)
     throw ZException("No technology");
@@ -555,7 +554,7 @@ void dbDatabase::writeTech(FILE* file)
 void dbDatabase::writeLib(FILE* file, dbLib* lib)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *(_dbLib*) lib;
   fflush(file);
 }
@@ -563,7 +562,7 @@ void dbDatabase::writeLib(FILE* file, dbLib* lib)
 void dbDatabase::writeLibs(FILE* file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *db->_lib_tbl;
   fflush(file);
 }
@@ -571,7 +570,7 @@ void dbDatabase::writeLibs(FILE* file)
 void dbDatabase::writeBlock(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *(_dbBlock*) block;
   fflush(file);
 }
@@ -579,7 +578,7 @@ void dbDatabase::writeBlock(FILE* file, dbBlock* block)
 void dbDatabase::writeNets(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *((_dbBlock*) block)->_net_tbl;
   fflush(file);
 }
@@ -587,7 +586,7 @@ void dbDatabase::writeNets(FILE* file, dbBlock* block)
 void dbDatabase::writeWires(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << *((_dbBlock*) block)->_wire_tbl;
   fflush(file);
 }
@@ -595,7 +594,7 @@ void dbDatabase::writeWires(FILE* file, dbBlock* block)
 void dbDatabase::writeParasitics(FILE* file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream    stream(db, file);
+  dbOStream stream(db, file);
   stream << ((_dbBlock*) block)->_num_ext_corners;
   stream << ((_dbBlock*) block)->_corner_name_list;
   stream << *((_dbBlock*) block)->_r_val_tbl;
@@ -610,9 +609,9 @@ void dbDatabase::writeParasitics(FILE* file, dbBlock* block)
 
 void dbDatabase::writeChip(FILE* file)
 {
-  _dbDatabase* db   = (_dbDatabase*) this;
-  _dbChip*     chip = (_dbChip*) getChip();
-  dbOStream    stream(db, file);
+  _dbDatabase* db = (_dbDatabase*) this;
+  _dbChip* chip = (_dbChip*) getChip();
+  dbOStream stream(db, file);
   stream << *chip;
   fflush(file);
 }
@@ -630,9 +629,9 @@ void dbDatabase::beginEco(dbBlock* block_)
 
 void dbDatabase::endEco(dbBlock* block_)
 {
-  _dbBlock*  block = (_dbBlock*) block_;
-  dbJournal* eco   = block->_journal;
-  block->_journal  = NULL;
+  _dbBlock* block = (_dbBlock*) block_;
+  dbJournal* eco = block->_journal;
+  block->_journal = NULL;
 
   if (block->_journal_pending)
     delete block->_journal_pending;
@@ -661,10 +660,19 @@ int dbDatabase::checkEco(dbBlock* block_)
   }
 }
 
-void dbDatabase::readEco(dbBlock* block_, FILE* file)
+void dbDatabase::readEco(dbBlock* block_, const char* filename)
 {
-  _dbBlock*  block = (_dbBlock*) block_;
-  dbIStream  stream(block->getDatabase(), file);
+  _dbBlock* block = (_dbBlock*) block_;
+
+  FILE* file = fopen(filename, "r");
+  if (!file) {
+    int errnum = errno;
+    block->getImpl()->getLogger()->error(
+        utl::ODB, 8, "Error opening file {}", strerror(errnum));
+    return;
+  }
+
+  dbIStream stream(block->getDatabase(), file);
   dbJournal* eco = new dbJournal(block_);
   assert(eco);
   stream >> *eco;
@@ -673,16 +681,28 @@ void dbDatabase::readEco(dbBlock* block_, FILE* file)
     delete block->_journal_pending;
 
   block->_journal_pending = eco;
+
+  fclose(file);
 }
 
-void dbDatabase::writeEco(dbBlock* block_, FILE* file)
+void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
   _dbBlock* block = (_dbBlock*) block_;
+
+  FILE* file = fopen(filename, "w");
+  if (!file) {
+    int errnum = errno;
+    block->getImpl()->getLogger()->error(
+        utl::ODB, 8, "Error opening file {}", strerror(errnum));
+    return;
+  }
 
   if (block->_journal_pending) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
+
+  fclose(file);
 }
 
 void dbDatabase::commitEco(dbBlock* block_)
@@ -720,7 +740,7 @@ dbDatabase* dbDatabase::create()
 void dbDatabase::clear()
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  int          id = db->_unique_id;
+  int id = db->_unique_id;
   db->~_dbDatabase();
   new (db) _dbDatabase(db, id);
 }
@@ -734,7 +754,7 @@ void dbDatabase::destroy(dbDatabase* db_)
 dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  _dbDatabase* d  = db_tbl->duplicate(db);
+  _dbDatabase* d = db_tbl->duplicate(db);
   return (dbDatabase*) d;
 }
 
@@ -755,12 +775,12 @@ utl::Logger* _dbObject::getLogger() const
 
 bool dbDatabase::diff(dbDatabase* db0_,
                       dbDatabase* db1_,
-                      FILE*       file,
-                      int         indent)
+                      FILE* file,
+                      int indent)
 {
   _dbDatabase* db0 = (_dbDatabase*) db0_;
   _dbDatabase* db1 = (_dbDatabase*) db1_;
-  dbDiff       diff(file);
+  dbDiff diff(file);
   diff.setIndentPerLevel(indent);
   db0->differences(diff, NULL, *db1);
   return diff.hasDifferences();

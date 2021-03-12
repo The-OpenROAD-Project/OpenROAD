@@ -30,53 +30,54 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definBase.h"
+
 #include "db.h"
 #include "defiUtil.hpp"
-#include "definBase.h"
 
 namespace odb {
 
 definBase::definBase()
 {
-  _mode        = defin::DEFAULT;
-  _tech        = nullptr;
-  _block       = nullptr;
-  _logger      = nullptr;
-  _errors      = 0;
+  _mode = defin::DEFAULT;
+  _tech = nullptr;
+  _block = nullptr;
+  _logger = nullptr;
+  _errors = 0;
   _dist_factor = 10;
 }
 
 void definBase::init()
 {
-  _mode        = defin::DEFAULT;
-  _tech        = nullptr;
-  _block       = nullptr;
-  _logger      = nullptr;
-  _errors      = 0;
+  _mode = defin::DEFAULT;
+  _tech = nullptr;
+  _block = nullptr;
+  _logger = nullptr;
+  _errors = 0;
   _dist_factor = 10;
 }
 
 void definBase::units(int d)
 {
-  int dbu      = _tech->getDbUnitsPerMicron();
+  int dbu = _tech->getDbUnitsPerMicron();
   _dist_factor = dbu / d;
 }
 
 void definBase::setTech(dbTech* tech)
 {
-  _tech        = tech;
-  int dbu      = _tech->getDbUnitsPerMicron();
+  _tech = tech;
+  int dbu = _tech->getDbUnitsPerMicron();
   _dist_factor = dbu / 100;
 }
 
 void definBase::setBlock(dbBlock* block)
 {
-  _block  = block;
+  _block = block;
 }
 
 void definBase::setLogger(utl::Logger* logger)
 {
-  _logger  = logger;
+  _logger = logger;
 }
 
 void definBase::setMode(defin::MODE mode)

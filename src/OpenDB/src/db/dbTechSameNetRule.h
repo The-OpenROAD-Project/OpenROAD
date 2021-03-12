@@ -58,9 +58,9 @@ class _dbTechSameNetRule : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbTechSameNetRuleFlags _flags;
-  uint                    _spacing;
-  dbId<_dbTechLayer>      _layer_1;
-  dbId<_dbTechLayer>      _layer_2;
+  uint _spacing;
+  dbId<_dbTechLayer> _layer_1;
+  dbId<_dbTechLayer> _layer_2;
 
   _dbTechSameNetRule(_dbDatabase*, const _dbTechSameNetRule& r);
   _dbTechSameNetRule(_dbDatabase*);
@@ -71,8 +71,8 @@ class _dbTechSameNetRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                   diff,
-                   const char*               field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechSameNetRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -88,9 +88,9 @@ inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*,
 
 inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*)
 {
-  _flags._stack      = 0;
+  _flags._stack = 0;
   _flags._spare_bits = 0;
-  _spacing           = 0;
+  _spacing = 0;
 }
 
 inline _dbTechSameNetRule::~_dbTechSameNetRule()

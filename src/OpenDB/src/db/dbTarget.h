@@ -56,11 +56,11 @@ class _dbTarget : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTargetFlags     _flags;
-  Point              _point;
-  dbId<_dbMTerm>     _mterm;
+  _dbTargetFlags _flags;
+  Point _point;
+  dbId<_dbMTerm> _mterm;
   dbId<_dbTechLayer> _layer;
-  dbId<_dbTarget>    _next;
+  dbId<_dbTarget> _next;
 
   _dbTarget(_dbDatabase*, const _dbTarget& t);
   _dbTarget(_dbDatabase*);

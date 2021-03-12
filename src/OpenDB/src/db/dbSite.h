@@ -48,21 +48,21 @@ class dbDiff;
 
 struct dbSiteFlags
 {
-  uint               _x_symmetry : 1;
-  uint               _y_symmetry : 1;
-  uint               _R90_symmetry : 1;
+  uint _x_symmetry : 1;
+  uint _y_symmetry : 1;
+  uint _R90_symmetry : 1;
   dbSiteClass::Value _class : 4;
-  uint               _spare_bits : 25;
+  uint _spare_bits : 25;
 };
 
 class _dbSite : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  dbSiteFlags   _flags;
-  char*         _name;
-  uint          _height;
-  uint          _width;
+  dbSiteFlags _flags;
+  char* _name;
+  uint _height;
+  uint _width;
   dbId<_dbSite> _next_entry;
 
   _dbSite(_dbDatabase*, const _dbSite& s);

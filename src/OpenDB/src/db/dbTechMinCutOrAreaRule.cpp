@@ -71,8 +71,8 @@ bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
   return true;
 }
 
-void _dbTechMinCutRule::differences(dbDiff&                  diff,
-                                    const char*              field,
+void _dbTechMinCutRule::differences(dbDiff& diff,
+                                    const char* field,
                                     const _dbTechMinCutRule& rhs) const
 {
   DIFF_BEGIN
@@ -113,8 +113,8 @@ bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
   return true;
 }
 
-void _dbTechMinEncRule::differences(dbDiff&                  diff,
-                                    const char*              field,
+void _dbTechMinEncRule::differences(dbDiff& diff,
+                                    const char* field,
                                     const _dbTechMinEncRule& rhs) const
 {
   DIFF_BEGIN
@@ -193,17 +193,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 //
 ////////////////////////////////////////////////////////////////////
 
-using namespace TechMinCutRule;
-
 bool dbTechMinCutRule::getMinimumCuts(uint& numcuts, uint& width) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if (_lsm->_flags._rule == NONE)
+  if (_lsm->_flags._rule == _dbTechMinCutRule::NONE)
     return false;
 
   numcuts = _lsm->_num_cuts;
-  width   = _lsm->_width;
+  width = _lsm->_width;
   return true;
 }
 
@@ -215,7 +213,7 @@ void dbTechMinCutRule::setMinimumCuts(uint numcuts,
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
   _lsm->_num_cuts = numcuts;
-  _lsm->_width    = width;
+  _lsm->_width = width;
 
   if (above_only && below_only) {  // For default encoding, rule applies from
                                    // both above and below
@@ -224,33 +222,34 @@ void dbTechMinCutRule::setMinimumCuts(uint numcuts,
   }
 
   if (above_only)
-    _lsm->_flags._rule = MINIMUM_CUT_ABOVE;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_ABOVE;
   else if (below_only)
-    _lsm->_flags._rule = MINIMUM_CUT_BELOW;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_BELOW;
   else
-    _lsm->_flags._rule = MINIMUM_CUT;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT;
 }
 
 bool dbTechMinCutRule::isAboveOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == MINIMUM_CUT_ABOVE);
+  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE);
 }
 
 bool dbTechMinCutRule::isBelowOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == MINIMUM_CUT_BELOW);
+  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW);
 }
 
 bool dbTechMinCutRule::getLengthForCuts(uint& length, uint& distance) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if ((_lsm->_flags._rule == NONE) || !(_lsm->_flags._cuts_length))
+  if ((_lsm->_flags._rule == _dbTechMinCutRule::NONE)
+      || !(_lsm->_flags._cuts_length))
     return false;
 
-  length   = _lsm->_length;
+  length = _lsm->_length;
   distance = _lsm->_distance;
   return true;
 }
@@ -269,7 +268,7 @@ bool dbTechMinCutRule::getCutDistance(uint& cut_distance) const
 void dbTechMinCutRule::setCutDistance(uint cut_distance)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  _lsm->_cut_distance     = cut_distance;
+  _lsm->_cut_distance = cut_distance;
 }
 
 //
@@ -279,18 +278,18 @@ void dbTechMinCutRule::setLengthForCuts(uint length, uint distance)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  assert((_lsm->_flags._rule == MINIMUM_CUT)
-         || (_lsm->_flags._rule == MINIMUM_CUT_ABOVE)
-         || (_lsm->_flags._rule == MINIMUM_CUT_BELOW));
+  assert((_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT)
+         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE)
+         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW));
 
   _lsm->_flags._cuts_length = 1;
-  _lsm->_length             = length;
-  _lsm->_distance           = distance;
+  _lsm->_length = length;
+  _lsm->_distance = distance;
 }
 
 void dbTechMinCutRule::writeLef(lefout& writer) const
 {
-  uint numcuts   = 0;
+  uint numcuts = 0;
   uint cut_width = 0;
   getMinimumCuts(numcuts, cut_width);
   fprintf(writer.out(),
@@ -319,7 +318,7 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
 
 dbTechMinCutRule* dbTechMinCutRule::create(dbTechLayer* inly)
 {
-  _dbTechLayer*      layer   = (_dbTechLayer*) inly;
+  _dbTechLayer* layer = (_dbTechLayer*) inly;
   _dbTechMinCutRule* newrule = layer->_min_cut_rules_tbl->create();
   return ((dbTechMinCutRule*) newrule);
 }
@@ -367,7 +366,7 @@ void dbTechMinEncRule::setEnclosureWidth(uint width)
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
   _lsm->_flags._has_width = 1;
-  _lsm->_width            = width;
+  _lsm->_width = width;
 }
 
 void dbTechMinEncRule::writeLef(lefout& writer) const
@@ -382,7 +381,7 @@ void dbTechMinEncRule::writeLef(lefout& writer) const
 
 dbTechMinEncRule* dbTechMinEncRule::create(dbTechLayer* inly)
 {
-  _dbTechLayer*      layer   = (_dbTechLayer*) inly;
+  _dbTechLayer* layer = (_dbTechLayer*) inly;
   _dbTechMinEncRule* newrule = layer->_min_enc_rules_tbl->create();
   return ((dbTechMinEncRule*) newrule);
 }

@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "dbGroupItr.h"
 
 #include "dbGroup.h"
 #include "dbTable.h"
-// User Code Begin includes
+// User Code Begin Includes
 #include "dbModule.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -61,15 +61,15 @@ void dbGroupItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint      id      = _parent->_groups;
-  uint      list    = 0;
+  uint id = _parent->_groups;
+  uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child    = _group_tbl->getPtr(id);
-    uint      n         = _child->_group_next;
+    _dbGroup* _child = _group_tbl->getPtr(id);
+    uint n = _child->_group_next;
     _child->_group_next = list;
-    list                = id;
-    id                  = n;
+    list = id;
+    id = n;
   }
   _parent->_groups = list;
   // User Code End reverse
@@ -117,7 +117,7 @@ dbObject* dbGroupItr::getObject(uint id, ...)
 {
   return _group_tbl->getPtr(id);
 }
-// User Code Begin methods
-// User Code End methods
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Cpp

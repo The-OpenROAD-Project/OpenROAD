@@ -54,7 +54,7 @@ class dbDiff;
 
 struct _dbBTermFlags
 {
-  dbIoType::Value  _io_type : 4;
+  dbIoType::Value _io_type : 4;
   dbSigType::Value _sig_type : 4;
   uint _orient : 4;  // This field is not used anymore. Replaced by bpin...
   uint _status : 4;  // This field is not used anymore. Replaced by bpin...
@@ -70,20 +70,24 @@ struct _dbBTermFlags
 class _dbBTerm : public _dbObject
 {
  public:
+  enum Field  // dbJournalField name
+  {
+    FLAGS
+  };
   // PERSISTANT-MEMBERS
-  _dbBTermFlags  _flags;
-  uint           _ext_id;
-  char*          _name;
+  _dbBTermFlags _flags;
+  uint _ext_id;
+  char* _name;
   dbId<_dbBTerm> _next_entry;
-  dbId<_dbNet>   _net;
+  dbId<_dbNet> _net;
   dbId<_dbBTerm> _next_bterm;
   dbId<_dbBTerm> _prev_bterm;
   dbId<_dbBlock> _parent_block;  // Up hierarchy: TWG
   dbId<_dbITerm> _parent_iterm;  // Up hierarchy: TWG
-  dbId<_dbBPin>  _bpins;         // Up hierarchy: TWG
-  dbId<_dbBTerm>  _ground_pin;
-  dbId<_dbBTerm>  _supply_pin;
-  std::uint32_t  _sta_vertex_id;  // not saved
+  dbId<_dbBPin> _bpins;          // Up hierarchy: TWG
+  dbId<_dbBTerm> _ground_pin;
+  dbId<_dbBTerm> _supply_pin;
+  std::uint32_t _sta_vertex_id;  // not saved
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
