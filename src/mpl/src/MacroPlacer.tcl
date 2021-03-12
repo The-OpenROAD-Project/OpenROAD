@@ -120,6 +120,7 @@ sta::define_cmd_args "macro_placement_debug" {
     [-partitions]
 }
 
+# This seg faults if the gui is not present -cherry
 proc macro_placement_debug { args } {
   sta::parse_key_args "macro_placement_debug" args \
       keys {} \
