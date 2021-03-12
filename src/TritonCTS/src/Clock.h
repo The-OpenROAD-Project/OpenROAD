@@ -159,10 +159,12 @@ class Clock
 
   Clock(const std::string& netName,
         const std::string& clockPin,
+        const std::string& sdcClockName,
         DBU clockPinX,
         DBU clockPinY)
       : _netName(netName),
         _clockPin(clockPin),
+        _sdcClockName(sdcClockName),
         _clockPinX(clockPinX),
         _clockPinY(clockPinY){};
 
@@ -245,6 +247,7 @@ class Clock
  private:
   std::string _netName;
   std::string _clockPin;
+  std::string _sdcClockName;
   DBU _clockPinX;
   DBU _clockPinY;
 

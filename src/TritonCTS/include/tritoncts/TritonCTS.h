@@ -109,7 +109,7 @@ class TritonCTS
   void parseClockNames(std::vector<std::string>& clockNetNames) const;
   void initDB();
   void initAllClocks();
-  void initClock(odb::dbNet* net);
+  void initClock(odb::dbNet* net, std::string sdcClock);
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);

@@ -45,6 +45,8 @@
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "utility/Logger.h"
+#include "sta/Sdc.hh"
+#include "sta/PatternMatch.hh"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -411,30 +413,47 @@ void TritonCTS::initAllClocks()
 
   // Uses dbSta to find all clock nets in the design.
 
-  std::set<odb::dbNet*> clockNets;
+  std::vector<std::pair<std::set<odb::dbNet*>, std::string>> clockNetsInfo;
 
   // Checks the user input in case there are other nets that need to be added to
   // the set.
   std::vector<odb::dbNet*> inputClkNets = _options->getClockNetsObjs();
 
   if (inputClkNets.size() != 0) {
+    std::set<odb::dbNet *> clockNets;
     for (odb::dbNet* net : inputClkNets) {
       // Since a set is unique, only the nets not found by dbSta are added.
       clockNets.insert(net);
     }
+    clockNetsInfo.emplace_back(std::make_pair(clockNets, std::string("")));
   } else {
-    clockNets = _openSta->findClkNets();
+    sta::Sdc *sdc = _openSta->sdc();
+    sta::PatternMatch matcher("*");
+    sta::ClockSeq clks;
+    sdc->findClocksMatching(&matcher, &clks);
+    for (auto clk : clks) {
+      std::string clkName = clk->name();
+      std::set<odb::dbNet* > clkNets = _openSta->findClkNets(clk);
+      clockNetsInfo.emplace_back(make_pair(clkNets, clkName));
+    }
   }
 
   // Iterate over all the nets found by the user-input and dbSta
-  for (odb::dbNet* net : clockNets) {
-    if (net != nullptr) {
-      _logger->info(CTS, 7, " Net \"{}\" found", net->getName());
-      // Initializes the net in TritonCTS. If the number of sinks is less than
-      // 2, the net is discarded.
-      initClock(net);
-    } else {
-      _logger->warn(CTS, 40, "A net was not found in the design. Skipping...");
+  for (auto clockInfo : clockNetsInfo) {
+     std::set<odb::dbNet *> clockNets = clockInfo.first;
+     std::string clkName = clockInfo.second;
+    for (odb::dbNet* net : clockNets) {
+      if (net != nullptr) {
+        if (clkName == "")
+          _logger->info(CTS, 7, " Net \"{}\" found", net->getName());
+        else
+          _logger->info(CTS, 7, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
+        // Initializes the net in TritonCTS. If the number of sinks is less than
+        // 2, the net is discarded.
+        initClock(net, clkName);
+      } else {
+        _logger->warn(CTS, 40, "A net was not found in the design. Skipping...");
+      }
     }
   }
 
@@ -446,7 +465,7 @@ void TritonCTS::initAllClocks()
   _options->setNumClockRoots(getNumClocks());
 }
 
-void TritonCTS::initClock(odb::dbNet* net)
+void TritonCTS::initClock(odb::dbNet* net, std::string sdcClock)
 {
   std::string driver = "";
   odb::dbITerm* iterm = net->getFirstOutput();
@@ -469,7 +488,7 @@ void TritonCTS::initClock(odb::dbNet* net)
   // Initialize clock net
   _logger->info(CTS, 9, " Initializing clock net for : \"{}\"", net->getConstName());
 
-  Clock clockNet(net->getConstName(), driver, xPin, yPin);
+  Clock clockNet(net->getConstName(), driver, sdcClock, xPin, yPin);
 
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();

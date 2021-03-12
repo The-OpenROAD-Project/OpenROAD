@@ -33,7 +33,7 @@ TritonCTS forced slew degradation on these wires.
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-[INFO CTS-0007]  Net "clk" found
+[INFO CTS-0007]  Net "clk" found for clock "clk"
 [INFO CTS-0009]  Initializing clock net for : "clk"
 [INFO CTS-0010]  Clock net "clk" has 16 sinks
 [INFO CTS-0008]  TritonCTS found 1 clock nets.
