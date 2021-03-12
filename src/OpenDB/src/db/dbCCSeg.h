@@ -69,15 +69,15 @@ class _dbCCSeg : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbCCSegFlags    _flags;
+  _dbCCSegFlags _flags;
   dbId<_dbCapNode> _cap_node[2];
-  dbId<_dbCCSeg>   _next[2];
+  dbId<_dbCCSeg> _next[2];
 
   _dbCCSeg(_dbDatabase* db);
   _dbCCSeg(_dbDatabase* db, const _dbCCSeg& s);
   ~_dbCCSeg();
 
-  int             idx(dbId<_dbCapNode> n) { return n == _cap_node[0] ? 0 : 1; }
+  int idx(dbId<_dbCapNode> n) { return n == _cap_node[0] ? 0 : 1; }
   dbId<_dbCCSeg>& next(dbId<_dbCapNode> n) { return _next[idx(n)]; }
 
   bool operator==(const _dbCCSeg& rhs) const;
@@ -95,18 +95,18 @@ class _dbCCSeg : public _dbObject
 
 inline _dbCCSeg::_dbCCSeg(_dbDatabase*)
 {
-  _flags._inFileCnt   = 0;
+  _flags._inFileCnt = 0;
   _flags._spef_mark_1 = 0;
-  _flags._mark        = 0;
-  _flags._spare_bits  = 0;
+  _flags._mark = 0;
+  _flags._spare_bits = 0;
 }
 
 inline _dbCCSeg::_dbCCSeg(_dbDatabase*, const _dbCCSeg& s) : _flags(s._flags)
 {
   _cap_node[0] = s._cap_node[0];
   _cap_node[1] = s._cap_node[1];
-  _next[0]     = s._next[0];
-  _next[1]     = s._next[1];
+  _next[0] = s._next[0];
+  _next[1] = s._next[1];
 }
 
 inline _dbCCSeg::~_dbCCSeg()

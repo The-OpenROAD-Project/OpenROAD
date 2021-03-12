@@ -45,15 +45,22 @@
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QToolTip>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+
+#include "layoutViewer.h"
+
 #include "highlightGroupDialog.h"
+
 #include "mainWindow.h"
 #include "search.h"
+
+#include "utility/Logger.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -102,13 +109,20 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  void setPen(const Color& color, bool cosmetic) override
+  void setPen(const Color& color, bool cosmetic, int width) override
   {
     QPen pen(QColor(color.r, color.g, color.b, color.a));
     pen.setCosmetic(cosmetic);
+    pen.setWidth(width);
     painter_->setPen(pen);
   }
 
+  virtual void setPenWidth(int width) override {
+      QPen pen(painter_->pen().color());
+      pen.setCosmetic(painter_->pen().isCosmetic());
+      pen.setWidth(width);
+      painter_->setPen(pen);
+  }
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
     QColor color = options_->color(layer);
@@ -137,16 +151,28 @@ class GuiPainter : public Painter
       painter_->drawPolygon(qpoly);
     }
   }
-  void drawRect(const odb::Rect& rect) override
+  void drawRect(const odb::Rect& rect, int roundX, int roundY) override
   {
-    painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
+      if (roundX > 0 || roundY > 0)
+          painter_->drawRoundRect(QRect(QPoint(rect.xMin(), rect.yMin()),
+                             QPoint(rect.xMax(), rect.yMax())), roundX, roundY);
+      else painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
                              QPoint(rect.xMax(), rect.yMax())));
   }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
-
+  void setTransparentBrush() override {
+      painter_->setBrush(Qt::transparent);
+  }
+  void drawCircle(int x, int y, int r) override {
+    painter_->drawEllipse(QPoint(x, y), r, r);
+  }
+  //NOTE: it is drawing upside down
+  void drawString(int x, int y, int offset, const std::string& s) override {
+      painter_->drawText(x+offset, y+offset, s.data());
+  }
  private:
   QPainter* painter_;
   Options* options_;
@@ -167,6 +193,7 @@ LayoutViewer::LayoutViewer(Options* options,
       max_depth_(99),
       search_init_(false),
       rubber_band_showing_(false),
+      logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
 {
   setMouseTracking(true);
@@ -181,6 +208,11 @@ void LayoutViewer::setDb(dbDatabase* db)
     update();
   }
   db_ = db;
+}
+
+void LayoutViewer::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 dbBlock* LayoutViewer::getBlock()
@@ -229,7 +261,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu = std::min(viewport.width() / (double) rect_dbu.dx(),
-                                  viewport.height() / (double) rect_dbu.dy());
+                                viewport.height() / (double) rect_dbu.dy());
   setPixelsPerDBU(pixels_per_dbu);
 
   QRectF screen_rect = dbuToScreen(rect_dbu);
@@ -381,7 +413,7 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   if (block) {
     Rect bbox = getBounds(block);
     pixels_per_dbu_ = std::min(event->size().width() / (double) bbox.xMax(),
-                               event->size().height() / (double) bbox.yMax());
+                             event->size().height() / (double) bbox.yMax());
   }
 }
 
@@ -594,25 +626,48 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
-  if (gcell_congestion_data_.empty())
-    populateCongestionData();
-  if (!options_->isCongestionVisible() || gcell_congestion_data_.empty())
+  auto block = getBlock();
+  if(block == nullptr)
+    return;
+  auto grid = block->getGCellGrid();
+  if(grid == nullptr)
+    return;
+  std::vector<int> x_grid, y_grid;
+  uint x_grid_sz, y_grid_sz;
+  grid->getGridX(x_grid);
+  x_grid_sz = x_grid.size();
+  grid->getGridY(y_grid);
+  y_grid_sz = y_grid.size();
+  auto gcell_congestion_data = grid->getCongestionMap();
+
+  if (!options_->isCongestionVisible() || gcell_congestion_data.empty())
     return;
 
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
   auto max_congestion_to_show = options_->getMaxCongestionToShow();
-  for (auto& gcell_data : gcell_congestion_data_) {
-    auto gcell_rect = gcell_data.first;
+
+  for (auto &[key, cong_data] : gcell_congestion_data) {
+    uint x_idx = key.first;;
+    uint y_idx = key.second;
+
+    if(x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1)
+    {
+      if(logger_ != nullptr)
+        logger_->warn(utl::GUI, 4, "Skipping malformed GCell");
+      continue;
+    }
+
+    auto gcell_rect = odb::Rect(x_grid[x_idx], y_grid[y_idx], x_grid[x_idx+1], y_grid[y_idx+1]);
+
     if (!gcell_rect.intersects(bounds))
       continue;
-    auto& cong_data = gcell_data.second;
 
-    auto hor_capacity = cong_data.hor_capacity_;
-    auto hor_usage = cong_data.hor_usage_;
-    auto ver_capacity = cong_data.ver_capacity_;
-    auto ver_usage = cong_data.ver_usage_;
+    auto hor_capacity = cong_data.horizontal_capacity;
+    auto hor_usage = cong_data.horizontal_usage;
+    auto ver_capacity = cong_data.vertical_capacity;
+    auto ver_usage = cong_data.vertical_usage;
 
     //-1 indicates capacity is not well defined...
     float hor_congestion
@@ -774,11 +829,11 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->setBrush(QBrush(color, brush_pattern));
     painter->setPen(QPen(color, 0));
     auto iter = search_.searchShapes(layer,
-                                     bounds.xMin(),
-                                     bounds.yMin(),
-                                     bounds.xMax(),
-                                     bounds.yMax(),
-                                     5 * pixel);
+                                      bounds.xMin(),
+                                      bounds.yMin(),
+                                      bounds.xMax(),
+                                      bounds.yMax(),
+                                      5 * pixel);
 
     for (auto& i : iter) {
       if (!options_->isNetVisible(std::get<2>(i))) {
@@ -807,11 +862,11 @@ void LayoutViewer::drawBlock(QPainter* painter,
       painter->setBrush(QBrush(color, brush_pattern));
       painter->setPen(QPen(color, 0));
       auto iter = search_.searchFills(layer,
-                                      bounds.xMin(),
-                                      bounds.yMin(),
-                                      bounds.xMax(),
-                                      bounds.yMax(),
-                                      5 * pixel);
+                                       bounds.xMin(),
+                                       bounds.yMin(),
+                                       bounds.xMax(),
+                                       bounds.yMax(),
+                                       5 * pixel);
 
       for (auto& i : iter) {
         const auto& ll = std::get<0>(i).min_corner();
@@ -914,6 +969,17 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 }
 
+void LayoutViewer::updateShapes()
+{
+  // This is not very smart - we just clear all the search structure
+  // rather than try to surgically update it.
+  if (search_init_) {
+    search_.clear();
+    search_init_ = false;
+  }
+  update();
+}
+
 void LayoutViewer::fit()
 {
   dbBlock* block = getBlock();
@@ -925,7 +991,7 @@ void LayoutViewer::fit()
 
   QSize viewport = scroller_->maximumViewportSize();
   qreal pixels_per_dbu = std::min(viewport.width() / (double) bbox.xMax(),
-                                  viewport.height() / (double) bbox.yMax());
+                                viewport.height() / (double) bbox.yMax());
   setPixelsPerDBU(pixels_per_dbu);
 }
 
@@ -1161,51 +1227,16 @@ void LayoutScroll::zoomOut()
 
 void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.  We need a pre & post
   // callback from OpenDB to do this right.
   // TODO:: Update this now with the new callbacks from OpenDB
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  update();
+  updateShapes();
 }
 
 void LayoutViewer::inDbFillCreate(dbFill* fill)
 {
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  update();
+  updateShapes();
 }
 
-void LayoutViewer::populateCongestionData()
-{
-  auto* openroad = ord::OpenRoad::openRoad();
-  auto fast_route = openroad->getFastRoute();
-  if (!fast_route)
-    return;
-  auto g_cells = fast_route->getCongestion();
-  if (g_cells.empty())
-    return;
-  for (auto& g_cell : g_cells) {
-    odb::Rect gcell_rect = g_cell.getGCellRect();
-    auto itr = gcell_congestion_data_.find(gcell_rect);
-    if (itr == gcell_congestion_data_.end()) {
-      gcell_congestion_data_[gcell_rect] = GCellData();
-      itr = gcell_congestion_data_.find(gcell_rect);
-    }
-
-    itr->second.hor_capacity_ += g_cell.getHorCapacity();
-    itr->second.hor_usage_ += g_cell.getHorUsage();
-
-    itr->second.ver_capacity_ += g_cell.getVerCapacity();
-    itr->second.ver_usage_ += g_cell.getVerUsage();
-  }
-}
 
 }  // namespace gui
+

@@ -45,19 +45,19 @@ class _dbDatabase;
 class _dbNameCache
 {
  public:
-  dbTable<_dbName>*    _name_tbl;
+  dbTable<_dbName>* _name_tbl;
   dbHashTable<_dbName> _name_hash;
 
   _dbNameCache(_dbDatabase* db,
-               dbObject*    owner,
+               dbObject* owner,
                dbObjectTable* (dbObject::*m)(dbObjectType));
   _dbNameCache(_dbDatabase* db, dbObject* owner, const _dbNameCache& cache);
   ~_dbNameCache();
 
   bool operator==(const _dbNameCache& rhs) const;
   bool operator!=(const _dbNameCache& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbNameCache& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 

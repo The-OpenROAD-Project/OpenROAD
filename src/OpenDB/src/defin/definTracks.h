@@ -35,8 +35,8 @@
 #include <map>
 #include <vector>
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -64,5 +64,3 @@ class definTracks : public definBase
 };
 
 }  // namespace odb
-
-

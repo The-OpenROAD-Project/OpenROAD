@@ -34,6 +34,7 @@
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbLib.h"
@@ -42,7 +43,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTransform.h"
-#include "dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -138,8 +138,8 @@ bool _dbRow::operator<(const _dbRow& rhs) const
   return false;
 }
 
-void _dbRow::differences(dbDiff&       diff,
-                         const char*   field,
+void _dbRow::differences(dbDiff& diff,
+                         const char* field,
                          const _dbRow& rhs) const
 {
   DIFF_BEGIN
@@ -190,30 +190,30 @@ const char* dbRow::getConstName()
 
 dbSite* dbRow::getSite()
 {
-  _dbRow*      row  = (_dbRow*) this;
-  _dbDatabase* db   = (_dbDatabase*) row->getDatabase();
-  _dbLib*      lib  = db->_lib_tbl->getPtr(row->_lib);
-  _dbSite*     site = lib->_site_tbl->getPtr(row->_site);
+  _dbRow* row = (_dbRow*) this;
+  _dbDatabase* db = (_dbDatabase*) row->getDatabase();
+  _dbLib* lib = db->_lib_tbl->getPtr(row->_lib);
+  _dbSite* site = lib->_site_tbl->getPtr(row->_site);
   return (dbSite*) site;
 }
 
 void dbRow::getOrigin(int& x, int& y)
 {
   _dbRow* row = (_dbRow*) this;
-  x           = row->_x;
-  y           = row->_y;
+  x = row->_x;
+  y = row->_y;
 }
 
 dbOrientType dbRow::getOrient()
 {
-  _dbRow*      row = (_dbRow*) this;
+  _dbRow* row = (_dbRow*) this;
   dbOrientType t(row->_flags._orient);
   return t;
 }
 
 dbRowDir dbRow::getDirection()
 {
-  _dbRow*  row = (_dbRow*) this;
+  _dbRow* row = (_dbRow*) this;
   dbRowDir d(row->_flags._dir);
   return d;
 }
@@ -239,11 +239,11 @@ void dbRow::getBBox(Rect& bbox)
     return;
   }
 
-  dbSite*     site = getSite();
-  int         w    = site->getWidth();
-  int         h    = site->getHeight();
+  dbSite* site = getSite();
+  int w = site->getWidth();
+  int h = site->getHeight();
   dbTransform transform(getOrient());
-  Rect        r(0, 0, w, h);
+  Rect r(0, 0, w, h);
   transform.apply(r);
   int dx = (int) r.dx();
   int dy = (int) r.dy();
@@ -261,40 +261,40 @@ void dbRow::getBBox(Rect& bbox)
   }
 }
 
-dbRow* dbRow::create(dbBlock*     block_,
-                     const char*  name,
-                     dbSite*      site_,
-                     int          origin_x,
-                     int          origin_y,
+dbRow* dbRow::create(dbBlock* block_,
+                     const char* name,
+                     dbSite* site_,
+                     int origin_x,
+                     int origin_y,
                      dbOrientType orient,
-                     dbRowDir     direction,
-                     int          num_sites,
-                     int          spacing)
+                     dbRowDir direction,
+                     int num_sites,
+                     int spacing)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  _dbSite*  site  = (_dbSite*) site_;
-  _dbLib*   lib   = (_dbLib*) site->getOwner();
-  _dbRow*   row   = block->_row_tbl->create();
-  row->_name      = strdup(name);
+  _dbSite* site = (_dbSite*) site_;
+  _dbLib* lib = (_dbLib*) site->getOwner();
+  _dbRow* row = block->_row_tbl->create();
+  row->_name = strdup(name);
   ZALLOCATED(row->_name);
-  row->_lib           = lib->getOID();
-  row->_site          = site->getOID();
+  row->_lib = lib->getOID();
+  row->_site = site->getOID();
   row->_flags._orient = orient;
-  row->_flags._dir    = direction;
-  row->_x             = origin_x;
-  row->_y             = origin_y;
-  row->_site_cnt      = num_sites;
-  row->_spacing       = spacing;
-  for(auto callback : block->_callbacks)
+  row->_flags._dir = direction;
+  row->_x = origin_x;
+  row->_y = origin_y;
+  row->_site_cnt = num_sites;
+  row->_spacing = spacing;
+  for (auto callback : block->_callbacks)
     callback->inDbRowCreate((dbRow*) row);
   return (dbRow*) row;
 }
 
 void dbRow::destroy(dbRow* row_)
 {
-  _dbRow*   row   = (_dbRow*) row_;
+  _dbRow* row = (_dbRow*) row_;
   _dbBlock* block = (_dbBlock*) row->getOwner();
-  for(auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks)
     callback->inDbRowDestroy((dbRow*) row);
   dbProperty::destroyProperties(row);
   block->_row_tbl->destroy(row);
@@ -302,7 +302,7 @@ void dbRow::destroy(dbRow* row_)
 
 dbSet<dbRow>::iterator dbRow::destroy(dbSet<dbRow>::iterator& itr)
 {
-  dbRow*                 r    = *itr;
+  dbRow* r = *itr;
   dbSet<dbRow>::iterator next = ++itr;
   destroy(r);
   return next;

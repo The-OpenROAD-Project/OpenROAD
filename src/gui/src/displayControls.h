@@ -142,6 +142,14 @@ class DisplayControls : public QDockWidget, public Options
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
+  void addCustomVisibilityControl(const std::string& name,
+                                  bool initially_visible = false);
+  bool checkCustomVisibilityControl(const std::string& name);
+
+  bool isGridGraphVisible();
+  bool areRouteGuidesVisible();
+  bool areRoutingObjsVisible();
+
   bool isCongestionVisible() const override;
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
@@ -209,6 +217,13 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* nets_power_;
   QStandardItem* nets_ground_;
   QStandardItem* nets_clock_;
+  
+  QStandardItem* grid_graph_;
+  QStandardItem* route_guides_;
+  QStandardItem* routing_objs_;
+
+  std::map<std::string, QStandardItem*> custom_controls_;
+  std::map<std::string, bool> custom_visibility_;
 
   odb::dbDatabase* db_;
   bool tech_inited_;
@@ -221,6 +236,7 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_power_visible_;
   bool nets_ground_visible_;
   bool nets_clock_visible_;
+  
   bool congestion_visible_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;

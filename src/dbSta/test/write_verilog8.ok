@@ -1,0 +1,31 @@
+[INFO ODB-0222] Reading LEF file: liberty1.lef
+[INFO ODB-0223]     Created 2 technology layers
+[INFO ODB-0225]     Created 6 library cells
+[INFO ODB-0226] Finished LEF file:  liberty1.lef
+module reg5 (out,
+    clk,
+    in);
+ output out;
+ input [2:0] clk;
+ input [1:0] in;
+
+ wire r1q;
+ wire r2q;
+ wire u1z;
+ wire u2z;
+
+ snl_ffqx1 r1 (.Q(r1q),
+    .D(in[0]),
+    .CP(clk[0]));
+ snl_ffqx1 r2 (.Q(r2q),
+    .D(in[1]),
+    .CP(clk[1]));
+ snl_ffqx1 r3 (.Q(out),
+    .D(u2z),
+    .CP(clk[2]));
+ snl_bufx1 u1 (.Z(u1z),
+    .A(r2q));
+ snl_and02x1 u2 (.Z(u2z),
+    .A(r1q),
+    .B(u1z));
+endmodule

@@ -74,11 +74,11 @@ class _dbCapNode : public _dbObject
   };
 
   // PERSISTANT-MEMBERS
-  _dbCapNodeFlags  _flags;
-  uint             _node_num;  // rc-network node-id
-  dbId<_dbNet>     _net;
+  _dbCapNodeFlags _flags;
+  uint _node_num;  // rc-network node-id
+  dbId<_dbNet> _net;
   dbId<_dbCapNode> _next;
-  dbId<_dbCCSeg>   _cc_segs;
+  dbId<_dbCCSeg> _cc_segs;
 
   _dbCapNode(_dbDatabase*);
   _dbCapNode(_dbDatabase*, const _dbCapNode& n);
@@ -93,25 +93,25 @@ class _dbCapNode : public _dbObject
     return o1->getOID() < o2->getOID();
   }
 
-  void differences(dbDiff&           diff,
-                   const char*       field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbCapNode& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*)
 {
-  _flags._internal    = 0;
-  _flags._iterm       = 0;
-  _flags._bterm       = 0;
-  _flags._branch      = 0;
-  _flags._foreign     = 0;
+  _flags._internal = 0;
+  _flags._iterm = 0;
+  _flags._bterm = 0;
+  _flags._branch = 0;
+  _flags._foreign = 0;
   _flags._childrenCnt = 0;
-  _flags._select      = 0;
-  _flags._name        = 0;
-  _flags._sort_index  = 0;
-  _net                = 0;
-  _node_num           = 0;
+  _flags._select = 0;
+  _flags._name = 0;
+  _flags._sort_index = 0;
+  _net = 0;
+  _node_num = 0;
 }
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*, const _dbCapNode& n)

@@ -47,15 +47,15 @@ class Ath__dbtable2
 {
  private:
   Ath__nameTable* _nameTable;
-  AthPool<T>*     _pool;
-  uint            _current;
-  uint            _tmpCnt;
+  AthPool<T>* _pool;
+  uint _current;
+  uint _tmpCnt;
 
  public:
   Ath__dbtable2(uint cnt, bool memDbg = false)
   {
     _nameTable = new Ath__nameTable(cnt);
-    _pool      = new AthPool<T>(memDbg, cnt);
+    _pool = new AthPool<T>(memDbg, cnt);
     _pool->alloc();
   }
   Ath__dbtable2()
@@ -65,7 +65,7 @@ class Ath__dbtable2
   }
 
  private:
-  T*   getPtrByAddrId(uint id) { return _pool->get(id); }
+  T* getPtrByAddrId(uint id) { return _pool->get(id); }
   uint addNewName(char* name, uint tag)
   {
     return _nameTable->addNewName(name, tag);
@@ -77,7 +77,7 @@ class Ath__dbtable2
     // to read DB functions which read the names first!
 
     uint n;
-    T*   a = _pool->alloc(NULL, &n);
+    T* a = _pool->alloc(NULL, &n);
     if (n != id) {
       fprintf(stderr, "ERROR:db makePtr n= %u tag=%u", n, id);
     }
@@ -88,7 +88,7 @@ class Ath__dbtable2
   T* makePtr(char* name, uint* nameId, uint skipName = 0)
   {
     uint addr = 0;
-    T*   a    = _pool->alloc(NULL, &addr);
+    T* a = _pool->alloc(NULL, &addr);
 
     if (skipName == 0) {
       *nameId = _nameTable->addNewName(name, addr);
@@ -146,7 +146,7 @@ class Ath__dbtable2
   uint startIterator(uint n = 1)
   {
     _current = n;
-    _tmpCnt  = _pool->getCnt();
+    _tmpCnt = _pool->getCnt();
 
     return _tmpCnt - n;
   }
@@ -158,5 +158,3 @@ class Ath__dbtable2
       return NULL;
   }
 };
-
-

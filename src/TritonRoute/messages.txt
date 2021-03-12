@@ -1,7 +1,7 @@
-DRT 0001 TritonRoute.cpp:252       Error reading param file: {}
-DRT 0002 TritonRoute.cpp:109       Detailed routing has not been run yet.
-DRT 0003 io.cpp:4743               load design first
-DRT 0004 io.cpp:4748               load design first
+DRT 0001 TritonRoute.cpp:256       Error reading param file: {}
+DRT 0002 TritonRoute.cpp:113       Detailed routing has not been run yet.
+DRT 0003 io.cpp:2752               load design first
+DRT 0004 io.cpp:2757               load design first
 DRT 0005 frRegionQuery.cpp:101     Unsupported region query add
 DRT 0006 frRegionQuery.cpp:113     Unsupported region query add
 DRT 0007 frRegionQuery.cpp:133     Unsupported region query add
@@ -37,125 +37,141 @@ DRT 0038 FlexGC_init.cpp:80        init_design_helper shape does not have dr net
 DRT 0039 FlexGC_init.cpp:83        init_design_helper unsupported type.
 DRT 0040 FlexGC_init.cpp:130       FlexGCWorker::initDesign_skipObj type not supported.
 DRT 0041 FlexGC_main.cpp:116       Warning: Unsupported metSpc rule.
-DRT 0042 FlexGC_main.cpp:175       UNKNOWN corner dir
-DRT 0043 FlexGC_main.cpp:248       Unsupported metSpc rule.
-DRT 0044 FlexGC_main.cpp:2739      Unsupported LEF58_SPACING rule for cut layer, skipped.
-DRT 0045 FlexGC_main.cpp:2886       unsupported branch EXACTALIGNED in checkLef58CutSpacing_spc_adjCut.
-DRT 0046 FlexGC_main.cpp:2890       unsupported branch EXCEPTSAMEPGNET in checkLef58CutSpacing_spc_adjCut.
-DRT 0047 FlexGC_main.cpp:2894       unsupported branch EXCEPTALLWITHIN in checkLef58CutSpacing_spc_adjCut.
-DRT 0048 FlexGC_main.cpp:2898       unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.
-DRT 0049 FlexGC_main.cpp:2902       unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut.
-DRT 0050 FlexGC_main.cpp:2906       unsupported branch ENCLOSURE in checkLef58CutSpacing_spc_adjCut.
-DRT 0051 FlexGC_main.cpp:2910       unsupported branch SIDEPARALLELOVERLAP in checkLef58CutSpacing_spc_adjCut.
-DRT 0052 FlexGC_main.cpp:2914       unsupported branch SAMEMASK in checkLef58CutSpacing_spc_adjCut.
-DRT 0053 FlexGC_init.cpp:856       updateGCWorker cannot find frNet in DRWorker.
-DRT 0054 FlexGC_main.cpp:3039      unsupported branch STACK in checkLef58CutSpacing_spc_layer.
-DRT 0055 FlexGC_main.cpp:3042      unsupported branch ORTHOGONALSPACING in checkLef58CutSpacing_spc_layer.
-DRT 0056 FlexGC_main.cpp:3047      unsupported branch SHORTEDGEONLY in checkLef58CutSpacing_spc_layer.
-DRT 0057 FlexGC_main.cpp:3051      unsupported branch WIDTH in checkLef58CutSpacing_spc_layer.
-DRT 0058 FlexGC_main.cpp:3053      unsupported branch PARALLEL in checkLef58CutSpacing_spc_layer.
-DRT 0059 FlexGC_main.cpp:3055      unsupported branch EDGELENGTH in checkLef58CutSpacing_spc_layer.
-DRT 0060 FlexGC_main.cpp:3058      unsupported branch EXTENSION in checkLef58CutSpacing_spc_layer.
-DRT 0061 FlexGC_main.cpp:3062      unsupported branch ABOVEWIDTH in checkLef58CutSpacing_spc_layer.
-DRT 0062 FlexGC_main.cpp:3064      unsupported branch MASKOVERLAP in checkLef58CutSpacing_spc_layer.
-DRT 0063 FlexGC_main.cpp:3066      unsupported branch WRONGDIRECTION in checkLef58CutSpacing_spc_layer.
-DRT 0064 FlexGC_main.cpp:3690      attempting to add patch with no drNet.
+DRT 0042 FlexGC_main.cpp:176       UNKNOWN corner dir
+DRT 0043 FlexGC_main.cpp:249       Unsupported metSpc rule.
+DRT 0044 FlexGC_main.cpp:2758      Unsupported LEF58_SPACING rule for cut layer, skipped.
+DRT 0045 FlexGC_main.cpp:2905       unsupported branch EXACTALIGNED in checkLef58CutSpacing_spc_adjCut.
+DRT 0046 FlexGC_main.cpp:2909       unsupported branch EXCEPTSAMEPGNET in checkLef58CutSpacing_spc_adjCut.
+DRT 0047 FlexGC_main.cpp:2913       unsupported branch EXCEPTALLWITHIN in checkLef58CutSpacing_spc_adjCut.
+DRT 0048 FlexGC_main.cpp:2917       unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.
+DRT 0049 FlexGC_main.cpp:2921       unsupported branch NOPRL in checkLef58CutSpacing_spc_adjCut.
+DRT 0050 FlexGC_main.cpp:2925       unsupported branch ENCLOSURE in checkLef58CutSpacing_spc_adjCut.
+DRT 0051 FlexGC_main.cpp:2929       unsupported branch SIDEPARALLELOVERLAP in checkLef58CutSpacing_spc_adjCut.
+DRT 0052 FlexGC_main.cpp:2933       unsupported branch SAMEMASK in checkLef58CutSpacing_spc_adjCut.
+DRT 0053 FlexGC_init.cpp:903       updateGCWorker cannot find frNet in DRWorker.
+DRT 0054 FlexGC_main.cpp:3058      unsupported branch STACK in checkLef58CutSpacing_spc_layer.
+DRT 0055 FlexGC_main.cpp:3061      unsupported branch ORTHOGONALSPACING in checkLef58CutSpacing_spc_layer.
+DRT 0056 FlexGC_main.cpp:3066      unsupported branch SHORTEDGEONLY in checkLef58CutSpacing_spc_layer.
+DRT 0057 FlexGC_main.cpp:3070      unsupported branch WIDTH in checkLef58CutSpacing_spc_layer.
+DRT 0058 FlexGC_main.cpp:3072      unsupported branch PARALLEL in checkLef58CutSpacing_spc_layer.
+DRT 0059 FlexGC_main.cpp:3074      unsupported branch EDGELENGTH in checkLef58CutSpacing_spc_layer.
+DRT 0060 FlexGC_main.cpp:3077      unsupported branch EXTENSION in checkLef58CutSpacing_spc_layer.
+DRT 0061 FlexGC_main.cpp:3081      unsupported branch ABOVEWIDTH in checkLef58CutSpacing_spc_layer.
+DRT 0062 FlexGC_main.cpp:3083      unsupported branch MASKOVERLAP in checkLef58CutSpacing_spc_layer.
+DRT 0063 FlexGC_main.cpp:3085      unsupported branch WRONGDIRECTION in checkLef58CutSpacing_spc_layer.
+DRT 0064 FlexGC_main.cpp:3709      attempting to add patch with no drNet.
 DRT 0065 FlexPA_init.cpp:86        instAnalysis unsupported pinFig.
 DRT 0066 FlexPA_init.cpp:93        instAnalysis skips {} due to no pin shapes
 DRT 0067 FlexPA_prep.cpp:99        FlexPA mergePinShapes unsupported shape.
 DRT 0068 FlexPA_prep.cpp:314       prepPoint_pin_genPoints_rect cannot find secondLayerNum.
-DRT 0069 FlexPA_init.cpp:258       initPinAccess error.
+DRT 0069 FlexPA_init.cpp:275       initPinAccess error.
 DRT 0070 FlexPA_prep.cpp:534       unexpected direction in getPlanarEP
-DRT 0071 FlexPA_prep.cpp:1006      prepPoint_pin_helper unique2paidx not found.
-DRT 0072 FlexPA_prep.cpp:1019      prepPoint_pin_helper unique2paidx not found
-DRT 0073 FlexPA_prep.cpp:1086      no ap for {}/{}
-DRT 0074 FlexPA_prep.cpp:1090      no ap for PIN/{}
-DRT 0075 FlexPA_prep.cpp:1102      prepPoint_pin unique2paidx not found.
-DRT 0076 FlexPA_prep.cpp:1163        complete {} pins
-DRT 0077 FlexPA_prep.cpp:1167        complete {} pins
-DRT 0078 FlexPA_prep.cpp:1200        complete {} pins
-DRT 0079 FlexPA_prep.cpp:1236        complete {} unique inst patterns
-DRT 0080 FlexPA_prep.cpp:1240        complete {} unique inst patterns
-DRT 0081 FlexPA_prep.cpp:1247        complete {} unique inst patterns
-DRT 0082 FlexPA_prep.cpp:1320        complete {} groups
-DRT 0083 FlexPA_prep.cpp:1324        complete {} groups
-DRT 0084 FlexPA_prep.cpp:1331        complete {} groups
-DRT 0085 FlexPA_prep.cpp:1517      valid access pattern combination not found.
-DRT 0086 FlexPA_prep.cpp:1754      pin does not have access point.
-DRT 0088 FlexPA_prep.cpp:1875      {}
-DRT 0089 FlexPA_prep.cpp:1941      genPattern_gc objs empty.
-DRT 0090 FlexPA_prep.cpp:2175      valid access pattern not found.
-DRT 0091 FlexPA_prep.cpp:2238      pin does not have valid ap.
-DRT 0092 FlexRP_prep.cpp:754       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
-DRT 0093 FlexRP_prep.cpp:766       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
-DRT 0096 io.cpp:147                same cell name: {}
-DRT 0100 io.cpp:328                unsupported via: {}
-DRT 0102 io.cpp:407                odd dimension in both directions
-DRT 0103 io.cpp:436                unknown direction
-DRT 0104 io.cpp:456                term {} not found
-DRT 0106 io.cpp:475                component pin {}/{} not found
-DRT 0107 io.cpp:540                unsupported layer {}
-DRT 0108 io.cpp:650                unsupported via in db
-DRT 0109 io.cpp:710                unsupported via in db
-DRT 0110 io.cpp:740                unsupported NET USE in def
-DRT 0111 io.cpp:769                unsupported PIN USE in db
-DRT 0115 TritonRoute.cpp:247       Setting MAX_THREADS=1 for use with the GUI.
-DRT 0116 io.cpp:826                load design first
-DRT 0117 io.cpp:829                load design first
+DRT 0071 FlexPA_prep.cpp:1008      prepPoint_pin_helper unique2paidx not found.
+DRT 0072 FlexPA_prep.cpp:1021      prepPoint_pin_helper unique2paidx not found
+DRT 0073 FlexPA_prep.cpp:1088      no ap for {}/{}
+DRT 0074 FlexPA_prep.cpp:1092      no ap for PIN/{}
+DRT 0075 FlexPA_prep.cpp:1104      prepPoint_pin unique2paidx not found.
+DRT 0076 FlexPA_prep.cpp:1165        complete {} pins
+DRT 0077 FlexPA_prep.cpp:1169        complete {} pins
+DRT 0078 FlexPA_prep.cpp:1202        complete {} pins
+DRT 0079 FlexPA_prep.cpp:1238        complete {} unique inst patterns
+DRT 0080 FlexPA_prep.cpp:1242        complete {} unique inst patterns
+DRT 0081 FlexPA_prep.cpp:1249        complete {} unique inst patterns
+DRT 0082 FlexPA_prep.cpp:1322        complete {} groups
+DRT 0083 FlexPA_prep.cpp:1326        complete {} groups
+DRT 0084 FlexPA_prep.cpp:1333        complete {} groups
+DRT 0085 FlexPA_prep.cpp:1519      valid access pattern combination not found.
+DRT 0086 FlexPA_prep.cpp:1756      pin does not have access point.
+DRT 0088 FlexPA_prep.cpp:1877      {}
+DRT 0089 FlexPA_prep.cpp:1943      genPattern_gc objs empty.
+DRT 0090 FlexPA_prep.cpp:2177      valid access pattern not found.
+DRT 0091 FlexPA_prep.cpp:2240      pin does not have valid ap.
+DRT 0092 FlexRP_prep.cpp:773       duplicate diff layer samenet cut spacing, skipping cut spacing from {} to {}.
+DRT 0093 FlexRP_prep.cpp:785       duplicate diff layer diffnet cut spacing, skipping cut spacing from {} to {}.
+DRT 0096 io.cpp:148                same cell name: {}
+DRT 0100 io.cpp:329                unsupported via: {}
+DRT 0102 io.cpp:445                odd dimension in both directions
+DRT 0103 io.cpp:474                unknown direction
+DRT 0104 io.cpp:495                term {} not found
+DRT 0106 io.cpp:514                component pin {}/{} not found
+DRT 0107 io.cpp:579                unsupported layer {}
+DRT 0108 io.cpp:689                unsupported via in db
+DRT 0109 io.cpp:749                unsupported via in db
+DRT 0110 io.cpp:779                unsupported NET USE in def
+DRT 0111 io.cpp:808                unsupported PIN USE in db
+DRT 0115 FlexPA_graphics.cpp:65    Setting MAX_THREADS=1 for use with the PA GUI.
+DRT 0116 io.cpp:865                load design first
+DRT 0117 io.cpp:868                load design first
 DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
-DRT 0119 FlexPA_graphics.cpp:199   marker {} at ({}, {}) ({}, {})
-DRT 0120 io.cpp:3798               unsupported PIN USE in lef
-DRT 0125 io.cpp:4025               unsupported via {}
-DRT 0128 io.cpp:3898               unsupported viarule {}
-DRT 0136 io.cpp:4092               load design first
-DRT 0140 io.cpp:3422               SpacingRange unsupported
-DRT 0141 io.cpp:3424               SpacingLengthThreshold unsupported
-DRT 0142 io.cpp:3426               SpacingNotchLength unsupported
-DRT 0143 io.cpp:3428               SpacingEndOfNotchWidth unsupported
-DRT 0148 TritonRoute.cpp:218       deprecated lef param in params file
-DRT 0149 io.cpp:4105               Reading Tech And Libs
-DRT 0150 io.cpp:4121               Reading Design
-DRT 0151 io.cpp:4147               Reading Guide
-DRT 0152 io.cpp:4180               Error reading guide file!
-DRT 0153 io.cpp:4184               cannot find net {}
-DRT 0154 io.cpp:4189               cannot find layer {}
-DRT 0156 io.cpp:4216               guideIn read {} guides
-DRT 0157 io.cpp:4220               guideIn read {} guides
-DRT 0158 io.cpp:4225               Error reading guide file!
-DRT 0159 io.cpp:4230               failed to open guide file
-DRT 0161 io_parser_helper.cpp:554  Writing reference output def {}.
+DRT 0119 FlexPA_graphics.cpp:202   marker {} at ({}, {}) ({}, {})
+DRT 0120 io.cpp:1824               unsupported PIN USE in lef
+DRT 0125 io.cpp:2055               unsupported via {}
+DRT 0128 io.cpp:1928               unsupported viarule {}
+DRT 0136 io.cpp:2122               load design first
+DRT 0140 io.cpp:1456               SpacingRange unsupported
+DRT 0141 io.cpp:1458               SpacingLengthThreshold unsupported
+DRT 0142 io.cpp:1460               SpacingNotchLength unsupported
+DRT 0143 io.cpp:1462               SpacingEndOfNotchWidth unsupported
+DRT 0148 TritonRoute.cpp:225       deprecated lef param in params file
+DRT 0149 io.cpp:2136               Reading Tech And Libs
+DRT 0150 io.cpp:2152               Reading Design
+DRT 0151 io.cpp:2180               Reading Guide
+DRT 0152 io.cpp:2213               Error reading guide file!
+DRT 0153 io.cpp:2217               cannot find net {}
+DRT 0154 io.cpp:2222               cannot find layer {}
+DRT 0156 io.cpp:2249               guideIn read {} guides
+DRT 0157 io.cpp:2253               guideIn read {} guides
+DRT 0158 io.cpp:2258               Error reading guide file!
+DRT 0159 io.cpp:2263               failed to open guide file
+DRT 0160 io.cpp:1198               unsupported LEF58_SPACING rule for layer {} of type AREA
+DRT 0161 io.cpp:1201               unsupported LEF58_SPACING rule for layer {} of type MAXXY
+DRT 0162 io.cpp:1204               unsupported LEF58_SPACING rule for layer {} of type SAMEMASK
 DRT 0162 io_pin.cpp:38             libcell analysis ...
+DRT 0163 io.cpp:1207               unsupported LEF58_SPACING rule for layer {} of type PARALLELOVERLAP
 DRT 0163 io_pin.cpp:86             instance analysis ...
+DRT 0164 io.cpp:1210               unsupported LEF58_SPACING rule for layer {} of type PARALLELWITHIN
 DRT 0164 io_pin.cpp:150            # unique instances = {}
 DRT 0165 FlexPA.cpp:91             start pin access
+DRT 0165 io.cpp:1213               unsupported LEF58_SPACING rule for layer {} of type SAMEMETALSHAREDEDGE
 DRT 0166 FlexPA.cpp:128            complete pin access
-DRT 0168 io_parser_helper.cpp:671  Init region query ...
-DRT 0169 io_parser_helper.cpp:680  Post process guides ...
-DRT 0170 io_parser_helper.cpp:849  no GCELLGRIDX
-DRT 0171 io_parser_helper.cpp:854  no GCELLGRIDY
-DRT 0172 io_parser_helper.cpp:904  no GCELLGRIDX
-DRT 0173 io_parser_helper.cpp:909  no GCELLGRIDY
-DRT 0174 io_parser_helper.cpp:931  gcell cnt x < 1
-DRT 0175 io_parser_helper.cpp:945  gcell cnt y < 1
-DRT 0176 io_parser_helper.cpp:950  GCELLGRID X {} DO {} STEP {} ;
-DRT 0177 io_parser_helper.cpp:954  GCELLGRID Y {} DO {} STEP {} ;
-DRT 0178 io_parser_helper.cpp:716  init guide query ...
-DRT 0179 io_parser_helper.cpp:719  init gr pin query ...
-DRT 0180 io.cpp:4560               post processing ...
+DRT 0166 io.cpp:1216               unsupported LEF58_SPACING rule for layer {}
+DRT 0167 io.cpp:1241               layer {} is not found to layer {} LEF58_SPACINGTABLE
+DRT 0168 io_parser_helper.cpp:558  Init region query ...
+DRT 0168 io.cpp:975                unsupported LEF58_SPACING rule for layer {}
+DRT 0169 io_parser_helper.cpp:567  Post process guides ...
+DRT 0170 TritonRoute.cpp:226       deprecated def param in params file
+DRT 0170 io_parser_helper.cpp:736  no GCELLGRIDX
+DRT 0171 TritonRoute.cpp:228       deprecated outputTA param in params file
+DRT 0171 io_parser_helper.cpp:741  no GCELLGRIDY
+DRT 0172 io_parser_helper.cpp:791  no GCELLGRIDX
+DRT 0173 io_parser_helper.cpp:796  no GCELLGRIDY
+DRT 0174 io_parser_helper.cpp:818  gcell cnt x < 1
+DRT 0175 io_parser_helper.cpp:832  gcell cnt y < 1
+DRT 0176 io_parser_helper.cpp:837  GCELLGRID X {} DO {} STEP {} ;
+DRT 0177 io_parser_helper.cpp:841  GCELLGRID Y {} DO {} STEP {} ;
+DRT 0178 io_parser_helper.cpp:603  init guide query ...
+DRT 0179 io_parser_helper.cpp:606  init gr pin query ...
+DRT 0180 io.cpp:2593               post processing ...
 DRT 0181 FlexTA.cpp:362            start track assignment
 DRT 0182 FlexTA.cpp:368            complete track assignment
-DRT 0185 io_parser_helper.cpp:737  post process initialize RPin region query ...
-DRT 0187 FlexDR.cpp:1267           start routing data preparation
-DRT 0188 FlexDR.cpp:597            initVia2ViaMinLen_minSpc {}
-DRT 0189 FlexDR.cpp:632            initVia2ViaMinLen_minimumcut {}
-DRT 0190 FlexDR.cpp:639            initVia2ViaMinLen_minimumcut 
-DRT 0191 FlexDR.cpp:982            initVia2ViaMinLenNew_minSpc {} 
-DRT 0192 FlexDR.cpp:1021           initVia2ViaMinLenNew_minimumcut 
-DRT 0193 FlexDR.cpp:1060           initVia2ViaMinLenNew_cutSpc 
-DRT 0194 FlexDR.cpp:1974           start detail routing ...
-DRT 0195 FlexDR.cpp:1538           start {}{} optimization iteration ...
-DRT 0196 FlexDR.cpp:1491             number of violations = {}
-DRT 0197 FlexDR.cpp:1494             number of quick violations = {}
-DRT 0198 FlexDR.cpp:2064           complete detail routing
-DRT 0199 FlexDR.cpp:1736             number of violations = {}
-DRT 0200 FlexDR.cpp:1739             number of quick violations = {}
+DRT 0185 io_parser_helper.cpp:624  post process initialize RPin region query ...
+DRT 0187 FlexDR.cpp:1269           start routing data preparation
+DRT 0188 FlexDR.cpp:599            initVia2ViaMinLen_minSpc {}
+DRT 0189 FlexDR.cpp:634            initVia2ViaMinLen_minimumcut {}
+DRT 0190 FlexDR.cpp:641            initVia2ViaMinLen_minimumcut {}
+DRT 0191 FlexDR.cpp:984            initVia2ViaMinLenNew_minSpc {} 
+DRT 0192 FlexDR.cpp:1023           initVia2ViaMinLenNew_minimumcut {}
+DRT 0193 FlexDR.cpp:1062           initVia2ViaMinLenNew_cutSpc {}
+DRT 0194 FlexDR.cpp:1976           start detail routing ...
+DRT 0195 FlexDR.cpp:1540           start {}{} optimization iteration ...
+DRT 0196 FlexDR.cpp:1493             number of violations = {}
+DRT 0197 FlexDR.cpp:1496             number of quick violations = {}
+DRT 0198 FlexDR.cpp:2066           complete detail routing
+DRT 0199 FlexDR.cpp:1738             number of violations = {}
+DRT 0200 FlexDR.cpp:1741             number of quick violations = {}
+DRT 0201 FlexGR.cpp:548            design isn't loaded before global routing
+DRT 0202 FlexGR.cpp:573            skipping layer {} not found in db for congestion map
+DRT 0203 FlexGR.cpp:555            dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+DRT 0205 TritonRoute.cpp:229       deprecated output param in params file
+DRT 0206 FlexDR_conn.cpp:1166      checkConnectivity error
+DRT 0207 FlexDR_graphics.cpp:392   Setting MAX_THREADS=1 for use with the DR GUI.

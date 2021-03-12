@@ -1,0 +1,132 @@
+{
+  "name": "dbGCellGrid",
+  "parent": "dbObject",
+  "fields": [
+    {
+      "name": "x_origin_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_count_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_step_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_origin_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_count_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_step_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_grid_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "y_grid_",
+      "type": "dbVector<int>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "x_grid_valid_",
+      "flags": [
+        "private"
+      ],
+      "type": "bit"
+    },
+    {
+      "name": "y_grid_valid_",
+      "flags": [
+        "private"
+      ],
+      "type": "bit"
+    },
+    {
+      "name": "congestion_map_",
+      "type": "std::map<dbId<_dbTechLayer>, std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>",
+      "flags": [
+        "private",
+        "no-template"
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "name": "GCellData",
+      "fields": [
+        {
+          "name": "horizontal_usage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "vertical_usage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "up_usage",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "horizontal_capacity",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "vertical_capacity",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        },
+        {
+          "name": "up_capacity",
+          "type": "uint",
+          "flags": [],
+          "default": 0
+        }
+      ],
+      "public": true
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbHashTable.h"
+  ]
+}

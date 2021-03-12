@@ -74,7 +74,7 @@ class SegmentBuilder
   {
   }
 
-  void build(std::string forceBuffer = "");
+  void build(std::string forceBuffer = "", ClockInst* sink = nullptr);
   void forceBufferInSegment(std::string master);
   Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
@@ -186,6 +186,13 @@ class HTreeBuilder : public TreeBuilder
   void run();
 
   void plotSolution();
+  unsigned computeMinDelaySegment(unsigned length,
+                                  unsigned inputSlew,
+                                  unsigned inputCap,
+                                  unsigned slewThreshold,
+                                  unsigned tolerance,
+                                  unsigned& outputSlew,
+                                  unsigned& outputCap) const;
 
  private:
   void initSinkRegion();
@@ -201,13 +208,6 @@ class HTreeBuilder : public TreeBuilder
                                   unsigned slewThreshold,
                                   unsigned tolerance,
                                   unsigned& outputSlew,
-                                  unsigned& outputCap) const;
-  unsigned computeMinDelaySegment(unsigned length,
-                                  unsigned inputSlew,
-                                  unsigned inputCap,
-                                  unsigned slewThreshold,
-                                  unsigned tolerance,
-                                  unsigned& outputSlew,
                                   unsigned& outputCap,
                                   bool forceBuffer,
                                   int expectedLength) const;
@@ -215,6 +215,8 @@ class HTreeBuilder : public TreeBuilder
   void createClockSubNets();
   void createSingleBufferClockNet();
   void initTopLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
+                         std::vector<const ClockInst*> &sinkInsts);
+  void initSecondLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
                          std::vector<const ClockInst*> &sinkInsts);
   void computeBranchSinks(
       LevelTopology& topology,
@@ -250,7 +252,7 @@ class HTreeBuilder : public TreeBuilder
   void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
                          std::vector<const ClockInst*> &sinkInsts,
                          float maxDiameter,
-                         unsigned clusterSize);
+                         unsigned clusterSize, bool secondLevel=false);
   void assignSinksToBranches(
       LevelTopology& topology,
       unsigned branchPtIdx1,

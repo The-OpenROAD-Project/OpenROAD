@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ZException.h"
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,13 +40,13 @@ namespace odb {
 
 ZException::ZException()
 {
-  _msg      = NULL;
+  _msg = NULL;
   _free_msg = true;
 }
 
 ZException::ZException(const char* fmt, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, fmt);
   vsnprintf(buffer, 8192, fmt, args);

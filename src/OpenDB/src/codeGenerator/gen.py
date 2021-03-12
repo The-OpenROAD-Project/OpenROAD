@@ -8,7 +8,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from helper import addOnceToDict, getClassIndex, getTableName, isBitFields, \
     getStruct, isRef, getRefType, isHashTable, getHashTableType, \
-    getTemplateType, components, getFunctionalName, isDbVector, std
+    getTemplateType, components, getFunctionalName, isPassByRef, std
 from parser import Parser
 
 parser = argparse.ArgumentParser(description='Code generator')
@@ -108,7 +108,7 @@ if "relations" in schema:
         if relation.get('hash', False):
             inParentHashField = {}
 
-            inParentHashField['name'] = inParentField['name'][:-3] + "hash"
+            inParentHashField['name'] = inParentField['name'][:-4] + "hash_"
             inParentHashField['type'] = "dbHashTable<_" + \
                 relation['second'] + ">"
             inParentHashField['components'] = [inParentHashField['name']]
@@ -135,6 +135,9 @@ for klass in schema['classes']:
     klass['hasTables'] = False
     flag_num_bits = 0
     for field in klass['fields']:
+        if field['type'] == 'bit':
+            field['type'] = 'bool'
+            field['bits'] = 1
         if 'bits' in field:
             struct['fields'].append(field)
             flag_num_bits += int(field['bits'])
@@ -147,7 +150,10 @@ for klass in schema['classes']:
         field['refType'] = getRefType(field['type'])
         field['isHashTable'] = isHashTable(field['type'])
         field['hashTableType'] = getHashTableType(field['type'])
-        field['isDbVector'] = isDbVector(field['type'])
+        field['isPassByRef'] = isPassByRef(field['type'])
+        if 'argument' not in field:
+            field['argument'] = field['name'].strip('_')
+        field.setdefault('flags',[])
         if 'private' in field['flags']:
             field['flags'].append('no-set')
             field['flags'].append('no-get')
@@ -201,9 +207,12 @@ for klass in schema['classes']:
                 field['setterArgumentType'][2:-1]
         elif 'bits' in field and field['bits'] == 1:
             field['setterArgumentType'] = field['getterReturnType'] = 'bool'
-        elif field['isDbVector']:
+        elif field['isPassByRef']:
             field['setterArgumentType'] = field['getterReturnType'] = field['type'].replace(
                 'dbVector', "std::vector")
+        elif field['type'] == 'char *':
+            field['setterArgumentType'] = field['type'];
+            field['getterReturnType'] = 'const char *'
         else:
             field['setterArgumentType'] = field['getterReturnType'] = \
                 field['type']
@@ -215,7 +224,7 @@ for klass in schema['classes']:
     total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
-            "name": "_spare_bits",
+            "name": "spare_bits_",
             "type": "uint",
             "bits": 32 - (flag_num_bits % 32),
             "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"]
@@ -226,12 +235,12 @@ for klass in schema['classes']:
     if len(struct['fields']) > 0:
 
         struct['in_class'] = True
-        struct['in_class_name'] = '_flags'
+        struct['in_class_name'] = 'flags_'
         klass['structs'].insert(0, struct)
         klass['fields'].insert(0, {
-            'name': '_flags',
+            'name': 'flags_',
             'type': struct['name'],
-            'components': components(klass['structs'], '_flags', struct['name']),
+            'components': components(klass['structs'], 'flags_', struct['name']),
             'bitFields': True,
             'isStruct': True,
             'numBits': total_num_bits,

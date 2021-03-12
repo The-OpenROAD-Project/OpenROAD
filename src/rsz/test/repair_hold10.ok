@@ -1,0 +1,86 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0127] Reading DEF file: repair_hold10.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 15 components and 68 component-terminals.
+[INFO ODB-0133]     Created 13 nets and 29 connections.
+[INFO ODB-0134] Finished DEF file: repair_hold10.def
+Min routing layer: 2
+Max routing layer: 6
+Global adjustment: 0%
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 349
+[INFO GRT-0017] Found 8 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 4
+[INFO GRT-0018] Processing 483 blockages on layer 1.
+[INFO GRT-0019] Processing 86 blockages on layer 2.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 977
+[INFO GRT-0157] Total Capacity: 277312
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
+
+[INFO GRT-0110] Final usage: 977
+[INFO GRT-0111] Final number of vias: 54
+[INFO GRT-0112] Final usage 3D: 1139
+[INFO GRT-0018] Total wirelength: 6927 um
+[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+worst slack -1.95
+[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+[INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.557ns delay for hold repairs.
+[INFO RSZ-0046] Found 2 endpoints with hold violations.
+[INFO RSZ-0032] Inserted 4 hold buffers.
+worst slack 0.19
+[WARNING DPL-0011] Could not find power special net.
+Placement Analysis
+---------------------------------
+total displacement         41.7 u
+average displacement        2.2 u
+max displacement           11.5 u
+original HPWL            6777.8 u
+legalized HPWL           6821.1 u
+delta HPWL                    1 %
+
+Min routing layer: 2
+Max routing layer: 6
+Global adjustment: 0%
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 409
+[INFO GRT-0017] Found 8 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 4
+[INFO GRT-0018] Processing 583 blockages on layer 1.
+[INFO GRT-0019] Processing 94 blockages on layer 2.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 988
+[INFO GRT-0157] Total Capacity: 277308
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
+
+[INFO GRT-0110] Final usage: 988
+[INFO GRT-0111] Final number of vias: 62
+[INFO GRT-0112] Final usage 3D: 1174
+[INFO GRT-0018] Total wirelength: 7058 um
+[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+worst slack 0.22

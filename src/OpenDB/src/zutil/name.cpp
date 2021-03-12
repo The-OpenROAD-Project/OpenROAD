@@ -35,7 +35,7 @@
 void Ath__nameBucket::set(char* name, uint tag)
 {
   int len = strlen(name);
-  _name   = new char[len + 1];
+  _name = new char[len + 1];
   strcpy(_name, name);
   _tag = tag;
 }
@@ -54,14 +54,14 @@ Ath__nameTable::Ath__nameTable(uint n, char* zero)
   if (zero == NULL)
     zero = strdup("zeroName");
 
-  _hashTable  = new AthHash<int>(n, 0);
+  _hashTable = new AthHash<int>(n, 0);
   _bucketPool = new AthPool<Ath__nameBucket>(false, 0);
 
   addNewName(zero, 0);
 }
 uint Ath__nameTable::addName(char* name, uint dataId)
 {
-  uint             poolIndex = 0;
+  uint poolIndex = 0;
   Ath__nameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
   b->set(name, dataId);
 
@@ -99,7 +99,7 @@ bool Ath__nameTable::readDB(FILE* fp)
 }
 void Ath__nameTable::allocName(char* name, uint nameId, bool hash)
 {
-  uint             poolIndex = 0;
+  uint poolIndex = 0;
   Ath__nameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
   b->set(name, 0);
 
@@ -114,7 +114,7 @@ void Ath__nameTable::addData(uint poolId, uint dataId)
   // when reading DB names, buckets have been allocated already
 
   Ath__nameBucket* b = _bucketPool->get(poolId);
-  b->_tag            = dataId;
+  b->_tag = dataId;
   _hashTable->add(b->_name, poolId);
 }
 
@@ -140,9 +140,9 @@ uint Ath__nameTable::getDataId(int poolId)
   return _bucketPool->get(poolId)->_tag;
 }
 uint Ath__nameTable::getDataId(char* name,
-                               uint  ignoreFlag,
-                               uint  exitFlag,
-                               int*  nn)
+                               uint ignoreFlag,
+                               uint exitFlag,
+                               int* nn)
 {
   int n;
   if (_hashTable->get(name, n)) {

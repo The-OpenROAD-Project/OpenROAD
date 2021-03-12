@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+
 #include "db.h"
 
 using namespace odb

@@ -6,27 +6,24 @@ read_sdc $sdc_file
 
 initialize_floorplan -site $site \
   -die_area $die_area \
-  -core_area $core_area \
-  -tracks $tracks_file
+  -core_area $core_area
+
+source $tracks_file
 
 # remove buffers inserted by synthesis 
 remove_buffers
 
 ################################################################
-# IO Placement
+# IO Placement (random)
 place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
 # Macro Placement
 if { [have_macros] } {
-  # tdms_place (but replace isn't timing driven)
-  global_placement -disable_timing_driven \
-    -disable_routability_driven \
-    -density $global_place_density
-
+  global_placement -density $global_place_density
   macro_placement -halo $macro_place_halo -channel $macro_place_channel
 }
-write_def [make_result_file ${design}_${platform}_floorplan.def]
+
 ################################################################
 # Tapcell insertion
 eval tapcell $tapcell_args
@@ -43,17 +40,21 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
-global_placement -disable_routability_driven \
-  -density $global_place_density \
+# If/when this enables routing driven also the layer adjustments have to
+# move to here.
+global_placement -timing_driven -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
+# IO Placement
+place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
+
 # checkpoint
-set global_place_def [make_result_file ${design}_${platform}_global_place.def]
-write_def $global_place_def
+set global_place_db [make_result_file ${design}_${platform}_global_place.db]
+write_db $global_place_db
 
 ################################################################
-# Resize
+# Repair max slew/cap/fanout violations and normalize slews
 
 estimate_parasitics -placement
 
@@ -64,16 +65,16 @@ repair_tie_fanout -separation $tie_separation $tiehi_port
 
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
-optimize_mirroring
-check_placement -verbose
 
 # post resize timing report (ideal clocks)
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
+report_worst_slack -min
+report_worst_slack -max
+report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 
 ################################################################
 # Clock Tree Synthesis
+
 # Clone clock tree inverters next to register loads
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
@@ -83,28 +84,21 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
-# CTS and detailed placement move instances, so update parastic estimates.
+################################################################
+# Setup/hold timing repair
+
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_timing
 
-report_clock_skew
-
-detailed_placement
-
-# post cts timing report (propagated clocks)
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
-
-set cts_def [make_result_file ${design}_${platform}_cts.def]
-write_def $cts_def
+# Post timing repair using placement based parasitics.
+report_worst_slack -min
+report_worst_slack -max
+report_tns
 
 detailed_placement
 filler_placement $filler_cells
-check_placement
-
-set filler_def [make_result_file ${design}_${platform}_filler.def]
-write_def $filler_def
+check_placement -verbose
 
 ################################################################
 # Global routing
@@ -117,8 +111,7 @@ global_route -guide_file $route_guide \
   -layers $global_routing_layers \
   -clock_layers $global_routing_clock_layers \
   -unidirectional_routing \
-  -overflow_iterations 100 \
-  -verbose 2
+  -overflow_iterations 100
 
 ################################################################
 # Final Report
@@ -128,9 +121,11 @@ estimate_parasitics -global_routing
 
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
-report_worst_slack
+report_worst_slack -min
+report_worst_slack -max
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
+report_clock_skew
 report_power
 
 report_floating_nets -verbose
@@ -154,11 +149,11 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Detailed routing
 
-set routed_def [make_result_file ${design}_${platform}_route.def]
-set tr_lef [make_tr_lef]
-set tr_params [make_tr_params $tr_lef $filler_def $route_guide $routed_def]
+set tr_params [make_tr_params $route_guide 0]
 
 detailed_route -param $tr_params
+set routed_def [make_result_file ${design}_${platform}_route.def]
+write_def $routed_def
 
 set drv_count [detailed_route_num_drvs]
 

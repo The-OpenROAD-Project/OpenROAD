@@ -53,9 +53,9 @@ class _dbName : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  char*         _name;
+  char* _name;
   dbId<_dbName> _next_entry;
-  uint          _ref_cnt;
+  uint _ref_cnt;
 
   _dbName(_dbDatabase*);
   _dbName(_dbDatabase*, const _dbName& n);

@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include "odb.h"
 #include "dbTypes.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -49,7 +49,7 @@ class dbTransform
 {
   friend class _dbBlock;
   dbOrientType::Value _orient;
-  Point            _offset;
+  Point _offset;
 
  public:
   // T = <R0, (0,0)>
@@ -103,16 +103,16 @@ class dbTransform
   void invert();
 
   dbOrientType getOrient() const { return _orient; }
-  Point     getOffset() const { return _offset; }
+  Point getOffset() const { return _offset; }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);
-  friend dbDiff&    operator<<(dbDiff& diff, const dbTransform& t);
+  friend dbDiff& operator<<(dbDiff& diff, const dbTransform& t);
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
 dbIStream& operator>>(dbIStream& stream, dbTransform& t);
-dbDiff&    operator<<(dbDiff& diff, const dbTransform& t);
+dbDiff& operator<<(dbDiff& diff, const dbTransform& t);
 
 inline void dbTransform::concat(const dbTransform& t)
 {
@@ -129,5 +129,3 @@ inline void dbTransform::invert()
 }
 
 }  // namespace odb
-
-

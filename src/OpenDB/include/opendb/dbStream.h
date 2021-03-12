@@ -34,11 +34,12 @@
 
 #include <string.h>
 
+#include <string>
+
 #include "ZException.h"
+#include "map"
 #include "odb.h"
 #include "tuple"
-#include "map"
-#include <string>
 
 namespace odb {
 
@@ -47,9 +48,9 @@ class _dbDatabase;
 class dbOStream
 {
   _dbDatabase* _db;
-  FILE*        _f;
-  double       _lef_area_factor;
-  double       _lef_dist_factor;
+  FILE* _f;
+  double _lef_area_factor;
+  double _lef_dist_factor;
 
   void write_error()
   {
@@ -162,7 +163,7 @@ class dbOStream
 
     return *this;
   }
-  
+
   template <class T1, class T2>
   dbOStream& operator<<(const std::pair<T1, T2>& p)
   {
@@ -171,17 +172,15 @@ class dbOStream
     return *this;
   }
 
-  template <size_t I = 0, typename... Ts> 
-  constexpr dbOStream& operator<<(const std::tuple<Ts...>& tup) 
+  template <size_t I = 0, typename... Ts>
+  constexpr dbOStream& operator<<(const std::tuple<Ts...>& tup)
   {
-    if constexpr(I == sizeof...(Ts)) 
-    { 
+    if constexpr (I == sizeof...(Ts)) {
       return *this;
-    } 
-    else { 
-      *this << std::get<I>(tup); 
-      return ((*this).operator<<<I+1>(tup)); 
-    } 
+    } else {
+      *this << std::get<I>(tup);
+      return ((*this).operator<<<I + 1>(tup));
+    }
   }
 
   template <class T1, class T2>
@@ -207,7 +206,7 @@ class dbOStream
   void markStream()
   {
     int marker = ftell(_f);
-    int magic  = 0xCCCCCCCC;
+    int magic = 0xCCCCCCCC;
     *this << magic;
     *this << marker;
   }
@@ -219,10 +218,10 @@ class dbOStream
 
 class dbIStream
 {
-  FILE*        _f;
+  FILE* _f;
   _dbDatabase* _db;
-  double       _lef_area_factor;
-  double       _lef_dist_factor;
+  double _lef_area_factor;
+  double _lef_dist_factor;
 
   void read_error()
   {
@@ -335,7 +334,7 @@ class dbIStream
     if (l == 0)
       c = NULL;
     else {
-      c     = (char*) malloc(l);
+      c = (char*) malloc(l);
       int n = fread(c, l, 1, _f);
       if (n != 1)
         read_error();
@@ -366,17 +365,15 @@ class dbIStream
     return *this;
   }
 
-  template <size_t I = 0, typename... Ts> 
-  constexpr dbIStream& operator>>(std::tuple<Ts...>& tup) 
+  template <size_t I = 0, typename... Ts>
+  constexpr dbIStream& operator>>(std::tuple<Ts...>& tup)
   {
-    if constexpr(I == sizeof...(Ts)) 
-    { 
+    if constexpr (I == sizeof...(Ts)) {
       return *this;
-    } 
-    else { 
+    } else {
       *this >> std::get<I>(tup);
-      return ((*this).operator>><I+1>(tup)); 
-    } 
+      return ((*this).operator>><I + 1>(tup));
+    }
   }
 
   dbIStream& operator>>(std::string& s)
@@ -391,7 +388,7 @@ class dbIStream
   void checkStream()
   {
     int marker = ftell(_f);
-    int magic  = 0xCCCCCCCC;
+    int magic = 0xCCCCCCCC;
     int smarker;
     int smagic;
     *this >> smagic;
@@ -405,5 +402,3 @@ class dbIStream
 };
 
 }  // namespace odb
-
-

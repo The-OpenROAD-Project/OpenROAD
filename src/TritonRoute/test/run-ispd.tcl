@@ -18,11 +18,7 @@ proc genFiles { run_dir ispd_year design } {
     file mkdir $run_dir/$design
     puts "Create param file for $design"
     set    paramFile [open "$run_dir/$design/run.param" w]
-    puts  $paramFile "lef:$bench_dir/$design/$design.input.lef"
-    puts  $paramFile "def:$bench_dir/$design/$design.input.def"
     puts  $paramFile "guide:$bench_dir/$design/$design.input.guide"
-    puts  $paramFile "output:$run_dir/$design/$design.output.def"
-    puts  $paramFile "outputTA:$design.outputTA.def"
     puts  $paramFile "outputguide:$design.output.guide.mod"
     puts  $paramFile "outputMaze:$design.output.maze.log"
     puts  $paramFile "outputDRC:$design.outputDRC.rpt"
@@ -35,10 +31,12 @@ proc genFiles { run_dir ispd_year design } {
     puts  $tclFile "read_lef $bench_dir/$design/$design.input.lef"
     puts  $tclFile "read_def $bench_dir/$design/$design.input.def"
     puts  $tclFile "detailed_route -param $run_dir/$design/run.param"
+    puts  $tclFile "write_def $run_dir/$design/$design.output.def"
     close $tclFile
 
     puts "Create run script for $design"
     set    runFile [open "$run_dir/$design/run.sh" w]
+    puts  $runFile "set -e"
     puts  $runFile "cd $run_dir/$design"
     puts  $runFile "$program -exit run.tcl > $run_dir/$design/run.log"
     puts  $runFile "echo"
@@ -89,10 +87,16 @@ foreach design $design_list_ispd19 {
 cd $run_dir
 
 set design_list [concat $design_list_ispd18 $design_list_ispd19]
-
-eval exec -ignorestderr parallel -j $parallel_jobs ./{}/run.sh ::: $design_list >@stdout
-
+set status [catch { eval exec -ignorestderr parallel -j $parallel_jobs --halt never --joblog $run_dir/log ./{}/run.sh ::: $design_list >@stdout } ]
 foreach design $design_list {
     exec tar czvf "${design}.tar.gz" "${design}"
 }
+puts "======================="
+if $status {
+    puts "Fail"
+} else {
+    puts "Success"    
+}
+puts "======================="
+exit $status
 

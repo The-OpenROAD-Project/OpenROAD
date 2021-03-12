@@ -97,8 +97,8 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
   return true;
 }
 
-void _dbMTerm::differences(dbDiff&         diff,
-                           const char*     field,
+void _dbMTerm::differences(dbDiff& diff,
+                           const char* field,
                            const _dbMTerm& rhs) const
 {
   DIFF_BEGIN
@@ -262,7 +262,7 @@ std::string dbMTerm::getName()
 
 char* dbMTerm::getName(dbInst* inst, char* ttname)
 {
-  dbBlock*  block  = (dbBlock*) inst->getImpl()->getOwner();
+  dbBlock* block = (dbBlock*) inst->getImpl()->getOwner();
   dbMaster* master = inst->getMaster();
   return (getName(block, master, ttname));
 }
@@ -314,7 +314,7 @@ dbIoType dbMTerm::getIoType()
 
 void dbMTerm::setMark(uint v)
 {
-  _dbMTerm* mterm     = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   mterm->_flags._mark = v;
 }
 bool dbMTerm::isSetMark()
@@ -330,14 +330,14 @@ dbMaster* dbMTerm::getMaster()
 
 dbSet<dbMPin> dbMTerm::getMPins()
 {
-  _dbMTerm*  mterm  = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return dbSet<dbMPin>(mterm, master->_mpin_itr);
 }
 
 dbSet<dbTarget> dbMTerm::getTargets()
 {
-  _dbMTerm*  mterm  = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return dbSet<dbTarget>(mterm, master->_target_itr);
 }
@@ -350,7 +350,7 @@ void* dbMTerm::staPort()
 
 void dbMTerm::staSetPort(void* port)
 {
-  _dbMTerm* mterm  = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   mterm->_sta_port = port;
 }
 
@@ -389,7 +389,7 @@ void dbMTerm::addDiffAreaEntry(double inval, dbTechLayer* refly)
 
 dbTechAntennaPinModel* dbMTerm::createDefaultAntennaModel()
 {
-  _dbMTerm*               mterm = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   _dbTechAntennaPinModel* m
       = (_dbTechAntennaPinModel*) getDefaultAntennaModel();
 
@@ -400,9 +400,9 @@ dbTechAntennaPinModel* dbMTerm::createDefaultAntennaModel()
     m->_mterm = getImpl()->getOID();
   } else {
     _dbMaster* master = (_dbMaster*) mterm->getOwner();
-    m                 = master->_antenna_pin_model_tbl->create();
-    mterm->_oxide1    = m->getOID();
-    m->_mterm         = getImpl()->getOID();
+    m = master->_antenna_pin_model_tbl->create();
+    mterm->_oxide1 = m->getOID();
+    m->_mterm = getImpl()->getOID();
   }
 
   return (dbTechAntennaPinModel*) m;
@@ -410,7 +410,7 @@ dbTechAntennaPinModel* dbMTerm::createDefaultAntennaModel()
 
 dbTechAntennaPinModel* dbMTerm::createOxide2AntennaModel()
 {
-  _dbMTerm*               mterm = (_dbMTerm*) this;
+  _dbMTerm* mterm = (_dbMTerm*) this;
   _dbTechAntennaPinModel* m = (_dbTechAntennaPinModel*) getOxide2AntennaModel();
 
   // Reinitialize the object to its default state...
@@ -420,9 +420,9 @@ dbTechAntennaPinModel* dbMTerm::createOxide2AntennaModel()
     m->_mterm = getImpl()->getOID();
   } else {
     _dbMaster* master = (_dbMaster*) mterm->getOwner();
-    m                 = master->_antenna_pin_model_tbl->create();
-    mterm->_oxide2    = m->getOID();
-    m->_mterm         = getImpl()->getOID();
+    m = master->_antenna_pin_model_tbl->create();
+    mterm->_oxide2 = m->getOID();
+    m->_mterm = getImpl()->getOID();
   }
 
   return (dbTechAntennaPinModel*) m;
@@ -478,8 +478,8 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
   dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
 
   dbMaster* tpmtr = (dbMaster*) mterm->getOwner();
-  dbLib*    tplib = (dbLib*) tpmtr->getImpl()->getOwner();
-  dbTech*   tech  = tplib->getTech();
+  dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
+  dbTech* tech = tplib->getTech();
 
   for (ant_iter = mterm->_par_met_area.begin();
        ant_iter != mterm->_par_met_area.end();
@@ -509,10 +509,10 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
   }
 }
 
-dbMTerm* dbMTerm::create(dbMaster*   master_,
+dbMTerm* dbMTerm::create(dbMaster* master_,
                          const char* name_,
-                         dbIoType    io_type_,
-                         dbSigType   sig_type_)
+                         dbIoType io_type_,
+                         dbSigType sig_type_)
 {
   _dbMaster* master = (_dbMaster*) master_;
 
@@ -520,9 +520,9 @@ dbMTerm* dbMTerm::create(dbMaster*   master_,
     return NULL;
 
   _dbMTerm* mterm = master->_mterm_tbl->create();
-  mterm->_name    = strdup(name_);
+  mterm->_name = strdup(name_);
   ZALLOCATED(mterm->_name);
-  mterm->_flags._io_type  = io_type_;
+  mterm->_flags._io_type = io_type_;
   mterm->_flags._sig_type = sig_type_;
   if (sig_type_ == dbSigType::CLOCK)
     master_->setSequential(1);

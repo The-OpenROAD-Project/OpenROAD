@@ -133,9 +133,14 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
   map<frBlock*, 
       map<frOrient, map<vector<frCoord>, set<frInst*, frBlockObjectComp> > >,
       frBlockObjectComp> refBlockOT2Insts; // refblock orient track-offset to instances
+  vector<frInst*> ndrInsts;
   vector<frCoord> offset;
   int cnt = 0;
   for (auto &inst: design_->getTopBlock()->getInsts()) {
+      if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)){
+          ndrInsts.push_back(inst.get());
+          continue;
+      }
     frPoint origin;
     inst->getOrigin(origin);
     frBox boundaryBBox;
@@ -223,6 +228,10 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
       }
     }
   }
+  for (frInst* inst : ndrInsts){
+      uniqueInstances_.push_back(inst);
+      inst2unique_[inst] = inst;
+  }
 
   // init unique2Idx
   for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
@@ -234,6 +243,14 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
   //}
 }
 
+bool FlexPA::isNDRInst(frInst& inst){
+    for (auto& a : inst.getInstTerms()){
+        if (a->getNet() && a->getNet()->getNondefaultRule()){   //this criterion can be improved
+            return true;
+        }
+    }
+    return false;
+}
 
 void FlexPA::initUniqueInstance() {
   vector<frTrackPattern*> prefTrackPatterns;

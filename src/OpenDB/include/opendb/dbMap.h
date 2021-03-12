@@ -35,8 +35,8 @@
 #include <map>
 #include <vector>
 
-#include "odb.h"
 #include "dbSet.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -54,9 +54,9 @@ namespace odb {
 template <class T, class D>
 class dbMap
 {
-  dbSet<T>         _set;
-  std::map<T*, D>* _map;     // map used if set is not sequential
-  std::vector<D>*  _vector;  // vector used if set is sequential
+  dbSet<T> _set;
+  std::map<T*, D>* _map;    // map used if set is not sequential
+  std::vector<D>* _vector;  // vector used if set is sequential
 
   // Map cannot be assigned or copied!
   dbMap(const dbMap&);
@@ -115,5 +115,3 @@ class dbMap
 }  // namespace odb
 
 #include "dbMap.hpp"
-
-

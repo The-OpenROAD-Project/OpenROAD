@@ -31,9 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definGCell.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "db.h"
 #include "dbShape.h"
 

@@ -36,6 +36,8 @@
 #include "openroad/OpenRoad.hh"
 
 #include <iostream>
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "utility/MakeLogger.h"
 #include "utility/Logger.h"
@@ -59,17 +61,17 @@
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
 
-#include "init_fp//MakeInitFloorplan.hh"
-#include "ioplacer/MakeIoplacer.h"
-#include "resizer/MakeResizer.hh"
+#include "ifp//MakeInitFloorplan.hh"
+#include "ppl/MakeIoplacer.h"
+#include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
-#include "opendp/MakeOpendp.h"
+#include "dpl/MakeOpendp.h"
 #include "finale/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
-#include "fastroute/MakeFastRoute.h"
+#include "grt/MakeFastRoute.h"
 #include "tritoncts/MakeTritoncts.h"
-#include "tapcell/MakeTapcell.h"
+#include "tap/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"
@@ -82,7 +84,7 @@ extern const char *openroad_swig_tcl_inits[];
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_Init(Tcl_Interp *interp);
+extern int Openroad_swig_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 }
 
@@ -209,7 +211,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   partitionMgr_ = makePartitionMgr();
 
   // Init components.
-  Openroad_Init(tcl_interp);
+  Openroad_swig_Init(tcl_interp);
   // Import TCL scripts.
   evalTclInit(tcl_interp, sta::openroad_swig_tcl_inits);
 
@@ -271,9 +273,16 @@ OpenRoad::readLef(const char *filename,
 void
 OpenRoad::readDef(const char *filename,
 		  bool order_wires,
-		  bool continue_on_errors)
+		  bool continue_on_errors,
+      bool floorplan_init,
+      bool incremental)
 {
-  odb::defin def_reader(db_,logger_);
+  odb::defin::MODE mode = odb::defin::DEFAULT;
+  if(floorplan_init)
+    mode = odb::defin::FLOORPLAN;
+  else if(incremental)
+    mode = odb::defin::INCREMENTAL;
+  odb::defin def_reader(db_, logger_, mode);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
@@ -427,6 +436,10 @@ OpenRoad::Observer::~Observer()
   }
 }
 
+void OpenRoad::pythonCommand(const char* py_command)
+{
+  PyRun_SimpleString(py_command);
+}
 
 ////////////////////////////////////////////////////////////////
 

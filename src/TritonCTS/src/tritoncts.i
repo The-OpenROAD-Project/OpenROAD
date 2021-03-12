@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%module tritoncts
-
 %{
 #include "tritoncts/TritonCTS.h"
 #include "CtsOptions.h"
@@ -65,6 +63,12 @@ void
 set_sink_clustering(bool enable)
 {
   getTritonCts()->getParms()->setSinkClustering(enable);
+}
+
+void
+set_sink_clustering_levels(unsigned levels)
+{
+  getTritonCts()->getParms()->setSinkClusteringLevels(levels);
 }
 
 void

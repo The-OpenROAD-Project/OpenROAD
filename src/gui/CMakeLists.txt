@@ -13,9 +13,9 @@ if (Qt5_FOUND)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
-  tcl_lib(NAME      gui
-          NAMESPACE gui
-          I_FILE    src/gui.i
+  swig_lib(NAME      gui
+           NAMESPACE gui
+           I_FILE    src/gui.i
   )
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
@@ -49,13 +49,16 @@ if (Qt5_FOUND)
 else()
   message(STATUS "GUI is not enabled")
   add_library(gui src/stub.cpp)
+  target_link_libraries(gui
+    PUBLIC
+      opendb
+  )
 endif()
 
 target_include_directories(gui
   PUBLIC
     include
   PRIVATE
-    ../FastRoute/include #Ugly but needed till we get FastRoute Data from OpenDb
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
 )

@@ -142,12 +142,16 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Show a message in the status bar
   void status(const std::string& message);
-
+  
   // Show Find Dialog Box
   void showFindDialog();
 
   // show Timing Dialog Box
   void showTimingDialog();
+
+  DisplayControls* getControls() const{
+      return controls_;
+  }
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -155,6 +159,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+  void updateShapes();
 
  private:
   void createMenus();

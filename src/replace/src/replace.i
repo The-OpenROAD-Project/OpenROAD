@@ -1,5 +1,3 @@
-%module replace
-
 %{
 #include "openroad/OpenRoad.hh"
 #include "replace/Replace.h"
@@ -140,17 +138,17 @@ set_verbose_level_cmd(int verbose)
 }
 
 void
-set_disable_timing_driven_mode_cmd()
+set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
-  replace->setTimingDrivenMode(false);
+  replace->setTimingDrivenMode(timing_driven);
 }
 
 void
-set_disable_routability_driven_mode_cmd()
+set_routability_driven_mode(bool routability_driven)
 {
   Replace* replace = getReplace();
-  replace->setRoutabilityDrivenMode(false);
+  replace->setRoutabilityDrivenMode(routability_driven);
 }
 
 void

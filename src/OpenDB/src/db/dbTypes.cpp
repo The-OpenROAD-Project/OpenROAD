@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbTypes.h"
+
 #include <ctype.h>
 #include <string.h>
 
 #include "dbId.h"
-#include "dbTypes.h"
 
 namespace odb {
 
@@ -1502,91 +1503,6 @@ const char* dbSourceType::getString() const
   }
 
   return value;
-}
-
-const char* TechLayerSpacingRule::getString(TechLayerSpacingRule::_RuleType v)
-{
-  const char* s = "";
-
-  switch (v) {
-    case TechLayerSpacingRule::DEFAULT:
-      s = "DEFAULT";
-      break;
-
-    case TechLayerSpacingRule::RANGE_ONLY:
-      s = "RANGE_ONLY";
-      break;
-
-    case TechLayerSpacingRule::RANGE_USELENGTH:
-      s = "RANGE_USELENGTH";
-      break;
-
-    case TechLayerSpacingRule::RANGE_INFLUENCE:
-      s = "RANGE_INFLUENCE";
-      break;
-
-    case TechLayerSpacingRule::RANGE_INFLUENCE_RANGE:
-      s = "RANGE_INFLUENCE_RANGE";
-      break;
-
-    case TechLayerSpacingRule::RANGE_RANGE:
-      s = "RANGE_RANGE";
-      break;
-
-    case TechLayerSpacingRule::LENGTHTHRESHOLD:
-      s = "LENGTHTHRESHOLD";
-      break;
-
-    case TechLayerSpacingRule::LENGTHTHRESHOLD_RANGE:
-      s = "LENGTHTHRESHOLD_RANGE";
-      break;
-
-    case TechLayerSpacingRule::CUT_LAYER_BELOW:
-      s = "CUT_LAYER_BELOW";
-      break;
-
-    case TechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE:
-      s = "ADJACENT_CUTS_INFLUENCE";
-      break;
-
-    case TechLayerSpacingRule::ENDOFLINE:
-      s = "ENDOFLINE";
-      break;
-
-    case TechLayerSpacingRule::ENDOFLINE_PARALLEL:
-      s = "ENDOFLINE_PARALLEL";
-      break;
-
-    case TechLayerSpacingRule::ENDOFLINE_PARALLEL_TWOEDGES:
-      s = "ENDOFLINE_PARALLEL_TWOEDGES";
-      break;
-  }
-
-  return s;
-}
-
-const char* TechMinCutRule::getString(TechMinCutRule::_RuleType v)
-{
-  const char* s = "";
-  switch (v) {
-    case TechMinCutRule::NONE:
-      s = "NONE";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT:
-      s = "MINIMUM_CUT";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT_ABOVE:
-      s = "MINIMUM_CUT_ABOVE";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT_BELOW:
-      s = "MINIMUM_CUT_BELOW";
-      break;
-  }
-
-  return s;
 }
 
 //

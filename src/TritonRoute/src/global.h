@@ -35,12 +35,8 @@
 #include "frDesign.h"
 #include "db/obj/frBlock.h"
 
-extern std::string DEF_FILE;
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
-extern std::string OUTTA_FILE;
-extern std::string OUT_FILE;
-extern std::string REF_OUT_FILE;
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
@@ -83,6 +79,9 @@ extern int MINNUMACCESSPOINT_STDCELLPIN;
 extern int ACCESS_PATTERN_END_ITERATION_NUM;
 
 extern int END_ITERATION;
+extern int NDR_NETS_RIPUP_THRESH;
+extern bool AUTO_TAPER_NDR_NETS;
+extern int  TAPERBOX_RADIUS;
 
 extern fr::frUInt4 TAVIACOST;
 extern fr::frUInt4 TAPINCOST;
@@ -122,6 +121,7 @@ namespace fr {
   frCoord getGCELLGRIDY();
   frCoord getGCELLOFFSETX();
   frCoord getGCELLOFFSETY();
+  
 
   // These need to be in the fr namespace to support argument-dependent
   // lookup

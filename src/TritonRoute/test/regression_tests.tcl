@@ -1,3 +1,3 @@
 record_tests {
-  test_db_update
+  ispd18_sample
 }

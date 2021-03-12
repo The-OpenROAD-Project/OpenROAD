@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definNet.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,8 +39,6 @@
 #include "db.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "definNet.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -53,7 +53,7 @@ inline uint get_net_dbid(const char* name)
     return 0;
 
   char* end;
-  uint  dbid = strtoul(name, &end, 10);
+  uint dbid = strtoul(name, &end, 10);
 
   if (*end != '\0')
     return 0;
@@ -65,10 +65,10 @@ definNet::definNet()
 {
   init();
   _skip_signal_connections = false;
-  _skip_wires              = false;
-  _replace_wires           = false;
-  _names_are_ids           = false;
-  _assembly_mode           = false;
+  _skip_wires = false;
+  _replace_wires = false;
+  _names_are_ids = false;
+  _assembly_mode = false;
 }
 
 definNet::~definNet()
@@ -79,20 +79,21 @@ void definNet::init()
 {
   definBase::init();
   _found_new_routing = false;
-  _net_cnt           = 0;
-  _net_iterm_cnt     = 0;
-  _cur_net           = NULL;
-  _cur_layer         = NULL;
-  _wire              = NULL;
-  _wire_type         = dbWireType::NONE;
-  _wire_shape_type   = dbWireShapeType::NONE;
-  _prev_x            = 0;
-  _prev_y            = 0;
-  _width             = 0;
-  _point_cnt         = 0;
-  _taper_rule        = NULL;
-  _non_default_rule  = NULL;
-  _rule_for_path     = NULL;
+  _net_cnt = 0;
+  _update_cnt = 0;
+  _net_iterm_cnt = 0;
+  _cur_net = NULL;
+  _cur_layer = NULL;
+  _wire = NULL;
+  _wire_type = dbWireType::NONE;
+  _wire_shape_type = dbWireShapeType::NONE;
+  _prev_x = 0;
+  _prev_y = 0;
+  _width = 0;
+  _point_cnt = 0;
+  _taper_rule = NULL;
+  _non_default_rule = NULL;
+  _rule_for_path = NULL;
   _rotated_vias.clear();
 }
 
@@ -118,7 +119,7 @@ void definNet::begin(const char* name)
     }
 
     if (_cur_net == NULL) {
-      _logger->warn(utl::ODB, 96,  "net {} does not exist", name);
+      _logger->warn(utl::ODB, 96, "net {} does not exist", name);
       ++_errors;
     } else {
       if (!_assembly_mode) {
@@ -134,13 +135,16 @@ void definNet::begin(const char* name)
     // This may cause problems with other routers.
     _non_default_rule = _cur_net->getNonDefaultRule();
   }
+  if (_mode == defin::FLOORPLAN)
+    _update_cnt++;
+  else
+    _net_cnt++;
 
-  _net_cnt++;
-  _wire              = NULL;
-  _rule_for_path     = NULL;
+  _wire = NULL;
+  _rule_for_path = NULL;
   _found_new_routing = false;
-  if (_net_cnt % 100000 == 0)
-    _logger->info(utl::ODB, 97,  "\t\tCreated {} Nets", _net_cnt);
+  if (_net_cnt != 0 && _net_cnt % 100000 == 0)
+    _logger->info(utl::ODB, 97, "\t\tCreated {} Nets", _net_cnt);
 }
 
 void definNet::beginMustjoin(const char* iname, const char* tname)
@@ -154,7 +158,7 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
     _cur_net = _block->findNet(buf);
 
     if (_cur_net == NULL) {
-      _logger->warn(utl::ODB, 98,  "duplicate mustjoin net found ({})", buf);
+      _logger->warn(utl::ODB, 98, "duplicate mustjoin net found ({})", buf);
       ++_errors;
     }
 
@@ -163,9 +167,9 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
   }
 
   _net_cnt++;
-  _wire             = NULL;
+  _wire = NULL;
   _non_default_rule = NULL;
-  _rule_for_path    = NULL;
+  _rule_for_path = NULL;
 }
 
 void definNet::connection(const char* iname, const char* tname)
@@ -193,17 +197,21 @@ void definNet::connection(const char* iname, const char* tname)
   dbInst* inst = _block->findInst(iname);
 
   if (inst == NULL) {
-    _logger->warn(utl::ODB, 99,  "error: netlist component ({}) is not defined", iname);
+    _logger->warn(
+        utl::ODB, 99, "error: netlist component ({}) is not defined", iname);
     ++_errors;
     return;
   }
 
   dbMaster* master = inst->getMaster();
-  dbMTerm*  mterm  = master->findMTerm(_block, tname);
+  dbMTerm* mterm = master->findMTerm(_block, tname);
 
   if (mterm == NULL) {
-    _logger->warn(utl::ODB, 100, 
-"error: netlist component-pin ({}, {}) is not defined",iname,tname);
+    _logger->warn(utl::ODB,
+                  100,
+                  "error: netlist component-pin ({}, {}) is not defined",
+                  iname,
+                  tname);
     ++_errors;
     return;
   }
@@ -236,29 +244,41 @@ void definNet::nonDefaultRule(const char* rule)
     dbTechNonDefaultRule* def_rule = findNonDefaultRule(rule);
 
     if (def_rule == NULL) {
-      _logger->warn(utl::ODB, 101,  "error: undefined NONDEFAULTRULE ({}) referenced", rule);
+      _logger->warn(utl::ODB,
+                    101,
+                    "error: undefined NONDEFAULTRULE ({}) referenced",
+                    rule);
       ++_errors;
     }
 
     else if (net_rule != def_rule) {
-      std::string net_name      = _cur_net->getName();
+      std::string net_name = _cur_net->getName();
       const char* net_rule_name = "(NULL)";
       std::string n;
 
       if (net_rule != NULL) {
-        n             = net_rule->getName();
+        n = net_rule->getName();
         net_rule_name = n.c_str();
       }
 
-      _logger->warn(utl::ODB, 102, 
-"error: NONDEFAULTRULE ({}) of net ({}) does not match DEF rule ""({}).",net_name.c_str(),net_rule_name,rule);
+      _logger->warn(
+          utl::ODB,
+          102,
+          "error: NONDEFAULTRULE ({}) of net ({}) does not match DEF rule "
+          "({}).",
+          net_name.c_str(),
+          net_rule_name,
+          rule);
       ++_errors;
     }
   } else {
     _non_default_rule = findNonDefaultRule(rule);
 
     if (_non_default_rule == NULL) {
-      _logger->warn(utl::ODB, 103,  "error: undefined NONDEFAULTRULE ({}) referenced", rule);
+      _logger->warn(utl::ODB,
+                    103,
+                    "error: undefined NONDEFAULTRULE ({}) referenced",
+                    rule);
       ++_errors;
     } else
       _cur_net->setNonDefaultRule(_non_default_rule);
@@ -322,7 +342,7 @@ void definNet::wire(dbWireType type)
     _wire_encoder.begin(_wire);
   }
 
-  _wire_type  = type;
+  _wire_type = type;
   _taper_rule = NULL;
 }
 
@@ -340,7 +360,8 @@ void definNet::pathBegin(const char* layer_name)
   _cur_layer = _tech->findLayer(layer_name);
 
   if (_cur_layer == NULL) {
-    _logger->warn(utl::ODB, 104,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 104, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     dbWire::destroy(_wire);
     _wire = NULL;
@@ -352,10 +373,13 @@ void definNet::pathBegin(const char* layer_name)
     _taper_rule = _rule_for_path->getLayerRule(_cur_layer);
 
     if (_taper_rule == NULL) {
-      std::string lyr_name  = _cur_layer->getName();
+      std::string lyr_name = _cur_layer->getName();
       std::string rule_name = _non_default_rule->getName();
-      _logger->warn(utl::ODB, 105, 
-"error: RULE ({}) referenced for layer ({})",_rule_for_path->getName().c_str(),lyr_name.c_str());
+      _logger->warn(utl::ODB,
+                    105,
+                    "error: RULE ({}) referenced for layer ({})",
+                    _rule_for_path->getName().c_str(),
+                    lyr_name.c_str());
       ++_errors;
     }
   }
@@ -377,7 +401,10 @@ void definNet::pathTaperRule(const char* layer_name, const char* rule_name)
   _rule_for_path = findNonDefaultRule(rule_name);
 
   if (_rule_for_path == NULL) {
-    _logger->warn(utl::ODB, 106,  "error: undefined TAPER RULE ({}) referenced", rule_name);
+    _logger->warn(utl::ODB,
+                  106,
+                  "error: undefined TAPER RULE ({}) referenced",
+                  rule_name);
     ++_errors;
     path(layer_name);
     return;
@@ -488,7 +515,8 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
     dbVia* block_via = _block->findVia(via_name);
 
     if (block_via == NULL) {
-      _logger->warn(utl::ODB, 107,  "error: undefined via ({}) referenced", via_name);
+      _logger->warn(
+          utl::ODB, 107, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return NULL;
     }
@@ -519,8 +547,10 @@ void definNet::pathVia(const char* via_name, dbOrientType orient)
     _cur_layer = top;
   else {
     ++_errors;
-    _logger->warn(utl::ODB, 108, 
-"error: invalid VIA layers, cannot determine exit layer of path");
+    _logger->warn(
+        utl::ODB,
+        108,
+        "error: invalid VIA layers, cannot determine exit layer of path");
   }
 }
 
@@ -531,7 +561,7 @@ void definNet::pathVia(const char* via_name)
 
   dbTechLayer* top;
   dbTechLayer* bot;
-  dbTechVia*   tech_via = _tech->findVia(via_name);
+  dbTechVia* tech_via = _tech->findVia(via_name);
 
   if (tech_via != NULL) {
     _wire_encoder.addTechVia(tech_via);
@@ -541,7 +571,8 @@ void definNet::pathVia(const char* via_name)
     dbVia* via = _block->findVia(via_name);
 
     if (via == NULL) {
-      _logger->warn(utl::ODB, 109,  "error: undefined via ({}) referenced", via_name);
+      _logger->warn(
+          utl::ODB, 109, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -557,8 +588,10 @@ void definNet::pathVia(const char* via_name)
     _cur_layer = top;
   else {
     ++_errors;
-    _logger->warn(utl::ODB, 110, 
-"error: invalid VIA layers, cannot determine exit layer of path");
+    _logger->warn(
+        utl::ODB,
+        110,
+        "error: invalid VIA layers, cannot determine exit layer of path");
   }
 }
 

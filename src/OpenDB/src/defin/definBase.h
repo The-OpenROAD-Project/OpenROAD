@@ -34,14 +34,15 @@
 
 #include <vector>
 
-#include "odb.h"
-#include "defiMisc.hpp"
-#include "definTypes.h"
 #include "dbTypes.h"
+#include "defiMisc.hpp"
+#include "defin.h"
+#include "definTypes.h"
 #include "geom.h"
+#include "odb.h"
 
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 
 namespace odb {
@@ -52,18 +53,20 @@ class dbTech;
 class definBase
 {
  public:
-  dbTech*  _tech;
+  defin::MODE _mode;
+  dbTech* _tech;
   dbBlock* _block;
   utl::Logger* _logger;
-  int      _errors;
-  int      _dist_factor;
+  int _errors;
+  int _dist_factor;
 
   definBase();
   virtual ~definBase() {}
-  void         setTech(dbTech* tech);
-  void         setBlock(dbBlock* block);
-  void         setLogger(utl::Logger* logger);
-  void         units(int d);
+  void setTech(dbTech* tech);
+  void setBlock(dbBlock* block);
+  void setLogger(utl::Logger* logger);
+  void units(int d);
+  void setMode(defin::MODE mode);
   virtual void init();
 
   int dbdist(int value) { return (int) (value * _dist_factor); }
@@ -85,14 +88,14 @@ class definBase
   }
 
   void translate(const std::vector<defPoint>& defpoints,
-                 std::vector<Point>&       points)
+                 std::vector<Point>& points)
   {
     points.clear();
     std::vector<defPoint>::const_iterator itr;
 
     for (itr = defpoints.begin(); itr != defpoints.end(); ++itr) {
       const defPoint& p = *itr;
-      Point        point(dbdist(p._x), dbdist(p._y));
+      Point point(dbdist(p._x), dbdist(p._y));
       points.push_back(point);
     }
   }

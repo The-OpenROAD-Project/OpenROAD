@@ -66,9 +66,9 @@ class Ath__connWord
   bool ordered();
   void orderByRow(uint r1, uint c1, uint r2, uint c2, uint colCnt);
   Ath__connWord(uint r1, uint c1, uint r2, uint c2, uint colCnt = 0);
-  int  getStraight();
-  int  getRowDist();
-  int  getColDist();
+  int getStraight();
+  int getRowDist();
+  int getColDist();
   uint getDist();
   uint getMinDist();
   uint getMaxDist();
@@ -90,9 +90,9 @@ class Ath__qPin;
 class Ath__p2pConn
 {
  private:
-  uint          _netId;  // TODO
-  Ath__connWord _conn;   // TODO
-  Ath__qPin*    _srcPin;
+  uint _netId;          // TODO
+  Ath__connWord _conn;  // TODO
+  Ath__qPin* _srcPin;
   Ath__p2pConn* _next;
 
   // Ath__box *_busList;
@@ -100,8 +100,8 @@ class Ath__p2pConn
  public:
   // Ath__box *_targetObs;
 
-  void       setNext(Ath__p2pConn* v);
-  void       setPin(Ath__qPin* q);
+  void setNext(Ath__p2pConn* v);
+  void setPin(Ath__qPin* q);
   Ath__qPin* getSrcPin();
   // void addBusBox(Ath__box *bb);
   // Ath__box *getBusList();
@@ -114,15 +114,15 @@ class Ath__p2pConn
 class Ath__connTable
 {
  private:
-  uint                         _maxBankCnt;
+  uint _maxBankCnt;
   Ath__array2d<Ath__p2pConn*>* _straightTable[2];
   Ath__array2d<Ath__p2pConn*>* _nextTable[2];
   Ath__array2d<Ath__p2pConn*>* _cornerTable;
   Ath__array2d<Ath__p2pConn*>* _tmpTablePtr;
   Ath__array2d<Ath__p2pConn*>* _tmpArrayPtr;
-  AthPool<Ath__p2pConn>*       _poolPtr;
-  uint                         _tmpCurrentIndex[32];
-  uint                         _tmpCnt[32];
+  AthPool<Ath__p2pConn>* _poolPtr;
+  uint _tmpCurrentIndex[32];
+  uint _tmpCnt[32];
 
   uint _nextSegCnt;
   uint _tileSize;
@@ -130,17 +130,17 @@ class Ath__connTable
 
  public:
   Ath__connTable(AthPool<Ath__p2pConn>* pool,
-                 uint                   n,
-                 uint                   pinLength,
-                 uint                   tileSize);
+                 uint n,
+                 uint pinLength,
+                 uint tileSize);
   Ath__p2pConn* addConn(uint netId, Ath__connWord w, uint dx = 0, uint dy = 0);
-  uint          addStraightConn(uint dir, uint dist, Ath__p2pConn* p2p);
-  uint          addCornerConn2(uint type, Ath__p2pConn* p2p, uint ii, uint jj);
-  void          printConnStats(FILE* fp);
-  uint          startNextIterator(uint dir, uint seg);
-  uint          startCornerIterator(uint dist);
-  uint          startStraightIterator(uint dir, uint dist);
-  int           getNextConn(Ath__connWord* conn, uint* netId);
+  uint addStraightConn(uint dir, uint dist, Ath__p2pConn* p2p);
+  uint addCornerConn2(uint type, Ath__p2pConn* p2p, uint ii, uint jj);
+  void printConnStats(FILE* fp);
+  uint startNextIterator(uint dir, uint seg);
+  uint startCornerIterator(uint dist);
+  uint startStraightIterator(uint dir, uint dist);
+  int getNextConn(Ath__connWord* conn, uint* netId);
   Ath__p2pConn* getNextConn();
   Ath__array2d<Ath__p2pConn*>* startStraightArrayIterator(uint dir);
   bool getNextArrayConn(uint ii, Ath__connWord* conn, uint* netId);
@@ -152,21 +152,21 @@ class Ath__searchBox;
 class Ath__qPin
 {
  public:
-  uint          _netId;
-  uint          _ioNetId;
-  uint          _nameId;
+  uint _netId;
+  uint _ioNetId;
+  uint _nameId;
   Ath__connWord _conn;
-  Ath__qPin*    _next;
+  Ath__qPin* _next;
   Ath__p2pConn* _head;
-  Ath__box*     _instBB;
-  Ath__box*     _targetBB;
-  Ath__box*     _portBB;
+  Ath__box* _instBB;
+  Ath__box* _targetBB;
+  Ath__box* _portBB;
 
   Ath__box*
       _obsList;  // All target wire bboxes, NULL if straight wire and _src=0
                  // For corner nets boxes include everything to the turn
   Ath__box*
-       _busList;  // All actual wire bboxes, NULL if straight wire and _src=0
+      _busList;  // All actual wire bboxes, NULL if straight wire and _src=0
   uint _portWireId;
   uint _src : 1;
   uint _tjunction : 2;
@@ -178,53 +178,53 @@ class Ath__qPin
 
   friend class Ath__qPinTable;
 
-  int        defX(uint defUnits);
-  int        defY(uint defUnits);
-  Ath__box*  getInstBox();
-  Ath__box*  getBusList();
-  void       setInstBox(Ath__box* bb);
-  bool       isSrc();
-  bool       isAssigned();
-  bool       isTargeted();
-  bool       isPlaced();
-  void       setPlaced();
-  void       setTargeted();
+  int defX(uint defUnits);
+  int defY(uint defUnits);
+  Ath__box* getInstBox();
+  Ath__box* getBusList();
+  void setInstBox(Ath__box* bb);
+  bool isSrc();
+  bool isAssigned();
+  bool isTargeted();
+  bool isPlaced();
+  void setPlaced();
+  void setTargeted();
   Ath__qPin* getSrcPin();
   Ath__qPin* getDstPin();
 
   uint getToRowCol(uint* col);
   uint getTurnRowCol(uint* row, uint* col);
-  int  getTurnDist(uint* row, uint* col, int* dir);
+  int getTurnDist(uint* row, uint* col, int* dir);
 
-  void      reset();
-  void      pinBoxDef(FILE* fp, char* layerName, char* orient, int defUnits);
-  uint      makeZuiObject(Ath__zui* zui,
-                          uint      width,
-                          bool      actual   = false,
-                          bool      instFlag = false);
-  uint      makeBusZuiObject(Ath__zui* zui, uint width);
-  void      getTargetBox(Ath__searchBox* bb);
-  void      getObsBox(Ath__searchBox* bb);
-  void      getNextObsBox(Ath__searchBox* sbb);
-  void      addBusBox(Ath__box* bb);
-  void      setPortWireId(uint id);
-  uint      getLayer();
+  void reset();
+  void pinBoxDef(FILE* fp, char* layerName, char* orient, int defUnits);
+  uint makeZuiObject(Ath__zui* zui,
+                     uint width,
+                     bool actual = false,
+                     bool instFlag = false);
+  uint makeBusZuiObject(Ath__zui* zui, uint width);
+  void getTargetBox(Ath__searchBox* bb);
+  void getObsBox(Ath__searchBox* bb);
+  void getNextObsBox(Ath__searchBox* sbb);
+  void addBusBox(Ath__box* bb);
+  void setPortWireId(uint id);
+  uint getLayer();
   Ath__box* getPortCoords(int* x1, int* y1, int* x2, int* y2, uint* layer);
-  uint      makePinObsZui(Ath__zui* zui,
-                          int       width,
-                          int       x1,
-                          int       y1,
-                          int       x2,
-                          int       y2,
-                          int       layer);
+  uint makePinObsZui(Ath__zui* zui,
+                     int width,
+                     int x1,
+                     int y1,
+                     int x2,
+                     int y2,
+                     int layer);
 };
 class Ath__qNet
 {
  private:
-  uint          _id;
-  uint          _origNetId;
+  uint _id;
+  uint _origNetId;
   Ath__connWord _conn;
-  Ath__qPin*    _qPin;
+  Ath__qPin* _qPin;
 
   uint _startTermIndex;
   uint _itermCnt;
@@ -245,74 +245,74 @@ class Ath__qPinTable
 {
  private:
   Ath__array1D<Ath__qPin*>* _table;
-  AthPool<Ath__qPin>*       _pool;
+  AthPool<Ath__qPin>* _pool;
 
-  Ath__box*          _nextPinShape[2];
-  Ath__box*          _straightPinShape[2];
-  Ath__box*          _cornerPinShape[4];
-  Ath__box*          _cornerObsShape[4];
-  Ath__box*          _thruObsShape[2];
+  Ath__box* _nextPinShape[2];
+  Ath__box* _straightPinShape[2];
+  Ath__box* _cornerPinShape[4];
+  Ath__box* _cornerObsShape[4];
+  Ath__box* _thruObsShape[2];
   AthPool<Ath__box>* _pinBoxPool;
 
   friend class Ath__quadTable;
 
  public:
   Ath__qPinTable(AthPool<Ath__qPin>* qPinPool,
-                 AthPool<Ath__box>*  boxPool,
-                 uint                n = 0);
+                 AthPool<Ath__box>* boxPool,
+                 uint n = 0);
   Ath__box* getHeadStraightPinShape(uint dir);
   Ath__box* getHeadNextPinShape(uint dir);
   Ath__box* getHeadCornerPinShape(uint type);
   Ath__box* getHeadCornerObsShape(uint type);
   Ath__box* getHeadObsShape(uint dir);
-  void      freeBoxes(Ath__box* head);
-  void      freeNextPinShapes();
+  void freeBoxes(Ath__box* head);
+  void freeNextPinShapes();
   Ath__box* newPinBox(uint layer, int x1, int y1, int x2, int y2);
   Ath__box* addPinBox(Ath__box* e, Ath__box* head);
   Ath__box* addNextPinBox(uint netId,
                           uint dir,
                           uint layer,
-                          int  x1,
-                          int  y1,
-                          int  x2,
-                          int  y2);
+                          int x1,
+                          int y1,
+                          int x2,
+                          int y2);
   Ath__box* addThruObsBox(uint netId,
                           uint dir,
                           uint layer,
-                          int  x1,
-                          int  y1,
-                          int  x2,
-                          int  y2);
+                          int x1,
+                          int y1,
+                          int x2,
+                          int y2);
   Ath__box* addCornerPinBox(uint netId,
                             uint type,
                             uint layer,
-                            int  x1,
-                            int  y1,
-                            int  x2,
-                            int  y2);
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2);
   Ath__box* addCornerObsBox(uint netId,
                             uint type,
                             uint layer,
-                            int  x1,
-                            int  y1,
-                            int  x2,
-                            int  y2);
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2);
   Ath__box* addStraightPinBox(uint netId,
                               uint dir,
                               uint layer,
-                              int  x1,
-                              int  y1,
-                              int  x2,
-                              int  y2);
+                              int x1,
+                              int y1,
+                              int x2,
+                              int y2);
   ~Ath__qPinTable();
-  Ath__qPin* addPin(Ath__qPin*          next,
-                    uint                netId,
-                    uint                ioNetNameId,
-                    Ath__connWord       w,
+  Ath__qPin* addPin(Ath__qPin* next,
+                    uint netId,
+                    uint ioNetNameId,
+                    Ath__connWord w,
                     AthPool<Ath__qPin>* pool);
-  uint       getCnt();
+  uint getCnt();
   Ath__qPin* get(uint ii);
-  bool       startIterator();
+  bool startIterator();
   Ath__qPin* getNextSrcPin_next();
   Ath__qPin* getNextSrcPin_thru();
   Ath__qPin* getNextSrcPin_corner();
@@ -326,9 +326,7 @@ class Ath__qBus
 
  public:
   Ath__qBus(uint n);
-  void          addConn(Ath__p2pConn* conn);
-  uint          getCnt();
+  void addConn(Ath__p2pConn* conn);
+  uint getCnt();
   Ath__p2pConn* get(uint ii);
 };
-
-

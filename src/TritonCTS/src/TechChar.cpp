@@ -45,7 +45,7 @@
 #include "sta/Units.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
-#include "resizer/Resizer.hh"
+#include "rsz/Resizer.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -592,6 +592,9 @@ void TechChar::initCharacterization()
       _logger->error(CTS, 76, "No Liberty cell found for {}.", _options->getSinkBuffer());
     } else {
       sta::LibertyLibrary* staLib = libertySinkCell->libertyLibrary();
+      sta::LibertyPort *input, *output;
+      libertySinkCell->bufferPorts(input, output);
+      _options->setSinkBufferInputCap(input->capacitance());
       maxCapExist = false;
       maxSlewExist = false;
       getBufferMaxSlewMaxCap(staLib, libertySinkCell, maxSlew, maxSlewExist, maxCap, maxCapExist, true);

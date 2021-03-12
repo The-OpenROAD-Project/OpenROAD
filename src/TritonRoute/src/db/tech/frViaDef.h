@@ -33,12 +33,13 @@
 #include <memory>
 #include "frBaseTypes.h"
 #include "db/obj/frShape.h"
+#include "utility/Logger.h"
 
 namespace fr{
   class frLef58CutClass {
   public:
     // constructors
-    frLef58CutClass(): name(""), viaWidth(0), viaLength(0), numCut(1) {}
+    frLef58CutClass(utl::Logger* loggerIn = nullptr): name(""), viaWidth(0), viaLength(0), numCut(1), logger(loggerIn) {}
     // getters
     void getName(std::string &in) const {
       in = name;
@@ -71,20 +72,29 @@ namespace fr{
     void setNumCut(frUInt4 in) {
       numCut = in;
     }
+    void report()
+    {
+      if(logger == nullptr)
+        return;
+      logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}", name, viaWidth, viaLength, numCut);
+    }
   protected:
     std::string name;
     frCoord  viaWidth;
     frCoord  viaLength;
     frUInt4  numCut; // this value is not equal to #multi cuts, only used for calculating resistance, currently ignored in rule checking process
+    utl::Logger* logger;
   };
 
 
   class frViaDef {
   public:
     // constructors
-    frViaDef(): name(), isDefault(false), layer1Figs(), layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false) {}
+    frViaDef(): name(), isDefault(false), layer1Figs(), layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false),
+                layer1ShapeBox(), layer2ShapeBox(), cutShapeBox(){}
     frViaDef(const std::string &nameIn): name(nameIn), isDefault(false), layer1Figs(),
-                                     layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false) {}
+                                     layer2Figs(), cutFigs(), cutClass(nullptr), cutClassIdx(-1), addedByRouter(false),
+                                     layer1ShapeBox(), layer2ShapeBox(), cutShapeBox(){}
     // getters
     void getName(std::string &nameIn) const {
       nameIn = name;
@@ -148,13 +158,22 @@ namespace fr{
     }
     // setters
     void addLayer1Fig(std::unique_ptr<frShape> figIn) {
-      layer1Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer1ShapeBox.merge(box);
+        layer1Figs.push_back(std::move(figIn));
     }
     void addLayer2Fig(std::unique_ptr<frShape> figIn) {
-      layer2Figs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        layer2ShapeBox.merge(box);
+        layer2Figs.push_back(std::move(figIn));
     }
     void addCutFig(std::unique_ptr<frShape> figIn) {
-      cutFigs.push_back(std::move(figIn));
+        frBox box;
+        figIn->getBBox(box);
+        cutShapeBox.merge(box);
+        cutFigs.push_back(std::move(figIn));
     }
     void setDefault(bool isDefaultIn) {
       isDefault = isDefaultIn;
@@ -168,6 +187,15 @@ namespace fr{
     void setAddedByRouter(bool in) {
       addedByRouter = in;
     }
+    const frBox& getLayer1ShapeBox(){
+        return layer1ShapeBox;
+    }
+    const frBox& getLayer2ShapeBox(){
+        return layer2ShapeBox;
+    }
+    const frBox& getCutShapeBox(){
+        return cutShapeBox;
+    }
   protected:
     std::string                              name;
     bool                                     isDefault;
@@ -177,6 +205,10 @@ namespace fr{
     frLef58CutClass*                         cutClass;
     int                                      cutClassIdx;
     bool                                     addedByRouter;
+    
+    frBox                                    layer1ShapeBox;
+    frBox                                    layer2ShapeBox;
+    frBox                                    cutShapeBox;
   };
 }
 #endif

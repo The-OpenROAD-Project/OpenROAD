@@ -30,15 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definBlockage.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "db.h"
 #include "dbShape.h"
-#include "definBlockage.h"
 #include "definPolygon.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -58,18 +58,19 @@ void definBlockage::init()
 
 void definBlockage::blockageRoutingBegin(const char* layer)
 {
-  _layer               = _tech->findLayer(layer);
-  _inst                = NULL;
-  _slots               = false;
-  _fills               = false;
-  _pushdown            = false;
-  _has_min_spacing     = false;
+  _layer = _tech->findLayer(layer);
+  _inst = NULL;
+  _slots = false;
+  _fills = false;
+  _pushdown = false;
+  _has_min_spacing = false;
   _has_effective_width = false;
-  _min_spacing         = 0;
-  _effective_width     = 0;
+  _min_spacing = 0;
+  _effective_width = 0;
 
   if (_layer == NULL) {
-    _logger->warn(utl::ODB, 88,  "error: undefined layer ({}) referenced", layer);
+    _logger->warn(
+        utl::ODB, 88, "error: undefined layer ({}) referenced", layer);
     ++_errors;
   }
 }
@@ -79,7 +80,8 @@ void definBlockage::blockageRoutingComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    _logger->warn(utl::ODB, 89,  "error: undefined component ({}) referenced", comp);
+    _logger->warn(
+        utl::ODB, 89, "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -102,13 +104,13 @@ void definBlockage::blockageRoutingPushdown()
 void definBlockage::blockageRoutingMinSpacing(int spacing)
 {
   _has_min_spacing = true;
-  _min_spacing     = spacing;
+  _min_spacing = spacing;
 }
 
 void definBlockage::blockageRoutingEffectiveWidth(int width)
 {
   _has_effective_width = true;
-  _effective_width     = width;
+  _effective_width = width;
 }
 
 void definBlockage::blockageRoutingRect(int x1, int y1, int x2, int y2)
@@ -144,7 +146,7 @@ void definBlockage::blockageRoutingPolygon(const std::vector<Point>& points)
   if (_layer == NULL)
     return;
 
-  definPolygon      polygon(points);
+  definPolygon polygon(points);
   std::vector<Rect> R;
   polygon.decompose(R);
 
@@ -177,12 +179,12 @@ void definBlockage::blockageRoutingEnd()
 
 void definBlockage::blockagePlacementBegin()
 {
-  _layer       = NULL;
-  _inst        = NULL;
-  _slots       = false;
-  _fills       = false;
-  _pushdown    = false;
-  _soft        = false;
+  _layer = NULL;
+  _inst = NULL;
+  _slots = false;
+  _fills = false;
+  _pushdown = false;
+  _soft = false;
   _max_density = 0.0;
 }
 
@@ -191,7 +193,8 @@ void definBlockage::blockagePlacementComponent(const char* comp)
   _inst = _block->findInst(comp);
 
   if (_inst == NULL) {
-    _logger->warn(utl::ODB, 90,  "error: undefined component ({}) referenced", comp);
+    _logger->warn(
+        utl::ODB, 90, "error: undefined component ({}) referenced", comp);
     ++_errors;
   }
 }
@@ -211,17 +214,20 @@ void definBlockage::blockagePlacementMaxDensity(double max_density)
   if (max_density >= 0 && max_density <= 100) {
     _max_density = max_density;
   } else {
-    _logger->warn(utl::ODB, 91, 
-"warning: Blockage max density {} not in [0, 100] will be ignored",max_density);
+    _logger->warn(
+        utl::ODB,
+        91,
+        "warning: Blockage max density {} not in [0, 100] will be ignored",
+        max_density);
   }
 }
 
 void definBlockage::blockagePlacementRect(int x1, int y1, int x2, int y2)
 {
-  x1            = dbdist(x1);
-  y1            = dbdist(y1);
-  x2            = dbdist(x2);
-  y2            = dbdist(y2);
+  x1 = dbdist(x1);
+  y1 = dbdist(y1);
+  x2 = dbdist(x2);
+  y2 = dbdist(y2);
   dbBlockage* b = dbBlockage::create(_block, x1, y1, x2, y2, _inst);
 
   if (_pushdown) {

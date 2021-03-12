@@ -34,7 +34,7 @@
 
 namespace odb {
 
-template<typename T>
+template <typename T>
 inline uint flagsToUInt(T* obj)
 {
   // Safe type punning
