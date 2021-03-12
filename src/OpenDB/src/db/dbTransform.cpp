@@ -148,7 +148,7 @@ dbDiff& operator<<(dbDiff& diff, const dbTransform& t)
 //
 void dbTransform::invert(dbTransform& result) const
 {
-  Point               offset(-_offset.x(), -_offset.y());
+  Point offset(-_offset.x(), -_offset.y());
   dbOrientType::Value orient;
 
   switch (_orient) {
@@ -173,7 +173,7 @@ void dbTransform::invert(dbTransform& result) const
 
     case dbOrientType::MY:
       offset.x() = -offset.x();
-      orient     = dbOrientType::MY;
+      orient = dbOrientType::MY;
       break;
 
     case dbOrientType::MYR90:
@@ -184,7 +184,7 @@ void dbTransform::invert(dbTransform& result) const
 
     case dbOrientType::MX:
       offset.y() = -offset.y();
-      orient     = dbOrientType::MX;
+      orient = dbOrientType::MX;
       break;
 
     case dbOrientType::MXR90:

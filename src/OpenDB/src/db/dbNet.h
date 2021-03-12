@@ -35,8 +35,8 @@
 #include "dbCore.h"
 #include "dbId.h"
 #include "dbTypes.h"
-#include "odb.h"
 #include "dbVector.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -56,12 +56,12 @@ class dbDiff;
 
 struct _dbNetFlags
 {
-  dbSigType::Value  _sig_type : 4;
+  dbSigType::Value _sig_type : 4;
   dbWireType::Value _wire_type : 4;
-  uint              _special : 1;
-  uint              _wild_connect : 1;
-  uint              _wire_ordered : 1;
-  uint              _buffered : 1;
+  uint _special : 1;
+  uint _wild_connect : 1;
+  uint _wire_ordered : 1;
+  uint _buffered : 1;
   uint _disconnected : 1;  // this flag is only valid if wire_ordered == true
   uint _spef : 1;
   uint _select : 1;
@@ -77,8 +77,8 @@ struct _dbNetFlags
   uint _size_only : 1;
   uint _fixed_bump : 1;
   dbSourceType::Value _source : 4;
-  uint                _rc_disconnected : 1;
-  uint                _block_rule : 1;
+  uint _rc_disconnected : 1;
+  uint _block_rule : 1;
 };
 
 class _dbNet : public _dbObject
@@ -97,7 +97,7 @@ class _dbNet : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbNetFlags _flags;
-  char*       _name;
+  char* _name;
   union
   {
     float _gndc_calibration_factor;
@@ -109,20 +109,20 @@ class _dbNet : public _dbObject
     float _dbCC;
     float _CcMatchRatio;
   };
-  dbId<_dbNet>                _next_entry;
-  dbId<_dbITerm>              _iterms;
-  dbId<_dbBTerm>              _bterms;
-  dbId<_dbWire>               _wire;
-  dbId<_dbWire>               _global_wire;
-  dbId<_dbSWire>              _swires;
-  dbId<_dbCapNode>            _cap_nodes;
-  dbId<_dbRSeg>               _r_segs;
+  dbId<_dbNet> _next_entry;
+  dbId<_dbITerm> _iterms;
+  dbId<_dbBTerm> _bterms;
+  dbId<_dbWire> _wire;
+  dbId<_dbWire> _global_wire;
+  dbId<_dbSWire> _swires;
+  dbId<_dbCapNode> _cap_nodes;
+  dbId<_dbRSeg> _r_segs;
   dbId<_dbTechNonDefaultRule> _non_default_rule;
-  dbVector<dbId<_dbGroup>>    _groups;
-  int                         _weight;
-  int                         _xtalk;
-  float                       _ccAdjustFactor;
-  uint                        _ccAdjustOrder;
+  dbVector<dbId<_dbGroup>> _groups;
+  int _weight;
+  int _xtalk;
+  float _ccAdjustFactor;
+  uint _ccAdjustOrder;
   // NON PERSISTANT-MEMBERS
   int _drivingIterm;
 

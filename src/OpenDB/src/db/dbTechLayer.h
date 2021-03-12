@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
@@ -39,8 +39,8 @@
 #include "dbTypes.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -68,72 +68,72 @@ class _dbTechLayerAntennaRule;
 
 struct dbTechLayerFlags
 {
-  dbTechLayerType::Value        _type : 4;
-  dbTechLayerDir::Value         _direction : 4;
-  dbTechLayerMinStepType::Value _minstep_type : 2;
-  uint                          _has_max_width : 1;
-  uint                          _has_thickness : 1;
-  uint                          _has_area : 1;
-  uint                          _has_protrusion : 1;
-  uint                          _has_alias : 1;
-  uint                          _has_xy_pitch : 1;
-  uint                          _has_xy_offset : 1;
-  bool                          _rect_only : 1;
-  bool                          _right_way_on_grid_only : 1;
-  bool                          _right_way_on_grid_only_check_mask : 1;
-  bool                          _rect_only_except_non_core_pins : 1;
-  uint                          _lef58_type : 3;
-  uint                          _spare_bits : 8;
+  dbTechLayerType::Value type_ : 4;
+  dbTechLayerDir::Value direction_ : 4;
+  dbTechLayerMinStepType::Value minstep_type_ : 2;
+  uint has_max_width_ : 1;
+  uint has_thickness_ : 1;
+  uint has_area_ : 1;
+  uint has_protrusion_ : 1;
+  uint has_alias_ : 1;
+  uint has_xy_pitch_ : 1;
+  uint has_xy_offset_ : 1;
+  bool rect_only_ : 1;
+  bool right_way_on_grid_only_ : 1;
+  bool right_way_on_grid_only_check_mask_ : 1;
+  bool rect_only_except_non_core_pins_ : 1;
+  uint lef58_type_ : 3;
+  uint spare_bits_ : 8;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayer : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerFlags _flags;
+  dbTechLayerFlags flags_;
 
-  dbTable<_dbTechLayerCutClassRule>*    _cut_class_rules_tbl;
-  dbHashTable<_dbTechLayerCutClassRule> _cut_class_rules_hash;
+  dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
+  dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
 
-  dbTable<_dbTechLayerSpacingEolRule>* _spacing_eol_rules_tbl;
+  dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingRule>* _cut_spacing_rules_tbl;
+  dbTable<_dbTechLayerCutSpacingRule>* cut_spacing_rules_tbl_;
 
-  dbTable<_dbTechLayerMinStepRule>* _minstep_rules_tbl;
+  dbTable<_dbTechLayerMinStepRule>* minstep_rules_tbl_;
 
-  dbTable<_dbTechLayerCornerSpacingRule>* _corner_spacing_rules_tbl;
+  dbTable<_dbTechLayerCornerSpacingRule>* corner_spacing_rules_tbl_;
 
-  dbTable<_dbTechLayerSpacingTablePrlRule>* _spacing_table_prl_rules_tbl;
+  dbTable<_dbTechLayerSpacingTablePrlRule>* spacing_table_prl_rules_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingTableOrthRule>* _cut_spacing_table_orth_tbl;
+  dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
 
-  dbTable<_dbTechLayerCutSpacingTableDefRule>* _cut_spacing_table_def_tbl;
+  dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
 
-  // User Code Begin fields
+  // User Code Begin Fields
 
-  uint   _pitch_x;
-  uint   _pitch_y;
-  uint   _offset_x;
-  uint   _offset_y;
-  uint   _width;
-  uint   _spacing;
+  uint _pitch_x;
+  uint _pitch_y;
+  uint _offset_x;
+  uint _offset_y;
+  uint _width;
+  uint _spacing;
   double _resistance;
   double _capacitance;
   double _edge_capacitance;
-  uint   _wire_extension;
-  uint   _number;
-  uint   _rlevel;
+  uint _wire_extension;
+  uint _number;
+  uint _rlevel;
   double _area;
-  uint   _thickness;
-  uint   _max_width;
-  int    _min_width;
-  int    _min_step;
-  int    _min_step_max_length;
-  int    _min_step_max_edges;
+  uint _thickness;
+  uint _max_width;
+  int _min_width;
+  int _min_step;
+  int _min_step_max_length;
+  int _min_step_max_edges;
 
   struct
   {  // Protrusion
@@ -141,43 +141,43 @@ class _dbTechLayer : public _dbObject
     uint _length;
     uint _from_width;
   } _pt;
-  char*                             _name;
-  char*                             _alias;
-  dbId<_dbTechLayer>                _upper;
-  dbId<_dbTechLayer>                _lower;
+  char* _name;
+  char* _alias;
+  dbId<_dbTechLayer> _upper;
+  dbId<_dbTechLayer> _lower;
   dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
 
-  dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
+  dbTable<_dbTechMinCutRule>* _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule>* _min_enc_rules_tbl;
   dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
-  dbVector<uint>                     _v55sp_length_idx;
-  dbVector<uint>                     _v55sp_width_idx;
-  dbMatrix<uint>                     _v55sp_spacing;
+  dbVector<uint> _v55sp_length_idx;
+  dbVector<uint> _v55sp_width_idx;
+  dbMatrix<uint> _v55sp_spacing;
 
   dbVector<uint> _two_widths_sp_idx;
-  dbVector<int>  _two_widths_sp_prl;
+  dbVector<int> _two_widths_sp_prl;
   dbMatrix<uint> _two_widths_sp_spacing;
 
   dbId<_dbTechLayerAntennaRule> _oxide1;
   dbId<_dbTechLayerAntennaRule> _oxide2;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
   ~_dbTechLayer();
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

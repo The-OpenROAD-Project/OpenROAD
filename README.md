@@ -226,7 +226,9 @@ utilization as show below:
           core_height + core_space_bottom + core_space_top )
 ```
 
+The `initialize_floorplan` command removes existing tracks.
 Use the `make_tracks` command to add routing tracks to a floorplan.
+
 ```
 make_tracks [layer]
             [-x_pitch x_pitch]
@@ -247,9 +249,13 @@ auto_place_pins pin_layer
 
 #### Pin placement
 
-Place pins to on-track locations at the boundaries of the 
-core while optimizing nets wirelength. Pin placement also 
+Place pins on the boundary of the die on the track grid to
+minimize net wire lengths. Pin placement also 
 creates a metal shape for each pin using min-area rules.
+
+For designs with unplaced cells, the net wire length is
+computed considering the center of the die area as the
+unplaced cells' position.
 
 Use the following command to perform pin placement:
 ```
@@ -259,6 +265,7 @@ place_pins [-hor_layers h_layers]
            [-exclude interval]
            [-random]
            [-group_pins pins]
+           [-corner_avoidance length]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
@@ -270,6 +277,7 @@ where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary
+- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -467,7 +475,7 @@ remove_buffers
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
 
 ```
-estimate_parasitics -placement
+estimate_parasitics -placement|-global_routing
 ```
 
 Estimate RC parasitics based on placed component pin locations. If
@@ -477,7 +485,10 @@ wire. Use the `set_units` command to check units or `set_cmd_units` to
 change units. They should represent "average" routing layer resistance
 and capacitance. If the set_wire_rc command is not called before
 resizing, the default_wireload model specified in the first liberty
-file or with the SDC set_wire_load command is used to make parasitics.
+file or with the SDC set_wire_load command is used to make parasitics.  
+
+After the `global_route` command has been called the global routing topology
+and layers can be used to estimate parasitics  with the `-global_routing` flag.
 
 ```
 set_dont_use lib_cells

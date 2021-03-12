@@ -68,13 +68,13 @@ class _dbITerm : public _dbObject
     FLAGS
   };
 
-  dbITermFlags   _flags;
-  uint           _ext_id;
-  dbId<_dbNet>   _net;
-  dbId<_dbInst>  _inst;
+  dbITermFlags _flags;
+  uint _ext_id;
+  dbId<_dbNet> _net;
+  dbId<_dbInst> _inst;
   dbId<_dbITerm> _next_net_iterm;
   dbId<_dbITerm> _prev_net_iterm;
-  uint32_t       _sta_vertex_id;  // not saved
+  uint32_t _sta_vertex_id;  // not saved
 
   _dbITerm(_dbDatabase*);
   _dbITerm(_dbDatabase*, const _dbITerm& i);
@@ -86,20 +86,20 @@ class _dbITerm : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   _dbMTerm* getMTerm() const;
-  _dbInst*  getInst() const;
+  _dbInst* getInst() const;
 };
 
 inline _dbITerm::_dbITerm(_dbDatabase*)
 {
-  _flags._mterm_idx  = 0;
+  _flags._mterm_idx = 0;
   _flags._spare_bits = 0;
-  _flags._clocked    = 0;
-  _flags._mark       = 0;
-  _flags._spef       = 0;
-  _flags._special    = 0;
-  _flags._connected  = 0;
-  _ext_id            = 0;
-  _sta_vertex_id     = 0;
+  _flags._clocked = 0;
+  _flags._mark = 0;
+  _flags._spef = 0;
+  _flags._special = 0;
+  _flags._connected = 0;
+  _ext_id = 0;
+  _sta_vertex_id = 0;
 }
 
 inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)

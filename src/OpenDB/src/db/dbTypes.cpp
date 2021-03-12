@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbTypes.h"
+
 #include <ctype.h>
 #include <string.h>
 
 #include "dbId.h"
-#include "dbTypes.h"
 
 namespace odb {
 
@@ -1502,31 +1503,6 @@ const char* dbSourceType::getString() const
   }
 
   return value;
-}
-
-
-const char* TechMinCutRule::getString(TechMinCutRule::_RuleType v)
-{
-  const char* s = "";
-  switch (v) {
-    case TechMinCutRule::NONE:
-      s = "NONE";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT:
-      s = "MINIMUM_CUT";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT_ABOVE:
-      s = "MINIMUM_CUT_ABOVE";
-      break;
-
-    case TechMinCutRule::MINIMUM_CUT_BELOW:
-      s = "MINIMUM_CUT_BELOW";
-      break;
-  }
-
-  return s;
 }
 
 //

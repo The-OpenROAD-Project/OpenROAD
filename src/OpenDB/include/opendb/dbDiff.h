@@ -32,13 +32,14 @@
 
 #pragma once
 
-#include <vector>
 #include <string>
-#include "odb.h"
+#include <vector>
+
 #include "dbId.h"
 #include "dbObject.h"
 #include "dbTypes.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -52,12 +53,12 @@ class _dbBlock;
 
 class dbDiff : public dbObject
 {
-  int                      _indent_level;
-  FILE*                    _f;
-  bool                     _deep_diff;
+  int _indent_level;
+  FILE* _f;
+  bool _deep_diff;
   std::vector<std::string> _headers;
-  int                      _indent_per_level;
-  bool                     _has_differences;
+  int _indent_per_level;
+  bool _has_differences;
 
   void write_headers();
   void indent();
@@ -65,7 +66,7 @@ class dbDiff : public dbObject
  public:
   enum Side
   {
-    LEFT  = '<',
+    LEFT = '<',
     RIGHT = '>'
   };
 
@@ -79,12 +80,12 @@ class dbDiff : public dbObject
   void begin(const char side, const char* field, const char* objname, uint oid);
   void begin(const char* field,
              const char* objname,
-             uint        oid,
+             uint oid,
              const char* name);
-  void begin(const char  side,
+  void begin(const char side,
              const char* field,
              const char* objname,
-             uint        oid,
+             uint oid,
              const char* name);
   void begin_object(const char* fmt, ...) ADS_FORMAT_PRINTF(2, 3);
 
@@ -128,7 +129,6 @@ class dbDiff : public dbObject
   dbDiff& operator<<(const Rect& r);
   dbDiff& operator<<(const Oct& o);
 
-
   void diff(const char* field, bool lhs, bool rhs);
   void diff(const char* field, char lhs, char rhs);
   void diff(const char* field, unsigned char lhs, unsigned char rhs);
@@ -144,38 +144,35 @@ class dbDiff : public dbObject
   void diff(const char* field, Oct lhs, Oct rhs);
 
   void diff(const char* field, const char* lhs, const char* rhs);
-  void diff(const char*         field,
+  void diff(const char* field,
             dbOrientType::Value lhs,
             dbOrientType::Value rhs);
   void diff(const char* field, dbSigType::Value lhs, dbSigType::Value rhs);
   void diff(const char* field, dbIoType::Value lhs, dbIoType::Value rhs);
-  void diff(const char*              field,
+  void diff(const char* field,
             dbPlacementStatus::Value lhs,
             dbPlacementStatus::Value rhs);
-  void diff(const char*         field,
+  void diff(const char* field,
             dbMasterType::Value lhs,
             dbMasterType::Value rhs);
-  void diff(const char*            field,
+  void diff(const char* field,
             dbTechLayerType::Value lhs,
             dbTechLayerType::Value rhs);
-  void diff(const char*           field,
+  void diff(const char* field,
             dbTechLayerDir::Value lhs,
             dbTechLayerDir::Value rhs);
   void diff(const char* field, dbRowDir::Value lhs, dbRowDir::Value rhs);
   void diff(const char* field, dbBoxOwner::Value lhs, dbBoxOwner::Value rhs);
   void diff(const char* field, dbWireType::Value lhs, dbWireType::Value rhs);
-  void diff(const char*            field,
+  void diff(const char* field,
             dbWireShapeType::Value lhs,
             dbWireShapeType::Value rhs);
   void diff(const char* field, dbSiteClass::Value lhs, dbSiteClass::Value rhs);
   void diff(const char* field, dbOnOffType::Value lhs, dbOnOffType::Value rhs);
-  void diff(const char*            field,
+  void diff(const char* field,
             dbClMeasureType::Value lhs,
             dbClMeasureType::Value rhs);
   void diff(const char* field, dbDirection::Value lhs, dbDirection::Value rhs);
-  void diff(const char*               field,
-            TechMinCutRule::_RuleType lhs,
-            TechMinCutRule::_RuleType rhs);
 
   void out(char side, const char* field, bool value);
   void out(char side, const char* field, char value);
@@ -206,7 +203,6 @@ class dbDiff : public dbObject
   void out(char side, const char* field, dbOnOffType::Value value);
   void out(char side, const char* field, dbClMeasureType::Value value);
   void out(char side, const char* field, dbDirection::Value value);
-  void out(char side, const char* field, TechMinCutRule::_RuleType value);
 };
 
 #define DIFF_BEGIN \
@@ -331,10 +327,10 @@ template <class T>
 class dbDiffDifferences
 {
  public:
-  void operator()(dbDiff&     diff,
+  void operator()(dbDiff& diff,
                   const char* field,
-                  const T*    lhs,
-                  const T*    rhs) const
+                  const T* lhs,
+                  const T* rhs) const
   {
     lhs->differences(diff, field, rhs);
   }
@@ -357,77 +353,75 @@ class dbArrayTable;
 class dbIterator;
 
 template <class T>
-void diff_object(dbDiff&     diff,
+void diff_object(dbDiff& diff,
                  const char* field,
-                 dbId<T>     lhs,
-                 dbId<T>     rhs,
+                 dbId<T> lhs,
+                 dbId<T> rhs,
                  dbTable<T>* lhs_tbl,
                  dbTable<T>* rhs_tbl);
 
 template <class T>
-void diff_object(dbDiff&          diff,
-                 const char*      field,
-                 dbId<T>          lhs,
-                 dbId<T>          rhs,
+void diff_object(dbDiff& diff,
+                 const char* field,
+                 dbId<T> lhs,
+                 dbId<T> rhs,
                  dbArrayTable<T>* lhs_tbl,
                  dbArrayTable<T>* rhs_tbl);
 
 template <class T>
-void diff_set(dbDiff&     diff,
+void diff_set(dbDiff& diff,
               const char* field,
-              dbId<T>     lhs,
-              dbId<T>     rhs,
-              dbObject*   lhs_owner,
-              dbObject*   rhs_owner,
+              dbId<T> lhs,
+              dbId<T> rhs,
+              dbObject* lhs_owner,
+              dbObject* rhs_owner,
               dbIterator* lhs_itr,
               dbIterator* rhs_itr);
 
 template <class T>
-void set_symmetric_diff(dbDiff&          diff,
-                        const char*      field,
+void set_symmetric_diff(dbDiff& diff,
+                        const char* field,
                         std::vector<T*>& lhs,
                         std::vector<T*>& rhs);
 
 template <class T>
-void set_symmetric_diff(dbDiff&               diff,
-                        const char*           field,
+void set_symmetric_diff(dbDiff& diff,
+                        const char* field,
                         const std::vector<T>& lhs,
                         const std::vector<T>& rhs);
 
 template <class T>
-void set_symmetric_diff(dbDiff&     diff,
+void set_symmetric_diff(dbDiff& diff,
                         const char* field,
                         dbTable<T>& lhs,
                         dbTable<T>& rhs);
 
 template <class T>
-void set_symmetric_diff(dbDiff&          diff,
-                        const char*      field,
+void set_symmetric_diff(dbDiff& diff,
+                        const char* field,
                         dbArrayTable<T>& lhs,
                         dbArrayTable<T>& rhs);
 
 template <class T>
-void diff_out_object(dbDiff&     diff,
-                     char        side,
+void diff_out_object(dbDiff& diff,
+                     char side,
                      const char* field,
-                     dbId<T>     id,
+                     dbId<T> id,
                      dbTable<T>* tbl);
 
 template <class T>
-void diff_out_object(dbDiff&          diff,
-                     char             side,
-                     const char*      field,
-                     dbId<T>          id,
+void diff_out_object(dbDiff& diff,
+                     char side,
+                     const char* field,
+                     dbId<T> id,
                      dbArrayTable<T>* tbl);
 
 template <class T>
-void diff_out_set(dbDiff&     diff,
-                  char        side,
+void diff_out_set(dbDiff& diff,
+                  char side,
                   const char* field,
-                  dbId<T>     id,
-                  dbObject*   owner,
+                  dbId<T> id,
+                  dbObject* owner,
                   dbIterator* itr);
 
 }  // namespace odb
-
-

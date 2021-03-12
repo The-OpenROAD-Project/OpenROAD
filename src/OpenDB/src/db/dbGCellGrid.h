@@ -30,18 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
+// User Code Begin Includes
 #include <map>
 
 #include "db.h"
 #include "dbVector.h"
-// User Code End includes
+// User Code End Includes
 
 namespace odb {
 
@@ -56,53 +56,53 @@ class _dbTechLayer;
 
 struct dbGCellGridFlags
 {
-  bool _x_grid_valid : 1;
-  bool _y_grid_valid : 1;
-  uint _spare_bits : 30;
+  bool x_grid_valid_ : 1;
+  bool y_grid_valid_ : 1;
+  uint spare_bits_ : 30;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbGCellGrid : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbGCellGridFlags _flags;
-  dbVector<int>    _x_origin;
-  dbVector<int>    _x_count;
-  dbVector<int>    _x_step;
-  dbVector<int>    _y_origin;
-  dbVector<int>    _y_count;
-  dbVector<int>    _y_step;
-  dbVector<int>    _x_grid;
-  dbVector<int>    _y_grid;
+  dbGCellGridFlags flags_;
+  dbVector<int> x_origin_;
+  dbVector<int> x_count_;
+  dbVector<int> x_step_;
+  dbVector<int> y_origin_;
+  dbVector<int> y_count_;
+  dbVector<int> y_step_;
+  dbVector<int> x_grid_;
+  dbVector<int> y_grid_;
   std::map<dbId<_dbTechLayer>,
            std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
-      _congestion_map;
+      congestion_map_;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
   ~_dbGCellGrid();
   bool operator==(const _dbGCellGrid& rhs) const;
   bool operator!=(const _dbGCellGrid& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGCellGrid& rhs) const;
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
+  // User Code Begin Methods
   bool gcellExists(dbId<_dbTechLayer> lid, uint x_idx, uint y_idx) const;
-  // User Code End methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);
-// User Code Begin general
+// User Code Begin General
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj);
 dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj);
-// User Code End general
+// User Code End General
 }  // namespace odb
-// Generator Code End 1
+// Generator Code End Header

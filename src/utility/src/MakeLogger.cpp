@@ -39,7 +39,7 @@
 #include "utility/Logger.h"
 
 extern "C" {
-extern int Logger_Init(Tcl_Interp *interp);
+extern int Utility_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -57,7 +57,7 @@ initLogger(Logger *logger,
            Tcl_Interp *tcl_interp)
 {
   // Define swig TCL commands.
-  Logger_Init(tcl_interp);
+  Utility_Init(tcl_interp);
 }
 
 } // namespace

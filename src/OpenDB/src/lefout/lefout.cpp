@@ -44,12 +44,12 @@ using namespace odb;
 
 void lefout::writeBoxes(void* boxes, const char* indent)
 {
-  dbSet<dbBox>*          geoms = (dbSet<dbBox>*) boxes;
+  dbSet<dbBox>* geoms = (dbSet<dbBox>*) boxes;
   dbSet<dbBox>::iterator bitr;
-  dbTechLayer*           cur_layer = NULL;
+  dbTechLayer* cur_layer = NULL;
 
   for (bitr = geoms->begin(); bitr != geoms->end(); ++bitr) {
-    dbBox*       box   = *bitr;
+    dbBox* box = *bitr;
     dbTechLayer* layer = box->getTechLayer();
 
     if (box->isVia()) {
@@ -166,7 +166,7 @@ void lefout::writeTech(dbTech* tech)
             "MANUFACTURINGGRID %.4g ;\n",
             lefdist(tech->getManufacturingGrid()));
 
-  dbSet<dbTechLayer>           layers = tech->getLayers();
+  dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator litr;
 
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
@@ -175,7 +175,7 @@ void lefout::writeTech(dbTech* tech)
   }
 
   // VIA's not using generate rule and not default
-  dbSet<dbTechVia>           vias = tech->getVias();
+  dbSet<dbTechVia> vias = tech->getVias();
   dbSet<dbTechVia>::iterator vitr;
 
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
@@ -186,7 +186,7 @@ void lefout::writeTech(dbTech* tech)
         writeVia(via);
   }
 
-  dbSet<dbTechViaRule>           via_rules = tech->getViaRules();
+  dbSet<dbTechViaRule> via_rules = tech->getViaRules();
   dbSet<dbTechViaRule>::iterator vritr;
 
   for (vritr = via_rules.begin(); vritr != via_rules.end(); ++vritr) {
@@ -227,7 +227,7 @@ void lefout::writeTech(dbTech* tech)
     fprintf(_out, "\nEND SPACING\n");
   }
 
-  dbSet<dbTechNonDefaultRule>           rules = tech->getNonDefaultRules();
+  dbSet<dbTechNonDefaultRule> rules = tech->getNonDefaultRules();
   dbSet<dbTechNonDefaultRule>::iterator ritr;
 
   for (ritr = rules.begin(); ritr != rules.end(); ++ritr) {
@@ -276,7 +276,7 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 
   std::vector<dbTechVia*>::iterator uvitr;
   for (uvitr = use_vias.begin(); uvitr != use_vias.end(); ++uvitr) {
-    dbTechVia*  via   = *uvitr;
+    dbTechVia* via = *uvitr;
     std::string vname = via->getName();
     fprintf(_out, "USEVIA %s ;\n", vname.c_str());
   }
@@ -286,17 +286,17 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 
   std::vector<dbTechViaGenerateRule*>::iterator uvritr;
   for (uvritr = use_rules.begin(); uvritr != use_rules.end(); ++uvritr) {
-    dbTechViaGenerateRule* rule  = *uvritr;
-    std::string            rname = rule->getName();
+    dbTechViaGenerateRule* rule = *uvritr;
+    std::string rname = rule->getName();
     fprintf(_out, "USEVIARULE %s ;\n", rname.c_str());
   }
 
-  dbSet<dbTechLayer>           layers = tech->getLayers();
+  dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator layitr;
 
   for (layitr = layers.begin(); layitr != layers.end(); ++layitr) {
     dbTechLayer* layer = *layitr;
-    int          count;
+    int count;
 
     if (rule->getMinCuts(layer, count)) {
       std::string lname = layer->getName();
@@ -310,7 +310,7 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 void lefout::writeLayerRule(dbTechLayerRule* rule)
 {
   dbTechLayer* layer = rule->getLayer();
-  std::string  name;
+  std::string name;
   if (_use_alias && layer->hasAlias())
     name = layer->getAlias();
   else
@@ -348,8 +348,8 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
-    dbTechLayer*        layer   = layrule->getLayer();
-    std::string         lname   = layer->getName();
+    dbTechLayer* layer = layrule->getLayer();
+    std::string lname = layer->getName();
     fprintf(_out, "    LAYER %s ;\n", lname.c_str());
 
     if (layrule->getDirection() == dbTechLayerDir::VERTICAL)
@@ -365,7 +365,7 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
   }
 
   for (idx = 0; idx < rule->getViaCount(); ++idx) {
-    dbTechVia*  via   = rule->getVia(idx);
+    dbTechVia* via = rule->getVia(idx);
     std::string vname = via->getName();
     fprintf(_out, "    VIA %s ;\n", vname.c_str());
   }
@@ -386,8 +386,8 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
-    dbTechLayer*        layer   = layrule->getLayer();
-    std::string         lname   = layer->getName();
+    dbTechLayer* layer = layrule->getLayer();
+    std::string lname = layer->getName();
     fprintf(_out, "    LAYER %s ;\n", lname.c_str());
 
     if (layrule->getDirection() == dbTechLayerDir::VERTICAL)
@@ -517,10 +517,10 @@ void lefout::writeLayer(dbTechLayer* layer)
             lefdist(layer->getProtrusionLength()),
             lefdist(layer->getProtrusionFromWidth()));
 
-  dbSet<dbTechLayerSpacingRule>           v54_rules;
+  dbSet<dbTechLayerSpacingRule> v54_rules;
   dbSet<dbTechLayerSpacingRule>::iterator ritr;
 
-  std::vector<dbTechV55InfluenceEntry*>                 inf_rules;
+  std::vector<dbTechV55InfluenceEntry*> inf_rules;
   std::vector<dbTechV55InfluenceEntry*>::const_iterator infitr;
 
   if (layer->getV54SpacingRules(v54_rules)) {
@@ -538,14 +538,14 @@ void lefout::writeLayer(dbTechLayer* layer)
     }
   }
 
-  std::vector<dbTechMinCutRule*>                 cut_rules;
+  std::vector<dbTechMinCutRule*> cut_rules;
   std::vector<dbTechMinCutRule*>::const_iterator citr;
   if (layer->getMinimumCutRules(cut_rules)) {
     for (citr = cut_rules.begin(); citr != cut_rules.end(); citr++)
       (*citr)->writeLef(*this);
   }
 
-  std::vector<dbTechMinEncRule*>                 enc_rules;
+  std::vector<dbTechMinEncRule*> enc_rules;
   std::vector<dbTechMinEncRule*>::const_iterator eitr;
   if (layer->getMinEnclosureRules(enc_rules)) {
     for (eitr = enc_rules.begin(); eitr != enc_rules.end(); eitr++)
@@ -645,7 +645,7 @@ void lefout::writeVia(dbTechVia* via)
 
 void lefout::writeLib(dbLib* lib)
 {
-  dbSet<dbSite>           sites = lib->getSites();
+  dbSet<dbSite> sites = lib->getSites();
   dbSet<dbSite>::iterator site_itr;
 
   for (site_itr = sites.begin(); site_itr != sites.end(); ++site_itr) {
@@ -653,7 +653,7 @@ void lefout::writeLib(dbLib* lib)
     writeSite(site);
   }
 
-  dbSet<dbMaster>           masters = lib->getMasters();
+  dbSet<dbMaster> masters = lib->getMasters();
   dbSet<dbMaster>::iterator master_itr;
 
   for (master_itr = masters.begin(); master_itr != masters.end();
@@ -763,7 +763,7 @@ void lefout::writeMaster(dbMaster* master)
     fprintf(_out, "    SITE %s ;\n", site.c_str());
   }
 
-  dbSet<dbMTerm>           mterms = master->getMTerms();
+  dbSet<dbMTerm> mterms = master->getMTerms();
   dbSet<dbMTerm>::iterator mitr;
 
   for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
@@ -799,7 +799,7 @@ void lefout::writeMTerm(dbMTerm* mterm)
   fprintf(_out, "        USE %s ; \n", mterm->getSigType().getString());
 
   mterm->writeAntennaLef(*this);
-  dbSet<dbMPin>           pins = mterm->getMPins();
+  dbSet<dbMPin> pins = mterm->getMPins();
   dbSet<dbMPin>::iterator pitr;
 
   for (pitr = pins.begin(); pitr != pins.end(); ++pitr) {
@@ -819,10 +819,10 @@ void lefout::writeMTerm(dbMTerm* mterm)
 
 void lefout::writePropertyDefinition(dbProperty* prop)
 {
-  std::string      propName   = prop->getName();
-  dbObjectType     owner_type = prop->getPropOwner()->getObjectType();
-  dbProperty::Type prop_type  = prop->getType();
-  std::string      objectType, propType, value;
+  std::string propName = prop->getName();
+  dbObjectType owner_type = prop->getPropOwner()->getObjectType();
+  dbProperty::Type prop_type = prop->getType();
+  std::string objectType, propType, value;
   switch (owner_type) {
     case dbTechLayerObj:
       objectType = "LAYER";
@@ -878,7 +878,7 @@ void lefout::writePropertyDefinition(dbProperty* prop)
 }
 
 inline void lefout::writeObjectPropertyDefinitions(
-    dbObject*                               obj,
+    dbObject* obj,
     std::unordered_map<std::string, short>& propertiesMap)
 {
   int bitNumber;
@@ -907,7 +907,7 @@ inline void lefout::writeObjectPropertyDefinitions(
     default:
       return;
   }
-  dbSet<dbProperty>           properties = dbProperty::getProperties(obj);
+  dbSet<dbProperty> properties = dbProperty::getProperties(obj);
   dbSet<dbProperty>::iterator pitr;
   for (pitr = properties.begin(); pitr != properties.end(); ++pitr) {
     dbProperty* prop = *pitr;
@@ -921,7 +921,7 @@ inline void lefout::writeObjectPropertyDefinitions(
 void lefout::writePropertyDefinitions(dbLib* lib)
 {
   std::unordered_map<std::string, short> propertiesMap;
-  dbTech*                                tech = lib->getDb()->getTech();
+  dbTech* tech = lib->getDb()->getTech();
 
   fprintf(_out, "\nPROPERTYDEFINITIONS\n");
 

@@ -1,5 +1,3 @@
-%module replace
-
 %{
 #include "openroad/OpenRoad.hh"
 #include "replace/Replace.h"

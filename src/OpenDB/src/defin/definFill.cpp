@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definFill.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "db.h"
 #include "dbShape.h"
-#include "definFill.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -56,14 +56,13 @@ void definFill::init()
   _cur_layer = NULL;
 }
 
-void definFill::fillBegin(const char* layer,
-                          bool needs_opc,
-                          int  mask_number)
+void definFill::fillBegin(const char* layer, bool needs_opc, int mask_number)
 {
   _cur_layer = _tech->findLayer(layer);
 
   if (_cur_layer == NULL) {
-    _logger->warn(utl::ODB, 95,  "error: undefined layer ({}) referenced", layer);
+    _logger->warn(
+        utl::ODB, 95, "error: undefined layer ({}) referenced", layer);
     ++_errors;
   }
   _mask_number = mask_number;

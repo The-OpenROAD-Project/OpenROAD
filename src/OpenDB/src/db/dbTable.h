@@ -68,18 +68,18 @@ class dbTable : public dbObjectTable, public dbIterator
   // NON-PERSISTANT-DATA
   dbTablePage** _pages;  // page-table
 
-  void           resizePageTbl();
-  void           newPage();
-  void           pushQ(uint& Q, _dbFreeObject* e);
+  void resizePageTbl();
+  void newPage();
+  void pushQ(uint& Q, _dbFreeObject* e);
   _dbFreeObject* popQ(uint& Q);
-  void           unlinkQ(uint& Q, _dbFreeObject* e);
+  void unlinkQ(uint& Q, _dbFreeObject* e);
 
   dbTable(_dbDatabase* db,
-          dbObject*    owner,
+          dbObject* owner,
           dbObjectTable* (dbObject::*m)(dbObjectType),
           dbObjectType type,
-          uint         page_size  = 128,
-          uint         page_shift = 7);
+          uint page_size = 128,
+          uint page_shift = 7);
 
   // Make a copy of a table.
   // The copy is identical including the ordering of all free-lists.
@@ -108,10 +108,10 @@ class dbTable : public dbObjectTable, public dbIterator
   // Get the object of this id
   T* getPtr(dbId<T> id) const
   {
-    uint page   = (uint)id >> _page_shift;
-    uint offset = (uint)id & _page_mask;
+    uint page = (uint) id >> _page_shift;
+    uint offset = (uint) id & _page_mask;
 
-    assert(((uint)id != 0) && (page < _page_cnt));
+    assert(((uint) id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
     assert(p->_oid & DB_ALLOC_BIT);
     return p;
@@ -119,10 +119,10 @@ class dbTable : public dbObjectTable, public dbIterator
 
   bool validId(dbId<T> id) const
   {
-    uint page   = (uint)id >> _page_shift;
-    uint offset = (uint)id & _page_mask;
+    uint page = (uint) id >> _page_shift;
+    uint offset = (uint) id & _page_mask;
 
-    if (((uint)id != 0) && (page < _page_cnt)) {
+    if (((uint) id != 0) && (page < _page_cnt)) {
       T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
       return (p->_oid & DB_ALLOC_BIT) == DB_ALLOC_BIT;
     }
@@ -137,9 +137,9 @@ class dbTable : public dbObjectTable, public dbIterator
   //
   T* getFreeObj(dbId<T> id)
   {
-    uint page   = (uint)id >> _page_shift;
-    uint offset = (uint)id & _page_mask;
-    assert(((uint)id != 0) && (page < _page_cnt));
+    uint page = (uint) id >> _page_shift;
+    uint offset = (uint) id & _page_mask;
+    assert(((uint) id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
     assert((p->_oid & DB_ALLOC_BIT) == 0);
     return p;
@@ -160,16 +160,16 @@ class dbTable : public dbObjectTable, public dbIterator
   void out(dbDiff& diff, char side) const;
 
   // dbIterator interface methods
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint cur, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint cur, ...);
   dbObject* getObject(uint cur, ...);
-  void      getObjects(std::vector<T*>& objects);
+  void getObjects(std::vector<T*>& objects);
 
  private:
   void copy_pages(const dbTable<T>&);

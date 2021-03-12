@@ -64,8 +64,8 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   return true;
 }
 
-void _dbChip::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbChip::differences(dbDiff& diff,
+                          const char* field,
                           const _dbChip& rhs) const
 {
   DIFF_BEGIN
@@ -197,7 +197,7 @@ dbChip* dbChip::create(dbDatabase* db_)
     return NULL;
 
   _dbChip* chip = db->_chip_tbl->create();
-  db->_chip     = chip->getOID();
+  db->_chip = chip->getOID();
   return (dbChip*) chip;
 }
 
@@ -209,8 +209,8 @@ dbChip* dbChip::getChip(dbDatabase* db_, uint dbid_)
 
 void dbChip::destroy(dbChip* chip_)
 {
-  _dbChip*     chip = (_dbChip*) chip_;
-  _dbDatabase* db   = chip->getDatabase();
+  _dbChip* chip = (_dbChip*) chip_;
+  _dbDatabase* db = chip->getDatabase();
   dbProperty::destroyProperties(chip);
   db->_chip_tbl->destroy(chip);
   db->_chip = 0;

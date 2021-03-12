@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "odb.h"
 #include "dbTypes.h"
 #include "definBase.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -59,5 +59,3 @@ class definPinProps : public definBase
 };
 
 }  // namespace odb
-
-

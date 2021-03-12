@@ -33,11 +33,12 @@
 #pragma once
 
 #include <string.h>
+
 #include <map>
 #include <vector>
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -57,11 +58,11 @@ class definComponent : public definBase
   };
 
   typedef std::map<const char*, dbMaster*, ltstr> MasterMap;
-  typedef std::map<const char*, dbSite*, ltstr>   SiteMap;
-  std::vector<dbLib*>                             _libs;
-  MasterMap                                       _masters;
-  SiteMap                                         _sites;
-  dbInst*                                         _cur_inst;
+  typedef std::map<const char*, dbSite*, ltstr> SiteMap;
+  std::vector<dbLib*> _libs;
+  MasterMap _masters;
+  SiteMap _sites;
+  dbInst* _cur_inst;
 
  public:
   int _inst_cnt;
@@ -81,7 +82,7 @@ class definComponent : public definBase
   virtual void end();
 
   dbMaster* getMaster(const char* name);
-  dbSite*   getSite(const char* name);
+  dbSite* getSite(const char* name);
 
  public:
   definComponent();
@@ -93,5 +94,3 @@ class definComponent : public definBase
 };
 
 }  // namespace odb
-
-

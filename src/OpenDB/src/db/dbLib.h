@@ -55,21 +55,21 @@ class _dbLib : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  int                    _lef_units;
-  int                    _dbu_per_micron;  // cached value from dbTech
-  char                   _hier_delimeter;
-  char                   _left_bus_delimeter;
-  char                   _right_bus_delimeter;
-  char                   _spare;
-  char*                  _name;
+  int _lef_units;
+  int _dbu_per_micron;  // cached value from dbTech
+  char _hier_delimeter;
+  char _left_bus_delimeter;
+  char _right_bus_delimeter;
+  char _spare;
+  char* _name;
   dbHashTable<_dbMaster> _master_hash;
-  dbHashTable<_dbSite>   _site_hash;
+  dbHashTable<_dbSite> _site_hash;
 
   // NON-PERSISTANT-MEMBERS
-  dbTable<_dbMaster>*   _master_tbl;
-  dbTable<_dbSite>*     _site_tbl;
+  dbTable<_dbMaster>* _master_tbl;
+  dbTable<_dbSite>* _site_tbl;
   dbTable<_dbProperty>* _prop_tbl;
-  _dbNameCache*         _name_cache;
+  _dbNameCache* _name_cache;
 
   dbPropertyItr* _prop_itr;
 

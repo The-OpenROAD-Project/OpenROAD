@@ -43,10 +43,10 @@ if (LOAD_PARTITIONERS)
   set(PATH_PARTITIONERS ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Partitioners Folder")
 endif (LOAD_PARTITIONERS)
 
-tcl_lib(NAME      PartitionMgr
-        NAMESPACE par
-        I_FILE    src/partitionmgr.i
-        SCRIPTS   src/partitionmgr.tcl
+swig_lib(NAME      PartitionMgr
+         NAMESPACE par
+         I_FILE    src/partitionmgr.i
+         SCRIPTS   src/partitionmgr.tcl
 )
 
 target_sources(PartitionMgr

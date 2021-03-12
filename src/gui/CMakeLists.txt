@@ -13,9 +13,9 @@ if (Qt5_FOUND)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
-  tcl_lib(NAME      gui
-          NAMESPACE gui
-          I_FILE    src/gui.i
+  swig_lib(NAME      gui
+           NAMESPACE gui
+           I_FILE    src/gui.i
   )
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)

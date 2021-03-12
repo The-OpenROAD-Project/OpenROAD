@@ -40,9 +40,9 @@ namespace fr {
   class frVia: public frRef {
   public:
     // constructors
-    frVia(): viaDef_(nullptr), owner_(nullptr) {}
-    frVia(frViaDef* in): frRef(), origin_(), viaDef_(in), owner_(nullptr) {}
-    frVia(const frVia &in): frRef(in), origin_(in.origin_), viaDef_(in.viaDef_), owner_(in.owner_) {}
+    frVia(): viaDef_(nullptr), owner_(nullptr), tapered_(false) {}
+    frVia(frViaDef* in): frRef(), origin_(), viaDef_(in), owner_(nullptr), tapered_(false) {}
+    frVia(const frVia &in): frRef(in), origin_(in.origin_), viaDef_(in.viaDef_), owner_(in.owner_), tapered_(in.tapered_) {}
     frVia(const drVia &in);
     // getters
     frViaDef* getViaDef() const {
@@ -284,11 +284,19 @@ namespace fr {
     frListIter<std::unique_ptr<frVia> > getIter() const {
       return iter_;
     }
+    void setTapered(bool t) {
+        tapered_ = t;
+    }
 
+    bool isTapered() const {
+        return tapered_;
+    }
+    
   protected:
     frPoint        origin_;
     frViaDef*      viaDef_;
     frBlockObject* owner_;
+    bool           tapered_;
     frListIter<std::unique_ptr<frVia> > iter_;
   };
 }

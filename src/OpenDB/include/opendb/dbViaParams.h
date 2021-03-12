@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "odb.h"
 #include "dbId.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -46,22 +46,22 @@ class dbDiff;
 class _dbViaParams
 {
  public:
-  int                _x_cut_size;
-  int                _y_cut_size;
-  int                _x_cut_spacing;
-  int                _y_cut_spacing;
-  int                _x_top_enclosure;
-  int                _y_top_enclosure;
-  int                _x_bot_enclosure;
-  int                _y_bot_enclosure;
-  int                _num_cut_rows;
-  int                _num_cut_cols;
-  int                _x_origin;
-  int                _y_origin;
-  int                _x_top_offset;
-  int                _y_top_offset;
-  int                _x_bot_offset;
-  int                _y_bot_offset;
+  int _x_cut_size;
+  int _y_cut_size;
+  int _x_cut_spacing;
+  int _y_cut_spacing;
+  int _x_top_enclosure;
+  int _y_top_enclosure;
+  int _x_bot_enclosure;
+  int _y_bot_enclosure;
+  int _num_cut_rows;
+  int _num_cut_cols;
+  int _x_origin;
+  int _y_origin;
+  int _x_top_offset;
+  int _y_top_offset;
+  int _x_bot_offset;
+  int _y_bot_offset;
   dbId<_dbTechLayer> _top_layer;
   dbId<_dbTechLayer> _cut_layer;
   dbId<_dbTechLayer> _bot_layer;
@@ -72,8 +72,8 @@ class _dbViaParams
 
   bool operator==(const _dbViaParams& rhs) const;
   bool operator!=(const _dbViaParams& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbViaParams& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   friend dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v);
@@ -84,5 +84,3 @@ dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v);
 dbIStream& operator>>(dbIStream& stream, _dbViaParams& v);
 
 }  // namespace odb
-
-

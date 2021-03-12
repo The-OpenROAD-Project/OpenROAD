@@ -53,14 +53,14 @@ struct _dbWireFlags
 class _dbWire : public _dbObject
 {
  public:
-  _dbWireFlags            _flags;
-  dbVector<int>           _data;
+  _dbWireFlags _flags;
+  dbVector<int> _data;
   dbVector<unsigned char> _opcodes;
-  dbId<_dbNet>            _net;
+  dbId<_dbNet> _net;
 
   _dbWire(_dbDatabase*)
   {
-    _flags._is_global  = 0;
+    _flags._is_global = 0;
     _flags._spare_bits = 0;
   }
 

@@ -78,6 +78,7 @@ variable template {}
 variable default_cutclass {}
 variable twowidths_table {}
 variable twowidths_table_wrongdirection {}
+variable stdcell_area ""
 
 #This file contains procedures that are used for PDN generation
 proc debug {message} {
@@ -92,7 +93,7 @@ proc debug {message} {
   if {[dict exists $state line]} {
     set str "$str[dict get $state line]"
   }
-  puts [set_message DEBUG "$str: $message"]
+  puts "\[DEBUG\] $str: $message"
 }
 
 proc lmap {args} {
@@ -2127,10 +2128,7 @@ proc get_core_ring_centre {type side layer_info} {
 
   if {[dict exists $layer_info pad_offset]} {
     set area [find_pad_offset_area]
-    set xMin [lindex $area 0]
-    set yMin [lindex $area 1]
-    set xMax [lindex $area 2]
-    set yMax [lindex $area 3]
+    lassign $area xMin yMin xMax yMax
     set offset [expr [dict get $layer_info pad_offset] + $width / 2]
     # debug "area        $area"
     # debug "pad_offset  $offset"
@@ -2218,6 +2216,10 @@ proc find_pad_offset_area {} {
     set yMax [lindex $die_area 3]
 
     # debug "pad_names: $pad_names"
+    set found_b 0
+    set found_r 0
+    set found_t 0
+    set found_l 0
     foreach inst [$block getInsts] {
       if {[lsearch $pad_names [[$inst getMaster] getName]] > -1} {
         # debug "inst_master: [[$inst getMaster] getName]"
@@ -2225,30 +2227,49 @@ proc find_pad_offset_area {} {
         switch $quadrant {
           "b" {
             # debug "inst: [$inst getName], side: $quadrant, yMax: [real_value [[$inst getBBox] yMax]]"
+            set found_b 1
             if {$yMin < [set y [[$inst getBBox] yMax]]} {
               set yMin $y
             }
           }
           "r" {
             # debug "inst: [$inst getName], side: $quadrant, xMin: [real_value [[$inst getBBox] xMin]]"
+            set found_r 1
             if {$xMax > [set x [[$inst getBBox] xMin]]} {
               set xMax $x
             }
           }
           "t" {
             # debug "inst: [$inst getName], side: $quadrant, yMin: [real_value [[$inst getBBox] yMin]]"
+            set found_t 1
             if {$yMax > [set y [[$inst getBBox] yMin]]} {
               set yMax $y
             }
           }
           "l" {
             # debug "inst: [$inst getName], side: $quadrant, xMax: [real_value [[$inst getBBox] xMax]]"
+            set found_l 1
             if {$xMin < [set x [[$inst getBBox] xMax]]} {
               set xMin $x
             }
           }
         }
       }
+    }
+    if {$found_b == 0} {
+      utl::warn "PDN" 99 "No power/ground pads found on bottom edge"
+    }
+    if {$found_r == 0} {
+      utl::warn "PDN" 99 "No power/ground pads found on right edge"
+    }
+    if {$found_t == 0} {
+      utl::warn "PDN" 99 "No power/ground pads found on top edge"
+    }
+    if {$found_l == 0} {
+      utl::warn "PDN" 99 "No power/ground pads found on left edge"
+    }
+    if {$found_b == 0 || $found_r == 0 || $found_t == 0 || $found_l == 0} {
+      utl::error "PDN" 99 "Cannot place core rings without pwr/gnd pads on each side"
     }
     # debug "pad_area: ([real_value $xMin] [real_value $yMin]) ([real_value $xMax] [real_value $yMax])"
     dict set design_data config pad_offset_area [list $xMin $yMin $xMax $yMax]
@@ -4223,14 +4244,13 @@ proc get_stdcell_plus_area {} {
 }
 
 proc get_stdcell_area {} {
-  variable block
   variable stdcell_area
   variable stdcell_plus_area
   
   if {$stdcell_area != ""} {return $stdcell_area}
   set rails_width [get_rails_max_width]
   
-  set rows [$block getRows]
+  set rows [[ord::get_db_block] getRows]
   set first_row [[lindex $rows 0] getBBox]
 
   set minX [$first_row xMin]

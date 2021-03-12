@@ -77,7 +77,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frPathSeg* pathSeg,
         if (end.y() > routeBox.bottom()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
 
@@ -106,7 +106,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frPathSeg* pathSeg,
         if (begin.y() < routeBox.top()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt()/*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
 
@@ -147,7 +147,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frPathSeg* pathSeg,
         if (end.x() > routeBox.left()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setEndStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setEndStyle(frEndStyle(frcExtendEndStyle), style.getEndExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
 
@@ -176,7 +176,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(frPathSeg* pathSeg,
         if (begin.x() < routeBox.right()) {
           frSegStyle style;
           pathSeg->getStyle(style);
-          style.setBeginStyle(frEndStyle(frcExtendEndStyle), getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2);
+          style.setBeginStyle(frEndStyle(frcExtendEndStyle), style.getBeginExt() /*getTech()->getLayer(pathSeg->getLayerNum())->getWidth() / 2*/);
           ps->setStyle(style);
         }
 
@@ -375,7 +375,8 @@ void FlexDRWorker::endAddNets_merge(frNet* net, set<pair<frPoint, frLayerNum> > 
       }
     }
     // merge horz pathseg
-    if ((int)horzPathSegs.size() == 2 && vertPathSegs.empty() && !hasPatchMetal) {
+    if ((int)horzPathSegs.size() == 2 && vertPathSegs.empty() && !hasPatchMetal && 
+                                         horzPathSegs[0]->isTapered() == horzPathSegs[1]->isTapered()) {
       unique_ptr<frShape> uShape = make_unique<frPathSeg>(*horzPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
       frPoint bp1, ep1, bp2, ep2;
@@ -403,7 +404,8 @@ void FlexDRWorker::endAddNets_merge(frNet* net, set<pair<frPoint, frLayerNum> > 
       net->addShape(std::move(uShape));
       regionQuery->addDRObj(rptr);
     }
-    if ((int)vertPathSegs.size() == 2 && horzPathSegs.empty() && !hasPatchMetal) {
+    if ((int)vertPathSegs.size() == 2 && horzPathSegs.empty() && !hasPatchMetal&& 
+                                         vertPathSegs[0]->isTapered() == vertPathSegs[1]->isTapered()) {
       unique_ptr<frShape> uShape = make_unique<frPathSeg>(*vertPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
       frPoint bp1, ep1, bp2, ep2;

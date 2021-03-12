@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "odbDList.h"
 #include "dbTypes.h"
 #include "geom.h"
 #include "odb.h"
+#include "odbDList.h"
 
 namespace odb {
 
@@ -60,7 +60,7 @@ class dbRtEndStyle
 
  private:
   Type _type;
-  int  _ext;
+  int _ext;
 
  public:
   dbRtEndStyle() : _type(EXTENDED), _ext(0) {}
@@ -68,17 +68,17 @@ class dbRtEndStyle
   void setExtended()
   {
     _type = EXTENDED;
-    _ext  = 0;
+    _ext = 0;
   }
 
   void setVariable(int ext)
   {
     _type = VARIABLE;
-    _ext  = ext;
+    _ext = ext;
   }
 
   Type getType() const { return _type; }
-  int  getExt() const { return _ext; }
+  int getExt() const { return _ext; }
 
   bool operator==(const dbRtEndStyle& s) const
   {
@@ -105,28 +105,28 @@ class dbRtEdge
   // must be updated in dbRtTree.cpp
   enum Type
   {
-    SEGMENT  = 0,
+    SEGMENT = 0,
     TECH_VIA = 1,
-    VIA      = 2,
-    SHORT    = 3,
-    VWIRE    = 4
+    VIA = 2,
+    SHORT = 3,
+    VWIRE = 4
   };
 
  protected:
-  Type                 _type;
-  dbRtNode*            _src;
-  dbRtNode*            _tgt;
-  dbWireType::Value    _wire_type;
-  dbTechLayerRule*     _non_default_rule;
-  double               _r;
-  double               _c;
-  dbRtTree*            _rt_tree;
-  dbRtEdge*            _next[2];
-  dbRtEdge*            _prev[2];
+  Type _type;
+  dbRtNode* _src;
+  dbRtNode* _tgt;
+  dbWireType::Value _wire_type;
+  dbTechLayerRule* _non_default_rule;
+  double _r;
+  double _c;
+  dbRtTree* _rt_tree;
+  dbRtEdge* _next[2];
+  dbRtEdge* _prev[2];
   DListEntry<dbRtEdge> _rt_edge;
-  int                  _shape_id;
-  uint                 _property;
-  bool                 _visited;
+  int _shape_id;
+  uint _property;
+  bool _visited;
 
   dbRtEdge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
       : _type(type),
@@ -147,7 +147,7 @@ class dbRtEdge
     _prev[1] = NULL;
   }
 
-  dbRtNode*  opposite(dbRtNode* n) const { return n == _src ? _tgt : _src; }
+  dbRtNode* opposite(dbRtNode* n) const { return n == _src ? _tgt : _src; }
   dbRtEdge*& prev(dbRtNode* node) { return node == _src ? _prev[0] : _prev[1]; }
   dbRtEdge*& next(dbRtNode* node) { return node == _src ? _next[0] : _next[1]; }
 
@@ -228,7 +228,7 @@ class dbRtVia : public dbRtEdge
 
   // Get the via of this edge
   dbVia* getVia() const { return _via; }
-  void   setVia(dbVia* via) { _via = via; }
+  void setVia(dbVia* via) { _via = via; }
 
   friend class dbRtTree;
 };
@@ -239,9 +239,9 @@ class dbRtTechVia : public dbRtEdge
   dbTechVia* _via;
 
  public:
-  dbRtTechVia(dbTechVia*        via,
+  dbRtTechVia(dbTechVia* via,
               dbWireType::Value wire_type,
-              dbTechLayerRule*  rule)
+              dbTechLayerRule* rule)
       : dbRtEdge(TECH_VIA, wire_type, rule), _via(via)
   {
   }
@@ -261,10 +261,10 @@ class dbRtSegment : public dbRtEdge
   dbRtEndStyle _src_style;
   dbRtEndStyle _tgt_style;
 
-  dbRtSegment(dbRtEndStyle      src,
-              dbRtEndStyle      tgt,
+  dbRtSegment(dbRtEndStyle src,
+              dbRtEndStyle tgt,
               dbWireType::Value wire_type,
-              dbTechLayerRule*  rule)
+              dbTechLayerRule* rule)
       : dbRtEdge(SEGMENT, wire_type, rule), _src_style(src), _tgt_style(tgt)
   {
   }

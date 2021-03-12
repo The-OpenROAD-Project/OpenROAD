@@ -61,20 +61,35 @@ find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
+find_package(Python3 COMPONENTS Development REQUIRED)
 
 ################################################################
 
-tcl_lib(NAME      openroad_swig
-        NAMESPACE ord
-        I_FILE    OpenRoad.i
-        SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
-                  OpenRoad.tcl
-                  ${ICEWALL_HOME}/src/ICeWall.tcl
-                  ${PDNGEN_HOME}/src/PdnGen.tcl
-                  ${OPENDB_HOME}/src/db/OpenDB.tcl
+swig_lib(NAME      openroad_swig
+         NAMESPACE ord
+         I_FILE    OpenRoad.i
+         SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
+                   OpenRoad.tcl
+                   ${ICEWALL_HOME}/src/ICeWall.tcl
+                   ${PDNGEN_HOME}/src/PdnGen.tcl
+                   ${OPENDB_HOME}/src/db/OpenDB.tcl
 )
 
 target_link_libraries(openroad_swig
+  PRIVATE
+    dbSta
+    opendb
+    OpenSTA
+)
+
+swig_lib(NAME      openroad_swig_py
+         NAMESPACE ord
+         LANGUAGE  python
+         I_FILE    OpenRoad-py.i
+         SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+)
+
+target_link_libraries(openroad_swig_py
   PRIVATE
     dbSta
     opendb
@@ -114,10 +129,10 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(finale)
-add_subdirectory(ioPlacer)
+add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
-add_subdirectory(FastRoute)
-add_subdirectory(tapcell)
+add_subdirectory(grt)
+add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
@@ -153,20 +168,22 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   openroad_swig
+  openroad_swig_py
   replace
   dpl
   finale
   rsz
-  ioPlacer
+  ppl
   flute
   dbSta
   OpenSTA
   opendb
   opendbtcl
+  opendbpy
   OpenRCX
   TritonCTS
-  FastRoute
-  tapcell
+  grt
+  tap
   gui
   TritonRoute
   mpl

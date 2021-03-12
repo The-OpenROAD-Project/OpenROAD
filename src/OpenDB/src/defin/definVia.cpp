@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definVia.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "db.h"
 #include "dbShape.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -53,7 +54,7 @@ void definVia::init()
 {
   definBase::init();
   _cur_via = NULL;
-  _params  = NULL;
+  _params = NULL;
 }
 
 void definVia::viaBegin(const char* name)
@@ -63,7 +64,7 @@ void definVia::viaBegin(const char* name)
   _cur_via = dbVia::create(_block, name);
 
   if (_cur_via == NULL) {
-    _logger->warn(utl::ODB, 166,  "error: duplicate via ({})", name);
+    _logger->warn(utl::ODB, 166, "error: duplicate via ({})", name);
     ++_errors;
   }
 }
@@ -76,7 +77,10 @@ void definVia::viaRule(const char* rule)
   dbTechViaGenerateRule* viarule = _tech->findViaGenerateRule(rule);
 
   if (viarule == NULL) {
-    _logger->warn(utl::ODB, 167,  "error: cannot file VIA GENERATE rule in technology ({}).", rule);
+    _logger->warn(utl::ODB,
+                  167,
+                  "error: cannot file VIA GENERATE rule in technology ({}).",
+                  rule);
     ++_errors;
     return;
   }
@@ -97,8 +101,8 @@ void definVia::viaCutSize(int xSize, int ySize)
 }
 
 bool definVia::viaLayers(const char* botName,
-                        const char* cutName,
-                        const char* topName)
+                         const char* cutName,
+                         const char* topName)
 {
   if (_cur_via == NULL)
     return false;
@@ -109,7 +113,8 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* bot = _tech->findLayer(botName);
 
   if (bot == NULL) {
-    _logger->warn(utl::ODB, 168,  "error: undefined layer ({}) referenced", botName);
+    _logger->warn(
+        utl::ODB, 168, "error: undefined layer ({}) referenced", botName);
     ++_errors;
     return false;
   }
@@ -117,7 +122,8 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* cut = _tech->findLayer(cutName);
 
   if (cut == NULL) {
-    _logger->warn(utl::ODB, 169,  "error: undefined layer ({}) referenced", cutName);
+    _logger->warn(
+        utl::ODB, 169, "error: undefined layer ({}) referenced", cutName);
     ++_errors;
     return false;
   }
@@ -125,7 +131,8 @@ bool definVia::viaLayers(const char* botName,
   dbTechLayer* top = _tech->findLayer(topName);
 
   if (top == NULL) {
-    _logger->warn(utl::ODB, 170,  "error: undefined layer ({}) referenced", topName);
+    _logger->warn(
+        utl::ODB, 170, "error: undefined layer ({}) referenced", topName);
     ++_errors;
     return false;
   }
@@ -221,7 +228,8 @@ void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 171,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 171, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }
