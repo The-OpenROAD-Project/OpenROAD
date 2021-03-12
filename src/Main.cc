@@ -108,8 +108,6 @@ initPython()
 
   Py_Initialize();
 
-  PyObject* module = PyModule_New("opendbpy");
-
   char *unencoded = sta::unencode(sta::opendbpy_python_inits);
   if (PyRun_SimpleString(unencoded)) {
     PyErr_Print();
@@ -161,7 +159,12 @@ main(int argc,
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
-      args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
+      size_t sz = strlen(argv[i]);
+      args[i] = new wchar_t[sz+1];
+      args[i][sz] = '\0';
+      for(size_t j = 0;j < sz; j++) {
+        args[i][j] = (wchar_t) argv[i][j];
+      }
     }
     return Py_Main(cmd_argc, args.data());
   }

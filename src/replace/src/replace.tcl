@@ -94,7 +94,7 @@ proc global_placement { args } {
   gpl::set_timing_driven_mode $timing_driven
   if { $timing_driven } {
     if { [get_libs -quiet "*"] == {} } {
-      utl::error GPL 115 "No liberty libraries found."
+      utl::error GPL 121 "No liberty libraries found."
     }
   }
   if { [info exists flags(-disable_timing_driven)] } { 

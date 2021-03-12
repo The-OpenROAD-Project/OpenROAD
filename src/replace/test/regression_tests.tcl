@@ -13,6 +13,7 @@ record_tests {
   error01
   diverge01
   diverge02 
+  macro04
 }
 
 # commented out at this moment..

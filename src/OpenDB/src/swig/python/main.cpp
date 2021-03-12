@@ -46,7 +46,12 @@ int main(int argc, char* argv[])
   }
   wchar_t** args = new wchar_t*[argc];
   for (size_t i = 0; i < argc; i++) {
-    args[i] = Py_DecodeLocale(argv[i], nullptr);
+    size_t sz = strlen(argv[i]);
+    args[i] = new wchar_t[sz+1];
+    args[i][sz] = '\0';
+    for(size_t j = 0;j < sz; j++) {
+      args[i][j] = (wchar_t) argv[i][j];
+    }
   }
 
   Py_Initialize();
