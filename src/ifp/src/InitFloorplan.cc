@@ -85,9 +85,9 @@ using odb::dbPlacementStatus;
 using odb::dbTransform;
 using odb::dbBox;
 using odb::dbTechLayerType;
-
 using odb::dbGroup;
 using odb::dbRegion;
+
 
 class Track
 {
@@ -161,8 +161,6 @@ protected:
   Vector<Track> readTracks(const char *tracks_file);
   void makeTracks(const char *tracks_file,
 		  Rect &die_area);
-  void makeTracks(Rect &die_area);
-  void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
@@ -335,24 +333,19 @@ InitFloorplan::initFloorplan(double die_lx,
       int cux = metersToMfgGrid(core_ux);
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
+      updateVoltageDomain(clx, cly, cux, cuy);
 
       // Destroy existing tracks.
       for (odb::dbTrackGrid *grid : block_->getTrackGrids())
         dbTrackGrid::destroy(grid);
 
-      updateVoltageDomain(clx, cly, cux, cuy);
-
       if (tracks_file && tracks_file[0])
 	makeTracks(tracks_file, die_area);
-      else
-	makeTracks(die_area);
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
   }
 }
-
-
 
 void
 InitFloorplan::updateVoltageDomain(int core_lx,
@@ -361,13 +354,12 @@ InitFloorplan::updateVoltageDomain(int core_lx,
                                    int core_uy)
 {
   int MARGIN = 6;
-
+  
   for (dbGroup* domain : block_->getGroups()) {
     if (domain->getType()==dbGroup::VOLTAGE_DOMAIN) {
       dbRegion* domain_region = dbRegion::create(block_, domain->getName());
 
       auto domain_name = string(domain->getName());
-
       Rect domain_rect = domain->getBox();
       int temp_domain_xMin = metersToMfgGrid(domain_rect.xMin() / 1e+6);
       int temp_domain_yMin = metersToMfgGrid(domain_rect.yMin() / 1e+6);
@@ -375,42 +367,17 @@ InitFloorplan::updateVoltageDomain(int core_lx,
       int temp_domain_yMax = metersToMfgGrid(domain_rect.yMax() / 1e+6);
 
       dbSet<dbRow> rows = block_->getRows();
-      dbSet<dbRow>::iterator row_itr = rows.begin();
-
-      dbSite *site = row_itr->getSite();
+      dbSet<dbRow>::iterator first_row = rows.begin();
+      dbSite *site = first_row->getSite();
       int row_height_ = site->getHeight();
       int site_width_ = site->getWidth();
 
-      int domain_xMin;
-      int domain_yMin;
-      int domain_xMax;
-      int domain_yMax;
-      if (temp_domain_yMin % row_height_ == 0) {
-        domain_yMin = temp_domain_yMin;
-      } else {
-        domain_yMin = temp_domain_yMin - temp_domain_yMin % row_height_;
-      }
-
-      if (temp_domain_yMax % row_height_ == 0) {
-   domain_yMax = temp_domain_yMax;
-      } else {
-        domain_yMax = temp_domain_yMax - temp_domain_yMax % row_height_;
-      }
-
-      if (temp_domain_xMin % site_width_ == 0) {
-        domain_xMin = temp_domain_xMin;
-      } else {
-        domain_xMin = temp_domain_xMin - temp_domain_xMin % site_width_;
-      }
-
-      if (temp_domain_xMax % site_width_ == 0) {
-        domain_xMax = temp_domain_xMax;
-      } else {
-        domain_xMax = temp_domain_xMax - temp_domain_xMax % site_width_;
-      }
+      int domain_yMin = temp_domain_yMin - temp_domain_yMin % row_height_;
+      int domain_yMax = temp_domain_yMax - temp_domain_yMax % row_height_;
+      int domain_xMin = temp_domain_xMin - temp_domain_xMin % site_width_;
+      int domain_xMax = temp_domain_xMax - temp_domain_xMax % site_width_;
 
       dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
-
 
       int row_old_count = 0;
       for (dbRow* row_count : rows) {
@@ -418,69 +385,50 @@ InitFloorplan::updateVoltageDomain(int core_lx,
       }
 
       int row_processed = 0;
-      for (dbRow* row : rows) {
-
+      for (dbRow *row_itr: rows) {
         row_processed += 1;
         if (row_processed > row_old_count) {
           break;
         }
 
         Rect row_rect;
-        row->getBBox(row_rect);
+        row_itr->getBBox(row_rect);
         int row_xMin = row_rect.xMin();
         int row_xMax = row_rect.xMax();
         int row_yMin = row_rect.yMin();
         int row_yMax = row_rect.yMax();
 
-        string row_old_name = row->getName();
-        size_t row_split = row_old_name.find("_");
-        string row_number = row_old_name.substr(row_split + 1);
+        string row_name = row_itr->getName();
+        string row_number = row_name.substr(row_name.find("_") + 1);
 
-        // Row/Domain: One rectangle is above the other
-        if (row_yMax + MARGIN * row_height_ <= domain_yMin || row_yMin >= domain_yMax + MARGIN * row_height_)
+        if (row_yMax + MARGIN * row_height_ <= domain_yMin || row_yMin >= domain_yMax + MARGIN * row_height_) {
           continue;
-        else {
-          dbOrientType orient = row->getOrient();
-          dbRow::destroy(row);
+        } else {
+          dbOrientType orient = row_itr->getOrient();
+          dbRow::destroy(row_itr);
 
-          int rowx_y = row_yMin / row_height_ + 1;
-          int rows_x = (domain_xMax - domain_xMin) / site_width_;
-
-          
-          int rows_2_xMin_site = (domain_xMax + MARGIN * row_height_) / site_width_;
-          int rows_2_xMin = rows_2_xMin_site * site_width_;
-          if (rows_2_xMin < core_ux)
+          int row_2_xMin_sites = (domain_xMax + MARGIN * row_height_) / site_width_;
+          int row_2_xMin = row_2_xMin_sites * site_width_;
+          if (row_2_xMin + site_width_ < core_ux)
           {
-
-            string row_new_name_2 = "ROW_" + row_number + "_2";
-            int rows_2_x = (core_ux - rows_2_xMin) / site_width_;
-
-            dbRow::create(block_, row_new_name_2.c_str(), site, rows_2_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, rows_2_x, site_width_);
-          }
-          
-
-          int rows_1_xMax_site = (domain_xMin - MARGIN * row_height_) / site_width_;
-          int rows_1_xMax = rows_1_xMax_site * site_width_;
-          printf("generating left rows: %d, core_lx: %d\n", rows_1_xMax, core_lx);
-          if (rows_1_xMax > core_lx)
-          {
-            string row_new_name_1 = "ROW_" + row_number + "_1";
-            int rows_1_x = (rows_1_xMax - core_lx) / site_width_;
-            dbRow::create(block_, row_new_name_1.c_str(), site, core_lx, row_yMin, orient, dbRowDir::HORIZONTAL, rows_1_x, site_width_);
+            string row_2_new_name = "ROW_" + row_number + "_2";
+            int row_2_sites = (core_ux - row_2_xMin) / site_width_;
+            dbRow::create(block_, row_2_new_name.c_str(), site, row_2_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, row_2_sites, site_width_);
           }
 
-          if (row_yMin >= domain_yMax && row_yMin <= domain_yMax + MARGIN * row_height_)
-            continue;
-          else if (row_yMax <= domain_yMin && row_yMax >= domain_yMin - MARGIN * row_height_) {
-            continue;
-          } else {
+          int row_1_xMax_sites = (domain_xMin - MARGIN * row_height_) / site_width_;
+          int row_1_xMax = row_1_xMax_sites * site_width_;
+          if (row_1_xMax > core_lx + site_width_)
+          {
+            string row_1_new_name = "ROW_" + row_number + "_1";
+            int row_1_sites = (row_1_xMax - core_lx) / site_width_;
+            dbRow::create(block_, row_1_new_name.c_str(), site, core_lx, row_yMin, orient, dbRowDir::HORIZONTAL, row_1_sites, site_width_);
+          }
 
+          int domain_row_sites = (domain_xMax - domain_xMin) / site_width_;
+          if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
             string domain_row_name = "ROW_" + domain_name + "_" + row_number;
-            printf("Domain row number is: %s, xMin: %d, yMin: %d\n", domain_row_name.c_str(), domain_xMin, row_yMin);
-
-            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, rows_x, site_width_);
-            printf("Right rows, domain_xMax: %d, Margin: %d, core_ux: %d\n", domain_xMax, MARGIN * row_height_, core_ux);
-
+            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, domain_row_sites, site_width_);
           }
         }
       }
@@ -495,12 +443,6 @@ InitFloorplan::makeRows(dbSite *site,
 			int core_ux,
 			int core_uy)
 {
-  // Delete any existing rows.
-  auto rows = block_->getRows();
-  for (dbSet<dbRow>::iterator row_itr = rows.begin();
-       row_itr != rows.end() ;
-       row_itr = dbRow::destroy(row_itr)) ;
-
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
   uint site_dx = site->getWidth();
@@ -625,58 +567,6 @@ Track::Track(string layer,
   offset_(offset),
   pitch_(pitch)
 {
-}
-
-void
-InitFloorplan::makeTracks(Rect &die_area)
-{
-  dbTech *tech = db_->getTech();
-  dbSet<dbTechLayer> layers = tech->getLayers();
-  for (auto layer : layers) {
-    if (layer->getType() == dbTechLayerType::ROUTING) {
-      dbTechLayerDir layer_dir = layer->getDirection();
-      dbTrackGrid *grid;
-      uint width;
-      int offset, pitch, track_count;
-      switch (layer_dir) {
-      case dbTechLayerDir::VERTICAL:
-        grid = block_->findTrackGrid(layer);
-        if (grid == nullptr)
-          grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dx();
-	pitch = layer->getPitchX();
-	if (pitch) {
-	  offset = layer->getOffsetX();
-	  if (offset == 0)
-	    offset = pitch;
-	  track_count = floor((width - offset) / pitch) + 1;
-	  grid->addGridPatternX(offset, track_count, pitch);
-	}
-	else
-	  logger_->error(IFP, 7, "layer {} has zero pitch.", layer->getConstName());
-	break;
-      case dbTechLayerDir::HORIZONTAL:
-        grid = block_->findTrackGrid(layer);
-        if (grid == nullptr)
-          grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dy();
-	pitch = layer->getPitchY();
-	if (pitch) {
-	  offset = layer->getOffsetY();
-	  if (offset == 0)
-	    offset = pitch;
-	  track_count = floor((width - offset) / pitch) + 1;
-	  grid->addGridPatternY(offset, track_count, pitch);
-	}
-	else
-	  logger_->error(IFP, 8, "layer {} has zero pitch.",
-                         layer->getConstName());
-	break;
-      case dbTechLayerDir::NONE:
-	break;
-      }
-    }
-  }
 }
 
 ////////////////////////////////////////////////////////////////
