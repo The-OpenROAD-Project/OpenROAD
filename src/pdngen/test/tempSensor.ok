@@ -1,0 +1,42 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd.tlef
+[INFO ODB-0223]     Created 11 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130hd/HEADER.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/HEADER.lef
+[INFO ODB-0222] Reading LEF file: sky130hd/SLC.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/SLC.lef
+[INFO ODB-0127] Reading DEF file: tempSensor/2_5_floorplan_tapcell.def
+[INFO ODB-0128] Design: tempsenseInst
+[INFO ODB-0130]     Created 35 pins.
+[INFO ODB-0131]     Created 393 components and 1287 component-terminals.
+[INFO ODB-0133]     Created 155 nets and 491 connections.
+[INFO ODB-0134] Finished DEF file: tempSensor/2_5_floorplan_tapcell.def
+[INFO PDN-0016] Power Delivery Network Generator: Generating PDN
+  config: tempSensor/pdn.cfg
+[INFO PDN-0008] Design Name is tempsenseInst
+[INFO PDN-0009] Reading technology data
+[INFO PDN-0011] ****** INFO ******
+Type: stdcell, grid
+    Core Rings
+      Layer: met4  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+      Layer: met5  -  width: 5.000  spacing: 2.000  core_offset: 4.500 
+    Stdcell Rails
+      Layer: met1  -  width: 0.490  pitch: 6.660  offset: 0.000 
+    Straps
+      Layer: met4  -  width: 0.960  pitch: 56.000  offset: 2.000 
+    Connect: {met4 met5} {met1 met4}
+Type: macro, macro_1
+    Macro orientation: R0 R180 MX MY
+    Straps
+      Layer: met5  -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {met4_PIN_ver met5}
+[INFO PDN-0012] **** END INFO ****
+[INFO PDN-0013] Inserting stdcell grid - grid
+[INFO PDN-0015] Writing to database
+No differences found.
