@@ -123,11 +123,22 @@ proc global_placement { args } {
   
   # density settings    
   set target_density 0.7
+  set uniform_mode 0
+
   if { [info exists keys(-density)] } {
     set target_density $keys(-density) 
-    sta::check_positive_float "-density" $target_density
   }
-  gpl::set_density_cmd $target_density
+
+  if { $target_density == "uniform" } {
+    set uniform_mode 1
+  } else {
+    sta::check_positive_float "-density" $target_density
+    gpl::set_density_cmd $target_density
+  } 
+    
+  gpl::set_uniform_target_density_mode_cmd $uniform_mode 
+  
+  
 
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
