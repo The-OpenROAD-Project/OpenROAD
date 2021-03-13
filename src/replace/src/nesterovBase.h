@@ -749,6 +749,7 @@ public:
   // temp variables
   unsigned char isSetBinCntX:1;
   unsigned char isSetBinCntY:1;
+  unsigned char useUniformTargetDensity:1;
 
   NesterovBaseVars();
   void reset();
