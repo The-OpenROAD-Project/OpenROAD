@@ -54,6 +54,13 @@ set_density_cmd(float density)
 }
 
 void
+set_uniform_target_density_mode_cmd(bool uniform)
+{
+  Replace* replace = getReplace();
+  replace->setUniformTargetDensityMode(uniform);
+}
+
+void
 set_initial_place_max_iter_cmd(int iter)
 {
   Replace* replace = getReplace();
