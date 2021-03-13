@@ -80,6 +80,7 @@ Replace::Replace()
   timingDrivenMode_(true),
   routabilityDrivenMode_(true),
   incrementalPlaceMode_(false),
+  uniformTargetDensityMode_(false),
   padLeft_(0), padRight_(0),
   verbose_(0),
   gui_debug_(false),
@@ -137,6 +138,7 @@ void Replace::reset() {
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true; 
   incrementalPlaceMode_ = false;
+  uniformTargetDensityMode_ = false;
   
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
@@ -210,6 +212,8 @@ void Replace::initNesterovPlace() {
       nbVars.isSetBinCntY = 1;
       nbVars.binCntY = binGridCntY_;
     }
+    
+    nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
     nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
   }
@@ -313,6 +317,11 @@ Replace::setTargetOverflow(float overflow) {
 void
 Replace::setTargetDensity(float density) {
   density_ = density;
+}
+
+void
+Replace::setUniformTargetDensityMode(bool mode) {
+  uniformTargetDensityMode_ = mode;
 }
 
 void
