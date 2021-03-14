@@ -92,10 +92,6 @@ class TimingPathsModel : public QAbstractTableModel
 
   TimingPath* getPathAt(int index) const { return timing_paths_[index]; }
 
-  void findInstances(std::string pattern, std::vector<odb::dbInst*>& insts);
-  void findNets(std::string pattern, std::vector<odb::dbNet*>& nets);
-  void findPins(std::string pattern, std::vector<odb::dbObject*>& pins);
-
   void resetModel();
   void sort(int col_index, Qt::SortOrder sort_order) override;
   void populateModel(bool get_max = true, int path_count = 100);
@@ -104,18 +100,14 @@ class TimingPathsModel : public QAbstractTableModel
   bool populatePaths(bool get_max = true, int path_count = 100);
 
   ord::OpenRoad* openroad_;
-  std::vector<sta::Instance*> findInstancesNetwork(std::string pattern);
-  std::vector<sta::Net*> findNetsNetwork(std::string pattern);
-  std::vector<sta::Pin*> findPinsNetwork(std::string pattern);
-
   std::vector<TimingPath*> timing_paths_;
+
   const static inline std::vector<std::string> _path_columns
       = {"Id", "Clock", "Req", "Arrival", "Slack", "Start", "End"};
 };
 
-class TimingPathNode
+struct TimingPathNode
 {
- public:
   TimingPathNode(odb::dbObject* pin,
                  bool is_rising,
                  float arrival,
@@ -148,7 +140,17 @@ class TimingPathNode
 class TimingPath
 {
  public:
-  TimingPath(int path_index) : path_index_(path_index) {}
+  TimingPath(int path_index)
+      : path_nodes_(),
+        start_clk_(),
+        end_clk_(),
+        slack_(0),
+        path_delay_(0),
+        arr_time_(0),
+        req_time_(0),
+        path_index_(path_index)
+  {
+  }
 
   void appendNode(const TimingPathNode& node) { path_nodes_.push_back(node); }
   int levelsCount() const { return path_nodes_.size(); }
@@ -157,11 +159,10 @@ class TimingPath
   void setEndClock(const char* name) { end_clk_ = name; }
   std::string getEndClock() const { return end_clk_; }
 
-  // Time will be returned in in nano seconds
   float getPathArrivalTime() const { return arr_time_; }
-  void setArrTime(float arr) { arr_time_ = arr; }
+  void setPathArrivalTime(float arr) { arr_time_ = arr; }
   float getPathRequiredTime() const { return req_time_; }
-  void setReqTime(float req) { req_time_ = req; }
+  void setPathRequiredTime(float req) { req_time_ = req; }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
   float getPathDelay() const { return path_delay_; }
@@ -173,8 +174,6 @@ class TimingPath
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
-
-  void printPath(const std::string& file_name) const;
 
  private:
   std::vector<TimingPathNode> path_nodes_;
@@ -250,7 +249,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener() : isDirty(false) {}
+  GuiDBChangeListener() : isDirty_(false) {}
 
   void inDbInstCreate(odb::dbInst* inst) override
   {
@@ -331,12 +330,12 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
   }
 
  signals:
-  void dbUpdated(QString update_type,
-                 std::vector<odb::dbObject*> update_objects);
+  void dbUpdated(const QString& update_type,
+                 const std::vector<odb::dbObject*>& update_objects);
  public slots:
   void reset()
   {
-    isDirty = false;
+    isDirty_ = false;
     // call reset after gui refresh
   }
 
@@ -345,14 +344,14 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
                 odb::dbObject* obj1 = nullptr,
                 odb::dbObject* obj2 = nullptr)
   {
-    if (isDirty == false) {
+    if (isDirty_ == false) {
       // send signal if dirty was false
       std::vector<odb::dbObject*> objects{obj1, obj2};
       emit dbUpdated(update_type, objects);
-      isDirty = true;
+      isDirty_ = true;
     }
   }
-  bool isDirty;
+  bool isDirty_;
 };
 
 }  // namespace gui

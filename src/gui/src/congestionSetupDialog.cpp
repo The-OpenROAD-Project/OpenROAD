@@ -262,8 +262,8 @@ std::vector<QString> CongestionSetupDialog::getColorNames(int band_index)
   QString label;
   auto color_data = _color_ranges[band_index];
   int index = 0;
-  int min_congestion = showStartCongestionValue();
-  int max_congestion = showEndCongestionValue();
+  int min_congestion = getMinCongestionValue();
+  int max_congestion = getMaxCongestionValue();
   int percent_step = (max_congestion - min_congestion) / spinBox->value();
   while (index < color_data.size() - 1) {
     label = QString::number(min_congestion + percent_step * index)
@@ -284,8 +284,8 @@ QColor CongestionSetupDialog::getCongestionColorForPercentage(
     int alpha) const
 {
   auto& color_data_vec = _color_ranges[colors_.size()];
-  int min_congestion = showStartCongestionValue();
-  int max_congestion = showEndCongestionValue();
+  int min_congestion = getMinCongestionValue();
+  int max_congestion = getMaxCongestionValue();
   if (congestion_percent >= max_congestion)
     return color_data_vec.rbegin()->band_color_;
 

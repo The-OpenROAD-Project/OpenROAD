@@ -46,13 +46,8 @@ class TimingReportDialog : public QDialog, public Ui::ReportTimingDlg
   Q_OBJECT
  public:
   TimingReportDialog(QWidget* parent = nullptr);
-  ~TimingReportDialog();
-
   bool isSetupAnalysis() const { return setupRadioButton->isChecked(); }
   int getPathCount() { return pathCount->text().toInt(); }
 
- public slots:
-  void accept();
-  void reject();
 };
 }  // namespace gui

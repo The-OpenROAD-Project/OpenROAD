@@ -69,11 +69,10 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   void timingPathsViewCustomSort(int col_index);
   void findNodeInPathDetails();
 
-  void showNextPath();
-  void showPrevPath();
-  void showPathIndex(int pathId = 0);
-  void showRequestedPath();
+  void showPathIndex(int pathId);
   void showTimingReportDialog();
+  void selectedRowChanged(const QItemSelection& prev_index,
+                          const QItemSelection& curr_index);
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 

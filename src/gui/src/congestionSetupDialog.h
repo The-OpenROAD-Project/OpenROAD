@@ -68,11 +68,11 @@ class CongestionSetupDialog : public QDialog, private Ui::CongestionSetup
   void saveState();
   bool showHorizontalCongestion() const { return horCongDir->isChecked(); }
   bool showVerticalCongestion() const { return verCongDir->isChecked(); }
-  int showStartCongestionValue() const
+  int getMinCongestionValue() const
   {
     return startCongestionSpinBox->value();
   }
-  int showEndCongestionValue() const { return endCongestionSpinBox->value(); }
+  int getMaxCongestionValue() const { return endCongestionSpinBox->value(); }
 
   QColor getCongestionColorForPercentage(float percent, int alpha = 100) const;
 

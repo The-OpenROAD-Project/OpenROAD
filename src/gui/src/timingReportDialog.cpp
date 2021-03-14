@@ -43,18 +43,4 @@ TimingReportDialog::TimingReportDialog(QWidget* parent) : QDialog(parent)
   pathCount->setValidator(new QIntValidator(0, 10000));
 }
 
-TimingReportDialog::~TimingReportDialog()
-{
-}
-
-void TimingReportDialog::accept()
-{
-  QDialog::accept();
-}
-
-void TimingReportDialog::reject()
-{
-  QDialog::reject();
-}
-
 }  // namespace gui

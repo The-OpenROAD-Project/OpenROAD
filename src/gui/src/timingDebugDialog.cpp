@@ -53,13 +53,7 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
       QHeaderView::Stretch);
   pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
       QHeaderView::Stretch);
-  timingPathTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  pathDetailsTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-  connect(timingPathTableView,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(showPathDetails(const QModelIndex&)));
   connect(timingPathTableView->horizontalHeader(),
           SIGNAL(sectionClicked(int)),
           this,
@@ -74,10 +68,8 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
           this,
           SLOT(findNodeInPathDetails()));
 
-  connect(nextPathBtn, SIGNAL(clicked()), this, SLOT(showNextPath()));
-  connect(prevPathBtn, SIGNAL(clicked()), this, SLOT(showPrevPath()));
   connect(
-      jumpToPathEdit, SIGNAL(returnPressed()), this, SLOT(showRequestedPath()));
+      pathIdSpinBox, SIGNAL(valueChanged(int)), this, SLOT(showPathIndex(int)));
 
   connect(dbchange_listener_,
           SIGNAL(dbUpdated(QString, std::vector<odb::dbObject*>)),
@@ -85,7 +77,12 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
           SLOT(handleDbChange(QString, std::vector<odb::dbObject*>)));
   connect(
       timingReportBtn, SIGNAL(clicked()), this, SLOT(showTimingReportDialog()));
-  jumpToPathEdit->setFocusPolicy(Qt::StrongFocus);
+  pathIdSpinBox->setMaximum(0);
+  pathIdSpinBox->setMinimum(0);
+
+  auto close_btn = buttonBox->button(QDialogButtonBox::Close);
+  if (close_btn)
+    close_btn->setAutoDefault(false);
 }
 
 TimingDebugDialog::~TimingDebugDialog()
@@ -119,8 +116,15 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
   }
   timing_paths_model_ = new TimingPathsModel(setup_hold, path_count);
   timingPathTableView->setModel(timing_paths_model_);
-  jumpToPathEdit->setValidator(
-      new QIntValidator(0, timing_paths_model_->rowCount()));
+
+  auto selection_model = timingPathTableView->selectionModel();
+  connect(
+      selection_model,
+      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+      this,
+      SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+  pathIdSpinBox->setMaximum(timing_paths_model_->rowCount() - 1);
+  pathIdSpinBox->setMinimum(0);
   return true;
 }
 
@@ -133,6 +137,8 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   pathDetailsTableView->setModel(path_details_model_);
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
+
+  pathIdSpinBox->setValue(index.row());
 }
 
 void TimingDebugDialog::highlightPathStage(const QModelIndex& index)
@@ -171,44 +177,13 @@ void TimingDebugDialog::findNodeInPathDetails()
   }
 }
 
-void TimingDebugDialog::showNextPath()
-{
-  QItemSelectionModel* selectionModel = timingPathTableView->selectionModel();
-  int row = -1;
-  if (selectionModel->hasSelection())
-    row = selectionModel->selection().first().indexes().first().row();
-  int rowcount = timingPathTableView->model()->rowCount();
-  row = (row + 1) % rowcount;
-  QModelIndex new_index = timingPathTableView->model()->index(row, 0);
-  timingPathTableView->selectRow(new_index.row());
-  showPathDetails(new_index);
-}
-
-void TimingDebugDialog::showPrevPath()
-{
-  QItemSelectionModel* selectionModel = timingPathTableView->selectionModel();
-  int row = -1;
-  if (selectionModel->hasSelection())
-    row = selectionModel->selection().first().indexes().first().row();
-  int rowcount = timingPathTableView->model()->rowCount();
-  row = (row - 1) % rowcount;
-  QModelIndex new_index = timingPathTableView->model()->index(row, 0);
-  timingPathTableView->selectRow(new_index.row());
-  showPathDetails(new_index);
-}
-
 void TimingDebugDialog::showPathIndex(int path_idx)
 {
+  if (timingPathTableView->model() == nullptr)
+    return;
   QModelIndex new_index = timingPathTableView->model()->index(path_idx, 0);
   timingPathTableView->selectRow(new_index.row());
   showPathDetails(new_index);
-}
-
-void TimingDebugDialog::showRequestedPath()
-{
-  QString path_str = jumpToPathEdit->text();
-  int path_idx = path_str.toInt();
-  showPathIndex(path_idx - 1);
 }
 
 void TimingDebugDialog::showTimingReportDialog()
@@ -223,7 +198,20 @@ void TimingDebugDialog::showTimingReportDialog()
     Gui::get()->unregisterRenderer(path_renderer_);
     timing_paths_model_->populateModel(setup_hold, path_count);
     Gui::get()->registerRenderer(path_renderer_);
+    pathIdSpinBox->setMaximum(timing_paths_model_->rowCount() - 1);
+    pathIdSpinBox->setMinimum(0);
+    pathIdSpinBox->setValue(0);
   }
+}
+
+void TimingDebugDialog::selectedRowChanged(const QItemSelection& selected_row,
+                                           const QItemSelection& deselected_row)
+{
+  auto sel_indices = selected_row.indexes();
+  if (sel_indices.isEmpty())
+    return;
+  auto top_sel_index = sel_indices.first();
+  showPathDetails(top_sel_index);
 }
 
 void TimingDebugDialog::handleDbChange(QString change_type,
