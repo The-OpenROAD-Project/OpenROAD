@@ -289,8 +289,8 @@ bool _dbTechLayerSpacingEolRule::operator<(
   return true;
 }
 void _dbTechLayerSpacingEolRule::differences(
-    dbDiff&                           diff,
-    const char*                       field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerSpacingEolRule& rhs) const
 {
   DIFF_BEGIN
@@ -373,8 +373,8 @@ void _dbTechLayerSpacingEolRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
-                                     char        side,
+void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
+                                     char side,
                                      const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -460,122 +460,122 @@ void _dbTechLayerSpacingEolRule::out(dbDiff&     diff,
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
   uint64_t* flags__bit_field = (uint64_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
-  eol_space_            = 0;
-  eol_width_            = 0;
-  wrong_dir_space_      = 0;
-  opposite_width_       = 0;
-  eol_within_           = 0;
-  wrong_dir_within_     = 0;
-  exact_width_          = 0;
-  other_width_          = 0;
-  fill_triangle_        = 0;
-  cut_class_            = 0;
-  with_cut_space_       = 0;
-  enclosure_end_width_  = 0;
+  eol_space_ = 0;
+  eol_width_ = 0;
+  wrong_dir_space_ = 0;
+  opposite_width_ = 0;
+  eol_within_ = 0;
+  wrong_dir_within_ = 0;
+  exact_width_ = 0;
+  other_width_ = 0;
+  fill_triangle_ = 0;
+  cut_class_ = 0;
+  with_cut_space_ = 0;
+  enclosure_end_width_ = 0;
   enclosure_end_within_ = 0;
-  end_prl_space_        = 0;
-  end_prl_              = 0;
-  end_to_end_space_     = 0;
-  one_cut_space_        = 0;
-  two_cut_space_        = 0;
-  extension_            = 0;
-  wrong_dir_extension_  = 0;
-  other_end_width_      = 0;
-  max_length_           = 0;
-  min_length_           = 0;
-  par_space_            = 0;
-  par_within_           = 0;
-  par_prl_              = 0;
-  par_min_length_       = 0;
-  enclose_dist_         = 0;
-  cut_to_metal_space_   = 0;
-  min_adj_length_       = 0;
-  min_adj_length1_      = 0;
-  min_adj_length2_      = 0;
-  notch_length_         = 0;
+  end_prl_space_ = 0;
+  end_prl_ = 0;
+  end_to_end_space_ = 0;
+  one_cut_space_ = 0;
+  two_cut_space_ = 0;
+  extension_ = 0;
+  wrong_dir_extension_ = 0;
+  other_end_width_ = 0;
+  max_length_ = 0;
+  min_length_ = 0;
+  par_space_ = 0;
+  par_within_ = 0;
+  par_prl_ = 0;
+  par_min_length_ = 0;
+  enclose_dist_ = 0;
+  cut_to_metal_space_ = 0;
+  min_adj_length_ = 0;
+  min_adj_length1_ = 0;
+  min_adj_length2_ = 0;
+  notch_length_ = 0;
   // User Code End Constructor
 }
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
-    _dbDatabase*                      db,
+    _dbDatabase* db,
     const _dbTechLayerSpacingEolRule& r)
 {
-  flags_.exact_width_valid_          = r.flags_.exact_width_valid_;
-  flags_.wrong_dir_spacing_valid_    = r.flags_.wrong_dir_spacing_valid_;
-  flags_.opposite_width_valid_       = r.flags_.opposite_width_valid_;
-  flags_.within_valid_               = r.flags_.within_valid_;
-  flags_.wrong_dir_within_valid_     = r.flags_.wrong_dir_within_valid_;
-  flags_.same_mask_valid_            = r.flags_.same_mask_valid_;
-  flags_.except_exact_width_valid_   = r.flags_.except_exact_width_valid_;
-  flags_.fill_concave_corner_valid_  = r.flags_.fill_concave_corner_valid_;
-  flags_.withcut_valid_              = r.flags_.withcut_valid_;
-  flags_.cut_class_valid_            = r.flags_.cut_class_valid_;
-  flags_.with_cut_above_valid_       = r.flags_.with_cut_above_valid_;
-  flags_.enclosure_end_valid_        = r.flags_.enclosure_end_valid_;
+  flags_.exact_width_valid_ = r.flags_.exact_width_valid_;
+  flags_.wrong_dir_spacing_valid_ = r.flags_.wrong_dir_spacing_valid_;
+  flags_.opposite_width_valid_ = r.flags_.opposite_width_valid_;
+  flags_.within_valid_ = r.flags_.within_valid_;
+  flags_.wrong_dir_within_valid_ = r.flags_.wrong_dir_within_valid_;
+  flags_.same_mask_valid_ = r.flags_.same_mask_valid_;
+  flags_.except_exact_width_valid_ = r.flags_.except_exact_width_valid_;
+  flags_.fill_concave_corner_valid_ = r.flags_.fill_concave_corner_valid_;
+  flags_.withcut_valid_ = r.flags_.withcut_valid_;
+  flags_.cut_class_valid_ = r.flags_.cut_class_valid_;
+  flags_.with_cut_above_valid_ = r.flags_.with_cut_above_valid_;
+  flags_.enclosure_end_valid_ = r.flags_.enclosure_end_valid_;
   flags_.enclosure_end_within_valid_ = r.flags_.enclosure_end_within_valid_;
-  flags_.end_prl_spacing_valid_      = r.flags_.end_prl_spacing_valid_;
-  flags_.prl_valid_                  = r.flags_.prl_valid_;
-  flags_.end_to_end_valid_           = r.flags_.end_to_end_valid_;
-  flags_.cut_spaces_valid_           = r.flags_.cut_spaces_valid_;
-  flags_.extension_valid_            = r.flags_.extension_valid_;
-  flags_.wrong_dir_extension_valid_  = r.flags_.wrong_dir_extension_valid_;
-  flags_.other_end_width_valid_      = r.flags_.other_end_width_valid_;
-  flags_.max_length_valid_           = r.flags_.max_length_valid_;
-  flags_.min_length_valid_           = r.flags_.min_length_valid_;
-  flags_.two_sides_valid_            = r.flags_.two_sides_valid_;
-  flags_.equal_rect_width_valid_     = r.flags_.equal_rect_width_valid_;
-  flags_.parallel_edge_valid_        = r.flags_.parallel_edge_valid_;
-  flags_.subtract_eol_width_valid_   = r.flags_.subtract_eol_width_valid_;
-  flags_.par_prl_valid_              = r.flags_.par_prl_valid_;
-  flags_.par_min_length_valid_       = r.flags_.par_min_length_valid_;
-  flags_.two_edges_valid_            = r.flags_.two_edges_valid_;
-  flags_.same_metal_valid_           = r.flags_.same_metal_valid_;
-  flags_.non_eol_corner_only_valid_  = r.flags_.non_eol_corner_only_valid_;
-  flags_.parallel_same_mask_valid_   = r.flags_.parallel_same_mask_valid_;
-  flags_.enclose_cut_valid_          = r.flags_.enclose_cut_valid_;
-  flags_.below_valid_                = r.flags_.below_valid_;
-  flags_.above_valid_                = r.flags_.above_valid_;
-  flags_.cut_spacing_valid_          = r.flags_.cut_spacing_valid_;
-  flags_.all_cuts_valid_             = r.flags_.all_cuts_valid_;
-  flags_.to_concave_corner_valid_    = r.flags_.to_concave_corner_valid_;
-  flags_.min_adjacent_length_valid_  = r.flags_.min_adjacent_length_valid_;
-  flags_.two_min_adj_length_valid_   = r.flags_.two_min_adj_length_valid_;
-  flags_.to_notch_length_valid_      = r.flags_.to_notch_length_valid_;
-  flags_.spare_bits_                 = r.flags_.spare_bits_;
-  eol_space_                         = r.eol_space_;
-  eol_width_                         = r.eol_width_;
-  wrong_dir_space_                   = r.wrong_dir_space_;
-  opposite_width_                    = r.opposite_width_;
-  eol_within_                        = r.eol_within_;
-  wrong_dir_within_                  = r.wrong_dir_within_;
-  exact_width_                       = r.exact_width_;
-  other_width_                       = r.other_width_;
-  fill_triangle_                     = r.fill_triangle_;
-  cut_class_                         = r.cut_class_;
-  with_cut_space_                    = r.with_cut_space_;
-  enclosure_end_width_               = r.enclosure_end_width_;
-  enclosure_end_within_              = r.enclosure_end_within_;
-  end_prl_space_                     = r.end_prl_space_;
-  end_prl_                           = r.end_prl_;
-  end_to_end_space_                  = r.end_to_end_space_;
-  one_cut_space_                     = r.one_cut_space_;
-  two_cut_space_                     = r.two_cut_space_;
-  extension_                         = r.extension_;
-  wrong_dir_extension_               = r.wrong_dir_extension_;
-  other_end_width_                   = r.other_end_width_;
-  max_length_                        = r.max_length_;
-  min_length_                        = r.min_length_;
-  par_space_                         = r.par_space_;
-  par_within_                        = r.par_within_;
-  par_prl_                           = r.par_prl_;
-  par_min_length_                    = r.par_min_length_;
-  enclose_dist_                      = r.enclose_dist_;
-  cut_to_metal_space_                = r.cut_to_metal_space_;
-  min_adj_length_                    = r.min_adj_length_;
-  min_adj_length1_                   = r.min_adj_length1_;
-  min_adj_length2_                   = r.min_adj_length2_;
-  notch_length_                      = r.notch_length_;
+  flags_.end_prl_spacing_valid_ = r.flags_.end_prl_spacing_valid_;
+  flags_.prl_valid_ = r.flags_.prl_valid_;
+  flags_.end_to_end_valid_ = r.flags_.end_to_end_valid_;
+  flags_.cut_spaces_valid_ = r.flags_.cut_spaces_valid_;
+  flags_.extension_valid_ = r.flags_.extension_valid_;
+  flags_.wrong_dir_extension_valid_ = r.flags_.wrong_dir_extension_valid_;
+  flags_.other_end_width_valid_ = r.flags_.other_end_width_valid_;
+  flags_.max_length_valid_ = r.flags_.max_length_valid_;
+  flags_.min_length_valid_ = r.flags_.min_length_valid_;
+  flags_.two_sides_valid_ = r.flags_.two_sides_valid_;
+  flags_.equal_rect_width_valid_ = r.flags_.equal_rect_width_valid_;
+  flags_.parallel_edge_valid_ = r.flags_.parallel_edge_valid_;
+  flags_.subtract_eol_width_valid_ = r.flags_.subtract_eol_width_valid_;
+  flags_.par_prl_valid_ = r.flags_.par_prl_valid_;
+  flags_.par_min_length_valid_ = r.flags_.par_min_length_valid_;
+  flags_.two_edges_valid_ = r.flags_.two_edges_valid_;
+  flags_.same_metal_valid_ = r.flags_.same_metal_valid_;
+  flags_.non_eol_corner_only_valid_ = r.flags_.non_eol_corner_only_valid_;
+  flags_.parallel_same_mask_valid_ = r.flags_.parallel_same_mask_valid_;
+  flags_.enclose_cut_valid_ = r.flags_.enclose_cut_valid_;
+  flags_.below_valid_ = r.flags_.below_valid_;
+  flags_.above_valid_ = r.flags_.above_valid_;
+  flags_.cut_spacing_valid_ = r.flags_.cut_spacing_valid_;
+  flags_.all_cuts_valid_ = r.flags_.all_cuts_valid_;
+  flags_.to_concave_corner_valid_ = r.flags_.to_concave_corner_valid_;
+  flags_.min_adjacent_length_valid_ = r.flags_.min_adjacent_length_valid_;
+  flags_.two_min_adj_length_valid_ = r.flags_.two_min_adj_length_valid_;
+  flags_.to_notch_length_valid_ = r.flags_.to_notch_length_valid_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  eol_space_ = r.eol_space_;
+  eol_width_ = r.eol_width_;
+  wrong_dir_space_ = r.wrong_dir_space_;
+  opposite_width_ = r.opposite_width_;
+  eol_within_ = r.eol_within_;
+  wrong_dir_within_ = r.wrong_dir_within_;
+  exact_width_ = r.exact_width_;
+  other_width_ = r.other_width_;
+  fill_triangle_ = r.fill_triangle_;
+  cut_class_ = r.cut_class_;
+  with_cut_space_ = r.with_cut_space_;
+  enclosure_end_width_ = r.enclosure_end_width_;
+  enclosure_end_within_ = r.enclosure_end_within_;
+  end_prl_space_ = r.end_prl_space_;
+  end_prl_ = r.end_prl_;
+  end_to_end_space_ = r.end_to_end_space_;
+  one_cut_space_ = r.one_cut_space_;
+  two_cut_space_ = r.two_cut_space_;
+  extension_ = r.extension_;
+  wrong_dir_extension_ = r.wrong_dir_extension_;
+  other_end_width_ = r.other_end_width_;
+  max_length_ = r.max_length_;
+  min_length_ = r.min_length_;
+  par_space_ = r.par_space_;
+  par_within_ = r.par_within_;
+  par_prl_ = r.par_prl_;
+  par_min_length_ = r.par_min_length_;
+  enclose_dist_ = r.enclose_dist_;
+  cut_to_metal_space_ = r.cut_to_metal_space_;
+  min_adj_length_ = r.min_adj_length_;
+  min_adj_length1_ = r.min_adj_length1_;
+  min_adj_length2_ = r.min_adj_length2_;
+  notch_length_ = r.notch_length_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -1701,16 +1701,16 @@ bool dbTechLayerSpacingEolRule::isToNotchLengthValid() const
 dbTechLayerSpacingEolRule* dbTechLayerSpacingEolRule::create(
     dbTechLayer* _layer)
 {
-  _dbTechLayer*               layer   = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerSpacingEolRule* newrule = layer->spacing_eol_rules_tbl_->create();
-  newrule->_layer                     = _layer->getImpl()->getOID();
+  newrule->_layer = _layer->getImpl()->getOID();
 
   return ((dbTechLayerSpacingEolRule*) newrule);
 }
 
 dbTechLayerSpacingEolRule*
 dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
-                                                      uint         dbid)
+                                                      uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingEolRule*) layer->spacing_eol_rules_tbl_->getPtr(

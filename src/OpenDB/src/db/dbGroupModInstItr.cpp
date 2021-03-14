@@ -61,15 +61,15 @@ void dbGroupModInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint      id      = _parent->_modinsts;
-  uint      list    = 0;
+  uint id = _parent->_modinsts;
+  uint list = 0;
 
   while (id != 0) {
-    _dbModInst* modinst  = _modinst_tbl->getPtr(id);
-    uint        n        = modinst->_group_next;
+    _dbModInst* modinst = _modinst_tbl->getPtr(id);
+    uint n = modinst->_group_next;
     modinst->_group_next = list;
-    list                 = id;
-    id                   = n;
+    list = id;
+    id = n;
   }
   _parent->_modinsts = list;
   // User Code End reverse

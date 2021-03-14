@@ -105,8 +105,8 @@ bool _dbViaParams::operator==(const _dbViaParams& rhs) const
   return true;
 }
 
-void _dbViaParams::differences(dbDiff&             diff,
-                               const char*         field,
+void _dbViaParams::differences(dbDiff& diff,
+                               const char* field,
                                const _dbViaParams& rhs) const
 {
   if (field)
@@ -190,22 +190,22 @@ _dbViaParams::_dbViaParams(const _dbViaParams& v)
 
 _dbViaParams::_dbViaParams()
 {
-  _x_cut_size      = 0;
-  _y_cut_size      = 0;
-  _x_cut_spacing   = 0;
-  _y_cut_spacing   = 0;
+  _x_cut_size = 0;
+  _y_cut_size = 0;
+  _x_cut_spacing = 0;
+  _y_cut_spacing = 0;
   _x_top_enclosure = 0;
   _y_top_enclosure = 0;
   _x_bot_enclosure = 0;
   _y_bot_enclosure = 0;
-  _num_cut_rows    = 1;
-  _num_cut_cols    = 1;
-  _x_origin        = 0;
-  _y_origin        = 0;
-  _x_top_offset    = 0;
-  _y_top_offset    = 0;
-  _x_bot_offset    = 0;
-  _y_bot_offset    = 0;
+  _num_cut_rows = 1;
+  _num_cut_cols = 1;
+  _x_origin = 0;
+  _y_origin = 0;
+  _x_top_offset = 0;
+  _y_top_offset = 0;
+  _x_bot_offset = 0;
+  _y_bot_offset = 0;
 }
 
 _dbViaParams::~_dbViaParams()

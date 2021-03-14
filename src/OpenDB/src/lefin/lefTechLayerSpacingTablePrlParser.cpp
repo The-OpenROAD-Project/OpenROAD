@@ -21,8 +21,8 @@
 #include "lefin.h"
 
 namespace lefTechLayerSpacingTablePrl {
-namespace qi      = boost::spirit::qi;
-namespace ascii   = boost::spirit::ascii;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 
 using boost::fusion::at_c;
@@ -37,53 +37,53 @@ using ascii::space;
 using phoenix::ref;
 
 void addInfluence(boost::fusion::vector<double, double, double>& params,
-                  odb::lefTechLayerSpacingTablePrlParser*        parser,
-                  odb::lefin*                                    lefin)
+                  odb::lefTechLayerSpacingTablePrlParser* parser,
+                  odb::lefin* lefin)
 {
-  auto width    = lefin->dbdist(at_c<0>(params));
+  auto width = lefin->dbdist(at_c<0>(params));
   auto distance = lefin->dbdist(at_c<1>(params));
-  auto spacing  = lefin->dbdist(at_c<2>(params));
+  auto spacing = lefin->dbdist(at_c<2>(params));
   parser->influence_tbl.push_back(std::make_tuple(width, distance, spacing));
 }
-void addLength(double                                  val,
+void addLength(double val,
                odb::lefTechLayerSpacingTablePrlParser* parser,
-               odb::lefin*                             lefin)
+               odb::lefin* lefin)
 {
   parser->length_tbl.push_back(lefin->dbdist(val));
 }
-void addWidth(double                                  val,
+void addWidth(double val,
               odb::lefTechLayerSpacingTablePrlParser* parser,
-              odb::lefin*                             lefin)
+              odb::lefin* lefin)
 {
   parser->width_tbl.push_back(lefin->dbdist(val));
   parser->curWidthIdx++;
   parser->spacing_tbl.push_back(std::vector<int>());
 }
-void addExcluded(boost::fusion::vector<double, double>&  params,
+void addExcluded(boost::fusion::vector<double, double>& params,
                  odb::lefTechLayerSpacingTablePrlParser* parser,
-                 odb::lefin*                             lefin)
+                 odb::lefin* lefin)
 {
-  auto low                                = lefin->dbdist(at_c<0>(params));
-  auto high                               = lefin->dbdist(at_c<1>(params));
+  auto low = lefin->dbdist(at_c<0>(params));
+  auto high = lefin->dbdist(at_c<1>(params));
   parser->within_map[parser->curWidthIdx] = {low, high};
 }
-void addSpacing(double                                  val,
+void addSpacing(double val,
                 odb::lefTechLayerSpacingTablePrlParser* parser,
-                odb::lefin*                             lefin)
+                odb::lefin* lefin)
 {
   parser->spacing_tbl[parser->curWidthIdx].push_back(lefin->dbdist(val));
 }
-void setEolWidth(double                               val,
+void setEolWidth(double val,
                  odb::dbTechLayerSpacingTablePrlRule* rule,
-                 odb::lefin*                          lefin)
+                 odb::lefin* lefin)
 {
   rule->setEolWidth(lefin->dbdist(val));
 }
 template <typename Iterator>
-bool parse(Iterator                                first,
-           Iterator                                last,
-           odb::dbTechLayer*                       layer,
-           odb::lefin*                             lefin,
+bool parse(Iterator first,
+           Iterator last,
+           odb::dbTechLayer* layer,
+           odb::lefin* lefin,
            odb::lefTechLayerSpacingTablePrlParser* parser)
 {
   odb::dbTechLayerSpacingTablePrlRule* rule
@@ -140,9 +140,9 @@ bool parse(Iterator                                first,
 
 namespace odb {
 
-bool lefTechLayerSpacingTablePrlParser::parse(std::string  s,
+bool lefTechLayerSpacingTablePrlParser::parse(std::string s,
                                               dbTechLayer* layer,
-                                              odb::lefin*  l)
+                                              odb::lefin* l)
 {
   return lefTechLayerSpacingTablePrl::parse(s.begin(), s.end(), layer, l, this);
 }

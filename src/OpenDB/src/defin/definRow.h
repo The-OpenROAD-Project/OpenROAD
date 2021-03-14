@@ -37,8 +37,8 @@
 #include <map>
 #include <vector>
 
-#include "odb.h"
 #include "definBase.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -57,20 +57,20 @@ class definRow : public definBase
   };
 
   typedef std::map<const char*, dbSite*, ltstr> SiteMap;
-  SiteMap                                       _sites;
-  std::vector<dbLib*>                           _libs;
-  dbRow*                                        _cur_row;
+  SiteMap _sites;
+  std::vector<dbLib*> _libs;
+  dbRow* _cur_row;
 
  public:
   /// Row interface methods
-  virtual void begin(const char*  name,
-                     const char*  site,
-                     int          origin_x,
-                     int          origin_y,
+  virtual void begin(const char* name,
+                     const char* site,
+                     int origin_x,
+                     int origin_y,
                      dbOrientType orient,
-                     defRow       direction,
-                     int          num_sites,
-                     int          spacing);
+                     defRow direction,
+                     int num_sites,
+                     int spacing);
   virtual void property(const char* name, const char* value);
   virtual void property(const char* name, int value);
   virtual void property(const char* name, double value);

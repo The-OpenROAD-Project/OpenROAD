@@ -60,16 +60,16 @@ bool dbSWireItr::orderReversed()
 
 void dbSWireItr::reverse(dbObject* parent)
 {
-  _dbNet* net  = (_dbNet*) parent;
-  uint    id   = net->_swires;
-  uint    list = 0;
+  _dbNet* net = (_dbNet*) parent;
+  uint id = net->_swires;
+  uint list = 0;
 
   while (id != 0) {
-    _dbSWire* swire    = _swire_tbl->getPtr(id);
-    uint      n        = swire->_next_swire;
+    _dbSWire* swire = _swire_tbl->getPtr(id);
+    uint n = swire->_next_swire;
     swire->_next_swire = list;
-    list               = id;
-    id                 = n;
+    list = id;
+    id = n;
   }
 
   net->_swires = list;

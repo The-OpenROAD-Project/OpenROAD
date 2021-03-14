@@ -69,12 +69,12 @@ class _dbTechLayerMinStepRule : public _dbObject
   // User Code End Enums
 
   dbTechLayerMinStepRuleFlags flags_;
-  int                         min_step_length_;
-  uint                        max_edges_;
-  int                         min_adj_length1_;
-  int                         min_adj_length2_;
-  int                         eol_width_;
-  int                         min_between_length_;
+  int min_step_length_;
+  uint max_edges_;
+  int min_adj_length1_;
+  int min_adj_length2_;
+  int eol_width_;
+  int min_between_length_;
 
   // User Code Begin Fields
   // User Code End Fields
@@ -87,8 +87,8 @@ class _dbTechLayerMinStepRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerMinStepRule& rhs) const;
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerMinStepRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods

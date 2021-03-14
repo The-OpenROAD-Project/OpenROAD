@@ -99,8 +99,8 @@ bool _dbTechLayerMinStepRule::operator<(
   return true;
 }
 void _dbTechLayerMinStepRule::differences(
-    dbDiff&                        diff,
-    const char*                    field,
+    dbDiff& diff,
+    const char* field,
     const _dbTechLayerMinStepRule& rhs) const
 {
   DIFF_BEGIN
@@ -122,8 +122,8 @@ void _dbTechLayerMinStepRule::differences(
   // User Code End Differences
   DIFF_END
 }
-void _dbTechLayerMinStepRule::out(dbDiff&     diff,
-                                  char        side,
+void _dbTechLayerMinStepRule::out(dbDiff& diff,
+                                  char side,
                                   const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -148,28 +148,28 @@ void _dbTechLayerMinStepRule::out(dbDiff&     diff,
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
+  *flags__bit_field = 0;
   // User Code Begin Constructor
   // User Code End Constructor
 }
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
-    _dbDatabase*                   db,
+    _dbDatabase* db,
     const _dbTechLayerMinStepRule& r)
 {
-  flags_.max_edges_valid_          = r.flags_.max_edges_valid_;
-  flags_.min_adj_length1_valid_    = r.flags_.min_adj_length1_valid_;
-  flags_.no_between_eol_           = r.flags_.no_between_eol_;
-  flags_.min_adj_length2_valid_    = r.flags_.min_adj_length2_valid_;
-  flags_.convex_corner_            = r.flags_.convex_corner_;
+  flags_.max_edges_valid_ = r.flags_.max_edges_valid_;
+  flags_.min_adj_length1_valid_ = r.flags_.min_adj_length1_valid_;
+  flags_.no_between_eol_ = r.flags_.no_between_eol_;
+  flags_.min_adj_length2_valid_ = r.flags_.min_adj_length2_valid_;
+  flags_.convex_corner_ = r.flags_.convex_corner_;
   flags_.min_between_length_valid_ = r.flags_.min_between_length_valid_;
-  flags_.except_same_corners_      = r.flags_.except_same_corners_;
-  flags_.spare_bits_               = r.flags_.spare_bits_;
-  min_step_length_                 = r.min_step_length_;
-  max_edges_                       = r.max_edges_;
-  min_adj_length1_                 = r.min_adj_length1_;
-  min_adj_length2_                 = r.min_adj_length2_;
-  eol_width_                       = r.eol_width_;
-  min_between_length_              = r.min_between_length_;
+  flags_.except_same_corners_ = r.flags_.except_same_corners_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  min_step_length_ = r.min_step_length_;
+  max_edges_ = r.max_edges_;
+  min_adj_length1_ = r.min_adj_length1_;
+  min_adj_length2_ = r.min_adj_length2_;
+  eol_width_ = r.eol_width_;
+  min_between_length_ = r.min_between_length_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -398,14 +398,14 @@ bool dbTechLayerMinStepRule::isExceptSameCorners() const
 // User Code Begin dbTechLayerMinStepRulePublicMethods
 dbTechLayerMinStepRule* dbTechLayerMinStepRule::create(dbTechLayer* _layer)
 {
-  _dbTechLayer*            layer   = (_dbTechLayer*) _layer;
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerMinStepRule* newrule = layer->minstep_rules_tbl_->create();
   return ((dbTechLayerMinStepRule*) newrule);
 }
 
 dbTechLayerMinStepRule* dbTechLayerMinStepRule::getTechLayerMinStepRule(
     dbTechLayer* inly,
-    uint         dbid)
+    uint dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerMinStepRule*) layer->minstep_rules_tbl_->getPtr(dbid);

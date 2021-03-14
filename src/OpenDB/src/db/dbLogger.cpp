@@ -52,15 +52,15 @@ typedef struct deb_rec
 
 #define NUMDEBMOD 64
 DEBREC debstatus[NUMDEBMOD];
-int    debcnt = 0;
+int debcnt = 0;
 
 #define MAX_WARN_STR 4096
 #define WARN_CNT 50
 typedef struct warn_rec
 {
   char* msg;
-  int   cnt;
-  int   maxcnt;
+  int cnt;
+  int maxcnt;
 } WARNREC;
 WARNREC warnstr[MAX_WARN_STR];
 
@@ -89,7 +89,7 @@ int isDebug(const char* mod, const char* tag)
     }
 
     bool flag = false;
-    int  idx  = -1;
+    int idx = -1;
 
     if (last_idx != -1) {
       if (strcmp(debstatus[last_idx].mod, mod) == 0) {
@@ -101,9 +101,9 @@ int isDebug(const char* mod, const char* tag)
       // find the module
       for (int i = 0; i < debcnt; i++) {
         if (strcmp(debstatus[i].mod, mod) == 0) {
-          flag               = true;
-          idx                = i;
-          last_idx           = idx;
+          flag = true;
+          idx = i;
+          last_idx = idx;
           last_failed_mod[0] = '\0';
           break;
         }
@@ -116,7 +116,7 @@ int isDebug(const char* mod, const char* tag)
     }
 
     // check for actual debugging..
-    flag     = false;
+    flag = false;
     int tlen = strlen(tag);
     int olen = strlen(debstatus[idx].only);
 
@@ -192,7 +192,7 @@ int checkWarning(const char* msg)
   if (idx == -1) {
     for (int i = 0; i < warncnt; i++) {
       if (strcmp(msg, warnstr[i].msg) == 0) {
-        idx      = i;
+        idx = i;
         last_idx = idx;
         break;
       }
@@ -206,8 +206,8 @@ int checkWarning(const char* msg)
         return 0;
       }
       // not found - first time for this message
-      warnstr[warncnt].msg    = strdup(msg);
-      warnstr[warncnt].cnt    = 1;
+      warnstr[warncnt].msg = strdup(msg);
+      warnstr[warncnt].cnt = 1;
       warnstr[warncnt].maxcnt = WARN_CNT;
 
       idx = warncnt;

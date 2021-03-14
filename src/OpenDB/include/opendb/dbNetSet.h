@@ -44,34 +44,34 @@ class dbSetIterator<dbNet>
   friend class dbSet<dbNet>;
 
   dbIterator* _itr;
-  uint        _cur;
-  dbObject*   _parent;
+  uint _cur;
+  dbObject* _parent;
 
   dbSetIterator(dbIterator* itr, uint id, dbObject* parent)
   {
-    _itr    = itr;
-    _cur    = id;
+    _itr = itr;
+    _cur = id;
     _parent = parent;
   }
 
  public:
-  typedef dbNet*                  value_type;
-  typedef std::ptrdiff_t          difference_type;
-  typedef dbNet**                 pointer;
-  typedef dbNet*&                 reference;
+  typedef dbNet* value_type;
+  typedef std::ptrdiff_t difference_type;
+  typedef dbNet** pointer;
+  typedef dbNet*& reference;
   typedef std::input_iterator_tag iterator_category;
 
   dbSetIterator()
   {
-    _itr    = NULL;
-    _cur    = 0;
+    _itr = NULL;
+    _cur = 0;
     _parent = NULL;
   }
 
   dbSetIterator(const dbSetIterator& it)
   {
-    _itr    = it._itr;
-    _cur    = it._cur;
+    _itr = it._itr;
+    _cur = it._cur;
     _parent = it._parent;
   }
 
@@ -107,26 +107,26 @@ template <>
 class dbSet<dbNet>
 {
   dbIterator* _itr;
-  dbObject*   _parent;
+  dbObject* _parent;
 
  public:
   typedef dbSetIterator<dbNet> iterator;
 
   dbSet()
   {
-    _itr    = NULL;
+    _itr = NULL;
     _parent = NULL;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)
   {
     _parent = parent;
-    _itr    = itr;
+    _itr = itr;
   }
 
   dbSet(const dbSet<dbNet>& c)
   {
-    _itr    = c._itr;
+    _itr = c._itr;
     _parent = c._parent;
   }
 
@@ -174,5 +174,3 @@ class dbSet<dbNet>
 };
 
 }  // namespace odb
-
-

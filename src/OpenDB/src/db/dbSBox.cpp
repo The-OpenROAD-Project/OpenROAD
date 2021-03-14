@@ -78,8 +78,8 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
   return _dbBox::operator<(rhs);
 }
 
-void _dbSBox::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbSBox::differences(dbDiff& diff,
+                          const char* field,
                           const _dbSBox& rhs) const
 {
   if (diff.deepDiff())
@@ -92,7 +92,7 @@ void _dbSBox::differences(dbDiff&        diff,
   DIFF_FIELD(_flags._is_block_via);
   DIFF_FIELD(_flags._layer_id);
   DIFF_FIELD(_flags._via_id);
-  if(!isOct())
+  if (!isOct())
     DIFF_FIELD(_shape._rect);
   DIFF_FIELD_NO_DEEP(_owner);
   DIFF_FIELD_NO_DEEP(_next_box);
@@ -109,7 +109,7 @@ void _dbSBox::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_FIELD(_flags._is_block_via);
     DIFF_OUT_FIELD(_flags._layer_id);
     DIFF_OUT_FIELD(_flags._via_id);
-    if(!isOct())
+    if (!isOct())
       DIFF_OUT_FIELD(_shape._rect);
     DIFF_OUT_FIELD(_owner);
     DIFF_END
@@ -178,19 +178,19 @@ Oct dbSBox::getOct()
   _dbSBox* box = (_dbSBox*) this;
   return box->_shape._oct;
 }
-dbSBox* dbSBox::create(dbSWire*        wire_,
-                       dbTechLayer*    layer_,
-                       int             x1,
-                       int             y1,
-                       int             x2,
-                       int             y2,
+dbSBox* dbSBox::create(dbSWire* wire_,
+                       dbTechLayer* layer_,
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2,
                        dbWireShapeType type,
-                       Direction       dir,
+                       Direction dir,
                        int width)
 {
-  _dbSWire* wire  = (_dbSWire*) wire_;
+  _dbSWire* wire = (_dbSWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
-  _dbSBox*  box   = block->_sbox_tbl->create();
+  _dbSBox* box = block->_sbox_tbl->create();
 
   uint dx;
   if (x2 > x1)
@@ -221,107 +221,104 @@ dbSBox* dbSBox::create(dbSWire*        wire_,
         return NULL;
       break;
     case OCTILINEAR:
-      if(dx!=dy)
+      if (dx != dy)
         return NULL;
       break;
   }
 
-  box->_flags._layer_id   = layer_->getImpl()->getOID();
+  box->_flags._layer_id = layer_->getImpl()->getOID();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner             = wire->getOID();
+  box->_owner = wire->getOID();
   GeomShape* _geomshape;
-  if(dir==OCTILINEAR)
-  {
-    Point p1(x1,y1);
-    Point p2(x2,y2);
+  if (dir == OCTILINEAR) {
+    Point p1(x1, y1);
+    Point p2(x2, y2);
     new (&box->_shape._oct) Oct();
-    box->_shape._oct.init(p1,p2,width);
-    box->_octilinear=true;
-    _geomshape =(GeomShape*) &(box->_shape._oct);
-  }else
-  {
+    box->_shape._oct.init(p1, p2, width);
+    box->_octilinear = true;
+    _geomshape = (GeomShape*) &(box->_shape._oct);
+  } else {
     box->_shape._rect.init(x1, y1, x2, y2);
-    box->_octilinear=false;
-    _geomshape =(GeomShape*) &(box->_shape._rect);
+    box->_octilinear = false;
+    _geomshape = (GeomShape*) &(box->_shape._rect);
   }
-
 
   box->_sflags._wire_type = type.getValue();
   box->_sflags._direction = dir;
 
   // link box to wire
   box->_next_box = (uint) wire->_wires;
-  wire->_wires   = box->getOID();
+  wire->_wires = box->getOID();
 
-  block->add_geom_shape(_geomshape); 
-  
+  block->add_geom_shape(_geomshape);
+
   return (dbSBox*) box;
 }
 
-dbSBox* dbSBox::create(dbSWire*        wire_,
-                       dbVia*          via_,
-                       int             x,
-                       int             y,
+dbSBox* dbSBox::create(dbSWire* wire_,
+                       dbVia* via_,
+                       int x,
+                       int y,
                        dbWireShapeType type)
 {
-  _dbSWire* wire  = (_dbSWire*) wire_;
-  _dbVia*   via   = (_dbVia*) via_;
+  _dbSWire* wire = (_dbSWire*) wire_;
+  _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
   if (via->_bbox == 0)
     return NULL;
 
-  _dbBox*  vbbox          = block->_box_tbl->getPtr(via->_bbox);
-  int      xmin           = vbbox->_shape._rect.xMin() + x;
-  int      ymin           = vbbox->_shape._rect.yMin() + y;
-  int      xmax           = vbbox->_shape._rect.xMax() + x;
-  int      ymax           = vbbox->_shape._rect.yMax() + y;
-  _dbSBox* box            = block->_sbox_tbl->create();
+  _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
+  int xmin = vbbox->_shape._rect.xMin() + x;
+  int ymin = vbbox->_shape._rect.yMin() + y;
+  int xmax = vbbox->_shape._rect.xMax() + x;
+  int ymax = vbbox->_shape._rect.yMax() + y;
+  _dbSBox* box = block->_sbox_tbl->create();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner             = wire->getOID();
+  box->_owner = wire->getOID();
   box->_shape._rect.init(xmin, ymin, xmax, ymax);
   box->_flags._is_block_via = 1;
-  box->_flags._via_id       = via->getOID();
-  box->_sflags._wire_type   = type.getValue();
-  box->_octilinear=false;
+  box->_flags._via_id = via->getOID();
+  box->_sflags._wire_type = type.getValue();
+  box->_octilinear = false;
   // link box to wire
   box->_next_box = (uint) wire->_wires;
-  wire->_wires   = box->getOID();
+  wire->_wires = box->getOID();
 
   block->add_rect(box->_shape._rect);
   return (dbSBox*) box;
 }
 
-dbSBox* dbSBox::create(dbSWire*        wire_,
-                       dbTechVia*      via_,
-                       int             x,
-                       int             y,
+dbSBox* dbSBox::create(dbSWire* wire_,
+                       dbTechVia* via_,
+                       int x,
+                       int y,
                        dbWireShapeType type)
 {
-  _dbSWire*   wire  = (_dbSWire*) wire_;
-  _dbTechVia* via   = (_dbTechVia*) via_;
-  _dbBlock*   block = (_dbBlock*) wire->getOwner();
+  _dbSWire* wire = (_dbSWire*) wire_;
+  _dbTechVia* via = (_dbTechVia*) via_;
+  _dbBlock* block = (_dbBlock*) wire->getOwner();
 
   if (via->_bbox == 0)
     return NULL;
 
-  _dbTech* tech           = (_dbTech*) via->getOwner();
-  _dbBox*  vbbox          = tech->_box_tbl->getPtr(via->_bbox);
-  int      xmin           = vbbox->_shape._rect.xMin() + x;
-  int      ymin           = vbbox->_shape._rect.yMin() + y;
-  int      xmax           = vbbox->_shape._rect.xMax() + x;
-  int      ymax           = vbbox->_shape._rect.yMax() + y;
-  _dbSBox* box            = block->_sbox_tbl->create();
+  _dbTech* tech = (_dbTech*) via->getOwner();
+  _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
+  int xmin = vbbox->_shape._rect.xMin() + x;
+  int ymin = vbbox->_shape._rect.yMin() + y;
+  int xmax = vbbox->_shape._rect.xMax() + x;
+  int ymax = vbbox->_shape._rect.yMax() + y;
+  _dbSBox* box = block->_sbox_tbl->create();
   box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_owner             = wire->getOID();
+  box->_owner = wire->getOID();
   box->_shape._rect.init(xmin, ymin, xmax, ymax);
   box->_flags._is_tech_via = 1;
-  box->_flags._via_id      = via->getOID();
-  box->_sflags._wire_type  = type.getValue();
-  box->_octilinear=false;
+  box->_flags._via_id = via->getOID();
+  box->_sflags._wire_type = type.getValue();
+  box->_octilinear = false;
   // link box to wire
   box->_next_box = (uint) wire->_wires;
-  wire->_wires   = box->getOID();
+  wire->_wires = box->getOID();
 
   block->add_rect(box->_shape._rect);
   return (dbSBox*) box;

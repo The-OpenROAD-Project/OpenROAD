@@ -60,7 +60,7 @@ class DListIterator
   T* _cur;
 
   void incr() { _cur = NEXT(_cur); }
-  T*&  NEXT(T* n) { return ENTRY(n)->_next; }
+  T*& NEXT(T* n) { return ENTRY(n)->_next; }
 
  public:
   DListIterator() { _cur = NULL; }
@@ -74,7 +74,7 @@ class DListIterator
 
   bool operator==(const DListIterator& i) const { return _cur == i._cur; }
   bool operator!=(const DListIterator& i) const { return _cur != i._cur; }
-  T*   operator*() { return _cur; }
+  T* operator*() { return _cur; }
   DListIterator<T, ENTRY>& operator++()
   {
     incr();
@@ -122,35 +122,35 @@ class DList
   void push_front(T* p)
   {
     if (_head == NULL) {
-      _head   = p;
-      _tail   = p;
+      _head = p;
+      _tail = p;
       NEXT(p) = NULL;
       PREV(p) = NULL;
     } else {
       PREV(_head) = p;
-      NEXT(p)     = _head;
-      PREV(p)     = NULL;
-      _head       = p;
+      NEXT(p) = _head;
+      PREV(p) = NULL;
+      _head = p;
     }
   }
 
   void push_back(T* p)
   {
     if (_head == NULL) {
-      _head   = p;
-      _tail   = p;
+      _head = p;
+      _tail = p;
       NEXT(p) = NULL;
       PREV(p) = NULL;
     } else {
       NEXT(_tail) = p;
-      PREV(p)     = _tail;
-      NEXT(p)     = NULL;
-      _tail       = p;
+      PREV(p) = _tail;
+      NEXT(p) = NULL;
+      _tail = p;
     }
   }
 
-  void     clear() { _head = _tail = NULL; }
-  bool     empty() const { return _head == NULL; }
+  void clear() { _head = _tail = NULL; }
+  bool empty() const { return _head == NULL; }
   iterator begin() { return iterator(_head); }
   iterator end() { return iterator(NULL); }
 
@@ -158,10 +158,10 @@ class DList
   {
     T* head = l._head;
     l._head = _head;
-    _head   = head;
+    _head = head;
     T* tail = l._tail;
     l._tail = _tail;
-    _tail   = tail;
+    _tail = tail;
   }
 
   iterator remove(T* p) { return remove(iterator(p)); }
@@ -171,21 +171,21 @@ class DList
   {
     if (*itr1 == _head) {
       if (_head == NULL) {
-        _head       = *itr2;
-        _tail       = *itr2;
+        _head = *itr2;
+        _tail = *itr2;
         NEXT(*itr2) = NULL;
         PREV(*itr2) = NULL;
       } else {
         PREV(_head) = *itr2;
         NEXT(*itr2) = _head;
         PREV(*itr2) = NULL;
-        _head       = *itr2;
+        _head = *itr2;
       }
     } else {
       NEXT(PREV(*itr1)) = *itr2;
-      PREV(*itr2)       = PREV(*itr1);
-      NEXT(*itr2)       = *itr1;
-      PREV(*itr1)       = *itr2;
+      PREV(*itr2) = PREV(*itr1);
+      NEXT(*itr2) = *itr1;
+      PREV(*itr1) = *itr2;
     }
   }
 
@@ -198,13 +198,13 @@ class DList
       }
 
       else {
-        _head       = NEXT(*cur);
+        _head = NEXT(*cur);
         PREV(_head) = NULL;
       }
     }
 
     else if (*cur == _tail) {
-      _tail       = PREV(*cur);
+      _tail = PREV(*cur);
       NEXT(_tail) = NULL;
     }
 
@@ -225,16 +225,16 @@ class DList
     T* n = NEXT(c);
 
     while (n) {
-      T* tmp  = NEXT(n);
+      T* tmp = NEXT(n);
       PREV(c) = n;
       NEXT(n) = c;
-      c       = n;
-      n       = tmp;
+      c = n;
+      n = tmp;
     }
 
     T* tmp = _head;
-    _head  = _tail;
-    _tail  = tmp;
+    _head = _tail;
+    _tail = tmp;
 
     PREV(_head) = NULL;
     NEXT(_tail) = NULL;
@@ -242,7 +242,7 @@ class DList
 
   int size()
   {
-    T*  c;
+    T* c;
     int i = 0;
     for (c = _head; c != NULL; c = NEXT(c))
       ++i;
@@ -252,9 +252,9 @@ class DList
   void merge(DList<T, ENTRY>& l)
   {
     iterator first1 = begin();
-    iterator last1  = end();
+    iterator last1 = end();
     iterator first2 = l.begin();
-    iterator last2  = l.end();
+    iterator last2 = l.end();
 
     while (first1 != last1 && first2 != last2) {
       if (lessthan(**first2, **first1)) {
@@ -272,9 +272,9 @@ class DList
         _head = *first2;
         _tail = l._tail;
       } else {
-        NEXT(_tail)   = *first2;
+        NEXT(_tail) = *first2;
         PREV(*first2) = _tail;
-        _tail         = l._tail;
+        _tail = l._tail;
       }
     }
 
@@ -286,9 +286,9 @@ class DList
   void merge(DList<T, ENTRY>& l, CMP cmp)
   {
     iterator first1 = begin();
-    iterator last1  = end();
+    iterator last1 = end();
     iterator first2 = l.begin();
-    iterator last2  = l.end();
+    iterator last2 = l.end();
 
     while (first1 != last1 && first2 != last2) {
       if (cmp(**first2, **first1)) {
@@ -306,9 +306,9 @@ class DList
         _head = *first2;
         _tail = l._tail;
       } else {
-        NEXT(_tail)   = *first2;
+        NEXT(_tail) = *first2;
         PREV(*first2) = _tail;
-        _tail         = l._tail;
+        _tail = l._tail;
       }
     }
 
@@ -321,7 +321,7 @@ class DList
     if ((_head != NULL) && (NEXT(_head) != NULL)) {
       DList<T, ENTRY> carry;
       DList<T, ENTRY> counter[64];
-      int             fill = 0;
+      int fill = 0;
 
       while (!empty()) {
         T* head = NEXT(_head);
@@ -351,7 +351,7 @@ class DList
     if ((_head != NULL) && (NEXT(_head) != NULL)) {
       DList<T, ENTRY> carry;
       DList<T, ENTRY> counter[64];
-      int             fill = 0;
+      int fill = 0;
 
       while (!empty()) {
         T* head = NEXT(_head);

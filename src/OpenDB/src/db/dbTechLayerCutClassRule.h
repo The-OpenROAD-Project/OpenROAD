@@ -63,11 +63,11 @@ class _dbTechLayerCutClassRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerCutClassRuleFlags   flags_;
-  char*                          _name;
-  int                            width_;
-  int                            length_;
-  int                            num_cuts_;
+  dbTechLayerCutClassRuleFlags flags_;
+  char* _name;
+  int width_;
+  int length_;
+  int num_cuts_;
   dbId<_dbTechLayerCutClassRule> _next_entry;
 
   // User Code Begin Fields
@@ -81,8 +81,8 @@ class _dbTechLayerCutClassRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutClassRule& rhs) const;
-  void differences(dbDiff&                         diff,
-                   const char*                     field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCutClassRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods

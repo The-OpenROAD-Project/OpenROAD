@@ -31,7 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "defout.h"
+
 #include <stdio.h>
+
 #include "db.h"
 #include "defout_impl.h"
 

@@ -47,15 +47,15 @@ namespace odb {
 
 dbBlockSearch::dbBlockSearch(dbBlock* blk, dbTech* tech)
 {
-  _block   = blk;
-  _tech    = tech;
+  _block = blk;
+  _tech = tech;
   _blockId = blk->getId();
 
   _signalNetSdb = NULL;
-  _netSdb       = NULL;
-  _netViaSdb    = NULL;
-  _instSdb      = NULL;
-  _trackSdb     = NULL;
+  _netSdb = NULL;
+  _netViaSdb = NULL;
+  _instSdb = NULL;
+  _trackSdb = NULL;
 
   initMenuIds();
 
@@ -79,27 +79,27 @@ void dbBlockSearch::initMenuIds()
 {
   _blockMenuId = 0;
 
-  _block_bb_id    = 1;  // ids are required by SDB in the absence of GUI
-  _block_pin_id   = 2;
-  _block_obs_id   = 3;
+  _block_bb_id = 1;  // ids are required by SDB in the absence of GUI
+  _block_pin_id = 2;
+  _block_obs_id = 3;
   _block_track_id = 4;
 
   _instMenuId = 0;
 
-  _inst_bb_id    = 5;
-  _inst_pin_id   = 6;
-  _inst_obs_id   = 7;
+  _inst_bb_id = 5;
+  _inst_pin_id = 6;
+  _inst_obs_id = 7;
   _inst_white_id = 8;
 
   _signalMenuId = 0;
 
   _signal_wire_id = 9;
-  _signal_via_id  = 10;
+  _signal_via_id = 10;
 
   _powerMenuId = 0;
 
   _power_wire_id = 11;
-  _power_via_id  = 12;
+  _power_via_id = 12;
 }
 uint dbBlockSearch::getBbox(int* x1, int* y1, int* x2, int* y2)
 {
@@ -221,8 +221,8 @@ void dbBlockSearch::resetNetSdb()
 }
 uint dbBlockSearch::makeInstSearchDb()
 {
-  uint maxInt    = 2100000000;
-  uint minWidth  = maxInt;
+  uint maxInt = 2100000000;
+  uint minWidth = maxInt;
   uint minHeight = maxInt;
 
   dbSet<dbInst> insts = _block->getInsts();
@@ -235,7 +235,7 @@ uint dbBlockSearch::makeInstSearchDb()
   // maxBox->getBox(maxRect);
 
   dbSet<dbInst>::iterator inst_itr;
-  uint                    instCnt = 0;
+  uint instCnt = 0;
   for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
     dbInst* inst = *inst_itr;
 
@@ -246,7 +246,7 @@ uint dbBlockSearch::makeInstSearchDb()
 
     dbBox* bb = inst->getBBox();
 
-    minWidth  = MIN(minWidth, bb->getDX());
+    minWidth = MIN(minWidth, bb->getDX());
     minHeight = MIN(minHeight, bb->getDY());
 
     Rect r;
@@ -281,7 +281,7 @@ continue;
   }
 
   uint start = 0;
-  uint end   = 0;
+  uint end = 0;
   // uint adjustedMarkerCnt= _instSdb->setExtrusionMarker(start, end);
   _instSdb->setExtrusionMarker(start, end);
   return instCnt;
@@ -292,13 +292,13 @@ uint dbBlockSearch::makeTrackSearchDb()
   Rect maxRect;
   _block->getDieArea(maxRect);
 
-  dbSet<dbTechLayer>           layers = _tech->getLayers();
+  dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
   uint cnt = 0;
 
   dbSet<dbTechLayer>::iterator litr;
-  dbTechLayer*                 layer;
+  dbTechLayer* layer;
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     layer = *litr;
     if (layer->getType() != dbTechLayerType::ROUTING)
@@ -327,10 +327,10 @@ uint dbBlockSearch::makeTrackSearchDb()
 #endif
 #ifndef NEW_TRACKS
 uint dbBlockSearch::addTracks(dbTrackGrid* g,
-                              uint         dir,
-                              uint         level,
-                              int          lo[2],
-                              int          hi[2])
+                              uint dir,
+                              uint level,
+                              int lo[2],
+                              int hi[2])
 {
   std::vector<int> trackXY(32000);
 
@@ -341,7 +341,7 @@ uint dbBlockSearch::addTracks(dbTrackGrid* g,
 
   uint cnt = 0;
   for (uint ii = 0; ii < trackXY.size(); ii++) {
-    int xy  = trackXY[ii];
+    int xy = trackXY[ii];
     lo[dir] = xy;
     hi[dir] = xy + 1;
     cnt++;
@@ -394,14 +394,14 @@ uint dbBlockSearch::getBlockObs(bool ignoreFlags)
     return 0;
 
   dbSet<dbObstruction> obstructions = _block->getObstructions();
-  dbSet<dbBlockage>    blockages    = _block->getBlockages();
+  dbSet<dbBlockage> blockages = _block->getBlockages();
 
   int bcnt = obstructions.size() + blockages.size();
 
   if (bcnt == 0)
     return 0;
 
-  uint                           cnt = 0;
+  uint cnt = 0;
   dbSet<dbObstruction>::iterator obs_itr;
 
   for (obs_itr = obstructions.begin(); obs_itr != obstructions.end();
@@ -413,8 +413,8 @@ uint dbBlockSearch::getBlockObs(bool ignoreFlags)
     // if ( obs->isFillObstruction() )
     // if ( obs->isPushedDown() )
 
-    dbBox* s     = obs->getBBox();
-    uint   level = s->getTechLayer()->getRoutingLevel();
+    dbBox* s = obs->getBBox();
+    uint level = s->getTechLayer()->getRoutingLevel();
     cnt += _dcr->addBox(s->getId(),
                         _block_obs_id,
                         _blockMenuId,
@@ -437,8 +437,8 @@ uint dbBlockSearch::getBlockObs(bool ignoreFlags)
     // if ( obs->isFillObstruction() )
     // if ( obs->isPushedDown() )
 
-    dbBox* s     = obs->getBBox();
-    uint   level = 0;
+    dbBox* s = obs->getBBox();
+    uint level = 0;
     if (s->getTechLayer() != NULL)
       level = s->getTechLayer()->getRoutingLevel();
 
@@ -472,27 +472,25 @@ uint dbBlockSearch::addInstBox(dbInst* inst)
 }
 uint dbBlockSearch::addBoxes(dbBTerm* bterm)
 {
-  uint                    cnt   = 0;
-  dbSet<dbBPin>           bpins = bterm->getBPins();
+  uint cnt = 0;
+  dbSet<dbBPin> bpins = bterm->getBPins();
   dbSet<dbBPin>::iterator itr;
 
   // TWG: Added bpins
   for (itr = bpins.begin(); itr != bpins.end(); ++itr) {
     dbBPin* bpin = *itr;
 
-    for (dbBox* box : bpin->getBoxes())
-    {
+    for (dbBox* box : bpin->getBoxes()) {
       cnt += _dcr->addBox(box->getId(),
-                            _block_pin_id,
-                            _blockMenuId,
-                            box->getTechLayer()->getRoutingLevel(),
-                            box->xMin(),
-                            box->yMin(),
-                            box->xMax(),
-                            box->yMax(),
-                            0);
+                          _block_pin_id,
+                          _blockMenuId,
+                          box->getTechLayer()->getRoutingLevel(),
+                          box->xMin(),
+                          box->yMin(),
+                          box->xMax(),
+                          box->yMax(),
+                          0);
     }
-
   }
 
   return cnt;
@@ -502,7 +500,7 @@ uint dbBlockSearch::addBtermBoxes(dbSet<dbBTerm>& bterms, bool ignoreFlag)
   if (!(ignoreFlag || _dcr->getSubMenuFlag(_blockMenuId, _block_pin_id)))
     return 0;
 
-  uint                     cnt = 0;
+  uint cnt = 0;
   dbSet<dbBTerm>::iterator itr;
   for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
     dbBTerm* bterm = *itr;
@@ -512,11 +510,11 @@ uint dbBlockSearch::addBtermBoxes(dbSet<dbBTerm>& bterms, bool ignoreFlag)
   return cnt;
 }
 uint dbBlockSearch::getFirstShape(dbITerm* iterm,
-                                  bool     viaFlag,
-                                  int&     x1,
-                                  int&     y1,
-                                  int&     x2,
-                                  int&     y2)
+                                  bool viaFlag,
+                                  int& x1,
+                                  int& y1,
+                                  int& x2,
+                                  int& y2)
 {
   // dbInst *inst= iterm->getInst();
   // uint cnt= 0;
@@ -545,7 +543,7 @@ uint dbBlockSearch::getItermShapesWithViaShapes(dbITerm* iterm)
   const char* bcut = "bcut";
 
   // dbInst *inst= iterm->getInst();
-  uint cnt     = 0;
+  uint cnt = 0;
   uint itermId = iterm->getId();
 
   dbITermShapeItr term_shapes(true);
@@ -566,9 +564,9 @@ uint dbBlockSearch::getItermShapesWithViaShapes(dbITerm* iterm)
         cnt += _dcr->addBox(
             itermId, _inst_pin_id, _instMenuId, level, x1, y1, x2, y2, shapeId);
       } else {
-        dbTechVia* via      = s.getTechVia();
-        uint       topLevel = via->getTopLayer()->getRoutingLevel();
-        uint       botLevel = via->getBottomLayer()->getRoutingLevel();
+        dbTechVia* via = s.getTechVia();
+        uint topLevel = via->getTopLayer()->getRoutingLevel();
+        uint botLevel = via->getBottomLayer()->getRoutingLevel();
 
         cnt += _dcr->addBox(itermId,
                             _inst_pin_id,
@@ -633,7 +631,7 @@ uint dbBlockSearch::getItermShapesNoVias(dbITerm* iterm)
 }
 uint dbBlockSearch::getItermShapes(dbInst* inst, bool viaFlag)
 {
-  uint           cnt    = 0;
+  uint cnt = 0;
   dbSet<dbITerm> iterms = inst->getITerms();
 
   dbSet<dbITerm>::iterator iterm_itr;
@@ -649,11 +647,11 @@ uint dbBlockSearch::getItermShapes(dbInst* inst, bool viaFlag)
 }
 
 uint dbBlockSearch::getFirstInstObsShape(dbInst* inst,
-                                         bool    viaFlag,
-                                         int&    x1,
-                                         int&    y1,
-                                         int&    x2,
-                                         int&    y2)
+                                         bool viaFlag,
+                                         int& x1,
+                                         int& y1,
+                                         int& x2,
+                                         int& y2)
 {
   // uint cnt= 0;
 
@@ -703,9 +701,9 @@ uint dbBlockSearch::getInstObs(dbInst* inst, bool viaFlag)
   return cnt;
 }
 uint dbBlockSearch::addInstShapes(dbInst* inst,
-                                  bool    vias,
-                                  bool    pinFlag,
-                                  bool    obsFlag)
+                                  bool vias,
+                                  bool pinFlag,
+                                  bool obsFlag)
 {
   uint cnt = 0;
   if (pinFlag) {
@@ -721,10 +719,10 @@ uint dbBlockSearch::addInstShapes(dbInst* inst,
   return cnt;
 }
 
-uint dbBlockSearch::getInstBoxes(int                   x1,
-                                 int                   y1,
-                                 int                   x2,
-                                 int                   y2,
+uint dbBlockSearch::getInstBoxes(int x1,
+                                 int y1,
+                                 int x2,
+                                 int y2,
                                  std::vector<dbInst*>& result)
 {
   _instSdb->searchBoxIds(x1, y1, x2, y2);
@@ -925,8 +923,8 @@ uint dbBlockSearch::addSBox(uint menuId,
   if (level < 0)
     return 0;
 
-  dbSWire* sw  = (dbSWire*) s->getBoxOwner();
-  dbNet*   net = sw->getNet();
+  dbSWire* sw = (dbSWire*) s->getBoxOwner();
+  dbNet* net = sw->getNet();
 
   return _dcr->addBox(net->getId(),
                       subMenuId,
@@ -939,10 +937,10 @@ uint dbBlockSearch::addSBox(uint menuId,
                       0);
 }
 uint dbBlockSearch::addWireCoords(dbShape& s,
-                                  uint     menuId,
-                                  uint     subMenuId,
-                                  uint     netId,
-                                  uint     shapeId)
+                                  uint menuId,
+                                  uint subMenuId,
+                                  uint netId,
+                                  uint shapeId)
 {
   int level = s.getTechLayer()->getRoutingLevel();
 
@@ -954,10 +952,10 @@ uint dbBlockSearch::addWireCoords(dbShape& s,
   return _dcr->addBox(netId, subMenuId, menuId, level, x1, y1, x2, y2, shapeId);
 }
 uint dbBlockSearch::addViaCoords(dbShape& viaShape,
-                                 uint     menuId,
-                                 uint     subMenuId,
-                                 uint     netId,
-                                 uint     shapeId)
+                                 uint menuId,
+                                 uint subMenuId,
+                                 uint netId,
+                                 uint shapeId)
 {
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(viaShape, shapes);
@@ -991,10 +989,10 @@ uint dbBlockSearch::addWireViaCoords(uint menuId,
 
     int level = getShapeLevel(&s, wireVia);
 
-    int  x1   = s.xMin();
-    int  y1   = s.yMin();
-    int  x2   = s.xMax();
-    int  y2   = s.yMax();
+    int x1 = s.xMin();
+    int y1 = s.yMin();
+    int x2 = s.xMax();
+    int y2 = s.yMax();
     uint flag = _dcr->addBox(
         net->getId(), subMenuId, menuId, level, x1, y1, x2, y2, shapeId);
 
@@ -1006,8 +1004,8 @@ uint dbBlockSearch::addWireViaCoords(uint menuId,
     if (level < 0)
       return 0;
 
-    dbSWire* sw  = (dbSWire*) s->getBoxOwner();
-    dbNet*   net = sw->getNet();
+    dbSWire* sw = (dbSWire*) s->getBoxOwner();
+    dbNet* net = sw->getNet();
 
     return _dcr->addBox(net->getId(),
                         subMenuId,
@@ -1021,10 +1019,10 @@ uint dbBlockSearch::addWireViaCoords(uint menuId,
   }
 }
 uint dbBlockSearch::addViaBoxes(dbShape& sVia,
-                                uint     menuId,
-                                uint     subMenuId,
-                                uint     id,
-                                uint     shapeId)
+                                uint menuId,
+                                uint subMenuId,
+                                uint id,
+                                uint shapeId)
 {
   uint cnt = 0;
 
@@ -1078,10 +1076,10 @@ uint dbBlockSearch::addViaBoxes(dbShape& sVia,
   return cnt;
 }
 uint dbBlockSearch::addViaBoxes(dbBox* viaBox,
-                                uint   menuId,
-                                uint   subMenuId,
-                                uint   netId,
-                                uint   shapeId)
+                                uint menuId,
+                                uint subMenuId,
+                                uint netId,
+                                uint shapeId)
 {
   uint cnt = 0;
 
@@ -1140,17 +1138,17 @@ uint dbBlockSearch::getViaLevels(dbBox* s, uint& top)
   if (via != NULL) {
     uint topLevel = via->getTopLayer()->getRoutingLevel();
     uint botLevel = via->getBottomLayer()->getRoutingLevel();
-    top           = topLevel;
+    top = topLevel;
 
     return botLevel;
   } else {
-    top        = 0;
+    top = 0;
     dbVia* via = s->getBlockVia();
     if (via == NULL)  // should be error????
       return 0;
     uint topLevel = via->getTopLayer()->getRoutingLevel();
     uint botLevel = via->getBottomLayer()->getRoutingLevel();
-    top           = topLevel;
+    top = topLevel;
 
     return botLevel;
   }
@@ -1161,17 +1159,17 @@ uint dbBlockSearch::getViaLevels(dbShape& s, uint& top)
   if (via != NULL) {
     uint topLevel = via->getTopLayer()->getRoutingLevel();
     uint botLevel = via->getBottomLayer()->getRoutingLevel();
-    top           = topLevel;
+    top = topLevel;
 
     return botLevel;
   } else {
-    top        = 0;
+    top = 0;
     dbVia* via = s.getVia();
     if (via == NULL)  // should be error????
       return 0;
     uint topLevel = via->getTopLayer()->getRoutingLevel();
     uint botLevel = via->getBottomLayer()->getRoutingLevel();
-    top           = topLevel;
+    top = topLevel;
 
     return botLevel;
   }
@@ -1189,8 +1187,8 @@ uint dbBlockSearch::addViaCoordsFromWire(uint menuId,
   uint cnt = 0;
 
   if (shapeId > 0) {  // signal via
-    dbNet*  net = dbNet::getNet(_block, netId);
-    dbWire* w   = net->getWire();
+    dbNet* net = dbNet::getNet(_block, netId);
+    dbWire* w = net->getWire();
 
     dbShape viaShape1;
     if (w->getPrevVia(shapeId, viaShape1)) {
@@ -1214,11 +1212,11 @@ uint dbBlockSearch::addViaCoordsFromWire(uint menuId,
 }
 
 uint dbBlockSearch::getViasFromWires(ZPtr<ISdb> sdb,
-                                     uint       menuId,
-                                     uint       subMenuId,
-                                     uint       wireMenuId,
-                                     dbNet*     targetNet,
-                                     bool       excludeFlag)
+                                     uint menuId,
+                                     uint subMenuId,
+                                     uint wireMenuId,
+                                     dbNet* targetNet,
+                                     bool excludeFlag)
 {
   uint cnt = 0;
   sdb->startIterator();
@@ -1234,7 +1232,7 @@ uint dbBlockSearch::getViasFromWires(ZPtr<ISdb> sdb,
     dbNet* net = NULL;
     if (shapeId == 0) {
       dbSBox* b = dbSBox::getSBox(_block, netId);
-      net       = (dbNet*) b->getBoxOwner();
+      net = (dbNet*) b->getBoxOwner();
     } else {
       net = dbNet::getNet(_block, netId);
     }
@@ -1264,13 +1262,13 @@ int dbBlockSearch::getTrackXY(int boxXY, int org, int count, int step)
   return xy;
 }
 uint dbBlockSearch::getTracks(dbTrackGrid* g,
-                              int          org,
-                              int          count,
-                              int          step,
-                              int*         bb_ll,
-                              int*         bb_ur,
-                              uint         level,
-                              uint         dir)
+                              int org,
+                              int count,
+                              int step,
+                              int* bb_ll,
+                              int* bb_ur,
+                              uint level,
+                              uint dir)
 {
   uint cnt = 0;
 
@@ -1318,14 +1316,14 @@ uint dbBlockSearch::getTracks(bool ignoreLayers)
 
   bool* excludeTable = _dcr->getExcludeLayerTable();
 
-  dbSet<dbTrackGrid>           grids = _block->getTrackGrids();
+  dbSet<dbTrackGrid> grids = _block->getTrackGrids();
   dbSet<dbTrackGrid>::iterator itr;
 
   uint cnt = 0;
   for (itr = grids.begin(); itr != grids.end(); ++itr) {
-    dbTrackGrid* grid  = *itr;
+    dbTrackGrid* grid = *itr;
     dbTechLayer* layer = grid->getTechLayer();
-    uint         level = layer->getRoutingLevel();
+    uint level = layer->getRoutingLevel();
     if (excludeTable[level])
       continue;
 
@@ -1365,9 +1363,9 @@ uint dbBlockSearch::getTracks(bool /* unused: ignoreLayers */)
       _dcr, _blockMenuId, _block_track_id, false, 0);  // use coords from Sdb
 }
 #endif
-uint dbBlockSearch::getPowerWireVias(ZPtr<ISdb>           sdb,
-                                     dbNet*               targetNet,
-                                     bool                 vias,
+uint dbBlockSearch::getPowerWireVias(ZPtr<ISdb> sdb,
+                                     dbNet* targetNet,
+                                     bool vias,
                                      std::vector<dbBox*>& viaTable)
 {
   sdb->startIterator();
@@ -1381,7 +1379,7 @@ uint dbBlockSearch::getPowerWireVias(ZPtr<ISdb>           sdb,
     if (shapeId > 0)
       continue;
 
-    uint    sboxId = netId;
+    uint sboxId = netId;
     dbSBox* s = (dbSBox*) dbSBox::getSBox(_block, sboxId);  // netId is box id
 
     if (vias && !s->isVia())
@@ -1397,12 +1395,12 @@ uint dbBlockSearch::getPowerWireVias(ZPtr<ISdb>           sdb,
   }
   return viaTable.size();
 }
-uint dbBlockSearch::getPowerWires(int                  x1,
-                                  int                  y1,
-                                  int                  x2,
-                                  int                  y2,
-                                  int                  layer,
-                                  dbNet*               targetNet,
+uint dbBlockSearch::getPowerWires(int x1,
+                                  int y1,
+                                  int x2,
+                                  int y2,
+                                  int layer,
+                                  dbNet* targetNet,
                                   std::vector<dbBox*>& viaTable)
 {
   if (_netSdb == NULL)
@@ -1413,19 +1411,19 @@ uint dbBlockSearch::getPowerWires(int                  x1,
     exludeTable[i] = true;
 
   exludeTable[layer] = false;
-  uint cnt           = 0;
+  uint cnt = 0;
 
   _netSdb->searchWireIds(x1, y1, x2, y2, false, exludeTable);
   cnt = getPowerWireVias(_netSdb, targetNet, false, viaTable);
   return cnt;
 }
-uint dbBlockSearch::getPowerWiresAndVias(int                  x1,
-                                         int                  y1,
-                                         int                  x2,
-                                         int                  y2,
-                                         int                  layer,
-                                         dbNet*               targetNet,
-                                         bool                 power_wires,
+uint dbBlockSearch::getPowerWiresAndVias(int x1,
+                                         int y1,
+                                         int x2,
+                                         int y2,
+                                         int layer,
+                                         dbNet* targetNet,
+                                         bool power_wires,
                                          std::vector<dbBox*>& viaTable)
 {
   if ((_netSdb == NULL) || (_netViaSdb == NULL))
@@ -1436,7 +1434,7 @@ uint dbBlockSearch::getPowerWiresAndVias(int                  x1,
     exludeTable[i] = true;
 
   exludeTable[layer] = false;
-  uint cnt           = 0;
+  uint cnt = 0;
 
   if (power_wires) {
     _netSdb->searchWireIds(x1, y1, x2, y2, false, exludeTable);
@@ -1453,9 +1451,9 @@ uint dbBlockSearch::getWiresAndVias_all(dbNet* targetNet, bool ignoreFlag)
     return 0;
 
   bool signal_wires = _dcr->getSubMenuFlag(_signalMenuId, _signal_wire_id);
-  bool signal_vias  = _dcr->getSubMenuFlag(_signalMenuId, _signal_via_id);
-  bool power_wires  = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
-  bool power_vias   = _dcr->getSubMenuFlag(_powerMenuId, _power_via_id);
+  bool signal_vias = _dcr->getSubMenuFlag(_signalMenuId, _signal_via_id);
+  bool power_wires = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
+  bool power_vias = _dcr->getSubMenuFlag(_powerMenuId, _power_via_id);
 
   if ((!ignoreFlag)
       && (!(signal_wires || signal_vias || power_wires || power_vias)))
@@ -1509,14 +1507,14 @@ uint dbBlockSearch::getWiresAndVias_all(dbNet* targetNet, bool ignoreFlag)
   return cnt;
 }
 uint dbBlockSearch::getWiresClipped(dbNet* targetNet,
-                                    uint   halo,
-                                    bool   ignoreFlag)
+                                    uint halo,
+                                    bool ignoreFlag)
 {
   if (_netSdb == NULL)
     return 0;
 
   bool signal_wires = _dcr->getSubMenuFlag(_signalMenuId, _signal_wire_id);
-  bool power_wires  = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
+  bool power_wires = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
 
   if ((!ignoreFlag) && (!(signal_wires || power_wires)))
     return 0;
@@ -1528,7 +1526,7 @@ uint dbBlockSearch::getWiresClipped(dbNet* targetNet,
   int x1, y1, x2, y2;
   _dcr->getBbox(&x1, &y1, &x2, &y2);
   bool* exludeTable = _dcr->getExcludeLayerTable();
-  uint  cnt         = 0;
+  uint cnt = 0;
 
   dbWire* wire = targetNet->getWire();
 
@@ -1536,7 +1534,7 @@ uint dbBlockSearch::getWiresClipped(dbNet* targetNet,
     return 0;
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
   for (shapes.begin(wire); shapes.next(s);) {
     // uint level= 0;
 
@@ -1619,12 +1617,12 @@ int dbBlockSearch::inspect(ZPtr<IZdcr> dcr)
   return TCL_OK;
 }
 
-uint dbBlockSearch::addArrow(int     x1,
-                             int     y1,
-                             int     x2,
-                             int     y2,
-                             int     labelCnt,
-                             char**  label,
+uint dbBlockSearch::addArrow(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int labelCnt,
+                             char** label,
                              double* val)
 {
   return _dcr->addArrow(true,
@@ -1642,8 +1640,8 @@ uint dbBlockSearch::addArrow(int     x1,
 }
 uint dbBlockSearch::addArrow(dbInst* inst1,
                              dbInst* inst2,
-                             int     labelCnt,
-                             char**  label,
+                             int labelCnt,
+                             char** label,
                              double* val)
 {
   dbBox* s1 = inst1->getBBox();
@@ -1676,14 +1674,14 @@ uint dbBlockSearch::addArrow(dbInst* inst1,
 }
 uint dbBlockSearch::addFlightLines(dbInst* inst)
 {
-  int    labelCnt = 0;
-  char** label    = new char*[3];
+  int labelCnt = 0;
+  char** label = new char*[3];
   for (uint ii = 0; ii < 3; ii++)
     label[ii] = new char[16];
 
   double val[3];
 
-  uint                 cnt = 0;
+  uint cnt = 0;
   std::vector<dbInst*> connectivity;
   inst->getConnectivity(connectivity);
 
@@ -1733,9 +1731,9 @@ void dbBlockSearch::addInstConnList(dbInst* inst, bool ignoreFlags)
 }
 void dbBlockSearch::inspectInstObs()
 {
-  uint    id2;
-  uint    instId = _dcr->getSubmenuObjId(&id2);
-  dbInst* inst   = dbInst::getInst(_block, instId);
+  uint id2;
+  uint instId = _dcr->getSubmenuObjId(&id2);
+  dbInst* inst = dbInst::getInst(_block, instId);
 
   if (_dcr->msgAction()) {
     char msg_buf[1024];
@@ -1746,7 +1744,7 @@ void dbBlockSearch::inspectInstObs()
             _block->getName().c_str());
 
     if (getInstObs(inst, false) > 0) {
-      int  x1, y1, x2, y2;
+      int x1, y1, x2, y2;
       uint layer = getFirstInstObsShape(inst, true, x1, y1, x2, y2);
 
       // char *firstBox= _dcr->getFirstTclBox(&x1, &y1, &x2, &y2, &layer);
@@ -1762,14 +1760,14 @@ void dbBlockSearch::inspectInstPin()
 {
   // uint instId= _dcr->getSelectIds(NULL, NULL, NULL);
   dbITerm* iterm = NULL;
-  uint     id2;
-  uint     itermId = _dcr->getSubmenuObjId(&id2);
+  uint id2;
+  uint itermId = _dcr->getSubmenuObjId(&id2);
   if (itermId > 0)
     iterm = dbITerm::getITerm(_block, itermId);
   else
     return;  // by name
 
-  dbNet*  net  = iterm->getNet();
+  dbNet* net = iterm->getNet();
   dbInst* inst = iterm->getInst();
 
   if (_dcr->msgAction()) {
@@ -1783,7 +1781,7 @@ void dbBlockSearch::inspectInstPin()
             _block->getName().c_str());
 
     if (getItermShapesWithViaShapes(iterm) > 0) {
-      int  x1, y1, x2, y2;
+      int x1, y1, x2, y2;
       uint layer = getFirstShape(iterm, true, x1, y1, x2, y2);
 
       // char *firstBox= _dcr->getFirstTclBox(&x1, &y1, &x2, &y2, &layer);
@@ -1814,7 +1812,7 @@ void dbBlockSearch::inspectInstPin()
 bool dbBlockSearch::getWildCardName(const char* name, char* outName)
 {
   uint wCnt = 0;
-  uint kk   = 0;
+  uint kk = 0;
   for (uint ii = 0; name[ii] != '\0'; ii++) {
     if (name[ii] == '*') {
       wCnt++;
@@ -1832,12 +1830,12 @@ bool dbBlockSearch::getWildCardName(const char* name, char* outName)
 void dbBlockSearch::selectInst()
 {
   bool termShapes = false;
-  bool instObs    = false;
-  bool vias       = false;
+  bool instObs = false;
+  bool vias = false;
 
-  uint          instId = _dcr->getSubmenuObjId(NULL);
-  dbInst*       inst   = NULL;
-  dbSet<dbInst> insts  = _block->getInsts();
+  uint instId = _dcr->getSubmenuObjId(NULL);
+  dbInst* inst = NULL;
+  dbSet<dbInst> insts = _block->getInsts();
 
   if (instId > 0) {
     if (instId <= insts.sequential())
@@ -1884,7 +1882,7 @@ void dbBlockSearch::selectInst()
 }
 void dbBlockSearch::selectIterm2Net(uint itermId)
 {
-  dbITerm*       iterm  = NULL;
+  dbITerm* iterm = NULL;
   dbSet<dbITerm> iterms = _block->getITerms();
 
   if (itermId <= iterms.sequential())
@@ -1973,9 +1971,9 @@ void dbBlockSearch::inspectInst()
     return;
   }
 
-  uint    id2;
-  uint    instId = _dcr->getSubmenuObjId(&id2);
-  dbInst* inst   = dbInst::getInst(_block, instId);
+  uint id2;
+  uint instId = _dcr->getSubmenuObjId(&id2);
+  dbInst* inst = dbInst::getInst(_block, instId);
 
   if (_dcr->msgAction()) {
     char msg_buf[1024];
@@ -1993,9 +1991,9 @@ void dbBlockSearch::inspectInst()
     return;
   }
 
-  bool bbox  = _dcr->getSubMenuFlag(_instMenuId, _inst_bb_id);
+  bool bbox = _dcr->getSubMenuFlag(_instMenuId, _inst_bb_id);
   bool terms = _dcr->getSubMenuFlag(_instMenuId, _inst_pin_id);
-  bool obs   = _dcr->getSubMenuFlag(_instMenuId, _inst_obs_id);
+  bool obs = _dcr->getSubMenuFlag(_instMenuId, _inst_obs_id);
 
   if (!(bbox || terms || obs))
     return;
@@ -2023,11 +2021,11 @@ void dbBlockSearch::inspectInst()
 }
 void dbBlockSearch::addNetSBoxesOnSearch(dbNet* net, bool skipVias)
 {
-  dbSet<dbSWire>           swires = net->getSWires();
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -2058,12 +2056,12 @@ void dbBlockSearch::addNetSBoxesOnSearch(dbNet* net, bool skipVias)
 }
 uint dbBlockSearch::getNetSBoxes(dbNet* net, bool skipVias)
 {
-  uint                     cnt    = 0;
-  dbSet<dbSWire>           swires = net->getSWires();
+  uint cnt = 0;
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -2102,10 +2100,10 @@ uint dbBlockSearch::getNetSBoxes(dbNet* net, bool skipVias)
   return cnt;
 }
 uint dbBlockSearch::addInstBoxes(dbInst* inst,
-                                 bool    instBoxes,
-                                 bool    termShapes,
-                                 bool    instObs,
-                                 bool    vias)
+                                 bool instBoxes,
+                                 bool termShapes,
+                                 bool instObs,
+                                 bool vias)
 {
   uint cnt = 0;
   _dcr->setInstMarker();
@@ -2132,7 +2130,7 @@ uint dbBlockSearch::addInstBoxes(dbNet* net, bool ignoreFlags)
   if (!(instBoxes || instBoxes || termShapes))
     return 0;
 
-  dbSet<dbITerm>           iterms = net->getITerms();
+  dbSet<dbITerm> iterms = net->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
 
   uint cnt = 0;
@@ -2155,11 +2153,11 @@ uint dbBlockSearch::addInstBoxes(dbNet* net, bool ignoreFlags)
 }
 
 uint dbBlockSearch::addNetShapes(dbNet* net,
-                                 bool   viaWireFlag,
-                                 uint   menuId,
-                                 uint   subMenuId)
+                                 bool viaWireFlag,
+                                 uint menuId,
+                                 uint subMenuId)
 {
-  uint    cnt  = 0;
+  uint cnt = 0;
   dbWire* wire = net->getWire();
   if (wire == NULL)
     return 0;
@@ -2168,7 +2166,7 @@ uint dbBlockSearch::addNetShapes(dbNet* net,
   uint netId = net->getId();
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
     if (s.isVia()) {
@@ -2192,7 +2190,7 @@ void dbBlockSearch::getNetBbox(dbNet* net, Rect& maxRect)
   // uint wireId= wire->getId();
 
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
     Rect r;
@@ -2267,10 +2265,10 @@ ignoreBB)
 }
 */
 uint dbBlockSearch::getNetWires(dbNet* net,
-                                bool   contextFlag,
-                                uint   clipMargin,
-                                bool   ignoreZuiFlags,
-                                bool   ignoreBB)
+                                bool contextFlag,
+                                uint clipMargin,
+                                bool ignoreZuiFlags,
+                                bool ignoreBB)
 {
   if (net == NULL)
     return 0;
@@ -2291,8 +2289,8 @@ uint dbBlockSearch::getNetWires(dbNet* net,
   return cnt;
 }
 uint dbBlockSearch::getNetConnectivity(dbNet* net,
-                                       bool   contextFlag,
-                                       uint   clipMargin,
+                                       bool contextFlag,
+                                       uint clipMargin,
                                        bool /* unused: ignoreLayerFlags */,
                                        bool ignoreZuiFlags,
                                        bool ignoreBB)
@@ -2327,13 +2325,13 @@ uint dbBlockSearch::getConnectivityWires(dbInst* inst, bool ignoreZuiFlags)
 {
   _dcr->setSignalMarker();
 
-  dbSet<dbITerm>           iterms = inst->getITerms();
+  dbSet<dbITerm> iterms = inst->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
 
   uint cnt = 0;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     dbITerm* iterm = *iterm_itr;
-    dbNet*   net   = iterm->getNet();
+    dbNet* net = iterm->getNet();
     if (net == NULL)
       continue;
 
@@ -2350,12 +2348,12 @@ void dbBlockSearch::addNetSBoxes(dbNet* net,
                                  uint /* unused: wtype */,
                                  bool skipVias)
 {
-  dbSet<dbSWire>           swires = net->getSWires();
+  dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire*                swire = *itr;
-    dbSet<dbSBox>           wires = swire->getWires();
+    dbSWire* swire = *itr;
+    dbSet<dbSBox> wires = swire->getWires();
     dbSet<dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
@@ -2387,11 +2385,11 @@ void dbBlockSearch::inspectPowerNet(bool /* unused: menuFlag */)
   //	}
   uint shapeId = 0;
 
-  uint    sboxId = _dcr->getSubmenuObjId(&shapeId);
-  dbSBox* s      = dbSBox::getSBox(_block, sboxId);
+  uint sboxId = _dcr->getSubmenuObjId(&shapeId);
+  dbSBox* s = dbSBox::getSBox(_block, sboxId);
 
-  dbSWire* sw  = (dbSWire*) s->getBoxOwner();
-  dbNet*   net = sw->getNet();
+  dbSWire* sw = (dbSWire*) s->getBoxOwner();
+  dbNet* net = sw->getNet();
 
   /*
           uint wid= zui->getInspNameId();
@@ -2500,8 +2498,8 @@ zui->getInspectName()); return NULL;
 */
 dbNet* dbBlockSearch::getNetAndShape(dbShape& s, uint* shapeId, uint* level)
 {
-  uint   netId = _dcr->getSubmenuObjId(shapeId);
-  dbNet* net   = dbNet::getNet(_block, netId);
+  uint netId = _dcr->getSubmenuObjId(shapeId);
+  dbNet* net = dbNet::getNet(_block, netId);
 
   dbWire* w = net->getWire();
   w->getShape(*shapeId, s);
@@ -2571,10 +2569,10 @@ uint dbBlockSearch::selectNet()
   // uint clipMargin= 0;
   // bool ignoreLayerFlags= true;
   bool ignoreZuiFlags = false;
-  bool ignoreBB       = false;
+  bool ignoreBB = false;
 
   _dcr->setSignalMarker();
-  dbNet*       net  = NULL;
+  dbNet* net = NULL;
   dbSet<dbNet> nets = _block->getNets();
 
   if (netId > 0) {
@@ -2651,10 +2649,10 @@ void dbBlockSearch::inspectNet()
   //
   //		return;
   //	}
-  uint    shapeId = 0;
-  uint    level   = 0;
+  uint shapeId = 0;
+  uint level = 0;
   dbShape s;
-  dbNet*  net = getNetAndShape(s, &shapeId, &level);
+  dbNet* net = getNetAndShape(s, &shapeId, &level);
 
   if (_dcr->msgAction()) {
     const char* typeWord = NULL;
@@ -2665,7 +2663,7 @@ void dbBlockSearch::inspectNet()
       typeWord = "Signal Via";
 
     char msg_buf[1024];
-    int  pos;
+    int pos;
     pos = sprintf(msg_buf,
                   "%s %d of net %d %s Block %s\n",
                   typeWord,
@@ -2683,9 +2681,9 @@ void dbBlockSearch::inspectNet()
     return;
   }
   bool signal_wires = _dcr->getSubMenuFlag(_signalMenuId, _signal_wire_id);
-  bool signal_vias  = _dcr->getSubMenuFlag(_signalMenuId, _signal_via_id);
-  bool power_wires  = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
-  bool power_vias   = _dcr->getSubMenuFlag(_powerMenuId, _power_via_id);
+  bool signal_vias = _dcr->getSubMenuFlag(_signalMenuId, _signal_via_id);
+  bool power_wires = _dcr->getSubMenuFlag(_powerMenuId, _power_wire_id);
+  bool power_vias = _dcr->getSubMenuFlag(_powerMenuId, _power_via_id);
 
   if (!(signal_wires || signal_vias || power_wires || power_vias))
     return;
@@ -2724,7 +2722,7 @@ void dbBlockSearch::inspectNet()
 
 void dbBlockSearch::selectBterm2Net(uint btermId)
 {
-  dbBTerm*       bterm  = NULL;
+  dbBTerm* bterm = NULL;
   dbSet<dbBTerm> bterms = _block->getBTerms();
 
   if (btermId <= bterms.sequential())
@@ -2769,7 +2767,7 @@ uint dbBlockSearch::selectBterm()
       if (!getWildCardName(inspectName, netSubName))
         return 0;
 
-      dbSet<dbBTerm>           bterms = _block->getBTerms();
+      dbSet<dbBTerm> bterms = _block->getBTerms();
       dbSet<dbBTerm>::iterator bterm_itr;
 
       for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
@@ -2801,10 +2799,10 @@ void dbBlockSearch::inspectBterm()
   uint id = _dcr->getSubmenuObjId(&id2);
 
   // TWG: added bpins
-  dbBox*   box   = dbBox::getBox(_block, id);
-  dbBPin*  bpin  = (dbBPin*) box->getBoxOwner();
+  dbBox* box = dbBox::getBox(_block, id);
+  dbBPin* bpin = (dbBPin*) box->getBoxOwner();
   dbBTerm* bterm = bpin->getBTerm();
-  dbNet*   net   = bterm->getNet();
+  dbNet* net = bterm->getNet();
 
   if (_dcr->msgAction()) {
     uint level = box->getTechLayer()->getRoutingLevel();
@@ -2835,15 +2833,15 @@ void dbBlockSearch::inspectBterm()
 }
 void dbBlockSearch::inspectBlockObs()
 {
-  uint   id2;
-  uint   id = _dcr->getSubmenuObjId(&id2);
+  uint id2;
+  uint id = _dcr->getSubmenuObjId(&id2);
   dbBox* bb = dbBox::getBox(_block, id);
 
   const char* obsBlockage = NULL;
-  uint        level       = 0;
+  uint level = 0;
   if (bb->getOwnerType() == dbBoxOwner::OBSTRUCTION) {
     obsBlockage = "Obstruction";
-    level       = bb->getTechLayer()->getRoutingLevel();
+    level = bb->getTechLayer()->getRoutingLevel();
   } else if (bb->getOwnerType() == dbBoxOwner::BLOCKAGE) {
     obsBlockage = "Blockage";
   }
@@ -2862,9 +2860,9 @@ void dbBlockSearch::inspectBlockObs()
 }
 void dbBlockSearch::inspectTrack()
 {
-  uint         id2;
-  uint         id = _dcr->getSubmenuObjId(&id2);
-  dbTrackGrid* g  = dbTrackGrid::getTrackGrid(_block, id);
+  uint id2;
+  uint id = _dcr->getSubmenuObjId(&id2);
+  dbTrackGrid* g = dbTrackGrid::getTrackGrid(_block, id);
   // uint dir= id2-1;
 
   if ((g != NULL) && _dcr->msgAction()) {

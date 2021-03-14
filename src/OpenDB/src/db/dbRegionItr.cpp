@@ -57,15 +57,15 @@ bool dbRegionItr::orderReversed()
 void dbRegionItr::reverse(dbObject* parent)
 {
   _dbRegion* region = (_dbRegion*) parent;
-  uint       id     = region->_children;
-  uint       list   = 0;
+  uint id = region->_children;
+  uint list = 0;
 
   while (id != 0) {
-    _dbRegion* pin   = _region_tbl->getPtr(id);
-    uint       n     = pin->_next_child;
+    _dbRegion* pin = _region_tbl->getPtr(id);
+    uint n = pin->_next_child;
     pin->_next_child = list;
-    list             = id;
-    id               = n;
+    list = id;
+    id = n;
   }
 
   region->_children = list;

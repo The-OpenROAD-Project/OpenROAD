@@ -67,10 +67,10 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   // User Code End Enums
 
   dbTechLayerSpacingTablePrlRuleFlags flags_;
-  int                                 eol_width_;
-  dbVector<int>                       length_tbl_;
-  dbVector<int>                       width_tbl_;
-  dbVector<dbVector<int>>             spacing_tbl_;
+  int eol_width_;
+  dbVector<int> length_tbl_;
+  dbVector<int> width_tbl_;
+  dbVector<dbVector<int>> spacing_tbl_;
   dbVector<std::tuple<int, int, int>> influence_tbl_;
 
   // User Code Begin Fields
@@ -86,8 +86,8 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerSpacingTablePrlRule& rhs) const;
-  void differences(dbDiff&                                diff,
-                   const char*                            field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerSpacingTablePrlRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
@@ -99,7 +99,7 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
-dbOStream& operator<<(dbOStream&                             stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj);
 // User Code Begin General
 // User Code End General

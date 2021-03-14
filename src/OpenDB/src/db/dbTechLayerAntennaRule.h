@@ -57,23 +57,23 @@ class _ARuleFactor
 {
  public:
   double _factor;
-  bool   _explicit;
-  bool   _diff_use_only;
+  bool _explicit;
+  bool _diff_use_only;
 
   _ARuleFactor();
   void setFactor(double factor, bool diffuse);
   bool operator==(const _ARuleFactor& rhs) const;
   bool operator!=(const _ARuleFactor& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _ARuleFactor& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
 
 inline _ARuleFactor::_ARuleFactor()
 {
-  _factor        = 1.0;
-  _explicit      = false;
+  _factor = 1.0;
+  _explicit = false;
   _diff_use_only = false;
 }
 
@@ -88,7 +88,7 @@ dbIStream& operator>>(dbIStream& stream, _ARuleFactor& arf);
 class _ARuleRatio
 {
  public:
-  double           _ratio;
+  double _ratio;
   dbVector<double> _diff_idx;
   dbVector<double> _diff_ratio;
 
@@ -101,8 +101,8 @@ class _ARuleRatio
 
   bool operator==(const _ARuleRatio& rhs) const;
   bool operator!=(const _ARuleRatio& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&            diff,
-                   const char*        field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _ARuleRatio& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -122,16 +122,16 @@ class _dbTechLayerAntennaRule : public _dbObject
 {
  public:
   dbId<_dbTechLayer> _layer;
-  _ARuleFactor       _area_mult;
-  _ARuleFactor       _sidearea_mult;
-  _ARuleRatio        _par_area_val;
-  _ARuleRatio        _cum_area_val;
-  _ARuleRatio        _par_sidearea_val;
-  _ARuleRatio        _cum_sidearea_val;
-  _ARuleRatio        _area_diff_reduce_val;
-  double             _gate_plus_diff_factor;
-  double             _area_minus_diff_factor;
-  bool               _has_antenna_cumroutingpluscut;
+  _ARuleFactor _area_mult;
+  _ARuleFactor _sidearea_mult;
+  _ARuleRatio _par_area_val;
+  _ARuleRatio _cum_area_val;
+  _ARuleRatio _par_sidearea_val;
+  _ARuleRatio _cum_sidearea_val;
+  _ARuleRatio _area_diff_reduce_val;
+  double _gate_plus_diff_factor;
+  double _area_minus_diff_factor;
+  bool _has_antenna_cumroutingpluscut;
 
   _dbTechLayerAntennaRule(_dbDatabase*) {}
   _dbTechLayerAntennaRule(_dbDatabase*, const _dbTechLayerAntennaRule& r)
@@ -154,8 +154,8 @@ class _dbTechLayerAntennaRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerAntennaRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -173,14 +173,14 @@ class _dbTechAntennaAreaElement
   ~_dbTechAntennaAreaElement(){};
 
   static void create(dbVector<_dbTechAntennaAreaElement*>& incon,
-                     double                                inarea,
-                     dbTechLayer*                          inly
+                     double inarea,
+                     dbTechLayer* inly
                      = NULL);  // Allocate a new element and add to container.
-  void        writeLef(const char* header, dbTech* tech, lefout& writer) const;
+  void writeLef(const char* header, dbTech* tech, lefout& writer) const;
 
-  friend dbOStream& operator<<(dbOStream&                       stream,
+  friend dbOStream& operator<<(dbOStream& stream,
                                const _dbTechAntennaAreaElement* aae);
-  friend dbIStream& operator>>(dbIStream&                  stream,
+  friend dbIStream& operator>>(dbIStream& stream,
                                _dbTechAntennaAreaElement*& aae);
 
   _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e);
@@ -190,17 +190,17 @@ class _dbTechAntennaAreaElement
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                          diff,
-                   const char*                      field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechAntennaAreaElement& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  double             getArea() const { return _area; }
+  double getArea() const { return _area; }
   dbId<_dbTechLayer> getLayerId() const { return _lyidx; }
 
  private:
   _dbTechAntennaAreaElement();
-  double             _area;
+  double _area;
   dbId<_dbTechLayer> _lyidx;
 };
 
@@ -210,7 +210,7 @@ class _dbTechAntennaAreaElement
 class _dbTechAntennaPinModel : public _dbObject
 {
  public:
-  dbId<_dbMTerm>                       _mterm;
+  dbId<_dbMTerm> _mterm;
   dbVector<_dbTechAntennaAreaElement*> _gate_area;
   dbVector<_dbTechAntennaAreaElement*> _max_area_car;
   dbVector<_dbTechAntennaAreaElement*> _max_sidearea_car;
@@ -225,14 +225,14 @@ class _dbTechAntennaPinModel : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                       diff,
-                   const char*                   field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechAntennaPinModel& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   static void getAntennaValues(
-      _dbDatabase*                                  db,
-      const dbVector<_dbTechAntennaAreaElement*>&   elements,
+      _dbDatabase* db,
+      const dbVector<_dbTechAntennaAreaElement*>& elements,
       std::vector<std::pair<double, dbTechLayer*>>& result);
 };
 

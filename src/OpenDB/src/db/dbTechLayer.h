@@ -68,22 +68,22 @@ class _dbTechLayerAntennaRule;
 
 struct dbTechLayerFlags
 {
-  dbTechLayerType::Value        type_ : 4;
-  dbTechLayerDir::Value         direction_ : 4;
+  dbTechLayerType::Value type_ : 4;
+  dbTechLayerDir::Value direction_ : 4;
   dbTechLayerMinStepType::Value minstep_type_ : 2;
-  uint                          has_max_width_ : 1;
-  uint                          has_thickness_ : 1;
-  uint                          has_area_ : 1;
-  uint                          has_protrusion_ : 1;
-  uint                          has_alias_ : 1;
-  uint                          has_xy_pitch_ : 1;
-  uint                          has_xy_offset_ : 1;
-  bool                          rect_only_ : 1;
-  bool                          right_way_on_grid_only_ : 1;
-  bool                          right_way_on_grid_only_check_mask_ : 1;
-  bool                          rect_only_except_non_core_pins_ : 1;
-  uint                          lef58_type_ : 3;
-  uint                          spare_bits_ : 8;
+  uint has_max_width_ : 1;
+  uint has_thickness_ : 1;
+  uint has_area_ : 1;
+  uint has_protrusion_ : 1;
+  uint has_alias_ : 1;
+  uint has_xy_pitch_ : 1;
+  uint has_xy_offset_ : 1;
+  bool rect_only_ : 1;
+  bool right_way_on_grid_only_ : 1;
+  bool right_way_on_grid_only_check_mask_ : 1;
+  bool rect_only_except_non_core_pins_ : 1;
+  uint lef58_type_ : 3;
+  uint spare_bits_ : 8;
 };
 // User Code Begin Structs
 // User Code End Structs
@@ -96,7 +96,7 @@ class _dbTechLayer : public _dbObject
 
   dbTechLayerFlags flags_;
 
-  dbTable<_dbTechLayerCutClassRule>*    cut_class_rules_tbl_;
+  dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
 
   dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
@@ -115,25 +115,25 @@ class _dbTechLayer : public _dbObject
 
   // User Code Begin Fields
 
-  uint   _pitch_x;
-  uint   _pitch_y;
-  uint   _offset_x;
-  uint   _offset_y;
-  uint   _width;
-  uint   _spacing;
+  uint _pitch_x;
+  uint _pitch_y;
+  uint _offset_x;
+  uint _offset_y;
+  uint _width;
+  uint _spacing;
   double _resistance;
   double _capacitance;
   double _edge_capacitance;
-  uint   _wire_extension;
-  uint   _number;
-  uint   _rlevel;
+  uint _wire_extension;
+  uint _number;
+  uint _rlevel;
   double _area;
-  uint   _thickness;
-  uint   _max_width;
-  int    _min_width;
-  int    _min_step;
-  int    _min_step_max_length;
-  int    _min_step_max_edges;
+  uint _thickness;
+  uint _max_width;
+  int _min_width;
+  int _min_step;
+  int _min_step_max_length;
+  int _min_step_max_edges;
 
   struct
   {  // Protrusion
@@ -141,21 +141,21 @@ class _dbTechLayer : public _dbObject
     uint _length;
     uint _from_width;
   } _pt;
-  char*                             _name;
-  char*                             _alias;
-  dbId<_dbTechLayer>                _upper;
-  dbId<_dbTechLayer>                _lower;
+  char* _name;
+  char* _alias;
+  dbId<_dbTechLayer> _upper;
+  dbId<_dbTechLayer> _lower;
   dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
 
-  dbTable<_dbTechMinCutRule>*        _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule>*        _min_enc_rules_tbl;
+  dbTable<_dbTechMinCutRule>* _min_cut_rules_tbl;
+  dbTable<_dbTechMinEncRule>* _min_enc_rules_tbl;
   dbTable<_dbTechV55InfluenceEntry>* _v55inf_tbl;
-  dbVector<uint>                     _v55sp_length_idx;
-  dbVector<uint>                     _v55sp_width_idx;
-  dbMatrix<uint>                     _v55sp_spacing;
+  dbVector<uint> _v55sp_length_idx;
+  dbVector<uint> _v55sp_width_idx;
+  dbMatrix<uint> _v55sp_spacing;
 
   dbVector<uint> _two_widths_sp_idx;
-  dbVector<int>  _two_widths_sp_prl;
+  dbVector<int> _two_widths_sp_prl;
   dbMatrix<uint> _two_widths_sp_spacing;
 
   dbId<_dbTechLayerAntennaRule> _oxide1;
@@ -167,8 +167,8 @@ class _dbTechLayer : public _dbObject
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);

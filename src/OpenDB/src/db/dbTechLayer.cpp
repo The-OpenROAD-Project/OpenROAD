@@ -266,8 +266,8 @@ bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
   // User Code End <
   return true;
 }
-void _dbTechLayer::differences(dbDiff&             diff,
-                               const char*         field,
+void _dbTechLayer::differences(dbDiff& diff,
+                               const char* field,
                                const _dbTechLayer& rhs) const
 {
   DIFF_BEGIN
@@ -409,8 +409,8 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field          = 0;
-  cut_class_rules_tbl_       = new dbTable<_dbTechLayerCutClassRule>(
+  *flags__bit_field = 0;
+  cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
@@ -461,35 +461,35 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       dbTechLayerCutSpacingTableDefRuleObj);
   ZALLOCATED(cut_spacing_table_def_tbl_);
   // User Code Begin Constructor
-  flags_.type_         = dbTechLayerType::ROUTING;
-  flags_.direction_    = dbTechLayerDir::NONE;
+  flags_.type_ = dbTechLayerType::ROUTING;
+  flags_.direction_ = dbTechLayerDir::NONE;
   flags_.minstep_type_ = dbTechLayerMinStepType();
-  _pitch_x             = 0;
-  _pitch_y             = 0;
-  _offset_x            = 0;
-  _offset_y            = 0;
-  _width               = 0;
-  _spacing             = 0;
-  _resistance          = 0.0;
-  _capacitance         = 0.0;
-  _edge_capacitance    = 0.0;
-  _wire_extension      = 0;
-  _number              = 0;
-  _rlevel              = 0;
-  _area                = 0.0;
-  _thickness           = 0;
-  _min_step            = -1;
-  _pt._width           = 0;
-  _pt._length          = 0;
-  _pt._from_width      = 0;
-  _max_width           = MAX_INT;
-  _min_width           = 0;
+  _pitch_x = 0;
+  _pitch_y = 0;
+  _offset_x = 0;
+  _offset_y = 0;
+  _width = 0;
+  _spacing = 0;
+  _resistance = 0.0;
+  _capacitance = 0.0;
+  _edge_capacitance = 0.0;
+  _wire_extension = 0;
+  _number = 0;
+  _rlevel = 0;
+  _area = 0.0;
+  _thickness = 0;
+  _min_step = -1;
+  _pt._width = 0;
+  _pt._length = 0;
+  _pt._from_width = 0;
+  _max_width = MAX_INT;
+  _min_width = 0;
   _min_step_max_length = -1;
-  _min_step_max_edges  = -1;
+  _min_step_max_edges = -1;
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
-  _name  = 0;
+  _name = 0;
   _alias = 0;
 
   _spacing_rules_tbl = new dbTable<_dbTechLayerSpacingRule>(
@@ -529,21 +529,21 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 }
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
-  flags_.has_max_width_          = r.flags_.has_max_width_;
-  flags_.has_thickness_          = r.flags_.has_thickness_;
-  flags_.has_area_               = r.flags_.has_area_;
-  flags_.has_protrusion_         = r.flags_.has_protrusion_;
-  flags_.has_alias_              = r.flags_.has_alias_;
-  flags_.has_xy_pitch_           = r.flags_.has_xy_pitch_;
-  flags_.has_xy_offset_          = r.flags_.has_xy_offset_;
-  flags_.rect_only_              = r.flags_.rect_only_;
+  flags_.has_max_width_ = r.flags_.has_max_width_;
+  flags_.has_thickness_ = r.flags_.has_thickness_;
+  flags_.has_area_ = r.flags_.has_area_;
+  flags_.has_protrusion_ = r.flags_.has_protrusion_;
+  flags_.has_alias_ = r.flags_.has_alias_;
+  flags_.has_xy_pitch_ = r.flags_.has_xy_pitch_;
+  flags_.has_xy_offset_ = r.flags_.has_xy_offset_;
+  flags_.rect_only_ = r.flags_.rect_only_;
   flags_.right_way_on_grid_only_ = r.flags_.right_way_on_grid_only_;
   flags_.right_way_on_grid_only_check_mask_
       = r.flags_.right_way_on_grid_only_check_mask_;
   flags_.rect_only_except_non_core_pins_
       = r.flags_.rect_only_except_non_core_pins_;
-  flags_.lef58_type_   = r.flags_.lef58_type_;
-  flags_.spare_bits_   = r.flags_.spare_bits_;
+  flags_.lef58_type_ = r.flags_.lef58_type_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r.cut_class_rules_tbl_);
   ZALLOCATED(cut_class_rules_tbl_);
@@ -571,39 +571,39 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r.cut_spacing_table_def_tbl_);
   ZALLOCATED(cut_spacing_table_def_tbl_);
   // User Code Begin CopyConstructor
-  flags_                 = r.flags_;
-  _pitch_x               = r._pitch_x;
-  _pitch_y               = r._pitch_y;
-  _offset_x              = r._offset_x;
-  _offset_y              = r._offset_y;
-  _width                 = r._width;
-  _spacing               = r._spacing;
-  _resistance            = r._resistance;
-  _capacitance           = r._capacitance;
-  _edge_capacitance      = r._edge_capacitance;
-  _wire_extension        = r._wire_extension;
-  _number                = r._number;
-  _rlevel                = r._rlevel;
-  _area                  = r._area;
-  _thickness             = r._thickness;
-  _max_width             = r._max_width;
-  _min_width             = r._min_width;
-  _min_step              = r._min_step;
-  _min_step_max_length   = r._min_step_max_length;
-  _min_step_max_edges    = r._min_step_max_edges;
-  _pt                    = r._pt;
-  _name                  = NULL;
-  _alias                 = NULL;
-  _upper                 = r._upper;
-  _lower                 = r._lower;
-  _v55sp_length_idx      = r._v55sp_length_idx;
-  _v55sp_width_idx       = r._v55sp_width_idx;
-  _v55sp_spacing         = r._v55sp_spacing;
-  _two_widths_sp_idx     = r._two_widths_sp_idx;
-  _two_widths_sp_prl     = r._two_widths_sp_prl;
+  flags_ = r.flags_;
+  _pitch_x = r._pitch_x;
+  _pitch_y = r._pitch_y;
+  _offset_x = r._offset_x;
+  _offset_y = r._offset_y;
+  _width = r._width;
+  _spacing = r._spacing;
+  _resistance = r._resistance;
+  _capacitance = r._capacitance;
+  _edge_capacitance = r._edge_capacitance;
+  _wire_extension = r._wire_extension;
+  _number = r._number;
+  _rlevel = r._rlevel;
+  _area = r._area;
+  _thickness = r._thickness;
+  _max_width = r._max_width;
+  _min_width = r._min_width;
+  _min_step = r._min_step;
+  _min_step_max_length = r._min_step_max_length;
+  _min_step_max_edges = r._min_step_max_edges;
+  _pt = r._pt;
+  _name = NULL;
+  _alias = NULL;
+  _upper = r._upper;
+  _lower = r._lower;
+  _v55sp_length_idx = r._v55sp_length_idx;
+  _v55sp_width_idx = r._v55sp_width_idx;
+  _v55sp_spacing = r._v55sp_spacing;
+  _two_widths_sp_idx = r._two_widths_sp_idx;
+  _two_widths_sp_prl = r._two_widths_sp_prl;
   _two_widths_sp_spacing = r._two_widths_sp_spacing;
-  _oxide1                = r._oxide1;
-  _oxide2                = r._oxide2;
+  _oxide1 = r._oxide1;
+  _oxide2 = r._oxide2;
 
   if (r._name) {
     _name = strdup(r._name);
@@ -945,7 +945,7 @@ bool dbTechLayer::isRectOnlyExceptNonCorePins() const
 
 void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
-  _dbTechLayer* layer       = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.lef58_type_ = (uint) type;
 }
 
@@ -992,7 +992,7 @@ void dbTechLayer::setAlias(const char* alias)
     free((void*) layer->_alias);
 
   layer->flags_.has_alias_ = 1;
-  layer->_alias            = strdup(alias);
+  layer->_alias = strdup(alias);
   ZALLOCATED(layer->_alias);
 }
 
@@ -1005,7 +1005,7 @@ uint dbTechLayer::getWidth() const
 void dbTechLayer::setWidth(int width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->_width       = width;
+  layer->_width = width;
 }
 
 int dbTechLayer::getSpacing()
@@ -1017,7 +1017,7 @@ int dbTechLayer::getSpacing()
 void dbTechLayer::setSpacing(int spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->_spacing     = spacing;
+  layer->_spacing = spacing;
 }
 
 double dbTechLayer::getEdgeCapacitance()
@@ -1028,7 +1028,7 @@ double dbTechLayer::getEdgeCapacitance()
 
 void dbTechLayer::setEdgeCapacitance(double cap)
 {
-  _dbTechLayer* layer      = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_edge_capacitance = cap;
 }
 
@@ -1040,45 +1040,45 @@ uint dbTechLayer::getWireExtension()
 
 void dbTechLayer::setWireExtension(uint ext)
 {
-  _dbTechLayer* layer    = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_wire_extension = ext;
 }
 
 int dbTechLayer::getSpacing(int w, int l)
 {
-  _dbTechLayer*                 layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   dbSet<dbTechLayerSpacingRule> v54rules;
 
   bool found_spacing = false;
-  uint spacing       = MAX_INT;
+  uint spacing = MAX_INT;
 
   bool found_over_spacing = false;
-  uint over_spacing       = MAX_INT;
-  uint width              = (uint) w;
-  uint length             = (uint) l;
+  uint over_spacing = MAX_INT;
+  uint width = (uint) w;
+  uint length = (uint) l;
 
   if (getV54SpacingRules(v54rules)) {
     dbSet<dbTechLayerSpacingRule>::iterator ritr;
-    dbTechLayerSpacingRule*                 cur_rule;
-    uint                                    rmin, rmax;
+    dbTechLayerSpacingRule* cur_rule;
+    uint rmin, rmax;
 
     for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
       cur_rule = *ritr;
       if (cur_rule->getRange(rmin, rmax)) {
         if ((width >= rmin) && (width <= rmax)) {
-          spacing       = MIN(spacing, cur_rule->getSpacing());
+          spacing = MIN(spacing, cur_rule->getSpacing());
           found_spacing = true;
         }
         if (width > rmax) {
           found_over_spacing = true;
-          over_spacing       = MIN(over_spacing, cur_rule->getSpacing());
+          over_spacing = MIN(over_spacing, cur_rule->getSpacing());
         }
       }
     }
   }
 
   std::vector<std::vector<uint>> v55rules;
-  uint                           i, j;
+  uint i, j;
   if (getV55SpacingTable(v55rules)) {
     for (i = 1; (i < layer->_v55sp_width_idx.size())
                 && (width > layer->_v55sp_width_idx[i]);
@@ -1089,12 +1089,12 @@ int dbTechLayer::getSpacing(int w, int l)
          j++)
       ;
     found_spacing = true;
-    spacing       = v55rules[i - 1][j - 1];
+    spacing = v55rules[i - 1][j - 1];
   }
 
   if ((!found_spacing) && (found_over_spacing)) {
     found_spacing = true;
-    spacing       = over_spacing;
+    spacing = over_spacing;
   }
 
   return (found_spacing) ? spacing : layer->_spacing;
@@ -1105,20 +1105,20 @@ int dbTechLayer::getSpacing(int w, int l)
 //
 void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
 {
-  _dbTechLayer*                 layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   dbSet<dbTechLayerSpacingRule> v54rules;
 
-  owidth  = getWidth();
+  owidth = getWidth();
   olength = owidth;
 
   if (getV54SpacingRules(v54rules)) {
     dbSet<dbTechLayerSpacingRule>::iterator ritr;
-    uint                                    rmin, rmax;
+    uint rmin, rmax;
 
     for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
       if ((*ritr)->getRange(rmin, rmax)) {
         if (rmin > (uint) owidth) {
-          owidth  = rmin;
+          owidth = rmin;
           olength = rmin;
         }
       }
@@ -1126,7 +1126,7 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
   }
 
   if (hasV55SpacingRules()) {
-    owidth  = layer->_v55sp_width_idx[layer->_v55sp_width_idx.size() - 1];
+    owidth = layer->_v55sp_width_idx[layer->_v55sp_width_idx.size() - 1];
     olength = layer->_v55sp_length_idx[layer->_v55sp_length_idx.size() - 1];
   }
 }
@@ -1136,21 +1136,21 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
 //
 void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
 {
-  _dbTechLayer*                 layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   dbSet<dbTechLayerSpacingRule> v54rules;
 
-  owidth  = getWidth();
+  owidth = getWidth();
   olength = owidth;
 
   if (getV54SpacingRules(v54rules)) {
     dbSet<dbTechLayerSpacingRule>::iterator ritr;
-    uint                                    rmin, rmax;
-    bool                                    range_found = false;
+    uint rmin, rmax;
+    bool range_found = false;
 
     for (ritr = v54rules.begin(); ritr != v54rules.end(); ++ritr) {
       if ((*ritr)->getRange(rmin, rmax)) {
         if ((rmin < (uint) owidth) || !range_found) {
-          owidth  = rmin;
+          owidth = rmin;
           olength = rmin;
         }
       }
@@ -1158,7 +1158,7 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   }
 
   if (hasV55SpacingRules()) {
-    owidth  = layer->_v55sp_width_idx[1];
+    owidth = layer->_v55sp_width_idx[1];
     olength = layer->_v55sp_length_idx[1];
   }
 }
@@ -1187,8 +1187,8 @@ bool dbTechLayer::getV55SpacingWidthsAndLengths(
   if (!hasV55SpacingRules())
     return false;
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  width_idx           = layer->_v55sp_width_idx;
-  length_idx          = layer->_v55sp_length_idx;
+  width_idx = layer->_v55sp_width_idx;
+  length_idx = layer->_v55sp_length_idx;
   return true;
 }
 
@@ -1199,7 +1199,7 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
   fprintf(writer.out(), "SPACINGTABLE\n");
   fprintf(writer.out(), "  PARALLELRUNLENGTH");
   dbVector<uint>::const_iterator v55_itr;
-  uint                           wddx, lndx;
+  uint wddx, lndx;
 
   for (v55_itr = layer->_v55sp_length_idx.begin();
        v55_itr != layer->_v55sp_length_idx.end();
@@ -1275,7 +1275,7 @@ void dbTechLayer::initV55SpacingTable(uint numrows, uint numcols)
 
 void dbTechLayer::addV55SpacingTableEntry(uint inrow, uint incol, uint spacing)
 {
-  _dbTechLayer* layer                 = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_v55sp_spacing(inrow, incol) = spacing;
 }
 
@@ -1309,7 +1309,7 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
 
   fprintf(writer.out(), "SPACINGTABLE TWOWIDTHS");
   dbVector<uint>::const_iterator itr;
-  uint                           wddx, lndx;
+  uint wddx, lndx;
 
   for (wddx = 0, itr = layer->_two_widths_sp_idx.begin();
        itr != layer->_two_widths_sp_idx.end();
@@ -1395,7 +1395,7 @@ void dbTechLayer::addTwoWidthsSpacingTableEntry(uint inrow,
                                                 uint incol,
                                                 uint spacing)
 {
-  _dbTechLayer* layer                         = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_two_widths_sp_spacing(inrow, incol) = spacing;
 }
 
@@ -1418,7 +1418,7 @@ bool dbTechLayer::getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules)
 dbSet<dbTechMinCutRule> dbTechLayer::getMinCutRules()
 {
   dbSet<dbTechMinCutRule> rules;
-  _dbTechLayer*           layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   rules = dbSet<dbTechMinCutRule>(layer, layer->_min_cut_rules_tbl);
   return rules;
 }
@@ -1426,7 +1426,7 @@ dbSet<dbTechMinCutRule> dbTechLayer::getMinCutRules()
 dbSet<dbTechMinEncRule> dbTechLayer::getMinEncRules()
 {
   dbSet<dbTechMinEncRule> rules;
-  _dbTechLayer*           layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   rules = dbSet<dbTechMinEncRule>(layer, layer->_min_enc_rules_tbl);
   return rules;
 }
@@ -1434,7 +1434,7 @@ dbSet<dbTechMinEncRule> dbTechLayer::getMinEncRules()
 dbSet<dbTechV55InfluenceEntry> dbTechLayer::getV55InfluenceEntries()
 {
   dbSet<dbTechV55InfluenceEntry> rules;
-  _dbTechLayer*                  layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   rules = dbSet<dbTechV55InfluenceEntry>(layer, layer->_v55inf_tbl);
   return rules;
 }
@@ -1459,7 +1459,7 @@ bool dbTechLayer::getMinEnclosureRules(
 
 dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
 {
-  _dbTechLayer*            layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTechLayerAntennaRule* r
       = (_dbTechLayerAntennaRule*) getDefaultAntennaRule();
 
@@ -1469,10 +1469,10 @@ dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
   } else {
-    _dbTech* tech  = (_dbTech*) layer->getOwner();
-    r              = tech->_antenna_rule_tbl->create();
+    _dbTech* tech = (_dbTech*) layer->getOwner();
+    r = tech->_antenna_rule_tbl->create();
     layer->_oxide1 = r->getOID();
-    r->_layer      = getImpl()->getOID();
+    r->_layer = getImpl()->getOID();
   }
 
   return (dbTechLayerAntennaRule*) r;
@@ -1480,7 +1480,7 @@ dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
 
 dbTechLayerAntennaRule* dbTechLayer::createOxide2AntennaRule()
 {
-  _dbTechLayer*            layer = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   _dbTechLayerAntennaRule* r
       = (_dbTechLayerAntennaRule*) getOxide2AntennaRule();
 
@@ -1490,10 +1490,10 @@ dbTechLayerAntennaRule* dbTechLayer::createOxide2AntennaRule()
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
   } else {
-    _dbTech* tech  = (_dbTech*) layer->getOwner();
-    r              = tech->_antenna_rule_tbl->create();
+    _dbTech* tech = (_dbTech*) layer->getOwner();
+    r = tech->_antenna_rule_tbl->create();
     layer->_oxide2 = r->getOID();
-    r->_layer      = getImpl()->getOID();
+    r->_layer = getImpl()->getOID();
   }
 
   return (dbTechLayerAntennaRule*) r;
@@ -1514,7 +1514,7 @@ bool dbTechLayer::hasOxide2AntennaRule() const
 dbTechLayerAntennaRule* dbTechLayer::getDefaultAntennaRule() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  _dbTech*      tech  = (_dbTech*) layer->getOwner();
+  _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide1 == 0)
     return NULL;
@@ -1526,7 +1526,7 @@ dbTechLayerAntennaRule* dbTechLayer::getDefaultAntennaRule() const
 dbTechLayerAntennaRule* dbTechLayer::getOxide2AntennaRule() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  _dbTech*      tech  = (_dbTech*) layer->getOwner();
+  _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide2 == 0)
     return NULL;
@@ -1563,9 +1563,9 @@ bool dbTechLayer::getThickness(uint& inthk) const
 
 void dbTechLayer::setThickness(uint thickness)
 {
-  _dbTechLayer* layer          = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_thickness_ = 1;
-  layer->_thickness            = thickness;
+  layer->_thickness = thickness;
 }
 
 bool dbTechLayer::hasArea() const
@@ -1586,9 +1586,9 @@ dbTechLayer::getArea() const
 
 void dbTechLayer::setArea(double area)
 {
-  _dbTechLayer* layer     = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_area_ = 1;
-  layer->_area            = area;
+  layer->_area = area;
 }
 
 bool dbTechLayer::hasMaxWidth() const
@@ -1608,9 +1608,9 @@ uint dbTechLayer::getMaxWidth() const
 
 void dbTechLayer::setMaxWidth(uint max_width)
 {
-  _dbTechLayer* layer          = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_max_width_ = 1;
-  layer->_max_width            = max_width;
+  layer->_max_width = max_width;
 }
 
 uint dbTechLayer::getMinWidth() const
@@ -1622,7 +1622,7 @@ uint dbTechLayer::getMinWidth() const
 void dbTechLayer::setMinWidth(uint min_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->_min_width   = min_width;
+  layer->_min_width = min_width;
 }
 
 bool dbTechLayer::hasMinStep() const
@@ -1643,7 +1643,7 @@ uint dbTechLayer::getMinStep() const
 void dbTechLayer::setMinStep(uint min_step)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->_min_step    = min_step;
+  layer->_min_step = min_step;
 }
 
 bool dbTechLayer::hasProtrusion() const
@@ -1683,11 +1683,11 @@ void dbTechLayer::setProtrusion(uint pt_width,
                                 uint pt_length,
                                 uint pt_from_width)
 {
-  _dbTechLayer* layer           = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_protrusion_ = 1;
-  layer->_pt._width             = pt_width;
-  layer->_pt._length            = pt_length;
-  layer->_pt._from_width        = pt_from_width;
+  layer->_pt._width = pt_width;
+  layer->_pt._length = pt_length;
+  layer->_pt._from_width = pt_from_width;
 }
 
 int dbTechLayer::getPitch()
@@ -1710,17 +1710,17 @@ int dbTechLayer::getPitchY()
 
 void dbTechLayer::setPitch(int pitch)
 {
-  _dbTechLayer* layer         = (_dbTechLayer*) this;
-  layer->_pitch_x             = pitch;
-  layer->_pitch_y             = pitch;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_pitch_x = pitch;
+  layer->_pitch_y = pitch;
   layer->flags_.has_xy_pitch_ = false;
 }
 
 void dbTechLayer::setPitchXY(int pitch_x, int pitch_y)
 {
-  _dbTechLayer* layer         = (_dbTechLayer*) this;
-  layer->_pitch_x             = pitch_x;
-  layer->_pitch_y             = pitch_y;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_pitch_x = pitch_x;
+  layer->_pitch_y = pitch_y;
   layer->flags_.has_xy_pitch_ = true;
 }
 
@@ -1750,17 +1750,17 @@ int dbTechLayer::getOffsetY()
 
 void dbTechLayer::setOffset(int offset)
 {
-  _dbTechLayer* layer          = (_dbTechLayer*) this;
-  layer->_offset_x             = offset;
-  layer->_offset_y             = offset;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_offset_x = offset;
+  layer->_offset_y = offset;
   layer->flags_.has_xy_offset_ = false;
 }
 
 void dbTechLayer::setOffsetXY(int offset_x, int offset_y)
 {
-  _dbTechLayer* layer          = (_dbTechLayer*) this;
-  layer->_offset_x             = offset_x;
-  layer->_offset_y             = offset_y;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_offset_x = offset_x;
+  layer->_offset_y = offset_y;
   layer->flags_.has_xy_offset_ = true;
 }
 
@@ -1778,7 +1778,7 @@ dbTechLayerDir dbTechLayer::getDirection()
 
 void dbTechLayer::setDirection(dbTechLayerDir direction)
 {
-  _dbTechLayer* layer      = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.direction_ = direction.getValue();
 }
 
@@ -1790,7 +1790,7 @@ dbTechLayerMinStepType dbTechLayer::getMinStepType() const
 
 void dbTechLayer::setMinStepType(dbTechLayerMinStepType type)
 {
-  _dbTechLayer* layer         = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.minstep_type_ = type.getValue();
 }
 
@@ -1808,7 +1808,7 @@ uint dbTechLayer::getMinStepMaxLength() const
 
 void dbTechLayer::setMinStepMaxLength(uint length)
 {
-  _dbTechLayer* layer         = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_min_step_max_length = length;
 }
 
@@ -1826,7 +1826,7 @@ uint dbTechLayer::getMinStepMaxEdges() const
 
 void dbTechLayer::setMinStepMaxEdges(uint edges)
 {
-  _dbTechLayer* layer        = (_dbTechLayer*) this;
+  _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_min_step_max_edges = edges;
 }
 
@@ -1845,7 +1845,7 @@ double dbTechLayer::getResistance()
 void dbTechLayer::setResistance(double resistance)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->_resistance  = resistance;
+  layer->_resistance = resistance;
 }
 
 double dbTechLayer::getCapacitance()
@@ -1875,7 +1875,7 @@ int dbTechLayer::getRoutingLevel()
 dbTechLayer* dbTechLayer::getLowerLayer()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  _dbTech*      tech  = (_dbTech*) layer->getOwner();
+  _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_lower == 0)
     return NULL;
@@ -1886,7 +1886,7 @@ dbTechLayer* dbTechLayer::getLowerLayer()
 dbTechLayer* dbTechLayer::getUpperLayer()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  _dbTech*      tech  = (_dbTech*) layer->getOwner();
+  _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_upper == 0)
     return NULL;
@@ -1899,8 +1899,8 @@ dbTech* dbTechLayer::getTech()
   return (dbTech*) getImpl()->getOwner();
 }
 
-dbTechLayer* dbTechLayer::create(dbTech*         tech_,
-                                 const char*     name_,
+dbTechLayer* dbTechLayer::create(dbTech* tech_,
+                                 const char* name_,
                                  dbTechLayerType type)
 {
   if (type.getValue() == dbTechLayerType::NONE)
@@ -1909,11 +1909,11 @@ dbTechLayer* dbTechLayer::create(dbTech*         tech_,
   if (tech_->findLayer(name_))
     return NULL;
 
-  _dbTech*      tech  = (_dbTech*) tech_;
+  _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();
-  layer->_name        = strdup(name_);
+  layer->_name = strdup(name_);
   ZALLOCATED(layer->_name);
-  layer->_number      = tech->_layer_cnt++;
+  layer->_number = tech->_layer_cnt++;
   layer->flags_.type_ = type.getValue();
 
   if (type.getValue() == dbTechLayerType::ROUTING) {
@@ -1922,14 +1922,14 @@ dbTechLayer* dbTechLayer::create(dbTech*         tech_,
 
   if (tech->_bottom == 0) {
     tech->_bottom = layer->getOID();
-    tech->_top    = layer->getOID();
+    tech->_top = layer->getOID();
     return (dbTechLayer*) layer;
   }
 
   _dbTechLayer* top = tech->_layer_tbl->getPtr(tech->_top);
-  top->_upper       = layer->getOID();
-  layer->_lower     = top->getOID();
-  tech->_top        = layer->getOID();
+  top->_upper = layer->getOID();
+  layer->_lower = top->getOID();
+  tech->_top = layer->getOID();
 
   return (dbTechLayer*) layer;
 }

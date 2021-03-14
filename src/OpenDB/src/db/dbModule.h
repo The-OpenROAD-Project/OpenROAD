@@ -60,9 +60,9 @@ class _dbModule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  char*            _name;
-  dbId<_dbModule>  _next_entry;
-  dbId<_dbInst>    _insts;
+  char* _name;
+  dbId<_dbModule> _next_entry;
+  dbId<_dbInst> _insts;
   dbId<_dbModInst> _modinsts;
   dbId<_dbModInst> _mod_inst;
 

@@ -66,6 +66,12 @@ set_sink_clustering(bool enable)
 }
 
 void
+set_sink_clustering_levels(unsigned levels)
+{
+  getTritonCts()->getParms()->setSinkClusteringLevels(levels);
+}
+
+void
 set_max_char_cap(double cap)
 {
   getTritonCts()->getParms()->setMaxCharCap(cap);

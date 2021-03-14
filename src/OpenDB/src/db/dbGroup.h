@@ -67,15 +67,15 @@ class _dbGroup : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbGroupFlags           flags_;
-  char*                  _name;
-  Rect                   _box;
-  dbId<_dbGroup>         _next_entry;
-  dbId<_dbGroup>         _group_next;
-  dbId<_dbGroup>         _parent_group;
-  dbId<_dbInst>          _insts;
-  dbId<_dbModInst>       _modinsts;
-  dbId<_dbGroup>         _groups;
+  dbGroupFlags flags_;
+  char* _name;
+  Rect _box;
+  dbId<_dbGroup> _next_entry;
+  dbId<_dbGroup> _group_next;
+  dbId<_dbGroup> _parent_group;
+  dbId<_dbInst> _insts;
+  dbId<_dbModInst> _modinsts;
+  dbId<_dbGroup> _groups;
   dbVector<dbId<_dbNet>> _power_nets;
   dbVector<dbId<_dbNet>> _ground_nets;
 

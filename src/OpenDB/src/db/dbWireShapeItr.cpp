@@ -50,9 +50,9 @@ namespace odb {
 //////////////////////////////////////////////////////////////////////////////////
 dbWireShapeItr::dbWireShapeItr()
 {
-  _wire  = NULL;
+  _wire = NULL;
   _block = NULL;
-  _tech  = NULL;
+  _tech = NULL;
 }
 
 dbWireShapeItr::~dbWireShapeItr()
@@ -74,19 +74,19 @@ inline unsigned char dbWireShapeItr::peekOp()
 
 void dbWireShapeItr::begin(dbWire* wire)
 {
-  _wire         = (_dbWire*) wire;
-  _block        = wire->getBlock();
-  _tech         = _block->getDb()->getTech();
-  _idx          = 0;
-  _prev_x       = 0;
-  _prev_y       = 0;
-  _prev_ext     = 0;
+  _wire = (_dbWire*) wire;
+  _block = wire->getBlock();
+  _tech = _block->getDb()->getTech();
+  _idx = 0;
+  _prev_x = 0;
+  _prev_y = 0;
+  _prev_ext = 0;
   _has_prev_ext = false;
-  _layer        = NULL;
-  _via          = NULL;
-  _dw           = 0;
-  _point_cnt    = 0;
-  _has_width    = false;
+  _layer = NULL;
+  _via = NULL;
+  _dw = 0;
+  _point_cnt = 0;
+  _has_width = false;
 }
 
 bool dbWireShapeItr::next(dbShape& shape)
@@ -106,9 +106,9 @@ nextOpCode:
     case WOP_PATH:
     case WOP_SHORT:
     case WOP_VWIRE: {
-      _layer     = dbTechLayer::getTechLayer(_tech, operand);
+      _layer = dbTechLayer::getTechLayer(_tech, operand);
       _point_cnt = 0;
-      _dw        = _layer->getWidth() >> 1;
+      _dw = _layer->getWidth() >> 1;
       goto nextOpCode;
     }
 
@@ -116,13 +116,13 @@ nextOpCode:
       WirePoint pnt;
       getPrevPoint(
           _tech, _block, _wire->_opcodes, _wire->_data, operand, true, pnt);
-      _layer        = pnt._layer;
-      _prev_x       = pnt._x;
-      _prev_y       = pnt._y;
-      _prev_ext     = 0;
+      _layer = pnt._layer;
+      _prev_x = pnt._x;
+      _prev_y = pnt._y;
+      _prev_ext = 0;
       _has_prev_ext = false;
-      _point_cnt    = 0;
-      _dw           = _layer->getWidth() >> 1;
+      _point_cnt = 0;
+      _dw = _layer->getWidth() >> 1;
       goto nextOpCode;
     }
 
@@ -150,21 +150,21 @@ nextOpCode:
       else
         cur_y = _prev_y;
 
-      int  cur_ext;
+      int cur_ext;
       bool has_cur_ext;
 
       if (opcode & WOP_EXTENSION) {
         nextOp(cur_ext);
         has_cur_ext = true;
       } else {
-        cur_ext     = 0;
+        cur_ext = 0;
         has_cur_ext = false;
       }
 
       if (_point_cnt++ == 0) {
-        _prev_x       = cur_x;
-        _prev_y       = cur_y;
-        _prev_ext     = cur_ext;
+        _prev_x = cur_x;
+        _prev_y = cur_y;
+        _prev_ext = cur_ext;
         _has_prev_ext = has_cur_ext;
         goto nextOpCode;
       }
@@ -179,9 +179,9 @@ nextOpCode:
                        has_cur_ext,
                        _dw,
                        _layer);
-      _prev_x       = cur_x;
-      _prev_y       = cur_y;
-      _prev_ext     = cur_ext;
+      _prev_x = cur_x;
+      _prev_y = cur_y;
+      _prev_ext = cur_ext;
       _has_prev_ext = has_cur_ext;
       return true;
     }
@@ -189,16 +189,16 @@ nextOpCode:
     case WOP_Y: {
       ZASSERT(_point_cnt != 0);
       _point_cnt++;
-      int  cur_y = operand;
-      int  cur_x = _prev_x;
-      int  cur_ext;
+      int cur_y = operand;
+      int cur_x = _prev_x;
+      int cur_ext;
       bool has_cur_ext;
 
       if (opcode & WOP_EXTENSION) {
         nextOp(cur_ext);
         has_cur_ext = true;
       } else {
-        cur_ext     = 0;
+        cur_ext = 0;
         has_cur_ext = false;
       }
 
@@ -212,9 +212,9 @@ nextOpCode:
                        has_cur_ext,
                        _dw,
                        _layer);
-      _prev_x       = cur_x;
-      _prev_y       = cur_y;
-      _prev_ext     = cur_ext;
+      _prev_x = cur_x;
+      _prev_y = cur_y;
+      _prev_ext = cur_ext;
       _has_prev_ext = has_cur_ext;
       return true;
     }
@@ -224,14 +224,14 @@ nextOpCode:
 
       // A colinear-point with an extension begins a new path-segment
       if (opcode & WOP_EXTENSION) {
-        _prev_ext     = operand;
+        _prev_ext = operand;
         _has_prev_ext = true;
         goto nextOpCode;
       }
 
       // A colinear-point following an extension cancels the ext
       if (_has_prev_ext) {
-        _prev_ext     = 0;
+        _prev_ext = 0;
         _has_prev_ext = false;
         goto nextOpCode;
       }
@@ -266,7 +266,7 @@ nextOpCode:
       if (_has_width == false)
         _dw = _layer->getWidth() >> 1;
 
-      _prev_ext     = 0;
+      _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
@@ -276,10 +276,10 @@ nextOpCode:
 
       Rect b;
       box->getBox(b);
-      int  xmin = b.xMin() + _prev_x;
-      int  ymin = b.yMin() + _prev_y;
-      int  xmax = b.xMax() + _prev_x;
-      int  ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + _prev_x;
+      int ymin = b.yMin() + _prev_y;
+      int xmax = b.xMax() + _prev_x;
+      int ymax = b.yMax() + _prev_y;
       Rect r(xmin, ymin, xmax, ymax);
       shape.setVia(via, r);
       return true;
@@ -296,7 +296,7 @@ nextOpCode:
       if (_has_width == false)
         _dw = _layer->getWidth() >> 1;
 
-      _prev_ext     = 0;
+      _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
@@ -306,10 +306,10 @@ nextOpCode:
 
       Rect b;
       box->getBox(b);
-      int  xmin = b.xMin() + _prev_x;
-      int  ymin = b.yMin() + _prev_y;
-      int  xmax = b.xMax() + _prev_x;
-      int  ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + _prev_x;
+      int ymin = b.yMin() + _prev_y;
+      int xmax = b.xMax() + _prev_x;
+      int ymax = b.yMax() + _prev_y;
       Rect r(xmin, ymin, xmax, ymax);
       shape.setVia(via, r);
       return true;

@@ -33,8 +33,8 @@
 #pragma once
 
 #include "odb.h"
-namespace utl{
-  class Logger;
+namespace utl {
+class Logger;
 }
 namespace odb {
 
@@ -69,5 +69,3 @@ class defout
 };
 
 }  // namespace odb
-
-

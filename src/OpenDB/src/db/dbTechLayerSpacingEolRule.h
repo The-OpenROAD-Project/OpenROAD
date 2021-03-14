@@ -104,39 +104,39 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   // User Code End Enums
 
   dbTechLayerSpacingEolRuleFlags flags_;
-  int                            eol_space_;
-  int                            eol_width_;
-  int                            wrong_dir_space_;
-  int                            opposite_width_;
-  int                            eol_within_;
-  int                            wrong_dir_within_;
-  int                            exact_width_;
-  int                            other_width_;
-  int                            fill_triangle_;
-  int                            cut_class_;
-  int                            with_cut_space_;
-  int                            enclosure_end_width_;
-  int                            enclosure_end_within_;
-  int                            end_prl_space_;
-  int                            end_prl_;
-  int                            end_to_end_space_;
-  int                            one_cut_space_;
-  int                            two_cut_space_;
-  int                            extension_;
-  int                            wrong_dir_extension_;
-  int                            other_end_width_;
-  int                            max_length_;
-  int                            min_length_;
-  int                            par_space_;
-  int                            par_within_;
-  int                            par_prl_;
-  int                            par_min_length_;
-  int                            enclose_dist_;
-  int                            cut_to_metal_space_;
-  int                            min_adj_length_;
-  int                            min_adj_length1_;
-  int                            min_adj_length2_;
-  int                            notch_length_;
+  int eol_space_;
+  int eol_width_;
+  int wrong_dir_space_;
+  int opposite_width_;
+  int eol_within_;
+  int wrong_dir_within_;
+  int exact_width_;
+  int other_width_;
+  int fill_triangle_;
+  int cut_class_;
+  int with_cut_space_;
+  int enclosure_end_width_;
+  int enclosure_end_within_;
+  int end_prl_space_;
+  int end_prl_;
+  int end_to_end_space_;
+  int one_cut_space_;
+  int two_cut_space_;
+  int extension_;
+  int wrong_dir_extension_;
+  int other_end_width_;
+  int max_length_;
+  int min_length_;
+  int par_space_;
+  int par_within_;
+  int par_prl_;
+  int par_min_length_;
+  int enclose_dist_;
+  int cut_to_metal_space_;
+  int min_adj_length_;
+  int min_adj_length1_;
+  int min_adj_length2_;
+  int notch_length_;
 
   // User Code Begin Fields
   dbId<_dbTechLayer> _layer;
@@ -150,8 +150,8 @@ class _dbTechLayerSpacingEolRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
-  void differences(dbDiff&                           diff,
-                   const char*                       field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerSpacingEolRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods

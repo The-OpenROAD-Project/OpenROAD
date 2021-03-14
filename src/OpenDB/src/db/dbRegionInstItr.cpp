@@ -58,25 +58,25 @@ bool dbRegionInstItr::orderReversed()
 void dbRegionInstItr::reverse(dbObject* parent)
 {
   _dbRegion* region = (_dbRegion*) parent;
-  uint       id     = region->_insts;
-  uint       list   = 0;
+  uint id = region->_insts;
+  uint list = 0;
 
   while (id != 0) {
-    _dbInst* inst      = _inst_tbl->getPtr(id);
-    uint     n         = inst->_region_next;
+    _dbInst* inst = _inst_tbl->getPtr(id);
+    uint n = inst->_region_next;
     inst->_region_next = list;
-    list               = id;
-    id                 = n;
+    list = id;
+    id = n;
   }
 
   uint prev = 0;
-  id        = list;
+  id = list;
 
   while (id != 0) {
-    _dbInst* inst      = _inst_tbl->getPtr(id);
+    _dbInst* inst = _inst_tbl->getPtr(id);
     inst->_region_prev = prev;
-    prev               = id;
-    id                 = inst->_region_next;
+    prev = id;
+    id = inst->_region_next;
   }
 
   region->_insts = list;

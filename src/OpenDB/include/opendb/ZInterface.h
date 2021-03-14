@@ -39,8 +39,8 @@
 #endif
 
 #include "ZException.h"
-#include "odb.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -75,7 +75,7 @@ class ZContext
 {
  public:
   Tcl_Interp* _interp;
-  ZSession*   _session;
+  ZSession* _session;
 };
 
 //////////////////////////////////////////////
@@ -146,5 +146,3 @@ class ZInterface
 };
 
 }  // namespace odb
-
-

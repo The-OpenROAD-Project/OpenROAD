@@ -72,16 +72,16 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
-  void differences(dbDiff&                                    diff,
-                   const char*                                field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
 };
-dbIStream& operator>>(dbIStream&                           stream,
+dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj);
-dbOStream& operator<<(dbOStream&                                 stream,
+dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj);
 // User Code Begin General
 // User Code End General

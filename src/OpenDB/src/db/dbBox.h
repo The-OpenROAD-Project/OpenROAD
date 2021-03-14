@@ -51,12 +51,12 @@ class dbDiff;
 struct _dbBoxFlags
 {
   dbBoxOwner::Value _owner_type : 4;
-  uint              _visited : 1;
-  uint              _mark : 1;
-  uint              _is_tech_via : 1;
-  uint              _is_block_via : 1;
-  uint              _layer_id : 8;
-  uint              _via_id : 16;
+  uint _visited : 1;
+  uint _mark : 1;
+  uint _is_tech_via : 1;
+  uint _is_block_via : 1;
+  uint _layer_id : 8;
+  uint _via_id : 16;
 };
 
 class _dbBox : public _dbObject
@@ -71,17 +71,17 @@ class _dbBox : public _dbObject
   union dbBoxShape
   {
     Rect _rect;
-    Oct  _oct;
+    Oct _oct;
     ~dbBoxShape(){};
   };
 
   // PERSISTANT-MEMBERS
   _dbBoxFlags _flags;
   // Rect         _rect;
-  dbBoxShape   _shape = {Rect()};
-  uint         _owner;
+  dbBoxShape _shape = {Rect()};
+  uint _owner;
   dbId<_dbBox> _next_box;
-  bool         _octilinear;
+  bool _octilinear;
 
   _dbBox(_dbDatabase*);
   _dbBox(_dbDatabase*, const _dbBox& b);
@@ -89,14 +89,14 @@ class _dbBox : public _dbObject
   bool operator==(const _dbBox& rhs) const;
   bool operator!=(const _dbBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBox& rhs) const;
-  int  equal(const _dbBox& rhs) const;
+  int equal(const _dbBox& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   bool isOct() const;
 
   _dbTechLayer* getTechLayer() const;
-  _dbTechVia*   getTechVia() const;
-  _dbVia*       getBlockVia() const;
+  _dbTechVia* getTechVia() const;
+  _dbVia* getBlockVia() const;
 
   void getViaXY(int& x, int& y) const;
 
@@ -114,15 +114,15 @@ class _dbBox : public _dbObject
 
 inline _dbBox::_dbBox(_dbDatabase*)
 {
-  _flags._owner_type   = dbBoxOwner::UNKNOWN;
-  _flags._is_tech_via  = 0;
+  _flags._owner_type = dbBoxOwner::UNKNOWN;
+  _flags._is_tech_via = 0;
   _flags._is_block_via = 0;
-  _flags._layer_id     = 0;
-  _flags._via_id       = 0;
-  _flags._visited      = 0;
-  _flags._mark         = 0;
-  _owner               = 0;
-  _octilinear          = false;
+  _flags._layer_id = 0;
+  _flags._via_id = 0;
+  _flags._visited = 0;
+  _flags._mark = 0;
+  _owner = 0;
+  _octilinear = false;
 }
 
 inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)

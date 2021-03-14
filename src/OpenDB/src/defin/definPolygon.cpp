@@ -31,13 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definPolygon.h"
+
 #include <algorithm>
+
 #include "poly_decomp.h"
 
 namespace odb {
 
-definPolygon::definPolygon(const std::vector<Point>& points)
-    : _points(points)
+definPolygon::definPolygon(const std::vector<Point>& points) : _points(points)
 {
   if (_points.size() < 4)
     return;

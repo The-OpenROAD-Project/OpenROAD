@@ -88,6 +88,43 @@ showUsage(const char *prog,
 static void
 showSplash();
 
+namespace sta {
+extern const char *opendbpy_python_inits[];
+extern const char *openroad_swig_py_python_inits[];
+}
+
+static void
+initPython()
+{
+  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not add module opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_AppendInittab("_openroad_swig_py", PyInit__openroad_swig_py) == -1) {
+    fprintf(stderr, "Error: could not add module openroadpy\n");
+    exit(1);
+  }
+
+  Py_Initialize();
+
+  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+  if (PyRun_SimpleString(unencoded)) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add init opendbpy\n");
+    exit(1);
+  }
+  delete [] unencoded;
+
+  unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
+  if (PyRun_SimpleString(unencoded)) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add init openroadpy\n");
+    exit(1);
+  }
+  delete [] unencoded;
+}
+
 int
 main(int argc,
      char *argv[])
@@ -111,17 +148,7 @@ main(int argc,
     remove(metrics_filename);
   }
 
-  if (PyImport_AppendInittab("opendbpy", PyInit__opendbpy) == -1) {
-    fprintf(stderr, "Error: could not add module opendbpy\n");
-    exit(1);
-  }
-
-  if (PyImport_AppendInittab("openroadpy", PyInit__openroad_swig_py) == -1) {
-    fprintf(stderr, "Error: could not add module openroadpy\n");
-    exit(1);
-  }
-
-  Py_Initialize();
+  initPython();
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -130,12 +157,16 @@ main(int argc,
     return gui::startGui(cmd_argc, cmd_argv);
   }
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
-    wchar_t** args = new wchar_t*[argc];
-    for(int i = 0; i < cmd_argc; i++)
-    {
-        args[i] = Py_DecodeLocale(cmd_argv[i], nullptr);
+    std::vector<wchar_t*> args;
+    for(int i = 0; i < cmd_argc; i++) {
+      size_t sz = strlen(argv[i]);
+      args[i] = new wchar_t[sz+1];
+      args[i][sz] = '\0';
+      for(size_t j = 0;j < sz; j++) {
+        args[i][j] = (wchar_t) argv[i][j];
+      }
     }
-    return Py_Main(cmd_argc, args);
+    return Py_Main(cmd_argc, args.data());
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
