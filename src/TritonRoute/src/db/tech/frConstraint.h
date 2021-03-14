@@ -1175,6 +1175,9 @@ namespace fr {
     frCoord findMin() const {
       return tbl.findMin();
     }
+    frCoord findMax() const {
+      return tbl.findMax();
+    }
     // setter
     void setLookupTbl(const fr2DLookupTbl<frSpacingTableTwRowType, frSpacingTableTwRowType, frCoord> &in) {
       tbl = in;
