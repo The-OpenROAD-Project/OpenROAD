@@ -72,11 +72,12 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   frLayerNum layerNum;
-  if (!shapes.empty()){
+  if (!shapes.empty()) {
       layerNum = layer_map_.at(layer->getNumber());
-      for (auto& b : shapes){
-          if (b.second != layerNum)
+      for (auto& b : shapes) {
+          if (b.second != layerNum){
               continue;
+          }
           painter.drawRect({b.first.left(), b.first.bottom(),
                           b.first.right(), b.first.top()});
       }
@@ -231,8 +232,11 @@ void FlexPAGraphics::setMarkersAndShapes(const std::vector<std::unique_ptr<frMar
         return;
     pa_markers_ = &markers;
     frBox box;
-    if (inst_term_) inst_term_->getInst()->getBBox(box);
-    else markers[0]->getBBox(box);
+    if (inst_term_) {
+      inst_term_->getInst()->getBBox(box);
+    } else {
+      markers[0]->getBBox(box);
+    }
     shapes.clear();
     for (auto& marker : markers) {
       frBox bbox;
