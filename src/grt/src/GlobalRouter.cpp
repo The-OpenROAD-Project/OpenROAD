@@ -236,7 +236,7 @@ void GlobalRouter::runFastRoute(bool onlySignal)
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 {
-  AntennaRepair* antennaRepair = new AntennaRepair(
+  AntennaRepair antennaRepair = AntennaRepair(
       this, _openroad->getAntennaChecker(), _openroad->getOpendp(), _db, _logger);
 
   // Copy first route result and make changes in this new vector
@@ -251,15 +251,15 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
       diodePort->libertyCell()->name(), diodePort->name());
   }
 
-  int violationsCnt = antennaRepair->checkAntennaViolations(
+  int violationsCnt = antennaRepair.checkAntennaViolations(
       originalRoute, _maxRoutingLayer, diodeMTerm);
 
   if (violationsCnt > 0) {
     clearFlow();
-    antennaRepair->fixAntennas(diodeMTerm);
-    antennaRepair->legalizePlacedCells();
+    antennaRepair.fixAntennas(diodeMTerm);
+    antennaRepair.legalizePlacedCells();
 
-    _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair->getDiodesCount());
+    _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
     startFastRoute();
     updateDirtyNets();
