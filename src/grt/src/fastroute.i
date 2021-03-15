@@ -52,6 +52,8 @@ using sta::LibertyPort;
 
 %inline %{
 
+namespace grt {
+
 bool
 have_routes()
 {
@@ -231,5 +233,7 @@ report_layer_wire_lengths()
 {
   getFastRoute()->reportLayerWireLengths();
 }
+
+} // namespace
 
 %} // inline
