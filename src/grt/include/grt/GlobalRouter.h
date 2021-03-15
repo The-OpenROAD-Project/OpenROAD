@@ -283,9 +283,9 @@ class GlobalRouter
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
-  void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
-  void removeDirtyNetsUsage();
+  void saveCapacities(int previousMinLayer, int previousMaxLayer);
+  void getCapacities(int previousMinLayer, int previousMaxLayer);
+  void removeDirtyNetsRouting();
   void updateDirtyNets();
 
   // db functions

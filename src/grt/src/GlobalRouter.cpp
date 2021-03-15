@@ -207,7 +207,7 @@ void GlobalRouter::applyAdjustments()
                              regionAdjst.getAdjustment());
   }
 
-  restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
+  getCapacities(_minLayerForClock, _maxLayerForClock);
 
   _fastRoute->initAuxVar();
 }
@@ -242,7 +242,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   // Copy first route result and make changes in this new vector
   NetRouteMap originalRoute(_routes);
 
-  getPreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
+  saveCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
@@ -270,8 +270,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
-    restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
-    removeDirtyNetsUsage();
+    getCapacities(_minRoutingLayer, _maxRoutingLayer);
+    removeDirtyNetsRouting();
 
     NetRouteMap newRoute = findRouting(antennaNets);
     mergeResults(newRoute);
@@ -296,7 +296,7 @@ void GlobalRouter::routeClockNets()
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
 
-  getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
+  saveCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
   _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 }
@@ -386,7 +386,7 @@ void GlobalRouter::setCapacities()
   }
 }
 
-void GlobalRouter::getPreviousCapacities(int previousMinLayer,
+void GlobalRouter::saveCapacities(int previousMinLayer,
                                          int previousMaxLayer)
 {
   int oldCap;
@@ -431,7 +431,7 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer,
   }
 }
 
-void GlobalRouter::restorePreviousCapacities(int previousMinLayer,
+void GlobalRouter::getCapacities(int previousMinLayer,
                                              int previousMaxLayer)
 {
   int oldCap;
@@ -460,7 +460,7 @@ void GlobalRouter::restorePreviousCapacities(int previousMinLayer,
   }
 }
 
-void GlobalRouter::removeDirtyNetsUsage()
+void GlobalRouter::removeDirtyNetsRouting()
 {
   for (odb::dbNet* db_net : _dirtyNets) {
     GRoute& netRoute = _routes[db_net];
