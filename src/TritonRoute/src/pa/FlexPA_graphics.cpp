@@ -72,9 +72,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   frLayerNum layerNum;
-  if (!shapes.empty()) {
+  if (!shapes_.empty()) {
       layerNum = layer_map_.at(layer->getNumber());
-      for (auto& b : shapes) {
+      for (auto& b : shapes_) {
           if (b.second != layerNum){
               continue;
           }
@@ -237,7 +237,7 @@ void FlexPAGraphics::setMarkersAndShapes(const std::vector<std::unique_ptr<frMar
     } else {
       markers[0]->getBBox(box);
     }
-    shapes.clear();
+    shapes_.clear();
     for (auto& marker : markers) {
       frBox bbox;
       marker->getBBox(bbox);
@@ -245,10 +245,10 @@ void FlexPAGraphics::setMarkersAndShapes(const std::vector<std::unique_ptr<frMar
                     marker->getConstraint()->typeId(),
                     bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
       for (auto &a: marker->getAggressors()) {
-          shapes.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+          shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
       }
       for (auto &a: marker->getVictims()) {
-          shapes.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+          shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
       }
     }
     
@@ -260,7 +260,7 @@ void FlexPAGraphics::setMarkersAndShapes(const std::vector<std::unique_ptr<frMar
     pa_ap_ = nullptr;
     pa_via_ = nullptr;
     pa_markers_ = nullptr;
-    shapes.clear();
+    shapes_.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)
