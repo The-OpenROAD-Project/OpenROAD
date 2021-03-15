@@ -65,6 +65,7 @@ class FlexPAGraphics : public gui::Renderer
 
   void setViaAP(const frAccessPoint* ap, const frVia* via,
                 const std::vector<std::unique_ptr<frMarker>>& markers);
+  void setMarkersAndShapes(const std::vector<std::unique_ptr<frMarker>>& markers);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -88,6 +89,7 @@ class FlexPAGraphics : public gui::Renderer
   const frAccessPoint* pa_ap_;
   const frVia* pa_via_;
   const std::vector<std::unique_ptr<frMarker>>* pa_markers_;
+  std::vector<std::pair<frBox, frLayerNum>>     shapes;
 };
 
 }  // namespace fr

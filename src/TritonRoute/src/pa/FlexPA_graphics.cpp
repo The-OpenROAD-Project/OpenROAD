@@ -71,11 +71,22 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  frLayerNum layerNum;
+  if (!shapes.empty()){
+      layerNum = layer_map_.at(layer->getNumber());
+      for (auto& b : shapes){
+          if (b.second != layerNum)
+              continue;
+          painter.drawRect({b.first.left(), b.first.bottom(),
+                          b.first.right(), b.first.top()});
+      }
+  }
+  
   if (!pin_) {
     return;
   }
 
-  frLayerNum layerNum = layer_map_.at(layer->getNumber());
+  layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
   }
@@ -98,7 +109,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                         bbox.right(), bbox.top()});
     }
   }
-
+  
   if (pa_markers_) {
     painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
@@ -111,7 +122,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       }
     }
   }
-
+  
   for (const auto& ap : aps_) {
     if (ap.getLayerNum() != layerNum) {
       continue;
@@ -133,8 +144,9 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   aps_.clear();
 
   frTerm* term = pin->getTerm();
-  frBlock* block = term->getBlock();
-  std::string name = block->getName() + ':' + term->getName();
+//  frBlock* block = term->getBlock();
+//  std::string name = block->getName() + ':' + term->getName()
+  std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':' + term->getName();
   if (!settings_->pinName.empty() && name != settings_->pinName) {
     return;
   }
@@ -211,6 +223,40 @@ void FlexPAGraphics::setViaAP(const frAccessPoint* ap,
   pa_ap_ = nullptr;
   pa_via_ = nullptr;
   pa_markers_ = nullptr;
+}
+
+void FlexPAGraphics::setMarkersAndShapes(const std::vector<std::unique_ptr<frMarker>>& markers)
+{
+    if (markers.empty()) 
+        return;
+    pa_markers_ = &markers;
+    frBox box;
+    if (inst_term_) inst_term_->getInst()->getBBox(box);
+    else markers[0]->getBBox(box);
+    shapes.clear();
+    for (auto& marker : markers) {
+      frBox bbox;
+      marker->getBBox(bbox);
+      logger_->info(DRT, 119, "marker {} at ({}, {}) ({}, {})",
+                    marker->getConstraint()->typeId(),
+                    bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+      for (auto &a: marker->getAggressors()) {
+          shapes.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+      }
+      for (auto &a: marker->getVictims()) {
+          shapes.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+      }
+    }
+    
+    gui_->zoomTo({box.left()-200, box.bottom()-200, box.right()+200, box.top()+200});
+    gui_->redraw();
+    gui_->pause();
+
+    // These are going away once we return
+    pa_ap_ = nullptr;
+    pa_via_ = nullptr;
+    pa_markers_ = nullptr;
+    shapes.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)
