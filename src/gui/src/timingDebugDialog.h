@@ -73,6 +73,8 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   void showTimingReportDialog();
   void selectedRowChanged(const QItemSelection& prev_index,
                           const QItemSelection& curr_index);
+  void selectedDetailRowChanged(const QItemSelection& prev_index,
+                                const QItemSelection& curr_index);
 
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 

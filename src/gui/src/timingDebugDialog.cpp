@@ -108,6 +108,8 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
     return true;
   bool setup_hold = true;
   int path_count = 100;
+  timing_report_dlg_->setupRadioButton->setChecked(setup_hold);
+  timing_report_dlg_->pathCount->setText(QString::number(path_count));
   if (timing_report_dlg_->exec() == QDialog::Accepted) {
     setup_hold = timing_report_dlg_->isSetupAnalysis();
     path_count = timing_report_dlg_->getPathCount();
@@ -138,13 +140,22 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
 
+  auto selection_model = pathDetailsTableView->selectionModel();
+  connect(
+      selection_model,
+      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
+      this,
+      SLOT(selectedDetailRowChanged(const QItemSelection&,
+                                    const QItemSelection&)));
+
   pathIdSpinBox->setValue(index.row());
 }
 
 void TimingDebugDialog::highlightPathStage(const QModelIndex& index)
 {
-  if (!index.isValid() || timing_paths_model_ == nullptr)
+  if (!index.isValid() || timing_paths_model_ == nullptr) {
     return;
+  }
   path_renderer_->highlightNode(index.row());
   emit highlightTimingPath(path_renderer_->getPathToRender());
 }
@@ -171,6 +182,7 @@ void TimingDebugDialog::findNodeInPathDetails()
   QModelIndex match_index = proxy.mapToSource(proxy.index(0, 0));
   if (match_index.isValid()) {
     pathDetailsTableView->selectRow(match_index.row());
+    highlightPathStage(match_index);
   } else {
     QMessageBox::information(
         this, "Node Search : ", search_node + " Match not found!");
@@ -201,6 +213,16 @@ void TimingDebugDialog::showTimingReportDialog()
     pathIdSpinBox->setMaximum(timing_paths_model_->rowCount() - 1);
     pathIdSpinBox->setMinimum(0);
     pathIdSpinBox->setValue(0);
+
+    auto selection_model = pathDetailsTableView->selectionModel();
+    if (selection_model) {
+      connect(selection_model,
+              SIGNAL(selectionChanged(const QItemSelection&,
+                                      const QItemSelection&)),
+              this,
+              SLOT(selectedDetailRowChanged(const QItemSelection&,
+                                            const QItemSelection&)));
+    }
   }
 }
 
@@ -212,6 +234,17 @@ void TimingDebugDialog::selectedRowChanged(const QItemSelection& selected_row,
     return;
   auto top_sel_index = sel_indices.first();
   showPathDetails(top_sel_index);
+}
+
+void TimingDebugDialog::selectedDetailRowChanged(
+    const QItemSelection& selected_row,
+    const QItemSelection& deselected_row)
+{
+  auto sel_indices = selected_row.indexes();
+  if (sel_indices.isEmpty())
+    return;
+  auto top_sel_index = sel_indices.first();
+  highlightPathStage(top_sel_index);
 }
 
 void TimingDebugDialog::handleDbChange(QString change_type,
