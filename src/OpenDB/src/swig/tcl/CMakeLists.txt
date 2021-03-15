@@ -20,6 +20,7 @@ target_link_libraries(opendbtcl
         cdl
         opendb_swig_common
         Boost::boost
+        ${TCL_LIBRARY}
 )
 
 # Executable
