@@ -49,7 +49,6 @@ Layer 6 pitch: 3.33
 [INFO GRT-0111] Final number of vias: 2038
 [INFO GRT-0112] Final usage 3D: 9045
 [INFO GRT-0018] Total wirelength: 30204 um
-Repairing antennas...
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -99,7 +98,7 @@ Layer 6 pitch: 3.33
 [INFO GRT-0023] Reducing resources of layer 4 by 15%.
 [INFO GRT-0024] Reducing resources of layer 5 by 15%.
 [INFO GRT-0025] Reducing resources of layer 6 by 15%.
-[INFO GRT-0009] #Nets to reroute: 7.
+[INFO GRT-0009] Nets to reroute: 7.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 155
@@ -114,6 +113,7 @@ Layer 6 pitch: 3.33
 [INFO GRT-0110] Final usage: 155
 [INFO GRT-0111] Final number of vias: 67
 [INFO GRT-0112] Final usage 3D: 356
+[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0014] Num routed nets: 411
 No differences found.
 No differences found.
