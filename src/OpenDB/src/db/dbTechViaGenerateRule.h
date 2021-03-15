@@ -62,8 +62,8 @@ class _dbTechViaGenerateRule : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   _dbTechViaGenerateRuleFlags _flags;
-  char*                       _name;
-  dbVector<uint>              _layer_rules;
+  char* _name;
+  dbVector<uint> _layer_rules;
 
   _dbTechViaGenerateRule(_dbDatabase*, const _dbTechViaGenerateRule& v);
   _dbTechViaGenerateRule(_dbDatabase*);
@@ -79,8 +79,8 @@ class _dbTechViaGenerateRule : public _dbObject
     return strcmp(_name, rhs._name) < 0;
   }
 
-  void differences(dbDiff&                       diff,
-                   const char*                   field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechViaGenerateRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

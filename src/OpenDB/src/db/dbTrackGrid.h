@@ -50,12 +50,12 @@ class _dbTrackGrid : public _dbObject
 {
  public:
   dbId<_dbTechLayer> _layer;
-  dbVector<int>      _x_origin;
-  dbVector<int>      _x_count;
-  dbVector<int>      _x_step;
-  dbVector<int>      _y_origin;
-  dbVector<int>      _y_count;
-  dbVector<int>      _y_step;
+  dbVector<int> _x_origin;
+  dbVector<int> _x_count;
+  dbVector<int> _x_step;
+  dbVector<int> _y_origin;
+  dbVector<int> _y_count;
+  dbVector<int> _y_step;
   dbId<_dbTechLayer> _next_grid;
 
   _dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g);
@@ -76,8 +76,8 @@ class _dbTrackGrid : public _dbObject
     return false;
   }
 
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTrackGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

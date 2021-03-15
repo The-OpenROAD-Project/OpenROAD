@@ -49,21 +49,21 @@ class dbDiff;
 struct _dbBPinFlags
 {
   dbPlacementStatus::Value _status : 4;
-  uint                     _has_min_spacing : 1;
-  uint                     _has_effective_width : 1;
-  uint                     _spare_bits : 26;
+  uint _has_min_spacing : 1;
+  uint _has_effective_width : 1;
+  uint _spare_bits : 26;
 };
 
 class _dbBPin : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbBPinFlags   _flags;
+  _dbBPinFlags _flags;
   dbId<_dbBTerm> _bterm;
-  dbId<_dbBox>   _boxes;
-  dbId<_dbBPin>  _next_bpin;
-  uint           _min_spacing;      // 5.6 DEF
-  uint           _effective_width;  // 5.6 DEF
+  dbId<_dbBox> _boxes;
+  dbId<_dbBPin> _next_bpin;
+  uint _min_spacing;      // 5.6 DEF
+  uint _effective_width;  // 5.6 DEF
 
   _dbBPin(_dbDatabase*, const _dbBPin& p);
   _dbBPin(_dbDatabase*);

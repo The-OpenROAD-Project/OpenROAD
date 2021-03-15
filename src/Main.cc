@@ -50,6 +50,8 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
@@ -66,6 +68,12 @@ using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
 
+extern "C"
+{
+    extern PyObject* PyInit__openroad_swig_py();
+    extern PyObject* PyInit__opendbpy();
+}
+
 static int cmd_argc;
 static char **cmd_argv;
 bool gui_mode = false;
@@ -79,6 +87,43 @@ showUsage(const char *prog,
 	  const char *init_filename);
 static void
 showSplash();
+
+namespace sta {
+extern const char *opendbpy_python_inits[];
+extern const char *openroad_swig_py_python_inits[];
+}
+
+static void
+initPython()
+{
+  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not add module opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_AppendInittab("_openroad_swig_py", PyInit__openroad_swig_py) == -1) {
+    fprintf(stderr, "Error: could not add module openroadpy\n");
+    exit(1);
+  }
+
+  Py_Initialize();
+
+  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+  if (PyRun_SimpleString(unencoded)) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add init opendbpy\n");
+    exit(1);
+  }
+  delete [] unencoded;
+
+  unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
+  if (PyRun_SimpleString(unencoded)) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add init openroadpy\n");
+    exit(1);
+  }
+  delete [] unencoded;
+}
 
 int
 main(int argc,
@@ -94,18 +139,34 @@ main(int argc,
   }
 
   log_filename = findCmdLineKey(argc, argv, "-log");
-  if (log_filename)
+  if (log_filename) {
     remove(log_filename);
+  }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
-  if (metrics_filename)
+  if (metrics_filename) {
     remove(metrics_filename);
+  }
+
+  initPython();
 
   cmd_argc = argc;
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
     return gui::startGui(cmd_argc, cmd_argv);
+  }
+  if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    std::vector<wchar_t*> args;
+    for(int i = 0; i < cmd_argc; i++) {
+      size_t sz = strlen(argv[i]);
+      args[i] = new wchar_t[sz+1];
+      args[i][sz] = '\0';
+      for(size_t j = 0;j < sz; j++) {
+        args[i][j] = (wchar_t) argv[i][j];
+      }
+    }
+    return Py_Main(cmd_argc, args.data());
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -224,6 +285,7 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+  printf("  -python            start with python interpreter [limited to db operations]\n");
   printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }

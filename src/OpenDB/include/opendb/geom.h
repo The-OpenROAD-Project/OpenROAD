@@ -32,8 +32,9 @@
 
 #pragma once
 
-#include "odb.h"
 #include <vector>
+
+#include "odb.h"
 
 namespace odb {
 
@@ -59,12 +60,12 @@ class Point
   Point(int x, int y);
   ~Point() = default;
   Point& operator=(const Point& p);
-  bool   operator==(const Point& p) const;
-  bool   operator!=(const Point& p) const;
-  bool   operator<(const Point& p) const;
+  bool operator==(const Point& p) const;
+  bool operator!=(const Point& p) const;
+  bool operator<(const Point& p) const;
 
-  int  getX() const;
-  int  getY() const;
+  int getX() const;
+  int getY() const;
   void setX(int x);
   void setY(int y);
 
@@ -72,8 +73,8 @@ class Point
   void rotate180();
   void rotate270();
 
-  int&       x() { return _x; }
-  int&       y() { return _y; }
+  int& x() { return _x; }
+  int& y() { return _y; }
   const int& x() const { return _x; }
   const int& y() const { return _y; }
 
@@ -110,8 +111,8 @@ class Point
   enum Rotation
   {
     COLINEAR = 0,
-    CW       = -1,
-    CCW      = 1
+    CW = -1,
+    CCW = 1
   };
   static int rotation(Point p0, Point p1, Point p2);
 
@@ -125,17 +126,16 @@ class Point
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
 };
 
-
 class GeomShape
 {
-  public:
+ public:
   virtual uint dx() const = 0;
   virtual uint dy() const = 0;
   virtual int xMin() const = 0;
   virtual int yMin() const = 0;
   virtual int xMax() const = 0;
   virtual int yMax() const = 0;
-  virtual std::vector<Point> getPoints() const = 0; 
+  virtual std::vector<Point> getPoints() const = 0;
   virtual ~GeomShape() = default;
 };
 
@@ -145,7 +145,7 @@ an Oct represents a 45-degree routing segment as 2 connected octagons
 DIR:RIGHT
                        ---------
                      /          \
-                   /             \ 
+                   /             \
                  /     high      |
                /                 |
              /                  /
@@ -155,28 +155,28 @@ DIR:RIGHT
      /                  /
    /                  /
   |                 /
-  |     low       / 
+  |     low       /
   \             /
    \          /
     ---------
 
 DIR: LEFT
-   ---------                      
-  /         \                      
- /            \                   
-|      high     \                 
-|                 \               
- \                  \             
-   \                  \           
-     \                  \         
-       \                  \       
-         \                  \     
-           \                  \   
-             \                 |  
-               \       low     |  
-                 \             /  
-                   \          /   
-                     ---------   
+   ---------
+  /         \
+ /            \
+|      high     \
+|                 \
+ \                  \
+   \                  \
+     \                  \
+       \                  \
+         \                  \
+           \                  \
+             \                 |
+               \       low     |
+                 \             /
+                   \          /
+                     ---------
 each octagon follows the model:
       (-B,A) --------- (B,A)
             /         \
@@ -189,16 +189,17 @@ each octagon follows the model:
       (-B,-A)---------(B,-A)
 
 A = W/2
-B = [ceiling(W/(sqrt(2) * M) ) * M] - A                  
+B = [ceiling(W/(sqrt(2) * M) ) * M] - A
 where W is wire width and M is the manufacturing grid
 */
 class Oct : public GeomShape
 {
-  Point center_high;   //the center of the higher octagon
-  Point center_low;    //the center of the lower octagon
-  int A;              // A=W/2 (the x distance from the center to the right or left edge)
-  public:
-  enum OCT_DIR        //The direction of the higher octagon relative to the lower octagon ( / is right while  \ is left)
+  Point center_high;  // the center of the higher octagon
+  Point center_low;   // the center of the lower octagon
+  int A;  // A=W/2 (the x distance from the center to the right or left edge)
+ public:
+  enum OCT_DIR  // The direction of the higher octagon relative to the lower
+                // octagon ( / is right while  \ is left)
   {
     RIGHT,
     LEFT,
@@ -210,80 +211,83 @@ class Oct : public GeomShape
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
-  bool  operator==(const Oct& r) const;
-  bool  operator!=(const Oct& r) const{return !(r==*this);};
+  bool operator==(const Oct& r) const;
+  bool operator!=(const Oct& r) const { return !(r == *this); };
   void init(const Point p1, const Point p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
   Point getCenterLow() const;
   int getWidth() const;
-  
+
   uint dx() const override
   {
     OCT_DIR D = getDir();
-    if(D==RIGHT)
-      return abs(center_high.getX() + A - center_low.getX() + A) ; 
-    else if(D==LEFT)
-      return abs(center_low.getX() + A - center_high.getX() + A) ;
+    if (D == RIGHT)
+      return abs(center_high.getX() + A - center_low.getX() + A);
+    else if (D == LEFT)
+      return abs(center_low.getX() + A - center_high.getX() + A);
     else
       return 0;
   };
   uint dy() const override
   {
-    return abs(center_high.getY() + A -center_low.getY() + A);
+    return abs(center_high.getY() + A - center_low.getY() + A);
   };
-  int   xMin() const override
+  int xMin() const override
   {
     OCT_DIR D = getDir();
-    if(D==RIGHT)
-      return center_low.getX()-A;
-    else if(D==LEFT)
-      return center_high.getX()-A;
+    if (D == RIGHT)
+      return center_low.getX() - A;
+    else if (D == LEFT)
+      return center_high.getX() - A;
     else
       return 0;
   };
-  int   yMin() const override
-  {
-    return center_low.getY()-A;
-  };
-  int   xMax() const override
+  int yMin() const override { return center_low.getY() - A; };
+  int xMax() const override
   {
     OCT_DIR D = getDir();
-    if(D==RIGHT)
-      return center_high.getX()+A;
-    else if(D==LEFT)
-      return center_low.getX()+A;
+    if (D == RIGHT)
+      return center_high.getX() + A;
+    else if (D == LEFT)
+      return center_low.getX() + A;
     else
       return 0;
   };
-  int   yMax() const override
-  {
-    return center_high.getY()+A;
-  };
+  int yMax() const override { return center_high.getY() + A; };
   std::vector<Point> getPoints() const override
   {
     OCT_DIR dir = getDir();
-    int B = ceil( (A*2)/(sqrt(2)) ) - A;
+    int B = ceil((A * 2) / (sqrt(2))) - A;
     std::vector<Point> points(9);
-    points[0] = points[8] = Point(center_low.getX()-B,center_low.getY()-A); //low oct (-B,-A)
-    points[1] = Point(center_low.getX()+B,center_low.getY()-A); //low oct (B,-A)
-    points[4] = Point(center_high.getX()+B,center_high.getY()+A); //high oct (B,A)
-    points[5] = Point(center_high.getX()-B,center_high.getY()+A); //high oct (-B,A)
-    if(dir==RIGHT)
-    {
-      points[2] = Point(center_high.getX()+A,center_high.getY()-B); //high oct (A,-B)
-      points[3] = Point(center_high.getX()+A,center_high.getY()+B); //high oct (A,B)
-      points[6] = Point(center_low.getX()-A,center_low.getY()+B); //low oct  (-A,B)
-      points[7] = Point(center_low.getX()-A,center_low.getY()-B); //low oct (-A,-B)
-    }else
-    {
-      points[2] = Point(center_low.getX()+A,center_low.getY()-B); //low oct (A,-B)
-      points[3] = Point(center_low.getX()+A,center_low.getY()+B); //low oct (A,B)
-      points[6] = Point(center_high.getX()-A,center_high.getY()+B); //high oct  (-A,B)
-      points[7] = Point(center_high.getX()-A,center_high.getY()-B); //high oct (-A,-B)
+    points[0] = points[8] = Point(center_low.getX() - B,
+                                  center_low.getY() - A);  // low oct (-B,-A)
+    points[1] = Point(center_low.getX() + B,
+                      center_low.getY() - A);  // low oct (B,-A)
+    points[4] = Point(center_high.getX() + B,
+                      center_high.getY() + A);  // high oct (B,A)
+    points[5] = Point(center_high.getX() - B,
+                      center_high.getY() + A);  // high oct (-B,A)
+    if (dir == RIGHT) {
+      points[2] = Point(center_high.getX() + A,
+                        center_high.getY() - B);  // high oct (A,-B)
+      points[3] = Point(center_high.getX() + A,
+                        center_high.getY() + B);  // high oct (A,B)
+      points[6] = Point(center_low.getX() - A,
+                        center_low.getY() + B);  // low oct  (-A,B)
+      points[7] = Point(center_low.getX() - A,
+                        center_low.getY() - B);  // low oct (-A,-B)
+    } else {
+      points[2] = Point(center_low.getX() + A,
+                        center_low.getY() - B);  // low oct (A,-B)
+      points[3] = Point(center_low.getX() + A,
+                        center_low.getY() + B);  // low oct (A,B)
+      points[6] = Point(center_high.getX() - A,
+                        center_high.getY() + B);  // high oct  (-A,B)
+      points[7] = Point(center_high.getX() - A,
+                        center_high.getY() - B);  // high oct (-A,-B)
     }
     return points;
-    
   };
   friend dbIStream& operator>>(dbIStream& stream, Oct& o);
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
@@ -303,13 +307,13 @@ class Rect : public GeomShape
   Rect(int x1, int y1, int x2, int y2);
   ~Rect() = default;
   Rect& operator=(const Rect& r) = default;
-  bool  operator==(const Rect& r) const;
-  bool  operator!=(const Rect& r) const;
-  bool  operator<(const Rect& r) const;
-  bool  operator>(const Rect& r) const { return r < *this; }
-  bool  operator<=(const Rect& r) const { return !(*this > r); }
-  bool  operator>=(const Rect& r) const { return !(*this < r); }
-  
+  bool operator==(const Rect& r) const;
+  bool operator!=(const Rect& r) const;
+  bool operator<(const Rect& r) const;
+  bool operator>(const Rect& r) const { return r < *this; }
+  bool operator<=(const Rect& r) const { return !(*this > r); }
+  bool operator>=(const Rect& r) const { return !(*this < r); }
+
   // Reinitialize the rectangle
   void init(int x1, int y1, int x2, int y2);
 
@@ -327,44 +331,26 @@ class Rect : public GeomShape
 
   uint minDXDY();
   uint maxDXDY();
-  int  getDir();
+  int getDir();
 
   void set_xlo(int x1);
   void set_xhi(int x1);
   void set_ylo(int x1);
   void set_yhi(int x1);
 
-  int xMin() const override
-  {
-    return _xlo;
-  };
-  int yMin() const override
-  {
-    return _ylo;
-  };
-  int xMax() const override
-  {
-    return _xhi;
-  };
-  int yMax() const override
-  {
-    return _yhi;
-  };
-  uint dx() const override
-  {
-    return (uint)(_xhi - _xlo);
-  };
-  uint dy() const override
-  {
-    return (uint)(_yhi - _ylo);
-  };
+  int xMin() const override { return _xlo; };
+  int yMin() const override { return _ylo; };
+  int xMax() const override { return _xhi; };
+  int yMax() const override { return _yhi; };
+  uint dx() const override { return (uint) (_xhi - _xlo); };
+  uint dy() const override { return (uint) (_yhi - _ylo); };
   std::vector<Point> getPoints() const override
   {
     std::vector<Point> points(5);
-    points[0]=points[4]=ll();
-    points[1]=lr();
-    points[2]=ur();
-    points[3]=ul();
+    points[0] = points[4] = ll();
+    points[1] = lr();
+    points[2] = ur();
+    points[3] = ul();
     return points;
   };
   Point ll() const;
@@ -483,24 +469,24 @@ inline void Point::rotate90()
 {
   int xp = -_y;
   int yp = _x;
-  _x     = xp;
-  _y     = yp;
+  _x = xp;
+  _y = yp;
 }
 
 inline void Point::rotate180()
 {
   int xp = -_x;
   int yp = -_y;
-  _x     = xp;
-  _y     = yp;
+  _x = xp;
+  _y = yp;
 }
 
 inline void Point::rotate270()
 {
   int xp = _y;
   int yp = -_x;
-  _x     = xp;
-  _y     = yp;
+  _x = xp;
+  _y = yp;
 }
 
 inline int64 Point::crossProduct(Point p0, Point p1, Point p2)
@@ -530,7 +516,7 @@ inline uint64 Point::squaredDistance(Point p0, Point p1)
   int64 y0 = p0._y;
   int64 y1 = p1._y;
   int64 dy = y1 - y0;
-  return (uint64)(dx * dx + dy * dy);
+  return (uint64) (dx * dx + dy * dy);
 }
 
 inline uint64 Point::manhattanDistance(Point p0, Point p1)
@@ -545,7 +531,7 @@ inline uint64 Point::manhattanDistance(Point p0, Point p1)
   int64 dy = y1 - y0;
   if (dy < 0)
     dy = -dy;
-  return (uint64)(dx + dy);
+  return (uint64) (dx + dy);
 }
 
 inline bool Point::operator<(const Point& rhs) const
@@ -718,10 +704,10 @@ inline void Rect::moveTo(int x, int y)
 {
   uint DX = dx();
   uint DY = dy();
-  _xlo    = x;
-  _ylo    = y;
-  _xhi    = x + DX;
-  _yhi    = y + DY;
+  _xlo = x;
+  _ylo = y;
+  _xhi = x + DX;
+  _yhi = y + DY;
 }
 
 inline void Rect::moveDelta(int dx, int dy)
@@ -889,67 +875,63 @@ inline void Rect::print(const char* prefix)
 
 inline Oct::Oct()
 {
-  A  = 0;
+  A = 0;
 }
 
-inline Oct::Oct(const Point p1, const Point p2,int width)
+inline Oct::Oct(const Point p1, const Point p2, int width)
 {
-  init(p1,p2,width);
+  init(p1, p2, width);
 }
 
 inline Oct::Oct(int x1, int y1, int x2, int y2, int width)
 {
-  Point p1(x1,y1);
-  Point p2(x2,y2);
-  init(p1,p2,width);
+  Point p1(x1, y1);
+  Point p2(x2, y2);
+  init(p1, p2, width);
 }
 
-inline bool  Oct::operator==(const Oct& r) const
+inline bool Oct::operator==(const Oct& r) const
 {
-  if(center_low!=r.center_low)
+  if (center_low != r.center_low)
     return false;
-  if(center_high!=r.center_high)
+  if (center_high != r.center_high)
     return false;
-  if(A!=r.A)
+  if (A != r.A)
     return false;
   return true;
-  
 }
 
 inline void Oct::init(const Point p1, const Point p2, int width)
 {
-  if(p1.getY()>p2.getY())
-  {
+  if (p1.getY() > p2.getY()) {
     center_high = p1;
     center_low = p2;
-  }else
-  {
+  } else {
     center_high = p2;
     center_low = p1;
   }
-  A = width/2;
-
+  A = width / 2;
 }
 
 inline Oct::OCT_DIR Oct::getDir() const
 {
-  if(center_low==center_high)
+  if (center_low == center_high)
     return UNKNOWN;
-  if(center_high.getX()>center_low.getX())
+  if (center_high.getX() > center_low.getX())
     return RIGHT;
   return LEFT;
 }
 
 inline Point Oct::getCenterHigh() const
 {
-  return center_high; 
+  return center_high;
 }
 inline Point Oct::getCenterLow() const
 {
-  return center_low; 
+  return center_low;
 }
 inline int Oct::getWidth() const
 {
-  return A*2; 
+  return A * 2;
 }
 }  // namespace odb

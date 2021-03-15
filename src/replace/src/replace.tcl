@@ -94,7 +94,7 @@ proc global_placement { args } {
   gpl::set_timing_driven_mode $timing_driven
   if { $timing_driven } {
     if { [get_libs -quiet "*"] == {} } {
-      utl::error GPL 115 "No liberty libraries found."
+      utl::error GPL 121 "No liberty libraries found."
     }
   }
   if { [info exists flags(-disable_timing_driven)] } { 
@@ -123,11 +123,22 @@ proc global_placement { args } {
   
   # density settings    
   set target_density 0.7
+  set uniform_mode 0
+
   if { [info exists keys(-density)] } {
     set target_density $keys(-density) 
-    sta::check_positive_float "-density" $target_density
   }
-  gpl::set_density_cmd $target_density
+
+  if { $target_density == "uniform" } {
+    set uniform_mode 1
+  } else {
+    sta::check_positive_float "-density" $target_density
+    gpl::set_density_cmd $target_density
+  } 
+    
+  gpl::set_uniform_target_density_mode_cmd $uniform_mode 
+  
+  
 
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)

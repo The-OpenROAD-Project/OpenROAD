@@ -35,10 +35,10 @@ include("openroad")
 
 add_subdirectory(src/ParquetFP)
 
-tcl_lib(NAME      mpl
-        NAMESPACE mpl
-        I_FILE    src/MacroPlacer.i
-        SCRIPTS   src/MacroPlacer.tcl
+swig_lib(NAME      mpl
+         NAMESPACE mpl
+         I_FILE    src/MacroPlacer.i
+         SCRIPTS   src/MacroPlacer.tcl
 )
 
 target_sources(mpl

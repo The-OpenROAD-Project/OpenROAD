@@ -3,16 +3,21 @@
   "type": "dbObject",
   "fields": [
     {
-      "name":"_spacing_tbl",
-      "type":"dbVector<std::pair<int, int>>",
-      "flags":["no-set","no-template"],
+      "name": "spacing_tbl_",
+      "type": "dbVector<std::pair<int, int>>",
+      "flags": [
+        "no-set",
+        "no-template"
+      ],
       "comment": "//{cutWithin, orthoSpacing}"
     }
   ],
   "constructors": [],
-  "enums":[],
+  "enums": [],
   "h_includes": [
     "dbVector.h"
   ],
-  "cpp_includes":["dbTechLayerCutSpacingRule.h"]
+  "cpp_includes": [
+    "dbTechLayerCutSpacingRule.h"
+  ]
 }

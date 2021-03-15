@@ -47,21 +47,21 @@ class dbDiff;
 struct _dbSWireFlags
 {
   dbWireType::Value _wire_type : 6;
-  uint              _spare_bits : 26;
+  uint _spare_bits : 26;
 };
 
 class _dbSWire : public _dbObject
 {
  public:
-  _dbSWireFlags  _flags;
-  dbId<_dbNet>   _net;
-  dbId<_dbNet>   _shield;
-  dbId<_dbSBox>  _wires;
+  _dbSWireFlags _flags;
+  dbId<_dbNet> _net;
+  dbId<_dbNet> _shield;
+  dbId<_dbSBox> _wires;
   dbId<_dbSWire> _next_swire;
 
   _dbSWire(_dbDatabase*)
   {
-    _flags._wire_type  = dbWireType::NONE;
+    _flags._wire_type = dbWireType::NONE;
     _flags._spare_bits = 0;
   }
 

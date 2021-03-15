@@ -40,33 +40,33 @@ namespace odb {
 dbExtControl::dbExtControl()
 {
   _independentExtCorners = false;
-  _wireStamped           = false;
-  _foreign               = false;
-  _rsegCoord             = false;
-  _overCell              = false;
-  _extracted             = false;
-  _lefRC                 = false;
-  _cornerCnt             = 0;
-  _ccPreseveGeom         = 0;
-  _ccUp                  = 0;
-  _couplingFlag          = 3;
-  _coupleThreshold       = 0.1;   // fF
-  _mergeResBound         = 50.0;  // OHMS
-  _mergeViaRes           = true;
-  _mergeParallelCC       = true;
-  _exttreePreMerg        = true;
-  _exttreeMaxcap         = 0.0;
-  _useDbSdb              = true;
-  _CCnoPowerSource       = 0;
-  _CCnoPowerTarget       = 0;
-  _usingMetalPlanes      = 0;
-  _ruleFileName          = (char*) 0;
-  _extractedCornerList   = (char*) 0;
-  _derivedCornerList     = (char*) 0;
-  _cornerIndexList       = (char*) 0;
-  _resFactorList         = (char*) 0;
-  _gndcFactorList        = (char*) 0;
-  _ccFactorList          = (char*) 0;
+  _wireStamped = false;
+  _foreign = false;
+  _rsegCoord = false;
+  _overCell = false;
+  _extracted = false;
+  _lefRC = false;
+  _cornerCnt = 0;
+  _ccPreseveGeom = 0;
+  _ccUp = 0;
+  _couplingFlag = 3;
+  _coupleThreshold = 0.1;  // fF
+  _mergeResBound = 50.0;   // OHMS
+  _mergeViaRes = true;
+  _mergeParallelCC = true;
+  _exttreePreMerg = true;
+  _exttreeMaxcap = 0.0;
+  _useDbSdb = true;
+  _CCnoPowerSource = 0;
+  _CCnoPowerTarget = 0;
+  _usingMetalPlanes = 0;
+  _ruleFileName = (char*) 0;
+  _extractedCornerList = (char*) 0;
+  _derivedCornerList = (char*) 0;
+  _cornerIndexList = (char*) 0;
+  _resFactorList = (char*) 0;
+  _gndcFactorList = (char*) 0;
+  _ccFactorList = (char*) 0;
 }
 dbExtControl::~dbExtControl()
 {

@@ -48,21 +48,21 @@ struct tcs_lev;
 struct tcs_shape
 {
   tcs_shape* next;
-  int        lev;
-  int        xlo, ylo, xhi, yhi;
-  int        isVia;
-  int        id;
+  int lev;
+  int xlo, ylo, xhi, yhi;
+  int isVia;
+  int id;
 };
 
 struct tcs_lev
 {
   tcs_shape* shape_list;
   tcs_shape* last_shape;
-  int        xlo, ylo, xhi, yhi;
-  int        n;
-  tcs_lev*   left;
-  tcs_lev*   right;
-  tcs_lev*   parent;
+  int xlo, ylo, xhi, yhi;
+  int n;
+  tcs_lev* left;
+  tcs_lev* right;
+  tcs_lev* parent;
 };
 
 class tmg_conn_search_internal
@@ -87,26 +87,26 @@ class tmg_conn_search_internal
   void merge(tcs_lev* bin, tcs_lev* left, tcs_lev* right);
 
   tcs_shape** _shV;
-  int         _shJ;
-  int         _shJmax;
-  int         _shN;
-  tcs_lev     _levAllV[32768];
-  int         _levAllN;
-  tcs_lev*    _levV[32];
-  int         _sxlo, _sylo, _sxhi, _syhi;
-  int         _srcVia;
-  tcs_lev*    _bin;
-  tcs_shape*  _cur;
-  tcs_shape*  _pcur;
-  bool        _sorted;
+  int _shJ;
+  int _shJmax;
+  int _shN;
+  tcs_lev _levAllV[32768];
+  int _levAllN;
+  tcs_lev* _levV[32];
+  int _sxlo, _sylo, _sxhi, _syhi;
+  int _srcVia;
+  tcs_lev* _bin;
+  tcs_shape* _cur;
+  tcs_shape* _pcur;
+  bool _sorted;
 };
 
 tmg_conn_search_internal::tmg_conn_search_internal()
 {
-  _shN    = 0;
-  _shJ    = 0;
+  _shN = 0;
+  _shJ = 0;
   _shJmax = 256;
-  _shV    = (tcs_shape**) malloc(_shJmax * sizeof(tcs_shape*));
+  _shV = (tcs_shape**) malloc(_shJmax * sizeof(tcs_shape*));
   int j;
   for (j = 0; j < _shJmax; j++)
     _shV[j] = NULL;
@@ -125,22 +125,22 @@ tmg_conn_search_internal::~tmg_conn_search_internal()
 
 void tmg_conn_search_internal::clear()
 {
-  _shN     = 0;
-  _shJ     = 0;
+  _shN = 0;
+  _shJ = 0;
   _levAllN = 0;
   int j;
   for (j = 0; j < 32; j++) {
-    _levV[j]             = _levAllV + _levAllN++;
+    _levV[j] = _levAllV + _levAllN++;
     _levV[j]->shape_list = NULL;
     _levV[j]->last_shape = NULL;
-    _levV[j]->left       = NULL;
-    _levV[j]->right      = NULL;
-    _levV[j]->parent     = NULL;
-    _levV[j]->n          = 0;
-    _levV[j]->xlo        = 0;
-    _levV[j]->ylo        = 0;
-    _levV[j]->xhi        = 0;
-    _levV[j]->yhi        = 0;
+    _levV[j]->left = NULL;
+    _levV[j]->right = NULL;
+    _levV[j]->parent = NULL;
+    _levV[j]->n = 0;
+    _levV[j]->xlo = 0;
+    _levV[j]->ylo = 0;
+    _levV[j]->xhi = 0;
+    _levV[j]->yhi = 0;
   }
   _sorted = false;
 }
@@ -192,22 +192,22 @@ void tmg_conn_search_internal::addShape(int lev,
       _shV[_shJ] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
     _shN = 0;
   }
-  tcs_shape* s  = _shV[_shJ] + _shN++;
-  s->lev        = lev;
-  s->xlo        = xlo;
-  s->ylo        = ylo;
-  s->xhi        = xhi;
-  s->yhi        = yhi;
-  s->isVia      = isVia;
-  s->id         = id;
-  s->next       = NULL;
+  tcs_shape* s = _shV[_shJ] + _shN++;
+  s->lev = lev;
+  s->xlo = xlo;
+  s->ylo = ylo;
+  s->xhi = xhi;
+  s->yhi = yhi;
+  s->isVia = isVia;
+  s->id = id;
+  s->next = NULL;
   tcs_lev* slev = _levV[lev];
   if (slev->shape_list == NULL) {
     slev->shape_list = s;
-    slev->xlo        = xlo;
-    slev->ylo        = ylo;
-    slev->xhi        = xhi;
-    slev->yhi        = yhi;
+    slev->xlo = xlo;
+    slev->ylo = ylo;
+    slev->xhi = xhi;
+    slev->yhi = yhi;
   } else {
     slev->last_shape->next = s;
     if (xlo < slev->xlo)
@@ -252,13 +252,13 @@ void tmg_conn_search_internal::searchStart(int lev,
   if (!_sorted) {
     sort();
   }
-  _bin    = _levV[lev];
-  _cur    = _bin->shape_list;
-  _pcur   = NULL;
-  _sxlo   = xlo;
-  _sylo   = ylo;
-  _sxhi   = xhi;
-  _syhi   = yhi;
+  _bin = _levV[lev];
+  _cur = _bin->shape_list;
+  _pcur = NULL;
+  _sxlo = xlo;
+  _sylo = ylo;
+  _sxhi = xhi;
+  _syhi = yhi;
   _srcVia = isVia;
 }
 
@@ -279,9 +279,9 @@ bool tmg_conn_search_internal::searchNext(int* id)
         _cur = _cur->next;
         continue;
       }
-      *id   = _cur->id;
+      *id = _cur->id;
       _pcur = _cur;
-      _cur  = _cur->next;
+      _cur = _cur->next;
       return true;
     }
     return false;
@@ -324,22 +324,22 @@ bool tmg_conn_search_internal::searchNext(int* id)
             }
           }
         }
-        *id   = _cur->id;
+        *id = _cur->id;
         _pcur = _cur;
-        _cur  = _cur->next;
+        _cur = _cur->next;
         return true;
       }
     if (_bin->left) {
-      _bin  = _bin->left;
-      _cur  = _bin->shape_list;
+      _bin = _bin->left;
+      _cur = _bin->shape_list;
       _pcur = NULL;
     } else {
       while (_bin->parent && _bin == _bin->parent->right)
         _bin = _bin->parent;
       _bin = _bin->parent;
       if (_bin) {
-        _bin  = _bin->right;
-        _cur  = _bin->shape_list;
+        _bin = _bin->right;
+        _cur = _bin->shape_list;
         _pcur = NULL;
       }
     }
@@ -360,20 +360,20 @@ static void tcs_lev_init(tcs_lev* bin)
 {
   bin->shape_list = NULL;
   bin->last_shape = NULL;
-  bin->left       = NULL;
-  bin->right      = NULL;
-  bin->parent     = NULL;
-  bin->n          = 0;
+  bin->left = NULL;
+  bin->right = NULL;
+  bin->parent = NULL;
+  bin->n = 0;
 }
 
 static void tcs_lev_add(tcs_lev* bin, tcs_shape* s)
 {
   if (bin->shape_list == NULL) {
     bin->shape_list = s;
-    bin->xlo        = s->xlo;
-    bin->ylo        = s->ylo;
-    bin->xhi        = s->xhi;
-    bin->yhi        = s->yhi;
+    bin->xlo = s->xlo;
+    bin->ylo = s->ylo;
+    bin->xhi = s->xhi;
+    bin->yhi = s->yhi;
   } else {
     bin->last_shape->next = s;
     if (s->xlo < bin->xlo)
@@ -414,16 +414,16 @@ void tmg_conn_search_internal::sort1(tcs_lev* bin)
     return;
   tcs_lev* left = _levAllV + _levAllN++;
   tcs_lev_init(left);
-  left->parent   = bin;
+  left->parent = bin;
   tcs_lev* right = _levAllV + _levAllN++;
   tcs_lev_init(right);
-  right->parent  = bin;
-  tcs_shape* s   = bin->shape_list;
-  tcs_lev*   par = bin->parent;
+  right->parent = bin;
+  tcs_shape* s = bin->shape_list;
+  tcs_lev* par = bin->parent;
   tcs_lev_init(bin);
   bin->parent = par;
-  bin->left   = left;
-  bin->right  = right;
+  bin->left = left;
+  bin->right = right;
   if (bin->xhi - bin->xlo >= bin->yhi - bin->ylo) {
     int xmid = (bin->xlo + bin->xhi) / 2;
     for (; s; s = s->next) {

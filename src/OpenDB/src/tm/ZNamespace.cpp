@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ZNamespace.h"
+
 #include "ZException.h"
 #include "ZObject.h"
 #include "db.h"
@@ -41,7 +42,7 @@ class ZNamespace::ZEntry
 {
  public:
   const char* _name;
-  ZObject*    _obj;
+  ZObject* _obj;
 
   ZEntry(const char* name, ZObject* object)
   {
@@ -174,7 +175,7 @@ dbObject* ZNamespace::resolveDB(const char* dbname)
   }
 
   const char* s = dbname;
-  char*       n = name;
+  char* n = name;
 
   for (; (s != p); ++s, ++n)
     *n = *s;

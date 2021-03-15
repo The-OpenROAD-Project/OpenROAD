@@ -33,10 +33,12 @@
 /*-------------------------------------------------------------
 ////	AUTHOR: SANJEEV MAHAJAN
 ---------------------------------------------------------------*/
+#include "graph.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "assert.h"
-#include "graph.h"
 #include "dbLogger.h"
 
 #define MAXIT 1000
@@ -54,8 +56,8 @@ int cmpwt(const void* a, const void* b)
 Queue::Queue(int size)
 {
   _front = 0;
-  _back  = -1;
-  _size  = size;
+  _back = -1;
+  _size = size;
   if (size)
     _qu = (int*) malloc(size * sizeof(int));
 }
@@ -75,7 +77,7 @@ Queue::~Queue(void)
 void Queue::reset(void)
 {
   _front = 0;
-  _back  = -1;
+  _back = -1;
 }
 
 int Queue::is_empty()
@@ -105,7 +107,7 @@ Graph::Graph(int n)
 {
   _num_left = n;
   _num_vert = n;
-  _match    = (int*) malloc(n * sizeof(int));
+  _match = (int*) malloc(n * sizeof(int));
   int i;
   for (i = 0; i < n; i++) {
     Darr<Edge*>* da = new Darr<Edge*>;
@@ -119,7 +121,7 @@ void Graph::set_num_left(int n = 0)
   assert(_num_left == 0);
   _num_left = n;
   _num_vert = n;
-  _match    = (int*) malloc(n * sizeof(int));
+  _match = (int*) malloc(n * sizeof(int));
   int i;
   for (i = 0; i < n; i++) {
     Darr<Edge*>* da = new Darr<Edge*>;
@@ -156,19 +158,19 @@ void Graph::add_edge(int left, int right, long wt)
     ed->wt = wt;
     return;
   }
-  ed        = (Edge*) malloc(sizeof(Edge));
-  ed->left  = left;
+  ed = (Edge*) malloc(sizeof(Edge));
+  ed->left = left;
   ed->right = right;
-  ed->wt    = wt;
+  ed->wt = wt;
   _edges.insert(ed);
-  int          m = right;
+  int m = right;
   Darr<Edge*>* r = _neighbors.get(m);
   _edge_table.insert(kv, ed);
   r->insert(ed);
   int dr = _degree.get(m);
   _degree.set(m, (dr + 1));
   Darr<Edge*>* l = _neighbors.get(left);
-  dr             = _degree.get(left);
+  dr = _degree.get(left);
   _degree.set(left, (dr + 1));
   l->insert(ed);
 }
@@ -219,19 +221,19 @@ void Graph::print()
 {
   int i;
   for (i = 0; i < _edges.n(); i++) {
-    int left  = _edges.get(i)->left;
+    int left = _edges.get(i)->left;
     int right = _edges.get(i)->right;
-    int wt    = _edges.get(i)->wt;
+    int wt = _edges.get(i)->wt;
     odb::notice(0, "left=%d, right=%d, wt=%d\n", left, right, wt);
   }
 }
 void Graph::find_connected_components(Darr<Darr<Edge*>*>& ed)
 {
   int* vis = (int*) malloc(_num_vert * sizeof(int));
-  int  i;
+  int i;
   for (i = 0; i < _num_vert; i++)
     vis[i] = -1;
-  int              k = 0;
+  int k = 0;
   Hash<Edge*, int> edge_tab;
   for (i = 0; i < _num_left; i++) {
     if (vis[i] != -1)
@@ -245,17 +247,17 @@ void Graph::find_connected_components(Darr<Darr<Edge*>*>& ed)
   // odb::notice(0,"The number of connected components is %d\n", ed.n());
 }
 
-void Graph::dfs(int               i,
-                int*              vis,
-                int               k,
-                Darr<Edge*>*      edg,
+void Graph::dfs(int i,
+                int* vis,
+                int k,
+                Darr<Edge*>* edg,
                 Hash<Edge*, int>& edge_tab)
 {
   if (vis[i] != -1)
     return;
-  vis[i]             = k;
+  vis[i] = k;
   Darr<Edge*>* edges = _neighbors.get(i);
-  int          j;
+  int j;
   for (j = 0; j < edges->n(); j++) {
     int vvv;
     if (!edge_tab.find(edges->get(j), vvv)) {
@@ -331,15 +333,15 @@ int no_change(long* dist, long* predist, int n)
   return 1;
 }
 int Graph::_bellman_ford(Darr<Edge*>* edg,
-                         long*        dist,
-                         int*         pred,
-                         int*         vis,
-                         int*         rightd,
-                         int          factor,
-                         int&         k)
+                         long* dist,
+                         int* pred,
+                         int* vis,
+                         int* rightd,
+                         int factor,
+                         int& k)
 {
-  int   i;
-  int   n       = _num_vert;
+  int i;
+  int n = _num_vert;
   long* predist = (long*) malloc(n * sizeof(long));
   for (i = 0; i < n; i++) {
     pred[i] = i;
@@ -348,7 +350,7 @@ int Graph::_bellman_ford(Darr<Edge*>* edg,
     dist[i] = LARGE;
   }
   for (i = 0; i < _num_left; i++) {
-    dist[i]         = LARGE;
+    dist[i] = LARGE;
     dist[_match[i]] = 0;
   }
   int val = 0;
@@ -358,9 +360,9 @@ int Graph::_bellman_ford(Darr<Edge*>* edg,
     for (l = 0; l < n; l++)
       predist[l] = dist[l];
     for (j = 0; j < edg->n(); j++) {
-      int  left  = edg->get(j)->left;
-      int  right = edg->get(j)->right;
-      long wt    = edg->get(j)->wt / factor;
+      int left = edg->get(j)->left;
+      int right = edg->get(j)->right;
+      long wt = edg->get(j)->wt / factor;
       if (_match[left] == right)
         relax(right, left, -wt, dist, pred);
       else
@@ -377,7 +379,7 @@ int Graph::_bellman_ford(Darr<Edge*>* edg,
 }
 long Graph::matchwt()
 {
-  int  i;
+  int i;
   long ww = 0;
   for (i = 0; i < _num_left; i++) {
 #ifndef NDEBUG
@@ -399,13 +401,13 @@ void Graph::_dfs_hall(int i, int* visited, int* parent, int l)
       parent[l] = visited[i];
     return;
   }
-  visited[i]         = l;
+  visited[i] = l;
   Darr<Edge*>* edges = _neighbors.get(i);
-  int          j;
+  int j;
   if (i < _num_left) {
     for (j = 0; j < edges->n(); j++) {
       Edge* ed = edges->get(j);
-      int   k  = ed->right;
+      int k = ed->right;
       if (_match[i] == k)
         continue;
       _dfs_hall(k, visited, parent, l);
@@ -414,7 +416,7 @@ void Graph::_dfs_hall(int i, int* visited, int* parent, int l)
   }
   for (j = 0; j < edges->n(); j++) {
     Edge* ed = edges->get(j);
-    int   k  = ed->left;
+    int k = ed->left;
     if (_match[k] != i)
       continue;
     _dfs_hall(k, visited, parent, l);
@@ -423,9 +425,9 @@ void Graph::_dfs_hall(int i, int* visited, int* parent, int l)
 }
 int Graph::find_hall_set(Darr<Darr<int>*>& hall)
 {
-  int  i;
+  int i;
   int* visited = (int*) malloc(_num_vert * sizeof(int));
-  int  k       = 0;
+  int k = 0;
   for (i = 0; i < _num_left; i++) {
     if (_match[i] != -1)
       continue;
@@ -469,8 +471,8 @@ int Graph::find_hall_set(Darr<Darr<int>*>& hall)
   // verification
   for (i = 0; i < hall.n(); i++) {
     Darr<int>* set = hall.get(i);
-    int        j;
-    int        numl = 0, numr = 0;
+    int j;
+    int numl = 0, numr = 0;
     for (j = 0; j < set->n(); j++) {
       if (set->get(j) < _num_left)
         numl++;
@@ -506,15 +508,15 @@ int Graph::find_matching(Matchkind kind)
   }
   // if(_num_left>noniso++)
   // return 0;
-  int       n = _num_vert;
-  Queue     qu(2 * _edges.n() + 2 * n + 1);
-  int*      pred    = (int*) malloc(n * sizeof(int));
-  int*      visited = (int*) malloc(n * sizeof(int));
+  int n = _num_vert;
+  Queue qu(2 * _edges.n() + 2 * n + 1);
+  int* pred = (int*) malloc(n * sizeof(int));
+  int* visited = (int*) malloc(n * sizeof(int));
   Darr<int> chpr;
   Darr<int> chvis;
 
   // sort_neighbor_weights();
-  int  found  = 1;
+  int found = 1;
   int* rightd = (int*) malloc((n - _num_left) * sizeof(int));
   for (i = 0; i < n - _num_left; i++) {
     rightd[i] = 0;
@@ -524,7 +526,7 @@ int Graph::find_matching(Matchkind kind)
       (rightd[_match[i] - _num_left])++;
   }
   for (i = 0; i < n; i++) {
-    pred[i]    = i;
+    pred[i] = i;
     visited[i] = 0;
   }
   while (found) {
@@ -535,11 +537,11 @@ int Graph::find_matching(Matchkind kind)
         qu.insert(i);
     }
     for (i = 0; i < chpr.n(); i++) {
-      int m   = chpr.get(i);
+      int m = chpr.get(i);
       pred[m] = m;
     }
     for (i = 0; i < chvis.n(); i++) {
-      int m      = chvis.get(i);
+      int m = chvis.get(i);
       visited[m] = 0;
     }
     chpr.reset();
@@ -557,7 +559,7 @@ int Graph::find_matching(Matchkind kind)
         Darr<Edge*>* edges = _neighbors.get(el);
         for (i = 0; i < edges->n(); i++) {
           Edge* ed = edges->get(i);
-          ne       = ed->right;
+          ne = ed->right;
           if (_match[el] == ne)
             continue;
           if (pred[ne] == ne)
@@ -579,7 +581,7 @@ int Graph::find_matching(Matchkind kind)
       Darr<Edge*>* edges = _neighbors.get(el);
       for (i = 0; i < edges->n(); i++) {
         Edge* ed = edges->get(i);
-        ne       = ed->left;
+        ne = ed->left;
         if (_match[ne] != el)
           continue;
         if (pred[ne] == ne)
@@ -596,7 +598,7 @@ int Graph::find_matching(Matchkind kind)
     while (pred[j] != j) {
       assert(j >= _num_left);
       _match[pred[j]] = j;
-      j               = pred[pred[j]];
+      j = pred[pred[j]];
     }
   }
   for (i = 0; i < _num_left; i++) {
@@ -614,7 +616,7 @@ int Graph::find_matching(Matchkind kind)
     return 1;
   }
   long* dist = (long*) malloc(n * sizeof(long));
-  int   k;
+  int k;
 
   // long matw = LARGE;
   Darr<Darr<Edge*>*> ed;
@@ -622,7 +624,7 @@ int Graph::find_matching(Matchkind kind)
   int ll;
   for (ll = 0; ll < ed.n(); ll++) {
     int factor = 1;
-    int maxwt  = 0;
+    int maxwt = 0;
     for (i = 0; i < ed.get(ll)->n(); i++) {
       if (maxwt < ed.get(ll)->get(i)->wt)
         maxwt = ed.get(ll)->get(i)->wt;
@@ -643,7 +645,7 @@ int Graph::find_matching(Matchkind kind)
         assert(k >= _num_left);
         while (pred[l] != l) {
           _match[pred[l]] = l;
-          l               = pred[pred[l]];
+          l = pred[pred[l]];
           if (l == k)
             break;
         }

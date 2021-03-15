@@ -226,7 +226,9 @@ utilization as show below:
           core_height + core_space_bottom + core_space_top )
 ```
 
+The `initialize_floorplan` command removes existing tracks.
 Use the `make_tracks` command to add routing tracks to a floorplan.
+
 ```
 make_tracks [layer]
             [-x_pitch x_pitch]
@@ -397,7 +399,7 @@ macro_placement [-halo {halo_x halo_y}]
 -snap_layer_number - snap macro origins to this routing layer track
 
 Macros will be placed with max(halo * 2, channel) spacing between macros and the
-fence/die boundary.
+fence/die boundary. If not solutions are found, try reducing the channel/halo.
 
 #### Detailed Placement
 
@@ -466,6 +468,22 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 no distance units are not specied in the liberty file microns are
 used.
 
+The resistance and capacitance values in the OpenROAD database can be
+changed using the `set_layer_rc` command. This is useful if they are
+not in the LEF file or to override the values in the LEF.
+
+```
+set_layer_rc [-layer layer]
+             [-via via_layer]
+             [-capacitance cap]
+             [-resistance res] }
+```
+
+The units for capacitance are from the first Liberty file read.
+For example, usually pF/um^2 or fF/um^2 for capacitance and
+kohms/square or ohms/square for resistance. Via resistances are
+specified with the `via` keyword.
+
 ```
 remove_buffers
 ```
@@ -473,7 +491,7 @@ remove_buffers
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
 
 ```
-estimate_parasitics -placement
+estimate_parasitics -placement|-global_routing
 ```
 
 Estimate RC parasitics based on placed component pin locations. If
@@ -483,7 +501,10 @@ wire. Use the `set_units` command to check units or `set_cmd_units` to
 change units. They should represent "average" routing layer resistance
 and capacitance. If the set_wire_rc command is not called before
 resizing, the default_wireload model specified in the first liberty
-file or with the SDC set_wire_load command is used to make parasitics.
+file or with the SDC set_wire_load command is used to make parasitics.  
+
+After the `global_route` command has been called the global routing topology
+and layers can be used to estimate parasitics  with the `-global_routing` flag.
 
 ```
 set_dont_use lib_cells

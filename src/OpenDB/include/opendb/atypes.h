@@ -124,5 +124,3 @@ enum Ath__zuiMark
   Ath_mark__tile,
   Ath_mark__context
 };
-
-

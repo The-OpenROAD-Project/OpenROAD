@@ -149,22 +149,22 @@ void dbShape::getViaXY(int& x, int& y) const
 {
   switch (_type) {
     case VIA: {
-      dbVia* v    = getVia();
-      dbBox* b    = v->getBBox();
-      int    xmin = b->xMin();
-      int    ymin = b->yMin();
-      x           = _rect.xMin() - xmin;
-      y           = _rect.yMin() - ymin;
+      dbVia* v = getVia();
+      dbBox* b = v->getBBox();
+      int xmin = b->xMin();
+      int ymin = b->yMin();
+      x = _rect.xMin() - xmin;
+      y = _rect.yMin() - ymin;
       break;
     }
 
     case TECH_VIA: {
-      dbTechVia* v    = getTechVia();
-      dbBox*     b    = v->getBBox();
-      int        xmin = b->xMin();
-      int        ymin = b->yMin();
-      x               = _rect.xMin() - xmin;
-      y               = _rect.yMin() - ymin;
+      dbTechVia* v = getTechVia();
+      dbBox* b = v->getBBox();
+      int xmin = b->xMin();
+      int ymin = b->yMin();
+      x = _rect.xMin() - xmin;
+      y = _rect.yMin() - ymin;
       break;
     }
     default:
@@ -178,20 +178,20 @@ void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
     int x, y;
     via.getViaXY(x, y);
     shapes.clear();
-    dbTechVia*   v = via.getTechVia();
+    dbTechVia* v = via.getTechVia();
     dbSet<dbBox> boxes;
     boxes = v->getBoxes();
     dbSet<dbBox>::iterator itr;
 
     for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
       dbBox* box = *itr;
-      Rect   b;
+      Rect b;
       box->getBox(b);
-      int     xmin = b.xMin() + x;
-      int     ymin = b.yMin() + y;
-      int     xmax = b.xMax() + x;
-      int     ymax = b.yMax() + y;
-      Rect    r(xmin, ymin, xmax, ymax);
+      int xmin = b.xMin() + x;
+      int ymin = b.yMin() + y;
+      int xmax = b.xMax() + x;
+      int ymax = b.yMax() + y;
+      Rect r(xmin, ymin, xmax, ymax);
       dbShape shape(v, box->getTechLayer(), r);
       shapes.push_back(shape);
     }
@@ -201,20 +201,20 @@ void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
     int x, y;
     via.getViaXY(x, y);
     shapes.clear();
-    dbVia*       v = via.getVia();
+    dbVia* v = via.getVia();
     dbSet<dbBox> boxes;
     boxes = v->getBoxes();
     dbSet<dbBox>::iterator itr;
 
     for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
       dbBox* box = *itr;
-      Rect   b;
+      Rect b;
       box->getBox(b);
-      int     xmin = b.xMin() + x;
-      int     ymin = b.yMin() + y;
-      int     xmax = b.xMax() + x;
-      int     ymax = b.yMax() + y;
-      Rect    r(xmin, ymin, xmax, ymax);
+      int xmin = b.xMin() + x;
+      int ymin = b.yMin() + y;
+      int xmax = b.xMax() + x;
+      int ymax = b.yMax() + y;
+      Rect r(xmin, ymin, xmax, ymax);
       dbShape shape(v, box->getTechLayer(), r);
       shapes.push_back(shape);
     }

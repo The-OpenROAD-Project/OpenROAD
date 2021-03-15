@@ -113,14 +113,12 @@ class Ath__itype
   Ath__itype(unsigned int type, unsigned int index, unsigned int num);
   unsigned int getAll();
   unsigned int getType();
-  void         setAll(unsigned int n);
-  void         setType(unsigned int type);
-  void         setIndex(unsigned int ii);
-  void         set(unsigned int ii, unsigned int n);
+  void setAll(unsigned int n);
+  void setType(unsigned int type);
+  void setIndex(unsigned int ii);
+  void set(unsigned int ii, unsigned int n);
   unsigned int get(unsigned int* index,
                    unsigned int* num,
-                   unsigned int  type = 32);
+                   unsigned int type = 32);
   unsigned int cnt2type(unsigned int cnt);
 };
-
-

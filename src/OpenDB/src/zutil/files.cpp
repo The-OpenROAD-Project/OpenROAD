@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "dbLogger.h"
 
 FILE* ATH__openFile(const char* name, const char* type)

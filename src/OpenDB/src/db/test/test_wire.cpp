@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+
 #include "db.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
@@ -42,10 +43,10 @@ extern void print_db(dbDatabase* db);
 dbTechLayer* m1;
 dbTechLayer* m2;
 dbTechLayer* m3;
-dbTechVia*   v12;
-dbTechVia*   v23;
-dbTech*      tech;
-dbDatabase*  db;
+dbTechVia* v12;
+dbTechVia* v23;
+dbTech* tech;
+dbDatabase* db;
 
 void create_tech()
 {
@@ -71,7 +72,7 @@ void print_shape(dbShape& shape)
 {
   if (shape.isVia()) {
     dbTechVia* tech_via = shape.getTechVia();
-    dbString   vname    = tech_via->getName();
+    dbString vname = tech_via->getName();
     printf("VIA %s ( %d %d ) ( %d %d )\n",
            vname.c_str(),
            shape.xMin(),
@@ -80,7 +81,7 @@ void print_shape(dbShape& shape)
            shape.yMax());
   } else {
     dbTechLayer* layer = shape.getTechLayer();
-    dbString     lname = layer->getName();
+    dbString lname = layer->getName();
     printf("RECT %s ( %d %d ) ( %d %d )\n",
            lname.c_str(),
            shape.xMin(),
@@ -94,10 +95,10 @@ int main()
 {
   db = dbDatabase::open("db", dbCreate);
   create_tech();
-  dbChip*       chip  = dbChip::create(db, tech, "chip");
-  dbBlock*      block = dbBlock::create(chip, "chip");
-  dbNet*        net   = dbNet::create(block, "net");
-  dbWire*       wire  = dbWire::create(net);
+  dbChip* chip = dbChip::create(db, tech, "chip");
+  dbBlock* block = dbBlock::create(chip, "chip");
+  dbNet* net = dbNet::create(block, "net");
+  dbWire* wire = dbWire::create(net);
   dbWireEncoder encoder;
   encoder.begin(wire);
   encoder.newPath(m1, dbWireType::ROUTED);
@@ -119,8 +120,8 @@ int main()
   encoder.addPoint(3000, 18000, 6000);
   encoder.end();
 
-  dbShape          shape;
-  dbWireShapeItr   sitr;
+  dbShape shape;
+  dbWireShapeItr sitr;
   std::vector<int> shape_id;
 
   for (sitr.begin(wire); sitr.next(shape);) {
@@ -133,7 +134,7 @@ int main()
   std::vector<int>::iterator itr;
 
   for (itr = shape_id.begin(); itr != shape_id.end(); ++itr) {
-    int     id = *itr;
+    int id = *itr;
     dbShape shape;
     sitr.getShape(id, shape);
     print_shape(shape);

@@ -190,6 +190,8 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
+  void pythonCommand(const char* py_command);
+
   // Observer interface
   class Observer
   {

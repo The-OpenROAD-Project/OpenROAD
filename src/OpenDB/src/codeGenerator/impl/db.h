@@ -1,9 +1,9 @@
-//Generator Code Begin 2
+//Generator Code Begin ClassDeclarations
 {% for klass in schema.classes %}
 class {{klass.name}};
 {% endfor %}
-//Generator Code End 2
-//Generator Code Begin 5
+//Generator Code End ClassDeclarations
+//Generator Code Begin ClassDefinition
 {% for klass in schema.classes %}
 
 class {{klass.name}} : public dbObject
@@ -32,13 +32,13 @@ class {{klass.name}} : public dbObject
   {% endfor %}
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.name}} );
+      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
       {% if field.dbSetGetter %}
         dbSet<{{field.type}}> get{{field.functional_name}}() const;
-      {% elif field.isDbVector %}
+      {% elif field.isPassByRef %}
         void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
       {% elif field.isHashTable %}
         {{field.getterReturnType}} {{field.getterFunctionName}}(const char* name) const;
@@ -55,7 +55,7 @@ class {{klass.name}} : public dbObject
     {% if  _struct.in_class %}
       {% for field in _struct.fields %}
         {% if 'no-set' not in field.flags %}
-        void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.name}} );
+        void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
       
         {% endif %}
         {% if 'no-get' not in field.flags %}
@@ -74,4 +74,4 @@ class {{klass.name}} : public dbObject
 };
 
 {% endfor %}
-//Generator Code End 5
+//Generator Code End ClassDefinition

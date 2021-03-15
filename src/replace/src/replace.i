@@ -1,5 +1,3 @@
-%module replace
-
 %{
 #include "openroad/OpenRoad.hh"
 #include "replace/Replace.h"
@@ -53,6 +51,13 @@ set_density_cmd(float density)
 {
   Replace* replace = getReplace();
   replace->setTargetDensity(density);
+}
+
+void
+set_uniform_target_density_mode_cmd(bool uniform)
+{
+  Replace* replace = getReplace();
+  replace->setUniformTargetDensityMode(uniform);
 }
 
 void

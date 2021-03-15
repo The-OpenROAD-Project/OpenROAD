@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definSNet.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,8 +40,6 @@
 #include "db.h"
 #include "dbShape.h"
 #include "definPolygon.h"
-#include "definSNet.h"
-
 #include "utility/Logger.h"
 namespace odb {
 
@@ -54,7 +54,7 @@ inline uint get_net_dbid(const char* name)
     return 0;
 
   char* end;
-  uint  dbid = strtoul(name, &end, 10);
+  uint dbid = strtoul(name, &end, 10);
 
   if (*end != '\0')
     return 0;
@@ -66,11 +66,11 @@ definSNet::definSNet()
 {
   init();
   _skip_special_wires = false;
-  _skip_shields       = false;
-  _skip_block_wires   = false;
-  _skip_fill_wires    = false;
-  _replace_wires      = false;
-  _names_are_ids      = false;
+  _skip_shields = false;
+  _skip_block_wires = false;
+  _skip_fill_wires = false;
+  _replace_wires = false;
+  _names_are_ids = false;
 }
 
 definSNet::~definSNet()
@@ -80,20 +80,20 @@ definSNet::~definSNet()
 void definSNet::init()
 {
   definBase::init();
-  _snet_cnt        = 0;
-  _snet_iterm_cnt  = 0;
-  _cur_net         = NULL;
-  _cur_layer       = NULL;
-  _swire           = NULL;
-  _wire_type       = dbWireType::NONE;
+  _snet_cnt = 0;
+  _snet_iterm_cnt = 0;
+  _cur_net = NULL;
+  _cur_layer = NULL;
+  _swire = NULL;
+  _wire_type = dbWireType::NONE;
   _wire_shape_type = dbWireShapeType::NONE;
-  _shield_net      = NULL;
-  _prev_x          = 0;
-  _prev_y          = 0;
-  _prev_ext        = 0;
-  _has_prev_ext    = false;
-  _width           = 0;
-  _point_cnt       = 0;
+  _shield_net = NULL;
+  _prev_x = 0;
+  _prev_y = 0;
+  _prev_ext = 0;
+  _has_prev_ext = false;
+  _width = 0;
+  _point_cnt = 0;
 }
 
 void definSNet::begin(const char* name)
@@ -121,7 +121,7 @@ void definSNet::begin(const char* name)
     }
 
     if (_cur_net == NULL) {
-      _logger->warn(utl::ODB, 156,  "special net {} does not exist", name);
+      _logger->warn(utl::ODB, 156, "special net {} does not exist", name);
       ++_errors;
     } else {
       dbWire* wire = _cur_net->getWire();
@@ -129,7 +129,7 @@ void definSNet::begin(const char* name)
       if (wire)
         dbWire::destroy(wire);
 
-      dbSet<dbSWire>           swires = _cur_net->getSWires();
+      dbSet<dbSWire> swires = _cur_net->getSWires();
       dbSet<dbSWire>::iterator itr;
 
       for (itr = swires.begin(); itr != swires.end(); itr = swires.begin()) {
@@ -145,7 +145,9 @@ void definSNet::begin(const char* name)
   _swire = NULL;
 }
 
-void definSNet::connection(const char* iname, const char* tname, bool /* unused: synth */)
+void definSNet::connection(const char* iname,
+                           const char* tname,
+                           bool /* unused: synth */)
 {
   if ((_cur_net == NULL) || (_replace_wires == true))
     return;
@@ -174,17 +176,21 @@ void definSNet::connection(const char* iname, const char* tname, bool /* unused:
   dbInst* inst = _block->findInst(iname);
 
   if (inst == NULL) {
-    _logger->warn(utl::ODB, 157,  "error: netlist component ({}) is not defined", iname);
+    _logger->warn(
+        utl::ODB, 157, "error: netlist component ({}) is not defined", iname);
     ++_errors;
     return;
   }
 
   dbMaster* master = inst->getMaster();
-  dbMTerm*  mterm  = master->findMTerm(_block, tname);
+  dbMTerm* mterm = master->findMTerm(_block, tname);
 
   if (mterm == NULL) {
-    _logger->warn(utl::ODB, 158, 
-"error: netlist component-pin ({}, {}) is not defined",iname,tname);
+    _logger->warn(utl::ODB,
+                  158,
+                  "error: netlist component-pin ({}, {}) is not defined",
+                  iname,
+                  tname);
     ++_errors;
     return;
   }
@@ -234,7 +240,8 @@ void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 159,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 159, "error: undefined layer ({}) referenced", layer_name);
     return;
   }
 
@@ -252,13 +259,14 @@ void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 160,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 160, "error: undefined layer ({}) referenced", layer_name);
     return;
   }
 
   std::vector<Point> P;
   translate(points, P);
-  definPolygon         polygon(P);
+  definPolygon polygon(P);
   std::vector<Rect> R;
   polygon.decompose(R);
 
@@ -286,7 +294,8 @@ void definSNet::wire(dbWireType type, const char* shield)
     _shield_net = _block->findNet(shield);
 
     if (_shield_net == NULL) {
-      _logger->warn(utl::ODB, 161,  "error: SHIELD net ({}) does not exists.", shield);
+      _logger->warn(
+          utl::ODB, 161, "error: SHIELD net ({}) does not exists.", shield);
       _wire_type = dbWireType::NONE;
       ++_errors;
     }
@@ -303,7 +312,8 @@ void definSNet::path(const char* layer_name, int width)
   _cur_layer = _tech->findLayer(layer_name);
 
   if (_cur_layer == NULL) {
-    _logger->warn(utl::ODB, 162,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 162, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     dbSWire::destroy(_swire);
     _swire = NULL;
@@ -311,12 +321,12 @@ void definSNet::path(const char* layer_name, int width)
   }
 
   if (_swire) {
-    _prev_x          = 0;
-    _prev_y          = 0;
-    _prev_ext        = 0;
-    _has_prev_ext    = false;
-    _point_cnt       = 0;
-    _width           = dbdist(width);
+    _prev_x = 0;
+    _prev_y = 0;
+    _prev_ext = 0;
+    _has_prev_ext = false;
+    _point_cnt = 0;
+    _width = dbdist(width);
     _wire_shape_type = dbWireShapeType::NONE;
   }
 }
@@ -336,8 +346,8 @@ void definSNet::pathPoint(int x, int y, int ext)
       || (_skip_fill_wires && (_wire_shape_type == dbWireShapeType::FILLWIRE)))
     return;
 
-  int cur_x   = dbdist(x);
-  int cur_y   = dbdist(y);
+  int cur_x = dbdist(x);
+  int cur_y = dbdist(y);
   int cur_ext = dbdist(ext);
 
   if (_swire) {
@@ -358,9 +368,9 @@ void definSNet::pathPoint(int x, int y, int ext)
                  _width,
                  _logger);
 
-    _prev_x       = cur_x;
-    _prev_y       = cur_y;
-    _prev_ext     = cur_ext;
+    _prev_x = cur_x;
+    _prev_y = cur_y;
+    _prev_ext = cur_ext;
     _has_prev_ext = true;
   }
 }
@@ -393,9 +403,9 @@ void definSNet::pathPoint(int x, int y)
                  _width,
                  _logger);
 
-    _prev_x       = cur_x;
-    _prev_y       = cur_y;
-    _prev_ext     = 0;
+    _prev_x = cur_x;
+    _prev_y = cur_y;
+    _prev_ext = 0;
     _has_prev_ext = false;
   }
 }
@@ -429,7 +439,8 @@ void definSNet::pathVia(const char* via_name)
     dbVia* via = _block->findVia(via_name);
 
     if (via == NULL) {
-      _logger->warn(utl::ODB, 163,  "error: undefined ia ({}) referenced", via_name);
+      _logger->warn(
+          utl::ODB, 163, "error: undefined ia ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -453,10 +464,10 @@ void definSNet::pathVia(const char* via_name)
 }
 
 void definSNet::pathViaArray(const char* via_name,
-                             int         numX,
-                             int         numY,
-                             int         stepX,
-                             int         stepY)
+                             int numX,
+                             int numY,
+                             int stepX,
+                             int stepY)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -485,7 +496,8 @@ void definSNet::pathViaArray(const char* via_name,
     dbVia* via = _block->findVia(via_name);
 
     if (via == NULL) {
-      _logger->warn(utl::ODB, 164,  "error: undefined ia ({}) referenced", via_name);
+      _logger->warn(
+          utl::ODB, 164, "error: undefined ia ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -594,13 +606,13 @@ void definSNet::connect_all(dbNet* net, const char* term)
 
   net->setWildConnected();
   std::map<dbMTerm*, int> matched_mterms;
-  std::vector<dbMaster*>  masters;
+  std::vector<dbMaster*> masters;
   _block->getMasters(masters);
   std::vector<dbMaster*>::iterator mitr;
 
   for (mitr = masters.begin(); mitr != masters.end(); ++mitr) {
     dbMaster* master = *mitr;
-    dbMTerm*  mterm  = master->findMTerm(_block, term);
+    dbMTerm* mterm = master->findMTerm(_block, term);
 
     if (mterm != NULL)
       matched_mterms[mterm] = 1;

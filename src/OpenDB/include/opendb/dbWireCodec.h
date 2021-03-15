@@ -201,29 +201,29 @@ class _dbWire;
 
 class dbWireEncoder
 {
-  _dbWire*                   _wire;
-  dbTech*                    _tech;
-  dbBlock*                   _block;
-  std::vector<int>           _data;
+  _dbWire* _wire;
+  dbTech* _tech;
+  dbBlock* _block;
+  std::vector<int> _data;
   std::vector<unsigned char> _opcodes;
-  dbTechLayer*               _layer;
-  int                        _idx;
-  int                        _x;
-  int                        _y;
-  uint                       _non_default_rule;
-  int                        _point_cnt;
-  int                        _via_cnt;
-  bool                       _prev_extended_colinear_pnt;
-  unsigned char              _wire_type;
-  unsigned char              _rule_opcode;
+  dbTechLayer* _layer;
+  int _idx;
+  int _x;
+  int _y;
+  uint _non_default_rule;
+  int _point_cnt;
+  int _via_cnt;
+  bool _prev_extended_colinear_pnt;
+  unsigned char _wire_type;
+  unsigned char _rule_opcode;
 
   unsigned char getOp(int idx);
-  void          updateOp(int idx, unsigned char op);
-  void          addOp(unsigned char op, int value);
+  void updateOp(int idx, unsigned char op);
+  void addOp(unsigned char op, int value);
   dbWireEncoder(const dbWireEncoder&);
   dbWireEncoder& operator=(const dbWireEncoder&);
-  unsigned char  getWireType(dbWireType type);
-  void           initPath(dbTechLayer* layer, unsigned char type);
+  unsigned char getWireType(dbWireType type);
+  void initPath(dbTechLayer* layer, unsigned char type);
   void initPath(dbTechLayer* layer, unsigned char type, dbTechLayerRule* rule);
   void initPath(dbTechLayer* layer, dbWireType type);
   void initPath(dbTechLayer* layer, dbWireType type, dbTechLayerRule* rule);
@@ -395,9 +395,9 @@ class dbWireEncoder
   /// extending the path with a non-default extension and the specified wire
   /// type.
   ///
-  void newPathExt(int              junction_id,
-                  int              ext,
-                  dbWireType       type,
+  void newPathExt(int junction_id,
+                  int ext,
+                  dbWireType type,
                   dbTechLayerRule* rule);
 
   ///
@@ -412,9 +412,9 @@ class dbWireEncoder
   /// width. The first point of this path has an implied short to the point of
   /// the junction id.
   ///
-  void newPathShort(int              junction_id,
-                    dbTechLayer*     layer,
-                    dbWireType       type,
+  void newPathShort(int junction_id,
+                    dbTechLayer* layer,
+                    dbWireType type,
                     dbTechLayerRule* rule);
 
   ///
@@ -429,9 +429,9 @@ class dbWireEncoder
   /// width. This method models a virtual wire from the juntion-id to the first
   /// point of this path.
   ///
-  void newPathVirtualWire(int              junction_id,
-                          dbTechLayer*     layer,
-                          dbWireType       type,
+  void newPathVirtualWire(int junction_id,
+                          dbTechLayer* layer,
+                          dbWireType type,
                           dbTechLayerRule* rule);
 
   ///
@@ -498,42 +498,42 @@ class dbWireDecoder
     VWIRE,  /// A new path spawned from a previous point, non-exsistant virtual
             /// wire from previous point to first point of path
     POINT,  /// A point on a path.
-    POINT_EXT,     /// A point on a path with an extension.
-    VIA,           /// A VIA instance on a path.
-    TECH_VIA,      /// A TECH-VIA instance on a path with an extension.
-    RECT,          /// A rect / patch wire
-    ITERM,         /// A dbITerm connected to the previous point/via
-    BTERM,         /// A dbBTerm connected to the previous point/via
-    RULE,          /// Use non-default rule
-    END_DECODE     /// No more path elements to decode.
+    POINT_EXT,  /// A point on a path with an extension.
+    VIA,        /// A VIA instance on a path.
+    TECH_VIA,   /// A TECH-VIA instance on a path with an extension.
+    RECT,       /// A rect / patch wire
+    ITERM,      /// A dbITerm connected to the previous point/via
+    BTERM,      /// A dbBTerm connected to the previous point/via
+    RULE,       /// Use non-default rule
+    END_DECODE  /// No more path elements to decode.
   };
 
  private:
-  _dbWire*     _wire;
-  dbBlock*     _block;
-  dbTech*      _tech;
-  int          _x;
-  int          _y;
-  bool         _default_width;
-  bool         _block_rule;
+  _dbWire* _wire;
+  dbBlock* _block;
+  dbTech* _tech;
+  int _x;
+  int _y;
+  bool _default_width;
+  bool _block_rule;
   dbTechLayer* _layer;
-  int          _operand;
-  int          _operand2;
-  int          _idx;
-  int          _jct_id;
-  int          _wire_type;
-  int          _point_cnt;
-  OpCode       _opcode;
-  uint         _property;
-  int          _deltaX1;
-  int          _deltaY1;
-  int          _deltaX2;
-  int          _deltaY2;
+  int _operand;
+  int _operand2;
+  int _idx;
+  int _jct_id;
+  int _wire_type;
+  int _point_cnt;
+  OpCode _opcode;
+  uint _property;
+  int _deltaX1;
+  int _deltaY1;
+  int _deltaX2;
+  int _deltaY2;
 
   unsigned char nextOp(int& value);
   unsigned char nextOp(uint& value);
   unsigned char peekOp();
-  void          flushRule();
+  void flushRule();
 
  public:
   ///

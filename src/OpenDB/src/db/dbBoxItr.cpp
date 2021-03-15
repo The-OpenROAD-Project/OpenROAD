@@ -32,6 +32,7 @@
 
 #include "dbBoxItr.h"
 
+#include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbBox.h"
@@ -42,7 +43,6 @@
 #include "dbTable.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "dbBPin.h"
 
 namespace odb {
 
@@ -61,15 +61,15 @@ void dbBoxItr::reverse(dbObject* parent)
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
       _dbRegion* region = (_dbRegion*) parent;
-      uint       id     = region->_boxes;
-      uint       list   = 0;
+      uint id = region->_boxes;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       region->_boxes = list;
@@ -80,16 +80,16 @@ void dbBoxItr::reverse(dbObject* parent)
       break;
 
     case dbViaObj: {
-      _dbVia* via  = (_dbVia*) parent;
-      uint    id   = via->_boxes;
-      uint    list = 0;
+      _dbVia* via = (_dbVia*) parent;
+      uint id = via->_boxes;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       via->_boxes = list;
@@ -98,15 +98,15 @@ void dbBoxItr::reverse(dbObject* parent)
 
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      uint       id     = master->_obstructions;
-      uint       list   = 0;
+      uint id = master->_obstructions;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       master->_obstructions = list;
@@ -114,16 +114,16 @@ void dbBoxItr::reverse(dbObject* parent)
     }
 
     case dbMPinObj: {
-      _dbMPin* pin  = (_dbMPin*) parent;
-      uint     id   = pin->_geoms;
-      uint     list = 0;
+      _dbMPin* pin = (_dbMPin*) parent;
+      uint id = pin->_geoms;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       pin->_geoms = list;
@@ -131,16 +131,16 @@ void dbBoxItr::reverse(dbObject* parent)
     }
 
     case dbTechViaObj: {
-      _dbTechVia* via  = (_dbTechVia*) parent;
-      uint        id   = via->_boxes;
-      uint        list = 0;
+      _dbTechVia* via = (_dbTechVia*) parent;
+      uint id = via->_boxes;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       via->_boxes = list;
@@ -148,16 +148,16 @@ void dbBoxItr::reverse(dbObject* parent)
     }
 
     case dbBPinObj: {
-      _dbBPin* bpin  = (_dbBPin*) parent;
-      uint        id   = bpin->_boxes;
-      uint        list = 0;
+      _dbBPin* bpin = (_dbBPin*) parent;
+      uint id = bpin->_boxes;
+      uint list = 0;
 
       while (id != 0) {
-        _dbBox* b    = _box_tbl->getPtr(id);
-        uint    n    = b->_next_box;
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       bpin->_boxes = list;

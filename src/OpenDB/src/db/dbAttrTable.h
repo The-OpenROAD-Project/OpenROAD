@@ -50,18 +50,18 @@ class dbAttrTable
  public:
   static const uint page_size;
   static const uint page_shift;
-  unsigned int      _page_cnt;
-  T**               _pages;
+  unsigned int _page_cnt;
+  T** _pages;
 
   dbAttrTable()
   {
-    _pages    = NULL;
+    _pages = NULL;
     _page_cnt = 0;
   }
 
   dbAttrTable(const dbAttrTable<T>& V)
   {
-    _pages    = NULL;
+    _pages = NULL;
     _page_cnt = 0;
   }
 
@@ -86,10 +86,10 @@ class dbAttrTable
 
   void setAttr(uint id, T attr)
   {
-    unsigned int page   = (id & ~(page_size - 1)) >> page_shift;
-    T*           pg     = getPage(page);
+    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+    T* pg = getPage(page);
     unsigned int offset = id & (page_size - 1);
-    pg[offset]          = attr;
+    pg[offset] = attr;
   }
 
   void clear()
@@ -103,14 +103,14 @@ class dbAttrTable
       delete[] _pages;
     }
 
-    _pages    = NULL;
+    _pages = NULL;
     _page_cnt = 0;
   }
 
   bool operator==(const dbAttrTable<T>& rhs) const;
   bool operator!=(const dbAttrTable<T>& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&               diff,
-                   const char*           field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const dbAttrTable<T>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
@@ -134,7 +134,7 @@ class dbAttrTable
 
   void resizePageTable(uint page)
   {
-    T**          old_pages    = _pages;
+    T** old_pages = _pages;
     unsigned int old_page_cnt = _page_cnt;
 
     if (_page_cnt == 0)
@@ -180,13 +180,13 @@ inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
 }
 
 template <typename T>
-inline void dbAttrTable<T>::differences(dbDiff&               diff,
-                                        const char*           field,
+inline void dbAttrTable<T>::differences(dbDiff& diff,
+                                        const char* field,
                                         const dbAttrTable<T>& rhs) const
 {
   uint sz1 = _page_cnt * page_size;
   uint sz2 = rhs._page_cnt * page_size;
-  uint i   = 0;
+  uint i = 0;
 
   for (; i < sz1 && i < sz2; ++i) {
     T o1 = getAttr(i);
@@ -222,12 +222,12 @@ inline void dbAttrTable<T>::differences(dbDiff&               diff,
 }
 
 template <typename T>
-inline void dbAttrTable<T>::out(dbDiff&     diff,
-                                char        side,
+inline void dbAttrTable<T>::out(dbDiff& diff,
+                                char side,
                                 const char* field) const
 {
   uint sz1 = _page_cnt * page_size;
-  uint i   = 0;
+  uint i = 0;
 
   for (; i < sz1; ++i) {
     T o1 = getAttr(i);
