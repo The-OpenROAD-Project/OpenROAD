@@ -89,7 +89,7 @@ class FlexPAGraphics : public gui::Renderer
   const frAccessPoint* pa_ap_;
   const frVia* pa_via_;
   const std::vector<std::unique_ptr<frMarker>>* pa_markers_;
-  std::vector<std::pair<frBox, frLayerNum>>     shapes;
+  std::vector<std::pair<frBox, frLayerNum>>     shapes_;
 };
 
 }  // namespace fr
