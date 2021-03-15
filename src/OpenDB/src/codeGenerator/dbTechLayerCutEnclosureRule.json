@@ -1,0 +1,196 @@
+{
+  "name": "dbTechLayerCutEnclosureRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "type_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 2
+    },
+    {
+      "type": "bit",
+      "name": "cut_class_valid_"
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "cut_class_",
+      "parent": "dbTechLayer"
+    },
+    {
+      "type": "bit",
+      "name": "above_"
+    },
+    {
+      "type": "bit",
+      "name": "below_"
+    },
+    {
+      "name":"eol_width_",
+      "type":"int"
+    },
+    {
+      "name":"eol_min_length_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"eol_min_length_",
+      "type":"int"
+    },
+    {
+      "name":"eol_only_",
+      "type":"bit"
+    },
+    {
+      "name":"short_edge_only_",
+      "type":"bit"
+    },
+    {
+      "name":"first_overhang_",
+      "type":"int"
+    },
+    {
+      "name":"second_overhang_",
+      "type":"int"
+    },
+    {
+      "name":"side_spacing_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"end_spacing_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"spacing_",
+      "type":"int"
+    },
+    {
+      "name":"extension_",
+      "type":"int"
+    },
+    {
+      "name":"forward_extension_",
+      "type":"int"
+    },
+    {
+      "name":"backward_extension_",
+      "type":"int"
+    },
+    {
+      "name":"off_center_line_",
+      "type":"bit"
+    },
+    {
+      "name":"width_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"min_width_",
+      "type":"int"
+    },
+    {
+      "name":"include_abutted_",
+      "type":"bit"
+    },
+    {
+      "name":"except_extra_cut_",
+      "type":"bit"
+    },
+    {
+      "name":"cut_within_",
+      "type":"int"
+    },
+    {
+      "name":"prl_",
+      "type":"bit"
+    },
+    {
+      "name":"no_shared_edge_",
+      "type":"bit"
+    },
+    {
+      "name":"length_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"min_length_",
+      "type":"int"
+    },
+    {
+      "name":"extra_cut_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"extra_only",
+      "type":"bit"
+    },
+    {
+      "name":"redundant_cut_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"parallel_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"second_parallel_valid",
+      "type":"bit"
+    },
+    {
+      "name":"par_length_",
+      "type":"int"
+    },
+    {
+      "name":"second_par_length_",
+      "type":"int"
+    },
+    {
+      "name":"par_within_",
+      "type":"int"
+    },
+    {
+      "name":"second_par_within_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"second_par_within_",
+      "type":"int"
+    },
+    {
+      "name":"below_enclosure_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"below_enclosure_",
+      "type":"int"
+    },
+    {
+      "name":"concave_corners_valid_",
+      "type":"bit"
+    },
+    {
+      "name":"num_corners_",
+      "type":"uint"
+    }
+  ],
+  "enums":[
+      {
+          "name":"ENC_TYPE",
+          "public": true,
+          "values":[
+              "DEFAULT",
+              "EOL",
+              "ENDSIDE",
+              "HORVER"
+          ]
+      }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbTechLayerCutClassRule.h"
+  ]
+}

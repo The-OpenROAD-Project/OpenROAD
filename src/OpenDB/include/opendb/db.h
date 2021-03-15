@@ -134,6 +134,7 @@ class dbTechLayerCutClassRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerCutSpacingTableDefRule;
+class dbTechLayerCutEnclosureRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6872,6 +6873,8 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
       const;
 
+  dbSet<dbTechLayerCutEnclosureRule> getTechLayerCutEnclosureRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8209,6 +8212,195 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   static void destroy(dbTechLayerCutSpacingTableDefRule* rule);
   // User Code End dbTechLayerCutSpacingTableDefRule
+};
+
+class dbTechLayerCutEnclosureRule : public dbObject
+{
+ public:
+  enum ENC_TYPE
+  {
+    DEFAULT,
+    EOL,
+    ENDSIDE,
+    HORVER
+  };
+
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
+
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  void setEolWidth(int eol_width);
+
+  int getEolWidth() const;
+
+  void setEolMinLength(int eol_min_length);
+
+  int getEolMinLength() const;
+
+  void setFirstOverhang(int first_overhang);
+
+  int getFirstOverhang() const;
+
+  void setSecondOverhang(int second_overhang);
+
+  int getSecondOverhang() const;
+
+  void setSpacing(int spacing);
+
+  int getSpacing() const;
+
+  void setExtension(int extension);
+
+  int getExtension() const;
+
+  void setForwardExtension(int forward_extension);
+
+  int getForwardExtension() const;
+
+  void setBackwardExtension(int backward_extension);
+
+  int getBackwardExtension() const;
+
+  void setMinWidth(int min_width);
+
+  int getMinWidth() const;
+
+  void setCutWithin(int cut_within);
+
+  int getCutWithin() const;
+
+  void setMinLength(int min_length);
+
+  int getMinLength() const;
+
+  void setParLength(int par_length);
+
+  int getParLength() const;
+
+  void setSecondParLength(int second_par_length);
+
+  int getSecondParLength() const;
+
+  void setParWithin(int par_within);
+
+  int getParWithin() const;
+
+  void setSecondParWithin(int second_par_within);
+
+  int getSecondParWithin() const;
+
+  void setBelowEnclosure(int below_enclosure);
+
+  int getBelowEnclosure() const;
+
+  void setNumCorners(uint num_corners);
+
+  uint getNumCorners() const;
+
+  void setCutClassValid(bool cut_class_valid);
+
+  bool isCutClassValid() const;
+
+  void setAbove(bool above);
+
+  bool isAbove() const;
+
+  void setBelow(bool below);
+
+  bool isBelow() const;
+
+  void setEolMinLengthValid(bool eol_min_length_valid);
+
+  bool isEolMinLengthValid() const;
+
+  void setEolOnly(bool eol_only);
+
+  bool isEolOnly() const;
+
+  void setShortEdgeOnly(bool short_edge_only);
+
+  bool isShortEdgeOnly() const;
+
+  void setSideSpacingValid(bool side_spacing_valid);
+
+  bool isSideSpacingValid() const;
+
+  void setEndSpacingValid(bool end_spacing_valid);
+
+  bool isEndSpacingValid() const;
+
+  void setOffCenterLine(bool off_center_line);
+
+  bool isOffCenterLine() const;
+
+  void setWidthValid(bool width_valid);
+
+  bool isWidthValid() const;
+
+  void setIncludeAbutted(bool include_abutted);
+
+  bool isIncludeAbutted() const;
+
+  void setExceptExtraCut(bool except_extra_cut);
+
+  bool isExceptExtraCut() const;
+
+  void setPrl(bool prl);
+
+  bool isPrl() const;
+
+  void setNoSharedEdge(bool no_shared_edge);
+
+  bool isNoSharedEdge() const;
+
+  void setLengthValid(bool length_valid);
+
+  bool isLengthValid() const;
+
+  void setExtraCutValid(bool extra_cut_valid);
+
+  bool isExtraCutValid() const;
+
+  void setExtraOnly(bool extra_only);
+
+  bool isExtraOnly() const;
+
+  void setRedundantCutValid(bool redundant_cut_valid);
+
+  bool isRedundantCutValid() const;
+
+  void setParallelValid(bool parallel_valid);
+
+  bool isParallelValid() const;
+
+  void setSecondParallelValid(bool second_parallel_valid);
+
+  bool isSecondParallelValid() const;
+
+  void setSecondParWithinValid(bool second_par_within_valid);
+
+  bool isSecondParWithinValid() const;
+
+  void setBelowEnclosureValid(bool below_enclosure_valid);
+
+  bool isBelowEnclosureValid() const;
+
+  void setConcaveCornersValid(bool concave_corners_valid);
+
+  bool isConcaveCornersValid() const;
+
+  // User Code Begin dbTechLayerCutEnclosureRule
+  void setType(ENC_TYPE type);
+
+  ENC_TYPE getType() const;
+
+  static dbTechLayerCutEnclosureRule* create(dbTechLayer* layer);
+
+  static dbTechLayerCutEnclosureRule* getTechLayerCutEnclosureRule(
+      dbTechLayer* inly,
+      uint dbid);
+  static void destroy(dbTechLayerCutEnclosureRule* rule);
+  // User Code End dbTechLayerCutEnclosureRule
 };
 
 class dbModule : public dbObject
