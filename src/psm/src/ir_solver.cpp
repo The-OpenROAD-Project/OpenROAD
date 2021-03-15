@@ -920,12 +920,7 @@ bool IRSolver::CreateGmat(bool connection_only)
 
 
 bool IRSolver::CheckValidR(double R) {
-  if (R < 1e-12) {
-    return false; 
-  } 
-  else { 
-    return true;
-  }
+  return R>=1e-12;
 }
 
 bool IRSolver::CheckConnectivity()
