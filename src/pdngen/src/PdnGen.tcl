@@ -1889,6 +1889,7 @@ proc is_extend_to_core_ring {layer_name} {
 proc generate_lower_metal_followpin_rails {} {
   variable block
   variable grid_data
+  variable core_domain
  
   set stdcell_area [get_extent [get_stdcell_area]]
   set stdcell_min_x [lindex $stdcell_area 0]
@@ -1934,7 +1935,7 @@ proc generate_lower_metal_followpin_rails {} {
       if {[is_extend_to_core_ring $lay]} {
         # debug "Extending to core_ring - adjustment $ring_adjustment ($xMin/$xMax) ($stdcell_min_x/$stdcell_max_x)"
         set voltage_domain [get_voltage_domain $xMin [$box yMin] $xMax [$box yMax]]
-        if {$voltage_domain == "CORE"} {
+        if {$voltage_domain == $core_domain} {
           if {$xMin == $stdcell_min_x} {
             set xMin [expr $xMin - $ring_adjustment]
           }
@@ -1942,8 +1943,8 @@ proc generate_lower_metal_followpin_rails {} {
             set xMax [expr $xMax + $ring_adjustment]
           }
         } else {
-          set core_power [get_domain_power "CORE"]
-          set core_ground [get_domain_ground "CORE"]
+          set core_power [get_domain_power $core_domain]
+          set core_ground [get_domain_ground $core_domain]
           set domain_power [get_domain_power $voltage_domain]
           set domain_ground [get_domain_ground $voltage_domain]
 
@@ -1967,12 +1968,12 @@ proc generate_lower_metal_followpin_rails {} {
       set vss_box [::odb::newSetFromRect $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]
       set vss_name [get_domain_ground [get_voltage_domain $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
-      if {$vdd_name == [get_domain_power "CORE"]} {
+      if {$vdd_name == [get_domain_power $core_domain]} {
         add_stripe $lay "POWER" $vdd_box
       } else {
         add_stripe $lay "POWER_$vdd_name" $vdd_box
       }
-      if {$vss_name == [get_domain_ground "CORE"]} {
+      if {$vss_name == [get_domain_ground $core_domain]} {
         add_stripe $lay "GROUND" $vss_box
       } else {
         add_stripe $lay "GROUND_$vss_name" $vss_box
@@ -2077,6 +2078,7 @@ proc generate_stripes {tag net_name} {
   variable template
   variable grid_data
   variable block
+  variable core_domain
 
   if {![dict exists $grid_data straps]} {return}
   foreach lay [dict keys [dict get $grid_data straps]] {
@@ -2090,7 +2092,7 @@ proc generate_stripes {tag net_name} {
         set area [adjust_area_for_core_rings $lay $area]
       }
       # debug "area=$area (spec area=[dict get $grid_data area])"
-      if {$net_name == [get_domain_power "CORE"] || $net_name == [get_domain_ground "CORE"]} {
+      if {$net_name == [get_domain_power $core_domain] || $net_name == [get_domain_ground $core_domain]} {
         generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
         update_mesh_stripes_with_volatge_domains $tag $lay $net_name
       }
@@ -2101,8 +2103,8 @@ proc generate_stripes {tag net_name} {
         set domain_yMin [$rect yMin]
         set domain_xMax [$rect xMax]
         set domain_yMax [$rect yMax]
-        if {($net_name == [get_domain_power $domain_name] && $net_name != [get_domain_power "CORE"]) || \
-              ($net_name == [get_domain_ground $domain_name] && $net_name != [get_domain_ground "CORE"])} {
+        if {($net_name == [get_domain_power $domain_name] && $net_name != [get_domain_power $core_domain]) || \
+              ($net_name == [get_domain_ground $domain_name] && $net_name != [get_domain_ground $core_domain])} {
           set rail_width [get_rails_max_width]
           set area [list $domain_xMin [expr $domain_yMin - $rail_width / 2] $domain_xMax [expr $domain_yMax + $rail_width / 2]]
           set area [adjust_area_for_core_rings $lay $area]
@@ -2148,9 +2150,10 @@ proc cut_blocked_areas {tag} {
 proc generate_grid_vias {tag net_name} {
   variable vias
   variable grid_data
+  variable core_domain
   
-  if {$net_name != [get_domain_power "CORE"] &&
-      $net_name != [get_domain_ground "CORE"]} {
+  if {$net_name != [get_domain_power $core_domain] &&
+      $net_name != [get_domain_ground $core_domain]} {
     set tag "$tag\_$net_name"
   }
 
@@ -2663,6 +2666,7 @@ proc export_opendb_specialnet {net_name signal_type} {
   variable tech 
   variable stripe_locs
   variable global_connections
+  variable core_domain
   
   set net [$block findNet $net_name]
   if {$net == "NULL"} {
@@ -2707,8 +2711,8 @@ proc export_opendb_specialnet {net_name signal_type} {
     $net setWildConnected
   }
   set swire [odb::dbSWire_create $net "ROUTED"]
-  if {$net_name != [get_domain_power "CORE"] &&
-      $net_name != [get_domain_ground "CORE"]} {
+  if {$net_name != [get_domain_power $core_domain] &&
+      $net_name != [get_domain_ground $core_domain]} {
     set signal_type "$signal_type\_$net_name"
   }
 
@@ -2772,6 +2776,7 @@ proc export_opendb_power_pin {net_name signal_type} {
   variable stripe_locs
   variable tech
   variable voltage_domains
+  variable core_domain
   
   set net [$block findNet $net_name]
   set bterm [odb::dbBTerm_create $net "${net_name}"]
@@ -2780,7 +2785,7 @@ proc export_opendb_power_pin {net_name signal_type} {
   $bpin setPlacementStatus "FIRM"
   
   dict for {domain domain_info} $voltage_domains {
-    if {$domain != "CORE" && $net_name == [dict get $domain_info primary_power]} {
+    if {$domain != $core_domain && $net_name == [dict get $domain_info primary_power]} {
       set r_pin "r_$net_name"
       set r_net [odb::dbNet_create $block $r_pin]
       set r_bterm [odb::dbBTerm_create $r_net "${r_pin}"]
@@ -2790,8 +2795,8 @@ proc export_opendb_power_pin {net_name signal_type} {
     }
   }
 
-  if {$net_name != [get_domain_power "CORE"] &&
-      $net_name != [get_domain_ground "CORE"]} {
+  if {$net_name != [get_domain_power $core_domain] &&
+      $net_name != [get_domain_ground $core_domain]} {
     set signal_type "$signal_type\_$net_name"
   }
 
@@ -3055,6 +3060,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable rails_start_with
   variable physical_viarules
   variable stdcell_area
+  variable core_domain
 
 #    set ::start_time [clock clicks -milliseconds]
   init_tech 
@@ -3096,6 +3102,12 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     set rails_start_with "GROUND"
   } else {
     set rails_start_with $::rails_start_with
+  }
+  
+  if {[info vars ::core_domain] == ""} {
+    set  core_domain "CORE"
+  } else {
+    set core_domain $::core_domain
   }
   
   dict set design_data power_nets $::power_nets
@@ -4403,8 +4415,9 @@ variable voltage_domains {
 
 proc get_voltage_domain {llx lly urx ury} {
   variable block
+  variable core_domain
 
-  set name "CORE"
+  set name $core_domain
   foreach region [$block getRegions] {
     set domain $region
     set rect [lindex [$region getBoundaries] 0]
@@ -4568,7 +4581,7 @@ proc generate_voltage_domain_rings {core_ring_data} {
   variable block
   variable voltage_domains
   variable grid_data
-  variable voltage_domain_rings
+  variable core_domain
   
   foreach region [$block getRegions] {
 
@@ -4629,14 +4642,14 @@ proc generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_uy + $width / 2] \
           ]
 
-        if {$power_net == [get_domain_power "CORE"]} {
+        if {$power_net == [get_domain_power $core_domain]} {
           add_stripe $layer "POWER" $lower_inner_ring
           add_stripe $layer "POWER" $upper_inner_ring
         } else {
           add_stripe $layer "POWER_$power_net" $lower_inner_ring
           add_stripe $layer "POWER_$power_net" $upper_inner_ring
         }
-        if {$ground_net == [get_domain_ground "CORE"]} {
+        if {$ground_net == [get_domain_ground $core_domain]} {
           add_stripe $layer "GROUND" $lower_outer_ring
           add_stripe $layer "GROUND" $upper_outer_ring
         } else {   
@@ -4673,14 +4686,14 @@ proc generate_voltage_domain_rings {core_ring_data} {
             [expr $outer_uy + $width / 2] \
           ]
         
-        if {$power_net == [get_domain_power "CORE"]} {
+        if {$power_net == [get_domain_power $core_domain]} {
           add_stripe $layer "POWER" $lhs_inner_ring
           add_stripe $layer "POWER" $rhs_inner_ring
         } else {
           add_stripe $layer "POWER_$power_net" $lhs_inner_ring
           add_stripe $layer "POWER_$power_net" $rhs_inner_ring
         }
-        if {$ground_net == [get_domain_ground "CORE"]} {
+        if {$ground_net == [get_domain_ground $core_domain]} {
           add_stripe $layer "GROUND" $lhs_outer_ring
           add_stripe $layer "GROUND" $rhs_outer_ring
         } else {   
@@ -4689,7 +4702,6 @@ proc generate_voltage_domain_rings {core_ring_data} {
         }
       }
     }
-    dict set voltage_domain_rings $vname $number_of_rings
   }
 }
 
