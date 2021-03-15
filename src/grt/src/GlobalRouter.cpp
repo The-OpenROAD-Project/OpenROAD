@@ -236,8 +236,6 @@ void GlobalRouter::runFastRoute(bool onlySignal)
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 {
-  _logger->report("Repairing antennas...");
-
   AntennaRepair* antennaRepair = new AntennaRepair(
       this, _openroad->getAntennaChecker(), _openroad->getOpendp(), _db, _logger);
 
@@ -249,7 +247,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
   if (diodeMTerm == nullptr) {
-    _logger->error(GRT, 69, "conversion from liberty port to dbMTerm fail.");
+    _logger->error(GRT, 69, "liberty port for {}/{} not found.",
+      diodePort->libertyCell()->name(), diodePort->name());
   }
 
   int violationsCnt = antennaRepair->checkAntennaViolations(
@@ -269,7 +268,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     initializeNets(antennaNets);
     applyAdjustments();
     _fastRoute->setVerbose(0);
-    _logger->info(GRT, 9, "#Nets to reroute: {}.", antennaNets.size());
+    _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsUsage();
@@ -299,7 +298,7 @@ void GlobalRouter::routeClockNets()
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _logger->info(GRT, 10, "#Routed clock nets: {}", _routes.size());
+  _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)

@@ -401,10 +401,10 @@ proc check_routing_layer { layer } {
   set max_routing_layer [$tech getRoutingLayerCount]
   
   if {$layer > $max_routing_layer} {
-    utl::error GRT 60 "check_routing_layer: layer $layer is greater than the max routing layer ($max_routing_layer)."
+    utl::error GRT 60 "layer $layer is greater than the max routing layer ($max_routing_layer)."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "check_routing_layer: layer $layer is lesser than the min routing layer (1)."
+    utl::error GRT 61 "layer $layer is lesser than the min routing layer (1)."
   }
 }
 
@@ -426,19 +426,19 @@ proc check_region { lower_x lower_y upper_x upper_y } {
   set core_area [$block getDieArea]
 
   if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
-    utl::error GRT 64 "check_region: Lower left x is outside die area."
+    utl::error GRT 64 "Lower left x is outside die area."
   }
 
   if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
-    utl::error GRT 65 "check_region: Lower left y is outside die area."
+    utl::error GRT 65 "Lower left y is outside die area."
   }
 
   if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
-    utl::error GRT 66 "check_region: Upper right x is outside die area."
+    utl::error GRT 66 "Upper right x is outside die area."
   }
 
   if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
-    utl::error GRT 67 "check_region: Upper right y is outside die area."
+    utl::error GRT 67 "Upper right y is outside die area."
   }
 }
 
