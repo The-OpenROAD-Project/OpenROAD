@@ -467,8 +467,7 @@ void GlobalRouter::removeDirtyNetsUsage()
     int segsCnt = 0;
     for (GSegment& segment : netRoute) {
       if (!(segment.initLayer != segment.finalLayer
-            || (segment.initX == segment.finalX
-                && segment.initY == segment.finalY))) {
+            || (segment.isVia()))) {
         odb::Point initOnGrid = _grid->getPositionOnGrid(
             odb::Point(segment.initX, segment.initY));
         odb::Point finalOnGrid = _grid->getPositionOnGrid(
