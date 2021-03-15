@@ -687,7 +687,7 @@ namespace eval ICeWall {
     set type_name [get_library_cell_by_type $type]
     if {[dict exists $library cells $type_name]} {
       if {[dict exists $library cells $type_name cell_name]} {
-        if {![catch {dict exists $library cells $type_name cell_name $position}]} {
+        if {[dict exists $library cells $type_name cell_name $position]} {
           set cell_name [dict get $library cells $type_name cell_name $position]
         } else {
           set cell_name [dict get $library cells $type_name cell_name]
