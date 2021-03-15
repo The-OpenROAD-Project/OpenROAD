@@ -189,6 +189,9 @@ main(int argc,
     auto* interp = Tcl_CreateInterp();
     Tcl_Init(interp);
     ord::initOpenRoad(interp);
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+      showSplash();
+    }
 
     return Py_Main(cmd_argc, args.data());
   }
