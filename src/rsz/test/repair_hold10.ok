@@ -43,17 +43,17 @@ worst slack -1.95
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.557ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 4 hold buffers.
-worst slack 0.19
+[INFO RSZ-0032] Inserted 1 hold buffers.
+worst slack 0.29
 [WARNING DPL-0011] Could not find power special net.
 Placement Analysis
 ---------------------------------
-total displacement         41.7 u
-average displacement        2.2 u
-max displacement           11.5 u
-original HPWL            6777.8 u
-legalized HPWL           6821.1 u
-delta HPWL                    1 %
+total displacement          5.3 u
+average displacement        0.3 u
+max displacement            3.2 u
+original HPWL            6757.8 u
+legalized HPWL           6764.9 u
+delta HPWL                    0 %
 
 Min routing layer: 2
 Max routing layer: 6
@@ -61,16 +61,16 @@ Global adjustment: 0%
 Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 409
+[INFO GRT-0004] Blockages: 364
 [INFO GRT-0017] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0018] Processing 583 blockages on layer 1.
-[INFO GRT-0019] Processing 94 blockages on layer 2.
+[INFO GRT-0018] Processing 508 blockages on layer 1.
+[INFO GRT-0019] Processing 88 blockages on layer 2.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
-[INFO GRT-0156] Total Usage   : 988
-[INFO GRT-0157] Total Capacity: 277308
+[INFO GRT-0156] Total Usage   : 978
+[INFO GRT-0157] Total Capacity: 277310
 [INFO GRT-0158] Max H Overflow: 0
 [INFO GRT-0159] Max V Overflow: 0
 [INFO GRT-0160] Max Overflow  : 0
@@ -78,9 +78,9 @@ Grid origin: (0, 0)
 [INFO GRT-0162] V   Overflow  : 0
 [INFO GRT-0163] Final Overflow: 0
 
-[INFO GRT-0110] Final usage: 988
-[INFO GRT-0111] Final number of vias: 62
-[INFO GRT-0112] Final usage 3D: 1174
-[INFO GRT-0018] Total wirelength: 7058 um
+[INFO GRT-0110] Final usage: 978
+[INFO GRT-0111] Final number of vias: 56
+[INFO GRT-0112] Final usage 3D: 1146
+[INFO GRT-0018] Total wirelength: 6941 um
 [WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
-worst slack 0.22
+worst slack -1.40

@@ -1912,9 +1912,7 @@ Resizer::repairSetup(float slack_margin)
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
     repairSetup(worst_path, worst_slack);
-    // This should use a dirty list for updating parasitics.
     ensureWireParasitics();
-    // This should use incremental requireds.
     sta_->findRequireds();
     sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
     debugPrint(logger_, RSZ, "retime", 1, "pass %d worst_slack = {}",
@@ -1945,6 +1943,8 @@ Resizer::repairSetup(float slack_margin)
       break;
     pass++;
   }
+  // Leave the parasitices up to date.
+  ensureWireParasitics();
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
@@ -1965,6 +1965,8 @@ Resizer::repairSetup(Pin *end_pin)
   PathRef path;
   sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
   repairSetup(path, slack);
+  // Leave the parasitices up to date.
+  ensureWireParasitics();
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
@@ -2203,6 +2205,9 @@ Resizer::repairHold(float slack_margin,
   VertexSet *ends = sta_->search()->endpoints();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   repairHold(ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
+
+  // Leave the parasitices up to date.
+  ensureWireParasitics();
 }
 
 // For testing/debug.
@@ -2221,6 +2226,8 @@ Resizer::repairHold(Pin *end_pin,
   sta_->findRequireds();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
+  // Leave the parasitices up to date.
+  ensureWireParasitics();
 }
 
 LibertyCell *
@@ -2330,6 +2337,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
+    ensureWireParasitics();
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < slack_margin
         // Hands off special nets.
@@ -2464,6 +2472,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
     out_net = makeUniqueNet();
   }
 
+  parasiticsInvalid(in_net);
   // Spread buffers between driver and load center.
   Point drvr_pin_loc = db_network_->location(drvr_pin);
   // Stay inside the core.
@@ -2493,6 +2502,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
                      drvr_loc.y() + dy * i);
     setLocation(buffer, buffer_loc);
     buf_in_net = buf_out_net;
+    parasiticsInvalid(buf_out_net);
   }
 
   for (Pin *load_pin : load_pins) {
@@ -2500,10 +2510,6 @@ Resizer::makeHoldDelay(Vertex *drvr,
     Port *load_port = db_network_->port(load_pin);
     sta_->disconnectPin(load_pin);
     sta_->connectPin(load, load_port, out_net);
-  }
-  if (have_estimated_parasitics_) {
-    estimateWireParasitic(drvr_net);
-    estimateWireParasitic(out_net);
   }
 }
 
