@@ -70,7 +70,7 @@ proc tapcell { args } {
   }
 
   if { [info exists keys(-endcap_master)] } {
-    set endcap_master $keys(-endcap_master)
+    set endcap_master_name $keys(-endcap_master)
   }
 
   if { [info exists keys(-endcap_cpp)] } {
@@ -146,12 +146,12 @@ proc tapcell { args } {
   }
 
   if { [info exists keys(-tbtie_cpp)] } {
-    utl::warn TAP 14 "tbtie_cpp option is deprecated."
+    utl::warn TAP 15 "tbtie_cpp option is deprecated."
   }
 
   set add_boundary_cell [info exists flags(-add_boundary_cell)]
   if {[info exists flags(-no_cell_at_top_bottom)]} {
-    utl::warn TAP 14 "no_cell_at_top_bottom option is deprecated."
+    utl::warn TAP 16 "no_cell_at_top_bottom option is deprecated."
   }
 
   set db [ord::get_db]
@@ -159,9 +159,9 @@ proc tapcell { args } {
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
 
-  set endcap_master [$db findMaster $endcap_master]
+  set endcap_master [$db findMaster $endcap_master_name]
   if { $endcap_master == "NULL" } {
-    utl::error TAP 10 "Master $endcap_master not found."
+    utl::error TAP 10 "Master $endcap_master_name not found."
   }
 
   tap::cut_rows $db $endcap_master [tap::find_blockages $db] $halo_x $halo_y
@@ -264,7 +264,7 @@ proc cut_rows {db endcap_master blockages halo_x halo_y} {
   set cut_rows_count [expr [llength [$block getRows]]-$rows_count]
   utl::info TAP 1 "Macro blocks found: $block_count"
   utl::info TAP 2 "Original rows: $rows_count"
-  utl::info TAP 3 "Cut rows: $cut_rows_count"
+  utl::info TAP 3 "Created rows: $cut_rows_count"
 }
 
 proc insert_endcaps {db rows endcap_master cnrcap_masters} {
@@ -275,21 +275,21 @@ proc insert_endcaps {db rows endcap_master cnrcap_masters} {
   set endcapwidth [$endcap_master getWidth]
 
   if {[llength $cnrcap_masters] == 2} {
-    lassign $cnrcap_masters cnrcap_nwin_master cnrcap_nwout_master
+    lassign $cnrcap_masters cnrcap_nwin_master_name cnrcap_nwout_master_name
     
-    if {$cnrcap_nwin_master == "INVALID" || $cnrcap_nwout_master == "INVALID"} {
+    if {$cnrcap_nwin_master_name == "INVALID" || $cnrcap_nwout_master_name == "INVALID"} {
       set do_corners 0
     } else {
       set do_corners 1
 
-      set cnrcap_nwin_master_db [$db findMaster $cnrcap_nwin_master]
-      if { $cnrcap_nwin_master_db == "NULL" } {
-        utl::error TAP 12 "Master $cnrcap_nwin_master not found."
+      set cnrcap_nwin_master [$db findMaster $cnrcap_nwin_master_name]
+      if { $cnrcap_nwin_master == "NULL" } {
+        utl::error TAP 12 "Master $cnrcap_nwin_master_name not found."
       }
-      set cnrcap_nwout_master_db [$db findMaster $cnrcap_nwout_master]
+      set cnrcap_nwout_master [$db findMaster $cnrcap_nwout_master_name]
 
-      if { $cnrcap_nwout_master_db == "NULL" } {
-        utl::error TAP 13 "Master $cnrcap_nwout_master not found."
+      if { $cnrcap_nwout_master == "NULL" } {
+        utl::error TAP 13 "Master $cnrcap_nwout_master_name not found."
       }
 
       lassign [get_min_max_x $rows] min_x max_x
@@ -313,16 +313,16 @@ proc insert_endcaps {db rows endcap_master cnrcap_masters} {
 
       if {$do_corners} {
         if { $cur_row == $top_row } {
-          set masterl [pick_corner_master 1 $row_ori $cnrcap_nwin_master_db $cnrcap_nwout_master_db $endcap_master]
+          set masterl [pick_corner_master 1 $row_ori $cnrcap_nwin_master $cnrcap_nwout_master $endcap_master]
           set masterr $masterl
         } elseif { $cur_row == $bottom_row } {
-          set masterl [pick_corner_master -1 $row_ori $cnrcap_nwin_master_db $cnrcap_nwout_master_db $endcap_master]
+          set masterl [pick_corner_master -1 $row_ori $cnrcap_nwin_master $cnrcap_nwout_master $endcap_master]
           set masterr $masterl
         } else {
           set rows_above [lindex $rows [expr $cur_row + 1]]
           set rows_below [lindex $rows [expr $cur_row - 1]]
-          set masterl [pick_corner_master [is_x_corner $llx $rows_above $rows_below] $row_ori $cnrcap_nwin_master_db $cnrcap_nwout_master_db $endcap_master]
-          set masterr [pick_corner_master [is_x_corner $urx $rows_above $rows_below] $row_ori $cnrcap_nwin_master_db $cnrcap_nwout_master_db $endcap_master]
+          set masterl [pick_corner_master [is_x_corner $llx $rows_above $rows_below] $row_ori $cnrcap_nwin_master $cnrcap_nwout_master $endcap_master]
+          set masterr [pick_corner_master [is_x_corner $urx $rows_above $rows_below] $row_ori $cnrcap_nwin_master $cnrcap_nwout_master $endcap_master]
         }
       } else {
         set masterl $endcap_master
@@ -409,7 +409,7 @@ proc insert_tapcells {db rows tapcell_master dist} {
 
   set master [$db findMaster $tapcell_master]
   if { $master == "NULL" } {
-    utl::error TAP 16 "Master $tapcell_master not found."
+    utl::error TAP 11 "Master $tapcell_master not found."
   }
   set tap_width [$master getWidth]
 
@@ -557,27 +557,27 @@ proc insert_at_top_bottom {db rows masters endcap_master} {
 
   set tap_nwintie_master [$db findMaster $tap_nwintie_master_name]
   if { $tap_nwintie_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwintie_master_name not found."
+    utl::error TAP 17 "Master $tap_nwintie_master_name not found."
   }
   set tap_nwin2_master [$db findMaster $tap_nwin2_master_name]
   if { $tap_nwin2_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwin2_master_name not found."
+    utl::error TAP 18 "Master $tap_nwin2_master_name not found."
   }
   set tap_nwin3_master [$db findMaster $tap_nwin3_master_name]
   if { $tap_nwin3_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwin3_master_name not found."
+    utl::error TAP 19 "Master $tap_nwin3_master_name not found."
   }
   set tap_nwouttie_master [$db findMaster $tap_nwouttie_master_name]
   if { $tap_nwouttie_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwouttie_master_name not found."
+    utl::error TAP 20 "Master $tap_nwouttie_master_name not found."
   }
   set tap_nwout2_master [$db findMaster $tap_nwout2_master_name]
   if { $tap_nwout2_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwout2_master_name not found."
+    utl::error TAP 21 "Master $tap_nwout2_master_name not found."
   }
   set tap_nwout3_master [$db findMaster $tap_nwout3_master_name]
   if { $tap_nwout3_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwout3_master_name not found."
+    utl::error TAP 22 "Master $tap_nwout3_master_name not found."
   }
 
   set tbtiewidth [$tap_nwintie_master getWidth]
@@ -687,35 +687,35 @@ proc insert_around_macros {db rows masters corner_master} {
   
   set tap_nwintie_master [$db findMaster $tap_nwintie_master_name]
   if { $tap_nwintie_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwintie_master_name not found."
+    utl::error TAP 23 "Master $tap_nwintie_master_name not found."
   }
   set tap_nwin2_master [$db findMaster $tap_nwin2_master_name]
   if { $tap_nwin2_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwin2_master_name not found."
+    utl::error TAP 24 "Master $tap_nwin2_master_name not found."
   }
   set tap_nwin3_master [$db findMaster $tap_nwin3_master_name]
   if { $tap_nwin3_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwin3_master_name not found."
+    utl::error TAP 25 "Master $tap_nwin3_master_name not found."
   }
   set tap_nwouttie_master [$db findMaster $tap_nwouttie_master_name]
   if { $tap_nwouttie_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwouttie_master_name not found."
+    utl::error TAP 26 "Master $tap_nwouttie_master_name not found."
   }
   set tap_nwout2_master [$db findMaster $tap_nwout2_master_name]
   if { $tap_nwout2_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwout2_master_name not found."
+    utl::error TAP 27 "Master $tap_nwout2_master_name not found."
   }
   set tap_nwout3_master [$db findMaster $tap_nwout3_master_name]
   if { $tap_nwout3_master == "NULL" } {
-    utl::error TAP 16 "Master $tap_nwout3_master_name not found."
+    utl::error TAP 28 "Master $tap_nwout3_master_name not found."
   }
   set incnrcap_nwin_master [$db findMaster $incnrcap_nwin_master_name]
   if { $incnrcap_nwin_master == "NULL" } {
-    utl::error TAP 16 "Master $incnrcap_nwin_master_name not found."
+    utl::error TAP 29 "Master $incnrcap_nwin_master_name not found."
   }
   set incnrcap_nwout_master [$db findMaster $incnrcap_nwout_master_name]
   if { $incnrcap_nwout_master == "NULL" } {
-    utl::error TAP 16 "Master $incnrcap_nwout_master_name not found."
+    utl::error TAP 30 "Master $incnrcap_nwout_master_name not found."
   }
   
   # find macro outlines
