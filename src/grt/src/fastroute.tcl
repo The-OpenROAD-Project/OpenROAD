@@ -169,7 +169,6 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-seed seed] \
                                   [-report_congestion congest_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
@@ -194,7 +193,7 @@ proc fastroute { args } {
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin -seed -report_congestion \
+          -overflow_iterations -grid_origin -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
@@ -292,13 +291,6 @@ proc global_route { args } {
   if { [info exists keys(-tile_size)] } {
     set tile_size $keys(-tile_size)
     grt::set_tile_size $tile_size
-  }
-
-  if { [info exists keys(-seed) ] } {
-    set seed $keys(-seed)
-    grt::set_seed $seed
-  } else {
-    grt::set_seed 0
   }
 
   grt::set_allow_overflow [info exists flags(-allow_overflow)]

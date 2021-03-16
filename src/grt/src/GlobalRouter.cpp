@@ -90,7 +90,6 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
-  _seed = 0;
   _reportCongest = false;
 
   // Clock net routing variables
@@ -1223,11 +1222,6 @@ void GlobalRouter::setAlpha(const float alpha)
 void GlobalRouter::setPitchesInTile(const int pitchesInTile)
 {
   _grid->setPitchesInTile(pitchesInTile);
-}
-
-void GlobalRouter::setSeed(unsigned seed)
-{
-  _seed = seed;
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)

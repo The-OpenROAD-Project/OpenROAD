@@ -169,7 +169,6 @@ class GlobalRouter
   void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
   void setPitchesInTile(const int pitchesInTile);
-  void setSeed(unsigned seed);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -350,7 +349,6 @@ class GlobalRouter
   bool _reportCongest;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
-  unsigned _seed;
   int _macroExtension;
 
   // Layer adjustment variables
