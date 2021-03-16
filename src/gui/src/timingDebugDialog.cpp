@@ -50,9 +50,9 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
+      QHeaderView::Interactive);
   pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
+      QHeaderView::Interactive);
 
   connect(timingPathTableView->horizontalHeader(),
           SIGNAL(sectionClicked(int)),
@@ -118,6 +118,9 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
   }
   timing_paths_model_ = new TimingPathsModel(setup_hold, path_count);
   timingPathTableView->setModel(timing_paths_model_);
+  timingPathTableView->resizeColumnsToContents();
+  timingPathTableView->horizontalHeader()->setSectionResizeMode(
+      timing_paths_model_->columnCount() - 1, QHeaderView::Stretch);
 
   auto selection_model = timingPathTableView->selectionModel();
   connect(
@@ -127,6 +130,7 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
       SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
   pathIdSpinBox->setMaximum(timing_paths_model_->rowCount() - 1);
   pathIdSpinBox->setMinimum(0);
+
   return true;
 }
 
@@ -137,6 +141,9 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   auto path = timing_paths_model_->getPathAt(index.row());
   path_details_model_->populateModel(path);
   pathDetailsTableView->setModel(path_details_model_);
+  pathDetailsTableView->resizeColumnsToContents();
+  pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
+      path_details_model_->columnCount() - 1, QHeaderView::Stretch);
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
 
@@ -252,6 +259,9 @@ void TimingDebugDialog::handleDbChange(QString change_type,
 {
   path_details_model_->populateModel(nullptr);
   timing_paths_model_->resetModel();
+  timingPathTableView->resizeColumnsToContents();
+  timingPathTableView->horizontalHeader()->setSectionResizeMode(
+      timing_paths_model_->columnCount() - 1, QHeaderView::Stretch);
 }
 
 }  // namespace gui
