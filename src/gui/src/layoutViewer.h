@@ -191,6 +191,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
+  void drawScreenRulers(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);

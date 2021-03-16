@@ -176,7 +176,6 @@ class GuiPainter : public Painter
   // NOTE: it is drawing upside down
   void drawString(int x, int y, int offset, const std::string& s) override
   {
-    // qDebug() << "Drawing String " << s.c_str() << " At : " << x << ", " << y;
     painter_->save();
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
@@ -693,6 +692,58 @@ void LayoutViewer::drawRulers(Painter& painter)
   }
 }
 
+void LayoutViewer::drawScreenRulers(Painter& painter)
+{
+  dbBlock* block = getBlock();
+  Rect bbox = getBounds(block);
+  auto ruler_color = Painter::ruler_color;
+  painter.setPen(ruler_color, true);
+  painter.setBrush(ruler_color);
+
+  qreal to_microns = block->getDbUnitsPerMicron();
+  int dbu_height = getBounds(block).yMax();
+
+  for (auto& ruler : rulers_) {
+    auto ruler_len
+        = QString::number((std::max(std::abs(ruler.p1().x() - ruler.p2().x()),
+                                    std::abs(ruler.p1().y() - ruler.p2().y())))
+                          / to_microns);
+    painter.drawLine(
+        ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
+    QPointF end1, end2;
+    QLineF screen_ruler;
+    if (ruler.dx() < ruler.dy()) {
+      end1 = QPointF(ruler.p2().x() * pixels_per_dbu_,
+                     (dbu_height - ruler.p2().y()) * pixels_per_dbu_);
+      end2 = QPointF(ruler.p2().x() * pixels_per_dbu_,
+                     (dbu_height - ruler.p1().y()) * pixels_per_dbu_);
+      screen_ruler = QLineF(end1, end2);
+      painter.drawLine(screen_ruler.p1().x(),
+                       screen_ruler.p1().y(),
+                       screen_ruler.p2().x(),
+                       screen_ruler.p2().y());
+      painter.drawString(screen_ruler.p1().x(),
+                         (screen_ruler.p1().y() + screen_ruler.p2().y()) / 2,
+                         0,
+                         ruler_len.toStdString());
+    } else {
+      end1 = QPointF(ruler.p1().x() * pixels_per_dbu_,
+                     (dbu_height - ruler.p2().y()) * pixels_per_dbu_);
+      end2 = QPointF(ruler.p2().x() * pixels_per_dbu_,
+                     (dbu_height - ruler.p1().y()) * pixels_per_dbu_);
+      screen_ruler = QLineF(end1, end2);
+      painter.drawLine(screen_ruler.p1().x(),
+                       screen_ruler.p1().y(),
+                       screen_ruler.p2().x(),
+                       screen_ruler.p2().y());
+      painter.drawString((screen_ruler.p1().x() + screen_ruler.p2().x()) / 2,
+                         screen_ruler.p1().y(),
+                         0,
+                         ruler_len.toStdString());
+    }
+  }
+}
+
 void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
 {
   auto block = getBlock();
@@ -961,7 +1012,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Always last so on top
   drawHighlighted(gui_painter);
 
-  drawRulers(gui_painter);
+  // drawRulers(gui_painter);
 }
 
 void LayoutViewer::drawPinMarkers(QPainter* painter,
@@ -1105,6 +1156,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     drawPinMarkers(&painter, dbu_bounds, block);
 
   painter.restore();
+  GuiPainter gui_painter(&painter, options_);
+  drawScreenRulers(gui_painter);
 
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
