@@ -163,8 +163,7 @@ Resizer::makePadParasitic(const Net *net)
 {
   const Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
-  Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
-                                                           parasitics_ap_);
+  Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap_);
   ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, pin1);
   ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, pin2);
 
@@ -185,8 +184,7 @@ Resizer::estimateWireParasiticSteiner(const Net *net)
   if (tree) {
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));
-    Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
-                                                             parasitics_ap_);
+    Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap_);
     bool is_clk = sta_->isClock(net);
     int branch_count = tree->branchCount();
     for (int i = 0; i < branch_count; i++) {
