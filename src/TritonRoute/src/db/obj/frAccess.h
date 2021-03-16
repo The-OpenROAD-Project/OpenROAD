@@ -171,6 +171,12 @@ namespace fr {
     frBlockObjectEnum typeId() const override {
       return frcAccessPoint;
     }
+    frCoord x() const{
+        return point_.x();
+    }
+    frCoord y() const{
+        return point_.y();
+    }
   private:
     frPoint                              point_;
     frLayerNum                           layerNum_;

@@ -109,19 +109,37 @@ initPython()
   Py_Initialize();
 
   char *unencoded = sta::unencode(sta::opendbpy_python_inits);
-  if (PyRun_SimpleString(unencoded)) {
+
+  PyObject* odb_code = Py_CompileString(unencoded, "opendbpy.py", Py_file_input);
+  if (odb_code == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not add init opendbpy\n");
+    fprintf(stderr, "Error: could not compile opendbpy\n");
     exit(1);
   }
+
+  if (PyImport_ExecCodeModule("opendb", odb_code) == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add module opendb.py\n");
+    exit(1);
+  }
+
   delete [] unencoded;
 
   unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
-  if (PyRun_SimpleString(unencoded)) {
+
+  PyObject* ord_code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+  if (ord_code == nullptr) {
     PyErr_Print();
-    fprintf(stderr, "Error: could not add init openroadpy\n");
+    fprintf(stderr, "Error: could not compile openroad.py\n");
     exit(1);
   }
+
+  if (PyImport_ExecCodeModule("openroad", ord_code) == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add module openroad\n");
+    exit(1);
+  }
+
   delete [] unencoded;
 }
 
@@ -159,13 +177,22 @@ main(int argc,
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
-      size_t sz = strlen(argv[i]);
-      args[i] = new wchar_t[sz+1];
+      size_t sz = strlen(cmd_argv[i]);
+      args.push_back(new wchar_t[sz+1]);
       args[i][sz] = '\0';
       for(size_t j = 0;j < sz; j++) {
-        args[i][j] = (wchar_t) argv[i][j];
+        args[i][j] = (wchar_t) cmd_argv[i][j];
       }
     }
+
+    // Setup the app with tcl
+    auto* interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    ord::initOpenRoad(interp);
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+      showSplash();
+    }
+
     return Py_Main(cmd_argc, args.data());
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
