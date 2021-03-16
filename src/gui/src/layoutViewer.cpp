@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -44,8 +45,10 @@
 #include <QPixmap>
 #include <QScrollBar>
 #include <QSizePolicy>
+#include <QStaticText>
 #include <QToolButton>
 #include <QToolTip>
+#include <QTranslator>
 #include <iostream>
 #include <tuple>
 #include <vector>
@@ -169,10 +172,16 @@ class GuiPainter : public Painter
   {
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
+
   // NOTE: it is drawing upside down
   void drawString(int x, int y, int offset, const std::string& s) override
   {
-    painter_->drawText(x + offset, y + offset, s.data());
+    // qDebug() << "Drawing String " << s.c_str() << " At : " << x << ", " << y;
+    painter_->save();
+    painter_->setPen(QPen(Qt::white, 0));
+    painter_->setBrush(QBrush());
+    painter_->drawText(x, y, QString::fromStdString(s));
+    painter_->restore();
   }
 
  private:
@@ -655,12 +664,32 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawRulers(Painter& painter)
 {
+  Rect bbox = getBounds(getBlock());
   auto ruler_color = Painter::ruler_color;
   painter.setPen(ruler_color, true);
   painter.setBrush(ruler_color);
+
+  qreal to_microns = getBlock()->getDbUnitsPerMicron();
+
   for (auto& ruler : rulers_) {
+    auto ruler_len
+        = QString::number((std::max(std::abs(ruler.p1().x() - ruler.p2().x()),
+                                    std::abs(ruler.p1().y() - ruler.p2().y())))
+                          / to_microns);
     painter.drawLine(
         ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
+
+    if (ruler.dx() < ruler.dy()) {
+      painter.drawString(ruler.p1().x(),
+                         (ruler.p1().y() + ruler.p2().y()) / 2,
+                         0,
+                         ruler_len.toStdString());
+    } else {
+      painter.drawString((ruler.p1().x() + ruler.p2().x()) / 2,
+                         ruler.p1().y(),
+                         0,
+                         ruler_len.toStdString());
+    }
   }
 }
 
@@ -1093,6 +1122,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
     } else {
       painter.drawRect(rubber_band_.normalized());
     }
+    return;
   }
 }
 
