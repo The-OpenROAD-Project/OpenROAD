@@ -34,7 +34,7 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "finale/Finale.h"
+#include "fin/Finale.h"
 
 %}
 

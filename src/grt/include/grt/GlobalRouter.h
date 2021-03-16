@@ -62,6 +62,7 @@ class dbDatabase;
 class dbTech;
 class dbBlock;
 class dbDatabase;
+class dbTechLayer;
 }  // namespace odb
 
 namespace sta {
@@ -168,7 +169,6 @@ class GlobalRouter
   void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
   void setPitchesInTile(const int pitchesInTile);
-  void setSeed(unsigned seed);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -283,9 +283,11 @@ class GlobalRouter
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
-  void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
-  void removeDirtyNetsUsage();
+  void saveCapacities(int previousMinLayer, int previousMaxLayer);
+  void restoreCapacities(int previousMinLayer, int previousMaxLayer);
+  int getEdgeResource(int x1, int y1, int x2, int y2,
+                      odb::dbTechLayer* tech_layer, odb::dbGCellGrid* gcell_grid);
+  void removeDirtyNetsRouting();
   void updateDirtyNets();
 
   // db functions
@@ -347,7 +349,6 @@ class GlobalRouter
   bool _reportCongest;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
-  unsigned _seed;
   int _macroExtension;
 
   // Layer adjustment variables
@@ -369,8 +370,8 @@ class GlobalRouter
   int _clockCost;
 
   // Antenna variables
-  int*** oldHUsages;
-  int*** oldVUsages;
+  int*** oldHUsages_;
+  int*** oldVUsages_;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;
