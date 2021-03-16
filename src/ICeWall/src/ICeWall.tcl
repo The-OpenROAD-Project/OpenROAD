@@ -545,7 +545,7 @@ namespace eval ICeWall {
     variable footprint
 
     # debug "start: $padcell"
-    if {![dict exists footprint padcell $padcell signal_type]} {
+    if {![dict exists $footprint padcell $padcell signal_type]} {
       set type [dict get $footprint padcell $padcell type]
       if {$type == "sig"} {
         dict set footprint padcell $padcell signal_type 1
@@ -687,7 +687,7 @@ namespace eval ICeWall {
     set type_name [get_library_cell_by_type $type]
     if {[dict exists $library cells $type_name]} {
       if {[dict exists $library cells $type_name cell_name]} {
-        if {[dict exists $library cells $type_name cell_name $position]} {
+        if {[llength [dict get $library cells $type_name cell_name]] > 1} {
           set cell_name [dict get $library cells $type_name cell_name $position]
         } else {
           set cell_name [dict get $library cells $type_name cell_name]

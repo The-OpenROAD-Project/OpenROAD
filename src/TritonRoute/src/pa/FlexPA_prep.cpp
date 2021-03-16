@@ -1000,7 +1000,19 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
       aps.push_back(std::move(ap));
     }
   }
-  if (isStdCellPin && (int)aps.size() >= MINNUMACCESSPOINT_STDCELLPIN) {
+  int nSparseAPs = (int)aps.size();
+  frBox tbx;
+  for (int i = 0; i < (int)aps.size(); i++){    //not perfect but will do the job
+      int r = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth()/2;
+      tbx.set(aps[i]->x()-r, aps[i]->y()-r, aps[i]->x()+r, aps[i]->y()+r);
+      for (int j = i+1; j < (int)aps.size(); j++){
+          if (aps[i]->getLayerNum() == aps[j]->getLayerNum() && tbx.contains(aps[j]->getPoint())){
+              nSparseAPs--;
+              break;
+          }
+      }
+  }
+  if (isStdCellPin && nSparseAPs >= MINNUMACCESSPOINT_STDCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
     auto it = unique2paidx_.find(instTerm->getInst());
@@ -1013,7 +1025,7 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
     }
     return true;
   }
-  if (isMacroCellPin && (int)aps.size() >= MINNUMACCESSPOINT_MACROCELLPIN) {
+  if (isMacroCellPin && nSparseAPs >= MINNUMACCESSPOINT_MACROCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
     auto it = unique2paidx_.find(instTerm->getInst());
@@ -1064,6 +1076,7 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
   for (auto upper : { frAccessPointEnum::OnGrid,
                       frAccessPointEnum::HalfGrid,
                       frAccessPointEnum::Center,
+                      frAccessPointEnum::EncOpt,
                       frAccessPointEnum::NearbyGrid}) {
     for (auto lower : { frAccessPointEnum::OnGrid,
                         frAccessPointEnum::HalfGrid,

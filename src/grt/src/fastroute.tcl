@@ -169,7 +169,6 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-seed seed] \
                                   [-report_congestion congest_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
@@ -194,7 +193,7 @@ proc fastroute { args } {
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin -seed -report_congestion \
+          -overflow_iterations -grid_origin -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
@@ -292,13 +291,6 @@ proc global_route { args } {
   if { [info exists keys(-tile_size)] } {
     set tile_size $keys(-tile_size)
     grt::set_tile_size $tile_size
-  }
-
-  if { [info exists keys(-seed) ] } {
-    set seed $keys(-seed)
-    grt::set_seed $seed
-  } else {
-    grt::set_seed 0
   }
 
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
@@ -401,10 +393,10 @@ proc check_routing_layer { layer } {
   set max_routing_layer [$tech getRoutingLayerCount]
   
   if {$layer > $max_routing_layer} {
-    utl::error GRT 60 "check_routing_layer: layer $layer is greater than the max routing layer ($max_routing_layer)."
+    utl::error GRT 60 "layer $layer is greater than the max routing layer ($max_routing_layer)."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "check_routing_layer: layer $layer is lesser than the min routing layer (1)."
+    utl::error GRT 61 "layer $layer is lesser than the min routing layer (1)."
   }
 }
 
@@ -426,19 +418,19 @@ proc check_region { lower_x lower_y upper_x upper_y } {
   set core_area [$block getDieArea]
 
   if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
-    utl::error GRT 64 "check_region: Lower left x is outside die area."
+    utl::error GRT 64 "Lower left x is outside die area."
   }
 
   if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
-    utl::error GRT 65 "check_region: Lower left y is outside die area."
+    utl::error GRT 65 "Lower left y is outside die area."
   }
 
   if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
-    utl::error GRT 66 "check_region: Upper right x is outside die area."
+    utl::error GRT 66 "Upper right x is outside die area."
   }
 
   if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
-    utl::error GRT 67 "check_region: Upper right y is outside die area."
+    utl::error GRT 67 "Upper right y is outside die area."
   }
 }
 

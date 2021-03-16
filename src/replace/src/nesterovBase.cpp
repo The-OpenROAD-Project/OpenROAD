@@ -931,6 +931,7 @@ NesterovBaseVars::reset() {
   binCntX = binCntY = 0;
   minWireLengthForceBar = -300;
   isSetBinCntX = isSetBinCntY = 0;
+  useUniformTargetDensity = 0;
 }
 
 
@@ -1005,8 +1006,6 @@ NesterovBase::reset() {
 
 void
 NesterovBase::init() {
-  // density update
-  targetDensity_ = nbVars_.targetDensity;
   
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
@@ -1119,7 +1118,7 @@ NesterovBase::init() {
   bg_.setPlacerBase(pb_);
   bg_.setLogger(log_);
   bg_.setCorePoints(&(pb_->die()));
-  bg_.setTargetDensity(nbVars_.targetDensity);
+  bg_.setTargetDensity(targetDensity_);
   
   // update binGrid info
   bg_.initBins();
@@ -1182,6 +1181,14 @@ NesterovBase::initFillerGCells() {
   // nonPlaceInstsArea should not have density downscaling!!! 
   whiteSpaceArea_ = coreArea - 
     static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  
+  // targetDensity initialize
+  if( nbVars_.useUniformTargetDensity ) {
+    targetDensity_ = static_cast<float>(stdInstsArea_)/static_cast<float>(whiteSpaceArea_ - macroInstsArea_) + 0.01; 
+  }
+  else {
+    targetDensity_ = nbVars_.targetDensity;
+  }
 
   // TODO density screening
   movableArea_ = whiteSpaceArea_ * targetDensity_;
@@ -1502,7 +1509,7 @@ NesterovBase::cutFillerCells(int64_t targetFillerArea) {
 
   // update totalFillerArea_
   totalFillerArea_ = curFillerArea;
-  log_->info(GPL, 35, "NewTotalFillerArea: {}", totalFillerArea_);
+  log_->info(GPL, 36, "NewTotalFillerArea: {}", totalFillerArea_);
 
   gCells_.swap(newGCells);
   gCellFillers_.swap(newGCellFillers);
