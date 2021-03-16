@@ -128,7 +128,7 @@ add_subdirectory(rsz)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(dpl)
-add_subdirectory(finale)
+add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
 add_subdirectory(grt)
@@ -171,7 +171,7 @@ target_link_libraries(openroad
   openroad_swig_py
   replace
   dpl
-  finale
+  fin
   rsz
   ppl
   flute
