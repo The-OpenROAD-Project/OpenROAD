@@ -6851,6 +6851,8 @@ class dbTechLayer : public dbObject
     DIFFUSION,
     TRIMPOLY
   };
+  // User Code Begin dbTechLayerEnums
+  // User Code End dbTechLayerEnums
 
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
@@ -7175,6 +7177,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerSpacingEolRuleEnums
+  // User Code End dbTechLayerSpacingEolRuleEnums
+
   void setEolSpace(int eol_space);
 
   int getEolSpace() const;
@@ -7485,6 +7490,9 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerMinStepRuleEnums
+  // User Code End dbTechLayerMinStepRuleEnums
+
   void setMinStepLength(int min_step_length);
 
   int getMinStepLength() const;
@@ -7555,6 +7563,8 @@ class dbTechLayerCornerSpacingRule : public dbObject
     CONVEXCORNER,
     CONCAVECORNER
   };
+  // User Code Begin dbTechLayerCornerSpacingRuleEnums
+  // User Code End dbTechLayerCornerSpacingRuleEnums
 
   void setWithin(int within);
 
@@ -7647,6 +7657,9 @@ class dbTechLayerCornerSpacingRule : public dbObject
 class dbTechLayerSpacingTablePrlRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerSpacingTablePrlRuleEnums
+  // User Code End dbTechLayerSpacingTablePrlRuleEnums
+
   void setEolWidth(int eol_width);
 
   int getEolWidth() const;
@@ -7696,6 +7709,9 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutClassRuleEnums
+  // User Code End dbTechLayerCutClassRuleEnums
+
   const char* getName() const;
 
   void setWidth(int width);
@@ -7743,6 +7759,8 @@ class dbTechLayerCutSpacingRule : public dbObject
     SAMEMETALSHAREDEDGE,
     AREA
   };
+  // User Code Begin dbTechLayerCutSpacingRuleEnums
+  // User Code End dbTechLayerCutSpacingRuleEnums
 
   void setCutSpacing(int cut_spacing);
 
@@ -8008,6 +8026,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 class dbTechLayerCutSpacingTableOrthRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutSpacingTableOrthRuleEnums
+  // User Code End dbTechLayerCutSpacingTableOrthRuleEnums
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
@@ -8025,6 +8045,9 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
+  // User Code End dbTechLayerCutSpacingTableDefRuleEnums
+
   void setDefault(int spacing);
 
   int getDefault() const;
@@ -8222,8 +8245,18 @@ class dbTechLayerCutEnclosureRule : public dbObject
     DEFAULT,
     EOL,
     ENDSIDE,
-    HORVER
+    HORZ_AND_VERT
   };
+  // User Code Begin dbTechLayerCutEnclosureRuleEnums
+  /*
+  ENC_TYPE describes the enclosure overhang values as following (from the
+  lefdefref):
+  * DEFAULT       : overhang1 overhang2
+  * EOL           : EOL eolWidth ... eolOverhang otherOverhang ...
+  * ENDSIDE       : END overhang1 SIDE overhang2
+  * HORZ_AND_VERT : HORIZONTAL overhang1 VERTICAL overhang2
+  */
+  // User Code End dbTechLayerCutEnclosureRuleEnums
 
   void setCutClass(dbTechLayerCutClassRule* cut_class);
 
@@ -8406,6 +8439,8 @@ class dbTechLayerCutEnclosureRule : public dbObject
 class dbModule : public dbObject
 {
  public:
+  // User Code Begin dbModuleEnums
+  // User Code End dbModuleEnums
   const char* getName() const;
 
   dbModInst* getModInst() const;
@@ -8433,6 +8468,9 @@ class dbModule : public dbObject
 class dbModInst : public dbObject
 {
  public:
+  // User Code Begin dbModInstEnums
+  // User Code End dbModInstEnums
+
   dbModule* getParent() const;
 
   dbModule* getMaster() const;
@@ -8464,6 +8502,8 @@ class dbGroup : public dbObject
     PHYSICAL_CLUSTER,
     VOLTAGE_DOMAIN
   };
+  // User Code Begin dbGroupEnums
+  // User Code End dbGroupEnums
 
   const char* getName() const;
 
@@ -8541,6 +8581,8 @@ class dbGCellGrid : public dbObject
     uint vertical_capacity = 0;
     uint up_capacity = 0;
   };
+  // User Code Begin dbGCellGridEnums
+  // User Code End dbGCellGridEnums
 
   // User Code Begin dbGCellGrid
 

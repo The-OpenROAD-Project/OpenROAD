@@ -148,9 +148,10 @@ for klass in schema['classes']:
         field['isRef'] = isRef(field['type']) \
             if field.get('parent') is not None else False
         field['refType'] = getRefType(field['type'])
-        
+        # refTable is the table name from which the getter extracts the pointer to dbObject
         if field['isRef']:
             field['refTable'] = getTableName(field['refType'].replace('*',''))
+            # checking if there is a defined relation between parent and refType for extracting table name
             for relation in schema['relations']:
                 if relation['first'] == field['parent'] and relation['second'] == field['refType'].replace('*',''):
                     field['refTable'] = relation['tbl_name']

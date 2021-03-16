@@ -93,12 +93,12 @@ bool lefTechLayerCutEnclosureRuleParser::parseSubRule(std::string s, odb::dbTech
     >> double_ [boost::bind(&lefTechLayerCutEnclosureRuleParser::setInt, this, _1, rule, &odb::dbTechLayerCutEnclosureRule::setSecondOverhang)]
   ) [boost::bind(&odb::dbTechLayerCutEnclosureRule::setType, rule, odb::dbTechLayerCutEnclosureRule::ENC_TYPE::ENDSIDE)];
   
-  qi::rule<std::string::iterator, space_type> HORVER = (
+  qi::rule<std::string::iterator, space_type> HORZ_AND_VERT = (
     lit("HORIZONTAL")
     >> double_ [boost::bind(&lefTechLayerCutEnclosureRuleParser::setInt, this, _1, rule, &odb::dbTechLayerCutEnclosureRule::setFirstOverhang)]
     >> lit("VERTICAL")
     >> double_ [boost::bind(&lefTechLayerCutEnclosureRuleParser::setInt, this, _1, rule, &odb::dbTechLayerCutEnclosureRule::setSecondOverhang)]
-  ) [boost::bind(&odb::dbTechLayerCutEnclosureRule::setType, rule, odb::dbTechLayerCutEnclosureRule::ENC_TYPE::HORVER)];
+  ) [boost::bind(&odb::dbTechLayerCutEnclosureRule::setType, rule, odb::dbTechLayerCutEnclosureRule::ENC_TYPE::HORZ_AND_VERT)];
   
   qi::rule<std::string::iterator, space_type> WIDTH_ = (
     lit("WIDTH") [boost::bind(&odb::dbTechLayerCutEnclosureRule::setWidthValid, rule, true)]
@@ -161,7 +161,7 @@ bool lefTechLayerCutEnclosureRuleParser::parseSubRule(std::string s, odb::dbTech
   );
   qi::rule<std::string::iterator, space_type> ENCLOSURE = (
     lit("ENCLOSURE") >> CUTCLASS
-    >> (EOL | DEFAULT | ENDSIDE | HORVER)
+    >> (EOL | DEFAULT | ENDSIDE | HORZ_AND_VERT)
     >> -WIDTH_
     >> -LENGTH
     >> -EXTRACUT
