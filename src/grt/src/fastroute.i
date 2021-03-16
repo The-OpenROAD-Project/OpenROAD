@@ -52,6 +52,8 @@ using sta::LibertyPort;
 
 %inline %{
 
+namespace grt {
+
 bool
 have_routes()
 {
@@ -149,12 +151,6 @@ set_allow_overflow(bool allowOverflow)
 }
 
 void
-set_seed(unsigned seed)
-{
-  getFastRoute()->setSeed(seed);
-}
-
-void
 set_layer_pitch(int layer, float pitch)
 {
   getFastRoute()->setLayerPitch(layer, pitch);
@@ -231,5 +227,7 @@ report_layer_wire_lengths()
 {
   getFastRoute()->reportLayerWireLengths();
 }
+
+} // namespace
 
 %} // inline
