@@ -792,7 +792,7 @@ proc insert_around_macros {db rows masters corner_master} {
       }
 
       # SE corner
-      build_cell $block $incnr_master $top_row_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y
+      build_cell $block $incnr_master $bot_row_ori [expr $x_start - [$incnr_master getWidth]] $bot_row_y
       # SW corner
       build_cell $block $incnr_master $west_ori $x_end $bot_row_y
     }
