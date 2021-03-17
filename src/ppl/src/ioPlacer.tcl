@@ -35,12 +35,13 @@
 
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
-                                              [-names names] \
-                                              [-region region]}
+                                              [-pin_names names] \
+                                              [-region region] \
+                                              [-names names]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -names -region}
+  keys {-direction -pin_names -region -names}
 
   if [info exists keys(-region)] {
     set region $keys(-region)
@@ -80,7 +81,16 @@ proc set_io_pin_constraint { args } {
   }
 
   if [info exists keys(-names)] {
+    utl::warn PPL 44 "-names option is deprecated. Use -pin_names instead."
     set names $keys(-names)
+    foreach name $names {
+      utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
+      ppl::add_name_constraint $name $edge_ $begin $end
+    }
+  }
+
+  if [info exists keys(-pin_names)] {
+    set names $keys(-pin_names)
     foreach name $names {
       utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
       ppl::add_name_constraint $name $edge_ $begin $end
