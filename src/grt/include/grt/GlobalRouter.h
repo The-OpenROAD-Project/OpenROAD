@@ -191,7 +191,7 @@ class GlobalRouter
 
   // flow functions
   void writeGuides(const char* fileName);
-  void startFastRoute();
+  void startFastRoute(int minRoutingLayer, int maxRoutingLayer);
   void estimateRC();
   void runFastRoute();
   NetRouteMap& getRoutes() { return _routes; }
@@ -231,18 +231,18 @@ class GlobalRouter
   void makeComponents();
   void deleteComponents();
   void clearFlow();
-  void applyAdjustments();
+  void applyAdjustments(int minRoutingLayer, int maxRoutingLayer);
   // main functions
-  void initCoreGrid();
+  void initCoreGrid(int maxRoutingLayer);
   void initRoutingLayers();
-  void initRoutingTracks();
-  void setCapacities();
+  void initRoutingTracks(int maxRoutingLayer);
+  void setCapacities(int minRoutingLayer, int maxRoutingLayer);
   void setSpacingsAndMinWidths();
   void initializeNets(std::vector<Net*>& nets);
-  void computeGridAdjustments();
-  void computeTrackAdjustments();
-  void computeUserGlobalAdjustments();
-  void computeUserLayerAdjustments();
+  void computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeTrackAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeUserGlobalAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeUserLayerAdjustments(int maxRoutingLayer);
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
@@ -255,9 +255,11 @@ class GlobalRouter
   void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route);
+  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
+                             int minRoutingLayer, int maxRoutingLayer);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
-  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets);
+  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets,
+                          int minRoutingLayer, int maxRoutingLayer);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -272,7 +274,7 @@ class GlobalRouter
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(const odb::Rect& rect);
-  NetRouteMap findRouting(std::vector<Net*>& nets);
+  NetRouteMap findRouting(std::vector<Net*>& nets, int minRoutingLayer, int maxRoutingLayer);
   void print(GRoute& route);
 
   // check functions

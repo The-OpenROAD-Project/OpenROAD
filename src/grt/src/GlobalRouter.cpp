@@ -142,24 +142,13 @@ GlobalRouter::~GlobalRouter()
   deleteComponents();
 }
 
-void GlobalRouter::startFastRoute()
+void GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer)
 {
   initAdjustments();
   initPitches();
-  if (_unidirectionalRoute) {
-    _fixLayer = 1;
-    if (_minRoutingLayer < 2)
-      _minRoutingLayer = 2;
-  } else {
-    _fixLayer = 0;
-  }
 
-  if (_maxRoutingLayer == -1) {
-    _maxRoutingLayer = computeMaxRoutingLayer();
-  }
-
-  if (_maxRoutingLayer < _selectedMetal) {
-    setSelectedMetal(_maxRoutingLayer);
+  if (maxRoutingLayer < _selectedMetal) {
+    setSelectedMetal(maxRoutingLayer);
   }
 
   if (_pdRevForHighFanout != -1) {
@@ -171,32 +160,32 @@ void GlobalRouter::startFastRoute()
   _fastRoute->setPDRevForHighFanout(_pdRevForHighFanout);
   _fastRoute->setAllowOverflow(_allowOverflow);
 
-  _logger->report("Min routing layer: {}", _minRoutingLayer);
-  _logger->report("Max routing layer: {}", _maxRoutingLayer);
+  _logger->report("Min routing layer: {}", minRoutingLayer);
+  _logger->report("Max routing layer: {}", maxRoutingLayer);
   _logger->report("Global adjustment: {}%", int(_adjustment * 100));
   _logger->report("Unidirectional routing: {}", _unidirectionalRoute);
   _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
-  for (int l = 1; l <= _maxRoutingLayer; l++) {
+  for (int l = 1; l <= maxRoutingLayer; l++) {
     if (_layerPitches[l] != 0) {
       _logger->report("Layer {} pitch: {}", l, _layerPitches[l]);
     }
   }
 
-  initCoreGrid();
+  initCoreGrid(maxRoutingLayer);
   initRoutingLayers();
-  initRoutingTracks();
-  setCapacities();
+  initRoutingTracks(maxRoutingLayer);
+  setCapacities(minRoutingLayer, maxRoutingLayer);
   setSpacingsAndMinWidths();
   initNetlist();
 }
 
-void GlobalRouter::applyAdjustments()
+void GlobalRouter::applyAdjustments(int minRoutingLayer, int maxRoutingLayer)
 {
-  computeGridAdjustments();
-  computeTrackAdjustments();
+  computeGridAdjustments(minRoutingLayer, maxRoutingLayer);
+  computeTrackAdjustments(minRoutingLayer, maxRoutingLayer);
   computeObstructionsAdjustments();
-  computeUserGlobalAdjustments();
-  computeUserLayerAdjustments();
+  computeUserGlobalAdjustments(minRoutingLayer, maxRoutingLayer);
+  computeUserLayerAdjustments(maxRoutingLayer);
 
   for (RegionAdjustment regionAdjst : _regionAdjustments) {
     _logger->report("Adjusting region on layer {}", regionAdjst.getLayer());
@@ -216,40 +205,45 @@ void GlobalRouter::runFastRoute()
   bool routeClocks = _minLayerForClock > 0 && _maxLayerForClock > 0;
 
   if (routeClocks) {
-    int minLayer = _minRoutingLayer;
-    int maxLayer = _maxRoutingLayer;
-    _minRoutingLayer = _minLayerForClock;
-    _maxRoutingLayer = _maxLayerForClock;
-
     // route clock nets
-    startFastRoute();
+    startFastRoute(_minLayerForClock, _maxLayerForClock);
     std::vector<Net*> clockNets;
     getNetsByType(NetType::Clock, clockNets);
     initializeNets(clockNets);
-    applyAdjustments();
+    applyAdjustments(_minLayerForClock, _maxLayerForClock);
     _logger->report("Routing clock nets...");
-    _routes = findRouting(clockNets);
+    _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
 
     capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
     clearFlow();
     _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
-    
-    _minRoutingLayer = minLayer;
-    _maxRoutingLayer = maxLayer;
+  }
+
+  if (_unidirectionalRoute) {
+    _fixLayer = 1;
+    if (_minRoutingLayer < 2) {
+      _minRoutingLayer = 2;
+    }
+  } else {
+    _fixLayer = 0;
+  }
+
+  if (_maxRoutingLayer == -1) {
+    _maxRoutingLayer = computeMaxRoutingLayer();
   }
 
   // route signal nets
-  startFastRoute();
+  startFastRoute(_minRoutingLayer, _maxRoutingLayer);
   NetType type = routeClocks ? NetType::Signal : NetType::All;
   std::vector<Net*> nets;
   getNetsByType(type, nets);
   initializeNets(nets);
-  applyAdjustments();
+  applyAdjustments(_minRoutingLayer, _maxRoutingLayer);
   if (routeClocks)
     restoreCapacities(capacities, _minLayerForClock, _maxLayerForClock);
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
-  NetRouteMap result = findRouting(nets);
+  NetRouteMap result = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
 
   _routes.insert(result.begin(), result.end());
 
@@ -283,19 +277,19 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
-    startFastRoute();
+    startFastRoute(_minRoutingLayer, _maxRoutingLayer);
     updateDirtyNets();
     std::vector<Net*> antennaNets;
     getNetsByType(NetType::Antenna, antennaNets);
     initializeNets(antennaNets);
-    applyAdjustments();
+    applyAdjustments(_minRoutingLayer, _maxRoutingLayer);
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
     restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsRouting();
 
-    NetRouteMap newRoute = findRouting(antennaNets);
+    NetRouteMap newRoute = findRouting(antennaNets, _minRoutingLayer, _maxRoutingLayer);
     mergeResults(newRoute);
   }
 }
@@ -305,11 +299,12 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   _dirtyNets.insert(net);
 }
 
-NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
+NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets, 
+                                      int minRoutingLayer, int maxRoutingLayer)
 {
   NetRouteMap routes = _fastRoute->run();
   _fastRoute->updateDbCongestion(_db);
-  addRemainingGuides(routes, nets);
+  addRemainingGuides(routes, nets, minRoutingLayer, maxRoutingLayer);
   connectPadPins(routes);
   for (auto& net_route : routes) {
     std::vector<Pin>& pins = _db_net_map[net_route.first]->getPins();
@@ -337,12 +332,12 @@ void GlobalRouter::estimateRC()
   }
 }
 
-void GlobalRouter::initCoreGrid()
+void GlobalRouter::initCoreGrid(int maxRoutingLayer)
 {
-  initGrid(_maxRoutingLayer);
+  initGrid(maxRoutingLayer);
 
-  computeCapacities(_maxRoutingLayer, _layerPitches);
-  computeSpacingsAndMinWidth(_maxRoutingLayer);
+  computeCapacities(maxRoutingLayer, _layerPitches);
+  computeSpacingsAndMinWidth(maxRoutingLayer);
   initObstructions();
 
   _fastRoute->setLowerLeft(_grid->getLowerLeftX(), _grid->getLowerLeftY());
@@ -359,15 +354,15 @@ void GlobalRouter::initRoutingLayers()
   _fastRoute->setLayerOrientation(routingLayer.getPreferredDirection());
 }
 
-void GlobalRouter::initRoutingTracks()
+void GlobalRouter::initRoutingTracks(int maxRoutingLayer)
 {
-  initRoutingTracks(*_allRoutingTracks, _maxRoutingLayer, _layerPitches);
+  initRoutingTracks(*_allRoutingTracks, maxRoutingLayer, _layerPitches);
 }
 
-void GlobalRouter::setCapacities()
+void GlobalRouter::setCapacities(int minRoutingLayer, int maxRoutingLayer)
 {
   for (int l = 1; l <= _grid->getNumLayers(); l++) {
-    if (l < _minRoutingLayer || l > _maxRoutingLayer) {
+    if (l < minRoutingLayer || l > maxRoutingLayer) {
       _fastRoute->addHCapacity(0, l);
       _fastRoute->addVCapacity(0, l);
 
@@ -722,7 +717,7 @@ void GlobalRouter::initializeNets(std::vector<Net*>& nets)
   _fastRoute->initEdges();
 }
 
-void GlobalRouter::computeGridAdjustments()
+void GlobalRouter::computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer)
 {
   odb::Point upperDieBounds
       = odb::Point(_grid->getUpperRightX(), _grid->getUpperRightY());
@@ -742,8 +737,8 @@ void GlobalRouter::computeGridAdjustments()
     vSpace = 0;
     RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
 
-    if (layer < _minRoutingLayer
-        || (layer > _maxRoutingLayer && _maxRoutingLayer > 0))
+    if (layer < minRoutingLayer
+        || (layer > maxRoutingLayer && maxRoutingLayer > 0))
       continue;
 
     int newVCapacity = 0;
@@ -789,7 +784,7 @@ void GlobalRouter::computeGridAdjustments()
   }
 }
 
-void GlobalRouter::computeTrackAdjustments()
+void GlobalRouter::computeTrackAdjustments(int minRoutingLayer, int maxRoutingLayer)
 {
   odb::Point upperDieBounds
       = odb::Point(_grid->getUpperRightX(), _grid->getUpperRightY());
@@ -800,8 +795,8 @@ void GlobalRouter::computeTrackAdjustments()
     int trackSpace;
     int numTracks = 0;
 
-    if (layer.getIndex() < _minRoutingLayer
-        || (layer.getIndex() > _maxRoutingLayer && _maxRoutingLayer > 0))
+    if (layer.getIndex() < minRoutingLayer
+        || (layer.getIndex() > maxRoutingLayer && maxRoutingLayer > 0))
       continue;
 
     if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
@@ -970,27 +965,27 @@ void GlobalRouter::computeTrackAdjustments()
   }
 }
 
-void GlobalRouter::computeUserGlobalAdjustments()
+void GlobalRouter::computeUserGlobalAdjustments(int minRoutingLayer, int maxRoutingLayer)
 {
   if (_adjustment == 0.0)
     return;
 
-  for (int l = _minRoutingLayer; l <= _maxRoutingLayer; l++) {
+  for (int l = minRoutingLayer; l <= maxRoutingLayer; l++) {
     if (_adjustments[l] == 0) {
       _adjustments[l] = _adjustment;
     }
   }
 }
 
-void GlobalRouter::computeUserLayerAdjustments()
+void GlobalRouter::computeUserLayerAdjustments(int maxRoutingLayer)
 {
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
+  for (int layer = 1; layer <= maxRoutingLayer; layer++) {
     float adjustment = _adjustments[layer];
     if (adjustment != 0) {
-      _logger->info(GRT, 13+_maxRoutingLayer+layer, "Reducing resources of layer {} by {}%.", layer, int(adjustment * 100));
+      _logger->info(GRT, 13+maxRoutingLayer+layer, "Reducing resources of layer {} by {}%.", layer, int(adjustment * 100));
       if (_hCapacities[layer - 1] != 0) {
         int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1]
                      * (1 - adjustment);
@@ -1448,7 +1443,8 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
   return selectedRoutingTracks;
 }
 
-void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route)
+void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
+                                         int minRoutingLayer, int maxRoutingLayer)
 {
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
   int lastLayer = -1;
@@ -1466,11 +1462,11 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route)
       lastLayer = pins[p].getTopLayer();
   }
 
-  if (lastLayer == _maxRoutingLayer) {
+  if (lastLayer == maxRoutingLayer) {
     lastLayer--;
   }
 
-  for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
+  for (int l = minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
     odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment
         = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l + 1);
@@ -1561,14 +1557,15 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
 }
 
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
-                                      std::vector<Net*>& nets)
+                                      std::vector<Net*>& nets,
+                                      int minRoutingLayer, int maxRoutingLayer)
 {
   for (Net* net : nets) {
     if (net->getNumPins() > 1) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
-        addGuidesForLocalNets(db_net, route);
+        addGuidesForLocalNets(db_net, route, minRoutingLayer, maxRoutingLayer);
       } else {
         addGuidesForPinAccess(db_net, route);
       }

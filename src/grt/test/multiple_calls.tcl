@@ -10,8 +10,6 @@ global_route -grid_origin {0 0}
 write_guides $guide_file1
 
 set_global_routing_layer_adjustment * 0.8
-
-set_global_routing_layer_adjustment * 0.8
 global_route
 write_guides $guide_file2
 
