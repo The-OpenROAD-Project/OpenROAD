@@ -291,7 +291,8 @@ set_io_pin_constraint -direction direction -pin_names names -region edge:interva
 
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-command call. The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
+The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
 #### Tapcell
 
