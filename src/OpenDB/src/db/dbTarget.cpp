@@ -63,8 +63,8 @@ bool _dbTarget::operator==(const _dbTarget& rhs) const
   return true;
 }
 
-void _dbTarget::differences(dbDiff&          diff,
-                            const char*      field,
+void _dbTarget::differences(dbDiff& diff,
+                            const char* field,
                             const _dbTarget& rhs) const
 {
   DIFF_BEGIN
@@ -105,9 +105,9 @@ dbMTerm* dbTarget::getMTerm()
 
 dbTechLayer* dbTarget::getTechLayer()
 {
-  _dbTarget*  target = (_dbTarget*) this;
-  dbDatabase* db     = (dbDatabase*) target->getDatabase();
-  _dbTech*    tech   = (_dbTech*) db->getTech();
+  _dbTarget* target = (_dbTarget*) this;
+  dbDatabase* db = (dbDatabase*) target->getDatabase();
+  _dbTech* tech = (_dbTech*) db->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(target->_layer);
 }
 
@@ -119,16 +119,16 @@ Point dbTarget::getPoint()
 
 dbTarget* dbTarget::create(dbMTerm* mterm_, dbTechLayer* layer_, Point point)
 {
-  _dbMTerm*     mterm  = (_dbMTerm*) mterm_;
-  _dbMaster*    master = (_dbMaster*) mterm->getOwner();
-  _dbTechLayer* layer  = (_dbTechLayer*) layer_;
+  _dbMTerm* mterm = (_dbMTerm*) mterm_;
+  _dbMaster* master = (_dbMaster*) mterm->getOwner();
+  _dbTechLayer* layer = (_dbTechLayer*) layer_;
 
   _dbTarget* target = master->_target_tbl->create();
-  target->_point    = point;
-  target->_mterm    = mterm->getOID();
-  target->_layer    = layer->getOID();
-  target->_next     = mterm->_targets;
-  mterm->_targets   = target->getOID();
+  target->_point = point;
+  target->_mterm = mterm->getOID();
+  target->_layer = layer->getOID();
+  target->_next = mterm->_targets;
+  mterm->_targets = target->getOID();
   return (dbTarget*) target;
 }
 
@@ -138,10 +138,10 @@ void dbTarget::destroy(dbTarget* target_)
   _dbMaster* master = (_dbMaster*) target->getOwner();
 
   // unlink target from the mterm
-  _dbMTerm*  mterm = (_dbMTerm*) master->_mterm_tbl->getPtr(target->_mterm);
-  uint       tid   = target->getOID();
-  uint       id    = mterm->_targets;
-  _dbTarget* p     = 0;
+  _dbMTerm* mterm = (_dbMTerm*) master->_mterm_tbl->getPtr(target->_mterm);
+  uint tid = target->getOID();
+  uint id = mterm->_targets;
+  _dbTarget* p = 0;
 
   while (id) {
     _dbTarget* t = master->_target_tbl->getPtr(id);
@@ -156,7 +156,7 @@ void dbTarget::destroy(dbTarget* target_)
     }
 
     id = t->_next;
-    p  = t;
+    p = t;
   }
 
   dbProperty::destroyProperties(target);
@@ -165,7 +165,7 @@ void dbTarget::destroy(dbTarget* target_)
 
 dbSet<dbTarget>::iterator dbTarget::destroy(dbSet<dbTarget>::iterator& itr)
 {
-  dbTarget*                 t    = *itr;
+  dbTarget* t = *itr;
   dbSet<dbTarget>::iterator next = ++itr;
   destroy(t);
   return next;

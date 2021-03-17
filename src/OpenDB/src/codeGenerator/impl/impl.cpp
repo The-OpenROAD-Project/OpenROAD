@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "{{klass.name}}.h"
 #include "db.h"
 #include "dbDiff.hpp"
@@ -41,12 +41,10 @@
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}
-//User Code Begin includes
-//User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 namespace odb {
 
-//User Code Begin definitions
-//User Code End definitions
   template class dbTable<_{{klass.name}}>; 
     
   bool _{{klass.name}}::operator==(const _{{klass.name}}& rhs) const
@@ -153,8 +151,8 @@ namespace odb {
         {% endfor %}
       {% endif %}
     {% endfor %}
-    //User Code Begin differences
-    //User Code End differences
+    // User Code Begin Differences
+    // User Code End Differences
     DIFF_END
   }
   void _{{klass.name}}::out(dbDiff& diff, char side, const char* field) const
@@ -184,8 +182,8 @@ namespace odb {
       {% endif %}
     {% endfor %}
 
-    //User Code Begin out
-    //User Code End out
+    // User Code Begin Out
+    // User Code End Out
     DIFF_END
   }
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
@@ -205,8 +203,8 @@ namespace odb {
         {{field.name}}.setTable({{field.table_name}});
       {% endif %}
     {% endfor %}
-    //User Code Begin constructor
-    //User Code End constructor
+    // User Code Begin Constructor
+    // User Code End Constructor
   }
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db, const _{{klass.name}}& r)
   {
@@ -311,6 +309,10 @@ namespace odb {
     //User Code Begin Destructor
     //User Code End Destructor
   }
+
+  //User Code Begin PrivateMethods
+  //User Code End PrivateMethods
+
   ////////////////////////////////////////////////////////////////////
   //
   // {{klass.name}} - Methods
@@ -319,17 +321,17 @@ namespace odb {
   {% for field in klass.fields %}
   
     {% if 'no-set' not in field.flags %}
-      void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+      void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
       {
     
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
     
         {% if field.isRef %}
     
-          obj->{{field.name}}={{field.name}}->getImpl()->getOID();
+          obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
     
         {% else %}
-          obj->{{field.name}}={{field.name}};
+          obj->{{field.name}}={{field.argument}};
     
         {% endif %}
       }
@@ -342,7 +344,7 @@ namespace odb {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.type}}>(obj, obj->{{field.name}});
         }
-      {% elif field.isDbVector %}
+      {% elif field.isPassByRef %}
         void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
         {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
@@ -362,7 +364,7 @@ namespace odb {
             if(obj->{{field.name}} == 0)
               return NULL;
             _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
-            return ({{field.refType}}) par->_{{field.refType[2:-1].lower()}}_tbl->getPtr(obj->{{field.name}});
+            return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
           {% elif field.isHashTable %}
             return {{field.getterReturnType}} obj->{{field.name}}.find(name);
           {% else %}
@@ -381,12 +383,12 @@ namespace odb {
       {% for field in _struct.fields %}
       
       {% if 'no-set' not in field.flags %}
-        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.name}} )
+        void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
         {
       
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
       
-          obj->{{_struct.in_class_name}}.{{field.name}}={{field.name}};
+          obj->{{_struct.in_class_name}}.{{field.name}}={{field.argument}};
       
         }
       {% endif %}
@@ -404,8 +406,9 @@ namespace odb {
       {% endfor %}
     {% endif %}
   {% endfor %}
-  
+
+
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
 }
-//Generator Code End 1
+// Generator Code End Cpp

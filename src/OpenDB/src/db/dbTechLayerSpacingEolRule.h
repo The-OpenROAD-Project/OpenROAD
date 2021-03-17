@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -51,96 +51,96 @@ class _dbTechLayer;
 
 struct dbTechLayerSpacingEolRuleFlags
 {
-  bool _exact_width_valid : 1;
-  bool _wrong_dir_spacing_valid : 1;
-  bool _opposite_width_valid : 1;
-  bool _within_valid : 1;
-  bool _wrong_dir_within_valid : 1;
-  bool _same_mask_valid : 1;
-  bool _except_exact_width_valid : 1;
-  bool _fill_concave_corner_valid : 1;
-  bool _withcut_valid : 1;
-  bool _cut_class_valid : 1;
-  bool _with_cut_above_valid : 1;
-  bool _enclosure_end_valid : 1;
-  bool _enclosure_end_within_valid : 1;
-  bool _end_prl_spacing_valid : 1;
-  bool _prl_valid : 1;
-  bool _end_to_end_valid : 1;
-  bool _cut_spaces_valid : 1;
-  bool _extension_valid : 1;
-  bool _wrong_dir_extension_valid : 1;
-  bool _other_end_width_valid : 1;
-  bool _max_length_valid : 1;
-  bool _min_length_valid : 1;
-  bool _two_sides_valid : 1;
-  bool _equal_rect_width_valid : 1;
-  bool _parallel_edge_valid : 1;
-  bool _subtract_eol_width_valid : 1;
-  bool _par_prl_valid : 1;
-  bool _par_min_length_valid : 1;
-  bool _two_edges_valid : 1;
-  bool _same_metal_valid : 1;
-  bool _non_eol_corner_only_valid : 1;
-  bool _parallel_same_mask_valid : 1;
-  bool _enclose_cut_valid : 1;
-  bool _below_valid : 1;
-  bool _above_valid : 1;
-  bool _cut_spacing_valid : 1;
-  bool _all_cuts_valid : 1;
-  bool _to_concave_corner_valid : 1;
-  bool _min_adjacent_length_valid : 1;
-  bool _two_min_adj_length_valid : 1;
-  bool _to_notch_length_valid : 1;
-  uint _spare_bits : 23;
+  bool exact_width_valid_ : 1;
+  bool wrong_dir_spacing_valid_ : 1;
+  bool opposite_width_valid_ : 1;
+  bool within_valid_ : 1;
+  bool wrong_dir_within_valid_ : 1;
+  bool same_mask_valid_ : 1;
+  bool except_exact_width_valid_ : 1;
+  bool fill_concave_corner_valid_ : 1;
+  bool withcut_valid_ : 1;
+  bool cut_class_valid_ : 1;
+  bool with_cut_above_valid_ : 1;
+  bool enclosure_end_valid_ : 1;
+  bool enclosure_end_within_valid_ : 1;
+  bool end_prl_spacing_valid_ : 1;
+  bool prl_valid_ : 1;
+  bool end_to_end_valid_ : 1;
+  bool cut_spaces_valid_ : 1;
+  bool extension_valid_ : 1;
+  bool wrong_dir_extension_valid_ : 1;
+  bool other_end_width_valid_ : 1;
+  bool max_length_valid_ : 1;
+  bool min_length_valid_ : 1;
+  bool two_sides_valid_ : 1;
+  bool equal_rect_width_valid_ : 1;
+  bool parallel_edge_valid_ : 1;
+  bool subtract_eol_width_valid_ : 1;
+  bool par_prl_valid_ : 1;
+  bool par_min_length_valid_ : 1;
+  bool two_edges_valid_ : 1;
+  bool same_metal_valid_ : 1;
+  bool non_eol_corner_only_valid_ : 1;
+  bool parallel_same_mask_valid_ : 1;
+  bool enclose_cut_valid_ : 1;
+  bool below_valid_ : 1;
+  bool above_valid_ : 1;
+  bool cut_spacing_valid_ : 1;
+  bool all_cuts_valid_ : 1;
+  bool to_concave_corner_valid_ : 1;
+  bool min_adjacent_length_valid_ : 1;
+  bool two_min_adj_length_valid_ : 1;
+  bool to_notch_length_valid_ : 1;
+  uint spare_bits_ : 23;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerSpacingEolRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerSpacingEolRuleFlags _flags;
-  int                            _eol_space;
-  int                            _eol_width;
-  int                            _wrong_dir_space;
-  int                            _opposite_width;
-  int                            _eol_within;
-  int                            _wrong_dir_within;
-  int                            _exact_width;
-  int                            _other_width;
-  int                            _fill_triangle;
-  int                            _cut_class;
-  int                            _with_cut_space;
-  int                            _enclosure_end_width;
-  int                            _enclosure_end_within;
-  int                            _end_prl_space;
-  int                            _end_prl;
-  int                            _end_to_end_space;
-  int                            _one_cut_space;
-  int                            _two_cut_space;
-  int                            _extension;
-  int                            _wrong_dir_extension;
-  int                            _other_end_width;
-  int                            _max_length;
-  int                            _min_length;
-  int                            _par_space;
-  int                            _par_within;
-  int                            _par_prl;
-  int                            _par_min_length;
-  int                            _enclose_dist;
-  int                            _cut_to_metal_space;
-  int                            _min_adj_length;
-  int                            _min_adj_length1;
-  int                            _min_adj_length2;
-  int                            _notch_length;
+  dbTechLayerSpacingEolRuleFlags flags_;
+  int eol_space_;
+  int eol_width_;
+  int wrong_dir_space_;
+  int opposite_width_;
+  int eol_within_;
+  int wrong_dir_within_;
+  int exact_width_;
+  int other_width_;
+  int fill_triangle_;
+  int cut_class_;
+  int with_cut_space_;
+  int enclosure_end_width_;
+  int enclosure_end_within_;
+  int end_prl_space_;
+  int end_prl_;
+  int end_to_end_space_;
+  int one_cut_space_;
+  int two_cut_space_;
+  int extension_;
+  int wrong_dir_extension_;
+  int other_end_width_;
+  int max_length_;
+  int min_length_;
+  int par_space_;
+  int par_within_;
+  int par_prl_;
+  int par_min_length_;
+  int enclose_dist_;
+  int cut_to_metal_space_;
+  int min_adj_length_;
+  int min_adj_length1_;
+  int min_adj_length2_;
+  int notch_length_;
 
-  // User Code Begin fields
+  // User Code Begin Fields
   dbId<_dbTechLayer> _layer;
-  // User Code End fields
+  // User Code End Fields
   _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
   _dbTechLayerSpacingEolRule(_dbDatabase*);
   ~_dbTechLayerSpacingEolRule();
@@ -150,16 +150,16 @@ class _dbTechLayerSpacingEolRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
-  void differences(dbDiff&                           diff,
-                   const char*                       field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerSpacingEolRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

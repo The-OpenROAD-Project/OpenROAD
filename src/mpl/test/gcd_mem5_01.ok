@@ -49,7 +49,7 @@ Begin West Partition
 [INFO MPL-0077] Using 0 cut lines
 End West Partition
 End Horizontal Partition
-[INFO MPL-0070] Using 4 partiion sets
+[INFO MPL-0070] Using 4 partition sets
 [WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
 [WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.
 [WARNING MPL-0061] Parquet area 51.12 x 72 exceeds the partition area 69.35 x 67.2.

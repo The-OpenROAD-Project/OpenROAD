@@ -53,31 +53,31 @@ enum _PropTypeEnum
 {
   // Do not change the order of this enum.
   DB_STRING_PROP = 0,
-  DB_BOOL_PROP   = 1,
-  DB_INT_PROP    = 2,
+  DB_BOOL_PROP = 1,
+  DB_INT_PROP = 2,
   DB_DOUBLE_PROP = 3
 };
 
 struct _dbPropertyFlags
 {
   _PropTypeEnum _type : 4;
-  uint          _owner_type : 8;
-  uint          _spare_bits : 20;
+  uint _owner_type : 8;
+  uint _spare_bits : 20;
 };
 
 class _dbProperty : public _dbObject
 {
  public:
-  _dbPropertyFlags  _flags;
-  uint              _name;
+  _dbPropertyFlags _flags;
+  uint _name;
   dbId<_dbProperty> _next;
-  uint              _owner;
+  uint _owner;
 
   union
   {
-    char*  _str_val;
-    uint   _bool_val;
-    int    _int_val;
+    char* _str_val;
+    uint _bool_val;
+    int _int_val;
     double _double_val;
   } _value;
 
@@ -88,17 +88,17 @@ class _dbProperty : public _dbObject
   bool operator==(const _dbProperty& rhs) const;
   bool operator!=(const _dbProperty& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbProperty& rhs) const;
-  void differences(dbDiff&            diff,
-                   const char*        field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbProperty& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   static dbTable<_dbProperty>* getPropTable(dbObject* object);
-  static _dbNameCache*         getNameCache(dbObject* object);
-  static dbPropertyItr*        getItr(dbObject* object);
-  static _dbProperty*          createProperty(dbObject*     object,
-                                              const char*   name,
-                                              _PropTypeEnum type);
+  static _dbNameCache* getNameCache(dbObject* object);
+  static dbPropertyItr* getItr(dbObject* object);
+  static _dbProperty* createProperty(dbObject* object,
+                                     const char* name,
+                                     _PropTypeEnum type);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop);

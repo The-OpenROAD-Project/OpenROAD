@@ -34,10 +34,10 @@
 #include <stdlib.h>
 
 #include "db.h"
+#include "dbLogger.h"
 #include "dbMap.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "dbLogger.h"
 #include "tmg_conn.h"
 
 namespace odb {
@@ -50,13 +50,13 @@ void tmg_conn::checkConnOrdered(bool verbose)
   dbBTerm* drv_bterm = NULL;
   dbITerm* itermV[1024];
   dbBTerm* btermV[1024];
-  int      itermN = 0;
-  int      btermN = 0;
-  int      j;
-  _connected           = true;
-  dbWire*         wire = _net->getWire();
-  dbWirePathItr   pitr;
-  dbWirePath      path;
+  int itermN = 0;
+  int btermN = 0;
+  int j;
+  _connected = true;
+  dbWire* wire = _net->getWire();
+  dbWirePathItr pitr;
+  dbWirePath path;
   dbWirePathShape pathShape;
   pitr.begin(wire);
   int first = 1;
@@ -81,11 +81,11 @@ void tmg_conn::checkConnOrdered(bool verbose)
       if (first) {
         first = 0;
         if (path.iterm) {
-          drv_iterm        = path.iterm;
+          drv_iterm = path.iterm;
           itermV[itermN++] = drv_iterm;
         }
         if (path.bterm) {
-          drv_bterm        = path.bterm;
+          drv_bterm = path.bterm;
           btermV[btermN++] = drv_bterm;
         }
       } else {
@@ -100,7 +100,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
               break;
           if (j == itermN) {
             notice(0, "DISC\n");
-            _connected       = false;
+            _connected = false;
             itermV[itermN++] = path.iterm;
           }
         }
@@ -110,7 +110,7 @@ void tmg_conn::checkConnOrdered(bool verbose)
               break;
           if (j == btermN) {
             notice(0, "DISC\n");
-            _connected       = false;
+            _connected = false;
             btermV[btermN++] = path.bterm;
           }
         }
@@ -167,33 +167,33 @@ static bool checkITermConnect(dbITerm* iterm, dbShape& shape)
   // check that some iterm shape intersects/touches shape
   Rect wrect;
   shape.getBox(wrect);
-  dbTechLayer* wlyr     = shape.getTechLayer();
+  dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyr_top = NULL;
   if (shape.isVia()) {
     if (shape.getTechVia()) {
-      wlyr     = shape.getTechVia()->getBottomLayer();
+      wlyr = shape.getTechVia()->getBottomLayer();
       wlyr_top = shape.getTechVia()->getTopLayer();
     } else if (shape.getVia()) {
-      wlyr     = shape.getVia()->getBottomLayer();
+      wlyr = shape.getVia()->getBottomLayer();
       wlyr_top = shape.getVia()->getTopLayer();
     }
   }
   dbMTerm* mterm = iterm->getMTerm();
-  int      px, py;
+  int px, py;
   iterm->getInst()->getOrigin(px, py);
-  Point        origin = Point(px, py);
+  Point origin = Point(px, py);
   dbOrientType orient = iterm->getInst()->getOrient();
-  dbTransform  transform(orient, origin);
+  dbTransform transform(orient, origin);
 
-  dbSet<dbMPin>           mpins = mterm->getMPins();
+  dbSet<dbMPin> mpins = mterm->getMPins();
   dbSet<dbMPin>::iterator mpin_itr;
   for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-    dbMPin*                mpin  = *mpin_itr;
-    dbSet<dbBox>           boxes = mpin->getGeometry();
+    dbMPin* mpin = *mpin_itr;
+    dbSet<dbBox> boxes = mpin->getGeometry();
     dbSet<dbBox>::iterator box_itr;
     for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
       dbBox* box = *box_itr;
-      Rect   rect;
+      Rect rect;
       if (box->isVia()) {
         dbTechVia* tv = box->getTechVia();
         if (tv->getTopLayer() == wlyr
@@ -224,11 +224,11 @@ static bool checkBTermConnect(dbBTerm* bterm, dbShape& shape)
   // check that some iterm shape intersects/touches shape
   Rect wrect;
   shape.getBox(wrect);
-  dbTechLayer* wlyr  = shape.getTechLayer();
+  dbTechLayer* wlyr = shape.getTechLayer();
   dbTechLayer* wlyrT = NULL;
   if (shape.isVia()) {
     if (shape.getTechVia()) {
-      wlyr  = shape.getTechVia()->getBottomLayer();
+      wlyr = shape.getTechVia()->getBottomLayer();
       wlyrT = shape.getTechVia()->getTopLayer();
     }
   }
@@ -254,16 +254,16 @@ void tmg_conn::checkConnected(bool verbose)
   struct itinfo
   {
     dbITerm* iterm;
-    bool     found;
+    bool found;
   };
-  dbSet<dbITerm>           iterms = _net->getITerms();
+  dbSet<dbITerm> iterms = _net->getITerms();
   dbSet<dbITerm>::iterator itt;
-  itinfo                   itV1[32];
-  itinfo*                  itV2 = NULL;
-  itinfo*                  itV  = itV1;
-  int                      itN  = iterms.size();
+  itinfo itV1[32];
+  itinfo* itV2 = NULL;
+  itinfo* itV = itV1;
+  int itN = iterms.size();
   if (itN > 32) {
-    itV  = (itinfo*) malloc(itN * sizeof(itinfo));
+    itV = (itinfo*) malloc(itN * sizeof(itinfo));
     itV2 = itV;
   }
   itinfo* x;
@@ -274,16 +274,16 @@ void tmg_conn::checkConnected(bool verbose)
   struct btinfo
   {
     dbBTerm* bterm;
-    bool     found;
+    bool found;
   };
-  dbSet<dbBTerm>           bterms = _net->getBTerms();
+  dbSet<dbBTerm> bterms = _net->getBTerms();
   dbSet<dbBTerm>::iterator btt;
-  btinfo                   btV1[32];
-  btinfo*                  btV2 = NULL;
-  btinfo*                  btV  = btV1;
-  int                      btN  = bterms.size();
+  btinfo btV1[32];
+  btinfo* btV2 = NULL;
+  btinfo* btV = btV1;
+  int btN = bterms.size();
   if (btN > 32) {
-    btV  = (btinfo*) malloc(btN * sizeof(btinfo));
+    btV = (btinfo*) malloc(btN * sizeof(btinfo));
     btV2 = btV;
   }
   btinfo* y;
@@ -291,10 +291,10 @@ void tmg_conn::checkConnected(bool verbose)
     y->bterm = *btt;
     y->found = false;
   }
-  int             j;
-  dbWire*         wire = _net->getWire();
-  dbWirePathItr   pitr;
-  dbWirePath      path;
+  int j;
+  dbWire* wire = _net->getWire();
+  dbWirePathItr pitr;
+  dbWirePath path;
   dbWirePathShape pathShape;
   pitr.begin(wire);
   bool disc = false;

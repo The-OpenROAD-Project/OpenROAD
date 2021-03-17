@@ -40,7 +40,7 @@ template <class T>
 class Ath__array1D
 {
  private:
-  T*  _array;
+  T* _array;
   int _size;
   int _chunk;
   int _current;
@@ -55,10 +55,10 @@ class Ath__array1D
 
     _current = 0;
     if (chunk > 0) {
-      _size  = _chunk;
+      _size = _chunk;
       _array = (T*) realloc(NULL, _size * sizeof(T));
     } else {
-      _size  = 0;
+      _size = 0;
       _array = NULL;
     }
     _iterCnt = 0;
@@ -74,7 +74,7 @@ class Ath__array1D
       _size += _chunk;
       _array = (T*) realloc(_array, _size * sizeof(T));
     }
-    int n              = _current;
+    int n = _current;
     _array[_current++] = t;
 
     return n;
@@ -84,7 +84,7 @@ class Ath__array1D
     if (maxSize < _size)
       return _size;
 
-    _size  = (maxSize / _chunk + 1) * _chunk;
+    _size = (maxSize / _chunk + 1) * _chunk;
     _array = (T*) realloc(_array, _size * sizeof(T));
 
     if (_array == NULL) {
@@ -163,14 +163,14 @@ class Ath__array1D
     return _array[_current];
   }
   unsigned int getSize(void) { return _size; }
-  void         resetIterator(unsigned int v = 0) { _iterCnt = v; }
-  void         resetCnt(unsigned int v = 0)
+  void resetIterator(unsigned int v = 0) { _iterCnt = v; }
+  void resetCnt(unsigned int v = 0)
   {
     _current = v;
     _iterCnt = v;
   }
   unsigned int getCnt(void) { return _current; }
-  void         set(int ii, T t)
+  void set(int ii, T t)
   {
     if (ii >= _size)
       reSize(ii + 1);
@@ -178,5 +178,3 @@ class Ath__array1D
     _array[ii] = t;
   }
 };
-
-

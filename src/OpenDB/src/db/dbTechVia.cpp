@@ -99,8 +99,8 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
   return true;
 }
 
-void _dbTechVia::differences(dbDiff&           diff,
-                             const char*       field,
+void _dbTechVia::differences(dbDiff& diff,
+                             const char* field,
                              const _dbTechVia& rhs) const
 {
   DIFF_BEGIN
@@ -174,13 +174,13 @@ _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
 
 _dbTechVia::_dbTechVia(_dbDatabase*)
 {
-  _flags._default_via  = 0;
+  _flags._default_via = 0;
   _flags._top_of_stack = 0;
-  _flags._has_params   = 0;
-  _flags._spare_bits   = 0;
-  _resistance          = 0.0;
-  _name                = 0;
-  _pattern             = 0;
+  _flags._has_params = 0;
+  _flags._spare_bits = 0;
+  _resistance = 0.0;
+  _name = 0;
+  _pattern = 0;
 }
 
 _dbTechVia::~_dbTechVia()
@@ -255,7 +255,7 @@ bool dbTechVia::isDefault()
 
 void dbTechVia::setDefault()
 {
-  _dbTechVia* via          = (_dbTechVia*) this;
+  _dbTechVia* via = (_dbTechVia*) this;
   via->_flags._default_via = 1;
 }
 
@@ -267,7 +267,7 @@ bool dbTechVia::isTopOfStack()
 
 void dbTechVia::setTopOfStack()
 {
-  _dbTechVia* via           = (_dbTechVia*) this;
+  _dbTechVia* via = (_dbTechVia*) this;
   via->_flags._top_of_stack = 1;
 }
 
@@ -279,7 +279,7 @@ double dbTechVia::getResistance()
 
 void dbTechVia::setResistance(double resistance)
 {
-  _dbTechVia* via  = (_dbTechVia*) this;
+  _dbTechVia* via = (_dbTechVia*) this;
   via->_resistance = resistance;
 }
 
@@ -301,8 +301,8 @@ dbBox* dbTechVia::getBBox()
 
 dbSet<dbBox> dbTechVia::getBoxes()
 {
-  _dbTechVia* via  = (_dbTechVia*) this;
-  _dbTech*    tech = (_dbTech*) via->getOwner();
+  _dbTechVia* via = (_dbTechVia*) this;
+  _dbTech* tech = (_dbTech*) via->getOwner();
   return dbSet<dbBox>(via, tech->_box_itr);
 }
 
@@ -348,7 +348,7 @@ bool dbTechVia::hasParams()
 
 void dbTechVia::setViaGenerateRule(dbTechViaGenerateRule* rule)
 {
-  _dbTechVia* via     = (_dbTechVia*) this;
+  _dbTechVia* via = (_dbTechVia*) this;
   via->_generate_rule = rule->getImpl()->getOID();
 }
 
@@ -359,7 +359,7 @@ dbTechViaGenerateRule* dbTechVia::getViaGenerateRule()
   if (via->_generate_rule == 0)
     return NULL;
 
-  _dbTech*                tech = (_dbTech*) via->getOwner();
+  _dbTech* tech = (_dbTech*) via->getOwner();
   _dbTechViaGenerateRule* rule
       = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
   return (dbTechViaGenerateRule*) rule;
@@ -388,26 +388,26 @@ void dbTechVia::setPattern(const char* pattern)
 
 void dbTechVia::setViaParams(const dbViaParams& params)
 {
-  _dbTechVia* via         = (_dbTechVia*) this;
-  _dbTech*    tech        = (_dbTech*) via->getOwner();
+  _dbTechVia* via = (_dbTechVia*) this;
+  _dbTech* tech = (_dbTech*) via->getOwner();
   via->_flags._has_params = 1;
 
   // Clear previous boxes
-  dbSet<dbBox>           boxes = getBoxes();
+  dbSet<dbBox> boxes = getBoxes();
   dbSet<dbBox>::iterator itr;
 
   for (itr = boxes.begin(); itr != boxes.end();) {
-    dbSet<dbBox>::iterator n   = ++itr;
-    _dbBox*                box = (_dbBox*) *itr;
+    dbSet<dbBox>::iterator n = ++itr;
+    _dbBox* box = (_dbBox*) *itr;
     dbProperty::destroyProperties(box);
     tech->_box_tbl->destroy(box);
     itr = n;
   }
 
-  via->_boxes      = 0U;
+  via->_boxes = 0U;
   via->_via_params = params;
-  via->_top        = params._top_layer;
-  via->_bottom     = params._bot_layer;
+  via->_top = params._top_layer;
+  via->_bottom = params._bot_layer;
   create_via_boxes(via, params);
 }
 
@@ -418,9 +418,9 @@ void dbTechVia::getViaParams(dbViaParams& params)
   if (via->_flags._has_params == 1)
     params = dbViaParams();
   else {
-    params        = via->_via_params;
+    params = via->_via_params;
     _dbTech* tech = (_dbTech*) via->getOwner();
-    params._tech  = (dbTech*) tech;
+    params._tech = (dbTech*) tech;
   }
 }
 
@@ -429,9 +429,9 @@ dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
   if (tech_->findVia(name_))
     return NULL;
 
-  _dbTech*    tech = (_dbTech*) tech_;
-  _dbTechVia* via  = tech->_via_tbl->create();
-  via->_name       = strdup(name_);
+  _dbTech* tech = (_dbTech*) tech_;
+  _dbTechVia* via = tech->_via_tbl->create();
+  via->_name = strdup(name_);
   ZALLOCATED(via->_name);
   tech->_via_hash.insert(via);
   tech->_via_cnt++;
@@ -439,28 +439,28 @@ dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
 }
 
 dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
-                            dbTechVia*            invia_,
-                            const char*           new_name)
+                            dbTechVia* invia_,
+                            const char* new_name)
 {
-  _dbTechNonDefaultRule* rule   = (_dbTechNonDefaultRule*) rule_;
-  _dbTechVia*            _invia = (_dbTechVia*) invia_;
+  _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) rule_;
+  _dbTechVia* _invia = (_dbTechVia*) invia_;
 
   dbTech* tech_ = (dbTech*) rule->getOwner();
 
   if (tech_->findVia(new_name))
     return NULL;
 
-  _dbTech*    tech = (_dbTech*) tech_;
-  _dbTechVia* via  = tech->_via_tbl->create();
-  via->_name       = strdup(new_name);
+  _dbTech* tech = (_dbTech*) tech_;
+  _dbTechVia* via = tech->_via_tbl->create();
+  via->_name = strdup(new_name);
   ZALLOCATED(via->_name);
 
-  via->_flags            = _invia->_flags;
-  via->_resistance       = _invia->_resistance;
-  via->_bbox             = _invia->_bbox;
-  via->_boxes            = _invia->_boxes;
-  via->_top              = _invia->_top;
-  via->_bottom           = _invia->_bottom;
+  via->_flags = _invia->_flags;
+  via->_resistance = _invia->_resistance;
+  via->_bbox = _invia->_bbox;
+  via->_boxes = _invia->_boxes;
+  via->_top = _invia->_top;
+  via->_bottom = _invia->_bottom;
   via->_non_default_rule = (rule) ? rule->getOID() : 0;
   if (rule)
     via->_flags._default_via
@@ -481,9 +481,9 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
   if (tech_->findVia(name_))
     return NULL;
 
-  _dbTech*    tech = (_dbTech*) tech_;
-  _dbTechVia* via  = tech->_via_tbl->create();
-  via->_name       = strdup(name_);
+  _dbTech* tech = (_dbTech*) tech_;
+  _dbTechVia* via = tech->_via_tbl->create();
+  via->_name = strdup(name_);
   ZALLOCATED(via->_name);
   tech->_via_cnt++;
   via->_non_default_rule = rule->getOID();
@@ -500,12 +500,12 @@ dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint dbid_)
 
 void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 {
-  int               rows = P.getNumCutRows();
-  int               cols = P.getNumCutCols();
-  int               row;
-  int               y    = 0;
-  int               maxX = 0;
-  int               maxY = 0;
+  int rows = P.getNumCutRows();
+  int cols = P.getNumCutCols();
+  int row;
+  int y = 0;
+  int maxX = 0;
+  int maxY = 0;
   std::vector<Rect> cutRects;
 
   for (row = 0; row < rows; ++row) {
@@ -527,8 +527,8 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 
   dbTechLayer* cut_layer = P.getCutLayer();
 
-  int                         dx = maxX / 2;
-  int                         dy = maxY / 2;
+  int dx = maxX / 2;
+  int dy = maxY / 2;
   std::vector<Rect>::iterator itr;
 
   for (itr = cutRects.begin(); itr != cutRects.end(); ++itr) {

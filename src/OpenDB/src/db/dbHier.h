@@ -53,9 +53,9 @@ class dbDiff;
 class _dbHier : public _dbObject
 {
  public:
-  dbId<_dbInst>             _inst;
-  dbId<_dbBlock>            _child_block;
-  dbVector<dbId<_dbBTerm> > _child_bterms;
+  dbId<_dbInst> _inst;
+  dbId<_dbBlock> _child_block;
+  dbVector<dbId<_dbBTerm>> _child_bterms;
 
   _dbHier(_dbDatabase* db);
   _dbHier(_dbDatabase* db, const _dbHier& h);
@@ -66,7 +66,7 @@ class _dbHier : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   static _dbHier* create(dbInst* inst, dbBlock* child);
-  static void     destroy(_dbHier* hdr);
+  static void destroy(_dbHier* hdr);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbHier& inst_hdr);

@@ -57,9 +57,9 @@ using LefDefParser::lefrSetRelaxMode;
 
 extern bool lefin_parse(lefin*, utl::Logger*, const char*);
 
-lefin::lefin(dbDatabase*  db,
+lefin::lefin(dbDatabase* db,
              utl::Logger* logger,
-             bool         ignore_non_routing_layers)
+             bool ignore_non_routing_layers)
     : _db(db),
       _tech(NULL),
       _master(NULL),
@@ -86,23 +86,23 @@ lefin::lefin(dbDatabase*  db,
 
 void lefin::init()
 {
-  _tech                = NULL;
-  _lib                 = NULL;
-  _master              = NULL;
-  _create_tech         = false;
-  _create_lib          = false;
-  _left_bus_delimeter  = '[';
+  _tech = NULL;
+  _lib = NULL;
+  _master = NULL;
+  _create_tech = false;
+  _create_lib = false;
+  _left_bus_delimeter = '[';
   _right_bus_delimeter = ']';
-  _hier_delimeter      = 0;
-  _layer_cnt           = 0;
-  _master_cnt          = 0;
-  _via_cnt             = 0;
-  _errors              = 0;
+  _hier_delimeter = 0;
+  _layer_cnt = 0;
+  _master_cnt = 0;
+  _via_cnt = 0;
+  _errors = 0;
 
   if (!_override_lef_dbu) {
-    _lef_units      = 0;
-    _dist_factor    = 1000.0;
-    _area_factor    = 1000000.0;
+    _lef_units = 0;
+    _dist_factor = 1000.0;
+    _area_factor = 1000000.0;
     _dbu_per_micron = 1000;
   }
 }
@@ -119,14 +119,14 @@ void lefin::createLibrary()
     _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
 }
 
-static void create_path_box(dbObject*    obj,
-                            bool         is_pin,
+static void create_path_box(dbObject* obj,
+                            bool is_pin,
                             dbTechLayer* layer,
-                            int          dw,
-                            int          prev_x,
-                            int          prev_y,
-                            int          cur_x,
-                            int          cur_y,
+                            int dw,
+                            int prev_x,
+                            int prev_y,
+                            int cur_x,
+                            int cur_y,
                             utl::Logger* logger)
 {
   int x1, x2, y1, y2;
@@ -183,9 +183,9 @@ static void create_path_box(dbObject*    obj,
 //
 bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 {
-  int          count = geometry->numItems();
+  int count = geometry->numItems();
   dbTechLayer* layer = NULL;
-  int          dw    = 0;
+  int dw = 0;
 
   for (int i = 0; i < count; i++) {
     _master_modified = true;
@@ -234,8 +234,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         break;
       }
       case lefiGeomPathIterE: {
-        lefiGeomPathIter*  pathItr = geometry->getPathIter(i);
-        int                j;
+        lefiGeomPathIter* pathItr = geometry->getPathIter(i);
+        int j;
         std::vector<Point> points;
 
         for (j = 0; j < pathItr->numPoints; j++) {
@@ -244,8 +244,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
           points.push_back(Point(x, y));
         }
 
-        int numX  = round(pathItr->xStart);
-        int numY  = round(pathItr->yStart);
+        int numX = round(pathItr->xStart);
+        int numY = round(pathItr->yStart);
         int stepX = dbdist(pathItr->xStep);
         int stepY = dbdist(pathItr->yStep);
         int dx, dy, x_idx, y_idx;
@@ -254,21 +254,21 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
           for (dy = 0, y_idx = 0; y_idx < numY; ++y_idx, dy += stepY) {
             if (points.size() == 1) {
               Point p = points[0];
-              int   x = p.getX() + dx;
-              int   y = p.getY() + dy;
+              int x = p.getX() + dx;
+              int y = p.getY() + dy;
               create_path_box(object, is_pin, layer, dw, x, y, x, y, _logger);
               continue;
             }
 
-            std::vector<Point>::iterator itr    = points.begin();
-            Point                        p      = *itr;
-            int                          prev_x = p.getX() + dx;
-            int                          prev_y = p.getY() + dy;
+            std::vector<Point>::iterator itr = points.begin();
+            Point p = *itr;
+            int prev_x = p.getX() + dx;
+            int prev_y = p.getY() + dy;
 
             for (++itr; itr != points.end(); ++itr) {
-              Point c     = *itr;
-              int   cur_x = c.getX() + dx;
-              int   cur_y = c.getY() + dy;
+              Point c = *itr;
+              int cur_x = c.getX() + dx;
+              int cur_y = c.getY() + dy;
               create_path_box(object,
                               is_pin,
                               layer,
@@ -287,10 +287,10 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       }
       case lefiGeomRectE: {
         lefiGeomRect* rect = geometry->getRect(i);
-        int           x1   = dbdist(rect->xl);
-        int           y1   = dbdist(rect->yl);
-        int           x2   = dbdist(rect->xh);
-        int           y2   = dbdist(rect->yh);
+        int x1 = dbdist(rect->xl);
+        int y1 = dbdist(rect->yl);
+        int x2 = dbdist(rect->xh);
+        int y2 = dbdist(rect->yh);
 
         if (is_pin)
           dbBox::create((dbMPin*) object, layer, x1, y1, x2, y2);
@@ -300,15 +300,15 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       }
       case lefiGeomRectIterE: {
         lefiGeomRectIter* rectItr = geometry->getRectIter(i);
-        int               x1      = dbdist(rectItr->xl);
-        int               y1      = dbdist(rectItr->yl);
-        int               x2      = dbdist(rectItr->xh);
-        int               y2      = dbdist(rectItr->yh);
-        int               numX    = round(rectItr->xStart);
-        int               numY    = round(rectItr->yStart);
-        int               stepX   = dbdist(rectItr->xStep);
-        int               stepY   = dbdist(rectItr->yStep);
-        int               dx, dy, x_idx, y_idx;
+        int x1 = dbdist(rectItr->xl);
+        int y1 = dbdist(rectItr->yl);
+        int x2 = dbdist(rectItr->xh);
+        int y2 = dbdist(rectItr->yh);
+        int numX = round(rectItr->xStart);
+        int numY = round(rectItr->yStart);
+        int stepX = dbdist(rectItr->xStep);
+        int stepY = dbdist(rectItr->yStep);
+        int dx, dy, x_idx, y_idx;
 
         for (dx = 0, x_idx = 0; x_idx < numX; ++x_idx, dx += stepX) {
           for (dy = 0, y_idx = 0; y_idx < numY; ++y_idx, dy += stepY) {
@@ -332,13 +332,13 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       }
       case lefiGeomPolygonIterE: {
         lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
-        lefiGeomPolygon      p;
-        double               x;
-        double               y;
+        lefiGeomPolygon p;
+        double x;
+        double y;
 
         p.numPoints = pItr->numPoints;
-        p.x         = pItr->x;
-        p.y         = pItr->y;
+        p.x = pItr->x;
+        p.y = pItr->y;
 
         for (y = 0; y < pItr->yStart; y++)
           for (x = 0; x < pItr->xStart; x++)
@@ -347,8 +347,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         break;
       }
       case lefiGeomViaE: {
-        lefiGeomVia* via   = geometry->getVia(i);
-        dbTechVia*   dbvia = _tech->findVia(via->name);
+        lefiGeomVia* via = geometry->getVia(i);
+        dbTechVia* dbvia = _tech->findVia(via->name);
 
         if (dbvia == NULL) {
           _logger->warn(
@@ -368,7 +368,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       }
       case lefiGeomViaIterE: {
         lefiGeomViaIter* viaItr = geometry->getViaIter(i);
-        dbTechVia*       dbvia  = _tech->findVia(viaItr->name);
+        dbTechVia* dbvia = _tech->findVia(viaItr->name);
 
         if (dbvia == NULL) {
           _logger->warn(utl::ODB,
@@ -378,10 +378,10 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
           return false;
         }
 
-        int x     = dbdist(viaItr->x);
-        int y     = dbdist(viaItr->y);
-        int numX  = round(viaItr->xStart);
-        int numY  = round(viaItr->yStart);
+        int x = dbdist(viaItr->x);
+        int y = dbdist(viaItr->y);
+        int numX = round(viaItr->xStart);
+        int numY = round(viaItr->yStart);
         int stepX = dbdist(viaItr->xStep);
         int stepY = dbdist(viaItr->yStep);
         int dx, dy, x_idx, y_idx;
@@ -411,12 +411,12 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
   return true;
 }
 
-void lefin::createPolygon(dbObject*        object,
-                          bool             is_pin,
-                          dbTechLayer*     layer,
+void lefin::createPolygon(dbObject* object,
+                          bool is_pin,
+                          dbTechLayer* layer,
                           lefiGeomPolygon* p,
-                          double           offset_x,
-                          double           offset_y)
+                          double offset_x,
+                          double offset_y)
 {
   std::vector<Point> points;
 
@@ -480,7 +480,7 @@ int lefin::busBitChars(const char* busBit)
   if (busBit[0] == '\0' || busBit[1] == '\0')
     _logger->error(utl::ODB, 179, "invalid BUSBITCHARS ({})\n", busBit);
 
-  _left_bus_delimeter  = busBit[0];
+  _left_bus_delimeter = busBit[0];
   _right_bus_delimeter = busBit[1];
 
   if (_lib) {
@@ -586,7 +586,7 @@ void lefin::layer(lefiLayer* layer)
   }
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
-    bool valid     = true;
+    bool valid = true;
     bool supported = true;
     if (type.getValue() == dbTechLayerType::ROUTING) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
@@ -625,6 +625,10 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         valid
             = lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
+      else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")){
+        lefTechLayerCutEnclosureRuleParser encParser(this);
+        encParser.parse(layer->propValue(iii), l);
+      }
       else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(
@@ -668,7 +672,7 @@ void lefin::layer(lefiLayer* layer)
   else if (layer->hasXYOffset())
     l->setOffsetXY(dbdist(layer->offsetX()), dbdist(layer->offsetY()));
 
-  int                     j;
+  int j;
   dbTechLayerSpacingRule* cur_rule;
   if (layer->hasSpacingNumber()) {
     for (j = 0; j < layer->numSpacing(); j++) {
@@ -714,12 +718,12 @@ void lefin::layer(lefiLayer* layer)
                                   dbdist(layer->spacing(j)),
                                   layer->hasSpacingSamenetPGonly(j));
       } else if (layer->hasSpacingEndOfLine(j)) {
-        double w  = layer->spacingEolWidth(j);
+        double w = layer->spacingEolWidth(j);
         double wn = layer->spacingEolWithin(j);
         if (layer->hasSpacingParellelEdge(j)) {
           double ps = layer->spacingParSpace(j);
           double pw = layer->spacingParWithin(j);
-          bool   t  = layer->hasSpacingTwoEdges(j);
+          bool t = layer->hasSpacingTwoEdges(j);
           cur_rule->setEol(
               dbdist(w), dbdist(wn), true, dbdist(ps), dbdist(pw), t);
         } else {
@@ -744,8 +748,8 @@ void lefin::layer(lefiLayer* layer)
   for (j = 0; j < layer->numSpacingTable(); j++) {
     cur_sptbl = layer->spacingTable(j);
     if (cur_sptbl->isInfluence()) {
-      lefiInfluence*           cur_ifl = cur_sptbl->influence();
-      int                      iflidx;
+      lefiInfluence* cur_ifl = cur_sptbl->influence();
+      int iflidx;
       dbTechV55InfluenceEntry* iflitem;
       for (iflidx = 0; iflidx < cur_ifl->numInfluenceEntry(); iflidx++) {
         iflitem = dbTechV55InfluenceEntry::create(l);
@@ -755,7 +759,7 @@ void lefin::layer(lefiLayer* layer)
       }
     } else if (cur_sptbl->isParallel()) {
       lefiParallel* cur_ipl = cur_sptbl->parallel();
-      int           wddx, lndx;
+      int wddx, lndx;
 
       l->initV55LengthIndex(cur_ipl->numLength());
       for (lndx = 0; lndx < cur_ipl->numLength(); lndx++)
@@ -793,7 +797,7 @@ void lefin::layer(lefiLayer* layer)
   }
 
   dbTechMinCutRule* cur_cut_rule;
-  bool              from_above, from_below;
+  bool from_above, from_below;
   for (j = 0; j < layer->numMinimumcut(); j++) {
     cur_cut_rule = dbTechMinCutRule::create(l);
     from_above = from_below = false;
@@ -825,10 +829,10 @@ void lefin::layer(lefiLayer* layer)
   }
 
   dbTechLayerAntennaRule* cur_ant_rule;
-  lefiAntennaModel*       cur_model;
-  lefiAntennaPWL*         cur_pwl;
-  std::vector<double>     dffdx, dffratio;
-  int                     k;
+  lefiAntennaModel* cur_model;
+  lefiAntennaPWL* cur_pwl;
+  std::vector<double> dffdx, dffratio;
+  int k;
 
   if (layer->numAntennaModel() > 0) {
     for (j = 0; j < MIN(layer->numAntennaModel(), 2); j++) {
@@ -1180,7 +1184,7 @@ void lefin::nonDefault(lefiNonDefault* rule)
 
   for (i = 0; i < rule->numSpacingRules(); ++i) {
     lefiSpacing* spacing = rule->spacingRule(i);
-    dbTechLayer* l1      = _tech->findLayer(spacing->name1());
+    dbTechLayer* l1 = _tech->findLayer(spacing->name1());
     if (l1 == nullptr) {
       _logger->warn(utl::ODB,
                     189,
@@ -1210,7 +1214,7 @@ void lefin::nonDefault(lefiNonDefault* rule)
 
   for (i = 0; i < rule->numUseVia(); ++i) {
     const char* vname = rule->viaName(i);
-    dbTechVia*  via   = _tech->findVia(vname);
+    dbTechVia* via = _tech->findVia(vname);
 
     if (via == NULL) {
       _logger->warn(utl::ODB, 191, "error: undefined VIA {}", vname);
@@ -1222,7 +1226,7 @@ void lefin::nonDefault(lefiNonDefault* rule)
   }
 
   for (i = 0; i < rule->numUseViaRule(); ++i) {
-    const char*            rname   = rule->viaRuleName(i);
+    const char* rname = rule->viaRuleName(i);
     dbTechViaGenerateRule* genrule = _tech->findViaGenerateRule(rname);
 
     if (genrule == NULL) {
@@ -1236,7 +1240,7 @@ void lefin::nonDefault(lefiNonDefault* rule)
   }
 
   for (i = 0; i < rule->numMinCuts(); ++i) {
-    const char*  lname = rule->cutLayerName(i);
+    const char* lname = rule->cutLayerName(i);
     dbTechLayer* layer = _tech->findLayer(lname);
 
     if (layer == NULL) {
@@ -1306,7 +1310,7 @@ void lefin::pin(lefiPin* pin)
   //
   // Parse and install antenna info
   //
-  int          i;
+  int i;
   dbTechLayer* tply;
 
   if (pin->lefiPin::hasAntennaPartialMetalArea())
@@ -1376,9 +1380,9 @@ void lefin::pin(lefiPin* pin)
       term->addDiffAreaEntry(pin->lefiPin::antennaDiffArea(i), tply);
     }
 
-  int                    j;
+  int j;
   dbTechAntennaPinModel* curmodel;
-  lefiPinAntennaModel*   curlefmodel;
+  lefiPinAntennaModel* curlefmodel;
   if (pin->lefiPin::numAntennaModel() > 0) {
     // NOTE: Only two different oxides supported for now!
     for (i = 0; (i < pin->lefiPin::numAntennaModel()) && (i < 2); i++) {
@@ -1454,7 +1458,7 @@ void lefin::pin(lefiPin* pin)
   }
 
   bool created_mpins = false;
-  int  numPorts      = pin->lefiPin::numPorts();
+  int numPorts = pin->lefiPin::numPorts();
   for (i = 0; i < numPorts; i++) {
     lefiGeometries* geometries = pin->lefiPin::port(i);
     if (geometries->numItems()) {
@@ -1605,9 +1609,9 @@ void lefin::setDBUPerMicron(int dbu)
     case 8000:
     case 10000:
     case 20000:
-      _dist_factor    = dbu;
+      _dist_factor = dbu;
       _dbu_per_micron = dbu;
-      _area_factor    = _dbu_per_micron * _dbu_per_micron;
+      _area_factor = _dbu_per_micron * _dbu_per_micron;
       break;
     default:
       ++_errors;
@@ -1801,7 +1805,7 @@ void lefin::viaRule(lefiViaRule* viaRule)
   int idx;
   for (idx = 0; idx < viaRule->numLayers(); ++idx) {
     lefiViaRuleLayer* leflay = viaRule->layer(idx);
-    dbTechLayer*      layer  = _tech->findLayer(leflay->name());
+    dbTechLayer* layer = _tech->findLayer(leflay->name());
 
     if (layer == NULL) {
       _logger->warn(utl::ODB,
@@ -1848,7 +1852,7 @@ void lefin::viaRule(lefiViaRule* viaRule)
 
 void lefin::viaGenerateRule(lefiViaRule* viaRule)
 {
-  const char*            name = viaRule->name();
+  const char* name = viaRule->name();
   dbTechViaGenerateRule* rule
       = dbTechViaGenerateRule::create(_tech, name, viaRule->hasDefault());
 
@@ -1860,7 +1864,7 @@ void lefin::viaGenerateRule(lefiViaRule* viaRule)
   int idx;
   for (idx = 0; idx < viaRule->numLayers(); ++idx) {
     lefiViaRuleLayer* leflay = viaRule->layer(idx);
-    dbTechLayer*      layer  = _tech->findLayer(leflay->name());
+    dbTechLayer* layer = _tech->findLayer(leflay->name());
 
     if (layer == NULL) {
       _logger->warn(utl::ODB,
@@ -1905,10 +1909,10 @@ void lefin::viaGenerateRule(lefiViaRule* viaRule)
     }
 
     if (viaRule->layer(idx)->hasRect()) {
-      int  xMin = dbdist(viaRule->layer(idx)->xl());
-      int  yMin = dbdist(viaRule->layer(idx)->yl());
-      int  xMax = dbdist(viaRule->layer(idx)->xh());
-      int  yMax = dbdist(viaRule->layer(idx)->yh());
+      int xMin = dbdist(viaRule->layer(idx)->xl());
+      int yMin = dbdist(viaRule->layer(idx)->yl());
+      int xMax = dbdist(viaRule->layer(idx)->xh());
+      int yMax = dbdist(viaRule->layer(idx)->yh());
       Rect r(xMin, yMin, xMax, yMax);
       layrule->setRect(r);
     }
@@ -2008,7 +2012,7 @@ dbTech* lefin::createTech(const char* lef_file)
     return NULL;
   };
 
-  _tech        = dbTech::create(_db, _dbu_per_micron);
+  _tech = dbTech::create(_db, _dbu_per_micron);
   _create_tech = true;
 
   if (!readLef(lef_file)) {
@@ -2042,7 +2046,7 @@ dbLib* lefin::createLib(const char* name, const char* lef_file)
   };
 
   setDBUPerMicron(_tech->getDbUnitsPerMicron());
-  _lib_name   = name;
+  _lib_name = name;
   _create_lib = true;
 
   if (!readLef(lef_file)) {
@@ -2077,9 +2081,9 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
     return NULL;
   };
 
-  _tech        = dbTech::create(_db, _dbu_per_micron);
-  _lib_name    = lib_name;
-  _create_lib  = true;
+  _tech = dbTech::create(_db, _dbu_per_micron);
+  _lib_name = lib_name;
+  _create_lib = true;
   _create_tech = true;
 
   if (!readLef(lef_file)) {
@@ -2104,7 +2108,7 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
   return _lib;
 }
 
-dbLib* lefin::createTechAndLib(const char*             lib_name,
+dbLib* lefin::createTechAndLib(const char* lib_name,
                                std::list<std::string>& file_list)
 {
   lefrSetRelaxMode();
@@ -2125,13 +2129,13 @@ dbLib* lefin::createTechAndLib(const char*             lib_name,
   _tech = dbTech::create(_db, _dbu_per_micron);
   assert(_tech);
 
-  _lib_name    = lib_name;
-  _create_lib  = true;
+  _lib_name = lib_name;
+  _create_lib = true;
   _create_tech = true;
 
   std::list<std::string>::iterator it;
   for (it = file_list.begin(); it != file_list.end(); ++it) {
-    std::string str      = *it;
+    std::string str = *it;
     const char* lef_file = str.c_str();
     _logger->info(utl::ODB, 234, "Reading LEF file:  {} ...", lef_file);
     if (!lefin_parse(this, _logger, lef_file)) {
@@ -2174,8 +2178,8 @@ bool lefin::updateLib(dbLib* lib, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
-  _tech       = lib->getTech();
-  _lib        = lib;
+  _tech = lib->getTech();
+  _lib = lib;
   _create_lib = true;
   setDBUPerMicron(_tech->getDbUnitsPerMicron());
 
@@ -2193,9 +2197,9 @@ bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
   lefrSetRelaxMode();
 
   init();
-  _lib         = lib;
-  _tech        = lib->getTech();
-  _create_lib  = true;
+  _lib = lib;
+  _tech = lib->getTech();
+  _create_lib = true;
   _create_tech = true;
   dbu_per_micron(_tech->getDbUnitsPerMicron());  // set override-flag, because
                                                  // the tech is being updated.
@@ -2210,7 +2214,7 @@ bool lefin::updateTech(dbTech* tech, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
-  _tech        = tech;
+  _tech = tech;
   _create_tech = true;
   dbu_per_micron(_tech->getDbUnitsPerMicron());  // set override-flag, because
                                                  // the tech is being updated.

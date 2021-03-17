@@ -86,6 +86,7 @@ swig_lib(NAME      openroad_swig_py
          NAMESPACE ord
          LANGUAGE  python
          I_FILE    OpenRoad-py.i
+         SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
 )
 
 target_link_libraries(openroad_swig_py
@@ -127,14 +128,14 @@ add_subdirectory(rsz)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(dpl)
-add_subdirectory(finale)
+add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
-add_subdirectory(PDNSim)
+add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 add_subdirectory(gui)
@@ -170,7 +171,7 @@ target_link_libraries(openroad
   openroad_swig_py
   replace
   dpl
-  finale
+  fin
   rsz
   ppl
   flute
@@ -186,7 +187,7 @@ target_link_libraries(openroad
   gui
   TritonRoute
   mpl
-  pdnsim
+  psm
   antennachecker
   PartitionMgr
   utility

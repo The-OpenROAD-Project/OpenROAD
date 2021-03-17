@@ -217,6 +217,8 @@ class HTreeBuilder : public TreeBuilder
   void createSingleBufferClockNet();
   void initTopLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
                          std::vector<const ClockInst*> &sinkInsts);
+  void initSecondLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
+                         std::vector<const ClockInst*> &sinkInsts);
   void computeBranchSinks(
       LevelTopology& topology,
       unsigned branchIdx,
@@ -251,7 +253,7 @@ class HTreeBuilder : public TreeBuilder
   void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
                          std::vector<const ClockInst*> &sinkInsts,
                          float maxDiameter,
-                         unsigned clusterSize);
+                         unsigned clusterSize, bool secondLevel=false);
   void assignSinksToBranches(
       LevelTopology& topology,
       unsigned branchPtIdx1,

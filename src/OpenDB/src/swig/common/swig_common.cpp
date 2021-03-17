@@ -25,13 +25,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <array>
+#include "swig_common.h"
+
 #include <libgen.h>
+
+#include <array>
 
 #include "opendb/defin.h"
 #include "opendb/lefin.h"
 #include "opendb/lefout.h"
-#include "swig_common.h"
 #include "utility/Logger.h"
 
 using namespace boost::polygon::operators;
@@ -86,12 +88,11 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
     return false;
 }
 
-odb::dbLib*
-read_lef(odb::dbDatabase* db, const char* path)
+odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
   utl::Logger* logger = new utl::Logger(NULL);
   odb::lefin lefParser(db, logger, false);
-  const char *libname = basename(const_cast<char*>(path));
+  const char* libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
     return lefParser.createTechAndLib(libname, path);
   } else {
@@ -99,11 +100,10 @@ read_lef(odb::dbDatabase* db, const char* path)
   }
 }
 
-odb::dbChip*
-read_def(odb::dbDatabase* db, std::string path)
+odb::dbChip* read_def(odb::dbDatabase* db, std::string path)
 {
   utl::Logger* logger = new utl::Logger(NULL);
-  std::vector<odb::dbLib *> libs;
+  std::vector<odb::dbLib*> libs;
   for (auto* lib : db->getLibs()) {
     libs.push_back(lib);
   }
@@ -111,9 +111,9 @@ read_def(odb::dbDatabase* db, std::string path)
   return defParser.createChip(libs, path.c_str());
 }
 
-int
-write_def(odb::dbBlock* block, const char* path,
-	      odb::defout::Version version)
+int write_def(odb::dbBlock* block,
+              const char* path,
+              odb::defout::Version version)
 {
   utl::Logger* logger = new utl::Logger(NULL);
   odb::defout writer(logger);
@@ -161,6 +161,18 @@ int write_db(odb::dbDatabase* db, const char* db_path)
   }
   db->write(fp);
   fclose(fp);
+  return 1;
+}
+
+int writeEco(odb::dbBlock* block, const char* filename)
+{
+  odb::dbDatabase::writeEco(block, filename);
+  return 1;
+}
+
+int readEco(odb::dbBlock* block, const char* filename)
+{
+  odb::dbDatabase::readEco(block, filename);
   return 1;
 }
 

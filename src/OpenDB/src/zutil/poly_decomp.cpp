@@ -52,7 +52,7 @@ class PolyDecomp
   {
     Node* _src;
     Node* _tgt;
-    Side  _side;
+    Side _side;
     Edge() {}
     bool inside_y(int y);
     bool contains_y(int y);
@@ -61,8 +61,8 @@ class PolyDecomp
   struct Node
   {
     Point _p;
-    Edge*    _in_edge;
-    Edge*    _out_edge;
+    Edge* _in_edge;
+    Edge* _out_edge;
     Node() {}
     int x() { return _p.getX(); };
     int y() { return _p.getY(); };
@@ -84,23 +84,22 @@ class PolyDecomp
 
   std::vector<Edge*> _edges;
   std::vector<Node*> _nodes;
-  std::list<Edge*>   _active_edges;
+  std::list<Edge*> _active_edges;
   std::vector<Node*> _active_nodes;
 
   Node* new_node(Point p);
   Edge* new_edge(Node* src, Node* tgt, Side side);
-  void  clear();
-  void  add_edges(std::vector<Node*>::iterator& itr, int scanline);
-  void  insert_edge(Edge* e, std::list<Edge*>::iterator& aeitr);
-  void  scan_edges(int scanline, std::vector<Rect>& rects);
-  void  purge_edges(int scanline);
+  void clear();
+  void add_edges(std::vector<Node*>::iterator& itr, int scanline);
+  void insert_edge(Edge* e, std::list<Edge*>::iterator& aeitr);
+  void scan_edges(int scanline, std::vector<Rect>& rects);
+  void purge_edges(int scanline);
 
  public:
   PolyDecomp();
   ~PolyDecomp();
 
-  void decompose(const std::vector<Point>& points,
-                 std::vector<Rect>&        rects);
+  void decompose(const std::vector<Point>& points, std::vector<Rect>& rects);
 };
 
 inline bool PolyDecomp::Edge::contains_y(int y)
@@ -146,9 +145,9 @@ void PolyDecomp::clear()
 
 PolyDecomp::Node* PolyDecomp::new_node(Point p)
 {
-  Node* n      = new Node();
-  n->_p        = p;
-  n->_in_edge  = NULL;
+  Node* n = new Node();
+  n->_p = p;
+  n->_in_edge = NULL;
   n->_out_edge = NULL;
   _nodes.push_back(n);
   return n;
@@ -156,10 +155,10 @@ PolyDecomp::Node* PolyDecomp::new_node(Point p)
 
 PolyDecomp::Edge* PolyDecomp::new_edge(Node* src, Node* tgt, Side side)
 {
-  Edge* e  = new Edge();
+  Edge* e = new Edge();
   e->_side = side;
-  e->_src  = src;
-  e->_tgt  = tgt;
+  e->_src = src;
+  e->_tgt = tgt;
   assert(src->_out_edge == NULL);
   src->_out_edge = e;
   assert(tgt->_in_edge == NULL);
@@ -170,7 +169,7 @@ PolyDecomp::Edge* PolyDecomp::new_edge(Node* src, Node* tgt, Side side)
 
 // assumes polygon points are in clockwise order
 void PolyDecomp::decompose(const std::vector<Point>& points,
-                           std::vector<Rect>&        rects)
+                           std::vector<Rect>& rects)
 {
   if (points.size() < 4)
     return;
@@ -202,8 +201,8 @@ void PolyDecomp::decompose(const std::vector<Point>& points,
     new_edge(u, w, RIGHT);
 
   std::sort(_active_nodes.begin(), _active_nodes.end(), NodeCompare());
-  std::vector<Node*>::iterator itr      = _active_nodes.begin();
-  int                          scanline = (*itr)->y();
+  std::vector<Node*>::iterator itr = _active_nodes.begin();
+  int scanline = (*itr)->y();
 
   for (;;) {
     add_edges(itr, scanline);
@@ -297,22 +296,22 @@ void PolyDecomp::scan_edges(int scanline, std::vector<Rect>& rects)
 
     if (left->inside_y(scanline))  // split intersected edge
     {
-      Node* u      = left->_src;
-      Node* v      = new_node(Point(u->x(), scanline));
+      Node* u = left->_src;
+      Node* v = new_node(Point(u->x(), scanline));
       u->_out_edge = NULL;
       v->_out_edge = left;
-      left->_src   = v;
-      left         = new_edge(u, v, LEFT);
+      left->_src = v;
+      left = new_edge(u, v, LEFT);
     }
 
     if (right->inside_y(scanline))  // split intersected edge
     {
-      Node* w     = right->_tgt;
-      Node* v     = new_node(Point(w->x(), scanline));
+      Node* w = right->_tgt;
+      Node* v = new_node(Point(w->x(), scanline));
       right->_tgt = v;
       v->_in_edge = right;
       w->_in_edge = NULL;
-      right       = new_edge(v, w, RIGHT);
+      right = new_edge(v, w, RIGHT);
     }
 
     Rect r(left->_src->_p, right->_src->_p);
@@ -334,7 +333,7 @@ void PolyDecomp::purge_edges(int scanline)
 }
 
 void decompose_polygon(const std::vector<Point>& points,
-                       std::vector<Rect>&        rects)
+                       std::vector<Rect>& rects)
 {
   PolyDecomp decomp;
   decomp.decompose(points, rects);
@@ -359,7 +358,7 @@ bool polygon_is_clockwise(const std::vector<Point>& P)
     int x = P[i].x();
     int y = P[i].y();
     if (y < yMin || (y == yMin && x < xMin)) {
-      b    = i;
+      b = i;
       yMin = y;
       xMin = x;
     }

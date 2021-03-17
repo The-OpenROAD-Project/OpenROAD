@@ -47,6 +47,7 @@ target_sources(rsz
     Resizer.cc
     Rebuffer.cc
     SteinerTree.cc
+    EstimateWireParasitics.cc
 )
 
 target_include_directories(rsz

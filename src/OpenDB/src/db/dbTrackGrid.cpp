@@ -78,8 +78,8 @@ bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
   return true;
 }
 
-void _dbTrackGrid::differences(dbDiff&             diff,
-                               const char*         field,
+void _dbTrackGrid::differences(dbDiff& diff,
+                               const char* field,
                                const _dbTrackGrid& rhs) const
 {
   DIFF_BEGIN
@@ -116,8 +116,8 @@ void _dbTrackGrid::out(dbDiff& diff, char side, const char* field) const
 dbTechLayer* dbTrackGrid::getTechLayer()
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  _dbDatabase*  db   = grid->getDatabase();
-  _dbTech*      tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbDatabase* db = grid->getDatabase();
+  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
   return (dbTechLayer*) tech->_layer_tbl->getPtr(grid->_layer);
 }
 
@@ -132,9 +132,9 @@ void dbTrackGrid::getGridX(std::vector<int>& x_grid)
   for (i = 0; i < grid->_x_origin.size(); ++i) {
     int j;
 
-    int x     = grid->_x_origin[i];
+    int x = grid->_x_origin[i];
     int count = grid->_x_count[i];
-    int step  = grid->_x_step[i];
+    int step = grid->_x_step[i];
 
     for (j = 0; j < count; ++j) {
       x_grid.push_back(x);
@@ -166,9 +166,9 @@ void dbTrackGrid::getGridY(std::vector<int>& y_grid)
   for (i = 0; i < grid->_y_origin.size(); ++i) {
     int j;
 
-    int y     = grid->_y_origin[i];
+    int y = grid->_y_origin[i];
     int count = grid->_y_count[i];
-    int step  = grid->_y_step[i];
+    int step = grid->_y_step[i];
 
     for (j = 0; j < count; ++j) {
       y_grid.push_back(y);
@@ -222,28 +222,28 @@ int dbTrackGrid::getNumGridPatternsY()
   return grid->_y_origin.size();
 }
 
-void dbTrackGrid::getGridPatternX(int  i,
+void dbTrackGrid::getGridPatternX(int i,
                                   int& origin_x,
                                   int& line_count,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   ZASSERT(i < (int) grid->_x_origin.size());
-  origin_x   = grid->_x_origin[i];
+  origin_x = grid->_x_origin[i];
   line_count = grid->_x_count[i];
-  step       = grid->_x_step[i];
+  step = grid->_x_step[i];
 }
 
-void dbTrackGrid::getGridPatternY(int  i,
+void dbTrackGrid::getGridPatternY(int i,
                                   int& origin_y,
                                   int& line_count,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   ZASSERT(i < (int) grid->_y_origin.size());
-  origin_y   = grid->_y_origin[i];
+  origin_y = grid->_y_origin[i];
   line_count = grid->_y_count[i];
-  step       = grid->_y_step[i];
+  step = grid->_y_step[i];
 }
 
 dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
@@ -254,7 +254,7 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
     return NULL;
 
   _dbTrackGrid* grid = block->_track_grid_tbl->create();
-  grid->_layer       = layer_->getImpl()->getOID();
+  grid->_layer = layer_->getImpl()->getOID();
   return (dbTrackGrid*) grid;
 }
 

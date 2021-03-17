@@ -40,7 +40,7 @@
 #include "geom.h"
 #include "odb.h"
 namespace utl {
-  class Logger;
+class Logger;
 }
 namespace odb {
 
@@ -79,10 +79,10 @@ class dbShape
   };
 
  private:
-  Type         _type;
-  Rect         _rect;
+  Type _type;
+  Rect _rect;
   dbTechLayer* _layer;
-  dbObject*    _via;
+  dbObject* _via;
 
  public:
   dbShape() : _type(SEGMENT), _layer(NULL), _via(NULL) {}
@@ -112,57 +112,57 @@ class dbShape
   {
   }
 
-  void setSegment(int          prev_x,
-                  int          prev_y,
-                  int          prev_ext,
-                  bool         has_prev_ext,
-                  int          cur_x,
-                  int          cur_y,
-                  int          cur_ext,
-                  bool         has_cur_ext,
-                  int          dw,
+  void setSegment(int prev_x,
+                  int prev_y,
+                  int prev_ext,
+                  bool has_prev_ext,
+                  int cur_x,
+                  int cur_y,
+                  int cur_ext,
+                  bool has_cur_ext,
+                  int dw,
                   dbTechLayer* layer);
 
   void setSegmentFromRect(int x1, int y1, int x2, int y2, dbTechLayer* layer);
 
   void setVia(dbVia* via, const Rect& r)
   {
-    _type  = VIA;
-    _rect  = r;
+    _type = VIA;
+    _rect = r;
     _layer = NULL;
-    _via   = (dbObject*) via;
+    _via = (dbObject*) via;
   }
 
   void setVia(dbTechVia* via, const Rect& r)
   {
-    _type  = TECH_VIA;
-    _rect  = r;
+    _type = TECH_VIA;
+    _rect = r;
     _layer = NULL;
-    _via   = (dbObject*) via;
+    _via = (dbObject*) via;
   }
 
   void setSegment(dbTechLayer* layer, const Rect& r)
   {
-    _type  = SEGMENT;
-    _rect  = r;
+    _type = SEGMENT;
+    _rect = r;
     _layer = layer;
-    _via   = NULL;
+    _via = NULL;
   }
 
   void setViaBox(dbTechVia* via, dbTechLayer* layer, const Rect& r)
   {
-    _type  = TECH_VIA_BOX;
-    _rect  = r;
+    _type = TECH_VIA_BOX;
+    _rect = r;
     _layer = layer;
-    _via   = (dbObject*) via;
+    _via = (dbObject*) via;
   }
 
   void setViaBox(dbVia* via, dbTechLayer* layer, const Rect& r)
   {
-    _type  = VIA_BOX;
-    _rect  = r;
+    _type = VIA_BOX;
+    _rect = r;
     _layer = layer;
-    _via   = (dbObject*) via;
+    _via = (dbObject*) via;
   }
 
   bool operator==(const dbShape& s)
@@ -269,20 +269,20 @@ class dbShape
 class dbWireShapeItr
 {
  public:
-  _dbWire*     _wire;
-  dbTech*      _tech;
-  dbBlock*     _block;
-  int          _idx;
-  int          _prev_x;
-  int          _prev_y;
-  int          _prev_ext;
-  bool         _has_prev_ext;
+  _dbWire* _wire;
+  dbTech* _tech;
+  dbBlock* _block;
+  int _idx;
+  int _prev_x;
+  int _prev_y;
+  int _prev_ext;
+  bool _has_prev_ext;
   dbTechLayer* _layer;
-  dbObject*    _via;
-  int          _dw;
-  int          _point_cnt;
-  int          _shape_id;
-  bool         _has_width;
+  dbObject* _via;
+  int _dw;
+  int _point_cnt;
+  int _shape_id;
+  bool _has_width;
 
   unsigned char nextOp(int& value);
   unsigned char peekOp();
@@ -293,7 +293,7 @@ class dbWireShapeItr
 
   void begin(dbWire* wire);
   bool next(dbShape& shape);
-  int  getShapeId();
+  int getShapeId();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -303,40 +303,40 @@ class dbWireShapeItr
 ///////////////////////////////////////////////////////////////////////////////
 struct dbWirePath
 {
-  int          junction_id;  // junction id of this point
-  Point        point;        // starting point of path
-  dbTechLayer* layer;        // starting layer of path
-  dbBTerm*     bterm;        // dbBTerm connected at this point, otherwise NULL
-  dbITerm*     iterm;        // dbITerm connected at this point, otherwise NULL
-  bool is_branch;  // true if this path is a branch from the current tree
+  int junction_id;     // junction id of this point
+  Point point;         // starting point of path
+  dbTechLayer* layer;  // starting layer of path
+  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise NULL
+  dbITerm* iterm;      // dbITerm connected at this point, otherwise NULL
+  bool is_branch;      // true if this path is a branch from the current tree
   bool is_short;  // true if this path is a virtual short to a previous junction
-  int  short_junction;         // junction id of the virtual short.
+  int short_junction;          // junction id of the virtual short.
   dbTechNonDefaultRule* rule;  // nondefaultrule for this path
   void dump(utl::Logger* logger, const char* group, int level) const;
 };
 
 struct dbWirePathShape
 {
-  int          junction_id;  // junction id of this point
-  Point        point;        // starting point of path
-  dbTechLayer* layer;        // layer of shape, or exit layer of via
-  dbBTerm*     bterm;        // dbBTerm connected at this point, otherwise NULL
-  dbITerm*     iterm;        // dbITerm connected at this point, otherwise NULL
-  dbShape      shape;        // shape at this point
+  int junction_id;     // junction id of this point
+  Point point;         // starting point of path
+  dbTechLayer* layer;  // layer of shape, or exit layer of via
+  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise NULL
+  dbITerm* iterm;      // dbITerm connected at this point, otherwise NULL
+  dbShape shape;       // shape at this point
 
   void dump(utl::Logger* logger, const char* group, int level) const;
 };
 
 class dbWirePathItr
 {
-  dbWireDecoder         _decoder;
+  dbWireDecoder _decoder;
   dbWireDecoder::OpCode _opcode;
-  int                   _prev_x;
-  int                   _prev_y;
-  int                   _prev_ext;
-  bool                  _has_prev_ext;
-  dbWire*               _wire;
-  int                   _dw;
+  int _prev_x;
+  int _prev_y;
+  int _prev_ext;
+  bool _has_prev_ext;
+  dbWire* _wire;
+  int _dw;
   dbTechNonDefaultRule* _rule;
 
   void getTerms(dbWirePathShape& s);
@@ -366,25 +366,25 @@ class dbInstShapeItr
   };
 
  private:
-  dbSet<dbBox>             _boxes;
-  dbSet<dbMPin>            _mpins;
-  dbSet<dbMTerm>           _mterms;
-  dbSet<dbBox>::iterator   _box_itr;
+  dbSet<dbBox> _boxes;
+  dbSet<dbMPin> _mpins;
+  dbSet<dbMTerm> _mterms;
+  dbSet<dbBox>::iterator _box_itr;
   dbSet<dbMTerm>::iterator _mterm_itr;
-  dbSet<dbMPin>::iterator  _mpin_itr;
-  int                      _state;
-  dbInst*                  _inst;
-  dbMaster*                _master;
-  dbMPin*                  _mpin;
-  dbTransform              _transform;
-  IteratorType             _type;
-  dbTechVia*               _via;
-  dbSet<dbBox>             _via_boxes;
-  dbSet<dbBox>::iterator   _via_box_itr;
-  int                      _via_x;
-  int                      _via_y;
-  bool                     _expand_vias;
-  int                      _prev_state;
+  dbSet<dbMPin>::iterator _mpin_itr;
+  int _state;
+  dbInst* _inst;
+  dbMaster* _master;
+  dbMPin* _mpin;
+  dbTransform _transform;
+  IteratorType _type;
+  dbTechVia* _via;
+  dbSet<dbBox> _via_boxes;
+  dbSet<dbBox>::iterator _via_box_itr;
+  int _via_x;
+  int _via_y;
+  bool _expand_vias;
+  int _prev_state;
 
   void getShape(dbBox* box, dbShape& shape);
   void getViaBox(dbBox* box, dbShape& shape);
@@ -404,21 +404,21 @@ class dbInstShapeItr
 class dbITermShapeItr
 {
  private:
-  dbSet<dbBox>            _boxes;
-  dbSet<dbMPin>           _mpins;
-  dbMTerm*                _mterm;
-  dbSet<dbBox>::iterator  _box_itr;
+  dbSet<dbBox> _boxes;
+  dbSet<dbMPin> _mpins;
+  dbMTerm* _mterm;
+  dbSet<dbBox>::iterator _box_itr;
   dbSet<dbMPin>::iterator _mpin_itr;
-  int                     _state;
-  dbITerm*                _iterm;
-  dbMPin*                 _mpin;
-  dbTransform             _transform;
-  dbTechVia*              _via;
-  dbSet<dbBox>            _via_boxes;
-  dbSet<dbBox>::iterator  _via_box_itr;
-  int                     _via_x;
-  int                     _via_y;
-  bool                    _expand_vias;
+  int _state;
+  dbITerm* _iterm;
+  dbMPin* _mpin;
+  dbTransform _transform;
+  dbTechVia* _via;
+  dbSet<dbBox> _via_boxes;
+  dbSet<dbBox>::iterator _via_box_itr;
+  int _via_x;
+  int _via_y;
+  bool _expand_vias;
 
   void getShape(dbBox* box, dbShape& shape);
   void getViaBox(dbBox* box, dbShape& shape);
@@ -472,29 +472,29 @@ class dbHierInstShapeItr
  public:
   enum Filter
   {
-    NONE           = 0,
-    BLOCK_PIN      = 0x00001,
-    BLOCK_OBS      = 0x00002,
-    INST_OBS       = 0x00004,
-    INST_PIN       = 0x00008,
-    INST_VIA       = 0x00010,
-    SIGNAL_WIRE    = 0x00020,
-    SIGNAL_VIA     = 0x00040,
-    POWER_WIRE     = 0x00080,
-    POWER_VIA      = 0x00100,
-    CLOCK_WIRE     = 0x00200,
-    CLOCK_VIA      = 0x00400,
-    RESET_WIRE     = 0x00800,
-    RESET_VIA      = 0x01000,
-    NET_WIRE       = 0x02000,
-    NET_SWIRE      = 0x04000,
+    NONE = 0,
+    BLOCK_PIN = 0x00001,
+    BLOCK_OBS = 0x00002,
+    INST_OBS = 0x00004,
+    INST_PIN = 0x00008,
+    INST_VIA = 0x00010,
+    SIGNAL_WIRE = 0x00020,
+    SIGNAL_VIA = 0x00040,
+    POWER_WIRE = 0x00080,
+    POWER_VIA = 0x00100,
+    CLOCK_WIRE = 0x00200,
+    CLOCK_VIA = 0x00400,
+    RESET_WIRE = 0x00800,
+    RESET_VIA = 0x01000,
+    NET_WIRE = 0x02000,
+    NET_SWIRE = 0x04000,
     NET_WIRE_SHAPE = 0x08000,
-    NET_SBOX       = 0x10000
+    NET_SBOX = 0x10000
   };
 
  private:
   std::vector<dbTransform> _transforms;
-  dbShapeItrCallback*      _callback;
+  dbShapeItrCallback* _callback;
 
   bool drawNet(unsigned filter, dbNet* net, bool& draw_via, bool& draw_segment);
   void getShape(dbBox* box, dbShape& shape);
@@ -503,17 +503,17 @@ class dbHierInstShapeItr
   void pop_transform();
   bool iterate_inst(dbInst* inst, unsigned filter, int level);
   bool iterate_swires(unsigned filter,
-                      dbNet*   net,
-                      bool     draw_vias,
-                      bool     draw_segments);
+                      dbNet* net,
+                      bool draw_vias,
+                      bool draw_segments);
   bool iterate_swire(unsigned filter,
                      dbSWire* swire,
-                     bool     draw_vias,
-                     bool     draw_segments);
+                     bool draw_vias,
+                     bool draw_segments);
   bool iterate_wire(unsigned filter,
-                    dbNet*   net,
-                    bool     draw_vias,
-                    bool     draw_segments);
+                    dbNet* net,
+                    bool draw_vias,
+                    bool draw_segments);
   bool iterate_leaf(dbInst* inst, unsigned filter, int level);
   void push_transform(dbTransform t);
   void transform(dbShape& shape);
@@ -593,15 +593,15 @@ inline uint dbShape::getDY() const
   return _rect.dy();
 }
 
-inline void dbShape::setSegment(int          prev_x,
-                                int          prev_y,
-                                int          prev_ext,
-                                bool         has_prev_ext,
-                                int          cur_x,
-                                int          cur_y,
-                                int          cur_ext,
-                                bool         has_cur_ext,
-                                int          dw,
+inline void dbShape::setSegment(int prev_x,
+                                int prev_y,
+                                int prev_ext,
+                                bool has_prev_ext,
+                                int cur_x,
+                                int cur_y,
+                                int cur_ext,
+                                bool has_cur_ext,
+                                int dw,
                                 dbTechLayer* layer)
 {
   int x1, x2, y1, y2;
@@ -675,19 +675,19 @@ inline void dbShape::setSegment(int          prev_x,
   _type = dbShape::SEGMENT;
   _rect.reset(x1, y1, x2, y2);
   _layer = layer;
-  _via   = NULL;
+  _via = NULL;
 }
 
-inline void dbShape::setSegmentFromRect(int          x1,
-                                        int          y1,
-                                        int          x2,
-                                        int          y2,
+inline void dbShape::setSegmentFromRect(int x1,
+                                        int y1,
+                                        int x2,
+                                        int y2,
                                         dbTechLayer* layer)
 {
   _type = dbShape::SEGMENT;
   _rect.reset(x1, y1, x2, y2);
   _layer = layer;
-  _via   = nullptr;
+  _via = nullptr;
 }
 
 //

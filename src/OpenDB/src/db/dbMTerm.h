@@ -51,23 +51,23 @@ class dbDiff;
 
 struct _dbMTermFlags
 {
-  dbIoType::Value  _io_type : 4;
+  dbIoType::Value _io_type : 4;
   dbSigType::Value _sig_type : 4;
-  uint             _mark : 1;
-  uint             _spare_bits : 23;
+  uint _mark : 1;
+  uint _spare_bits : 23;
 };
 
 class _dbMTerm : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbMTermFlags                _flags;
-  uint                         _order_id;
-  char*                        _name;
-  dbId<_dbMTerm>               _next_entry;
-  dbId<_dbMTerm>               _next_mterm;
-  dbId<_dbMPin>                _pins;
-  dbId<_dbTarget>              _targets;
+  _dbMTermFlags _flags;
+  uint _order_id;
+  char* _name;
+  dbId<_dbMTerm> _next_entry;
+  dbId<_dbMTerm> _next_mterm;
+  dbId<_dbMPin> _pins;
+  dbId<_dbTarget> _targets;
   dbId<_dbTechAntennaPinModel> _oxide1;
   dbId<_dbTechAntennaPinModel> _oxide2;
 
@@ -93,12 +93,12 @@ class _dbMTerm : public _dbObject
 
 inline _dbMTerm::_dbMTerm(_dbDatabase*)
 {
-  _flags._io_type    = dbIoType::INPUT;
-  _flags._sig_type   = dbSigType::SIGNAL;
-  _flags._mark       = 0;
+  _flags._io_type = dbIoType::INPUT;
+  _flags._sig_type = dbSigType::SIGNAL;
+  _flags._mark = 0;
   _flags._spare_bits = 0;
-  _order_id          = 0;
-  _name              = 0;
+  _order_id = 0;
+  _name = 0;
   _par_met_area.clear();
   _par_met_sidearea.clear();
   _par_cut_area.clear();

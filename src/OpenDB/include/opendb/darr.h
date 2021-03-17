@@ -34,6 +34,7 @@
 ////	AUTHOR: SANJEEV MAHAJAN
 ---------------------------------------------------------------*/
 #include <stdlib.h>
+
 #include "assert.h"
 #pragma once
 
@@ -45,15 +46,15 @@ class Darr
   ~Darr(void);
   void insert(T el);
   void remove(int i);
-  T    pop();
-  T    get(int i);
+  T pop();
+  T get(int i);
   void set(int i, T el);
-  int  n();
+  int n();
   void dsort(int cmp(const void* a, const void* b));
   void reset(int n = 0);
 
  private:
-  T*  _ar;
+  T* _ar;
   int _n;
   int _tot;
 };
@@ -61,7 +62,7 @@ class Darr
 template <class T>
 Darr<T>::Darr(int n)
 {
-  _n   = 0;
+  _n = 0;
   _tot = n;
   if (n == 0) {
     _ar = NULL;
@@ -76,8 +77,8 @@ void Darr<T>::insert(T el)
     _ar[_n++] = el;
     return;
   }
-  _tot    = 2 * _tot + 1;
-  T*  ara = new T[_tot];
+  _tot = 2 * _tot + 1;
+  T* ara = new T[_tot];
   int i;
   for (i = 0; i < _n; i++)
     ara[i] = _ar[i];
@@ -142,4 +143,3 @@ void Darr<T>::dsort(int cmp(const void* a, const void* b))
 {
   qsort(_ar, _n, sizeof(T), cmp);
 }
-

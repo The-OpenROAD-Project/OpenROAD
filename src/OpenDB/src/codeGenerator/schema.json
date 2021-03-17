@@ -28,6 +28,9 @@
       "src":"dbTechLayerCutSpacingTableDefRule.json"
     },
     {
+      "src":"dbTechLayerCutEnclosureRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -250,50 +253,56 @@
       "first":"dbTechLayer",
       "second":"dbTechLayerCutClassRule",
       "type":"1_n",
-      "tbl_name":"_cut_class_rules_tbl",
+      "tbl_name":"cut_class_rules_tbl_",
       "hash":true
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerSpacingEolRule",
       "type":"1_n",
-      "tbl_name":"_spacing_eol_rules_tbl"
+      "tbl_name":"spacing_eol_rules_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerCutSpacingRule",
       "type":"1_n",
-      "tbl_name":"_cut_spacing_rules_tbl"
+      "tbl_name":"cut_spacing_rules_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerMinStepRule",
       "type":"1_n",
-      "tbl_name":"_minstep_rules_tbl"
+      "tbl_name":"minstep_rules_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerCornerSpacingRule",
       "type":"1_n",
-      "tbl_name":"_corner_spacing_rules_tbl"
+      "tbl_name":"corner_spacing_rules_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerSpacingTablePrlRule",
       "type":"1_n",
-      "tbl_name":"_spacing_table_prl_rules_tbl"
+      "tbl_name":"spacing_table_prl_rules_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerCutSpacingTableOrthRule",
       "type":"1_n",
-      "tbl_name":"_cut_spacing_table_orth_tbl"
+      "tbl_name":"cut_spacing_table_orth_tbl_"
     },
     {
       "first":"dbTechLayer",
       "second":"dbTechLayerCutSpacingTableDefRule",
       "type":"1_n",
-      "tbl_name":"_cut_spacing_table_def_tbl"
+      "tbl_name":"cut_spacing_table_def_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerCutEnclosureRule",
+      "type":"1_n",
+      "tbl_name":"cut_enc_rules_tbl_"
     }
   ]
 }

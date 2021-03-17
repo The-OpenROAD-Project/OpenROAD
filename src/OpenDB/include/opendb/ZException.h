@@ -49,7 +49,7 @@ class ZException
 {
  public:
   const char* _msg;
-  bool        _free_msg;
+  bool _free_msg;
 
   ZException();
   ZException(const char* fmt, ...) ADS_FORMAT_PRINTF(2, 3);
@@ -63,7 +63,7 @@ class ZOutOfMemory : public ZException
   ZOutOfMemory()
   {
     _free_msg = false;
-    _msg      = "Out of memory";
+    _msg = "Out of memory";
   }
 };
 
@@ -83,11 +83,14 @@ class ZAssert : public ZException
 // See http://cnicholson.net/2009/02/stupid-c-tricks-adventures-in-assert
 // Avoids unused variable warnings.
 #ifdef NDEBUG
-    #define ZASSERT(x) do { (void)sizeof(x); } while(0)  
-#else  
-    #define ZASSERT(x) assert(x)
-#endif  
-  
+#define ZASSERT(x)    \
+  do {                \
+    (void) sizeof(x); \
+  } while (0)
+#else
+#define ZASSERT(x) assert(x)
+#endif
+
 #define ZALLOCATED(expr)    \
   do {                      \
     if ((expr) == NULL)     \
@@ -95,5 +98,3 @@ class ZAssert : public ZException
   } while (0);
 
 }  // namespace odb
-
-

@@ -43,7 +43,9 @@
 #define ADS_TM_BIND_HPP
 
 #include <errno.h>
+
 #include <string>
+
 #include "ZNamespace.h"
 #include "ZSession.h"
 #include "db.h"
@@ -54,7 +56,7 @@
 namespace odb {
 
 Tcl_SavedResult savedResult[128];
-int             curSavedResult = 0;
+int curSavedResult = 0;
 
 ZInterface::ZInterface()
 {
@@ -70,7 +72,7 @@ int ZInterface::event(const char* name,
                       ...)
 {
   const char* attr = attr1;
-  const char* val  = val1;
+  const char* val = val1;
   std::string event_str;
   event_str = "zevent";
   event_str.append(" ");
@@ -128,7 +130,7 @@ int ZInterface::event(const char* name,
   }
 
   const char* result = Tcl_GetStringResult(_context._interp);
-  int         x      = (int) strtol(result, NULL, 10);
+  int x = (int) strtol(result, NULL, 10);
 
   Tcl_RestoreResult(_context._interp, &savedResult[--curSavedResult]);
 
@@ -157,7 +159,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
       case Z_SHORT:
       case Z_USHORT:
       case Z_INT: {
-        int  val = va_arg(args, int);
+        int val = va_arg(args, int);
         char buffer[16];
         snprintf(buffer, 16, "%d", val);
         event_str.append(buffer);
@@ -166,7 +168,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
 
       case Z_UINT: {
         unsigned int val = va_arg(args, unsigned int);
-        char         buffer[16];
+        char buffer[16];
         snprintf(buffer, 16, "%u", val);
         event_str.append(buffer);
         break;
@@ -175,7 +177,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
       case Z_FLOAT:
       case Z_DOUBLE: {
         double val = va_arg(args, double);
-        char   buffer[128];
+        char buffer[128];
         snprintf(buffer, 128, "%g", val);
         event_str.append(buffer);
         break;
@@ -198,7 +200,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
       }
 
       case Z_ZOBJECT: {
-        ZObject*    val  = va_arg(args, ZObject*);
+        ZObject* val = va_arg(args, ZObject*);
         const char* name = _context._session->_ns->addZObject(val);
         event_str.append(name);
         break;
@@ -206,7 +208,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
 
       case Z_DBOBJECT: {
         dbObject* val = va_arg(args, dbObject*);
-        char      buffer[256];
+        char buffer[256];
         val->getDbName(buffer);
         event_str.append(buffer);
         break;
@@ -242,7 +244,7 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
     error(0, "TCL evaluation 2 failed on (%s - %d).\n", event_str.c_str(), rc);
 
   const char* result = Tcl_GetStringResult(_context._interp);
-  int         x      = (int) strtol(result, NULL, 10);
+  int x = (int) strtol(result, NULL, 10);
 
   Tcl_RestoreResult(_context._interp, &savedResult[--curSavedResult]);
 
@@ -266,7 +268,7 @@ int ZInterface::idle(int level = 0)
 
 int ZInterface::milos(int code, const char* msg, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -278,7 +280,7 @@ int ZInterface::milos(int code, const char* msg, ...)
 
 int ZInterface::ade(int code, const char* msg, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -293,7 +295,7 @@ int ZInterface::warning(int code, const char* msg, ...)
   if (checkWarning(msg) == 1)
     return TCL_OK;
 
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -308,7 +310,7 @@ int ZInterface::info(int code, const char* msg, ...)
   if (checkWarning(msg) == 1)
     return TCL_OK;
 
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -320,7 +322,7 @@ int ZInterface::info(int code, const char* msg, ...)
 
 int ZInterface::notice(int code, const char* msg, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -332,7 +334,7 @@ int ZInterface::notice(int code, const char* msg, ...)
 
 int ZInterface::verbose(int code, const char* msg, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);
@@ -344,7 +346,7 @@ int ZInterface::verbose(int code, const char* msg, ...)
 
 void ZInterface::error(int /* unused: code */, const char* msg, ...)
 {
-  char    buffer[8192];
+  char buffer[8192];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, 8192, msg, args);

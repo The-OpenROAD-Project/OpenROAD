@@ -49,7 +49,8 @@ class dbDiff;
 struct _dbSBoxFlags
 {
   dbWireShapeType::Value _wire_type : 6;
-  uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 = octilinear
+  uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
+                        // octilinear
   uint _spare_bits : 24;
 };
 
@@ -68,7 +69,7 @@ class _dbSBox : public _dbBox
   bool operator<(const _dbSBox& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbSBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  int  equal(const _dbSBox& rhs) const;
+  int equal(const _dbSBox& rhs) const;
 };
 
 inline _dbSBox::_dbSBox(_dbDatabase* db, const _dbSBox& b)
@@ -78,8 +79,8 @@ inline _dbSBox::_dbSBox(_dbDatabase* db, const _dbSBox& b)
 
 inline _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
 {
-  _sflags._wire_type  = dbWireShapeType::COREWIRE;
-  _sflags._direction  = 0;
+  _sflags._wire_type = dbWireShapeType::COREWIRE;
+  _sflags._direction = 0;
   _sflags._spare_bits = 0;
 }
 

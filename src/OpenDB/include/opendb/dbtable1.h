@@ -47,8 +47,8 @@ class Ath__dbtable
 {
  private:
   Ath__array2d<T*>* _array;
-  Ath__nameTable*   _nameTable;
-  AthPool<T>*       _pool;
+  Ath__nameTable* _nameTable;
+  AthPool<T>* _pool;
 
  public:
   Ath__dbtable(uint cnt, bool, bool memDbg = false)
@@ -60,7 +60,7 @@ class Ath__dbtable
     _array = new Ath__array2d<T*>(32, 512, 256, 8);
 
     _nameTable = new Ath__nameTable(cnt);
-    _pool      = new AthPool<T>(memDbg, cnt);
+    _pool = new AthPool<T>(memDbg, cnt);
   }
   Ath__dbtable()
   {
@@ -73,8 +73,8 @@ class Ath__dbtable
  private:
  public:
   char* getName(uint id) { return _nameTable->getName(id); }
-  uint  getBankCnt() { return _array->getBankCnt(); }
-  uint  getCnt(uint ii) { return _array->getCnt(ii); }
+  uint getBankCnt() { return _array->getBankCnt(); }
+  uint getCnt(uint ii) { return _array->getCnt(ii); }
 
   T* get(uint ii, uint jj) { return _array->get(ii, jj); }
   T* getPtr(uint mtag)
@@ -132,7 +132,7 @@ class Ath__dbtable
   uint getNextTag(uint cnt, uint* t)
   {
     Ath__itype w;
-    uint       type = w.cnt2type(cnt);
+    uint type = w.cnt2type(cnt);
 
     w.setType(type);
     w.set(0, _array->getCnt(type));
@@ -185,7 +185,7 @@ class Ath__dbtable
     uint type = getTypeNum(tag, &num);
 
     uint addr;
-    T*   a = _pool->alloc(&addr);
+    T* a = _pool->alloc(&addr);
     uint n = _array->add(type, a);
     if (n != num) {
       fprintf(stderr, "ERROR: db: getNewByType netTag=%u", tag);
@@ -210,7 +210,7 @@ class Ath__dbtable
     uint tag = getNextTag(cnt, &type);
 
     uint addr;
-    T*   a = _pool->alloc(NULL, &addr);
+    T* a = _pool->alloc(NULL, &addr);
 
     if (skipName == 0) {
       *nameId = _nameTable->addNewName(name, tag);
@@ -219,7 +219,7 @@ class Ath__dbtable
     return a;
   }
   uint getTag(char* name) { return _nameTable->getDataId(name); }
-  T*   getPtr(char* name)
+  T* getPtr(char* name)
   {
     uint num;
     uint type = getType(_nameTable->getDataId(name), &num);
@@ -276,7 +276,7 @@ class Ath__dbtable
     return cnt;
   }
   uint startIterator() { return _array->startIteratorAll(); }
-  T*   getNext()
+  T* getNext()
   {
     T* a = NULL;
     if (_array->getNext(&a) > 0)
@@ -285,5 +285,3 @@ class Ath__dbtable
       return NULL;
   }
 };
-
-

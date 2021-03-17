@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -50,28 +50,28 @@ class _dbDatabase;
 
 struct dbTechLayerCutClassRuleFlags
 {
-  bool _length_valid : 1;
-  bool _cuts_valid : 1;
-  uint _spare_bits : 30;
+  bool length_valid_ : 1;
+  bool cuts_valid_ : 1;
+  uint spare_bits_ : 30;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerCutClassRuleFlags   _flags;
-  char*                          _name;
-  int                            _width;
-  int                            _length;
-  int                            _num_cuts;
+  dbTechLayerCutClassRuleFlags flags_;
+  char* _name;
+  int width_;
+  int length_;
+  int num_cuts_;
   dbId<_dbTechLayerCutClassRule> _next_entry;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
   ~_dbTechLayerCutClassRule();
@@ -81,16 +81,16 @@ class _dbTechLayerCutClassRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutClassRule& rhs) const;
-  void differences(dbDiff&                         diff,
-                   const char*                     field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerCutClassRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

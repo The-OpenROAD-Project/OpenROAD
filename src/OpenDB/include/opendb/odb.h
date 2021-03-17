@@ -40,8 +40,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef unsigned int  uint;
+typedef unsigned int uint;
 typedef unsigned char uchar;
 
-typedef long long          int64;
+typedef long long int64;
 typedef unsigned long long uint64;

@@ -61,6 +61,7 @@ struct GSegment
         finalLayer(l1)
   {
   }
+  bool isVia() { return (initX == finalX && initY == finalY); }
 };
 
 class GCellCongestion

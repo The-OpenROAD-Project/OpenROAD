@@ -21,8 +21,8 @@
 #include "lefin.h"
 
 namespace lefTechLayerCutClass {
-namespace qi      = boost::spirit::qi;
-namespace ascii   = boost::spirit::ascii;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
 using ascii::char_;
 using boost::fusion::at_c;
@@ -40,14 +40,14 @@ void addCutClassRule(boost::fusion::vector<std::string,
                                            double,
                                            boost::optional<double>,
                                            boost::optional<int>>& params,
-                     odb::dbTechLayer*                            layer,
-                     odb::lefin*                                  lefin)
+                     odb::dbTechLayer* layer,
+                     odb::lefin* lefin)
 {
   std::string name = at_c<0>(params);
-  auto        rule = odb::dbTechLayerCutClassRule::create(layer, name.c_str());
+  auto rule = odb::dbTechLayerCutClassRule::create(layer, name.c_str());
   rule->setWidth(lefin->dbdist(at_c<1>(params)));
   auto length = at_c<2>(params);
-  auto cnt    = at_c<3>(params);
+  auto cnt = at_c<3>(params);
   if (length.is_initialized()) {
     rule->setLengthValid(true);
     rule->setLength(lefin->dbdist(length.value()));
@@ -58,10 +58,10 @@ void addCutClassRule(boost::fusion::vector<std::string,
   }
 }
 template <typename Iterator>
-bool parse(Iterator          first,
-           Iterator          last,
+bool parse(Iterator first,
+           Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin*       lefin)
+           odb::lefin* lefin)
 {
   qi::rule<Iterator, std::string(), ascii::space_type> _string;
   _string %= lexeme[+(char_ - ' ')];
@@ -78,9 +78,9 @@ bool parse(Iterator          first,
 
 namespace odb {
 
-bool lefTechLayerCutClassParser::parse(std::string  s,
+bool lefTechLayerCutClassParser::parse(std::string s,
                                        dbTechLayer* layer,
-                                       odb::lefin*  l)
+                                       odb::lefin* l)
 {
   return lefTechLayerCutClass::parse(s.begin(), s.end(), layer, l);
 }
