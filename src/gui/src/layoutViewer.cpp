@@ -177,6 +177,7 @@ class GuiPainter : public Painter
   void drawString(int x, int y, int offset, const std::string& s) override
   {
     painter_->save();
+    auto dy = painter_->transform().dy();
     painter_->setPen(QPen(Qt::white, 0));
     painter_->setBrush(QBrush());
     painter_->drawText(x, y, QString::fromStdString(s));
@@ -1012,6 +1013,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Always last so on top
   drawHighlighted(gui_painter);
 
+  // auto font = painter->font();
+  // font.setPointSize(16 / pixels_per_dbu_);
+  // painter->setFont(font);
   // drawRulers(gui_painter);
 }
 
@@ -1055,30 +1059,38 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
         Point pt1, pt2;
         int arg_min = std::distance(
             dists.begin(), std::min_element(dists.begin(), dists.end()));
-        if (arg_min == 0) {  // Closer to Left Edge
-          pt1 = Point(pin_center.getX() + max_dim, pin_center.getY() + max_dim);
-          pt2 = Point(pin_center.getX() + max_dim, pin_center.getY() - max_dim);
-        } else if (arg_min == 1) {  // Closer to Right Edge
-          pt1 = Point(pin_center.getX() - max_dim, pin_center.getY() - max_dim);
-          pt2 = Point(pin_center.getX() - max_dim, pin_center.getY() + max_dim);
-        } else if (arg_min == 2) {  // Closer to top Edge
-          pt1 = Point(pin_center.getX() - max_dim, pin_center.getY() - max_dim);
-          pt2 = Point(pin_center.getX() + max_dim, pin_center.getY() - max_dim);
-        } else {  // Closer to Bottom Edge
-          pt1 = Point(pin_center.getX() - max_dim, pin_center.getY() + max_dim);
-          pt2 = Point(pin_center.getX() + max_dim, pin_center.getY() + max_dim);
+        if (arg_min <= 1) {  // Closer to Left/Right Edge
+          if (pin_dir == odb::dbIoType::INPUT) {
+            pt1 = Point(pin_center.getX() + max_dim,
+                        pin_center.getY() + max_dim);
+            pt2 = Point(pin_center.getX() + max_dim,
+                        pin_center.getY() - max_dim);
+          } else {
+            pt1 = Point(pin_center.getX() - max_dim,
+                        pin_center.getY() - max_dim);
+            pt2 = Point(pin_center.getX() - max_dim,
+                        pin_center.getY() + max_dim);
+          }
+        } else {  // Closer to top/bot Edge
+          if (pin_dir == odb::dbIoType::OUTPUT
+              || pin_dir == odb::dbIoType::INOUT) {
+            pt1 = Point(pin_center.getX() - max_dim,
+                        pin_center.getY() - max_dim);
+            pt2 = Point(pin_center.getX() + max_dim,
+                        pin_center.getY() - max_dim);
+          } else {
+            pt1 = Point(pin_center.getX() - max_dim,
+                        pin_center.getY() + max_dim);
+            pt2 = Point(pin_center.getX() + max_dim,
+                        pin_center.getY() + max_dim);
+          }
         }
-
-        // QColor red_color("yellow");
-        // painter->setPen(red_color);
-        // painter->setBrush(red_color);
-        // painter->drawRect(QRect(QPoint(pin_rect.xMin(), pin_rect.yMin()),
-        //                        QPoint(pin_rect.xMax(), pin_rect.yMax())));
 
         painter->setPen(layer_color);
         path.moveTo(pt1.getX(), pt1.getY());
 
         path.lineTo(pt2.getX(), pt2.getY());
+
         path.lineTo(pin_center.getX(), pin_center.getY());
         path.lineTo(pt1.getX(), pt1.getY());
 
