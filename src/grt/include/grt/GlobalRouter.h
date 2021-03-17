@@ -166,6 +166,8 @@ class GlobalRouter
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int minLayer);
   void setMaxRoutingLayer(const int maxLayer);
+  void setMinLayerForClock(const int minLayer);
+  void setMaxLayerForClock(const int maxLayer);
   void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
   void setPitchesInTile(const int pitchesInTile);
@@ -192,7 +194,7 @@ class GlobalRouter
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
-  void runFastRoute(bool onlySignal);
+  void runFastRoute();
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
@@ -283,8 +285,8 @@ class GlobalRouter
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void saveCapacities(int previousMinLayer, int previousMaxLayer);
-  void restoreCapacities(int previousMinLayer, int previousMaxLayer);
+  Capacities saveCapacities(int previousMinLayer, int previousMaxLayer);
+  void restoreCapacities(Capacities capacities, int previousMinLayer, int previousMaxLayer);
   int getEdgeResource(int x1, int y1, int x2, int y2,
                       odb::dbTechLayer* tech_layer, odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
@@ -368,10 +370,6 @@ class GlobalRouter
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
   int _clockCost;
-
-  // Antenna variables
-  int*** oldHUsages_;
-  int*** oldVUsages_;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;
