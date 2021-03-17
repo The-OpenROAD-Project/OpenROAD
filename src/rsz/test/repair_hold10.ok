@@ -37,8 +37,8 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 977
 [INFO GRT-0111] Final number of vias: 54
 [INFO GRT-0112] Final usage 3D: 1139
-[INFO GRT-0018] Total wirelength: 6927 um
 [WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0018] Total wirelength: 6927 um
 worst slack -1.95
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 [INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.557ns delay for hold repairs.
@@ -81,6 +81,6 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 978
 [INFO GRT-0111] Final number of vias: 56
 [INFO GRT-0112] Final usage 3D: 1146
-[INFO GRT-0018] Total wirelength: 6941 um
 [WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0018] Total wirelength: 6941 um
 worst slack -1.40

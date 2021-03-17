@@ -568,8 +568,10 @@ void LayoutViewer::drawRows(dbBlock* block,
   if (!options_->areRowsVisible()) {
     return;
   }
-  painter->setPen(Qt::white);
-  painter->setBrush(QColor(0, 0xff, 0, 0x70));
+  QPen pen(QColor(0, 0xff, 0, 0x70));
+  pen.setCosmetic(true);
+  painter->setPen(pen);
+  painter->setBrush(Qt::NoBrush);
   for (dbRow* row : block->getRows()) {
     int x;
     int y;

@@ -1333,7 +1333,13 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tech->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
-  tmpLayer->setMinWidth(layer->getMinWidth());
+  if(layer->getMinWidth() > layer->getWidth())
+    logger->warn(
+        DRT,
+        210,
+        "layer {} minWidth is larger than width. Using width as minWidth",
+        layer->getName());
+  tmpLayer->setMinWidth(std::min(layer->getMinWidth(), layer->getWidth()));
   // add minWidth constraint
   auto minWidthConstraint
       = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());

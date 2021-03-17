@@ -44,7 +44,7 @@ Routing clock nets...
 [INFO GRT-0110] Final usage: 33
 [INFO GRT-0111] Final number of vias: 27
 [INFO GRT-0112] Final usage 3D: 114
-[INFO GRT-0010] #Routed clock nets: 2
+[INFO GRT-0010] Routed clock nets: 2
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 50%
@@ -75,6 +75,7 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 120
 [INFO GRT-0111] Final number of vias: 119
 [INFO GRT-0112] Final usage 3D: 477
+[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 1677 um
 [INFO GRT-0014] Num routed nets: 15
 No differences found.

@@ -327,7 +327,6 @@ void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getNet() != nullptr)
       _grouter->addDirtyNet(iterm->getNet());
-    continue;
   }
 }
 
