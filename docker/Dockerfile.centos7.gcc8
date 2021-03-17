@@ -1,19 +1,22 @@
 FROM centos:centos7 AS base-dependencies
-LABEL maintainer="Vitor Bandeira <bandeira@ieee.org>"
+LABEL maintainer="Abdelrahman Hosny <abdelrahman_hosny@brown.edu>"
 
 # Install dev and runtime dependencies
 RUN yum group install -y "Development Tools" \
     && yum install -y https://repo.ius.io/ius-release-el7.rpm \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
-    && yum install -y llvm-toolset-7.0 llvm-toolset-7.0-libomp-devel \
     && yum install -y qt5-qtbase-devel \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
-RUN scl enable devtoolset-8 bash
+ENV CC=/opt/rh/devtoolset-8/root/usr/bin/gcc \
+    CPP=/opt/rh/devtoolset-8/root/usr/bin/cpp \
+    CXX=/opt/rh/devtoolset-8/root/usr/bin/g++ \
+    PATH=/opt/rh/devtoolset-8/root/usr/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:/opt/rh/devtoolset-8/root/usr/lib64/dyninst:/opt/rh/devtoolset-8/root/usr/lib/dyninst:/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:$LD_LIBRARY_PATH
 
 # Install CMake
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
@@ -73,18 +76,12 @@ RUN yum install -y gettext-devel help2man texinfo \
     && make install -j $(nproc) \
     && cd - \
     && rm -rf flex
-    
+
 # spdlog required by OpenDB
-
-# These are referenced by cmake
-ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
-    CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++
-
 RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
     && cd spdlog \
     && mkdir build \
     && cd build \
-    && source scl_source enable llvm-toolset-7.0 \ 
     && cmake .. \
     && make install -j
 
@@ -98,8 +95,5 @@ FROM base-dependencies AS builder
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-
 # Build
-RUN source scl_source enable llvm-toolset-7.0 && \
-    cmake -B build . && \
-    cmake --build build -j 8
+RUN cmake -B build . && cmake --build build -j 8
