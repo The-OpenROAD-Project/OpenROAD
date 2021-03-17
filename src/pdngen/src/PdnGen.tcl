@@ -1943,6 +1943,7 @@ proc generate_lower_metal_followpin_rails {} {
             set xMax [expr $xMax + $ring_adjustment]
           }
         } else {
+          #Create lower metal followpin rails for voltage domains where the starting positions are not stdcell_min_x
           set core_power [get_domain_power [dict get $design_data core_domain]]
           set core_ground [get_domain_ground [dict get $design_data core_domain]]
           set domain_power [get_domain_power $voltage_domain]
@@ -2093,11 +2094,14 @@ proc generate_stripes {tag net_name} {
         set area [adjust_area_for_core_rings $lay $area]
       }
       # debug "area=$area (spec area=[dict get $grid_data area])"
+      #Create stripes for core domain's pwr/gnd nets
       if {$net_name == [get_domain_power [dict get $design_data core_domain]] || 
           $net_name == [get_domain_ground [dict get $design_data core_domain]]} {
         generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
+        #Split core domains pwr/gnd nets when they cross other voltage domains that have different pwr/gnd nets
         update_mesh_stripes_with_volatge_domains $tag $lay $net_name
       }
+      #Create stripes for each voltage domains
       foreach domain_name [dict keys $voltage_domains] {
         if {$domain_name == [dict get $design_data core_domain]} {continue} 
         set domain [$block findRegion $domain_name]
@@ -2107,6 +2111,7 @@ proc generate_stripes {tag net_name} {
         set domain_yMin [$rect yMin]
         set domain_xMax [$rect xMax]
         set domain_yMax [$rect yMax]
+        #Do not create duplicate stripes if the voltage domain has the same pwr/gnd nets as the core domain
         if {($net_name == [get_domain_power $domain_name] && $net_name != [get_domain_power [dict get $design_data core_domain]]) ||
               ($net_name == [get_domain_ground $domain_name] && $net_name != [get_domain_ground [dict get $design_data core_domain]])} {
           set rail_width [get_rails_max_width]
@@ -2690,6 +2695,8 @@ proc export_opendb_specialnet {net_name signal_type} {
             [regexp [dict get $pattern pin_name] [$mterm getName]]} {
             odb::dbITerm_connect $inst $net $mterm
           } else {
+            #PHY cells like ENDCAPS, WELLTAPS have uncertain pwr/gnd connections when there are voltage domains.
+            #This is to detect where the PHY cells are placed, the pwr/gnd pins are connected automatically
             set box [$inst getBBox]
             set inst_llx [$box xMin]
             set inst_lly [$box yMin]
@@ -3858,7 +3865,7 @@ proc add_grid {} {
   # debug "Ground straps"
   foreach gnd_net [dict get $design_data ground_nets] {
     set tag "GROUND"
-    generate_stripes $tag  $gnd_net
+    generate_stripes $tag $gnd_net
   }
   merge_stripes
 
@@ -4416,6 +4423,7 @@ variable voltage_domains {
   }
 }
 
+# This is a proc to get the first voltage domain that overlaps with the input box
 proc get_voltage_domain {llx lly urx ury} {
   variable block
   variable design_data
@@ -4453,6 +4461,7 @@ proc get_domain_ground {domain} {
   return [dict get $voltage_domains $domain primary_ground]
 }
 
+# This proc is to split core domain's power stripes if they cross interal voltage domains that have different pwr/gnd nets
 proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
   variable block
   variable stripes
@@ -4468,11 +4477,28 @@ proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
   set stdcell_max_x [lindex $stdcell_area 2]
   set stdcell_max_y [lindex $stdcell_area 3]
   
+  set ring_adjustment 0
+  if {[set ring_vertical_layer [get_core_ring_vertical_layer_name]] != ""} {
+    if {[dict exists $grid_data core_ring $ring_vertical_layer pad_offset]} {
+      set pad_area [find_pad_offset_area]
+      set offset [expr [dict get $grid_data core_ring $ring_vertical_layer pad_offset]]
+      set ring_adjustment [expr $stdcell_min_x - ([lindex $pad_area 0] + $offset)]
+    }
+    if {[dict exists $grid_data core_ring $ring_vertical_layer core_offset]} {
+      set ring_adjustment [expr \
+        [dict get $grid_data core_ring $ring_vertical_layer core_offset] + \
+        [dict get $grid_data core_ring $ring_vertical_layer spacing] + \
+        3 * [dict get $grid_data core_ring $ring_vertical_layer width] / 2 \
+      ]
+    }
+  }
+  
   set first_row [lindex [$block getRows] 0]
   set row_site [$first_row getSite]
   set site_width [$row_site getWidth]
   set row_height [$row_site getHeight]
-  
+
+  # This voltage domain to core domain margin is hard coded for now
   set MARGIN 6
   set X_MARGIN [expr ($MARGIN * $row_height / $site_width) * $site_width]
   set Y_MARGIN [expr $MARGIN * $row_height]
@@ -4482,85 +4508,80 @@ proc update_mesh_stripes_with_volatge_domains {tag lay snet_name} {
     set domain [$block findRegion $domain_name]
     set first_rect [lindex [$domain getBoundaries] 0]
 
+    # voltage domain area
     set domain_xMin [expr [$first_rect xMin]]
     set domain_yMin [expr [$first_rect yMin]]
     set domain_xMax [expr [$first_rect xMax]]
     set domain_yMax [expr [$first_rect yMax]]
     
+    # voltage domain area + margin
     set domain_boundary_xMin [expr [$first_rect xMin] - $X_MARGIN]
     set domain_boundary_yMin [expr [$first_rect yMin] - $Y_MARGIN + $rails_width / 2]
     set domain_boundary_xMax [expr [$first_rect xMax] + $X_MARGIN]
     set domain_boundary_yMax [expr [$first_rect yMax] + $Y_MARGIN - $rails_width / 2]
-  
-    if {[get_domain_ground $domain_name] == $snet_name || [get_domain_power $domain_name] == $snet_name} {continue}
-    
-    foreach polygon $stripes($lay,$tag) {
-      foreach poly [odb::getPolygons $polygon] {
-        set pts []
-        foreach pt [odb::getPoints $poly] {
-          lappend pts [$pt getX] [$pt getY]
-        }
-        set stripe_xMin [lindex $pts 0]
-        set stripe_yMin [lindex $pts 1]
-        set stripe_xMax [lindex $pts 4]
-        set stripe_yMax [lindex $pts 5]
+   
+    if {[get_dir $lay] == "hor"} {
+      if {$domain_boundary_xMin < $stdcell_min_x + $site_width} {
+        set domain_boundary_xMin [expr $stdcell_min_x - $ring_adjustment]
+      }
+      if {$domain_boundary_xMax > $stdcell_max_x - $site_width} {
+        set domain_boundary_xMax [expr $stdcell_max_x + $ring_adjustment]
+      }
+    } else {
+      if {$domain_boundary_yMin < $stdcell_min_y + $row_height} {
+        set domain_boundary_yMin [expr $stdcell_min_y - $ring_adjustment]
+      }
+      if {$domain_boundary_yMax > $stdcell_max_y - $row_height} {
+        set domain_boundary_yMax [expr $stdcell_max_y + $ring_adjustment]
+      }
+    }
 
-        if {!($domain_boundary_yMin >= $stripe_yMax || $domain_boundary_xMin >= $stripe_xMax || \
-              $domain_boundary_xMax <= $stripe_xMin || $domain_boundary_yMax <= $stripe_yMin)} {
-          set idx [lsearch $stripes($lay,$tag) $polygon]
-          set stripes($lay,$tag) [lreplace $stripes($lay,$tag) $idx $idx]
-     
-          if {[get_dir $lay] == "hor"} {
-            if {$domain_boundary_xMax < [expr $stdcell_max_x - $site_width]} {
-              set right_stripe \
-                [odb::newSetFromRect \
-                  [expr $domain_boundary_xMax] \
-                  [expr $stripe_yMin] \
-                  [expr $stripe_xMax] \
-                  [expr $stripe_yMax] \
-                ]
-              add_stripe $lay $tag $right_stripe
-            }
-            
-            if {$domain_boundary_xMin > [expr $stdcell_min_x + $site_width]} {
-              set left_stripe \
-                [odb::newSetFromRect \
-                  [expr $stripe_xMin] \
-                  [expr $stripe_yMin] \
-                  [expr $domain_boundary_xMin] \
-                  [expr $stripe_yMax] \
-                ]
-              add_stripe $lay $tag $left_stripe
-            }
-          } else {
-            if {$domain_boundary_yMax < [expr $stdcell_max_y - $row_height]} {
-              set upper_stripe \
-                [odb::newSetFromRect \
-                  [expr $stripe_xMin] \
-                  [expr $domain_boundary_yMax] \
-                  [expr $stripe_xMax] \
-                  [expr $stripe_yMax] \
-                ]
-              add_stripe $lay $tag $upper_stripe
-            }
-            
-            if {$domain_boundary_yMin > [expr $stdcell_min_y + $row_height]} {
-              set lower_stripe \
-                [odb::newSetFromRect \
-                  [expr $stripe_xMin] \
-                  [expr $stripe_yMin] \
-                  [expr $stripe_xMax] \
-                  [expr $domain_boundary_yMin] \
-                ]
-              add_stripe $lay $tag $lower_stripe
-            }
-          }
-        }
+    # Core domain's pwr/gnd nets that are not shared should not cross the entire voltage domain area
+    set boundary_box \
+        [odb::newSetFromRect \
+          $domain_boundary_xMin \
+          $domain_boundary_yMin \
+          $domain_boundary_xMax \
+          $domain_boundary_yMax \
+        ]
+
+    if {[get_dir $lay] == "hor"} {
+      set domain_box \
+        [odb::newSetFromRect \
+          $domain_boundary_xMin \
+          $domain_yMin \
+          $domain_boundary_xMax \
+          $domain_yMax \
+        ]
+    } else {
+      set domain_box \
+        [odb::newSetFromRect \
+          $domain_xMin \
+          $domain_boundary_yMin \
+          $domain_xMax \
+          $domain_boundary_yMax \
+        ]
+    } 
+    # Core domain's pwr/gnd nets shared with a voltage domain should not cross the domains' pwr/gnd rings
+    set boundary_box_for_crossing_core_net [odb::subtractSet $boundary_box $domain_box]
+
+    for {set i 0} {$i < [llength $stripes($lay,$tag)]} {incr i} {
+      set updated_polygonSet [lindex $stripes($lay,$tag) $i]
+      if {$snet_name == [get_domain_ground $domain_name] ||
+          $snet_name == [get_domain_power $domain_name]} {
+        set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box_for_crossing_core_net]
+      } else {
+        set updated_polygonSet [odb::subtractSet $updated_polygonSet $boundary_box]
+      }
+      # This if statemet prevents from deleting domain rings
+      if {[llength [odb::getPolygons $updated_polygonSet]] > 0} {
+        set stripes($lay,$tag) [lreplace $stripes($lay,$tag) $i $i $updated_polygonSet]
       }
     }
   }
 }
 
+# This proc is to check if a pwr/gnd net is unique for all voltage domains, the setWildConnected can be used
 proc check_snet_is_unique {net} {
   variable voltage_domains
   
@@ -4584,6 +4605,8 @@ proc check_snet_is_unique {net} {
   
 } 
 
+# This proc generates power rings for voltage domains, tags for the core domain are POWER/GROUND, tags for the other
+# voltage domains are defined as POWER_<pwr-net> and GROUND_<gnd-net>
 proc generate_voltage_domain_rings {core_ring_data} {
   variable block
   variable voltage_domains
@@ -4712,6 +4735,7 @@ proc generate_voltage_domain_rings {core_ring_data} {
   }
 }
 
+# This proc detects pins used in pdn.cfg for global connections
 proc get_valid_mterms {net_name} {
   variable global_connections
   
