@@ -194,6 +194,12 @@ set_sink_buffer(const char* buffer)
 }
 
 void
+set_balance_levels(bool balance)
+{
+  getTritonCts()->getParms()->setBalanceLevels(balance);
+}
+
+void
 report_characterization()
 {
   getTritonCts()->getCharacterization()->report();

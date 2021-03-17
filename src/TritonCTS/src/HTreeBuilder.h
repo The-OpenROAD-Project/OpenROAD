@@ -181,7 +181,8 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net, Logger* logger) : TreeBuilder(options, net), _logger(logger){};
+  HTreeBuilder(CtsOptions* options, Clock& net, TreeBuilder* parent, Logger* logger) :
+                        TreeBuilder(options, net, parent), _logger(logger){};
 
   void run();
 

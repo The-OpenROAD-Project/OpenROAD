@@ -82,4 +82,5 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0091] Sinks after db write = 301 (Leaf Buffers = 28)
 [INFO CTS-0092] Avg Sink Wire Length = 125.0 um
+[INFO CTS-0094] Min path depth = 3 Max path depth = 7
  ... End of TritonCTS execution.

@@ -35,45 +35,40 @@
 
 #pragma once
 
-#include <deque>
-#include <functional>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "Clock.h"
 #include "CtsOptions.h"
-#include "TechChar.h"
+#include "TreeBuilder.h"
+#include "Clock.h"
 #include "Util.h"
+
+#include <cmath>
+#include <limits>
+#include <map>
+
+namespace utl {
+class Logger;
+} // namespace utl
 
 namespace cts {
 
-class TreeBuilder
+using utl::Logger;
+
+typedef std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>> CellLevelMap;
+class LevelBalancer
 {
  public:
-  TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
-      : _options(options), _clock(clk), _parent(parent)
-  {
-    if (parent)
-      parent->_children.emplace_back(this);
-  }
+  LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger):
+                _root(root), _options(options), _logger(logger) { }
 
-  virtual void run() = 0;
-  void setTechChar(TechChar& techChar) { _techChar = &techChar; }
-  const Clock& getClock() const { return _clock; }
-  Clock& getClock() { return _clock; }
-  void addChild(TreeBuilder* child) { _children.emplace_back(child); }
-  std::vector<TreeBuilder*> getChildren() const { return _children; }
-  TreeBuilder* getParent() const { return _parent; }
-  unsigned treeLevels() const { return _treeLevels; }
+  void run();
+  void addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*> cluster,
+          Clock::SubNet* driverNet, unsigned bufLevels, const std::string nameSuffix);
+  void fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, unsigned maxTreeDepth);
+  unsigned computeMaxTreeDepth(TreeBuilder* parent);
 
- protected:
-  CtsOptions* _options = nullptr;
-  Clock _clock;
-  TechChar* _techChar = nullptr;
-  TreeBuilder* _parent;
-  std::vector <TreeBuilder *> _children;
-  unsigned _treeLevels = 0;
+ private:
+  TreeBuilder* _root;
+  CtsOptions* _options;
+  Logger* _logger;
+  CellLevelMap cgcLevelMap;
 };
-
-}  // namespace cts
+}

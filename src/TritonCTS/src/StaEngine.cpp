@@ -58,19 +58,16 @@ void StaEngine::init()
   _network = _openSta->network();
 }
 
-void StaEngine::findClockRoots(utl::Logger* _logger)
+void StaEngine::findClockRoots(sta::Clock* clk,
+                    std::set<odb::dbNet*> &clockNets, utl::Logger* _logger)
 {
-  _logger->report(" Looking for clock sources...");
-
-  std::string clockNames = "";
-  for (sta::Clock* clk : _sdc->clks()) {
-    for (sta::Pin* pin : clk->leafPins()) {
-      clockNames += std::string(_network->name(pin)) + " ";
-    }
+  for (sta::Pin* pin : clk->leafPins()) {
+    odb::dbITerm* instTerm;
+    odb::dbBTerm* port;
+    ord::OpenRoad::openRoad()->getDbNetwork()->staToDb(pin, instTerm, port);
+    odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
+    clockNets.insert(net);
   }
-
-  _logger->report("    Clock names: {}", clockNames);
-  _options->setClockNets(clockNames);
 }
 
 float StaEngine::getInputPinCap(odb::dbITerm* iterm)
@@ -88,6 +85,25 @@ float StaEngine::getInputPinCap(odb::dbITerm* iterm)
     return inputPort->capacitance();
   } else {
     return 0.0;
+  }
+    
+}
+
+bool StaEngine::isSink(odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* masterCell = ord::OpenRoad::openRoad()->getDbNetwork()->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
+  if (!libertyCell) {
+    return false;
+  }
+
+  sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
+  sta::LibertyPort *inputPort = libertyCell->findLibertyPort(iterm->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->isRegClk();
+  } else {
+    return false;
   }
     
 }

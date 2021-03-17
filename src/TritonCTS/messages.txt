@@ -78,3 +78,5 @@ CTS 0089 SinkClustering.cpp:162    Matching1 size: {}.
 CTS 0090 HTreeBuilder.cpp:179          Sinks will be clustered based on buffer max cap.
 CTS 0091 TritonCTS.cpp:293         Sinks after db write = {} (Leaf Buffers = {})
 CTS 0092 TritonCTS.cpp:295         Avg Sink Wire Length = {:.3} um
+CTS 0093 LevelBalancer.cpp:53      Fixing tree levels for max depth {}
+CTS 0094 TritonCTS.cpp:337         Min path depth = {} Max path depth = {}

@@ -126,6 +126,8 @@ void HTreeBuilder::preSinkClustering(
     clusterCount++;
   }
   _topLevelSinksClustered = newSinkLocations;
+  if (clusterCount)
+    _treeLevels++;
 
   _logger->info(CTS, 19, " Tot. number of sinks after clustering: {}", _topLevelSinksClustered.size());
 }
@@ -229,6 +231,7 @@ void HTreeBuilder::run()
   }
 
   _clock.setMaxLevel(_topologyForEachLevel.size());
+  _treeLevels += _topologyForEachLevel.size();
 
   if (_options->getPlotSolution() || _logger->debugCheck(utl::CTS, "HTree", 2)) {
     plotSolution();

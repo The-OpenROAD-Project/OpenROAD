@@ -54,8 +54,7 @@ namespace cts {
 enum InstType : uint8_t
 {
   CLOCK_BUFFER,
-  CLOCK_SINK,
-  CLOCK_GATING_CELL
+  CLOCK_SINK
 };
 
 class ClockInst
@@ -135,6 +134,14 @@ class Clock
       _instances[idx] = newSink;
       _mapInstToIdx.erase(curSink);
       _mapInstToIdx[newSink] = idx;
+    }
+
+    void removeSinks()
+    {
+      ClockInst* driver = getDriver();
+      _instances.clear();
+      _mapInstToIdx.clear();
+      addInst(*driver);
     }
 
     std::string getName() const { return _name; }
@@ -244,6 +251,10 @@ class Clock
   void setNetObj(odb::dbNet* net) { _netObj = net; }
   odb::dbNet* getNetObj() { return _netObj; }
 
+  std::string getClockDriverName() const { return _clockPin; }
+  void setDriverPin(odb::dbObject* pin) { _driverPin = pin; }
+  odb::dbObject* getDriverPin() const { return _driverPin; }
+
  private:
   std::string _netName;
   std::string _clockPin;
@@ -257,6 +268,7 @@ class Clock
   std::unordered_map<std::string, ClockInst*> _mapNameToInst;
 
   odb::dbNet* _netObj;
+  odb::dbObject* _driverPin = nullptr;
 
   unsigned _numLevels = 0;
 };

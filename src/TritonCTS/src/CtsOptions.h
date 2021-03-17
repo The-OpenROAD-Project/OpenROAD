@@ -175,6 +175,8 @@ class CtsOptions
   unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
   void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
   unsigned getNumStaticLayers() const { return _numStaticLayers; }
+  void setBalanceLevels(bool balance) { _balanceLevels = balance; }
+  bool getBalanceLevels() const { return _balanceLevels; }
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
   void setSinkBufferMaxCap(double cap) { _sinkBufferMaxCap = cap; }
@@ -227,6 +229,7 @@ class CtsOptions
   long int _sinks = 0;
   double _maxDiameter = 50;
   unsigned _sinkClustersSize = 20;
+  bool _balanceLevels = false;
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;
