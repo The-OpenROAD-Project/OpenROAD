@@ -43,6 +43,8 @@ class Rect;
 
 namespace grt {
 
+typedef std::vector<std::vector<std::vector<int>>> CapacitiesVec;
+
 struct GSegment
 {
   int initX;
@@ -90,6 +92,19 @@ class GCellCongestion
   short ver_capacity_;
   short hor_usage_;
   short ver_usage_;
+};
+
+class Capacities
+{
+ public:
+  Capacities() = default;
+  CapacitiesVec& getHorCapacities() { return hor_capacities_; }
+  CapacitiesVec& getVerCapacities() { return ver_capacities_; }
+  void setHorCapacities(CapacitiesVec capacities) { hor_capacities_ = capacities; }
+  void setVerCapacities(CapacitiesVec capacities) { ver_capacities_ = capacities; }
+ private:
+  CapacitiesVec hor_capacities_;
+  CapacitiesVec ver_capacities_;
 };
 
 // class Route is defined in fastroute core.
