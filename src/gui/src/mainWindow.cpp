@@ -191,7 +191,7 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
-  congestion_setup_ = new QAction("Congestion Setup...");
+  congestion_setup_ = new QAction("Congestion Setup...", this);
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
