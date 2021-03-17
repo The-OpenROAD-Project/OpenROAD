@@ -1,8 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
 //
 // Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -31,33 +32,43 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "finale/Finale.h"
+#include "fin/MakeFinale.h"
 
-#include "DensityFill.h"
+#include <tcl.h>
 
-namespace fin {
+#include "fin/Finale.h"
+#include "openroad/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
-////////////////////////////////////////////////////////////////
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* fin_tcl_inits[];
+}  // namespace sta
 
-Finale::Finale() : db_(nullptr), debug_(false)
-{
+extern "C" {
+extern int Fin_Init(Tcl_Interp* interp);
 }
 
-void Finale::init(odb::dbDatabase* db, Logger* logger)
+namespace ord {
+
+fin::Finale* makeFinale()
 {
-  db_ = db;
-  logger_ = logger;
+  return new fin::Finale;
 }
 
-void Finale::setDebug()
+void deleteFinale(fin::Finale* finale)
 {
-  debug_ = true;
+  delete finale;
 }
 
-void Finale::densityFill(const char* rules_filename, const odb::Rect& fill_area)
+void initFinale(OpenRoad* openroad)
 {
-  DensityFill filler(db_, logger_, debug_);
-  filler.fill(rules_filename, fill_area);
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Fin_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(tcl_interp, sta::fin_tcl_inits);
+  openroad->getFinale()->init(openroad->getDb(), openroad->getLogger());
 }
 
-}  // namespace fin
+}  // namespace ord
