@@ -90,7 +90,6 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
-  _reportCongest = false;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -255,10 +254,6 @@ void GlobalRouter::runFastRoute()
   _routes.insert(result.begin(), result.end());
 
   computeWirelength();
-  if (_reportCongest) {
-    _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
-    _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
-  }
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
@@ -1312,12 +1307,6 @@ void GlobalRouter::setAllowOverflow(bool allowOverflow)
   _allowOverflow = allowOverflow;
 }
 
-void GlobalRouter::setReportCongestion(char* congestFile)
-{
-  _reportCongest = true;
-  _congestFile = congestFile;
-}
-
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
@@ -1803,12 +1792,6 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
   }
 
   return route;
-}
-
-std::vector<GCellCongestion> GlobalRouter::getCongestion() {
-  std::vector<GCellCongestion> congestion;
-  _fastRoute->findCongestionInformation(congestion);
-  return congestion;
 }
 
 void GlobalRouter::computeWirelength()
@@ -3254,29 +3237,6 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
   return (p1._x < p2._x) || (p1._x == p2._x && p1._y < p2._y)
          || (p1._x == p2._x && p1._y == p2._y && p1._layer < p2._layer);
 }
-
-GCellCongestion::GCellCongestion(int min_x, int min_y,
-                                 int max_x, int max_y,
-                                 int layer, short h_cap, short v_cap,
-                                 short h_usage, short v_usage) {
-  gcell_rect_ = odb::Rect(min_x, min_y, max_x, max_y);
-  layer_ = layer;
-  hor_capacity_ = h_cap;
-  ver_capacity_ = v_cap;
-  hor_usage_ = h_usage;
-  ver_usage_ = v_usage;
-};
-
-GCellCongestion::GCellCongestion(odb::Rect rect, int layer,
-                                 short h_cap, short v_cap,
-                                 short h_usage, short v_usage) {
-  gcell_rect_ = rect;
-  layer_ = layer;
-  hor_capacity_ = h_cap;
-  ver_capacity_ = v_cap;
-  hor_usage_ = h_usage;
-  ver_usage_ = v_usage;
-};
 
 class GrouteRenderer : public gui::Renderer
 {

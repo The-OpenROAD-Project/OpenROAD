@@ -169,7 +169,6 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-report_congestion congest_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
@@ -193,7 +192,7 @@ proc fastroute { args } {
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin -report_congestion \
+          -overflow_iterations -grid_origin \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
@@ -349,11 +348,6 @@ proc global_route { args } {
          [ord::db_layer_has_ver_tracks $layer]) } {
       utl::error GRT 57 "missing track structure."
     }
-  }
-
-  if { [info exists keys(-report_congestion)] } {
-    set congest_file $keys(-report_congestion)
-    grt::report_congestion $congest_file
   }
 
   grt::run_fastroute

@@ -186,7 +186,6 @@ class GlobalRouter
   void setGridOrigin(long x, long y);
   void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
-  void setReportCongestion(char* congestFile);
   void setMacroExtension(int macroExtension);
   void printGrid();
 
@@ -204,9 +203,6 @@ class GlobalRouter
 
   // congestion drive replace functions
   ROUTE_ getRoute();
-
-  // gui functions
-  std::vector<GCellCongestion> getCongestion();
 
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
@@ -336,19 +332,16 @@ class GlobalRouter
   std::vector<RoutingTracks>* _allRoutingTracks;
 
   // Flow variables
-  std::string _congestFile;
   float _adjustment;
   int _minRoutingLayer;
   int _maxRoutingLayer;
   bool _unidirectionalRoute;
   int _fixLayer;
   const int _selectedMetal = 3;
-  const float transitionLayerAdjust = 0.6;
   const int _gcellsOffset = 2;
   int _overflowIterations;
   int _pdRevForHighFanout;
   bool _allowOverflow;
-  bool _reportCongest;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   int _macroExtension;
