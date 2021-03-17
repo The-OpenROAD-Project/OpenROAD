@@ -11,5 +11,5 @@
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[ERROR PPL-0022] Vertical routing layer 13 not found.
-PPL-0022
+[ERROR PPL-0023] Routing tracks not found for layer 13.
+PPL-0023

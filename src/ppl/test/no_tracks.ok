@@ -7,5 +7,5 @@
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[ERROR PPL-0020] Horizontal routing layer 2 not found.
-PPL-0020
+[ERROR PPL-0021] Routing tracks not found for layer 2.
+PPL-0021
