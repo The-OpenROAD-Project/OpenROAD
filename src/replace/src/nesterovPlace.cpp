@@ -710,11 +710,11 @@ NesterovPlace::updateInitialPrevSLPCoordi() {
 
 
     float prevCoordiX 
-      = curSLPCoordi_[i].x + npVars_.initialPrevCoordiUpdateCoef 
+      = curSLPCoordi_[i].x - npVars_.initialPrevCoordiUpdateCoef
       * curSLPSumGrads_[i].x;
   
     float prevCoordiY
-      = curSLPCoordi_[i].y + npVars_.initialPrevCoordiUpdateCoef
+      = curSLPCoordi_[i].y - npVars_.initialPrevCoordiUpdateCoef
       * curSLPSumGrads_[i].y;
     
     FloatPoint newCoordi( 

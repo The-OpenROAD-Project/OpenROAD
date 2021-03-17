@@ -48,42 +48,42 @@
 [INFO GPL-0028] BinCnt: 4 4
 [INFO GPL-0029] BinSize: 29070 28000
 [INFO GPL-0030] NumBins: 16
-[NesterovSolve] Iter: 1 overflow: 0.188272 HPWL: 1938482
-[NesterovSolve] Iter: 10 overflow: 0.194734 HPWL: 1960536
-[NesterovSolve] Iter: 20 overflow: 0.210138 HPWL: 1979807
-[NesterovSolve] Iter: 30 overflow: 0.207007 HPWL: 1978744
-[NesterovSolve] Iter: 40 overflow: 0.205899 HPWL: 1978206
-[NesterovSolve] Iter: 50 overflow: 0.207256 HPWL: 1979754
-[NesterovSolve] Iter: 60 overflow: 0.206722 HPWL: 1979953
-[NesterovSolve] Iter: 70 overflow: 0.20654 HPWL: 1980282
-[NesterovSolve] Iter: 80 overflow: 0.206801 HPWL: 1981343
-[NesterovSolve] Iter: 90 overflow: 0.206597 HPWL: 1982421
-[NesterovSolve] Iter: 100 overflow: 0.206524 HPWL: 1984036
-[NesterovSolve] Iter: 110 overflow: 0.206539 HPWL: 1986426
-[NesterovSolve] Iter: 120 overflow: 0.206389 HPWL: 1989561
-[NesterovSolve] Iter: 130 overflow: 0.206313 HPWL: 1994346
-[NesterovSolve] Iter: 140 overflow: 0.206243 HPWL: 1999787
-[NesterovSolve] Iter: 150 overflow: 0.206178 HPWL: 2006303
-[NesterovSolve] Iter: 160 overflow: 0.206193 HPWL: 2013996
-[NesterovSolve] Iter: 170 overflow: 0.206203 HPWL: 2013348
-[NesterovSolve] Iter: 180 overflow: 0.206657 HPWL: 2016474
-[NesterovSolve] Iter: 190 overflow: 0.207036 HPWL: 2008478
-[NesterovSolve] Iter: 200 overflow: 0.207216 HPWL: 2012719
-[NesterovSolve] Iter: 210 overflow: 0.207555 HPWL: 2015499
-[NesterovSolve] Iter: 220 overflow: 0.207234 HPWL: 2002833
-[NesterovSolve] Iter: 230 overflow: 0.204583 HPWL: 1995684
-[NesterovSolve] Iter: 240 overflow: 0.199577 HPWL: 1986343
-[NesterovSolve] Iter: 250 overflow: 0.189193 HPWL: 1988108
-[NesterovSolve] Iter: 260 overflow: 0.175686 HPWL: 1985076
-[NesterovSolve] Iter: 270 overflow: 0.158414 HPWL: 1978929
-[NesterovSolve] Iter: 280 overflow: 0.136638 HPWL: 1985792
-[NesterovSolve] Iter: 290 overflow: 0.111381 HPWL: 1994840
-[NesterovSolve] Finished with Overflow: 0.099078
+[NesterovSolve] Iter: 1 overflow: 0.188335 HPWL: 1937885
+[NesterovSolve] Iter: 10 overflow: 0.194736 HPWL: 1960537
+[NesterovSolve] Iter: 20 overflow: 0.210134 HPWL: 1979782
+[NesterovSolve] Iter: 30 overflow: 0.207008 HPWL: 1978741
+[NesterovSolve] Iter: 40 overflow: 0.205883 HPWL: 1978224
+[NesterovSolve] Iter: 50 overflow: 0.207252 HPWL: 1979719
+[NesterovSolve] Iter: 60 overflow: 0.206724 HPWL: 1979869
+[NesterovSolve] Iter: 70 overflow: 0.206538 HPWL: 1980208
+[NesterovSolve] Iter: 80 overflow: 0.206811 HPWL: 1981279
+[NesterovSolve] Iter: 90 overflow: 0.206613 HPWL: 1982340
+[NesterovSolve] Iter: 100 overflow: 0.206531 HPWL: 1983967
+[NesterovSolve] Iter: 110 overflow: 0.20655 HPWL: 1986379
+[NesterovSolve] Iter: 120 overflow: 0.206405 HPWL: 1989483
+[NesterovSolve] Iter: 130 overflow: 0.206322 HPWL: 1994321
+[NesterovSolve] Iter: 140 overflow: 0.206252 HPWL: 1999819
+[NesterovSolve] Iter: 150 overflow: 0.206181 HPWL: 2006475
+[NesterovSolve] Iter: 160 overflow: 0.20619 HPWL: 2014135
+[NesterovSolve] Iter: 170 overflow: 0.206205 HPWL: 2013330
+[NesterovSolve] Iter: 180 overflow: 0.20666 HPWL: 2016333
+[NesterovSolve] Iter: 190 overflow: 0.207027 HPWL: 2008080
+[NesterovSolve] Iter: 200 overflow: 0.207175 HPWL: 2011104
+[NesterovSolve] Iter: 210 overflow: 0.207555 HPWL: 2015384
+[NesterovSolve] Iter: 220 overflow: 0.207212 HPWL: 2002954
+[NesterovSolve] Iter: 230 overflow: 0.204527 HPWL: 1996484
+[NesterovSolve] Iter: 240 overflow: 0.199471 HPWL: 1986889
+[NesterovSolve] Iter: 250 overflow: 0.188973 HPWL: 1987877
+[NesterovSolve] Iter: 260 overflow: 0.175308 HPWL: 1984866
+[NesterovSolve] Iter: 270 overflow: 0.157997 HPWL: 1978989
+[NesterovSolve] Iter: 280 overflow: 0.136171 HPWL: 1985974
+[NesterovSolve] Iter: 290 overflow: 0.110876 HPWL: 1995010
+[NesterovSolve] Finished with Overflow: 0.098632
 [INFO MPL-0005] Found 3 macros
 [INFO MPL-0009] West pins 21
 [INFO MPL-0009] East pins 22
 [INFO MPL-0009] North pins 16
 [INFO MPL-0009] South pins 16
-[INFO MPL-0071] Initial weighted wire length 752.615
+[INFO MPL-0071] Initial weighted wire length 752.896
 [INFO MPL-0071] Placed weighted wire length 676.531
 No differences found.

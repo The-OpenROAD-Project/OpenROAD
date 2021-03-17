@@ -134,6 +134,7 @@ class dbTechLayerCutClassRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerCutSpacingTableDefRule;
+class dbTechLayerCutEnclosureRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -6850,6 +6851,8 @@ class dbTechLayer : public dbObject
     DIFFUSION,
     TRIMPOLY
   };
+  // User Code Begin dbTechLayerEnums
+  // User Code End dbTechLayerEnums
 
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
@@ -6871,6 +6874,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerCutSpacingTableDefRule> getTechLayerCutSpacingTableDefRules()
       const;
+
+  dbSet<dbTechLayerCutEnclosureRule> getTechLayerCutEnclosureRules() const;
 
   void setRectOnly(bool rect_only);
 
@@ -7172,6 +7177,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerSpacingEolRuleEnums
+  // User Code End dbTechLayerSpacingEolRuleEnums
+
   void setEolSpace(int eol_space);
 
   int getEolSpace() const;
@@ -7482,6 +7490,9 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerMinStepRuleEnums
+  // User Code End dbTechLayerMinStepRuleEnums
+
   void setMinStepLength(int min_step_length);
 
   int getMinStepLength() const;
@@ -7552,6 +7563,8 @@ class dbTechLayerCornerSpacingRule : public dbObject
     CONVEXCORNER,
     CONCAVECORNER
   };
+  // User Code Begin dbTechLayerCornerSpacingRuleEnums
+  // User Code End dbTechLayerCornerSpacingRuleEnums
 
   void setWithin(int within);
 
@@ -7644,6 +7657,9 @@ class dbTechLayerCornerSpacingRule : public dbObject
 class dbTechLayerSpacingTablePrlRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerSpacingTablePrlRuleEnums
+  // User Code End dbTechLayerSpacingTablePrlRuleEnums
+
   void setEolWidth(int eol_width);
 
   int getEolWidth() const;
@@ -7693,6 +7709,9 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutClassRuleEnums
+  // User Code End dbTechLayerCutClassRuleEnums
+
   const char* getName() const;
 
   void setWidth(int width);
@@ -7740,6 +7759,8 @@ class dbTechLayerCutSpacingRule : public dbObject
     SAMEMETALSHAREDEDGE,
     AREA
   };
+  // User Code Begin dbTechLayerCutSpacingRuleEnums
+  // User Code End dbTechLayerCutSpacingRuleEnums
 
   void setCutSpacing(int cut_spacing);
 
@@ -8005,6 +8026,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 class dbTechLayerCutSpacingTableOrthRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutSpacingTableOrthRuleEnums
+  // User Code End dbTechLayerCutSpacingTableOrthRuleEnums
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
@@ -8022,6 +8045,9 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerCutSpacingTableDefRule : public dbObject
 {
  public:
+  // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
+  // User Code End dbTechLayerCutSpacingTableDefRuleEnums
+
   void setDefault(int spacing);
 
   int getDefault() const;
@@ -8211,9 +8237,210 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   // User Code End dbTechLayerCutSpacingTableDefRule
 };
 
+class dbTechLayerCutEnclosureRule : public dbObject
+{
+ public:
+  enum ENC_TYPE
+  {
+    DEFAULT,
+    EOL,
+    ENDSIDE,
+    HORZ_AND_VERT
+  };
+  // User Code Begin dbTechLayerCutEnclosureRuleEnums
+  /*
+  ENC_TYPE describes the enclosure overhang values as following (from the
+  lefdefref):
+  * DEFAULT       : overhang1 overhang2
+  * EOL           : EOL eolWidth ... eolOverhang otherOverhang ...
+  * ENDSIDE       : END overhang1 SIDE overhang2
+  * HORZ_AND_VERT : HORIZONTAL overhang1 VERTICAL overhang2
+  */
+  // User Code End dbTechLayerCutEnclosureRuleEnums
+
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
+
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  void setEolWidth(int eol_width);
+
+  int getEolWidth() const;
+
+  void setEolMinLength(int eol_min_length);
+
+  int getEolMinLength() const;
+
+  void setFirstOverhang(int first_overhang);
+
+  int getFirstOverhang() const;
+
+  void setSecondOverhang(int second_overhang);
+
+  int getSecondOverhang() const;
+
+  void setSpacing(int spacing);
+
+  int getSpacing() const;
+
+  void setExtension(int extension);
+
+  int getExtension() const;
+
+  void setForwardExtension(int forward_extension);
+
+  int getForwardExtension() const;
+
+  void setBackwardExtension(int backward_extension);
+
+  int getBackwardExtension() const;
+
+  void setMinWidth(int min_width);
+
+  int getMinWidth() const;
+
+  void setCutWithin(int cut_within);
+
+  int getCutWithin() const;
+
+  void setMinLength(int min_length);
+
+  int getMinLength() const;
+
+  void setParLength(int par_length);
+
+  int getParLength() const;
+
+  void setSecondParLength(int second_par_length);
+
+  int getSecondParLength() const;
+
+  void setParWithin(int par_within);
+
+  int getParWithin() const;
+
+  void setSecondParWithin(int second_par_within);
+
+  int getSecondParWithin() const;
+
+  void setBelowEnclosure(int below_enclosure);
+
+  int getBelowEnclosure() const;
+
+  void setNumCorners(uint num_corners);
+
+  uint getNumCorners() const;
+
+  void setCutClassValid(bool cut_class_valid);
+
+  bool isCutClassValid() const;
+
+  void setAbove(bool above);
+
+  bool isAbove() const;
+
+  void setBelow(bool below);
+
+  bool isBelow() const;
+
+  void setEolMinLengthValid(bool eol_min_length_valid);
+
+  bool isEolMinLengthValid() const;
+
+  void setEolOnly(bool eol_only);
+
+  bool isEolOnly() const;
+
+  void setShortEdgeOnly(bool short_edge_only);
+
+  bool isShortEdgeOnly() const;
+
+  void setSideSpacingValid(bool side_spacing_valid);
+
+  bool isSideSpacingValid() const;
+
+  void setEndSpacingValid(bool end_spacing_valid);
+
+  bool isEndSpacingValid() const;
+
+  void setOffCenterLine(bool off_center_line);
+
+  bool isOffCenterLine() const;
+
+  void setWidthValid(bool width_valid);
+
+  bool isWidthValid() const;
+
+  void setIncludeAbutted(bool include_abutted);
+
+  bool isIncludeAbutted() const;
+
+  void setExceptExtraCut(bool except_extra_cut);
+
+  bool isExceptExtraCut() const;
+
+  void setPrl(bool prl);
+
+  bool isPrl() const;
+
+  void setNoSharedEdge(bool no_shared_edge);
+
+  bool isNoSharedEdge() const;
+
+  void setLengthValid(bool length_valid);
+
+  bool isLengthValid() const;
+
+  void setExtraCutValid(bool extra_cut_valid);
+
+  bool isExtraCutValid() const;
+
+  void setExtraOnly(bool extra_only);
+
+  bool isExtraOnly() const;
+
+  void setRedundantCutValid(bool redundant_cut_valid);
+
+  bool isRedundantCutValid() const;
+
+  void setParallelValid(bool parallel_valid);
+
+  bool isParallelValid() const;
+
+  void setSecondParallelValid(bool second_parallel_valid);
+
+  bool isSecondParallelValid() const;
+
+  void setSecondParWithinValid(bool second_par_within_valid);
+
+  bool isSecondParWithinValid() const;
+
+  void setBelowEnclosureValid(bool below_enclosure_valid);
+
+  bool isBelowEnclosureValid() const;
+
+  void setConcaveCornersValid(bool concave_corners_valid);
+
+  bool isConcaveCornersValid() const;
+
+  // User Code Begin dbTechLayerCutEnclosureRule
+  void setType(ENC_TYPE type);
+
+  ENC_TYPE getType() const;
+
+  static dbTechLayerCutEnclosureRule* create(dbTechLayer* layer);
+
+  static dbTechLayerCutEnclosureRule* getTechLayerCutEnclosureRule(
+      dbTechLayer* inly,
+      uint dbid);
+  static void destroy(dbTechLayerCutEnclosureRule* rule);
+  // User Code End dbTechLayerCutEnclosureRule
+};
+
 class dbModule : public dbObject
 {
  public:
+  // User Code Begin dbModuleEnums
+  // User Code End dbModuleEnums
   const char* getName() const;
 
   dbModInst* getModInst() const;
@@ -8241,6 +8468,9 @@ class dbModule : public dbObject
 class dbModInst : public dbObject
 {
  public:
+  // User Code Begin dbModInstEnums
+  // User Code End dbModInstEnums
+
   dbModule* getParent() const;
 
   dbModule* getMaster() const;
@@ -8272,6 +8502,8 @@ class dbGroup : public dbObject
     PHYSICAL_CLUSTER,
     VOLTAGE_DOMAIN
   };
+  // User Code Begin dbGroupEnums
+  // User Code End dbGroupEnums
 
   const char* getName() const;
 
@@ -8349,6 +8581,8 @@ class dbGCellGrid : public dbObject
     uint vertical_capacity = 0;
     uint up_capacity = 0;
   };
+  // User Code Begin dbGCellGridEnums
+  // User Code End dbGCellGridEnums
 
   // User Code Begin dbGCellGrid
 
