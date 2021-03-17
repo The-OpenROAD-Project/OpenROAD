@@ -85,7 +85,7 @@ if "relations" in schema:
         if 'tbl_name' in relation:
             inParentField['name'] = relation["tbl_name"]
         else:
-            inParentField['name'] = getTableName(relation['second'])
+            inParentField['name'] = relation["tbl_name"] = getTableName(relation['second'])
         inParentField['type'] = relation['second']
         inParentField['table'] = True
         inParentField['dbSetGetter'] = True
@@ -148,6 +148,13 @@ for klass in schema['classes']:
         field['isRef'] = isRef(field['type']) \
             if field.get('parent') is not None else False
         field['refType'] = getRefType(field['type'])
+        # refTable is the table name from which the getter extracts the pointer to dbObject
+        if field['isRef']:
+            field['refTable'] = getTableName(field['refType'].replace('*',''))
+            # checking if there is a defined relation between parent and refType for extracting table name
+            for relation in schema['relations']:
+                if relation['first'] == field['parent'] and relation['second'] == field['refType'].replace('*',''):
+                    field['refTable'] = relation['tbl_name']
         field['isHashTable'] = isHashTable(field['type'])
         field['hashTableType'] = getHashTableType(field['type'])
         field['isPassByRef'] = isPassByRef(field['type'])
