@@ -190,6 +190,19 @@ BOOST_AUTO_TEST_CASE( test_default )
 
     auto poly = dbTech->findLayer("poly");
     BOOST_TEST(poly->getLef58Type() == odb::dbTechLayer::NWELL);
+
+    auto encRules = cutLayer->getTechLayerCutEnclosureRules();
+    BOOST_TEST(encRules.size() == 1);
+    odb::dbTechLayerCutEnclosureRule* encRule = *encRules.begin();
+    BOOST_TEST(encRule->getFirstOverhang() == 0.05*distFactor);
+    BOOST_TEST(encRule->getSecondOverhang() == 0.05*distFactor);
+    BOOST_TEST(encRule->isWidthValid());
+    BOOST_TEST(encRule->isIncludeAbutted());
+    BOOST_TEST(encRule->isAbove());
+    BOOST_TEST(encRule->isCutClassValid());
+    BOOST_TEST(encRule->getCutClass()->getName() == "cls1");
+    BOOST_TEST(!encRule->isBelow());
+    BOOST_TEST(encRule->getMinWidth() == 0.2 *distFactor);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

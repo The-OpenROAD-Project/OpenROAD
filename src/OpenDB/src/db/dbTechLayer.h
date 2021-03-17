@@ -58,6 +58,7 @@ class _dbTechLayerCornerSpacingRule;
 class _dbTechLayerSpacingTablePrlRule;
 class _dbTechLayerCutSpacingTableOrthRule;
 class _dbTechLayerCutSpacingTableDefRule;
+class _dbTechLayerCutEnclosureRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -112,6 +113,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
 
   dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
+
+  dbTable<_dbTechLayerCutEnclosureRule>* cut_enc_rules_tbl_;
 
   // User Code Begin Fields
 

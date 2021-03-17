@@ -66,7 +66,7 @@
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"
-#include "finale/MakeFinale.h"
+#include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"

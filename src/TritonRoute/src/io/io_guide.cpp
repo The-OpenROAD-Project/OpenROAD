@@ -641,19 +641,19 @@ void io::Parser::genGuides(frNet *net, vector<frRect> &rects) {
     
 
     if (pin2GCellMap.empty()) {
-      cout <<"Error: genGuides empty pin2GCellMap" <<endl; 
-      cout <<" gcell2pin.size() = " <<gCell2PinMap.size() <<endl;
+      logger->warn(DRT, 214, "genGuides empty pin2GCellMap");
+      debugPrint(logger, DRT, "io", 1, "gcell2pin.size() = {}", gCell2PinMap.size());
     }
     for (auto &[obj, locS]: pin2GCellMap) {
       if (locS.empty()) {
         if (obj->typeId() == frcInstTerm) {
           auto ptr = static_cast<frInstTerm*>(obj);
-          cout <<"Error: pin " <<ptr->getInst()->getName() <<"/" <<ptr->getTerm()->getName() <<" not covered by guide" <<endl; 
+          logger->warn(DRT, 215, "pin {}/{} not covered by guide", ptr->getInst()->getName(), ptr->getTerm()->getName());
         } else if (obj->typeId() == frcTerm) {
           auto ptr = static_cast<frTerm*>(obj);
-          cout <<"Error: pin PIN/" <<ptr->getName() <<" not covered by guide" <<endl; 
+          logger->warn(DRT, 216, "pin PIN/{} not covered by guide", ptr->getName());
         } else {
-          cout <<"Error: genGuides unknown type" <<endl; 
+          logger->warn(DRT, 217, "genGuides unknown type");
         }
       }
     }
@@ -678,12 +678,10 @@ void io::Parser::genGuides(frNet *net, vector<frRect> &rects) {
             genGuides_final(net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
             break;
           } else {
-            cout <<"Error: critical error guide not connected, exit now 1!" <<endl;
-            exit(1);
+            logger->error(DRT, 218, "Guide is not connected to design");
           }
         } else {
-          cout <<"Error: critical error guide not connected, exit now 2!" <<endl;
-          exit(1);
+          logger->error(DRT, 219, "Guide is not connected to design");
         }
       } else {
         retry = true;
@@ -721,7 +719,7 @@ void io::Parser::genGuides_final(frNet *net, vector<frRect> &rects, vector<bool>
       } else if (pin2GCellMap[obj].find(make_pair(box.upperRight(), lNum)) != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.upperRight(), lNum));
       } else {
-        cout <<"Error: genGuides_final error 1" <<endl;
+        logger->warn(DRT, 220, "genGuides_final error 1");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
@@ -738,14 +736,14 @@ void io::Parser::genGuides_final(frNet *net, vector<frRect> &rects, vector<bool>
       } else if (pin2GCellMap[obj].find(make_pair(box.upperRight(), lNum)) != pin2GCellMap[obj].end()) {
         pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.upperRight(), lNum));
       } else {
-        cout <<"Error: genGuides_final error 2" <<endl;
+        logger->warn(DRT, 221, "genGuides_final error 2");
       }
       guideIdx2Pins[guideIdx].push_back(pinIdx);
     }
   }
   for (auto &guides: pinIdx2GCellUpdated) {
     if (guides.empty()) {
-      cout <<"Error: genGuides_final pin not in any guide" <<endl;
+      logger->warn(DRT, 222, "genGuides_final pin not in any guide");
     }
   }
    
@@ -793,8 +791,7 @@ void io::Parser::genGuides_final(frNet *net, vector<frRect> &rects, vector<bool>
           }
         }
       } else {
-        cout <<"Error: pin dangling id " <<idx <<" " <<pt <<" " <<lNum <<endl;
-        exit(1);
+        logger->error(DRT, 223, "pin dangling id {} ({},{}) {}",idx, pt.x(), pt.y(), lNum);
       }
     }
   }
@@ -1026,7 +1023,7 @@ bool io::Parser::genGuides_astar(frNet* net, vector<bool> &adjVisited, vector<in
   int pinVisited = count(adjVisited.begin() + gCnt, adjVisited.end(), true);
   // true error when allowing feedthrough
   if (pinVisited != nCnt - gCnt && (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) && retry) {
-    cout <<"Error: " <<net->getName() <<" " <<nCnt - gCnt - pinVisited <<" pin not visited #guides = " <<gCnt <<endl;
+    logger->warn(DRT, 224, "{} {} pin not visited #guides = {}", net->getName(), nCnt - gCnt - pinVisited, gCnt);
     if (enableOutput) {
       for (int i = gCnt; i < nCnt; i++) {
         if (!adjVisited[i]) {
@@ -1037,7 +1034,7 @@ bool io::Parser::genGuides_astar(frNet* net, vector<bool> &adjVisited, vector<in
   }
   // fallback to feedthrough in next iter
   if (pinVisited != nCnt - gCnt && !ALLOW_PIN_AS_FEEDTHROUGH && !forceFeedThrough && retry) {
-    cout <<"Warning: " <<net->getName() <<" " <<nCnt - gCnt - pinVisited <<" pin not visited, fall back to feedrough mode" <<endl;
+    logger->warn(DRT, 225, "{} {} pin not visited, fall back to feedrough mode", net->getName(), nCnt - gCnt - pinVisited);
     //if (enableOutput) {
     //  for (int i = gCnt; i < nCnt; i++) {
     //    if (!adjVisited[i]) {

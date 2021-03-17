@@ -1,5 +1,4 @@
-#############################################################################
-##
+###########################################################################
 ## BSD 3-Clause License
 ##
 ## Copyright (c) 2020, OpenRoad Project
@@ -30,40 +29,33 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-#############################################################################
+###########################################################################
 
-proc density_fill_debug { args } {
-  finale::set_density_fill_debug_cmd
-}
+include("openroad")
 
-sta::define_cmd_args "density_fill" {[-rules rules_file]\
-                                     [-area {lx ly ux uy}]}
+swig_lib(NAME      fin
+         NAMESPACE fin
+         I_FILE    src/finale.i
+         SCRIPTS   src/finale.tcl
+)
 
-proc density_fill { args } {
-  sta::parse_key_args "density_fill" args \
-    keys {-rules -area} flags {}
+target_sources(fin
+  PRIVATE
+    src/Finale.cpp
+    src/MakeFinale.cpp
+    src/DensityFill.cpp
+    src/graphics.cpp
+)
 
-  if { [info exists keys(-rules)] } {
-    set rules_file $keys(-rules)
-  } else {
-    utl::error FIN 7 "The -rules argument must be specified."
-  }
+target_include_directories(fin
+  PUBLIC
+    include
+)
 
-  if { [info exists keys(-area)] } {
-    set area $keys(-area)
-    if { [llength $area] != 4 } {
-      utl::error FIN 8 "The -area argument must be a list of 4 coordinates."
-    }
-    lassign $area lx ly ux uy
-    sta::check_positive_integer "-area" $lx
-    sta::check_positive_integer "-area" $ly
-    sta::check_positive_integer "-area" $ux
-    sta::check_positive_integer "-area" $uy
-    set fill_area [odb::Rect x $lx $ly $ux $uy]
-  } else {
-    set fill_area [ord::get_db_core]
-  }
-
-  fin::density_fill_cmd $rules_file $fill_area
-}
-
+target_link_libraries(fin
+  PRIVATE
+    opendb
+    gui
+    OpenSTA
+    Boost::boost
+)
