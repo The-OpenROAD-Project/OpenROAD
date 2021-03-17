@@ -206,19 +206,48 @@ void GlobalRouter::applyAdjustments()
                              regionAdjst.getAdjustment());
   }
 
-  restoreCapacities(_minLayerForClock, _maxLayerForClock);
-
   _fastRoute->initAuxVar();
 }
 
-void GlobalRouter::runFastRoute(bool onlySignal)
+void GlobalRouter::runFastRoute()
 {
+  clear();
+  Capacities capacities;
+
+  bool routeClocks = _minLayerForClock > 0 && _maxLayerForClock > 0;
+
+  if (routeClocks) {
+    int minLayer = _minRoutingLayer;
+    int maxLayer = _maxRoutingLayer;
+    _minRoutingLayer = _minLayerForClock;
+    _maxRoutingLayer = _maxLayerForClock;
+
+    // route clock nets
+    startFastRoute();
+    std::vector<Net*> clockNets;
+    getNetsByType(NetType::Clock, clockNets);
+    initializeNets(clockNets);
+    applyAdjustments();
+    _logger->report("Routing clock nets...");
+    _routes = findRouting(clockNets);
+
+    capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
+    clearFlow();
+    _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
+    
+    _minRoutingLayer = minLayer;
+    _maxRoutingLayer = maxLayer;
+  }
+
+  // route signal nets
   startFastRoute();
-  NetType type = onlySignal ? NetType::Signal : NetType::All;
+  NetType type = routeClocks ? NetType::Signal : NetType::All;
   std::vector<Net*> nets;
   getNetsByType(type, nets);
   initializeNets(nets);
   applyAdjustments();
+  if (routeClocks)
+    restoreCapacities(capacities, _minLayerForClock, _maxLayerForClock);
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
   NetRouteMap result = findRouting(nets);
@@ -240,7 +269,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   // Copy first route result and make changes in this new vector
   NetRouteMap originalRoute(_routes);
 
-  saveCapacities(_minRoutingLayer, _maxRoutingLayer);
+  Capacities capacities = saveCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
   odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
@@ -268,7 +297,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 
-    restoreCapacities(_minRoutingLayer, _maxRoutingLayer);
+    restoreCapacities(capacities, _minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsRouting();
 
     NetRouteMap newRoute = findRouting(antennaNets);
@@ -279,24 +308,6 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
   _dirtyNets.insert(net);
-}
-
-void GlobalRouter::routeClockNets()
-{
-  startFastRoute();
-  std::vector<Net*> clockNets;
-  getNetsByType(NetType::Clock, clockNets);
-  initializeNets(clockNets);
-  applyAdjustments();
-  _logger->report("Routing clock nets...");
-  _routes = findRouting(clockNets);
-
-  _minLayerForClock = _minRoutingLayer;
-  _maxLayerForClock = _maxRoutingLayer;
-
-  saveCapacities(_minLayerForClock, _maxLayerForClock);
-  clearFlow();
-  _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets)
@@ -385,7 +396,7 @@ void GlobalRouter::setCapacities()
   }
 }
 
-void GlobalRouter::saveCapacities(int previousMinLayer,
+Capacities GlobalRouter::saveCapacities(int previousMinLayer,
                                          int previousMaxLayer)
 {
   int oldCap;
@@ -394,31 +405,34 @@ void GlobalRouter::saveCapacities(int previousMinLayer,
 
   auto gcellGrid = _block->getGCellGrid();
 
-  oldHUsages_ = new int**[_grid->getNumLayers()];
+  Capacities capacities;
+
+  CapacitiesVec &h_caps = capacities.getHorCapacities();
+  CapacitiesVec &v_caps = capacities.getVerCapacities();
+
+  h_caps.resize(_grid->getNumLayers());
   for (int l = 0; l < _grid->getNumLayers(); l++) {
-    oldHUsages_[l] = new int*[yGrids];
+    h_caps[l].resize(yGrids);
     for (int i = 0; i < yGrids; i++) {
-      oldHUsages_[l][i] = new int[xGrids];
+      h_caps[l][i].resize(xGrids);
     }
   }
 
-  oldVUsages_ = new int**[_grid->getNumLayers()];
+  v_caps.resize(_grid->getNumLayers());
   for (int l = 0; l < _grid->getNumLayers(); l++) {
-    oldVUsages_[l] = new int*[xGrids];
+    v_caps[l].resize(xGrids);
     for (int i = 0; i < xGrids; i++) {
-      oldVUsages_[l][i] = new int[yGrids];
+      v_caps[l][i].resize(yGrids);
     }
   }
 
-  int oldTotalCap = 0;
   for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     auto techLayer = _db->getTech()->findRoutingLayer(layer);
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = getEdgeResource(
             x - 1, y - 1, x, y - 1, techLayer, gcellGrid);
-        oldTotalCap += oldCap;
-        oldHUsages_[layer - 1][y - 1][x - 1] = oldCap;
+        h_caps[layer - 1][y - 1][x - 1] = oldCap;
       }
     }
 
@@ -426,26 +440,28 @@ void GlobalRouter::saveCapacities(int previousMinLayer,
       for (int y = 1; y < yGrids; y++) {
         oldCap = getEdgeResource(
             x - 1, y - 1, x - 1, y, techLayer, gcellGrid);
-        oldTotalCap += oldCap;
-        oldVUsages_[layer - 1][x - 1][y - 1] = oldCap;
+        v_caps[layer - 1][x - 1][y - 1] = oldCap;
       }
     }
   }
+
+  return capacities;
 }
 
-void GlobalRouter::restoreCapacities(int previousMinLayer,
+void GlobalRouter::restoreCapacities(Capacities capacities, int previousMinLayer,
                                              int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  int newTotalCap = 0;
+  const CapacitiesVec &h_caps = capacities.getHorCapacities();
+  const CapacitiesVec &v_caps = capacities.getVerCapacities();
+
   for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
-        oldCap = oldHUsages_[layer - 1][y - 1][x - 1];
-        newTotalCap += oldCap;
+        oldCap = h_caps[layer - 1][y - 1][x - 1];
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x, y - 1, layer, oldCap, true);
       }
@@ -453,8 +469,7 @@ void GlobalRouter::restoreCapacities(int previousMinLayer,
 
     for (int x = 1; x < xGrids; x++) {
       for (int y = 1; y < yGrids; y++) {
-        oldCap = oldVUsages_[layer - 1][x - 1][y - 1];
-        newTotalCap += oldCap;
+        oldCap = v_caps[layer - 1][x - 1][y - 1];
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
       }
@@ -1207,6 +1222,16 @@ void GlobalRouter::setMinRoutingLayer(const int minLayer)
 void GlobalRouter::setMaxRoutingLayer(const int maxLayer)
 {
   _maxRoutingLayer = maxLayer;
+}
+
+void GlobalRouter::setMinLayerForClock(const int minLayer)
+{
+  _minLayerForClock = minLayer;
+}
+
+void GlobalRouter::setMaxLayerForClock(const int maxLayer)
+{
+  _maxLayerForClock = maxLayer;
 }
 
 void GlobalRouter::setUnidirectionalRoute(const bool unidirRoute)

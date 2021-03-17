@@ -302,7 +302,6 @@ proc global_route { args } {
     grt::set_macro_extension 0
   }
 
-  set min_clock_layer 6
   if { [info exists keys(-clock_layers)] } {
     set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
     lassign $layer_range min_clock_layer max_clock_layer
@@ -311,7 +310,6 @@ proc global_route { args } {
 
     if { $min_clock_layer < $max_clock_layer } {
       grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-      grt::route_clock_nets
     } else {
       utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
     }
@@ -358,8 +356,7 @@ proc global_route { args } {
     grt::report_congestion $congest_file
   }
 
-  set only_signal [expr [info exists keys(-clock_layers)] || [info exists flags(-only_signal_nets)]]
-  grt::run_fastroute $only_signal
+  grt::run_fastroute
   
   if { [info exists keys(-output_file)] } {
     utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."
