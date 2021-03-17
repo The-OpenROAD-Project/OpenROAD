@@ -112,6 +112,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum, 
       case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
         maxSpcVal = static_cast<frSpacingTablePrlConstraint*>(con)->findMax();
         break;
+      case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+        maxSpcVal = static_cast<frSpacingTableTwConstraint*>(con)->findMax();
+        break;
       default:
         logger_->warn(DRT, 41, "Warning: Unsupported metSpc rule.");
     }
@@ -184,6 +187,27 @@ box_t FlexGCWorker::Impl::checkMetalCornerSpacing_getQueryBox(gcCorner* corner, 
   return queryBox;
 }
 
+bool isPG(frBlockObject* obj)
+{
+  switch (obj->typeId())
+  {
+    case frcNet:{
+      auto type = static_cast<frNet*>(obj)->getType();
+      return type == frNetEnum::frcPowerNet || type == frNetEnum::frcGroundNet;
+    }
+    case frcInstTerm:{
+      auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
+      return type ==  frTermEnum::frcPowerTerm || type ==  frTermEnum::frcGroundTerm;
+    }
+    case frcTerm:{
+      auto type = static_cast<frTerm*>(obj)->getType();
+      return type ==  frTermEnum::frcPowerTerm || type ==  frTermEnum::frcGroundTerm;
+    }
+    default:
+      return false;
+  }
+}
+
 frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gcRect* rect2, frCoord prl/*, bool &hasRoute*/) {
   auto layerNum = rect1->getLayerNum();
   frCoord reqSpcVal = 0;
@@ -208,45 +232,34 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gc
   }
   // check if width is a result of route shape
   // if the width a shape is smaller if only using fixed shape, then it's route shape -- wrong...
+  frCoord  minSpcVal = 0;
   if (currLayer->hasMinSpacing()) {
     auto con = currLayer->getMinSpacing();
     switch (con->typeId()) {
       case frConstraintTypeEnum::frcSpacingTablePrlConstraint:
         reqSpcVal = static_cast<frSpacingTablePrlConstraint*>(con)->find(std::max(width1, width2), prl);
-        // same-net override
-        if (!isObs && rect1->getNet() == rect2->getNet()) {
-          if (currLayer->hasSpacingSamenet()) {
-            auto conSamenet = currLayer->getSpacingSamenet();
-            if (!conSamenet->hasPGonly()) {
-              reqSpcVal = std::max(conSamenet->getMinSpacing(), static_cast<frSpacingTablePrlConstraint*>(con)->findMin());
-            } else {
-              bool isPG = false;
-              auto owner = rect1->getNet()->getOwner();
-              if (owner->typeId() == frcNet) {
-                if (static_cast<frNet*>(owner)->getType() == frNetEnum::frcPowerNet || 
-                    static_cast<frNet*>(owner)->getType() == frNetEnum::frcGroundNet) {
-                  isPG = true;
-                }
-              } else if (owner->typeId() == frcInstTerm) {
-                if (static_cast<frInstTerm*>(owner)->getTerm()->getType() == frTermEnum::frcPowerTerm || 
-                    static_cast<frInstTerm*>(owner)->getTerm()->getType() == frTermEnum::frcGroundTerm) {
-                  isPG = true;
-                }
-              } else if (owner->typeId() == frcTerm) {
-                if (static_cast<frTerm*>(owner)->getType() == frTermEnum::frcPowerTerm || 
-                    static_cast<frTerm*>(owner)->getType() == frTermEnum::frcGroundTerm) {
-                  isPG = true;
-                }
-              }
-              if (isPG) {
-                reqSpcVal = std::max(conSamenet->getMinSpacing(), static_cast<frSpacingTablePrlConstraint*>(con)->findMin());
-              }
-            }
-          }
-        }
+        minSpcVal = static_cast<frSpacingTablePrlConstraint*>(con)->findMin();
+        break;
+      case frConstraintTypeEnum::frcSpacingTableTwConstraint:
+        reqSpcVal = static_cast<frSpacingTableTwConstraint*>(con)->find(width1, width2, prl);
+        minSpcVal = static_cast<frSpacingTableTwConstraint*>(con)->findMin();
         break;
       default:
         logger_->warn(DRT, 43, "Unsupported metSpc rule.");
+    }
+    if(con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint ||
+       con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint)
+    {
+      // same-net override
+      if (!isObs && rect1->getNet() == rect2->getNet()) {
+        if (currLayer->hasSpacingSamenet()) {
+          auto conSamenet = currLayer->getSpacingSamenet();
+          if (!conSamenet->hasPGonly())
+            reqSpcVal = std::max(conSamenet->getMinSpacing(), minSpcVal);
+          else if (isPG(rect1->getNet()->getOwner()))
+            reqSpcVal = std::max(conSamenet->getMinSpacing(), minSpcVal);
+        }
+      }
     }
   }
   return reqSpcVal;
