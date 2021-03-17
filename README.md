@@ -300,7 +300,6 @@ Tapcell and endcap insertion.
 ```
 tapcell -tapcell_master <tapcell_master>
         -endcap_master <endcap_master>
-        -endcap_cpp <endcap_cpp>
         -distance <dist>
         -halo_width_x <halo_x>
         -halo_width_y <halo_y>
@@ -314,8 +313,6 @@ tapcell -tapcell_master <tapcell_master>
         -cnrcap_nwout_master <cnrcap_nwout_master>
         -incnrcap_nwin_master <incnrcap_nwin_master>
         -incnrcap_nwout_master <incnrcap_nwout_master>
-        -tbtie_cpp <tbtie_cpp>
-        -no_cell_at_top_bottom
         -add_boundary_cell
 ```
 You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
