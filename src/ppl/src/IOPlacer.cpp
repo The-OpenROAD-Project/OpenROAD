@@ -856,9 +856,9 @@ void IOPlacer::run(bool random_mode)
       total_hpwl += returnIONetsHPWL(sections_[idx].net);
     }
     delta_hpwl = init_hpwl - total_hpwl;
-    logger_->info(PPL, 11, "***HPWL before ioPlacer: {}", init_hpwl);
-    logger_->info(PPL, 12, "***HPWL after  ioPlacer: {}", total_hpwl);
-    logger_->info(PPL, 13, "***HPWL delta  ioPlacer: {}", delta_hpwl);
+    logger_->info(PPL, 11, "HPWL before ioPlacer: {}", init_hpwl);
+    logger_->info(PPL, 12, "HPWL after  ioPlacer: {}", total_hpwl);
+    logger_->info(PPL, 13, "HPWL delta  ioPlacer: {}", delta_hpwl);
   }
 
   commitIOPlacementToDB(assignment_);
