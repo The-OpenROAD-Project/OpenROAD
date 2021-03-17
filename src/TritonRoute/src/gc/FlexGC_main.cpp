@@ -189,23 +189,23 @@ box_t FlexGCWorker::Impl::checkMetalCornerSpacing_getQueryBox(gcCorner* corner, 
 
 bool isPG(frBlockObject* obj)
 {
-  if (obj->typeId() == frcNet) {
-    if (static_cast<frNet*>(obj)->getType() == frNetEnum::frcPowerNet || 
-        static_cast<frNet*>(obj)->getType() == frNetEnum::frcGroundNet) {
-      return true;
+  switch (obj->typeId())
+  {
+    case frcNet:{
+      auto type = static_cast<frNet*>(obj)->getType();
+      return type == frNetEnum::frcPowerNet || type == frNetEnum::frcGroundNet;
     }
-  } else if (obj->typeId() == frcInstTerm) {
-    if (static_cast<frInstTerm*>(obj)->getTerm()->getType() == frTermEnum::frcPowerTerm || 
-        static_cast<frInstTerm*>(obj)->getTerm()->getType() == frTermEnum::frcGroundTerm) {
-      return true;
+    case frcInstTerm:{
+      auto type = static_cast<frInstTerm*>(obj)->getTerm()->getType();
+      return type ==  frTermEnum::frcPowerTerm || type ==  frTermEnum::frcGroundTerm;
     }
-  } else if (obj->typeId() == frcTerm) {
-    if (static_cast<frTerm*>(obj)->getType() == frTermEnum::frcPowerTerm || 
-        static_cast<frTerm*>(obj)->getType() == frTermEnum::frcGroundTerm) {
-      return true;
+    case frcTerm:{
+      auto type = static_cast<frTerm*>(obj)->getType();
+      return type ==  frTermEnum::frcPowerTerm || type ==  frTermEnum::frcGroundTerm;
     }
+    default:
+      return false;
   }
-  return false;
 }
 
 frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gcRect* rect2, frCoord prl/*, bool &hasRoute*/) {
