@@ -193,13 +193,29 @@ class Logger
                     const std::string& message,
                     const Args&... args)
     {
-      assert(id >= 0 && id <= 9999);
-      logger_->log(level,
-                   "[{} {}-{:04d}] " + message,
-                   level_names[level],
-                   tool_names_[tool],
-                   id,
-                   args...);
+      assert(id >= 0 && id <= max_message_id);
+      auto& counter = message_counters_[tool][id];
+      auto count = counter++;
+      if (count < max_message_print) {
+        logger_->log(level,
+                     "[{} {}-{:04d}] " + message,
+                     level_names[level],
+                     tool_names_[tool],
+                     id,
+                     args...);
+        return;
+      }
+
+      if (count == max_message_print) {
+        logger_->log(level,
+                     "[{} {}-{:04d}] message limit reached, "
+                     "this message will no longer print",
+                     level_names[level],
+                     tool_names_[tool],
+                     id);
+      } else {
+        counter--; // to avoid counter overflow
+      }
     }
 
   template <typename Value>
@@ -225,10 +241,19 @@ class Logger
   };
   using DebugGroups = std::map<std::string, int, StringViewCmp>;
 
+  static constexpr int max_message_id = 9999;
+
+  // Stop issuing messages of a given tool/id when this limit is hit.
+  static constexpr int max_message_print = 1000;
+
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::shared_ptr<spdlog::logger> metrics_logger_;
 
+  // This matrix is pre-allocated so it can be safely updated
+  // from multiple threads without locks.
+  using MessageCounter = std::array<short, max_message_id + 1>;
+  std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;
   bool first_metric_;
