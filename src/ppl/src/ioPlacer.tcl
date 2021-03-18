@@ -69,8 +69,9 @@ proc set_io_pin_constraint { args } {
     }
   }
 
-  if {[info exists keys(-direction)] && [info exists keys(-name)]} {
-    utl::error PPL 16 "Both -direction and -name constraints not allowed.."
+  if {[info exists keys(-direction)] && [info exists keys(-pin_names)] && \
+      [info exists keys(-names)]} {
+    utl::error PPL 16 "Both -direction and -pin_names constraints not allowed.."
   }
 
   if [info exists keys(-direction)] {
