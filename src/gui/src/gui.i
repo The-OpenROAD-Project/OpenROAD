@@ -40,44 +40,62 @@
 %}
 
 %inline %{
+bool enabled()
+{
+  auto gui = gui::Gui::get();
+  return gui != nullptr;
+}
+
 void
 selection_add_net(const char* name)
 {
   auto gui = gui::Gui::get();
-  gui->addSelectedNet(name);
+  if (gui) {
+    gui->addSelectedNet(name);
+  }
 }
 
 void
 selection_add_nets(const char* name)
 {
   auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  if (gui) {
+    gui->addSelectedNets(name);
+  }
 }
 
 void
 selection_add_inst(const char* name)
 {
   auto gui = gui::Gui::get();
-  gui->addSelectedInst(name);
+  if (gui) {
+    gui->addSelectedInst(name);
+  }
 }
 
 void
 selection_add_insts(const char* name)
 {
   auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  if (gui) {
+    gui->addSelectedInsts(name);
+  }
 }
 
 void highlight_inst(const char* name, int highlightGroup)
 {
   auto gui = gui::Gui::get();
-  gui->addInstToHighlightSet(name, highlightGroup);
+  if (gui) {
+    gui->addInstToHighlightSet(name, highlightGroup);
+  }
 }
 
 void highlight_net(const char* name, int highlightGroup=0)
 {
   auto gui = gui::Gui::get();
-  gui->addNetToHighlightSet(name, highlightGroup);
+  if (gui) {
+    gui->addNetToHighlightSet(name, highlightGroup);
+  }
 }
 
 // converts from microns to DBU
@@ -85,6 +103,9 @@ void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
   auto gui = gui::Gui::get();
   auto db = ord::OpenRoad::openRoad()->getDb();
+  if (gui) {
+    return;
+  }
   auto logger = ord::OpenRoad::openRoad()->getLogger();
   using utl::GUI;
   if (!db) {
