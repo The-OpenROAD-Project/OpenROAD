@@ -212,7 +212,7 @@ bool Netlist::checkSlotForPin(const IOPin& pin,
         = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
 
   for (Constraint constraint : constraints) {
-    const PinGroup &pin_list = constraint.pin_list;
+    const PinList &pin_list = constraint.pin_list;
     if (pin.getDirection() == constraint.direction) {
       valid_slot = checkInterval(constraint, edge, pos);
     } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
@@ -249,7 +249,7 @@ bool Netlist::checkSectionForPin(const IOPin& pin,
     const int constraint_begin = constraint.interval.getBegin();
     const int constraint_end = constraint.interval.getEnd();
 
-    const PinGroup &pin_list = constraint.pin_list;
+    const PinList &pin_list = constraint.pin_list;
 
     if (pin.getDirection() == constraint.direction) {
       valid_slot = (section_min <= constraint_end &&

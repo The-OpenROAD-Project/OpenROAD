@@ -222,7 +222,7 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
-  for (PinGroup pin_group : pin_groups_) {
+  for (PinList pin_group : pin_groups_) {
     netlist_io_pins_.createIOGroup(pin_group);
   }
 }
@@ -728,11 +728,11 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   excluded_intervals_.push_back(excluded_interv);
 }
 
-PinGroup* IOPlacer::createNamesConstraint(Edge edge, int begin, int end)
+PinList* IOPlacer::createNamesConstraint(Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
-  constraints_.push_back(Constraint(PinGroup(), Direction::invalid, interval));
-  PinGroup* pin_list = &constraints_.back().pin_list;
+  constraints_.push_back(Constraint(PinList(), Direction::invalid, interval));
+  PinList* pin_list = &constraints_.back().pin_list;
   return pin_list;
 }
 
@@ -742,7 +742,7 @@ void IOPlacer::addDirectionConstraint(Direction direction,
                                       int end)
 {
   Interval interval(edge, begin, end);
-  Constraint constraint(PinGroup(), direction, interval);
+  Constraint constraint(PinList(), direction, interval);
   constraints_.push_back(constraint);
 }
 
@@ -776,14 +776,14 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
-PinGroup* IOPlacer::createPinGroup()
+PinList* IOPlacer::createPinGroup()
 {
-  pin_groups_.push_back(PinGroup());
-  PinGroup* group = &pin_groups_.back();
+  pin_groups_.push_back(PinList());
+  PinList* group = &pin_groups_.back();
   return group;
 }
 
-void IOPlacer::addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group)
+void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)
 {
   pin_group->push_back(pin);
 }
@@ -1011,7 +1011,7 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (PinGroup pin_group : pin_groups_) {
+  for (PinList pin_group : pin_groups_) {
     int group_created = netlist_.createIOGroup(pin_group); 
     if(group_created == pin_group.size()) {
       group_idx++;

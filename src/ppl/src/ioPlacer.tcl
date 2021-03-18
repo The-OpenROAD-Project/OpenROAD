@@ -264,7 +264,7 @@ proc place_pins { args } {
       foreach pin_name $group {
         set db_bterm [$dbBlock findBTerm $pin_name]
         if { $db_bterm != "NULL" } {
-          ppl::add_pin_to_group $db_bterm $pin_group
+          ppl::add_pin_to_list $db_bterm $pin_group
         } else {
           utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
         }
@@ -373,7 +373,7 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
       set db_bterm [$dbBlock findBTerm $pin_name]
       if { $db_bterm != "NULL" } {
         utl::report "Restrict I/O pin $pin_name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge_name edge."
-        ppl::add_pin_to_group $db_bterm $pin_list
+        ppl::add_pin_to_list $db_bterm $pin_list
       } else {
         utl::warn PPL 47 "Pin $pin_name not found in constraint"
       }

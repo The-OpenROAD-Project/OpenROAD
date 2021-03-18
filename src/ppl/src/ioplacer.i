@@ -46,7 +46,7 @@ ppl::IOPlacer* getIOPlacer();
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
-using ppl::PinGroup;
+using ppl::PinList;
 %}
 
 %include "../../Exception.i"
@@ -97,7 +97,7 @@ exclude_interval(Edge edge, int begin, int end)
   getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
-PinGroup* create_names_constraint(Edge edge, int begin, int end)
+PinList* create_names_constraint(Edge edge, int begin, int end)
 {
   return getIOPlacer()->createNamesConstraint(edge, begin, end);
 }
@@ -144,16 +144,16 @@ add_ver_layer(int layer)
   getIOPlacer()->addVerLayer(layer);
 }
 
-PinGroup*
+PinList*
 create_pin_group()
 {
   return getIOPlacer()->createPinGroup();
 }
 
 void
-add_pin_to_group(odb::dbBTerm* pin, PinGroup* pin_group)
+add_pin_to_list(odb::dbBTerm* pin, PinList* pin_group)
 {
-  getIOPlacer()->addPinToGroup(pin, pin_group);
+  getIOPlacer()->addPinToList(pin, pin_group);
 }
 
 void

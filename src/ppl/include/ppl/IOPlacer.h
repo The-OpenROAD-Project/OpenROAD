@@ -65,7 +65,7 @@ using odb::Rect;
 using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
-typedef std::vector<odb::dbBTerm*> PinGroup;
+typedef std::vector<odb::dbBTerm*> PinList;
 
 enum class RandomMode
 {
@@ -99,11 +99,11 @@ struct Interval
 
 struct Constraint
 {
-  PinGroup pin_list;
+  PinList pin_list;
   Direction direction;
   Interval interval;
   Constraint() = default;
-  Constraint(PinGroup pins, Direction dir, Interval interv)
+  Constraint(PinList pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
   {
   }
@@ -119,7 +119,7 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  PinGroup* createNamesConstraint(Edge edge, int begin, int end);
+  PinList* createNamesConstraint(Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
                               int begin,
@@ -128,8 +128,8 @@ class IOPlacer
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
-  PinGroup* createPinGroup();
-  void addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group);
+  PinList* createPinGroup();
+  void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
 
  private:
   Netlist netlist_;
@@ -144,7 +144,7 @@ class IOPlacer
   bool force_pin_spread_;
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
+  std::vector<PinList> pin_groups_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
