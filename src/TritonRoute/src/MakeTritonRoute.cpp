@@ -32,26 +32,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "triton_route/MakeTritonRoute.h"
-#include "triton_route/TritonRoute.h"
+
 #include "openroad/OpenRoad.hh"
+#include "triton_route/TritonRoute.h"
 
 namespace ord {
 
-triton_route::TritonRoute *makeTritonRoute()
+triton_route::TritonRoute* makeTritonRoute()
 {
   return new triton_route::TritonRoute();
 }
 
-void deleteTritonRoute(triton_route::TritonRoute *router)
+void deleteTritonRoute(triton_route::TritonRoute* router)
 {
   delete router;
 }
 
 void initTritonRoute(OpenRoad* openroad)
 {
-  openroad->getTritonRoute()->init(openroad->tclInterp(),
-                                   openroad->getDb(),
-                                   openroad->getLogger());
+  openroad->getTritonRoute()->init(
+      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord

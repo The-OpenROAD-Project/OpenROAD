@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -28,21 +28,25 @@
 
 #include <iostream>
 #include <sstream>
-#include "frProfileTask.h"
+
 #include "FlexRP.h"
 #include "db/infra/frTime.h"
+#include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
 using namespace std;
 using namespace fr;
 
-void FlexRP::init() {
+void FlexRP::init()
+{
   ProfileTask profile("RP:init");
   bool enableOutput = false;
 
-  vector<pair<frCoord, frCoord> > forbiddenRanges;
-  vector<vector<pair<frCoord, frCoord> > > eightForbiddenRanges(8, forbiddenRanges);
-  vector<vector<pair<frCoord, frCoord> > > fourForbiddenRanges(4, forbiddenRanges);
+  vector<pair<frCoord, frCoord>> forbiddenRanges;
+  vector<vector<pair<frCoord, frCoord>>> eightForbiddenRanges(8,
+                                                              forbiddenRanges);
+  vector<vector<pair<frCoord, frCoord>>> fourForbiddenRanges(4,
+                                                             forbiddenRanges);
   vector<bool> fourForbidden(4, false);
 
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
@@ -58,18 +62,24 @@ void FlexRP::init() {
     tech_->viaForbiddenPlanarLen.push_back(fourForbiddenRanges);
     tech_->line2LineForbiddenLen.push_back(fourForbiddenRanges);
     tech_->viaForbiddenThrough.push_back(fourForbidden);
-    for (auto& ndr : tech_->nonDefaultRules){
-        ndr->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
-        ndr->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
+    for (auto& ndr : tech_->nonDefaultRules) {
+      ndr->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
+      ndr->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
     }
   }
 
   if (enableOutput) {
-    cout << "tech_->via2ViaForbiddenLen size = " << tech_->via2ViaForbiddenLen.size() << "\n";
-    cout << "tech_->via2ViaForbiddenOverlapLen size = " << tech_->via2ViaForbiddenOverlapLen.size() << "\n";
-    cout << "tech_->viaForbiddenTurnLen size = " << tech_->viaForbiddenTurnLen.size() << "\n";
-    cout << "tech_->viaForbiddenPlanarLen size = " << tech_->viaForbiddenPlanarLen.size() << "\n";
-    cout << "tech_->line2LineForbiddenLen size = " << tech_->line2LineForbiddenLen.size() << "\n";
-    cout << "tech_->viaForbiddenThrough size = " << tech_->viaForbiddenThrough.size() << "\n";
+    cout << "tech_->via2ViaForbiddenLen size = "
+         << tech_->via2ViaForbiddenLen.size() << "\n";
+    cout << "tech_->via2ViaForbiddenOverlapLen size = "
+         << tech_->via2ViaForbiddenOverlapLen.size() << "\n";
+    cout << "tech_->viaForbiddenTurnLen size = "
+         << tech_->viaForbiddenTurnLen.size() << "\n";
+    cout << "tech_->viaForbiddenPlanarLen size = "
+         << tech_->viaForbiddenPlanarLen.size() << "\n";
+    cout << "tech_->line2LineForbiddenLen size = "
+         << tech_->line2LineForbiddenLen.size() << "\n";
+    cout << "tech_->viaForbiddenThrough size = "
+         << tech_->viaForbiddenThrough.size() << "\n";
   }
 }
