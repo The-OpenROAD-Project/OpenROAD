@@ -26,15 +26,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdexcept>
-
 #include "fixture.h"
+
+#include <stdexcept>
 
 using namespace fr;
 
 Fixture::Fixture()
-  : logger(std::make_unique<Logger>()),
-    design(std::make_unique<frDesign>(logger.get()))
+    : logger(std::make_unique<Logger>()),
+      design(std::make_unique<frDesign>(logger.get()))
 {
   makeDesign();
 }
@@ -112,7 +112,7 @@ void Fixture::makeCornerConstraint(frLayerNum layer_num,
                                    frCoord eolWidth,
                                    frCornerTypeEnum type)
 {
-  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
 
