@@ -144,6 +144,14 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   pathDetailsTableView->resizeColumnsToContents();
   pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
       path_details_model_->columnCount() - 1, QHeaderView::Stretch);
+
+  // As there is no direct API to get Load from OpenSTA, remove the following 2
+  // lines
+  // once the load values are populated properly in the model
+  pathDetailsTableView->hideColumn(path_details_model_->columnCount() - 1);
+  pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
+      path_details_model_->columnCount() - 2, QHeaderView::Stretch);
+
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);
 
