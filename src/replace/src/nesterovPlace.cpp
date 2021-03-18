@@ -519,7 +519,7 @@ NesterovPlace::doNesterovPlace() {
     }
 
     if( npVars_.maxBackTrack == numBackTrak ) {
-      log_->warn(GPL, 75, "Backtracking limit reached so a small step will be taken");
+      debugPrint(log_, GPL, "replace", 3, "Backtracking limit reached so a small step will be taken");
     }
 
     if( isDiverged_ ) {

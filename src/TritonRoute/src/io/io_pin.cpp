@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -31,17 +31,20 @@
 using namespace std;
 using namespace fr;
 
-void io::Parser::instAnalysis() {
+void io::Parser::instAnalysis()
+{
   bool enableOutput = false;
-  //bool enableOutput = true;
+  // bool enableOutput = true;
   if (VERBOSE > 0) {
     logger->info(DRT, 162, "libcell analysis ...");
   }
   trackOffsetMap.clear();
   prefTrackPatterns.clear();
-  for (auto &trackPattern: design->getTopBlock()->getTrackPatterns()) {
-    auto isVerticalTrack = trackPattern->isHorizontal(); // yes = vertical track
-    if (design->getTech()->getLayer(trackPattern->getLayerNum())->getDir() == frcHorzPrefRoutingDir) {
+  for (auto& trackPattern : design->getTopBlock()->getTrackPatterns()) {
+    auto isVerticalTrack
+        = trackPattern->isHorizontal();  // yes = vertical track
+    if (design->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
+        == frcHorzPrefRoutingDir) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -53,21 +56,22 @@ void io::Parser::instAnalysis() {
   }
 
   int numLayers = design->getTech()->getLayers().size();
-  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp> refBlockPinLayerRange;
-  for (auto &uRefBlock: design->getRefBlocks()) {
+  map<frBlock*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+      refBlockPinLayerRange;
+  for (auto& uRefBlock : design->getRefBlocks()) {
     auto refBlock = uRefBlock.get();
     frLayerNum minLayerNum = numLayers;
     frLayerNum maxLayerNum = 0;
-    for (auto &uTerm: refBlock->getTerms()) {
-      for (auto &uPin: uTerm->getPins()) {
-        for (auto &uPinFig: uPin->getFigs()) {
+    for (auto& uTerm : refBlock->getTerms()) {
+      for (auto& uPin : uTerm->getPins()) {
+        for (auto& uPinFig : uPin->getFigs()) {
           auto pinFig = uPinFig.get();
           if (pinFig->typeId() == frcRect) {
             auto lNum = static_cast<frRect*>(pinFig)->getLayerNum();
             minLayerNum = min(minLayerNum, lNum);
             maxLayerNum = max(maxLayerNum, lNum);
           } else {
-            cout <<"Error: instAnalysis unsupported pinFig" <<endl;
+            cout << "Error: instAnalysis unsupported pinFig" << endl;
           }
         }
       }
@@ -75,12 +79,13 @@ void io::Parser::instAnalysis() {
     maxLayerNum = min(maxLayerNum + 2, numLayers);
     refBlockPinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
     if (enableOutput) {
-      cout <<"  " <<refBlock->getName() <<" PIN layer ("
-           <<design->getTech()->getLayer(minLayerNum)->getName() <<", "
-           <<design->getTech()->getLayer(maxLayerNum)->getName() <<")" <<endl;
+      cout << "  " << refBlock->getName() << " PIN layer ("
+           << design->getTech()->getLayer(minLayerNum)->getName() << ", "
+           << design->getTech()->getLayer(maxLayerNum)->getName() << ")"
+           << endl;
     }
   }
-  //cout <<"  refBlock pin layer range done" <<endl;
+  // cout <<"  refBlock pin layer range done" <<endl;
 
   if (VERBOSE > 0) {
     logger->info(DRT, 163, "instance analysis ...");
@@ -88,23 +93,31 @@ void io::Parser::instAnalysis() {
 
   vector<frCoord> offset;
   int cnt = 0;
-  for (auto &inst: design->getTopBlock()->getInsts()) {
+  for (auto& inst : design->getTopBlock()->getInsts()) {
     frPoint origin;
     inst->getOrigin(origin);
     auto orient = inst->getOrient();
-    auto [minLayerNum, maxLayerNum] = refBlockPinLayerRange[inst->getRefBlock()];
+    auto [minLayerNum, maxLayerNum]
+        = refBlockPinLayerRange[inst->getRefBlock()];
     offset.clear();
-    for (auto &tp: prefTrackPatterns) {
-      if (tp->getLayerNum() >= minLayerNum && tp->getLayerNum() <= maxLayerNum) {
+    for (auto& tp : prefTrackPatterns) {
+      if (tp->getLayerNum() >= minLayerNum
+          && tp->getLayerNum() <= maxLayerNum) {
         // vertical track
         if (tp->isHorizontal()) {
           offset.push_back(origin.x() % tp->getTrackSpacing());
-          //cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.y() % tp->getTrackSpacing() 
-          //     <<" " <<design->getTech()->getLayer(tp->getLayerNum())->getName() <<endl;
+          // cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.y() %
+          // tp->getTrackSpacing()
+          //      <<" "
+          //      <<design->getTech()->getLayer(tp->getLayerNum())->getName()
+          //      <<endl;
         } else {
           offset.push_back(origin.y() % tp->getTrackSpacing());
-          //cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.x() % tp->getTrackSpacing()
-          //     <<" " <<design->getTech()->getLayer(tp->getLayerNum())->getName() <<endl;
+          // cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.x() %
+          // tp->getTrackSpacing()
+          //      <<" "
+          //      <<design->getTech()->getLayer(tp->getLayerNum())->getName()
+          //      <<endl;
         }
       }
     }
@@ -124,26 +137,26 @@ void io::Parser::instAnalysis() {
   }
 
   if (enableOutput) {
-    cout <<endl <<"summary: " <<endl;
+    cout << endl << "summary: " << endl;
   }
   cnt = 0;
   frString orientName;
-  for (auto &[refBlock, orientMap]: trackOffsetMap) {
+  for (auto& [refBlock, orientMap] : trackOffsetMap) {
     if (enableOutput) {
-      cout <<"  " <<refBlock->getName() <<" (ORIENT/#diff patterns)";
+      cout << "  " << refBlock->getName() << " (ORIENT/#diff patterns)";
     }
-    for (auto &[orient, offsetMap]: orientMap) {
+    for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
       if (enableOutput) {
         orient.getName(orientName);
-        cout <<" (" <<orientName <<", " <<offsetMap.size() <<")";
-        for (auto &[vec, inst]: offsetMap) {
-          cout <<" " <<(*inst.begin())->getName();
+        cout << " (" << orientName << ", " << offsetMap.size() << ")";
+        for (auto& [vec, inst] : offsetMap) {
+          cout << " " << (*inst.begin())->getName();
         }
       }
     }
     if (enableOutput) {
-      cout <<endl;
+      cout << endl;
     }
   }
   if (VERBOSE > 0) {
