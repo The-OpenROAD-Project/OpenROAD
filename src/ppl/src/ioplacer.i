@@ -97,16 +97,15 @@ exclude_interval(Edge edge, int begin, int end)
   getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
+PinGroup* create_names_constraint(Edge edge, int begin, int end)
+{
+  return getIOPlacer()->createNamesConstraint(edge, begin, end);
+}
+
 void add_direction_constraint(Direction direction, Edge edge,
                                int begin, int end)
 {
   getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
-}
-
-void add_name_constraint(const char* name, Edge edge,
-                               int begin, int end)
-{
-  getIOPlacer()->addNameConstraint(name, edge, begin, end);
 }
 
 void
