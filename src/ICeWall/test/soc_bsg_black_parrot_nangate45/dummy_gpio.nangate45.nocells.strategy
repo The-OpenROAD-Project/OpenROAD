@@ -1,0 +1,96 @@
+Footprint library {
+
+  proc calculate_required_io_pg_pairs {} {
+    set drive_strength 0
+    foreach padcell [ICeWall::get_footprint_padcells] {
+      set drive_strength [ICeWall::get_padcell_parameter $padcell drive_strength]
+    }
+    return $drive_strength / 32
+  }
+  
+  proc calculate_required_core_pg_pairs {} {
+    set drive_strength 0
+    foreach padcell [ICeWall::get_footprint_padcells] {
+      set drive_strength [ICeWall::get_padcell_parameter $padcell drive_strength]
+    }
+    return $drive_strength / 32
+  }
+  
+  proc add_control_cells {} {
+    # Add a pdt cell for every 8 signal pads bookended by cbk cells
+
+    set cbk_idx 0
+    set pdt_idx 0
+    ste sig_idx 0
+    
+    ICeWall::insert cbk$cbk_idx cbk ""
+    incr $cbk_idx
+
+    foreach padcell [ICeWall::get_footprint_padcells] {
+      if {[ICeWall::get_padcell_type $padcell] == "sig"} {
+        incr sig_idx
+        if {$sig_idx % 8 == 4} {
+          ICeWall::insert pdt$pdt_idx pdt $padcell
+          incr $pdt_idx
+        }
+        if {$sig_idx % 8 == 0} {
+          ICeWall::insert cbk$cbk_idx cbk $padcell
+          incr $cbk_idx
+        }
+      }
+    }
+  }
+  
+  types {
+    sig     PADCELL_SIG
+    vda     PADCELL_VDD
+    vsa     PADCELL_VSS
+    vdd     PADCELL_VDD
+    vss     PADCELL_VSS
+    vddio   PADCELL_VDDIO
+    vssio   PADCELL_VSSIO
+    cbk     PADCELL_CBRK
+    pdt     PADCELL_PWRDET
+    fbk     PADCELL_FBRK
+    bondpad PAD
+    corner  PAD_CORNER
+    fill    {PAD_FILL5 PAD_FILL1}
+    marker  MARKER
+    bump    DUMMY_BUMP
+  }
+
+  bump {
+    pitch 160
+    pin_name PAD
+    spacing_to_edge {151 + 14}
+    cell_name {
+      140 DUMMY_BUMP_small
+      150 DUMMY_BUMP_medium
+      180 DUMMY_BUMP_large
+    }
+  }
+  
+  num_pads_per_tile {
+    130 4
+    160 5
+  }
+
+  rdl {
+    layer_name LB
+    width 10.0
+    spacing 10.0
+  }
+
+  breakers {cbk fbk}
+  connect_by_abutment {
+    RETN
+    SNS
+    DVDD
+    DVSS
+  }
+
+  required_io_pg_pairs calculate_required_io_pairs
+  
+}
+
+
