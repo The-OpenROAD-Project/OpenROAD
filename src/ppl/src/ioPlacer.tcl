@@ -193,10 +193,15 @@ proc place_pins { args } {
   set num_tracks_y 0
   foreach hor_layer $hor_layers {
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      utl::error PPL 21 "Routing tracks not found for layer $hor_layer."
+      utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer."
     }
 
-    set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
+    set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
+    if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
+      utl::warn PPL 45 "Layer $hor_layer preferred direction is not horizontal."
+    }
+
+    set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
     
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
   }
@@ -204,10 +209,15 @@ proc place_pins { args } {
   set num_tracks_x 0
   foreach ver_layer $ver_layers {
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      utl::error PPL 23 "Routing tracks not found for layer $ver_layer."
+      utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer."
     }
 
-    set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+    set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
+    if { [$v_tech_layer getDirection] != "VERTICAL" } {
+      utl::warn PPL 46 "Layer $ver_layer preferred direction is not vertical."
+    }
+
+    set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]
 
     set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
   }
