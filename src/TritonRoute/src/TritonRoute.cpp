@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,21 +26,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <fstream>
-#include "global.h"
 #include "triton_route/TritonRoute.h"
+
+#include <fstream>
+#include <iostream>
+
+#include "db/tech/frTechObject.h"
+#include "dr/FlexDR.h"
+#include "frDesign.h"
+#include "gc/FlexGC.h"
+#include "global.h"
+#include "gr/FlexGR.h"
+#include "gui/gui.h"
 #include "io/io.h"
 #include "pa/FlexPA.h"
-#include "ta/FlexTA.h"
-#include "dr/FlexDR.h"
-#include "gc/FlexGC.h"
-#include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
-#include "db/tech/frTechObject.h"
-#include "frDesign.h"
-#include "gui/gui.h"
+#include "ta/FlexTA.h"
 
 using namespace std;
 using namespace fr;
@@ -48,17 +50,17 @@ using namespace triton_route;
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *TritonRoute_tcl_inits[];
-}
+extern const char* TritonRoute_tcl_inits[];
+}  // namespace sta
 
 extern "C" {
 extern int Tritonroute_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
-  : debug_(std::make_unique<frDebugSettings>()),
-    num_drvs_(-1),
-    gui_(gui::Gui::get())
+    : debug_(std::make_unique<frDebugSettings>()),
+      num_drvs_(-1),
+      gui_(gui::Gui::get())
 {
 }
 
@@ -115,7 +117,9 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
+void TritonRoute::init(Tcl_Interp* tcl_interp,
+                       odb::dbDatabase* db,
+                       Logger* logger)
 {
   db_ = db;
   logger_ = logger;
@@ -123,9 +127,10 @@ void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logg
   // Define swig TCL commands.
   Tritonroute_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::TritonRoute_tcl_inits);
-  }
+}
 
-void TritonRoute::init() {
+void TritonRoute::init()
+{
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     VIAINPIN_BOTTOMLAYERNUM = 2;
     VIAINPIN_TOPLAYERNUM = 2;
@@ -135,7 +140,7 @@ void TritonRoute::init() {
     ENABLE_VIA_GEN = false;
   }
 
-  io::Parser parser(getDesign(),logger_);
+  io::Parser parser(getDesign(), logger_);
   parser.readDb(db_);
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
@@ -153,30 +158,35 @@ void TritonRoute::init() {
   parser.initRPin();
 }
 
-void TritonRoute::prep() {
+void TritonRoute::prep()
+{
   FlexRP rp(getDesign(), getDesign()->getTech(), logger_);
   rp.main();
 }
 
-void TritonRoute::gr() {
+void TritonRoute::gr()
+{
   FlexGR gr(getDesign(), logger_);
   gr.main(db_);
 }
 
-void TritonRoute::ta() {
+void TritonRoute::ta()
+{
   FlexTA ta(getDesign(), logger_);
   ta.main();
 }
 
-void TritonRoute::dr() {
+void TritonRoute::dr()
+{
   num_drvs_ = -1;
   FlexDR dr(getDesign(), logger_);
   dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 
-void TritonRoute::endFR() {
-  io::Writer writer(getDesign(),logger_);
+void TritonRoute::endFR()
+{
+  io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
 }
 
@@ -185,7 +195,8 @@ void TritonRoute::reportConstraints()
   getDesign()->getTech()->printAllConstraints(logger_);
 }
 
-int TritonRoute::main() {
+int TritonRoute::main()
+{
   init();
   if (GUIDE_FILE == string("")) {
     gr();
@@ -200,7 +211,7 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
-  if(gui_ != nullptr)
+  if (gui_ != nullptr)
     gui_->updateShapes();
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
@@ -208,45 +219,93 @@ int TritonRoute::main() {
   return 0;
 }
 
-void TritonRoute::readParams(const string &fileName)
+void TritonRoute::readParams(const string& fileName)
 {
   int readParamCnt = 0;
   ifstream fin(fileName.c_str());
   string line;
-  if (fin.is_open()){
-    while (fin.good()){
+  if (fin.is_open()) {
+    while (fin.good()) {
       getline(fin, line);
-      if (line[0] != '#'){
-        char delimiter=':';
+      if (line[0] != '#') {
+        char delimiter = ':';
         int pos = line.find(delimiter);
         string field = line.substr(0, pos);
         string value = line.substr(pos + 1);
         stringstream ss(value);
-        if (field == "lef")           { logger_->warn(utl::DRT, 148, "deprecated lef param in params file"); }
-        else if (field == "def")      { logger_->warn(utl::DRT, 170, "deprecated def param in params file");}
-        else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
-        else if (field == "outputTA") { logger_->warn(utl::DRT, 171, "deprecated outputTA param in params file");}
-        else if (field == "output")   { logger_->warn(utl::DRT, 205, "deprecated output param in params file");}
-        else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
-        else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
-        else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
-        else if (field == "outputCMap") { CMAP_FILE = value; ++readParamCnt;}
-        else if (field == "threads")  { MAX_THREADS = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "verbose")    VERBOSE = atoi(value.c_str());
-        else if (field == "dbProcessNode") { DBPROCESSNODE = value; ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") { ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") { ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") { ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") { ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyViaBottomLayerNum") { ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteOnGridOnlyViaTopLayerNum") { ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteViaInPinBottomLayerNum") { VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteViaInPinTopLayerNum") { VIAINPIN_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "drouteEndIterNum") { END_ITERATION = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "OR_SEED") { OR_SEED = atoi(value.c_str()); ++readParamCnt; }
-        else if (field == "OR_K") { OR_K = atof(value.c_str()); ++readParamCnt; }
-        else if (field == "bottomRoutingLayer") { BOTTOM_ROUTING_LAYER = atoi(value.c_str()); ++readParamCnt;}
-        else if (field == "topRoutingLayer") { TOP_ROUTING_LAYER = atoi(value.c_str()); ++readParamCnt;}
+        if (field == "lef") {
+          logger_->warn(utl::DRT, 148, "deprecated lef param in params file");
+        } else if (field == "def") {
+          logger_->warn(utl::DRT, 170, "deprecated def param in params file");
+        } else if (field == "guide") {
+          GUIDE_FILE = value;
+          ++readParamCnt;
+        } else if (field == "outputTA") {
+          logger_->warn(
+              utl::DRT, 171, "deprecated outputTA param in params file");
+        } else if (field == "output") {
+          logger_->warn(
+              utl::DRT, 205, "deprecated output param in params file");
+        } else if (field == "outputguide") {
+          OUTGUIDE_FILE = value;
+          ++readParamCnt;
+        } else if (field == "outputMaze") {
+          OUT_MAZE_FILE = value;
+          ++readParamCnt;
+        } else if (field == "outputDRC") {
+          DRC_RPT_FILE = value;
+          ++readParamCnt;
+        } else if (field == "outputCMap") {
+          CMAP_FILE = value;
+          ++readParamCnt;
+        } else if (field == "threads") {
+          MAX_THREADS = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "verbose")
+          VERBOSE = atoi(value.c_str());
+        else if (field == "dbProcessNode") {
+          DBPROCESSNODE = value;
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") {
+          ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") {
+          ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") {
+          ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") {
+          ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyViaBottomLayerNum") {
+          ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteOnGridOnlyViaTopLayerNum") {
+          ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteViaInPinBottomLayerNum") {
+          VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteViaInPinTopLayerNum") {
+          VIAINPIN_TOPLAYERNUM = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "drouteEndIterNum") {
+          END_ITERATION = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "OR_SEED") {
+          OR_SEED = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "OR_K") {
+          OR_K = atof(value.c_str());
+          ++readParamCnt;
+        } else if (field == "bottomRoutingLayer") {
+          BOTTOM_ROUTING_LAYER = atoi(value.c_str());
+          ++readParamCnt;
+        } else if (field == "topRoutingLayer") {
+          TOP_ROUTING_LAYER = atoi(value.c_str());
+          ++readParamCnt;
+        }
       }
     }
     fin.close();
@@ -259,22 +318,18 @@ void TritonRoute::readParams(const string &fileName)
 
 bool fr::isPad(MacroClassEnum e)
 {
-  return e == MacroClassEnum::PAD   ||
-    e == MacroClassEnum::PAD_INPUT  ||
-    e == MacroClassEnum::PAD_OUTPUT ||
-    e == MacroClassEnum::PAD_INOUT  ||
-    e == MacroClassEnum::PAD_POWER  ||
-    e == MacroClassEnum::PAD_SPACER ||
-    e == MacroClassEnum::PAD_AREAIO;
+  return e == MacroClassEnum::PAD || e == MacroClassEnum::PAD_INPUT
+         || e == MacroClassEnum::PAD_OUTPUT || e == MacroClassEnum::PAD_INOUT
+         || e == MacroClassEnum::PAD_POWER || e == MacroClassEnum::PAD_SPACER
+         || e == MacroClassEnum::PAD_AREAIO;
 }
 
 bool fr::isEndcap(MacroClassEnum e)
 {
-  return e == MacroClassEnum::ENDCAP       ||
-    e == MacroClassEnum::ENDCAP_PRE        ||
-    e == MacroClassEnum::ENDCAP_POST       ||
-    e == MacroClassEnum::ENDCAP_TOPLEFT    ||
-    e == MacroClassEnum::ENDCAP_TOPRIGHT   ||
-    e == MacroClassEnum::ENDCAP_BOTTOMLEFT ||
-    e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
+  return e == MacroClassEnum::ENDCAP || e == MacroClassEnum::ENDCAP_PRE
+         || e == MacroClassEnum::ENDCAP_POST
+         || e == MacroClassEnum::ENDCAP_TOPLEFT
+         || e == MacroClassEnum::ENDCAP_TOPRIGHT
+         || e == MacroClassEnum::ENDCAP_BOTTOMLEFT
+         || e == MacroClassEnum::ENDCAP_BOTTOMRIGHT;
 }
