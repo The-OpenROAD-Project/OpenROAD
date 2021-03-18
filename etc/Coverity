@@ -1,0 +1,7 @@
+#!/bin/bash
+set -x
+set -e
+
+cmake -B build .
+cov-build --dir cov-int cmake --build build -j $(nproc)
+tar czvf openroad.tgz cov-int

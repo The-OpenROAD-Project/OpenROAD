@@ -6,14 +6,14 @@ pipeline {
   stages {
     stage('Build and test') {
       parallel {
-        stage('Local centos7 gcc8') {
+        stage('Local centos7 gcc') {
           stages {
-            stage('Build centos7 gcc8') {
+            stage('Build centos7 gcc') {
               steps {
-                sh './jenkins/build.sh'
+                sh './etc/BuildHelper'
               }
             }
-            stage('Test centos7 gcc8') {
+            stage('Test centos7 gcc') {
               steps {
                 script {
                   parallel (
@@ -31,30 +31,30 @@ pipeline {
             }
           }
         }
-        stage('Docker centos7 clang7') {
+        stage('Docker centos7 clang') {
           stages{
-            stage('Build centos7 clang7') {
+            stage('Build centos7 clang') {
               steps {
-                sh './jenkins/docker/build.sh centos7 clang7'
+                sh './docker/BuildHelper centos7 clang'
               }
             }
-            stage('Test centos7 clang7') {
+            stage('Test centos7 clang') {
               steps {
-                sh './jenkins/docker/test.sh centos7 clang7'
+                sh './docker/TestRegression centos7 clang'
               }
             }
           }
         }
-        stage('Docker ubuntu20 gcc8') {
+        stage('Docker ubuntu20 gcc') {
           stages{
-            stage('Build ubuntu20 gcc8') {
+            stage('Build ubuntu20 gcc') {
               steps {
-                sh './jenkins/docker/build.sh ubuntu20 gcc8'
+                sh './docker/BuildHelper ubuntu20 gcc'
               }
             }
-            stage('Test ubuntu20 gcc8') {
+            stage('Test ubuntu20 gcc') {
               steps {
-                sh './jenkins/docker/test.sh ubuntu20 gcc8'
+                sh './docker/TestRegression ubuntu20 gcc'
               }
             }
           }

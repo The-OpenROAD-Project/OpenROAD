@@ -3,12 +3,12 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh './jenkins/build.sh coverage'
+        sh './etc/BuilderHelper coverage'
       }
     }
     stage('Coverage') {
       steps {
-        sh './jenkins/test.sh coverage'
+        sh './etc/CoverageAnalysis'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage-output', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
       }
     }

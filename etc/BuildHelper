@@ -1,0 +1,51 @@
+#!/bin/bash
+set -x
+set -e
+
+if [[ "$#" -gt 0 ]]; then
+    case "$@" in
+        "coverge" )
+            CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON"
+            ;;
+        "no-gui" )
+            CMAKE_OPTIONS="-DBUILD_GUI=OFF"
+            ;;
+        "clang" )
+            COMPILER="clang"
+            ;;
+        "gcc" )
+            COMPILER="gcc"
+            ;;
+        *)
+            echo "Option not recognized"
+            echo "usage: $0 [gcc]"
+            echo "       $0 [clang]"
+            echo "       $0 [coverage]"
+            echo "       $0 [no-gui]"
+            return 1
+            ;;
+    esac
+fi
+
+case "${COMPILER:-gcc}" in
+    "gcc" )
+        if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
+            source /opt/rh/devtoolset-8/enable
+        fi
+        ;;
+    "clang" )
+        if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+            export CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang
+            export CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++
+        else
+            export CC="$(command -v clang)"
+            export CXX="$(command -v clang++)"
+        fi
+        ;;
+esac
+
+log_name="openroad-build-$(date +%s).log"
+cmake "$CMAKE_OPTIONS" -B build . | tee "$log_name"
+time cmake --build build -j $(nproc) | tee -a "$log_name"
+mv "$log_name" build/

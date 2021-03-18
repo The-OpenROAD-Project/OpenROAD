@@ -1,79 +1,20 @@
-FROM ubuntu:20.04 AS base-dependencies
-LABEL maintainer="Vitor Bandeira <bandeira@ieee.org>"
+# create image with only dependencies
+FROM ubuntu:20.04 AS base
 
-ENV CC=/usr/bin/gcc \
-    CPP=/usr/bin/cpp \
-    CXX=/usr/bin/g++
+COPY ./etc/InstallDeps /tmp/
+RUN /tmp/InstallDeps && rm -f /tmp/InstallDeps \
+      && strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+# need the strip "hack" above to run on docker in gcloud instance
 
-RUN apt update
+# create image with dependencies + compiled app
+FROM openroad:ubuntu20 AS dev
+ARG compiler=gcc
+COPY . /OpenROAD
+WORKDIR /OpenROAD
+RUN ./etc/BuildHelper $compiler
 
-RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
-
-RUN apt install -y \
-        automake \
-        autotools-dev \
-        bison \
-        clang-7 \
-        cmake \
-        flex \
-        g++ \
-        gcc \
-        git \
-        lcov \
-        libpcre3 \
-        libpcre3-dev \
-        python3 \
-        python3-dev \
-        qt5-default \
-        tcl \
-        tcl-dev \
-        wget \
-        zlib1g \
-        zlib1g-dev
-
-# Install CMake
-RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
-    chmod +x cmake-3.14.0-Linux-x86_64.sh  && \
-    ./cmake-3.14.0-Linux-x86_64.sh --skip-license --prefix=/usr/local && rm -rf cmake-3.14.0-Linux-x86_64.sh
-
-# Install SWIG
-RUN wget https://github.com/swig/swig/archive/rel-4.0.1.tar.gz \
-    && tar xfz rel-4.0.1.tar.gz \
-    && rm -rf rel-4.0.1.tar.gz \
-    && cd swig-rel-4.0.1 \
-    && ./autogen.sh && ./configure --prefix=/usr && make -j $(nproc) && make install
-
-# boost 1.68 required for TritonRoute but 1.68 unavailable
-RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download && \
-    tar -xf download && \
-    cd boost_1_72_0 && \
-    ./bootstrap.sh && \
-    ./b2 install --with-iostreams --with-test -j $(nproc)
-
-# eigen required by replace, TritonMacroPlace
-RUN git clone -b 3.3 https://gitlab.com/libeigen/eigen.git \
-    && cd eigen \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make install
-
-# lemon required by TritonCTS (no package for CentOS!)
-#  (On Ubuntu liblemon-dev can be used instead)
-RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
-    && tar -xf lemon-1.3.1.tar.gz \
-    && cd lemon-1.3.1 \
-    && cmake -B build . \
-    && cmake --build build -j $(nproc) --target install
-
-# spdlog required by OpenDB
-RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
-    && cd spdlog \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make install -j
-
-# need the "hack" below to run on docker in gcloud instance (MacOS Docker does
-# not need)
-RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+# create image with dependencies + compiled app + run app automatically
+FROM openroad:ubuntu20-dev AS runner
+# rlwrap provides minimal tcl readline functionality
+# not sure why tclreadline does not work on ubuntu
+ENTRYPOINT [ "rlwrap", "/OpenROAD/build/src/openroad" ]

@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh './jenkins/build.sh'
+        sh './etc/BuilderHelper'
       }
     }
     stage('Clean-up') {
