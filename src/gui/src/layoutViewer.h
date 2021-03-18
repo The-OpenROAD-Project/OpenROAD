@@ -171,7 +171,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawBlock(QPainter* painter,
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
-                 int depth);
+                 int depth,
+                 const QTransform* base_tx = nullptr);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -191,7 +192,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                       const odb::Rect& bounds,
                       odb::dbBlock* block);
   void drawRulers(Painter& painter);
-  void drawScreenRulers(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
