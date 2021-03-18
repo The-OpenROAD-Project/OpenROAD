@@ -728,23 +728,21 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   excluded_intervals_.push_back(excluded_interv);
 }
 
+PinGroup* IOPlacer::createNamesConstraint(Edge edge, int begin, int end)
+{
+  Interval interval(edge, begin, end);
+  constraints_.push_back(Constraint(PinGroup(), Direction::invalid, interval));
+  PinGroup* pin_list = &constraints_.back().pin_list;
+  return pin_list;
+}
+
 void IOPlacer::addDirectionConstraint(Direction direction,
                                       Edge edge,
                                       int begin,
                                       int end)
 {
   Interval interval(edge, begin, end);
-  Constraint constraint("INVALID", direction, interval);
-  constraints_.push_back(constraint);
-}
-
-void IOPlacer::addNameConstraint(std::string name,
-                                 Edge edge,
-                                 int begin,
-                                 int end)
-{
-  Interval interval(edge, begin, end);
-  Constraint constraint(name, Direction::invalid, interval);
+  Constraint constraint(PinGroup(), direction, interval);
   constraints_.push_back(constraint);
 }
 

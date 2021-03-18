@@ -64,6 +64,9 @@ using odb::Rect;
 
 using utl::Logger;
 
+// A list of pins that will be placed together in the die boundary
+typedef std::vector<odb::dbBTerm*> PinGroup;
+
 enum class RandomMode
 {
   none,
@@ -96,17 +99,15 @@ struct Interval
 
 struct Constraint
 {
-  std::string name;
+  PinGroup pin_list;
   Direction direction;
   Interval interval;
-  Constraint(std::string name, Direction dir, Interval interv)
-      : name(name), direction(dir), interval(interv)
+  Constraint() = default;
+  Constraint(PinGroup pins, Direction dir, Interval interv)
+      : pin_list(pins), direction(dir), interval(interv)
   {
   }
 };
-
-// A list of pins that will be placed together in the die boundary
-typedef std::vector<odb::dbBTerm*> PinGroup;
 
 class IOPlacer
 {
@@ -118,11 +119,11 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
+  PinGroup* createNamesConstraint(Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
                               int begin,
                               int end);
-  void addNameConstraint(std::string name, Edge edge, int begin, int end);
   void addHorLayer(int layer) { hor_layers_.insert(layer); }
   void addVerLayer(int layer) { ver_layers_.insert(layer); }
   Edge getEdge(std::string edge);
