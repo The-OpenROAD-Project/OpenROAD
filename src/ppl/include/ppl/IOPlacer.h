@@ -105,6 +105,7 @@ struct Constraint
   }
 };
 
+// A list of pins that will be placed together in the die boundary
 typedef std::vector<odb::dbBTerm*> PinGroup;
 
 class IOPlacer
