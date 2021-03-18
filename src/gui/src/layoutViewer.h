@@ -121,6 +121,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void inDbWireDestroy(odb::dbWire* wire) override;
   virtual void inDbSWireCreate(odb::dbSWire* wire) override;
   virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
+  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
 
  signals:
   void location(qreal x, qreal y);

@@ -1253,6 +1253,12 @@ void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
   updateShapes();
 }
 
+void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
+{
+  // This happens when initialize_floorplan is run and it make sense
+  // to fit as current zoom with be on a zero sized block.
+  fit();
+}
 
 }  // namespace gui
 
