@@ -32,10 +32,10 @@
 using namespace std;
 using namespace fr;
 
-inline frCoord FlexTAWorker::box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy) {
+inline frSquaredDistance FlexTAWorker::box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy) {
   dx = max(max(box1.left(), box2.left())     - min(box1.right(), box2.right()), 0);
   dy = max(max(box1.bottom(), box2.bottom()) - min(box1.top(), box2.top()),     0);
-  return dx * dx + dy * dy;
+  return (frSquaredDistance)dx * dx + (frSquaredDistance)dy * dy;
 }
 
 // must be current TA layer
@@ -70,7 +70,7 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox &box, frLayerNum lNum, ta
   }
   if (fig->getNet()->getNondefaultRule())
       bloatDist = max(bloatDist, fig->getNet()->getNondefaultRule()->getSpacing(lNum/2 -1));
-  frCoord bloatDistSquare = bloatDist * bloatDist;
+  frSquaredDistance bloatDistSquare = (frSquaredDistance)bloatDist * bloatDist;
 
   bool isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
 
@@ -94,8 +94,8 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox &box, frLayerNum lNum, ta
     xform.set(frPoint(boxLeft, trackLoc));
     box2.transform(xform);
     box2boxDistSquare(box1, box2, dx, dy);
-    frCoord maxX = (frCoord)(sqrt(1.0 * bloatDistSquare - 1.0 * dy * dy));
-    if (maxX * maxX + dy * dy == bloatDistSquare) {
+    frCoord maxX = (frCoord)(sqrt(1.0 * bloatDistSquare - 1.0 * (frSquaredDistance)dy * dy));
+    if ((frSquaredDistance)maxX * maxX + (frSquaredDistance)dy * dy == bloatDistSquare) {
       maxX = max(0, maxX - 1);
     }
     frCoord blockLeft  = boxLeft  - maxX - halfwidth2;
@@ -380,7 +380,7 @@ void FlexTAWorker::modCutSpacingCost(const frBox &box, frLayerNum lNum, taPinFig
   frBox tmpBx;
   frTransform xform;
   frCoord dx, dy, c2ctrackdist;
-  //frCoord distSquare;
+  //frSquaredDistance distSquare;
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
   frBox blockBox;

@@ -715,9 +715,10 @@ namespace fr {
     void modMinSpacingCost(drNet* net, const frBox &box, frMIdx z, int type, bool isCurrPs);
     void modMinSpacingCostPlanar(const frBox &box, frMIdx z, int type, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
     void modMinSpacingCostVia(const frBox &box, frMIdx z, int type, bool isUpperVia, bool isCurrPs, bool isBlockage = false, frNonDefaultRule* ndr = nullptr);
-    frCoord pt2boxDistSquare(const frPoint &pt, const frBox &box);
-    frCoord box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
-    frCoord box2boxDistSquareNew(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
+    frSquaredDistance pt2boxDistSquare(const frPoint &pt, const frBox &box);
+    frSquaredDistance pt2ptDistSquare(const frPoint &pt1, const frPoint &pt2);
+    frSquaredDistance box2boxDistSquare(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
+    frSquaredDistance box2boxDistSquareNew(const frBox &box1, const frBox &box2, frCoord &dx, frCoord &dy);
     void modMinSpacingCostVia_eol(const frBox &box, const frBox &tmpBx, int type, bool isUpperVia, frMIdx i, frMIdx j, frMIdx z);
     void modMinSpacingCostVia_eol_helper(const frBox &box, const frBox &testBox, int type, bool isUpperVia, frMIdx i, frMIdx j, frMIdx z);
     // eolSpc

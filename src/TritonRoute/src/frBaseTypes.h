@@ -46,6 +46,7 @@ namespace fr {
   using frLayerNum = int;
   using frCoord = int;
   using frArea = uint64_t;
+  using frSquaredDistance = uint64_t;
   using frUInt4 = unsigned int;
   using frDist  = double;
   using frString = std::string;
