@@ -343,9 +343,6 @@ class Gui
   // Show a message in the status bar
   void status(const std::string& message);
 
-  // reset shapes in layoutViewer & reinitializing it
-  void updateShapes();
-
   // Add a custom visibilty control to the 'Display Control' panel.
   // Useful for debug renderers to control their display.
   void addCustomVisibilityControl(const std::string& name,
