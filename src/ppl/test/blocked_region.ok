@@ -11,8 +11,8 @@
 [INFO ODB-0127] Reading DEF file: blocked_region.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 378 components and 1959 component-terminals.
-[INFO ODB-0133]     Created 413 nets and 1205 connections.
+[INFO ODB-0131]     Created 253 components and 1357 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 155 connections.
 [INFO ODB-0134] Finished DEF file: blocked_region.def
 Found 1 macro blocks.
 Using 1u default distance from corners.
