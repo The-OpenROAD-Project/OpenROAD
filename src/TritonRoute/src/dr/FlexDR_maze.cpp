@@ -41,43 +41,34 @@ using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
 
-inline frSquaredDistance FlexDRWorker::pt2boxDistSquare(const frPoint& pt,
-                                                        const frBox& box)
+inline frCoord FlexDRWorker::pt2boxDistSquare(const frPoint& pt,
+                                              const frBox& box)
 {
   frCoord dx = max(max(box.left() - pt.x(), pt.x() - box.right()), 0);
   frCoord dy = max(max(box.bottom() - pt.y(), pt.y() - box.top()), 0);
-  return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
+  return dx * dx + dy * dy;
 }
 
-inline frSquaredDistance FlexDRWorker::pt2ptDistSquare(const frPoint& pt1,
-                                                       const frPoint& pt2)
-{
-  frCoord dx = abs(pt1.x() - pt2.x());
-  frCoord dy = abs(pt1.y() - pt2.y());
-  return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
-}
-
-inline frSquaredDistance FlexDRWorker::box2boxDistSquare(const frBox& box1,
-                                                         const frBox& box2,
-                                                         frCoord& dx,
-                                                         frCoord& dy)
+inline frCoord FlexDRWorker::box2boxDistSquare(const frBox& box1,
+                                               const frBox& box2,
+                                               frCoord& dx,
+                                               frCoord& dy)
 {
   dx = max(max(box1.left(), box2.left()) - min(box1.right(), box2.right()), 0);
   dy = max(max(box1.bottom(), box2.bottom()) - min(box1.top(), box2.top()), 0);
-  return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
+  return dx * dx + dy * dy;
 }
 
 // prlx = -dx, prly = -dy
 // dx > 0 : disjoint in x; dx = 0 : touching in x; dx < 0 : overlap in x
-inline frSquaredDistance FlexDRWorker::box2boxDistSquareNew(const frBox& box1,
-                                                            const frBox& box2,
-                                                            frCoord& dx,
-                                                            frCoord& dy)
+inline frCoord FlexDRWorker::box2boxDistSquareNew(const frBox& box1,
+                                                  const frBox& box2,
+                                                  frCoord& dx,
+                                                  frCoord& dy)
 {
   dx = max(box1.left(), box2.left()) - min(box1.right(), box2.right());
   dy = max(box1.bottom(), box2.bottom()) - min(box1.top(), box2.top());
-  return (frSquaredDistance) max(dx, 0) * max(dx, 0)
-         + (frSquaredDistance) max(dy, 0) * max(dy, 0);
+  return max(dx, 0) * max(dx, 0) + max(dy, 0) * max(dy, 0);
 }
 
 void FlexDRWorker::modViaForbiddenThrough(const FlexMazeIdx& bi,
@@ -255,8 +246,7 @@ void FlexDRWorker::modBlockedVia(const frBox& box, frMIdx z, bool setBlock)
   }
   if (ndr)
     bloatDist = max(bloatDist, ndr->getSpacing(z));
-  frSquaredDistance bloatDistSquare = bloatDist;
-  bloatDistSquare *= bloatDist;
+  frCoord bloatDistSquare = bloatDist * bloatDist;
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -268,7 +258,7 @@ void FlexDRWorker::modBlockedVia(const frBox& box, frMIdx z, bool setBlock)
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
 
   frPoint pt, pt1, pt2, pt3, pt4;
-  frSquaredDistance distSquare = 0;
+  frCoord distSquare = 0;
   int cnt = 0;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -437,7 +427,7 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
   frCoord dx, dy, prl;
   frTransform xform;
   frCoord reqDist = 0;
-  frSquaredDistance distSquare = 0;
+  frCoord distSquare = 0;
   int cnt = 0;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -461,7 +451,7 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
         reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
             width1, width2planar, prl > 0 ? length1 : 0);
       }
-      if (distSquare < (frSquaredDistance) reqDist * reqDist) {
+      if (distSquare < reqDist * reqDist) {
         switch (type) {
           case 0:
             gridGraph_.subDRCCostPlanar(i, j, z);  // safe access
@@ -556,7 +546,7 @@ void FlexDRWorker::modMinSpacingCost(drNet* net,
           reqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
               width1, width2viaU, prl);
         }
-        if (distSquare < (frSquaredDistance) reqDist * reqDist) {
+        if (distSquare < reqDist * reqDist) {
           switch (type) {
             case 0:
               gridGraph_.subDRCCostVia(i, j, z);
@@ -947,6 +937,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
       bloatDistEolX = max(bloatDistEolX, eolSpace);
     }
   }
+  // frCoord bloatDistSquare = bloatDist * bloatDist;
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -959,7 +950,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
   frPoint pt;
   frBox tmpBx;
-  frSquaredDistance distSquare = 0;
+  frCoord distSquare = 0;
   frCoord dx, dy, prl;
   frTransform xform;
   frCoord reqDist = 0;
@@ -1019,7 +1010,7 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
       }
       if (ndr)
         reqDist = max(reqDist, ndr->getSpacing(z));
-      if (distSquare < (frSquaredDistance) reqDist * reqDist) {
+      if (distSquare < reqDist * reqDist) {
         if (isUpperVia) {
           switch (type) {
             case 0:
@@ -1300,7 +1291,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
     frBox viaBox;
     origVia->getCutBBox(viaBox);
 
-    frSquaredDistance reqDistSquare = con->getCutSpacing();
+    auto reqDistSquare = con->getCutSpacing();
     reqDistSquare *= reqDistSquare;
 
     auto cutWithin = con->getCutWithin();
@@ -1326,7 +1317,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
         gtl::point_data<frCoord> cutCenterPt((box.left() + box.right()) / 2,
                                              (box.bottom() + box.top()) / 2);
 
-        frSquaredDistance distSquare = 0;
+        frCoord distSquare = 0;
         if (con->hasCenterToCenter()) {
           distSquare = gtl::distance_squared(origCenter, cutCenterPt);
         } else {
@@ -1397,6 +1388,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
       bloatDist = max(bloatDist, con->getCutWithin());
     }
   }
+  // frCoord bloatDistSquare = bloatDist * bloatDist;
 
   FlexMazeIdx mIdx1;
   FlexMazeIdx mIdx2;
@@ -1409,8 +1401,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
 
   frPoint pt;
   frBox tmpBx;
-  frSquaredDistance distSquare = 0;
-  frSquaredDistance c2cSquare = 0;
+  frCoord distSquare = 0;
+  frCoord c2cSquare = 0;
   frCoord dx, dy, prl;
   frTransform xform;
   // frCoord reqDist = 0;
@@ -1430,13 +1422,15 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
         tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
                         (tmpBx.bottom() + tmpBx.top()) / 2);
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
+        c2cSquare = (boxCenter.x() - tmpBxCenter.x())
+                        * (boxCenter.x() - tmpBxCenter.x())
+                    + (boxCenter.y() - tmpBxCenter.y())
+                          * (boxCenter.y() - tmpBxCenter.y());
         prl = max(-dx, -dy);
         for (auto con :
              getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
           hasViol = false;
-          reqDistSquare = con->getCutSpacing();
-          reqDistSquare *= con->getCutSpacing();
+          reqDistSquare = con->getCutSpacing() * con->getCutSpacing();
           currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
           if (con->hasSameNet()) {
             continue;
@@ -1446,8 +1440,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frBox& origCutBox,
           } else if (con->isAdjacentCuts()) {
             // OBS always count as within distance instead of cut spacing
             if (isBlockage) {
-              reqDistSquare = con->getCutWithin();
-              reqDistSquare *= con->getCutWithin();
+              reqDistSquare = con->getCutWithin() * con->getCutWithin();
             }
             if (currDistSquare < reqDistSquare) {
               hasViol = true;
@@ -1561,14 +1554,14 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
 
   frPoint pt;
   frBox tmpBx;
-  frSquaredDistance distSquare = 0;
-  frSquaredDistance c2cSquare = 0;
-  frCoord dx, dy;
+  frCoord distSquare = 0;
+  frCoord c2cSquare = 0;
+  frCoord dx, dy /*, prl*/;
   frTransform xform;
-  frSquaredDistance reqDistSquare = 0;
+  frCoord reqDistSquare = 0;
   frPoint boxCenter, tmpBxCenter;
   boxCenter.set((box.left() + box.right()) / 2, (box.bottom() + box.top()) / 2);
-  frSquaredDistance currDistSquare = 0;
+  frCoord currDistSquare = 0;
   bool hasViol = false;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
@@ -1581,10 +1574,12 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const frBox& box,
         tmpBxCenter.set((tmpBx.left() + tmpBx.right()) / 2,
                         (tmpBx.bottom() + tmpBx.top()) / 2);
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
+        c2cSquare = (boxCenter.x() - tmpBxCenter.x())
+                        * (boxCenter.x() - tmpBxCenter.x())
+                    + (boxCenter.y() - tmpBxCenter.y())
+                          * (boxCenter.y() - tmpBxCenter.y());
         hasViol = false;
-        reqDistSquare = con->getCutSpacing();
-        reqDistSquare *= con->getCutSpacing();
+        reqDistSquare = con->getCutSpacing() * con->getCutSpacing();
         currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
         if (currDistSquare < reqDistSquare) {
           hasViol = true;

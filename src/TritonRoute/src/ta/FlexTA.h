@@ -236,10 +236,10 @@ class FlexTAWorker
   void sortIroutes();
 
   // quick drc
-  frSquaredDistance box2boxDistSquare(const frBox& box1,
-                                      const frBox& box2,
-                                      frCoord& dx,
-                                      frCoord& dy);
+  inline frCoord box2boxDistSquare(const frBox& box1,
+                                   const frBox& box2,
+                                   frCoord& dx,
+                                   frCoord& dy);
   void addCost(taPinFig* fig,
                std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
   void subCost(taPinFig* fig,
