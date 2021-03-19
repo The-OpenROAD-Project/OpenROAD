@@ -835,16 +835,15 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
-  frSquaredDistance pt2boxDistSquare(const frPoint& pt, const frBox& box);
-  frSquaredDistance pt2ptDistSquare(const frPoint& pt1, const frPoint& pt2);
-  frSquaredDistance box2boxDistSquare(const frBox& box1,
-                                      const frBox& box2,
-                                      frCoord& dx,
-                                      frCoord& dy);
-  frSquaredDistance box2boxDistSquareNew(const frBox& box1,
-                                         const frBox& box2,
-                                         frCoord& dx,
-                                         frCoord& dy);
+  frCoord pt2boxDistSquare(const frPoint& pt, const frBox& box);
+  frCoord box2boxDistSquare(const frBox& box1,
+                            const frBox& box2,
+                            frCoord& dx,
+                            frCoord& dy);
+  frCoord box2boxDistSquareNew(const frBox& box1,
+                               const frBox& box2,
+                               frCoord& dx,
+                               frCoord& dy);
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
                                 int type,
