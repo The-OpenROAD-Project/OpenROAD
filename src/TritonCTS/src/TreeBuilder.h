@@ -65,7 +65,7 @@ class TreeBuilder
   void addChild(TreeBuilder* child) { _children.emplace_back(child); }
   std::vector<TreeBuilder*> getChildren() const { return _children; }
   TreeBuilder* getParent() const { return _parent; }
-  unsigned treeLevels() const { return _treeLevels; }
+  unsigned getTreeBufLevels() const { return _treeBufLevels; }
 
  protected:
   CtsOptions* _options = nullptr;
@@ -73,7 +73,7 @@ class TreeBuilder
   TechChar* _techChar = nullptr;
   TreeBuilder* _parent;
   std::vector <TreeBuilder *> _children;
-  unsigned _treeLevels = 0;
+  unsigned _treeBufLevels = 0;
 };
 
 }  // namespace cts

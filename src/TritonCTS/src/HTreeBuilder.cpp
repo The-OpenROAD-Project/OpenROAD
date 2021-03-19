@@ -137,7 +137,7 @@ void HTreeBuilder::preSinkClustering(
   }
   _topLevelSinksClustered = newSinkLocations;
   if (clusterCount)
-    _treeLevels++;
+    _treeBufLevels++;
 
   _logger->info(CTS, 19, " Tot. number of sinks after clustering: {}", _topLevelSinksClustered.size());
 }
@@ -246,11 +246,11 @@ void HTreeBuilder::run()
 
   if (_topologyForEachLevel.size() < 1) {
     createSingleBufferClockNet();
+    _treeBufLevels++;
     return;
   }
 
   _clock.setMaxLevel(_topologyForEachLevel.size());
-  _treeLevels += _topologyForEachLevel.size();
 
   if (_options->getPlotSolution() || _logger->debugCheck(utl::CTS, "HTree", 2)) {
     plotSolution();
@@ -750,9 +750,11 @@ void HTreeBuilder::createClockSubNets()
       "clkbuf_0", _options->getRootBuffer(), centerX, centerY);
   Clock::SubNet& rootClockSubNet = _clock.addSubNet("clknet_0");
   rootClockSubNet.addInst(rootBuffer);
+  _treeBufLevels++;
 
   // First level...
   LevelTopology& topLevelTopology = _topologyForEachLevel[0];
+  bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
     SegmentBuilder builder("clkbuf_1_" + std::to_string(idx) + "_",
@@ -772,12 +774,17 @@ void HTreeBuilder::createClockSubNets()
     if (_topologyForEachLevel.size() == 1) {
       builder.forceBufferInSegment(_options->getRootBuffer());
     }
+    if (isFirstPoint) {
+      _treeBufLevels += builder.getNumBuffers();
+      isFirstPoint = false;
+    }
     topLevelTopology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
   });
 
   // Others...
   for (int levelIdx = 1; levelIdx < _topologyForEachLevel.size(); ++levelIdx) {
     LevelTopology& topology = _topologyForEachLevel[levelIdx];
+    isFirstPoint = true;
     topology.forEachBranchingPoint([&](unsigned idx,
                                        Point<double> branchPoint) {
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
@@ -802,6 +809,10 @@ void HTreeBuilder::createClockSubNets()
       }
       if (levelIdx == _topologyForEachLevel.size() - 1) {
         builder.forceBufferInSegment(_options->getRootBuffer());
+      }
+      if (isFirstPoint) {
+        _treeBufLevels += builder.getNumBuffers();
+        isFirstPoint = false;
       }
       topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
     });
@@ -976,6 +987,7 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   _drivingSubNet->addInst(newBuffer);
   _drivingSubNet = &_clock->addSubNet(_netPrefix + "_leaf");
   _drivingSubNet->addInst(newBuffer);
+  _numBuffers++;
 }
 
 }  // namespace cts

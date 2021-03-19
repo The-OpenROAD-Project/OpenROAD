@@ -248,7 +248,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName
 
 void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned &leafSinks,
                                       unsigned currWireLength, double &sinkWireLength,
-                                      int& minDepth, int& maxDepth, int depth)
+                                      int& minDepth, int& maxDepth, int depth, bool fullTree)
 {
   if (sinks > 100000)
     return;
@@ -288,12 +288,13 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
-      //if (!_staEngine->isSink(iterm)) {
-      if (strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6)) {
+      bool terminate = fullTree ? _staEngine->isSink(iterm) : 
+                                  !(strlen(name.c_str()) > 7 && !strncmp(name.c_str(), "clkbuf", 6));
+      if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin)
           countSinksPostDbWrite(outputPin->getNet(), sinks, leafSinks, (currWireLength + dist),
-                                sinkWireLength, minDepth, maxDepth, depth+1);
+                                sinkWireLength, minDepth, maxDepth, depth+1, fullTree);
         else
         {
           _logger->report("  Hanging buffer {}", name);
@@ -330,11 +331,17 @@ void TritonCTS::writeDataToDb()
     double allSinkDistance = 0.0;
     int minDepth = 0;
     int maxDepth = 0;
-    countSinksPostDbWrite(topClockNet, sinkCount, leafSinks, 0, allSinkDistance, minDepth, maxDepth, 0);
+    bool reportFullTree = !builder->getParent() && builder->getChildren().size() && _options->getBalanceLevels();
+    countSinksPostDbWrite(topClockNet, sinkCount, leafSinks, 0, allSinkDistance,
+                           minDepth, maxDepth, 0, reportFullTree);
+    _logger->report(" Post DB write clock net \"{}\" report", builder->getClock().getName());
     _logger->info(CTS, 91, "Sinks after db write = {} (Leaf Buffers = {})", sinkCount, leafSinks);
     double avgWL = allSinkDistance/sinkCount;
     _logger->info(CTS, 92, "Avg Sink Wire Length = {:.3} um", avgWL);
     _logger->info(CTS, 94, "Min path depth = {} Max path depth = {}", minDepth, maxDepth);
+    if (!builder->getParent() && _options->getBalanceLevels()) {
+
+    }
   }
 }
 

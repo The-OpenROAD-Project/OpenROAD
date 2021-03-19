@@ -85,6 +85,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0016]     Fanout distribution for the current clock = 1:2.
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [WARNING ODB-0034] Can not find physical location of iterm p1/Y
+ Post DB write clock net "clk2" report
 [INFO CTS-0091] Sinks after db write = 2 (Leaf Buffers = 0)
 [INFO CTS-0092] Avg Sink Wire Length = 9.69 um
 [INFO CTS-0094] Min path depth = 2 Max path depth = 2

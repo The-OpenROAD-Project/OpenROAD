@@ -80,6 +80,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0015]     Created 35 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 9:3, 10:1, 11:24, 12:1, 16:1.
 [INFO CTS-0017]     Max level of the clock tree: 1.
+ Post DB write clock net "clk" report
 [INFO CTS-0091] Sinks after db write = 301 (Leaf Buffers = 28)
 [INFO CTS-0092] Avg Sink Wire Length = 125.0 um
 [INFO CTS-0094] Min path depth = 3 Max path depth = 7
