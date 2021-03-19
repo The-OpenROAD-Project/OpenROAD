@@ -103,12 +103,6 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_unidirectional_routing(bool unidirRouting)
-{
-  getFastRoute()->setUnidirectionalRoute(unidirRouting);
-}
-
-void
 set_alpha(float alpha)
 {
   getFastRoute()->setAlpha(alpha);

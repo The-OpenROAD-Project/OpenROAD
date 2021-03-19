@@ -240,7 +240,9 @@ proc global_route { args } {
     }
   }
 
-  grt::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
+  if { [info exists flags(-unidirectional_routing)] } {
+    utl::warn GRT 210 "flag -unidirectional_routing is deprecated."
+  } 
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)

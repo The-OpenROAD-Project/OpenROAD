@@ -85,8 +85,6 @@ void GlobalRouter::init()
   _adjustment = 0.0;
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
-  _unidirectionalRoute = 0;
-  _fixLayer = 0;
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
@@ -163,7 +161,6 @@ std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRouti
   _logger->report("Min routing layer: {}", minRoutingLayer);
   _logger->report("Max routing layer: {}", maxRoutingLayer);
   _logger->report("Global adjustment: {}%", int(_adjustment * 100));
-  _logger->report("Unidirectional routing: {}", _unidirectionalRoute);
   _logger->report("Grid origin: ({}, {})", _gridOrigin->x(), _gridOrigin->y());
   for (int l = 1; l <= maxRoutingLayer; l++) {
     if (_layerPitches[l] != 0) {
@@ -217,6 +214,9 @@ void GlobalRouter::globalRouteClocksSeparately()
   clearObjects();
   _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 
+  if (_maxRoutingLayer == -1) {
+    _maxRoutingLayer = computeMaxRoutingLayer();
+  }
   // route signal nets
   std::vector<Net*> signalNets =
     startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
@@ -231,6 +231,10 @@ void GlobalRouter::globalRouteClocksSeparately()
 
 void GlobalRouter::globalRoute()
 {
+  if (_maxRoutingLayer == -1) {
+    _maxRoutingLayer = computeMaxRoutingLayer();
+  }
+
   std::vector<Net*> nets =
   startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
 
@@ -243,19 +247,6 @@ void GlobalRouter::runFastRoute()
   clear();
 
   bool routeClocks = _minLayerForClock > 0 && _maxLayerForClock > 0;
-
-  if (_unidirectionalRoute) {
-    _fixLayer = 1;
-    if (_minRoutingLayer < 2) {
-      _minRoutingLayer = 2;
-    }
-  } else {
-    _fixLayer = 0;
-  }
-
-  if (_maxRoutingLayer == -1) {
-    _maxRoutingLayer = computeMaxRoutingLayer();
-  }
 
   if (routeClocks) {
     globalRouteClocksSeparately();
@@ -1236,11 +1227,6 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
   _maxLayerForClock = maxLayer;
 }
 
-void GlobalRouter::setUnidirectionalRoute(const bool unidirRoute)
-{
-  _unidirectionalRoute = unidirRoute;
-}
-
 void GlobalRouter::setAlpha(const float alpha)
 {
   _alpha = alpha;
@@ -1373,12 +1359,7 @@ void GlobalRouter::writeGuides(const char* fileName)
           }
 
           guideBox.push_back(globalRoutingToBox(segment));
-          if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
-            phLayerF = getRoutingLayerByIndex(
-                (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
-          } else {
-            phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-          }
+          phLayerF = getRoutingLayerByIndex(segment.finalLayer);
           finalLayer = segment.finalLayer;
         } else {
           if (abs(segment.finalLayer - segment.initLayer) > 1) {
@@ -1386,17 +1367,9 @@ void GlobalRouter::writeGuides(const char* fileName)
                   db_net->getConstName());
           } else {
             RoutingLayer phLayerI;
-            if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-              phLayerI = getRoutingLayerByIndex(_minRoutingLayer);
-            } else {
-              phLayerI = getRoutingLayerByIndex(segment.initLayer);
-            }
-            if (segment.finalLayer < _minRoutingLayer
-                && !_unidirectionalRoute) {
-              phLayerF = getRoutingLayerByIndex(_minRoutingLayer);
-            } else {
-              phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-            }
+            phLayerI = getRoutingLayerByIndex(segment.initLayer);
+            phLayerF = getRoutingLayerByIndex(segment.finalLayer);
+            
             finalLayer = segment.finalLayer;
             odb::Rect box;
             guideBox.push_back(globalRoutingToBox(segment));
@@ -1478,7 +1451,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
     lastLayer--;
   }
 
-  for (int l = minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
+  for (int l = 1; l <= lastLayer; l++) {
     odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment
         = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l + 1);

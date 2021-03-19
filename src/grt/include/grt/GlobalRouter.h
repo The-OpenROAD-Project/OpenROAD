@@ -339,8 +339,6 @@ class GlobalRouter
   float _adjustment;
   int _minRoutingLayer;
   int _maxRoutingLayer;
-  bool _unidirectionalRoute;
-  int _fixLayer;
   const int _selectedMetal = 3;
   const int _gcellsOffset = 2;
   int _overflowIterations;
