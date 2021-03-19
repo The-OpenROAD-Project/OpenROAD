@@ -372,7 +372,7 @@ proc estimate_rc_cmd {} {
   if { [have_routes] } {
     estimate_rc
   } else {
-    utl::error GRT 58 "run fastroute before estimating parasitics for global routing."
+    utl::error GRT 58 "run global_route before estimating parasitics for global routing."
   }
 }
 
