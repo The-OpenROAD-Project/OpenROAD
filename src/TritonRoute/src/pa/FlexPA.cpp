@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,30 +26,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexPA.h"
+
+#include <chrono>
 #include <iostream>
 #include <sstream>
-#include <chrono>
-#include "frProfileTask.h"
-#include "FlexPA.h"
+
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
+#include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
 using namespace std;
 using namespace fr;
 
 FlexPA::FlexPA(frDesign* in, Logger* logger)
-  : design_(in),
-    logger_(logger),
-    stdCellPinGenApCnt_(0),
-    stdCellPinValidPlanarApCnt_(0),
-    stdCellPinValidViaApCnt_(0),
-    stdCellPinNoApCnt_(0),
-    macroCellPinGenApCnt_(0),
-    macroCellPinValidPlanarApCnt_(0),
-    macroCellPinValidViaApCnt_(0),
-    macroCellPinNoApCnt_(0),
-    maxAccessPatternSize_(0)
+    : design_(in),
+      logger_(logger),
+      stdCellPinGenApCnt_(0),
+      stdCellPinValidPlanarApCnt_(0),
+      stdCellPinValidViaApCnt_(0),
+      stdCellPinNoApCnt_(0),
+      macroCellPinGenApCnt_(0),
+      macroCellPinValidPlanarApCnt_(0),
+      macroCellPinValidViaApCnt_(0),
+      macroCellPinNoApCnt_(0),
+      maxAccessPatternSize_(0)
 {
 }
 
@@ -61,12 +63,14 @@ FlexPA::~FlexPA()
 void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugPA;
-  graphics_ = on && FlexPAGraphics::guiActive() ?
-    std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
-    : nullptr;
+  graphics_
+      = on && FlexPAGraphics::guiActive()
+            ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
+            : nullptr;
 }
 
-void FlexPA::init() {
+void FlexPA::init()
+{
   ProfileTask profile("PA:init");
   initViaRawPriority();
   initTrackCoords();
@@ -75,17 +79,19 @@ void FlexPA::init() {
   initPinAccess();
 }
 
-void FlexPA::prep() {
+void FlexPA::prep()
+{
   ProfileTask profile("PA:prep");
   prepPoint();
   revertAccessPoints();
   prepPattern();
 }
 
-int FlexPA::main() {
+int FlexPA::main()
+{
   ProfileTask profile("PA:main");
 
-  //bool enableOutput = true;
+  // bool enableOutput = true;
   frTime t;
   if (VERBOSE > 0) {
     logger_->info(DRT, 165, "start pin access");
@@ -95,11 +101,11 @@ int FlexPA::main() {
   prep();
 
   int stdCellPinCnt = 0;
-  for (auto &inst: getDesign()->getTopBlock()->getInsts()) {
+  for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE) {
       continue;
     }
-    for (auto &instTerm: inst->getInstTerms()) {
+    for (auto& instTerm : inst->getInstTerms()) {
       if (isSkipInstTerm(instTerm.get())) {
         continue;
       }
@@ -119,7 +125,8 @@ int FlexPA::main() {
     logger_->report("#stdCellPinCnt         = {}", stdCellPinCnt);
     logger_->report("#instTermValidViaApCnt = {}", instTermValidViaApCnt_);
     logger_->report("#macroGenAp            = {}", macroCellPinGenApCnt_);
-    logger_->report("#macroValidPlanarAp    = {}", macroCellPinValidPlanarApCnt_);
+    logger_->report("#macroValidPlanarAp    = {}",
+                    macroCellPinValidPlanarApCnt_);
     logger_->report("#macroValidViaAp       = {}", macroCellPinValidViaApCnt_);
     logger_->report("#macroNoAp             = {}", macroCellPinNoApCnt_);
   }

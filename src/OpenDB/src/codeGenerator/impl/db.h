@@ -30,6 +30,8 @@ class {{klass.name}} : public dbObject
     };
     {% endif %}
   {% endfor %}
+  // User Code Begin {{klass.name}}Enums
+  // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
       void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
