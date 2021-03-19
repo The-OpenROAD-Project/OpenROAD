@@ -239,6 +239,53 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
+void IOPlacer::getBlockedRegionsFromMacros()
+{
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (master->isBlock()) {
+      odb::Rect inst_area;
+      inst->getBBox()->getBox(inst_area);
+      odb::Rect intersect = die_area.intersect(inst_area);
+      if (intersect != inst_area) {
+        std::vector<Interval> intervals;
+
+        // check intersect bottom edge
+        if (!die_area.overlaps(intersect.ll()) &&
+            !die_area.overlaps(intersect.lr())) {
+          intervals.push_back(
+            Interval(Edge::bottom, intersect.xMin(), intersect.xMax()));
+        }
+        // check intersect top edge
+        if (!die_area.overlaps(intersect.ul()) &&
+            !die_area.overlaps(intersect.ur())) {
+          intervals.push_back(
+            Interval(Edge::top, intersect.xMin(), intersect.xMax()));
+        }
+        // check intersect left edge
+        if (!die_area.overlaps(intersect.ll()) &&
+            !die_area.overlaps(intersect.ul())) {
+          intervals.push_back(
+            Interval(Edge::left, intersect.yMin(), intersect.yMax()));
+        }
+        // check intersect right edge
+        if (!die_area.overlaps(intersect.lr()) &&
+            !die_area.overlaps(intersect.ur())) {
+          intervals.push_back(
+            Interval(Edge::right, intersect.yMin(), intersect.yMax()));
+        }
+
+        for (Interval interval : intervals) {
+          excludeInterval(interval);
+        }
+      }
+    }
+  }
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   Point lb = core_.getBoundary().ll();
@@ -728,6 +775,11 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   excluded_intervals_.push_back(excluded_interv);
 }
 
+void IOPlacer::excludeInterval(Interval interval)
+{
+  excluded_intervals_.push_back(interval);
+}
+
 void IOPlacer::addDirectionConstraint(Direction direction,
                                       Edge edge,
                                       int begin,
@@ -795,6 +847,7 @@ void IOPlacer::run(bool random_mode)
   initParms();
 
   initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
 
   std::vector<HungarianMatching> hg_vec;
   int init_hpwl = 0;
@@ -807,7 +860,6 @@ void IOPlacer::run(bool random_mode)
   if (report_hpwl_) {
     init_hpwl = returnIONetsHPWL(netlist_);
   }
-
   if (random_mode) {
     logger_->report("Random pin placement");
     randomPlacement(RandomMode::even);
