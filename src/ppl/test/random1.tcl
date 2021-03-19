@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 
-place_pins -hor_layers 2 -ver_layers 3 -random
+place_pins -hor_layers 3 -ver_layers 2 -random
 
 set def_file [make_result_file random1.def]
 

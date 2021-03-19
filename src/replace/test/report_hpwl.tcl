@@ -26,7 +26,7 @@ foreach net $nets {
 
   foreach bTerm [$net getBTerms] {
     foreach bPin [$bTerm getBPins] {
-      set pinBox [$bPin getBox]
+      set pinBox [$bPin getBBox]
 
       # puts "bPinBox: [$bTerm getConstName] [$pinBox xMin] [$pinBox yMin] [$pinBox xMax] [$pinBox yMax]"
 
