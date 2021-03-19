@@ -194,6 +194,8 @@ class GlobalRouter
   std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
   void runFastRoute();
+  void globalRouteClocksSeparately();
+  void globalRoute();
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
@@ -230,9 +232,7 @@ class GlobalRouter
  private:
   void makeComponents();
   void deleteComponents();
-  void clearFlow();
-  void globalRouteClocksSeparately();
-  void globalRoute();
+  void clearObjects();
   void applyAdjustments(int minRoutingLayer, int maxRoutingLayer);
   // main functions
   void initCoreGrid(int maxRoutingLayer);

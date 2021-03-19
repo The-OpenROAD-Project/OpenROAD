@@ -124,10 +124,10 @@ void GlobalRouter::clear()
 {
   _routes.clear();
   _nets->clear();
-  clearFlow();
+  clearObjects();
 }
 
-void GlobalRouter::clearFlow()
+void GlobalRouter::clearObjects()
 {
   _grid->clear();
   _fastRoute->clear();
@@ -214,7 +214,7 @@ void GlobalRouter::globalRouteClocksSeparately()
   _logger->report("Routing clock nets...");
   _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
   capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
-  clearFlow();
+  clearObjects();
   _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 
   // route signal nets
@@ -285,7 +285,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
       originalRoute, _maxRoutingLayer, diodeMTerm);
 
   if (violationsCnt > 0) {
-    clearFlow();
+    clearObjects();
     antennaRepair.fixAntennas(diodeMTerm);
     antennaRepair.legalizePlacedCells();
 
