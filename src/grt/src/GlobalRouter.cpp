@@ -142,7 +142,7 @@ GlobalRouter::~GlobalRouter()
   deleteComponents();
 }
 
-void GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer)
+std::vector<Net*> GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type)
 {
   initAdjustments();
   initPitches();
@@ -177,6 +177,13 @@ void GlobalRouter::startFastRoute(int minRoutingLayer, int maxRoutingLayer)
   setCapacities(minRoutingLayer, maxRoutingLayer);
   setSpacingsAndMinWidths();
   initNetlist();
+
+  std::vector<Net*> nets;
+  getNetsByType(type, nets);
+  initializeNets(nets);
+  applyAdjustments(minRoutingLayer, maxRoutingLayer);
+
+  return nets;
 }
 
 void GlobalRouter::applyAdjustments(int minRoutingLayer, int maxRoutingLayer)
@@ -197,27 +204,45 @@ void GlobalRouter::applyAdjustments(int minRoutingLayer, int maxRoutingLayer)
   _fastRoute->initAuxVar();
 }
 
+void GlobalRouter::globalRouteClocksSeparately()
+{
+  Capacities capacities;
+
+  // route clock nets
+  std::vector<Net*> clockNets =
+    startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
+  _logger->report("Routing clock nets...");
+  _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
+  capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
+  clearFlow();
+  _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
+
+  // route signal nets
+  std::vector<Net*> signalNets =
+    startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
+  restoreCapacities(capacities, _minLayerForClock, _maxLayerForClock);
+  // Store results in a temporary map, allowing to keep previous
+  // routing result from clock nets
+  NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
+  _routes.insert(result.begin(), result.end());
+
+  computeWirelength();
+}
+
+void GlobalRouter::globalRoute()
+{
+  std::vector<Net*> nets =
+  startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::All);
+
+  _routes = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
+  computeWirelength();
+}
+
 void GlobalRouter::runFastRoute()
 {
   clear();
-  Capacities capacities;
 
   bool routeClocks = _minLayerForClock > 0 && _maxLayerForClock > 0;
-
-  if (routeClocks) {
-    // route clock nets
-    startFastRoute(_minLayerForClock, _maxLayerForClock);
-    std::vector<Net*> clockNets;
-    getNetsByType(NetType::Clock, clockNets);
-    initializeNets(clockNets);
-    applyAdjustments(_minLayerForClock, _maxLayerForClock);
-    _logger->report("Routing clock nets...");
-    _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
-
-    capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
-    clearFlow();
-    _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
-  }
 
   if (_unidirectionalRoute) {
     _fixLayer = 1;
@@ -232,22 +257,11 @@ void GlobalRouter::runFastRoute()
     _maxRoutingLayer = computeMaxRoutingLayer();
   }
 
-  // route signal nets
-  startFastRoute(_minRoutingLayer, _maxRoutingLayer);
-  NetType type = routeClocks ? NetType::Signal : NetType::All;
-  std::vector<Net*> nets;
-  getNetsByType(type, nets);
-  initializeNets(nets);
-  applyAdjustments(_minRoutingLayer, _maxRoutingLayer);
-  if (routeClocks)
-    restoreCapacities(capacities, _minLayerForClock, _maxLayerForClock);
-  // Store results in a temporary map, allowing to keep any previous
-  // routing result (e.g., after routeClockNets)
-  NetRouteMap result = findRouting(nets, _minRoutingLayer, _maxRoutingLayer);
-
-  _routes.insert(result.begin(), result.end());
-
-  computeWirelength();
+  if (routeClocks) {
+    globalRouteClocksSeparately();
+  } else {
+    globalRoute();
+  }
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
@@ -277,12 +291,10 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     _logger->info(GRT, 15, "{} diodes inserted.", antennaRepair.getDiodesCount());
 
-    startFastRoute(_minRoutingLayer, _maxRoutingLayer);
     updateDirtyNets();
-    std::vector<Net*> antennaNets;
-    getNetsByType(NetType::Antenna, antennaNets);
-    initializeNets(antennaNets);
-    applyAdjustments(_minRoutingLayer, _maxRoutingLayer);
+    std::vector<Net*> antennaNets =
+      startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Antenna);
+
     _fastRoute->setVerbose(0);
     _logger->info(GRT, 9, "Nets to reroute: {}.", antennaNets.size());
 

@@ -191,7 +191,7 @@ class GlobalRouter
 
   // flow functions
   void writeGuides(const char* fileName);
-  void startFastRoute(int minRoutingLayer, int maxRoutingLayer);
+  std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
   void runFastRoute();
   NetRouteMap& getRoutes() { return _routes; }
@@ -231,6 +231,8 @@ class GlobalRouter
   void makeComponents();
   void deleteComponents();
   void clearFlow();
+  void globalRouteClocksSeparately();
+  void globalRoute();
   void applyAdjustments(int minRoutingLayer, int maxRoutingLayer);
   // main functions
   void initCoreGrid(int maxRoutingLayer);
