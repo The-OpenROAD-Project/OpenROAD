@@ -3606,7 +3606,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
   auto minAreaConstraint
       = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
 
-  frCoord currArea = 0;
+  frArea currArea = 0;
   if (ENABLE_BOUNDARY_MAR_FIX) {
     if (areaMap.find(points[0]) != areaMap.end()) {
       currArea = areaMap.find(points[0])->second;
@@ -3633,7 +3633,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
       minAreaConstraint
           = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
-      frCoord reqArea
+      frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add next via enclosure
       if (currIdx.z() < prevIdx.z()) {
@@ -3650,7 +3650,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         //   <<", " <<i - 1 <<endl;
         // }
         FlexMazeIdx bp, ep;
-        frCoord gapArea = reqArea
+        frArea gapArea = reqArea
                           - (currArea - startViaHalfEncArea - endViaHalfEncArea)
                           - std::min(startViaHalfEncArea, endViaHalfEncArea);
         // new
@@ -3742,7 +3742,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       layerNum = gridGraph_.getLayerNum(prevIdx.z());
       minAreaConstraint
           = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
-      frCoord reqArea
+      frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       auto pathWidth = getDesign()->getTech()->getLayer(layerNum)->getWidth();
       frPoint bp, ep;
@@ -3764,7 +3764,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     layerNum = gridGraph_.getLayerNum(prevIdx.z());
     minAreaConstraint
         = getDesign()->getTech()->getLayer(layerNum)->getAreaConstraint();
-    frCoord reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
+    frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
     if (areaMap.find(prevIdx) != areaMap.end()) {
       currArea += areaMap.find(prevIdx)->second;
     }
@@ -3775,7 +3775,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       //   <<endl;
       // }
       FlexMazeIdx bp, ep;
-      frCoord gapArea = reqArea
+      frArea gapArea = reqArea
                         - (currArea - startViaHalfEncArea - endViaHalfEncArea)
                         - std::min(startViaHalfEncArea, endViaHalfEncArea);
       // new
