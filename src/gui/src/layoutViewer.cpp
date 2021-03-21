@@ -1149,6 +1149,17 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   }
 }
 
+void LayoutViewer::updateShapes()
+{
+  // This is not very smart - we just clear all the search structure
+  // rather than try to surgically update it.
+  if (search_init_) {
+    search_.clear();
+    search_init_ = false;
+  }
+  update();
+}
+
 void LayoutViewer::fit()
 {
   dbBlock* block = getBlock();
@@ -1403,26 +1414,14 @@ void LayoutScroll::zoomOut()
 
 void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.  We need a pre & post
   // callback from OpenDB to do this right.
   // TODO:: Update this now with the new callbacks from OpenDB
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  update();
+  updateShapes();
 }
 
 void LayoutViewer::inDbFillCreate(dbFill* fill)
 {
-  // This is not very smart - we just clear all the search structure
-  // rather than try to surgically update it.
-  if (search_init_) {
-    search_.clear();
-    search_init_ = false;
-  }
-  update();
+  updateShapes();
 }
 
 }  // namespace gui

@@ -193,13 +193,12 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 //
 ////////////////////////////////////////////////////////////////////
 
-using namespace TechMinCutRule;
 
 bool dbTechMinCutRule::getMinimumCuts(uint& numcuts, uint& width) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if (_lsm->_flags._rule == NONE)
+  if (_lsm->_flags._rule == _dbTechMinCutRule::NONE)
     return false;
 
   numcuts = _lsm->_num_cuts;
@@ -224,30 +223,30 @@ void dbTechMinCutRule::setMinimumCuts(uint numcuts,
   }
 
   if (above_only)
-    _lsm->_flags._rule = MINIMUM_CUT_ABOVE;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_ABOVE;
   else if (below_only)
-    _lsm->_flags._rule = MINIMUM_CUT_BELOW;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_BELOW;
   else
-    _lsm->_flags._rule = MINIMUM_CUT;
+    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT;
 }
 
 bool dbTechMinCutRule::isAboveOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == MINIMUM_CUT_ABOVE);
+  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE);
 }
 
 bool dbTechMinCutRule::isBelowOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == MINIMUM_CUT_BELOW);
+  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW);
 }
 
 bool dbTechMinCutRule::getLengthForCuts(uint& length, uint& distance) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if ((_lsm->_flags._rule == NONE) || !(_lsm->_flags._cuts_length))
+  if ((_lsm->_flags._rule == _dbTechMinCutRule::NONE) || !(_lsm->_flags._cuts_length))
     return false;
 
   length   = _lsm->_length;
@@ -279,9 +278,9 @@ void dbTechMinCutRule::setLengthForCuts(uint length, uint distance)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  assert((_lsm->_flags._rule == MINIMUM_CUT)
-         || (_lsm->_flags._rule == MINIMUM_CUT_ABOVE)
-         || (_lsm->_flags._rule == MINIMUM_CUT_BELOW));
+  assert((_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT)
+         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE)
+         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW));
 
   _lsm->_flags._cuts_length = 1;
   _lsm->_length             = length;

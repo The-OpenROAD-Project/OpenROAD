@@ -110,6 +110,11 @@ void Gui::pause()
   main_window->pause();
 }
 
+void Gui::updateShapes()
+{
+  main_window->updateShapes();
+}
+
 void Gui::addSelectedNet(const char* name)
 {
   auto block = getBlock(main_window->getDb());
