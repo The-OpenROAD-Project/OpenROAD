@@ -74,5 +74,5 @@ target_link_libraries(TritonCTS
     rsz
     flute
     pdrev
-    utility
+    utl
  )

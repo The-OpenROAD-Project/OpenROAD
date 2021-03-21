@@ -34,7 +34,7 @@
 #include <errno.h>
 
 #include "sta/StaMain.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace sta {
 // Tcl files encoded into strings.

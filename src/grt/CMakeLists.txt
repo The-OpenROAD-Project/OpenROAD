@@ -62,7 +62,7 @@ target_include_directories(grt
 )
 
 target_link_libraries(grt
-    utility
+    utl
     FastRoute4.1
     pdrev
     antennachecker

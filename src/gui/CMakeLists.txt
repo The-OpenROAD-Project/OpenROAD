@@ -43,7 +43,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     PRIVATE
       Qt5::Core
       Qt5::Widgets
-      utility
+      utl
       Boost::boost
   )
 else()
