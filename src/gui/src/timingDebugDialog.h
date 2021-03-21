@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QKeyEvent>
 #include <QModelIndex>
 #include <QString>
 #include <vector>
@@ -64,6 +65,8 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   void reject();
   bool populateTimingPaths(odb::dbBlock* block);
 
+  void keyPressEvent(QKeyEvent* key_event);
+
   void showPathDetails(const QModelIndex& index);
   void highlightPathStage(const QModelIndex& index);
   void timingPathsViewCustomSort(int col_index);
@@ -79,10 +82,13 @@ class TimingDebugDialog : public QDialog, public Ui::TimingDialog
   void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
 
  private:
+  void copy();
+
   TimingPathsModel* timing_paths_model_;
   TimingPathDetailModel* path_details_model_;
   TimingPathRenderer* path_renderer_;
   GuiDBChangeListener* dbchange_listener_;
   TimingReportDialog* timing_report_dlg_;
+  QTableView* focus_view_;
 };
 }  // namespace gui

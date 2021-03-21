@@ -32,7 +32,10 @@
 
 #include "timingDebugDialog.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QDebug>
+#include <QGuiApplication>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 
@@ -46,7 +49,8 @@ TimingDebugDialog::TimingDebugDialog(QWidget* parent)
       path_details_model_(new TimingPathDetailModel()),
       path_renderer_(new TimingPathRenderer()),
       dbchange_listener_(new GuiDBChangeListener),
-      timing_report_dlg_(new TimingReportDialog())
+      timing_report_dlg_(new TimingReportDialog()),
+      focus_view_(timingPathTableView)
 {
   setupUi(this);
   timingPathTableView->horizontalHeader()->setSectionResizeMode(
@@ -134,6 +138,14 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
   return true;
 }
 
+void TimingDebugDialog::keyPressEvent(QKeyEvent* key_event)
+{
+  if (key_event->matches(QKeySequence::Copy)) {
+    copy();
+    key_event->accept();
+  }
+}
+
 void TimingDebugDialog::showPathDetails(const QModelIndex& index)
 {
   if (!index.isValid() || timing_paths_model_ == nullptr)
@@ -149,6 +161,8 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   // lines
   // once the load values are populated properly in the model
   pathDetailsTableView->hideColumn(path_details_model_->columnCount() - 1);
+  pathDetailsTableView->hideColumn(2);
+  pathDetailsTableView->hideColumn(4);
   pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
       path_details_model_->columnCount() - 2, QHeaderView::Stretch);
 
@@ -249,6 +263,7 @@ void TimingDebugDialog::selectedRowChanged(const QItemSelection& selected_row,
     return;
   auto top_sel_index = sel_indices.first();
   showPathDetails(top_sel_index);
+  focus_view_ = timingPathTableView;
 }
 
 void TimingDebugDialog::selectedDetailRowChanged(
@@ -260,6 +275,32 @@ void TimingDebugDialog::selectedDetailRowChanged(
     return;
   auto top_sel_index = sel_indices.first();
   highlightPathStage(top_sel_index);
+  focus_view_ = pathDetailsTableView;
+}
+
+void TimingDebugDialog::copy()
+{
+  QItemSelectionModel* selection = focus_view_->selectionModel();
+  QModelIndexList indexes = selection->selectedIndexes();
+
+  if (indexes.size() < 1)
+    return;
+  auto sel_index = indexes.first();
+  if (focus_view_ == timingPathTableView) {
+    auto src_index = sel_index.sibling(sel_index.row(), 5);
+    auto sink_index = sel_index.sibling(sel_index.row(), 6);
+    auto src_node
+        = selection->model()->data(src_index, Qt::DisplayRole).toString();
+    auto sink_node
+        = selection->model()->data(sink_index, Qt::DisplayRole).toString();
+    QString sel_text = src_node + " -> " + sink_node;
+    QGuiApplication::clipboard()->setText(sel_text);
+  } else {
+    auto sibling_index = sel_index.sibling(sel_index.row(), 0);
+    auto sel_text
+        = selection->model()->data(sibling_index, Qt::DisplayRole).toString();
+    QGuiApplication::clipboard()->setText(sel_text);
+  }
 }
 
 void TimingDebugDialog::handleDbChange(QString change_type,

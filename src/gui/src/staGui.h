@@ -207,7 +207,7 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   TimingPath* path_;
   const static inline std::vector<std::string> _path_details_columns
-      = {"Node", "Transition", "Required", "Arrival", "Slack", "Slew", "Load"};
+      = {"Node", "Transition", "Required", "Time", "Slack", "Slew", "Load"};
 };
 
 class TimingPathRenderer : public gui::Renderer
