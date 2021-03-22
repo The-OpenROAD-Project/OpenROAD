@@ -1,0 +1,117 @@
+#!/bin/bash
+
+set -e
+
+cd "$(dirname $(readlink -f $0))/../"
+pwd
+
+baseDir=$(pwd)
+commitSha="$(git rev-parse HEAD)"
+osList=( centos7 ubuntu20 )
+compilerList=( gcc clang )
+targetList=( base dev runner )
+
+_setup()
+{
+    if [[ $# -ne 3 ]]; then
+        echo "_setup takes 3 arguments, os, compiler and target"
+    fi
+    export DOCKER_OS="${1}"
+    export DOCKER_COMPILER="${2}"
+    export DOCKER_TARGET="${3}"
+    export DOCKER_IMAGE="openroad-${DOCKER_OS}-${DOCKER_TARGET}"
+    export DOCKER_NAME="${DOCKER_OS}-${DOCKER_COMPILER}-${commitSha}"
+    export DOCKER_FILE="docker/${DOCKER_OS}-${DOCKER_TARGET}.Dockerfile"
+    case "${DOCKER_TARGET}" in
+        "base" | "runner")
+            DOCKER_FOLDER="etc"
+            ;;
+        "dev")
+            DOCKER_FOLDER="."
+            ;;
+        *)
+            echo "Target not found"
+    esac
+}
+
+_help()
+{
+    cat <<EOF
+usage: $0 create [os [target]]
+       $0 build  [os [compiler]]
+       $0 test   [os [compiler]]
+       $0 push   [os [target]]
+       $0 help
+available os = ${osList[@]}
+available compiler = ${compilerList[@]}
+available target = ${targetList[@]}
+EOF
+    exit 1
+}
+
+_createContainer()
+{
+    echo "Create container $DOCKER_NAME"
+    if [[ -z $(docker ps -a -q -f name=${DOCKER_NAME}) ]]; then
+        docker container create -it -w /OpenROAD --name=${DOCKER_NAME} ${DOCKER_IMAGE}
+    fi
+}
+
+_build()
+{
+    _setup "${1:-centos7}" "${2:-gcc}" "base"
+    echo "Build app on $DOCKER_NAME with $DOCKER_COMPILER"
+    _createContainer
+    docker container start "${DOCKER_NAME}"
+    docker exec "${DOCKER_NAME}" "rm -rf /OpenROAD/*"
+    docker cp "${baseDir}/." "${DOCKER_NAME}":/OpenROAD/.
+    docker exec "${DOCKER_NAME}" ./etc/BuildHelper "${DOCKER_COMPILER}"
+    docker container stop "${DOCKER_NAME}"
+}
+
+_test()
+{
+    _setup "${1:-centos7}" "${2:-gcc}" "base"
+    echo "Run regression test on $DOCKER_NAME with $DOCKER_COMPILER"
+    _createContainer
+    docker container start "${DOCKER_NAME}"
+    docker exec "${DOCKER_NAME}" "./test/regression"
+    docker container stop "${DOCKER_NAME}"
+}
+
+_create()
+{
+    _setup "${1:-centos7}" "NONE" "${2:-base}"
+    echo "Create docker image $DOCKER_IMAGE using $DOCKER_FILE with target $DOCKER_TARGET"
+    docker build -f "${DOCKER_FILE}" --tag "${DOCKER_IMAGE}" "${DOCKER_FOLDER}"
+}
+
+_push()
+{
+    _setup "${1:-centos7}" "NONE" "${2:-base}"
+    echo "Push docker image $DOCKER_IMAGE to DockerHub [NOT IMPLEMENTED YET]"
+}
+
+_all()
+{
+    _create
+    _build
+    _test
+    _push
+}
+
+_rule="${1:-all}"
+if [[ $# -gt 0 ]]; then
+    shift 1
+fi
+
+if [[ $# -gt 3 ]]; then
+    _help
+fi
+
+if [[ -z $(command -v "_${_rule}") ]]; then
+    echo "Command $_rule not found"
+    _help
+else
+    "_${_rule}" ${@} || _help
+fi
