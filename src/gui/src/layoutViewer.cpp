@@ -985,10 +985,10 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
   auto block_bbox = block->getBBox();
   auto block_width = block_bbox->getWidth();
   auto block_height = block_bbox->getLength();
-  double mult_factor = (1.0 * fit_pixels_per_dbu_) / (100 * pixels_per_dbu_);
+  double mult_factor = (2.0 * fit_pixels_per_dbu_) / (100 * pixels_per_dbu_);
   auto max_dim
       = std::max(block_width, block_height)
-        * mult_factor;  // 2 Percent of bounds is used to draw pin-markers
+        * mult_factor;  // 4 Percent of bounds is used to draw pin-markers
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
@@ -1021,26 +1021,26 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
         if (arg_min <= 1) {  // Closer to Left/Right Edge
           if (pin_dir == odb::dbIoType::INPUT) {
             pt1 = Point(pin_center.getX() + max_dim,
-                        pin_center.getY() + max_dim);
+                        pin_center.getY() + max_dim / 4);
             pt2 = Point(pin_center.getX() + max_dim,
-                        pin_center.getY() - max_dim);
+                        pin_center.getY() - max_dim / 4);
           } else {
             pt1 = Point(pin_center.getX() - max_dim,
-                        pin_center.getY() - max_dim);
+                        pin_center.getY() - max_dim / 4);
             pt2 = Point(pin_center.getX() - max_dim,
-                        pin_center.getY() + max_dim);
+                        pin_center.getY() + max_dim / 4);
           }
         } else {  // Closer to top/bot Edge
           if (pin_dir == odb::dbIoType::OUTPUT
               || pin_dir == odb::dbIoType::INOUT) {
-            pt1 = Point(pin_center.getX() - max_dim,
+            pt1 = Point(pin_center.getX() - max_dim / 4,
                         pin_center.getY() - max_dim);
-            pt2 = Point(pin_center.getX() + max_dim,
+            pt2 = Point(pin_center.getX() + max_dim / 4,
                         pin_center.getY() - max_dim);
           } else {
-            pt1 = Point(pin_center.getX() - max_dim,
+            pt1 = Point(pin_center.getX() - max_dim / 4,
                         pin_center.getY() + max_dim);
-            pt2 = Point(pin_center.getX() + max_dim,
+            pt2 = Point(pin_center.getX() + max_dim / 4,
                         pin_center.getY() + max_dim);
           }
         }
