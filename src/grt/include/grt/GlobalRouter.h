@@ -166,6 +166,8 @@ class GlobalRouter
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int minLayer);
   void setMaxRoutingLayer(const int maxLayer);
+  void setMinLayerForClock(const int minLayer);
+  void setMaxLayerForClock(const int maxLayer);
   void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
   void setPitchesInTile(const int pitchesInTile);
@@ -184,15 +186,16 @@ class GlobalRouter
   void setGridOrigin(long x, long y);
   void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
-  void setReportCongestion(char* congestFile);
   void setMacroExtension(int macroExtension);
   void printGrid();
 
   // flow functions
   void writeGuides(const char* fileName);
-  void startFastRoute();
+  std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
-  void runFastRoute(bool onlySignal);
+  void runFastRoute();
+  void globalRouteClocksSeparately();
+  void globalRoute();
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
@@ -202,9 +205,6 @@ class GlobalRouter
 
   // congestion drive replace functions
   ROUTE_ getRoute();
-
-  // gui functions
-  std::vector<GCellCongestion> getCongestion();
 
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
@@ -232,19 +232,19 @@ class GlobalRouter
  private:
   void makeComponents();
   void deleteComponents();
-  void clearFlow();
-  void applyAdjustments();
+  void clearObjects();
+  void applyAdjustments(int minRoutingLayer, int maxRoutingLayer);
   // main functions
-  void initCoreGrid();
+  void initCoreGrid(int maxRoutingLayer);
   void initRoutingLayers();
-  void initRoutingTracks();
-  void setCapacities();
+  void initRoutingTracks(int maxRoutingLayer);
+  void setCapacities(int minRoutingLayer, int maxRoutingLayer);
   void setSpacingsAndMinWidths();
   void initializeNets(std::vector<Net*>& nets);
-  void computeGridAdjustments();
-  void computeTrackAdjustments();
-  void computeUserGlobalAdjustments();
-  void computeUserLayerAdjustments();
+  void computeGridAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeTrackAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeUserGlobalAdjustments(int minRoutingLayer, int maxRoutingLayer);
+  void computeUserLayerAdjustments(int maxRoutingLayer);
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
@@ -257,9 +257,11 @@ class GlobalRouter
   void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route);
+  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route,
+                             int minRoutingLayer, int maxRoutingLayer);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
-  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets);
+  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets,
+                          int minRoutingLayer, int maxRoutingLayer);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -274,7 +276,7 @@ class GlobalRouter
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(const odb::Rect& rect);
-  NetRouteMap findRouting(std::vector<Net*>& nets);
+  NetRouteMap findRouting(std::vector<Net*>& nets, int minRoutingLayer, int maxRoutingLayer);
   void print(GRoute& route);
 
   // check functions
@@ -283,8 +285,8 @@ class GlobalRouter
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void saveCapacities(int previousMinLayer, int previousMaxLayer);
-  void restoreCapacities(int previousMinLayer, int previousMaxLayer);
+  Capacities saveCapacities(int previousMinLayer, int previousMaxLayer);
+  void restoreCapacities(Capacities capacities, int previousMinLayer, int previousMaxLayer);
   int getEdgeResource(int x1, int y1, int x2, int y2,
                       odb::dbTechLayer* tech_layer, odb::dbGCellGrid* gcell_grid);
   void removeDirtyNetsRouting();
@@ -334,19 +336,14 @@ class GlobalRouter
   std::vector<RoutingTracks>* _allRoutingTracks;
 
   // Flow variables
-  std::string _congestFile;
   float _adjustment;
   int _minRoutingLayer;
   int _maxRoutingLayer;
-  bool _unidirectionalRoute;
-  int _fixLayer;
   const int _selectedMetal = 3;
-  const float transitionLayerAdjust = 0.6;
   const int _gcellsOffset = 2;
   int _overflowIterations;
   int _pdRevForHighFanout;
   bool _allowOverflow;
-  bool _reportCongest;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   int _macroExtension;
@@ -368,10 +365,6 @@ class GlobalRouter
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
   int _clockCost;
-
-  // Antenna variables
-  int*** oldHUsages_;
-  int*** oldVUsages_;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;

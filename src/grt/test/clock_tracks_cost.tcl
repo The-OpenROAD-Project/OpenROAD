@@ -17,7 +17,6 @@ set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
 global_route -layers 2-6 \
-          -unidirectional_routing \
           -clock_layers 4-6 \
           -clock_tracks_cost 3
 
