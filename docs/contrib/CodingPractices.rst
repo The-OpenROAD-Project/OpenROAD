@@ -287,17 +287,13 @@ Practice #19
 ------------
 
 Don't use == true, or == false.
+Boolean expressions have a value of true or false already.
 
 .. code-block:: cpp
 
       if(found.first == true) {
             // code
       }
-
-Boolean expressions have a value of true or false already.
-
-.. code-block:: cpp
-
       // is simply
       if(found.first) {
             // code
@@ -435,8 +431,8 @@ to guarantee.
 .. code-block:: cpp
 
       // Instead of:
-      #ifndef **MACRO_PLACER_HASH_UTIL**
-            #define **MACRO_PLACER_HASH_UTIL**
+      #ifndef __MACRO_PLACER_HASH_UTIL__
+            #define __MACRO_PLACER_HASH_UTIL__
       #endif
       // use
       #pragma once
@@ -490,9 +486,23 @@ Use range iteration. C++ iterators are ugly and verbose.
       odb::dbSet::iterator nIter;
       for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
             odb::dbNet* currNet = *nIter;
+            // code
       }
       // use
       for (odb::dbNet* currNet : nets) {
+            // code
+      }
+
+Practice #34
+------------
+
+Don't use end of line comments unless they are very short. Don't forced
+someone reading your code to use a super wide window.
+
+.. code-block:: cpp
+
+      for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edges completely inside the adjust region according the percentage of reduction
+            // code
       }
 
 Git
@@ -521,39 +531,27 @@ in student code:
 Compiled Object files
 ~~~~~~~~~~~~~~~~~~~~~
 
-` \*.slo \*.lo \*.o \*.obj `
+`\*.slo \*.lo \*.o \*.obj`
 
 Precompiled Headers
 ~~~~~~~~~~~~~~~~~~~
 
-\*.gch \*.pch
+`\*.gch \*.pch`
 
 Compiled Dynamic libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-\*.so \*.dylib \*.dll
+`\*.so \*.dylib \*.dll`
 
 Fortran module files
 ~~~~~~~~~~~~~~~~~~~~
 
-\*.mod \*.smod
+`\*.mod \*.smod`
 
 Compiled Static libraries
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-\*.lai \*.la \*.a \*.lib
-
-Practice #34
-------------
-
-Don't use end of line comments unless they are very short. Don't forced
-someone reading your code to use a super wide window.
-
-.. code-block:: cpp
-
-      for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edges completely inside the adjust region according the percentage of reduction
-      // code
-      }
+`\*.lai \*.la \*.a \*.lib`
 
 CMAKE
 ****
