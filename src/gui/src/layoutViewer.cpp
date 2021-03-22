@@ -1225,8 +1225,6 @@ void LayoutScroll::zoomOut()
 
 void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
-  // callback from OpenDB to do this right.
-  // TODO:: Update this now with the new callbacks from OpenDB
   updateShapes();
 }
 
@@ -1235,6 +1233,32 @@ void LayoutViewer::inDbFillCreate(dbFill* fill)
   updateShapes();
 }
 
+void LayoutViewer::inDbWireCreate(dbWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbWireDestroy(dbWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbSWireCreate(dbSWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
+{
+  // This happens when initialize_floorplan is run and it make sense
+  // to fit as current zoom with be on a zero sized block.
+  fit();
+}
 
 }  // namespace gui
 

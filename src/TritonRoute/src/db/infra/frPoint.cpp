@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,46 +27,48 @@
  */
 
 #include "db/infra/frPoint.h"
+
 #include "db/infra/frTransform.h"
 
 using namespace std;
 using namespace fr;
 
-void frPoint::transform(const frTransform &xform) {
+void frPoint::transform(const frTransform& xform)
+{
   frCoord tmpX = 0;
   frCoord tmpY = 0;
-  //cout <<xform.orient() <<endl;
-  switch(xform.orient()) {
-    case frcR90 :
+  // cout <<xform.orient() <<endl;
+  switch (xform.orient()) {
+    case frcR90:
       tmpX = xform.xOffset() - yCoord_;
       tmpY = xform.yOffset() + xCoord_;
       break;
-    case frcR180 :
+    case frcR180:
       tmpX = xform.xOffset() - xCoord_;
       tmpY = xform.yOffset() - yCoord_;
       break;
-    case frcR270 :
+    case frcR270:
       tmpX = xform.xOffset() + yCoord_;
       tmpY = xform.yOffset() - xCoord_;
       break;
-    case frcMY :
+    case frcMY:
       tmpX = xform.xOffset() - xCoord_;
       tmpY = xform.yOffset() + yCoord_;
       break;
-    case frcMYR90 : // MY, rotate, then shift 
+    case frcMYR90:  // MY, rotate, then shift
       tmpX = xform.xOffset() - yCoord_;
       tmpY = xform.yOffset() - xCoord_;
       break;
-    case frcMX :
+    case frcMX:
       tmpX = xform.xOffset() + xCoord_;
       tmpY = xform.yOffset() - yCoord_;
       break;
-    case frcMXR90 : // MX, rotate, then shift
+    case frcMXR90:  // MX, rotate, then shift
       tmpX = xform.xOffset() + yCoord_;
       tmpY = xform.yOffset() + xCoord_;
       break;
     // frcR0
-    default :
+    default:
       tmpX = xform.xOffset() + xCoord_;
       tmpY = xform.yOffset() + yCoord_;
       break;

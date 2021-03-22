@@ -493,9 +493,4 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewer_->setLogger(logger);
 }
 
-void MainWindow::updateShapes()
-{
-  viewer_->updateShapes();
-}
-
 }  // namespace gui
