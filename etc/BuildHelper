@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+
 set -e
 
 if [[ "$#" -gt 0 ]]; then
@@ -22,7 +22,7 @@ if [[ "$#" -gt 0 ]]; then
             echo "       $0 [clang]"
             echo "       $0 [coverage]"
             echo "       $0 [no-gui]"
-            return 1
+            exit 1
             ;;
     esac
 fi
