@@ -12,5 +12,5 @@ target_link_libraries(opendb_swig_common
   PUBLIC
     defin
     lefin
-    utility
+    utl
 )

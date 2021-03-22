@@ -60,7 +60,7 @@
 #include "mainWindow.h"
 #include "search.h"
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
