@@ -169,9 +169,15 @@ set_macro_extension(int macroExtension)
 }
 
 void
-run_fastroute()
+global_route()
 {
-  getFastRoute()->runFastRoute();
+  getFastRoute()->globalRoute();
+}
+
+void
+global_route_clocks_separately()
+{
+  getFastRoute()->globalRouteClocksSeparately();
 }
 
 void
@@ -187,7 +193,7 @@ repair_antennas(LibertyPort* diodePort)
 }
 
 void
-clear_fastroute()
+clear()
 {
   getFastRoute()->clear();
 }
