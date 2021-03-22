@@ -177,7 +177,8 @@ class IOPlacer
   void updateOrientation(IOPin&);
   void updatePinArea(IOPin&);
   bool checkBlocked(Edge edge, int pos);
-  std::vector<Interval> findBlockedIntervals(odb::Rect die_area, odb::Rect box);
+  std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
+                                             const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
 

@@ -239,35 +239,30 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
-std::vector<Interval> IOPlacer::findBlockedIntervals(odb::Rect die_area, odb::Rect box)
+std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
+                                                     const odb::Rect& box)
 {
   std::vector<Interval> intervals;
 
-  if (!die_area.inside(box)) {
-    // check intersect bottom edge
-    if (!die_area.overlaps(box.ll()) &&
-        !die_area.overlaps(box.lr())) {
-      intervals.push_back(
-        Interval(Edge::bottom, box.xMin(), box.xMax()));
-    }
-    // check intersect top edge
-    if (!die_area.overlaps(box.ul()) &&
-        !die_area.overlaps(box.ur())) {
-      intervals.push_back(
-        Interval(Edge::top, box.xMin(), box.xMax()));
-    }
-    // check intersect left edge
-    if (!die_area.overlaps(box.ll()) &&
-        !die_area.overlaps(box.ul())) {
-      intervals.push_back(
-        Interval(Edge::left, box.yMin(), box.yMax()));
-    }
-    // check intersect right edge
-    if (!die_area.overlaps(box.lr()) &&
-        !die_area.overlaps(box.ur())) {
-      intervals.push_back(
-        Interval(Edge::right, box.yMin(), box.yMax()));
-    }
+  // check intersect bottom edge
+  if (die_area.yMin() == box.yMin()) {
+    intervals.push_back(
+      Interval(Edge::bottom, box.xMin(), box.xMax()));
+  }
+  // check intersect top edge
+  if (die_area.yMax() == box.yMax()) {
+    intervals.push_back(
+      Interval(Edge::top, box.xMin(), box.xMax()));
+  }
+  // check intersect left edge
+  if (die_area.xMin() == box.xMin()) {
+    intervals.push_back(
+      Interval(Edge::left, box.yMin(), box.yMax()));
+  }
+  // check intersect right edge
+  if (die_area.xMax() == box.xMax()) {
+    intervals.push_back(
+      Interval(Edge::right, box.yMin(), box.yMax()));
   }
 
   return intervals;
