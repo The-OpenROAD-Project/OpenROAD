@@ -12,5 +12,3 @@ set def_file [make_result_file on_grid.def]
 write_def $def_file
 
 diff_file on_grid.defok $def_file
-
-exit
