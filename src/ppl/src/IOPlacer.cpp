@@ -239,6 +239,37 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
+std::vector<Interval> IOPlacer::findBlockedIntervals(odb::Rect die_area, odb::Rect box)
+{
+  std::vector<Interval> intervals;
+  // check intersect bottom edge
+  if (!die_area.overlaps(box.ll()) &&
+      !die_area.overlaps(box.lr())) {
+    intervals.push_back(
+      Interval(Edge::bottom, box.xMin(), box.xMax()));
+  }
+  // check intersect top edge
+  if (!die_area.overlaps(box.ul()) &&
+      !die_area.overlaps(box.ur())) {
+    intervals.push_back(
+      Interval(Edge::top, box.xMin(), box.xMax()));
+  }
+  // check intersect left edge
+  if (!die_area.overlaps(box.ll()) &&
+      !die_area.overlaps(box.ul())) {
+    intervals.push_back(
+      Interval(Edge::left, box.yMin(), box.yMax()));
+  }
+  // check intersect right edge
+  if (!die_area.overlaps(box.lr()) &&
+      !die_area.overlaps(box.ur())) {
+    intervals.push_back(
+      Interval(Edge::right, box.yMin(), box.yMax()));
+  }
+
+  return intervals;
+}
+
 void IOPlacer::getBlockedRegionsFromMacros()
 {
   odb::Rect die_area;
@@ -251,31 +282,7 @@ void IOPlacer::getBlockedRegionsFromMacros()
       inst->getBBox()->getBox(inst_area);
       odb::Rect intersect = die_area.intersect(inst_area);
 
-      std::vector<Interval> intervals;
-      // check intersect bottom edge
-      if (!die_area.overlaps(intersect.ll()) &&
-          !die_area.overlaps(intersect.lr())) {
-        intervals.push_back(
-          Interval(Edge::bottom, intersect.xMin(), intersect.xMax()));
-      }
-      // check intersect top edge
-      if (!die_area.overlaps(intersect.ul()) &&
-          !die_area.overlaps(intersect.ur())) {
-        intervals.push_back(
-          Interval(Edge::top, intersect.xMin(), intersect.xMax()));
-      }
-      // check intersect left edge
-      if (!die_area.overlaps(intersect.ll()) &&
-          !die_area.overlaps(intersect.ul())) {
-        intervals.push_back(
-          Interval(Edge::left, intersect.yMin(), intersect.yMax()));
-      }
-      // check intersect right edge
-      if (!die_area.overlaps(intersect.lr()) &&
-          !die_area.overlaps(intersect.ur())) {
-        intervals.push_back(
-          Interval(Edge::right, intersect.yMin(), intersect.yMax()));
-      }
+      std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
 
       for (Interval interval : intervals) {
         excludeInterval(interval);
