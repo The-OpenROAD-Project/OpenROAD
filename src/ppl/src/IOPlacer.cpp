@@ -41,7 +41,7 @@
 
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace ppl {
 
@@ -401,8 +401,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
     }
     n_sec.begin_slot = edge_begin;
     n_sec.end_slot = end_slot;
-    n_sec.max_slots = n_sec.num_slots;
-    n_sec.cur_slots = 0;
+    n_sec.used_slots = 0;
     n_sec.edge = edge;
 
     sections_.push_back(n_sec);
@@ -417,6 +416,7 @@ void IOPlacer::createSections()
 
   sections_.clear();
 
+  // sections only have slots at the same edge of the die boundary
   createSectionsPerEdge(Edge::bottom);
   createSectionsPerEdge(Edge::right);
   createSectionsPerEdge(Edge::top);
@@ -449,7 +449,7 @@ int IOPlacer::assignGroupsToSections()
     }
 
     for (auto i : sortIndexes(dst)) {
-      if (sections[i].cur_slots+group_size < sections[i].max_slots) {
+      if (sections[i].used_slots+group_size < sections[i].num_slots) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin io_pin = net.getIoPin(pin_idx);
@@ -459,7 +459,7 @@ int IOPlacer::assignGroupsToSections()
 
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.push_back(sections[i].net.numIOPins()-1);
-          sections[i].cur_slots++;
+          sections[i].used_slots++;
         }
         total_pins_assigned += group_size;
         sections[i].net.addIOGroup(group);
@@ -502,9 +502,9 @@ bool IOPlacer::assignPinsSections()
       }
       net.getSinksOfIO(idx, inst_pins_vector);
       for (auto i : sortIndexes(dst)) {
-        if (sections[i].cur_slots < sections[i].max_slots) {
+        if (sections[i].used_slots < sections[i].num_slots) {
           sections[i].net.addIONet(io_pin, inst_pins_vector);
-          sections[i].cur_slots++;
+          sections[i].used_slots++;
           pin_assigned = true;
           total_pins_assigned++;
           break;
@@ -856,9 +856,9 @@ void IOPlacer::run(bool random_mode)
       total_hpwl += returnIONetsHPWL(sections_[idx].net);
     }
     delta_hpwl = init_hpwl - total_hpwl;
-    logger_->info(PPL, 11, "***HPWL before ioPlacer: {}", init_hpwl);
-    logger_->info(PPL, 12, "***HPWL after  ioPlacer: {}", total_hpwl);
-    logger_->info(PPL, 13, "***HPWL delta  ioPlacer: {}", delta_hpwl);
+    logger_->info(PPL, 11, "HPWL before ioPlacer: {}", init_hpwl);
+    logger_->info(PPL, 12, "HPWL after  ioPlacer: {}", total_hpwl);
+    logger_->info(PPL, 13, "HPWL delta  ioPlacer: {}", delta_hpwl);
   }
 
   commitIOPlacementToDB(assignment_);

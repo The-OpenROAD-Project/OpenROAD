@@ -35,12 +35,13 @@
 
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
-                                              [-names names] \
-                                              [-region region]}
+                                              [-pin_names names] \
+                                              [-region region] \
+                                              [-names names]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -names -region}
+  keys {-direction -pin_names -region -names}
 
   if [info exists keys(-region)] {
     set region $keys(-region)
@@ -68,8 +69,9 @@ proc set_io_pin_constraint { args } {
     }
   }
 
-  if {[info exists keys(-direction)] && [info exists keys(-name)]} {
-    utl::error PPL 16 "Both -direction and -name constraints not allowed.."
+  if {[info exists keys(-direction)] && [info exists keys(-pin_names)] && \
+      [info exists keys(-names)]} {
+    utl::error PPL 16 "Both -direction and -pin_names constraints not allowed.."
   }
 
   if [info exists keys(-direction)] {
@@ -80,7 +82,16 @@ proc set_io_pin_constraint { args } {
   }
 
   if [info exists keys(-names)] {
+    utl::warn PPL 44 "-names option is deprecated. Use -pin_names instead."
     set names $keys(-names)
+    foreach name $names {
+      utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
+      ppl::add_name_constraint $name $edge_ $begin $end
+    }
+  }
+
+  if [info exists keys(-pin_names)] {
+    set names $keys(-pin_names)
     foreach name $names {
       utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
       ppl::add_name_constraint $name $edge_ $begin $end
@@ -182,28 +193,32 @@ proc place_pins { args } {
 
   set num_tracks_y 0
   foreach hor_layer $hor_layers {
-    set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
-    if { $hor_track_grid == "NULL" } {
-      utl::error PPL 20 "Horizontal routing layer $hor_layer not found."
+    if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
+      utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer."
     }
 
-    if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      utl::error PPL 21 "Routing tracks not found for layer $hor_layer."
+    set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
+    if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
+      utl::warn PPL 45 "Layer $hor_layer preferred direction is not horizontal."
     }
+
+    set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
     
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
   }
 
   set num_tracks_x 0
   foreach ver_layer $ver_layers {
-    set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
-    if { $ver_track_grid == "NULL" } {
-      utl::error PPL 22 "Vertical routing layer $ver_layer not found."
+    if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
+      utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer."
     }
 
-    if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      utl::error PPL 23 "Routing tracks not found for layer $ver_layer."
+    set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
+    if { [$v_tech_layer getDirection] != "VERTICAL" } {
+      utl::warn PPL 46 "Layer $ver_layer preferred direction is not vertical."
     }
+
+    set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]
 
     set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
   }

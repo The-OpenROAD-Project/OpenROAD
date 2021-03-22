@@ -40,7 +40,7 @@
 #include "plot.h"
 #include "graphics.h"
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 using namespace std;

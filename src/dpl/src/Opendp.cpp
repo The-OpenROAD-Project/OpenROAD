@@ -44,7 +44,7 @@
 #include <limits>
 #include <map>
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {

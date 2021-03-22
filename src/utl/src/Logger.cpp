@@ -33,9 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include <mutex>
+#include <atomic>
 
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -47,7 +48,12 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
   : debug_on_(false),
     first_metric_(true)
 {
-  sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+  // This ensures it is safe to update the message counters
+  // without using locks.
+  static_assert(std::atomic<MessageCounter::value_type>::is_always_lock_free,
+                "message counter should be atomic");
+
+ sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
     sinks_.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename));
   
@@ -61,6 +67,10 @@ Logger::Logger(const char* log_filename, const char *metrics_filename)
     metrics_logger_->sinks().push_back(metrics_sink);
     metrics_logger_->set_pattern("%v");
     metrics_logger_->info("{"); // start json object
+  }
+
+  for (auto& counters : message_counters_) {
+    counters.fill(0);
   }
 }
 
