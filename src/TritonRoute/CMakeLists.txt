@@ -134,7 +134,7 @@ target_link_libraries(TritonRoute
     opendb
     flute
     OpenSTA
-    utility
+    utl
     Threads::Threads
     OpenMP::OpenMP_CXX
     Boost::boost

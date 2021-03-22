@@ -41,7 +41,7 @@
 #include "db.h"
 #include "dbMap.h"
 #include "dbWireCodec.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 template <typename T>

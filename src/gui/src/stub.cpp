@@ -43,10 +43,6 @@ Gui* Gui::singleton_ = nullptr;
 
 Gui* gui::Gui::get()
 {
-  if (!singleton_) {
-    singleton_ = new Gui();
-  }
-
   return singleton_;
 }
 
@@ -63,10 +59,6 @@ void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
 }
 
 void gui::Gui::redraw()
-{
-}
-
-void gui::Gui::updateShapes()
 {
 }
 

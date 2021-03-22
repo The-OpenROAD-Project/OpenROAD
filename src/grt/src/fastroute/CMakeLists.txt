@@ -58,7 +58,7 @@ target_include_directories(FastRoute4.1
 
 target_link_libraries(FastRoute4.1
   PRIVATE
-    utility
+    utl
     pdrev
     flute
     opendb

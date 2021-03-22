@@ -33,13 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "utility/MakeLogger.h"
+#include "utl/MakeLogger.h"
 
 #include <tcl.h>
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 extern "C" {
-extern int Utility_Init(Tcl_Interp *interp);
+extern int Utl_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -57,7 +57,7 @@ initLogger(Logger *logger,
            Tcl_Interp *tcl_interp)
 {
   // Define swig TCL commands.
-  Utility_Init(tcl_interp);
+  Utl_Init(tcl_interp);
 }
 
 } // namespace

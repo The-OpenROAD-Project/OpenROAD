@@ -39,8 +39,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#include "utility/MakeLogger.h"
-#include "utility/Logger.h"
+#include "utl/MakeLogger.h"
+#include "utl/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"

@@ -38,7 +38,7 @@
 
 #include "DataType.h"
 #include "flute.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace utl {
 class Logger;

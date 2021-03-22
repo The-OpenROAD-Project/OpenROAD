@@ -211,8 +211,6 @@ int TritonRoute::main()
   ta();
   dr();
   endFR();
-  if (gui_ != nullptr)
-    gui_->updateShapes();
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 

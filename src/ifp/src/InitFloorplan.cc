@@ -47,7 +47,7 @@
 #include "sta/PortDirection.hh"
 
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace ifp {
 
@@ -85,6 +85,9 @@ using odb::dbPlacementStatus;
 using odb::dbTransform;
 using odb::dbBox;
 using odb::dbTechLayerType;
+using odb::dbGroup;
+using odb::dbRegion;
+
 
 class Track
 {
@@ -163,9 +166,15 @@ protected:
   int metersToMfgGrid(double dist) const;
   double dbuToMeters(int dist) const;
 
+  void updateVoltageDomain(int core_lx,
+                           int core_ly,
+                           int core_ux,
+                           int core_uy);
+
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
+  Vector<Track> tracks_;
 };
 
 void
@@ -324,6 +333,7 @@ InitFloorplan::initFloorplan(double die_lx,
       int cux = metersToMfgGrid(core_ux);
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
+      updateVoltageDomain(clx, cly, cux, cuy);
 
       // Destroy existing tracks.
       for (odb::dbTrackGrid *grid : block_->getTrackGrids())
@@ -334,6 +344,109 @@ InitFloorplan::initFloorplan(double die_lx,
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
+  }
+}
+
+
+// this function is used to create regions ( split overlapped rows and create new ones )
+void
+InitFloorplan::updateVoltageDomain(int core_lx,
+                                   int core_ly,
+                                   int core_ux,
+                                   int core_uy)
+{
+  // this is hardcoded for now as a margin between voltage domains
+  int MARGIN = 6;
+
+  // checks if a group is defined as a voltage domain, if so it creates a region 
+  for (dbGroup* domain : block_->getGroups()) {
+    if (domain->getType()==dbGroup::VOLTAGE_DOMAIN) {
+      dbRegion* domain_region = dbRegion::create(block_, domain->getName());
+
+      auto domain_name = string(domain->getName());
+      Rect domain_rect = domain->getBox();
+      int temp_domain_xMin = metersToMfgGrid(domain_rect.xMin() / 1e+6);
+      int temp_domain_yMin = metersToMfgGrid(domain_rect.yMin() / 1e+6);
+      int temp_domain_xMax = metersToMfgGrid(domain_rect.xMax() / 1e+6);
+      int temp_domain_yMax = metersToMfgGrid(domain_rect.yMax() / 1e+6);
+
+      dbSet<dbRow> rows = block_->getRows();
+      dbSet<dbRow>::iterator first_row = rows.begin();
+      dbSite *site = first_row->getSite();
+      int row_height_ = site->getHeight();
+      int site_width_ = site->getWidth();
+
+      int domain_yMin = temp_domain_yMin - temp_domain_yMin % row_height_;
+      int domain_yMax = temp_domain_yMax - temp_domain_yMax % row_height_;
+      int domain_xMin = temp_domain_xMin - temp_domain_xMin % site_width_;
+      int domain_xMax = temp_domain_xMax - temp_domain_xMax % site_width_;
+
+      dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
+
+      int row_old_count = 0;
+      for (dbRow* row_count : rows) {
+        row_old_count += 1;
+      }
+
+      int row_processed = 0;
+      for (dbRow *row_itr: rows) {
+        row_processed += 1;
+        if (row_processed > row_old_count) {
+          break;
+        }
+
+        Rect row_rect;
+        row_itr->getBBox(row_rect);
+        int row_xMin = row_rect.xMin();
+        int row_xMax = row_rect.xMax();
+        int row_yMin = row_rect.yMin();
+        int row_yMax = row_rect.yMax();
+
+        string row_name = row_itr->getName();
+        string row_number = row_name.substr(row_name.find("_") + 1);
+        // check if the rows overlapped with the area of a defined voltage domains + margin
+        if (row_yMax + MARGIN * row_height_ <= domain_yMin || row_yMin >= domain_yMax + MARGIN * row_height_) {
+          continue;
+        } else {
+          dbOrientType orient = row_itr->getOrient();
+          dbRow::destroy(row_itr);
+
+          int row_1_xMax_sites = (domain_xMin - MARGIN * row_height_) / site_width_;
+          int row_1_xMax = row_1_xMax_sites * site_width_;
+          // in case there is at least one valid site width on the left, create left core rows 
+          if (row_1_xMax > core_lx + site_width_)
+          {
+	    // warning message since tap cells might not be inserted
+            if (row_1_xMax < core_lx + 10 * site_width_) {
+              logger_->warn(IFP, 11, "left core row has less than 10 sites");   
+            } 
+            string row_1_new_name = "ROW_" + row_number + "_1";
+            int row_1_sites = (row_1_xMax - core_lx) / site_width_;
+            dbRow::create(block_, row_1_new_name.c_str(), site, core_lx, row_yMin, orient, dbRowDir::HORIZONTAL, row_1_sites, site_width_);
+          }
+          
+          int row_2_xMin_sites = (domain_xMax + MARGIN * row_height_) / site_width_;
+          int row_2_xMin = row_2_xMin_sites * site_width_;
+          // in case there is at least one valid site width on the right, create right core rows 
+          if (row_2_xMin + site_width_ < core_ux)
+          {  
+            if (row_2_xMin + 10 * site_width_ > core_ux) {
+              logger_->warn(IFP, 12, "right core row has less than 10 sites"); 
+            }   
+            string row_2_new_name = "ROW_" + row_number + "_2";
+            int row_2_sites = (core_ux - row_2_xMin) / site_width_;
+            dbRow::create(block_, row_2_new_name.c_str(), site, row_2_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, row_2_sites, site_width_);
+          }
+
+          int domain_row_sites = (domain_xMax - domain_xMin) / site_width_;
+          // create domain rows if current iterations are not in margin area
+          if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
+            string domain_row_name = "ROW_" + domain_name + "_" + row_number;
+            dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, dbRowDir::HORIZONTAL, domain_row_sites, site_width_);
+          }
+        }
+      }
+    }
   }
 }
 
