@@ -179,6 +179,7 @@ class IOPlacer
   bool checkBlocked(Edge edge, int pos);
   std::vector<Interval> findBlockedIntervals(odb::Rect die_area, odb::Rect box);
   void getBlockedRegionsFromMacros();
+  void getBlockedRegionsFromDbObstructions();
 
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,

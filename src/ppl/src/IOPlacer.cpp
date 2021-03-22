@@ -283,10 +283,27 @@ void IOPlacer::getBlockedRegionsFromMacros()
       odb::Rect intersect = die_area.intersect(inst_area);
 
       std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
-
       for (Interval interval : intervals) {
         excludeInterval(interval);
       }
+    }
+  }
+}
+
+void IOPlacer::getBlockedRegionsFromDbObstructions()
+{
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    odb::dbBox* obstructBox = obstruction->getBBox();
+    odb::Rect obstructArea;
+    obstructBox->getBox(obstructArea);
+    odb::Rect intersect = die_area.intersect(obstructArea);
+
+    std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
+    for (Interval interval : intervals) {
+      excludeInterval(interval);
     }
   }
 }
