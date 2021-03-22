@@ -46,6 +46,12 @@ void
 selection_add_net(const char* name)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addSelectedNet(name);
 }
 
@@ -53,6 +59,12 @@ void
 selection_add_nets(const char* name)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addSelectedNets(name);
 }
 
@@ -60,6 +72,12 @@ void
 selection_add_inst(const char* name)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addSelectedInst(name);
 }
 
@@ -67,24 +85,48 @@ void
 selection_add_insts(const char* name)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addSelectedInsts(name);
 }
 
 void highlight_inst(const char* name, int highlightGroup)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addInstToHighlightSet(name, highlightGroup);
 }
 
 void highlight_net(const char* name, int highlightGroup=0)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addNetToHighlightSet(name, highlightGroup);
 }
 
-void drawRuler(int x0, int y0, int x1, int y1)
+void add_ruler(int x0, int y0, int x1, int y1)
 {
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using utl::GUI;
+  if (!gui) {
+    logger->info(GUI, 1, "Tool is not run in GUI mode");
+    return ;
+  }
   gui->addRuler(x0, y0, x1, y1);  
 }
 

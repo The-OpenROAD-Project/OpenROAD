@@ -842,14 +842,14 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     // Skip the cut layer if the cuts will be too small to see
     const bool is_cut = layer->getType() == dbTechLayerType::CUT;
-    if (is_cut && layer->getWidth() < 5 * pixel) {
+    if (is_cut && layer->getWidth() < 1 * pixel) {
       continue;
     }
 
     // Draw the instances' shapes
     for (auto inst : insts) {
       dbMaster* master = inst->getMaster();
-      if (master->getHeight() < 1 * pixel) {
+      if (master->getHeight() < 5 * pixel) {
         continue;
       }
 
