@@ -2806,6 +2806,7 @@ namespace eval ICeWall {
     pdngen::merge_stripes
     dict set pdngen::design_data power_nets "VDD"
     dict set pdngen::design_data ground_nets "VSS"
+    dict set pdngen::design_data core_domain "CORE"
     pdngen::opendb_update_grid
   }
     # Connect up pads in the corner regions

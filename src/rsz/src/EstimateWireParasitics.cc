@@ -35,7 +35,7 @@
 
 #include "rsz/Resizer.hh"
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "sta/Report.hh"
 #include "sta/Units.hh"

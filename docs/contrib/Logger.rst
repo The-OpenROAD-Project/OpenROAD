@@ -153,7 +153,7 @@ logged.
 Calls to the Tcl functions utl::warn and utl::error with a single
 message argument report with tool ID “UKN” and message ID 0000.
 
-Tools ``#include utility/Logger.h`` that defines the logger API. The
+Tools ``#include utl/Logger.h`` that defines the logger API. The
 Logger instance is owned by the OpenRoad instance. Each tool should
 retrieve the logger instance in the tool init function called after the
 tool make function by the OpenRoad application.
@@ -280,8 +280,8 @@ install spdlog 1.8.1 on dfm and check your build there.
 
    target_link_libraries(<library_target>
      PUBLIC
-     utility
-     )
+       utl
+   )
 
 ================ =================
 Tool             message/namespace

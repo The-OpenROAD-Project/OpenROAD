@@ -113,7 +113,7 @@ target_link_libraries(PartitionMgr
   PUBLIC
     opendb
     OpenSTA
-			utility
+    utl
 )
 
 unset(LOAD_PARTITIONERS)

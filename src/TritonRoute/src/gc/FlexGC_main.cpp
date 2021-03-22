@@ -3538,8 +3538,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
   auto reqSpcVal = con->getCutSpacing();
-  frSquaredDistance reqSpcValSquare = reqSpcVal;
-  reqSpcVal *= reqSpcVal;
+  frSquaredDistance reqSpcValSquare = (frSquaredDistance) reqSpcVal * reqSpcVal;
 
   // skip unsupported rule branch
   if (con->isStack()) {

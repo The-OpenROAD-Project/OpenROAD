@@ -40,7 +40,7 @@
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 

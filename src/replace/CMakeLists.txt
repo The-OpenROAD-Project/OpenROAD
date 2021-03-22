@@ -88,7 +88,7 @@ target_include_directories(replace
 
 target_link_libraries(replace
   PRIVATE
-    utility
+    utl
     Eigen3::Eigen
     gui
     opendb

@@ -35,7 +35,7 @@
 
 %{
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace ord {
 // Defined in OpenRoad.i
