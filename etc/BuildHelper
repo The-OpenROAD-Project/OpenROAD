@@ -2,9 +2,11 @@
 
 set -e
 
+cd "$(dirname $(readlink -f $0))/../"
+
 if [[ "$#" -gt 0 ]]; then
     case "$@" in
-        "coverge" )
+        "coverage" )
             CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON"
             ;;
         "no-gui" )
@@ -45,7 +47,7 @@ case "${COMPILER:-gcc}" in
         ;;
 esac
 
-log_name="openroad-build-$(date +%s).log"
-cmake "$CMAKE_OPTIONS" -B build . | tee "$log_name"
-time cmake --build build -j $(nproc) | tee -a "$log_name"
-mv "$log_name" build/
+logName="openroad-build-$(date +%s).log"
+cmake "$CMAKE_OPTIONS" -B build . | tee "$logName"
+time cmake --build build -j $(nproc) | tee -a "$logName"
+mv "$logName" build/.
