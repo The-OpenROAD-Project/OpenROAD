@@ -203,14 +203,12 @@ void GlobalRouter::applyAdjustments(int minRoutingLayer, int maxRoutingLayer)
 
 void GlobalRouter::globalRouteClocksSeparately()
 {
-  Capacities capacities;
-
   // route clock nets
   std::vector<Net*> clockNets =
     startFastRoute(_minLayerForClock, _maxLayerForClock, NetType::Clock);
   _logger->report("Routing clock nets...");
   _routes = findRouting(clockNets, _minLayerForClock, _maxLayerForClock);
-  capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
+  Capacities clk_capacities = saveCapacities(_minLayerForClock, _maxLayerForClock);
   clearObjects();
   _logger->info(GRT, 10, "Routed clock nets: {}", _routes.size());
 
@@ -220,7 +218,7 @@ void GlobalRouter::globalRouteClocksSeparately()
   // route signal nets
   std::vector<Net*> signalNets =
     startFastRoute(_minRoutingLayer, _maxRoutingLayer, NetType::Signal);
-  restoreCapacities(capacities, _minLayerForClock, _maxLayerForClock);
+  restoreCapacities(clk_capacities, _minLayerForClock, _maxLayerForClock);
   // Store results in a temporary map, allowing to keep previous
   // routing result from clock nets
   NetRouteMap result = findRouting(signalNets, _minRoutingLayer, _maxRoutingLayer);
