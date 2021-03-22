@@ -1,7 +1,7 @@
 pipeline {
-  agent any
+  agent any;
   environment {
-    COMMIT_AUTHOR_EMAIL= sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim()
+    COMMIT_AUTHOR_EMAIL= sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
   }
   stages {
     stage('Build and test') {
@@ -10,7 +10,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc') {
               steps {
-                sh './etc/BuildHelper'
+                sh './etc/BuildHelper';
               }
             }
             stage('Test centos7 gcc') {
@@ -25,7 +25,7 @@ pipeline {
                       'gcd_sky130hs': { sh './test/regression gcd_sky130hs' },
                       'gcd_sky130hd': { sh './test/regression gcd_sky130hd' },
                       'ibex_sky130hs': { sh './test/regression ibex_sky130hs' },
-                  )
+                      )
                 }
               }
             }
@@ -35,12 +35,12 @@ pipeline {
           stages{
             stage('Build centos7 clang') {
               steps {
-                sh './docker/BuildHelper centos7 clang'
+                sh './etc/DockerHelper build centos7 clang';
               }
             }
             stage('Test centos7 clang') {
               steps {
-                sh './docker/TestRegression centos7 clang'
+                sh './etc/DockerHelper test centos7 clang';
               }
             }
           }
@@ -49,12 +49,12 @@ pipeline {
           stages{
             stage('Build ubuntu20 gcc') {
               steps {
-                sh './docker/BuildHelper ubuntu20 gcc'
+                sh './etc/DockerHelper build ubuntu20 gcc';
               }
             }
             stage('Test ubuntu20 gcc') {
               steps {
-                sh './docker/TestRegression ubuntu20 gcc'
+                sh './etc/DockerHelper test ubuntu20 gcc';
               }
             }
           }
@@ -65,26 +65,26 @@ pipeline {
   post {
     failure {
       script {
-        if ( env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'openroad' ) {
-          echo('Main development branch: report to stakeholders and commit author.')
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com"
-          REPLY_TO="$EMAIL_TO"
+        if ( env.BRANCH_NAME == 'master' ) {
+          echo('Main development branch: report to stakeholders and commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com";
+          REPLY_TO="$EMAIL_TO";
         } else {
-          echo('Feature development branch: report only to commit author.')
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL"
-          REPLY_TO='$DEFAULT_REPLYTO'
+          echo('Feature development branch: report only to commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
+          REPLY_TO='$DEFAULT_REPLYTO';
         }
         emailext (
             to: "$EMAIL_TO",
             replyTo: "$REPLY_TO",
             subject: '$DEFAULT_SUBJECT',
             body: '$DEFAULT_CONTENT',
-            )
+            );
       }
     }
     always {
-      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'"
-      archiveArtifacts '**/results.tgz'
+      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+      archiveArtifacts '**/results.tgz';
     }
   }
 }

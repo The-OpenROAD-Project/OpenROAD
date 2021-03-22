@@ -1,6 +1,8 @@
 #!/bin/bash
-set -x
+
 set -e
+
+cd "$(dirname $(readlink -f $0))/../"
 
 cmake -B build .
 cov-build --dir cov-int cmake --build build -j $(nproc)

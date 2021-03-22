@@ -1,15 +1,23 @@
 pipeline {
-  agent any
+  agent any;
   stages {
     stage('Build') {
       steps {
-        sh './etc/BuilderHelper coverage'
+        sh './etc/BuildHelper coverage';
       }
     }
     stage('Coverage') {
       steps {
-        sh './etc/CoverageAnalysis'
-        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage-output', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
+        sh './etc/CoverageAnalysis';
+        publishHTML([
+            allowMissing: false,
+            alwaysLinkToLastBuild: false,
+            keepAll: false,
+            reportDir: 'coverage-output',
+            reportFiles: 'index.html',
+            reportName: 'Code Coverage',
+            reportTitles: ''
+        ]);
       }
     }
   }

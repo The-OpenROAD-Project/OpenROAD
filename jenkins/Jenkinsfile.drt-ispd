@@ -1,26 +1,26 @@
 pipeline {
-  agent any
+  agent any;
   stages {
     stage('Build') {
       steps {
-        sh './etc/BuilderHelper'
+        sh './etc/BuildHelper';
       }
     }
     stage('Clean-up') {
       steps {
-        sh 'rm -rf /home/jenkins/ispd/runs/*'
+        sh 'rm -rf /home/jenkins/ispd/runs/*';
       }
     }
     stage('Test') {
       steps {
-        sh './src/TritonRoute/test/run-ispd.tcl'
+        sh './src/TritonRoute/test/run-ispd.tcl';
       }
     }
   }
   post {
     always {
-      sh 'mv /home/jenkins/ispd/runs/*.tar.gz .'
-      archiveArtifacts '*.tar.gz'
+      sh 'mv /home/jenkins/ispd/runs/*.tar.gz .';
+      archiveArtifacts '*.tar.gz';
     }
   }
 }
