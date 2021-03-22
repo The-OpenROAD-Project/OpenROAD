@@ -63,6 +63,13 @@ class Fixture
                                       fr::frCoord par_space = -1,
                                       fr::frCoord par_within = -1,
                                       bool two_edges = false);
+  void makeLef58SpacingEndOfLineConstraint(fr::frLayerNum layer_num,
+                                           fr::frCoord par_space = -1,
+                                           fr::frCoord par_within = -1,
+                                           bool two_edges = false,
+                                           fr::frCoord min_max_length = -1,
+                                           bool max = true,
+                                           bool two_sides = true);
 
   fr::frNet* makeNet(const char* name);
 

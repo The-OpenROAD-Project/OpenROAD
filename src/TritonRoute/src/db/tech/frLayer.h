@@ -235,6 +235,11 @@ class frLayer
     return sol;
   }
 
+  void addLef58SpacingEndOfLineConstraint(
+      const std::shared_ptr<frLef58SpacingEndOfLineConstraint>& constraintIn)
+  {
+    lef58SpacingEndOfLineConstraints.push_back(constraintIn);
+  }
   // new functions
   bool hasMinSpacing() const { return (minSpc); }
   frConstraint* getMinSpacing() const { return minSpc; }
