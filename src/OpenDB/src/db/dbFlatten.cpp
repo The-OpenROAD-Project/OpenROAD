@@ -42,7 +42,7 @@
 #include "dbTransform.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

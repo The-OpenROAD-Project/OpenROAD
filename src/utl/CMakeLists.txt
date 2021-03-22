@@ -15,23 +15,23 @@
 
 include("openroad")
 
-swig_lib(NAME      utility
+swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
 )
 
-target_sources(utility
+target_sources(utl
   PRIVATE
     src/Logger.cpp
     src/MakeLogger.cpp
 )
   
-target_include_directories(utility
+target_include_directories(utl
   PUBLIC
     include
 )
 
-target_link_libraries(utility
+target_link_libraries(utl
   PUBLIC
     spdlog::spdlog
 )

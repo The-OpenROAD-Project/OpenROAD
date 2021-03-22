@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Hypergraph.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include <algorithm>
 #include <iostream>

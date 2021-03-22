@@ -45,7 +45,7 @@
 #include "openroad/OpenRoad.hh"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace gui {
 

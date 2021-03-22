@@ -54,7 +54,7 @@
 #include "definSNet.h"
 #include "definTracks.h"
 #include "definVia.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \
   reader->error((msg));               \

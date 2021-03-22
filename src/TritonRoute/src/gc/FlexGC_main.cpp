@@ -2445,13 +2445,14 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   }
 
   // no violation if spacing satisfied
-  auto reqSpcValSquare = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare
+      = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;
   gtl::center(center1, *rect1);
   gtl::center(center2, *rect2);
-  frCoord distSquare = 0;
+  frSquaredDistance distSquare = 0;
   if (con->hasCenterToCenter()) {
     distSquare = gtl::distance_squared(center1, center2);
   } else {
@@ -2566,13 +2567,14 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   }
 
   // no violation if spacing satisfied
-  auto reqSpcValSquare = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare
+      = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;
   gtl::center(center1, *rect1);
   gtl::center(center2, *rect2);
-  frCoord distSquare = 0;
+  frSquaredDistance distSquare = 0;
 
   if (con->hasCenterToCenter()) {
     distSquare = gtl::distance_squared(center1, center2);
@@ -2704,7 +2706,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
 
   auto conCutClassIdx = con->getCutClassIdx();
 
-  auto cutWithinSquare = con->getCutWithin();
+  frSquaredDistance cutWithinSquare = con->getCutWithin();
   box_t queryBox;
   myBloat(*rect, cutWithinSquare, queryBox);
   cutWithinSquare *= cutWithinSquare;
@@ -2717,7 +2719,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
   gtl::center(center1, *rect);
   // count adj cuts
   for (auto& [objBox, ptr] : result) {
-    frCoord distSquare = 0;
+    frSquaredDistance distSquare = 0;
     if (con->isCenterToCenter()) {
       gtl::center(center2, *ptr);
       distSquare = gtl::distance_squared(center1, center2);
@@ -2762,7 +2764,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
 
   auto conCutClassIdx = con->getCutClassIdx();
 
-  auto cutWithinSquare = con->getCutWithin();
+  frSquaredDistance cutWithinSquare = con->getCutWithin();
   box_t queryBox;
   myBloat(*rect, cutWithinSquare, queryBox);
   cutWithinSquare *= cutWithinSquare;
@@ -2775,7 +2777,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
   gtl::center(center1, *rect);
   // count adj cuts
   for (auto& [objBox, ptr] : result) {
-    frCoord distSquare = 0;
+    frSquaredDistance distSquare = 0;
     if (con->isCenterToCenter()) {
       gtl::center(center2, *ptr);
       distSquare = gtl::distance_squared(center1, center2);
@@ -2935,14 +2937,14 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
     ;
   }
 
-  auto reqSpcValSquare
+  frSquaredDistance reqSpcValSquare
       = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;
   gtl::center(center1, *rect1);
   gtl::center(center2, *rect2);
-  frCoord distSquare = 0;
+  frSquaredDistance distSquare = 0;
   if (con->isCenterToCenter()) {
     distSquare = gtl::distance_squared(center1, center2);
   } else {
@@ -3048,7 +3050,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
   auto reqSpcVal = con->getCutSpacing();
-  auto reqSpcValSquare = reqSpcVal * reqSpcVal;
+  frSquaredDistance reqSpcValSquare = (frSquaredDistance) reqSpcVal * reqSpcVal;
 
   // skip unsupported rule branch
   if (con->isStack()) {
@@ -3153,7 +3155,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
             corner->x(), corner->y(), corner->x(), corner->y());
         gtl::generalized_intersect(markerRect, *rect1);
 
-        frCoord distSquare = 0;
+        frSquaredDistance distSquare = 0;
         if (con->isCenterToCenter()) {
           gtl::point_data<frCoord> center1;
           gtl::center(center1, *rect1);
@@ -3518,7 +3520,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
     return true;
   }
 
-  auto cutWithinSquare = con->getCutWithin();
+  frSquaredDistance cutWithinSquare = con->getCutWithin();
   box_t queryBox;
   myBloat(*rect, cutWithinSquare, queryBox);
   cutWithinSquare *= cutWithinSquare;
@@ -3531,7 +3533,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
   gtl::center(center1, *rect);
   // count adj cuts
   for (auto& [objBox, ptr] : result) {
-    frCoord distSquare = 0;
+    frSquaredDistance distSquare = 0;
     if (con->hasCenterToCenter()) {
       gtl::center(center2, *ptr);
       distSquare = gtl::distance_squared(center1, center2);
