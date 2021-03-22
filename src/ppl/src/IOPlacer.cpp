@@ -250,37 +250,35 @@ void IOPlacer::getBlockedRegionsFromMacros()
       odb::Rect inst_area;
       inst->getBBox()->getBox(inst_area);
       odb::Rect intersect = die_area.intersect(inst_area);
-      if (intersect != inst_area) {
-        std::vector<Interval> intervals;
 
-        // check intersect bottom edge
-        if (!die_area.overlaps(intersect.ll()) &&
-            !die_area.overlaps(intersect.lr())) {
-          intervals.push_back(
-            Interval(Edge::bottom, intersect.xMin(), intersect.xMax()));
-        }
-        // check intersect top edge
-        if (!die_area.overlaps(intersect.ul()) &&
-            !die_area.overlaps(intersect.ur())) {
-          intervals.push_back(
-            Interval(Edge::top, intersect.xMin(), intersect.xMax()));
-        }
-        // check intersect left edge
-        if (!die_area.overlaps(intersect.ll()) &&
-            !die_area.overlaps(intersect.ul())) {
-          intervals.push_back(
-            Interval(Edge::left, intersect.yMin(), intersect.yMax()));
-        }
-        // check intersect right edge
-        if (!die_area.overlaps(intersect.lr()) &&
-            !die_area.overlaps(intersect.ur())) {
-          intervals.push_back(
-            Interval(Edge::right, intersect.yMin(), intersect.yMax()));
-        }
+      std::vector<Interval> intervals;
+      // check intersect bottom edge
+      if (!die_area.overlaps(intersect.ll()) &&
+          !die_area.overlaps(intersect.lr())) {
+        intervals.push_back(
+          Interval(Edge::bottom, intersect.xMin(), intersect.xMax()));
+      }
+      // check intersect top edge
+      if (!die_area.overlaps(intersect.ul()) &&
+          !die_area.overlaps(intersect.ur())) {
+        intervals.push_back(
+          Interval(Edge::top, intersect.xMin(), intersect.xMax()));
+      }
+      // check intersect left edge
+      if (!die_area.overlaps(intersect.ll()) &&
+          !die_area.overlaps(intersect.ul())) {
+        intervals.push_back(
+          Interval(Edge::left, intersect.yMin(), intersect.yMax()));
+      }
+      // check intersect right edge
+      if (!die_area.overlaps(intersect.lr()) &&
+          !die_area.overlaps(intersect.ur())) {
+        intervals.push_back(
+          Interval(Edge::right, intersect.yMin(), intersect.yMax()));
+      }
 
-        for (Interval interval : intervals) {
-          excludeInterval(interval);
-        }
+      for (Interval interval : intervals) {
+        excludeInterval(interval);
       }
     }
   }
