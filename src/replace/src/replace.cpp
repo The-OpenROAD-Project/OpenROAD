@@ -38,7 +38,7 @@
 #include "nesterovBase.h"
 #include "routeBase.h" 
 #include "timingBase.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "rsz/Resizer.hh"
 #include <iostream>
 

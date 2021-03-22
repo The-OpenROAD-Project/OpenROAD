@@ -35,7 +35,7 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "gui/gui.h"
 %}
 

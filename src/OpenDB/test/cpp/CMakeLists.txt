@@ -13,7 +13,7 @@ set(TEST_LIBS
         cdl
         ${TCL_LIBRARY}
         Boost::boost
-        utility
+        utl
 )
 
 add_executable(TestCallBacks TestCallBacks.cpp)

@@ -114,6 +114,9 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
     xform.set(frPoint(boxLeft, trackLoc));
     box2.transform(xform);
     box2boxDistSquare(box1, box2, dx, dy);
+    if (dy >= bloatDist) {
+      continue;
+    }
     frCoord maxX = (frCoord) (sqrt(1.0 * bloatDistSquare
                                    - 1.0 * (frSquaredDistance) dy * dy));
     if ((frSquaredDistance) maxX * maxX + (frSquaredDistance) dy * dy

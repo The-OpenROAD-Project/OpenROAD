@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TechChar.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "db_sta/dbSta.hh"
 #include "sta/Graph.hh"

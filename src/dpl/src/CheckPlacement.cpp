@@ -36,7 +36,7 @@
 #include <limits>
 
 #include "dpl/Opendp.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 

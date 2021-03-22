@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 #include "opendb/db.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace psm {
 using odb::dbInst;
 

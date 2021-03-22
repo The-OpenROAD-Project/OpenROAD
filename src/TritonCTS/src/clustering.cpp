@@ -52,7 +52,7 @@
 #include <string>
 #include <vector>
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #define CPLEX_CLUSTERING
 

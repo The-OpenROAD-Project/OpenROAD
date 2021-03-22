@@ -52,5 +52,5 @@ target_link_libraries(antennachecker
   PUBLIC
     opendb
     OpenSTA
-    utility
+    utl
 )

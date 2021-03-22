@@ -38,7 +38,7 @@
 
 #include "db.h"
 #include "dbShape.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definRow::definRow()
