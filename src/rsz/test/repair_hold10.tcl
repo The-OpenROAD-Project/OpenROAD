@@ -26,7 +26,6 @@ report_worst_slack -min
 detailed_placement
 
 # check slacks with fresh parasitics
-grt::clear_fastroute
 global_route -layers 2-6
 estimate_parasitics -global_routing
 report_worst_slack -min
