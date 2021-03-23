@@ -99,9 +99,9 @@ class GuiPainter : public Painter
  public:
   GuiPainter(QPainter* painter,
              Options* options,
-             const QTransform* base_transform = nullptr,
-             int dbu_height = 0,
-             qreal pixels_per_dbu = 0)
+             const QTransform& base_transform,
+             int dbu_height,
+             qreal pixels_per_dbu)
       : painter_(painter),
         options_(options),
         base_transform_(base_transform),
@@ -181,11 +181,14 @@ class GuiPainter : public Painter
     painter_->drawEllipse(QPoint(x, y), r, r);
   }
 
-  // NOTE: it is drawing upside down
+  // NOTE: The constant height text s drawn with this function, hence
+  //       the trasnsformation is mapped to the base transformation and
+  //       the world co-ordinates are mapped to the window co-ordinates
+  //       before drawing.
   void drawString(int x, int y, int offset, const std::string& s) override
   {
     painter_->save();
-    painter_->setTransform(*base_transform_);
+    painter_->setTransform(base_transform_);
     int sx = x * pixels_per_dbu_;
     int sy = (dbu_height_ - y) * pixels_per_dbu_;
     painter_->setPen(QPen(Qt::white, 0));
@@ -197,7 +200,7 @@ class GuiPainter : public Painter
  private:
   QPainter* painter_;
   Options* options_;
-  const QTransform* base_transform_;
+  const QTransform& base_transform_;
   int dbu_height_;
   qreal pixels_per_dbu_;
 };
@@ -367,6 +370,11 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
+  int dbu_height = getBounds(getBlock()).yMax();
+  // mouse_press_pos_
+  //    = QPoint((int) floor(event->pos().x() / pixels_per_dbu_),
+  //             dbu_height - (int) floor(event->pos().y() / pixels_per_dbu_));
+  mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
       Point pt_dbu = screenToDBU(event->pos());
@@ -396,9 +404,9 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
   // emit location in microns
   Point pt_dbu = screenToDBU(event->pos());
-  qreal to_microns = block->getDbUnitsPerMicron();
-  emit location(pt_dbu.x() / to_microns, pt_dbu.y() / to_microns);
-
+  qreal to_dbu = block->getDbUnitsPerMicron();
+  emit location(pt_dbu.x() / to_dbu, pt_dbu.y() / to_dbu);
+  mouse_move_pos_ = event->pos();
   if (rubber_band_showing_) {
     updateRubberBandRegion();
     rubber_band_.setBottomRight(event->pos());
@@ -412,7 +420,6 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_showing_ = false;
     updateRubberBandRegion();
     unsetCursor();
-
     QRect rect = rubber_band_.normalized();
     if (!(QApplication::keyboardModifiers() & Qt::ControlModifier)
         && (rect.width() < 4 || rect.height() < 4)) {
@@ -421,7 +428,6 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     }
 
     Rect rubber_band_dbu = screenToDBU(rect);
-
     // Clip to the block bounds
     dbBlock* block = getBlock();
     Rect bbox = getBounds(block);
@@ -434,23 +440,31 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
       if (rect.width() < 10 && rect.height() < 10)
         return;
+      int dbu_height = getBounds(getBlock()).yMax();
+      int mouse_release_x = (int) floor(event->pos().x() / pixels_per_dbu_);
+      int mouse_release_y
+          = dbu_height - (int) floor(event->pos().y() / pixels_per_dbu_);
+
+      int mouse_press_x = (int) floor(mouse_press_pos_.x() / pixels_per_dbu_);
+      int mouse_press_y
+          = dbu_height - (int) floor(mouse_press_pos_.y() / pixels_per_dbu_);
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
-        QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
-        QPoint pt2(rubber_band_dbu.xMax(), rubber_band_dbu.yMin());
+        QPoint pt1 = QPoint(mouse_press_x, mouse_press_y);
+        QPoint pt2(mouse_release_x, pt1.y());
         if (pt1.x() < pt2.x())
           ruler = QLine(pt1, pt2);
         else
           ruler = QLine(pt2, pt1);
       } else {
-        QPoint pt1(rubber_band_dbu.xMin(), rubber_band_dbu.yMin());
-        QPoint pt2(rubber_band_dbu.xMin(), rubber_band_dbu.yMax());
+        QPoint pt1 = QPoint(mouse_press_x, mouse_press_y);
+        QPoint pt2(pt1.x(), mouse_release_y);
         if (pt1.y() < pt2.y())
           ruler = QLine(pt1, pt2);
         else
-          ruler = QLine(pt1, pt2);
+          ruler = QLine(pt2, pt1);
       }
-      Gui::get()->addRuler(
+      emit addRuler(
           ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
       return;
     }
@@ -682,26 +696,23 @@ void LayoutViewer::drawRulers(Painter& painter)
   painter.setPen(ruler_color, true);
   painter.setBrush(ruler_color);
 
-  qreal to_microns = getBlock()->getDbUnitsPerMicron();
+  qreal to_dbu = getBlock()->getDbUnitsPerMicron();
 
   for (auto& ruler : rulers_) {
-    auto ruler_len
-        = QString::number((std::max(std::abs(ruler.p1().x() - ruler.p2().x()),
-                                    std::abs(ruler.p1().y() - ruler.p2().y())))
-                          / to_microns);
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2)
+       << (std::max(std::abs(ruler.p1().x() - ruler.p2().x()),
+                    std::abs(ruler.p1().y() - ruler.p2().y())))
+              / to_dbu;
     painter.drawLine(
         ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
 
     if (ruler.dx() < ruler.dy()) {
-      painter.drawString(ruler.p1().x(),
-                         (ruler.p1().y() + ruler.p2().y()) / 2,
-                         0,
-                         ruler_len.toStdString());
+      painter.drawString(
+          ruler.p1().x(), (ruler.p1().y() + ruler.p2().y()) / 2, 0, ss.str());
     } else {
-      painter.drawString((ruler.p1().x() + ruler.p2().x()) / 2,
-                         ruler.p1().y(),
-                         0,
-                         ruler_len.toStdString());
+      painter.drawString(
+          (ruler.p1().x() + ruler.p2().x()) / 2, ruler.p1().y(), 0, ss.str());
     }
   }
 }
@@ -730,7 +741,6 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   auto min_congestion_to_show = options_->getMinCongestionToShow();
   for (auto& [key, cong_data] : gcell_congestion_data) {
     uint x_idx = key.first;
-    ;
     uint y_idx = key.second;
 
     if (x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1) {
@@ -781,7 +791,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
                              const Rect& bounds,
                              dbBlock* block,
                              int depth,
-                             const QTransform* base_tx)
+                             const QTransform& base_tx)
 {
   int pixel = 1 / pixels_per_dbu_;  // 1 pixel in DBU
   LayerBoxes boxes;
@@ -993,8 +1003,7 @@ void LayoutViewer::drawPinMarkers(QPainter* painter,
   for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
-      if (status == odb::dbPlacementStatus::NONE
-          || status == odb::dbPlacementStatus::UNPLACED) {
+      if (!status.isPlaced()) {
         continue;
       }
       auto pin_dir = term->getIoType();
@@ -1123,8 +1132,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   Rect dbu_bounds = screenToDBU(event->rect());
-  drawBlock(&painter, dbu_bounds, block, 0, base_transform);
-  if (options_->isPinMarkersVisible())
+  drawBlock(&painter, dbu_bounds, block, 0, *base_transform);
+  if (options_->arePinMarkersVisible())
     drawPinMarkers(&painter, dbu_bounds, block);
 
   painter.restore();
@@ -1136,10 +1145,17 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
       auto norm_rect = rubber_band_.normalized();
       QLine ruler;
       if (norm_rect.width() > norm_rect.height()) {
-        ruler = QLine(norm_rect.bottomLeft(), norm_rect.bottomRight());
+        if (mouse_press_pos_.y() > mouse_move_pos_.y())
+          ruler = QLine(norm_rect.bottomLeft(), norm_rect.bottomRight());
+        else
+          ruler = QLine(norm_rect.topLeft(), norm_rect.topRight());
         painter.drawLine(ruler);
       } else {
-        ruler = QLine(norm_rect.topLeft(), norm_rect.bottomLeft());
+        if (mouse_press_pos_.x() > mouse_move_pos_.x())
+          ruler = QLine(norm_rect.topRight(), norm_rect.bottomRight());
+        else
+          ruler = QLine(norm_rect.topLeft(), norm_rect.bottomLeft());
+
         painter.drawLine(ruler);
       }
     } else {
@@ -1170,8 +1186,9 @@ void LayoutViewer::fit()
   Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixels_per_dbu = std::min(viewport.width() / (double) bbox.xMax(),
-                                  viewport.height() / (double) bbox.yMax());
+  qreal pixels_per_dbu
+      = std::min((viewport.width() * 0.98) / (double) bbox.xMax(),
+                 (viewport.height() * 0.98) / (double) bbox.yMax());
   setPixelsPerDBU(pixels_per_dbu);
   fit_pixels_per_dbu_ = pixels_per_dbu;
 }
@@ -1351,6 +1368,7 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     Gui::get()->clearSelections();
     Gui::get()->clearHighlights(-1);
+    Gui::get()->clearRulers();
   });
 }
 

@@ -102,6 +102,11 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addSelected(const Selected&)));
 
+  connect(viewer_,
+          SIGNAL(addRuler(int, int, int, int)),
+          this,
+          SLOT(addRuler(int, int, int, int)));
+
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));

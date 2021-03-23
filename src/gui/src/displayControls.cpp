@@ -472,7 +472,7 @@ bool DisplayControls::isCongestionVisible() const
   return congestion_visible_;
 }
 
-bool DisplayControls::isPinMarkersVisible() const
+bool DisplayControls::arePinMarkersVisible() const
 {
   return pin_markers_visible_;
 }

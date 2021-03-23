@@ -151,7 +151,7 @@ class DisplayControls : public QDockWidget, public Options
   bool areRoutingObjsVisible();
 
   bool isCongestionVisible() const override;
-  bool isPinMarkersVisible() const override;
+  bool arePinMarkersVisible() const override;
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
   float getMinCongestionToShow() const override;

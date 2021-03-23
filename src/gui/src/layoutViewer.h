@@ -125,14 +125,15 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void location(qreal x, qreal y);
   void selected(const Selected& selected, bool showConnectivity = false);
   void addSelected(const Selected& selected);
+  void addRuler(int x0, int y0, int x1, int y1);
 
  public slots:
   void zoomIn();
   void zoomOut();
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
-  void fit();  // fit the whole design in the window
-  void updateShapes(); //reseting shapes_ and reinitializing it
+  void fit();           // fit the whole design in the window
+  void updateShapes();  // reseting shapes_ and reinitializing it
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
@@ -173,7 +174,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                  const odb::Rect& bounds,
                  odb::dbBlock* block,
                  int depth,
-                 const QTransform* base_tx = nullptr);
+                 const QTransform& base_tx);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -215,6 +216,8 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool search_init_;
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
+  QPoint mouse_press_pos_;
+  QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   utl::Logger* logger_;
 
