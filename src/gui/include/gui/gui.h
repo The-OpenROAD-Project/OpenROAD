@@ -250,11 +250,7 @@ class Painter
 
   virtual void drawString(int x, int y, int offset, const std::string& s) = 0;
 
-  virtual void drawRuler(int x0, int y0, int x1, int y1)
-  {
-    // A Line will be provided as a ruler by Base
-    drawLine(x0, y0, x1, y1);
-  }
+  virtual void drawRuler(int x0, int y0, int x1, int y1) = 0;
 
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)

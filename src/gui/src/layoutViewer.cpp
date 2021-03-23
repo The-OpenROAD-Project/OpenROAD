@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "layoutViewer.h"
-
 #include <QApplication>
 #include <QDebug>
 #include <QFont>
@@ -101,23 +99,25 @@ class GuiPainter : public Painter
              Options* options,
              const QTransform& base_transform,
              int dbu_height,
-             qreal pixels_per_dbu)
+             qreal pixels_per_dbu,
+             int dbu_per_micron)
       : painter_(painter),
         options_(options),
         base_transform_(base_transform),
         dbu_height_(dbu_height),
-        pixels_per_dbu_(pixels_per_dbu)
+        pixels_per_dbu_(pixels_per_dbu),
+        dbu_per_micron_(dbu_per_micron)
   {
   }
 
-  void setPen(odb::dbTechLayer* layer, bool cosmetic) override
+  void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override
   {
     QPen pen(options_->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
 
-  void setPen(const Color& color, bool cosmetic, int width) override
+  void setPen(const Color& color, bool cosmetic = false, int width = 1) override
   {
     QPen pen(QColor(color.r, color.g, color.b, color.a));
     pen.setCosmetic(cosmetic);
@@ -132,7 +132,7 @@ class GuiPainter : public Painter
     pen.setWidth(width);
     painter_->setPen(pen);
   }
-  void setBrush(odb::dbTechLayer* layer, int alpha) override
+  void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
   {
     QColor color = options_->color(layer);
     Qt::BrushStyle brush_pattern = options_->pattern(layer);
@@ -160,7 +160,7 @@ class GuiPainter : public Painter
       painter_->drawPolygon(qpoly);
     }
   }
-  void drawRect(const odb::Rect& rect, int roundX, int roundY) override
+  void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
     if (roundX > 0 || roundY > 0)
       painter_->drawRoundRect(QRect(QPoint(rect.xMin(), rect.yMin()),
@@ -175,6 +175,8 @@ class GuiPainter : public Painter
   {
     painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
   }
+  using Painter::drawLine;
+
   void setTransparentBrush() override { painter_->setBrush(Qt::transparent); }
   void drawCircle(int x, int y, int r) override
   {
@@ -197,12 +199,34 @@ class GuiPainter : public Painter
     painter_->restore();
   }
 
+  void drawRuler(int x0, int y0, int x1, int y1) override
+  {
+    setPen(ruler_color, true);
+    setBrush(ruler_color);
+
+    std::stringstream ss;
+    const int x_len = std::abs(x0 - x1);
+    const int y_len = std::abs(y0 - y1);
+
+    ss << std::fixed << std::setprecision(2)
+       << std::max(x_len, y_len) / (qreal) dbu_per_micron_;
+
+    drawLine(x0, y0, x1, y1);
+
+    if (x_len < y_len) {
+      drawString(x0, (y0 + y1) / 2, 0, ss.str());
+    } else {
+      drawString((x0 + x1) / 2, y0, 0, ss.str());
+    }
+  }
+
  private:
   QPainter* painter_;
   Options* options_;
   const QTransform base_transform_;
   int dbu_height_;
   qreal pixels_per_dbu_;
+  int dbu_per_micron_;
 };
 
 LayoutViewer::LayoutViewer(Options* options,
@@ -440,6 +464,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
       int dbu_height = getBounds(getBlock()).yMax();
       auto mouse_release_pos = screenToDBU(event->pos());
       auto mouse_press_pos = screenToDBU(mouse_press_pos_);
+      qreal to_dbu = getBlock()->getDbUnitsPerMicron();
 
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
@@ -684,29 +709,9 @@ void LayoutViewer::drawHighlighted(Painter& painter)
 
 void LayoutViewer::drawRulers(Painter& painter)
 {
-  Rect bbox = getBounds(getBlock());
-  auto ruler_color = Painter::ruler_color;
-  painter.setPen(ruler_color, true);
-  painter.setBrush(ruler_color);
-
-  qreal to_dbu = getBlock()->getDbUnitsPerMicron();
-
   for (auto& ruler : rulers_) {
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(2)
-       << (std::max(std::abs(ruler.p1().x() - ruler.p2().x()),
-                    std::abs(ruler.p1().y() - ruler.p2().y())))
-              / to_dbu;
-    painter.drawLine(
+    painter.drawRuler(
         ruler.p1().x(), ruler.p1().y(), ruler.p2().x(), ruler.p2().y());
-
-    if (ruler.dx() < ruler.dy()) {
-      painter.drawString(
-          ruler.p1().x(), (ruler.p1().y() + ruler.p2().y()) / 2, 0, ss.str());
-    } else {
-      painter.drawString(
-          (ruler.p1().x() + ruler.p2().x()) / 2, ruler.p1().y(), 0, ss.str());
-    }
   }
 }
 
@@ -791,8 +796,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   QTransform initial_xfm = painter->transform();
 
   auto& renderers = Gui::get()->renderers();
-  GuiPainter gui_painter(
-      painter, options_, base_tx, getBounds(block).yMax(), pixels_per_dbu_);
+  GuiPainter gui_painter(painter,
+                         options_,
+                         base_tx,
+                         getBounds(block).yMax(),
+                         pixels_per_dbu_,
+                         block->getDbUnitsPerMicron());
 
   // Draw bounds
   painter->setPen(QPen(Qt::gray, 0));
