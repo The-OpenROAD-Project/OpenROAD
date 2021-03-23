@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e
+
+_help() {
+    echo "Usage: $0 [dynamic | static]"
+}
+
+_lcov() {
+    mkdir -p coverage-output
+    lcov \
+        --capture \
+        --directory ./build \
+        --exclude "/usr/include/*" \
+        --exclude "/opt/*" \
+        --exclude "/usr/lib/*" \
+        --exclude "/usr/local/*" \
+        --exclude "*build*" \
+        --output-file ./coverage-output/main_coverage.info
+
+    genhtml ./coverage-output/main_coverage.info \
+        --output-directory ./coverage-output \
+        --ignore-errors source
+    }
+
+_coverity() {
+    cmake -B build .
+    cov-build --dir cov-int cmake --build build -j $(nproc)
+    tar czvf openroad.tgz cov-int
+}
+
+cd "$(dirname $(readlink -f $0))/../"
+
+target="${1:-dynamic}"
+case "${target}" in
+    dynamic )
+        _lcov
+        ;;
+    static )
+        _coverity
+        ;;
+    *)
+        _help
+        ;;
+esac
