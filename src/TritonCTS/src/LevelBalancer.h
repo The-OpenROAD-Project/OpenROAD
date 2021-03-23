@@ -52,6 +52,35 @@ namespace cts {
 
 using utl::Logger;
 
+/////////////////////////////////////////////////////////////////////////
+// Class: LevelBalancer
+// Purpose: Balance buffer levels accross nets of same clock
+// Nets driven by drivers other than clock source itself are driven by
+// clock gates (CGC). Each of these nets is build independently by CTS
+// Since the clock is same, large skew would be introduced between sinks
+// of different clock nets.
+//
+// INPUT to Level Balancer
+//
+//                |----|>----[]  Level = 1
+//                |----|>----[]
+//                |----|>----[]
+//   [root]-------|                   |---|>----[]   Level = 3
+//                |----|>----D--------|
+//                          (CGC)     |---|>-----[]
+//                            
+// OUTPUT of Level Balancer
+//
+//                |----|>-|>|>---[]  Level = 3
+//                |----|>-|>|>---[]
+//                |----|>-|>|>---[]
+//   [root]-------|                   |---|>----[] Level = 3
+//                |----|>----D--------|
+//                          (CGC)     |---|>-----[]
+//
+//
+
+
 typedef std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>> CellLevelMap;
 class LevelBalancer
 {

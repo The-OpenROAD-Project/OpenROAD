@@ -775,7 +775,7 @@ void HTreeBuilder::createClockSubNets()
       builder.forceBufferInSegment(_options->getRootBuffer());
     }
     if (isFirstPoint) {
-      _treeBufLevels += builder.getNumBuffers();
+      _treeBufLevels += builder.getNumBufferLevels();
       isFirstPoint = false;
     }
     topLevelTopology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
@@ -811,7 +811,7 @@ void HTreeBuilder::createClockSubNets()
         builder.forceBufferInSegment(_options->getRootBuffer());
       }
       if (isFirstPoint) {
-        _treeBufLevels += builder.getNumBuffers();
+        _treeBufLevels += builder.getNumBufferLevels();
         isFirstPoint = false;
       }
       topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
@@ -950,14 +950,14 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
       
       std::string buffMaster = (forceBuffer != "") ? forceBuffer : wireSegment.getBufferMaster(buffer);
       ClockInst& newBuffer
-          = _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+          = _clock->addClockBuffer(_instPrefix + std::to_string(_numBufferLevels),
                                    buffMaster,
                                    x * _techCharDistUnit,
                                    y * _techCharDistUnit);
       if (sink) {
         _drivingSubNet->replaceSink(sink, &newBuffer);
         _drivingSubNet
-            = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+            = &_clock->addSubNet(_netPrefix + std::to_string(_numBufferLevels));
         _drivingSubNet->addInst(newBuffer);
         _drivingSubNet->addInst(*sink);
         //sink = newBuffer;
@@ -965,18 +965,18 @@ void SegmentBuilder::build(std::string forceBuffer, ClockInst* sink)
       } else {
         _drivingSubNet->addInst(newBuffer);
         _drivingSubNet
-            = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+            = &_clock->addSubNet(_netPrefix + std::to_string(_numBufferLevels));
         _drivingSubNet->addInst(newBuffer);
       }
 
-      ++_numBuffers;
+      ++_numBufferLevels;
     }
   }
 }
 
 void SegmentBuilder::forceBufferInSegment(std::string master)
 {
-  if (_numBuffers != 0) {
+  if (_numBufferLevels != 0) {
     return;
   }
 
@@ -987,7 +987,7 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   _drivingSubNet->addInst(newBuffer);
   _drivingSubNet = &_clock->addSubNet(_netPrefix + "_leaf");
   _drivingSubNet->addInst(newBuffer);
-  _numBuffers++;
+  _numBufferLevels++;
 }
 
 }  // namespace cts

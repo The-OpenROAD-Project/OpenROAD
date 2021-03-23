@@ -499,7 +499,7 @@ void TritonCTS::initAllClocks()
         // 2, the net is discarded.
         initOneClockTree(net, clkName, nullptr);
       } else {
-        _logger->warn(CTS, 40, "A net was not found in the design. Skipping...");
+        _logger->warn(CTS, 40, "Net was not found in the design for {}, please check. Skipping...", clkName);
       }
     }
   }
