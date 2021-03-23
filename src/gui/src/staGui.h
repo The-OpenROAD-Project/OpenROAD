@@ -112,6 +112,7 @@ struct TimingPathNode
                  bool is_rising,
                  float arrival,
                  float required,
+                 float delay,
                  float slack,
                  float slew,
                  float load)
@@ -119,6 +120,7 @@ struct TimingPathNode
         is_rising_(is_rising),
         arrival_(arrival),
         required_(required),
+        delay_(delay),
         slack_(slack),
         slew_(slew),
         load_(load)
@@ -132,6 +134,7 @@ struct TimingPathNode
   bool is_rising_;
   float arrival_;
   float required_;
+  float delay_;
   float slack_;
   float slew_;
   float load_;
@@ -207,7 +210,14 @@ class TimingPathDetailModel : public QAbstractTableModel
  private:
   TimingPath* path_;
   const static inline std::vector<std::string> _path_details_columns
-      = {"Node", "Transition", "Required", "Time", "Slack", "Slew", "Load"};
+      = {"Node",
+         "Transition",
+         "Required",
+         "Time",
+         "Slack",
+         "Delay",
+         "Slew",
+         "Load "};
 };
 
 class TimingPathRenderer : public gui::Renderer

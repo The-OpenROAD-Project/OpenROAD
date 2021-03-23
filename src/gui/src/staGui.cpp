@@ -46,11 +46,15 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "openroad/OpenRoad.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
@@ -60,10 +64,6 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/PathAnalysisPt.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/ArcDelayCalc.hh"
 
 namespace gui {
 
@@ -235,7 +235,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     sta::PathExpanded* expanded = new sta::PathExpanded(path_end->path(), sta_);
 
     TimingPath* path = new TimingPath(path_index++);
-    sta::DcalcAnalysisPt *dcalc_ap = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
+    sta::DcalcAnalysisPt* dcalc_ap
+        = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
 
     path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
     path->setEndClock(path_end->targetClk(sta_)->name());
@@ -245,18 +246,22 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     path->setPathRequiredTime(path_end->requiredTime(sta_));
 
+    float arrival_prev_stage = 0;
+    float arrival_cur_stage = 0;
     for (size_t i = 0; i < expanded->size(); i++) {
       auto ref = expanded->path(i);
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
-      if(sta_->network()->isDriver(pin)) {
-        sta::Parasitic *parasitic = nullptr;
+      if (sta_->network()->isDriver(pin)) {
+        sta::Parasitic* parasitic = nullptr;
         sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
         if (arc_delay_calc)
-          parasitic = arc_delay_calc->findParasitic(pin, ref->transition(sta_), dcalc_ap);
-        sta::GraphDelayCalc *graph_delay_calc = sta_->graphDelayCalc();
-        cap = graph_delay_calc->loadCap(pin, parasitic, ref->transition(sta_), dcalc_ap);
+          parasitic = arc_delay_calc->findParasitic(
+              pin, ref->transition(sta_), dcalc_ap);
+        sta::GraphDelayCalc* graph_delay_calc = sta_->graphDelayCalc();
+        cap = graph_delay_calc->loadCap(
+            pin, parasitic, ref->transition(sta_), dcalc_ap);
       }
 
       auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
@@ -273,8 +278,27 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       odb::dbObject* pin_object = term;
       if (term == nullptr)
         pin_object = port;
-      path->appendNode(TimingPathNode(
-          pin_object, is_rising, arrival, path_required, slack, slew, cap));
+      arrival_cur_stage = arrival;
+      if (i == 0)
+        path->appendNode(TimingPathNode(pin_object,
+                                        is_rising,
+                                        arrival,
+                                        path_required,
+                                        0,
+                                        slack,
+                                        slew,
+                                        cap));
+      else {
+        path->appendNode(TimingPathNode(pin_object,
+                                        is_rising,
+                                        arrival,
+                                        path_required,
+                                        arrival_cur_stage - arrival_prev_stage,
+                                        slack,
+                                        slew,
+                                        cap));
+        arrival_prev_stage = arrival_cur_stage;
+      }
       first_path = false;
     }
     timing_paths_.push_back(path);
@@ -358,9 +382,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       return time_units->asString(node.arrival_);
     case 4:  // Slack
       return time_units->asString(node.slack_);
-    case 5:  // Slew
+    case 5:  // Delay
+      return time_units->asString(node.delay_);
+    case 6:  // Slew
       return time_units->asString(node.slew_);
-    case 6:  // Load
+    case 7:  // Load
       return cap_units->asString(node.load_);
   }
   return QVariant();
