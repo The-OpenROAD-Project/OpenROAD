@@ -200,7 +200,7 @@ class GuiPainter : public Painter
  private:
   QPainter* painter_;
   Options* options_;
-  const QTransform& base_transform_;
+  const QTransform base_transform_;
   int dbu_height_;
   qreal pixels_per_dbu_;
 };
@@ -1119,13 +1119,13 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.drawRect(event->rect());
 
   // Coordinate system setup (see file level comments)
-  const QTransform* base_transform = &(painter.transform());
+  const QTransform base_transform = painter.transform();
   painter.save();
   painter.translate(0, height());
   painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
   Rect dbu_bounds = screenToDBU(event->rect());
-  drawBlock(&painter, dbu_bounds, block, 0, *base_transform);
+  drawBlock(&painter, dbu_bounds, block, 0, base_transform);
   if (options_->arePinMarkersVisible())
     drawPinMarkers(&painter, dbu_bounds, block);
 
