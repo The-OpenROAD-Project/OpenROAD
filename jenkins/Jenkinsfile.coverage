@@ -1,21 +1,21 @@
 pipeline {
   agent any;
   stages {
-    stage('Build') {
+    stage('Build for Coverage') {
       steps {
-        sh './etc/BuildHelper coverage';
+        sh './etc/Build.sh -coverage';
       }
     }
-    stage('Coverage') {
+    stage('Dynamic Code Coverage') {
       steps {
-        sh './etc/CoverageAnalysis';
+        sh './etc/CodeCoverage.sh dynamic';
         publishHTML([
             allowMissing: false,
             alwaysLinkToLastBuild: false,
             keepAll: false,
             reportDir: 'coverage-output',
             reportFiles: 'index.html',
-            reportName: 'Code Coverage',
+            reportName: 'Dynamic Code Coverage',
             reportTitles: ''
         ]);
       }
