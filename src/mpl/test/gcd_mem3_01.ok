@@ -61,7 +61,7 @@ Begin West Partition
 [INFO MPL-0079] Cut line 12.60
 End West Partition
 End Horizontal Partition
-[INFO MPL-0070] Using 3 partiion sets
+[INFO MPL-0070] Using 3 partition sets
 [INFO MPL-0071] Solution 1 weighted wire length 5591.33
 [INFO MPL-0071] Solution 2 weighted wire length 5666.89
 [INFO MPL-0071] Solution 3 weighted wire length 5483.13

@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
 
 #include <chrono>
@@ -164,14 +164,13 @@ void TritonCTS::findClockRoots()
   _logger->report(" **********************");
   _logger->report(" *  Find clock roots  *");
   _logger->report(" **********************");
-
+  _staEngine->init();
   if (_options->getClockNets() != "") {
     _logger->info(CTS, 1, " Running TritonCTS with user-specified clock roots: {}", _options->getClockNets());
     return;
   }
 
   _logger->info(CTS, 2, " User did not specify clock roots.");
-  _staEngine->init();
 }
 
 void TritonCTS::populateTritonCts()

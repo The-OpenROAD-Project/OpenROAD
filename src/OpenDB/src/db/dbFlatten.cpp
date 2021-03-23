@@ -30,9 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbFlatten.h"
+
 #include "db.h"
 #include "dbCapNode.h"
-#include "dbFlatten.h"
 #include "dbInst.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
@@ -41,7 +42,7 @@
 #include "dbTransform.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -54,7 +55,6 @@ dbFlatten::dbFlatten()
       _hier_d(0),
       _next_bterm_map_id(0)
 {
-
 }
 
 dbFlatten::~dbFlatten()
@@ -63,8 +63,8 @@ dbFlatten::~dbFlatten()
 
 bool dbFlatten::flatten(dbBlock* block, int level)
 {
-  _hier_d               = block->getHierarchyDelimeter();
-  _next_bterm_map_id    = 0;
+  _hier_d = block->getHierarchyDelimeter();
+  _next_bterm_map_id = 0;
   dbProperty* bterm_map = NULL;
 
   if (_create_bterm_map) {
@@ -77,12 +77,12 @@ bool dbFlatten::flatten(dbBlock* block, int level)
     bterm_map = dbStringProperty::create(block, "_ADS_BTERM_MAP", name.c_str());
   }
 
-  bool                    error = false;
-  dbSet<dbInst>           insts = block->getInsts();
+  bool error = false;
+  dbSet<dbInst> insts = block->getInsts();
   dbSet<dbInst>::iterator itr;
 
   for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst*  inst  = *itr;
+    dbInst* inst = *itr;
     dbBlock* child = inst->getChild();
 
     if (child)
@@ -91,7 +91,7 @@ bool dbFlatten::flatten(dbBlock* block, int level)
   }
 
   for (itr = insts.begin(); itr != insts.end();) {
-    dbInst*  inst  = *itr;
+    dbInst* inst = *itr;
     dbBlock* child = inst->getChild();
 
     if (child) {
@@ -119,9 +119,9 @@ bool dbFlatten::flatten(dbBlock* block, int level)
 //           ./
 //           o Grandchild (inst)
 // */
-bool dbFlatten::flatten(dbBlock*    parent,
-                        dbBlock*    child,
-                        int         level,
+bool dbFlatten::flatten(dbBlock* parent,
+                        dbBlock* child,
+                        int level,
                         dbProperty* bterm_map)
 {
   bool error = false;
@@ -139,11 +139,11 @@ bool dbFlatten::flatten(dbBlock*    parent,
   }
 
   // Descend hierarchy and flatten
-  dbSet<dbInst>           insts = child->getInsts();
+  dbSet<dbInst> insts = child->getInsts();
   dbSet<dbInst>::iterator itr;
 
   for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst*  inst       = *itr;
+    dbInst* inst = *itr;
     dbBlock* grandchild = inst->getChild();
 
     if (grandchild)
@@ -166,18 +166,18 @@ bool dbFlatten::flatten(dbBlock*    parent,
   // Copy vias
   ////////////////////////////
   dbVia::copy(parent, child);
-  dbSet<dbVia>           vias = child->getVias();
+  dbSet<dbVia> vias = child->getVias();
   dbSet<dbVia>::iterator vitr;
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
-    dbVia*      v    = *vitr;
+    dbVia* v = *vitr;
     std::string name = v->getName();
-    _via_map[v]      = parent->findVia(name.c_str());
+    _via_map[v] = parent->findVia(name.c_str());
   }
 
   ////////////////////////////
   // Copy non-default_rules
   ////////////////////////////
-  dbSet<dbTechNonDefaultRule>           ndrules = child->getNonDefaultRules();
+  dbSet<dbTechNonDefaultRule> ndrules = child->getNonDefaultRules();
   dbSet<dbTechNonDefaultRule>::iterator nditr;
   for (nditr = ndrules.begin(); nditr != ndrules.end(); ++nditr) {
     dbTechNonDefaultRule* rule = *nditr;
@@ -187,7 +187,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
   ////////////////////////////
   // Copy nets
   ////////////////////////////
-  dbSet<dbNet>           nets = child->getNets();
+  dbSet<dbNet> nets = child->getNets();
   dbSet<dbNet>::iterator nitr;
 
   for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
@@ -204,7 +204,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
   // Copy instances
   ////////////////////////////
   for (itr = insts.begin(); itr != insts.end();) {
-    dbInst*  inst       = *itr;
+    dbInst* inst = *itr;
     dbBlock* grandchild = inst->getChild();
 
     if (grandchild) {
@@ -233,7 +233,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
   ////////////////////////////
   // Copy obstructions
   ////////////////////////////
-  dbSet<dbObstruction>           obstructions = child->getObstructions();
+  dbSet<dbObstruction> obstructions = child->getObstructions();
   dbSet<dbObstruction>::iterator oitr;
 
   for (oitr = obstructions.begin(); oitr != obstructions.end(); ++oitr) {
@@ -244,7 +244,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
   ////////////////////////////
   // Copy blocakges
   ////////////////////////////
-  dbSet<dbBlockage>           blocakges = child->getBlockages();
+  dbSet<dbBlockage> blocakges = child->getBlockages();
   dbSet<dbBlockage>::iterator bitr;
 
   for (bitr = blocakges.begin(); bitr != blocakges.end(); ++bitr) {
@@ -255,7 +255,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
   ////////////////////////////
   // Copy regions
   ////////////////////////////
-  dbSet<dbRegion>           regions = child->getRegions();
+  dbSet<dbRegion> regions = child->getRegions();
   dbSet<dbRegion>::iterator rgitr;
 
   for (rgitr = regions.begin(); rgitr != regions.end(); ++rgitr) {
@@ -269,7 +269,7 @@ bool dbFlatten::flatten(dbBlock*    parent,
     name += _hier_d;
     name += "ADS_BLOCK_REGION";
     dbRegion* block_region = dbRegion::create(parent, name.c_str());
-    Rect      bndry;
+    Rect bndry;
     child->getDieArea(bndry);
     _transform.apply(bndry);
     dbBox::create(
@@ -333,12 +333,12 @@ bool dbFlatten::copyInst(dbBlock* parent, dbInst* child, dbInst* grandchild)
   inst->setPlacementStatus(child->getPlacementStatus());
 
   // Copy connections
-  dbSet<dbITerm>           iterms = grandchild->getITerms();
+  dbSet<dbITerm> iterms = grandchild->getITerms();
   dbSet<dbITerm>::iterator itr;
 
   for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
     dbITerm* child_iterm = *itr;
-    dbNet*   child_net   = child_iterm->getNet();
+    dbNet* child_net = child_iterm->getNet();
 
     if (child_net != NULL) {
       dbNet* parent_net = _net_map[child_net];
@@ -367,7 +367,7 @@ dbNet* dbFlatten::copyNet(dbBlock* parent_block, dbNet* child_net)
     for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
       dbBTerm* bterm = *itr;
       dbITerm* iterm = bterm->getITerm();
-      dbNet*   net   = iterm->getNet();
+      dbNet* net = iterm->getNet();
 
       if (net)
         return net;
@@ -379,7 +379,7 @@ dbNet* dbFlatten::copyNet(dbBlock* parent_block, dbNet* child_net)
   }
 
   // internal net, export up hierarchy
-  dbInst*     inst = child_net->getBlock()->getParentInst();
+  dbInst* inst = child_net->getBlock()->getParentInst();
   std::string name = inst->getName();
   name += _hier_d;
   name += child_net->getName();
@@ -399,7 +399,7 @@ dbNet* dbFlatten::copyNet(dbBlock* parent_block, dbNet* child_net)
 void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
 {
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
     uint sid = shapes.getShapeId();
@@ -416,25 +416,25 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
   if (skip_rcSegs)
     return;
   fprintf(fp, "\ncapNOdes\n");
-  dbSet<dbCapNode>           nodeSet = wire->getNet()->getCapNodes();
+  dbSet<dbCapNode> nodeSet = wire->getNet()->getCapNodes();
   dbSet<dbCapNode>::iterator rc_itr;
   for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
     dbCapNode* node = *rc_itr;
 
     uint node_num = node->getNode();
-    uint sid      = node->getShapeId();
+    uint sid = node->getShapeId();
     fprintf(fp, "cap%d  node%d  J%d\n", node->getId(), node_num, sid);
   }
-  dbBlock*                block = wire->getNet()->getBlock();
-  dbSet<dbRSeg>           rSet  = wire->getNet()->getRSegs();
+  dbBlock* block = wire->getNet()->getBlock();
+  dbSet<dbRSeg> rSet = wire->getNet()->getRSegs();
   dbSet<dbRSeg>::iterator rcitr;
 
   fprintf(fp, "\nRSEGS\n");
   for (rcitr = rSet.begin(); rcitr != rSet.end(); ++rcitr) {
-    dbRSeg*    rc      = *rcitr;
+    dbRSeg* rc = *rcitr;
     dbCapNode* capNode = dbCapNode::getCapNode(block, rc->getTargetNode());
 
-    uint       shapeId = rc->getShapeId();
+    uint shapeId = rc->getShapeId();
     dbCapNode* srcNode = rc->getSourceCapNode();
 
     fprintf(fp, "%d J%d rc%d ", srcNode->getNode(), shapeId, rc->getId());
@@ -473,10 +473,10 @@ void dbFlatten::printShapes(FILE* fp, dbWire* wire, bool skip_rcSegs)
 void dbFlatten::setOldShapeIds(dbWire* wire)
 {
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
-    uint    sid = shapes.getShapeId();
+    uint sid = shapes.getShapeId();
     dbShape s;
     wire->getShape(sid, s);
     if (s.isVia())
@@ -489,10 +489,10 @@ void dbFlatten::mapOld2newIds(dbWire* wire, FILE* fp)
   if (fp != NULL)
     fprintf(fp, "\nmapOld2newIds\n");
   dbWireShapeItr shapes;
-  dbShape        s;
+  dbShape s;
 
   for (shapes.begin(wire); shapes.next(s);) {
-    uint    sid = shapes.getShapeId();
+    uint sid = shapes.getShapeId();
     dbShape s;
     wire->getShape(sid, s);
     if (s.isVia())
@@ -508,11 +508,11 @@ void dbFlatten::mapOld2newIds(dbWire* wire, FILE* fp)
 }
 void dbFlatten::setShapeProperties(dbWire* wire)
 {
-  dbBlock*                block = wire->getNet()->getBlock();
-  dbSet<dbRSeg>           rSet  = wire->getNet()->getRSegs();
+  dbBlock* block = wire->getNet()->getBlock();
+  dbSet<dbRSeg> rSet = wire->getNet()->getRSegs();
   dbSet<dbRSeg>::iterator rcitr;
   for (rcitr = rSet.begin(); rcitr != rSet.end(); ++rcitr) {
-    dbRSeg*    rc      = *rcitr;
+    dbRSeg* rc = *rcitr;
     dbCapNode* capNode = dbCapNode::getCapNode(block, rc->getTargetNode());
     if (capNode->isITerm() || capNode->isBTerm())
       continue;
@@ -527,9 +527,9 @@ void dbFlatten::setShapeProperties(dbWire* wire)
   }
 }
 
-FILE* dbFlatten::debugNetWires(FILE*       fp,
-                               dbNet*      dst,
-                               dbNet*      src,
+FILE* dbFlatten::debugNetWires(FILE* fp,
+                               dbNet* dst,
+                               dbNet* src,
                                const char* msg)
 {
   if (fp == NULL) {
@@ -537,8 +537,9 @@ FILE* dbFlatten::debugNetWires(FILE*       fp,
     sprintf(buf, "%d", dst->getId());
     fp = fopen(buf, "w");
 
-    if (fp == NULL) {      
-      src->getImpl()->getLogger()->error(utl::ODB, 26,  "Cannot Open file {} to write", buf);
+    if (fp == NULL) {
+      src->getImpl()->getLogger()->error(
+          utl::ODB, 26, "Cannot Open file {} to write", buf);
       return nullptr;
     }
   }
@@ -566,9 +567,9 @@ FILE* dbFlatten::debugNetWires(FILE*       fp,
   }
   return fp;
 }
-void dbFlatten::copyNetWires(dbNet*      dst,
-                             dbNet*      src,
-                             int         level,
+void dbFlatten::copyNetWires(dbNet* dst,
+                             dbNet* src,
+                             int level,
                              dbProperty* bterm_map)
 {
   FILE* fp = NULL;
@@ -592,11 +593,11 @@ void dbFlatten::copyAttrs(dbInst* dst_, dbInst* src_)
   dst->_flags._user_flag_1 = src->_flags._user_flag_1;
   dst->_flags._user_flag_2 = src->_flags._user_flag_2;
   dst->_flags._user_flag_3 = src->_flags._user_flag_3;
-  dst->_flags._size_only   = src->_flags._size_only;
-  dst->_flags._dont_touch  = src->_flags._dont_touch;
-  dst->_flags._dont_size   = src->_flags._dont_size;
-  dst->_flags._source      = src->_flags._source;
-  dst->_weight             = src->_weight;
+  dst->_flags._size_only = src->_flags._size_only;
+  dst->_flags._dont_touch = src->_flags._dont_touch;
+  dst->_flags._dont_size = src->_flags._dont_size;
+  dst->_flags._source = src->_flags._source;
+  dst->_weight = src->_weight;
 }
 
 void dbFlatten::copyAttrs(dbNet* dst_, dbNet* src_)
@@ -604,38 +605,38 @@ void dbFlatten::copyAttrs(dbNet* dst_, dbNet* src_)
   _dbNet* dst = (_dbNet*) dst_;
   _dbNet* src = (_dbNet*) src_;
 
-  dst->_flags._sig_type        = src->_flags._sig_type;
-  dst->_flags._wire_type       = src->_flags._wire_type;
-  dst->_flags._special         = src->_flags._special;
-  dst->_flags._wild_connect    = src->_flags._wild_connect;
-  dst->_flags._wire_ordered    = src->_flags._wire_ordered;
-  dst->_flags._buffered        = src->_flags._buffered;
-  dst->_flags._disconnected    = src->_flags._disconnected;
-  dst->_flags._spef            = src->_flags._spef;
-  dst->_flags._select          = src->_flags._select;
-  dst->_flags._mark            = src->_flags._mark;
-  dst->_flags._mark_1          = src->_flags._mark_1;
-  dst->_flags._wire_altered    = src->_flags._wire_altered;
-  dst->_flags._extracted       = src->_flags._extracted;
-  dst->_flags._rc_graph        = src->_flags._rc_graph;
-  dst->_flags._reduced         = src->_flags._reduced;
-  dst->_flags._set_io          = src->_flags._set_io;
-  dst->_flags._io              = src->_flags._io;
-  dst->_flags._dont_touch      = src->_flags._dont_touch;
-  dst->_flags._size_only       = src->_flags._size_only;
-  dst->_flags._fixed_bump      = src->_flags._fixed_bump;
-  dst->_flags._source          = src->_flags._source;
+  dst->_flags._sig_type = src->_flags._sig_type;
+  dst->_flags._wire_type = src->_flags._wire_type;
+  dst->_flags._special = src->_flags._special;
+  dst->_flags._wild_connect = src->_flags._wild_connect;
+  dst->_flags._wire_ordered = src->_flags._wire_ordered;
+  dst->_flags._buffered = src->_flags._buffered;
+  dst->_flags._disconnected = src->_flags._disconnected;
+  dst->_flags._spef = src->_flags._spef;
+  dst->_flags._select = src->_flags._select;
+  dst->_flags._mark = src->_flags._mark;
+  dst->_flags._mark_1 = src->_flags._mark_1;
+  dst->_flags._wire_altered = src->_flags._wire_altered;
+  dst->_flags._extracted = src->_flags._extracted;
+  dst->_flags._rc_graph = src->_flags._rc_graph;
+  dst->_flags._reduced = src->_flags._reduced;
+  dst->_flags._set_io = src->_flags._set_io;
+  dst->_flags._io = src->_flags._io;
+  dst->_flags._dont_touch = src->_flags._dont_touch;
+  dst->_flags._size_only = src->_flags._size_only;
+  dst->_flags._fixed_bump = src->_flags._fixed_bump;
+  dst->_flags._source = src->_flags._source;
   dst->_flags._rc_disconnected = src->_flags._rc_disconnected;
-  dst->_weight                 = src->_weight;
-  dst->_xtalk                  = src->_xtalk;
-  dst->_non_default_rule       = src->_non_default_rule;
+  dst->_weight = src->_weight;
+  dst->_xtalk = src->_xtalk;
+  dst->_non_default_rule = src->_non_default_rule;
 }
 
-void dbFlatten::copyWires(dbNet*      dst_,
-                          dbNet*      src_,
-                          int         level,
+void dbFlatten::copyWires(dbNet* dst_,
+                          dbNet* src_,
+                          int level,
                           dbProperty* bterm_map,
-                          bool        copyParasitics)
+                          bool copyParasitics)
 {
   //_dbNet * dst = (_dbNet *) dst_;
   _dbNet* src = (_dbNet*) src_;
@@ -649,7 +650,7 @@ void dbFlatten::copyWires(dbNet*      dst_,
 
       if (dst_->getWire()) {
         dbVector<unsigned char> opcodes;
-        dbVector<int>           data;
+        dbVector<int> data;
         opcodes.reserve(src_wire->_opcodes.size());
         opcodes = src_wire->_opcodes;
         data.reserve(src_wire->_data.size());
@@ -684,7 +685,7 @@ void dbFlatten::copyWires(dbNet*      dst_,
     if (canCopyWire((dbWire*) src_wire, src->_flags._sig_type)) {
       if (dst_->getGlobalWire()) {
         dbVector<unsigned char> opcodes;
-        dbVector<int>           data;
+        dbVector<int> data;
         opcodes.reserve(src_wire->_opcodes.size());
         opcodes = src_wire->_opcodes;
         data.reserve(src_wire->_data.size());
@@ -708,16 +709,16 @@ void dbFlatten::copyWires(dbNet*      dst_,
 }
 
 void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
-                        dbVector<int>&           data,
-                        dbBlock*                 src,
-                        int                      level,
-                        dbProperty*              bterm_map)
+                        dbVector<int>& data,
+                        dbBlock* src,
+                        int level,
+                        dbProperty* bterm_map)
 {
-  uint               i;
-  uint               n         = opcodes.size();
-  uint               point_cnt = 0;
-  int                curX      = 0;
-  int                curY      = 0;
+  uint i;
+  uint n = opcodes.size();
+  uint point_cnt = 0;
+  int curX = 0;
+  int curY = 0;
   std::vector<Point> jct_points;
   jct_points.resize(opcodes.size());
 
@@ -733,9 +734,9 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
       }
 
       case WOP_JUNCTION: {
-        Point p   = jct_points[data[i]];
-        curX      = p.x();
-        curY      = p.y();
+        Point p = jct_points[data[i]];
+        curX = p.x();
+        curY = p.y();
         point_cnt = 0;
         break;
       }
@@ -752,10 +753,10 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
           curY = data[++i];
           Point p(curX, curY);
           jct_points[i - 1] = p;
-          jct_points[i]     = p;
+          jct_points[i] = p;
           _transform.apply(p);
           data[i - 1] = p.x();
-          data[i]     = p.y();
+          data[i] = p.y();
         }
 
         point_cnt++;
@@ -779,10 +780,10 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
       }
 
       case WOP_VIA: {
-        uint   vid     = data[i];
+        uint vid = data[i];
         dbVia* src_via = dbVia::getVia(src, vid);
         dbVia* dst_via = _via_map[src_via];
-        data[i]        = dst_via->getImpl()->getOID();
+        data[i] = dst_via->getImpl()->getOID();
         break;
       }
 
@@ -800,7 +801,7 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
           // notice(0, "------------------------------> WOP_ITERM:\n");
           if (level > 1) {
             opcodes[i] = WOP_NOP;
-            data[i]    = 0;
+            data[i] = 0;
             break;
           }
         }
@@ -808,16 +809,16 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
         dbInst* src_inst = src_iterm->getInst();
         dbInst* dst_inst = _inst_map[src_inst];
         assert(dst_inst);
-        dbMTerm* mterm     = src_iterm->getMTerm();
+        dbMTerm* mterm = src_iterm->getMTerm();
         dbITerm* dst_iterm = dst_inst->getITerm(mterm);
-        data[i]            = dst_iterm->getImpl()->getOID();
+        data[i] = dst_iterm->getImpl()->getOID();
         break;
       }
 
       case WOP_BTERM: {
         assert(bterm_map == NULL);
         opcodes[i] = WOP_NOP;
-        data[i]    = 0;
+        data[i] = 0;
         break;
       }
 
@@ -833,8 +834,8 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
 }
 
 void dbFlatten::appendWire(dbVector<unsigned char>& opcodes,
-                           dbVector<int>&           data,
-                           dbWire*                  dst_)
+                           dbVector<int>& data,
+                           dbWire* dst_)
 {
   _dbWire* dst = (_dbWire*) dst_;
 
@@ -856,7 +857,7 @@ void dbFlatten::appendWire(dbVector<unsigned char>& opcodes,
 
 void dbFlatten::copySWires(dbNet* dst, dbNet* src)
 {
-  dbSet<dbSWire>           swires = src->getSWires();
+  dbSet<dbSWire> swires = src->getSWires();
   dbSet<dbSWire>::iterator itr;
 
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
@@ -940,7 +941,7 @@ void dbFlatten::copyObstruction(dbBlock* dst_block, dbObstruction* src_)
   _dbObstruction* src = (_dbObstruction*) src_;
 
   dbBox* box = src_->getBBox();
-  Rect   r;
+  Rect r;
   box->getBox(r);
   _transform.apply(r);
 
@@ -952,15 +953,15 @@ void dbFlatten::copyObstruction(dbBlock* dst_block, dbObstruction* src_)
                                                 r.xMax(),
                                                 r.yMax(),
                                                 _inst_map[src_->getInstance()]);
-  dst->_flags           = src->_flags;
-  dst->_min_spacing     = src->_min_spacing;
+  dst->_flags = src->_flags;
+  dst->_min_spacing = src->_min_spacing;
   dst->_effective_width = src->_effective_width;
 }
 
 void dbFlatten::copyBlockage(dbBlock* dst_block, dbBlockage* src)
 {
   dbBox* box = src->getBBox();
-  Rect   r;
+  Rect r;
   box->getBox(r);
   _transform.apply(r);
 
@@ -976,8 +977,8 @@ void dbFlatten::copyBlockage(dbBlock* dst_block, dbBlockage* src)
 //
 // Copy "src" region of the child_inst to parent_block.
 //
-void dbFlatten::copyRegion(dbBlock*  parent_block,
-                           dbInst*   child_inst,
+void dbFlatten::copyRegion(dbBlock* parent_block,
+                           dbInst* child_inst,
                            dbRegion* parent_region,
                            dbRegion* src)
 {
@@ -1002,27 +1003,27 @@ void dbFlatten::copyRegion(dbBlock*  parent_block,
   dst->setRegionType(src->getRegionType());
   dst->setInvalid(src->isInvalid());
 
-  dbSet<dbBox>           boxes = src->getBoundaries();
-  dbSet<dbBox>::iterator bitr  = boxes.begin();
+  dbSet<dbBox> boxes = src->getBoundaries();
+  dbSet<dbBox>::iterator bitr = boxes.begin();
 
   for (; bitr != boxes.end(); ++bitr) {
     dbBox* box = *bitr;
-    Rect   r;
+    Rect r;
     box->getBox(r);
     _transform.apply(r);
     dbBox::create(dst, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
 
-  dbSet<dbInst>           insts = src->getRegionInsts();
-  dbSet<dbInst>::iterator iitr  = insts.begin();
+  dbSet<dbInst> insts = src->getRegionInsts();
+  dbSet<dbInst>::iterator iitr = insts.begin();
 
   for (; iitr != insts.end(); ++iitr) {
     dbInst* inst = *iitr;
     dst->addInst(_inst_map[inst]);
   }
 
-  dbSet<dbRegion>           children = src->getChildren();
-  dbSet<dbRegion>::iterator citr     = children.begin();
+  dbSet<dbRegion> children = src->getChildren();
+  dbSet<dbRegion>::iterator citr = children.begin();
 
   for (; citr != children.end(); ++citr) {
     dbRegion* child = *citr;
@@ -1031,8 +1032,8 @@ void dbFlatten::copyRegion(dbBlock*  parent_block,
 }
 
 dbTechNonDefaultRule* dbFlatten::copyNonDefaultRule(
-    dbBlock*              parent,
-    dbInst*               child_inst,
+    dbBlock* parent,
+    dbInst* child_inst,
     dbTechNonDefaultRule* src_rule)
 {
   std::string name = child_inst->getName();
@@ -1063,13 +1064,13 @@ dbTechNonDefaultRule* dbFlatten::copyNonDefaultRule(
   for (ritr = rules.begin(); ritr != rules.end(); ++ritr)
     dst_rule->addUseViaRule(*ritr);
 
-  dbTech*                      tech   = parent->getDb()->getTech();
-  dbSet<dbTechLayer>           layers = tech->getLayers();
+  dbTech* tech = parent->getDb()->getTech();
+  dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator layitr;
 
   for (layitr = layers.begin(); layitr != layers.end(); ++layitr) {
     dbTechLayer* layer = *layitr;
-    int          count;
+    int count;
 
     if (src_rule->getMinCuts(layer, count))
       dst_rule->setMinCuts(layer, count);
@@ -1099,56 +1100,91 @@ bool dbFlatten::createParentCapNode(dbCapNode* node, dbNet* dstNet)
 {
   bool foreign = false;
 
-  debugPrint(node->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "Cap {} num {}", node->getId(), node->getNode());
+  debugPrint(node->getImpl()->getLogger(),
+             utl::ODB,
+             "FLATTEN",
+             3,
+             "Cap {} num {}",
+             node->getId(),
+             node->getNode());
 
   dbCapNode* cap = NULL;
   if (!node->isBTerm()) {  //
-    cap                      = dbCapNode::create(dstNet, 0, foreign);
+    cap = dbCapNode::create(dstNet, 0, foreign);
     _node_map[node->getId()] = cap->getId();
   }
   if (node->isInternal()) {  //
     cap->setInternalFlag();
     uint nodeNum = _shape_rc_map[node->getNode()];
     cap->setNode(nodeNum);
-    debugPrint(node->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3,  "\t--> {}     {}", cap->getId(), cap->getNode());
+    debugPrint(node->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\t--> {}     {}",
+               cap->getId(),
+               cap->getNode());
   } else if (node->isITerm()) {  //
     dbITerm* src_iterm = node->getITerm();
-    dbInst*  src_inst  = src_iterm->getInst();
+    dbInst* src_inst = src_iterm->getInst();
 
     dbInst* dst_inst = _inst_map[src_inst];
     assert(dst_inst);
-    dbMTerm* mterm     = src_iterm->getMTerm();
+    dbMTerm* mterm = src_iterm->getMTerm();
     dbITerm* dst_iterm = dst_inst->getITerm(mterm);
     cap->setNode(dst_iterm->getId());
     cap->setITermFlag();
-    debugPrint(node->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3,  "\t--> {}     {}", cap->getId(), cap->getNode());
+    debugPrint(node->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\t--> {}     {}",
+               cap->getId(),
+               cap->getNode());
   } else if (node->isBTerm()) {  //
 
-    dbBTerm* bterm           = node->getBTerm();
-    dbITerm* iterm           = bterm->getITerm();
-    uint     parentId        = adjustParentNode2(dstNet, iterm->getId());
+    dbBTerm* bterm = node->getBTerm();
+    dbITerm* iterm = bterm->getITerm();
+    uint parentId = adjustParentNode2(dstNet, iterm->getId());
     _node_map[node->getId()] = parentId;
 
-    debugPrint(node->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\t\tG BTerm {} --> {} <-- {} ==> {} {}",node->getId(),bterm->getConstName(),iterm->getId(),_node_map[node->getId()],parentId);
+    debugPrint(node->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\t\tG BTerm {} --> {} <-- {} ==> {} {}",
+               node->getId(),
+               bterm->getConstName(),
+               iterm->getId(),
+               _node_map[node->getId()],
+               parentId);
   }
   return true;
 }
 uint dbFlatten::adjustParentNode2(dbNet* dstNet, uint srcTermId)
 {
-  dbSet<dbCapNode>           capNodes     = dstNet->getCapNodes();
+  dbSet<dbCapNode> capNodes = dstNet->getCapNodes();
   dbSet<dbCapNode>::iterator cap_node_itr = capNodes.begin();
   for (; cap_node_itr != capNodes.end(); ++cap_node_itr) {
     dbCapNode* node = *cap_node_itr;
     if (!node->isITerm())
       continue;
 
-    uint     nodeNum = node->getNode();
-    dbITerm* iterm   = node->getITerm();
+    uint nodeNum = node->getNode();
+    dbITerm* iterm = node->getITerm();
     if (iterm->getId() != srcTermId)
       continue;
 
     uint jid = node->getShapeId();
-    debugPrint(node->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode {} J{} N{} srcTermId={}",node->getId(),jid,nodeNum,srcTermId);
+    debugPrint(node->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\tadjustParentNode {} J{} N{} srcTermId={}",
+               node->getId(),
+               jid,
+               nodeNum,
+               srcTermId);
 
     node->resetITermFlag();
     node->setInternalFlag();
@@ -1166,7 +1202,14 @@ dbCapNode* dbFlatten::checkNode(dbCapNode* src, uint srcTermId)
   if (!src->isITerm())
     return NULL;
 
-  debugPrint(src->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\tcheckNode node={} i{} rcTermId={}",src->getId(),src->getITerm()->getId(),srcTermId);
+  debugPrint(src->getImpl()->getLogger(),
+             utl::ODB,
+             "FLATTEN",
+             3,
+             "\tcheckNode node={} i{} rcTermId={}",
+             src->getId(),
+             src->getITerm()->getId(),
+             srcTermId);
 
   if (src->getITerm()->getId() == srcTermId)
     return src;
@@ -1175,13 +1218,22 @@ dbCapNode* dbFlatten::checkNode(dbCapNode* src, uint srcTermId)
 }
 uint dbFlatten::adjustParentNode(dbNet* dstNet, uint srcTermId)
 {
-  dbSet<dbRSeg>           rsegs    = dstNet->getRSegs();
+  dbSet<dbRSeg> rsegs = dstNet->getRSegs();
   dbSet<dbRSeg>::iterator rseg_itr = rsegs.begin();
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     dbRSeg* rseg = *rseg_itr;
 
     uint jid = rseg->getShapeId();
-    debugPrint(dstNet->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode J{} rseg{} {} {} srcTermId={}",jid,rseg->getId(),rseg->getSourceNode(),rseg->getTargetNode(),srcTermId);
+    debugPrint(dstNet->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\tadjustParentNode J{} rseg{} {} {} srcTermId={}",
+               jid,
+               rseg->getId(),
+               rseg->getSourceNode(),
+               rseg->getTargetNode(),
+               srcTermId);
     if ((rseg->getSourceNode() > 0) && (rseg->getTargetNode() > 0))
       continue;
     dbCapNode* src = rseg->getSourceCapNode();
@@ -1196,7 +1248,16 @@ uint dbFlatten::adjustParentNode(dbNet* dstNet, uint srcTermId)
 
     // uint jid= rseg->getShapeId();
 
-    debugPrint(dstNet->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\tadjustParentNode rseg{} J{} {} {} srcTermId={}",rseg->getId(),jid,src->getId(),tgt->getId(),srcTermId);
+    debugPrint(dstNet->getImpl()->getLogger(),
+               utl::ODB,
+               "FLATTEN",
+               3,
+               "\tadjustParentNode rseg{} J{} {} {} srcTermId={}",
+               rseg->getId(),
+               jid,
+               src->getId(),
+               tgt->getId(),
+               srcTermId);
 
     node->resetITermFlag();
     node->setInternalFlag();
@@ -1230,10 +1291,16 @@ uint dbFlatten::createCapNodes(dbNet* src, dbNet* dst, bool noDstWires)
 
   // uint maxCap= dst->maxInternalCapNum()+1;
 
-  debugPrint(src->getImpl()->getLogger(), utl::ODB, "FLATTEN", 3, "\tCapNodes: {} {}",src->getConstName(),dst->getConstName());
+  debugPrint(src->getImpl()->getLogger(),
+             utl::ODB,
+             "FLATTEN",
+             3,
+             "\tCapNodes: {} {}",
+             src->getConstName(),
+             dst->getConstName());
 
-  uint                       gCnt         = 0;
-  dbSet<dbCapNode>           capNodes     = src->getCapNodes();
+  uint gCnt = 0;
+  dbSet<dbCapNode> capNodes = src->getCapNodes();
   dbSet<dbCapNode>::iterator cap_node_itr = capNodes.begin();
   for (; cap_node_itr != capNodes.end(); ++cap_node_itr) {
     dbCapNode* node = *cap_node_itr;
@@ -1249,15 +1316,18 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
 
   dbSet<dbRSeg> rsegs = dst->getRSegs();
 
-  uint                    rCnt     = 0;
+  uint rCnt = 0;
   dbSet<dbRSeg>::iterator rseg_itr = rsegs.begin();
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     dbRSeg* rseg = *rseg_itr;
 
     uint sid = rseg->getShapeId();
     if (sid == 0) {
-      dst->getImpl()->getLogger()->warn(utl::ODB, 27, 
-"rsegId {} has zero shape : {}",rseg->getId(),dst->getConstName());
+      dst->getImpl()->getLogger()->warn(utl::ODB,
+                                        27,
+                                        "rsegId {} has zero shape : {}",
+                                        rseg->getId(),
+                                        dst->getConstName());
       continue;
     }
     if (!rseg->getTargetCapNode()->isInternal())
@@ -1275,14 +1345,20 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
 }
 uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 {
-  debugPrint(src->getImpl()->getLogger(), utl::ODB, "FLATTEN", 18, "\tRSegs: {} {}",src->getConstName(),dst->getConstName());
+  debugPrint(src->getImpl()->getLogger(),
+             utl::ODB,
+             "FLATTEN",
+             18,
+             "\tRSegs: {} {}",
+             src->getConstName(),
+             dst->getConstName());
 
   dbBlock* block = dst->getBlock();
   // extMain::printRSegs(parentNet);
 
   dbSet<dbRSeg> rsegs = src->getRSegs();
 
-  uint                    rCnt     = 0;
+  uint rCnt = 0;
   dbSet<dbRSeg>::iterator rseg_itr = rsegs.begin();
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     dbRSeg* rseg = *rseg_itr;
@@ -1304,7 +1380,17 @@ uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 
       rc->setResistance(res, corner);
       rc->setCapacitance(cap, corner);
-      debugPrint(src->getImpl()->getLogger(), utl::ODB, "FLATTEN", 18, "\t\tsrc:{}->{} - tgt:{}->{} - {}  {}",srcId,_node_map[srcId],tgtId,_node_map[tgtId],res,cap);
+      debugPrint(src->getImpl()->getLogger(),
+                 utl::ODB,
+                 "FLATTEN",
+                 18,
+                 "\t\tsrc:{}->{} - tgt:{}->{} - {}  {}",
+                 srcId,
+                 _node_map[srcId],
+                 tgtId,
+                 _node_map[tgtId],
+                 res,
+                 cap);
     }
     rCnt++;
   }
@@ -1314,19 +1400,24 @@ uint dbFlatten::createRSegs(dbNet* src, dbNet* dst)
 uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
 {
   if (fp == NULL)
-    net->getImpl()->getLogger()->info(utl::ODB, 28,  "\t\t\tprintRSegs: {}", net->getConstName());
+    net->getImpl()->getLogger()->info(
+        utl::ODB, 28, "\t\t\tprintRSegs: {}", net->getConstName());
   else
     fprintf(fp, "\t\t\tprintRSegs: %s\n", net->getConstName());
 
   dbSet<dbRSeg> rsegs = net->getRSegs();
 
-  uint                    rCnt     = 0;
+  uint rCnt = 0;
   dbSet<dbRSeg>::iterator rseg_itr = rsegs.begin();
   for (; rseg_itr != rsegs.end(); ++rseg_itr) {
     dbRSeg* rseg = *rseg_itr;
 
     if (fp == NULL)
-      net->getImpl()->getLogger()->info(utl::ODB, 29,  "\t\t\t\t\trsegId: {} J{} -- ", rseg->getId(), rseg->getShapeId());
+      net->getImpl()->getLogger()->info(utl::ODB,
+                                        29,
+                                        "\t\t\t\t\trsegId: {} J{} -- ",
+                                        rseg->getId(),
+                                        rseg->getShapeId());
     else
       fprintf(fp,
               "\t\t\t\t\trsegId: %d J%d -- ",
@@ -1336,10 +1427,14 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* src = rseg->getSourceCapNode();
     if (fp == NULL) {
       if (src == NULL)
-        net->getImpl()->getLogger()->info(utl::ODB, 30,  " 0 --");
+        net->getImpl()->getLogger()->info(utl::ODB, 30, " 0 --");
       else
-        net->getImpl()->getLogger()->info(utl::ODB, 31, 
-" {} I{} B{} -- ",src->getNode(),src->isITerm(),src->isBTerm());
+        net->getImpl()->getLogger()->info(utl::ODB,
+                                          31,
+                                          " {} I{} B{} -- ",
+                                          src->getNode(),
+                                          src->isITerm(),
+                                          src->isBTerm());
     } else {
       if (src == NULL)
         fprintf(fp, " 0 --");
@@ -1353,9 +1448,14 @@ uint dbFlatten::printRSegs(FILE* fp, dbNet* net)
     dbCapNode* tgt = rseg->getTargetCapNode();
     if (fp == NULL) {
       if (tgt == NULL)
-        net->getImpl()->getLogger()->info(utl::ODB, 32,  " 0");
+        net->getImpl()->getLogger()->info(utl::ODB, 32, " 0");
       else
-        net->getImpl()->getLogger()->info(utl::ODB, 33,  " {} I{} B{}", tgt->getNode(), tgt->isITerm(), tgt->isBTerm());
+        net->getImpl()->getLogger()->info(utl::ODB,
+                                          33,
+                                          " {} I{} B{}",
+                                          tgt->getNode(),
+                                          tgt->isITerm(),
+                                          tgt->isBTerm());
 
     } else {
       if (tgt == NULL)

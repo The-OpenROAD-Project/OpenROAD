@@ -51,32 +51,32 @@ extract_parasitics
   [-no_merge_via_res]             seperate via resistance
 ```
 
-The `extract_parasitics` command performs parastic extraction based on the
+The `extract_parasitics` command performs parasitic extraction based on the
 routed design. If there are no routed design information no parasitics are
 added. Use `ext_model_file` to specify the Extraction Rules file used for the
 extraction. 
 
-The `cc_model` is used to specify the maximium number of tracks on same routing level.
+The `cc_model` is used to specify the maximum number of tracks on same routing level.
 The default value is 10.
 The `context_depth` option is used to specify the levels that OpenRCX needs to consider 
 The default value is 5.
 for the over/under context overlap for capacitance calculation. 
 The `max_res` command combines resistors in series up to the threshold values.
-Use `no_merge_via_res` seperates the via resistance from the wire resistance.
+Use `no_merge_via_res` separates the via resistance from the wire resistance.
 
-The `corner_cnt` defines the number of corners used during the parastic
+The `corner_cnt` defines the number of corners used during the parasitic
 extractions.
 
 #### Write SPEF
 
 ```
 write_spef
-  [-net_id net_id]                output the parasitics info for spesific nets
+  [-net_id net_id]                output the parasitics info for specific nets
   [filename]                      the output filename
 ```
 
 The `write_spef` command writes the .spef output of the parasitics stored in the
-database. Use `net_id` command to write the output for spesific nets.
+database. Use `net_id` command to write the output for specific nets.
 
 #### Scale RC
 
@@ -87,7 +87,7 @@ adjust_rc
   [-gndc_factor gndc]             scale the ground cap value
 ```
 
-Use the `adjust_rc` command to scale the the resistance, ground, and coupling
+Use the `adjust_rc` command to scale the resistance, ground, and coupling
 capacitance. The `res_factor` specifies the scale factor for resistance. The
 `cc_factor` specifies the scale factor for coupling cap. The `gndc_factor`
 specifies the scale factor for ground cap.
@@ -101,7 +101,7 @@ diff_spef
 
 `diff_spef` command compares the parasitics in the database with the parasitic
 information from `<file>.spef`. The output of this command is `diff_spef.out` and
-contains the RC numbers from the parasitics in the databse and the `<file>.spef`,
+contains the RC numbers from the parasitics in the database and the `<file>.spef`,
 and the percentage RC difference of the two data.
 
 #### Extraction Rules File Generation
@@ -123,8 +123,8 @@ effects. This command generates a .def file.
 
 The `cnt` command determines the number of wires in each pattern, the default
 values is 5. Use `len` command to change the wire length in the pattern. `all` 
-option is used to  specify all diffrent pattern geometries (over, under,
-over_under, and digonal). The option `all` is required.
+option is used to  specify all different pattern geometries (over, under,
+over_under, and diagonal). The option `all` is required.
 
 The `s_list` option specifies the lists of wire spacing multipliers from the
 minimum spacing defined in the LEF. The list will be the input index on the 

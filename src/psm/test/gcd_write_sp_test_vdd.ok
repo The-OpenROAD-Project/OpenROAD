@@ -1,0 +1,20 @@
+[INFO ODB-0222] Reading LEF file: Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 624 components and 2752 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1248 connections.
+[INFO ODB-0133]     Created 581 nets and 1504 connections.
+[INFO ODB-0134] Finished DEF file: gcd.def
+[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vdd.loc.
+[INFO PSM-0005] Output spice file is specified as: ./results/gcd_spice_vdd.sp.
+[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vdd.loc.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 1527.
+[INFO PSM-0064] Number of voltage sources = 1
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0006] Spice file is written at: ./results/gcd_spice_vdd.sp.
+No differences found.

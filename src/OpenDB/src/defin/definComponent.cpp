@@ -30,17 +30,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definComponent.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "db.h"
 #include "dbTransform.h"
-#include "definComponent.h"
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
-
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definComponent::definComponent()
@@ -78,10 +78,10 @@ void definComponent::init()
     free((void*) (*sitr).first);
 
   _sites.clear();
-  _inst_cnt   = 0;
+  _inst_cnt = 0;
   _update_cnt = 0;
-  _iterm_cnt  = 0;
-  _cur_inst   = NULL;
+  _iterm_cnt = 0;
+  _cur_inst = NULL;
 }
 
 dbMaster* definComponent::getMaster(const char* name)
@@ -148,32 +148,35 @@ void definComponent::begin(const char* iname, const char* mname)
   dbMaster* master = getMaster(mname);
 
   if (master == NULL) {
-    _logger->warn(utl::ODB, 92, 
-"error: unknown library cell referenced ({}) for instance ({})",mname,iname);
+    _logger->warn(
+        utl::ODB,
+        92,
+        "error: unknown library cell referenced ({}) for instance ({})",
+        mname,
+        iname);
     _errors++;
     return;
   }
-  if(_mode != defin::DEFAULT){
+  if (_mode != defin::DEFAULT) {
     _cur_inst = _block->findInst(iname);
-    if(_cur_inst == nullptr){
+    if (_cur_inst == nullptr) {
       _errors++;
       return;
     }
     _update_cnt++;
-  }
-  else{
+  } else {
     _cur_inst = dbInst::create(_block, master, iname);
-    if(_cur_inst != nullptr){
+    if (_cur_inst != nullptr) {
       _inst_cnt++;
       _iterm_cnt += master->getMTermCount();
-    }else
-    {
-      _logger->warn(utl::ODB, 93,  "error: duplicate instance definition({})", iname);
+    } else {
+      _logger->warn(
+          utl::ODB, 93, "error: duplicate instance definition({})", iname);
       _errors++;
       return;
     }
     if (_inst_cnt % 100000 == 0)
-      _logger->info(utl::ODB, 94,  "\t\tCreated {} Insts", _inst_cnt);
+      _logger->info(utl::ODB, 94, "\t\tCreated {} Insts", _inst_cnt);
   }
 }
 
@@ -195,7 +198,7 @@ void definComponent::placement(int status, int x, int y, int orient)
     case DEFI_COMPONENT_UNPLACED:
       _cur_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
       return;
-    default: // placement status is unset
+    default:  // placement status is unset
       return;
   }
 
@@ -227,7 +230,7 @@ void definComponent::placement(int status, int x, int y, int orient)
   }
 
   dbMaster* master = _cur_inst->getMaster();
-  Rect   bbox;
+  Rect bbox;
   master->getPlacementBoundary(bbox);
   dbTransform t(_cur_inst->getOrient());
   t.apply(bbox);
@@ -249,7 +252,7 @@ void definComponent::region(const char* name)
 
   if (region == NULL)
     region = dbRegion::create(_block, name);
-  else if(_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
+  else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
     return;
 
   region->addInst(_cur_inst);

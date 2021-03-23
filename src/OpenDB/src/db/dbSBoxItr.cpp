@@ -54,15 +54,15 @@ void dbSBoxItr::reverse(dbObject* parent)
   switch (parent->getImpl()->getType()) {
     case dbSWireObj: {
       _dbSWire* wire = (_dbSWire*) parent;
-      uint      id   = wire->_wires;
-      uint      list = 0;
+      uint id = wire->_wires;
+      uint list = 0;
 
       while (id != 0) {
-        _dbSBox* b   = _box_tbl->getPtr(id);
-        uint     n   = b->_next_box;
+        _dbSBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
         b->_next_box = list;
-        list         = id;
-        id           = n;
+        list = id;
+        id = n;
       }
 
       wire->_wires = list;

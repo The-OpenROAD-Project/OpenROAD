@@ -1,5 +1,3 @@
-%module openroad
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
@@ -47,7 +45,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -212,10 +210,11 @@ using odb::dbTech;
 
 ////////////////////////////////////////////////////////////////
 //
-// C++ functions visible as TCL functions.
+// C++ functions visible as SWIG functions.
 //
 ////////////////////////////////////////////////////////////////
 
+#ifdef SWIGTCL
 %include "Exception.i"
 
 %typemap(in) vector<LibertyCell*> * {
@@ -227,6 +226,7 @@ using odb::dbTech;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }
+#endif
 
 %inline %{
 
@@ -450,6 +450,13 @@ units_initialized()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->unitsInitialized();
+}
+
+void
+python_cmd(const char* py_command)
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->pythonCommand(py_command);
 }
 
 namespace ord {

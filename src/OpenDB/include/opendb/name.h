@@ -44,7 +44,7 @@ class Ath__nameBucket
 {
  private:
   char* _name;
-  uint  _tag;
+  uint _tag;
 
  public:
   void set(char* name, uint tag);
@@ -56,7 +56,7 @@ class Ath__nameBucket
 class Ath__nameTable
 {
  private:
-  AthHash<int>*             _hashTable;
+  AthHash<int>* _hashTable;
   AthPool<Ath__nameBucket>* _bucketPool;
   // int *nameMap; // TODO
 
@@ -71,14 +71,12 @@ class Ath__nameTable
   bool readDB(FILE* fp);
   void addData(uint poolId, uint dataId);
 
-  uint  addNewName(char* name, uint dataId);
+  uint addNewName(char* name, uint dataId);
   char* getName(uint poolId);
-  uint  getDataId(int poolId);
-  uint  getTagId(char* name);
-  uint  getDataId(char* name,
-                  uint  ignoreFlag = 0,
-                  uint  exitFlag   = 0,
-                  int*  nn         = 0);
+  uint getDataId(int poolId);
+  uint getTagId(char* name);
+  uint getDataId(char* name,
+                 uint ignoreFlag = 0,
+                 uint exitFlag = 0,
+                 int* nn = 0);
 };
-
-

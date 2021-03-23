@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,223 +30,359 @@
 #define _FR_FLEXGC_IMPL_H_
 
 #include <memory>
-#include "frDesign.h"
+
 #include "db/gcObj/gcNet.h"
 #include "dr/FlexDR.h"
+#include "frDesign.h"
 #include "gc/FlexGC.h"
 
 namespace fr {
-  class FlexGCWorkerRegionQuery {
-  public:
-      FlexGCWorkerRegionQuery(FlexGCWorker* in);
-      ~FlexGCWorkerRegionQuery();
-      FlexGCWorker* getGCWorker() const;
-      void addPolygonEdge(gcSegment* edge);
-      void addMaxRectangle(gcRect* rect);
-      void removePolygonEdge(gcSegment* connFig);
-      void removeMaxRectangle(gcRect* connFig);
-      void queryPolygonEdge(const box_t &box, frLayerNum layerNum, std::vector<std::pair<segment_t, gcSegment*> > &result);
-      void queryPolygonEdge(const frBox &box, frLayerNum layerNum, std::vector<std::pair<segment_t, gcSegment*> > &result);
-      void queryMaxRectangle(const box_t &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
-      void queryMaxRectangle(const frBox &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
-      void queryMaxRectangle(const gtl::rectangle_data<frCoord> &box, frLayerNum layerNum, std::vector<rq_box_value_t<gcRect*> > &result);
-      void init(int numLayers);
-      void addToRegionQuery(gcNet* net);
-      void removeFromRegionQuery(gcNet* net);
-  private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-  };
+class FlexGCWorkerRegionQuery
+{
+ public:
+  FlexGCWorkerRegionQuery(FlexGCWorker* in);
+  ~FlexGCWorkerRegionQuery();
+  FlexGCWorker* getGCWorker() const;
+  void addPolygonEdge(gcSegment* edge);
+  void addMaxRectangle(gcRect* rect);
+  void addSpcRectangle(gcRect* rect);
+  void removePolygonEdge(gcSegment* connFig);
+  void removeMaxRectangle(gcRect* connFig);
+  void queryPolygonEdge(const box_t& box,
+                        frLayerNum layerNum,
+                        std::vector<std::pair<segment_t, gcSegment*>>& result);
+  void queryPolygonEdge(const frBox& box,
+                        frLayerNum layerNum,
+                        std::vector<std::pair<segment_t, gcSegment*>>& result);
+  void queryMaxRectangle(const box_t& box,
+                         frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result);
+  void querySpcRectangle(const box_t& box,
+                         frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect>>& result);
+  void queryMaxRectangle(const frBox& box,
+                         frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result);
+  void queryMaxRectangle(const gtl::rectangle_data<frCoord>& box,
+                         frLayerNum layerNum,
+                         std::vector<rq_box_value_t<gcRect*>>& result);
+  void init(int numLayers);
+  void addToRegionQuery(gcNet* net);
+  void removeFromRegionQuery(gcNet* net);
 
-  class FlexGCWorker::Impl {
-    friend class FlexGCWorker;
-  public:
-    // constructors
-    Impl(frDesign* designIn,
-         Logger* logger,
-         FlexDRWorker* drWorkerIn,
-         FlexGCWorker* gcWorkerIn);
-    gcNet* addNet(frBlockObject* owner = nullptr) {
-      auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
-      auto net = uNet.get();
-      net->setOwner(owner);
-      nets_.push_back(std::move(uNet));
-      owner2nets_[owner] = net;
-      return net;
-    }
-    bool addMarker(std::unique_ptr<frMarker> in);
-    void clearMarkers() {
-      mapMarkers_.clear();
-      markers_.clear();
-    }
-    void addPAObj(frConnFig* obj, frBlockObject* owner);
-    // getters
-    frDesign* getDesign() const {
-      return design_;
-    }
-    FlexDRWorker* getDRWorker() const {
-      return drWorker_;
-    }
-    const frBox& getExtBox() const {
-      return extBox_;
-    }
-    frRegionQuery* getRegionQuery() const {
-      return design_->getRegionQuery();
-    }
-    std::vector<std::unique_ptr<gcNet> >& getNets() {
-      return nets_;
-    }
-    // others
-    void init();
-    int  main();
-    void end();
-    // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-    void initPA0();
-    void initPA1();
-    
-  protected:
-    frDesign*                            design_;
-    Logger*                              logger_;
-    FlexDRWorker*                        drWorker_;
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};
 
-    frBox                                extBox_;
-    frBox                                drcBox_;
+class FlexGCWorker::Impl
+{
+  friend class FlexGCWorker;
 
-    std::map<frBlockObject*, gcNet*>     owner2nets_; // no order is assumed
-    std::vector<std::unique_ptr<gcNet> > nets_;
+ public:
+  // constructors
+  Impl(frDesign* designIn,
+       Logger* logger,
+       FlexDRWorker* drWorkerIn,
+       FlexGCWorker* gcWorkerIn);
+  gcNet* addNet(frBlockObject* owner = nullptr)
+  {
+    auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
+    auto net = uNet.get();
+    net->setOwner(owner);
+    nets_.push_back(std::move(uNet));
+    owner2nets_[owner] = net;
+    return net;
+  }
+  bool addMarker(std::unique_ptr<frMarker> in);
+  void clearMarkers()
+  {
+    mapMarkers_.clear();
+    markers_.clear();
+  }
+  void addPAObj(frConnFig* obj, frBlockObject* owner);
+  // getters
+  frDesign* getDesign() const { return design_; }
+  FlexDRWorker* getDRWorker() const { return drWorker_; }
+  const frBox& getExtBox() const { return extBox_; }
+  frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
+  std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
+  // others
+  void init();
+  int main();
+  void end();
+  // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
+  void initPA0();
+  void initPA1();
 
-    std::vector<std::unique_ptr<frMarker> > markers_;
-    std::map<std::tuple<frBox, frLayerNum, frConstraint*, frBlockObject*, frBlockObject*>, frMarker*> mapMarkers_;
-    std::vector<std::unique_ptr<drPatchWire> > pwires_;
+ protected:
+  frDesign* design_;
+  Logger* logger_;
+  FlexDRWorker* drWorker_;
 
-    FlexGCWorkerRegionQuery              rq_;
-    bool                                 printMarker_;
+  frBox extBox_;
+  frBox drcBox_;
 
-    // temps
-    std::vector<drNet*>                  modifiedDRNets_;
+  std::map<frBlockObject*, gcNet*> owner2nets_;  // no order is assumed
+  std::vector<std::unique_ptr<gcNet>> nets_;
 
-    // parameters
-    gcNet*                               targetNet_;
-    frLayerNum                           minLayerNum_;
-    frLayerNum                           maxLayerNum_;
+  std::vector<std::unique_ptr<frMarker>> markers_;
+  std::map<std::tuple<frBox,
+                      frLayerNum,
+                      frConstraint*,
+                      frBlockObject*,
+                      frBlockObject*>,
+           frMarker*>
+      mapMarkers_;
+  std::vector<std::unique_ptr<drPatchWire>> pwires_;
 
-    // for pin prep
-    frBlockObject*                       targetObj_;
-    bool                                 ignoreDB_;
-    bool                                 ignoreMinArea_;
-    bool                                 surgicalFixEnabled_;
+  FlexGCWorkerRegionQuery rq_;
+  bool printMarker_;
 
-    FlexGCWorkerRegionQuery& getWorkerRegionQuery() {
-      return rq_;
-    }
+  // temps
+  std::vector<drNet*> modifiedDRNets_;
 
-    // init
-    gcNet* getNet(frBlockObject* obj);
-    void initObj(const frBox &box, frLayerNum layerNum, frBlockObject* obj, bool isFixed);
-    void initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
-    void initDesign();
-    bool initDesign_skipObj(frBlockObject* obj);
-    void initDRWorker();
-    void initNets();
-    void initNet(gcNet* net);
-    void initNet_pins_polygon(gcNet* net);
-    void initNet_pins_polygonEdges(gcNet* net);
-    void initNet_pins_polygonEdges_getFixedPolygonEdges(gcNet* net, std::vector<std::set<std::pair<frPoint, frPoint> > > &fixedPolygonEdges);
-    void initNet_pins_polygonEdges_helper_outer(gcNet* net, gcPin* pin, gcPolygon* poly, frLayerNum i, 
-                                                const std::vector<std::set<std::pair<frPoint, frPoint> > > &fixedPolygonEdges);
-    void initNet_pins_polygonEdges_helper_inner(gcNet* net, gcPin* pin, const gtl::polygon_90_data<frCoord> &hole_poly, frLayerNum i, 
-                                                const std::vector<std::set<std::pair<frPoint, frPoint> > > &fixedPolygonEdges);
-    void initNet_pins_polygonCorners(gcNet* net);
-    void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
-    void initNet_pins_maxRectangles(gcNet* net);
-    void initNet_pins_maxRectangles_getFixedMaxRectangles(gcNet* net, std::vector<std::set<std::pair<frPoint, frPoint> > > &fixedMaxRectangles);
-    void initNet_pins_maxRectangles_helper(gcNet* net, gcPin* pin, const gtl::rectangle_data<frCoord>& rect, frLayerNum i,
-                                           const std::vector<std::set<std::pair<frPoint, frPoint> > > &fixedMaxRectangles);
+  // parameters
+  gcNet* targetNet_;
+  frLayerNum minLayerNum_;
+  frLayerNum maxLayerNum_;
 
-    void initRegionQuery();
+  // for pin prep
+  frBlockObject* targetObj_;
+  bool ignoreDB_;
+  bool ignoreMinArea_;
+  bool surgicalFixEnabled_;
 
-    // update
-    void updateGCWorker();
+  FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
-    void checkMetalSpacing();
-    frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum, bool isNDR=true);
-    void myBloat(const gtl::rectangle_data<frCoord> &rect, frCoord val, box_t &box);
-    void checkMetalSpacing_main(gcRect* rect, bool isNDR=true);
-    void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool isNDR=true);
-    void checkMetalSpacing_short(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
-    bool checkMetalSpacing_short_skipOBSPin(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
-    frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1, gcRect* rect2, frCoord prl);
-    bool checkMetalSpacing_prl_hasPolyEdge(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, int type, frCoord prl);
-    void checkMetalSpacing_prl(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, 
-                                frCoord prl, frCoord distX, frCoord distY, bool isNDR=true);
-    box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner, frCoord &maxSpcValX, frCoord &maxSpcValY);
-    void checkMetalCornerSpacing();
-    void checkMetalCornerSpacing_getMaxSpcVal(frLayerNum layerNum, frCoord &maxSpcValX, frCoord &maxSpcValY);
-    
-    void checkMetalCornerSpacing_main(gcCorner* corner);
-    void checkMetalCornerSpacing_main(gcCorner* corner, gcRect* rect, frLef58CornerSpacingConstraint* con);
-    void checkMetalCornerSpacing_main(gcCorner* corner, gcSegment* seg, frLef58CornerSpacingConstraint* con);
+  // init
+  gcNet* getNet(frBlockObject* obj);
+  void initObj(const frBox& box,
+               frLayerNum layerNum,
+               frBlockObject* obj,
+               bool isFixed);
+  gcNet* initDRObj(drConnFig* obj, gcNet* currNet = nullptr);
+  void initDesign();
+  bool initDesign_skipObj(frBlockObject* obj);
+  void initDRWorker();
+  void initNets();
+  void initNet(gcNet* net);
+  void initNet_pins_polygon(gcNet* net);
+  void initNet_pins_polygonEdges(gcNet* net);
+  void initNet_pins_polygonEdges_getFixedPolygonEdges(
+      gcNet* net,
+      std::vector<std::set<std::pair<frPoint, frPoint>>>& fixedPolygonEdges);
+  void initNet_pins_polygonEdges_helper_outer(
+      gcNet* net,
+      gcPin* pin,
+      gcPolygon* poly,
+      frLayerNum i,
+      const std::vector<std::set<std::pair<frPoint, frPoint>>>&
+          fixedPolygonEdges);
+  void initNet_pins_polygonEdges_helper_inner(
+      gcNet* net,
+      gcPin* pin,
+      const gtl::polygon_90_data<frCoord>& hole_poly,
+      frLayerNum i,
+      const std::vector<std::set<std::pair<frPoint, frPoint>>>&
+          fixedPolygonEdges);
+  void initNet_pins_polygonCorners(gcNet* net);
+  void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
+  void initNet_pins_maxRectangles(gcNet* net);
+  void initNet_pins_maxRectangles_getFixedMaxRectangles(
+      gcNet* net,
+      std::vector<std::set<std::pair<frPoint, frPoint>>>& fixedMaxRectangles);
+  void initNet_pins_maxRectangles_helper(
+      gcNet* net,
+      gcPin* pin,
+      const gtl::rectangle_data<frCoord>& rect,
+      frLayerNum i,
+      const std::vector<std::set<std::pair<frPoint, frPoint>>>&
+          fixedMaxRectangles);
 
-    void checkMetalShape();
-    void checkMetalShape_main(gcPin* pin);
-    void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord> &rect, frLayerNum layerNum, gcNet* net, bool isH);
-    void checkMetalShape_offGrid(gcPin* pin);
-    void checkMetalShape_minEnclosedArea(gcPin* pin);
-    void checkMetalShape_minStep(gcPin* pin);
-    void checkMetalShape_minStep_helper(const frBox &markerBox, frLayerNum layerNum, gcNet* net, frMinStepConstraint* con,
-                                        bool hasInsideCorner, bool hasOutsideCorner, bool hasStep,
-                                        int currEdges, frCoord currLength, bool hasRoute);
-    void checkMetalShape_rectOnly(gcPin* pin);
-    void checkMetalShape_minArea(gcPin* pin);
+  void initRegionQuery();
 
-    void checkMetalEndOfLine();
-    void checkMetalEndOfLine_main(gcPin* pin);
-    void checkMetalEndOfLine_eol(gcSegment* edge, frSpacingEndOfLineConstraint* con);
-    bool checkMetalEndOfLine_eol_isEolEdge(gcSegment *edge, frSpacingEndOfLineConstraint *con);
-    bool checkMetalEndOfLine_eol_hasParallelEdge(gcSegment *edge, frSpacingEndOfLineConstraint *con, bool &hasRoute);
-    bool checkMetalEndOfLine_eol_hasParallelEdge_oneDir(gcSegment *edge, frSpacingEndOfLineConstraint *con, bool isSegLow, bool &hasRoute);
-    void checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getQueryBox(gcSegment *edge, frSpacingEndOfLineConstraint *con, 
-                                                                    bool isSegLow, box_t &queryBox, gtl::rectangle_data<frCoord> &queryRect);
-    void checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(gcSegment *edge, gtl::rectangle_data<frCoord> &rect);
-    void checkMetalEndOfLine_eol_hasEol(gcSegment *edge, frSpacingEndOfLineConstraint *con, bool hasRoute);
-    void checkMetalEndOfLine_eol_hasEol_getQueryBox(gcSegment *edge, frSpacingEndOfLineConstraint *con, 
-                                                    box_t &queryBox, gtl::rectangle_data<frCoord> &queryRect);
-    void checkMetalEndOfLine_eol_hasEol_helper(gcSegment *edge1, gcSegment *edge2, frSpacingEndOfLineConstraint *con);
+  // update
+  void updateGCWorker();
 
-    void checkCutSpacing();
-    void checkCutSpacing_main(gcRect* rect);
-    void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
-    bool checkCutSpacing_main_hasAdjCuts(gcRect* rect, frCutSpacingConstraint* con);
-    frCoord checkCutSpacing_getMaxSpcVal(frCutSpacingConstraint* con);
-    void checkCutSpacing_main(gcRect* ptr1, gcRect* ptr2, frCutSpacingConstraint* con);
-    void checkCutSpacing_short(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect);
-    void checkCutSpacing_spc(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, frCutSpacingConstraint* con, frCoord prl);
-    void checkCutSpacing_spc_diff_layer(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, frCutSpacingConstraint* con);
-    frCoord checkCutSpacing_spc_getReqSpcVal(gcRect* ptr1, gcRect* ptr2, frCutSpacingConstraint* con);
+  void checkMetalSpacing();
+  frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
+                                         bool isNDR = true);
+  void myBloat(const gtl::rectangle_data<frCoord>& rect,
+               frCoord val,
+               box_t& box);
+  void checkMetalSpacing_main(gcRect* rect,
+                              bool isNDR = true,
+                              bool querySpcRects = false);
+  void checkMetalSpacing_main(gcRect* rect1, gcRect* rect2, bool isNDR = true);
+  void checkMetalSpacing_short(gcRect* rect1,
+                               gcRect* rect2,
+                               const gtl::rectangle_data<frCoord>& markerRect);
+  bool checkMetalSpacing_short_skipOBSPin(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect);
+  frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
+                                             gcRect* rect2,
+                                             frCoord prl);
+  bool checkMetalSpacing_prl_hasPolyEdge(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      int type,
+      frCoord prl);
+  void checkMetalSpacing_prl(gcRect* rect1,
+                             gcRect* rect2,
+                             const gtl::rectangle_data<frCoord>& markerRect,
+                             frCoord prl,
+                             frCoord distX,
+                             frCoord distY,
+                             bool isNDR = true);
+  box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
+                                            frCoord& maxSpcValX,
+                                            frCoord& maxSpcValY);
+  void checkMetalCornerSpacing();
+  void checkMetalCornerSpacing_getMaxSpcVal(frLayerNum layerNum,
+                                            frCoord& maxSpcValX,
+                                            frCoord& maxSpcValY);
 
-    // LEF58
-    void checkLef58CutSpacing_main(gcRect* rect);
-    void checkLef58CutSpacing_main(gcRect* rect, frLef58CutSpacingConstraint* con, bool skipSameNet = false);
-    void checkLef58CutSpacing_main(gcRect* rect1, gcRect* rect2, frLef58CutSpacingConstraint* con);
-    void checkLef58CutSpacing_spc_layer(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, frLef58CutSpacingConstraint* con);
-    void checkLef58CutSpacing_spc_adjCut(gcRect* rect1, gcRect* rect2, const gtl::rectangle_data<frCoord> &markerRect, frLef58CutSpacingConstraint* con);
-    bool checkLef58CutSpacing_spc_hasAdjCuts(gcRect* rect, frLef58CutSpacingConstraint* con);
-    bool checkLef58CutSpacing_spc_hasTwoCuts(gcRect* rect1, gcRect* rect2, frLef58CutSpacingConstraint* con);
-    bool checkLef58CutSpacing_spc_hasTwoCuts_helper(gcRect* rect, frLef58CutSpacingConstraint* con);
-    frCoord checkLef58CutSpacing_spc_getReqSpcVal(gcRect* ptr1, gcRect* ptr2, frLef58CutSpacingConstraint* con);
-    frCoord checkLef58CutSpacing_getMaxSpcVal(frLef58CutSpacingConstraint* con);
-    void checkMetalShape_lef58MinStep(gcPin* pin);
-    void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin, frLef58MinStepConstraint* con);
+  void checkMetalCornerSpacing_main(gcCorner* corner);
+  void checkMetalCornerSpacing_main(gcCorner* corner,
+                                    gcRect* rect,
+                                    frLef58CornerSpacingConstraint* con);
+  void checkMetalCornerSpacing_main(gcCorner* corner,
+                                    gcSegment* seg,
+                                    frLef58CornerSpacingConstraint* con);
 
-    // surgical fix
-    void patchMetalShape();
-    void patchMetalShape_helper();
-  
-    // utility
-    bool isCornerOverlap(gcCorner* corner, const frBox &box);
-    bool isCornerOverlap(gcCorner* corner, const gtl::rectangle_data<frCoord> &rect);
-    bool isOppositeDir(gcCorner* corner, gcSegment* seg);
-  };
-}
+  void checkMetalShape();
+  void checkMetalShape_main(gcPin* pin);
+  void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord>& rect,
+                                frLayerNum layerNum,
+                                gcNet* net,
+                                bool isH);
+  void checkMetalShape_offGrid(gcPin* pin);
+  void checkMetalShape_minEnclosedArea(gcPin* pin);
+  void checkMetalShape_minStep(gcPin* pin);
+  void checkMetalShape_minStep_helper(const frBox& markerBox,
+                                      frLayerNum layerNum,
+                                      gcNet* net,
+                                      frMinStepConstraint* con,
+                                      bool hasInsideCorner,
+                                      bool hasOutsideCorner,
+                                      bool hasStep,
+                                      int currEdges,
+                                      frCoord currLength,
+                                      bool hasRoute);
+  void checkMetalShape_rectOnly(gcPin* pin);
+  void checkMetalShape_minArea(gcPin* pin);
+
+  void checkMetalEndOfLine();
+  void checkMetalEndOfLine_main(gcPin* pin);
+  void checkMetalEndOfLine_eol(gcSegment* edge,
+                               frSpacingEndOfLineConstraint* con);
+  bool checkMetalEndOfLine_eol_isEolEdge(gcSegment* edge,
+                                         frSpacingEndOfLineConstraint* con);
+  bool checkMetalEndOfLine_eol_hasParallelEdge(
+      gcSegment* edge,
+      frSpacingEndOfLineConstraint* con,
+      bool& hasRoute);
+  bool checkMetalEndOfLine_eol_hasParallelEdge_oneDir(
+      gcSegment* edge,
+      frSpacingEndOfLineConstraint* con,
+      bool isSegLow,
+      bool& hasRoute);
+  void checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getQueryBox(
+      gcSegment* edge,
+      frSpacingEndOfLineConstraint* con,
+      bool isSegLow,
+      box_t& queryBox,
+      gtl::rectangle_data<frCoord>& queryRect);
+  void checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(
+      gcSegment* edge,
+      gtl::rectangle_data<frCoord>& rect);
+  void checkMetalEndOfLine_eol_hasEol(gcSegment* edge,
+                                      frSpacingEndOfLineConstraint* con,
+                                      bool hasRoute);
+  void checkMetalEndOfLine_eol_hasEol_getQueryBox(
+      gcSegment* edge,
+      frSpacingEndOfLineConstraint* con,
+      box_t& queryBox,
+      gtl::rectangle_data<frCoord>& queryRect);
+  void checkMetalEndOfLine_eol_hasEol_helper(gcSegment* edge1,
+                                             gcSegment* edge2,
+                                             frSpacingEndOfLineConstraint* con);
+
+  void checkCutSpacing();
+  void checkCutSpacing_main(gcRect* rect);
+  void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
+  bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
+                                       frCutSpacingConstraint* con);
+  frCoord checkCutSpacing_getMaxSpcVal(frCutSpacingConstraint* con);
+  void checkCutSpacing_main(gcRect* ptr1,
+                            gcRect* ptr2,
+                            frCutSpacingConstraint* con);
+  void checkCutSpacing_short(gcRect* rect1,
+                             gcRect* rect2,
+                             const gtl::rectangle_data<frCoord>& markerRect);
+  void checkCutSpacing_spc(gcRect* rect1,
+                           gcRect* rect2,
+                           const gtl::rectangle_data<frCoord>& markerRect,
+                           frCutSpacingConstraint* con,
+                           frCoord prl);
+  void checkCutSpacing_spc_diff_layer(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      frCutSpacingConstraint* con);
+  frCoord checkCutSpacing_spc_getReqSpcVal(gcRect* ptr1,
+                                           gcRect* ptr2,
+                                           frCutSpacingConstraint* con);
+
+  // LEF58
+  void checkLef58CutSpacing_main(gcRect* rect);
+  void checkLef58CutSpacing_main(gcRect* rect,
+                                 frLef58CutSpacingConstraint* con,
+                                 bool skipSameNet = false);
+  void checkLef58CutSpacing_main(gcRect* rect1,
+                                 gcRect* rect2,
+                                 frLef58CutSpacingConstraint* con);
+  void checkLef58CutSpacing_spc_layer(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      frLef58CutSpacingConstraint* con);
+  void checkLef58CutSpacing_spc_adjCut(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      frLef58CutSpacingConstraint* con);
+  bool checkLef58CutSpacing_spc_hasAdjCuts(gcRect* rect,
+                                           frLef58CutSpacingConstraint* con);
+  bool checkLef58CutSpacing_spc_hasTwoCuts(gcRect* rect1,
+                                           gcRect* rect2,
+                                           frLef58CutSpacingConstraint* con);
+  bool checkLef58CutSpacing_spc_hasTwoCuts_helper(
+      gcRect* rect,
+      frLef58CutSpacingConstraint* con);
+  frCoord checkLef58CutSpacing_spc_getReqSpcVal(
+      gcRect* ptr1,
+      gcRect* ptr2,
+      frLef58CutSpacingConstraint* con);
+  frCoord checkLef58CutSpacing_getMaxSpcVal(frLef58CutSpacingConstraint* con);
+  void checkMetalShape_lef58MinStep(gcPin* pin);
+  void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,
+                                                 frLef58MinStepConstraint* con);
+
+  // surgical fix
+  void patchMetalShape();
+  void patchMetalShape_helper();
+
+  // utility
+  bool isCornerOverlap(gcCorner* corner, const frBox& box);
+  bool isCornerOverlap(gcCorner* corner,
+                       const gtl::rectangle_data<frCoord>& rect);
+  bool isOppositeDir(gcCorner* corner, gcSegment* seg);
+};
+}  // namespace fr
 
 #endif

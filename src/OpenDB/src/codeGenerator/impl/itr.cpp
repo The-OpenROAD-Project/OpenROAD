@@ -30,15 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin 1
+// Generator Code Begin Cpp
 #include "{{itr.name}}.h"
 #include "{{itr.parentObject}}.h"
 #include "dbTable.h"
 {% for include in itr.includes %}
   #include "{{include}}"
 {% endfor %}
-//User Code Begin includes
-//User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -109,7 +109,7 @@ dbObject* {{itr.name}}::getObject(uint id, ...)
 {
   return _{{itr.tableName}}->getPtr(id);
 }
-//User Code Begin methods
-//User Code End methods
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
-//Generator Code End 1
+// Generator Code End Cpp

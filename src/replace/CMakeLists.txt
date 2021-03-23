@@ -57,10 +57,10 @@ if( USE_CIMG_LIB )
 endif()
 
 
-tcl_lib(NAME      replace
-        NAMESPACE gpl
-        I_FILE    src/replace.i
-        SCRIPTS   src/replace.tcl
+swig_lib(NAME      replace
+         NAMESPACE gpl
+         I_FILE    src/replace.i
+         SCRIPTS   src/replace.tcl
 )
 
 target_sources(replace
@@ -88,14 +88,14 @@ target_include_directories(replace
 
 target_link_libraries(replace
   PRIVATE
-    utility
+    utl
     Eigen3::Eigen
     gui
     opendb
     OpenSTA
     flute
     rsz
-    FastRoute
+    grt
 )
 
 # CIMG_USE case

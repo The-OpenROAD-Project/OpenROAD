@@ -2,6 +2,7 @@ record_tests {
   simple01
   simple01-obs
   simple01-td
+  simple01-uniform
   simple02
   simple03
   simple04
@@ -13,6 +14,7 @@ record_tests {
   error01
   diverge01
   diverge02 
+  macro04
 }
 
 # commented out at this moment..

@@ -45,38 +45,38 @@ namespace odb {
 gs::gs(AthPool<SEQ>* pool)
 {
   _allocSEQ = false;
-  _init     = INIT;
+  _init = INIT;
 
   pixint sum = PIXFILL;
-  int    i;
+  int i;
   for (i = 0; i < PIXMAPGRID; i++) {
     start[i] = sum;
-    sum      = (sum >> 1);
+    sum = (sum >> 1);
   }
 
-  sum       = PIXMAX;
+  sum = PIXMAX;
   pixint s2 = sum;
   for (i = 0; i < PIXMAPGRID; i++) {
     end[i] = sum;
-    sum    = (sum >> 1) | PIXMAX;
+    sum = (sum >> 1) | PIXMAX;
 
     middle[i] = s2;
-    s2        = (s2 >> 1);
+    s2 = (s2 >> 1);
   }
 
-  nslices  = -1;
+  nslices = -1;
   maxslice = -1;
 
-  precolor[0]  = 0xff0000;
-  precolor[1]  = 0x00ff00;
-  precolor[2]  = 0x20cfff;
-  precolor[3]  = 0xffff00;
-  precolor[4]  = 0x880000;
-  precolor[5]  = 0x007700;
-  precolor[6]  = 0x0000ff;
-  precolor[7]  = 0xff9000;
-  precolor[8]  = 0xff8080;
-  precolor[9]  = 0x607710;
+  precolor[0] = 0xff0000;
+  precolor[1] = 0x00ff00;
+  precolor[2] = 0x20cfff;
+  precolor[3] = 0xffff00;
+  precolor[4] = 0x880000;
+  precolor[5] = 0x007700;
+  precolor[6] = 0x0000ff;
+  precolor[7] = 0xff9000;
+  precolor[8] = 0xff8080;
+  precolor[9] = 0x607710;
   precolor[10] = 0x602090;
   precolor[11] = 0x808080;
   precolor[12] = 0xe040e0;
@@ -87,7 +87,7 @@ gs::gs(AthPool<SEQ>* pool)
   if (pool != NULL) {
     _seqPool = pool;
   } else {
-    _seqPool  = new AthPool<SEQ>(false, 1024);
+    _seqPool = new AthPool<SEQ>(false, 1024);
     _allocSEQ = true;
   }
 }
@@ -168,13 +168,13 @@ int gs::alloc_mem()
 
   if ((_init & SLICES)) {
     pixcol = (struct rgb*) calloc(nslices, sizeof(struct rgb));
-    plptr  = (pixmap**) calloc(nslices, sizeof(pixmap*));
+    plptr = (pixmap**) calloc(nslices, sizeof(pixmap*));
     pldata = (plconfig**) calloc(nslices, sizeof(plconfig*));
     // fprintf(stderr,"Allocing pixcol at: %x (%d)\n",pixcol,
     // nslices*sizeof(struct rgb));
 
     for (int s = 0; s < nslices; s++) {
-      pldata[s]          = (plconfig*) calloc(1, sizeof(plconfig));
+      pldata[s] = (plconfig*) calloc(1, sizeof(plconfig));
       pldata[s]->plalloc = NULL;
     }
 
@@ -216,7 +216,7 @@ int gs::setSlices(int _nslices, bool /* unused: skipMemAlloc */)
 {
   // fprintf(stderr,"setSlices: %d\n",_nslices);
   free_mem();
-  nslices  = _nslices;
+  nslices = _nslices;
   maxplane = nslices - 1;
   _init |= SLICES;
   // alloc_mem(skipMemAlloc);
@@ -225,13 +225,13 @@ int gs::setSlices(int _nslices, bool /* unused: skipMemAlloc */)
   return 0;
 }
 
-int gs::setSize(int  pl,
-                int  _xres,
-                int  _yres,
-                int  _x0,
-                int  _y0,
-                int  _x1,
-                int  _y1,
+int gs::setSize(int pl,
+                int _xres,
+                int _yres,
+                int _x0,
+                int _y0,
+                int _x1,
+                int _y1,
                 bool skipPixmap)
 {
   plc = pldata[pl];
@@ -288,7 +288,7 @@ int gs::setSize(int  pl,
 
   if (skipPixmap) {
     plc->plalloc = NULL;
-    plc->plane   = NULL;
+    plc->plane = NULL;
     return 0;
   }
 
@@ -320,13 +320,13 @@ int gs::setSize(int  pl,
   return 0;
 }
 
-int gs::configureSlice(int  _slicenum,
-                       int  _xres,
-                       int  _yres,
-                       int  _x0,
-                       int  _y0,
-                       int  _x1,
-                       int  _y1,
+int gs::configureSlice(int _slicenum,
+                       int _xres,
+                       int _yres,
+                       int _x0,
+                       int _y0,
+                       int _x1,
+                       int _y1,
                        bool skipAlloc)
 {
   if (_init & ALLOCATED) {
@@ -367,12 +367,12 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   // normalize bbox
   long a;
   if (px0 > px1) {
-    a   = px0;
+    a = px0;
     px0 = px1;
     px1 = a;
   }
   if (py0 > py1) {
-    a   = py0;
+    a = py0;
     py0 = py1;
     py1 = a;
   }
@@ -460,14 +460,14 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
 }
 
 // generate an RGB image based on the colors
-int gs::create_image(FILE*  fp,
+int gs::create_image(FILE* fp,
                      char** src,
-                     int    output,
-                     int    encoding,
-                     int    width,
-                     int    height,
-                     int*   ll,
-                     int*   ur)
+                     int output,
+                     int encoding,
+                     int width,
+                     int height,
+                     int* ll,
+                     int* ur)
 {
   init_headers(width, height);
 
@@ -582,10 +582,10 @@ void gs::release(SEQ* s)
  *             array - pool of sequence pointers to get a handle from
  */
 
-uint gs::get_seq(int*                ll,
-                 int*                ur,
-                 uint                order,
-                 uint                plane,
+uint gs::get_seq(int* ll,
+                 int* ur,
+                 uint order,
+                 uint plane,
                  Ath__array1D<SEQ*>* array)
 {
   if (check_slice(plane) != 0) {
@@ -642,11 +642,11 @@ uint gs::get_seq(int*                ll,
   }
   // fprintf(stderr,"Converted: %d,%d to %d,%d\n",cx0,cy0,cx1,cy1);
 
-  int  row, col;
-  int  rs, re;
-  int  cs, ce;
-  int  blacksum = 0;
-  int  start, end;
+  int row, col;
+  int rs, re;
+  int cs, ce;
+  int blacksum = 0;
+  int start, end;
   bool flag;
 
   if (order == GS_ROW) {
@@ -664,8 +664,8 @@ uint gs::get_seq(int*                ll,
       //}
 
       start = cx0;
-      end   = cx1;
-      flag  = false;
+      end = cx1;
+      flag = false;
       while (get_seqrow(row, plane, start, end, s->type) == 0) {
         // fprintf(stderr,"Raw Sequence results: start = %d, end =
         // %d\n",start,end);
@@ -673,7 +673,7 @@ uint gs::get_seq(int*                ll,
         s->_ur[0] = (int) ((end + 1) * (plc->xres) + (plc->x0) - 1);
         if (s->_ur[0] >= ur[0]) {
           s->_ur[0] = ur[0];
-          flag      = true;
+          flag = true;
         }
 
         if ((row == cy0) && (s->_ll[0] < ll[0]))
@@ -720,12 +720,12 @@ uint gs::get_seq(int*                ll,
 
     for (col = cx0; col <= cx0; col++) {
       start = cy0;
-      flag  = false;
+      flag = false;
       while (get_seqcol(col, plane, start, end, s->type) == 0) {
         s->_ll[1] = (int) (start * plc->yres + plc->y0);
         s->_ur[1] = (int) ((end + 1) * plc->yres + plc->y0 - 1);
         if (s->_ur[1] >= ur[1]) {
-          flag      = true;
+          flag = true;
           s->_ur[1] = ur[1];
         }
 
@@ -791,7 +791,7 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
 #ifdef DEBUG
   fprintf(stderr, "GSR2: %d/%d\n", sto, str);
 #endif
-  offset     = y * plc->pixstride + sto;
+  offset = y * plc->pixstride + sto;
   pixmap* pl = pldata[plane]->plane + offset;
 
   seqcol = GS_NONE;
@@ -945,10 +945,10 @@ int gs::get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol)
 #ifdef DEBUG
   fprintf(stderr, "GSC2: %d/%d\n", sto, stc);
 #endif
-  int row         = stpix;
-  offset          = sto + row * plc->pixstride;
-  pixint  bitmask = middle[stc];
-  pixmap* pl      = pldata[plane]->plane + offset;
+  int row = stpix;
+  offset = sto + row * plc->pixstride;
+  pixint bitmask = middle[stc];
+  pixmap* pl = pldata[plane]->plane + offset;
 
   seqcol = GS_NONE;
 
@@ -991,12 +991,12 @@ int gs::get_bw_count(int y, int plane, int& black, int& white)
   white = 0;
 
   pixint* bmask;
-  int     st;
-  int     bit;
+  int st;
+  int bit;
 
   long offset;
 
-  offset     = y * plc->pixstride;
+  offset = y * plc->pixstride;
   pixmap* pl = pldata[plane]->plane + offset;
 
   for (st = 0; st < plc->pixfullblox; st++) {
@@ -1038,11 +1038,11 @@ int gs::get_bw_count(int y, int plane, int& black, int& white)
 }
 
 int gs::write_ppm_file(FILE* fp,
-                       int   encoding,
-                       int   width,
-                       int   height,
-                       int*  ll,
-                       int*  ur)
+                       int encoding,
+                       int width,
+                       int height,
+                       int* ll,
+                       int* ur)
 {
   if (!(_init & ALLOCATED)) {
     return -1;
@@ -1052,12 +1052,12 @@ int gs::write_ppm_file(FILE* fp,
   struct rgb* pixlookup;
 
   char* buffptr;
-  int   bufflen;
+  int bufflen;
 
   if (encoding == 255) {
     pixlookup = pixcol;
-    buffptr   = pixbuff;
-    bufflen   = 3;
+    buffptr = pixbuff;
+    bufflen = 3;
     fprintf(fp, "%s", ppmheader);
   } else {
     fprintf(stderr, "Unsupported encoding style!\n");
@@ -1119,7 +1119,7 @@ int gs::write_ppm_file(FILE* fp,
 }
 
 int gs::write_ppm_string(char** s,
-                         int    encoding,
+                         int encoding,
                          int /* unused: width */,
                          int /* unused: height */,
                          int* /* unused: ll */,
@@ -1133,16 +1133,16 @@ int gs::write_ppm_string(char** s,
   struct rgb* pixlookup;
 
   char* buffptr;
-  int   bufflen;
+  int bufflen;
 
   char* stout;
 
   if (encoding == 255) {
     pixlookup = pixcol;
-    buffptr   = pixbuff;
-    bufflen   = 3;
+    buffptr = pixbuff;
+    bufflen = 3;
     // add a little extra for base-64 padding and header
-    *s    = (char*) malloc(bufflen * plc->width * plc->height + 128);
+    *s = (char*) malloc(bufflen * plc->width * plc->height + 128);
     stout = *s;
     sprintf(stout, "%s", ppmheader);
   }
@@ -1158,13 +1158,13 @@ int gs::write_ppm_string(char** s,
   // memset(plalloc[3],129,plc->height*(pixwidth+1)*sizeof(pixmap));
 
   pixint* bmask;
-  int     py;
-  int     st;
-  int     pln;
-  int     bit;
+  int py;
+  int st;
+  int pln;
+  int bit;
 
   char* outptr;
-  long  offset;
+  long offset;
 
   // pixint *bend=&middle[PIXMAPGRID];
   int buffcopy;

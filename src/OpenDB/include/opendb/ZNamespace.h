@@ -33,6 +33,7 @@
 #pragma once
 
 #include <string.h>
+
 #include <map>
 #include <vector>
 
@@ -60,11 +61,11 @@ class ZNamespace
   class ZEntry;
   class dbEntry;
 
-  std::map<ZObject*, ZEntry*>            _zobj_entries;
-  std::map<dbDatabase*, dbEntry*>        _db_entries;
-  std::map<const char*, ZEntry*, ltstr>  _zobj_names;
+  std::map<ZObject*, ZEntry*> _zobj_entries;
+  std::map<dbDatabase*, dbEntry*> _db_entries;
+  std::map<const char*, ZEntry*, ltstr> _zobj_names;
   std::map<const char*, dbEntry*, ltstr> _db_names;
-  uint                                   _unique_id;
+  uint _unique_id;
 
  public:
   ZNamespace();
@@ -72,13 +73,11 @@ class ZNamespace
 
   // These functions may throw a ZException
   const char* addZObject(ZObject* obj);
-  void        removeZObject(ZObject* obj);
-  ZObject*    resolveZObject(const char* zname);
-  void        registerDb(dbDatabase* db);
-  void        unregisterDb(dbDatabase* db);
-  dbObject*   resolveDB(const char* dbname);
+  void removeZObject(ZObject* obj);
+  ZObject* resolveZObject(const char* zname);
+  void registerDb(dbDatabase* db);
+  void unregisterDb(dbDatabase* db);
+  dbObject* resolveDB(const char* dbname);
 };
 
 }  // namespace odb
-
-

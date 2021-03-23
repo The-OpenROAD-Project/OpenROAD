@@ -99,6 +99,7 @@ class Replace
     void setBinGridCntY(int binGridCntY);
 
     void setTargetDensity(float density);
+    void setUniformTargetDensityMode(bool mode);
     void setTargetOverflow(float overflow);
     void setInitDensityPenalityFactor(float penaltyFactor);
     void setInitWireLengthCoef(float coef);
@@ -183,6 +184,7 @@ class Replace
     bool timingDrivenMode_;
     bool routabilityDrivenMode_;
     bool incrementalPlaceMode_;
+    bool uniformTargetDensityMode_;
    
     // temp variable; OpenDB should have these values. 
     int padLeft_;

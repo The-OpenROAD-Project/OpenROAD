@@ -34,6 +34,8 @@
 
 #include <tcl.h>
 
+#include <functional>
+
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>

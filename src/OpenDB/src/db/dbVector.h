@@ -44,9 +44,9 @@ template <class T>
 class dbVector : public std::vector<T>
 {
  public:
-  typedef typename std::vector<T>::iterator       iterator;
+  typedef typename std::vector<T>::iterator iterator;
   typedef typename std::vector<T>::const_iterator const_iterator;
-  typedef std::vector<T>                          _base;
+  typedef std::vector<T> _base;
 
   dbVector<T>& operator=(const std::vector<T>& v)
   {
@@ -62,14 +62,14 @@ class dbVector : public std::vector<T>
 
   ~dbVector() {}
 
-  iterator       begin() { return _base::begin(); }
-  iterator       end() { return _base::end(); }
+  iterator begin() { return _base::begin(); }
+  iterator end() { return _base::end(); }
   const_iterator begin() const { return _base::begin(); }
   const_iterator end() const { return _base::end(); }
-  void           differences(dbDiff&            diff,
-                             const char*        field,
-                             const dbVector<T>& rhs) const;
-  void           out(dbDiff& diff, char side, const char* field) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const dbVector<T>& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 #ifndef WIN32
@@ -77,9 +77,9 @@ template <class T>
 class dbVector<T*> : public std::vector<T*>
 {
  public:
-  typedef typename std::vector<T*>::iterator       iterator;
+  typedef typename std::vector<T*>::iterator iterator;
   typedef typename std::vector<T*>::const_iterator const_iterator;
-  typedef std::vector<T*>                          _base;
+  typedef std::vector<T*> _base;
 
   dbVector<T*>& operator=(const std::vector<T*>& v)
   {
@@ -95,8 +95,8 @@ class dbVector<T*> : public std::vector<T*>
 
   ~dbVector() {}
 
-  iterator       begin() { return _base::begin(); }
-  iterator       end() { return _base::end(); }
+  iterator begin() { return _base::begin(); }
+  iterator end() { return _base::end(); }
   const_iterator begin() const { return _base::begin(); }
   const_iterator end() const { return _base::end(); }
 
@@ -120,8 +120,8 @@ class dbVector<T*> : public std::vector<T*>
     return !this->operator==(rhs);
   }
 
-  void differences(dbDiff&             diff,
-                   const char*         field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const dbVector<T*>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
@@ -151,7 +151,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbVector<T>& v)
   stream >> sz;
   v.reserve(sz);
 
-  T            t;
+  T t;
   unsigned int i;
   for (i = 0; i < sz; ++i) {
     stream >> t;
@@ -162,13 +162,13 @@ inline dbIStream& operator>>(dbIStream& stream, dbVector<T>& v)
 }
 
 template <class T>
-inline void dbVector<T>::differences(dbDiff&            diff,
-                                     const char*        field,
+inline void dbVector<T>::differences(dbDiff& diff,
+                                     const char* field,
                                      const dbVector<T>& rhs) const
 {
   const_iterator i1 = begin();
   const_iterator i2 = rhs.begin();
-  unsigned int   i  = 0;
+  unsigned int i = 0;
 
   for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
     if (*i1 != *i2) {
@@ -198,7 +198,7 @@ template <class T>
 inline void dbVector<T>::out(dbDiff& diff, char side, const char* field) const
 {
   const_iterator i1 = begin();
-  unsigned int   i  = 0;
+  unsigned int i = 0;
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("%c %s[%d] = ", side, field, i);
@@ -209,13 +209,13 @@ inline void dbVector<T>::out(dbDiff& diff, char side, const char* field) const
 
 #ifndef WIN32
 template <class T>
-inline void dbVector<T*>::differences(dbDiff&             diff,
-                                      const char*         field,
+inline void dbVector<T*>::differences(dbDiff& diff,
+                                      const char* field,
                                       const dbVector<T*>& rhs) const
 {
   const_iterator i1 = begin();
   const_iterator i2 = rhs.begin();
-  unsigned int   i  = 0;
+  unsigned int i = 0;
 
   for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
     if (*i1 != *i2) {
@@ -239,7 +239,7 @@ template <class T>
 inline void dbVector<T*>::out(dbDiff& diff, char side, const char* field) const
 {
   const_iterator i1 = begin();
-  unsigned int   i  = 0;
+  unsigned int i = 0;
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("%c %s[%d]:\n", side, field, i);

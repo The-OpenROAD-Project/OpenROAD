@@ -31,11 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "odb.h"
-#include "array1.h"
-#include "util.h"
-
 #include <vector>
+
+#include "array1.h"
+#include "odb.h"
+#include "util.h"
 
 namespace odb {
 
@@ -44,13 +44,13 @@ typedef char gsPixel;
 #define PIXMAPGRID 64
 
 #if (PIXMAPGRID == 64)
-typedef uint64       pixint;
+typedef uint64 pixint;
 typedef unsigned int pixints;
 #define PIXFILL 0xffffffffffffffffLL
 #define PIXMAX 0x8000000000000000LL
 #define PIXADJUST 2
 #elif (PIXMAPGRID == 32)
-typedef unsigned int       pixint;
+typedef unsigned int pixint;
 typedef short unsigned int pixints;
 #define PIXFILL 0xffffffff
 #define PIXMAX 0x80000000
@@ -91,7 +91,7 @@ typedef struct
 
 typedef union
 {
-  pixint  lword;
+  pixint lword;
   pixints word[2];
   /*
   unsigned short int sword[4];
@@ -105,13 +105,13 @@ class gs
   gs(AthPool<SEQ>* seqPool = NULL);
   ~gs();
 
-  int configureSlice(int  slicenum,
-                     int  xres,
-                     int  yres,
-                     int  x0,
-                     int  y0,
-                     int  x1,
-                     int  y1,
+  int configureSlice(int slicenum,
+                     int xres,
+                     int yres,
+                     int x0,
+                     int y0,
+                     int x1,
+                     int y1,
                      bool skipAlloc = false);
 
   // render a rectangle
@@ -121,14 +121,14 @@ class gs
   int colorize(int slice, int rgb);
 
   // call to get the output
-  int create_image(FILE*  fp,
+  int create_image(FILE* fp,
                    char** out,
-                   int    output,
-                   int    encoding,
-                   int    width,
-                   int    height,
-                   int*   ll,
-                   int*   ur);
+                   int output,
+                   int encoding,
+                   int width,
+                   int height,
+                   int* ll,
+                   int* ur);
 
   // allocate (re-allocate) memory
   int alloc_mem(void);
@@ -141,10 +141,10 @@ class gs
   // set the number of slices
   int setSlices(int _nslices, bool skipMemAlloc = false);
 
-  int     get_max_slice();
-  int     get_rowcount(int slice);
-  int     get_colcount(int slice);
-  int     get_cutoff(int slice);
+  int get_max_slice();
+  int get_rowcount(int slice);
+  int get_colcount(int slice);
+  int get_cutoff(int slice);
   pixmap* get_array(int slice, int x, int y);
 
   char* get_color_value(int slice);
@@ -153,10 +153,10 @@ class gs
   int get_seqrow(int y, int plane, int start, int& end, int& bw);
   int get_seqcol(int x, int plane, int start, int& end, int& bw);
 
-  uint get_seq(int*                ll,
-               int*                ur,
-               uint                order,
-               uint                plane,
+  uint get_seq(int* ll,
+               int* ur,
+               uint order,
+               uint plane,
                Ath__array1D<SEQ*>* array);
   void dump_row(int row, int plane);
 
@@ -170,9 +170,9 @@ class gs
   SEQ* salloc();
 
  protected:
-  int  nslices;   // max number of slices
-  int  maxslice;  // maximum used slice
-  int  csize;     // size of the color table
+  int nslices;   // max number of slices
+  int maxslice;  // maximum used slice
+  int csize;     // size of the color table
   char ppmheader[128];
 
   char pixbuff[4];
@@ -208,9 +208,9 @@ class gs
   // int  pwidth;
   // int  pheight;
 
-  plconfig*  plc;
+  plconfig* plc;
   plconfig** pldata;
-  pixmap**   plptr;
+  pixmap** plptr;
 
   int maxplane;
 
@@ -221,7 +221,7 @@ class gs
   int precolor[MAXPRECOLOR + 1];
 
   AthPool<SEQ>* _seqPool;
-  bool          _allocSEQ;
+  bool _allocSEQ;
 
  public:
   void check_mem();
@@ -235,13 +235,13 @@ class gs
   // find the highest slice of each pixel
 
   // set the size parameters
-  int setSize(int  pl,
-              int  _xres,
-              int  _yres,
-              int  _x0,
-              int  _x1,
-              int  _y0,
-              int  _y1,
+  int setSize(int pl,
+              int _xres,
+              int _yres,
+              int _x0,
+              int _x1,
+              int _y0,
+              int _y1,
               bool skipAlloc = false);
 
   void dump_bytes(char* s);
@@ -256,19 +256,19 @@ class gs
 
   // write all slices as a series of PBM files
   int write_ppm_file(FILE* fp,
-                     int   encoding,
-                     int   width,
-                     int   height,
-                     int*  ll,
-                     int*  ur);
+                     int encoding,
+                     int width,
+                     int height,
+                     int* ll,
+                     int* ur);
 
   // write all slices as a series of PBM files
   int write_ppm_string(char** s,
-                       int    encoding,
-                       int    width,
-                       int    height,
-                       int*   ll,
-                       int*   ur);
+                       int encoding,
+                       int width,
+                       int height,
+                       int* ll,
+                       int* ur);
 
   // set up initial pixcolor stuff
   void init_pixcol();
@@ -280,5 +280,3 @@ class gs
 };
 
 }  // namespace odb
-
-

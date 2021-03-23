@@ -38,14 +38,14 @@ namespace odb {
 
 dbInstShapeItr::dbInstShapeItr(bool expand_vias)
 {
-  _state       = 0;
-  _inst        = NULL;
-  _master      = NULL;
-  _mpin        = NULL;
-  _type        = ALL;
-  _via         = NULL;
-  _via_x       = 0;
-  _via_y       = 0;
+  _state = 0;
+  _inst = NULL;
+  _master = NULL;
+  _mpin = NULL;
+  _type = ALL;
+  _via = NULL;
+  _via_x = 0;
+  _via_y = 0;
   _expand_vias = expand_vias;
 }
 
@@ -54,23 +54,23 @@ void dbInstShapeItr::begin(dbInst* inst, IteratorType type)
   int x, y;
   _inst = inst;
   _inst->getOrigin(x, y);
-  _master    = _inst->getMaster();
+  _master = _inst->getMaster();
   _transform = dbTransform(inst->getOrient(), Point(x, y));
-  _type      = type;
-  _state     = 0;
+  _type = type;
+  _state = 0;
 }
 
-void dbInstShapeItr::begin(dbInst*            inst,
-                           IteratorType       type,
+void dbInstShapeItr::begin(dbInst* inst,
+                           IteratorType type,
                            const dbTransform& t)
 {
   int x, y;
   _inst = inst;
   _inst->getOrigin(x, y);
-  _master    = _inst->getMaster();
+  _master = _inst->getMaster();
   _transform = dbTransform(inst->getOrient(), Point(x, y));
   _transform.concat(t);
-  _type  = type;
+  _type = type;
   _state = 0;
 }
 
@@ -78,10 +78,10 @@ void dbInstShapeItr::getViaBox(dbBox* box, dbShape& shape)
 {
   Rect b;
   box->getBox(b);
-  int  xmin = b.xMin() + _via_x;
-  int  ymin = b.yMin() + _via_y;
-  int  xmax = b.xMax() + _via_x;
-  int  ymax = b.yMax() + _via_y;
+  int xmin = b.xMin() + _via_x;
+  int ymin = b.yMin() + _via_y;
+  int xmax = b.xMax() + _via_x;
+  int ymax = b.yMax() + _via_y;
   Rect r(xmin, ymin, xmax, ymax);
   _transform.apply(r);
   shape.setViaBox(_via, box->getTechLayer(), r);
@@ -118,13 +118,13 @@ next_state:
   switch (_state) {
     case INIT: {
       if (_type == OBSTRUCTIONS) {
-        _boxes   = _master->getObstructions();
+        _boxes = _master->getObstructions();
         _box_itr = _boxes.begin();
-        _state   = OBS_ITR;
+        _state = OBS_ITR;
       } else {
-        _mterms    = _master->getMTerms();
+        _mterms = _master->getMTerms();
         _mterm_itr = _mterms.begin();
-        _state     = MTERM_ITR;
+        _state = MTERM_ITR;
       }
 
       goto next_state;
@@ -136,9 +136,9 @@ next_state:
       else {
         dbMTerm* mterm = *_mterm_itr;
         ++_mterm_itr;
-        _mpins    = mterm->getMPins();
+        _mpins = mterm->getMPins();
         _mpin_itr = _mpins.begin();
-        _state    = MPIN_ITR;
+        _state = MPIN_ITR;
       }
 
       goto next_state;
@@ -150,9 +150,9 @@ next_state:
       else {
         _mpin = *_mpin_itr;
         ++_mpin_itr;
-        _boxes   = _mpin->getGeometry();
+        _boxes = _mpin->getGeometry();
         _box_itr = _boxes.begin();
-        _state   = MBOX_ITR;
+        _state = MBOX_ITR;
       }
 
       goto next_state;
@@ -174,10 +174,10 @@ next_state:
           box->getViaXY(_via_x, _via_y);
           _via = box->getTechVia();
           assert(_via);
-          _via_boxes   = _via->getBoxes();
+          _via_boxes = _via->getBoxes();
           _via_box_itr = _via_boxes.begin();
-          _prev_state  = MBOX_ITR;
-          _state       = VIA_BOX_ITR;
+          _prev_state = MBOX_ITR;
+          _state = VIA_BOX_ITR;
         }
       }
 
@@ -201,10 +201,10 @@ next_state:
           box->getViaXY(_via_x, _via_y);
           _via = box->getTechVia();
           assert(_via);
-          _via_boxes   = _via->getBoxes();
+          _via_boxes = _via->getBoxes();
           _via_box_itr = _via_boxes.begin();
-          _prev_state  = OBS_ITR;
-          _state       = VIA_BOX_ITR;
+          _prev_state = OBS_ITR;
+          _state = VIA_BOX_ITR;
         }
       }
       goto next_state;
@@ -225,7 +225,7 @@ next_state:
 
     case PINS_DONE: {
       if (_type == ALL) {
-        _type  = OBSTRUCTIONS;
+        _type = OBSTRUCTIONS;
         _state = INIT;
         goto next_state;
       }

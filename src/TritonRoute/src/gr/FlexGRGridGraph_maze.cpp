@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,16 +26,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gr/FlexGRGridGraph.h"
-#include "gr/FlexGR.h"
 #include <cmath>
+
+#include "gr/FlexGR.h"
+#include "gr/FlexGRGridGraph.h"
 
 using namespace std;
 using namespace fr;
 
-bool FlexGRGridGraph::search(vector<FlexMazeIdx> &connComps, grNode* nextPinNode,
-                             vector<FlexMazeIdx> &path, FlexMazeIdx &ccMazeIdx1, 
-                             FlexMazeIdx &ccMazeIdx2, const frPoint &centerPt) {
+bool FlexGRGridGraph::search(vector<FlexMazeIdx>& connComps,
+                             grNode* nextPinNode,
+                             vector<FlexMazeIdx>& path,
+                             FlexMazeIdx& ccMazeIdx1,
+                             FlexMazeIdx& ccMazeIdx2,
+                             const frPoint& centerPt)
+{
   bool enableOutput = false;
   int stepCnt = 0;
 
@@ -61,27 +66,37 @@ bool FlexGRGridGraph::search(vector<FlexMazeIdx> &connComps, grNode* nextPinNode
 
   frPoint currPt;
   // push connected components to wavefront
-  for (auto &idx: connComps) {
+  for (auto& idx : connComps) {
     if (isDst(idx.x(), idx.y(), idx.z())) {
       if (enableOutput) {
-        cout <<"message: astarSearch dst covered (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;
+        cout << "message: astarSearch dst covered (" << idx.x() << ", "
+             << idx.y() << ", " << idx.z() << ")" << endl;
       }
       path.push_back(FlexMazeIdx(idx.x(), idx.y(), idx.z()));
       return true;
     }
     getPoint(idx.x(), idx.y(), currPt);
-    frCoord currDist = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
-    FlexGRWavefrontGrid currGrid(idx.x(), idx.y(), idx.z(), currDist, 0, getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
+    frCoord currDist
+        = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+    FlexGRWavefrontGrid currGrid(
+        idx.x(),
+        idx.y(),
+        idx.z(),
+        currDist,
+        0,
+        getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
     wavefront_.push(currGrid);
     if (enableOutput) {
-      cout <<"src add to wavefront (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;
+      cout << "src add to wavefront (" << idx.x() << ", " << idx.y() << ", "
+           << idx.z() << ")" << endl;
     }
   }
 
   while (!wavefront_.empty()) {
     auto currGrid = wavefront_.top();
     wavefront_.pop();
-    if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
+    if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z())
+        != frDirEnum::UNKNOWN) {
       continue;
     }
     // test
@@ -102,13 +117,18 @@ bool FlexGRGridGraph::search(vector<FlexMazeIdx> &connComps, grNode* nextPinNode
   return false;
 }
 
-frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx &src, const FlexMazeIdx &dstMazeIdx1,
-                                   const FlexMazeIdx &dstMazeIdx2, const frDirEnum &dir) {
+frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx& src,
+                                   const FlexMazeIdx& dstMazeIdx1,
+                                   const FlexMazeIdx& dstMazeIdx2,
+                                   const frDirEnum& dir)
+{
   bool enableOutput = false;
   if (enableOutput) {
-    cout <<"est from (" <<src.x() <<", " <<src.y() <<", " <<src.z() <<") "
-         <<"to ("       <<dstMazeIdx1.x() <<", " <<dstMazeIdx1.y() <<", " <<dstMazeIdx1.z() <<") ("
-                        <<dstMazeIdx2.x() <<", " <<dstMazeIdx2.y() <<", " <<dstMazeIdx2.z() <<")";
+    cout << "est from (" << src.x() << ", " << src.y() << ", " << src.z()
+         << ") "
+         << "to (" << dstMazeIdx1.x() << ", " << dstMazeIdx1.y() << ", "
+         << dstMazeIdx1.z() << ") (" << dstMazeIdx2.x() << ", "
+         << dstMazeIdx2.y() << ", " << dstMazeIdx2.z() << ")";
   }
   // bend cost
   int bendCnt = 0;
@@ -116,25 +136,42 @@ frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx &src, const FlexMazeIdx &ds
   getPoint(src.x(), src.y(), srcPoint);
   getPoint(dstMazeIdx1.x(), dstMazeIdx1.y(), dstPoint1);
   getPoint(dstMazeIdx2.x(), dstMazeIdx2.y(), dstPoint2);
-  frCoord minCostX = max(max(dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x()), 0);
-  frCoord minCostY = max(max(dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y()), 0);
-  frCoord minCostZ = max(max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()), 
-                             getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())), 0);
+  frCoord minCostX
+      = max(max(dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x()), 0);
+  frCoord minCostY
+      = max(max(dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y()), 0);
+  frCoord minCostZ = max(max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
+                             getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
+                         0);
   if (enableOutput) {
-    cout <<" x/y/z min cost = (" <<minCostX <<", " <<minCostY <<", " <<minCostZ <<") " <<endl;
+    cout << " x/y/z min cost = (" << minCostX << ", " << minCostY << ", "
+         << minCostZ << ") " << endl;
   }
 
-  bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E && dir != frDirEnum::W) ? 1 : 0;
-  bendCnt += (minCostY && dir != frDirEnum::UNKNOWN && dir != frDirEnum::S && dir != frDirEnum::N) ? 1 : 0;
-  bendCnt += (minCostZ && dir != frDirEnum::UNKNOWN && dir != frDirEnum::U && dir != frDirEnum::D) ? 1 : 0;
+  bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
+              && dir != frDirEnum::W)
+                 ? 1
+                 : 0;
+  bendCnt += (minCostY && dir != frDirEnum::UNKNOWN && dir != frDirEnum::S
+              && dir != frDirEnum::N)
+                 ? 1
+                 : 0;
+  bendCnt += (minCostZ && dir != frDirEnum::UNKNOWN && dir != frDirEnum::U
+              && dir != frDirEnum::D)
+                 ? 1
+                 : 0;
   if (enableOutput) {
     cout << "  est cost = " << minCostX + minCostY + minCostZ + bendCnt << endl;
   }
   return (minCostX + minCostY + minCostZ + bendCnt);
 }
 
-void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid &currGrid, vector<FlexMazeIdx> &path, vector<FlexMazeIdx> &root,
-                                    FlexMazeIdx &ccMazeIdx1, FlexMazeIdx &ccMazeIdx2) {
+void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
+                                    vector<FlexMazeIdx>& path,
+                                    vector<FlexMazeIdx>& root,
+                                    FlexMazeIdx& ccMazeIdx1,
+                                    FlexMazeIdx& ccMazeIdx2)
+{
   bool enableOutput = false;
   if (enableOutput) {
     cout << "    start traceBackPath...\n";
@@ -160,7 +197,7 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid &currGrid, vector<
     if (currDir != prevDir) {
       path.push_back(FlexMazeIdx(currX, currY, currZ));
       if (enableOutput) {
-        cout <<" -- (" <<currX <<", " <<currY <<", " <<currZ <<")";
+        cout << " -- (" << currX << ", " << currY << ", " << currZ << ")";
       }
     }
     getPrevGrid(currX, currY, currZ, currDir);
@@ -178,20 +215,21 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid &currGrid, vector<
     if (currDir != prevDir) {
       path.push_back(FlexMazeIdx(currX, currY, currZ));
       if (enableOutput) {
-        cout <<" -- (" <<currX <<", " <<currY <<", " <<currZ <<")";
+        cout << " -- (" << currX << ", " << currY << ", " << currZ << ")";
       }
     }
     getPrevGrid(currX, currY, currZ, currDir);
     prevDir = currDir;
   }
-  // add final path to src, only add when path exists; no path exists (src = dst)
+  // add final path to src, only add when path exists; no path exists (src =
+  // dst)
   if (!path.empty()) {
     path.push_back(FlexMazeIdx(currX, currY, currZ));
     if (enableOutput) {
-      cout <<" -- (" <<currX <<", " <<currY <<", " <<currZ <<")";
+      cout << " -- (" << currX << ", " << currY << ", " << currZ << ")";
     }
   }
-  for (auto &mi: path) {
+  for (auto& mi : path) {
     ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
                    min(ccMazeIdx1.y(), mi.y()),
                    min(ccMazeIdx1.z(), mi.z()));
@@ -200,17 +238,23 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid &currGrid, vector<
                    max(ccMazeIdx2.z(), mi.z()));
   }
   if (enableOutput) {
-    cout <<endl;
+    cout << endl;
   }
 }
 
-frDirEnum FlexGRGridGraph::getLastDir(const std::bitset<GRWAVEFRONTBITSIZE> &buffer) {
+frDirEnum FlexGRGridGraph::getLastDir(
+    const std::bitset<GRWAVEFRONTBITSIZE>& buffer)
+{
   auto currDirVal = buffer.to_ulong() & 0b111u;
   return static_cast<frDirEnum>(currDirVal);
 }
 
-void FlexGRGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) const {
-  switch(dir) {
+void FlexGRGridGraph::getPrevGrid(frMIdx& gridX,
+                                  frMIdx& gridY,
+                                  frMIdx& gridZ,
+                                  const frDirEnum dir) const
+{
+  switch (dir) {
     case frDirEnum::E:
       --gridX;
       break;
@@ -229,21 +273,23 @@ void FlexGRGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, c
     case frDirEnum::D:
       ++gridZ;
       break;
-    default:
-      ;
+    default:;
   }
   return;
 }
 
-
-void FlexGRGridGraph::expandWavefront(FlexGRWavefrontGrid &currGrid, const FlexMazeIdx &dstMazeIdx1, 
-                                      const FlexMazeIdx &dstMazeIdx2, const frPoint &centerPt) {
+void FlexGRGridGraph::expandWavefront(FlexGRWavefrontGrid& currGrid,
+                                      const FlexMazeIdx& dstMazeIdx1,
+                                      const FlexMazeIdx& dstMazeIdx2,
+                                      const frPoint& centerPt)
+{
   bool enableOutput = false;
-  //bool enableOutput = true;
+  // bool enableOutput = true;
   if (enableOutput) {
-    cout << "start expand from (" << currGrid.x() << ", " << currGrid.y() << ", " << currGrid.z() << ")\n";
+    cout << "start expand from (" << currGrid.x() << ", " << currGrid.y()
+         << ", " << currGrid.z() << ")\n";
   }
-    // N
+  // N
   if (isExpandable(currGrid, frDirEnum::N)) {
     expand(currGrid, frDirEnum::N, dstMazeIdx1, dstMazeIdx2, centerPt);
   }
@@ -269,8 +315,10 @@ void FlexGRGridGraph::expandWavefront(FlexGRWavefrontGrid &currGrid, const FlexM
   }
 }
 
-bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid &currGrid, frDirEnum dir) {
-  //bool enableOutput = true;
+bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid& currGrid,
+                                   frDirEnum dir)
+{
+  // bool enableOutput = true;
   bool enableOutput = false;
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
@@ -278,70 +326,91 @@ bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid &currGrid, frDirEnu
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   if (enableOutput) {
     if (!hasEdge(gridX, gridY, gridZ, dir)) {
-      cout <<"no edge@(" <<gridX <<", " <<gridY <<", " <<gridZ <<") " <<(int)dir <<endl;
+      cout << "no edge@(" << gridX << ", " << gridY << ", " << gridZ << ") "
+           << (int) dir << endl;
     }
   }
   reverse(gridX, gridY, gridZ, dir);
-  if (!hg || 
-      isSrc(gridX, gridY, gridZ) || 
-      getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN ||
-      currGrid.getLastDir() == dir) {
+  if (!hg || isSrc(gridX, gridY, gridZ)
+      || getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN
+      || currGrid.getLastDir() == dir) {
     return false;
   } else {
     return true;
   }
 }
 
-void FlexGRGridGraph::expand(FlexGRWavefrontGrid &currGrid, const frDirEnum &dir, 
-                             const FlexMazeIdx &dstMazeIdx1, const FlexMazeIdx &dstMazeIdx2,
-                             const frPoint &centerPt) {
+void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
+                             const frDirEnum& dir,
+                             const FlexMazeIdx& dstMazeIdx1,
+                             const FlexMazeIdx& dstMazeIdx2,
+                             const frPoint& centerPt)
+{
   bool enableOutput = false;
-  //bool enableOutput = true;
+  // bool enableOutput = true;
   frCost nextEstCost, nextPathCost;
   int gridX = currGrid.x();
   int gridY = currGrid.y();
   int gridZ = currGrid.z();
 
   getNextGrid(gridX, gridY, gridZ, dir);
-  
+
   FlexMazeIdx nextIdx(gridX, gridY, gridZ);
   // get cost
   nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
   nextPathCost = getNextPathCost(currGrid, dir);
   if (enableOutput) {
-    std::cout << "  expanding from (" << currGrid.x() << ", " << currGrid.y() << ", " << currGrid.z() 
-              << ") [pathCost / totalCost = " << currGrid.getPathCost() << " / " << currGrid.getCost() << "] to "
-              << "(" << gridX << ", " << gridY << ", " << gridZ << ") [pathCost / totalCost = " 
-              << nextPathCost << " / " << nextPathCost + nextEstCost << "]\n";
+    std::cout << "  expanding from (" << currGrid.x() << ", " << currGrid.y()
+              << ", " << currGrid.z()
+              << ") [pathCost / totalCost = " << currGrid.getPathCost() << " / "
+              << currGrid.getCost() << "] to "
+              << "(" << gridX << ", " << gridY << ", " << gridZ
+              << ") [pathCost / totalCost = " << nextPathCost << " / "
+              << nextPathCost + nextEstCost << "]\n";
   }
 
   frPoint currPt;
   getPoint(gridX, gridY, currPt);
-  frCoord currDist = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+  frCoord currDist
+      = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
 
-  FlexGRWavefrontGrid nextWavefrontGrid(gridX, gridY, gridZ, currDist, nextPathCost, nextPathCost + nextEstCost, currGrid.getBackTraceBuffer());
+  FlexGRWavefrontGrid nextWavefrontGrid(gridX,
+                                        gridY,
+                                        gridZ,
+                                        currDist,
+                                        nextPathCost,
+                                        nextPathCost + nextEstCost,
+                                        currGrid.getBackTraceBuffer());
   // update wavefront buffer
   auto tailDir = nextWavefrontGrid.shiftAddBuffer(dir);
   // commit grid prev direction if needed
   auto tailIdx = getTailIdx(nextIdx, nextWavefrontGrid);
   if (tailDir != frDirEnum::UNKNOWN) {
-    if (getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == frDirEnum::UNKNOWN ||
-        getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == tailDir) {
+    if (getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z())
+            == frDirEnum::UNKNOWN
+        || getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z())
+               == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
       wavefront_.push(nextWavefrontGrid);
       if (enableOutput) {
-        std::cout << "    commit (" << tailIdx.x() << ", " << tailIdx.y() << ", " << tailIdx.z() << ") prev accessing dir = " << (int)tailDir << "\n";
+        std::cout << "    commit (" << tailIdx.x() << ", " << tailIdx.y()
+                  << ", " << tailIdx.z()
+                  << ") prev accessing dir = " << (int) tailDir << "\n";
       }
     }
-  } else {  
+  } else {
     // add to wavefront
     wavefront_.push(nextWavefrontGrid);
   }
   return;
 }
 
-void FlexGRGridGraph::getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, const frDirEnum dir) {
-  switch(dir) {
+void FlexGRGridGraph::getNextGrid(frMIdx& gridX,
+                                  frMIdx& gridY,
+                                  frMIdx& gridZ,
+                                  const frDirEnum dir)
+{
+  switch (dir) {
     case frDirEnum::E:
       ++gridX;
       break;
@@ -360,13 +429,14 @@ void FlexGRGridGraph::getNextGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, c
     case frDirEnum::D:
       --gridZ;
       break;
-    default:
-      ;
+    default:;
   }
   return;
 }
 
-frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid &currGrid, const frDirEnum &dir) {
+frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
+                                        const frDirEnum& dir)
+{
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
   frMIdx gridZ = currGrid.z();
@@ -379,9 +449,9 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid &currGrid, con
   }
 
   // currently no congeston on via direction
-  bool congCost   = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
-  
-  bool blockCost  = hasBlock(gridX, gridY, gridZ, dir);
+  bool congCost = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
+
+  bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
   bool overflowCost = false;
 
   frMIdx tmpX = gridX;
@@ -397,29 +467,45 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid &currGrid, con
     rawSupply = getRawSupply(tmpX, tmpY, tmpZ, tmpDir);
   }
 
-  bool histCost   = hasHistoryCost(tmpX, tmpY, tmpZ);
+  bool histCost = hasHistoryCost(tmpX, tmpY, tmpZ);
 
   overflowCost = (rawDemand >= rawSupply * grWorker_->getCongThresh());
 
-  nextPathCost += getEdgeLength(gridX, gridY, gridZ, dir)
-                  + (congCost   ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (histCost   ? 4 * getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getHistoryCost(gridX, gridY, gridZ) *  getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (blockCost  ? BLOCKCOST                         * getEdgeLength(gridX, gridY, gridZ, dir) * 100  : 0)
-                  + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+  nextPathCost
+      += getEdgeLength(gridX, gridY, gridZ, dir)
+         + (congCost
+                ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh())
+                      * getEdgeLength(gridX, gridY, gridZ, dir)
+                : 0)
+         + (histCost ? 4
+                           * getCongCost(rawDemand,
+                                         rawSupply * grWorker_->getCongThresh())
+                           * getHistoryCost(gridX, gridY, gridZ)
+                           * getEdgeLength(gridX, gridY, gridZ, dir)
+                     : 0)
+         + (blockCost
+                ? BLOCKCOST * getEdgeLength(gridX, gridY, gridZ, dir) * 100
+                : 0)
+         + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
   return nextPathCost;
 }
 
-double FlexGRGridGraph::getCongCost(int demand, int supply) {
+double FlexGRGridGraph::getCongCost(int demand, int supply)
+{
   return (demand * (4 / (1.0 + exp(supply - demand))) / (supply + 1));
 }
 
-FlexMazeIdx FlexGRGridGraph::getTailIdx(const FlexMazeIdx &currIdx, const FlexGRWavefrontGrid &currGrid) {
+FlexMazeIdx FlexGRGridGraph::getTailIdx(const FlexMazeIdx& currIdx,
+                                        const FlexGRWavefrontGrid& currGrid)
+{
   int gridX = currIdx.x();
   int gridY = currIdx.y();
   int gridZ = currIdx.z();
   auto backTraceBuffer = currGrid.getBackTraceBuffer();
   for (int i = 0; i < GRWAVEFRONTBUFFERSIZE; ++i) {
-    int currDirVal = backTraceBuffer.to_ulong() - ((backTraceBuffer.to_ulong() >> DIRBITSIZE) << DIRBITSIZE);
+    int currDirVal
+        = backTraceBuffer.to_ulong()
+          - ((backTraceBuffer.to_ulong() >> DIRBITSIZE) << DIRBITSIZE);
     frDirEnum currDir = static_cast<frDirEnum>(currDirVal);
     backTraceBuffer >>= DIRBITSIZE;
     getPrevGrid(gridX, gridY, gridZ, currDir);

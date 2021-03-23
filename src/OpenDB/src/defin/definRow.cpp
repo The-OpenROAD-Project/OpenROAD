@@ -30,15 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "definRow.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "db.h"
 #include "dbShape.h"
-#include "definRow.h"
-
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definRow::definRow()
@@ -96,20 +96,24 @@ dbSite* definRow::getSite(const char* name)
   return NULL;
 }
 
-void definRow::begin(const char*  name,
-                     const char*  site_name,
-                     int          x,
-                     int          y,
+void definRow::begin(const char* name,
+                     const char* site_name,
+                     int x,
+                     int y,
                      dbOrientType orient,
-                     defRow       direction,
-                     int          num_sites,
-                     int          spacing)
+                     defRow direction,
+                     int num_sites,
+                     int spacing)
 {
   dbSite* site = getSite(site_name);
 
   if (site == NULL) {
-    _logger->warn(utl::ODB, 155, 
-"error: undefined site ({}) referenced in row ({}) statement.",site_name,name);
+    _logger->warn(
+        utl::ODB,
+        155,
+        "error: undefined site ({}) referenced in row ({}) statement.",
+        site_name,
+        name);
     ++_errors;
     return;
   }

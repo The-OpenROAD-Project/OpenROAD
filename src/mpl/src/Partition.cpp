@@ -36,7 +36,7 @@
 #include "btreeanneal.h"
 #include "mpl/MacroPlacer.h"
 #include "mixedpackingfromdb.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 
@@ -234,13 +234,11 @@ bool Partition::anneal()
     //////////////////////////////////////////////////////
     // Make node structures for macros.
     for (auto& macro : macros_) {
-      MacroSpacings &spacings = macro_placer_->getSpacings(macro);
       // ParqueFP Node putHaloX/Y, putChannelX/Y are non-functional.
       // Simulate them by expanding the macro size.
       // Halo and 1/2 channel on both left/right top/bottom.
-      // Note well that these spacings must be removed to get the macro origin (below).
-      double padded_width = macro.w + spacings.getSpacingX() * 2;
-      double padded_height = macro.h + spacings.getSpacingY() * 2;
+      double padded_width = macro_placer_->paddedWidth(macro);
+      double padded_height = macro_placer_->paddedHeight(macro);
       double aspect_ratio = padded_width / padded_height;
       pfp::Node node(macro.name(),
                      padded_width * padded_height,
@@ -248,11 +246,6 @@ bool Partition::anneal()
                      aspect_ratio,
                      &macro - &macros_[0],
                      false);
-      // These do absolutely nothing.
-      node.putHaloX(spacings.getHaloX());
-      node.putHaloY(spacings.getHaloY());
-      node.putChannelX(spacings.getChannelX());
-      node.putChannelY(spacings.getChannelY());
 
       node.addSubBlockIndex(&macro - &macros_[0]);
       pfp_nodes->putNewNode(node);
@@ -353,7 +346,6 @@ bool Partition::anneal()
     if (solution_width > width || solution_height > height) {
       return false;
     }
-
     // flip info initialization for each partition
     bool isFlipX = false, isFlipY = false;
     switch (partClass) {

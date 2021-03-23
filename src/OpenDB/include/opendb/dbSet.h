@@ -45,15 +45,15 @@ class dbSetIterator
   friend class dbSet<T>;
 
   dbIterator* _itr;
-  uint        _cur;
+  uint _cur;
 
   dbSetIterator(dbIterator* itr, uint id);
 
  public:
-  typedef T*                      value_type;
-  typedef std::ptrdiff_t          difference_type;
-  typedef T**                     pointer;
-  typedef T*&                     reference;
+  typedef T* value_type;
+  typedef std::ptrdiff_t difference_type;
+  typedef T** pointer;
+  typedef T*& reference;
   typedef std::input_iterator_tag iterator_category;
 
   dbSetIterator();
@@ -62,10 +62,10 @@ class dbSetIterator
   bool operator==(const dbSetIterator<T>& it);
   bool operator!=(const dbSetIterator<T>& it);
 
-  T*                operator*();
-  T*                operator->();
+  T* operator*();
+  T* operator->();
   dbSetIterator<T>& operator++();
-  dbSetIterator<T>  operator++(int);
+  dbSetIterator<T> operator++(int);
 };
 
 ///
@@ -94,26 +94,26 @@ template <class T>
 class dbSet
 {
   dbIterator* _itr;
-  dbObject*   _parent;
+  dbObject* _parent;
 
  public:
   typedef dbSetIterator<T> iterator;
 
   dbSet()
   {
-    _itr    = NULL;
+    _itr = NULL;
     _parent = NULL;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)
   {
     _parent = parent;
-    _itr    = itr;
+    _itr = itr;
   }
 
   dbSet(const dbSet<T>& c)
   {
-    _itr    = c._itr;
+    _itr = c._itr;
     _parent = c._parent;
   }
 
@@ -222,7 +222,5 @@ inline dbSetIterator<T> dbSetIterator<T>::operator++(int)
 
 // Specialization definitions
 #include "dbBlockSet.h"
-#include "dbNetSet.h"
 #include "dbCCSegSet.h"
-
-
+#include "dbNetSet.h"

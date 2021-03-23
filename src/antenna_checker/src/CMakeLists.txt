@@ -31,10 +31,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      antennachecker
-        NAMESPACE ant
-        I_FILE    AntennaChecker.i
-        SCRIPTS   AntennaChecker.tcl
+swig_lib(NAME      antennachecker
+         NAMESPACE ant
+         I_FILE    AntennaChecker.i
+         SCRIPTS   AntennaChecker.tcl
 )
 
 target_sources(antennachecker
@@ -52,5 +52,5 @@ target_link_libraries(antennachecker
   PUBLIC
     opendb
     OpenSTA
-    utility
+    utl
 )

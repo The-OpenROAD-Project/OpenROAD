@@ -198,7 +198,7 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
-  congestion_setup_ = new QAction("Congestion Setup...");
+  congestion_setup_ = new QAction("Congestion Setup...", nullptr);
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
@@ -513,11 +513,6 @@ void MainWindow::setLogger(utl::Logger* logger)
 {
   script_->setLogger(logger);
   viewer_->setLogger(logger);
-}
-
-void MainWindow::updateShapes()
-{
-  viewer_->updateShapes();
 }
 
 }  // namespace gui

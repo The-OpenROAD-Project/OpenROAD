@@ -37,7 +37,7 @@ sta::define_cmd_args "macro_placement" {
     [-channel {vertical_width horizontal_width}]\
     [-fence_region {lx ly ux uy}]\
     [-snap_layer snap_layer_number]\
-    [-style corner_max_wl|center_spread]}
+    [-style corner_max_wl|corner_min_wl]}
 
 proc macro_placement { args } {
   sta::parse_key_args "macro_placement" args \
@@ -79,12 +79,14 @@ proc macro_placement { args } {
     if { [llength $fence_region] != 4 } {
       utl::error "MPL" 94 "-fence_region is not a list of 4 values."
     }
-    lassign $fence_region lx ly ux uy 
+    lassign $fence_region lx ly ux uy
     
     if { $lx < $core_lx || $ly < $core_ly || $ux > $core_ux || $uy > $core_uy } {
       utl::warn "MPL" 85 "fence_region outside of core area. Using core area."
+      mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
+    } else {
+      mpl::set_fence_region $lx $ly $ux $uy
     }
-    mpl::set_fence_region $lx $ly $ux $uy
   } else {
     mpl::set_fence_region $core_lx $core_ly $core_ux $core_uy
   }
@@ -107,8 +109,8 @@ proc macro_placement { args } {
   }
   if { $style == "corner_max_wl" } {
     mpl::place_macros_corner_max_wl
-  } elseif { $style == "center_spread" } {
-    mpl::place_macros_center_spread
+  } elseif { $style == "corner_min_wl" } {
+    mpl::place_macros_corner_min_wl
   } else {
     utl::error MPL 96 "Unknown placement style."
   }
@@ -118,6 +120,7 @@ sta::define_cmd_args "macro_placement_debug" {
     [-partitions]
 }
 
+# This seg faults if the gui is not present -cherry
 proc macro_placement_debug { args } {
   sta::parse_key_args "macro_placement_debug" args \
       keys {} \

@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TechChar.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "db_sta/dbSta.hh"
 #include "sta/Graph.hh"
@@ -592,6 +592,9 @@ void TechChar::initCharacterization()
       _logger->error(CTS, 76, "No Liberty cell found for {}.", _options->getSinkBuffer());
     } else {
       sta::LibertyLibrary* staLib = libertySinkCell->libertyLibrary();
+      sta::LibertyPort *input, *output;
+      libertySinkCell->bufferPorts(input, output);
+      _options->setSinkBufferInputCap(input->capacitance());
       maxCapExist = false;
       maxSlewExist = false;
       getBufferMaxSlewMaxCap(staLib, libertySinkCell, maxSlew, maxSlewExist, maxCap, maxCapExist, true);

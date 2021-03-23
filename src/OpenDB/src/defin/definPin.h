@@ -34,11 +34,11 @@
 
 #include <string>
 
-#include "odb.h"
 #include "dbTypes.h"
 #include "definBase.h"
 #include "definPolygon.h"
 #include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -51,7 +51,7 @@ class definPin : public definBase
   struct PinRect
   {
     dbTechLayer* _layer;
-    Rect      _rect;
+    Rect _rect;
 
     PinRect(dbTechLayer* layer, const Rect& rect) : _layer(layer), _rect(rect)
     {
@@ -70,7 +70,7 @@ class definPin : public definBase
 
   struct Pin
   {
-    dbBTerm*    _bterm;
+    dbBTerm* _bterm;
     std::string _pin;
 
     Pin(dbBTerm* bterm, const std::string& pin) : _bterm(bterm), _pin(pin) {}
@@ -81,24 +81,24 @@ class definPin : public definBase
   int _update_cnt;
 
  private:
-  dbBTerm*                 _cur_bterm;
+  dbBTerm* _cur_bterm;
   dbPlacementStatus::Value _status;
-  dbOrientType::Value      _orient;
-  int                      _orig_x;
-  int                      _orig_y;
-  int                      _min_spacing;
-  int                      _effective_width;
-  char                     _left_bus;
-  char                     _right_bus;
-  Rect                     _rect;
-  dbTechLayer*             _layer;
-  bool                     _has_min_spacing;
-  bool                     _has_effective_width;
-  bool                     _has_placement;
-  std::vector<PinRect>     _rects;
-  std::vector<Polygon>     _polygons;
-  std::vector<Pin>         _ground_pins;
-  std::vector<Pin>         _supply_pins;
+  dbOrientType::Value _orient;
+  int _orig_x;
+  int _orig_y;
+  int _min_spacing;
+  int _effective_width;
+  char _left_bus;
+  char _right_bus;
+  Rect _rect;
+  dbTechLayer* _layer;
+  bool _has_min_spacing;
+  bool _has_effective_width;
+  bool _has_placement;
+  std::vector<PinRect> _rects;
+  std::vector<Polygon> _polygons;
+  std::vector<Pin> _ground_pins;
+  std::vector<Pin> _supply_pins;
 
   void addRect(PinRect& r, dbBPin* pin);
   void addPolygon(Polygon& p, dbBPin* pin);
@@ -111,8 +111,8 @@ class definPin : public definBase
   virtual void pinUse(dbSigType type);
   virtual void pinDirection(dbIoType type);
   virtual void pinPlacement(defPlacement status,
-                            int          x,
-                            int          y,
+                            int x,
+                            int y,
                             dbOrientType orient);
   virtual void pinMinSpacing(int spacing);
   virtual void pinEffectiveWidth(int width);

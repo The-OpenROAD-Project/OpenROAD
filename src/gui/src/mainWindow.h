@@ -162,7 +162,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-  void updateShapes();
  private:
   void createMenus();
   void createActions();

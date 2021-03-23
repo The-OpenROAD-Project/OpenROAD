@@ -30,16 +30,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbFill.h"
+
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbFill.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -91,8 +92,8 @@ bool _dbFill::operator<(const _dbFill& rhs) const
   return false;
 }
 
-void _dbFill::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbFill::differences(dbDiff& diff,
+                          const char* field,
                           const _dbFill& rhs) const
 {
   DIFF_BEGIN
@@ -115,8 +116,8 @@ void _dbFill::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer* _dbFill::getTechLayer() const
 {
-  _dbDatabase* db   = (_dbDatabase*) getDatabase();
-  _dbTech*     tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbDatabase* db = (_dbDatabase*) getDatabase();
+  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
   return tech->_layer_tbl->getPtr(_flags._layer_id);
 }
 
@@ -129,7 +130,7 @@ _dbTechLayer* _dbFill::getTechLayer() const
 void dbFill::getRect(Rect& rect)
 {
   _dbFill* fill = (_dbFill*) this;
-  rect          = fill->_rect;
+  rect = fill->_rect;
 }
 
 bool dbFill::needsOPC()
@@ -150,19 +151,19 @@ dbTechLayer* dbFill::getTechLayer()
   return (dbTechLayer*) fill->getTechLayer();
 }
 
-dbFill* dbFill::create(dbBlock*     block,
-                       bool         needs_opc,
-                       uint         mask_number,
+dbFill* dbFill::create(dbBlock* block,
+                       bool needs_opc,
+                       uint mask_number,
                        dbTechLayer* layer,
-                       int          x1,
-                       int          y1,
-                       int          x2,
-                       int          y2)
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2)
 {
   _dbBlock* block_internal = (_dbBlock*) block;
-  _dbFill* fill          = block_internal->_fill_tbl->create();
-  fill->_flags._opc      = needs_opc;
-  fill->_flags._mask_id  = mask_number;
+  _dbFill* fill = block_internal->_fill_tbl->create();
+  fill->_flags._opc = needs_opc;
+  fill->_flags._mask_id = mask_number;
   fill->_flags._layer_id = layer->getImpl()->getOID();
   fill->_rect.init(x1, y1, x2, y2);
 
@@ -178,7 +179,7 @@ dbFill* dbFill::create(dbBlock*     block,
 
 void dbFill::destroy(dbFill* fill_)
 {
-  _dbFill*  fill  = (_dbFill*) fill_;
+  _dbFill* fill = (_dbFill*) fill_;
   _dbBlock* block = (_dbBlock*) fill->getOwner();
   dbProperty::destroyProperties(fill);
   block->_fill_tbl->destroy(fill);
@@ -186,7 +187,7 @@ void dbFill::destroy(dbFill* fill_)
 
 dbSet<dbFill>::iterator dbFill::destroy(dbSet<dbFill>::iterator& itr)
 {
-  dbFill*                 r    = *itr;
+  dbFill* r = *itr;
   dbSet<dbFill>::iterator next = ++itr;
   destroy(r);
   return next;

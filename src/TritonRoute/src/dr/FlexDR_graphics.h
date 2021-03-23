@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2020, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,11 +30,11 @@
 
 #include <memory>
 
-#include "gui/gui.h"
 #include "frBaseTypes.h"
+#include "gui/gui.h"
 
 namespace odb {
-  class dbDatabase;
+class dbDatabase;
 }
 
 namespace fr {
@@ -50,7 +50,6 @@ class frDesign;
 class FlexDRGraphics : public gui::Renderer
 {
  public:
-
   // Debug detailed routing
   FlexDRGraphics(frDebugSettings* settings,
                  frDesign* design,
@@ -73,26 +72,25 @@ class FlexDRGraphics : public gui::Renderer
 
   // From Renderer API
   virtual void drawObjects(gui::Painter& painter) override;
-  virtual void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  virtual void drawLayer(odb::dbTechLayer* layer,
+                         gui::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
-  
-  
-  void update();
-  
-  void pause(drNet* net);
-  
- private:
 
-  FlexDRWorker*    worker_;
-  drNet*           net_;
+  void update();
+
+  void pause(drNet* net);
+
+ private:
+  FlexDRWorker* worker_;
+  drNet* net_;
   const FlexGridGraph* grid_graph_;
   frDebugSettings* settings_;
-  int              current_iter_;
-  frLayerNum       last_pt_layer_;
-  gui::Gui*        gui_;
-  Logger*          logger_;
+  int current_iter_;
+  frLayerNum last_pt_layer_;
+  gui::Gui* gui_;
+  Logger* logger_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
@@ -106,4 +104,4 @@ class FlexDRGraphics : public gui::Renderer
   static const char* shape_cost_visible_;
 };
 
-}  // namespace dr
+}  // namespace fr

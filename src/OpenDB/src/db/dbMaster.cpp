@@ -131,8 +131,8 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   return true;
 }
 
-void _dbMaster::differences(dbDiff&          diff,
-                            const char*      field,
+void _dbMaster::differences(dbDiff& diff,
+                            const char* field,
                             const _dbMaster& rhs) const
 {
   DIFF_BEGIN
@@ -198,23 +198,23 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
 ////////////////////////////////////////////////////////////////////
 _dbMaster::_dbMaster(_dbDatabase* db)
 {
-  _flags._x_symmetry    = 0;
-  _flags._y_symmetry    = 0;
-  _flags._R90_symmetry  = 0;
-  _flags._type          = dbMasterType::CORE;
-  _flags._frozen        = 0;
-  _flags._mark          = 0;
+  _flags._x_symmetry = 0;
+  _flags._y_symmetry = 0;
+  _flags._R90_symmetry = 0;
+  _flags._type = dbMasterType::CORE;
+  _flags._frozen = 0;
+  _flags._mark = 0;
   _flags._special_power = 0;
-  _flags._sequential    = 0;
+  _flags._sequential = 0;
   _flags._spare_bits_19 = 0;
 
-  _x         = 0;
-  _y         = 0;
-  _height    = 0;
-  _width     = 0;
+  _x = 0;
+  _y = 0;
+  _height = 0;
+  _width = 0;
   _mterm_cnt = 0;
-  _id        = 0;
-  _name      = 0;
+  _id = 0;
+  _name = 0;
 
   _mterm_tbl = new dbTable<_dbMTerm>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj, 4, 2);
@@ -415,15 +415,15 @@ const char* dbMaster::getConstName()
 void dbMaster::getOrigin(int& x, int& y)
 {
   _dbMaster* master = (_dbMaster*) this;
-  x                 = master->_x;
-  y                 = master->_y;
+  x = master->_x;
+  y = master->_y;
 }
 
 void dbMaster::setOrigin(int x, int y)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_x        = x;
-  master->_y        = y;
+  master->_x = x;
+  master->_y = y;
 }
 
 void* dbMaster::staCell()
@@ -447,7 +447,7 @@ uint dbMaster::getWidth()
 void dbMaster::setWidth(uint w)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_width    = w;
+  master->_width = w;
 }
 
 uint dbMaster::getHeight()
@@ -459,7 +459,7 @@ uint dbMaster::getHeight()
 void dbMaster::setHeight(uint h)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_height   = h;
+  master->_height = h;
 }
 
 dbMasterType dbMaster::getType() const
@@ -470,7 +470,7 @@ dbMasterType dbMaster::getType() const
 
 void dbMaster::setType(dbMasterType type)
 {
-  _dbMaster* master    = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._type = type.getValue();
 }
 
@@ -488,7 +488,7 @@ dbMaster* dbMaster::getLEQ()
 void dbMaster::setLEQ(dbMaster* leq)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_leq      = leq->getImpl()->getOID();
+  master->_leq = leq->getImpl()->getOID();
 }
 
 dbMaster* dbMaster::getEEQ()
@@ -505,7 +505,7 @@ dbMaster* dbMaster::getEEQ()
 void dbMaster::setEEQ(dbMaster* eeq)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_eeq      = eeq->getImpl()->getOID();
+  master->_eeq = eeq->getImpl()->getOID();
 }
 
 dbSet<dbMTerm> dbMaster::getMTerms()
@@ -545,7 +545,7 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
       ii++;
     }
     ttname[ii] = '\0';
-    mterm      = findMTerm(ttname);
+    mterm = findMTerm(ttname);
   }
   return mterm;
 }
@@ -576,13 +576,13 @@ int dbMaster::getMTermCount()
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_site     = site->getImpl()->getOID();
+  master->_site = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
-  _dbLib*    lib    = (_dbLib*) master->getOwner();
+  _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (master->_site == 0)
     return NULL;
@@ -592,7 +592,7 @@ dbSite* dbMaster::getSite()
 
 void dbMaster::setSymmetryX()
 {
-  _dbMaster* master          = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._x_symmetry = 1;
 }
 
@@ -604,7 +604,7 @@ bool dbMaster::getSymmetryX()
 
 void dbMaster::setSymmetryY()
 {
-  _dbMaster* master          = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._y_symmetry = 1;
 }
 
@@ -616,7 +616,7 @@ bool dbMaster::getSymmetryY()
 
 void dbMaster::setSymmetryR90()
 {
-  _dbMaster* master            = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._R90_symmetry = 1;
 }
 
@@ -637,12 +637,12 @@ void dbMaster::setFrozen()
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
-  dbSet<dbMTerm>           mterms = getMTerms();
+  dbSet<dbMTerm> mterms = getMTerms();
   dbSet<dbMTerm>::iterator itr;
-  int                      i = 0;
+  int i = 0;
 
   for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    _dbMTerm* mterm  = (_dbMTerm*) *itr;
+    _dbMTerm* mterm = (_dbMTerm*) *itr;
     mterm->_order_id = i++;
   }
 }
@@ -653,12 +653,12 @@ int dbMaster::getOutputIndex()
 }
 void dbMaster::setOutputIndex(int v)
 {
-  _dbMaster* master           = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_output_mterm_index = v;
 }
 void dbMaster::setClockedIndex(int v)
 {
-  _dbMaster* master            = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_clocked_mterm_index = v;
 }
 int dbMaster::getClockedIndex()
@@ -668,7 +668,7 @@ int dbMaster::getClockedIndex()
 }
 void dbMaster::setSequential(uint v)
 {
-  _dbMaster* master          = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._sequential = v;
 }
 
@@ -679,7 +679,7 @@ bool dbMaster::isSequential()
 }
 void dbMaster::setMark(uint mark)
 {
-  _dbMaster* master    = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._mark = mark;
 }
 
@@ -691,7 +691,7 @@ uint dbMaster::isMarked()
 
 void dbMaster::setSpecialPower(bool value)
 {
-  _dbMaster* master             = (_dbMaster*) this;
+  _dbMaster* master = (_dbMaster*) this;
   master->_flags._special_power = (value == true) ? 1 : 0;
 }
 
@@ -704,7 +704,7 @@ bool dbMaster::isSpecialPower()
 void dbMaster::getPlacementBoundary(Rect& r)
 {
   _dbMaster* master = (_dbMaster*) this;
-  r                 = Rect(0, 0, master->_width, master->_height);
+  r = Rect(0, 0, master->_width, master->_height);
   dbTransform t(Point(master->_x, master->_y));
   t.apply(r);
 }
@@ -712,7 +712,7 @@ void dbMaster::getPlacementBoundary(Rect& r)
 void dbMaster::transform(dbTransform& t)
 {
   //_dbMaster * master = (_dbMaster *) this;
-  dbSet<dbBox>           obs = getObstructions();
+  dbSet<dbBox> obs = getObstructions();
   dbSet<dbBox>::iterator itr;
 
   for (itr = obs.begin(); itr != obs.end(); ++itr) {
@@ -720,18 +720,18 @@ void dbMaster::transform(dbTransform& t)
     t.apply(box->_shape._rect);
   }
 
-  dbSet<dbMTerm>           mterms = getMTerms();
+  dbSet<dbMTerm> mterms = getMTerms();
   dbSet<dbMTerm>::iterator mitr;
 
   for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-    dbMTerm*                mterm = *mitr;
-    dbSet<dbMPin>           mpins = mterm->getMPins();
+    dbMTerm* mterm = *mitr;
+    dbSet<dbMPin> mpins = mterm->getMPins();
     dbSet<dbMPin>::iterator pitr;
 
     for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
       dbMPin* mpin = *pitr;
 
-      dbSet<dbBox>           geoms = mpin->getGeometry();
+      dbSet<dbBox> geoms = mpin->getGeometry();
       dbSet<dbBox>::iterator gitr;
 
       for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
@@ -753,10 +753,10 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   if (lib_->findMaster(name_))
     return NULL;
 
-  _dbLib*      lib    = (_dbLib*) lib_;
-  _dbDatabase* db     = lib->getDatabase();
-  _dbMaster*   master = lib->_master_tbl->create();
-  master->_name       = strdup(name_);
+  _dbLib* lib = (_dbLib*) lib_;
+  _dbDatabase* db = lib->getDatabase();
+  _dbMaster* master = lib->_master_tbl->create();
+  master->_name = strdup(name_);
   ZALLOCATED(master->_name);
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
@@ -775,9 +775,9 @@ bool dbMaster::isFiller()
   // dbMasterType type= dbMasterType(master->_flags._type);
 
   if (getMTermCount() == 2) {
-    bool                     signal = false;
+    bool signal = false;
     dbSet<dbMTerm>::iterator itr;
-    dbSet<dbMTerm>           mterms = getMTerms();
+    dbSet<dbMTerm> mterms = getMTerms();
     for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
       dbMTerm* mt = *itr;
       if (!((mt->getSigType() == dbSigType::GROUND)

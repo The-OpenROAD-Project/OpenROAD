@@ -50,5 +50,3 @@ class ZSession : public ZInterface
 };
 
 }  // namespace odb
-
-

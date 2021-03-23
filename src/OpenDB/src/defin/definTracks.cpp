@@ -31,13 +31,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definTracks.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "db.h"
 #include "dbShape.h"
-
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definTracks::definTracks()
@@ -55,9 +56,9 @@ void definTracks::init()
 
 void definTracks::tracksBegin(defDirection dir, int orig, int count, int step)
 {
-  _track._dir   = dir;
-  _track._orig  = dbdist(orig);
-  _track._step  = dbdist(step);
+  _track._dir = dir;
+  _track._orig = dbdist(orig);
+  _track._step = dbdist(step);
   _track._count = count;
 }
 
@@ -66,7 +67,8 @@ void definTracks::tracksLayer(const char* layer_name)
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 165,  "error: undefined layer ({}) referenced", layer_name);
+    _logger->warn(
+        utl::ODB, 165, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     return;
   }

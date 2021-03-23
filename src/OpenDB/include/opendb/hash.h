@@ -36,9 +36,10 @@
 #pragma once
 
 #include <string.h>
+
 #include "darr.h"
 typedef unsigned long int ub4;
-typedef unsigned char     ub1;
+typedef unsigned char ub1;
 #define FACTOR 1
 
 #ifdef ATHENA_64BIT
@@ -99,27 +100,27 @@ class HashG
   HashG();
   virtual ~HashG();
   void insert(Key key, Val val);
-  int  find(Key key, Val& val);
-  int  remove(Key key, Val& val);
-  int  find_and_modify(Key key, Val& val, Val f(Val val));
-  int  modify(Key key, Val val);
+  int find(Key key, Val& val);
+  int remove(Key key, Val& val);
+  int find_and_modify(Key key, Val& val, Val f(Val val));
+  int modify(Key key, Val val);
   void clear(void);
-  int  size(void);
-  int  n(void);
+  int size(void);
+  int n(void);
   void print();
   void begin();
   bool next(Key& key, Val& val);
-  int  max_size();
+  int max_size();
 
  protected:
   int _lsz;
 
  private:
   Darr<Keyval<Key, Val>*>* _table;
-  int                      _n;
-  int                      _b;
-  int                      _c;
-  int                      _m;
+  int _n;
+  int _b;
+  int _c;
+  int _m;
   // dummy function
   virtual ub4 _map(Key /* unused: key*/) { return 1; }
   // dummy function
@@ -129,11 +130,11 @@ class HashG
 template <class Key, class Val>
 HashG<Key, Val>::HashG(void)
 {
-  _n     = 0;
-  _lsz   = 0;
-  _b     = 0;
-  _c     = -1;
-  _m     = 0;
+  _n = 0;
+  _lsz = 0;
+  _b = 0;
+  _c = -1;
+  _m = 0;
   _table = new Darr<Keyval<Key, Val>*>[(1 << _lsz)];
 }
 template <class Key, class Val>
@@ -156,8 +157,8 @@ bool HashG<Key, Val>::next(Key& key, Val& val)
   if (_c < _table[_b].n() - 1) {
     _c++;
     keyval = *(_table[_b].get(_c));
-    key    = keyval.key;
-    val    = keyval.val;
+    key = keyval.key;
+    val = keyval.val;
     return true;
   }
   _b++;
@@ -167,8 +168,8 @@ bool HashG<Key, Val>::next(Key& key, Val& val)
   if (_b >= (1 << _lsz))
     return false;
   keyval = *(_table[_b].get(0));
-  key    = keyval.key;
-  val    = keyval.val;
+  key = keyval.key;
+  val = keyval.val;
   return true;
 }
 template <class Key, class Val>
@@ -205,8 +206,8 @@ template <class Key, class Val>
 void HashG<Key, Val>::insert(Key key, Val val)
 {
   Keyval<Key, Val>* kv = new Keyval<Key, Val>;
-  kv->key              = key;
-  kv->val              = val;
+  kv->key = key;
+  kv->val = val;
   if (_n++ < FACTOR * (1 << _lsz)) {
     ub4 map = _map(key);
     _table[map].insert(kv);
@@ -222,7 +223,7 @@ void HashG<Key, Val>::insert(Key key, Val val)
     int j;
     for (j = 0; j < _table[i].n(); j++) {
       Keyval<Key, Val>* kv1 = _table[i].get(j);
-      ub4               map = _map(kv1->key);
+      ub4 map = _map(kv1->key);
       tab[map].insert(kv1);
     }
   }
@@ -276,7 +277,7 @@ int HashG<Key, Val>::find_and_modify(Key key, Val& val, Val f(Val val))
     Keyval<Key, Val>* kv = _table[map].get(i);
     if (equal(kv->key, key)) {
       (kv->val) = f(kv->val);
-      val       = kv->val;
+      val = kv->val;
       return 1;
     }
   }
@@ -320,17 +321,17 @@ class HashP : public HashG<Keyval<Key, Key>, Val>
 {
  private:
   typedef HashG<Keyval<Key, Key>, Val> base;
-  ub4                                  _map(Keyval<Key, Key> key)
+  ub4 _map(Keyval<Key, Key> key)
   {
     ub4 a, b, c;
-    ub4 ikey1 = (ub4)(key.key);
-    ub4 ikey2 = (ub4)(key.val);
+    ub4 ikey1 = (ub4) (key.key);
+    ub4 ikey2 = (ub4) (key.val);
     a = b = 0x7fffffff;
-    c     = 0;
+    c = 0;
     a += ikey1;
     b += ikey2;
     mix(a, b, c);
-    c = (c & (ub4)(hm(base::_lsz)));
+    c = (c & (ub4) (hm(base::_lsz)));
     return c;
   }
   int equal(Keyval<Key, Key> key1, Keyval<Key, Key> key2)
@@ -357,7 +358,7 @@ class Hash : public HashG<Key, Val>
     ub4 ikey2 = (ub4) HASH_HI_WORD(key);
     // golden ratio
     a = b = 0x7fffffff;
-    c     = 0;
+    c = 0;
     a += ikey1;
     b += ikey2;
     mix(a, b, c);
@@ -371,13 +372,13 @@ class HashN : public HashG<char*, Val>
 {
  private:
   typedef HashG<char*, Val> base;
-  ub4                       _map(char* key)
+  ub4 _map(char* key)
   {
     ub4 a, b, c, len, leng;
     a = b = 0x7fffffff;
-    c     = 0;
+    c = 0;
     leng = len = strlen(key);
-    char* k    = key;
+    char* k = key;
     while (len >= 12) {
       a += k[0] + ((ub4) k[1] << 8) + ((ub4) k[2] << 16) + ((ub4) k[3] << 24);
       b += k[4] + ((ub4) k[5] << 8) + ((ub4) k[6] << 16) + ((ub4) k[7] << 24);
@@ -417,4 +418,3 @@ class HashN : public HashG<char*, Val>
   }
   int equal(char* key1, char* key2) { return !strcmp(key1, key2); }
 };
-

@@ -55,19 +55,19 @@ bool dbPropertyItr::orderReversed()
 
 void dbPropertyItr::reverse(dbObject* parent)
 {
-  _dbObject*     parent_impl = parent->getImpl();
-  dbObjectTable* table       = parent_impl->getTable();
-  uint           id          = table->getPropList(parent_impl->getOID());
+  _dbObject* parent_impl = parent->getImpl();
+  dbObjectTable* table = parent_impl->getTable();
+  uint id = table->getPropList(parent_impl->getOID());
 
   if (id) {
     uint list = 0;
 
     while (id != 0) {
       _dbProperty* p = _prop_tbl->getPtr(id);
-      uint         n = p->_next;
-      p->_next       = list;
-      list           = id;
-      id             = n;
+      uint n = p->_next;
+      p->_next = list;
+      list = id;
+      id = n;
     }
 
     table->setPropList(parent_impl->getOID(), list);
@@ -94,7 +94,7 @@ uint dbPropertyItr::size(dbObject* parent)
 uint dbPropertyItr::begin(dbObject* parent)
 {
   dbObjectTable* table = parent->getImpl()->getTable();
-  uint           id    = table->getPropList(parent->getImpl()->getOID());
+  uint id = table->getPropList(parent->getImpl()->getOID());
   return id;
 }
 

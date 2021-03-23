@@ -48,10 +48,10 @@ find_package(Boost 1.68.0)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
 
-tcl_lib(NAME      TritonRoute
-        NAMESPACE drt
-        I_FILE    src/TritonRoute.i
-        SCRIPTS   src/TritonRoute.tcl
+swig_lib(NAME      TritonRoute
+         NAMESPACE drt
+         I_FILE    src/TritonRoute.i
+         SCRIPTS   src/TritonRoute.tcl
 )
 
 set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
@@ -134,7 +134,7 @@ target_link_libraries(TritonRoute
     opendb
     flute
     OpenSTA
-    utility
+    utl
     Threads::Threads
     OpenMP::OpenMP_CXX
     Boost::boost

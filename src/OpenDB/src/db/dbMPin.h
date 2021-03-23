@@ -50,8 +50,8 @@ class _dbMPin : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   dbId<_dbMTerm> _mterm;
-  dbId<_dbBox>   _geoms;
-  dbId<_dbMPin>  _next_mpin;
+  dbId<_dbBox> _geoms;
+  dbId<_dbMPin> _next_mpin;
 
   _dbMPin(_dbDatabase*, const _dbMPin& p);
   _dbMPin(_dbDatabase*);

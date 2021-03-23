@@ -1,118 +1,147 @@
 {
-    "name": "dbTechLayer",
-    "type": "dbObject",
-    "fields": [
-      {
-        "name":"_type",
-        "type":"dbTechLayerType::Value",
-        "flags":["no-set","no-get"],
-        "bits":4
-      },
-      {
-        "name":"_direction",
-        "type":"dbTechLayerDir::Value",
-        "flags":["no-set","no-get"],
-        "bits":4
-      },
-      {
-        "name":"_minstep_type",
-        "type":"dbTechLayerMinStepType::Value",
-        "flags":["no-set","no-get"],
-        "bits":2
-      },
-      {
-        "name":"_has_max_width",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_thickness",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_area",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_protrusion",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_alias",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_xy_pitch",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_has_xy_offset",
-        "type":"uint",
-        "flags":["no-set","no-get"],
-        "bits":1
-      },
-      {
-        "name":"_rect_only",
-        "type":"bool",
-        "flags":[],
-        "bits":1
-      },
-      {
-        "name":"_right_way_on_grid_only",
-        "type":"bool",
-        "flags":[],
-        "bits":1
-      },
-      {
-        "name":"_right_way_on_grid_only_check_mask",
-        "type":"bool",
-        "flags":[],
-        "bits":1
-      },
-      {
-        "type": "bool",
-        "name": "_rect_only_except_non_core_pins",
-        "flags":[],
-        "bits":1
-      },
-      {
-        "type": "uint",
-        "name": "_lef58_type",
-        "bits":3,
-        "flags":["no-set","no-get"]
-      }
-    ],
-    "constructors": [],
-    "enums":[
-      {
-        "name":"LEF58_TYPE",
-        "values":[
-          "NONE",
-          "NWELL",
-          "PWELL",
-          "ABOVEDIEEDGE",
-          "BELOWDIEEDGE",
-          "DIFFUSION",
-          "TRIMPOLY"
-        ],
-        "public":true
-      }
-    ],
-    "h_includes": [
-      "dbMatrix.h",
-      "dbTypes.h",
-      "dbVector.h"
-    ],
-    "cpp_includes":[]
+  "name": "dbTechLayer",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "type_",
+      "type": "dbTechLayerType::Value",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 4
+    },
+    {
+      "name": "direction_",
+      "type": "dbTechLayerDir::Value",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 4
+    },
+    {
+      "name": "minstep_type_",
+      "type": "dbTechLayerMinStepType::Value",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 2
+    },
+    {
+      "name": "has_max_width_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_thickness_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_area_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_protrusion_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_alias_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_xy_pitch_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "has_xy_offset_",
+      "type": "uint",
+      "flags": [
+        "no-set",
+        "no-get"
+      ],
+      "bits": 1
+    },
+    {
+      "name": "rect_only_",
+      "type": "bit",
+      "flags": []
+    },
+    {
+      "name": "right_way_on_grid_only_",
+      "type": "bit",
+      "flags": []
+    },
+    {
+      "name": "right_way_on_grid_only_check_mask_",
+      "type": "bit",
+      "flags": []
+    },
+    {
+      "type": "bit",
+      "name": "rect_only_except_non_core_pins_",
+      "flags": []
+    },
+    {
+      "type": "uint",
+      "name": "lef58_type_",
+      "bits": 3,
+      "flags": [
+        "no-set",
+        "no-get"
+      ]
+    }
+  ],
+  "constructors": [],
+  "enums": [
+    {
+      "name": "LEF58_TYPE",
+      "values": [
+        "NONE",
+        "NWELL",
+        "PWELL",
+        "ABOVEDIEEDGE",
+        "BELOWDIEEDGE",
+        "DIFFUSION",
+        "TRIMPOLY"
+      ],
+      "public": true
+    }
+  ],
+  "h_includes": [
+    "dbMatrix.h",
+    "dbTypes.h",
+    "dbVector.h"
+  ],
+  "cpp_includes": []
 }

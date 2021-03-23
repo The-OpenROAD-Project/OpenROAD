@@ -86,16 +86,16 @@ class Allocator
 
   struct block
   {
-    void*  _chunk;
+    void* _chunk;
     block* _next;
   };
 
   block* _block_list;
-  int    _block_size;
-  uint   _size;
-  uint   _vm_size;
+  int _block_size;
+  uint _size;
+  uint _vm_size;
   chunk* _free_list;
-  void   new_block();
+  void new_block();
 
  public:
   // construct an allocator, block-size = number of object reserved per block
@@ -130,10 +130,10 @@ template <class T>
 inline Allocator<T>::Allocator(int block_size)
 {
   _block_size = block_size;
-  _free_list  = NULL;
+  _free_list = NULL;
   _block_list = NULL;
-  _size       = 0;
-  _vm_size    = 0;
+  _size = 0;
+  _vm_size = 0;
 }
 
 template <class T>
@@ -151,7 +151,7 @@ inline uint Allocator<T>::vm_size() const
 template <class T>
 inline void Allocator<T>::clear()
 {
-  block* b    = _block_list;
+  block* b = _block_list;
   block* next = NULL;
 
   for (; b; b = next) {
@@ -160,7 +160,7 @@ inline void Allocator<T>::clear()
     ::free((void*) b);
   }
 
-  _free_list  = NULL;
+  _free_list = NULL;
   _block_list = NULL;
 }
 
@@ -174,7 +174,7 @@ inline T* Allocator<T>::malloc()
   if (_free_list == NULL)
     new_block();
 
-  chunk* c   = _free_list;
+  chunk* c = _free_list;
   _free_list = c->_next;
   return (T*) c;
 #endif
@@ -196,8 +196,8 @@ inline void Allocator<T>::free(T* t)
   ::free((void*) t);
 #else
 
-  chunk* c   = (chunk*) t;
-  c->_next   = _free_list;
+  chunk* c = (chunk*) t;
+  c->_next = _free_list;
   _free_list = c;
 #endif
 }
@@ -224,19 +224,17 @@ inline void Allocator<T>::new_block()
   _vm_size += obj_size * _block_size;
 
   char* base = (char*) b->_chunk;
-  char* end  = base + obj_size * _block_size;
+  char* end = base + obj_size * _block_size;
   char* c;
 
   for (c = end - obj_size; c >= base; c -= obj_size) {
-    chunk* ck  = (chunk*) c;
-    ck->_next  = _free_list;
+    chunk* ck = (chunk*) c;
+    ck->_next = _free_list;
     _free_list = ck;
   }
 
-  b->_next    = _block_list;
+  b->_next = _block_list;
   _block_list = b;
 }
 
 }  // namespace odb
-
-

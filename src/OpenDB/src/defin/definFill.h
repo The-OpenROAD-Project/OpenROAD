@@ -42,8 +42,8 @@ class dbTechLayer;
 class definFill : public definBase
 {
   dbTechLayer* _cur_layer;
-  uint         _mask_number;
-  bool         _needs_opc;
+  uint _mask_number;
+  bool _needs_opc;
 
  public:
   // Fill interface methods

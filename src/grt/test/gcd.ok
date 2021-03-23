@@ -1,0 +1,38 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: gcd.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO ODB-0134] Finished DEF file: gcd.def
+Min routing layer: 1
+Max routing layer: 10
+Global adjustment: 0%
+Grid origin: (0, 0)
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0017] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0018] Processing 8469 blockages on layer 1.
+[INFO GRT-0146] Final usage/overflow report:
+[INFO GRT-0155] Overflow Report:
+[INFO GRT-0156] Total Usage   : 3332
+[INFO GRT-0157] Total Capacity: 149734
+[INFO GRT-0158] Max H Overflow: 0
+[INFO GRT-0159] Max V Overflow: 0
+[INFO GRT-0160] Max Overflow  : 0
+[INFO GRT-0161] H   Overflow  : 0
+[INFO GRT-0162] V   Overflow  : 0
+[INFO GRT-0163] Final Overflow: 0
+
+[INFO GRT-0110] Final usage: 3332
+[INFO GRT-0111] Final number of vias: 1228
+[INFO GRT-0112] Final usage 3D: 7016
+[INFO GRT-0018] Total wirelength: 10266 um
+[INFO GRT-0014] Num routed nets: 563
+No differences found.

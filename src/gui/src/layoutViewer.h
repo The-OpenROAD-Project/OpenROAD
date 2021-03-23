@@ -120,6 +120,11 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // From dbBlockCallBackObj
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;
+  virtual void inDbWireCreate(odb::dbWire* wire) override;
+  virtual void inDbWireDestroy(odb::dbWire* wire) override;
+  virtual void inDbSWireCreate(odb::dbSWire* wire) override;
+  virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
+  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
 
  signals:
   void location(qreal x, qreal y);
@@ -132,8 +137,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomOut();
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
-  void fit();           // fit the whole design in the window
-  void updateShapes();  // reseting shapes_ and reinitializing it
+  void fit();  // fit the whole design in the window
 
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
@@ -201,6 +205,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   QRectF dbuToScreen(const odb::Rect& dbu_rect);
 
   void addMenuAndActions();
+  void updateShapes();
 
   odb::dbDatabase* db_;
   Options* options_;

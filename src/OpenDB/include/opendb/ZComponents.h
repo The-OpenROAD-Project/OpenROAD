@@ -73,5 +73,3 @@ enum ZInterfaceID
 };
 
 }  // namespace odb
-
-

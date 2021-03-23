@@ -1,5 +1,3 @@
-%module gui
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
@@ -37,13 +35,19 @@
 
 %{
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "gui/gui.h"
+
+using utl::GUI;
 %}
 
 %inline %{
 
-using utl::GUI;
+bool enabled()
+{
+  auto gui = gui::Gui::get();
+  return gui != nullptr;
+}
 
 void
 selection_add_net(const char* name)
@@ -51,7 +55,7 @@ selection_add_net(const char* name)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 4, "Command selection_add_net is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addSelectedNet(name);
 }
@@ -62,7 +66,7 @@ selection_add_nets(const char* name)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 5, "Command selection_add_nets is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addSelectedNets(name);
 }
@@ -73,7 +77,7 @@ selection_add_inst(const char* name)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 6, "Command selection_add_inst is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addSelectedInst(name);
 }
@@ -84,7 +88,7 @@ selection_add_insts(const char* name)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 7, "Command selection_add_insts is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addSelectedInsts(name);
 }
@@ -94,7 +98,7 @@ void highlight_inst(const char* name, int highlightGroup)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 8, "Command highlight_inst is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addInstToHighlightSet(name, highlightGroup);
 }
@@ -104,7 +108,7 @@ void highlight_net(const char* name, int highlightGroup=0)
   auto gui = gui::Gui::get();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 9, "Command highlight_net is not usable in non-GUI mode");
-    return ;
+    return;
   }
   gui->addNetToHighlightSet(name, highlightGroup);
 }
@@ -124,6 +128,9 @@ void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
   auto gui = gui::Gui::get();
   auto db = ord::OpenRoad::openRoad()->getDb();
+  if (gui) {
+    return;
+  }
   auto logger = ord::OpenRoad::openRoad()->getLogger();
   if (!gui) {
     ord::OpenRoad::openRoad()->getLogger()->info(GUI, 11, "Command zoom_to is not usable in non-GUI mode");

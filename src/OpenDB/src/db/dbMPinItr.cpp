@@ -58,15 +58,15 @@ bool dbMPinItr::orderReversed()
 void dbMPinItr::reverse(dbObject* parent)
 {
   _dbMTerm* mterm = (_dbMTerm*) parent;
-  uint      id    = mterm->_pins;
-  uint      list  = 0;
+  uint id = mterm->_pins;
+  uint list = 0;
 
   while (id != 0) {
-    _dbMPin* pin    = _mpin_tbl->getPtr(id);
-    uint     n      = pin->_next_mpin;
+    _dbMPin* pin = _mpin_tbl->getPtr(id);
+    uint n = pin->_next_mpin;
     pin->_next_mpin = list;
-    list            = id;
-    id              = n;
+    list = id;
+    id = n;
   }
 
   mterm->_pins = list;
