@@ -983,8 +983,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
-        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid() 
-        || rule->isEncloseCutValid()) {
+        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
                    168,
                    "unsupported LEF58_SPACING rule for layer {}",
@@ -1063,6 +1062,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
       else
         len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
+    }
+    if (rule->isEncloseCutValid()) {
+      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
+          rule->getEncloseDist(), rule->getCutToMetalSpace());
+      within->setEncloseCutConstraint(enc);
+      enc->setAbove(rule->isAboveValid());
+      enc->setBelow(rule->isBelowValid());
+      enc->setAllCuts(rule->isAllCutsValid());
     }
     tech->addConstraint(con);
     tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);

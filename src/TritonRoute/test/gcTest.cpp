@@ -416,7 +416,7 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {
   // Setup
   if (lef58)
-    makeLef58SpacingEndOfLineConstraint(2);
+    makeLef58SpacingEolConstraint(2);
   else
     makeSpacingEndOfLineConstraint(2);
 
@@ -443,8 +443,8 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
   if (lef58)
-    makeLef58SpacingEndOfLineConstraint(
-        2, /* par_space */ 200, /* par_within */ 200);
+    makeLef58SpacingEolParEdgeConstraint(
+        makeLef58SpacingEolConstraint(2), 200, 200);
   else
     makeSpacingEndOfLineConstraint(
         2, /* par_space */ 200, /* par_within */ 200);
@@ -473,10 +473,8 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
   if (lef58)
-    makeLef58SpacingEndOfLineConstraint(2,
-                                        /* par_space */ 200,
-                                        /* par_within */ 200,
-                                        /* two_edges */ true);
+    makeLef58SpacingEolParEdgeConstraint(
+        makeLef58SpacingEolConstraint(2), 200, 200, true);
   else
     makeSpacingEndOfLineConstraint(2,
                                    /* par_space */ 200,
@@ -509,13 +507,8 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                      twoSides,
                      legal)
 {
-  makeLef58SpacingEndOfLineConstraint(2,
-                                      /* no par edge*/ -1,
-                                      /* x */ -1,
-                                      /* x */ true,
-                                      500,
-                                      max,
-                                      twoSides);
+  makeLef58SpacingEolMinMaxLenConstraint(
+      makeLef58SpacingEolConstraint(2), 500, max, twoSides);
   frNet* n1 = makeNet("n1");
   frCoord y = 500;
   if (twoSides)  // both sides need to meet minMax for eolSpacing to be
@@ -525,8 +518,8 @@ BOOST_DATA_TEST_CASE(eol_min_max,
     if (max && legal)
       y += 10;  // right(510) > max(500) --> minMax violated --> legal
     else if (!max && !legal)
-      y += 100;  // right(600) & left(500) >= min(500) --> minMax is met
-                 // --> illegal
+      y += 100;      // right(600) & left(500) >= min(500) --> minMax is met
+                     // --> illegal
   } else if (legal)  // both sides need to violate minMax to have no eolSpacing
                      // violations
   {
@@ -554,5 +547,26 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                  frBox(450, y, 550, 650));
   }
 }
-
+BOOST_AUTO_TEST_CASE(
+    eol_enclose_cut,
+    *boost::unit_test::disabled())  // needs drworker for via shapes
+{
+  addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
+  addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
+  makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
+  frNet* n1 = makeNet("n1");
+  frViaDef* v = makeVia("v");
+  frCoord y = 350;
+  makePathseg(n1, 4, {500, 0}, {500, 500});
+  makePathseg(n1, 4, {0, 700}, {1000, 700});
+  makeViaRect(v, 3, {400, y}, {500, y + 100});
+  runGC();
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  if (markers.size() == 1)
+    testMarker(markers[0].get(),
+               4,
+               frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+               frBox(450, 500, 550, 650));
+}
 BOOST_AUTO_TEST_SUITE_END();

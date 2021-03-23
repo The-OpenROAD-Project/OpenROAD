@@ -445,6 +445,65 @@ class frMinWidthConstraint : public frConstraint
   frCoord minWidth;
 };
 
+class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
+{
+ public:
+  // constructors
+  frLef58SpacingEndOfLineWithinEncloseCutConstraint()
+      : below(false),
+        above(false),
+        encloseDist(0),
+        cutToMetalSpace(0),
+        allCuts(false)
+  {
+  }
+  frLef58SpacingEndOfLineWithinEncloseCutConstraint(frCoord encloseDistIn,
+                                                    frCoord cutToMetalSpaceIn)
+      : below(false),
+        above(false),
+        encloseDist(encloseDistIn),
+        cutToMetalSpace(cutToMetalSpaceIn),
+        allCuts(false)
+  {
+  }
+  // setters
+  void setBelow(bool value) { below = value; }
+  void setAbove(bool value) { above = value; }
+  void setAllCuts(bool value) { allCuts = value; }
+  void setEncloseDist(frCoord value) { encloseDist = value; }
+  void setCutToMetalSpace(frCoord value) { cutToMetalSpace = value; }
+  // getters
+  bool isAbove() { return above; }
+  bool isBelow() { return below; }
+  bool isAllCuts() { return allCuts; }
+  frCoord getEncloseDist() { return encloseDist; }
+  frCoord getCutToMetalSpace() { return cutToMetalSpace; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::
+        frcLef58SpacingEndOfLineWithinEncloseCutConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report(
+        "\t\tSPACING_WITHIN_ENCLOSECUT below {} above {} encloseDist "
+        "{} cutToMetalSpace {} allCuts {}",
+        below,
+        above,
+        encloseDist,
+        cutToMetalSpace,
+        allCuts);
+  }
+
+ protected:
+  bool below;
+  bool above;
+  frCoord encloseDist;
+  frCoord cutToMetalSpace;
+  bool allCuts;
+};
+
 class frLef58SpacingEndOfLineWithinEndToEndConstraint : public frConstraint
 {
  public:
@@ -735,9 +794,14 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   {
     return maxMinLengthConstraint;
   }
-  bool hasEncloseCut() const
+  bool hasEncloseCutConstraint() const
   {
-    return false;  // skip for now
+    return (encloseCutConstraint) ? true : false;
+  }
+  std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
+  getEncloseCutConstraint() const
+  {
+    return encloseCutConstraint;
   }
   // setters
   void setOppositeWidth(frCoord in)
@@ -769,6 +833,12 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
           frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>& in)
   {
     maxMinLengthConstraint = in;
+  }
+  void setEncloseCutConstraint(
+      const std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>&
+          in)
+  {
+    encloseCutConstraint = in;
   }
   // others
   frConstraintTypeEnum typeId() const override
@@ -803,6 +873,8 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
       parallelEdgeConstraint;
   std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
       maxMinLengthConstraint;
+  std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
+      encloseCutConstraint;
 };
 
 class frLef58SpacingEndOfLineConstraint : public frConstraint
