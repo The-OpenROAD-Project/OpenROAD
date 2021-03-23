@@ -60,7 +60,7 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
   for (auto child : parent->getChildren()) {
     unsigned depth = computeMaxTreeDepth(child) + 1; //also count itself - non sink inst
     odb::dbObject* driverPin = child->getClock().getDriverPin();
-    if (driverPin) {
+    if (driverPin && driverPin->getObjectType() == odb::dbITermObj) {
       odb::dbInst* drivingInst = (static_cast<odb::dbITerm*> (driverPin))->getInst();
       debugPrint(_logger, CTS, "levelizer", 1,
           "Downstream depth is {} from driver {}", depth, child->getClock().getName());

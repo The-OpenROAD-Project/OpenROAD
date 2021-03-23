@@ -5,7 +5,7 @@ CTS 0003 TritonCTS.cpp:334         [TritonCTS Metrics] Total number of Clock Roo
 CTS 0004 TritonCTS.cpp:335         [TritonCTS Metrics] Total number of Buffers Inserted: {}.
 CTS 0005 TritonCTS.cpp:336         [TritonCTS Metrics] Total number of Clock Subnets: {}.
 CTS 0006 TritonCTS.cpp:337         [TritonCTS Metrics] Total number of Sinks: {}.
-CTS 0007 TritonCTS.cpp:434          found
+CTS 0007 TritonCTS.cpp:434         Net \"{}\" found for clock \"{}\"
 CTS 0008 TritonCTS.cpp:447          TritonCTS found {} clock nets.
 CTS 0009 TritonCTS.cpp:472         {}"
 CTS 0010 TritonCTS.cpp:501          has {} sinks
@@ -80,4 +80,4 @@ CTS 0091 TritonCTS.cpp:293         Sinks after db write = {} (Leaf Buffers = {})
 CTS 0092 TritonCTS.cpp:295         Avg Sink Wire Length = {:.3} um
 CTS 0093 LevelBalancer.cpp:53      Fixing tree levels for max depth {}
 CTS 0094 TritonCTS.cpp:337         Min path depth = {} Max path depth = {}
-CTS 0095 TritonCTS.cpp:500         Net \"{}\" found for clock \"{}\"
+CTS 0095 TritonCTS.cpp:500         Net \"{}\" found

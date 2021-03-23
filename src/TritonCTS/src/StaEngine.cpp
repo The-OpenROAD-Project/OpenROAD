@@ -53,7 +53,7 @@ namespace cts {
 void StaEngine::init()
 {
   _openroad = ord::OpenRoad::openRoad();
-  _openSta = openRoad->getSta();
+  _openSta = _openroad->getSta();
   _sdc = _openSta->sdc();
   _network = _openSta->network();
 }

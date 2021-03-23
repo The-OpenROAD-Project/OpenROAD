@@ -492,9 +492,9 @@ void TritonCTS::initAllClocks()
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
         if (clkName == "")
-          _logger->info(CTS, 7, " Net \"{}\" found", net->getName());
+          _logger->info(CTS, 95, " Net \"{}\" found", net->getName());
         else
-          _logger->info(CTS, 95, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
+          _logger->info(CTS, 7, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         initOneClockTree(net, clkName, nullptr);
