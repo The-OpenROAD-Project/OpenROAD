@@ -112,6 +112,9 @@ int TimingPathsModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 {
+  if (index.isValid() && role == Qt::TextAlignmentRole)
+    return Qt::AlignCenter;
+
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
   }
@@ -328,6 +331,9 @@ int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
+  if (index.isValid() && role == Qt::TextAlignmentRole)
+    return Qt::AlignCenter;
+
   if (!index.isValid() || role != Qt::DisplayRole || !path_) {
     return QVariant();
   }
