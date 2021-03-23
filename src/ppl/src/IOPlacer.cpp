@@ -275,7 +275,7 @@ void IOPlacer::getBlockedRegionsFromMacros()
 
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
-    if (master->isBlock()) {
+    if (master->isBlock() && inst->isPlaced()) {
       odb::Rect inst_area;
       inst->getBBox()->getBox(inst_area);
       odb::Rect intersect = die_area.intersect(inst_area);
