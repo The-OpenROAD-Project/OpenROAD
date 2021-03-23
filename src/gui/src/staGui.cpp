@@ -60,6 +60,10 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/PathAnalysisPt.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/ArcDelayCalc.hh"
 
 namespace gui {
 
@@ -228,6 +232,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     sta::PathExpanded* expanded = new sta::PathExpanded(path_end->path(), sta_);
 
     TimingPath* path = new TimingPath(path_index++);
+    sta::DcalcAnalysisPt *dcalc_ap = path_end->path()->pathAnalysisPt(sta_)->dcalcAnalysisPt();
+
     path->setStartClock(path_end->sourceClkEdge(sta_)->clock()->name());
     path->setEndClock(path_end->targetClk(sta_)->name());
     path->setPathDelay(path_end->pathDelay() ? path_end->pathDelay()->delay()
@@ -241,6 +247,15 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
+      if(sta_->network()->isDriver(pin)) {
+        sta::Parasitic *parasitic = nullptr;
+        sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
+        if (arc_delay_calc)
+          parasitic = arc_delay_calc->findParasitic(pin, ref->transition(sta_), dcalc_ap);
+        sta::GraphDelayCalc *graph_delay_calc = sta_->graphDelayCalc();
+        cap = graph_delay_calc->loadCap(pin, parasitic, ref->transition(sta_), dcalc_ap);
+      }
+
       auto is_rising = ref->transition(sta_) == sta::RiseFall::rise();
       auto arrival = ref->arrival(sta_);
       auto path_ap = ref->pathAnalysisPt(sta_);
