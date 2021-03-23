@@ -63,6 +63,7 @@ class StaEngine
  private:
   sta::dbSta* _openSta = nullptr;
   sta::Sdc* _sdc = nullptr;
+  ord::OpenRoad* _openroad = nullptr;
   sta::Network* _network = nullptr;
   CtsOptions* _options = nullptr;
 };

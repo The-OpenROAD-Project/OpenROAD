@@ -250,9 +250,6 @@ void TritonCTS::countSinksPostDbWrite(odb::dbNet* net, unsigned &sinks, unsigned
                                       unsigned currWireLength, double &sinkWireLength,
                                       int& minDepth, int& maxDepth, int depth, bool fullTree)
 {
-  if (sinks > 100000)
-    return;
-
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   int driverX = -1;
   int driverY = -1;
@@ -468,7 +465,7 @@ void TritonCTS::initAllClocks()
   // the set.
   std::vector<odb::dbNet*> inputClkNets = _options->getClockNetsObjs();
 
-  if (inputClkNets.size() != 0) {
+  if (!inputClkNets.empty()) {
     std::set<odb::dbNet *> clockNets;
     for (odb::dbNet* net : inputClkNets) {
       // Since a set is unique, only the nets not found by dbSta are added.
@@ -497,7 +494,7 @@ void TritonCTS::initAllClocks()
         if (clkName == "")
           _logger->info(CTS, 7, " Net \"{}\" found", net->getName());
         else
-          _logger->info(CTS, 7, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
+          _logger->info(CTS, 95, " Net \"{}\" found for clock \"{}\"", net->getName(), clkName);
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         initOneClockTree(net, clkName, nullptr);
@@ -560,7 +557,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net, std::string sdcClock, TreeBui
     return nullptr;
   } else {
     if (clockNet.getNumSinks() == 0) {
-      _logger->warn(CTS, 42, "Net \"{}\" has 0 sinks. Disconnected net or"
+      _logger->warn(CTS, 42, "Net \"{}\" has 0 sinks. Unconnected net or"
                     " unplaced sink instances. Skipping...", clockNet.getName());
       return nullptr;
     }

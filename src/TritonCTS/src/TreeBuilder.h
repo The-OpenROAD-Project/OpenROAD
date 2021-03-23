@@ -73,6 +73,9 @@ class TreeBuilder
   TechChar* _techChar = nullptr;
   TreeBuilder* _parent;
   std::vector <TreeBuilder *> _children;
+  // Tree buffer levels. Number of buffers inserted in first leg of the HTree
+  // is buffer levels (depth) of tree in all legs.
+  // This becomes buffer level for whole tree thus
   unsigned _treeBufLevels = 0;
 };
 

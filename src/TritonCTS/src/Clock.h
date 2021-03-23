@@ -251,7 +251,6 @@ class Clock
   void setNetObj(odb::dbNet* net) { _netObj = net; }
   odb::dbNet* getNetObj() { return _netObj; }
 
-  std::string getClockDriverName() const { return _clockPin; }
   void setDriverPin(odb::dbObject* pin) { _driverPin = pin; }
   odb::dbObject* getDriverPin() const { return _driverPin; }
 

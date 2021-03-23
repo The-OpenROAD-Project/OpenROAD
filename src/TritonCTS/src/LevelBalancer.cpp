@@ -64,7 +64,7 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
       odb::dbInst* drivingInst = (static_cast<odb::dbITerm*> (driverPin))->getInst();
       debugPrint(_logger, CTS, "levelizer", 1,
           "Downstream depth is {} from driver {}", depth, child->getClock().getName());
-      cgcLevelMap[drivingInst] = std::make_pair(depth, child);
+      cgcLevelMap_[drivingInst] = std::make_pair(depth, child);
     }
     if (depth > maxDepth)
       maxDepth = depth;
@@ -130,10 +130,10 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, un
         return;
       }
       odb::dbInst* inst = clkInst->getDbInputPin()->getInst();
-      if (cgcLevelMap.find(inst) == cgcLevelMap.end()) {
+      if (cgcLevelMap_.find(inst) == cgcLevelMap_.end()) {
         subClusters[currLevel].emplace_back(clkInst);
       } else {
-        subClusters[cgcLevelMap[inst].first + currLevel].emplace_back(clkInst);
+        subClusters[cgcLevelMap_[inst].first + currLevel].emplace_back(clkInst);
       }
     });
     if (!subClusters.size())
@@ -154,7 +154,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, un
 
       if (currLevel != clusterLevel) {
         for (ClockInst* clockInstObj : cluster.second) {
-          fixTreeLevels(cgcLevelMap[clockInstObj->getDbInputPin()->getInst()].second,
+          fixTreeLevels(cgcLevelMap_[clockInstObj->getDbInputPin()->getInst()].second,
                         currLevel+bufLevels+1, maxTreeDepth);
         }
       }
