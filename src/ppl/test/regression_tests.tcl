@@ -9,6 +9,7 @@ record_tests {
   on_grid
   random1
   random2
+  blocked_region
   cells_not_placed
   exclude1
   exclude2

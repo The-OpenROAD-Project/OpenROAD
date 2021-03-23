@@ -12,7 +12,6 @@
 Min routing layer: 1
 Max routing layer: 10
 Global adjustment: 0%
-Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 95
