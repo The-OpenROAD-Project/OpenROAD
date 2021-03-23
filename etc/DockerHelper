@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 cd "$(dirname $(readlink -f $0))/../"
 
@@ -8,14 +9,13 @@ baseDir=$(pwd)
 commitSha="$(git rev-parse HEAD)"
 osList=( centos7 ubuntu20 )
 compilerList=( gcc clang )
-targetList=( base dev )
+targetList=( builder dev runtime )
 org=openroadeda
 
-_help()
-{
+_help() {
     cat <<EOF
 usage: $0 create [os [target [compiler]]]
-       $0 test   [os [compiler]]
+       $0 test   [os [target [compiler]]]
        $0 push   [os [target]]
        $0 help
 available os = ${osList[@]}
@@ -25,82 +25,99 @@ EOF
     exit 1
 }
 
-_setup()
-{
+_setup() {
     if [[ $# -ne 3 ]]; then
         echo "_setup takes 3 arguments:"
-        echo "_setup os compiler target"
+        echo "_setup os target compiler"
         exit 1
     fi
     os="${1}"
-    compiler="${2}"
-    target="${3}"
+    target="${2}"
+    compiler="${3}"
     file="docker/Dockerfile.${target}"
+    case "${os}" in
+        "centos7")
+            fromImage="centos:centos7"
+            ;;
+        "ubuntu20")
+            fromImage="ubuntu:20.04"
+            ;;
+        *)
+            echo "Target OS ${os} not supported"
+            _help
+            ;;
+    esac
     case "${target}" in
-        "base" )
-            case "${os}" in
-                "centos7")
-                    fromImage="centos:centos7"
-                    ;;
-                "ubuntu20")
-                    fromImage="ubuntu:20.04"
-                    ;;
-                *)
-                    echo "Target OS ${os} not supported"
-                    _help
-                    ;;
-            esac
-            context="etc"
-            imageTag="${org}/${os}-${target}"
-            buildArgs="--build-arg fromImage=${fromImage}"
+        "builder" )
+            context="."
+            tagImage="${org}/${os}-${compiler}-${commitSha}"
+            buildArgs="--build-arg compiler=${compiler}"
+            fromImage="${org}/${os}-dev"
             ;;
         "dev" )
-            fromImage="${org}/${os}-base"
-            context="."
-            imageTag="${org}/${os}-${compiler}-${commitSha}"
-            buildArgs="--build-arg fromImage=${fromImage} --build-arg compiler=${compiler}"
+            context="etc"
+            tagImage="${org}/${os}-${target}"
+            ;;
+        "runtime" )
+            context="etc"
+            tagImage="${org}/${os}-${target}"
+            copyImage="${org}/${os}-${compiler}-${commitSha}"
+            buildArgs="--build-arg copyImage=${copyImage}"
             ;;
         *)
             echo "Target ${target} not found"
             _help
     esac
+    buildArgs="--build-arg fromImage=${fromImage} ${buildArgs}"
 }
 
-_test()
-{
-    _setup "${1:-centos7}" "${2:-gcc}" "dev"
+_checkExists() {
     # create image with compiled binary if it does not exists
-    if [[ $(docker images -q ${imageTag}) == "" ]]; then
-        _create "${1:-centos7}" "dev" "${2:-gcc}"
+    if [[ $# -ne 1 ]]; then
+        echo "_checkExists takes one and only one argument: image_name"
+        exit 1
     fi
-    echo "Run regression test on ${imageTag}"
-    docker run --rm -it "${imageTag}" "./test/regression"
+    if [[ $(docker images -q ${1}) == "" ]]; then
+        _create
+    fi
 }
 
-_create()
-{
-    _setup "${1:-centos7}" "${3:-gcc}" "${2:-base}"
-    echo "Create docker image ${imageTag} using ${file}"
-    docker build --file "${file}" --tag "${imageTag}" ${buildArgs} "${context}"
+_test() {
+    _checkExists "${tagImage}"
+    echo "Run regression test on ${tagImage}"
+    docker run --rm -it "${tagImage}" "./test/regression"
 }
 
-_push()
-{
-    _setup "${1:-centos7}" "NONE" "${2:-base}"
-    echo "Push docker image ${imageTag} to DockerHub [NOT IMPLEMENTED YET]"
+_create() {
+    _checkExists "${fromImage}"
+    echo "Create docker image ${tagImage} using ${file}"
+    docker build --file "${file}" --tag "${tagImage}" ${buildArgs} "${context}"
 }
 
+_push() {
+    echo "Push docker image ${tagImage} to DockerHub [NOT IMPLEMENTED YET]"
+}
+
+# script has at most 3 arguments
+if [[ $# -lt 1 ]]; then
+    echo "Too few arguments"
+    _help
+fi
 # script has at most 3 arguments
 if [[ $# -gt 3 ]]; then
     echo "Too many arguments"
     _help
 fi
 
+_rule="${1}"
+shift 1
+
 # check if the main rule is valid
 if [[ -z $(command -v "_${_rule}") ]]; then
     echo "Command ${_rule} not found"
     _help
 else
+    _setup "${1:-centos7}" "${2:-dev}" "${3:-gcc}"
     # call rule with arguments
     "_${_rule}" ${@}
 fi

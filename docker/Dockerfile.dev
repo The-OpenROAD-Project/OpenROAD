@@ -1,7 +1,5 @@
-# create image with dependencies, copy source code and compile the app
-ARG fromImage=openroadeda/centos7-base
-ARG compiler=gcc
+# create image with only dependencies
+ARG fromImage=centos:centos7
 FROM $fromImage
-COPY . /OpenROAD
-WORKDIR /OpenROAD
-RUN ./etc/BuildHelper $compiler
+COPY Installer /tmp/.
+RUN /tmp/Installer -dev && rm -f /tmp/Installer

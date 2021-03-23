@@ -1,5 +1,0 @@
-# create image with only dependencies
-ARG fromImage=centos:centos7
-FROM $fromImage
-COPY Installer /tmp/.
-RUN /tmp/Installer dev && rm -f /tmp/Installer

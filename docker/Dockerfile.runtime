@@ -1,0 +1,8 @@
+# create image with only dependencies
+ARG fromImage=centos:centos7
+ARG copyImage=openroadeda/centos7-dev
+FROM $fromImage
+COPY Installer /tmp/.
+RUN /tmp/Installer -runtime && rm -f /tmp/Installer
+# COPY --from=$copyImage /OpenROAD/build/src/openroad /usr/bin/.
+# ENTRYPOINT [ "openroad" ]
