@@ -69,6 +69,6 @@ class LevelBalancer
   TreeBuilder* _root;
   CtsOptions* _options;
   Logger* _logger;
-  CellLevelMap cgcLevelMap;
+  CellLevelMap cgcLevelMap_;
 };
 }

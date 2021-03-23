@@ -52,7 +52,7 @@ namespace cts {
 
 void StaEngine::init()
 {
-  ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
+  _openroad = ord::OpenRoad::openRoad();
   _openSta = openRoad->getSta();
   _sdc = _openSta->sdc();
   _network = _openSta->network();
@@ -64,7 +64,7 @@ void StaEngine::findClockRoots(sta::Clock* clk,
   for (sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
-    ord::OpenRoad::openRoad()->getDbNetwork()->staToDb(pin, instTerm, port);
+    _openroad->getDbNetwork()->staToDb(pin, instTerm, port);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
     clockNets.insert(net);
   }
@@ -73,7 +73,7 @@ void StaEngine::findClockRoots(sta::Clock* clk,
 float StaEngine::getInputPinCap(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
-  sta::Cell* masterCell = ord::OpenRoad::openRoad()->getDbNetwork()->dbToSta(inst->getMaster());
+  sta::Cell* masterCell = _openroad->getDbNetwork()->dbToSta(inst->getMaster());
   sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
   if (!libertyCell) {
     return 0.0;
@@ -92,7 +92,7 @@ float StaEngine::getInputPinCap(odb::dbITerm* iterm)
 bool StaEngine::isSink(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
-  sta::Cell* masterCell = ord::OpenRoad::openRoad()->getDbNetwork()->dbToSta(inst->getMaster());
+  sta::Cell* masterCell = _openroad->getDbNetwork()->dbToSta(inst->getMaster());
   sta::LibertyCell* libertyCell = _network->libertyCell(masterCell);
   if (!libertyCell) {
     return false;
