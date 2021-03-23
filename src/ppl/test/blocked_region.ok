@@ -1,0 +1,22 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: blocked_region.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  blocked_region.lef
+[INFO ODB-0127] Reading DEF file: blocked_region.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 253 components and 1357 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 155 connections.
+[INFO ODB-0134] Finished DEF file: blocked_region.def
+Found 1 macro blocks.
+Using 1u default distance from corners.
+Using 2 tracks default min distance between IO pins.
+Random pin placement
+RandomMode Even
+No differences found.

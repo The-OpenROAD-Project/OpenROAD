@@ -169,7 +169,6 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-report_congestion congest_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
@@ -193,7 +192,7 @@ proc fastroute { args } {
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin -report_congestion \
+          -overflow_iterations -grid_origin \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
@@ -241,7 +240,9 @@ proc global_route { args } {
     }
   }
 
-  grt::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
+  if { [info exists flags(-unidirectional_routing)] } {
+    utl::warn GRT 210 "flag -unidirectional_routing is deprecated."
+  } 
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)
@@ -302,7 +303,6 @@ proc global_route { args } {
     grt::set_macro_extension 0
   }
 
-  set min_clock_layer 6
   if { [info exists keys(-clock_layers)] } {
     set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
     lassign $layer_range min_clock_layer max_clock_layer
@@ -311,7 +311,6 @@ proc global_route { args } {
 
     if { $min_clock_layer < $max_clock_layer } {
       grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-      grt::route_clock_nets
     } else {
       utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
     }
@@ -353,13 +352,12 @@ proc global_route { args } {
     }
   }
 
-  if { [info exists keys(-report_congestion)] } {
-    set congest_file $keys(-report_congestion)
-    grt::report_congestion $congest_file
+  grt::clear
+  if { [info exists keys(-clock_layers)] } {
+    grt::global_route_clocks_separately
+  } else {
+    grt::global_route
   }
-
-  set only_signal [expr [info exists keys(-clock_layers)] || [info exists flags(-only_signal_nets)]]
-  grt::run_fastroute $only_signal
   
   if { [info exists keys(-output_file)] } {
     utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."
@@ -379,7 +377,7 @@ proc estimate_rc_cmd {} {
   if { [have_routes] } {
     estimate_rc
   } else {
-    utl::error GRT 58 "run fastroute before estimating parasitics for global routing."
+    utl::error GRT 58 "run global_route before estimating parasitics for global routing."
   }
 }
 
