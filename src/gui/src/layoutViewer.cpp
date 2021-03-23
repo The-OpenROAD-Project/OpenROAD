@@ -371,9 +371,6 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
   int dbu_height = getBounds(getBlock()).yMax();
-  // mouse_press_pos_
-  //    = QPoint((int) floor(event->pos().x() / pixels_per_dbu_),
-  //             dbu_height - (int) floor(event->pos().y() / pixels_per_dbu_));
   mouse_press_pos_ = event->pos();
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
@@ -441,24 +438,20 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
       if (rect.width() < 10 && rect.height() < 10)
         return;
       int dbu_height = getBounds(getBlock()).yMax();
-      int mouse_release_x = (int) floor(event->pos().x() / pixels_per_dbu_);
-      int mouse_release_y
-          = dbu_height - (int) floor(event->pos().y() / pixels_per_dbu_);
+      auto mouse_release_pos = screenToDBU(event->pos());
+      auto mouse_press_pos = screenToDBU(mouse_press_pos_);
 
-      int mouse_press_x = (int) floor(mouse_press_pos_.x() / pixels_per_dbu_);
-      int mouse_press_y
-          = dbu_height - (int) floor(mouse_press_pos_.y() / pixels_per_dbu_);
       QLine ruler;
       if (rubber_band_dbu.dx() > rubber_band_dbu.dy()) {
-        QPoint pt1 = QPoint(mouse_press_x, mouse_press_y);
-        QPoint pt2(mouse_release_x, pt1.y());
+        QPoint pt1 = QPoint(mouse_press_pos.x(), mouse_press_pos.y());
+        QPoint pt2(mouse_release_pos.x(), pt1.y());
         if (pt1.x() < pt2.x())
           ruler = QLine(pt1, pt2);
         else
           ruler = QLine(pt2, pt1);
       } else {
-        QPoint pt1 = QPoint(mouse_press_x, mouse_press_y);
-        QPoint pt2(pt1.x(), mouse_release_y);
+        QPoint pt1 = QPoint(mouse_press_pos.x(), mouse_press_pos.y());
+        QPoint pt2(pt1.x(), mouse_release_pos.y());
         if (pt1.y() < pt2.y())
           ruler = QLine(pt1, pt2);
         else
