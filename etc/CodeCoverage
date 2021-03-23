@@ -3,7 +3,11 @@
 set -e
 
 _help() {
-    echo "Usage: $0 [dynamic | static]"
+    cat <<EOF
+usage: $0 [dynamic]
+       $0 static
+EOF
+    exit 1
 }
 
 _lcov() {
@@ -40,6 +44,7 @@ case "${target}" in
         _coverity
         ;;
     *)
+        echo "invalid argument: ${1}"
         _help
         ;;
 esac

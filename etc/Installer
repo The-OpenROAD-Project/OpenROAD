@@ -145,7 +145,26 @@ _installCentosRuntime() {
     yum update -y
 }
 
-# Main
+_help() {
+    cat <<EOF
+Usage: $0 -run[time]
+       $0 -dev[elopment]
+EOF
+    exit 1
+}
+
+case "${1}" in
+    -run|-runtime)
+        option="runtime"
+        ;;
+    -dev|-development)
+        option="dev"
+        ;;
+    *)
+        echo "argument $1 not recognized"
+        _help
+esac
+
 platform="$(uname -s)"
 case "${platform}" in
     "Linux" )
@@ -157,11 +176,11 @@ case "${platform}" in
         ;;
     *)
         echo "${platform} is not supported"
-        exit 1
+        echo "we only support Linux at the moment"
+        _help
         ;;
 esac
 
-option="${1:-runtime}"
 case "${os}" in
     "CentOS Linux" )
         _installCentosRuntime
@@ -180,8 +199,8 @@ case "${os}" in
         _installUbuntuCleanUp
         ;;
     *)
-        echo "Unsuported system: ${os}"
-        echo "Supported systems are Centos7 and Ubuntu 20.04"
-        exit 1
+        echo "unsupported system: ${os}"
+        echo "supported systems are CentOS 7 and Ubuntu 20.04"
+        _help
         ;;
 esac

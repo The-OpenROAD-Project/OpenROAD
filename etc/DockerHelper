@@ -46,7 +46,7 @@ _setup()
                     fromImage="ubuntu:20.04"
                     ;;
                 *)
-                    echo "Target OS=${os} not supported"
+                    echo "Target OS ${os} not supported"
                     _help
                     ;;
             esac
@@ -92,12 +92,13 @@ _push()
 
 # script has at most 3 arguments
 if [[ $# -gt 3 ]]; then
+    echo "Too many arguments"
     _help
 fi
 
 # check if the main rule is valid
 if [[ -z $(command -v "_${_rule}") ]]; then
-    echo "Command $_rule not found"
+    echo "Command ${_rule} not found"
     _help
 else
     # call rule with arguments
