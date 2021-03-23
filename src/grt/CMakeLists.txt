@@ -41,8 +41,8 @@ add_subdirectory(src/fastroute)
 
 swig_lib(NAME      grt
          NAMESPACE grt
-         I_FILE    src/fastroute.i
-         SCRIPTS   src/fastroute.tcl
+         I_FILE    src/GlobalRouter.i
+         SCRIPTS   src/GlobalRouter.tcl
 )
 
 target_sources(grt

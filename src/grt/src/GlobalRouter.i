@@ -103,12 +103,6 @@ set_max_layer(int maxLayer)
 }
 
 void
-set_unidirectional_routing(bool unidirRouting)
-{
-  getFastRoute()->setUnidirectionalRoute(unidirRouting);
-}
-
-void
 set_alpha(float alpha)
 {
   getFastRoute()->setAlpha(alpha);
@@ -159,8 +153,8 @@ set_layer_pitch(int layer, float pitch)
 void
 set_clock_layer_range(int minLayer, int maxLayer)
 {
-  getFastRoute()->setMinRoutingLayer(minLayer);
-  getFastRoute()->setMaxRoutingLayer(maxLayer);
+  getFastRoute()->setMinLayerForClock(minLayer);
+  getFastRoute()->setMaxLayerForClock(maxLayer);
 }
 
 void set_clock_cost(int cost)
@@ -175,9 +169,15 @@ set_macro_extension(int macroExtension)
 }
 
 void
-run_fastroute(bool onlySignal)
+global_route()
 {
-  getFastRoute()->runFastRoute(onlySignal);
+  getFastRoute()->globalRoute();
+}
+
+void
+global_route_clocks_separately()
+{
+  getFastRoute()->globalRouteClocksSeparately();
 }
 
 void
@@ -187,19 +187,13 @@ estimate_rc()
 }
 
 void
-route_clock_nets()
-{
-  getFastRoute()->routeClockNets();
-}
-
-void
 repair_antennas(LibertyPort* diodePort)
 {
   getFastRoute()->repairAntennas(diodePort);
 }
 
 void
-clear_fastroute()
+clear()
 {
   getFastRoute()->clear();
 }
@@ -208,12 +202,6 @@ void
 write_guides(char* fileName)
 {
   getFastRoute()->writeGuides(fileName);
-}
-
-void
-report_congestion(char* congest_file)
-{
-  getFastRoute()->setReportCongestion(congest_file);
 }
 
 void

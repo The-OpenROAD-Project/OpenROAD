@@ -15,42 +15,43 @@ RSZ 0018 Resizer.tcl:235           -buffer_cell is deprecated.
 RSZ 0019 Resizer.tcl:286           repair_hold_violations is deprecated. Use repair_timing -hold
 RSZ 0020 Resizer.tcl:365           found $floating_net_count floatiing nets.
 RSZ 0021 Resizer.tcl:410           no estimated parasitics. Using wire load models.
-RSZ 0022 Resizer.cc:451            no buffers found.
-RSZ 0023 Resizer.cc:1101           repairNet failure.
-RSZ 0024 Resizer.cc:1229           Max utilization reached.
-RSZ 0025 Resizer.cc:2249           max utilization reached.
-RSZ 0026 Resizer.cc:313            Removed {} buffers.
-RSZ 0027 Resizer.cc:472            Inserted {} input buffers.
-RSZ 0028 Resizer.cc:540            Inserted {} output buffers.
-RSZ 0029 Resizer.cc:1236           Resized {} instances.
-RSZ 0030 Resizer.cc:2265           Inserted {} buffers.
-RSZ 0031 Resizer.cc:2267           Resized {} instances.
-RSZ 0032 Resizer.cc:2573           Inserted {} hold buffers.
-RSZ 0033 Resizer.cc:2582           No hold violations found.
-RSZ 0034 Resizer.cc:596            Found {} slew violations.
-RSZ 0035 Resizer.cc:598            Found {} fanout violations.
-RSZ 0036 Resizer.cc:600            Found {} capacitance violations.
-RSZ 0037 Resizer.cc:602            Found {} long wires.
-RSZ 0038 Resizer.cc:604            Inserted {} buffers in {} nets.
-RSZ 0039 Resizer.cc:608            Resized {} instances.
-RSZ 0040 Resizer.cc:2245           Inserted {} buffers.
-RSZ 0041 Resizer.cc:2247           Resized {} instances.
-RSZ 0042 Resizer.cc:2127           Inserted {} tie {} instances.
-RSZ 0043 Resizer.cc:331            Cannot remove buffers between net {} and {} because both nets have ports connected to them.
+RSZ 0022 Resizer.cc:445            no buffers found.
+RSZ 0023 Resizer.cc:1095           repairNet failure.
+RSZ 0024 Resizer.cc:1223           Max utilization reached.
+RSZ 0025 Resizer.cc:1956           max utilization reached.
+RSZ 0026 Resizer.cc:307            Removed {} buffers.
+RSZ 0027 Resizer.cc:466            Inserted {} input buffers.
+RSZ 0028 Resizer.cc:534            Inserted {} output buffers.
+RSZ 0029 Resizer.cc:1230           Resized {} instances.
+RSZ 0030 Resizer.cc:1974           Inserted {} buffers.
+RSZ 0031 Resizer.cc:1976           Resized {} instances.
+RSZ 0032 Resizer.cc:2287           Inserted {} hold buffers.
+RSZ 0033 Resizer.cc:2296           No hold violations found.
+RSZ 0034 Resizer.cc:590            Found {} slew violations.
+RSZ 0035 Resizer.cc:592            Found {} fanout violations.
+RSZ 0036 Resizer.cc:594            Found {} capacitance violations.
+RSZ 0037 Resizer.cc:596            Found {} long wires.
+RSZ 0038 Resizer.cc:598            Inserted {} buffers in {} nets.
+RSZ 0039 Resizer.cc:602            Resized {} instances.
+RSZ 0040 Resizer.cc:1950           Inserted {} buffers.
+RSZ 0041 Resizer.cc:1952           Resized {} instances.
+RSZ 0042 Resizer.cc:1832           Inserted {} tie {} instances.
+RSZ 0043 Resizer.cc:325            Cannot remove buffers between net {} and {} because both nets have ports connected to them.
 RSZ 0045 SteinerTree.cc:392        steiner left/right failed.
-RSZ 0046 Resizer.cc:2548           Found {} endpoints with hold violations.
-RSZ 0047 Resizer.cc:688            Found {} long wires.
-RSZ 0048 Resizer.cc:690            Inserted {} buffers in {} nets.
+RSZ 0046 Resizer.cc:2262           Found {} endpoints with hold violations.
+RSZ 0047 Resizer.cc:682            Found {} long wires.
+RSZ 0048 Resizer.cc:684            Inserted {} buffers in {} nets.
 RSZ 0049 Resizer.tcl:322           No liberty libraries found.
-RSZ 0050 Resizer.cc:2579           Max utilization reached.
-RSZ 0051 Resizer.cc:728            Found {} slew violations.
-RSZ 0052 Resizer.cc:730            Found {} fanout violations.
-RSZ 0053 Resizer.cc:732            Found {} capacitance violations.
-RSZ 0054 Resizer.cc:734            Found {} long wires.
-RSZ 0055 Resizer.cc:736            Inserted {} buffers in {} nets.
-RSZ 0056 Resizer.cc:742            Resized {} instances.
-RSZ 0057 Resizer.cc:744            Resized {} instances.
+RSZ 0050 Resizer.cc:2293           Max utilization reached.
+RSZ 0051 Resizer.cc:722            Found {} slew violations.
+RSZ 0052 Resizer.cc:724            Found {} fanout violations.
+RSZ 0053 Resizer.cc:726            Found {} capacitance violations.
+RSZ 0054 Resizer.cc:728            Found {} long wires.
+RSZ 0055 Resizer.cc:730            Inserted {} buffers in {} nets.
+RSZ 0056 Resizer.cc:736            Resized {} instances.
+RSZ 0057 Resizer.cc:738            Resized {} instances.
 RSZ 0058 Resizer.tcl:459           Using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]um.
-RSZ 0059 Resizer.cc:2492           Using {} with {}{}{} delay for hold repairs.
-RSZ 0060 Resizer.cc:2577           Max buffer count reached.
+RSZ 0059 Resizer.cc:2201           Using {} with {}{}{} delay for hold repairs.
+RSZ 0060 Resizer.cc:2291           Max buffer count reached.
 RSZ 0061 Resizer.tcl:121           $signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 6] [sta::unit_scale_abreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 6] [sta::unit_scale_abreviation capacitance][sta::unit_suffix capacitance]/um.
+RSZ 0062 Resizer.cc:1954           Unable to repair all setup violations.
