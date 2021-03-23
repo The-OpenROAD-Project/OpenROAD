@@ -253,7 +253,7 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
-      if (sta_->network()->isDriver(pin)) {
+      if (sta_->network()->isDriver(pin) && i != 0) {
         sta::Parasitic* parasitic = nullptr;
         sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
         if (arc_delay_calc)
@@ -387,7 +387,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     case 6:  // Slew
       return time_units->asString(node.slew_);
     case 7:  // Load
+    {
+      if (node.load_ == 0)
+        return "";
       return cap_units->asString(node.load_);
+    }
   }
   return QVariant();
 }
