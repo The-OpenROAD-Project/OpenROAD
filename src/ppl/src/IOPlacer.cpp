@@ -800,6 +800,12 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
+void IOPlacer::addNamesConstraint(PinList* pins, Edge edge, int begin, int end)
+{
+  Interval interval(edge, begin, end);
+  constraints_.push_back(Constraint(*pins, Direction::invalid, interval));;
+}
+
 PinList* IOPlacer::createNamesConstraint(Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
@@ -853,6 +859,11 @@ PinList* IOPlacer::createPinGroup()
   pin_groups_.push_back(PinList());
   PinList* group = &pin_groups_.back();
   return group;
+}
+
+void IOPlacer::addPinGroup(PinList* group)
+{
+  pin_groups_.push_back(*group);
 }
 
 void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)

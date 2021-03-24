@@ -120,6 +120,7 @@ class IOPlacer
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   PinList* createNamesConstraint(Edge edge, int begin, int end);
+  void addNamesConstraint(PinList* pins, Edge edge, int begin, int end);
   void excludeInterval(Interval interval);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
@@ -130,6 +131,7 @@ class IOPlacer
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
   PinList* createPinGroup();
+  void addPinGroup(PinList* group);
   void addPinToList(odb::dbBTerm* pin, PinList* pin_group);
 
  private:
