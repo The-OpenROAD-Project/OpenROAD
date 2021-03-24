@@ -139,11 +139,6 @@ add_names_constraint(PinList *pin_list, Edge edge, int begin, int end)
   getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
 }
 
-PinList* create_names_constraint(Edge edge, int begin, int end)
-{
-  return getIOPlacer()->createNamesConstraint(edge, begin, end);
-}
-
 void add_direction_constraint(Direction direction, Edge edge,
                                int begin, int end)
 {
@@ -190,12 +185,6 @@ void
 add_pin_group(PinList *pin_list)
 {
   getIOPlacer()->addPinGroup(pin_list);
-}
-
-PinList*
-create_pin_group()
-{
-  return getIOPlacer()->createPinGroup();
 }
 
 void

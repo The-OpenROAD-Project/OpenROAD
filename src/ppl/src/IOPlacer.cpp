@@ -806,14 +806,6 @@ void IOPlacer::addNamesConstraint(PinList* pins, Edge edge, int begin, int end)
   constraints_.push_back(Constraint(*pins, Direction::invalid, interval));;
 }
 
-PinList* IOPlacer::createNamesConstraint(Edge edge, int begin, int end)
-{
-  Interval interval(edge, begin, end);
-  constraints_.push_back(Constraint(PinList(), Direction::invalid, interval));
-  PinList* pin_list = &constraints_.back().pin_list;
-  return pin_list;
-}
-
 void IOPlacer::addDirectionConstraint(Direction direction,
                                       Edge edge,
                                       int begin,
@@ -852,13 +844,6 @@ Direction IOPlacer::getDirection(std::string direction)
   }
 
   return Direction::invalid;
-}
-
-PinList* IOPlacer::createPinGroup()
-{
-  pin_groups_.push_back(PinList());
-  PinList* group = &pin_groups_.back();
-  return group;
 }
 
 void IOPlacer::addPinGroup(PinList* group)
