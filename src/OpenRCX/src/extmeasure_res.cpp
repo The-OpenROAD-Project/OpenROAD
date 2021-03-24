@@ -96,8 +96,9 @@ int extMeasure::computeResDist(SEQ* s,
   uint cnt = 0;
   for (int kk = (int) trackMin; kk <= (int) trackMax; kk++)  // skip overlapping track
   {
+    /* TEST 0322
     if (!kk)
-      continue;
+      continue; */
     /*
 #ifdef HI_ACC_1
     if (kk <= _dgContextHiTrack[planeIndex])
@@ -110,13 +111,25 @@ int extMeasure::computeResDist(SEQ* s,
       trackTable[cnt++] = *_dgContextTracks / 2 - kk;
   }
 
-  for (uint ii = 1; ii < cnt; ii++) {
+  for (uint ii = 0; ii < cnt; ii++) {
     int trackn = trackTable[ii];
 
 #ifdef HI_ACC_1
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
 #endif
+    // Check for same track: 032021 DF
+    bool same_track= false;
+  for (uint idx=0; idx < (int) _dgContextArray[planeIndex][trackn]->getCnt(); idx++) {
+    SEQ *tseq = _dgContextArray[planeIndex][trackn]->get(idx);
+    if (tseq->type==_rsegSrcId) {
+      same_track= true;
+      break;
+    }
+  }
+  if (same_track)
+    continue;
+
     bool add_all_diag = false;
     if (!add_all_diag) {
       for (uint jj = 0; jj < tmpTable.getCnt(); jj++)
@@ -153,7 +166,7 @@ uint extMeasure::computeRes(SEQ* s,
     return 0;
 
   Ath__array1D<SEQ*> overlapSeq(16);
-  getDgOverlap(s, _dir, dgContext, &overlapSeq, residueSeq);
+  getDgOverlap_res(s, _dir, dgContext, &overlapSeq, residueSeq);
 
   uint len = 0;
   for (uint jj = 0; jj < overlapSeq.getCnt(); jj++) {
@@ -167,11 +180,226 @@ uint extMeasure::computeRes(SEQ* s,
     int w2= tgt->_ur[_dir] - tgt->_ll[_dir];
     const char *x = _dir ? "x" : "y";
     const char *y = _dir ? "y" : "x";
-    fprintf(stdout, "   %s %7d %7d  %s=%d  W%d  L%d D%d   d2=%d\n", x, tgt->_ll[!_dir], tgt->_ur[!_dir], y, tgt->_ll[_dir],  w2,  len1, diagDist, d2);
+    // fprintf(stdout, "   %s %7d %7d  %s=%d  W%d  L%d D%d   d2=%d\n", 
+    //  x, tgt->_ll[!_dir], tgt->_ur[!_dir], y, tgt->_ll[_dir],  w2,  len1, diagDist, d2);
     len += len1;
+    calcRes(_rsegSrcId, len1, _dist, diagDist, _met);
   }
   seq_release(&overlapSeq);
   return len;
 }
+void extMeasure::calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet)
+{
+  if (dist1==-1)
+    dist1=0;
+  if (dist2==-1)
+    dist1=0;
+  int min_dist=0;
+  if (dist1>dist2) {
+    min_dist= dist1;
+    dist1= dist2;
+    dist2= min_dist;
+  }
+  uint modelCnt = _metRCTable.getCnt();
+  for (uint ii = 0; ii < modelCnt; ii++) {
+    extMetRCTable* rcModel = _metRCTable.get(ii);
+    if (rcModel->_resOver[tgtMet] == NULL)
+      continue;
+
+    extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
+    double R=len * rc->_res;
+    _rc[ii]->_res += R;
+  }
+}
+void extMeasure::calcRes0(double *deltaRes, uint tgtMet, uint len, int dist1, int dist2)
+{
+  uint modelCnt = _metRCTable.getCnt();
+  for (uint ii = 0; ii < modelCnt; ii++) {
+    extMetRCTable* rcModel = _metRCTable.get(ii);
+    if (rcModel->_resOver[tgtMet] == NULL)
+      continue;
+
+    extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
+    double R=len * rc->_res;
+    deltaRes[ii] = R;
+  }
+}
+void extMain::calcRes0(double *deltaRes, uint tgtMet, uint width, uint len, int dist1, int dist2)
+{
+  for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+      uint modelIndex = _modelMap.get(jj);
+      extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
+
+    if (rcModel->_resOver[tgtMet] == NULL)
+      continue;
+
+    extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, width, dist1, dist2);
+    double R=len * rc->_res;
+    deltaRes[jj] = R;
+  }
+}
+extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
+{
+  Ath__array1D<extDistRC*>* table = _computeTable;
+  if (!compute)
+    table = _measureTable;
+
+  if (table->getCnt()==0)
+    return NULL;
+
+  int target_dist_index= -1;
+  extDistRC* rc= NULL;
+  uint ii = 0;
+  for ( ; ii < table->getCnt(); ii++) {
+    rc = table->get(ii);
+    if (dist1==rc->_sep) {
+      target_dist_index= ii;
+      break;
+    }
+    if (dist1<rc->_sep) {
+      target_dist_index= ii;
+      break;
+    }
+  }
+  if (target_dist_index<0) {
+    rc = table->get(0); // assume first rec is 0,0
+    return rc;
+  }
+  extDistRC* last_rc= NULL;
+  for (uint ii = target_dist_index; ii < table->getCnt(); ii++) {
+    extDistRC* rc1 = table->get(ii);
+    if (rc->_sep != rc1->_sep) {
+      return last_rc;
+    }
+    if (dist2==rc1->getCoupling()) {
+      return rc1;
+    }
+    if (dist2<rc1->getCoupling()) {
+      if (last_rc!=NULL)
+        return last_rc;
+      return rc1;
+    }
+    last_rc= rc1;
+  }
+  if (table->getCnt()>0) {
+    rc = table->get(0); // assume first rec is 0,0
+    return rc;
+  }
+  return NULL;
+}
+extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
+{
+  int wIndex = getWidthIndex(w);
+  if (wIndex < 0)
+    return NULL;
+  
+  extDistRC *rc= _rcDistTable[mou][wIndex]->findRes(dist1, dist2, false);
+}
+
+
+void extMeasure::getDgOverlap_res(SEQ* sseq,
+                              uint dir,
+                              Ath__array1D<SEQ*>* dgContext,
+                              Ath__array1D<SEQ*>* overlapSeq,
+                              Ath__array1D<SEQ*>* residueSeq)
+{
+  int idx = 1;
+  uint lp = dir ? 0 : 1;  // x : y
+  uint wp = dir ? 1 : 0;  // y : x
+  SEQ* rseq;
+  SEQ* tseq;
+  SEQ* wseq;
+  int covered = sseq->_ll[lp];
+
+#ifdef HI_ACC_1
+  if (idx == dgContext->getCnt()) {
+    rseq = _seqPool->alloc();
+    rseq->_ll[wp] = sseq->_ll[wp];
+    rseq->_ur[wp] = sseq->_ur[wp];
+    rseq->_ll[lp] = sseq->_ll[lp];
+    rseq->_ur[lp] = sseq->_ur[lp];
+    residueSeq->add(rseq);
+    return;
+  }
+#endif
+
+  dbRSeg* srseg = NULL;
+  if (_rsegSrcId > 0)
+    srseg = dbRSeg::getRSeg(_block, _rsegSrcId);
+  for (; idx < (int) dgContext->getCnt(); idx++) {
+    tseq = dgContext->get(idx);
+    if (tseq->_ur[lp] <= covered)
+      continue;
+
+    if ( tseq->_ll[lp] >= sseq->_ur[lp]) {
+      rseq = _seqPool->alloc();
+      rseq->_ll[wp] = sseq->_ll[wp];
+      rseq->_ur[wp] = sseq->_ur[wp];
+      rseq->_ll[lp] = covered;
+      rseq->_ur[lp] = sseq->_ur[lp];
+      assert(rseq->_ur[lp] >= rseq->_ll[lp]);
+      residueSeq->add(rseq);
+      break;
+    }
+#ifdef CHECK_SAME_NET
+    dbRSeg* trseg = NULL;
+    if (tseq->type > 0)
+      trseg = dbRSeg::getRSeg(_block, tseq->type);
+    if ((trseg != NULL) && (srseg != NULL)
+        && (trseg->getNet() == srseg->getNet())) {
+      if ((tseq->_ur[lp] >= sseq->_ur[lp])
+          || (idx == (int) dgContext->getCnt() - 1)) {
+        rseq = _seqPool->alloc();
+        rseq->_ll[wp] = sseq->_ll[wp];
+        rseq->_ur[wp] = sseq->_ur[wp];
+        rseq->_ll[lp] = covered;
+        rseq->_ur[lp] = sseq->_ur[lp];
+        assert(rseq->_ur[lp] >= rseq->_ll[lp]);
+        residueSeq->add(rseq);
+        break;
+      } else
+        continue;
+    }
+#endif
+    wseq = _seqPool->alloc();
+    wseq->type = tseq->type;
+    wseq->_ll[wp] = tseq->_ll[wp];
+    wseq->_ur[wp] = tseq->_ur[wp];
+    if (tseq->_ur[lp] <= sseq->_ur[lp])
+      wseq->_ur[lp] = tseq->_ur[lp];
+    else
+      wseq->_ur[lp] = sseq->_ur[lp];
+    if (tseq->_ll[lp] <= covered)
+      wseq->_ll[lp] = covered;
+    else {
+      wseq->_ll[lp] = tseq->_ll[lp];
+      rseq = _seqPool->alloc();
+      rseq->_ll[wp] = sseq->_ll[wp];
+      rseq->_ur[wp] = sseq->_ur[wp];
+      rseq->_ll[lp] = covered;
+      rseq->_ur[lp] = tseq->_ll[lp];
+      assert(rseq->_ur[lp] >= rseq->_ll[lp]);
+      residueSeq->add(rseq);
+    }
+    assert(wseq->_ur[lp] >= wseq->_ll[lp]);
+    overlapSeq->add(wseq);
+    covered = wseq->_ur[lp];
+    if (tseq->_ur[lp] >= sseq->_ur[lp])
+      break;
+    if (idx == (int) dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
+      rseq = _seqPool->alloc();
+      rseq->_ll[wp] = sseq->_ll[wp];
+      rseq->_ur[wp] = sseq->_ur[wp];
+      rseq->_ll[lp] = covered;
+      rseq->_ur[lp] = sseq->_ur[lp];
+      assert(rseq->_ur[lp] >= rseq->_ll[lp]);
+      residueSeq->add(rseq);
+    }
+  }
+  dgContext->get(0)->_ll[0] = idx;
+}
+
+
+
 }  // namespace rcx
 

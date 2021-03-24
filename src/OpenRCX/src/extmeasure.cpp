@@ -38,7 +38,7 @@
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
-//#define CHECK_SAME_NET
+// #define CHECK_SAME_NET
 //#define DEBUG_NET 208091
 //#define MIN_FOR_LOOPS
 
@@ -1083,8 +1083,8 @@ uint extMeasure::createNetSingleWire(char* dirName,
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != NULL) {
     in1->rename(net->getConstName());
-   // fprintf(stdout, "M%d  %8d %8d   %8d %8d DX=%d DY=%d  %s\n",
-    // _met, ll[0], ll[1], ur[0], ur[1], ur[0]-ll[0], ur[1]-ll[1], netName);
+    // fprintf(stdout, "M%d  %8d %8d   %8d %8d DX=%d DY=%d  %s\n",
+    //  _met, ll[0], ll[1], ur[0], ur[1], ur[0]-ll[0], ur[1]-ll[1], netName);
   }
 
   uint netId = net->getId();
@@ -3619,6 +3619,9 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
                            int srcCovered)
 {
   int res_lenOverSub = _len - ouCovered;  // 0228
+  res_lenOverSub = 0;  // 0315 -- new calc
+  bool SCALING_RES=false;
+
 
   int DIAG_SUB_DIVIDER = 1;
   /*
@@ -3632,9 +3635,12 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
       = 1.0;  // Open ended resitance should account by 1/4 -- 11/15
   
   // ----------------------------------------- DF Scaling - 022821
+  double SUB_MULT_RES= 1.0;
+  if (SCALING_RES) {
   double dist_track= 0.0;
-  double SUB_MULT_RES = ScaleResbyTrack(true, dist_track);
+  SUB_MULT_RES = ScaleResbyTrack(true, dist_track);
   res_lenOverSub = _len;
+  }
   // ----------------------------------------- DF Scaling - 022821
   int lenOverSub = _len - ouCovered;
   if (lenOverSub < 0)
@@ -3657,7 +3663,6 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
       cap = SUB_MULT_CAP * rc->getFringe() * lenOverSub;
       tot = _extMain->updateTotalCap(rseg1, cap, jj);
     }
-
     double res = 0;
     if (!_extMain->_lef_res && !rvia1) {
       if (res_lenOverSub > 0) {
@@ -3720,6 +3725,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   double dist_track= 0.0;
   double SUB_MULT_RES = ScaleResbyTrack(false, dist_track);
   double res_lenOverSub = _len;
+   res_lenOverSub = 0;  // 0315 -- new calc
   // ----------------------------------------- DF Scaling - 022821
   int lenOverSub = _len - ouCovered;
 
@@ -4109,7 +4115,6 @@ void extMeasure::measureRC(int* options)
   if (USE_DB_UNITS) {
     if (_dist > 0)
       _dist = _extMain->GetDBcoords2(_dist);
-
     _width = _extMain->GetDBcoords2(_width);
   }
   // if (_dist>0)
@@ -4120,18 +4125,52 @@ void extMeasure::measureRC(int* options)
   DebugStart();
 
   int totCovered = computeAndStoreRC(rseg1, rseg2, prevCovered);
-  SEQ *s= addSeq(_ll, _ur);
   
-  bool DEBUG1=false;
-  if (DEBUG1) {
+  bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
+  if ( !rvia1 && rseg1 != NULL ) {
+    for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      _rc[jj]->_res= 0;
+    }
+    bool DEBUG1=_netId==604801;
+    if (IsDebugNet()) {
+      const char *netName= "";
+      if (_netId>0) {
+        dbNet* net = dbNet::getNet(_block, _netId);
+        netName= net->getConstName();
+      }
      fprintf(stdout, " ---------------------------------------------------------------------------------\n");
-      fprintf(stdout, "     %7d %7d %7d %7d    M%d  D%d  L%d   N%d N%d \n",
-                    _ll[0], _ur[0], _ll[1], _ur[1], _met, _dist, _len, _netSrcId, _netTgtId);
+      fprintf(stdout, "     %7d %7d %7d %7d    M%d  D%d  L%d   N%d N%d %s\n",
+                    _ll[0], _ur[0], _ll[1], _ur[1], _met, _dist, _len, _netSrcId, _netTgtId, netName);
      fprintf(stdout, " ---------------------------------------------------------------------------------\n");
-     // if (_dist>0)
-   _diagLen += computeResDist(s, 1, 4, _met, NULL);
-  }
 
+    }
+     uint track_num= options[18];
+     double deltaRes[10];
+     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+       deltaRes[jj] = 0.0;
+     }
+     // if (_dist>0)
+     SEQ *s= addSeq(_ll, _ur);
+     int len_covered= computeResDist(s, 0, 4, _met, NULL);
+     int len_down_not_coupled= _len-len_covered;
+     if (_dist>0 && len_down_not_coupled>0) {
+        calcRes(rseg1->getId(), len_down_not_coupled, 0, _dist, _met);
+        len_covered += len_down_not_coupled;
+     }
+     if (len_covered>0) {
+        calcRes0(deltaRes, _met, len_covered);
+     }
+     // calcRes(_rsegSrcId, len_down_not_coupled, _dist, 0, _met);
+  
+    for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+
+      double  totR1 = _rc[jj]->_res;
+      totR1 -= deltaRes[jj];
+      double totalSegCap= 0;
+      if (totR1!=0.0)
+        totalSegCap= _extMain->updateRes(rseg1,totR1, jj);
+    }
+  }
   if (IsDebugNet())
     debugPrint(logger_,
                RCX,
@@ -4406,7 +4445,8 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     tseq = dgContext->get(idx);
     if (tseq->_ur[lp] <= covered)
       continue;
-    if (tseq->_ll[lp] >= sseq->_ur[lp]) {
+
+    if ( tseq->_ll[lp] >= sseq->_ur[lp]) {
       rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];
@@ -4476,7 +4516,7 @@ void extMeasure::getDgOverlap(SEQ* sseq,
 
 void extMeasure::getDgOverlap(int* options)
 {
-  int ttttprintOverlap = 0;
+  int ttttprintOverlap = 1;
   int srcseqcnt = 0;
   if (ttttprintOverlap && !_dgContextFile) {
     _dgContextFile = fopen("overlapSeq.1", "w");
