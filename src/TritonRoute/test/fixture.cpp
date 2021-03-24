@@ -291,36 +291,43 @@ frNet* Fixture::makeNet(const char* name)
   return net;
 }
 
-frViaDef* Fixture::makeVia(const char* name)
+frViaDef* Fixture::makeViaDef(const char* name,
+                              frLayerNum layer_num,
+                              const frPoint& ll,
+                              const frPoint& ur)
 {
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
-  frViaDef* via = via_p.get();
-  tech->addVia(std::move(via_p));
-  return via;
-}
-
-void Fixture::makeViaRect(frViaDef* via,
-                          frLayerNum layer_num,
-                          const frPoint& ll,
-                          const frPoint& ur)
-{
   for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
     unique_ptr<frRect> pinFig = make_unique<frRect>();
     pinFig->setBBox(frBox(ll, ur));
     pinFig->setLayerNum(l);
     switch (l - layer_num) {
       case -1:
-        via->addLayer1Fig(std::move(pinFig));
+        via_p->addLayer1Fig(std::move(pinFig));
         break;
       case 0:
-        via->addCutFig(std::move(pinFig));
+        via_p->addCutFig(std::move(pinFig));
         break;
       case 1:
-        via->addLayer2Fig(std::move(pinFig));
+        via_p->addLayer2Fig(std::move(pinFig));
         break;
     }
   }
+
+  frViaDef* via = via_p.get();
+  tech->addVia(std::move(via_p));
+  return via;
+}
+
+frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const frPoint& origin)
+{
+  auto via_p = make_unique<frVia>(viaDef);
+  via_p->setOrigin(origin);
+  via_p->addToNet(net);
+  frVia* via = via_p.get();
+  net->addVia(std::move(via_p));
+  return via;
 }
 
 void Fixture::makePathseg(frNet* net,

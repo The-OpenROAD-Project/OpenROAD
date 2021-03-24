@@ -91,6 +91,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
     return prevEdgeLen >= minMaxCon->getLength()
            || nextEdgeLen >= minMaxCon->getLength();
 }
+
+// TODO check for hasRoute
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
     gcSegment* edge1,
     gcSegment* edge2,
@@ -105,41 +107,40 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
   auto encCutCon = con->getWithinConstraint()->getEncloseCutConstraint();
   frSquaredDistance cutToMetalSpace
       = encCutCon->getCutToMetalSpace() * encCutCon->getCutToMetalSpace();
-  box_t queryBox;
+  box_t queryBox;  // query region is encloseDist from edge1
   checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
       edge1, encCutCon.get(), queryBox);
 
-  std::vector<int> layers;
-  if (!(encCutCon->isBelow() ^ encCutCon->isAbove())) {
-    if (edge1->getLayerNum() - 1 >= minLayerNum_)
-      layers.push_back(edge1->getLayerNum() - 1);
+  std::vector<int> layers;  // cutLayers to search for the vias
+  bool aboveAndBelow
+      = !(encCutCon->isBelow()
+          || encCutCon->isAbove());  // if not defined (means both)
+  if (aboveAndBelow || encCutCon->isAbove())
     if (edge1->getLayerNum() + 1 <= maxLayerNum_)
       layers.push_back(edge1->getLayerNum() + 1);
-  } else {
-    if (encCutCon->isBelow() && edge1->getLayerNum() - 1 >= minLayerNum_)
+  if (aboveAndBelow || encCutCon->isBelow())
+    if (edge1->getLayerNum() - 1 >= minLayerNum_)
       layers.push_back(edge1->getLayerNum() - 1);
-    else if (encCutCon->isAbove() && edge1->getLayerNum() + 1 <= maxLayerNum_)
-      layers.push_back(edge1->getLayerNum() + 1);
-  }
-
+  // edge2 segment as a rectangle for getting distance
   gtl::rectangle_data<frCoord> metRect(edge2->getLowCorner()->x(),
                                        edge2->getLowCorner()->y(),
                                        edge2->getHighCorner()->x(),
                                        edge2->getHighCorner()->y());
   bool found = false;
+  // allCuts=false --> return true if you find one cut segment that satisfies
+  // the enclose cut allCuts=true  --> return true if all cut segment satisfies
+  // the enclose cut (at least one has to be found)
   for (auto layerNum : layers) {
-    vector<drConnFig*> results;
-    auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
-    workerRegionQuery.query(queryBox, layerNum, results);
-    for (auto& connFig : results) {
-      if (connFig->typeId() != drcVia) {
+    vector<pair<segment_t, gcSegment*>> results;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
+    for (auto& [boostSeg, ptr] : results) {
+      if (edge1->getDir() != ptr->getDir())
         continue;
-      }
-      auto obj = static_cast<drVia*>(connFig);
-      frBox via_box;
-      obj->getBBox(via_box);
-      gtl::rectangle_data<frCoord> rect(
-          via_box.left(), via_box.bottom(), via_box.right(), via_box.top());
+      gtl::rectangle_data<frCoord> rect(ptr->getLowCorner()->x(),
+                                        ptr->getLowCorner()->y(),
+                                        ptr->getHighCorner()->x(),
+                                        ptr->getHighCorner()->y());
       frSquaredDistance dist = gtl::square_euclidean_distance(metRect, rect);
       if (dist < cutToMetalSpace) {
         if (encCutCon->isAllCuts())

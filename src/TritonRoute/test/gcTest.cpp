@@ -38,6 +38,7 @@
 #endif
 
 #include <boost/test/data/test_case.hpp>
+#include <iostream>
 
 #include "fixture.h"
 #include "frDesign.h"
@@ -547,26 +548,31 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                  frBox(450, y, 550, 650));
   }
 }
-BOOST_AUTO_TEST_CASE(
-    eol_enclose_cut,
-    *boost::unit_test::disabled())  // needs drworker for via shapes
+BOOST_DATA_TEST_CASE(eol_enclose_cut,
+                     (bdata::make({0, 350})) ^ (bdata::make({true, false})),
+                     y,
+                     legal)
 {
   addLayer(design->getTech(), "v2", frLayerTypeEnum::CUT);
   addLayer(design->getTech(), "m2", frLayerTypeEnum::ROUTING);
   makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
   frNet* n1 = makeNet("n1");
-  frViaDef* v = makeVia("v");
-  frCoord y = 350;
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+
   makePathseg(n1, 4, {500, 0}, {500, 500});
   makePathseg(n1, 4, {0, 700}, {1000, 700});
-  makeViaRect(v, 3, {400, y}, {500, y + 100});
+  auto v = makeVia(vd, n1, {400, y});
   runGC();
   auto& markers = worker.getMarkers();
-  BOOST_TEST(markers.size() == 1);
-  if (markers.size() == 1)
-    testMarker(markers[0].get(),
-               4,
-               frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
-               frBox(450, 500, 550, 650));
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    if (markers.size() == 1)
+      testMarker(markers[0].get(),
+                 4,
+                 frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+                 frBox(450, 500, 550, 650));
+  }
 }
 BOOST_AUTO_TEST_SUITE_END();

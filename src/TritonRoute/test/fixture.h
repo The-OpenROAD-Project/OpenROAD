@@ -95,12 +95,12 @@ class Fixture
 
   frNet* makeNet(const char* name);
 
-  frViaDef* makeVia(const char* name);
+  frViaDef* makeViaDef(const char* name,
+                       frLayerNum layer_num,
+                       const frPoint& ll,
+                       const frPoint& ur);
 
-  void makeViaRect(frViaDef* via,
-                   frLayerNum layer_num,
-                   const frPoint& begin,
-                   const frPoint& end);
+  frVia* makeVia(frViaDef* via, frNet* net, const frPoint& origin);
 
   void makePathseg(frNet* net,
                    frLayerNum layer_num,
