@@ -77,19 +77,23 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
   auto minMaxCon = con->getWithinConstraint()->getMaxMinLengthConstraint();
   auto prevEdgeLen = gtl::length(*edge->getPrevEdge());
   auto nextEdgeLen = gtl::length(*edge->getNextEdge());
-  if (minMaxCon->isMaxLength())
-    if (minMaxCon->isTwoSides())
+  if (minMaxCon->isMaxLength()) {
+    if (minMaxCon->isTwoSides()) {
       return prevEdgeLen <= minMaxCon->getLength()
              && nextEdgeLen <= minMaxCon->getLength();
-    else
+    } else {
       return prevEdgeLen <= minMaxCon->getLength()
              || nextEdgeLen <= minMaxCon->getLength();
-  else if (minMaxCon->isTwoSides())
-    return prevEdgeLen >= minMaxCon->getLength()
-           && nextEdgeLen >= minMaxCon->getLength();
-  else
-    return prevEdgeLen >= minMaxCon->getLength()
-           || nextEdgeLen >= minMaxCon->getLength();
+    }
+  } else {
+    if (minMaxCon->isTwoSides()) {
+      return prevEdgeLen >= minMaxCon->getLength()
+             && nextEdgeLen >= minMaxCon->getLength();
+    } else {
+      return prevEdgeLen >= minMaxCon->getLength()
+             || nextEdgeLen >= minMaxCon->getLength();
+    }
+  }
 }
 
 // bbox on the gcSegment->low() side
@@ -278,7 +282,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
       auto con = (frSpacingEndOfLineConstraint*) constraint;
       hasParallelEdge = con->hasParallelEdge();
       hasTwoEdges = con->hasTwoEdges();
-    } break;
+      break;
+    }
     case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint: {
       auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
       hasParallelEdge = con->getWithinConstraint()->hasParallelEdgeConstraint();
@@ -286,7 +291,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
         hasTwoEdges = con->getWithinConstraint()
                           ->getParallelEdgeConstraint()
                           ->hasTwoEdges();
-    } break;
+      break;
+    }
     default:
       logger_->error(DRT, 225, "Unsupported endofline spacing rule");
       break;
