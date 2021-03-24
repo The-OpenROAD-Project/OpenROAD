@@ -37,7 +37,7 @@
 
 #include "db_sta/dbNetwork.hh"
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"

@@ -41,7 +41,7 @@
 #include "OpenRCX/extRCap.h"
 #include "OpenRCX/extSpef.h"
 #include "OpenRCX/exttree.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 

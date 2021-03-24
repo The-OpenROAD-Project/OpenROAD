@@ -17,7 +17,7 @@ target_include_directories(opendbpy
 target_link_libraries(opendbpy
     PUBLIC
         opendb
-        utility
+        utl
         tcl
         cdl
         opendb_swig_common

@@ -40,7 +40,7 @@
 #include "dbTransform.h"
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definComponent::definComponent()

@@ -128,19 +128,19 @@ add_subdirectory(rsz)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(dpl)
-add_subdirectory(finale)
+add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
-add_subdirectory(PDNSim)
+add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
-add_subdirectory(utility)
+add_subdirectory(utl)
 add_subdirectory(pdrev)
 
 ################################################################
@@ -171,7 +171,7 @@ target_link_libraries(openroad
   openroad_swig_py
   replace
   dpl
-  finale
+  fin
   rsz
   ppl
   flute
@@ -187,10 +187,10 @@ target_link_libraries(openroad
   gui
   TritonRoute
   mpl
-  pdnsim
+  psm
   antennachecker
   PartitionMgr
-  utility
+  utl
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

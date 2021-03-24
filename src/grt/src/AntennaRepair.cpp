@@ -47,7 +47,7 @@
 #include "Net.h"
 #include "Pin.h"
 #include "grt/GlobalRouter.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace grt {
 
@@ -327,7 +327,6 @@ void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getNet() != nullptr)
       _grouter->addDirtyNet(iterm->getNet());
-    continue;
   }
 }
 

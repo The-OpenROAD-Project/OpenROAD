@@ -42,7 +42,7 @@
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

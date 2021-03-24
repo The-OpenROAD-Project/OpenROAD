@@ -90,9 +90,6 @@ class FastRouteCore
   void initAuxVar();
   NetRouteMap run();
   void updateDbCongestion(odb::dbDatabase* db);
-  void writeCongestionReport2D(std::string fileName);
-  void writeCongestionReport3D(std::string fileName);
-  void findCongestionInformation(std::vector<GCellCongestion>& congestionInfo);
 
   int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
   int getEdgeCurrentResource(long x1,

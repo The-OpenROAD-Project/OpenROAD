@@ -9,7 +9,7 @@ target_include_directories(defout
         ${TCL_INCLUDE_PATH}
 )
 target_link_libraries(defout
-    utility
+    utl
 )
 
 set_target_properties(defout

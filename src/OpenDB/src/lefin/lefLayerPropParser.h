@@ -6,7 +6,9 @@
 
 #include "db.h"
 #include "lefin.h"
-
+namespace utl {
+class Logger;
+}
 namespace odb {
 class lefTechLayerSpacingEolParser
 {
@@ -93,6 +95,23 @@ class lefTechLayerCutSpacingTableParser
   bool parse(std::string,
              lefin*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
+};
+
+class lefTechLayerCutEnclosureRuleParser
+{
+ public:
+  lefTechLayerCutEnclosureRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerCutEnclosureRule* rule,
+              void (odb::dbTechLayerCutEnclosureRule::*func)(int));
+  void setCutClass(std::string,
+                   odb::dbTechLayerCutEnclosureRule* rule,
+                   odb::dbTechLayer* layer);
 };
 
 }  // namespace odb

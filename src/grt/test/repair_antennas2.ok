@@ -15,7 +15,6 @@
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 0%
-Unidirectional routing: true
 Grid origin: (0, 0)
 Layer 2 pitch: 0.37
 Layer 3 pitch: 0.48
@@ -49,7 +48,6 @@ Layer 6 pitch: 3.33
 [INFO GRT-0111] Final number of vias: 1831
 [INFO GRT-0112] Final usage 3D: 7528
 [INFO GRT-0018] Total wirelength: 22298 um
-Repairing antennas...
 [WARNING GRT-0043] No OR_DEFAULT vias defined.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -97,7 +95,6 @@ Notice 0: Split top of 1 T shapes.
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 0%
-Unidirectional routing: true
 Grid origin: (0, 0)
 Layer 2 pitch: 0.37
 Layer 3 pitch: 0.48
@@ -115,7 +112,7 @@ Layer 6 pitch: 3.33
 [INFO GRT-0023] Reducing resources of layer 4 by 15%.
 [INFO GRT-0024] Reducing resources of layer 5 by 15%.
 [INFO GRT-0025] Reducing resources of layer 6 by 15%.
-[INFO GRT-0009] #Nets to reroute: 1.
+[INFO GRT-0009] Nets to reroute: 1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 21
@@ -130,6 +127,7 @@ Layer 6 pitch: 3.33
 [INFO GRT-0110] Final usage: 21
 [INFO GRT-0111] Final number of vias: 4
 [INFO GRT-0112] Final usage 3D: 33
+[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO DPL-0001] Placed 5890 filler instances.
 [INFO GRT-0014] Num routed nets: 437
 No differences found.

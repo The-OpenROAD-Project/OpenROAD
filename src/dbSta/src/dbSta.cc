@@ -58,7 +58,7 @@
 #include "opendb/db.h"
 
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "gui/gui.h"
 
@@ -460,7 +460,8 @@ dbStaReport::warn(int id,
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
-  logger_->warn(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->warn(STA, id, "{}", buffer_);
   va_end(args);
 }
 
@@ -476,7 +477,8 @@ dbStaReport::fileWarn(int id,
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
-  logger_->warn(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->warn(STA, id, "{}", buffer_);
   va_end(args);
 }
 
@@ -489,7 +491,8 @@ dbStaReport::vfileWarn(int id,
 {
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
-  logger_->warn(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->warn(STA, id, "{}", buffer_);
 }
 
 void
@@ -501,6 +504,7 @@ dbStaReport::error(int id,
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
+  // Don't give std::format a chance to interpret the message.
   logger_->error(STA, id, buffer_);
   va_end(args);
 }
@@ -517,7 +521,8 @@ dbStaReport::fileError(int id,
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
-  logger_->error(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->error(STA, id, "{}", buffer_);
   va_end(args);
 }
 
@@ -530,7 +535,8 @@ dbStaReport::vfileError(int id,
 {
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
-  logger_->error(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->error(STA, id, "{}", buffer_);
 }
 
 void
@@ -542,7 +548,8 @@ dbStaReport::critical(int id,
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
-  logger_->critical(STA, id, buffer_);
+  // Don't give std::format a chance to interpret the message.
+  logger_->critical(STA, id, "{}", buffer_);
   va_end(args);
 }
 

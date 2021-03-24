@@ -35,6 +35,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -42,15 +43,12 @@
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
-
-#include "gui/gui.h"
-
+#include "displayControls.h"
 #include "geom.h"
-
+#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
-#include "displayControls.h"
 
 namespace gui {
 
@@ -113,11 +111,6 @@ void Gui::pause()
   main_window->pause();
 }
 
-void Gui::updateShapes()
-{
-  main_window->updateShapes();
-}
-
 void Gui::addSelectedNet(const char* name)
 {
   auto block = getBlock(main_window->getDb());
@@ -151,16 +144,16 @@ void Gui::addSelectedNets(const char* pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
 
-  for (auto* net : block->getNets()) {
+    for (auto* net : block->getNets()) {
       if (re.exactMatch(net->getConstName())) {
-      nets.emplace(net, OpenDbDescriptor::get());
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
     }
-  }
   } else if (match_case == false) {
     for (auto* net : block->getNets()) {
       if (boost::iequals(pattern, net->getConstName()))
         nets.emplace(net, OpenDbDescriptor::get());
-}
+    }
   } else {
     for (auto* net : block->getNets()) {
       if (pattern == net->getConstName()) {
@@ -205,25 +198,25 @@ void Gui::addSelectedInsts(const char* pattern,
     QRegExp re(pattern,
                match_case == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
                QRegExp::Wildcard);
-  for (auto* inst : block->getInsts()) {
+    for (auto* inst : block->getInsts()) {
       if (re.exactMatch(inst->getConstName())) {
-      insts.emplace(inst, OpenDbDescriptor::get());
+        insts.emplace(inst, OpenDbDescriptor::get());
+      }
     }
-  }
   } else if (match_case == false) {
     for (auto* inst : block->getInsts()) {
       if (boost::iequals(inst->getConstName(), pattern))
         insts.emplace(inst, OpenDbDescriptor::get());
-}
+    }
   } else {
     for (auto* inst : block->getInsts()) {
-        if (pattern == inst->getConstName()) {
-            insts.emplace(inst, OpenDbDescriptor::get());
-            break;  // There can't be two insts with the same name
-        }
-    }   
+      if (pattern == inst->getConstName()) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+        break;  // There can't be two insts with the same name
+      }
+    }
   }
-  
+
   main_window->addSelected(insts);
   if (add_to_highlight_set == true)
     main_window->addHighlighted(insts, highlight_group);
@@ -280,6 +273,11 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
   main_window->addHighlighted(selection_set, highlight_group);
 }
 
+void Gui::addRuler(int x0, int y0, int x1, int y1)
+{
+  main_window->addRuler(x0, y0, x1, y1);
+}
+
 void Gui::clearSelections()
 {
   main_window->setSelected(Selected());
@@ -288,6 +286,11 @@ void Gui::clearSelections()
 void Gui::clearHighlights(int highlight_group)
 {
   main_window->clearHighlighted(highlight_group);
+}
+
+void Gui::clearRulers()
+{
+  main_window->clearRulers();
 }
 
 void Gui::addCustomVisibilityControl(const std::string& name,
@@ -339,7 +342,7 @@ std::string OpenDbDescriptor::getLocation(void* object) const
 {
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
   auto block = getBlock(main_window->getDb());
-  auto to_microns = block->getDbUnitsPerMicron();
+  double to_microns = block->getDbUnitsPerMicron();
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {
       auto net = static_cast<odb::dbNet*>(db_obj);
@@ -347,7 +350,8 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       odb::Rect wire_bbox;
       if (wire && wire->getBBox(wire_bbox)) {
         std::stringstream ss;
-        ss << "[(" << wire_bbox.xMin() / to_microns << ","
+        ss << std::fixed << std::setprecision(5)
+           << "[(" << wire_bbox.xMin() / to_microns << ","
            << wire_bbox.yMin() / to_microns << "), ("
            << wire_bbox.xMax() / to_microns << ","
            << wire_bbox.yMax() / to_microns << ")]";
@@ -358,14 +362,19 @@ std::string OpenDbDescriptor::getLocation(void* object) const
     case odb::dbInstObj: {
       auto inst_obj = static_cast<odb::dbInst*>(db_obj);
       auto inst_bbox = inst_obj->getBBox();
-      auto placement_status = inst_obj->getPlacementStatus().getString();
+      auto placement_status = inst_obj->getPlacementStatus();
       auto inst_orient = inst_obj->getOrient().getString();
       std::stringstream ss;
-      ss << "[(" << inst_bbox->xMin() / to_microns << ","
-         << inst_bbox->yMin() / to_microns << "), ("
-         << inst_bbox->xMax() / to_microns << ","
-         << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "
-         << placement_status;
+      if (placement_status.isPlaced()) {
+        ss << std::fixed << std::setprecision(5)
+           << "[(" << inst_bbox->xMin() / to_microns << ","
+           << inst_bbox->yMin() / to_microns << "), ("
+           << inst_bbox->xMax() / to_microns << ","
+           << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "
+           << placement_status.getString();
+      } else {
+        ss << placement_status.getString();
+      }
       return ss.str();
     } break;
     default:
@@ -407,8 +416,8 @@ void OpenDbDescriptor::highlight(void* object,
 {
   auto highlight_color = Painter::persistHighlight;
   if (select_flag == true) {
-  painter.setPen(Painter::highlight, true);
-  painter.setBrush(Painter::transparent);
+    painter.setPen(Painter::highlight, true);
+    painter.setBrush(Painter::transparent);
   } else {
     if (highlight_group >= 0 && highlight_group < 7) {
       highlight_color = Painter::highlightColors[highlight_group];
