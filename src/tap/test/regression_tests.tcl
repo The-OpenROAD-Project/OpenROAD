@@ -5,4 +5,8 @@ record_tests {
   gcd_sky130
   invalid_cells
   avoid_overlap
+  avoid_overlap_skip_overlaps
+  boundary_macros
+  gcd_prefix
+  gcd_ripup
 }
