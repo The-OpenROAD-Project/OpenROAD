@@ -43,16 +43,6 @@ namespace ord {
 ppl::IOPlacer* getIOPlacer();
 } // namespace ord
 
-namespace sta {
-
-// Defined in StaTcl.i
-template <class TYPE>
-vector<TYPE> *
-tclListStdSeq(Tcl_Obj *const source,
-        swig_type_info *swig_type,
-        Tcl_Interp *interp);
-} // namespace sta
-
 namespace ppl {
   typedef PinList TmpPinList;
 }
@@ -62,8 +52,32 @@ using ppl::Edge;
 using ppl::Direction;
 using ppl::PinList;
 using std::vector;
-using sta::tclListStdSeq;
 using ppl::TmpPinList;
+
+template <class TYPE>
+vector<TYPE> *
+tclListStdSeq(Tcl_Obj *const source,
+	      swig_type_info *swig_type,
+	      Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    vector<TYPE> *seq = new vector<TYPE>;
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      seq->push_back(reinterpret_cast<TYPE>(obj));
+    }
+    return seq;
+  }
+  else
+    return nullptr;
+}
+
 %}
 
 ////////////////////////////////////////////////////////////////
