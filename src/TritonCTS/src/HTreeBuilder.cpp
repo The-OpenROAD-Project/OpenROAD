@@ -35,7 +35,7 @@
 
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "clustering.h"
 
 #include <fstream>

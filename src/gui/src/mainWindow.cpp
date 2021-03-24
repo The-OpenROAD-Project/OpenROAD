@@ -54,7 +54,8 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_, selected_, highlighted_, this)),
+      viewer_(
+          new LayoutViewer(controls_, selected_, highlighted_, rulers_, this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
@@ -101,8 +102,14 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addSelected(const Selected&)));
 
+  connect(viewer_,
+          SIGNAL(addRuler(int, int, int, int)),
+          this,
+          SLOT(addRuler(int, int, int, int)));
+
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));
 
   connect(this,
           SIGNAL(selectionChanged()),
@@ -191,7 +198,7 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
-  congestion_setup_ = new QAction("Congestion Setup...");
+  congestion_setup_ = new QAction("Congestion Setup...", nullptr);
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
@@ -279,6 +286,13 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
+void MainWindow::addRuler(int x0, int y0, int x1, int y1)
+{
+  QLine ruler(QPoint(x0, y0), QPoint(x1, y1));
+  rulers_.push_back(ruler);
+  emit rulersChanged();
+}
+
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
                                       int highlight_group)
 {
@@ -306,6 +320,14 @@ void MainWindow::clearHighlighted(int highlight_group)
   }
   if (num_items_cleared > 0)
     emit highlightChanged();
+}
+
+void MainWindow::clearRulers()
+{
+  if (rulers_.empty())
+    return;
+  rulers_.clear();
+  emit rulersChanged();
 }
 
 void MainWindow::removeFromSelected(const QList<const Selected*>& items)
@@ -491,11 +513,6 @@ void MainWindow::setLogger(utl::Logger* logger)
 {
   script_->setLogger(logger);
   viewer_->setLogger(logger);
-}
-
-void MainWindow::updateShapes()
-{
-  viewer_->updateShapes();
 }
 
 }  // namespace gui

@@ -286,12 +286,13 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
-set_io_pin_constraint -direction direction -names names -region edge:interval
+set_io_pin_constraint -direction direction -pin_names names -region edge:interval
 ```
 
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
+The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
 #### Tapcell
 

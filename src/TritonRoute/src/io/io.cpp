@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,23 +26,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <exception>
+#include "io/io.h"
 
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+#include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
 #include "global.h"
-#include "io/io.h"
-#include "db/tech/frConstraint.h"
-
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 using namespace std;
 using namespace fr;
-
 
 int defdist(odb::dbBlock* block, int x)
 {
@@ -57,10 +56,14 @@ void io::Parser::setDieArea(odb::dbBlock* block)
   vector<frPoint> points;
   odb::Rect box;
   block->getDieArea(box);
-  points.push_back(frPoint(defdist(block,box.xMin()), defdist(block,box.yMin())));
-  points.push_back(frPoint(defdist(block,box.xMax()), defdist(block,box.yMax())));
-  points.push_back(frPoint(defdist(block,box.xMax()), defdist(block,box.yMin())));
-  points.push_back(frPoint(defdist(block,box.xMin()), defdist(block,box.yMax())));
+  points.push_back(
+      frPoint(defdist(block, box.xMin()), defdist(block, box.yMin())));
+  points.push_back(
+      frPoint(defdist(block, box.xMax()), defdist(block, box.yMax())));
+  points.push_back(
+      frPoint(defdist(block, box.xMax()), defdist(block, box.yMin())));
+  points.push_back(
+      frPoint(defdist(block, box.xMin()), defdist(block, box.yMax())));
   bound.setPoints(points);
   bounds.push_back(bound);
   tmpBlock->setDBUPerUU(block->getDbUnitsPerMicron());
@@ -73,10 +76,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
   for (auto track : tracks) {
     if (tech->name2layer.find(track->getTechLayer()->getName())
         == tech->name2layer.end())
-      logger->error(DRT,
-                    94,
-                    "cannot find layer: {}",
-                    track->getTechLayer()->getName());
+      logger->error(
+          DRT, 94, "cannot find layer: {}", track->getTechLayer()->getName());
     int xPatternSize = track->getNumGridPatternsX();
     int yPatternSize = track->getNumGridPatternsY();
     for (int i = 0; i < xPatternSize; i++) {
@@ -112,24 +113,23 @@ void io::Parser::setTracks(odb::dbBlock* block)
 
 frOrientEnum getFrOrient(odb::dbOrientType orient)
 {
-  switch (orient)
-  {
-  case odb::dbOrientType::R0:
-    return frOrientEnum::frcR0;  
-  case odb::dbOrientType::R90:
-    return frOrientEnum::frcR90;  
-  case odb::dbOrientType::R180:
-    return frOrientEnum::frcR180;  
-  case odb::dbOrientType::R270:
-    return frOrientEnum::frcR270;  
-  case odb::dbOrientType::MY:
-    return frOrientEnum::frcMY;  
-  case odb::dbOrientType::MYR90:
-    return frOrientEnum::frcMXR90;  
-  case odb::dbOrientType::MX:
-    return frOrientEnum::frcMX;  
-  case odb::dbOrientType::MXR90:
-    return frOrientEnum::frcMXR90;  
+  switch (orient) {
+    case odb::dbOrientType::R0:
+      return frOrientEnum::frcR0;
+    case odb::dbOrientType::R90:
+      return frOrientEnum::frcR90;
+    case odb::dbOrientType::R180:
+      return frOrientEnum::frcR180;
+    case odb::dbOrientType::R270:
+      return frOrientEnum::frcR270;
+    case odb::dbOrientType::MY:
+      return frOrientEnum::frcMY;
+    case odb::dbOrientType::MYR90:
+      return frOrientEnum::frcMXR90;
+    case odb::dbOrientType::MX:
+      return frOrientEnum::frcMX;
+    case odb::dbOrientType::MXR90:
+      return frOrientEnum::frcMXR90;
   }
   return frOrientEnum::frcR0;
 }
@@ -139,10 +139,8 @@ void io::Parser::setInsts(odb::dbBlock* block)
   for (auto inst : block->getInsts()) {
     if (design->name2refBlock_.find(inst->getMaster()->getName())
         == design->name2refBlock_.end())
-      logger->error(DRT,
-                    95,
-                    "library cell {} not found",
-                    inst->getMaster()->getName());
+      logger->error(
+          DRT, 95, "library cell {} not found", inst->getMaster()->getName());
     if (tmpBlock->name2inst_.find(inst->getName())
         != tmpBlock->name2inst_.end())
       logger->error(DRT, 96, "same cell name: {}", inst->getName());
@@ -267,7 +265,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 
       frCoord currX = 0;
       frCoord currY = 0;
-      vector<unique_ptr<frShape> > cutFigs;
+      vector<unique_ptr<frShape>> cutFigs;
       for (int i = 0; i < params.getNumCutRows(); i++) {
         currX = 0;
         for (int j = 0; j < params.getNumCutCols(); j++) {
@@ -315,7 +313,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       }
       tech->addVia(std::move(viaDef));
     } else {
-      map<frLayerNum, set<odb::dbBox*> > lNum2Int;
+      map<frLayerNum, set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end()) {
@@ -361,40 +359,44 @@ void io::Parser::setVias(odb::dbBlock* block)
 
 void io::Parser::setNDRs(odb::dbDatabase* db)
 {
-    frNonDefaultRule* fnd;
-    unique_ptr<frNonDefaultRule> ptnd;
-    int z;
-    for (auto ndr : db->getTech()->getNonDefaultRules()) {
-        ptnd = make_unique<frNonDefaultRule>();
-        fnd = ptnd.get();
-        design->tech_->addNDR(std::move(ptnd));
-        fnd->setName(ndr->getName().data());
-        fnd->setHardSpacing(ndr->getHardSpacing());
-        vector<odb::dbTechLayerRule*> lr;
-        ndr->getLayerRules(lr);
-        for (auto& l : lr){
-            z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum()/2 -1;
-            fnd->setWidth(l->getWidth(), z);
-            fnd->setSpacing(l->getSpacing(), z);
-            fnd->setWireExtension(l->getWireExtension(), z);
-        }
-        vector<odb::dbTechVia*> vias;
-        ndr->getUseVias(vias);
-        for (auto via : vias){
-            fnd->addVia(design->getTech()->getVia(via->getName()), via->getBottomLayer()->getNumber()-1);
-        }
-        vector<odb::dbTechViaGenerateRule*> viaRules;
-        ndr->getUseViaRules(viaRules);
-        z = std::numeric_limits<int>().max();
-        for (auto via : viaRules){
-            for (int i = 0; i < (int)via->getViaLayerRuleCount(); i++){
-                if (via->getViaLayerRule(i)->getLayer()->getType() == odb::dbTechLayerType::CUT) continue;
-                if (via->getViaLayerRule(i)->getLayer()->getNumber()/2 < z) 
-                    z = via->getViaLayerRule(i)->getLayer()->getNumber()/2;
-            }
-            fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
-        }
+  frNonDefaultRule* fnd;
+  unique_ptr<frNonDefaultRule> ptnd;
+  int z;
+  for (auto ndr : db->getTech()->getNonDefaultRules()) {
+    ptnd = make_unique<frNonDefaultRule>();
+    fnd = ptnd.get();
+    design->tech_->addNDR(std::move(ptnd));
+    fnd->setName(ndr->getName().data());
+    fnd->setHardSpacing(ndr->getHardSpacing());
+    vector<odb::dbTechLayerRule*> lr;
+    ndr->getLayerRules(lr);
+    for (auto& l : lr) {
+      z = design->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
+          - 1;
+      fnd->setWidth(l->getWidth(), z);
+      fnd->setSpacing(l->getSpacing(), z);
+      fnd->setWireExtension(l->getWireExtension(), z);
     }
+    vector<odb::dbTechVia*> vias;
+    ndr->getUseVias(vias);
+    for (auto via : vias) {
+      fnd->addVia(design->getTech()->getVia(via->getName()),
+                  via->getBottomLayer()->getNumber() - 1);
+    }
+    vector<odb::dbTechViaGenerateRule*> viaRules;
+    ndr->getUseViaRules(viaRules);
+    z = std::numeric_limits<int>().max();
+    for (auto via : viaRules) {
+      for (int i = 0; i < (int) via->getViaLayerRuleCount(); i++) {
+        if (via->getViaLayerRule(i)->getLayer()->getType()
+            == odb::dbTechLayerType::CUT)
+          continue;
+        if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z)
+          z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
+      }
+      fnd->addViaRule(design->getTech()->getViaRule(via->getName()), z);
+    }
+  }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
@@ -486,7 +488,9 @@ void io::Parser::setNets(odb::dbBlock* block)
   for (auto net : block->getNets()) {
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
-    if (net->getNonDefaultRule()) uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
+    if (net->getNonDefaultRule())
+      uNetIn->setNondefaultRule(design->getTech()->getNondefaultRule(
+          net->getNonDefaultRule()->getName()));
     netIn->setId(numNets);
     numNets++;
     for (auto term : net->getBTerms()) {
@@ -510,13 +514,17 @@ void io::Parser::setNets(odb::dbBlock* block)
       auto inst = tmpBlock->name2inst_[term->getInst()->getName()];
       // gettin inst term
       auto frterm = inst->getRefBlock()->getTerm(term->getMTerm()->getName());
-      if(frterm == nullptr)
-        logger->error(DRT, 106, "component pin {}/{} not found",term->getInst()->getName(),term->getMTerm()->getName());
+      if (frterm == nullptr)
+        logger->error(DRT,
+                      106,
+                      "component pin {}/{} not found",
+                      term->getInst()->getName(),
+                      term->getMTerm()->getName());
       int idx = frterm->getOrderId();
-      auto &instTerms = inst->getInstTerms();
+      auto& instTerms = inst->getInstTerms();
       auto instTerm = instTerms[idx].get();
       assert(instTerm->getTerm()->getName() == term->getMTerm()->getName());
-      
+
       instTerm->addToNet(netIn);
       netIn->addInstTerm(instTerm);
       // graph enablement
@@ -719,14 +727,14 @@ void io::Parser::setNets(odb::dbBlock* block)
             auto defaultExt = width / 2;
 
             frEndStyleEnum tmpBeginEnum;
-            if (box->getWireShapeType()==odb::dbWireShapeType::NONE) {
+            if (box->getWireShapeType() == odb::dbWireShapeType::NONE) {
               tmpBeginEnum = frcExtendEndStyle;
             } else {
               tmpBeginEnum = frcTruncateEndStyle;
             }
             frEndStyle tmpBeginStyle(tmpBeginEnum);
             frEndStyleEnum tmpEndEnum;
-            if (box->getWireShapeType()==odb::dbWireShapeType::NONE) {
+            if (box->getWireShapeType() == odb::dbWireShapeType::NONE) {
               tmpEndEnum = frcExtendEndStyle;
             } else {
               tmpEndEnum = frcTruncateEndStyle;
@@ -735,8 +743,11 @@ void io::Parser::setNets(odb::dbBlock* block)
 
             frSegStyle tmpSegStyle;
             tmpSegStyle.setWidth(width);
-            tmpSegStyle.setBeginStyle(tmpBeginStyle, tmpBeginEnum == frcExtendEndStyle ? defaultExt : 0);
-            tmpSegStyle.setEndStyle(tmpEndStyle, tmpEndEnum == frcExtendEndStyle ? defaultExt : 0);
+            tmpSegStyle.setBeginStyle(
+                tmpBeginStyle,
+                tmpBeginEnum == frcExtendEndStyle ? defaultExt : 0);
+            tmpSegStyle.setEndStyle(
+                tmpEndStyle, tmpEndEnum == frcExtendEndStyle ? defaultExt : 0);
             tmpP->setStyle(tmpSegStyle);
             netIn->addShape(std::move(tmpP));
           } else {
@@ -835,10 +846,8 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for (auto box : pin->getBoxes()) {
         if (tech->name2layer.find(box->getTechLayer()->getName())
             == tech->name2layer.end())
-          logger->error(DRT,
-                        112,
-                        "unsupported layer {}",
-                        box->getTechLayer()->getName());
+          logger->error(
+              DRT, 112, "unsupported layer {}", box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
         frCoord xl = defdist(block, box->xMin());
@@ -861,10 +870,10 @@ void io::Parser::setBTerms(odb::dbBlock* block)
 void io::Parser::readDesign(odb::dbDatabase* db)
 {
   ProfileTask profile("IO:readDesign");
-  if(db->getChip() == nullptr)
+  if (db->getChip() == nullptr)
     logger->error(DRT, 116, "load design first");
   odb::dbBlock* block = db->getChip()->getBlock();
-  if(block == nullptr)
+  if (block == nullptr)
     logger->error(DRT, 117, "load design first");
   tmpBlock = make_unique<frBlock>(string(block->getName()));
   tmpBlock->trackPatterns_.clear();
@@ -881,7 +890,8 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   addFakeNets();
 }
 
-void io::Parser::addFakeNets() {
+void io::Parser::addFakeNets()
+{
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
   vssFakeNet->setType(frNetEnum::frcGroundNet);
@@ -894,25 +904,26 @@ void io::Parser::addFakeNets() {
   design->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
 
-void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer)
+void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
+                                           frLayer* tmpLayer)
 {
-  for(auto rule : layer->getTechLayerCornerSpacingRules())
-  {
+  for (auto rule : layer->getTechLayerCornerSpacingRules()) {
     std::string widthName("WIDTH");
     std::vector<frCoord> widths;
-    std::vector<std::pair<frCoord, frCoord> > spacings;
+    std::vector<std::pair<frCoord, frCoord>> spacings;
     rule->getSpacingTable(spacings);
     rule->getWidthTable(widths);
     bool hasSameXY = true;
-    for(auto &[spacing1, spacing2] : spacings)
-      if(spacing1 != spacing2)
+    for (auto& [spacing1, spacing2] : spacings)
+      if (spacing1 != spacing2)
         hasSameXY = false;
 
-    fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(widthName, widths, spacings);
-    unique_ptr<frConstraint> uCon = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+    fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
+        widthName, widths, spacings);
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
     auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
-    switch (rule->getType())
-    {
+    switch (rule->getType()) {
       case odb::dbTechLayerCornerSpacingRule::CornerType::CONVEXCORNER:
         rptr->setCornerType(frCornerTypeEnum::CONVEX);
         rptr->setSameMask(rule->isSameMask());
@@ -927,9 +938,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
             rptr->setIncludeLShape(rule->isIncludeShape());
           }
         }
-        
+
         break;
-      
+
       default:
         rptr->setCornerType(frCornerTypeEnum::CONCAVE);
         if (rule->isMinLengthValid()) {
@@ -947,19 +958,21 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     tech->addUConstraint(std::move(uCon));
     tmpLayer->addLef58CornerSpacingConstraint(rptr);
   }
-  for(auto rule : layer->getTechLayerSpacingTablePrlRules())
-  {
+  for (auto rule : layer->getTechLayerSpacingTablePrlRules()) {
     string rowName("WIDTH");
     string colName("PARALLELRUNLENGTH");
     frCollection<frCoord> rowVals, colVals;
-    frCollection<frCollection<frCoord> > tblVals;
-    map<frCoord, pair<frCoord, frCoord> > ewVals;
-    map<frUInt4, pair<frCoord, frCoord> > _ewVals;
+    frCollection<frCollection<frCoord>> tblVals;
+    map<frCoord, pair<frCoord, frCoord>> ewVals;
+    map<frUInt4, pair<frCoord, frCoord>> _ewVals;
     rule->getTable(rowVals, colVals, tblVals, _ewVals);
-    for(auto &[key, value] : _ewVals) ewVals[key] = value;
-    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord> > prlTbl = make_shared<
-      fr2DLookupTbl<frCoord, frCoord, frCoord> >(rowName, rowVals, colName, colVals, tblVals);
-    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
+    for (auto& [key, value] : _ewVals)
+      ewVals[key] = value;
+    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl
+        = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
+            rowName, rowVals, colName, colVals, tblVals);
+    shared_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
+        = make_shared<frLef58SpacingTableConstraint>(prlTbl, ewVals);
     spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
     spacingTableConstraint->setSameMask(rule->isSameMask());
     if (rule->isExceeptEol()) {
@@ -968,15 +981,18 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     tech->addConstraint(spacingTableConstraint);
     tmpLayer->addConstraint(spacingTableConstraint);
   }
-  for(auto rule : layer->getTechLayerSpacingEolRules())
-  {
-    if(rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid() || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid())
-    {
-      logger->warn(utl::DRT, 168, "unsupported LEF58_SPACING rule for layer {}",layer->getName());
+  for (auto rule : layer->getTechLayerSpacingEolRules()) {
+    if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
+        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
+      logger->warn(utl::DRT,
+                   168,
+                   "unsupported LEF58_SPACING rule for layer {}",
+                   layer->getName());
       continue;
     }
     auto con = make_shared<frLef58SpacingEndOfLineConstraint>();
-    con->setEol(rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
+    con->setEol(
+        rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
     if (rule->isWrongDirSpacingValid()) {
       con->setWrongDirSpace(rule->getWrongDirSpace());
     }
@@ -994,13 +1010,15 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       within->setSameMask(rule->isSameMaskValid());
     }
     if (rule->isEndToEndValid()) {
-      auto endToEnd = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+      auto endToEnd
+          = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
       within->setEndToEndConstraint(endToEnd);
       endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
       endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
       if (rule->isExtensionValid()) {
         if (rule->isWrongDirExtensionValid()) {
-          endToEnd->setExtension(rule->getExtension(), rule->getWrongDirExtension());
+          endToEnd->setExtension(rule->getExtension(),
+                                 rule->getWrongDirExtension());
         } else {
           endToEnd->setExtension(rule->getExtension());
         }
@@ -1010,7 +1028,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       }
     }
     if (rule->isParallelEdgeValid()) {
-      auto parallelEdge = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+      auto parallelEdge
+          = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
       within->setParallelEdgeConstraint(parallelEdge);
       if (rule->isSubtractEolWidthValid()) {
         parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
@@ -1036,9 +1055,10 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
       }
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
-      auto len = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+      auto len
+          = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
       within->setMaxMinLengthConstraint(len);
-      if(rule->isMinLengthValid())
+      if (rule->isMinLengthValid())
         len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
       else
         len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
@@ -1046,34 +1066,36 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer, frLayer* tmp
     tech->addConstraint(con);
     tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);
   }
-  if(layer->isRectOnly())
-  {
-    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(layer->isRectOnlyExceptNonCorePins());
+  if (layer->isRectOnly()) {
+    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(
+        layer->isRectOnlyExceptNonCorePins());
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech->addUConstraint(std::move(rectOnlyConstraint));
   }
-  if(layer->isRightWayOnGridOnly())
-  {
-    auto rightWayOnGridOnlyConstraint = make_unique<frLef58RightWayOnGridOnlyConstraint>(layer->isRightWayOnGridOnlyCheckMask());
-    tmpLayer->setLef58RightWayOnGridOnlyConstraint(rightWayOnGridOnlyConstraint.get());
+  if (layer->isRightWayOnGridOnly()) {
+    auto rightWayOnGridOnlyConstraint
+        = make_unique<frLef58RightWayOnGridOnlyConstraint>(
+            layer->isRightWayOnGridOnlyCheckMask());
+    tmpLayer->setLef58RightWayOnGridOnlyConstraint(
+        rightWayOnGridOnlyConstraint.get());
     tech->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
-  for(auto rule : layer->getTechLayerMinStepRules())
-  {
+  for (auto rule : layer->getTechLayerMinStepRules()) {
     auto con = make_unique<frLef58MinStepConstraint>();
     con->setMinStepLength(rule->getMinStepLength());
-    con->setMaxEdges(rule->isMaxEdgesValid()?rule->getMaxEdges():-1);
-    con->setMinAdjacentLength(rule->isMinAdjLength1Valid()?rule->getMinAdjLength1():-1);
-    con->setEolWidth(rule->isNoBetweenEol()?rule->getEolWidth():-1);
+    con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
+    con->setMinAdjacentLength(
+        rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
+    con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech->addUConstraint(std::move(con));
   }
 }
 
-void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLayer)
+void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
+                                       frLayer* tmpLayer)
 {
-  for(auto rule : layer->getTechLayerCutClassRules())
-  {
+  for (auto rule : layer->getTechLayerCutClassRules()) {
     auto cutClass = make_unique<frLef58CutClass>();
     string name = rule->getName();
     cutClass->setName(name);
@@ -1090,142 +1112,156 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
     }
     tech->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
   }
-  for(auto rule : layer->getTechLayerCutSpacingRules())
-  {
-    switch (rule->getType())
-    {
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS:{
-      auto con = make_unique<frLef58CutSpacingConstraint>();
-      con->setCutSpacing(rule->getCutSpacing());
-      con->setCenterToCenter(rule->isCenterToCenter());
-      con->setSameNet(rule->isSameNet());
-      con->setSameMetal(rule->isSameMetal());
-      con->setSameVia(rule->isSameVia());
-      con->setAdjacentCuts(rule->getAdjacentCuts());
-      if(rule->isExactAligned())
-        con->setExactAlignedCut(rule->getNumCuts());
-      if(rule->isTwoCutsValid())
-        con->setTwoCuts(rule->getTwoCuts());
-      con->setSameCut(rule->isSameCut());
-      con->setCutWithin(rule->getWithin());
-      con->setExceptSamePGNet(rule->isExceptSamePgnet());
-      if(rule->getCutClass()!=nullptr)
-      {
-        std::string className = rule->getCutClass()->getName();
-        con->setCutClassName(className);
-        auto cutClassIdx = tmpLayer->getCutClassIdx(className);
-        if (cutClassIdx != -1)
+  for (auto rule : layer->getTechLayerCutSpacingRules()) {
+    switch (rule->getType()) {
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS: {
+        auto con = make_unique<frLef58CutSpacingConstraint>();
+        con->setCutSpacing(rule->getCutSpacing());
+        con->setCenterToCenter(rule->isCenterToCenter());
+        con->setSameNet(rule->isSameNet());
+        con->setSameMetal(rule->isSameMetal());
+        con->setSameVia(rule->isSameVia());
+        con->setAdjacentCuts(rule->getAdjacentCuts());
+        if (rule->isExactAligned())
+          con->setExactAlignedCut(rule->getNumCuts());
+        if (rule->isTwoCutsValid())
+          con->setTwoCuts(rule->getTwoCuts());
+        con->setSameCut(rule->isSameCut());
+        con->setCutWithin(rule->getWithin());
+        con->setExceptSamePGNet(rule->isExceptSamePgnet());
+        if (rule->getCutClass() != nullptr) {
+          std::string className = rule->getCutClass()->getName();
+          con->setCutClassName(className);
+          auto cutClassIdx = tmpLayer->getCutClassIdx(className);
+          if (cutClassIdx != -1)
             con->setCutClassIdx(cutClassIdx);
-        else
-          continue;
-        con->setToAll(rule->isCutClassToAll());
-      }
-      con->setNoPrl(rule->isNoPrl());
-      con->setSideParallelOverlap(rule->isSideParallelOverlap());
-      con->setSameMask(rule->isSameMask());
+          else
+            continue;
+          con->setToAll(rule->isCutClassToAll());
+        }
+        con->setNoPrl(rule->isNoPrl());
+        con->setSideParallelOverlap(rule->isSideParallelOverlap());
+        con->setSameMask(rule->isSameMask());
 
-      tmpLayer->addLef58CutSpacingConstraint(con.get());
-      tech->addUConstraint(std::move(con));
-      break;
-    }
-    
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER:{
-      if(rule->getSecondLayer() == nullptr)
-        continue;
-      auto con = make_unique<frLef58CutSpacingConstraint>();
-      con->setCutSpacing(rule->getCutSpacing());
-      con->setCenterToCenter(rule->isCenterToCenter());
-      con->setSameNet(rule->isSameNet());
-      con->setSameMetal(rule->isSameMetal());
-      con->setSameVia(rule->isSameVia());
-      con->setSecondLayerName(rule->getSecondLayer()->getName());
-      con->setStack(rule->isStack());
-      if(rule->isOrthogonalSpacingValid())
-      {
-        con->setOrthogonalSpacing(rule->getOrthogonalSpacing());
+        tmpLayer->addLef58CutSpacingConstraint(con.get());
+        tech->addUConstraint(std::move(con));
+        break;
       }
-      if(rule->getCutClass()!=nullptr)
-      {
-        std::string className = rule->getCutClass()->getName();
-        con->setCutClassName(className);
-        auto cutClassIdx = tmpLayer->getCutClassIdx(className);
-        if (cutClassIdx != -1)
-            con->setCutClassIdx(cutClassIdx);
-        else
+
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER: {
+        if (rule->getSecondLayer() == nullptr)
           continue;
-        con->setShortEdgeOnly(rule->isShortEdgeOnly());
-        if(rule->isPrlValid())
-          con->setPrl(rule->getPrl());
-        con->setConcaveCorner(rule->isConcaveCorner());
-        if(rule->isConcaveCornerWidth())
-        {
-          con->setWidth(rule->getWidth());
-          con->setEnclosure(rule->getEnclosure());
-          con->setEdgeLength(rule->getEdgeLength());
-        }else if(rule->isConcaveCornerParallel())
-        {
-          con->setParLength(rule->getParLength());
-          con->setParWithin(rule->getParWithin());
-          con->setEnclosure(rule->getParEnclosure());
-        }else if(rule->isConcaveCornerEdgeLength())
-        {
-          con->setEdgeLength(rule->getEdgeLength());
-          con->setEdgeEnclosure(rule->getEdgeEnclosure());
-          con->setAdjEnclosure(rule->getAdjEnclosure());
+        auto con = make_unique<frLef58CutSpacingConstraint>();
+        con->setCutSpacing(rule->getCutSpacing());
+        con->setCenterToCenter(rule->isCenterToCenter());
+        con->setSameNet(rule->isSameNet());
+        con->setSameMetal(rule->isSameMetal());
+        con->setSameVia(rule->isSameVia());
+        con->setSecondLayerName(rule->getSecondLayer()->getName());
+        con->setStack(rule->isStack());
+        if (rule->isOrthogonalSpacingValid()) {
+          con->setOrthogonalSpacing(rule->getOrthogonalSpacing());
         }
-        if(rule->isExtensionValid())
-          con->setExtension(rule->getExtension());
-        if(rule->isNonEolConvexCorner())
-        {
-          con->setEolWidth(rule->getEolWidth());
-          if(rule->isMinLengthValid())
-            con->setMinLength(rule->getMinLength());
+        if (rule->getCutClass() != nullptr) {
+          std::string className = rule->getCutClass()->getName();
+          con->setCutClassName(className);
+          auto cutClassIdx = tmpLayer->getCutClassIdx(className);
+          if (cutClassIdx != -1)
+            con->setCutClassIdx(cutClassIdx);
+          else
+            continue;
+          con->setShortEdgeOnly(rule->isShortEdgeOnly());
+          if (rule->isPrlValid())
+            con->setPrl(rule->getPrl());
+          con->setConcaveCorner(rule->isConcaveCorner());
+          if (rule->isConcaveCornerWidth()) {
+            con->setWidth(rule->getWidth());
+            con->setEnclosure(rule->getEnclosure());
+            con->setEdgeLength(rule->getEdgeLength());
+          } else if (rule->isConcaveCornerParallel()) {
+            con->setParLength(rule->getParLength());
+            con->setParWithin(rule->getParWithin());
+            con->setEnclosure(rule->getParEnclosure());
+          } else if (rule->isConcaveCornerEdgeLength()) {
+            con->setEdgeLength(rule->getEdgeLength());
+            con->setEdgeEnclosure(rule->getEdgeEnclosure());
+            con->setAdjEnclosure(rule->getAdjEnclosure());
+          }
+          if (rule->isExtensionValid())
+            con->setExtension(rule->getExtension());
+          if (rule->isNonEolConvexCorner()) {
+            con->setEolWidth(rule->getEolWidth());
+            if (rule->isMinLengthValid())
+              con->setMinLength(rule->getMinLength());
+          }
+          if (rule->isAboveWidthValid()) {
+            rule->setWidth(rule->getAboveWidth());
+            if (rule->isAboveWidthEnclosureValid())
+              rule->setEnclosure(rule->getAboveEnclosure());
+          }
+          con->setMaskOverlap(rule->isMaskOverlap());
+          con->setWrongDirection(rule->isWrongDirection());
         }
-        if(rule->isAboveWidthValid())
-        {
-          rule->setWidth(rule->getAboveWidth());
-          if(rule->isAboveWidthEnclosureValid())
-            rule->setEnclosure(rule->getAboveEnclosure());
-        }
-        con->setMaskOverlap(rule->isMaskOverlap());
-        con->setWrongDirection(rule->isWrongDirection());
+        tmpLayer->addLef58CutSpacingConstraint(con.get());
+        tech->addUConstraint(std::move(con));
+        break;
       }
-      tmpLayer->addLef58CutSpacingConstraint(con.get());
-      tech->addUConstraint(std::move(con));
-      break;
-    }
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
-      logger->warn(utl::DRT, 160, "unsupported LEF58_SPACING rule for layer {} of type AREA",layer->getName());
-      break;
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
-      logger->warn(utl::DRT, 161, "unsupported LEF58_SPACING rule for layer {} of type MAXXY",layer->getName());
-      break;
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK:
-      logger->warn(utl::DRT, 162, "unsupported LEF58_SPACING rule for layer {} of type SAMEMASK",layer->getName());
-      break;
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
-      logger->warn(utl::DRT, 163, "unsupported LEF58_SPACING rule for layer {} of type PARALLELOVERLAP",layer->getName());
-      break;
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
-      logger->warn(utl::DRT, 164, "unsupported LEF58_SPACING rule for layer {} of type PARALLELWITHIN",layer->getName());
-      break;
-    case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE:
-      logger->warn(utl::DRT, 165, "unsupported LEF58_SPACING rule for layer {} of type SAMEMETALSHAREDEDGE",layer->getName());
-      break;
-    default:
-      logger->warn(utl::DRT, 166, "unsupported LEF58_SPACING rule for layer {}",layer->getName());
-      break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
+        logger->warn(utl::DRT,
+                     160,
+                     "unsupported LEF58_SPACING rule for layer {} of type AREA",
+                     layer->getName());
+        break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY:
+        logger->warn(
+            utl::DRT,
+            161,
+            "unsupported LEF58_SPACING rule for layer {} of type MAXXY",
+            layer->getName());
+        break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK:
+        logger->warn(
+            utl::DRT,
+            162,
+            "unsupported LEF58_SPACING rule for layer {} of type SAMEMASK",
+            layer->getName());
+        break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
+        logger->warn(utl::DRT,
+                     163,
+                     "unsupported LEF58_SPACING rule for layer {} of type "
+                     "PARALLELOVERLAP",
+                     layer->getName());
+        break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
+        logger->warn(utl::DRT,
+                     164,
+                     "unsupported LEF58_SPACING rule for layer {} of type "
+                     "PARALLELWITHIN",
+                     layer->getName());
+        break;
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE:
+        logger->warn(utl::DRT,
+                     165,
+                     "unsupported LEF58_SPACING rule for layer {} of type "
+                     "SAMEMETALSHAREDEDGE",
+                     layer->getName());
+        break;
+      default:
+        logger->warn(utl::DRT,
+                     166,
+                     "unsupported LEF58_SPACING rule for layer {}",
+                     layer->getName());
+        break;
     }
   }
-  for(auto rule : layer->getTechLayerCutSpacingTableDefRules())
-  {
-    if(rule->isLayerValid()&&tmpLayer->getLayerNum()==1)
+  for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
+    if (rule->isLayerValid() && tmpLayer->getLayerNum() == 1)
       continue;
     auto con = make_shared<frLef58CutSpacingTableConstraint>();
-    if(rule->isDefaultValid())
+    if (rule->isDefaultValid())
       con->setDefaultCutSpacing(rule->getDefault());
-    if(rule->isPrlValid())
-    {
+    if (rule->isPrlValid()) {
       auto ptr = make_shared<frLef58CutSpacingTablePrlConstraint>();
       ptr->setPrl(rule->getPrl());
       ptr->setHorizontal(rule->isPrlHorizontal());
@@ -1233,13 +1269,15 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
       ptr->setMaxXY(rule->isMaxXY());
       con->setPrlConstraint(ptr);
     }
-    if(rule->isLayerValid())
-    {
+    if (rule->isLayerValid()) {
       auto secondLayerName = rule->getSecondLayer()->getName();
       auto ptr = make_shared<frLef58CutSpacingTableLayerConstraint>();
-      if(tech->name2layer.find(secondLayerName) == tech->name2layer.end()){
-        logger->warn(utl::DRT, 167, "layer {} is not found to layer {} LEF58_SPACINGTABLE",secondLayerName
-        ,layer->getName());
+      if (tech->name2layer.find(secondLayerName) == tech->name2layer.end()) {
+        logger->warn(utl::DRT,
+                     167,
+                     "layer {} is not found to layer {} LEF58_SPACINGTABLE",
+                     secondLayerName,
+                     layer->getName());
         continue;
       }
       auto secondLayerNum = tech->name2layer.at(secondLayerName)->getLayerNum();
@@ -1247,51 +1285,49 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer, frLayer* tmpLaye
       ptr->setNonZeroEnc(rule->isNonZeroEnclosure());
       con->setLayerConstraint(ptr);
     }
-    frCollection<frCollection<std::pair<frCoord,frCoord>>> table;
+    frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
     map<std::string, frUInt4> rowMap, tmpRowMap;
     map<std::string, frUInt4> colMap, tmpColMap;
     rule->getSpacingTable(table, tmpRowMap, tmpColMap);
 
-    for(auto &[key, val] : tmpRowMap)
-    {
+    for (auto& [key, val] : tmpRowMap) {
       std::string newKey = key;
       size_t idx = newKey.find("/");
-      if(idx != string::npos)
+      if (idx != string::npos)
         newKey.replace(idx, 1, "");
       rowMap[newKey] = val;
     }
-    for(auto &[key, val] : tmpColMap)
-    {
+    for (auto& [key, val] : tmpColMap) {
       std::string newKey = key;
       size_t idx = newKey.find("/");
-      if(idx != string::npos)
+      if (idx != string::npos)
         newKey.replace(idx, 1, "");
       colMap[newKey] = val;
     }
 
     vector<frString> expColNames;
-    for(auto &[col, idx] : colMap)
+    for (auto& [col, idx] : colMap)
       expColNames.push_back(col);
     sort(expColNames.begin(), expColNames.end());
 
     vector<frString> expRowNames;
-    for(auto &[row, idx] : rowMap)
+    for (auto& [row, idx] : rowMap)
       expRowNames.push_back(row);
     sort(expRowNames.begin(), expRowNames.end());
-    
+
     auto tblVals = table;
     uint i = 0;
-    for(auto &[row,orig_i] : rowMap)
-    {
+    for (auto& [row, orig_i] : rowMap) {
       uint j = 0;
-      for(auto &[col, orig_j] : colMap)
+      for (auto& [col, orig_j] : colMap)
         tblVals.at(i).at(j++) = table.at(orig_i).at(orig_j);
       ++i;
     }
     string rowName("CUTCLASS");
     string colName("CUTCLASS");
-    auto ptr = make_shared<fr2DLookupTbl<frString, frString, pair<frCoord, frCoord> > >(rowName, 
-        expRowNames, colName, expColNames, tblVals);
+    auto ptr = make_shared<
+        fr2DLookupTbl<frString, frString, pair<frCoord, frCoord>>>(
+        rowName, expRowNames, colName, expColNames, tblVals);
     con->setCutClassTbl(ptr);
     tmpLayer->lef58CutSpacingTableConstraints.push_back(con);
     tech->addConstraint(con);
@@ -1333,7 +1369,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tech->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
-  if(layer->getMinWidth() > layer->getWidth())
+  if (layer->getMinWidth() > layer->getWidth())
     logger->warn(
         DRT,
         210,
@@ -1487,9 +1523,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       auto rptr = uCon.get();
       tech->addUConstraint(std::move(uCon));
       if (tmpLayer->hasSpacingSamenet()) {
-        logger->warn(DRT,
-                     138,
-                     "new SPACING SAMENET overrides old SPACING SAMENET rule");
+        logger->warn(
+            DRT, 138, "new SPACING SAMENET overrides old SPACING SAMENET rule");
       }
       tmpLayer->setSpacingSamenet(
           static_cast<frSpacingSamenetConstraint*>(rptr));
@@ -1502,9 +1537,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
       tech->addUConstraint(std::move(uCon));
       if (tmpLayer->getMinSpacing())
-        logger->warn(DRT,
-                     144,
-                     "new SPACING SAMENET overrides old SPACING SAMENET rule");
+        logger->warn(
+            DRT, 144, "new SPACING SAMENET overrides old SPACING SAMENET rule");
       tmpLayer->setMinSpacing(rptr);
     }
   }
@@ -1576,9 +1610,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     tech->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
-      logger->warn(DRT,
-                   146,
-                   "new SPACINGTABLE TWOWIDTHS overrides old SPACING rule");
+      logger->warn(
+          DRT, 146, "new SPACINGTABLE TWOWIDTHS overrides old SPACING rule");
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -1682,9 +1715,9 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
 void io::Parser::addMasterSliceLayer(odb::dbTechLayer* layer)
 {
-  if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL &&
-      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL &&
-      layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
+  if (layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::NWELL
+      && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::PWELL
+      && layer->getLef58Type() != odb::dbTechLayer::LEF58_TYPE::DIFFUSION)
     masterSliceLayerName = string(layer->getName());
 }
 
@@ -1728,85 +1761,84 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       bound.setPoints(points);
       bounds.push_back(bound);
       tmpBlock->setBoundaries(bounds);
-      switch (master->getType().getValue())
-      {
+      switch (master->getType().getValue()) {
         case odb::dbMasterType::NONE:
-        break;
+          break;
         case odb::dbMasterType::CORE:
         case odb::dbMasterType::CORE_FEEDTHRU:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE);
+          break;
         case odb::dbMasterType::CORE_TIEHIGH:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIEHIGH);
+          break;
         case odb::dbMasterType::CORE_TIELOW:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_TIELOW);
+          break;
         case odb::dbMasterType::CORE_WELLTAP:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_WELLTAP);
+          break;
         case odb::dbMasterType::CORE_SPACER:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_SPACER);
+          break;
         case odb::dbMasterType::CORE_ANTENNACELL:
-        tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::CORE_ANTENNACELL);
+          break;
         case odb::dbMasterType::COVER:
         case odb::dbMasterType::COVER_BUMP:
-        tmpBlock->setMacroClass(MacroClassEnum::COVER);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::COVER);
+          break;
         case odb::dbMasterType::BLOCK:
         case odb::dbMasterType::BLOCK_BLACKBOX:
         case odb::dbMasterType::BLOCK_SOFT:
-        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-        break;
-        tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+          break;
+          tmpBlock->setMacroClass(MacroClassEnum::BLOCK);
+          break;
         case odb::dbMasterType::PAD:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD);
+          break;
         case odb::dbMasterType::PAD_INPUT:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_INPUT);
+          break;
         case odb::dbMasterType::PAD_OUTPUT:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_OUTPUT);
+          break;
         case odb::dbMasterType::PAD_INOUT:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_INOUT);
+          break;
         case odb::dbMasterType::PAD_POWER:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_POWER);
+          break;
         case odb::dbMasterType::PAD_SPACER:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_SPACER);
+          break;
         case odb::dbMasterType::PAD_AREAIO:
-        tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::PAD_AREAIO);
+          break;
         case odb::dbMasterType::RING:
-        tmpBlock->setMacroClass(MacroClassEnum::RING);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::RING);
+          break;
         case odb::dbMasterType::ENDCAP:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP);
+          break;
         case odb::dbMasterType::ENDCAP_PRE:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_PRE);
+          break;
         case odb::dbMasterType::ENDCAP_POST:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_POST);
+          break;
         case odb::dbMasterType::ENDCAP_TOPLEFT:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPLEFT);
+          break;
         case odb::dbMasterType::ENDCAP_TOPRIGHT:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_TOPRIGHT);
+          break;
         case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMLEFT);
+          break;
         case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
-        tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
-        break;
+          tmpBlock->setMacroClass(MacroClassEnum::ENDCAP_BOTTOMRIGHT);
+          break;
       }
 
       for (auto _term : master->getMTerms()) {
@@ -1843,8 +1875,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         } else if (str == "FEEDTHRU") {
           termDirection = frTermDirectionEnum::FEEDTHRU;
         } else {
-          logger->error(
-              DRT, 121, "unsupported term direction {} in lef", str);
+          logger->error(DRT, 121, "unsupported term direction {} in lef", str);
         }
         term->setDirection(termDirection);
 
@@ -1855,18 +1886,18 @@ void io::Parser::setMacros(odb::dbDatabase* db)
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
             string layer = box->getTechLayer()->getName();
-            if (tech->name2layer.find(layer) == tech->name2layer.end()){
+            if (tech->name2layer.find(layer) == tech->name2layer.end()) {
               auto type = box->getTechLayer()->getType();
-              if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+              if (type == odb::dbTechLayerType::ROUTING
+                  || type == odb::dbTechLayerType::CUT)
                 logger->warn(DRT,
-                            122,
-                            "layer {} is skipped for {}/{}",
-                            layer,
-                            tmpBlock->getName(),
-                            _term->getName());
+                             122,
+                             "layer {} is skipped for {}/{}",
+                             layer,
+                             tmpBlock->getName(),
+                             _term->getName());
               continue;
-            }
-            else
+            } else
               layerNum = tech->name2layer.at(layer)->getLayerNum();
 
             frCoord xl = box->xMin();
@@ -1889,12 +1920,13 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         string layer = obs->getTechLayer()->getName();
         if (tech->name2layer.find(layer) == tech->name2layer.end()) {
           auto type = obs->getTechLayer()->getType();
-          if(type == odb::dbTechLayerType::ROUTING || type == odb::dbTechLayerType::CUT)
+          if (type == odb::dbTechLayerType::ROUTING
+              || type == odb::dbTechLayerType::CUT)
             logger->warn(DRT,
-                        123,
-                        "layer {} is skipped for {}/OBS",
-                        layer,
-                        tmpBlock->getName());
+                         123,
+                         "layer {} is skipped for {}/OBS",
+                         layer,
+                         tmpBlock->getName());
           continue;
         } else
           layerNum = tech->name2layer.at(layer)->getLayerNum();
@@ -1950,10 +1982,8 @@ void io::Parser::setTechViaRules(odb::dbTech* _tech)
       lNum2Int[lnum] = ++curOrder;
     }
     if (lNum2Int.begin()->first + count - 1 != (--lNum2Int.end())->first) {
-      logger->error(DRT,
-                    130,
-                    "non consecutive layers for viarule {}",
-                    rule->getName());
+      logger->error(
+          DRT, 130, "non consecutive layers for viarule {}", rule->getName());
     }
     auto viaRuleGen = make_unique<frViaRuleGenerate>(rule->getName());
     if (rule->isDefault()) {
@@ -2049,11 +2079,8 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
     for (auto box : via->getBoxes()) {
       string layerName = box->getTechLayer()->getName();
       if (tech->name2layer.find(layerName) == tech->name2layer.end())
-        logger->error(DRT,
-                      124,
-                      "unknown layer {} for via {}",
-                      layerName,
-                      via->getName());
+        logger->error(
+            DRT, 124, "unknown layer {} for via {}", layerName, via->getName());
       frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
       lNum2Int[lNum] = 1;
     }
@@ -2075,11 +2102,8 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
       frLayerNum layerNum;
       string layer = box->getTechLayer()->getName();
       if (tech->name2layer.find(layer) == tech->name2layer.end())
-        logger->error(DRT,
-                      127,
-                      "unknown layer {} for via {}",
-                      layer,
-                      via->getName());
+        logger->error(
+            DRT, 127, "unknown layer {} for via {}", layer, via->getName());
       else
         layerNum = tech->name2layer.at(layer)->getLayerNum();
       frCoord xl = box->xMin();
@@ -2158,9 +2182,7 @@ void io::Parser::readDb(odb::dbDatabase* db)
     logger->info(DRT, 150, "Reading Design");
   }
 
-
   readDesign(db);
-
 
   if (VERBOSE > 0) {
     logger->report("");
@@ -2179,7 +2201,8 @@ void io::Parser::readDb(odb::dbDatabase* db)
   }
 }
 
-void io::Parser::readGuide() {
+void io::Parser::readGuide()
+{
   ProfileTask profile("IO:readGuide");
 
   if (VERBOSE > 0) {
@@ -2193,14 +2216,15 @@ void io::Parser::readGuide() {
 
   ifstream fin(GUIDE_FILE.c_str());
   string line;
-  frBox  box;
+  frBox box;
   frLayerNum layerNum;
 
-  if (fin.is_open()){
+  if (fin.is_open()) {
     while (fin.good()) {
       getline(fin, line);
-      //cout <<line <<endl <<line.size() <<endl;
-      if (line == "(" || line == "") continue;
+      // cout <<line <<endl <<line.size() <<endl;
+      if (line == "(" || line == "")
+        continue;
       if (line == ")") {
         continue;
       }
@@ -2209,29 +2233,30 @@ void io::Parser::readGuide() {
       string word = "";
       vector<string> vLine;
       while (!ss.eof()) {
-        ss >>word;
+        ss >> word;
         vLine.push_back(word);
-        //cout <<word <<" ";
+        // cout <<word <<" ";
       }
-      //cout <<endl;
+      // cout <<endl;
 
       if (vLine.size() == 0) {
         logger->error(DRT, 152, "Error reading guide file!");
       } else if (vLine.size() == 1) {
         netName = vLine[0];
-        if (design->topBlock_->name2net_.find(vLine[0]) == design->topBlock_->name2net_.end()) {
-          logger->error(DRT, 153, "cannot find net {}",vLine[0]);
+        if (design->topBlock_->name2net_.find(vLine[0])
+            == design->topBlock_->name2net_.end()) {
+          logger->error(DRT, 153, "cannot find net {}", vLine[0]);
         }
-        net = design->topBlock_->name2net_[netName]; 
+        net = design->topBlock_->name2net_[netName];
       } else if (vLine.size() == 5) {
         if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
-          logger->error(DRT, 154, "cannot find layer {}",vLine[4]);
+          logger->error(DRT, 154, "cannot find layer {}", vLine[4]);
         }
         layerNum = tech->name2layer[vLine[4]]->getLayerNum();
 
         if (layerNum < (BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
             || layerNum > TOP_ROUTING_LAYER)
-            logger->error(DRT,
+          logger->error(DRT,
                         155,
                         "guide in net {} uses layer {} ({})"
                         " that is outside the allowed routing range "
@@ -2269,30 +2294,32 @@ void io::Parser::readGuide() {
     logger->error(DRT, 159, "failed to open guide file");
   }
 
-
   if (VERBOSE > 0) {
     logger->report("");
     logger->report("#guides:     {}", numGuides);
     logger->report("");
   }
-
 }
 
-void io::Writer::fillConnFigs_net(frNet* net, bool isTA) {
-  //bool enableOutput = true;
+void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
+{
+  // bool enableOutput = true;
   bool enableOutput = false;
   auto netName = net->getName();
   if (isTA) {
-    for (auto &uGuide: net->getGuides()) {
-      //cout <<"find guide" <<endl;
-      for (auto &uConnFig: uGuide->getRoutes()) {
+    for (auto& uGuide : net->getGuides()) {
+      // cout <<"find guide" <<endl;
+      for (auto& uConnFig : uGuide->getRoutes()) {
         auto connFig = uConnFig.get();
         if (connFig->typeId() == frcPathSeg) {
-          connFigs[netName].push_back(make_shared<frPathSeg>(*static_cast<frPathSeg*>(connFig)));
+          connFigs[netName].push_back(
+              make_shared<frPathSeg>(*static_cast<frPathSeg*>(connFig)));
         } else if (connFig->typeId() == frcVia) {
-          connFigs[netName].push_back(make_shared<frVia>(*static_cast<frVia*>(connFig)));
+          connFigs[netName].push_back(
+              make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
-          cout <<"Error: io::Writer::filliConnFigs does not support this type" <<endl;
+          cout << "Error: io::Writer::filliConnFigs does not support this type"
+               << endl;
         }
       }
     }
@@ -2300,7 +2327,7 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA) {
     if (enableOutput) {
       cout << netName << ":\n";
     }
-    for (auto &shape: net->getShapes()) {
+    for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
         frPoint start, end;
@@ -2308,41 +2335,51 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA) {
 
         if (enableOutput) {
           frLayerNum currLayerNum = pathSeg.getLayerNum();
-          cout << "  connfig pathseg (" << start.x() / 2000.0<< ", " << start.y() / 2000.0 
-               << ") - (" << end.x() / 2000.0 << ", " << end.y() / 2000.0 << ") " << currLayerNum  <<"\n"; 
+          cout << "  connfig pathseg (" << start.x() / 2000.0 << ", "
+               << start.y() / 2000.0 << ") - (" << end.x() / 2000.0 << ", "
+               << end.y() / 2000.0 << ") " << currLayerNum << "\n";
         }
         connFigs[netName].push_back(make_shared<frPathSeg>(pathSeg));
       }
     }
-    for (auto &via: net->getVias()) {
+    for (auto& via : net->getVias()) {
       connFigs[netName].push_back(make_shared<frVia>(*via));
     }
-    for (auto &shape: net->getPatchWires()) {
+    for (auto& shape : net->getPatchWires()) {
       auto pwire = static_cast<frPatchWire*>(shape.get());
       connFigs[netName].push_back(make_shared<frPatchWire>(*pwire));
     }
   }
 }
 
-void io::Writer::splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
-  vector< vector< map<frCoord, vector<shared_ptr<frPathSeg> > > > > &mergedPathSegs) {
-  if (layerNum >= 0 && layerNum < (int)(getTech()->getLayers().size()) &&
-      mergedPathSegs.at(layerNum).at(isH).find(trackLoc) != mergedPathSegs.at(layerNum).at(isH).end()) {
-    for (auto &pathSeg: mergedPathSegs.at(layerNum).at(isH).at(trackLoc)) {
+void io::Writer::splitVia_helper(
+    frLayerNum layerNum,
+    int isH,
+    frCoord trackLoc,
+    frCoord x,
+    frCoord y,
+    vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>>& mergedPathSegs)
+{
+  if (layerNum >= 0 && layerNum < (int) (getTech()->getLayers().size())
+      && mergedPathSegs.at(layerNum).at(isH).find(trackLoc)
+             != mergedPathSegs.at(layerNum).at(isH).end()) {
+    for (auto& pathSeg : mergedPathSegs.at(layerNum).at(isH).at(trackLoc)) {
       frPoint begin, end;
       pathSeg->getPoints(begin, end);
-      if ((isH == 0 && (begin.x() < x) && (end.x() > x)) ||
-          (isH == 1 && (begin.y() < y) && (end.y() > y))) {
+      if ((isH == 0 && (begin.x() < x) && (end.x() > x))
+          || (isH == 1 && (begin.y() < y) && (end.y() > y))) {
         frSegStyle style1, style2, style_default;
         pathSeg->getStyle(style1);
         pathSeg->getStyle(style2);
         style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
         shared_ptr<frPathSeg> newPathSeg = make_shared<frPathSeg>(*pathSeg);
-        pathSeg->setPoints(begin, frPoint(x,y));
-        style1.setEndStyle(style_default.getEndStyle(), style_default.getEndExt());
+        pathSeg->setPoints(begin, frPoint(x, y));
+        style1.setEndStyle(style_default.getEndStyle(),
+                           style_default.getEndExt());
         pathSeg->setStyle(style1);
-        newPathSeg->setPoints(frPoint(x,y), end);
-        style2.setBeginStyle(style_default.getBeginStyle(), style_default.getBeginExt());
+        newPathSeg->setPoints(frPoint(x, y), end);
+        style2.setBeginStyle(style_default.getBeginStyle(),
+                             style_default.getBeginExt());
         newPathSeg->setStyle(style2);
         mergedPathSegs.at(layerNum).at(isH).at(trackLoc).push_back(newPathSeg);
         // via can only intersect at most one merged pathseg on one track
@@ -2353,17 +2390,17 @@ void io::Writer::splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc,
 }
 
 // merge pathseg, delete redundant via
-void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
-  //if (VERBOSE > 0) {
-  //  cout <<endl <<"merge and split ..." <<endl;
-  //}
-  // initialzie pathseg and via map
-  map < tuple<frLayerNum, bool, frCoord>,
-        map<frCoord, vector< tuple<shared_ptr<frPathSeg>, bool> > 
-           >
-      > pathSegMergeMap;
-  map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
-  for (auto &connFig: connFigs) {
+void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
+{
+  // if (VERBOSE > 0) {
+  //   cout <<endl <<"merge and split ..." <<endl;
+  // }
+  //  initialzie pathseg and via map
+  map<tuple<frLayerNum, bool, frCoord>,
+      map<frCoord, vector<tuple<shared_ptr<frPathSeg>, bool>>>>
+      pathSegMergeMap;
+  map<tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia>> viaMergeMap;
+  for (auto& connFig : connFigs) {
     if (connFig->typeId() == frcPathSeg) {
       auto pathSeg = dynamic_pointer_cast<frPathSeg>(connFig);
       frPoint begin, end;
@@ -2371,15 +2408,17 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
       frLayerNum layerNum = pathSeg->getLayerNum();
       if (begin == end) {
         // std::cout << "Warning: 0 length connfig\n";
-        continue; // if segment length = 0, ignore
+        continue;  // if segment length = 0, ignore
       } else {
         // std::cout << "xxx\n";
         bool isH = (begin.x() == end.x()) ? false : true;
-        frCoord trackLoc   = isH ? begin.y() : begin.x();
+        frCoord trackLoc = isH ? begin.y() : begin.x();
         frCoord beginCoord = isH ? begin.x() : begin.y();
-        frCoord endCoord   = isH ? end.x()   : end.y();
-        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][beginCoord].push_back(make_tuple(pathSeg, true));
-        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][endCoord].push_back(make_tuple(pathSeg, false));
+        frCoord endCoord = isH ? end.x() : end.y();
+        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][beginCoord]
+            .push_back(make_tuple(pathSeg, true));
+        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][endCoord]
+            .push_back(make_tuple(pathSeg, false));
       }
     } else if (connFig->typeId() == frcVia) {
       auto via = dynamic_pointer_cast<frVia>(connFig);
@@ -2387,35 +2426,36 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
       frPoint viaPoint;
       via->getOrigin(viaPoint);
       viaMergeMap[make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)] = via;
-      //cout <<"found via" <<endl;
+      // cout <<"found via" <<endl;
     }
   }
 
   // merge pathSeg
-  map<frCoord, vector<shared_ptr<frPathSeg> > > tmp1;
-  vector< map<frCoord, vector<shared_ptr<frPathSeg> > > > tmp2(2, tmp1);
-  vector< vector< map<frCoord, vector<shared_ptr<frPathSeg> > > > > mergedPathSegs(getTech()->getLayers().size(), tmp2);
+  map<frCoord, vector<shared_ptr<frPathSeg>>> tmp1;
+  vector<map<frCoord, vector<shared_ptr<frPathSeg>>>> tmp2(2, tmp1);
+  vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>> mergedPathSegs(
+      getTech()->getLayers().size(), tmp2);
 
-  for (auto &it1: pathSegMergeMap) {
+  for (auto& it1 : pathSegMergeMap) {
     auto layerNum = get<0>(it1.first);
-    int  isH = get<1>(it1.first);
+    int isH = get<1>(it1.first);
     auto trackLoc = get<2>(it1.first);
     bool hasSeg = false;
     int cnt = 0;
     shared_ptr<frPathSeg> newPathSeg;
     frSegStyle style;
     frPoint begin, end;
-    for (auto &it2: it1.second) {
-      //cout <<"coord " <<coord <<endl;
-      for (auto &pathSegTuple: it2.second) {
-        cnt += get<1>(pathSegTuple)? 1 : -1;
+    for (auto& it2 : it1.second) {
+      // cout <<"coord " <<coord <<endl;
+      for (auto& pathSegTuple : it2.second) {
+        cnt += get<1>(pathSegTuple) ? 1 : -1;
       }
       // newPathSeg begin
       if (!hasSeg && cnt > 0) {
         style.setBeginStyle(frcTruncateEndStyle, 0);
         style.setEndStyle(frcTruncateEndStyle, 0);
         newPathSeg = make_shared<frPathSeg>(*(get<0>(*(it2.second.begin()))));
-        for (auto &pathSegTuple: it2.second) {
+        for (auto& pathSegTuple : it2.second) {
           auto pathSeg = get<0>(pathSegTuple);
           auto isBegin = get<1>(pathSegTuple);
           if (isBegin) {
@@ -2423,16 +2463,17 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
             frSegStyle tmpStyle;
             pathSeg->getStyle(tmpStyle);
             if (tmpStyle.getBeginExt() > style.getBeginExt()) {
-              style.setBeginStyle(tmpStyle.getBeginStyle(), tmpStyle.getBeginExt());
+              style.setBeginStyle(tmpStyle.getBeginStyle(),
+                                  tmpStyle.getBeginExt());
             }
           }
         }
         newPathSeg->setStyle(style);
         hasSeg = true;
-      // newPathSeg end
+        // newPathSeg end
       } else if (hasSeg && cnt == 0) {
         newPathSeg->getPoints(begin, end);
-        for (auto &pathSegTuple: it2.second) {
+        for (auto& pathSegTuple : it2.second) {
           auto pathSeg = get<0>(pathSegTuple);
           auto isBegin = get<1>(pathSegTuple);
           if (!isBegin) {
@@ -2454,16 +2495,17 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
   }
 
   // split pathseg from via
-  // mergedPathSegs[layerNum][isHorizontal] is a map<frCoord, vector<shared_ptr<frPathSeg> > >
-  //map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
-  for (auto &it1: viaMergeMap) {
-    auto x           = get<0>(it1.first);
-    auto y           = get<1>(it1.first);
+  // mergedPathSegs[layerNum][isHorizontal] is a map<frCoord,
+  // vector<shared_ptr<frPathSeg> > >
+  // map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
+  for (auto& it1 : viaMergeMap) {
+    auto x = get<0>(it1.first);
+    auto y = get<1>(it1.first);
     auto cutLayerNum = get<2>(it1.first);
     frCoord trackLoc;
 
     auto layerNum = cutLayerNum - 1;
-    int  isH      = 1;
+    int isH = 1;
     trackLoc = (isH == 1) ? y : x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
@@ -2483,19 +2525,19 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
   }
 
   // split intersecting pathSegs
-  for (auto &it1: mergedPathSegs) {
+  for (auto& it1 : mergedPathSegs) {
     // vertical for mapIt1
-    for (auto &mapIt1: it1.at(0)) {
+    for (auto& mapIt1 : it1.at(0)) {
       // horizontal for mapIt2
-      for (auto &mapIt2: it1.at(1)) {
+      for (auto& mapIt2 : it1.at(1)) {
         // at most split once
         // seg1 is vertical
-        for (auto &seg1: mapIt1.second) {
+        for (auto& seg1 : mapIt1.second) {
           bool skip = false;
           // seg2 is horizontal
           frPoint seg1Begin, seg1End;
           seg1->getPoints(seg1Begin, seg1End);
-          for (auto &seg2: mapIt2.second) {
+          for (auto& seg2 : mapIt2.second) {
             frPoint seg2Begin, seg2End;
             seg2->getPoints(seg2Begin, seg2End);
             bool pushNewSeg1 = false;
@@ -2517,10 +2559,13 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
               frSegStyle style_default;
               seg1->getStyle(tmpStyle1);
               seg1->getStyle(tmpStyle2);
-              style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
-              tmpStyle1.setEndStyle(frcExtendEndStyle, style_default.getEndExt());
+              style_default
+                  = getTech()->getLayer(layerNum)->getDefaultSegStyle();
+              tmpStyle1.setEndStyle(frcExtendEndStyle,
+                                    style_default.getEndExt());
               seg1->setStyle(tmpStyle1);
-              tmpStyle2.setBeginStyle(frcExtendEndStyle, style_default.getBeginExt());
+              tmpStyle2.setBeginStyle(frcExtendEndStyle,
+                                      style_default.getBeginExt());
               newSeg1->setStyle(tmpStyle2);
             }
             // check whether seg2 needs to be split, break seg2
@@ -2538,10 +2583,13 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
               frSegStyle style_default;
               seg2->getStyle(tmpStyle1);
               seg2->getStyle(tmpStyle2);
-              style_default = getTech()->getLayer(layerNum)->getDefaultSegStyle();
-              tmpStyle1.setEndStyle(frcExtendEndStyle, style_default.getEndExt());
+              style_default
+                  = getTech()->getLayer(layerNum)->getDefaultSegStyle();
+              tmpStyle1.setEndStyle(frcExtendEndStyle,
+                                    style_default.getEndExt());
               seg2->setStyle(tmpStyle1);
-              tmpStyle2.setBeginStyle(frcExtendEndStyle, style_default.getBeginExt());
+              tmpStyle2.setBeginStyle(frcExtendEndStyle,
+                                      style_default.getBeginExt());
               newSeg2->setStyle(tmpStyle2);
             }
             if (pushNewSeg1) {
@@ -2554,21 +2602,21 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
               skip = true;
               break;
             }
-            //cout <<"found" <<endl;
+            // cout <<"found" <<endl;
           }
-          if (skip) break;
+          if (skip)
+            break;
         }
       }
     }
   }
 
-
   // write back pathseg
   connFigs.clear();
-  for (auto &it1: mergedPathSegs) {
-    for (auto &it2: it1) {
-      for (auto &it3: it2) {
-        for (auto &it4: it3.second) {
+  for (auto& it1 : mergedPathSegs) {
+    for (auto& it2 : it1) {
+      for (auto& it3 : it2) {
+        for (auto& it4 : it3.second) {
           connFigs.push_back(it4);
         }
       }
@@ -2576,16 +2624,16 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig> > &connFigs) {
   }
 
   // write back via
-  //map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
-  for (auto &it: viaMergeMap) {
+  // map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
+  for (auto& it : viaMergeMap) {
     connFigs.push_back(it.second);
   }
-
 }
 
-void io::Writer::fillViaDefs() {
+void io::Writer::fillViaDefs()
+{
   viaDefs.clear();
-  for (auto &uViaDef: getDesign()->getTech()->getVias()) {
+  for (auto& uViaDef : getDesign()->getTech()->getVias()) {
     auto viaDef = uViaDef.get();
     if (viaDef->isAddedByRouter()) {
       viaDefs.push_back(viaDef);
@@ -2593,16 +2641,17 @@ void io::Writer::fillViaDefs() {
   }
 }
 
-void io::Writer::fillConnFigs(bool isTA) {
+void io::Writer::fillConnFigs(bool isTA)
+{
   connFigs.clear();
   if (VERBOSE > 0) {
     logger->info(DRT, 180, "post processing ...");
   }
-  for (auto &net: getDesign()->getTopBlock()->getNets()) {
+  for (auto& net : getDesign()->getTopBlock()->getNets()) {
     fillConnFigs_net(net.get(), isTA);
   }
   if (isTA) {
-    for (auto &it: connFigs) {
+    for (auto& it : connFigs) {
       mergeSplitConnFigs(it.second);
     }
   }
@@ -2668,9 +2717,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
                 = getTech()->getLayer(pathSeg->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
             if (pathSeg->isTapered() || !net->getNonDefaultRule())
-                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
-            else 
-                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"), net->getNonDefaultRule()->getLayerRule(layer));
+              _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            else
+              _wire_encoder.newPath(
+                  layer,
+                  odb::dbWireType("ROUTED"),
+                  net->getNonDefaultRule()->getLayerRule(layer));
             frPoint begin, end;
             frSegStyle segStyle;
             pathSeg->getPoints(begin, end);
@@ -2704,9 +2756,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
             auto viaName = via->getViaDef()->getName();
             auto layer = tech->findLayer(layerName.c_str());
             if (!net->getNonDefaultRule() || via->isTapered())
-                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
-            else 
-                _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"), net->getNonDefaultRule()->getLayerRule(layer));
+              _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            else
+              _wire_encoder.newPath(
+                  layer,
+                  odb::dbWireType("ROUTED"),
+                  net->getNonDefaultRule()->getLayerRule(layer));
             frPoint origin;
             via->getOrigin(origin);
             _wire_encoder.addPoint(origin.x(), origin.y());

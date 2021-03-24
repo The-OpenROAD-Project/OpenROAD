@@ -96,9 +96,6 @@ proc initialize_floorplan { args } {
     if [info exists keys(-aspect_ratio)] {
       set aspect_ratio $keys(-aspect_ratio)
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
-      if { $aspect_ratio > 1.0 } {
-	utl::error IFP 14 "-aspect_ratio must be from 0.0 to 1.0"
-      }
     } else {
       set aspect_ratio 1.0
     }

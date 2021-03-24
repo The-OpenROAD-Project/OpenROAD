@@ -74,7 +74,7 @@ target_include_directories(OpenRCX
 target_link_libraries(OpenRCX
   PUBLIC
     opendb
-    utility
+    utl
   PRIVATE
     OpenSTA
 )

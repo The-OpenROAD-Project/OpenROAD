@@ -64,7 +64,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

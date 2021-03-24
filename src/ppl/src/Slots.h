@@ -47,6 +47,8 @@
 namespace ppl {
 enum class Edge;
 
+// Slot: an on-track position in the die boundary where a pin
+// can be placed
 struct Slot
 {
   bool blocked;
@@ -58,6 +60,8 @@ struct Slot
 
 using SlotVector = std::vector<Slot>;
 
+// Section: an region in the die boundary that contains a set
+// of slots. By default, each section has 200 slots
 struct Section
 {
   odb::Point pos;
@@ -65,8 +69,7 @@ struct Section
   int cost;
   int begin_slot;
   int end_slot;
-  float max_slots;
-  int cur_slots;
+  int used_slots;
   int num_slots;
   Edge edge;
 };

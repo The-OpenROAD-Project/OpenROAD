@@ -37,7 +37,7 @@
 #include "opendb/db.h"
 #include "routeBase.h"
 #include "timingBase.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include <iostream>
 using namespace std;
 
@@ -519,7 +519,7 @@ NesterovPlace::doNesterovPlace() {
     }
 
     if( npVars_.maxBackTrack == numBackTrak ) {
-      log_->warn(GPL, 75, "Backtracking limit reached so a small step will be taken");
+      debugPrint(log_, GPL, "replace", 3, "Backtracking limit reached so a small step will be taken");
     }
 
     if( isDiverged_ ) {

@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "OpenRCX/extRCap.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 

@@ -39,7 +39,7 @@
 #include <string>
 
 #include "db.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definRegion::definRegion()

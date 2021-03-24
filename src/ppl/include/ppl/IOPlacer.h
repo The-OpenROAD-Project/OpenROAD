@@ -105,6 +105,7 @@ struct Constraint
   }
 };
 
+// A list of pins that will be placed together in the die boundary
 typedef std::vector<odb::dbBTerm*> PinGroup;
 
 class IOPlacer
@@ -117,6 +118,7 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
+  void excludeInterval(Interval interval);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
                               int begin,
@@ -175,6 +177,10 @@ class IOPlacer
   void updateOrientation(IOPin&);
   void updatePinArea(IOPin&);
   bool checkBlocked(Edge edge, int pos);
+  std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
+                                             const odb::Rect& box);
+  void getBlockedRegionsFromMacros();
+  void getBlockedRegionsFromDbObstructions();
 
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,

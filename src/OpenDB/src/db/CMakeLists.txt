@@ -138,6 +138,6 @@ target_link_libraries(opendb
         tm
         zlib 
         zutil
-        utility
+        utl
         tcl
 )

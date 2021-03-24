@@ -41,7 +41,7 @@
 
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace ppl {
 
@@ -239,6 +239,73 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
+std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
+                                                     const odb::Rect& box)
+{
+  std::vector<Interval> intervals;
+
+  // check intersect bottom edge
+  if (die_area.yMin() == box.yMin()) {
+    intervals.push_back(
+      Interval(Edge::bottom, box.xMin(), box.xMax()));
+  }
+  // check intersect top edge
+  if (die_area.yMax() == box.yMax()) {
+    intervals.push_back(
+      Interval(Edge::top, box.xMin(), box.xMax()));
+  }
+  // check intersect left edge
+  if (die_area.xMin() == box.xMin()) {
+    intervals.push_back(
+      Interval(Edge::left, box.yMin(), box.yMax()));
+  }
+  // check intersect right edge
+  if (die_area.xMax() == box.xMax()) {
+    intervals.push_back(
+      Interval(Edge::right, box.yMin(), box.yMax()));
+  }
+
+  return intervals;
+}
+
+void IOPlacer::getBlockedRegionsFromMacros()
+{
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (master->isBlock() && inst->isPlaced()) {
+      odb::Rect inst_area;
+      inst->getBBox()->getBox(inst_area);
+      odb::Rect intersect = die_area.intersect(inst_area);
+
+      std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
+      for (Interval interval : intervals) {
+        excludeInterval(interval);
+      }
+    }
+  }
+}
+
+void IOPlacer::getBlockedRegionsFromDbObstructions()
+{
+  odb::Rect die_area;
+  block_->getDieArea(die_area);
+
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    odb::dbBox* obstructBox = obstruction->getBBox();
+    odb::Rect obstructArea;
+    obstructBox->getBox(obstructArea);
+    odb::Rect intersect = die_area.intersect(obstructArea);
+
+    std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
+    for (Interval interval : intervals) {
+      excludeInterval(interval);
+    }
+  }
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   Point lb = core_.getBoundary().ll();
@@ -401,8 +468,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge)
     }
     n_sec.begin_slot = edge_begin;
     n_sec.end_slot = end_slot;
-    n_sec.max_slots = n_sec.num_slots;
-    n_sec.cur_slots = 0;
+    n_sec.used_slots = 0;
     n_sec.edge = edge;
 
     sections_.push_back(n_sec);
@@ -417,6 +483,7 @@ void IOPlacer::createSections()
 
   sections_.clear();
 
+  // sections only have slots at the same edge of the die boundary
   createSectionsPerEdge(Edge::bottom);
   createSectionsPerEdge(Edge::right);
   createSectionsPerEdge(Edge::top);
@@ -449,7 +516,7 @@ int IOPlacer::assignGroupsToSections()
     }
 
     for (auto i : sortIndexes(dst)) {
-      if (sections[i].cur_slots+group_size < sections[i].max_slots) {
+      if (sections[i].used_slots+group_size < sections[i].num_slots) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin io_pin = net.getIoPin(pin_idx);
@@ -459,7 +526,7 @@ int IOPlacer::assignGroupsToSections()
 
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.push_back(sections[i].net.numIOPins()-1);
-          sections[i].cur_slots++;
+          sections[i].used_slots++;
         }
         total_pins_assigned += group_size;
         sections[i].net.addIOGroup(group);
@@ -502,9 +569,9 @@ bool IOPlacer::assignPinsSections()
       }
       net.getSinksOfIO(idx, inst_pins_vector);
       for (auto i : sortIndexes(dst)) {
-        if (sections[i].cur_slots < sections[i].max_slots) {
+        if (sections[i].used_slots < sections[i].num_slots) {
           sections[i].net.addIONet(io_pin, inst_pins_vector);
-          sections[i].cur_slots++;
+          sections[i].used_slots++;
           pin_assigned = true;
           total_pins_assigned++;
           break;
@@ -728,6 +795,11 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   excluded_intervals_.push_back(excluded_interv);
 }
 
+void IOPlacer::excludeInterval(Interval interval)
+{
+  excluded_intervals_.push_back(interval);
+}
+
 void IOPlacer::addDirectionConstraint(Direction direction,
                                       Edge edge,
                                       int begin,
@@ -795,6 +867,7 @@ void IOPlacer::run(bool random_mode)
   initParms();
 
   initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
 
   std::vector<HungarianMatching> hg_vec;
   int init_hpwl = 0;
@@ -807,7 +880,6 @@ void IOPlacer::run(bool random_mode)
   if (report_hpwl_) {
     init_hpwl = returnIONetsHPWL(netlist_);
   }
-
   if (random_mode) {
     logger_->report("Random pin placement");
     randomPlacement(RandomMode::even);
@@ -856,9 +928,9 @@ void IOPlacer::run(bool random_mode)
       total_hpwl += returnIONetsHPWL(sections_[idx].net);
     }
     delta_hpwl = init_hpwl - total_hpwl;
-    logger_->info(PPL, 11, "***HPWL before ioPlacer: {}", init_hpwl);
-    logger_->info(PPL, 12, "***HPWL after  ioPlacer: {}", total_hpwl);
-    logger_->info(PPL, 13, "***HPWL delta  ioPlacer: {}", delta_hpwl);
+    logger_->info(PPL, 11, "HPWL before ioPlacer: {}", init_hpwl);
+    logger_->info(PPL, 12, "HPWL after  ioPlacer: {}", total_hpwl);
+    logger_->info(PPL, 13, "HPWL delta  ioPlacer: {}", delta_hpwl);
   }
 
   commitIOPlacementToDB(assignment_);

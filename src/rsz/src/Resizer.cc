@@ -37,7 +37,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "gui/gui.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include "sta/Report.hh"
 #include "sta/FuncExpr.hh"
@@ -1950,6 +1950,8 @@ Resizer::repairSetup(float slack_margin)
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  if (fuzzyLess(worst_slack, slack_margin))
+    logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
   if (overMaxArea())
     logger_->error(RSZ, 25, "max utilization reached.");
 }
