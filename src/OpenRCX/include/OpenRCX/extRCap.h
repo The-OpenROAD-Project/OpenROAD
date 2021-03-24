@@ -246,6 +246,7 @@ class extDistRCTable
 
   extDistRC* getRC_99();
   void ScaleRes(double SUB_MULT_RES, Ath__array1D<extDistRC*>* table);
+  extDistRC* findRes(int dist1, int dist2, bool compute);
 
   uint addMeasureRC(extDistRC* rc);
   void makeComputeTable(uint maxDist, uint distUnit);
@@ -298,6 +299,8 @@ class extDistRCTable
                       Ath__array1D<double>* rcTable,
                       bool compute);
 };
+extDistRC* findRes(Ath__array1D<extDistRC*>* sTable, int dist1, int dist2, bool compute);
+
 class extDistWidthRCTable
 {
  public:
@@ -421,6 +424,7 @@ class extDistWidthRCTable
                        bool ignore);
 
   // extDistRC* getRC(uint mou, double w, double s);
+  extDistRC* getRes(uint mou, uint w, int dist1, int dist2);
   extDistRC* getRC(uint mou, uint w, uint s);
   extDistRC* getRC(uint mou, uint w, uint dw, uint ds, uint s);
   extDistRC* getFringeRC(uint mou, uint w, int index_dist = -1);
@@ -1093,6 +1097,9 @@ class extMeasure
   void calcOU(uint len);
   void calcRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, uint totLenCovered);
   // DF ---- 3/6/21
+  void calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet);
+  void calcRes0(double *deltaRes, uint tgtMet, uint len, int dist1=0, int dist2=0);
+  // ------------------------------------
   uint computeRes(odb::SEQ* s,
                              uint targetMet,
                              uint dir,
@@ -1263,6 +1270,11 @@ class extMeasure
   void initTargetSeq();
   void getDgOverlap(int* options);
   void getDgOverlap(odb::SEQ* sseq,
+                    uint dir,
+                    Ath__array1D<odb::SEQ*>* dgContext,
+                    Ath__array1D<odb::SEQ*>* overlapSeq,
+                    Ath__array1D<odb::SEQ*>* residueSeq);
+  void getDgOverlap_res(odb::SEQ* sseq,
                     uint dir,
                     Ath__array1D<odb::SEQ*>* dgContext,
                     Ath__array1D<odb::SEQ*>* overlapSeq,
@@ -2227,6 +2239,7 @@ class extMain
 
   extRCModel* getRCmodel(uint n);
 
+  void calcRes0(double *deltaRes, uint tgtMet, uint width, uint len, int dist1=0, int dist2=0);
   double getLefResistance(uint level, uint width, uint length, uint model);
   double getResistance(uint level, uint width, uint len, uint model);
   double getFringe(uint met, uint width, uint modelIndex, double& areaCap);
