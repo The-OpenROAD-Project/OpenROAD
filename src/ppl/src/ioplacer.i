@@ -53,6 +53,8 @@ using ppl::PinGroup;
 
 %inline %{
 
+namespace ppl {
+
 void
 set_num_slots(int numSlots)
 {
@@ -208,5 +210,7 @@ clear()
 {
   getIOPlacer()->clear();
 }
+
+} // namespace
 
 %} // inline

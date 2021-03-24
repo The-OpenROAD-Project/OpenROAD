@@ -35,7 +35,7 @@
 
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "clustering.h"
 
 #include <fstream>
@@ -201,7 +201,7 @@ void HTreeBuilder::run()
     if (_options->getSinkClusteringUseMaxCap()) {
       _logger->info(CTS, 90, "    Sinks will be clustered based on buffer max cap.");
     } else {
-      _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {} um",
+      _logger->info(CTS, 29, "    Sinks will be clustered in groups of {} and a maximum diameter of {:.1f} um",
                   _options->getSizeSinkClustering(), _options->getMaxDiameter());
     }
   }

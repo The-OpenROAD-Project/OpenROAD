@@ -15,11 +15,12 @@ target_include_directories(opendbtcl
 target_link_libraries(opendbtcl
     PUBLIC
         opendb
-        utility
+        utl
         tcl
         cdl
         opendb_swig_common
         Boost::boost
+        ${TCL_LIBRARY}
 )
 
 # Executable

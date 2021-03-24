@@ -67,7 +67,7 @@ target_link_libraries(ppl
     Munkres
     OpenSTA
     opendb
-    utility
+    utl
 )
                       
                       

@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2020, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,11 +26,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "FlexPA_graphics.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <limits>
 
-#include "FlexPA_graphics.h"
 #include "FlexPA.h"
 
 namespace fr {
@@ -39,15 +40,15 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
                                Logger* logger)
-  : logger_(logger),
-    settings_(settings),
-    gui_(gui::Gui::get()),
-    pin_(nullptr),
-    inst_term_(nullptr),
-    top_block_(design->getTopBlock()),
-    pa_ap_(nullptr),
-    pa_via_(nullptr),
-    pa_markers_(nullptr)
+    : logger_(logger),
+      settings_(settings),
+      gui_(gui::Gui::get()),
+      pin_(nullptr),
+      inst_term_(nullptr),
+      top_block_(design->getTopBlock()),
+      pa_ap_(nullptr),
+      pa_via_(nullptr),
+      pa_markers_(nullptr)
 {
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
@@ -71,11 +72,23 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  frLayerNum layerNum;
+  if (!shapes_.empty()) {
+    layerNum = layer_map_.at(layer->getNumber());
+    for (auto& b : shapes_) {
+      if (b.second != layerNum) {
+        continue;
+      }
+      painter.drawRect(
+          {b.first.left(), b.first.bottom(), b.first.right(), b.first.top()});
+    }
+  }
+
   if (!pin_) {
     return;
   }
 
-  frLayerNum layerNum = layer_map_.at(layer->getNumber());
+  layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
   }
@@ -94,8 +107,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (!skip) {
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.left(), bbox.bottom(),
-                        bbox.right(), bbox.top()});
+      painter.drawRect({bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
     }
   }
 
@@ -106,8 +118,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (marker->getLayerNum() == layerNum) {
         frBox bbox;
         marker->getBBox(bbox);
-        painter.drawRect({bbox.left(), bbox.bottom(),
-                          bbox.right(), bbox.top()});
+        painter.drawRect(
+            {bbox.left(), bbox.bottom(), bbox.right(), bbox.top()});
       }
     }
   }
@@ -120,10 +132,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(color, /* cosmetic */ true);
 
     frPoint pt = ap.getPoint();
-    painter.drawLine({pt.x() - 50, pt.y() - 50},
-                     {pt.x() + 50, pt.y() + 50});
-    painter.drawLine({pt.x() - 50, pt.y() + 50},
-                     {pt.x() + 50, pt.y() - 50});    
+    painter.drawLine({pt.x() - 50, pt.y() - 50}, {pt.x() + 50, pt.y() + 50});
+    painter.drawLine({pt.x() - 50, pt.y() + 50}, {pt.x() + 50, pt.y() - 50});
   }
 }
 
@@ -133,8 +143,10 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   aps_.clear();
 
   frTerm* term = pin->getTerm();
-  frBlock* block = term->getBlock();
-  std::string name = block->getName() + ':' + term->getName();
+  //  frBlock* block = term->getBlock();
+  //  std::string name = block->getName() + ':' + term->getName()
+  std::string name = (inst_term ? inst_term->getInst()->getName() : "") + ':'
+                     + term->getName();
   if (!settings_->pinName.empty() && name != settings_->pinName) {
     return;
   }
@@ -142,7 +154,7 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
   status("Start pin: " + name);
   pin_ = pin;
   inst_term_ = inst_term;
-  
+
   frBox box;
   inst_term->getInst()->getBBox(box);
   gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
@@ -151,24 +163,25 @@ void FlexPAGraphics::startPin(frPin* pin, frInstTerm* inst_term)
 
 static const char* to_string(frAccessPointEnum e)
 {
-  switch(e) {
-  case frAccessPointEnum::OnGrid:
-    return "on-grid";
-  case frAccessPointEnum::HalfGrid:
-    return "half-grid";
-  case frAccessPointEnum::Center:
-    return "center";
-  case frAccessPointEnum::EncOpt:
-    return "enclose";
-  case frAccessPointEnum::NearbyGrid:
-    return "nearby";
+  switch (e) {
+    case frAccessPointEnum::OnGrid:
+      return "on-grid";
+    case frAccessPointEnum::HalfGrid:
+      return "half-grid";
+    case frAccessPointEnum::Center:
+      return "center";
+    case frAccessPointEnum::EncOpt:
+      return "enclose";
+    case frAccessPointEnum::NearbyGrid:
+      return "nearby";
   }
   return "unknown";
 }
 
-void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                            frAccessPointEnum lower_type,
-                            frAccessPointEnum upper_type)
+void FlexPAGraphics::setAPs(
+    const std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    frAccessPointEnum lower_type,
+    frAccessPointEnum upper_type)
 {
   if (!pin_) {
     return;
@@ -178,16 +191,17 @@ void FlexPAGraphics::setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& a
   for (auto& ap : aps) {
     aps_.emplace_back(*ap.get());
   }
-  status("add " + std::to_string(aps.size())
-         + " ( " + to_string(lower_type) + " / " + to_string(upper_type) + " ) "
+  status("add " + std::to_string(aps.size()) + " ( " + to_string(lower_type)
+         + " / " + to_string(upper_type) + " ) "
          + " AP; total: " + std::to_string(aps_.size()));
   gui_->redraw();
   gui_->pause();
 }
 
-void FlexPAGraphics::setViaAP(const frAccessPoint* ap,
-                              const frVia* via,
-                              const std::vector<std::unique_ptr<frMarker>>& markers)
+void FlexPAGraphics::setViaAP(
+    const frAccessPoint* ap,
+    const frVia* via,
+    const std::vector<std::unique_ptr<frMarker>>& markers)
 {
   if (!pin_ || !settings_->paMarkers) {
     return;
@@ -199,9 +213,14 @@ void FlexPAGraphics::setViaAP(const frAccessPoint* ap,
   for (auto& marker : markers) {
     frBox bbox;
     marker->getBBox(bbox);
-    logger_->info(DRT, 119, "marker {} at ({}, {}) ({}, {})",
+    logger_->info(DRT,
+                  119,
+                  "marker {} at ({}, {}) ({}, {})",
                   marker->getConstraint()->typeId(),
-                  bbox.left(), bbox.bottom(), bbox.right(), bbox.top());
+                  bbox.left(),
+                  bbox.bottom(),
+                  bbox.right(),
+                  bbox.top());
   }
 
   gui_->redraw();
@@ -211,6 +230,52 @@ void FlexPAGraphics::setViaAP(const frAccessPoint* ap,
   pa_ap_ = nullptr;
   pa_via_ = nullptr;
   pa_markers_ = nullptr;
+}
+
+void FlexPAGraphics::setMarkersAndShapes(
+    const std::vector<std::unique_ptr<frMarker>>& markers)
+{
+  if (markers.empty())
+    return;
+  pa_markers_ = &markers;
+  frBox box;
+  if (inst_term_) {
+    inst_term_->getInst()->getBBox(box);
+  } else {
+    markers[0]->getBBox(box);
+  }
+  shapes_.clear();
+  for (auto& marker : markers) {
+    frBox bbox;
+    marker->getBBox(bbox);
+    logger_->info(DRT,
+                  119,
+                  "marker {} at ({}, {}) ({}, {})",
+                  marker->getConstraint()->typeId(),
+                  bbox.left(),
+                  bbox.bottom(),
+                  bbox.right(),
+                  bbox.top());
+    for (auto& a : marker->getAggressors()) {
+      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+    }
+    for (auto& a : marker->getVictims()) {
+      shapes_.push_back(make_pair(get<1>(a.second), get<0>(a.second)));
+    }
+  }
+
+  gui_->zoomTo({box.left() - 200,
+                box.bottom() - 200,
+                box.right() + 200,
+                box.top() + 200});
+  gui_->redraw();
+  gui_->pause();
+
+  // These are going away once we return
+  pa_ap_ = nullptr;
+  pa_via_ = nullptr;
+  pa_markers_ = nullptr;
+  shapes_.clear();
 }
 
 void FlexPAGraphics::status(const std::string& message)

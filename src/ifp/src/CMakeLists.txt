@@ -57,5 +57,5 @@ target_link_libraries(ifp
     opendb
     dbSta
     OpenSTA
-    utility
-    )
+    utl
+)

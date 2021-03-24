@@ -49,7 +49,7 @@
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -625,6 +625,10 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_CUTCLASS"))
         valid
             = lefTechLayerCutClassParser::parse(layer->propValue(iii), l, this);
+      else if (!strcmp(layer->propName(iii), "LEF58_ENCLOSURE")){
+        lefTechLayerCutEnclosureRuleParser encParser(this);
+        encParser.parse(layer->propValue(iii), l);
+      }
       else if (!strcmp(layer->propName(iii), "LEF58_SPACINGTABLE")) {
         lefTechLayerCutSpacingTableParser cutSpacingTableParser(l);
         valid = cutSpacingTableParser.parse(

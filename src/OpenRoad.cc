@@ -39,8 +39,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#include "utility/MakeLogger.h"
-#include "utility/Logger.h"
+#include "utl/MakeLogger.h"
+#include "utl/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -66,7 +66,7 @@
 #include "rsz/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "dpl/MakeOpendp.h"
-#include "finale/MakeFinale.h"
+#include "fin/MakeFinale.h"
 #include "mpl/MakeMacroPlacer.h"
 #include "replace/MakeReplace.h"
 #include "grt/MakeFastRoute.h"
@@ -74,7 +74,7 @@
 #include "tap/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
-#include "pdnsim/MakePDNSim.hh"
+#include "psm/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 

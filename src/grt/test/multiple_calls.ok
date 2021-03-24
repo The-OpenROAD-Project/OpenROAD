@@ -12,7 +12,6 @@
 Min routing layer: 1
 Max routing layer: 10
 Global adjustment: 0%
-Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 2874
@@ -39,7 +38,6 @@ Grid origin: (0, 0)
 Min routing layer: 1
 Max routing layer: 10
 Global adjustment: 80%
-Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 2874
@@ -71,8 +69,8 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 626
 [INFO GRT-0111] Final number of vias: 266
 [INFO GRT-0112] Final usage 3D: 1424
-[INFO GRT-0018] Total wirelength: 2310 um
 [WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[INFO GRT-0018] Total wirelength: 2310 um
 [INFO GRT-0014] Num routed nets: 87
 Differences found at line 65.
 105000 134400 109200 138600 metal1

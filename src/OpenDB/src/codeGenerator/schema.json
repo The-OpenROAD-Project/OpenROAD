@@ -28,6 +28,9 @@
       "src":"dbTechLayerCutSpacingTableDefRule.json"
     },
     {
+      "src":"dbTechLayerCutEnclosureRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -294,6 +297,12 @@
       "second":"dbTechLayerCutSpacingTableDefRule",
       "type":"1_n",
       "tbl_name":"cut_spacing_table_def_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerCutEnclosureRule",
+      "type":"1_n",
+      "tbl_name":"cut_enc_rules_tbl_"
     }
   ]
 }
