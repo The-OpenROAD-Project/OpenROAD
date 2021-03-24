@@ -117,7 +117,7 @@ bool extMeasure::IsDebugNet()
   if (_no_debug)
     return false;
 
-  if (_netSrcId <= 0 || _netTgtId <= 0)
+  if (_netSrcId <= 0 && _netTgtId <= 0)
     return false;
 
   if (_netSrcId == _extMain->_debug_net_id
@@ -410,7 +410,7 @@ bool extMeasure::DebugStart(bool allNets)
                GetDBcoords(_len));
   }
   // Added Jeff 1/13
-  uint debugTgtId = _netSrcId != _netId ? _netSrcId : _netTgtId;
+  uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
 
   dbNet* net = dbNet::getNet(_block, debugTgtId);
   debugPrint(logger_,
