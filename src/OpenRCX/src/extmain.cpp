@@ -770,7 +770,14 @@ fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
 
 fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
     }
-
+    double resTable[20];
+    bool newResModel= true;
+    if (newResModel) {
+      for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+        resTable[jj]= 0.0;
+      }
+      calcRes0(resTable, n, w, 1);
+    }
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
       uint modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
@@ -794,22 +801,26 @@ fprintf(stdout, "layer %d  spacing=%d\n", n, _minDistTable[n]);
                    "EXT_RES: "
                    "R "
                    "Layer= {} met= {}   w= {} cc= {:g} fr= {:g} res= {:g} "
-                   "model_res= {:g}",
+                   "model_res= {:g} new_model_res= {:g} ",
                    layer->getConstName(),
                    n,
                    w,
                    rc->getCoupling(),
                    rc->getFringe(),
                    res,
-                   r1);
+                   r1, resTable[jj]);
       }
 
       extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
 
       if (!_lef_res) {
+        if (newResModel) {
+          _resistanceTable[jj][n] = resTable[jj];
+        } else {
         if (rc0 != NULL) {
           double r1 = rc->getRes();
           _resistanceTable[jj][n] = r1;
+        }
         }
       } else {
         debugPrint(logger_,
