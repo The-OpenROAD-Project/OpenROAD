@@ -72,19 +72,19 @@ class dbArrayTable : public dbObjectTable
   // NON-PERSISTANT-DATA
   dbArrayTablePage** _pages;  // page-table
 
-  void           resizePageTbl();
-  void           newPage();
-  void           pushQ(uint& Q, _dbFreeObject* e);
+  void resizePageTbl();
+  void newPage();
+  void pushQ(uint& Q, _dbFreeObject* e);
   _dbFreeObject* popQ(uint& Q);
-  void           unlinkQ(uint& Q, _dbFreeObject* e);
+  void unlinkQ(uint& Q, _dbFreeObject* e);
 
   dbArrayTable(_dbDatabase* db,
-               dbObject*    owner,
-               GetObjTbl_t  m,
+               dbObject* owner,
+               GetObjTbl_t m,
                dbObjectType type,
-               uint         array_size,
-               uint         page_size  = 128,
-               uint         page_shift = 7);
+               uint array_size,
+               uint page_size = 128,
+               uint page_shift = 7);
 
   // Make a copy of a table.
   // The copy is identical including the ordering of all free-lists.
@@ -115,7 +115,7 @@ class dbArrayTable : public dbObjectTable
   // Get the object of this id
   T* getPtr(uint id) const
   {
-    uint page   = id >> _page_shift;
+    uint page = id >> _page_shift;
     uint offset = id & _page_mask;
     ZASSERT((id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
@@ -125,7 +125,7 @@ class dbArrayTable : public dbObjectTable
 
   bool validId(uint id) const
   {
-    uint page   = id >> _page_shift;
+    uint page = id >> _page_shift;
     uint offset = id & _page_mask;
 
     if ((id != 0) && (page < _page_cnt)) {
@@ -143,7 +143,7 @@ class dbArrayTable : public dbObjectTable
   //
   T* getFreeObj(uint id)
   {
-    uint page   = id >> _page_shift;
+    uint page = id >> _page_shift;
     uint offset = id & _page_mask;
     ZASSERT((id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
@@ -156,13 +156,13 @@ class dbArrayTable : public dbObjectTable
   void differences(dbDiff& diff, const dbArrayTable<T>& rhs) const;
   void out(dbDiff& diff, char side) const;
 
-  void      readPage(dbIStream& stream, dbArrayTablePage* page);
-  void      writePage(dbOStream& stream, const dbArrayTablePage* page) const;
-  void      getObjects(std::vector<T*>& objects);
+  void readPage(dbIStream& stream, dbArrayTablePage* page);
+  void writePage(dbOStream& stream, const dbArrayTablePage* page) const;
+  void getObjects(std::vector<T*>& objects);
   dbObject* getObject(uint id, ...) { return getPtr(id); }
 
  private:
-  T*   create();
+  T* create();
   void destroy(T* t);
   void copy_pages(const dbArrayTable<T>&);
   void copy_page(uint page_id, dbArrayTablePage* page);

@@ -31,13 +31,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definRegion.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
-#include "db.h"
 
-#include "utility/Logger.h"
+#include <string>
+
+#include "db.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definRegion::definRegion()
@@ -71,7 +73,7 @@ void definRegion::begin(const char* name, bool is_group)
 
   if (_cur_region) {
     if (!is_group) {
-      _logger->warn(utl::ODB, 152,  "Region \"{}\" already exists", name);
+      _logger->warn(utl::ODB, 152, "Region \"{}\" already exists", name);
       ++_errors;
       _cur_region = NULL;
       return;
@@ -84,8 +86,13 @@ void definRegion::begin(const char* name, bool is_group)
       return;
 
     getGroupName(_block, region_name);
-    _logger->warn(utl::ODB, 153, 
-"Warning: A REGION with the name \"{}\" already exists, renaming ""this GROUP to \"{}\".",name,region_name.c_str());
+    _logger->warn(
+        utl::ODB,
+        153,
+        "Warning: A REGION with the name \"{}\" already exists, renaming "
+        "this GROUP to \"{}\".",
+        name,
+        region_name.c_str());
   }
 
   _cur_region = dbRegion::create(_block, region_name.c_str());
@@ -117,15 +124,18 @@ void definRegion::inst(const char* name)
       size_t prefix_length = pname_length - 1;
       std::string prefix = pname.substr(0, pname_length - 1);
       for (dbInst* inst : _block->getInsts()) {
-	const char *inst_name = inst->getConstName();
-	if (strncmp(inst_name, prefix.c_str(), prefix_length) == 0) {
-	  _cur_region->addInst(inst);
-	}
+        const char* inst_name = inst->getConstName();
+        if (strncmp(inst_name, prefix.c_str(), prefix_length) == 0) {
+          _cur_region->addInst(inst);
+        }
       }
     } else {
       dbInst* inst = _block->findInst(name);
       if (inst == NULL) {
-        _logger->warn(utl::ODB, 154,  "error: netlist component ({}) is not defined", name);
+        _logger->warn(utl::ODB,
+                      154,
+                      "error: netlist component ({}) is not defined",
+                      name);
         ++_errors;
         return;
       }

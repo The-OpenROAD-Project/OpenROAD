@@ -30,19 +30,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "dbWireCodec.h"
+
 #include <ctype.h>
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayerRule.h"
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "dbWireOpcode.h"
-#include "dbDatabase.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -109,8 +110,8 @@ inline void dbWireEncoder::initPath(dbTechLayer* layer, dbWireType type)
   initPath(layer, getWireType(type));
 }
 
-inline void dbWireEncoder::initPath(dbTechLayer*     layer,
-                                    dbWireType       type,
+inline void dbWireEncoder::initPath(dbTechLayer* layer,
+                                    dbWireType type,
                                     dbTechLayerRule* rule)
 {
   initPath(layer, getWireType(type), rule);
@@ -118,23 +119,23 @@ inline void dbWireEncoder::initPath(dbTechLayer*     layer,
 
 void dbWireEncoder::initPath(dbTechLayer* layer, unsigned char wire_type)
 {
-  _wire_type                  = wire_type;
-  _point_cnt                  = 0;
-  _via_cnt                    = 0;
-  _layer                      = layer;
-  _non_default_rule           = 0;
-  _rule_opcode                = 0;
+  _wire_type = wire_type;
+  _point_cnt = 0;
+  _via_cnt = 0;
+  _layer = layer;
+  _non_default_rule = 0;
+  _rule_opcode = 0;
   _prev_extended_colinear_pnt = false;
 }
 
-void dbWireEncoder::initPath(dbTechLayer*     layer,
-                             unsigned char    wire_type,
+void dbWireEncoder::initPath(dbTechLayer* layer,
+                             unsigned char wire_type,
                              dbTechLayerRule* rule)
 {
-  _wire_type        = wire_type;
-  _point_cnt        = 0;
-  _via_cnt          = 0;
-  _layer            = layer;
+  _wire_type = wire_type;
+  _point_cnt = 0;
+  _via_cnt = 0;
+  _layer = layer;
   _non_default_rule = rule->getImpl()->getOID();
 
   if (rule->isBlockRule())
@@ -143,8 +144,8 @@ void dbWireEncoder::initPath(dbTechLayer*     layer,
     _rule_opcode = WOP_RULE;
 
   _prev_extended_colinear_pnt = false;
-  _x                          = 0;
-  _y                          = 0;
+  _x = 0;
+  _y = 0;
 }
 
 dbWireEncoder::dbWireEncoder()
@@ -159,44 +160,44 @@ dbWireEncoder::~dbWireEncoder()
 void dbWireEncoder::begin(dbWire* wire)
 {
   clear();
-  _wire  = (_dbWire*) wire;
+  _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech  = _block->getDb()->getTech();
+  _tech = _block->getDb()->getTech();
 }
 
 void dbWireEncoder::clear()
 {
-  _wire  = NULL;
+  _wire = NULL;
   _block = NULL;
-  _tech  = NULL;
+  _tech = NULL;
   _data.clear();
   _opcodes.clear();
-  _layer                      = NULL;
-  _idx                        = 0;
-  _x                          = 0;
-  _y                          = 0;
-  _non_default_rule           = 0;
-  _rule_opcode                = 0;
-  _point_cnt                  = 0;
-  _via_cnt                    = 0;
+  _layer = NULL;
+  _idx = 0;
+  _x = 0;
+  _y = 0;
+  _non_default_rule = 0;
+  _rule_opcode = 0;
+  _point_cnt = 0;
+  _via_cnt = 0;
   _prev_extended_colinear_pnt = false;
 }
 
 void dbWireEncoder::append(dbWire* wire)
 {
-  _wire                       = (_dbWire*) wire;
-  _block                      = wire->getBlock();
-  _tech                       = _block->getDb()->getTech();
-  _data                       = _wire->_data;
-  _opcodes                    = _wire->_opcodes;
-  _layer                      = NULL;
-  _idx                        = _data.size();
-  _x                          = 0;
-  _y                          = 0;
-  _non_default_rule           = 0;
-  _rule_opcode                = 0;
-  _point_cnt                  = 0;
-  _via_cnt                    = 0;
+  _wire = (_dbWire*) wire;
+  _block = wire->getBlock();
+  _tech = _block->getDb()->getTech();
+  _data = _wire->_data;
+  _opcodes = _wire->_opcodes;
+  _layer = NULL;
+  _idx = _data.size();
+  _x = 0;
+  _y = 0;
+  _non_default_rule = 0;
+  _rule_opcode = 0;
+  _point_cnt = 0;
+  _via_cnt = 0;
   _prev_extended_colinear_pnt = false;
 }
 
@@ -412,8 +413,8 @@ void dbWireEncoder::newPath(dbTechLayer* layer, dbWireType type)
   addOp(WOP_PATH | _wire_type, layer->getImpl()->getOID());
 }
 
-void dbWireEncoder::newPath(dbTechLayer*     layer,
-                            dbWireType       type,
+void dbWireEncoder::newPath(dbTechLayer* layer,
+                            dbWireType type,
                             dbTechLayerRule* rule)
 {
   initPath(layer, type, rule);
@@ -428,8 +429,8 @@ void dbWireEncoder::newPath(int jct_id)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, _wire_type);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
 
   addOp(WOP_JUNCTION | _wire_type, jct_id);
@@ -442,16 +443,16 @@ void dbWireEncoder::newPath(int jct_id, dbWireType type)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, type);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(WOP_COLINEAR | WOP_DEFAULT_WIDTH, 0);
 }
 
-void dbWireEncoder::newPathShort(int          jct_id,
+void dbWireEncoder::newPathShort(int jct_id,
                                  dbTechLayer* layer,
-                                 dbWireType   type)
+                                 dbWireType type)
 {
   ZASSERT((jct_id >= 0) && (jct_id < _idx));
   initPath(layer, type);
@@ -459,9 +460,9 @@ void dbWireEncoder::newPathShort(int          jct_id,
   addOp(WOP_OPERAND, jct_id);
 }
 
-void dbWireEncoder::newPathVirtualWire(int          jct_id,
+void dbWireEncoder::newPathVirtualWire(int jct_id,
                                        dbTechLayer* layer,
-                                       dbWireType   type)
+                                       dbWireType type)
 {
   ZASSERT((jct_id >= 0) && (jct_id < _idx));
   initPath(layer, type);
@@ -475,8 +476,8 @@ void dbWireEncoder::newPathExt(int jct_id, int ext)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, _wire_type);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(WOP_COLINEAR | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
@@ -488,8 +489,8 @@ void dbWireEncoder::newPathExt(int jct_id, int ext, dbWireType type)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, type);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(WOP_COLINEAR | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
@@ -501,8 +502,8 @@ void dbWireEncoder::newPath(int jct_id, dbTechLayerRule* rule)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, _wire_type, rule);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(_rule_opcode, _non_default_rule);
@@ -515,17 +516,17 @@ void dbWireEncoder::newPath(int jct_id, dbWireType type, dbTechLayerRule* rule)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, type, rule);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(_rule_opcode, _non_default_rule);
   addOp(WOP_COLINEAR, 0);
 }
 
-void dbWireEncoder::newPathShort(int              jct_id,
-                                 dbTechLayer*     layer,
-                                 dbWireType       type,
+void dbWireEncoder::newPathShort(int jct_id,
+                                 dbTechLayer* layer,
+                                 dbWireType type,
                                  dbTechLayerRule* rule)
 {
   ZASSERT((jct_id >= 0) && (jct_id < _idx));
@@ -535,9 +536,9 @@ void dbWireEncoder::newPathShort(int              jct_id,
   addOp(_rule_opcode, _non_default_rule);
 }
 
-void dbWireEncoder::newPathVirtualWire(int              jct_id,
-                                       dbTechLayer*     layer,
-                                       dbWireType       type,
+void dbWireEncoder::newPathVirtualWire(int jct_id,
+                                       dbTechLayer* layer,
+                                       dbWireType type,
                                        dbTechLayerRule* rule)
 {
   ZASSERT((jct_id >= 0) && (jct_id < _idx));
@@ -553,25 +554,25 @@ void dbWireEncoder::newPathExt(int jct_id, int ext, dbTechLayerRule* rule)
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, _wire_type, rule);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(_rule_opcode, _non_default_rule);
   addOp(WOP_COLINEAR | WOP_EXTENSION, ext);
 }
 
-void dbWireEncoder::newPathExt(int              jct_id,
-                               int              ext,
-                               dbWireType       type,
+void dbWireEncoder::newPathExt(int jct_id,
+                               int ext,
+                               dbWireType type,
                                dbTechLayerRule* rule)
 {
   ZASSERT((jct_id >= 0) && (jct_id < _idx));
   WirePoint pnt;
   getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
   initPath(pnt._layer, type, rule);
-  _x         = pnt._x;
-  _y         = pnt._y;
+  _x = pnt._x;
+  _y = pnt._y;
   _point_cnt = 1;
   addOp(WOP_JUNCTION | _wire_type, jct_id);
   addOp(_rule_opcode, _non_default_rule);
@@ -599,7 +600,7 @@ void dbWireEncoder::end()
 
   // Should we calculate the bbox???
   ((_dbBlock*) _block)->_flags._valid_bbox = 0;
-  _point_cnt                               = 0;
+  _point_cnt = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -614,9 +615,9 @@ void dbWireEncoder::end()
 
 dbWireDecoder::dbWireDecoder()
 {
-  _wire  = NULL;
+  _wire = NULL;
   _block = NULL;
-  _tech  = NULL;
+  _tech = NULL;
 }
 
 dbWireDecoder::~dbWireDecoder()
@@ -625,23 +626,23 @@ dbWireDecoder::~dbWireDecoder()
 
 void dbWireDecoder::begin(dbWire* wire)
 {
-  _wire          = (_dbWire*) wire;
-  _block         = wire->getBlock();
-  _tech          = _block->getDb()->getTech();
-  _x             = 0;
-  _y             = 0;
+  _wire = (_dbWire*) wire;
+  _block = wire->getBlock();
+  _tech = _block->getDb()->getTech();
+  _x = 0;
+  _y = 0;
   _default_width = true;
-  _layer         = NULL;
-  _idx           = 0;
-  _jct_id        = -1;
-  _opcode        = END_DECODE;
-  _wire_type     = dbWireType::NONE;
-  _point_cnt     = 0;
-  _property      = 0;
-  _deltaX1       = 0;
-  _deltaY1       = 0;
-  _deltaX2       = 0;
-  _deltaY2       = 0;
+  _layer = NULL;
+  _idx = 0;
+  _jct_id = -1;
+  _opcode = END_DECODE;
+  _wire_type = dbWireType::NONE;
+  _point_cnt = 0;
+  _property = 0;
+  _deltaX1 = 0;
+  _deltaY1 = 0;
+  _deltaX2 = 0;
+  _deltaY2 = 0;
 }
 
 inline unsigned char dbWireDecoder::nextOp(int& value)
@@ -742,13 +743,13 @@ nextOpCode:
   if (_idx == (int) _wire->_opcodes.size())
     return END_DECODE;
 
-  _jct_id              = _idx;
+  _jct_id = _idx;
   unsigned char opcode = nextOp(_operand);
 
   switch (opcode & WOP_OPCODE_MASK) {
     case WOP_PATH: {
-      _layer         = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt     = 0;
+      _layer = dbTechLayer::getTechLayer(_tech, _operand);
+      _point_cnt = 0;
       _default_width = true;
 
       switch (opcode & WOP_WIRE_TYPE_MASK) {
@@ -777,8 +778,8 @@ nextOpCode:
     }
 
     case WOP_SHORT: {
-      _layer         = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt     = 0;
+      _layer = dbTechLayer::getTechLayer(_tech, _operand);
+      _point_cnt = 0;
       _default_width = true;
 
       switch (opcode & WOP_WIRE_TYPE_MASK) {
@@ -812,10 +813,10 @@ nextOpCode:
       WirePoint pnt;
       getPrevPoint(
           _tech, _block, _wire->_opcodes, _wire->_data, _operand, true, pnt);
-      _layer         = pnt._layer;
-      _x             = pnt._x;
-      _y             = pnt._y;
-      _point_cnt     = 0;
+      _layer = pnt._layer;
+      _x = pnt._x;
+      _y = pnt._y;
+      _point_cnt = 0;
       _default_width = true;
 
       switch (opcode & WOP_WIRE_TYPE_MASK) {
@@ -845,15 +846,15 @@ nextOpCode:
 
     case WOP_RULE:
       _default_width = false;
-      _block_rule    = (opcode & WOP_BLOCK_RULE);
+      _block_rule = (opcode & WOP_BLOCK_RULE);
       return _opcode = RULE;
 
     case WOP_X: {
       _x = _operand;
 
       if (_point_cnt == 0) {
-        _jct_id    = _idx;
-        opcode     = nextOp(_y);
+        _jct_id = _idx;
+        opcode = nextOp(_y);
         _point_cnt = 1;
 
         if (opcode & WOP_EXTENSION) {
@@ -912,7 +913,7 @@ nextOpCode:
 
       if (opcode & WOP_EXTENSION) {
         _operand2 = _operand;
-        _opcode   = POINT_EXT;
+        _opcode = POINT_EXT;
       } else
         _opcode = POINT;
 
@@ -972,8 +973,8 @@ nextOpCode:
       goto nextOpCode;
 
     case WOP_VWIRE: {
-      _layer         = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt     = 0;
+      _layer = dbTechLayer::getTechLayer(_tech, _operand);
+      _point_cnt = 0;
       _default_width = true;
 
       switch (opcode & WOP_WIRE_TYPE_MASK) {
@@ -1038,8 +1039,8 @@ void dbWireDecoder::getPoint(int& x, int& y) const
 void dbWireDecoder::getPoint(int& x, int& y, int& ext) const
 {
   ZASSERT(_opcode == POINT_EXT);
-  x   = _x;
-  y   = _y;
+  x = _x;
+  y = _y;
   ext = _operand2;
 }
 
@@ -1116,27 +1117,30 @@ void dumpDecoder4Net(dbNet* innet)
   if (!innet)
     return;
 
-  const char* prfx  = "dumpDecoder:";
-  dbWire*     wire0 = innet->getWire();
+  const char* prfx = "dumpDecoder:";
+  dbWire* wire0 = innet->getWire();
   utl::Logger* logger = innet->getImpl()->getLogger();
   if (!wire0) {
-    logger->warn(utl::ODB, 63 , "{} No wires for net {}", prfx, innet->getName());
+    logger->warn(
+        utl::ODB, 63, "{} No wires for net {}", prfx, innet->getName());
     return;
   }
 
-  dbWireDecoder         decoder;
+  dbWireDecoder decoder;
   dbWireDecoder::OpCode opcode;
-  int                   x, y, ext;
+  int x, y, ext;
   decoder.begin(wire0);
-  logger->info(utl::ODB, 64 , "{} begin decoder for net {}", prfx, innet->getName());
+  logger->info(
+      utl::ODB, 64, "{} begin decoder for net {}", prfx, innet->getName());
 
-  dbTechLayer*     layer;
-  dbWireType       wtype;
+  dbTechLayer* layer;
+  dbWireType wtype;
   dbTechLayerRule* lyr_rule = nullptr;
   while (1) {
     opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
-      logger->info(utl::ODB, 65 , "{} End decoder for net {}", prfx, innet->getName());
+      logger->info(
+          utl::ODB, 65, "{} End decoder for net {}", prfx, innet->getName());
       break;
     }
 
@@ -1145,21 +1149,23 @@ void dumpDecoder4Net(dbNet* innet)
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
         if (decoder.peek() == dbWireDecoder::RULE) {
-          opcode   = decoder.next();
+          opcode = decoder.next();
           lyr_rule = decoder.getRule();
-          logger->info(utl::ODB, 66 ,
-                 "{} New path: layer {} type {}  non-default rule {}",
-                 prfx,
-                 layer->getName(),
-                 wtype.getString(),
-                 lyr_rule->getNonDefaultRule()->getName());
+          logger->info(utl::ODB,
+                       66,
+                       "{} New path: layer {} type {}  non-default rule {}",
+                       prfx,
+                       layer->getName(),
+                       wtype.getString(),
+                       lyr_rule->getNonDefaultRule()->getName());
 
         } else {
-          logger->info(utl::ODB, 67 ,
-                 "{} New path: layer {} type {}\n",
-                 prfx,
-                 layer->getName(),
-                 wtype.getString());
+          logger->info(utl::ODB,
+                       67,
+                       "{} New path: layer {} type {}\n",
+                       prfx,
+                       layer->getName(),
+                       wtype.getString());
         }
         break;
       }
@@ -1167,124 +1173,136 @@ void dumpDecoder4Net(dbNet* innet)
       case dbWireDecoder::JUNCTION: {
         uint jct = decoder.getJunctionValue();
         lyr_rule = NULL;
-        opcode   = decoder.peek();
+        opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode   = decoder.next();
+          opcode = decoder.next();
           lyr_rule = decoder.getRule();
-          opcode   = decoder.peek();
+          opcode = decoder.peek();
         }
         if (opcode == dbWireDecoder::POINT_EXT) {
           opcode = decoder.next();
           decoder.getPoint(x, y, ext);
           if (lyr_rule)
-            logger->info(utl::ODB, 68 ,
-                   "{} New path at junction {}, point(ext) {} {} {}, with rule "
-                   "{}",
-                   prfx,
-                   jct,
-                   x,
-                   y,
-                   ext,
-                   lyr_rule->getNonDefaultRule()->getName());
+            logger->info(
+                utl::ODB,
+                68,
+                "{} New path at junction {}, point(ext) {} {} {}, with rule "
+                "{}",
+                prfx,
+                jct,
+                x,
+                y,
+                ext,
+                lyr_rule->getNonDefaultRule()->getName());
           else
-            logger->info(utl::ODB, 69 ,
-                   "{} New path at junction {}, point(ext) {} {} {}",
-                   prfx,
-                   jct,
-                   x,
-                   y,
-                   ext);
+            logger->info(utl::ODB,
+                         69,
+                         "{} New path at junction {}, point(ext) {} {} {}",
+                         prfx,
+                         jct,
+                         x,
+                         y,
+                         ext);
         } else if (opcode == dbWireDecoder::POINT) {
           opcode = decoder.next();
           decoder.getPoint(x, y);
           if (lyr_rule)
-            logger->info(utl::ODB, 70,
-                   "{} New path at junction {}, point {} {}, with rule {}",
-                   prfx,
-                   jct,
-                   x,
-                   y,
-                   lyr_rule->getNonDefaultRule()->getName());
+            logger->info(
+                utl::ODB,
+                70,
+                "{} New path at junction {}, point {} {}, with rule {}",
+                prfx,
+                jct,
+                x,
+                y,
+                lyr_rule->getNonDefaultRule()->getName());
           else
-            logger->info(utl::ODB, 71 ,
-                   "{} New path at junction {}, point {} {}",
-                   prfx,
-                   jct,
-                   x,
-                   y);
+            logger->info(utl::ODB,
+                         71,
+                         "{} New path at junction {}, point {} {}",
+                         prfx,
+                         jct,
+                         x,
+                         y);
 
         } else {
-          logger->warn(utl::ODB, 72 ,
-                 "{} opcode after junction is not point or point_ext??\n",
-                 prfx);
+          logger->warn(utl::ODB,
+                       72,
+                       "{} opcode after junction is not point or point_ext??\n",
+                       prfx);
         }
         break;
       }
 
       case dbWireDecoder::SHORT: {
         uint jval = decoder.getJunctionValue();
-        layer     = decoder.getLayer();
-        wtype     = decoder.getWireType();
-        lyr_rule  = NULL;
-        opcode    = decoder.peek();
+        layer = decoder.getLayer();
+        wtype = decoder.getWireType();
+        lyr_rule = NULL;
+        opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode   = decoder.next();
+          opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule)
-          logger->info(utl::ODB, 73 ,
-                 "{} Short at junction {}, with rule {}",
-                 prfx,
-                 jval,
-                 lyr_rule->getNonDefaultRule()->getName());
+          logger->info(utl::ODB,
+                       73,
+                       "{} Short at junction {}, with rule {}",
+                       prfx,
+                       jval,
+                       lyr_rule->getNonDefaultRule()->getName());
         else
-          logger->info(utl::ODB, 74 , "{} Short at junction {}", prfx, jval);
+          logger->info(utl::ODB, 74, "{} Short at junction {}", prfx, jval);
         break;
       }
 
       case dbWireDecoder::VWIRE: {
         uint jval = decoder.getJunctionValue();
-        layer     = decoder.getLayer();
-        wtype     = decoder.getWireType();
-        lyr_rule  = NULL;
-        opcode    = decoder.peek();
+        layer = decoder.getLayer();
+        wtype = decoder.getWireType();
+        lyr_rule = NULL;
+        opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode   = decoder.next();
+          opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule)
-          logger->info(utl::ODB, 75 ,
-                 "{} Virtual wire at junction {}, with rule {}",
-                 prfx,
-                 jval,
-                 lyr_rule->getNonDefaultRule()->getName());
+          logger->info(utl::ODB,
+                       75,
+                       "{} Virtual wire at junction {}, with rule {}",
+                       prfx,
+                       jval,
+                       lyr_rule->getNonDefaultRule()->getName());
         else
-          logger->info(utl::ODB, 76 , "{} Virtual wire at junction {}", prfx, jval);
+          logger->info(
+              utl::ODB, 76, "{} Virtual wire at junction {}", prfx, jval);
         break;
       }
 
       case dbWireDecoder::POINT: {
         decoder.getPoint(x, y);
-        logger->info(utl::ODB, 77 , "{} Found point {} {}", prfx, x, y);
+        logger->info(utl::ODB, 77, "{} Found point {} {}", prfx, x, y);
         break;
       }
 
       case dbWireDecoder::POINT_EXT: {
         decoder.getPoint(x, y, ext);
-        logger->info(utl::ODB, 78 , "{} Found point(ext){} {} {}", prfx, x, y, ext);
+        logger->info(
+            utl::ODB, 78, "{} Found point(ext){} {} {}", prfx, x, y, ext);
         break;
       }
 
       case dbWireDecoder::TECH_VIA: {
-        logger->info(utl::ODB, 79 ,
-               "{} Found via {}",
-               prfx,
-               decoder.getTechVia()->getName());
+        logger->info(utl::ODB,
+                     79,
+                     "{} Found via {}",
+                     prfx,
+                     decoder.getTechVia()->getName());
         break;
       }
 
       case dbWireDecoder::VIA: {
-        logger->info(utl::ODB, 80 , "block via found in signal net!");
+        logger->info(utl::ODB, 80, "block via found in signal net!");
         break;
       }
 
@@ -1298,39 +1316,46 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::ITERM: {
-        logger->info(utl::ODB, 81 , "{} Found Iterm", prfx);
+        logger->info(utl::ODB, 81, "{} Found Iterm", prfx);
         break;
       }
 
       case dbWireDecoder::BTERM: {
-        logger->info(utl::ODB, 82 , "{} Found Bterm", prfx);
+        logger->info(utl::ODB, 82, "{} Found Bterm", prfx);
         break;
       }
 
-     case dbWireDecoder::RULE: {
+      case dbWireDecoder::RULE: {
         if (strcmp(
                 lyr_rule->getNonDefaultRule()->getName().c_str(),
                 (decoder.getRule())->getNonDefaultRule()->getName().c_str())) {
-          logger->error(utl::ODB, 83 ,
-                "{} GOT RULE {}, EXPECTED RULE {}",
-                prfx,
-                lyr_rule->getNonDefaultRule()->getName().c_str(),
-                decoder.getRule()->getNonDefaultRule()->getName().c_str());
+          logger->error(
+              utl::ODB,
+              83,
+              "{} GOT RULE {}, EXPECTED RULE {}",
+              prfx,
+              lyr_rule->getNonDefaultRule()->getName().c_str(),
+              decoder.getRule()->getNonDefaultRule()->getName().c_str());
         }
         lyr_rule = decoder.getRule();
-        logger->info(utl::ODB, 84 ,
-               "{} Found Rule {} in middle of path",
-               prfx,
-               lyr_rule->getNonDefaultRule()->getName().c_str());
+        logger->info(utl::ODB,
+                     84,
+                     "{} Found Rule {} in middle of path",
+                     prfx,
+                     lyr_rule->getNonDefaultRule()->getName().c_str());
         break;
       }
 
       case dbWireDecoder::END_DECODE:
-        logger->info(utl::ODB, 85 , "{} End decoder for net {}", prfx, innet->getName().c_str());
+        logger->info(utl::ODB,
+                     85,
+                     "{} End decoder for net {}",
+                     prfx,
+                     innet->getName().c_str());
         break;
 
       default: {
-        logger->error(utl::ODB, 86 ,"{} Hit default!", prfx);
+        logger->error(utl::ODB, 86, "{} Hit default!", prfx);
         break;
       }
     }  // switch opcode
@@ -1346,7 +1371,7 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
     return;
   }
 
-  dbNet*      innet = NULL;
+  dbNet* innet = NULL;
   const char* ckdigit;
   for (ckdigit = net_name_or_id; *ckdigit; ckdigit++)
     if (!isdigit(*ckdigit))
@@ -1355,7 +1380,8 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
   innet = (*ckdigit == '\0') ? dbNet::getNet(inblk, atoi(net_name_or_id))
                              : inblk->findNet(net_name_or_id);
   if (!innet) {
-    inblk->getImpl()->getLogger()->error(utl::ODB, 0, "{} Net {} not found", prfx, net_name_or_id);
+    inblk->getImpl()->getLogger()->error(
+        utl::ODB, 0, "{} Net {} not found", prfx, net_name_or_id);
     return;
   }
 

@@ -26,15 +26,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdexcept>
-
 #include "fixture.h"
+
+#include <stdexcept>
 
 using namespace fr;
 
 Fixture::Fixture()
-  : logger(std::make_unique<Logger>()),
-    design(std::make_unique<frDesign>(logger.get()))
+    : logger(std::make_unique<Logger>()),
+      design(std::make_unique<frDesign>(logger.get()))
 {
   makeDesign();
 }
@@ -112,7 +112,7 @@ void Fixture::makeCornerConstraint(frLayerNum layer_num,
                                    frCoord eolWidth,
                                    frCornerTypeEnum type)
 {
-  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord> > cornerSpacingTbl(
+  fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
       "WIDTH", {0}, {{200, 200}});
   auto con = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
 
@@ -214,6 +214,41 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   frLayer* layer = tech->getLayer(layer_num);
   layer->addEolSpacing(con.get());
   tech->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58SpacingEndOfLineConstraint(frLayerNum layer_num,
+                                                  frCoord par_space,
+                                                  frCoord par_within,
+                                                  bool two_edges,
+                                                  frCoord min_max_length,
+                                                  bool max,
+                                                  bool two_sides)
+{
+  auto con = std::make_shared<frLef58SpacingEndOfLineConstraint>();
+  con->setEol(200, 200);
+  auto within = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+  con->setWithinConstraint(within);
+  within->setEolWithin(50);
+  if (par_space != -1) {
+    if (par_within == -1) {
+      throw std::invalid_argument("Must give par_within with par_space");
+    }
+    auto parallelEdge = std::make_shared<
+        frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+    within->setParallelEdgeConstraint(parallelEdge);
+    parallelEdge->setPar(par_space, par_within);
+    parallelEdge->setTwoEdges(two_edges);
+  }
+  if (min_max_length != -1) {
+    auto minMax = std::make_shared<
+        frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+    within->setMaxMinLengthConstraint(minMax);
+    minMax->setLength(max, min_max_length, two_sides);
+  }
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->addLef58SpacingEndOfLineConstraint(con);
+  tech->addConstraint(con);
 }
 
 frNet* Fixture::makeNet(const char* name)

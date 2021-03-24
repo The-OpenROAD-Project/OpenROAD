@@ -1,3 +1,8 @@
+%rename(assign) *::operator=;
+%rename(_print) *::print;
+%rename(pre_inc) *::operator++();
+%rename(post_inc) *::operator++(int);
+
 %template(vector_str) std::vector<std::string>;
 
 

@@ -35,10 +35,10 @@
 #include <sys/time.h>
 #endif
 #include "db.h"
+#include "dbLogger.h"
 #include "dbRtTree.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
-#include "dbLogger.h"
 
 using namespace odb;
 
@@ -95,9 +95,9 @@ class Timer
 
 struct WireShape
 {
-  dbWire*      wire;
+  dbWire* wire;
   dbTechLayer* layer;
-  int          id;
+  int id;
 
   WireShape() {}
 
@@ -106,12 +106,12 @@ struct WireShape
 
 void db_test_wires2(dbBlock* block)
 {
-  dbShape                shape;
-  dbSet<dbNet>           nets = block->getNets();
+  dbShape shape;
+  dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator itr;
   std::vector<WireShape> shapes;
-  double                 total = 0.0;
-  int                    count = 0;
+  double total = 0.0;
+  int count = 0;
 
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
@@ -121,7 +121,7 @@ void db_test_wires2(dbBlock* block)
     if (wire == NULL)
       continue;
 
-    Timer          t;
+    Timer t;
     dbWireShapeItr sitr;
     t.start();
 
@@ -140,7 +140,7 @@ void db_test_wires2(dbBlock* block)
 
   for (witr = shapes.begin(); witr != shapes.end(); ++witr) {
     WireShape s = *witr;
-    dbShape   s1, s2;
+    dbShape s1, s2;
     s.wire->getShape(s.id, s1);
     s.wire->getSegment(s.id, s.layer, s2);
 
@@ -157,7 +157,8 @@ void db_test_wires2(dbBlock* block)
     s.wire->getSegment(s.id, s.layer, shape);
   }
   t.stop();
-  notice(0, "get-segment-itr time (%lu): %fs \n", shapes.size(), t.result_sec());
+  notice(
+      0, "get-segment-itr time (%lu): %fs \n", shapes.size(), t.result_sec());
 
   t.start();
   for (witr = shapes.begin(); witr != shapes.end(); ++witr) {

@@ -64,7 +64,7 @@ class dbIntHashTable
 
   // PERSISTANT-MEMBERS
   dbPagedVector<dbId<T>, 256, 8> _hash_tbl;
-  uint                           _num_entries;
+  uint _num_entries;
 
   // NON-PERSISTANT-MEMBERS
   dbTable<T>* _obj_tbl;
@@ -80,15 +80,15 @@ class dbIntHashTable
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff&                  diff,
-                   const char*              field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const dbIntHashTable<T>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   void setTable(dbTable<T>* table) { _obj_tbl = table; }
 
-  T*   find(uint id);
-  int  hasMember(uint id);
+  T* find(uint id);
+  int hasMember(uint id);
   void insert(T* object);
   void remove(T* object);
 };

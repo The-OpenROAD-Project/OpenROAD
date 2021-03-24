@@ -40,7 +40,7 @@
 
 #include "SteinerTree.hh"
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 

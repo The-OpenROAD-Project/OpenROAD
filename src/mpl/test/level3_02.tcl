@@ -1,4 +1,4 @@
-# 3 levels of registers between mem0 and mem1, -style center_spread
+# 3 levels of registers between mem0 and mem1, -style corner_min_wl
 source helpers.tcl
 
 read_liberty Nangate45/Nangate45_typ.lib
@@ -26,7 +26,7 @@ read_sdc gcd.sdc
 }
 
 global_placement
-macro_placement -style center_spread -halo {0.5 0.5}
+macro_placement -style corner_min_wl -halo {0.5 0.5}
 
 set def_file [make_result_file level3_02.def]
 write_def $def_file

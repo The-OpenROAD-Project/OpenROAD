@@ -43,10 +43,6 @@ Gui* Gui::singleton_ = nullptr;
 
 Gui* gui::Gui::get()
 {
-  if (!singleton_) {
-    singleton_ = new Gui();
-  }
-
   return singleton_;
 }
 

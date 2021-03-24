@@ -98,8 +98,8 @@ bool _dbLib::operator==(const _dbLib& rhs) const
   return true;
 }
 
-void _dbLib::differences(dbDiff&       diff,
-                         const char*   field,
+void _dbLib::differences(dbDiff& diff,
+                         const char* field,
                          const _dbLib& rhs) const
 {
   DIFF_BEGIN
@@ -145,13 +145,13 @@ void _dbLib::out(dbDiff& diff, char side, const char* field) const
 ////////////////////////////////////////////////////////////////////
 _dbLib::_dbLib(_dbDatabase* db)
 {
-  _lef_units           = 0;
-  _dbu_per_micron      = 1000;
-  _hier_delimeter      = 0;
-  _left_bus_delimeter  = 0;
+  _lef_units = 0;
+  _dbu_per_micron = 1000;
+  _hier_delimeter = 0;
+  _left_bus_delimeter = 0;
   _right_bus_delimeter = 0;
-  _spare               = 0;
-  _name                = 0;
+  _spare = 0;
+  _name = 0;
 
   _master_tbl = new dbTable<_dbMaster>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbMasterObj);
@@ -338,7 +338,7 @@ int dbLib::getLefUnits()
 
 void dbLib::setLefUnits(int units)
 {
-  _dbLib* lib     = (_dbLib*) this;
+  _dbLib* lib = (_dbLib*) this;
   lib->_lef_units = units;
 }
 
@@ -350,16 +350,16 @@ char dbLib::getHierarchyDelimeter()
 
 void dbLib::setBusDelimeters(char left, char right)
 {
-  _dbLib* lib               = (_dbLib*) this;
-  lib->_left_bus_delimeter  = left;
+  _dbLib* lib = (_dbLib*) this;
+  lib->_left_bus_delimeter = left;
   lib->_right_bus_delimeter = right;
 }
 
 void dbLib::getBusDelimeters(char& left, char& right)
 {
   _dbLib* lib = (_dbLib*) this;
-  left        = lib->_left_bus_delimeter;
-  right       = lib->_right_bus_delimeter;
+  left = lib->_left_bus_delimeter;
+  right = lib->_right_bus_delimeter;
 }
 
 dbLib* dbLib::create(dbDatabase* db_, const char* name, char hier_delimeter)
@@ -367,12 +367,12 @@ dbLib* dbLib::create(dbDatabase* db_, const char* name, char hier_delimeter)
   if (db_->findLib(name))
     return NULL;
 
-  _dbDatabase* db  = (_dbDatabase*) db_;
-  _dbLib*      lib = db->_lib_tbl->create();
-  lib->_name       = strdup(name);
+  _dbDatabase* db = (_dbDatabase*) db_;
+  _dbLib* lib = db->_lib_tbl->create();
+  lib->_name = strdup(name);
   ZALLOCATED(lib->_name);
   lib->_hier_delimeter = hier_delimeter;
-  _dbTech* tech        = (_dbTech*) db_->getTech();
+  _dbTech* tech = (_dbTech*) db_->getTech();
   lib->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbLib*) lib;
 }
@@ -385,8 +385,8 @@ dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
 
 void dbLib::destroy(dbLib* lib_)
 {
-  _dbLib*      lib = (_dbLib*) lib_;
-  _dbDatabase* db  = lib->getDatabase();
+  _dbLib* lib = (_dbLib*) lib_;
+  _dbDatabase* db = lib->getDatabase();
   dbProperty::destroyProperties(lib);
   db->_lib_tbl->destroy(lib);
 }

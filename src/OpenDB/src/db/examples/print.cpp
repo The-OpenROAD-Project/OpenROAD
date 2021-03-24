@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+
 #include "db.h"
 
 using namespace odb
@@ -45,14 +46,14 @@ using namespace odb
 
   printf("\nBEGIN LIB %s\n", name.c_str());
 
-  dbSet<dbMaster>           masters = lib->getMasters();
+  dbSet<dbMaster> masters = lib->getMasters();
   dbSet<dbMaster>::iterator master_itr;
 
   for (master_itr = masters.begin(); master_itr != masters.end();
        ++master_itr) {
-    dbMaster*    master = *master_itr;
-    dbString     mname  = master->getName();
-    dbMasterType type   = master->getType();
+    dbMaster* master = *master_itr;
+    dbString mname = master->getName();
+    dbMasterType type = master->getType();
     printf("  MASTER %s TYPE %s\n", mname.c_str(), type.getString());
   }
 
@@ -63,14 +64,14 @@ void print_instances(dbBlock* block)
 {
   printf("  BEGIN INSTANCES\n");
 
-  dbSet<dbInst>           insts = block->getInsts();
+  dbSet<dbInst> insts = block->getInsts();
   dbSet<dbInst>::iterator inst_itr;
 
   for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
-    dbInst*   inst   = *inst_itr;
-    dbString  iname  = inst->getName();
+    dbInst* inst = *inst_itr;
+    dbString iname = inst->getName();
     dbMaster* master = inst->getMaster();
-    dbString  mname  = master->getName();
+    dbString mname = master->getName();
     printf("    INST %s %s\n", mname.c_str(), iname.c_str());
   }
 
@@ -81,20 +82,20 @@ void print_nets(dbBlock* block)
 {
   printf("  BEGIN NETS\n");
 
-  dbSet<dbNet>           nets = block->getNets();
+  dbSet<dbNet> nets = block->getNets();
   dbSet<dbNet>::iterator net_itr;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet*   net  = *net_itr;
+    dbNet* net = *net_itr;
     dbString name = net->getName();
     printf("    NET %s ", name.c_str());
 
-    dbSet<dbITerm>           iterms = net->getITerms();
+    dbSet<dbITerm> iterms = net->getITerms();
     dbSet<dbITerm>::iterator iterm_itr;
 
     for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
       dbITerm* iterm = *iterm_itr;
-      dbInst*  inst  = iterm->getInst();
+      dbInst* inst = iterm->getInst();
       dbMTerm* mterm = iterm->getMTerm();
       dbString iname = inst->getName();
       dbString mname = mterm->getName();
@@ -110,12 +111,12 @@ void print_nets(dbBlock* block)
 void print_bterms(dbBlock* block)
 {
   printf("  BEGIN BTERMS\n");
-  dbSet<dbBTerm>           bterms = block->getBTerms();
+  dbSet<dbBTerm> bterms = block->getBTerms();
   dbSet<dbBTerm>::iterator bterm_itr;
 
   for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
     dbBTerm* bterm = *bterm_itr;
-    dbNet*   net   = bterm->getNet();
+    dbNet* net = bterm->getNet();
     dbString bname = bterm->getName();
     dbString nname = net->getName();
     printf("    BTERM %s %s\n", bname.c_str(), nname.c_str());
@@ -138,7 +139,7 @@ void print_chip(dbChip* chip)
 
 void print_db(dbDatabase* db)
 {
-  dbSet<dbLib>           libs = db->getLibs();
+  dbSet<dbLib> libs = db->getLibs();
   dbSet<dbLib>::iterator lib_itr;
 
   for (lib_itr = libs.begin(); lib_itr != libs.end(); ++lib_itr) {
@@ -146,7 +147,7 @@ void print_db(dbDatabase* db)
     print_lib(lib);
   }
 
-  dbSet<dbChip>           chips = db->getChips();
+  dbSet<dbChip> chips = db->getChips();
   dbSet<dbChip>::iterator chip_itr;
 
   for (chip_itr = chips.begin(); chip_itr != chips.end(); ++chip_itr) {

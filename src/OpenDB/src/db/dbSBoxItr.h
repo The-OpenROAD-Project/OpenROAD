@@ -49,14 +49,14 @@ class dbSBoxItr : public dbIterator
  public:
   dbSBoxItr(dbTable<_dbSBox>* box_tbl) { _box_tbl = box_tbl; }
 
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint id, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
   dbObject* getObject(uint id, ...);
 };
 

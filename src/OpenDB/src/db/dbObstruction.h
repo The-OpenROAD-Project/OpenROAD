@@ -59,10 +59,10 @@ class _dbObstruction : public _dbObject
 {
  public:
   _dbObstructionFlags _flags;
-  dbId<_dbInst>       _inst;
-  dbId<_dbBox>        _bbox;
-  int                 _min_spacing;
-  int                 _effective_width;
+  dbId<_dbInst> _inst;
+  dbId<_dbBox> _bbox;
+  int _min_spacing;
+  int _effective_width;
 
   _dbObstruction(_dbDatabase*, const _dbObstruction& o);
   _dbObstruction(_dbDatabase*);
@@ -71,8 +71,8 @@ class _dbObstruction : public _dbObject
   bool operator==(const _dbObstruction& rhs) const;
   bool operator!=(const _dbObstruction& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbObstruction& rhs) const;
-  void differences(dbDiff&               diff,
-                   const char*           field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbObstruction& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

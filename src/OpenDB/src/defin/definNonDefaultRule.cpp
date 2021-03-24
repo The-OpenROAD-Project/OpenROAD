@@ -31,12 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "definNonDefaultRule.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "db.h"
 
-#include "utility/Logger.h"
+#include "db.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definNonDefaultRule::definNonDefaultRule()
@@ -57,10 +58,10 @@ void definNonDefaultRule::init()
 void definNonDefaultRule::beginRule(const char* name)
 {
   _cur_layer_rule = NULL;
-  _cur_rule       = dbTechNonDefaultRule::create(_block, name);
+  _cur_rule = dbTechNonDefaultRule::create(_block, name);
 
   if (_cur_rule == NULL) {
-    _logger->warn(utl::ODB, 111,  "error: Duplicate NONDEFAULTRULE {}", name);
+    _logger->warn(utl::ODB, 111, "error: Duplicate NONDEFAULTRULE {}", name);
     ++_errors;
   }
 }
@@ -81,7 +82,7 @@ void definNonDefaultRule::via(const char* name)
   dbTechVia* via = _tech->findVia(name);
 
   if (via == NULL) {
-    _logger->warn(utl::ODB, 112,  "error: Cannot find tech-via {}", name);
+    _logger->warn(utl::ODB, 112, "error: Cannot find tech-via {}", name);
     ++_errors;
     return;
   }
@@ -97,7 +98,8 @@ void definNonDefaultRule::viaRule(const char* name)
   dbTechViaGenerateRule* rule = _tech->findViaGenerateRule(name);
 
   if (rule == NULL) {
-    _logger->warn(utl::ODB, 113,  "error: Cannot find tech-via-genreate rule {}", name);
+    _logger->warn(
+        utl::ODB, 113, "error: Cannot find tech-via-genreate rule {}", name);
     ++_errors;
     return;
   }
@@ -113,7 +115,7 @@ void definNonDefaultRule::minCuts(const char* name, int count)
   dbTechLayer* layer = _tech->findLayer(name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 114,  "error: Cannot find layer {}", name);
+    _logger->warn(utl::ODB, 114, "error: Cannot find layer {}", name);
     ++_errors;
     return;
   }
@@ -129,7 +131,7 @@ void definNonDefaultRule::beginLayerRule(const char* name, int width)
   dbTechLayer* layer = _tech->findLayer(name);
 
   if (layer == NULL) {
-    _logger->warn(utl::ODB, 115,  "error: Cannot find layer {}", name);
+    _logger->warn(utl::ODB, 115, "error: Cannot find layer {}", name);
     ++_errors;
     return;
   }
@@ -137,8 +139,11 @@ void definNonDefaultRule::beginLayerRule(const char* name, int width)
   _cur_layer_rule = dbTechLayerRule::create(_cur_rule, layer);
 
   if (_cur_layer_rule == NULL) {
-    _logger->warn(utl::ODB, 116, 
-"error: Duplicate layer rule ({}) in non-default-rule statement.",name);
+    _logger->warn(
+        utl::ODB,
+        116,
+        "error: Duplicate layer rule ({}) in non-default-rule statement.",
+        name);
     ++_errors;
     return;
   }

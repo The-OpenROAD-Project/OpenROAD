@@ -64,7 +64,7 @@ class dbHashTable
 
   // PERSISTANT-MEMBERS
   dbPagedVector<dbId<T>, 256, 8> _hash_tbl;
-  uint                           _num_entries;
+  uint _num_entries;
 
   // NON-PERSISTANT-MEMBERS
   dbTable<T>* _obj_tbl;
@@ -77,14 +77,14 @@ class dbHashTable
   ~dbHashTable();
   bool operator==(const dbHashTable<T>& rhs) const;
   bool operator!=(const dbHashTable<T>& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff&               diff,
-                   const char*           field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const dbHashTable<T>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   void setTable(dbTable<T>* table) { _obj_tbl = table; }
-  T*   find(const char* name);
-  int  hasMember(const char* name);
+  T* find(const char* name);
+  int hasMember(const char* name);
   void insert(T* object);
   void remove(T* object);
 };

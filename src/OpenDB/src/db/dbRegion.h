@@ -50,18 +50,18 @@ class dbDiff;
 struct _dbRegionFlags
 {
   dbRegionType::Value _type : 4;
-  uint                _invalid : 1;
-  uint                _spare_bits : 27;
+  uint _invalid : 1;
+  uint _spare_bits : 27;
 };
 
 class _dbRegion : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbRegionFlags  _flags;
-  char*           _name;
-  dbId<_dbInst>   _insts;
-  dbId<_dbBox>    _boxes;
+  _dbRegionFlags _flags;
+  char* _name;
+  dbId<_dbInst> _insts;
+  dbId<_dbBox> _boxes;
   dbId<_dbRegion> _parent;
   dbId<_dbRegion> _children;
   dbId<_dbRegion> _next_child;

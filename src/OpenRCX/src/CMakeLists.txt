@@ -33,10 +33,10 @@
 
 include("openroad")
 
-tcl_lib(NAME      OpenRCX
-        NAMESPACE rcx
-        I_FILE    ext.i
-        SCRIPTS   OpenRCX.tcl
+swig_lib(NAME      OpenRCX
+         NAMESPACE rcx
+         I_FILE    ext.i
+         SCRIPTS   OpenRCX.tcl
 )
 
 
@@ -74,7 +74,7 @@ target_include_directories(OpenRCX
 target_link_libraries(OpenRCX
   PUBLIC
     opendb
-    utility
+    utl
   PRIVATE
     OpenSTA
 )

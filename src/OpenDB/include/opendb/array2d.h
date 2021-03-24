@@ -45,11 +45,11 @@ class Ath__array2d
 {
  private:
   AthArray<T>** _array;
-  unsigned int  _bankCnt;
-  uint          _tmpBank;
-  uint          _tmpCnt;
-  uint          _current;
-  bool          _doIteratorAll;
+  unsigned int _bankCnt;
+  uint _tmpBank;
+  uint _tmpCnt;
+  uint _current;
+  bool _doIteratorAll;
 
  public:
   Ath__array2d(
@@ -71,9 +71,9 @@ class Ath__array2d
   }
   void resetIteratorFlags()
   {
-    _tmpBank       = 0;
-    _tmpCnt        = 0;
-    _current       = 0;
+    _tmpBank = 0;
+    _tmpCnt = 0;
+    _current = 0;
     _doIteratorAll = false;
   }
   Ath__array2d(int bCnt, bool)  // for max 1024 and 128, for quad
@@ -113,7 +113,7 @@ class Ath__array2d
     _array[0] = new AthArray<T>(4);
     assert(_array[0]);
 
-    unsigned int halfCnt    = _bankCnt / 2 + 1;
+    unsigned int halfCnt = _bankCnt / 2 + 1;
     unsigned int quarterCnt = halfCnt / 2 + 1;
 
     unsigned int ii;
@@ -154,13 +154,13 @@ class Ath__array2d
 
     return _array[ii]->add(a);
   }
-  T            get(int ii, int jj) { return _array[ii]->get(jj); }
+  T get(int ii, int jj) { return _array[ii]->get(jj); }
   unsigned int getCnt(unsigned int ii) { return _array[ii]->getLast(); }
   unsigned int startIterator(unsigned int ii)
   {
     _doIteratorAll = false;
-    _tmpBank       = ii;
-    _current       = 0;
+    _tmpBank = ii;
+    _current = 0;
     if (ii < _bankCnt)
       _tmpCnt = _array[ii]->getLast();
     else
@@ -170,7 +170,7 @@ class Ath__array2d
   }
   unsigned int startIteratorAll()
   {
-    uint cnt       = startIterator(0);
+    uint cnt = startIterator(0);
     _doIteratorAll = true;
     return cnt;
   }
@@ -207,5 +207,3 @@ class Ath__array2d
     }
   }
 };
-
-

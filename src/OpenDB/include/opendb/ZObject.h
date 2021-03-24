@@ -91,9 +91,9 @@ class ZObject;
 /// NULL.
 ///
 int adsCreateComponent(const ZContext& context,
-                       ZComponentID    cid,
-                       ZInterfaceID    iid,
-                       void**          result);
+                       ZComponentID cid,
+                       ZInterfaceID iid,
+                       void** result);
 
 ///
 /// adsNewComponent - Creates a component specified by the component-identifier.
@@ -101,13 +101,13 @@ int adsCreateComponent(const ZContext& context,
 /// error will occur if this component does not support the specified interface.
 ///
 template <class INTERFACE>
-inline int adsNewComponent(const ZContext&  context,
-                           ZComponentID     cid,
+inline int adsNewComponent(const ZContext& context,
+                           ZComponentID cid,
                            ZPtr<INTERFACE>& ptr)
 {
-  INTERFACE*   p;
+  INTERFACE* p;
   ZInterfaceID iid = (ZInterfaceID) INTERFACE::ZIID;
-  int          r   = adsCreateComponent(context, cid, iid, (void**) &p);
+  int r = adsCreateComponent(context, cid, iid, (void**) &p);
 
   ptr = (INTERFACE*) p;
 
@@ -130,9 +130,9 @@ class ZObject
   };
   ZObject();
   virtual ~ZObject();
-  virtual uint AddRef()                                     = 0;
-  virtual uint Release()                                    = 0;
-  virtual int  QueryInterface(ZInterfaceID iid, void** ref) = 0;
+  virtual uint AddRef() = 0;
+  virtual uint Release() = 0;
+  virtual int QueryInterface(ZInterfaceID iid, void** ref) = 0;
 };
 
 ///
@@ -162,7 +162,7 @@ class ZPtr
       _p = NULL;
     else {
       void* v;
-      int   r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);
+      int r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);
 
       if (r != Z_OK) {
         assert(r == Z_OK);  // throw the assert in debug mode
@@ -193,7 +193,7 @@ class ZPtr
       setPtr(NULL);
     else {
       void* v;
-      int   r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);
+      int r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);
 
       if (r != Z_OK) {
         assert(r == Z_OK);  // throw the assert in debug mode
@@ -234,5 +234,3 @@ class ZPtr
 };
 
 }  // namespace odb
-
-

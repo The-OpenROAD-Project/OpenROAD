@@ -48,14 +48,14 @@ class dbRSegItr : public dbIterator
  public:
   dbRSegItr(dbTable<_dbRSeg>* seg_tbl) { _seg_tbl = seg_tbl; }
 
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint id, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
   dbObject* getObject(uint id, ...);
 };
 

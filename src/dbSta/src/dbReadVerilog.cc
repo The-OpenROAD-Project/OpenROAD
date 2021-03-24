@@ -47,7 +47,7 @@
 #include "opendb/db.h"
 
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace ord {
 
@@ -253,6 +253,10 @@ Verilog2db::makeDbInsts()
     dbMaster *master = getMaster(cell);
     if (master)
       dbInst::create(block_, master, inst_name);
+    else
+      logger_->warn(ORD, 1001, "instance {} LEF master {} not found.",
+                    inst_name,
+                    network_->name(cell));
   }
   delete leaf_iter;
 }
@@ -280,11 +284,14 @@ Verilog2db::makeDbNets(const Instance *inst)
   while (net_iter->hasNext()) {
     Net *net = net_iter->next();
     const char *net_name = network_->pathName(net);
-    if ((is_top || !hasTerminals(net))
-	&& !network_->isGround(net)
-	&& !network_->isPower(net)) {
+    if (is_top || !hasTerminals(net)) {
       dbNet *db_net = dbNet::create(block_, net_name);
       
+      if (network_->isPower(net))
+        db_net->setSigType(odb::dbSigType::POWER);
+      if (network_->isGround(net))
+        db_net->setSigType(odb::dbSigType::GROUND);
+
       // Sort connected pins for regression stability.
       PinSeq net_pins;
       NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
@@ -352,10 +359,13 @@ Verilog2db::getMaster(Cell *cell)
       // Check for corresponding liberty cell.
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell == nullptr)
-	logger_->warn(ORD, 1000, "LEF master {} has no liberty cell.", cell_name);
+	logger_->warn(ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
       return master;
     }
     else {
+      LibertyCell *lib_cell = network_->libertyCell(cell);
+      if (lib_cell)
+        logger_->warn(ORD, 1012, "Liberty cell has no LEF master.", cell_name);
       // OpenSTA read_verilog warns about missing cells.
       master_map_[cell] = nullptr;
       return nullptr;

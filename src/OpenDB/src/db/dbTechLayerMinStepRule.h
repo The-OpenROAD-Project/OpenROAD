@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin 1
+// Generator Code Begin Header
 #pragma once
 
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin includes
-// User Code End includes
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
@@ -50,34 +50,34 @@ class _dbDatabase;
 
 struct dbTechLayerMinStepRuleFlags
 {
-  bool _max_edges_valid : 1;
-  bool _min_adj_length1_valid : 1;
-  bool _no_between_eol : 1;
-  bool _min_adj_length2_valid : 1;
-  bool _convex_corner : 1;
-  bool _min_between_length_valid : 1;
-  bool _except_same_corners : 1;
-  uint _spare_bits : 25;
+  bool max_edges_valid_ : 1;
+  bool min_adj_length1_valid_ : 1;
+  bool no_between_eol_ : 1;
+  bool min_adj_length2_valid_ : 1;
+  bool convex_corner_ : 1;
+  bool min_between_length_valid_ : 1;
+  bool except_same_corners_ : 1;
+  uint spare_bits_ : 25;
 };
-// User Code Begin structs
-// User Code End structs
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbTechLayerMinStepRule : public _dbObject
 {
  public:
-  // User Code Begin enums
-  // User Code End enums
+  // User Code Begin Enums
+  // User Code End Enums
 
-  dbTechLayerMinStepRuleFlags _flags;
-  int                         _min_step_length;
-  uint                        _max_edges;
-  int                         _min_adj_length1;
-  int                         _min_adj_length2;
-  int                         _eol_width;
-  int                         _min_between_length;
+  dbTechLayerMinStepRuleFlags flags_;
+  int min_step_length_;
+  uint max_edges_;
+  int min_adj_length1_;
+  int min_adj_length2_;
+  int eol_width_;
+  int min_between_length_;
 
-  // User Code Begin fields
-  // User Code End fields
+  // User Code Begin Fields
+  // User Code End Fields
   _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
   _dbTechLayerMinStepRule(_dbDatabase*);
   ~_dbTechLayerMinStepRule();
@@ -87,16 +87,16 @@ class _dbTechLayerMinStepRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerMinStepRule& rhs) const;
-  void differences(dbDiff&                        diff,
-                   const char*                    field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechLayerMinStepRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin methods
-  // User Code End methods
+  // User Code Begin Methods
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);
-// User Code Begin general
-// User Code End general
+// User Code Begin General
+// User Code End General
 }  // namespace odb
-   // Generator Code End 1
+   // Generator Code End Header

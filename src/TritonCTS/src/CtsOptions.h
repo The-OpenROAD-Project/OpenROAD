@@ -37,7 +37,7 @@
 
 #include "Util.h"
 #include "db.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include <iostream>
 #include <sstream>
@@ -176,11 +176,15 @@ class CtsOptions
   void setMaxDiameter(double distance) { _maxDiameter = distance; _sinkClusteringUseMaxCap = false; }
   unsigned getSizeSinkClustering() const { return _sinkClustersSize; }
   void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; _sinkClusteringUseMaxCap = false; }
+  unsigned getSinkClusteringLevels() const { return _sinkClusteringLevels; }
+  void setSinkClusteringLevels(unsigned levels) { _sinkClusteringLevels = levels; }
   unsigned getNumStaticLayers() const { return _numStaticLayers; }
   void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
   void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
   void setSinkBufferMaxCap(double cap) { _sinkBufferMaxCap = cap; }
   double getSinkBufferMaxCap() const { return _sinkBufferMaxCap; }
+  void setSinkBufferInputCap(double cap) { _sinkBufferInputCap = cap; }
+  double getSinkBufferInputCap() const { return _sinkBufferInputCap; }
   std::string getSinkBuffer() const { return _sinkBuffer; }
   void setLogger(utl::Logger* l) { _logger = l;}
   utl::Logger *getLogger() { return _logger;}
@@ -211,6 +215,7 @@ class CtsOptions
   double _maxCharSlew = 0;
   double _maxCharCap = 0;
   double _sinkBufferMaxCap = 0;
+  double _sinkBufferInputCap = 0;
   double _capPerSqr = 0;
   double _resPerSqr = 0;
   double _capInter = 0;
@@ -230,6 +235,7 @@ class CtsOptions
   long int _sinks = 0;
   double _maxDiameter = 50;
   unsigned _sinkClustersSize = 20;
+  unsigned _sinkClusteringLevels = 0;
   unsigned _numStaticLayers = 0;
   std::vector<std::string> _bufferList;
   std::vector<odb::dbNet*> _clockNetsObjs;

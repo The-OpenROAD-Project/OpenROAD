@@ -107,7 +107,7 @@ Path Type: min
    0.00    0.02 ^ r1/CK (DFF_X1)
    0.09    0.11 ^ r1/Q (DFF_X1)
    0.02    0.13 ^ hold1/Z (BUF_X1)
-   0.02    0.15 ^ hold2/Z (BUF_X1)
+   0.02    0.14 ^ hold2/Z (BUF_X1)
    0.03    0.17 ^ u2/ZN (AND2_X1)
    0.00    0.17 ^ r3/D (DFF_X1)
            0.17   data arrival time

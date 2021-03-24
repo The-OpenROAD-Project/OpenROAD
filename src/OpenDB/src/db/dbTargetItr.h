@@ -48,14 +48,14 @@ class dbTargetItr : public dbIterator
  public:
   dbTargetItr(dbTable<_dbTarget>* target_tbl) { _target_tbl = target_tbl; }
 
-  bool      reversible();
-  bool      orderReversed();
-  void      reverse(dbObject* parent);
-  uint      sequential();
-  uint      size(dbObject* parent);
-  uint      begin(dbObject* parent);
-  uint      end(dbObject* parent);
-  uint      next(uint id, ...);
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
   dbObject* getObject(uint id, ...);
 };
 

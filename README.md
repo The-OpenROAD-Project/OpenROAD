@@ -226,7 +226,9 @@ utilization as show below:
           core_height + core_space_bottom + core_space_top )
 ```
 
+The `initialize_floorplan` command removes existing tracks.
 Use the `make_tracks` command to add routing tracks to a floorplan.
+
 ```
 make_tracks [layer]
             [-x_pitch x_pitch]
@@ -247,9 +249,13 @@ auto_place_pins pin_layer
 
 #### Pin placement
 
-Place pins to on-track locations at the boundaries of the 
-core while optimizing nets wirelength. Pin placement also 
+Place pins on the boundary of the die on the track grid to
+minimize net wire lengths. Pin placement also 
 creates a metal shape for each pin using min-area rules.
+
+For designs with unplaced cells, the net wire length is
+computed considering the center of the die area as the
+unplaced cells' position.
 
 Use the following command to perform pin placement:
 ```
@@ -259,6 +265,7 @@ place_pins [-hor_layers h_layers]
            [-exclude interval]
            [-random]
            [-group_pins pins]
+           [-corner_avoidance length]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
 of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
@@ -270,6 +277,7 @@ where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary
+- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -278,12 +286,13 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
-set_io_pin_constraint -direction direction -names names -region edge:interval
+set_io_pin_constraint -direction direction -pin_names names -region edge:interval
 ```
 
 The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+command call. The `-direction` argument is the pin direction defined in DEF file (input, output, inout, and feedthru).
+The `-pin_names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
 #### Tapcell
 
@@ -292,7 +301,6 @@ Tapcell and endcap insertion.
 ```
 tapcell -tapcell_master <tapcell_master>
         -endcap_master <endcap_master>
-        -endcap_cpp <endcap_cpp>
         -distance <dist>
         -halo_width_x <halo_x>
         -halo_width_y <halo_y>
@@ -306,8 +314,6 @@ tapcell -tapcell_master <tapcell_master>
         -cnrcap_nwout_master <cnrcap_nwout_master>
         -incnrcap_nwin_master <incnrcap_nwin_master>
         -incnrcap_nwout_master <incnrcap_nwout_master>
-        -tbtie_cpp <tbtie_cpp>
-        -no_cell_at_top_bottom
         -add_boundary_cell
 ```
 You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
@@ -391,7 +397,7 @@ macro_placement [-halo {halo_x halo_y}]
 -snap_layer_number - snap macro origins to this routing layer track
 
 Macros will be placed with max(halo * 2, channel) spacing between macros and the
-fence/die boundary.
+fence/die boundary. If not solutions are found, try reducing the channel/halo.
 
 #### Detailed Placement
 
@@ -460,6 +466,22 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 no distance units are not specied in the liberty file microns are
 used.
 
+The resistance and capacitance values in the OpenROAD database can be
+changed using the `set_layer_rc` command. This is useful if they are
+not in the LEF file or to override the values in the LEF.
+
+```
+set_layer_rc [-layer layer]
+             [-via via_layer]
+             [-capacitance cap]
+             [-resistance res] }
+```
+
+The units for capacitance are from the first Liberty file read.
+For example, usually pF/um^2 or fF/um^2 for capacitance and
+kohms/square or ohms/square for resistance. Via resistances are
+specified with the `via` keyword.
+
 ```
 remove_buffers
 ```
@@ -467,7 +489,7 @@ remove_buffers
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This step is recommended before using `repair_design` so it has more flexibility in buffering nets.
 
 ```
-estimate_parasitics -placement
+estimate_parasitics -placement|-global_routing
 ```
 
 Estimate RC parasitics based on placed component pin locations. If
@@ -477,7 +499,10 @@ wire. Use the `set_units` command to check units or `set_cmd_units` to
 change units. They should represent "average" routing layer resistance
 and capacitance. If the set_wire_rc command is not called before
 resizing, the default_wireload model specified in the first liberty
-file or with the SDC set_wire_load command is used to make parasitics.
+file or with the SDC set_wire_load command is used to make parasitics.  
+
+After the `global_route` command has been called the global routing topology
+and layers can be used to estimate parasitics  with the `-global_routing` flag.
 
 ```
 set_dont_use lib_cells
@@ -507,10 +532,11 @@ repair_design [-max_wire_length max_length]
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
-delay in the wire. It also resizes gates to normalize slews.  Use
-`-max_wire_length` to specify the maximum length of wires.  The
-resistance/capacitance values in `set_wire_rc` are used to find the
-wire delays.
+delay in the wire. It also resizes gates to normalize slews. 
+The resistance/capacitance values in `set_wire_rc` are used to find the
+wire delays. Use `-max_wire_length` to specify the maximum length of wires.
+The maximum wire length defaults to a value that minimizes the wire delay for the wire
+resistance/capacitance values specified by `set_wire_rc`.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```

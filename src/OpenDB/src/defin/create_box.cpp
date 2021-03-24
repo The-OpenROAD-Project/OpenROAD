@@ -31,30 +31,32 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "create_box.h"
+
 #include <stdio.h>
-#include "utility/Logger.h"
+
+#include "utl/Logger.h"
 namespace odb {
 
-void create_box(dbSWire*        wire,
+void create_box(dbSWire* wire,
                 dbWireShapeType type,
-                dbTechLayer*    layer,
-                int             prev_x,
-                int             prev_y,
-                int             prev_ext,
-                bool            has_prev_ext,
-                int             cur_x,
-                int             cur_y,
-                int             cur_ext,
-                bool            has_cur_ext,
-                int             width,
-                utl::Logger*    logger)
+                dbTechLayer* layer,
+                int prev_x,
+                int prev_y,
+                int prev_ext,
+                bool has_prev_ext,
+                int cur_x,
+                int cur_y,
+                int cur_ext,
+                bool has_cur_ext,
+                int width,
+                utl::Logger* logger)
 {
   int x1, x2, y1, y2;
   int dw = width >> 1;
 
   if ((cur_x == prev_x) && (cur_y == prev_y))  // single point
   {
-    printf("(%d,%d) (%d,%d)\n",prev_x,prev_y,cur_x,cur_y);
+    printf("(%d,%d) (%d,%d)\n", prev_x, prev_y, cur_x, cur_y);
     return;
     assert(0 && "ambiguous path segment");
   } else if (cur_x == prev_x)  // vert. path
@@ -112,29 +114,42 @@ void create_box(dbSWire*        wire,
         x2 = prev_x;
     }
     dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::HORIZONTAL);
-  }else if(abs(cur_x-prev_x)==abs(cur_y-prev_y)) {//45-degree path
-    dbSBox::create(wire, layer, prev_x, prev_y, cur_x, cur_y, type, dbSBox::OCTILINEAR,width);
-  }else {
-    assert(0 && "not orthogonal nor 45-degree path segment");  // illegal: non-orthogonal-path
+  } else if (abs(cur_x - prev_x) == abs(cur_y - prev_y)) {  // 45-degree path
+    dbSBox::create(wire,
+                   layer,
+                   prev_x,
+                   prev_y,
+                   cur_x,
+                   cur_y,
+                   type,
+                   dbSBox::OCTILINEAR,
+                   width);
+  } else {
+    assert(
+        0
+        && "not orthogonal nor 45-degree path segment");  // illegal:
+                                                          // non-orthogonal-path
   }
 }
 
-dbTechLayer* create_via_array(dbSWire*        wire,
+dbTechLayer* create_via_array(dbSWire* wire,
                               dbWireShapeType type,
-                              dbTechLayer*    layer,
-                              dbTechVia*      via,
-                              int             orig_x,
-                              int             orig_y,
-                              int             numX,
-                              int             numY,
-                              int             stepX,
-                              int             stepY,
-                              utl::Logger*    logger)
+                              dbTechLayer* layer,
+                              dbTechVia* via,
+                              int orig_x,
+                              int orig_y,
+                              int numX,
+                              int numY,
+                              int stepX,
+                              int stepY,
+                              utl::Logger* logger)
 {
   if (via->getBBox() == NULL) {
     std::string n = via->getName();
-    logger->warn(utl::ODB, 241, 
-"error: Cannot create a via instance, via ({}) has no shapes",n.c_str());
+    logger->warn(utl::ODB,
+                 241,
+                 "error: Cannot create a via instance, via ({}) has no shapes",
+                 n.c_str());
     return NULL;
   }
 
@@ -152,7 +167,7 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     x += stepX;
   }
 
-  dbTechLayer* top    = via->getTopLayer();
+  dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bottom = via->getBottomLayer();
 
   // VIA: implicit layer change...
@@ -160,9 +175,15 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     std::string vname = via->getName();
     std::string lname = layer->getName();
 
-    logger->warn(utl::ODB, 242,  "error: Can not determine which direction to continue path,");
-    logger->info(utl::ODB, 243, 
-"       via ({}) spans above and below the current layer ({}).",vname.c_str(),lname.c_str());
+    logger->warn(utl::ODB,
+                 242,
+                 "error: Can not determine which direction to continue path,");
+    logger->info(
+        utl::ODB,
+        243,
+        "       via ({}) spans above and below the current layer ({}).",
+        vname.c_str(),
+        lname.c_str());
     return NULL;
   }
 
@@ -175,22 +196,24 @@ dbTechLayer* create_via_array(dbSWire*        wire,
   return layer;
 }
 
-dbTechLayer* create_via_array(dbSWire*        wire,
+dbTechLayer* create_via_array(dbSWire* wire,
                               dbWireShapeType type,
-                              dbTechLayer*    layer,
-                              dbVia*          via,
-                              int             orig_x,
-                              int             orig_y,
-                              int             numX,
-                              int             numY,
-                              int             stepX,
-                              int             stepY,
-                              utl::Logger*    logger)
+                              dbTechLayer* layer,
+                              dbVia* via,
+                              int orig_x,
+                              int orig_y,
+                              int numX,
+                              int numY,
+                              int stepX,
+                              int stepY,
+                              utl::Logger* logger)
 {
   if (via->getBBox() == NULL) {
     std::string vname = via->getName();
-    logger->warn(utl::ODB, 244, 
-"error: Cannot create a via instance, via ({}) has no shapes",vname.c_str());
+    logger->warn(utl::ODB,
+                 244,
+                 "error: Cannot create a via instance, via ({}) has no shapes",
+                 vname.c_str());
     return NULL;
   }
 
@@ -208,7 +231,7 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     x += stepX;
   }
 
-  dbTechLayer* top    = via->getTopLayer();
+  dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bottom = via->getBottomLayer();
 
   // VIA: implicit layer change...
@@ -216,9 +239,17 @@ dbTechLayer* create_via_array(dbSWire*        wire,
     std::string vname = via->getName();
     std::string lname = layer->getName();
 
-    logger->warn(utl::ODB, 245, "error: Net {}: Can not determine which direction to continue path,",wire->getNet()->getConstName());
-    logger->info(utl::ODB, 246, 
-"       via ({}) spans above and below the current layer ({}).",vname.c_str(),lname.c_str());
+    logger->warn(
+        utl::ODB,
+        245,
+        "error: Net {}: Can not determine which direction to continue path,",
+        wire->getNet()->getConstName());
+    logger->info(
+        utl::ODB,
+        246,
+        "       via ({}) spans above and below the current layer ({}).",
+        vname.c_str(),
+        lname.c_str());
     return NULL;
   }
 

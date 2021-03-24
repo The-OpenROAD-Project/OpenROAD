@@ -32,14 +32,12 @@
 
 #pragma once
 
-#include "odb.h"
-#include <string>
 #include <list>
+#include <string>
 #include <vector>
 
-namespace utl {
-  class Logger;
-}
+#include "odb.h"
+#include "utl/Logger.h"
 
 namespace LefDefParser {
 class lefiArray;
@@ -82,35 +80,33 @@ using namespace LefDefParser;
 
 class lefin
 {
-  dbDatabase*  _db;
-  dbTech*      _tech;
-  dbLib*       _lib;
-  dbMaster*    _master;
+  dbDatabase* _db;
+  dbTech* _tech;
+  dbLib* _lib;
+  dbMaster* _master;
   utl::Logger* _logger;
-  bool         _create_tech;
-  bool         _create_lib;
-  bool         _skip_obstructions;
-  char         _left_bus_delimeter;
-  char         _right_bus_delimeter;
-  char         _hier_delimeter;
-  int          _layer_cnt;
-  int          _master_cnt;
-  int          _via_cnt;
-  int          _errors;
-  int          _lef_units;
-  const char*  _lib_name;
-  double       _dist_factor;
-  double       _area_factor;
-  int          _dbu_per_micron;
-  bool         _override_lef_dbu;
-  bool         _master_modified;
-  bool         _ignore_non_routing_layers;
-  std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props; 
+  bool _create_tech;
+  bool _create_lib;
+  bool _skip_obstructions;
+  char _left_bus_delimeter;
+  char _right_bus_delimeter;
+  char _hier_delimeter;
+  int _layer_cnt;
+  int _master_cnt;
+  int _via_cnt;
+  int _errors;
+  int _lef_units;
+  const char* _lib_name;
+  double _dist_factor;
+  double _area_factor;
+  int _dbu_per_micron;
+  bool _override_lef_dbu;
+  bool _master_modified;
+  bool _ignore_non_routing_layers;
+  std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props;
 
   void init();
   void setDBUPerMicron(int dbu);
-
-  
 
   // convert area value to db-units (1nm = 1db unit)
   int dbarea(double value)
@@ -132,15 +128,14 @@ class lefin
   bool readLef(const char* lef_file);
   bool addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry);
   void createLibrary();
-  void createPolygon(dbObject*        object,
-                     bool             is_pin,
-                     dbTechLayer*     layer,
+  void createPolygon(dbObject* object,
+                     bool is_pin,
+                     dbTechLayer* layer,
                      lefiGeomPolygon* p,
-                     double           offset_x = 0.0,
-                     double           offset_y = 0.0);
+                     double offset_x = 0.0,
+                     double offset_y = 0.0);
 
  public:
-
   // convert distance value to db-units (1nm = 1db unit)
   int dbdist(double value)
   {
@@ -149,7 +144,6 @@ class lefin
     else
       return (int) (value * _dist_factor + 0.5);
   }
-  
 
   enum AntennaType
   {
@@ -165,7 +159,7 @@ class lefin
   void arrayBegin(const char* name);
   void array(lefiArray* a);
   void arrayEnd(const char* name);
-  int  busBitChars(const char* busBit);
+  int busBitChars(const char* busBit);
   void caseSense(int caseSense);
   void clearance(const char* name);
   void divider(const char* name);
@@ -205,8 +199,17 @@ class lefin
   void viaRule(lefiViaRule* viaRule);
   void viaGenerateRule(lefiViaRule* viaRule);
   void done(void* ptr);
-  void error(const char* msg);
-  void warning(const char* msg);
+  template <typename... Args>
+  inline void warning(int id, std::string msg, const Args&... args)
+  {
+    _logger->warn(utl::ODB, id, msg, args...);
+  }
+  template <typename... Args>
+  inline void errorTolerant(int id, std::string msg, const Args&... args)
+  {
+    _logger->warn(utl::ODB, id, msg, args...);
+    ++_errors;
+  }
   void lineNumber(int lineNo);
 
   lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
@@ -243,7 +246,7 @@ class lefin
   dbLib* createTechAndLib(const char* lib_name, const char* lef_file);
 
   // Create a technology and library from the MACRO's in this LEF file.
-  dbLib* createTechAndLib(const char*             lib_name,
+  dbLib* createTechAndLib(const char* lib_name,
                           std::list<std::string>& lef_file_list);
 
   // Add macros to this library
@@ -254,9 +257,6 @@ class lefin
 
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
-
 };
 
 }  // namespace odb
-
-

@@ -50,13 +50,15 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
 #include "openroad/Version.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "utility/Logger.h" 
+#include "utl/Logger.h" 
 #include "gui/gui.h"
 
 using std::string;
@@ -65,6 +67,12 @@ using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
+
+extern "C"
+{
+    extern PyObject* PyInit__openroad_swig_py();
+    extern PyObject* PyInit__opendbpy();
+}
 
 static int cmd_argc;
 static char **cmd_argv;
@@ -80,6 +88,61 @@ showUsage(const char *prog,
 static void
 showSplash();
 
+namespace sta {
+extern const char *opendbpy_python_inits[];
+extern const char *openroad_swig_py_python_inits[];
+}
+
+static void
+initPython()
+{
+  if (PyImport_AppendInittab("_opendbpy", PyInit__opendbpy) == -1) {
+    fprintf(stderr, "Error: could not add module opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_AppendInittab("_openroad_swig_py", PyInit__openroad_swig_py) == -1) {
+    fprintf(stderr, "Error: could not add module openroadpy\n");
+    exit(1);
+  }
+
+  Py_Initialize();
+
+  char *unencoded = sta::unencode(sta::opendbpy_python_inits);
+
+  PyObject* odb_code = Py_CompileString(unencoded, "opendbpy.py", Py_file_input);
+  if (odb_code == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not compile opendbpy\n");
+    exit(1);
+  }
+
+  if (PyImport_ExecCodeModule("opendb", odb_code) == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add module opendb.py\n");
+    exit(1);
+  }
+
+  delete [] unencoded;
+
+  unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
+
+  PyObject* ord_code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+  if (ord_code == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not compile openroad.py\n");
+    exit(1);
+  }
+
+  if (PyImport_ExecCodeModule("openroad", ord_code) == nullptr) {
+    PyErr_Print();
+    fprintf(stderr, "Error: could not add module openroad\n");
+    exit(1);
+  }
+
+  delete [] unencoded;
+}
+
 int
 main(int argc,
      char *argv[])
@@ -94,18 +157,43 @@ main(int argc,
   }
 
   log_filename = findCmdLineKey(argc, argv, "-log");
-  if (log_filename)
+  if (log_filename) {
     remove(log_filename);
+  }
 
   metrics_filename = findCmdLineKey(argc, argv, "-metrics");
-  if (metrics_filename)
+  if (metrics_filename) {
     remove(metrics_filename);
+  }
+
+  initPython();
 
   cmd_argc = argc;
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
     gui_mode = true;
     return gui::startGui(cmd_argc, cmd_argv);
+  }
+  if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
+    std::vector<wchar_t*> args;
+    for(int i = 0; i < cmd_argc; i++) {
+      size_t sz = strlen(cmd_argv[i]);
+      args.push_back(new wchar_t[sz+1]);
+      args[i][sz] = '\0';
+      for(size_t j = 0;j < sz; j++) {
+        args[i][j] = (wchar_t) cmd_argv[i][j];
+      }
+    }
+
+    // Setup the app with tcl
+    auto* interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    ord::initOpenRoad(interp);
+    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
+      showSplash();
+    }
+
+    return Py_Main(cmd_argc, args.data());
   }
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
@@ -224,6 +312,7 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+  printf("  -python            start with python interpreter [limited to db operations]\n");
   printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }

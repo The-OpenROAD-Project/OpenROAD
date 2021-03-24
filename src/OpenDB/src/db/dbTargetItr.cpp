@@ -58,15 +58,15 @@ bool dbTargetItr::orderReversed()
 void dbTargetItr::reverse(dbObject* parent)
 {
   _dbMTerm* mterm = (_dbMTerm*) parent;
-  uint      id    = mterm->_targets;
-  uint      list  = 0;
+  uint id = mterm->_targets;
+  uint list = 0;
 
   while (id != 0) {
     _dbTarget* target = _target_tbl->getPtr(id);
-    uint       n      = target->_next;
-    target->_next     = list;
-    list              = id;
-    id                = n;
+    uint n = target->_next;
+    target->_next = list;
+    list = id;
+    id = n;
   }
 
   mterm->_targets = list;

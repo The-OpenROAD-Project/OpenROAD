@@ -38,7 +38,7 @@
 #include <cfloat>
 #include <limits>
 
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace dpl {

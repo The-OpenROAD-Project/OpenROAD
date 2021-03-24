@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2019, The Regents of the University of California
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -13,12 +13,12 @@
  *     * Neither the name of the University nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -26,15 +26,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "gr/FlexGRGridGraph.h"
-#include "gr/FlexGR.h"
+
 #include <iostream>
+
+#include "gr/FlexGR.h"
 
 using namespace std;
 using namespace fr;
 
-void FlexGRGridGraph::init() {
+void FlexGRGridGraph::init()
+{
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   xgp_ = &(gCellPatterns.at(0));
   ygp_ = &(gCellPatterns.at(1));
@@ -44,7 +46,8 @@ void FlexGRGridGraph::init() {
   initEdges();
 }
 
-void FlexGRGridGraph::initCoords() {
+void FlexGRGridGraph::initCoords()
+{
   map<frLayerNum, frPrefRoutingDirEnum> zMap;
   frPoint gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
   frPoint gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
@@ -62,7 +65,7 @@ void FlexGRGridGraph::initCoords() {
   }
   // z
   if (!is2DRouting_) {
-    for (auto &layer: getTech()->getLayers()) {
+    for (auto& layer : getTech()->getLayers()) {
       if (layer->getType() != frLayerTypeEnum::ROUTING) {
         continue;
       }
@@ -76,7 +79,7 @@ void FlexGRGridGraph::initCoords() {
   }
 
   frCoord zHeight = 0;
-  for (auto &[k, v]: zMap) {
+  for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
     zHeights_.push_back(zHeight);
@@ -84,67 +87,77 @@ void FlexGRGridGraph::initCoords() {
   }
 }
 
-void FlexGRGridGraph::initGrids() {
+void FlexGRGridGraph::initGrids()
+{
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
   bits_.clear();
-  bits_.resize(xDim*yDim*zDim, 0);
+  bits_.resize(xDim * yDim * zDim, 0);
   prevDirs_.clear();
   srcs_.clear();
   dsts_.clear();
-  prevDirs_.resize(xDim*yDim*zDim*3, 0);
-  srcs_.resize(xDim*yDim*zDim, 0);
-  dsts_.resize(xDim*yDim*zDim, 0);
+  prevDirs_.resize(xDim * yDim * zDim * 3, 0);
+  srcs_.resize(xDim * yDim * zDim, 0);
+  dsts_.resize(xDim * yDim * zDim, 0);
 }
 
-void FlexGRGridGraph::initEdges() {
+void FlexGRGridGraph::initEdges()
+{
   bool enableOutput = false;
 
-  for (frMIdx zIdx = 0; zIdx < (int)zCoords_.size(); zIdx++) {
-    auto dir = is2DRouting_ ? frcNonePrefRoutingDir : (zDirs_[zIdx] ? frcHorzPrefRoutingDir : frcVertPrefRoutingDir);
-    for (frMIdx xIdx = 0; xIdx < (int)xCoords_.size(); xIdx++) {
-      for (frMIdx yIdx = 0; yIdx < (int)yCoords_.size(); yIdx++) {
+  for (frMIdx zIdx = 0; zIdx < (int) zCoords_.size(); zIdx++) {
+    auto dir = is2DRouting_ ? frcNonePrefRoutingDir
+                            : (zDirs_[zIdx] ? frcHorzPrefRoutingDir
+                                            : frcVertPrefRoutingDir);
+    for (frMIdx xIdx = 0; xIdx < (int) xCoords_.size(); xIdx++) {
+      for (frMIdx yIdx = 0; yIdx < (int) yCoords_.size(); yIdx++) {
         // horz
         if (enableOutput) {
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-            cout <<"Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", E) already set" <<endl;
+            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                 << ", E) already set" << endl;
           }
         }
-        if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir) &&
-            ((xIdx + 1) != (int)xCoords_.size())) {
+        if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir)
+            && ((xIdx + 1) != (int) xCoords_.size())) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
           if (enableOutput) {
             if (!flag) {
-              cout << "Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", E) addEdge failed" <<endl;
+              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                   << ", E) addEdge failed" << endl;
             }
           }
         }
         // vert
         if (enableOutput) {
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-            cout <<"Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", N) already set" <<endl;
+            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                 << ", N) already set" << endl;
           }
         }
-        if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir) &&
-            ((yIdx + 1) != (int)yCoords_.size())) {
+        if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir)
+            && ((yIdx + 1) != (int) yCoords_.size())) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
           if (enableOutput) {
             if (!flag) {
-              cout << "Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", N) addEdge failed" <<endl;
+              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                   << ", N) addEdge failed" << endl;
             }
           }
         }
         // via
         if (enableOutput) {
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-            cout <<"Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", U) already set" <<endl;
+            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                 << ", U) already set" << endl;
           }
         }
-        if ((zIdx + 1) != (int)zCoords_.size()) {
+        if ((zIdx + 1) != (int) zCoords_.size()) {
           bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
           if (enableOutput) {
             if (!flag) {
-              cout << "Error: (" <<xIdx <<", " <<yIdx <<", " <<zIdx <<", U) addEdge failed" <<endl;
+              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
+                   << ", U) addEdge failed" << endl;
             }
           }
         }
@@ -153,20 +166,24 @@ void FlexGRGridGraph::initEdges() {
   }
 }
 
-void FlexGRGridGraph::resetStatus() {
+void FlexGRGridGraph::resetStatus()
+{
   resetSrc();
   resetDst();
   resetPrevNodeDir();
 }
 
-void FlexGRGridGraph::resetSrc() {
+void FlexGRGridGraph::resetSrc()
+{
   srcs_.assign(srcs_.size(), 0);
 }
 
-void FlexGRGridGraph::resetDst() {
+void FlexGRGridGraph::resetDst()
+{
   dsts_.assign(dsts_.size(), 0);
 }
 
-void FlexGRGridGraph::resetPrevNodeDir() {
+void FlexGRGridGraph::resetPrevNodeDir()
+{
   prevDirs_.assign(prevDirs_.size(), 0);
 }

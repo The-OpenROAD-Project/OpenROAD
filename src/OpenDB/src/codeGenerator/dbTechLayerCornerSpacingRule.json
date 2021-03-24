@@ -4,120 +4,104 @@
   "fields": [
     {
       "type": "uint",
-      "name": "_corner_type",
-      "flags": ["no-get","no-set"],
-      "bits":1
+      "name": "corner_type_",
+      "flags": [
+        "private"
+      ],
+      "bits": 1
     },
     {
       "type": "bool",
-      "name": "_same_mask",
-      "flags": [],
-      "bits":1
+      "name": "same_mask_",
+      "bits": 1
     },
     {
       "type": "bool",
-      "name":"_corner_only",
-      "flags":[],
-      "bits":1
+      "name": "corner_only_",
+      "bits": 1
     },
     {
       "type": "int",
-      "name": "_within",
-      "flags": []
+      "name": "within_"
     },
     {
       "type": "bool",
-      "name":"_except_eol",
-      "flags":[],
-      "bits":1
+      "name": "except_eol_",
+      "bits": 1
     },
     {
       "type": "int",
-      "name": "_eol_width",
-      "flags": []
+      "name": "eol_width_"
     },
     {
       "type": "bool",
-      "name":"_except_jog_length",
-      "flags":[],
-      "bits":1
-    },
-    {
-      "type" : "int",
-      "name" : "_jog_length",
-      "flags" : []
-    },
-    {
-      "type": "bool",
-      "name":"_edge_length_valid",
-      "flags":[],
-      "bits":1
-    },
-    {
-      "type" : "int",
-      "name" : "_edge_length",
-      "flags" : []
-    },
-    {
-      "type": "bool",
-      "name": "_include_shape",
-      "flags": [],
-      "bits":1
-    },
-    {
-      "type": "bool",
-      "name":"_min_length_valid",
-      "flags":[],
-      "bits":1
+      "name": "except_jog_length_",
+      "bits": 1
     },
     {
       "type": "int",
-      "name": "_min_length",
-      "flags": []
+      "name": "jog_length_"
     },
     {
       "type": "bool",
-      "name":"_except_notch",
-      "flags":[],
-      "bits":1
-    },
-    {
-      "type": "bool",
-      "name":"_except_notch_length_valid",
-      "flags":[],
-      "bits":1
+      "name": "edge_length_valid_",
+      "bits": 1
     },
     {
       "type": "int",
-      "name": "_except_notch_length",
-      "flags": []
+      "name": "edge_length_"
     },
     {
       "type": "bool",
-      "name":"_except_same_net",
-      "flags":[],
-      "bits":1
+      "name": "include_shape_",
+      "bits": 1
     },
     {
       "type": "bool",
-      "name":"_except_same_metal",
-      "flags":[],
-      "bits":1
+      "name": "min_length_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "min_length_"
+    },
+    {
+      "type": "bool",
+      "name": "except_notch_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "except_notch_length_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "except_notch_length_"
+    },
+    {
+      "type": "bool",
+      "name": "except_same_net_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "except_same_metal_",
+      "bits": 1
     }
   ],
   "constructors": [],
-  "enums":[
+  "enums": [
     {
-      "name":"CornerType",
-      "values":[
+      "name": "CornerType",
+      "values": [
         "CONVEXCORNER",
         "CONCAVECORNER"
       ],
-      "public":true
+      "public": true
     }
   ],
-  "includes": [
-    "dbObject.h"
-  ],
-  "cpp_includes":["dbTechLayer.h"]
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
 }

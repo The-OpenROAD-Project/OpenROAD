@@ -50,17 +50,17 @@ x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0034] Found 7 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0038] Inserted 5 buffers in 7 nets.
-[INFO RSZ-0039] Resized 7 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 7 nets.
+[INFO RSZ-0039] Resized 6 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/A3                                   0.15    0.06    0.09 (MET)
+u1/ZN                                   0.15    0.06    0.09 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/ZN                                  20.90    7.05   13.86 (MET)
+u1/ZN                                  10.47    3.44    7.03 (MET)
 

@@ -57,16 +57,16 @@ bool dbRSegItr::orderReversed()
 
 void dbRSegItr::reverse(dbObject* parent)
 {
-  _dbNet* net  = (_dbNet*) parent;
-  uint    id   = net->_r_segs;
-  uint    list = 0;
+  _dbNet* net = (_dbNet*) parent;
+  uint id = net->_r_segs;
+  uint list = 0;
 
   while (id != 0) {
     _dbRSeg* seg = _seg_tbl->getPtr(id);
-    uint     n   = seg->_next;
-    seg->_next   = list;
-    list         = id;
-    id           = n;
+    uint n = seg->_next;
+    seg->_next = list;
+    list = id;
+    id = n;
   }
 
   net->_r_segs = list;

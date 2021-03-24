@@ -622,17 +622,13 @@ Create clock tree subnets.
 
 ::
 
-   clock_tree_synthesis -lut_file <lut_file> \
-                       -sol_list <sol_list_file> \
-                       -wire_unit <wire_unit> \
-                       -root_buf <root_buf> \
+   clock_tree_synthesis -root_buf <root_buf> \
+                        -buf_list <tree_bufs> \
                        [-clk_nets <list_of_clk_nets>]
 
--  ``lut_file``, ``sol_list`` and ``wire_unit`` are parameters related
-   to the technology characterization described
-   `here <https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md>`__.
 -  ``root_buffer`` is the master cell of the buffer that serves as root
-   for the clock tree.
+-  ``buf_list`` is the list of master cells of the buffers that can be used
+   for building the clock tree.
 -  ``clk_nets`` is a string containing the names of the clock roots. If
    this parameter is ommitted, TritonCTS looks for the clock roots
    automatically.

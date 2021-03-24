@@ -56,10 +56,10 @@ _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
 
 _dbProperty::_dbProperty(_dbDatabase*)
 {
-  _flags._type       = DB_STRING_PROP;
+  _flags._type = DB_STRING_PROP;
   _flags._spare_bits = 0;
-  _name              = 0;
-  _owner             = 0;
+  _name = 0;
+  _owner = 0;
   memset(&_value, 0, sizeof(_value));
 }
 
@@ -115,8 +115,8 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   return true;
 }
 
-void _dbProperty::differences(dbDiff&            diff,
-                              const char*        field,
+void _dbProperty::differences(dbDiff& diff,
+                              const char* field,
                               const _dbProperty& rhs) const
 {
   DIFF_BEGIN
@@ -322,30 +322,30 @@ next_object:
   return NULL;
 }
 
-_dbProperty* _dbProperty::createProperty(dbObject*     object_,
-                                         const char*   name,
+_dbProperty* _dbProperty::createProperty(dbObject* object_,
+                                         const char* name,
                                          _PropTypeEnum type)
 {
-  _dbObject*            object    = (_dbObject*) object_;
+  _dbObject* object = (_dbObject*) object_;
   dbTable<_dbProperty>* propTable = getPropTable(object);
 
   // Create property
-  _dbProperty* prop        = propTable->create();
-  uint         oid         = object->getOID();
-  prop->_flags._type       = type;
+  _dbProperty* prop = propTable->create();
+  uint oid = object->getOID();
+  prop->_flags._type = type;
   prop->_flags._owner_type = object->getType();
-  prop->_owner             = oid;
+  prop->_owner = oid;
 
   // Get name-id, increment reference count
-  _dbNameCache* cache   = getNameCache(object);
-  uint          name_id = cache->addName(name);
-  prop->_name           = name_id;
+  _dbNameCache* cache = getNameCache(object);
+  uint name_id = cache->addName(name);
+  prop->_name = name_id;
 
   // Link property into owner's prop-list
-  dbObjectTable*    table    = object->getTable();
+  dbObjectTable* table = object->getTable();
   dbId<_dbProperty> propList = table->getPropList(oid);
-  prop->_next                = propList;
-  propList                   = prop->getImpl()->getOID();
+  prop->_next = propList;
+  propList = prop->getImpl()->getOID();
   table->setPropList(oid, propList);
   return prop;
 }
@@ -362,15 +362,15 @@ dbProperty::Type dbProperty::getType()
 
 std::string dbProperty::getName()
 {
-  _dbProperty*  prop  = (_dbProperty*) this;
+  _dbProperty* prop = (_dbProperty*) this;
   _dbNameCache* cache = _dbProperty::getNameCache(this);
-  const char*   name  = cache->getName(prop->_name);
+  const char* name = cache->getName(prop->_name);
   return name;
 }
 
 dbObject* dbProperty::getPropOwner()
 {
-  _dbProperty*   prop  = (_dbProperty*) this;
+  _dbProperty* prop = (_dbProperty*) this;
   dbObjectTable* table = prop->getTable()->getObjectTable(
       (dbObjectType) prop->_flags._owner_type);
   return table->getObject(prop->_owner);
@@ -433,13 +433,13 @@ void dbProperty::destroy(dbProperty* prop_)
   _dbProperty* prop = (_dbProperty*) prop_;
 
   // unlink property from owner
-  dbTable<_dbProperty>* propTable  = _dbProperty::getPropTable(prop);
-  dbObjectTable*        ownerTable = prop->getTable()->getObjectTable(
+  dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(prop);
+  dbObjectTable* ownerTable = prop->getTable()->getObjectTable(
       (dbObjectType) prop->_flags._owner_type);
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->_owner);
-  dbId<_dbProperty> cur      = propList;
-  uint              oid      = prop->getOID();
+  dbId<_dbProperty> cur = propList;
+  uint oid = prop->getOID();
 
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
@@ -468,15 +468,15 @@ void dbProperty::destroy(dbProperty* prop_)
 
 void dbProperty::destroyProperties(dbObject* obj)
 {
-  _dbObject*        object   = obj->getImpl();
-  uint              oid      = object->getOID();
-  dbObjectTable*    objTable = object->getTable();
-  dbId<_dbProperty> cur      = objTable->getPropList(oid);
+  _dbObject* object = obj->getImpl();
+  uint oid = object->getOID();
+  dbObjectTable* objTable = object->getTable();
+  dbId<_dbProperty> cur = objTable->getPropList(oid);
 
   if (!cur)
     return;
 
-  _dbNameCache*         cache     = _dbProperty::getNameCache(obj);
+  _dbNameCache* cache = _dbProperty::getNameCache(obj);
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(obj);
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
@@ -491,7 +491,7 @@ void dbProperty::destroyProperties(dbObject* obj)
 
 dbSet<dbProperty>::iterator dbProperty::destroy(dbSet<dbProperty>::iterator itr)
 {
-  dbProperty*                 p = *itr;
+  dbProperty* p = *itr;
   dbSet<dbProperty>::iterator n = ++itr;
   dbProperty::destroy(p);
   return n;
@@ -509,13 +509,13 @@ bool dbBoolProperty::getValue()
 
 void dbBoolProperty::setValue(bool value)
 {
-  _dbProperty* prop      = (_dbProperty*) this;
+  _dbProperty* prop = (_dbProperty*) this;
   prop->_value._bool_val = value;
 }
 
-dbBoolProperty* dbBoolProperty::create(dbObject*   object,
+dbBoolProperty* dbBoolProperty::create(dbObject* object,
                                        const char* name,
-                                       bool        value)
+                                       bool value)
 {
   if (find(object, name))
     return NULL;
@@ -553,12 +553,12 @@ void dbStringProperty::setValue(const char* value)
   ZALLOCATED(prop->_value._str_val);
 }
 
-dbStringProperty* dbStringProperty::create(dbObject*   object,
+dbStringProperty* dbStringProperty::create(dbObject* object,
                                            const char* name,
                                            const char* value)
 {
   _dbProperty* prop = (_dbProperty*) find(object, name);
-  if (prop){
+  if (prop) {
     std::string val = std::string(prop->_value._str_val) + " " + value;
     free(prop->_value._str_val);
     prop->_value._str_val = strdup(val.c_str());
@@ -590,13 +590,13 @@ int dbIntProperty::getValue()
 
 void dbIntProperty::setValue(int value)
 {
-  _dbProperty* prop     = (_dbProperty*) this;
+  _dbProperty* prop = (_dbProperty*) this;
   prop->_value._int_val = value;
 }
 
-dbIntProperty* dbIntProperty::create(dbObject*   object,
+dbIntProperty* dbIntProperty::create(dbObject* object,
                                      const char* name,
-                                     int         value)
+                                     int value)
 {
   if (find(object, name))
     return NULL;
@@ -623,13 +623,13 @@ double dbDoubleProperty::getValue()
 
 void dbDoubleProperty::setValue(double value)
 {
-  _dbProperty* prop        = (_dbProperty*) this;
+  _dbProperty* prop = (_dbProperty*) this;
   prop->_value._double_val = value;
 }
 
-dbDoubleProperty* dbDoubleProperty::create(dbObject*   object,
+dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
                                            const char* name,
-                                           double      value)
+                                           double value)
 {
   if (find(object, name))
     return NULL;
@@ -650,21 +650,21 @@ void dbProperty::writePropValue(dbProperty* prop, FILE* out)
   switch (prop->getType()) {
     case dbProperty::STRING_PROP: {
       dbStringProperty* p = (dbStringProperty*) prop;
-      std::string       v = p->getValue();
+      std::string v = p->getValue();
       fprintf(out, "\"%s\" ", v.c_str());
       break;
     }
 
     case dbProperty::INT_PROP: {
       dbIntProperty* p = (dbIntProperty*) prop;
-      int            v = p->getValue();
+      int v = p->getValue();
       fprintf(out, "%d ", v);
       break;
     }
 
     case dbProperty::DOUBLE_PROP: {
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
-      double            v = p->getValue();
+      double v = p->getValue();
       fprintf(out, "%G ", v);
     }
 
@@ -675,7 +675,7 @@ void dbProperty::writePropValue(dbProperty* prop, FILE* out)
 
 void dbProperty::writeProperties(dbObject* object, FILE* out)
 {
-  dbSet<dbProperty>           props = dbProperty::getProperties(object);
+  dbSet<dbProperty> props = dbProperty::getProperties(object);
   dbSet<dbProperty>::iterator itr;
 
   for (itr = props.begin(); itr != props.end(); ++itr) {

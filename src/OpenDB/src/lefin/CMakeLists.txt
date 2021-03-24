@@ -10,6 +10,7 @@ add_library(lefin
     lefTechLayerCutClassParser.cpp
     lefTechLayerCutSpacingParser.cpp
     lefTechLayerCutSpacingTableParser.cpp
+    lefTechLayerCutEnclosureParser.cpp
     lefTechLayerTypeParser.cpp
 )
 
@@ -29,6 +30,6 @@ target_link_libraries(lefin
     PUBLIC
         zutil
         lef
-        utility
+        utl
         Boost::boost
 )

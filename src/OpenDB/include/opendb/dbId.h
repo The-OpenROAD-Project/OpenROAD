@@ -67,7 +67,7 @@ class dbId
   dbId(const dbId<T>& id) : _id(id._id) {}
   dbId(unsigned int id) { _id = id; }
 
-                operator unsigned int() const { return _id; }
+  operator unsigned int() const { return _id; }
   unsigned int& id() { return _id; }
 
   bool isValid() { return _id > 0; }
@@ -86,5 +86,3 @@ class dbId
 };
 
 }  // namespace odb
-
-

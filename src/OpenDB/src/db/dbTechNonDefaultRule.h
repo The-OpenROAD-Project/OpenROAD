@@ -64,22 +64,22 @@ class _dbTechNonDefaultRule : public _dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  _dbTechNonDefaultRuleFlags              _flags;
-  char*                                   _name;
-  dbVector<dbId<_dbTechLayerRule> >       _layer_rules;
-  dbVector<dbId<_dbTechVia> >             _vias;
-  dbVector<dbId<_dbTechSameNetRule> >     _samenet_rules;
-  dbMatrix<dbId<_dbTechSameNetRule> >     _samenet_matrix;
-  dbVector<dbId<_dbTechVia> >             _use_vias;
-  dbVector<dbId<_dbTechViaGenerateRule> > _use_rules;
-  dbVector<dbId<_dbTechLayer> >           _cut_layers;
-  dbVector<int>                           _min_cuts;
+  _dbTechNonDefaultRuleFlags _flags;
+  char* _name;
+  dbVector<dbId<_dbTechLayerRule>> _layer_rules;
+  dbVector<dbId<_dbTechVia>> _vias;
+  dbVector<dbId<_dbTechSameNetRule>> _samenet_rules;
+  dbMatrix<dbId<_dbTechSameNetRule>> _samenet_matrix;
+  dbVector<dbId<_dbTechVia>> _use_vias;
+  dbVector<dbId<_dbTechViaGenerateRule>> _use_rules;
+  dbVector<dbId<_dbTechLayer>> _cut_layers;
+  dbVector<int> _min_cuts;
 
   _dbTechNonDefaultRule(_dbDatabase*);
   _dbTechNonDefaultRule(_dbDatabase*, const _dbTechNonDefaultRule& r);
   ~_dbTechNonDefaultRule();
 
-  _dbTech*  getTech();
+  _dbTech* getTech();
   _dbBlock* getBlock();
 
   bool operator==(const _dbTechNonDefaultRule& rhs) const;
@@ -88,8 +88,8 @@ class _dbTechNonDefaultRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechNonDefaultRule& rhs) const;
-  void differences(dbDiff&                      diff,
-                   const char*                  field,
+  void differences(dbDiff& diff,
+                   const char* field,
                    const _dbTechNonDefaultRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };

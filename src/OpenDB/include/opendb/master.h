@@ -36,9 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "atypes.h"
-
 #include "array1.h"
+#include "atypes.h"
 #include "dbtable2.h"
 #include "misc_global.h"
 #include "parse.h"
@@ -46,20 +45,20 @@
 class Ath__mterm
 {
  private:
-  uint               _id;
+  uint _id;
   Ath__termDirection _dir;
-  uint               _type;
-  uint               _flags;
-  uint               _order;
+  uint _type;
+  uint _flags;
+  uint _order;
 
  public:
   ~Ath__mterm();
-  char*              getName();
-  uint               getId();
+  char* getName();
+  uint getId();
   Ath__termDirection getDir();
-  void               writeDB(FILE* fp);
-  void               readDB(FILE* fp);
-  uint               getOrder();
+  void writeDB(FILE* fp);
+  void readDB(FILE* fp);
+  uint getOrder();
 
   friend class Ath__mtermTable;
   friend class Ath__masterTable;
@@ -75,24 +74,24 @@ class Ath__mtermTable
  public:
   Ath__mtermTable(int n);
   ~Ath__mtermTable();
-  char*       getName(uint id);
-  uint        getTermId(char* name);
+  char* getName(uint id);
+  uint getTermId(char* name);
   Ath__mterm* getTermPtr(char* name);
-  uint        startMtermIterator();
+  uint startMtermIterator();
   Ath__mterm* getNextMterm();
   Ath__mterm* newTerm();
-  Ath__mterm* addTerm(char*              pname,
-                      char*              mname,
-                      Ath__signalType    t,
+  Ath__mterm* addTerm(char* pname,
+                      char* mname,
+                      Ath__signalType t,
                       Ath__termDirection d,
-                      uint               f);
+                      uint f);
 
   Ath__mterm* makeMterm(uint nameId);
 
   Ath__mterm* getTermPtr(uint id);
-  uint        getCnt();
-  void        writeDB(FILE* fp);
-  void        readDB(FILE* fp);
+  uint getCnt();
+  void writeDB(FILE* fp);
+  void readDB(FILE* fp);
 
   friend class Ath__masterTable;
 };
@@ -129,8 +128,8 @@ class Ath__masterTable
 {
  private:
   Ath__dbtable2<Ath__master>* _dbtable;
-  Ath__mtermTable*            _mtermTable;
-  Ath__array1D<Ath__mterm*>*  _indexTermTable;
+  Ath__mtermTable* _mtermTable;
+  Ath__array1D<Ath__mterm*>* _indexTermTable;
 
  public:
   Ath__masterTable(int mCnt);
@@ -138,44 +137,42 @@ class Ath__masterTable
   Ath__master* addMaster(char* name, uint flags);
   Ath__master* addMaster(uint nameId);
   Ath__master* getMaster(char* name);
-  bool         isCoverMaster(char* name);
-  char*        getName(Ath__master* m);
-  char*        getName(uint id);
-  uint         getTermCnt(uint mtag);
-  void         addNewTerm(char*              pname,
-                          char*              mname,
-                          Ath__signalType    t,
-                          Ath__termDirection d,
-                          uint               flags);
+  bool isCoverMaster(char* name);
+  char* getName(Ath__master* m);
+  char* getName(uint id);
+  uint getTermCnt(uint mtag);
+  void addNewTerm(char* pname,
+                  char* mname,
+                  Ath__signalType t,
+                  Ath__termDirection d,
+                  uint flags);
 
   void addNewPinTag2(Ath__mterm* t, Ath__master* m, uint mtag, uint index);
   uint makePinTag2(char* pname, uint masterId, uint itag);
   Ath__termDirection getTermDir(uint termId);
-  Ath__master*       getMaster(uint id);
-  Ath__mterm*        getMtermPtr(uint termId);
-  void               printStats(FILE* fp);
-  void               writeMastersDB(FILE* fp, char* masterType);
-  void               readMastersDB(FILE* fp, uint mCnt);
+  Ath__master* getMaster(uint id);
+  Ath__mterm* getMtermPtr(uint termId);
+  void printStats(FILE* fp);
+  void writeMastersDB(FILE* fp, char* masterType);
+  void readMastersDB(FILE* fp, uint mCnt);
 
-  Ath__signalType    getSignalType(char* use);
+  Ath__signalType getSignalType(char* use);
   Ath__termDirection getPinDirection(char* dir);
-  int                readLefMacro(Ath__parser* parse, int skipSupply);
+  int readLefMacro(Ath__parser* parse, int skipSupply);
 
-  uint         startMasterIterator();
+  uint startMasterIterator();
   Ath__master* getNextMaster();
-  uint         getMasterId(char* name);
+  uint getMasterId(char* name);
 
-  uint        orderMterms(Ath__termDirection dir,
-                          Ath__master*       m,
-                          uint               firstTermId,
-                          uint               lastTermId,
-                          uint               tCnt);
-  void        orderMterms(Ath__master* m, uint firstTermId, uint lastTermId);
+  uint orderMterms(Ath__termDirection dir,
+                   Ath__master* m,
+                   uint firstTermId,
+                   uint lastTermId,
+                   uint tCnt);
+  void orderMterms(Ath__master* m, uint firstTermId, uint lastTermId);
   Ath__mterm* getTermPtr(uint id);
   Ath__mterm* getTermPtr(char* pname, uint masterId);
   Ath__mterm* getMtermPtr(uint masterId, uint masterTermIndex);
-  uint        getTermCnt();
-  void        getMtermName(Ath__mterm* mterm, char* name);
+  uint getTermCnt();
+  void getMtermName(Ath__mterm* mterm, char* name);
 };
-
-

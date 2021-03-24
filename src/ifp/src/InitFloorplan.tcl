@@ -96,9 +96,6 @@ proc initialize_floorplan { args } {
     if [info exists keys(-aspect_ratio)] {
       set aspect_ratio $keys(-aspect_ratio)
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
-      if { $aspect_ratio > 1.0 } {
-	utl::error IFP 14 "-aspect_ratio must be from 0.0 to 1.0"
-      }
     } else {
       set aspect_ratio 1.0
     }
@@ -152,7 +149,7 @@ sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_offset x_offset]\
                                       [-y_offset y_offset]}
 
-# Look Ma, not c++!
+# Look Ma, no c++!
 proc make_tracks { args } {
   sta::parse_key_args "make_tracks" args \
     keys {-x_pitch -y_pitch -x_offset -y_offset} \
@@ -237,19 +234,24 @@ proc make_layer_tracks { layer x_offset x_pitch y_offset y_pitch } {
   } else {
     set die_area [$block getDieArea]
     set grid [$block findTrackGrid $layer]
-    if { $grid != "NULL" } {
-      [odb::dbTrackGrid_destroy $grid]
+    if { $grid == "NULL" } {
+      set grid [odb::dbTrackGrid_create $block $layer]
     }
-    set grid [odb::dbTrackGrid_create $block $layer]
 
     if { $y_offset == 0 } {
       set y_offset $y_pitch
+    }
+    if { $x_offset > [$die_area dx] } {
+      utl::error "IFP" 21 "-x_offset > die width."
     }
     set x_track_count [expr int(([$die_area dx] - $x_offset) / $x_pitch) + 1]
     $grid addGridPatternX [expr [$die_area xMin] + $x_offset] $x_track_count $x_pitch
 
     if { $x_offset == 0 } {
       set x_offset $x_pitch
+    }
+    if { $y_offset > [$die_area dy] } {
+      utl::error "IFP" 22 "-y_offset > die height."
     }
     set y_track_count [expr int(([$die_area dy] - $y_offset) / $y_pitch) + 1]
     $grid addGridPatternY [expr [$die_area yMin] + $y_offset] $y_track_count $y_pitch

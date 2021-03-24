@@ -33,8 +33,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dbLogger.h"
 #include "db.h"
+#include "dbLogger.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
 #include "tmg_conn.h"
@@ -44,61 +44,61 @@ namespace odb {
 struct tcg_edge;
 struct tcg_edge
 {
-  tcg_edge*    next;
-  tcg_edge*    reverse;
+  tcg_edge* next;
+  tcg_edge* reverse;
   tmg_rcshort* s;
-  int          fr;
-  int          to;
-  int          k;  // index to _rcV
-  bool         visited;
-  bool         skip;
+  int fr;
+  int to;
+  int k;  // index to _rcV
+  bool visited;
+  bool skip;
 };
 struct tcg_pt
 {
   tcg_edge* edges;
-  int       ipath;
-  int       visited;  // 1= from another descent, 2+k= _stackV[k]->fr
+  int ipath;
+  int visited;  // 1= from another descent, 2+k= _stackV[k]->fr
 };
 
 class tmg_conn_graph
 {
  public:
-  tcg_pt*    _ptV;
-  int        _ptN;
-  int*       _path_vis;
+  tcg_pt* _ptV;
+  int _ptN;
+  int* _path_vis;
   tcg_edge** _stackV;
-  int        _stackN;
-  tcg_edge*  _e;
+  int _stackN;
+  tcg_edge* _e;
 
  private:
-  int       _ptNmax;
-  int       _shortNmax;
-  int       _eNmax;
+  int _ptNmax;
+  int _shortNmax;
+  int _eNmax;
   tcg_edge* _eV;
-  int       _eN;
+  int _eN;
 
  public:
   tmg_conn_graph();
-  void      init(int ptN, int shortN);
+  void init(int ptN, int shortN);
   tcg_edge* newEdge(tmg_conn* conn, int fr, int to)
   {
     if (_eN >= _eNmax)
       notice(0, "overflow eN\n");
-    tcg_edge* e   = _eV + _eN++;
-    e->k          = -1;
-    e->skip       = false;
-    int       ndx = conn->_ptV[to]._x;
-    int       ndy = conn->_ptV[to]._y;
+    tcg_edge* e = _eV + _eN++;
+    e->k = -1;
+    e->skip = false;
+    int ndx = conn->_ptV[to]._x;
+    int ndy = conn->_ptV[to]._y;
     tcg_edge* ppe = NULL;
-    tcg_edge* pe  = _ptV[fr].edges;
+    tcg_edge* pe = _ptV[fr].edges;
     while (pe && !pe->s && ndx > conn->_ptV[pe->to]._x) {
       ppe = pe;
-      pe  = pe->next;
+      pe = pe->next;
     }
     while (pe && !pe->s && ndx == conn->_ptV[pe->to]._x
            && ndy > conn->_ptV[pe->to]._y) {
       ppe = pe;
-      pe  = pe->next;
+      pe = pe->next;
     }
     e->next = pe;
     if (ppe)
@@ -111,27 +111,27 @@ class tmg_conn_graph
   {
     if (_eN >= _eNmax)
       notice(0, "overflow eN\n");
-    tcg_edge* e   = _eV + _eN++;
-    e->k          = -1;
-    e->skip       = false;
-    int       ned = conn->ptDist(fr, to);
-    int       ndx = conn->_ptV[to]._x;
-    int       ndy = conn->_ptV[to]._y;
+    tcg_edge* e = _eV + _eN++;
+    e->k = -1;
+    e->skip = false;
+    int ned = conn->ptDist(fr, to);
+    int ndx = conn->_ptV[to]._x;
+    int ndy = conn->_ptV[to]._y;
     tcg_edge* ppe = NULL;
-    tcg_edge* pe  = _ptV[fr].edges;
+    tcg_edge* pe = _ptV[fr].edges;
     while (pe && ned > conn->ptDist(pe->fr, pe->to)) {
       ppe = pe;
-      pe  = pe->next;
+      pe = pe->next;
     }
     while (pe && ned == conn->ptDist(pe->fr, pe->to)
            && ndx > conn->_ptV[pe->to]._x) {
       ppe = pe;
-      pe  = pe->next;
+      pe = pe->next;
     }
     while (pe && ned == conn->ptDist(pe->fr, pe->to)
            && ndx == conn->_ptV[pe->to]._x && ndy > conn->_ptV[pe->to]._y) {
       ppe = pe;
-      pe  = pe->next;
+      pe = pe->next;
     }
     e->next = pe;
     if (ppe)
@@ -143,22 +143,22 @@ class tmg_conn_graph
   tcg_edge* getNextEdge(bool ok_to_descend);
   tcg_edge* getFirstEdge(int jstart);
   tcg_edge* getFirstNonShortEdge(int& jstart);
-  void      addEdges(tmg_conn* conn, int i0, int i1, int k);
-  void      clearVisited();
-  void      relocateShorts(tmg_conn* conn);
-  void      getEdgeRefCoord(tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
-  uint      isBadShort(tcg_edge* pe, tmg_conn* conn);
+  void addEdges(tmg_conn* conn, int i0, int i1, int k);
+  void clearVisited();
+  void relocateShorts(tmg_conn* conn);
+  void getEdgeRefCoord(tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
+  uint isBadShort(tcg_edge* pe, tmg_conn* conn);
 };
 
 tmg_conn_graph::tmg_conn_graph()
 {
-  _ptNmax    = 1024;
+  _ptNmax = 1024;
   _shortNmax = 1024;
-  _eNmax     = 1024;
-  _ptV       = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
-  _path_vis  = (int*) malloc(_ptNmax * sizeof(int));
-  _eV        = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
-  _stackV    = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
+  _eNmax = 1024;
+  _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
+  _path_vis = (int*) malloc(_ptNmax * sizeof(int));
+  _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
+  _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
 }
 
 void tmg_conn_graph::init(int ptN, int shortN)
@@ -200,8 +200,8 @@ void tmg_conn_graph::clearVisited()
 
 void tmg_conn_graph::getEdgeRefCoord(tmg_conn* conn,
                                      tcg_edge* pe,
-                                     int&      rx,
-                                     int&      ry)
+                                     int& rx,
+                                     int& ry)
 {
   rx = conn->_ptV[pe->to]._x;
   ry = conn->_ptV[pe->to]._y;
@@ -230,8 +230,8 @@ uint tmg_conn_graph::isBadShort(tcg_edge* pe, tmg_conn* conn)
 void tmg_conn_graph::relocateShorts(tmg_conn* conn)
 {
   tcg_edge *pe, *ppe, *pppe, *skipe, *last;
-  int       jp, r1x, r1y, r2x, r2y;
-  bool      needAdjust, firstCheck;
+  int jp, r1x, r1y, r2x, r2y;
+  bool needAdjust, firstCheck;
   for (jp = 0; jp < _ptN; jp++) {
     pe = _ptV[jp].edges;
     if (pe == NULL || pe->next == NULL)
@@ -240,8 +240,8 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
     while (needAdjust) {
       needAdjust = false;
       firstCheck = true;
-      pppe       = NULL;
-      ppe        = NULL;
+      pppe = NULL;
+      ppe = NULL;
       for (pe = _ptV[jp].edges; pe != NULL; pe = pe->next) {
         if (ppe == NULL) {
           ppe = pe;
@@ -254,43 +254,43 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
         if ((pe->s == NULL && ppe->s == NULL) || isBadShort(pe, conn)
             || isBadShort(ppe, conn)) {
           pppe = ppe;
-          ppe  = pe;
-          r1x  = r2x;
-          r1y  = r2y;
+          ppe = pe;
+          r1x = r2x;
+          r1y = r2y;
           continue;
         }
         if (r1x > r2x || (r1x == r2x && r1y > r2y)) {
           needAdjust = true;
-          last       = pe->next;
+          last = pe->next;
           if (pppe)
             pppe->next = pe;
           else
             _ptV[jp].edges = pe;
-          pppe      = pe;
-          pe->next  = ppe;
+          pppe = pe;
+          pe->next = ppe;
           ppe->next = last;
-          pe        = ppe;
+          pe = ppe;
         } else {
           pppe = ppe;
-          ppe  = pe;
-          r1x  = r2x;
-          r1y  = r2y;
+          ppe = pe;
+          r1x = r2x;
+          r1y = r2y;
         }
       }
     }
   }
   // re-assign "skip".
-  int       noshortn, shortn, skipn;
-  bool      newSkip;
+  int noshortn, shortn, skipn;
+  bool newSkip;
   tcg_edge *plast, *nse;
   for (jp = 0; jp < _ptN; jp++) {
-    skipe    = NULL;
+    skipe = NULL;
     noshortn = 0;
-    shortn   = 0;
-    skipn    = 0;
-    ppe      = NULL;
-    plast    = NULL;
-    last     = NULL;
+    shortn = 0;
+    skipn = 0;
+    ppe = NULL;
+    plast = NULL;
+    last = NULL;
     for (pe = _ptV[jp].edges; pe != NULL; pe = pe->next) {
       if (!pe->s) {
         noshortn++;
@@ -307,7 +307,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
         skipn++;
       }
       plast = last;
-      last  = pe;
+      last = pe;
     }
     if (!skipe)
       continue;  // no need to adjust skip
@@ -329,18 +329,18 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
       ;
     }
     if (nse && nse->s) {
-      nse->s->_skip      = true;
-      nse->skip          = true;
+      nse->s->_skip = true;
+      nse->skip = true;
       nse->reverse->skip = true;
-      newSkip            = true;
+      newSkip = true;
     } else
       newSkip = false;
 
     if (!newSkip)
       return;
     // unskip skipe
-    skipe->s->_skip      = false;
-    skipe->skip          = false;
+    skipe->s->_skip = false;
+    skipe->skip = false;
     skipe->reverse->skip = false;
   }
   return;
@@ -358,7 +358,7 @@ tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
   uint loops = 16;
   while (loops && e->s) {
     jstart = jstart == e->s->_i0 ? e->s->_i1 : e->s->_i0;
-    e      = _ptV[jstart].edges;
+    e = _ptV[jstart].edges;
     loops--;
   }
   if (loops == 0) {
@@ -366,11 +366,11 @@ tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
   }
   if (!e) {
     _stackV[0] = NULL;
-    _stackN    = 0;
+    _stackN = 0;
     return NULL;
   }
   _stackV[0] = e;
-  _stackN    = 1;
+  _stackN = 1;
   return e;
 }
 
@@ -384,7 +384,7 @@ tcg_edge* tmg_conn_graph::getFirstEdge(int jstart)
   if (!e)
     return NULL;
   _stackV[0] = e;
-  _stackN    = 1;
+  _stackN = 1;
   return e;
 }
 
@@ -419,9 +419,9 @@ tcg_edge* tmg_conn_graph::getNextEdge(bool ok_to_descend)
   }
   // ascend
   while (--_stackN > 0) {
-    e                   = _stackV[_stackN - 1];
+    e = _stackV[_stackN - 1];
     _ptV[e->to].visited = 1;
-    e                   = e->next;
+    e = e->next;
     while (e && (e->visited || e->skip))
       e = e->next;
     if (e) {
@@ -442,9 +442,9 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
   if (!_graph)
     _graph = new tmg_conn_graph();
   _graph->init(_ptN, _shortN);
-  tcg_pt*      pgV = _graph->_ptV;
+  tcg_pt* pgV = _graph->_ptV;
   tmg_rcshort* s;
-  tcg_edge *   e, *e2;
+  tcg_edge *e, *e2;
 
   // setup paths
   int npath = -1;
@@ -479,23 +479,23 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
       s->_skip = true;
       continue;
     }
-    e           = _graph->newShortEdge(this, s->_i0, s->_i1);
-    e2          = _graph->newShortEdge(this, s->_i1, s->_i0);
-    e->s        = s;
-    e2->s       = s;
-    e->reverse  = e2;
+    e = _graph->newShortEdge(this, s->_i0, s->_i1);
+    e2 = _graph->newShortEdge(this, s->_i1, s->_i0);
+    e->s = s;
+    e2->s = s;
+    e->reverse = e2;
     e2->reverse = e;
-    e->fr       = s->_i0;
-    e->to       = s->_i1;
-    e2->fr      = s->_i1;
-    e2->to      = s->_i0;
-    e->visited  = false;
+    e->fr = s->_i0;
+    e->to = s->_i1;
+    e2->fr = s->_i1;
+    e2->to = s->_i0;
+    e->visited = false;
     e2->visited = false;
   }
 
   tcg_pt* pg;
-  int*    path_vis = _graph->_path_vis;
-  int     jstart;
+  int* path_vis = _graph->_path_vis;
+  int jstart;
   for (int j = 0; j < _ptN; j++) {
     pgV[j].visited = 0;
   }
@@ -510,18 +510,18 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
       continue;
     pgV[jstart].visited = 2;
     while (e) {
-      e->visited          = 1;
+      e->visited = 1;
       e->reverse->visited = 1;
-      pg                  = pgV + e->to;
+      pg = pgV + e->to;
       if (pg->visited) {
         // notice(0, "removing short loop\n");
-        e->skip          = true;
+        e->skip = true;
         e->reverse->skip = true;
-        e->s->_skip      = true;
-        e                = _graph->getNextEdge(false);
+        e->s->_skip = true;
+        e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
-        e           = _graph->getNextEdge(true);
+        e = _graph->getNextEdge(true);
       }
     }
   }
@@ -537,15 +537,15 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
     compn++;
     pgV[jstart].visited = 2;
     while (e) {
-      e->visited          = 1;
+      e->visited = 1;
       e->reverse->visited = 1;
-      pg                  = pgV + e->to;
+      pg = pgV + e->to;
       if (pg->visited) {
         loopn++;
         e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
-        e           = _graph->getNextEdge(true);
+        e = _graph->getNextEdge(true);
       }
     }
   }
@@ -556,22 +556,22 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
 void tmg_conn_graph::addEdges(tmg_conn* conn, int i0, int i1, int k)
 {
   tcg_edge *e, *e2;
-  e           = newEdge(conn, i0, i1);
-  e2          = newEdge(conn, i1, i0);
-  e->s        = NULL;
-  e->reverse  = e2;
-  e->fr       = i0;
-  e->to       = i1;
-  e->k        = k;
-  e->visited  = false;
-  e->skip     = false;
-  e2->s       = NULL;
+  e = newEdge(conn, i0, i1);
+  e2 = newEdge(conn, i1, i0);
+  e->s = NULL;
+  e->reverse = e2;
+  e->fr = i0;
+  e->to = i1;
+  e->k = k;
+  e->visited = false;
+  e->skip = false;
+  e2->s = NULL;
   e2->reverse = e;
-  e2->fr      = i1;
-  e2->to      = i0;
-  e2->k       = k;
+  e2->fr = i1;
+  e2->to = i0;
+  e2->k = k;
   e2->visited = false;
-  e2->skip    = false;
+  e2->skip = false;
 }
 
 void tmg_conn::removeWireLoops(int* loop_remaining)
@@ -595,14 +595,14 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
   // if no shorts, allow the loop to stay;
   // we do not expect any router to have a pure path loop
 
-  int       done = 0;
-  int       jstart, k;
-  tcg_pt *  pg, *pgV = _graph->_ptV;
+  int done = 0;
+  int jstart, k;
+  tcg_pt *pg, *pgV = _graph->_ptV;
   tcg_edge *e, *eloop, *emax;
-  int       dist, max_dist, max_k;
+  int dist, max_dist, max_k;
   while (!done) {
     int loop_removed = 0;
-    done             = 1;
+    done = 1;
     _graph->clearVisited();
     for (jstart = 0; jstart < _ptN; jstart++) {
       e = _graph->getFirstEdge(jstart);
@@ -610,19 +610,19 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
         continue;
       pgV[jstart].visited = 2;
       while (e) {
-        e->visited          = 1;
+        e->visited = 1;
         e->reverse->visited = 1;
-        pg                  = pgV + e->to;
+        pg = pgV + e->to;
         //  notice(0, "%-3d to %d\n",e->fr,e->to);
         if (pg->visited == 1) {
           //  notice(0, "pg->visited=1  e= %d %d\n",e->fr,e->to);
           done = 0;
         } else if (pg->visited) {
           // notice(0, "removing loop at %d\n",e->to);
-          k        = pg->visited - 2;
+          k = pg->visited - 2;
           max_dist = 0;
-          max_k    = 0;
-          emax     = NULL;
+          max_k = 0;
+          emax = NULL;
           for (; k < _graph->_stackN; k++) {
             eloop = _graph->_stackV[k];
             if (!eloop->s)
@@ -631,8 +631,8 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
                    + abs(_ptV[eloop->fr]._y - _ptV[eloop->to]._y);
             if (dist >= max_dist) {
               max_dist = dist;
-              max_k    = k;
-              emax     = eloop;
+              max_k = k;
+              emax = eloop;
             }
           }
           if (!emax) {
@@ -641,9 +641,9 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
           } else {
             // notice(0, "removing short %d-%d  dist %d\n", e->fr, e->to,
             // max_dist); notice(0, "max_dist=%d\n",max_dist);
-            emax->skip          = true;
+            emax->skip = true;
             emax->reverse->skip = true;
-            emax->s->_skip      = true;
+            emax->s->_skip = true;
             loop_removed++;
             done = 0;
             if (max_k + 1 < _graph->_stackN) {
@@ -658,7 +658,7 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
           e = _graph->getNextEdge(false);
         } else {
           pg->visited = 2 + _graph->_stackN;
-          e           = _graph->getNextEdge(true);
+          e = _graph->getNextEdge(true);
         }
       }
     }
@@ -679,9 +679,9 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
     compn++;
     pgV[jstart].visited = 2;
     while (e) {
-      e->visited          = 1;
+      e->visited = 1;
       e->reverse->visited = 1;
-      pg                  = pgV + e->to;
+      pg = pgV + e->to;
       if (pg->visited) {
         loopn++;
         // notice(0, "loop at %d\n",e->to);
@@ -696,7 +696,7 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
         e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
-        e           = _graph->getNextEdge(true);
+        e = _graph->getNextEdge(true);
       }
     }
   }
@@ -717,30 +717,30 @@ bool tmg_conn::dfsStart(int& j)
   return true;
 }
 
-bool tmg_conn::dfsNext(int*  from,
-                       int*  to,
-                       int*  k,
+bool tmg_conn::dfsNext(int* from,
+                       int* to,
+                       int* k,
                        bool* is_short,
                        bool* is_loop)
 {
-  tcg_edge* e   = _graph->_e;
-  tcg_pt*   pgV = _graph->_ptV;
+  tcg_edge* e = _graph->_e;
+  tcg_pt* pgV = _graph->_ptV;
   if (!e)
     return false;
-  *from               = e->fr;
-  *to                 = e->to;
-  *k                  = e->k;
-  *is_short           = (e->s ? true : false);
-  e->visited          = 1;
+  *from = e->fr;
+  *to = e->to;
+  *k = e->k;
+  *is_short = (e->s ? true : false);
+  e->visited = 1;
   e->reverse->visited = 1;
-  pgV[e->fr].visited  = 1;
+  pgV[e->fr].visited = 1;
   if (pgV[e->to].visited) {
-    *is_loop   = true;
+    *is_loop = true;
     _graph->_e = _graph->getNextEdge(false);
   } else {
-    *is_loop           = false;
+    *is_loop = false;
     pgV[e->to].visited = 1;
-    _graph->_e         = _graph->getNextEdge(true);
+    _graph->_e = _graph->getNextEdge(true);
   }
   return true;
 }
@@ -752,7 +752,7 @@ int tmg_conn::isVisited(int j)
 
 void tmg_conn::checkVisited()
 {
-  int     j;
+  int j;
   tcg_pt* pgV = _graph->_ptV;
   for (j = 0; j < _ptN; j++)
     if (!pgV[j].visited) {
@@ -774,14 +774,14 @@ static void print_shape(tmg_rc_sh& s)
 
 void tmg_conn::printDisconnect()
 {
-  int         j, n, jsmall = 0;
-  int         compn   = 0;
-  int         nsmall  = 0;
-  int         tstack0 = 0;
-  int         tstackN = 0;
+  int j, n, jsmall = 0;
+  int compn = 0;
+  int nsmall = 0;
+  int tstack0 = 0;
+  int tstackN = 0;
   tmg_rcterm *x, **tstackV = _tstackV;
-  tcg_pt*     pgV = _graph->_ptV;
-  tcg_edge*   e;
+  tcg_pt* pgV = _graph->_ptV;
+  tcg_edge* e;
   _graph->clearVisited();
   for (j = 0; j < _ptN; j++) {
     e = _graph->getFirstEdge(j);
@@ -791,12 +791,12 @@ void tmg_conn::printDisconnect()
       tstackV[tstackN++] = _termV + _ptV[j]._tindex;
     compn++;
     pgV[j].visited = 1;
-    n              = 0;
+    n = 0;
     while (1) {
       // do a physically-connected subtree
       while (e) {
         n++;
-        e->visited          = 1;
+        e->visited = 1;
         e->reverse->visited = 1;
         if (_ptV[e->to]._tindex >= 0) {
           x = _termV + _ptV[e->to]._tindex;
@@ -807,7 +807,7 @@ void tmg_conn::printDisconnect()
           e = _graph->getNextEdge(false);
         } else {
           pgV[e->to].visited = 1;
-          e                  = _graph->getNextEdge(true);
+          e = _graph->getNextEdge(true);
         }
       }
       // finished physically-connected subtree,
@@ -822,7 +822,7 @@ void tmg_conn::printDisconnect()
       if (!pt)
         break;
       tstack0--;
-      e                      = _graph->getFirstEdge(pt - _ptV);
+      e = _graph->getFirstEdge(pt - _ptV);
       pgV[pt - _ptV].visited = 1;
     }
     if (nsmall == 0 || n < nsmall) {
@@ -833,18 +833,18 @@ void tmg_conn::printDisconnect()
   if (compn < 2 || nsmall == 0)
     return;
   _graph->clearVisited();
-  e                   = _graph->getFirstEdge(jsmall);
+  e = _graph->getFirstEdge(jsmall);
   pgV[jsmall].visited = 1;
-  int last_pt         = -1;
+  int last_pt = -1;
   while (e) {
-    last_pt             = e->to;
-    e->visited          = 1;
+    last_pt = e->to;
+    e->visited = 1;
     e->reverse->visited = 1;
     if (pgV[e->to].visited) {
       e = _graph->getNextEdge(false);
     } else {
       pgV[e->to].visited = 1;
-      e                  = _graph->getNextEdge(true);
+      e = _graph->getNextEdge(true);
     }
   }
 
@@ -885,19 +885,19 @@ void tmg_conn::printDisconnect()
 
 void tmg_conn::adjustShapes()
 {
-  int        j, k;
-  tcg_pt *   p, *q, *pgV = _graph->_ptV;
-  tcg_edge*  e;
-  int        pS[256], p0, pN;
+  int j, k;
+  tcg_pt *p, *q, *pgV = _graph->_ptV;
+  tcg_edge* e;
+  int pS[256], p0, pN;
   tmg_rc_sh *s, *sV[256];
-  tmg_rc*    rV[256];
+  tmg_rc* rV[256];
   // since the dbShape for a via does not carry a ref point,
   // we keep this in an auxiliary array
   tmg_rcpt* spV[256];
-  int       is_h[256], is_v[256];
-  int       sN;
-  int       adjust_done   = 0;
-  int       adjust_failed = 0;
+  int is_h[256], is_v[256];
+  int sN;
+  int adjust_done = 0;
+  int adjust_failed = 0;
 
   // find shorts that are not to the same xy
   _graph->clearVisited();
@@ -906,11 +906,11 @@ void tmg_conn::adjustShapes()
     if (p->visited)
       continue;
     p->visited = 1;
-    pS[0]      = j;
-    pN         = 1;
+    pS[0] = j;
+    pN = 1;
     for (e = p->edges; e; e = e->next)
       if (!e->skip && e->s) {
-        pS[pN++]           = e->to;
+        pS[pN++] = e->to;
         pgV[e->to].visited = 1;
       }
     if (pN == 1)
@@ -924,7 +924,7 @@ void tmg_conn::adjustShapes()
             if (e->to == pS[k])
               break;
           if (k == pN) {
-            pS[pN++]           = e->to;
+            pS[pN++] = e->to;
             pgV[e->to].visited = 1;
           }
         }
@@ -937,23 +937,23 @@ void tmg_conn::adjustShapes()
 
     // we have pN points
     // now get all sN>=pN shapes connected to them
-    sN            = 0;
-    int nvia      = 0;
+    sN = 0;
+    int nvia = 0;
     int first_seg = 1;
-    int ok_hor    = 1;
-    int ok_ver    = 1;
-    int xlo       = 0;
-    int xhi       = 0;
-    int ylo       = 0;
-    int yhi       = 0;
-    int w         = 0;
+    int ok_hor = 1;
+    int ok_ver = 1;
+    int xlo = 0;
+    int xhi = 0;
+    int ylo = 0;
+    int yhi = 0;
+    int w = 0;
     for (k = 0; k < pN; k++)
       for (e = pgV[pS[k]].edges; e; e = e->next)
         if (!e->s) {
           spV[sN] = _ptV + pS[k];
-          rV[sN]  = &_rcV[e->k];
-          s       = &(_rcV[e->k]._shape);
-          sV[sN]  = s;
+          rV[sN] = &_rcV[e->k];
+          s = &(_rcV[e->k]._shape);
+          sV[sN] = s;
           sN++;
           if (s->isVia())
             nvia++;
@@ -963,10 +963,10 @@ void tmg_conn::adjustShapes()
             else
               w = s->getDY();
             first_seg = 0;
-            xlo       = s->xMin();
-            xhi       = s->xMax();
-            ylo       = s->yMin();
-            yhi       = s->yMax();
+            xlo = s->xMin();
+            xhi = s->xMax();
+            ylo = s->yMin();
+            yhi = s->yMax();
           } else {
             if (s->getDX() < s->getDY()) {
               if ((uint) w != s->getDX())
@@ -1222,9 +1222,9 @@ void tmg_conn::adjustShapes()
         for (k = 0; k < pN; k++)
           for (e = pgV[pS[k]].edges; e; e = e->next)
             if (!e->skip && e->s && pgV[e->to].visited == 2) {
-              e->skip          = true;
+              e->skip = true;
               e->reverse->skip = true;
-              e->s->_skip      = true;
+              e->s->_skip = true;
             }
         for (k = 0; k < pN; k++)
           pgV[pS[k]].visited = 1;
@@ -1301,8 +1301,8 @@ void tmg_conn::adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN)
   int k;
   for (k = 0; k < sN; k++)
     if (spV[k] != p) {
-      int       dx = p->_x - spV[k]->_x;
-      int       dy = p->_y - spV[k]->_y;
+      int dx = p->_x - spV[k]->_x;
+      int dy = p->_y - spV[k]->_y;
       tmg_rcpt* p2;
       if (_ptV + rV[k]->_ifr == spV[k])
         p2 = _ptV + rV[k]->_ito;
@@ -1350,8 +1350,8 @@ int tmg_conn::getDisconnectedStart()
 void tmg_conn::copyWireIdToVisitedShorts(int j)
 {
   // copy _ptV[j]._dbwire_id to visited points shorted to j
-  int       wire_id = _ptV[j]._dbwire_id;
-  tmg_rcpt* x0      = _ptV + j;
+  int wire_id = _ptV[j]._dbwire_id;
+  tmg_rcpt* x0 = _ptV + j;
   tmg_rcpt* x;
   for (x = x0->_sring; x != x0; x = x->_sring) {
     if (x->_dbwire_id < 0 && _graph->_ptV[x - _ptV].visited) {

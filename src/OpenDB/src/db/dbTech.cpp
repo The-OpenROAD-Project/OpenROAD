@@ -51,7 +51,7 @@
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaLayerRule.h"
 #include "dbTechViaRule.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -167,8 +167,8 @@ bool _dbTech::operator==(const _dbTech& rhs) const
   return true;
 }
 
-void _dbTech::differences(dbDiff&        diff,
-                          const char*    field,
+void _dbTech::differences(dbDiff& diff,
+                          const char* field,
                           const _dbTech& rhs) const
 {
   DIFF_BEGIN
@@ -262,24 +262,24 @@ void _dbTech::out(dbDiff& diff, char side, const char* field) const
 ////////////////////////////////////////////////////////////////////
 _dbTech::_dbTech(_dbDatabase* db)
 {
-  _via_cnt        = 0;
-  _layer_cnt      = 0;
-  _rlayer_cnt     = 0;
-  _lef_units      = 0;
+  _via_cnt = 0;
+  _layer_cnt = 0;
+  _rlayer_cnt = 0;
+  _lef_units = 0;
   _dbu_per_micron = 1000;
-  _mfgrid         = 0;
+  _mfgrid = 0;
 
-  _flags._namecase    = dbOnOffType::ON;
-  _flags._haswireext  = dbOnOffType::OFF;
-  _flags._nowireext   = dbOnOffType::OFF;
-  _flags._hasclmeas   = dbOnOffType::OFF;
-  _flags._clmeas      = dbClMeasureType::EUCLIDEAN;
+  _flags._namecase = dbOnOffType::ON;
+  _flags._haswireext = dbOnOffType::OFF;
+  _flags._nowireext = dbOnOffType::OFF;
+  _flags._hasclmeas = dbOnOffType::OFF;
+  _flags._clmeas = dbClMeasureType::EUCLIDEAN;
   _flags._hasminspobs = dbOnOffType::OFF;
-  _flags._minspobs    = dbOnOffType::ON;
+  _flags._minspobs = dbOnOffType::ON;
   _flags._hasminsppin = dbOnOffType::OFF;
-  _flags._minsppin    = dbOnOffType::OFF;
-  _flags._spare_bits  = 0;
-  _version            = 5.4;
+  _flags._minsppin = dbOnOffType::OFF;
+  _flags._spare_bits = 0;
+  _version = 5.4;
   strncpy(_version_buf, "5.4", 9);
 
   _layer_tbl = new dbTable<_dbTechLayer>(
@@ -561,9 +561,9 @@ const char* _dbTech::_getLefVersionStr() const
 //
 void _dbTech::_setLefVersion(double inver)
 {
-  _version              = inver;
-  int major_version     = (int) floor(inver);
-  int minor_version     = ((int) floor(inver * 10.0)) - (major_version * 10);
+  _version = inver;
+  int major_version = (int) floor(inver);
+  int minor_version = ((int) floor(inver * 10.0)) - (major_version * 10);
   int opt_minor_version = ((int) floor(inver * 1000.0)) - (major_version * 1000)
                           - (minor_version * 100);
   if (opt_minor_version > 0)
@@ -623,7 +623,7 @@ dbSet<dbTechLayer> dbTech::getLayers()
 
 dbTechLayer* dbTech::findLayer(const char* name)
 {
-  dbSet<dbTechLayer>           layers = getLayers();
+  dbSet<dbTechLayer> layers = getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
@@ -638,7 +638,7 @@ dbTechLayer* dbTech::findLayer(const char* name)
 
 dbTechLayer* dbTech::findLayer(int layer_number)
 {
-  dbSet<dbTechLayer>           layers = getLayers();
+  dbSet<dbTechLayer> layers = getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
@@ -653,7 +653,7 @@ dbTechLayer* dbTech::findLayer(int layer_number)
 
 dbTechLayer* dbTech::findRoutingLayer(int level_number)
 {
-  dbSet<dbTechLayer>           layers = getLayers();
+  dbSet<dbTechLayer> layers = getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
@@ -668,7 +668,7 @@ dbTechLayer* dbTech::findRoutingLayer(int level_number)
 
 void dbTech::setDbUnitsPerMicron(int value)
 {
-  _dbTech* tech         = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_dbu_per_micron = value;
 }
 
@@ -698,7 +698,7 @@ int dbTech::getLefUnits()
 
 void dbTech::setLefUnits(int units)
 {
-  _dbTech* tech    = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_lef_units = units;
 }
 
@@ -735,9 +735,9 @@ dbOnOffType dbTech::getNoWireExtAtPin() const
 
 void dbTech::setNoWireExtAtPin(dbOnOffType intyp)
 {
-  _dbTech* tech            = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_flags._haswireext = dbOnOffType::ON;
-  tech->_flags._nowireext  = intyp.getValue();
+  tech->_flags._nowireext = intyp.getValue();
 }
 
 dbOnOffType dbTech::getNamesCaseSensitive() const
@@ -750,7 +750,7 @@ dbOnOffType dbTech::getNamesCaseSensitive() const
 
 void dbTech::setNamesCaseSensitive(dbOnOffType intyp)
 {
-  _dbTech* tech          = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_flags._namecase = intyp.getValue();
 }
 
@@ -769,9 +769,9 @@ dbClMeasureType dbTech::getClearanceMeasure() const
 
 void dbTech::setClearanceMeasure(dbClMeasureType inmeas)
 {
-  _dbTech* tech           = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_flags._hasclmeas = dbOnOffType::ON;
-  tech->_flags._clmeas    = inmeas.getValue();
+  tech->_flags._clmeas = inmeas.getValue();
 }
 
 bool dbTech::hasUseMinSpacingObs() const
@@ -789,9 +789,9 @@ dbOnOffType dbTech::getUseMinSpacingObs() const
 
 void dbTech::setUseMinSpacingObs(dbOnOffType intyp)
 {
-  _dbTech* tech             = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_flags._hasminspobs = dbOnOffType::ON;
-  tech->_flags._minspobs    = intyp.getValue();
+  tech->_flags._minspobs = intyp.getValue();
 }
 
 bool dbTech::hasUseMinSpacingPin() const
@@ -809,9 +809,9 @@ dbOnOffType dbTech::getUseMinSpacingPin() const
 
 void dbTech::setUseMinSpacingPin(dbOnOffType intyp)
 {
-  _dbTech* tech             = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   tech->_flags._hasminsppin = dbOnOffType::ON;
-  tech->_flags._minsppin    = intyp.getValue();
+  tech->_flags._minsppin = intyp.getValue();
 }
 
 bool dbTech::hasManufacturingGrid() const
@@ -852,14 +852,14 @@ int dbTech::getViaCount()
 
 dbSet<dbTechNonDefaultRule> dbTech::getNonDefaultRules()
 {
-  _dbTech*                    tech = (_dbTech*) this;
+  _dbTech* tech = (_dbTech*) this;
   dbSet<dbTechNonDefaultRule> ndr(tech, tech->_non_default_rule_tbl);
   return ndr;
 }
 
 dbTechNonDefaultRule* dbTech::findNonDefaultRule(const char* name)
 {
-  dbSet<dbTechNonDefaultRule>           rules = getNonDefaultRules();
+  dbSet<dbTechNonDefaultRule> rules = getNonDefaultRules();
   dbSet<dbTechNonDefaultRule>::iterator itr;
 
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
@@ -874,9 +874,9 @@ dbTechNonDefaultRule* dbTech::findNonDefaultRule(const char* name)
 
 dbTechSameNetRule* dbTech::findSameNetRule(dbTechLayer* l1_, dbTechLayer* l2_)
 {
-  _dbTech*                 tech = (_dbTech*) this;
-  _dbTechLayer*            l1   = (_dbTechLayer*) l1_;
-  _dbTechLayer*            l2   = (_dbTechLayer*) l2_;
+  _dbTech* tech = (_dbTech*) this;
+  _dbTechLayer* l1 = (_dbTechLayer*) l1_;
+  _dbTechLayer* l2 = (_dbTechLayer*) l2_;
   dbId<_dbTechSameNetRule> rule
       = tech->_samenet_matrix(l1->_number, l2->_number);
 
@@ -890,7 +890,7 @@ void dbTech::getSameNetRules(std::vector<dbTechSameNetRule*>& rules)
 {
   _dbTech* tech = (_dbTech*) this;
   rules.clear();
-  dbVector<dbId<_dbTechSameNetRule> >::iterator itr;
+  dbVector<dbId<_dbTechSameNetRule>>::iterator itr;
 
   for (itr = tech->_samenet_rules.begin(); itr != tech->_samenet_rules.end();
        ++itr) {
@@ -913,7 +913,7 @@ dbSet<dbTechViaGenerateRule> dbTech::getViaGenerateRules()
 
 dbTechViaRule* dbTech::findViaRule(const char* name)
 {
-  dbSet<dbTechViaRule>           rules = getViaRules();
+  dbSet<dbTechViaRule> rules = getViaRules();
   dbSet<dbTechViaRule>::iterator itr;
 
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
@@ -928,7 +928,7 @@ dbTechViaRule* dbTech::findViaRule(const char* name)
 
 dbTechViaGenerateRule* dbTech::findViaGenerateRule(const char* name)
 {
-  dbSet<dbTechViaGenerateRule>           rules = getViaGenerateRules();
+  dbSet<dbTechViaGenerateRule> rules = getViaGenerateRules();
   dbSet<dbTechViaGenerateRule>::iterator itr;
 
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
@@ -946,43 +946,61 @@ void dbTech::checkLayer(bool typeChk,
                         bool pitchChk,
                         bool spacingChk)
 {
-  dbSet<dbTechLayer>           layers = getLayers();
+  dbSet<dbTechLayer> layers = getLayers();
   dbSet<dbTechLayer>::iterator itr;
   if (!typeChk && !widthChk && !pitchChk && !spacingChk) {
-    typeChk    = true;
-    widthChk   = true;
-    pitchChk   = true;
+    typeChk = true;
+    widthChk = true;
+    pitchChk = true;
     spacingChk = true;
   }
 
-  dbTechLayer*    layer;
+  dbTechLayer* layer;
   dbTechLayerType type;
-  int             pitch, spacing, level;
-  uint            width;
+  int pitch, spacing, level;
+  uint width;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     layer = (dbTechLayer*) *itr;
-    type  = layer->getType();
+    type = layer->getType();
     if (type.getValue() == dbTechLayerType::CUT)
       continue;
     if (typeChk && type.getValue() != dbTechLayerType::ROUTING) {
-      //TODO: remove this line
+      // TODO: remove this line
       warning(0, "Layer %s is not a routing layer!\n", layer->getConstName());
-      getImpl()->getLogger()->warn(utl::ODB, 58,  "Layer {} is not a routing layer!", layer->getConstName());
+      getImpl()->getLogger()->warn(utl::ODB,
+                                   58,
+                                   "Layer {} is not a routing layer!",
+                                   layer->getConstName());
       continue;
     }
     level = layer->getRoutingLevel();
     pitch = layer->getPitch();
     if (pitchChk && pitch <= 0)
-      getImpl()->getLogger()->error(utl::ODB, 59, 
-"Layer {}, routing level {}, has {} pitch !!",layer->getConstName(),level,pitch);
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          59,
+          "Layer {}, routing level {}, has {} pitch !!",
+          layer->getConstName(),
+          level,
+          pitch);
     width = layer->getWidth();
     if (widthChk && width == 0)
-      getImpl()->getLogger()->error(utl::ODB, 60, 
-"Layer {}, routing level {}, has {} width !!",layer->getConstName(),level,width);
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          60,
+          "Layer {}, routing level {}, has {} width !!",
+          layer->getConstName(),
+          level,
+          width);
     spacing = layer->getSpacing();
     if (spacingChk && spacing <= 0)
-      getImpl()->getLogger()->error(utl::ODB, 61, 
-"Layer {}, routing level {}, has {} spacing !!",layer->getConstName(),level,spacing);
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          61,
+          "Layer {}, routing level {}, has {} spacing !!",
+          layer->getConstName(),
+          level,
+          spacing);
   }
 
   return;
@@ -994,8 +1012,8 @@ dbTech* dbTech::create(dbDatabase* db_, int dbu_per_micron)
   if (db->_tech != 0)
     return NULL;
 
-  _dbTech* tech         = db->_tech_tbl->create();
-  db->_tech             = tech->getOID();
+  _dbTech* tech = db->_tech_tbl->create();
+  db->_tech = tech->getOID();
   tech->_dbu_per_micron = dbu_per_micron;
   return (dbTech*) tech;
 }
@@ -1008,8 +1026,8 @@ dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
 
 void dbTech::destroy(dbTech* tech_)
 {
-  _dbTech*     tech = (_dbTech*) tech_;
-  _dbDatabase* db   = tech->getDatabase();
+  _dbTech* tech = (_dbTech*) tech_;
+  _dbDatabase* db = tech->getDatabase();
   dbProperty::destroyProperties(tech);
   db->_tech_tbl->destroy(tech);
   db->_tech = 0;

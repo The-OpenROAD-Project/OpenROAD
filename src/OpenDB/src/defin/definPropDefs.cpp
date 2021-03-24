@@ -30,8 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "db.h"
 #include "definPropDefs.h"
+
+#include "db.h"
 
 namespace odb {
 
@@ -75,7 +76,7 @@ void definPropDefs::begin(const char* obj_type,
   dbProperty* obj = dbProperty::find(_defs, obj_type);
 
   if (obj == NULL) {
-      obj = dbIntProperty::create(_defs, obj_type, 0);
+    obj = dbIntProperty::create(_defs, obj_type, 0);
   }
 
   _prop = dbProperty::find(obj, name);

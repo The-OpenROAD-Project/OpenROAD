@@ -81,6 +81,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_size] \
                                              [-sink_clustering_max_diameter] \
                                              [-sink_clustering_enable] \
+                                             [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
                                              [-sink_clustering_use_agglomerative]
@@ -90,7 +91,8 @@ proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
     keys {-root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
-          -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf -sink_clustering_use_agglomerative}\
+          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf -sink_clustering_use_agglomerative}\
+
     flags {-post_cts_disable -sink_clustering_enable}
 
   cts::set_disable_post_cts [info exists flags(-post_cts_disable)]
@@ -110,7 +112,12 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-sink_clustering_use_agglomerative)] } {
     set use_agglomerative $keys(-sink_clustering_use_agglomerative)
     cts::set_sink_clustering_use_agglomerative $use_agglomerative
-  } 
+  }
+
+  if { [info exists keys(-sink_clustering_levels)] } {
+    set levels $keys(-sink_clustering_levels)
+    cts::set_sink_clustering_levels $levels
+  }
 
   if { [info exists keys(-num_static_layers)] } {
     set num $keys(-num_static_layers)
