@@ -56,7 +56,7 @@ AthPool<extDistRC>* extMetRCTable::getRCPool()
 }
 uint extMain::GenExtRules(const char* rulesFileName, int pattern)
 {
-  bool ResModel= pattern == 1000;
+  bool ResModel1= pattern == 1000;
 
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
@@ -455,12 +455,22 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
       spaceTable->add(s);
     }
     } else {
-      // for (uint ii = 0; ii < sTable->getCnt(); ii++) {
-      for (uint ii = 1; ii < 5; ii++) {
+      spaceTable->add(0);
+      
+      for (uint ii = 1; ii < 3; ii++) {
         //double m = sTable->get(ii);
         double s = pitch * ii;
-        s -= minWidth;
-       
+        double s1= s - minWidth;
+      
+        spaceTable->add(s1);
+        spaceTable->add(s);
+      } 
+      for (uint ii = 3; ii < 5; ii++) {
+        //double m = sTable->get(ii);
+        double s = pitch * ii;
+        double s1= s - minWidth;
+      
+        // spaceTable->add(s1);
         spaceTable->add(s);
       } 
     }
@@ -557,9 +567,7 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
   bboxLL[measure->_dir] = measure->_ur[measure->_dir];
   bboxLL[!measure->_dir] = measure->_ll[!measure->_dir];
 
-  int n
-      = measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
-
+  int n= measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
 
   double pitchUp_print = measure->_topWidth;
   double pitch_print = 0.001 * (measure->_minWidth + measure->_minSpace);
@@ -571,21 +579,45 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
 
   int x1 = bboxLL[0];
   int y1 = bboxLL[1];
+   uint WW = measure->_w_nm;
+  uint SS1= measure->_s_nm;
+  uint WW2 = measure->_w2_nm;
+  uint SS2 = measure->_s2_nm;
+
 
   // logger_->info(RCX, 0, "                                     %12d %12d", x1,
   // y1);
   measure->clean2dBoxTable(measure->_met, false);
 
+  if (measure->_s_nm==0) {
+      measure->createNetSingleWire(_wireDirName, 3, WW, SS1);
+    if (measure->_s2_nm==0) {
+      measure->_ll[measure->_dir] += gap;
+      measure->_ur[measure->_dir] += gap;
+
+      return 1;
+    }
+    measure->createNetSingleWire(_wireDirName, 4, WW, SS2);
+    measure->_ll[measure->_dir] += gap;
+    measure->_ur[measure->_dir] += gap;
+
+    return 2;
+  }
+
   double x_tmp[50];
   uint netIdTable[50];
   uint idCnt = 1;
   int ii;
+  if (s_layout>0) {
   for (ii = 0; ii < n - 1; ii++) {
     netIdTable[idCnt]
         = measure->createNetSingleWire(_wireDirName, idCnt, w_layout, s_layout);
     idCnt++;
     x_tmp[ii] = x;
     x -= pitch_print;
+  }
+  } else {
+
   }
 
   double X[50];
@@ -594,15 +626,7 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
   for (; ii >= 0; ii--)
     X[cnt++] = x_tmp[ii];
 
-  uint WW = measure->_w_nm;
-  uint SS1;
-  //	if (measure->_diag)
-  //		SS1= 2*measure->_minSpace;
-  //	else
-  SS1 = measure->_s_nm;
-  uint WW2 = measure->_w2_nm;
-  uint SS2 = measure->_s2_nm;
-
+ 
   uint base;
   if (n > 1) {
     X[cnt++] = -pitchUp_print;
@@ -621,22 +645,7 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
       netIdTable[idCnt]
           = measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
       idCnt++;
-    } else {
-      uint met_tmp = measure->_met;
-      measure->_met = measure->_overMet;
-      uint ss2 = SS1;
-      if (measure->_s_nm == 0)
-        ss2 = measure->_s_nm;
-
-      netIdTable[idCnt]
-          = measure->createNetSingleWire(_wireDirName, idCnt, 0, ss2);
-      idCnt++;
-
-      measure->_met = met_tmp;
-      netIdTable[idCnt] = measure->createNetSingleWire(
-          _wireDirName, idCnt, w_layout, s_layout);
-      idCnt++;
-    }
+    } 
 
     //	x= measure->_topWidth*0.5+pitchUp_print+0.001*measure->_minSpace;
     x = measure->_topWidth * 0.5 + 0.001 * (WW2 + SS2 + measure->_minSpace);
@@ -654,10 +663,10 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
         = measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
     idCnt++;
   }
+  measure->_ll[measure->_dir] += gap;
+  measure->_ur[measure->_dir] += gap;
 
-  if (measure->_diag) {
-    return cnt;
-  }
+  return cnt;
 }
 int extRCModel::writeBenchWires_DB(extMeasure* measure)
 {

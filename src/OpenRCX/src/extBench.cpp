@@ -525,6 +525,11 @@ uint extMain::benchWires(extMainOptions* opt)
 
   if (opt->_gen_def_patterns) {
     m->linesOverBench(opt);
+
+    opt->_res_patterns= true;
+    m->linesOverBench(opt);
+    opt->_res_patterns= false;
+
     m->linesOverUnderBench(opt);
     m->linesUnderBench(opt);
     m->linesDiagUnderBench(opt);
