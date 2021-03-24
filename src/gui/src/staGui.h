@@ -97,7 +97,7 @@ class TimingPathsModel : public QAbstractTableModel
   void populateModel(bool get_max = true, int path_count = 100);
 
  private:
-  bool populatePaths(bool get_max = true, int path_count = 100);
+  bool populatePaths(bool get_max = true, int path_count = 100, bool clockExpanded = false);
 
   ord::OpenRoad* openroad_;
   std::vector<TimingPath*> timing_paths_;

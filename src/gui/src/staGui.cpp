@@ -193,7 +193,7 @@ void TimingPathsModel::populateModel(bool setup_hold, int path_count)
   endResetModel();
 }
 
-bool TimingPathsModel::populatePaths(bool get_max, int path_count)
+bool TimingPathsModel::populatePaths(bool get_max, int path_count, bool clockExpanded)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -245,7 +245,11 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
     path->setSlack(path_end->slack(sta_));
     path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     path->setPathRequiredTime(path_end->requiredTime(sta_));
-
+    bool clockPropagated = path_end->sourceClkEdge(sta_)->clock()->isPropagated();
+    if (!clockPropagated)
+      clockExpanded = false;
+    else
+      clockExpanded = true;
     float arrival_prev_stage = 0;
     float arrival_cur_stage = 0;
     for (size_t i = 0; i < expanded->size(); i++) {
@@ -253,7 +257,7 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count)
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
-      if (sta_->network()->isDriver(pin) && i != 0) {
+      if (sta_->network()->isDriver(pin) && !(!clockExpanded && (sta_->network()->isCheckClk(pin) || !i))) {
         sta::Parasitic* parasitic = nullptr;
         sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
         if (arc_delay_calc)
