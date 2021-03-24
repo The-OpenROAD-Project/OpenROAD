@@ -43,16 +43,11 @@ namespace ord {
 ppl::IOPlacer* getIOPlacer();
 } // namespace ord
 
-namespace ppl {
-  typedef PinList TmpPinList;
-}
-
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
 using ppl::PinList;
 using std::vector;
-using ppl::TmpPinList;
 
 template <class TYPE>
 vector<TYPE> *
@@ -86,7 +81,7 @@ tclListStdSeq(Tcl_Obj *const source,
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) TmpPinList* {
+%typemap(in) PinList* {
   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
@@ -139,7 +134,7 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_names_constraint(TmpPinList *pin_list, Edge edge, int begin, int end)
+add_names_constraint(PinList *pin_list, Edge edge, int begin, int end)
 {
   getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
 }
@@ -192,7 +187,7 @@ add_ver_layer(int layer)
 }
 
 void
-add_pin_group(TmpPinList *pin_list)
+add_pin_group(PinList *pin_list)
 {
   getIOPlacer()->addPinGroup(pin_list);
 }
