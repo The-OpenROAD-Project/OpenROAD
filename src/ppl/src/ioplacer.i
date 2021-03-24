@@ -43,11 +43,38 @@ namespace ord {
 ppl::IOPlacer* getIOPlacer();
 } // namespace ord
 
+namespace sta {
+
+// Defined in StaTcl.i
+template <class TYPE>
+vector<TYPE> *
+tclListStdSeq(Tcl_Obj *const source,
+        swig_type_info *swig_type,
+        Tcl_Interp *interp);
+} // namespace sta
+
+namespace ppl {
+  typedef PinList TmpPinList;
+}
+
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
 using ppl::PinList;
+using std::vector;
+using sta::tclListStdSeq;
+using ppl::TmpPinList;
 %}
+
+////////////////////////////////////////////////////////////////
+//
+// SWIG type definitions.
+//
+////////////////////////////////////////////////////////////////
+
+%typemap(in) TmpPinList* {
+  $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
+}
 
 %include "../../Exception.i"
 
@@ -97,6 +124,12 @@ exclude_interval(Edge edge, int begin, int end)
   getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
+void
+add_names_constraint(TmpPinList *pin_list, Edge edge, int begin, int end)
+{
+  getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
+}
+
 PinList* create_names_constraint(Edge edge, int begin, int end)
 {
   return getIOPlacer()->createNamesConstraint(edge, begin, end);
@@ -142,6 +175,12 @@ void
 add_ver_layer(int layer)
 {
   getIOPlacer()->addVerLayer(layer);
+}
+
+void
+add_pin_group(TmpPinList *pin_list)
+{
+  getIOPlacer()->addPinGroup(pin_list);
 }
 
 PinList*
