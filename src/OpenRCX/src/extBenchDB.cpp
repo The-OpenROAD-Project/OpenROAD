@@ -73,12 +73,11 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
   extMeasure m;
   m._diagModel = 1;
-  m._res= ResModel;
 
   char buff[2000];
   sprintf(buff, "%s.log", rulesFileName);
-  if (ResModel)
-    sprintf(buff, "%s.log.Res", rulesFileName);
+  //if (ResModel)
+  //  sprintf(buff, "%s.log.Res", rulesFileName);
   FILE* logFP = fopen(buff, "w");
 
   Ath__parser* p = new Ath__parser();
@@ -130,6 +129,8 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
     bool overUnder = false;
     bool under = false;
     bool diag = false;
+    bool ResModel=false;
+
 
     uint met = p->getInt(0, 1);
     uint overMet = 0;
@@ -140,6 +141,7 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
     m._overUnder = false;
     m._over = false;
     m._diag = false;
+    m._res = false;
 
     char* overUnderToken = strdup(p->get(1));  // M2oM1uM3
     int wCnt = w->mkWords(overUnderToken, "ou");
@@ -161,7 +163,10 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       over = true;
-
+      if (p->getFirstChar() == 'R')  {
+        ResModel=true;
+        m._res= ResModel;
+      }
       m._overMet = -1;
       m._underMet = overMet;
       m._overUnder = false;

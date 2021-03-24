@@ -4077,7 +4077,7 @@ void extMetRCTable::mkWidthAndSpaceMappings()
 }
 void extRCModel::writeRules(char* name, bool binary)
 {
-  bool writeRes= false;
+  bool writeRes= true;
   //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
@@ -4308,16 +4308,15 @@ uint extRCModel::readRules(Ath__parser* parser,
   } else if (over) {
     if (strcmp(ouKey, "OVER")==0) {
     if (!ignore) {
-      _modelTable[m]->allocOverTable(met, wTable, dbFactor);
+      // Read RESOVER fisrt _modelTable[m]->allocOverTable(met, wTable, dbFactor);
       _modelTable[m]->_capOver[met]->readRulesOver(
           parser, widthCnt, bin, ignore, "OVER", dbFactor);
     } else
       dummy->readRulesOver(parser, widthCnt, bin, ignore, "OVER", dbFactor);
     } else { // RESOVER
       if (!ignore) {
-          // ASSUME: HAVE READ NORMAL RULES FIRST
           _modelTable[m]->allocOverTable(met, wTable, dbFactor);
-          _modelTable[m]->_capOver[met]->readRulesOver(
+          _modelTable[m]->_resOver[met]->readRulesOver(
               parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
         } else
           dummy->readRulesOver(parser, widthCnt, bin, ignore, "RESOVER", dbFactor);     
@@ -4486,7 +4485,7 @@ bool extRCModel::readRules(char* name,
           skipModel = true;
       }
 // skipModel= true;
-bool res_skipModel= true;
+bool res_skipModel= false;
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (!res_skipModel) {
