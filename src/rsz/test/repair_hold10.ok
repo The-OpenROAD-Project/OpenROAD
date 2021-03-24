@@ -14,7 +14,6 @@
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 0%
-Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 349
@@ -58,7 +57,6 @@ delta HPWL                    0 %
 Min routing layer: 2
 Max routing layer: 6
 Global adjustment: 0%
-Unidirectional routing: false
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 364

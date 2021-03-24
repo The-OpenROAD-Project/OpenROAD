@@ -59,6 +59,7 @@ Total                  1.32e-04   2.78e-05   1.06e-06   1.61e-04 100.0%
                           82.1%      17.3%       0.7%
 [INFO RSZ-0040] Inserted 8 buffers.
 [INFO RSZ-0041] Resized 20 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
