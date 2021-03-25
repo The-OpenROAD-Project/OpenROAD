@@ -35,7 +35,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8 without GUI') {
               steps {
-                sh './etc/Build.sh -no-gui';
+                sh './etc/Build.sh -no-gui -dir=build-without-gui';
               }
             }
           }
