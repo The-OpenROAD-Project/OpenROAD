@@ -3,7 +3,7 @@ read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fakeram45_64x7.lef
 read_def gcd_ripup.def
 
-tapcell "2" -distance "20" -tapcell_master "FILLCELL_X1" -endcap_master "FILLCELL_X1"
+tapcell -distance "20" -tapcell_master "FILLCELL_X1" -endcap_master "FILLCELL_X1"
 
 tapcell_ripup
 

@@ -4,6 +4,7 @@ record_tests {
   gcd_nangate45
   gcd_sky130
   invalid_cells
+  multiple_calls
   avoid_overlap
   avoid_overlap_skip
   boundary_macros
