@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+set -euo pipefail
 
 _installCommonDev() {
     lastDir="$(pwd)"
@@ -147,10 +148,10 @@ _installCentosRuntime() {
 
 _help() {
     cat <<EOF
-Usage: $0 -run[time]
+usage: $0 -run[time]
        $0 -dev[elopment]
 EOF
-    exit 1
+    exit "${1:-1}"
 }
 
 case "${1}" in
@@ -161,7 +162,7 @@ case "${1}" in
         option="dev"
         ;;
     *)
-        echo "argument $1 not recognized"
+        echo "argument $1 not recognized" >&2
         _help
 esac
 
@@ -175,8 +176,8 @@ case "${platform}" in
         fi
         ;;
     *)
-        echo "${platform} is not supported"
-        echo "we only support Linux at the moment"
+        echo "${platform} is not supported" >&2
+        echo "we only support Linux at the moment" >&2
         _help
         ;;
 esac
@@ -199,8 +200,8 @@ case "${os}" in
         _installUbuntuCleanUp
         ;;
     *)
-        echo "unsupported system: ${os}"
-        echo "supported systems are CentOS 7 and Ubuntu 20.04"
+        echo "unsupported system: ${os}" >&2
+        echo "supported systems are CentOS 7 and Ubuntu 20.04" >&2
         _help
         ;;
 esac

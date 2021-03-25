@@ -1,13 +1,16 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
+
+cd "$(dirname $(readlink -f $0))/../"
 
 _help() {
     cat <<EOF
 usage: $0 [dynamic]
        $0 static
+
 EOF
-    exit 1
+    exit "${1:-1}"
 }
 
 _lcov() {
@@ -33,8 +36,6 @@ _coverity() {
     tar czvf openroad.tgz cov-int
 }
 
-cd "$(dirname $(readlink -f $0))/../"
-
 target="${1:-dynamic}"
 case "${target}" in
     dynamic )
@@ -44,7 +45,7 @@ case "${target}" in
         _coverity
         ;;
     *)
-        echo "invalid argument: ${1}"
+        echo "invalid argument: ${1}" >&2
         _help
         ;;
 esac
