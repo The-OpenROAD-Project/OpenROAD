@@ -168,9 +168,7 @@ class GlobalRouter
   void setMaxRoutingLayer(const int maxLayer);
   void setMinLayerForClock(const int minLayer);
   void setMaxLayerForClock(const int maxLayer);
-  void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
-  void setPitchesInTile(const int pitchesInTile);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,

@@ -1230,11 +1230,6 @@ void GlobalRouter::setAlpha(const float alpha)
   _alpha = alpha;
 }
 
-void GlobalRouter::setPitchesInTile(const int pitchesInTile)
-{
-  _grid->setPitchesInTile(pitchesInTile);
-}
-
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
 {
   initAdjustments();
