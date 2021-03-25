@@ -2,31 +2,27 @@
 <ui version="4.0">
  <class>ReportTimingDlg</class>
  <widget class="QDialog" name="ReportTimingDlg">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>260</width>
-    <height>161</height>
+    <width>301</width>
+    <height>158</height>
    </rect>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>260</width>
-    <height>161</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>260</width>
-    <height>161</height>
-   </size>
+  <property name="font">
+   <font>
+    <pointsize>12</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Report Timing</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Analysis</string>
@@ -49,21 +45,37 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="text">
-        <string>Path Count Per Clock Group</string>
+        <string>Paths (Per Clock Group)</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="pathCount"/>
+      <widget class="QSpinBox" name="pathCount">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+       <property name="value">
+        <number>100</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
-   <item row="2" column="0">
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

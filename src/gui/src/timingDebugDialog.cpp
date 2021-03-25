@@ -111,9 +111,8 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
   if (timing_paths_model_ != nullptr)
     return true;
   bool setup_hold = true;
-  int path_count = 100;
+  int path_count;
   timing_report_dlg_->setupRadioButton->setChecked(setup_hold);
-  timing_report_dlg_->pathCount->setText(QString::number(path_count));
   if (timing_report_dlg_->exec() == QDialog::Accepted) {
     setup_hold = timing_report_dlg_->isSetupAnalysis();
     path_count = timing_report_dlg_->getPathCount();
