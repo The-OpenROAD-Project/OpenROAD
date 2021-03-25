@@ -180,6 +180,21 @@ proc set_layer_ranges { args } {
   }
 }
 
+sta::define_cmd_args "set_macro_extension" { [-macro_extension extension] }
+
+proc set_macro_extension { args } {
+  sta::parse_key_args "set_macro_extension" args \
+    keys {-macro_extension}
+
+  if { [info exists keys(-macro_extension)] } {
+    set extension $keys(-macro_extension)
+    grt::set_macro_extension $extension
+    sta::check_positive_integer "-macro_extension" $extension
+  } else {
+    grt::set_macro_extension 0
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
                                   [-clock_layers layers] \
