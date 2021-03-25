@@ -308,6 +308,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
+  const int default_min_dist = 2;
   Point lb = core_.getBoundary().ll();
   Point ub = core_.getBoundary().ur();
 
@@ -320,15 +321,22 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int min = vertical ? lb_x : lb_y;
   int max = vertical ? ub_x : ub_y;
 
-  int offset = parms_->getCornerAvoidance() * core_.getDatabaseUnit();
+  int offset = parms_->getCornerAvoidance();
 
   int i = 0;
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
+    int min_dst_ver = core_.getMinDstPinsX()[i]*
+                      std::ceil((float)parms_->getMinDistance()/core_.getMinDstPinsX()[i]);
+    int min_dst_hor = core_.getMinDstPinsY()[i]*
+                      std::ceil((float)parms_->getMinDistance()/core_.getMinDstPinsY()[i]);
+
+    min_dst_ver = (min_dst_ver == 0) ? default_min_dist*core_.getMinDstPinsX()[i] : min_dst_ver;
+    min_dst_hor = (min_dst_hor == 0) ? default_min_dist*core_.getMinDstPinsY()[i] : min_dst_hor;
 
     int min_dst_pins
-        = vertical ? core_.getMinDstPinsX()[i] * parms_->getMinDistance()
-                   : core_.getMinDstPinsY()[i] * parms_->getMinDistance();
+        = vertical ? min_dst_ver
+                   : min_dst_hor;
     int init_tracks
         = vertical ? core_.getInitTracksX()[i] : core_.getInitTracksY()[i];
     int num_tracks
@@ -345,8 +353,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     int num_tracks_offset = std::ceil(
         offset
-        / (std::max(core_.getMinDstPinsX()[i] * parms_->getMinDistance(),
-                    core_.getMinDstPinsY()[i] * parms_->getMinDistance())));
+        / (std::max(min_dst_ver,
+                    min_dst_hor)));
 
     start_idx
         = std::max(0.0, ceil((min + half_width - init_tracks) / min_dst_pins))
