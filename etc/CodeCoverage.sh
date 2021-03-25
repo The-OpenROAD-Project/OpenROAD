@@ -34,6 +34,12 @@ _coverity() {
     cmake -B build .
     cov-build --dir cov-int cmake --build build -j $(nproc)
     tar czvf openroad.tgz cov-int
+    commitSha="$(git rev-parse HEAD)"
+    curl --form token=$COVERITY_TOKEN \
+         --form email=openroad@eng.ucsd.edu \
+         --form file=@openroad.tgz \
+         --form version="$commitSha" \
+         "https://scan.coverity.com/builds?project=The-OpenROAD-Project%2FOpenROAD"
 }
 
 target="${1:-dynamic}"
