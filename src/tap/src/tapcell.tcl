@@ -55,7 +55,6 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-tbtie_cpp tbtie_cpp]\
                                 [-no_cell_at_top_bottom]\
                                 [-add_boundary_cell]\
-                                [-skip_tapcell_in_endcap]
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -66,7 +65,7 @@ proc tapcell { args } {
               -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
               -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
-    flags {-no_cell_at_top_bottom -add_boundary_cell -skip_tapcell_in_endcap}
+    flags {-no_cell_at_top_bottom -add_boundary_cell}
 
   if { [info exists keys(-tapcell_master)] } {
     set tapcell_master $keys(-tapcell_master)
@@ -158,8 +157,6 @@ proc tapcell { args } {
   if {[info exists flags(-add_boundary_cell)]} {
     utl::warn TAP 17 "add_boundary_cell option is deprecated."
   }
-
-  set skip_tapcell_in_endcap [info exists flags(-skip_tapcell_in_endcap)]
   
   set tap_prefix $tap::default_tapcell_prefix
   if { [info exists keys(-tap_prefix)] } {
@@ -221,7 +218,7 @@ proc tapcell { args } {
     tap::insert_around_macros $db $rows $tap_macro_masters [$db findMaster $cnrcap_nwin_master] $endcap_prefix
   }
 
-  tap::insert_tapcells $db $rows $tapcell_master $dist $skip_tapcell_in_endcap $tap_prefix
+  tap::insert_tapcells $db $rows $tapcell_master $dist $tap_prefix
 
   set tap::filled_sites []
 }
@@ -474,7 +471,7 @@ proc pick_corner_master {top_bottom ori cnrcap_nwin_master cnrcap_nwout_master e
   }
 }
 
-proc insert_tapcells {db rows tapcell_master dist skip_at_endcaps prefix} {
+proc insert_tapcells {db rows tapcell_master dist prefix} {
   variable filled_sites
   variable phy_idx
   set start_phy_idx $phy_idx
@@ -581,18 +578,6 @@ proc insert_tapcells {db rows tapcell_master dist skip_at_endcaps prefix} {
         set overlap [check_if_filled $x $tap_width $ori $row_fill_check]
         if {$overlap == 0} {
           build_cell $block $master $ori $x $lly $prefix
-        } elseif {!$skip_at_endcaps} {
-          lassign $overlap new_x_left new_x_right
-
-          if {$new_x_left >= $llx && [check_if_filled $new_x_left $tap_width $ori $row_fill_check] == 0} {
-            # bump cell to the left
-            build_cell $block $master $ori $new_x_left $lly $prefix
-          } elseif {$new_x_right < $urx && [check_if_filled $new_x_right $tap_width $ori $row_fill_check] == 0} {
-            # bump cell to the right
-            build_cell $block $master $ori $new_x_right $lly $prefix
-          } else {
-            # do nothing because legal site not possible
-          }
         }
       }
     }
