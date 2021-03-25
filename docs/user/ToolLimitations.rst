@@ -113,7 +113,7 @@ Layout Finishing and Final Verifications
 -  A golden PV tool will be the evaluator for DRC.
 -  Generation of merged GDS currently requires a Magic 8.2 tech file.
    Details are given
-   `here <https://github.com/The-OpenROAD-Project/OpenROAD-Utilities/tree/master/def-to-gdsii>`__.
+   `here <https://github.com/The-OpenROAD-Project-Attic/OpenROAD-Utilities/tree/master/def-to-gdsii>`__.
 -  Export of merged GDS does not add text markings that may be expected
    by commercial physical verification tools.
 -  For supported design tape-outs (particularly, at a commercial 14/12nm

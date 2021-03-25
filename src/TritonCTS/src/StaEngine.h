@@ -44,6 +44,7 @@ namespace sta {
 class Sta;
 class Sdc;
 class Network;
+class Clock;
 }  // namespace sta
 
 namespace cts {
@@ -54,12 +55,15 @@ class StaEngine
   StaEngine(CtsOptions* options) : _options(options){};
 
   void init();
-  void findClockRoots(utl::Logger* _logger);
+  void findClockRoots(sta::Clock* clk,
+                      std::set<odb::dbNet*> &clockNets, utl::Logger* _logger);
   float getInputPinCap(odb::dbITerm* iterm);
+  bool isSink(odb::dbITerm* iterm);
 
  private:
   sta::dbSta* _openSta = nullptr;
   sta::Sdc* _sdc = nullptr;
+  ord::OpenRoad* _openroad = nullptr;
   sta::Network* _network = nullptr;
   CtsOptions* _options = nullptr;
 };
