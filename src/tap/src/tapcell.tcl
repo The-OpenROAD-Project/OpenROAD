@@ -194,6 +194,8 @@ proc tapcell { args } {
     utl::error TAP 10 "Master $endcap_master_name not found."
   }
 
+  tap::clear $tap_prefix $endcap_prefix
+
   tap::cut_rows $db $endcap_master [tap::find_blockages $db] $halo_x $halo_y
 
   set rows [tap::organize_rows $db]
@@ -259,6 +261,15 @@ variable phy_idx
 variable filled_sites
 variable default_tapcell_prefix "TAP_"
 variable default_endcap_prefix "PHY_"
+
+proc clear { tap_prefix endcap_prefix } {
+  set taps_removed [tap::remove_cells $tap_prefix]
+  set endcaps_removed [tap::remove_cells $endcap_prefix]
+
+  # Reset global parameters 
+  set tap::phy_idx 0
+  set tap::filled_sites []
+}
 
 proc cut_rows {db endcap_master blockages halo_x halo_y} {
   set block [[$db getChip] getBlock]
