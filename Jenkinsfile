@@ -31,6 +31,15 @@ pipeline {
             }
           }
         }
+        stage('Local centos7 gcc8 without GUI') {
+          stages {
+            stage('Build centos7 gcc8 without GUI') {
+              steps {
+                sh './etc/Build.sh -no-gui';
+              }
+            }
+          }
+        }
         stage('Docker centos7 gcc8') {
           stages{
             stage('Build centos7 gcc8') {
