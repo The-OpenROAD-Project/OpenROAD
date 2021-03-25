@@ -58,17 +58,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(CODE_COVERAGE "CODE_COVERAGE" OFF)
-if(CODE_COVERAGE)
-  # Seriously bad form to change compile flags directly like this,
-  # but at least restricted to coverage option. -cherry
-  message("*** Using code coverage ***")
-  SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
-  SET(GCC_COVERAGE_LINK_FLAGS    "-lgcov")
-  SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-  SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
-endif()
-
 set(OPENROAD_VERSION ${PROJECT_VERSION})
 message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
