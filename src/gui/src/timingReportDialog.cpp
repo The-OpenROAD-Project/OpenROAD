@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,53 +29,18 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "timingReportDialog.h"
 
-#include <deque>
-#include <functional>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <QDebug>
+#include <QMessageBox>
+#include <QValidator>
 
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-#include "Util.h"
-
-namespace cts {
-
-class TreeBuilder
+namespace gui {
+TimingReportDialog::TimingReportDialog(QWidget* parent) : QDialog(parent)
 {
- public:
-  TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
-      : _options(options), _clock(clk), _parent(parent)
-  {
-    if (parent)
-      parent->_children.emplace_back(this);
-  }
+  setupUi(this);
+  pathCount->setValidator(new QIntValidator(0, 10000));
+}
 
-  virtual void run() = 0;
-  void setTechChar(TechChar& techChar) { _techChar = &techChar; }
-  const Clock& getClock() const { return _clock; }
-  Clock& getClock() { return _clock; }
-  void addChild(TreeBuilder* child) { _children.emplace_back(child); }
-  std::vector<TreeBuilder*> getChildren() const { return _children; }
-  TreeBuilder* getParent() const { return _parent; }
-  unsigned getTreeBufLevels() const { return _treeBufLevels; }
-
- protected:
-  CtsOptions* _options = nullptr;
-  Clock _clock;
-  TechChar* _techChar = nullptr;
-  TreeBuilder* _parent;
-  std::vector <TreeBuilder *> _children;
-  // Tree buffer levels. Number of buffers inserted in first leg of the HTree
-  // is buffer levels (depth) of tree in all legs.
-  // This becomes buffer level for whole tree thus
-  unsigned _treeBufLevels = 0;
-};
-
-}  // namespace cts
+}  // namespace gui

@@ -48,6 +48,7 @@ class dbWire;
 class dbBTerm;
 class dbBPin;
 class dbBlockage;
+class dbPlacementStatus;
 class dbObstruction;
 class dbRegion;
 class dbRow;
@@ -68,6 +69,7 @@ class dbBlockCallBackObj
   virtual void inDbInstCreate(dbInst*) {}
   virtual void inDbInstCreate(dbInst*, dbRegion*) {}
   virtual void inDbInstDestroy(dbInst*) {}
+  virtual void inDbInstPlacementStatusBefore(dbInst*, const dbPlacementStatus&) {}
   virtual void inDbInstSwapMasterBefore(dbInst*, dbMaster*) {}
   virtual void inDbInstSwapMasterAfter(dbInst*) {}
   virtual void inDbPreMoveInst(dbInst*) {}

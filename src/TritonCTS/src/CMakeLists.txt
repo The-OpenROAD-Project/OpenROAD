@@ -57,6 +57,7 @@ target_sources(TritonCTS
     TritonCTS.cpp
     clustering.cpp
     SinkAgglDriver.cpp
+    LevelBalancer.cpp
 )
 
 target_include_directories(TritonCTS

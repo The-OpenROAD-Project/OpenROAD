@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2021, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,53 +29,25 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <deque>
-#include <functional>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <QDialog>
 
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-#include "Util.h"
+#include "ui_reportTiming.h"
 
-namespace cts {
+namespace ord {
+class OpenRoad;
+}
 
-class TreeBuilder
+namespace gui {
+class TimingReportDialog : public QDialog, public Ui::ReportTimingDlg
 {
+  Q_OBJECT
  public:
-  TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
-      : _options(options), _clock(clk), _parent(parent)
-  {
-    if (parent)
-      parent->_children.emplace_back(this);
-  }
+  TimingReportDialog(QWidget* parent = nullptr);
+  bool isSetupAnalysis() const { return setupRadioButton->isChecked(); }
+  int getPathCount() { return pathCount->text().toInt(); }
 
-  virtual void run() = 0;
-  void setTechChar(TechChar& techChar) { _techChar = &techChar; }
-  const Clock& getClock() const { return _clock; }
-  Clock& getClock() { return _clock; }
-  void addChild(TreeBuilder* child) { _children.emplace_back(child); }
-  std::vector<TreeBuilder*> getChildren() const { return _children; }
-  TreeBuilder* getParent() const { return _parent; }
-  unsigned getTreeBufLevels() const { return _treeBufLevels; }
-
- protected:
-  CtsOptions* _options = nullptr;
-  Clock _clock;
-  TechChar* _techChar = nullptr;
-  TreeBuilder* _parent;
-  std::vector <TreeBuilder *> _children;
-  // Tree buffer levels. Number of buffers inserted in first leg of the HTree
-  // is buffer levels (depth) of tree in all legs.
-  // This becomes buffer level for whole tree thus
-  unsigned _treeBufLevels = 0;
 };
-
-}  // namespace cts
+}  // namespace gui
