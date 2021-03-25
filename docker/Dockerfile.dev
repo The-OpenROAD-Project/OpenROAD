@@ -1,5 +1,8 @@
-# create image with only dependencies
+# create image with dependencies needed to compile openroad app
+# NOTE: don't use this file directly unless you know what you are doing,
+# instead use etc/DockerHelper.sh
 ARG fromImage=centos:centos7
 FROM $fromImage
-COPY Installer /tmp/.
-RUN /tmp/Installer -dev && rm -f /tmp/Installer
+
+COPY Installer.sh /tmp/.
+RUN /tmp/Installer.sh -dev && rm -f /tmp/Installer.sh

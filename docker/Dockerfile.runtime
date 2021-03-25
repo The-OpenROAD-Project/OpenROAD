@@ -1,8 +1,17 @@
-# create image with only dependencies
+# create image only with runtime dependencies
+# copies binary from a builder image
+# NOTE: don't use this file directly unless you know what you are doing,
+# instead use etc/DockerHelper.sh
+
+ARG copyImage=openroadeda/centos7-builder
+# need to use the line below as the --from does not accept an ARG
+FROM $copyImage AS copyfrom
+
 ARG fromImage=centos:centos7
-ARG copyImage=openroadeda/centos7-dev
 FROM $fromImage
-COPY Installer /tmp/.
-RUN /tmp/Installer -runtime && rm -f /tmp/Installer
-# COPY --from=$copyImage /OpenROAD/build/src/openroad /usr/bin/.
-# ENTRYPOINT [ "openroad" ]
+
+COPY Installer.sh /tmp/.
+RUN /tmp/Installer.sh -runtime && rm -f /tmp/Installer.sh
+
+COPY --from=copyfrom /OpenROAD/build/src/openroad /usr/bin/.
+ENTRYPOINT [ "openroad" ]
