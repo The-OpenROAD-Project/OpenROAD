@@ -6,7 +6,6 @@ record_tests {
   invalid_cells
   multiple_calls
   avoid_overlap
-  avoid_overlap_skip
   boundary_macros
   gcd_prefix
   gcd_ripup
