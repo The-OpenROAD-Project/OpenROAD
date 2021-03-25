@@ -1439,7 +1439,42 @@ void LayoutScroll::zoomOut()
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
 }
 
-void LayoutViewer::inDbPostMoveInst(dbInst*)
+void LayoutViewer::inDbNetDestroy(dbNet* net)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbInstDestroy(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbInstSwapMasterAfter(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbInstPlacementStatusBefore(
+    dbInst* inst,
+    const dbPlacementStatus& status)
+{
+  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbPostMoveInst(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbBPinDestroy(dbBPin* pin)
 {
   updateShapes();
 }
@@ -1472,7 +1507,7 @@ void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
 void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
 {
   // This happens when initialize_floorplan is run and it make sense
-  // to fit as current zoom with be on a zero sized block.
+  // to fit as current zoom will be on a zero sized block.
   fit();
 }
 

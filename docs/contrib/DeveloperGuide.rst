@@ -176,6 +176,8 @@ pass and the code is considered stable.
 
 Work on OpenROAD should be done on a branch in the private repository.
 
+::
+
    git switch -c <branch>
 
 After making changes inside the tool source tree, stage and commit them

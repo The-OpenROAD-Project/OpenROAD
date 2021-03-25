@@ -5,10 +5,8 @@ OpenROAD is divided into a number of tools that are orchestrated
 together to achieve RTL-to-GDS. As of the current implementation, the
 flow is divided into four stages:
 
-1. Logic Synthesis: is performed by
-   `yosys <https://github.com/The-OpenROAD-Project/yosys>`__.
-2. Floorplanning through Detailed Routing: are performed by `OpenROAD
-   App <https://github.com/The-OpenROAD-Project/OpenROAD>`__.
+1. Logic Synthesis: is performed by `yosys`_.
+2. Floorplanning through Detailed Routing: are performed by `OpenROAD App`_.
 3. KLayout: GDS merge, DRC and LVS (public PDKs)
 
 To Run OpenROAD flow, we provide scripts to automate the RTL-to-GDS
@@ -18,13 +16,12 @@ stages. Alternatively, you can run the individual steps manually.
 --------------------------
 
 **GitHub:**
-`OpenROAD-flow-public <https://github.com/The-OpenROAD-Project/OpenROAD-flow-public>`__
+`OpenROAD-flow`_
 
 Code Organization
 ~~~~~~~~~~~~~~~~~
 
-This repository serves as an example RTL-to-GDS flow using the OpenROAD
-tools.
+This repository serves as an example RTL-to-GDS flow using the OpenROAD tools.
 
 The two main components are:
 
@@ -69,7 +66,7 @@ Option 1: Installing build exports*\*
 
       source setup_env.sh
 
-Option 2: Building the tools using docker*\*
+Option 2: Building the tools using docker
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This build option leverages a multi-step docker flow to install the
@@ -129,9 +126,7 @@ installing KLayout from source.
 Using the flow
 ~~~~~~~~~~~~~~
 
-See the flow
-`README <https://github.com/The-OpenROAD-Project/OpenROAD-flow-public/blob/master/flow/README.md>`__
-for details about the flow and how to run designs through the flow.
+See the flow `README`_ for details about the flow and how to run designs through the flow.
 
 [OPTION 2] Individual Flow Steps
 --------------------------------
@@ -704,3 +699,7 @@ Options description:
 -  **param_file**: This file contains the parameters used to
    control the detailed router)
 
+.. _`OpenROAD-flow`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+.. _`yosys`: https://github.com/The-OpenROAD-Project/yosys
+.. _`OpenROAD App`: https://github.com/The-OpenROAD-Project/OpenROAD
+.. _`README`: https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/flow/README.md

@@ -216,6 +216,41 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
+void Fixture::makeLef58SpacingEndOfLineConstraint(frLayerNum layer_num,
+                                                  frCoord par_space,
+                                                  frCoord par_within,
+                                                  bool two_edges,
+                                                  frCoord min_max_length,
+                                                  bool max,
+                                                  bool two_sides)
+{
+  auto con = std::make_shared<frLef58SpacingEndOfLineConstraint>();
+  con->setEol(200, 200);
+  auto within = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+  con->setWithinConstraint(within);
+  within->setEolWithin(50);
+  if (par_space != -1) {
+    if (par_within == -1) {
+      throw std::invalid_argument("Must give par_within with par_space");
+    }
+    auto parallelEdge = std::make_shared<
+        frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+    within->setParallelEdgeConstraint(parallelEdge);
+    parallelEdge->setPar(par_space, par_within);
+    parallelEdge->setTwoEdges(two_edges);
+  }
+  if (min_max_length != -1) {
+    auto minMax = std::make_shared<
+        frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+    within->setMaxMinLengthConstraint(minMax);
+    minMax->setLength(max, min_max_length, two_sides);
+  }
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->addLef58SpacingEndOfLineConstraint(con);
+  tech->addConstraint(con);
+}
+
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();
