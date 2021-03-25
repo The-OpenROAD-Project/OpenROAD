@@ -19,39 +19,36 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Global routing (route guides for detailed routing)
 * Detailed routing
 
-OpenROAD uses the OpenDB database and OpenSTA for static timing
-analysis.
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
-#### Build
+## Install dependencies
 
-The OpenROAD build requires the following packages:
+The `etc/Installer.sh`  script supports Centos7 and Ubuntu 20.04.
+You need root access to correctly install the dependencies with the script.
 
-Tools
-  * cmake 3.14
-  * gcc 8.3.0 or clang7
-  * bison 3.0.5
-  * flex 2.6.4
-  * swig 4.0
+```
+./etc/Installer.sh -dev
+```
 
-Libraries
-  * boost 1.68
-  * tcl 8.6
-  * zlib
-  * eigen
-  * lemon
-  * qt5
-  * CImg (optional for replace)
-
-
-See `Dockerfile` for an example of how to install these packages. 
+## Build
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
-mkdir build
-cd build
-cmake ..
-make
+```
+
+
+### Build by hand
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+### Build using support script
+```
+$ ./etc/Build.sh
 ```
 
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
@@ -68,6 +65,11 @@ TCL_LIB - path to tcl library
 TCL_HEADER - path to tcl.h
 ZLIB_ROOT - path to zlib
 CMAKE_INSTALL_PREFIX
+```
+
+### Example with support script
+```
+$ ./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
