@@ -26,6 +26,8 @@ usage: $0 [CMD] [OPTIONS]
                                   'builder': os + packages to compile app +
                                              copy source code and build app
                                   'runner': os + packages to run a compiled app
+  -sha                          Use git commit sha as the tag image. Default is
+                                  'latest'.
   -h -help                      Show this message and exits
 
 EOF
@@ -55,38 +57,40 @@ _setup() {
             ;;
     esac
     imageName="${org}/${os}-${target}"
+    if [[ "${useCommitSha}" == "yes" ]]; then
+        imageTag="${commitSha}"
+    else
+        imageTag="latest"
+    fi
     case "${target}" in
         "builder" )
-            fromImage="${org}/${os}-dev:${commitSha}"
+            fromImage="${org}/${os}-dev:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             imageName="${imageName}-${compiler}"
-            tagVersion="${commitSha}"
             ;;
         "dev" )
             fromImage="${osBaseImage}"
             context="etc"
             buildArgs=""
-            tagVersion="${commitSha}"
             ;;
         "runtime" )
             fromImage="${osBaseImage}"
             context="etc"
-            copyImage="${org}/${os}-builder:${commitSha}-${compiler}"
+            copyImage="${org}/${os}-builder-${compiler}:${imageTag}"
             buildArgs="--build-arg copyImage=${copyImage}"
-            tagVersion="${commitSha}"
             ;;
         *)
             echo "Target ${target} not found" >&2
             _help
     esac
-    imageTag="${imageName}:${tagVersion}"
+    imagePath="${imageName}:${imageTag}"
     buildArgs="--build-arg fromImage=${fromImage} ${buildArgs}"
     file="docker/Dockerfile.${target}"
 }
 
 _test() {
-    echo "Run regression test on ${imageTag}"
+    echo "Run regression test on ${imagePath}"
     case "${target}" in
         "builder" )
             ;;
@@ -94,22 +98,22 @@ _test() {
             echo "Target ${target} is not valid candidate to run regression" >&2
             _help
     esac
-    if [[ "$(docker images -q ${imageTag} 2> /dev/null)" == "" ]]; then
-        echo "Could not find ${imageTag}, will attempt to create it" >&2
+    if [[ "$(docker images -q ${imagePath} 2> /dev/null)" == "" ]]; then
+        echo "Could not find ${imagePath}, will attempt to create it" >&2
         _create
     fi
-    docker run --rm -it "${imageTag}" "./test/regression"
+    docker run --rm -it "${imagePath}" "./test/regression"
 }
 
 _create() {
-    echo "Create docker image ${imageTag} using ${file}"
-    docker build --file "${file}" --tag "${imageTag}" ${buildArgs} "${context}"
+    echo "Create docker image ${imagePath} using ${file}"
+    docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
 }
 
 _push() {
     case "${target}" in
         "dev" )
-            read -p "Will push docker image ${imageTag} to DockerHub [y/N]" -n 1 -r
+            read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$  ]]
             then
@@ -145,6 +149,7 @@ fi
 os="centos7"
 target="dev"
 compiler="gcc"
+useCommitSha="no"
 
 while [ "$#" -gt 0 ]; do
     case "${1}" in
@@ -159,6 +164,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -target=* )
             target="${1#*=}"
+            ;;
+        -sha )
+            useCommitSha=yes
             ;;
         -compiler | -os | -target )
             echo "${1} requires an argument" >&2
