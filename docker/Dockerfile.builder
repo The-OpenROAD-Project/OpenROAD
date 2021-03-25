@@ -9,4 +9,5 @@ COPY . /OpenROAD
 WORKDIR /OpenROAD
 
 ARG compiler=gcc
-RUN ./etc/Build.sh -compiler=${compiler}
+ARG numThreads=$(nproc)
+RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads}

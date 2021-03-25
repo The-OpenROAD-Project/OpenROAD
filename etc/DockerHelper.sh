@@ -25,7 +25,9 @@ usage: $0 [CMD] [OPTIONS]
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
                                              copy source code and build app
-                                  'runner': os + packages to run a compiled app
+                                  'runtime': os + packages to run a compiled app
+  -threads                      Max number of threads to use if compiling.
+                                  Default = \$(nproc)
   -sha                          Use git commit sha as the tag image. Default is
                                   'latest'.
   -h -help                      Show this message and exits
@@ -67,6 +69,7 @@ _setup() {
             fromImage="${org}/${os}-dev:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
+            buildArgs="--build-arg numThreads=${numThreads}"
             imageName="${imageName}-${compiler}"
             ;;
         "dev" )
@@ -150,6 +153,7 @@ os="centos7"
 target="dev"
 compiler="gcc"
 useCommitSha="no"
+numThreads="$(nproc)"
 
 while [ "$#" -gt 0 ]; do
     case "${1}" in
@@ -164,6 +168,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -target=* )
             target="${1#*=}"
+            ;;
+        -threads=* )
+            numThreads="${1#*=}"
             ;;
         -sha )
             useCommitSha=yes

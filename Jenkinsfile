@@ -1,7 +1,8 @@
 pipeline {
   agent any;
   environment {
-    COMMIT_AUTHOR_EMAIL= sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+    NUM_THREADS = 8
   }
   stages {
     stage('Build and test') {
@@ -10,7 +11,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8') {
               steps {
-                sh './etc/Build.sh';
+                sh './etc/Build.sh -threads=$NUM_THREADS';
               }
             }
             stage('Test centos7 gcc8') {
@@ -35,7 +36,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8 without GUI') {
               steps {
-                sh './etc/Build.sh -no-gui -dir=build-without-gui';
+                sh './etc/Build.sh -threads=$NUM_THREADS -no-gui -dir=build-without-gui';
               }
             }
           }
@@ -44,7 +45,7 @@ pipeline {
           stages{
             stage('Build centos7 gcc8') {
               steps {
-                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc';
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=gcc';
               }
             }
             stage('Test centos7 gcc8') {
@@ -58,7 +59,7 @@ pipeline {
           stages{
             stage('Build centos7 clang7') {
               steps {
-                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang';
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=clang';
               }
             }
             stage('Test centos7 clang7') {
@@ -72,7 +73,7 @@ pipeline {
           stages{
             stage('Build ubuntu20 gcc9') {
               steps {
-                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc';
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
             stage('Test ubuntu20 gcc9') {
@@ -86,7 +87,7 @@ pipeline {
           stages{
             stage('Build ubuntu20 clang10') {
               steps {
-                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang';
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=clang';
               }
             }
             stage('Test ubuntu20 clang10') {

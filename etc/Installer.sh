@@ -154,17 +154,25 @@ EOF
     exit "${1:-1}"
 }
 
-case "${1}" in
-    -run|-runtime)
-        option="runtime"
-        ;;
-    -dev|-development)
-        option="dev"
-        ;;
-    *)
-        echo "argument $1 not recognized" >&2
-        _help
-esac
+# default values, can be overwritten by cmdline args
+while [ "$#" -gt 0 ]; do
+    case "${1}" in
+        -h|-help)
+            _help 0
+            ;;
+        -run|-runtime)
+            option="runtime"
+            ;;
+        -dev|-development)
+            option="dev"
+            ;;
+        *)
+            echo "unknown option: ${1}" >&2
+            _help
+            ;;
+    esac
+    shift 1
+done
 
 platform="$(uname -s)"
 case "${platform}" in
