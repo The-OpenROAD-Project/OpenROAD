@@ -141,19 +141,58 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
+sta::define_cmd_args "set_layer_ranges" { [-layers layers] \
+                                          [-clock_layers layers] \
+}
+
+proc set_layer_ranges { args } {
+  sta::parse_key_args "set_layer_ranges" args \
+    keys {-layers -clock_layers}
+
+  if { [info exists keys(-layers)] } {
+    set layer_range [grt::parse_layer_range "-layers" $keys(-layers)]
+    lassign $layer_range min_layer max_layer
+    grt::check_routing_layer $min_layer
+    grt::check_routing_layer $max_layer
+
+    grt::set_min_layer $min_layer
+    grt::set_max_layer $max_layer
+  }
+
+  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+    if { !([ord::db_layer_has_hor_tracks $layer] && \
+         [ord::db_layer_has_ver_tracks $layer]) } {
+      utl::error GRT 57 "missing track structure."
+    }
+  }
+
+  if { [info exists keys(-clock_layers)] } {
+    set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
+    lassign $layer_range min_clock_layer max_clock_layer
+    grt::check_routing_layer $min_clock_layer
+    grt::check_routing_layer $max_clock_layer
+
+    if { $min_clock_layer < $max_clock_layer } {
+      grt::set_clock_layer_range $min_clock_layer $max_clock_layer
+    } else {
+      utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
+    }
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
-                                  [-unidirectional_routing] \
+                                  [-clock_layers layers] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
                                   [-clock_tracks_cost clock_tracks_cost] \
                                   [-macro_extension macro_extension] \
                                   [-output_file out_file] \
+                                  [-unidirectional_routing] \
 }
 
 # sta::define_cmd_alias "fastroute" "global_route"
@@ -170,7 +209,7 @@ proc global_route { args } {
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension -output_file \
          } \
-    flags {-unidirectional_routing -allow_overflow} \
+    flags {-unidirectional_routing -allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -266,12 +305,12 @@ proc global_route { args } {
 
     grt::set_min_layer $min_layer
     grt::set_max_layer $max_layer
-  }
 
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    if { !([ord::db_layer_has_hor_tracks $layer] && \
-         [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "missing track structure."
+    for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+      if { !([ord::db_layer_has_hor_tracks $layer] && \
+           [ord::db_layer_has_ver_tracks $layer]) } {
+        utl::error GRT 57 "missing track structure."
+      }
     }
   }
 
