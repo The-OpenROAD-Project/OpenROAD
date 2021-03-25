@@ -1180,7 +1180,7 @@ class dbBlock : public dbObject
   /// of the geometric elements of the dbBlock. It is generally a constant
   /// declared in DEF.
   ///
-  void setDieArea(const Rect& rect);
+  void setDieArea(const Rect& new_rect);
 
   ///
   /// Get the die area. The default die-area is (0,0,0,0).

@@ -633,6 +633,8 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
   // getters
   frCoord getLength() const { return length; }
   bool isMaxLength() const { return maxLength; }
+  bool isTwoSides() const { return twoSides; }
+
   // setters
   void setLength(bool maxLengthIn, frCoord lengthIn, bool twoSidesIn = false)
   {

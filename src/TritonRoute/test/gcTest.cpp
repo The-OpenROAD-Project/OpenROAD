@@ -412,10 +412,13 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
 }
 
 // Check for a basic end-of-line (EOL) spacing violation.
-BOOST_AUTO_TEST_CASE(eol_basic)
+BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {
   // Setup
-  makeSpacingEndOfLineConstraint(2);
+  if (lef58)
+    makeLef58SpacingEndOfLineConstraint(2);
+  else
+    makeSpacingEndOfLineConstraint(2);
 
   frNet* n1 = makeNet("n1");
 
@@ -429,16 +432,22 @@ BOOST_AUTO_TEST_CASE(eol_basic)
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
-             frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
+             lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
+                   : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
 }
 
 // Check for an end-of-line (EOL) spacing violation involving one
 // parallel edge
-BOOST_AUTO_TEST_CASE(eol_parallel_edge)
+BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  makeSpacingEndOfLineConstraint(2, /* par_space */ 200, /* par_within */ 200);
+  if (lef58)
+    makeLef58SpacingEndOfLineConstraint(
+        2, /* par_space */ 200, /* par_within */ 200);
+  else
+    makeSpacingEndOfLineConstraint(
+        2, /* par_space */ 200, /* par_within */ 200);
 
   frNet* n1 = makeNet("n1");
 
@@ -453,19 +462,26 @@ BOOST_AUTO_TEST_CASE(eol_parallel_edge)
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
-             frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
+             lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
+                   : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
 }
 
 // Check for an end-of-line (EOL) spacing violation involving two
 // parallel edges
-BOOST_AUTO_TEST_CASE(eol_parallel_two_edge)
+BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
 {
   // Setup
-  makeSpacingEndOfLineConstraint(2,
-                                 /* par_space */ 200,
-                                 /* par_within */ 200,
-                                 /* two_edges */ true);
+  if (lef58)
+    makeLef58SpacingEndOfLineConstraint(2,
+                                        /* par_space */ 200,
+                                        /* par_within */ 200,
+                                        /* two_edges */ true);
+  else
+    makeSpacingEndOfLineConstraint(2,
+                                   /* par_space */ 200,
+                                   /* par_within */ 200,
+                                   /* two_edges */ true);
 
   frNet* n1 = makeNet("n1");
 
@@ -481,8 +497,62 @@ BOOST_AUTO_TEST_CASE(eol_parallel_two_edge)
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
-             frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
+             lef58 ? frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint
+                   : frConstraintTypeEnum::frcSpacingEndOfLineConstraint,
              frBox(450, 500, 550, 650));
+}
+
+BOOST_DATA_TEST_CASE(eol_min_max,
+                     (bdata::make({true, false}) * bdata::make({true, false})
+                      * bdata::make({true, false})),
+                     max,
+                     twoSides,
+                     legal)
+{
+  makeLef58SpacingEndOfLineConstraint(2,
+                                      /* no par edge*/ -1,
+                                      /* x */ -1,
+                                      /* x */ true,
+                                      500,
+                                      max,
+                                      twoSides);
+  frNet* n1 = makeNet("n1");
+  frCoord y = 500;
+  if (twoSides)  // both sides need to meet minMax for eolSpacing to be
+                 // triggered and one of them need to violate minMax for
+                 // eolSpacing to be neglected
+  {
+    if (max && legal)
+      y += 10;  // right(510) > max(500) --> minMax violated --> legal
+    else if (!max && !legal)
+      y += 100;  // right(600) & left(500) >= min(500) --> minMax is met
+                 // --> illegal
+  } else if (legal)  // both sides need to violate minMax to have no eolSpacing
+                     // violations
+  {
+    if (max)
+      y += 110;  // right(610) & left(510) > max(500)
+    else
+      y -= 10;  // right(490) & left(390) < min(500)
+  }
+  makePathseg(n1, 2, {500, 0}, {500, y});
+  makePathseg(n1, 2, {0, 700}, {1000, 700});
+
+  makePathseg(n1, 2, {0, 50}, {450, 50});
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal)
+    BOOST_TEST(markers.size() == 0);
+  else {
+    BOOST_TEST(markers.size() == 1);
+    if (markers.size() == 1)
+      testMarker(markers[0].get(),
+                 2,
+                 frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+                 frBox(450, y, 550, 650));
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END();

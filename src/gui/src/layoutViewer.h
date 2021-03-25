@@ -118,7 +118,14 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
 
   // From dbBlockCallBackObj
+  virtual void inDbNetDestroy(odb::dbNet* net) override;
+  virtual void inDbInstDestroy(odb::dbInst* inst) override;
+  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
+  virtual void inDbInstPlacementStatusBefore(
+      odb::dbInst* inst,
+      const odb::dbPlacementStatus& status) override;
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
+  virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;
   virtual void inDbWireCreate(odb::dbWire* wire) override;
   virtual void inDbWireDestroy(odb::dbWire* wire) override;

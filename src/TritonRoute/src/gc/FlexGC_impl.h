@@ -278,22 +278,21 @@ class FlexGCWorker::Impl
 
   void checkMetalEndOfLine();
   void checkMetalEndOfLine_main(gcPin* pin);
-  void checkMetalEndOfLine_eol(gcSegment* edge,
-                               frSpacingEndOfLineConstraint* con);
+  void checkMetalEndOfLine_eol(gcSegment* edge, frConstraint* constraint);
   bool checkMetalEndOfLine_eol_isEolEdge(gcSegment* edge,
-                                         frSpacingEndOfLineConstraint* con);
-  bool checkMetalEndOfLine_eol_hasParallelEdge(
-      gcSegment* edge,
-      frSpacingEndOfLineConstraint* con,
-      bool& hasRoute);
-  bool checkMetalEndOfLine_eol_hasParallelEdge_oneDir(
-      gcSegment* edge,
-      frSpacingEndOfLineConstraint* con,
-      bool isSegLow,
-      bool& hasRoute);
+                                         frConstraint* constraint);
+  bool checkMetalEndOfLine_eol_hasMinMaxLength(gcSegment* edge,
+                                               frConstraint* constraint);
+  bool checkMetalEndOfLine_eol_hasParallelEdge(gcSegment* edge,
+                                               frConstraint* constraint,
+                                               bool& hasRoute);
+  bool checkMetalEndOfLine_eol_hasParallelEdge_oneDir(gcSegment* edge,
+                                                      frConstraint* constraint,
+                                                      bool isSegLow,
+                                                      bool& hasRoute);
   void checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getQueryBox(
       gcSegment* edge,
-      frSpacingEndOfLineConstraint* con,
+      frConstraint* constraint,
       bool isSegLow,
       box_t& queryBox,
       gtl::rectangle_data<frCoord>& queryRect);
@@ -301,16 +300,16 @@ class FlexGCWorker::Impl
       gcSegment* edge,
       gtl::rectangle_data<frCoord>& rect);
   void checkMetalEndOfLine_eol_hasEol(gcSegment* edge,
-                                      frSpacingEndOfLineConstraint* con,
+                                      frConstraint* constraint,
                                       bool hasRoute);
   void checkMetalEndOfLine_eol_hasEol_getQueryBox(
       gcSegment* edge,
-      frSpacingEndOfLineConstraint* con,
+      frConstraint* constraint,
       box_t& queryBox,
       gtl::rectangle_data<frCoord>& queryRect);
   void checkMetalEndOfLine_eol_hasEol_helper(gcSegment* edge1,
                                              gcSegment* edge2,
-                                             frSpacingEndOfLineConstraint* con);
+                                             frConstraint* constraint);
 
   void checkCutSpacing();
   void checkCutSpacing_main(gcRect* rect);
