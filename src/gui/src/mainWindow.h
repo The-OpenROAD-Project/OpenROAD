@@ -42,6 +42,8 @@
 #include "gui/gui.h"
 #include "openroad/OpenRoad.hh"
 
+#include "timingDebugDialog.h"
+
 namespace odb {
 class dbDatabase;
 }
@@ -154,7 +156,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
-  DisplayControls* getControls() const { return controls_; }
+  // show Timing Dialog Box
+  void showTimingDialog();
+
+  DisplayControls* getControls() const{
+      return controls_;
+  }
+
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -192,6 +200,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
+  QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;
 
@@ -200,6 +209,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
+  TimingDebugDialog* timing_dialog_;
 };
 
 }  // namespace gui

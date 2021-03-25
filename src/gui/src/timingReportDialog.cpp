@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
 // Copyright (c) 2019, OpenROAD
@@ -30,40 +30,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+#include "timingReportDialog.h"
 
-#include <QColor>
-
-namespace odb {
-class dbTechLayer;
-class dbNet;
-}  // namespace odb
+#include <QDebug>
+#include <QMessageBox>
+#include <QValidator>
 
 namespace gui {
-
-// This interface class provides access to the display options to
-// clients who are drawing.
-class Options
+TimingReportDialog::TimingReportDialog(QWidget* parent) : QDialog(parent)
 {
- public:
-  virtual ~Options() {}
-  virtual QColor color(const odb::dbTechLayer* layer) = 0;
-  virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
-  virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
-  virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
-  virtual bool isNetVisible(odb::dbNet* net) = 0;
-  virtual bool areFillsVisible() = 0;
-  virtual bool areRowsVisible() = 0;
-  virtual bool arePrefTracksVisible() = 0;
-  virtual bool areNonPrefTracksVisible() = 0;
-
-  virtual bool isCongestionVisible() const = 0;
-  virtual bool arePinMarkersVisible() const = 0;
-  virtual bool showHorizontalCongestion() const = 0;
-  virtual bool showVerticalCongestion() const = 0;
-  virtual float getMinCongestionToShow() const = 0;
-  virtual float getMaxCongestionToShow() const = 0;
-  virtual QColor getCongestionColor(float congestion) const = 0;
-};
+  setupUi(this);
+  pathCount->setValidator(new QIntValidator(0, 10000));
+}
 
 }  // namespace gui

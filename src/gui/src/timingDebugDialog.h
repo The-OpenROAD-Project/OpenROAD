@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2021, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,38 +32,63 @@
 
 #pragma once
 
-#include <QColor>
+#include <QDialog>
+#include <QKeyEvent>
+#include <QModelIndex>
+#include <QString>
+#include <vector>
 
-namespace odb {
-class dbTechLayer;
-class dbNet;
-}  // namespace odb
+#include "opendb/db.h"
+#include "staGui.h"
+#include "timingReportDialog.h"
+#include "ui_timingDebug.h"
+
+namespace ord {
+class OpenRoad;
+}
 
 namespace gui {
-
-// This interface class provides access to the display options to
-// clients who are drawing.
-class Options
+class TimingDebugDialog : public QDialog, public Ui::TimingDialog
 {
+  Q_OBJECT
  public:
-  virtual ~Options() {}
-  virtual QColor color(const odb::dbTechLayer* layer) = 0;
-  virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
-  virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
-  virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
-  virtual bool isNetVisible(odb::dbNet* net) = 0;
-  virtual bool areFillsVisible() = 0;
-  virtual bool areRowsVisible() = 0;
-  virtual bool arePrefTracksVisible() = 0;
-  virtual bool areNonPrefTracksVisible() = 0;
+  TimingDebugDialog(QWidget* parent = nullptr);
+  ~TimingDebugDialog();
 
-  virtual bool isCongestionVisible() const = 0;
-  virtual bool arePinMarkersVisible() const = 0;
-  virtual bool showHorizontalCongestion() const = 0;
-  virtual bool showVerticalCongestion() const = 0;
-  virtual float getMinCongestionToShow() const = 0;
-  virtual float getMaxCongestionToShow() const = 0;
-  virtual QColor getCongestionColor(float congestion) const = 0;
+  TimingPathRenderer* getTimingRenderer() { return path_renderer_; }
+
+ signals:
+  void highlightTimingPath(TimingPath* timing_path);
+
+ public slots:
+  void accept();
+  void reject();
+  bool populateTimingPaths(odb::dbBlock* block);
+
+  void keyPressEvent(QKeyEvent* key_event);
+
+  void showPathDetails(const QModelIndex& index);
+  void highlightPathStage(const QModelIndex& index);
+  void timingPathsViewCustomSort(int col_index);
+  void findNodeInPathDetails();
+
+  void showPathIndex(int pathId);
+  void showTimingReportDialog();
+  void selectedRowChanged(const QItemSelection& prev_index,
+                          const QItemSelection& curr_index);
+  void selectedDetailRowChanged(const QItemSelection& prev_index,
+                                const QItemSelection& curr_index);
+
+  void handleDbChange(QString change_type, std::vector<odb::dbObject*> objects);
+
+ private:
+  void copy();
+
+  TimingPathsModel* timing_paths_model_;
+  TimingPathDetailModel* path_details_model_;
+  TimingPathRenderer* path_renderer_;
+  GuiDBChangeListener* dbchange_listener_;
+  TimingReportDialog* timing_report_dlg_;
+  QTableView* focus_view_;
 };
-
 }  // namespace gui
