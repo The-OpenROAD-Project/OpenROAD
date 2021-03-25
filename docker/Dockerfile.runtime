@@ -3,7 +3,7 @@
 # NOTE: don't use this file directly unless you know what you are doing,
 # instead use etc/DockerHelper.sh
 
-ARG copyImage=openroadeda/centos7-builder
+ARG copyImage=openroad/centos7-builder:latest
 # need to use the line below as the --from does not accept an ARG
 FROM $copyImage AS copyfrom
 
