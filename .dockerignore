@@ -1,4 +1,3 @@
-**/.git
-docker
-build
+.git
+build*
 Dockerfile

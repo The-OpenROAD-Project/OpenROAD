@@ -102,7 +102,7 @@ _test() {
         echo "Could not find ${imagePath}, will attempt to create it" >&2
         _create
     fi
-    docker run --rm "${imagePath}" "./test/regression"
+    docker run --rm "${imagePath}" "./docker/test_wrapper.sh" "${compiler}" "./test/regression"
 }
 
 _create() {

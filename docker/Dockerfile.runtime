@@ -4,7 +4,7 @@
 # instead use etc/DockerHelper.sh
 
 ARG copyImage=openroad/centos7-builder:latest
-# need to use the line below as the --from does not accept an ARG
+# need to use the line below as the "COPY --from" does not accept an ARG
 FROM $copyImage AS copyfrom
 
 ARG fromImage=centos:centos7

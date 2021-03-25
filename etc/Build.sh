@@ -4,9 +4,13 @@ set -eo pipefail
 
 cd "$(dirname $(readlink -f $0))/../"
 
+# default values, can be overwritten by cmdline args
 buildDir="build"
 numThreads="$(nproc)"
 cmakeOptions=()
+cleanBefore=no
+keepLog=no
+compiler=gcc
 
 _help() {
     cat <<EOF
@@ -77,7 +81,7 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-case "${compiler:-gcc}" in
+case "${compiler}" in
     "gcc" )
         if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
             source /opt/rh/devtoolset-8/enable
@@ -97,12 +101,12 @@ case "${compiler:-gcc}" in
         _help 1
 esac
 
-if [[ "${cleanBefore:-no}" == "yes" ]]; then
+if [[ "${cleanBefore}" == "yes" ]]; then
     rm -rf "${buildDir}"
 fi
 
 mkdir -p "${buildDir}"
-if [[ "${keepLog:-no}" == "yes"  ]]; then
+if [[ "${keepLog}" == "yes"  ]]; then
     logName="${buildDir}/openroad-build-$(date +%s).log"
 else
     logName=/dev/null
