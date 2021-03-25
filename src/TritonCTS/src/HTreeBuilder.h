@@ -77,7 +77,6 @@ class SegmentBuilder
   void build(std::string forceBuffer = "", ClockInst* sink = nullptr);
   void forceBufferInSegment(std::string master);
   Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
-  unsigned getNumBufferLevels() const { return _numBufferLevels; }
 
  protected:
   const std::string _instPrefix;
@@ -90,7 +89,7 @@ class SegmentBuilder
   TechChar* _techChar;
   unsigned _techCharDistUnit;
   bool _forceBuffer;
-  unsigned _numBufferLevels = 0;
+  unsigned _numBuffers = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -182,8 +181,7 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options, Clock& net, TreeBuilder* parent, Logger* logger) :
-                        TreeBuilder(options, net, parent), _logger(logger){};
+  HTreeBuilder(CtsOptions* options, Clock& net, Logger* logger) : TreeBuilder(options, net), _logger(logger){};
 
   void run();
 
