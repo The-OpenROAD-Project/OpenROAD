@@ -141,26 +141,6 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port }
-
-proc repair_antennas { args } {
-  sta::check_argc_eq1 "repair_antennas" $args
-  set lib_port [lindex $args 0]
-  if { ![sta::is_object $lib_port] } {
-    set lib_port [sta::get_lib_pins [lindex $args 0]]
-  }
-  if { $lib_port != "" } {
-    grt::repair_antennas $lib_port
-  }
-}
-
-sta::define_cmd_args "write_guides" { file_name }
-
-proc write_guides { args } {
-  set file_name $args
-  grt::write_guides $file_name
-}
-
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
                                   [-unidirectional_routing] \
@@ -312,6 +292,26 @@ proc global_route { args } {
     set out_file $keys(-guide_file)
     grt::write_guides $out_file
   }
+}
+
+sta::define_cmd_args "repair_antennas" { lib_port }
+
+proc repair_antennas { args } {
+  sta::check_argc_eq1 "repair_antennas" $args
+  set lib_port [lindex $args 0]
+  if { ![sta::is_object $lib_port] } {
+    set lib_port [sta::get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "" } {
+    grt::repair_antennas $lib_port
+  }
+}
+
+sta::define_cmd_args "write_guides" { file_name }
+
+proc write_guides { args } {
+  set file_name $args
+  grt::write_guides $file_name
 }
 
 namespace eval grt {
