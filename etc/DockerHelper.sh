@@ -69,7 +69,7 @@ _setup() {
             fromImage="${org}/${os}-dev:${imageTag}"
             context="."
             buildArgs="--build-arg compiler=${compiler}"
-            buildArgs="--build-arg numThreads=${numThreads}"
+            buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
             imageName="${imageName}-${compiler}"
             ;;
         "dev" )
