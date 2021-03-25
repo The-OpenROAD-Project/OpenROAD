@@ -20,7 +20,7 @@
 [INFO TAP-0002] Original rows: 30
 [INFO TAP-0003] Created rows: 0
 [INFO TAP-0004] Endcaps inserted: 60
-[INFO TAP-0005] Tapcells inserted: 39
+[INFO TAP-0005] Tapcells inserted: 38
 Differences found at line 44.
 COMPONENTS 80 ;
-COMPONENTS 100 ;
+COMPONENTS 99 ;
