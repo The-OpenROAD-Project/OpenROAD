@@ -54,7 +54,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Path Count</string>
+        <string>Path Count Per Clock Group</string>
        </property>
       </widget>
      </item>
