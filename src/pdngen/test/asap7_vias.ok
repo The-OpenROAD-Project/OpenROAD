@@ -28,7 +28,7 @@ Type: stdcell, grid
     Connect: 
       {M1 M2 constraints {cut_pitch 0.288}} 
       {M2 M3 fixed_vias {VIA23}} 
-      {M3 M6 fixed_vias {VIA34 VIA45 VIA56}} 
+      {M3 M6 fixed_vias {VIA45 VIA56}} 
     
 [INFO PDN-0012] **** END INFO ****
 [INFO PDN-0013] Inserting stdcell grid - grid
