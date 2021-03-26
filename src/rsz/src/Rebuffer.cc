@@ -461,7 +461,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
     rebufferTopDown(choice->ref(), net2, level + 1);
-    parasitics_->deleteParasitics(net, parasitics_ap_);
+    parasiticsInvalid(net);
     break;
   }
   case BufferedNetType::wire:
@@ -486,7 +486,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
                  sdc_network_->pathName(net));
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load_inst, load_port, net);
-      parasitics_->deleteParasitics(load_net, parasitics_ap_);
+      parasiticsInvalid(load_net);
     }
     break;
   }

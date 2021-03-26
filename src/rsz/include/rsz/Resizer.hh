@@ -396,7 +396,8 @@ protected:
   Parasitic *makeWireParasitic(Net *net,
                                Pin *drvr_pin,
                                Pin *load_pin,
-                               double wire_length); // meters
+                               double wire_length, // meters
+                               const ParasiticAnalysisPt *parasitics_ap);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
@@ -541,8 +542,6 @@ protected:
   double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
-  const Pvt *pvt_;
-  const ParasiticAnalysisPt *parasitics_ap_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
   bool have_estimated_parasitics_;
