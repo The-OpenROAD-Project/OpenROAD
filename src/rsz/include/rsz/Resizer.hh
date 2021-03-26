@@ -370,9 +370,13 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
+  double findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew,
+                         const DcalcAnalysisPt *dcalc_ap); 
   double gateSlewDiff(LibertyPort *drvr_port,
                       double load_cap,
-                      double slew);
+                      double slew,
+                      const DcalcAnalysisPt *dcalc_ap);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
@@ -383,6 +387,7 @@ protected:
   Requireds pinRequireds(const Pin *pin);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
+                  const DcalcAnalysisPt *dcalc_ap,
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
@@ -540,7 +545,7 @@ protected:
   Rect core_;
   bool core_exists_;
   double design_area_;
-  const MinMax *min_max_;
+  const MinMax *max_;
   const DcalcAnalysisPt *dcalc_ap_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;

@@ -158,7 +158,7 @@ Resizer::Resizer() :
   db_network_(nullptr),
   db_(nullptr),
   core_exists_(false),
-  min_max_(nullptr),
+  max_(nullptr),
   dcalc_ap_(nullptr),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
@@ -386,8 +386,8 @@ void
 Resizer::initCorner(Corner *corner)
 {
   corner_ = corner;
-  min_max_ = MinMax::max();
-  dcalc_ap_ = corner->findDcalcAnalysisPt(min_max_);
+  max_ = MinMax::max();
+  dcalc_ap_ = corner->findDcalcAnalysisPt(max_);
 }
 
 void
@@ -889,29 +889,44 @@ Resizer::checkSlew(const Pin *drvr_pin,
   delete pin_iter;
 }
 
-// Find the output port load capacitance that results in slew.
 double
 Resizer::findSlewLoadCap(LibertyPort *drvr_port,
                          double slew)
+{
+  double cap = INF;
+  for (Corner *corner : *sta_->corners()) {
+    LibertyPort *corner_port = drvr_port->cornerPort(corner->libertyIndex(max_));
+    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    double corner_cap = findSlewLoadCap(corner_port, slew, dcalc_ap);
+    cap = min(cap, corner_cap);
+  }
+  return cap;
+}
+
+// Find the output port load capacitance that results in slew.
+double
+Resizer::findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew,
+                         const DcalcAnalysisPt *dcalc_ap)
 {
   // cap1 lower bound
   // cap2 upper bound
   double cap1 = 0.0;
   double cap2 = slew / drvr_port->driveResistance() * 2;
   double tol = .01; // 1%
-  double diff1 = gateSlewDiff(drvr_port, cap1, slew);
-  double diff2 = gateSlewDiff(drvr_port, cap2, slew);
+  double diff1 = gateSlewDiff(drvr_port, cap1, slew, dcalc_ap);
+  double diff2 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
   // binary search for diff = 0.
   while (abs(cap1 - cap2) > max(cap1, cap2) * tol) {
     if (diff2 < 0.0) {
       cap1 = cap2;
       diff1 = diff2;
       cap2 *= 2;
-      diff2 = gateSlewDiff(drvr_port, cap2, slew);
+      diff2 = gateSlewDiff(drvr_port, cap2, slew, dcalc_ap);
     }
     else {
       double cap3 = (cap1 + cap2) / 2.0;
-      double diff3 = gateSlewDiff(drvr_port, cap3, slew);
+      double diff3 = gateSlewDiff(drvr_port, cap3, slew, dcalc_ap);
       if (diff3 < 0.0) {
         cap1 = cap3;
         diff1 = diff3;
@@ -929,11 +944,12 @@ Resizer::findSlewLoadCap(LibertyPort *drvr_port,
 double
 Resizer::gateSlewDiff(LibertyPort *drvr_port,
                       double load_cap,
-                      double slew)
+                      double slew,
+                      const DcalcAnalysisPt *dcalc_ap)
 {
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, delays, slews);
+  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   Slew gate_slew = max(slews[RiseFall::riseIndex()], slews[RiseFall::fallIndex()]);
   return gate_slew - slew;
 }
@@ -1746,7 +1762,7 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
             GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
             RiseFall *in_rf = arc->fromTrans()->asRiseFall();
             RiseFall *out_rf = arc->toTrans()->asRiseFall();
-            float in_cap = input->capacitance(in_rf, min_max_);
+            float in_cap = input->capacitance(in_rf, max_);
             float load_cap = in_cap * 10.0; // "factor debatable"
             ArcDelay arc_delay;
             Slew arc_slew;
@@ -1985,6 +2001,7 @@ Resizer::repairSetup(PathRef &path,
     int end_index = path_length - 1;
     int start_index = expanded.startIndex();
     PathRef *prev_path = expanded.path(start_index - 1);
+    const DcalcAnalysisPt *dcalc_ap = path.dcalcAnalysisPt(sta_);
     for (int i = start_index; i < path_length; i++) {
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
@@ -1993,7 +2010,7 @@ Resizer::repairSetup(PathRef &path,
           && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
         Edge *prev_edge = path->prevEdge(prev_arc, sta_);
-        Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap_->index())
+        Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
           // Remove intrinsic delay to find load dependent delay.
           - prev_arc->intrinsicDelay();
         load_delays.push_back(pair(i, load_delay));
@@ -2046,7 +2063,7 @@ Resizer::repairSetup(PathRef &path,
         break;
       }
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
       int in_index = drvr_index - 1;
       PathRef *in_path = expanded.path(in_index);
       Pin *in_pin = in_path->pin(sta_);
@@ -2818,8 +2835,8 @@ Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
 float
 Resizer::portCapacitance(const LibertyPort *port)
 {
-  float cap1 = port->capacitance(RiseFall::rise(), min_max_);
-  float cap2 = port->capacitance(RiseFall::fall(), min_max_);
+  float cap1 = port->capacitance(RiseFall::rise(), max_);
+  float cap2 = port->capacitance(RiseFall::fall(), max_);
   return max(cap1, cap2);
 }
 
@@ -2848,7 +2865,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
   return gate_delays[rf->index()];
 }
 
@@ -2860,7 +2877,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
   return max(gate_delays[RiseFall::riseIndex()],
              gate_delays[RiseFall::fallIndex()]);
 }
@@ -2874,7 +2891,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell)
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   float load_cap = input->capacitance();
-  gateDelays(output, load_cap, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
   return max(gate_delays[RiseFall::riseIndex()],
              gate_delays[RiseFall::fallIndex()]);
 }
@@ -2888,7 +2905,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   float load_cap = input->capacitance();
-  gateDelays(output, load_cap, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
   return gate_delays[rf->index()];
 }
 
@@ -2897,6 +2914,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
 void
 Resizer::gateDelays(LibertyPort *drvr_port,
                     float load_cap,
+                    const DcalcAnalysisPt *dcalc_ap,
                     // Return values.
                     ArcDelay delays[RiseFall::index_count],
                     Slew slews[RiseFall::index_count])
@@ -2905,7 +2923,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
     delays[rf_index] = -INF;
     slews[rf_index] = -INF;
   }
-  const Pvt *pvt = dcalc_ap_->operatingConditions();
+  const Pvt *pvt = dcalc_ap->operatingConditions();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
@@ -2937,7 +2955,7 @@ Resizer::gateDelay(LibertyPort *drvr_port,
 {
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, delays, slews);
+  gateDelays(drvr_port, load_cap, dcalc_ap_, delays, slews);
   return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
 }
 
@@ -3061,7 +3079,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
     const ParasiticAnalysisPt *parasitics_ap =
       corner->findParasiticAnalysisPt(MinMax::max());
     const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(MinMax::max());
-    const Pvt *pvt = dcalc_ap_->operatingConditions();
+    const Pvt *pvt = dcalc_ap->operatingConditions();
 
     makeWireParasitic(net, drvr_pin, load_pin, wire_length, parasitics_ap);
     // Let delay calc reduce parasitic network as it sees fit.
@@ -3092,11 +3110,11 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
         }
       }
     }
+    arc_delay_calc_->finishDrvrPin();
+    parasitics_->deleteParasitics(net, dcalc_ap->parasiticAnalysisPt());
   }
 
   // Cleanup the turds.
-  arc_delay_calc_->finishDrvrPin();
-  parasitics_->deleteParasiticNetwork(net, dcalc_ap_->parasiticAnalysisPt());
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
