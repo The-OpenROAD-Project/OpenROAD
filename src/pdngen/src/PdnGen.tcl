@@ -3101,9 +3101,13 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
 #    set ::start_time [clock clicks -milliseconds]
   init_tech 
-   
+  
+  if {![file exists $PDN_cfg]} {
+    utl::error "PDN" 28 "File $PDN_cfg does not exist"
+  }
+ 
   if {![file_exists_non_empty $PDN_cfg]} {
-    utl::error "PDN" 28 "File $PDN_cfg does not exist, or exists but empty"
+    utl::error "PDN" 28 "File $PDN_cfg is empty"
   }
 
   set design_name [$block getName]
