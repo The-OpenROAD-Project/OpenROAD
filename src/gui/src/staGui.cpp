@@ -33,8 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "staGui.h"
-
 #include <QApplication>
 #include <QDebug>
 #include <fstream>
@@ -64,8 +62,39 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "staGui.h"
 
 namespace gui {
+
+const char* TimingPathDetailModel::up_down_arrows = u8"\u21C5";
+const char* TimingPathDetailModel::up_arrow = u8"\u2191";
+const char* TimingPathDetailModel::down_arrow = u8"\u2193";
+
+// These two definitions need to stay in sync
+const std::vector<std::string> TimingPathsModel::_path_columns
+    = {"Capture Clock", "Required", "Arrival", "Slack", "Start", "End"};
+enum TimingPathsModel::Column : int
+{
+  Clock,
+  Required,
+  Arrival,
+  Slack,
+  Start,
+  End
+};
+
+// These two definitions need to stay in sync
+const std::vector<std::string> TimingPathDetailModel::_path_details_columns
+    = {"Pin", up_down_arrows, "Time", "Delay", "Slew", "Load"};
+enum TimingPathDetailModel::Column : int
+{
+  Pin,
+  RiseFall,
+  Time,
+  Delay,
+  Slew,
+  Load
+};
 
 gui::Painter::Color TimingPathRenderer::inst_highlight_color_
     = gui::Painter::dark_cyan;
@@ -112,8 +141,19 @@ int TimingPathsModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
 {
-  if (index.isValid() && role == Qt::TextAlignmentRole)
-    return Qt::AlignCenter;
+  const Column col_index = static_cast<Column>(index.column());
+  if (index.isValid() && role == Qt::TextAlignmentRole) {
+    switch (col_index) {
+    case Clock:
+    case Start:
+    case End:
+      return Qt::AlignLeft;
+    case Required:
+    case Arrival:
+    case Slack:
+      return Qt::AlignRight;
+    }
+  }
 
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
@@ -125,22 +165,19 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
   int row_index = index.row();
   if (row_index > timing_paths_.size())
     return QVariant();
-  int col_index = index.column();
   auto timing_path = timing_paths_[row_index];
   switch (col_index) {
-    case 0:  // Path Id
-      return QString::number(timing_path->getPathIndex());
-    case 1:  // Clock
+    case Clock:
       return QString::fromStdString(timing_path->getStartClock());
-    case 2:  // Required Time
+    case Required:
       return QString(time_units->asString(timing_path->getPathRequiredTime()));
-    case 3:  // Arrival Time
+    case Arrival:
       return QString(time_units->asString(timing_path->getPathArrivalTime()));
-    case 4:  // Slack
+    case Slack:
       return QString(time_units->asString(timing_path->getSlack()));
-    case 5:  // Path Start
+    case Start:
       return QString(timing_path->getStartStageName().c_str());
-    case 6:  // Path End
+    case End:
       return QString::fromStdString(timing_path->getEndStageName());
   }
   return QVariant();
@@ -193,7 +230,9 @@ void TimingPathsModel::populateModel(bool setup_hold, int path_count)
   endResetModel();
 }
 
-bool TimingPathsModel::populatePaths(bool get_max, int path_count, bool clockExpanded)
+bool TimingPathsModel::populatePaths(bool get_max,
+                                     int path_count,
+                                     bool clockExpanded)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -245,7 +284,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count, bool clockExp
     path->setSlack(path_end->slack(sta_));
     path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     path->setPathRequiredTime(path_end->requiredTime(sta_));
-    bool clockPropagated = path_end->sourceClkEdge(sta_)->clock()->isPropagated();
+    bool clockPropagated
+        = path_end->sourceClkEdge(sta_)->clock()->isPropagated();
     if (!clockPropagated)
       clockExpanded = false;
     else
@@ -257,7 +297,8 @@ bool TimingPathsModel::populatePaths(bool get_max, int path_count, bool clockExp
       auto pin = ref->vertex(sta_)->pin();
       auto slew = ref->slew(sta_);
       float cap = 0.0;
-      if (sta_->network()->isDriver(pin) && !(!clockExpanded && (sta_->network()->isCheckClk(pin) || !i))) {
+      if (sta_->network()->isDriver(pin)
+          && !(!clockExpanded && (sta_->network()->isCheckClk(pin) || !i))) {
         sta::Parasitic* parasitic = nullptr;
         sta::ArcDelayCalc* arc_delay_calc = sta_->arcDelayCalc();
         if (arc_delay_calc)
@@ -359,41 +400,47 @@ int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 
 QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 {
-  if (index.isValid() && role == Qt::TextAlignmentRole)
-    return Qt::AlignCenter;
+  const Column col_index = static_cast<Column>(index.column());
+  if (index.isValid() && role == Qt::TextAlignmentRole) {
+    switch (col_index) {
+      case Pin:
+        return Qt::AlignLeft;
+      case Time:
+      case Delay:
+      case Slew:
+      case Load:
+        return Qt::AlignRight;
+      case RiseFall:
+        return Qt::AlignCenter;
+    }
+  }
 
   if (!index.isValid() || role != Qt::DisplayRole || !path_) {
     return QVariant();
   }
 
   sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
-  auto time_units = sta->search()->units()->timeUnit();
-  auto cap_units = sta->search()->units()->capacitanceUnit();
+  const auto time_units = sta->search()->units()->timeUnit();
 
-  int row_index = index.row();
+  const int row_index = index.row();
   if (row_index > path_->levelsCount())
     return QVariant();
-  int col_index = index.column();
-  auto node = path_->getNodeAt(row_index);
+  const auto node = path_->getNodeAt(row_index);
   switch (col_index) {
-    case 0:  // Node Name
+    case Pin:
       return QString(node.getNodeName().c_str());
-    case 1:  // Rising
-      return node.is_rising_ ? QString("R") : QString("F");
-    case 2:  // Required Time
-      return time_units->asString(node.required_);
-    case 3:  // Arrival Time
+    case RiseFall:
+      return node.is_rising_ ? QString(up_arrow) : QString(down_arrow);
+    case Time:
       return time_units->asString(node.arrival_);
-    case 4:  // Slack
-      return time_units->asString(node.slack_);
-    case 5:  // Delay
+    case Delay:
       return time_units->asString(node.delay_);
-    case 6:  // Slew
+    case Slew:
       return time_units->asString(node.slew_);
-    case 7:  // Load
-    {
+    case Load: {
       if (node.load_ == 0)
         return "";
+      const auto cap_units = sta->search()->units()->capacitanceUnit();
       return cap_units->asString(node.load_);
     }
   }
@@ -405,14 +452,8 @@ QVariant TimingPathDetailModel::headerData(int section,
                                            int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    if (section <= 1)
-      return QString(
-          TimingPathDetailModel::_path_details_columns[section].c_str());
-    sta::dbSta* sta = ord::OpenRoad::openRoad()->getSta();
-    auto time_units = sta->search()->units()->timeUnit();
-    auto cap_units = sta->search()->units()->capacitanceUnit();
-    return QString(
-        TimingPathDetailModel::_path_details_columns[section].c_str());
+    return QString::fromStdString(
+        TimingPathDetailModel::_path_details_columns.at(section));
   }
   return QVariant();
 }
