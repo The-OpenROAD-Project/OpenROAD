@@ -882,12 +882,6 @@ dbNetwork::makeCell(Library *library,
   ConcreteCell *ccell = reinterpret_cast<ConcreteCell *>(cell);
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
-  LibertyCell *lib_cell = findLibertyCell(cell_name);
-  if (lib_cell) {
-    ccell->setLibertyCell(lib_cell);
-    lib_cell->setExtCell(reinterpret_cast<void*>(master));
-  }
-
   for (dbMTerm *mterm : master->getMTerms()) {
     const char *port_name = mterm->getConstName();
     Port *port = makePort(cell, port_name);
@@ -896,20 +890,33 @@ dbNetwork::makeCell(Library *library,
     mterm->staSetPort(reinterpret_cast<void*>(port));
     ConcretePort *cport = reinterpret_cast<ConcretePort *>(port);
     cport->setExtPort(reinterpret_cast<void*>(mterm));
-
-    if (lib_cell) {
-      LibertyPort *lib_port = lib_cell->findLibertyPort(port_name);
-      if (lib_port) {
-	cport->setLibertyPort(lib_port);
-	lib_port->setExtPort(mterm);
-      }
-      else if (!dir->isPowerGround())
-	logger_->warn(ORD, 1013, "LEF macro {} pin {} missing from liberty cell.",
-		      cell_name,
-		      port_name);
-    }
   }
   groupBusPorts(cell);
+
+  LibertyLibraryIterator *lib_iter = libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
+    LibertyCell *lib_cell = lib->findLibertyCell(cell_name);
+    if (lib_cell) {
+      ccell->setLibertyCell(lib_cell);
+      lib_cell->setExtCell(reinterpret_cast<void*>(master));
+
+      for (dbMTerm *mterm : master->getMTerms()) {
+        const char *port_name = mterm->getConstName();
+        PortDirection *dir = dbToSta(mterm->getSigType(), mterm->getIoType());
+        LibertyPort *lib_port = lib_cell->findLibertyPort(port_name);
+        if (lib_port) {
+          ConcretePort *cport = reinterpret_cast<ConcretePort *>(mterm->staPort());
+          cport->setLibertyPort(lib_port);
+          lib_port->setExtPort(mterm);
+        }
+        else if (!dir->isPowerGround())
+          logger_->warn(ORD, 1013, "LEF macro {} pin {} missing from liberty cell.",
+                        cell_name,
+                        port_name);
+      }
+    }
+  }
 }
 
 void
