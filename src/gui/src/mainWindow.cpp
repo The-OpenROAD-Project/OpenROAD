@@ -47,6 +47,7 @@
 #include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "staGui.h"
 
 namespace gui {
 
@@ -54,7 +55,8 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_, selected_, highlighted_, this)),
+      viewer_(
+          new LayoutViewer(controls_, selected_, highlighted_, rulers_, this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
@@ -66,6 +68,7 @@ MainWindow::MainWindow(QWidget* parent)
   move(size.width() * 0.1, size.height() * 0.1);
 
   find_dialog_ = new FindObjectDialog(this);
+  timing_dialog_ = new TimingDebugDialog(this);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
@@ -86,6 +89,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+
   connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
   connect(viewer_,
@@ -101,8 +105,14 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(addSelected(const Selected&)));
 
+  connect(viewer_,
+          SIGNAL(addRuler(int, int, int, int)),
+          this,
+          SLOT(addRuler(int, int, int, int)));
+
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));
 
   connect(this,
           SIGNAL(selectionChanged()),
@@ -141,6 +151,16 @@ MainWindow::MainWindow(QWidget* parent)
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&, int)));
 
+  connect(timing_dialog_,
+          SIGNAL(highlightTimingPath(TimingPath*)),
+          viewer_,
+          SLOT(update()));
+
+  createActions();
+  createToolbars();
+  createMenus();
+  createStatusBar();
+
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
@@ -148,11 +168,6 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   settings.endGroup();
-
-  createActions();
-  createMenus();
-  createToolbars();
-  createStatusBar();
 }
 
 void MainWindow::createStatusBar()
@@ -191,7 +206,11 @@ void MainWindow::createActions()
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
 
-  congestion_setup_ = new QAction("Congestion Setup...", nullptr);
+  timing_debug_ = new QAction("Timing ...", this);
+  timing_debug_->setShortcut(QString("Ctrl+T"));
+
+  congestion_setup_ = new QAction("Congestion Setup...", this);
+
   connect(congestion_setup_,
           SIGNAL(triggered()),
           controls_,
@@ -202,6 +221,7 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(timing_debug_, SIGNAL(triggered()), this, SLOT(showTimingDialog()));
 }
 
 void MainWindow::createMenus()
@@ -214,20 +234,27 @@ void MainWindow::createMenus()
   view_menu_->addAction(find_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
+  view_menu_->addAction(timing_debug_);
+
+  tools_menu_ = menuBar()->addMenu("&Tools");
+  tools_menu_->addAction(congestion_setup_);
+  tools_menu_->addAction(timing_debug_);
 
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
+  windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   selection_browser_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
 {
-  view_tool_bar_ = addToolBar("View");
+  view_tool_bar_ = addToolBar("Toolbar");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
   view_tool_bar_->addAction(congestion_setup_);
+  view_tool_bar_->addAction(timing_debug_);
 
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
@@ -279,6 +306,13 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
+void MainWindow::addRuler(int x0, int y0, int x1, int y1)
+{
+  QLine ruler(QPoint(x0, y0), QPoint(x1, y1));
+  rulers_.push_back(ruler);
+  emit rulersChanged();
+}
+
 void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
                                       int highlight_group)
 {
@@ -306,6 +340,14 @@ void MainWindow::clearHighlighted(int highlight_group)
   }
   if (num_items_cleared > 0)
     emit highlightChanged();
+}
+
+void MainWindow::clearRulers()
+{
+  if (rulers_.empty())
+    return;
+  rulers_.clear();
+  emit rulersChanged();
 }
 
 void MainWindow::removeFromSelected(const QList<const Selected*>& items)
@@ -371,6 +413,14 @@ void MainWindow::showFindDialog()
   if (getBlock() == nullptr)
     return;
   find_dialog_->exec();
+}
+
+void MainWindow::showTimingDialog()
+{
+  if (timing_dialog_->populateTimingPaths(nullptr)) {
+    timing_dialog_->show();
+    Gui::get()->registerRenderer(timing_dialog_->getTimingRenderer());
+  }
 }
 
 bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)

@@ -222,7 +222,7 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
-  for (PinGroup pin_group : pin_groups_) {
+  for (PinList pin_group : pin_groups_) {
     netlist_io_pins_.createIOGroup(pin_group);
   }
 }
@@ -275,7 +275,7 @@ void IOPlacer::getBlockedRegionsFromMacros()
 
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
-    if (master->isBlock()) {
+    if (master->isBlock() && inst->isPlaced()) {
       odb::Rect inst_area;
       inst->getBBox()->getBox(inst_area);
       odb::Rect intersect = die_area.intersect(inst_area);
@@ -800,23 +800,19 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
+void IOPlacer::addNamesConstraint(PinList* pins, Edge edge, int begin, int end)
+{
+  Interval interval(edge, begin, end);
+  constraints_.push_back(Constraint(*pins, Direction::invalid, interval));;
+}
+
 void IOPlacer::addDirectionConstraint(Direction direction,
                                       Edge edge,
                                       int begin,
                                       int end)
 {
   Interval interval(edge, begin, end);
-  Constraint constraint("INVALID", direction, interval);
-  constraints_.push_back(constraint);
-}
-
-void IOPlacer::addNameConstraint(std::string name,
-                                 Edge edge,
-                                 int begin,
-                                 int end)
-{
-  Interval interval(edge, begin, end);
-  Constraint constraint(name, Direction::invalid, interval);
+  Constraint constraint(PinList(), direction, interval);
   constraints_.push_back(constraint);
 }
 
@@ -850,14 +846,12 @@ Direction IOPlacer::getDirection(std::string direction)
   return Direction::invalid;
 }
 
-PinGroup* IOPlacer::createPinGroup()
+void IOPlacer::addPinGroup(PinList* group)
 {
-  pin_groups_.push_back(PinGroup());
-  PinGroup* group = &pin_groups_.back();
-  return group;
+  pin_groups_.push_back(*group);
 }
 
-void IOPlacer::addPinToGroup(odb::dbBTerm* pin, PinGroup* pin_group)
+void IOPlacer::addPinToList(odb::dbBTerm* pin, PinList* pin_group)
 {
   pin_group->push_back(pin);
 }
@@ -1085,7 +1079,7 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (PinGroup pin_group : pin_groups_) {
+  for (PinList pin_group : pin_groups_) {
     int group_created = netlist_.createIOGroup(pin_group); 
     if(group_created == pin_group.size()) {
       group_idx++;

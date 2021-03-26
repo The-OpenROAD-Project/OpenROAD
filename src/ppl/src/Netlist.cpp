@@ -38,6 +38,8 @@
 #include "Slots.h"
 #include "ppl/IOPlacer.h"
 
+#include <algorithm>
+
 namespace ppl {
 
 Netlist::Netlist()
@@ -210,9 +212,11 @@ bool Netlist::checkSlotForPin(const IOPin& pin,
         = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
 
   for (Constraint constraint : constraints) {
+    const PinList &pin_list = constraint.pin_list;
     if (pin.getDirection() == constraint.direction) {
       valid_slot = checkInterval(constraint, edge, pos);
-    } else if (pin.getName() == constraint.name) {
+    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
+               != pin_list.end()) {
       valid_slot = checkInterval(constraint, edge, pos);
     }
   }
@@ -245,6 +249,8 @@ bool Netlist::checkSectionForPin(const IOPin& pin,
     const int constraint_begin = constraint.interval.getBegin();
     const int constraint_end = constraint.interval.getEnd();
 
+    const PinList &pin_list = constraint.pin_list;
+
     if (pin.getDirection() == constraint.direction) {
       valid_slot = (section_min <= constraint_end &&
                     constraint_begin <= section_max &&
@@ -252,7 +258,8 @@ bool Netlist::checkSectionForPin(const IOPin& pin,
       available_slots = std::max(0,
                                 (std::min(section_max, constraint_end) -
                                  std::max(section_min, constraint_begin) + 1))/spacing;
-    } else if (pin.getName() == constraint.name) {
+    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
+               != pin_list.end()) {
       valid_slot = (section_min <= constraint_end &&
                     constraint_begin <= section_max &&
                     constraint.interval.getEdge() == edge);

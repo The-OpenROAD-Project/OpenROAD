@@ -41,7 +41,8 @@
 #include "findDialog.h"
 #include "gui/gui.h"
 #include "openroad/OpenRoad.hh"
-#include "gui/gui.h"
+
+#include "timingDebugDialog.h"
 
 namespace odb {
 class dbDatabase;
@@ -100,6 +101,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The highlight set of objects has changed
   void highlightChanged();
 
+  // Ruler Requested on the Layout
+  void rulersChanged();
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -119,12 +123,18 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add the selections to highlight set
   void addHighlighted(const SelectionSet& selection, int highlight_group = 0);
 
+  // Add Ruler to Layout View
+  void addRuler(int x0, int y0, int x1, int y1);
+
   // Add the selections(List) to highlight set
   void updateHighlightedSet(const QList<const Selected*>& items_to_highlight,
                             int highlight_group = 0);
 
   // Higlight set will be cleared with this explicit call
   void clearHighlighted(int highlight_group = -1 /* -1 : clear all Groups */);
+
+  // Clear Rulers
+  void clearRulers();
 
   // Remove items from the Selected Set
   void removeFromSelected(const QList<const Selected*>& items);
@@ -142,21 +152,24 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Show a message in the status bar
   void status(const std::string& message);
-  
+
   // Show Find Dialog Box
   void showFindDialog();
+
+  // show Timing Dialog Box
+  void showTimingDialog();
 
   DisplayControls* getControls() const{
       return controls_;
   }
-  
+
+
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
   void selectHighlightConnectedNets(bool select_flag,
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
  private:
   void createMenus();
   void createActions();
@@ -168,6 +181,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   odb::dbDatabase* db_;
   SelectionSet selected_;
   HighlightSet highlighted_;
+  std::vector<QLine> rulers_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -179,6 +193,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QMenu* file_menu_;
   QMenu* view_menu_;
+  QMenu* tools_menu_;
   QMenu* windows_menu_;
 
   QToolBar* view_tool_bar_;
@@ -186,6 +201,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* exit_;
   QAction* fit_;
   QAction* find_;
+  QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;
 
@@ -194,6 +210,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QLabel* location_;
 
   FindObjectDialog* find_dialog_;
+  TimingDebugDialog* timing_dialog_;
 };
 
 }  // namespace gui

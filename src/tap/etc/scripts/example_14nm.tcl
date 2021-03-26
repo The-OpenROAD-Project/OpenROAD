@@ -36,7 +36,7 @@
 read_lef input.lef
 read_def input.def
 
-tapcell -no_cell_at_top_bottom -add_boundary_cell
+tapcell -add_boundary_cell
         -tap_nwin2_master "TAPCELL_NWIN2_MASTER_NAME"
         -tap_nwin3_master "TAPCELL_NWIN3_MASTER_NAME"
         -tap_nwout2_master "TAPCELL_NWOUT2_MASTER_NAME"
@@ -49,8 +49,6 @@ tapcell -no_cell_at_top_bottom -add_boundary_cell
         -incnrcap_nwout_master "INCNRCAP_NWOUT_MASTER_NAME"
         -endcap_master "ENDCAP_MASTER_NAME"
         -tapcell_master "TAPCELL_MASTER_NAME"
-        -endcap_cpp "12"
-        -tbtie_cpp "16"
         -distance "25"
         -halo_width_x "2"
         -halo_width_y "2"
