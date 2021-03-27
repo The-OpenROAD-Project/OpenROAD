@@ -770,26 +770,6 @@ class FlexDRWorker
   void initFixedObjs();
   void initMarkers();
 
-  // route 2
-  void route_2();
-
-  void route_2_init(std::deque<drNet*>& rerouteNets);
-  void route_2_init_getNets(std::vector<drNet*>& tmpNets);
-  void route_2_init_getNets_sort(std::vector<drNet*>& tmpNets);
-
-  void route_2_pushNet(std::deque<drNet*>& rerouteNets,
-                       drNet* net,
-                       bool ripUp = false,
-                       bool isPushFront = false);
-  drNet* route_2_popNet(std::deque<drNet*>& rerouteNets);
-
-  void route_2_ripupNet(drNet* net);
-
-  void route_2_x1(drNet* net, std::deque<drNet*>& rerouteNets);
-  void route_2_x2(drNet* net, std::deque<drNet*>& rerouteNets);
-  void route_2_x2_ripupNets(const frMarker& marker, drNet* net);
-  bool route_2_x2_addHistoryCost(const frMarker& marker);
-
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
