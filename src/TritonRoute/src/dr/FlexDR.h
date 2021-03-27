@@ -284,8 +284,7 @@ class FlexDR
                     bool enableDRC = false,
                     int ripupMode = 1,
                     bool followGuide = true,
-                    int fixMode = 0,
-                    bool TEST = false);
+                    int fixMode = 0);
   void end(bool writeMetrics = false);
 
   // utility
@@ -367,9 +366,6 @@ class FlexDRWorker
         drcBox_(),
         drIter_(0),
         mazeEndIter_(1),
-        TEST_(false),
-        DRCTEST_(false),
-        QUICKDRCTEST_(false),
         enableDRC_(true),
         followGuide_(false),
         needRecheck_(false),
@@ -412,9 +408,6 @@ class FlexDRWorker
     boundaryPin_ = std::move(bp);
   }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
-  void setTest(bool in) { TEST_ = in; }
-  void setQuickDRCTest(bool in) { QUICKDRCTEST_ = in; }
-  void setDRCTest(bool in) { DRCTEST_ = in; }
   void setEnableDRC(bool in) { enableDRC_ = in; }
   void setRipupMode(int in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
@@ -554,9 +547,6 @@ class FlexDRWorker
   frBox gcellBox_;
   int drIter_;
   int mazeEndIter_;
-  bool TEST_ : 1;
-  bool DRCTEST_ : 1;
-  bool QUICKDRCTEST_ : 1;
   bool enableDRC_ : 1;
   bool followGuide_ : 1;
   bool needRecheck_ : 1;
