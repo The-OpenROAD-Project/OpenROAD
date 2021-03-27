@@ -41,26 +41,24 @@ using namespace std;
 using namespace fr;
 namespace gtl = boost::polygon;
 
-inline frSquaredDistance FlexDRWorker::pt2boxDistSquare(const frPoint& pt,
-                                                        const frBox& box)
+static frSquaredDistance pt2boxDistSquare(const frPoint& pt, const frBox& box)
 {
   frCoord dx = max(max(box.left() - pt.x(), pt.x() - box.right()), 0);
   frCoord dy = max(max(box.bottom() - pt.y(), pt.y() - box.top()), 0);
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
-inline frSquaredDistance FlexDRWorker::pt2ptDistSquare(const frPoint& pt1,
-                                                       const frPoint& pt2)
+static frSquaredDistance pt2ptDistSquare(const frPoint& pt1, const frPoint& pt2)
 {
   frCoord dx = abs(pt1.x() - pt2.x());
   frCoord dy = abs(pt1.y() - pt2.y());
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
-inline frSquaredDistance FlexDRWorker::box2boxDistSquare(const frBox& box1,
-                                                         const frBox& box2,
-                                                         frCoord& dx,
-                                                         frCoord& dy)
+static frSquaredDistance box2boxDistSquare(const frBox& box1,
+                                           const frBox& box2,
+                                           frCoord& dx,
+                                           frCoord& dy)
 {
   dx = max(max(box1.left(), box2.left()) - min(box1.right(), box2.right()), 0);
   dy = max(max(box1.bottom(), box2.bottom()) - min(box1.top(), box2.top()), 0);
@@ -69,10 +67,10 @@ inline frSquaredDistance FlexDRWorker::box2boxDistSquare(const frBox& box1,
 
 // prlx = -dx, prly = -dy
 // dx > 0 : disjoint in x; dx = 0 : touching in x; dx < 0 : overlap in x
-inline frSquaredDistance FlexDRWorker::box2boxDistSquareNew(const frBox& box1,
-                                                            const frBox& box2,
-                                                            frCoord& dx,
-                                                            frCoord& dy)
+static frSquaredDistance box2boxDistSquareNew(const frBox& box1,
+                                              const frBox& box2,
+                                              frCoord& dx,
+                                              frCoord& dy)
 {
   dx = max(box1.left(), box2.left()) - min(box1.right(), box2.right());
   dy = max(box1.bottom(), box2.bottom()) - min(box1.top(), box2.top());
@@ -3651,8 +3649,8 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         // }
         FlexMazeIdx bp, ep;
         frArea gapArea = reqArea
-                          - (currArea - startViaHalfEncArea - endViaHalfEncArea)
-                          - std::min(startViaHalfEncArea, endViaHalfEncArea);
+                         - (currArea - startViaHalfEncArea - endViaHalfEncArea)
+                         - std::min(startViaHalfEncArea, endViaHalfEncArea);
         // new
         bool bpPatchStyle = true;  // style 1: left only; 0: right only
         bool epPatchStyle = false;
@@ -3776,8 +3774,8 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       // }
       FlexMazeIdx bp, ep;
       frArea gapArea = reqArea
-                        - (currArea - startViaHalfEncArea - endViaHalfEncArea)
-                        - std::min(startViaHalfEncArea, endViaHalfEncArea);
+                       - (currArea - startViaHalfEncArea - endViaHalfEncArea)
+                       - std::min(startViaHalfEncArea, endViaHalfEncArea);
       // new
       bool bpPatchStyle = true;  // style 1: left only; 0: right only
       bool epPatchStyle = false;
