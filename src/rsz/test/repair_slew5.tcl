@@ -22,4 +22,3 @@ report_check_types -max_slew -max_cap -max_fanout -violators
 repair_design
 
 report_check_types -max_slew -max_cap -max_fanout
-

@@ -40,7 +40,6 @@ namespace gui {
 TimingReportDialog::TimingReportDialog(QWidget* parent) : QDialog(parent)
 {
   setupUi(this);
-  pathCount->setValidator(new QIntValidator(0, 10000));
 }
 
 }  // namespace gui

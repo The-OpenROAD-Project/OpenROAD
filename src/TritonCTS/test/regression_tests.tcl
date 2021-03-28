@@ -10,5 +10,4 @@ record_tests {
   check_wire_rc_cts
   check_wire_rc_cts_2
   post_cts_opt
-  balance_levels
 }
