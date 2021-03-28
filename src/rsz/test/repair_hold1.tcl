@@ -14,7 +14,7 @@ estimate_parasitics -placement
 report_checks -path_delay min -format full_clock -endpoint_count 2 \
   -unique_paths_to_endpoint -to r3/D
 
-rsz::resizer_preamble [get_libs *]
+rsz::resizer_preamble
 rsz::repair_hold_pin [get_pins r3/D] [get_lib_cell BUF_X1] 0
 report_checks -path_delay min -format full_clock -endpoint_count 2 \
   -unique_paths_to_endpoint -to r3/D

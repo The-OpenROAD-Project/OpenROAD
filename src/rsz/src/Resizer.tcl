@@ -182,7 +182,7 @@ proc buffer_ports { args } {
   sta::check_argc_eq0 "buffer_ports" $args
   
   rsz::set_max_utilization [rsz::parse_max_util keys]
-  rsz::resizer_preamble [get_libs *]
+  rsz::resizer_preamble
   if { $buffer_inputs } {
     rsz::buffer_inputs
   }
@@ -192,7 +192,6 @@ proc buffer_ports { args } {
 }
 
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-                                        [-libraries resize_libs]\
                                         [-max_utilization util]}
 
 proc repair_design { args } {
@@ -203,21 +202,16 @@ proc repair_design { args } {
   if { [info exists keys(-buffer_cell)] } {
     utl::warn RSZ 16 "-buffer_cell is deprecated."
   }
+  if { [info exists keys(-libraries)] } {
+    utl::warn RSZ 13 "-libraries is deprecated."
+  }
   set max_wire_length [rsz::parse_max_wire_length keys]
   
-  if { [info exists keys(-libraries)] } {
-    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-  } else {
-    set resize_libs [get_libs *]
-    if { $resize_libs == {} } {
-      utl::error RSZ 8 "No liberty libraries found."
-    }
-  }
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
-  rsz::resizer_preamble $resize_libs
+  rsz::resizer_preamble
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_design_cmd $max_wire_length
 }
@@ -236,7 +230,7 @@ proc repair_clock_nets { args } {
   
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
-  rsz::resizer_preamble [get_libs *]
+  rsz::resizer_preamble
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
@@ -282,13 +276,9 @@ proc repair_hold_violations { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   sta::check_argc_eq0 "repair_hold_violations" $args
   utl::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
-  set resize_libs [get_libs *]
-  if { $resize_libs == {} } {
-    utl::error RSZ 9 "No liberty libraries found."
-  }
 
   rsz::check_parasitics
-  rsz::resizer_preamble $resize_libs
+  rsz::resizer_preamble
   rsz::repair_hold 0.0 $allow_setup_violations $max_buffer_percent
 }
 
@@ -296,13 +286,16 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-allow_setup_violations]\
-                                        [-libraries resize_libs]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-slack_margin -libraries -max_utilization -max_buffer_percent} \
     flags {-setup -hold -allow_setup_violations}
+
+  if { [info exists keys(-libraries)] } {
+    utl::warn RSZ 63 "-libraries is deprecated."
+  }
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -312,14 +305,6 @@ proc repair_timing { args } {
   }
 
   set slack_margin [rsz::parse_slack_margin_arg keys]
-  if { [info exists keys(-libraries)] } {
-    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-  } else {
-    set resize_libs [get_libs *]
-    if { $resize_libs == {} } {
-      utl::error RSZ 49 "No liberty libraries found."
-    }
-  }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
@@ -332,7 +317,7 @@ proc repair_timing { args } {
 
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
-  rsz::resizer_preamble $resize_libs
+  rsz::resizer_preamble
   if { $setup } {
     rsz::repair_setup $slack_margin
   }
@@ -392,14 +377,14 @@ namespace eval rsz {
 proc resize { args } {
   sta::check_argc_eq0 "resize" $args
   check_parasitics
-  resizer_preamble [get_libs *]
+  resizer_preamble
   resize_to_target_slew
 }
 
 # for testing
 proc repair_setup_pin { end_pin } {
   check_parasitics
-  resizer_preamble [get_libs *]
+  resizer_preamble
   repair_setup_pin_cmd $end_pin
 }
 

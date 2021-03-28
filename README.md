@@ -525,7 +525,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              [-libraries resize_libs]
               [-max_utilization util]
 ```
 

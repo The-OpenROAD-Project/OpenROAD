@@ -160,7 +160,7 @@ public:
   bool dontUse(LibertyCell *cell);
 
   void setMaxUtilization(double max_utilization);
-  void resizePreamble(LibertyLibrarySeq *resize_libs);
+  void resizePreamble();
   void bufferInputs();
   void bufferOutputs();
   // Resize all instances in the network.
@@ -274,9 +274,10 @@ protected:
                    LibertyCell *buffer_cell);
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
-  void makeEquivCells(LibertyLibrarySeq *resize_libs);
-  void findBuffers(LibertyLibrarySeq *resize_libs);
-  void findTargetLoads(LibertyLibrarySeq *resize_libs);
+  void makeEquivCells();
+  void findBuffers();
+  bool isLinkCell(LibertyCell *cell);
+  void findTargetLoads();
   void findTargetLoads(LibertyLibrary *library,
                        TgtSlews &slews);
   void findTargetLoad(LibertyCell *cell,
@@ -291,7 +292,7 @@ protected:
                     Slew in_slew,
                     float load_cap,
                     Slew out_slew);
-  void findBufferTargetSlews(LibertyLibrarySeq *resize_libs);
+  void findBufferTargetSlews();
   void findBufferTargetSlews(LibertyLibrary *library,
                              // Return values.
                              Slew slews[],
@@ -509,7 +510,6 @@ protected:
                                      BufferedNet *ref,
                                      BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
-  LibertyLibrarySeq allLibraries();
   void findResizeSlacks1();
 
   bool removeBuffer(Instance *buffer);

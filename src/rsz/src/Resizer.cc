@@ -389,22 +389,25 @@ Resizer::ensureLevelDrvrVertices()
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::resizePreamble(LibertyLibrarySeq *resize_libs)
+Resizer::resizePreamble()
 {
   init();
-  makeEquivCells(resize_libs);
-  findBuffers(resize_libs);
-  findTargetLoads(resize_libs);
+  makeEquivCells();
+  findBuffers();
+  findTargetLoads();
 }
 
 void
-Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
+Resizer::findBuffers()
 {
   buffer_lowest_drive_ = nullptr;
   float low_drive = -INF;
-  for (LibertyLibrary *lib : *resize_libs) {
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
     for (LibertyCell *buffer : *lib->buffers()) {
-      if (!dontUse(buffer)) {
+      if (!dontUse(buffer)
+          && isLinkCell(buffer)) {
         buffer_cells_.push_back(buffer);
 
         LibertyPort *input, *output;
@@ -417,8 +420,15 @@ Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
       }
     }
   }
+  delete lib_iter;
   if (buffer_cells_.empty())
     logger_->error(RSZ, 22, "no buffers found.");
+}
+
+bool
+Resizer::isLinkCell(LibertyCell *cell)
+{
+  return network_->findLibertyCell(cell->name()) == cell;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1229,17 +1239,16 @@ Resizer::hasFanout(Vertex *drvr)
 }
 
 void
-Resizer::makeEquivCells(LibertyLibrarySeq *resize_libs)
+Resizer::makeEquivCells()
 {
-  // Map cells from all libraries to resize_libs.
-  LibertyLibrarySeq map_libs;
+  LibertyLibrarySeq libs;
   LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary *lib = lib_iter->next();
-    map_libs.push_back(lib);
+    libs.push_back(lib);
   }
   delete lib_iter;
-  sta_->makeEquivCells(resize_libs, &map_libs);
+  sta_->makeEquivCells(&libs, nullptr);
 }
 
 static float
@@ -1382,24 +1391,10 @@ Resizer::hasMultipleOutputs(const Instance *inst)
 void
 Resizer::resizeSlackPreamble()
 {
-  LibertyLibrarySeq resize_libs = allLibraries();
-  resizePreamble(&resize_libs);
+  resizePreamble();
   // Save max_wire_length for multiple repairDesign calls.
   max_wire_length_ = findMaxWireLength();
   net_slack_map_.clear();
-}
-
-LibertyLibrarySeq
-Resizer::allLibraries()
-{
-  LibertyLibrarySeq libs;
-  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    LibertyLibrary *lib = lib_iter->next();
-    libs.push_back(lib);
-  }
-  delete lib_iter;
-  return libs;
 }
 
 // Run repair design to find the slacks but save/restore all changes to the netlist.
@@ -1542,15 +1537,19 @@ Resizer::dontUse(LibertyCell *cell)
 // Find a target slew for the libraries and then
 // a target load for each cell that gives the target slew.
 void
-Resizer::findTargetLoads(LibertyLibrarySeq *resize_libs)
+Resizer::findTargetLoads()
 {
   // Find target slew across all buffers in the libraries.
-  findBufferTargetSlews(resize_libs);
+  findBufferTargetSlews();
   if (target_load_map_ == nullptr)
     target_load_map_ = new CellTargetLoadMap;
   target_load_map_->clear();
-  for (LibertyLibrary *lib : *resize_libs)
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
     findTargetLoads(lib, tgt_slews_);
+  }
+  delete lib_iter;
 }
 
 float
@@ -1685,13 +1684,15 @@ Resizer::targetSlew(const RiseFall *rf)
 
 // Find target slew across all buffers in the libraries.
 void
-Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
+Resizer::findBufferTargetSlews()
 {
   tgt_slews_[RiseFall::riseIndex()] = 0.0;
   tgt_slews_[RiseFall::fallIndex()] = 0.0;
   int tgt_counts[RiseFall::index_count]{0};
   
-  for (LibertyLibrary *lib : *resize_libs) {
+  LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    LibertyLibrary *lib = lib_iter->next();
     Slew slews[RiseFall::index_count]{0.0};
     int counts[RiseFall::index_count]{0};
     
@@ -1708,6 +1709,7 @@ Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
       }
     }
   }
+  delete lib_iter;
 
   for (int rf : RiseFall::rangeIndex())
     tgt_slews_[rf] /= tgt_counts[rf];
