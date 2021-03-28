@@ -43,8 +43,7 @@ proc remove_buffers { args } {
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
                                       [-layer layer_name]\
                                       [-layers {layer_name weight ...}]\
-                                      [-resistance res ][-capacitance cap]\
-                                      [-corner corner_name]}
+                                      [-resistance res ][-capacitance cap]}
 
 proc set_wire_rc { args } {
    sta::parse_key_args "set_wire_rc" args \
@@ -93,7 +92,6 @@ proc set_wire_rc { args } {
     set report_rc 0
   }
   
-  set corner [sta::cmd_corner]
   if { [info exists keys(-corner)] } {
     utl::warn RSZ 12 "-corner argument ignored."
   }
@@ -129,10 +127,10 @@ proc set_wire_rc { args } {
   }
 
   if { $signal } {
-    rsz::set_wire_rc_cmd $wire_res $wire_cap $corner
+    rsz::set_wire_rc_cmd $wire_res $wire_cap
   }
   if { $clk } {
-    rsz::set_wire_clk_rc_cmd $wire_res $wire_cap $corner
+    rsz::set_wire_clk_rc_cmd $wire_res $wire_cap
   }
 }
 

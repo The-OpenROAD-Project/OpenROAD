@@ -327,11 +327,10 @@ Requireds
 Resizer::pinRequireds(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
-  PathAnalysisPt *path_ap = corner_->findPathAnalysisPt(max_);
   Requireds requireds;
   for (RiseFall *rf : RiseFall::range()) {
     int rf_index = rf->index();
-    Required required = sta_->vertexRequired(vertex, rf, path_ap);
+    Required required = sta_->vertexRequired(vertex, rf, max_);
     if (fuzzyInf(required))
       // Unconstrained pin.
       required = 0.0;

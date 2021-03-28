@@ -90,8 +90,7 @@ Resizer::ensureWireParasitic(const Net *net)
       // Sufficient to check for parasitic for one corner because
       // they are all made at the same time.
       const Corner *corner = sta_->corners()->findCorner(0);
-      const ParasiticAnalysisPt *parasitic_ap =
-        corner->findParasiticAnalysisPt(MinMax::max());
+      const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
       if (parasitics_invalid_.hasKey(net)
           || parasitics_->findPiElmore(drvr_pin,RiseFall::rise(),parasitic_ap) == nullptr)
         estimateWireParasitic(net);
@@ -106,8 +105,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
   const Corner *corner = sta_->corners()->findCorner(0);
-  const ParasiticAnalysisPt *parasitic_ap =
-    corner->findParasiticAnalysisPt(MinMax::max());
+  const ParasiticAnalysisPt *parasitic_ap = corner->findParasiticAnalysisPt(max_);
   if (have_estimated_parasitics_
       && net
       && (parasitics_invalid_.hasKey(net)
@@ -126,8 +124,6 @@ Resizer::estimateWireParasitics()
     sta_->deleteParasitics();
     // Make separate parasitics for each corner, same for min/max.
     sta_->corners()->makeCornerParasiticAnalysisPts();
-    // temporary
-    corner_ = sta_->cmdCorner();
 
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
@@ -173,8 +169,7 @@ Resizer::makePadParasitic(const Net *net)
   const Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
   for (Corner *corner : *sta_->corners()) {
-    const ParasiticAnalysisPt *parasitics_ap =
-      corner->findParasiticAnalysisPt(MinMax::max());
+    const ParasiticAnalysisPt *parasitics_ap = corner->findParasiticAnalysisPt(max_);
     Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap);
     ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, pin1);
     ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, pin2);
@@ -183,9 +178,9 @@ Resizer::makePadParasitic(const Net *net)
     parasitics_->makeResistor(nullptr, n1, n2, .001, parasitics_ap);
 
     ReducedParasiticType reduce_to = sta_->arcDelayCalc()->reducedParasiticType();
-    const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
+    const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
     parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
-                          corner_, MinMax::max(), parasitics_ap);
+                          corner, max_, parasitics_ap);
     parasitics_->deleteParasiticNetwork(net, parasitics_ap);
   }
 }
@@ -198,8 +193,7 @@ Resizer::estimateWireParasiticSteiner(const Net *net)
     debugPrint(logger_, RSZ, "resizer_parasitics", 1, "estimate wire {}",
                sdc_network_->pathName(net));
     for (Corner *corner : *sta_->corners()) {
-      const ParasiticAnalysisPt *parasitics_ap =
-        corner->findParasiticAnalysisPt(MinMax::max());
+      const ParasiticAnalysisPt *parasitics_ap = corner->findParasiticAnalysisPt(max_);
       Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap);
       bool is_clk = sta_->isClock(net);
       int branch_count = tree->branchCount();
@@ -238,9 +232,9 @@ Resizer::estimateWireParasiticSteiner(const Net *net)
         }
       }
       ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
-      const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
+      const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
       parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
-                            corner_, MinMax::max(), parasitics_ap);
+                            corner, max_, parasitics_ap);
       parasitics_->deleteParasiticNetwork(net, parasitics_ap);
     }
     delete tree;

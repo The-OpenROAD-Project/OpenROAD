@@ -448,7 +448,6 @@ set_wire_rc [-clock] [-signal]
             [-layer layer_name]
             [-resistance res ]
             [-capacitance cap]
-            [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to

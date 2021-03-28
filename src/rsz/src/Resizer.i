@@ -167,22 +167,20 @@ remove_buffers_cmd()
 
 void
 set_wire_rc_cmd(float res,
-                float cap,
-                Corner *corner)
+                float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireRC(res, cap, corner);
+  resizer->setWireRC(res, cap);
 }
 
 void
 set_wire_clk_rc_cmd(float res,
-                    float cap,
-                    Corner *corner)
+                    float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(res, cap, corner);
+  resizer->setWireClkRC(res, cap);
 }
 
 // ohms/meter

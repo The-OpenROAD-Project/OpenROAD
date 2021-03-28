@@ -133,12 +133,10 @@ public:
   void removeBuffers();
   // Set the resistance and capacitance used for parasitics.
   void setWireRC(float wire_res, // ohms/meter
-                 float wire_cap, // farads/meter
-                 Corner *corner);
+                 float wire_cap); // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
   void setWireClkRC(float wire_res, // ohms/meter
-                    float wire_cap, // farads/meter
-                    Corner *corner);
+                    float wire_cap); // farads/meter
   // ohms/meter
   float wireResistance() { return wire_res_; }
   float wireClkResistance() { return wire_clk_res_; }
@@ -271,8 +269,6 @@ protected:
   void init();
   void ensureBlock();
   void ensureDesignArea();
-  void ensureCorner();
-  void initCorner(Corner *corner);
   void ensureLevelDrvrVertices();
   void bufferInput(Pin *top_pin,
                    LibertyCell *buffer_cell);
@@ -522,16 +518,13 @@ protected:
   void journalMakeBuffer(Instance *buffer);
   void journalRestore();
 
-  int rebuffer_net_count_;
-  BufferedNetSeq rebuffer_options_;
-  friend class BufferedNet;
+  ////////////////////////////////////////////////////////////////
 
   // These are command args
   float wire_res_;
   float wire_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
-  Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
 
@@ -567,11 +560,18 @@ protected:
   NetSeq worst_slack_nets_;
   SteinerRenderer *steiner_renderer_;
 
+  int rebuffer_net_count_;
+  BufferedNetSeq rebuffer_options_;
+
   // Journal to roll back changes (OpenDB not up to the task).
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSet inserted_buffers_;
 
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
+  static constexpr int rebuffer_max_fanout_ = 40;
+  static constexpr int split_load_min_fanout_ = 8;
+
+  friend class BufferedNet;
 };
 
 } // namespace

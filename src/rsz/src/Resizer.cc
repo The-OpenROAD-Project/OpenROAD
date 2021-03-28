@@ -151,14 +151,13 @@ Resizer::Resizer() :
   wire_cap_(0.0),
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
-  corner_(nullptr),
   max_area_(0.0),
   gui_(nullptr),
   sta_(nullptr),
   db_network_(nullptr),
   db_(nullptr),
   core_exists_(false),
-  max_(nullptr),
+  max_(MinMax::max()),
   dcalc_ap_(nullptr),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
@@ -280,7 +279,7 @@ Resizer::init()
   ensureDesignArea();
   ensureLevelDrvrVertices();
   sta_->ensureClkNetwork();
-  ensureCorner();
+  dcalc_ap_ = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
 }
 
 void
@@ -357,37 +356,18 @@ Resizer::removeBuffer(Instance *buffer)
 
 void
 Resizer::setWireRC(float wire_res,
-                   float wire_cap,
-                   Corner *corner)
+                   float wire_cap)
 {
-  initCorner(corner);
   wire_res_ = wire_res;
   wire_cap_ = wire_cap;
 }
 
 void
 Resizer::setWireClkRC(float wire_res,
-                      float wire_cap,
-                      Corner *corner)
+                      float wire_cap)
 {
-  initCorner(corner);
   wire_clk_res_ = wire_res;
   wire_clk_cap_ = wire_cap;
-}
-
-void
-Resizer::ensureCorner()
-{
-  if (corner_ == nullptr)
-    initCorner(sta_->cmdCorner());
-}
-
-void
-Resizer::initCorner(Corner *corner)
-{
-  corner_ = corner;
-  max_ = MinMax::max();
-  dcalc_ap_ = corner->findDcalcAnalysisPt(max_);
 }
 
 void
@@ -760,8 +740,7 @@ Resizer::repairNet(Net *net,
     buffer_lowest_drive_->bufferPorts(buffer_input_port, buffer_output_port);
     float buf_cap_limit;
     bool buf_cap_limit_exists;
-    buffer_output_port->capacitanceLimit(MinMax::max(),
-                                         buf_cap_limit, buf_cap_limit_exists);
+    buffer_output_port->capacitanceLimit(max_, buf_cap_limit, buf_cap_limit_exists);
 
     double drvr_max_cap = INF;
     float max_fanout = INF;
@@ -773,7 +752,7 @@ Resizer::repairNet(Net *net,
       float cap, max_cap1, cap_slack;
       const Corner *corner1;
       const RiseFall *tr;
-      sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(),
+      sta_->checkCapacitance(drvr_pin, nullptr, max_,
                              corner1, tr, cap, max_cap1, cap_slack);
       if (cap_slack < 0.0) {
         drvr_max_cap = max_cap1;
@@ -783,7 +762,7 @@ Resizer::repairNet(Net *net,
     }
     if (check_fanout) {
       float fanout, fanout_slack;
-      sta_->checkFanout(drvr_pin, MinMax::max(),
+      sta_->checkFanout(drvr_pin, max_,
                         fanout, max_fanout, fanout_slack);
       if (fanout_slack < 0.0) {
         fanout_violations++;
@@ -874,12 +853,12 @@ Resizer::checkSlew(const Pin *drvr_pin,
   PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
-    const Corner *corner1;
+    const Corner *corner;
     const RiseFall *tr;
     Slew slew1;
     float limit1, slack1;
-    sta_->checkSlew(pin, corner_, MinMax::max(), false,
-                    corner1, tr, slew1, limit1, slack1);
+    sta_->checkSlew(pin, nullptr, max_, false,
+                    corner, tr, slew1, limit1, slack1);
     if (slack1 < slack) {
       slew = slew1;
       limit = limit1;
@@ -1454,7 +1433,7 @@ Resizer::findResizeSlacks1()
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
         && !isSpecial(net)) {
-      net_slack_map_[net] = sta_->vertexSlack(drvr, MinMax::max());
+      net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
       nets.push_back(net);
     }
   }
@@ -1916,19 +1895,18 @@ Resizer::repairSetup(float slack_margin)
   resize_count_ = 0;
   Slack worst_slack;
   Vertex *worst_vertex;
-  sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+  sta_->worstSlack(max_, worst_slack, worst_vertex);
   debugPrint(logger_, RSZ, "retime", 1, "worst_slack = {}",
              delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
   int decreasing_slack_passes = 0;
   while (fuzzyLess(worst_slack, slack_margin)) {
-    PathRef worst_path;
-    sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
+    PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
     repairSetup(worst_path, worst_slack);
     ensureWireParasitics();
     sta_->findRequireds();
-    sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+    sta_->worstSlack(max_, worst_slack, worst_vertex);
     debugPrint(logger_, RSZ, "retime", 1, "pass {} worst_slack = {}",
                pass,
                delayAsString(worst_slack, sta_, 3));
@@ -1939,7 +1917,7 @@ Resizer::repairSetup(float slack_margin)
       if (decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
         // Undo changes that reduced slack.
         journalRestore();
-        sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+        sta_->worstSlack(max_, worst_slack, worst_vertex);
         debugPrint(logger_, RSZ, "retime", 1,
                    "decreasing slack for %d passes restoring worst_slack {}",
                    repair_setup_decreasing_slack_passes_allowed_,
@@ -1977,9 +1955,8 @@ Resizer::repairSetup(Pin *end_pin)
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
-  Slack slack = sta_->vertexSlack(vertex, MinMax::max());
-  PathRef path;
-  sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
+  Slack slack = sta_->vertexSlack(vertex, max_);
+  PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   repairSetup(path, slack);
   // Leave the parasitices up to date.
   ensureWireParasitics();
@@ -2035,14 +2012,13 @@ Resizer::repairSetup(PathRef &path,
       PathRef *load_path = expanded.path(drvr_index + 1);
       Vertex *load_vertex = load_path->vertex(sta_);
       Pin *load_pin = load_vertex->pin();
-      // Rebuffer blows up on large fanout nets.
-      constexpr int rebuffer_max_fanout = 40;
       int fanout = this->fanout(drvr_vertex);
       debugPrint(logger_, RSZ, "retime", 2, "{} fanout = {}",
                  network_->pathName(drvr_pin),
                  fanout);
       if (fanout > 1
-          && fanout < rebuffer_max_fanout) {
+          // Rebuffer blows up on large fanout nets.
+          && fanout < rebuffer_max_fanout_) {
         int count_before = inserted_buffer_count_;
         rebuffer(drvr_pin);
         int insert_count = inserted_buffer_count_ - count_before;
@@ -2053,8 +2029,7 @@ Resizer::repairSetup(PathRef &path,
           break;
       }
       // Don't split loads on low fanout nets.
-      constexpr int split_load_min_fanout = 8;
-      if (fanout > split_load_min_fanout) {
+      if (fanout > split_load_min_fanout_) {
         // Divide and conquer.
         debugPrint(logger_, RSZ, "retime", 2, "split loads {} -> {}",
                    network_->pathName(drvr_pin),
@@ -2108,7 +2083,7 @@ Resizer::splitLoads(PathRef *drvr_path,
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
     Vertex *fanout_vertex = edge->to(graph_);
-    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, MinMax::max());
+    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
     Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_, RSZ, "retime", 3, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
@@ -3077,8 +3052,8 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
 
   for (Corner *corner : *sta_->corners()) {
     const ParasiticAnalysisPt *parasitics_ap =
-      corner->findParasiticAnalysisPt(MinMax::max());
-    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(MinMax::max());
+      corner->findParasiticAnalysisPt(max_);
+    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const Pvt *pvt = dcalc_ap->operatingConditions();
 
     makeWireParasitic(net, drvr_pin, load_pin, wire_length, parasitics_ap);
