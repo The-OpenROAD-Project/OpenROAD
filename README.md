@@ -268,18 +268,20 @@ place_pins [-hor_layers h_layers]
            [-random]
            [-group_pins pins]
            [-corner_avoidance length]
+           [-min_distance distance]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
-of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices.
 - ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
-of pins placed in vertical tracks. Can be a single layer or a list of layer indices
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices.
 - ``-random_seed``. Specify the seed for random operations.
 - ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
-- ``-group_pins``. Specify a list of pins to be placed together on the die boundary
-- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
+- ``-group_pins``. Specify a list of pins to be placed together on the die boundary.
+- ``-corner_avoidance distance``. Specify the distance (in micron) from each corner to avoid placing pins.
+- ``-min_distance distance``. Specify the minimum distance (in micron) between pins in the die boundary.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
