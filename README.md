@@ -1,5 +1,7 @@
 # OpenROAD
 
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+
 OpenROAD is an integrated chip physical design tool that takes a
 design from synthesized Verilog to routed layout.  
 
@@ -266,18 +268,20 @@ place_pins [-hor_layers h_layers]
            [-random]
            [-group_pins pins]
            [-corner_avoidance length]
+           [-min_distance distance]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
-of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices.
 - ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
-of pins placed in vertical tracks. Can be a single layer or a list of layer indices
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices.
 - ``-random_seed``. Specify the seed for random operations.
 - ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
-- ``-group_pins``. Specify a list of pins to be placed together on the die boundary
-- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
+- ``-group_pins``. Specify a list of pins to be placed together on the die boundary.
+- ``-corner_avoidance distance``. Specify the distance (in micron) from each corner to avoid placing pins.
+- ``-min_distance distance``. Specify the minimum distance (in micron) between pins in the die boundary.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -299,22 +303,23 @@ The `-pin_names` argument is a list of names. The `-region` syntax is the same a
 Tapcell and endcap insertion.
 
 ```
-tapcell -tapcell_master <tapcell_master>
-        -endcap_master <endcap_master>
-        -distance <dist>
-        -halo_width_x <halo_x>
-        -halo_width_y <halo_y>
-        -tap_nwin2_master <tap_nwin2_master>
-        -tap_nwin3_master <tap_nwin3_master>
-        -tap_nwout2_master <tap_nwout2_master>
-        -tap_nwout3_master <tap_nwout3_master>
-        -tap_nwintie_master <tap_nwintie_master>
-        -tap_nwouttie_master <tap_nwouttie_master>
-        -cnrcap_nwin_master <cnrcap_nwin_master>
-        -cnrcap_nwout_master <cnrcap_nwout_master>
-        -incnrcap_nwin_master <incnrcap_nwin_master>
-        -incnrcap_nwout_master <incnrcap_nwout_master>
-        -add_boundary_cell
+tapcell [-tapcell_master tapcell_master]
+        [-endcap_master endcap_master]
+        [-distance dist]
+        [-halo_width_x halo_x]
+        [-halo_width_y halo_y]
+        [-tap_nwin2_master tap_nwin2_master]
+        [-tap_nwin3_master tap_nwin3_master]
+        [-tap_nwout2_master tap_nwout2_master]
+        [-tap_nwout3_master tap_nwout3_master]
+        [-tap_nwintie_master tap_nwintie_master]
+        [-tap_nwouttie_master tap_nwouttie_master]
+        [-cnrcap_nwin_master cnrcap_nwin_master]
+        [-cnrcap_nwout_master cnrcap_nwout_master]
+        [-incnrcap_nwin_master incnrcap_nwin_master]
+        [-incnrcap_nwout_master incnrcap_nwout_master]
+        [-tap_prefix tap_prefix]
+        [-endcap_prefix endcap_prefix]
 ```
 You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
 

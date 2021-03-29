@@ -102,8 +102,8 @@ class TimingPathsModel : public QAbstractTableModel
   ord::OpenRoad* openroad_;
   std::vector<TimingPath*> timing_paths_;
 
-  const static inline std::vector<std::string> _path_columns
-      = {"Id", "Clock", "Req", "Arrival", "Slack", "Start", "End"};
+  static const std::vector<std::string> _path_columns;
+  enum Column : int;
 };
 
 struct TimingPathNode
@@ -209,15 +209,12 @@ class TimingPathDetailModel : public QAbstractTableModel
 
  private:
   TimingPath* path_;
-  const static inline std::vector<std::string> _path_details_columns
-      = {"Node",
-         "Transition",
-         "Required",
-         "Time",
-         "Slack",
-         "Delay",
-         "Slew",
-         "Load "};
+  // Unicode symbols
+  static const char* up_down_arrows;
+  static const char* up_arrow;
+  static const char* down_arrow;
+  static const std::vector<std::string> _path_details_columns;
+  enum Column : int;
 };
 
 class TimingPathRenderer : public gui::Renderer
