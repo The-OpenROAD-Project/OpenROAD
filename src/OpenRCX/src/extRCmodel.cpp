@@ -103,6 +103,10 @@ void extDistRC::interpolate(uint d, extDistRC* rc1, extDistRC* rc2)
   _fringe = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_fringe, rc2->_fringe);
   _res = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_res, rc2->_res);
 }
+double extDistRC::interpolate_res(uint d, extDistRC* rc2)
+{
+  return lineSegment(d, _sep, rc2->_sep, _res, rc2->_res);
+}
 void extDistRC::set(uint d, double cc, double fr, double a, double r)
 {
   _sep = d;
@@ -122,8 +126,8 @@ void extDistRC::readRC(Ath__parser* parser, double dbFactor)
 }
 void extDistRC::readRC_res2(Ath__parser* parser, double dbFactor)
 {
-  _sep =      Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
-  _coupling = Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
+  _sep =      Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
+  _coupling = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
   _fringe = parser->getDouble(2) / dbFactor;
   //	_area= a;
   _res = parser->getDouble(3) / dbFactor;
@@ -466,6 +470,11 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
   if (!ignore)
     table = new Ath__array1D<extDistRC*>(cnt);
 
+  Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
+  //_computeTableR = new Ath__array1D<extDistRC*>[8];
+  int cnt1 =0;
+  int kk=0;
+  extDistRC* rc0= NULL;
   while (parser->parseNextLine() > 0) {
     if (parser->isKeyword(0, "END"))
       break;
@@ -476,11 +485,25 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     extDistRC* rc = rcPool->alloc();
     rc->readRC_res2(parser, dbFactor);
     table->add(rc);
-  }
-  if (ignore)
-    return cnt;
+    if (rc0!=NULL && rc0->_coupling!=rc->_coupling) {
+      _measureTable = table0;
+      interpolate(4, -1, rcPool);
+      _measureTableR[kk]= table0;
+      _computeTableR[kk]= _computeTable;
+      kk++;
+      
+      table0 = new Ath__array1D<extDistRC*>(cnt1);
+      cnt1=0;
 
-  _measureTable = table;
+      _maxDist= rc0->_sep;
+    } 
+    rc0= rc;
+    cnt1 ++;   
+    table0->add(rc);
+  }
+  _distCnt= kk+1;
+  _measureTableR[kk]= table0;
+  _measureTable= table;
 
   return cnt;
 }
@@ -556,7 +579,7 @@ void extDistRCTable::makeComputeTable(uint maxDist, uint distUnit)
 {
   _unit = distUnit;  // in nm
   uint n = maxDist / distUnit;
-  n = 16 * (n / 16 + 1);
+  n = distUnit * (n / distUnit + 1);
 
   _computeTable = new Ath__array1D<extDistRC*>(n + 1);
   // TODO
