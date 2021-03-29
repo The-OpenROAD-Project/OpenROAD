@@ -156,6 +156,11 @@ MainWindow::MainWindow(QWidget* parent)
           viewer_,
           SLOT(update()));
 
+  createActions();
+  createToolbars();
+  createMenus();
+  createStatusBar();
+
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
@@ -163,11 +168,6 @@ MainWindow::MainWindow(QWidget* parent)
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
   settings.endGroup();
-
-  createActions();
-  createMenus();
-  createToolbars();
-  createStatusBar();
 }
 
 void MainWindow::createStatusBar()
@@ -209,7 +209,7 @@ void MainWindow::createActions()
   timing_debug_ = new QAction("Timing ...", this);
   timing_debug_->setShortcut(QString("Ctrl+T"));
 
-  congestion_setup_ = new QAction("Congestion Setup...", nullptr);
+  congestion_setup_ = new QAction("Congestion Setup...", this);
 
   connect(congestion_setup_,
           SIGNAL(triggered()),
@@ -236,16 +236,21 @@ void MainWindow::createMenus()
   view_menu_->addAction(zoom_out_);
   view_menu_->addAction(timing_debug_);
 
+  tools_menu_ = menuBar()->addMenu("&Tools");
+  tools_menu_->addAction(congestion_setup_);
+  tools_menu_->addAction(timing_debug_);
+
   windows_menu_ = menuBar()->addMenu("&Windows");
   windows_menu_->addAction(controls_->toggleViewAction());
   windows_menu_->addAction(script_->toggleViewAction());
   windows_menu_->addAction(selection_browser_->toggleViewAction());
+  windows_menu_->addAction(view_tool_bar_->toggleViewAction());
   selection_browser_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
 {
-  view_tool_bar_ = addToolBar("View");
+  view_tool_bar_ = addToolBar("Toolbar");
   view_tool_bar_->addAction(fit_);
   view_tool_bar_->addAction(find_);
   view_tool_bar_->addAction(congestion_setup_);
