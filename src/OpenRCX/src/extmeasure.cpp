@@ -4151,8 +4151,10 @@ void extMeasure::measureRC(int* options)
      }
      // if (_dist>0)
      SEQ *s= addSeq(_ll, _ur);
-     int len_covered= computeResDist(s, 0, 4, _met, NULL);
+     int len_covered= computeResDist(s, 1, 4, _met, NULL);
      int len_down_not_coupled= _len-len_covered;
+
+     int maxDist= getMaxDist(_met, 0);
      if (_dist>0 && len_down_not_coupled>0) {
         calcRes(rseg1->getId(), len_down_not_coupled, 0, _dist, _met);
         len_covered += len_down_not_coupled;
