@@ -1455,13 +1455,17 @@ proc get_via_option {viarule_name via_info lower width height constraints} {
 
 proc get_viarule_name {lower width height} {
   set rules [select_via_info $lower]
-  set first_key [lindex [dict keys $rules] 0]
-  #if {![dict exists $rules $first_key cut layer]} {
-  #  debug "$lower $width $height"
-  #  debug "$rules"
-  #  debug "$first_key"
-  #}
-  set cut_layer [dict get $rules $first_key cut layer]
+  if {[llength $rules] > 0} {
+    set first_key [lindex [dict keys $rules] 0]
+    #if {![dict exists $rules $first_key cut layer]} {
+    #  debug "$lower $width $height"
+    #  debug "$rules"
+    #  debug "$first_key"
+    #}
+    set cut_layer [dict get $rules $first_key cut layer]
+  } else {
+    set cut_layer $lower
+  }
 
   return ${cut_layer}_${width}x${height}
 }
