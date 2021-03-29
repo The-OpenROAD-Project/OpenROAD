@@ -1717,10 +1717,6 @@ Resizer::findBufferTargetSlews()
   debugPrint(logger_, RSZ, "target_load", 1, "target_slews = {}/{}",
              delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
              delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
-
-//    printf("Target slews rise %s / fall %s\n",
-//           delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
-//           delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 }
 
 void
