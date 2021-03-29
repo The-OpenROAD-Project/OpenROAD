@@ -26,8 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dr/FlexDR.h"
-
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -36,6 +34,7 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
+#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 
@@ -1575,16 +1574,6 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
 
 void FlexDR::initDR(int size, bool enableDRC)
 {
-  bool TEST = false;
-  // bool TEST = true;
-  // FlexGridGraph gg(getTech(), getDesign());
-  ////frBox testBBox(225000, 228100, 228000, 231100); // net1702 in ispd19_test1
-  // frBox testBBox(0, 0, 2000, 2000); // net1702 in ispd19_test1
-  ////gg.setBBox(testBBox);
-  // gg.init(testBBox);
-  // gg.print();
-  // exit(1);
-
   frTime t;
 
   if (VERBOSE > 0) {
@@ -1604,155 +1593,105 @@ void FlexDR::initDR(int size, bool enableDRC)
   bool isExceed = false;
 
   int numQuickMarkers = 0;
-  if (TEST) {
-    // FlexDRWorker worker(getDesign());
-    FlexDRWorker worker(this, logger_);
-    // frBox routeBox;
-    // routeBox.set(0*2000, 0*2000, 1*2000, 1*2000);
-    // frCoord xl = 21 * 2000;
-    // frCoord yl = 42 * 2000;
-    frCoord xl = 241.92 * 2000;
-    frCoord yl = 241.92 * 2000;
-    // frCoord xh = 129 * 2000;
-    // frCoord yh = 94.05 * 2000;
-    frPoint idx;
-    getDesign()->getTopBlock()->getGCellIdx(frPoint(xl, yl), idx);
-    if (VERBOSE > 1) {
-      cout << "(i,j) = (" << idx.x() << ", " << idx.y() << ")" << endl;
-    }
-    // getDesign()->getTopBlock()->getGCellBox(idx, routeBox);
-    frBox routeBox1;
-    getDesign()->getTopBlock()->getGCellBox(frPoint(idx.x(), idx.y()),
-                                            routeBox1);
-    frBox routeBox2;
-    getDesign()->getTopBlock()->getGCellBox(
-        frPoint(min((int) xgp.getCount() - 1, idx.x() + size - 1),
-                min((int) ygp.getCount(), idx.y() + size - 1)),
-        routeBox2);
-    frBox routeBox(routeBox1.left(),
-                   routeBox1.bottom(),
-                   routeBox2.right(),
-                   routeBox2.top());
-    auto bp = initDR_mergeBoundaryPin(idx.x(), idx.y(), size, routeBox);
-    // routeBox.set(129*2000, 94.05*2000, 132*2000, 96.9*2000);
-    worker.setRouteBox(routeBox);
-    frBox extBox;
-    routeBox.bloat(2000, extBox);
-    frBox drcBox;
-    routeBox.bloat(500, drcBox);
-    worker.setRouteBox(routeBox);
-    worker.setExtBox(extBox);
-    worker.setDrcBox(drcBox);
-    worker.setFollowGuide(false);
-    worker.setCost(DRCCOST, 0, 0, 0);
-    // int i = (129   * 2000 - xgp.getStartCoord()) / xgp.getSpacing();
-    // int j = (94.05 * 2000 - ygp.getStartCoord()) / ygp.getSpacing();
-    // worker.setDRIter(0, gcell2BoundaryPin[idx.x()][idx.y()]);
-    worker.setDRIter(0, bp);
-    worker.setEnableDRC(enableDRC);
-    // worker.setTest(true);
-    worker.main();
-    cout << "done" << endl << flush;
-  } else {
-    vector<unique_ptr<FlexDRWorker>> uworkers;
-    int batchStepX, batchStepY;
 
-    getBatchInfo(batchStepX, batchStepY);
+  vector<unique_ptr<FlexDRWorker>> uworkers;
+  int batchStepX, batchStepY;
 
-    vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
-                                                             * batchStepY);
+  getBatchInfo(batchStepX, batchStepY);
 
-    int xIdx = 0, yIdx = 0;
-    // sequential init
-    for (int i = 0; i < (int) xgp.getCount(); i += size) {
-      for (int j = 0; j < (int) ygp.getCount(); j += size) {
-        auto worker = make_unique<FlexDRWorker>(this, logger_);
-        frBox routeBox1;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
-        frBox routeBox2;
-        getDesign()->getTopBlock()->getGCellBox(
-            frPoint(min((int) xgp.getCount() - 1, i + size - 1),
-                    min((int) ygp.getCount(), j + size - 1)),
-            routeBox2);
-        // frBox routeBox;
-        frBox routeBox(routeBox1.left(),
-                       routeBox1.bottom(),
-                       routeBox2.right(),
-                       routeBox2.top());
-        frBox extBox;
-        routeBox.bloat(MTSAFEDIST, extBox);
-        frBox drcBox;
-        routeBox.bloat(DRCSAFEDIST, drcBox);
-        worker->setRouteBox(routeBox);
-        worker->setExtBox(extBox);
-        worker->setDrcBox(drcBox);
+  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
+                                                           * batchStepY);
 
-        auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
-        worker->setDRIter(0, bp);
-        // set boundary pin
-        worker->setEnableDRC(enableDRC);
-        worker->setFollowGuide(false);
-        // worker->setFollowGuide(true);
-        worker->setCost(DRCCOST, 0, 0, 0);
-        // int workerIdx = xIdx * batchSizeY + yIdx;
-        int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
-        // workers[batchIdx][workerIdx] = worker;
-        if (workers[batchIdx].empty()
-            || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
-          workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
-        }
-        workers[batchIdx].back().push_back(std::move(worker));
+  int xIdx = 0, yIdx = 0;
+  // sequential init
+  for (int i = 0; i < (int) xgp.getCount(); i += size) {
+    for (int j = 0; j < (int) ygp.getCount(); j += size) {
+      auto worker = make_unique<FlexDRWorker>(this, logger_);
+      frBox routeBox1;
+      getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
+      frBox routeBox2;
+      getDesign()->getTopBlock()->getGCellBox(
+          frPoint(min((int) xgp.getCount() - 1, i + size - 1),
+                  min((int) ygp.getCount(), j + size - 1)),
+          routeBox2);
+      // frBox routeBox;
+      frBox routeBox(routeBox1.left(),
+                     routeBox1.bottom(),
+                     routeBox2.right(),
+                     routeBox2.top());
+      frBox extBox;
+      routeBox.bloat(MTSAFEDIST, extBox);
+      frBox drcBox;
+      routeBox.bloat(DRCSAFEDIST, drcBox);
+      worker->setRouteBox(routeBox);
+      worker->setExtBox(extBox);
+      worker->setDrcBox(drcBox);
 
-        yIdx++;
+      auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
+      worker->setDRIter(0, bp);
+      // set boundary pin
+      worker->setEnableDRC(enableDRC);
+      worker->setFollowGuide(false);
+      // worker->setFollowGuide(true);
+      worker->setCost(DRCCOST, 0, 0, 0);
+      // int workerIdx = xIdx * batchSizeY + yIdx;
+      int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      // workers[batchIdx][workerIdx] = worker;
+      if (workers[batchIdx].empty()
+          || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+        workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
       }
-      yIdx = 0;
-      xIdx++;
+      workers[batchIdx].back().push_back(std::move(worker));
+
+      yIdx++;
     }
+    yIdx = 0;
+    xIdx++;
+  }
 
-    omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(MAX_THREADS);
 
-    // parallel execution
-    for (auto& workerBatch : workers) {
-      for (auto& workersInBatch : workerBatch) {
+  // parallel execution
+  for (auto& workerBatch : workers) {
+    for (auto& workersInBatch : workerBatch) {
 // multi thread
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->main_mt();
+      for (int i = 0; i < (int) workersInBatch.size(); i++) {
+        workersInBatch[i]->main_mt();
 #pragma omp critical
-          {
-            cnt++;
-            if (VERBOSE > 0) {
-              if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                  && prev_perc < 90) {
-                if (prev_perc == 0 && t.isExceed(0)) {
-                  isExceed = true;
+        {
+          cnt++;
+          if (VERBOSE > 0) {
+            if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1 && prev_perc < 90) {
+              if (prev_perc == 0 && t.isExceed(0)) {
+                isExceed = true;
+              }
+              prev_perc += 10;
+              // if (true) {
+              if (isExceed) {
+                if (enableDRC) {
+                  cout << "    completing " << prev_perc << "% with "
+                       << getDesign()->getTopBlock()->getNumMarkers()
+                       << " violations" << endl;
+                } else {
+                  cout << "    completing " << prev_perc << "% with "
+                       << numQuickMarkers << " quick violations" << endl;
                 }
-                prev_perc += 10;
-                // if (true) {
-                if (isExceed) {
-                  if (enableDRC) {
-                    cout << "    completing " << prev_perc << "% with "
-                         << getDesign()->getTopBlock()->getNumMarkers()
-                         << " violations" << endl;
-                  } else {
-                    cout << "    completing " << prev_perc << "% with "
-                         << numQuickMarkers << " quick violations" << endl;
-                  }
-                  cout << "    " << t << endl << flush;
-                }
+                cout << "    " << t << endl << flush;
               }
             }
           }
         }
-        // single thread
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end();
-        }
-        workersInBatch.clear();
       }
+      // single thread
+      for (int i = 0; i < (int) workersInBatch.size(); i++) {
+        workersInBatch[i]->end();
+      }
+      workersInBatch.clear();
     }
-    checkConnectivity();
   }
+  checkConnectivity();
+
   if (VERBOSE > 0) {
     if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1 && prev_perc >= 90) {
       if (prev_perc == 0 && t.isExceed(0)) {
@@ -1808,8 +1747,7 @@ void FlexDR::searchRepair(int iter,
                           bool enableDRC,
                           int ripupMode,
                           bool followGuide,
-                          int fixMode,
-                          bool TEST)
+                          int fixMode)
 {
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
@@ -1822,8 +1760,6 @@ void FlexDR::searchRepair(int iter,
   }
 
   frTime t;
-  // bool TEST = false;
-  // bool TEST = true;
   if (VERBOSE > 0) {
     string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -1853,173 +1789,124 @@ void FlexDR::searchRepair(int iter,
             * (((int) ygp.getCount() - 1 - offset) / clipSize + 1);
   int prev_perc = 0;
   bool isExceed = false;
-  if (TEST) {
-    cout << "search and repair test mode" << endl << flush;
-    // FlexDRWorker worker(getDesign());
-    FlexDRWorker worker(this, logger_);
-    frBox routeBox;
-    // frCoord xl = 148.5 * 2000;
-    // frCoord yl = 570 * 2000;
-    // frPoint idx;
-    // getDesign()->getTopBlock()->getGCellIdx(frPoint(xl, yl), idx);
-    // if (VERBOSE > 1) {
-    //   cout <<"(i,j) = (" <<idx.x() <<", " <<idx.y() <<")" <<endl;
-    // }
-    // getDesign()->getTopBlock()->getGCellBox(idx, routeBox);
-    // routeBox.set(156*2000, 108.3*2000, 177*2000, 128.25*2000);
-    //  routeBox.set(175*2000, 3.5*2000, 185*2000, 13.5*2000);
-    //  routeBox.set(0*2000, 0*2000, 200*2000, 200*2000);
-    //  routeBox.set(420*1000, 816.1*1000, 441*1000, 837.1*1000);
-    routeBox.set(441 * 1000, 816.1 * 1000, 462 * 1000, 837.1 * 1000);
-    worker.setRouteBox(routeBox);
-    frBox extBox;
-    frBox drcBox;
-    routeBox.bloat(2000, extBox);
-    routeBox.bloat(500, drcBox);
-    worker.setRouteBox(routeBox);
-    worker.setExtBox(extBox);
-    worker.setDrcBox(drcBox);
-    worker.setMazeEndIter(mazeEndIter);
-    worker.setTest(true);
-    // worker.setQuickDRCTest(true);
-    // worker.setDRCTest(true);
-    worker.setDRIter(iter);
-    if (!iter) {
-      // set boundary pin (need to manulally calculate for test mode)
-      auto bp = initDR_mergeBoundaryPin(147, 273, size, routeBox);
-      worker.setDRIter(0, bp);
-    }
-    worker.setEnableDRC(enableDRC);
-    worker.setRipupMode(ripupMode);
-    worker.setFollowGuide(followGuide);
-    worker.setFixMode(fixMode);
-    // worker.setNetOrderingMode(netOrderingMode);
-    worker.setCost(workerDRCCost,
-                   workerMarkerCost,
-                   workerMarkerBloatWidth,
-                   workerMarkerBloatDepth);
-    worker.main_mt();
-    numQuickMarkers += worker.getNumQuickMarkers();
-    cout << "done" << endl << flush;
-  } else {
-    vector<unique_ptr<FlexDRWorker>> uworkers;
-    int batchStepX, batchStepY;
 
-    getBatchInfo(batchStepX, batchStepY);
+  vector<unique_ptr<FlexDRWorker>> uworkers;
+  int batchStepX, batchStepY;
 
-    vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
-                                                             * batchStepY);
+  getBatchInfo(batchStepX, batchStepY);
 
-    int xIdx = 0, yIdx = 0;
-    for (int i = offset; i < (int) xgp.getCount(); i += clipSize) {
-      for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
-        auto worker = make_unique<FlexDRWorker>(this, logger_);
-        frBox routeBox1;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
-        frBox routeBox2;
-        const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
-        const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
-        getDesign()->getTopBlock()->getGCellBox(frPoint(max_i, max_j),
-                                                routeBox2);
-        frBox routeBox(routeBox1.left(),
-                       routeBox1.bottom(),
-                       routeBox2.right(),
-                       routeBox2.top());
-        frBox extBox;
-        frBox drcBox;
-        routeBox.bloat(MTSAFEDIST, extBox);
-        routeBox.bloat(DRCSAFEDIST, drcBox);
-        worker->setRouteBox(routeBox);
-        worker->setExtBox(extBox);
-        worker->setDrcBox(drcBox);
-        worker->setGCellBox(frBox(i, j, max_i, max_j));
-        worker->setMazeEndIter(mazeEndIter);
-        worker->setDRIter(iter);
-        if (!iter) {
-          // if (routeBox.left() == 441000 && routeBox.bottom() == 816100) {
-          //   cout << "@@@ debug: " << i << " " << j << endl;
-          // }
-          // set boundary pin
-          auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
-          worker->setDRIter(0, bp);
-        }
-        worker->setEnableDRC(enableDRC);
-        worker->setRipupMode(ripupMode);
-        worker->setFollowGuide(followGuide);
-        worker->setFixMode(fixMode);
-        // TODO: only pass to relevant workers
-        worker->setGraphics(graphics_.get());
-        worker->setCost(workerDRCCost,
-                        workerMarkerCost,
-                        workerMarkerBloatWidth,
-                        workerMarkerBloatDepth);
+  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
+                                                           * batchStepY);
 
-        int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
-        if (workers[batchIdx].empty()
-            || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
-          workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
-        }
-        workers[batchIdx].back().push_back(std::move(worker));
-
-        yIdx++;
+  int xIdx = 0, yIdx = 0;
+  for (int i = offset; i < (int) xgp.getCount(); i += clipSize) {
+    for (int j = offset; j < (int) ygp.getCount(); j += clipSize) {
+      auto worker = make_unique<FlexDRWorker>(this, logger_);
+      frBox routeBox1;
+      getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
+      frBox routeBox2;
+      const int max_i = min((int) xgp.getCount() - 1, i + clipSize - 1);
+      const int max_j = min((int) ygp.getCount(), j + clipSize - 1);
+      getDesign()->getTopBlock()->getGCellBox(frPoint(max_i, max_j), routeBox2);
+      frBox routeBox(routeBox1.left(),
+                     routeBox1.bottom(),
+                     routeBox2.right(),
+                     routeBox2.top());
+      frBox extBox;
+      frBox drcBox;
+      routeBox.bloat(MTSAFEDIST, extBox);
+      routeBox.bloat(DRCSAFEDIST, drcBox);
+      worker->setRouteBox(routeBox);
+      worker->setExtBox(extBox);
+      worker->setDrcBox(drcBox);
+      worker->setGCellBox(frBox(i, j, max_i, max_j));
+      worker->setMazeEndIter(mazeEndIter);
+      worker->setDRIter(iter);
+      if (!iter) {
+        // if (routeBox.left() == 441000 && routeBox.bottom() == 816100) {
+        //   cout << "@@@ debug: " << i << " " << j << endl;
+        // }
+        // set boundary pin
+        auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
+        worker->setDRIter(0, bp);
       }
-      yIdx = 0;
-      xIdx++;
+      worker->setEnableDRC(enableDRC);
+      worker->setRipupMode(ripupMode);
+      worker->setFollowGuide(followGuide);
+      worker->setFixMode(fixMode);
+      // TODO: only pass to relevant workers
+      worker->setGraphics(graphics_.get());
+      worker->setCost(workerDRCCost,
+                      workerMarkerCost,
+                      workerMarkerBloatWidth,
+                      workerMarkerBloatDepth);
+
+      int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      if (workers[batchIdx].empty()
+          || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+        workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
+      }
+      workers[batchIdx].back().push_back(std::move(worker));
+
+      yIdx++;
     }
+    yIdx = 0;
+    xIdx++;
+  }
 
-    omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(MAX_THREADS);
 
-    // parallel execution
-    for (auto& workerBatch : workers) {
-      ProfileTask profile("DR:checkerboard");
-      for (auto& workersInBatch : workerBatch) {
-        {
-          ProfileTask profile("DR:batch");
+  // parallel execution
+  for (auto& workerBatch : workers) {
+    ProfileTask profile("DR:checkerboard");
+    for (auto& workersInBatch : workerBatch) {
+      {
+        ProfileTask profile("DR:batch");
 // multi thread
 #pragma omp parallel for schedule(dynamic)
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {
-            workersInBatch[i]->main_mt();
+        for (int i = 0; i < (int) workersInBatch.size(); i++) {
+          workersInBatch[i]->main_mt();
 #pragma omp critical
-            {
-              cnt++;
-              if (VERBOSE > 0) {
-                if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                    && prev_perc < 90) {
-                  if (prev_perc == 0 && t.isExceed(0)) {
-                    isExceed = true;
+          {
+            cnt++;
+            if (VERBOSE > 0) {
+              if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
+                  && prev_perc < 90) {
+                if (prev_perc == 0 && t.isExceed(0)) {
+                  isExceed = true;
+                }
+                prev_perc += 10;
+                // if (true) {
+                if (isExceed) {
+                  if (enableDRC) {
+                    logger_->report(
+                        "    completing {}% with {} violations",
+                        prev_perc,
+                        getDesign()->getTopBlock()->getNumMarkers());
+                  } else {
+                    logger_->report(
+                        "    completing {}% with {} quick violations",
+                        prev_perc,
+                        numQuickMarkers);
                   }
-                  prev_perc += 10;
-                  // if (true) {
-                  if (isExceed) {
-                    if (enableDRC) {
-                      logger_->report(
-                          "    completing {}% with {} violations",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-                    } else {
-                      logger_->report(
-                          "    completing {}% with {} quick violations",
-                          prev_perc,
-                          numQuickMarkers);
-                    }
-                    logger_->report("    {}", t);
-                  }
+                  logger_->report("    {}", t);
                 }
               }
             }
           }
         }
-        {
-          ProfileTask profile("DR:end_batch");
-          // single thread
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {
-            workersInBatch[i]->end();
-          }
-          workersInBatch.clear();
+      }
+      {
+        ProfileTask profile("DR:end_batch");
+        // single thread
+        for (int i = 0; i < (int) workersInBatch.size(); i++) {
+          workersInBatch[i]->end();
         }
+        workersInBatch.clear();
       }
     }
   }
+
   if (!iter) {
     removeGCell2BoundaryPin();
   }
