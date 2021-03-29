@@ -924,11 +924,8 @@ dbNetwork::makeCell(Library *library,
       for (dbMTerm *mterm : master->getMTerms()) {
         const char *port_name = mterm->getConstName();
         LibertyPort *lib_port = lib_cell->findLibertyPort(port_name);
-        if (lib_port) {
-          ConcretePort *cport = reinterpret_cast<ConcretePort *>(mterm->staPort());
-          cport->setLibertyPort(lib_port);
+        if (lib_port)
           lib_port->setExtPort(mterm);
-        }
       }
     }
   }
