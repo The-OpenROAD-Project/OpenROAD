@@ -111,9 +111,8 @@ bool TimingDebugDialog::populateTimingPaths(odb::dbBlock* block)
   if (timing_paths_model_ != nullptr)
     return true;
   bool setup_hold = true;
-  int path_count = 100;
+  int path_count;
   timing_report_dlg_->setupRadioButton->setChecked(setup_hold);
-  timing_report_dlg_->pathCount->setText(QString::number(path_count));
   if (timing_report_dlg_->exec() == QDialog::Accepted) {
     setup_hold = timing_report_dlg_->isSetupAnalysis();
     path_count = timing_report_dlg_->getPathCount();
@@ -155,16 +154,7 @@ void TimingDebugDialog::showPathDetails(const QModelIndex& index)
   pathDetailsTableView->setModel(path_details_model_);
   pathDetailsTableView->resizeColumnsToContents();
   pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
-      path_details_model_->columnCount() - 1, QHeaderView::Stretch);
-
-  // As there is no direct API to get Load from OpenSTA, remove the following 2
-  // lines
-  // once the load values are populated properly in the model
-  pathDetailsTableView->hideColumn(2);  // Required
-  pathDetailsTableView->hideColumn(4);  // Slack
-  pathDetailsTableView->resizeColumnsToContents();
-  pathDetailsTableView->horizontalHeader()->setSectionResizeMode(
-      path_details_model_->columnCount() - 1, QHeaderView::Stretch);
+      0, QHeaderView::Stretch);
 
   path_renderer_->highlight(path);
   emit highlightTimingPath(path);

@@ -35,7 +35,7 @@ TritonCTS forced slew degradation on these wires.
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-[INFO CTS-0007]  Net "clk" found for clock "clk"
+[INFO CTS-0007]  Net "clk" found
 [INFO CTS-0009]  Initializing clock net for : "clk"
 [INFO CTS-0010]  Clock net "clk" has 16 sinks
 [INFO CTS-0008]  TritonCTS found 1 clock nets.
@@ -80,8 +80,6 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0015]     Created 3 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 8:2.
 [INFO CTS-0017]     Max level of the clock tree: 1.
- Post DB write clock net "clk" report
 [INFO CTS-0091] Sinks after db write = 16 (Leaf Buffers = 0)
 [INFO CTS-0092] Avg Sink Wire Length = 23.9 um
-[INFO CTS-0094] Min path depth = 2 Max path depth = 2
  ... End of TritonCTS execution.
