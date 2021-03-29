@@ -120,8 +120,10 @@ int extMeasure::computeResDist(SEQ* s,
 #endif
     // Check for same track: 032021 DF
     bool same_track= false;
-  for (uint idx=0; idx < (int) _dgContextArray[planeIndex][trackn]->getCnt(); idx++) {
-    SEQ *tseq = _dgContextArray[planeIndex][trackn]->get(idx);
+    Ath__array1D<SEQ*> *dTable= _dgContextArray[planeIndex][trackn];
+    int cnt= (int) dTable->getCnt();
+  for (uint idx=1; idx < (int) cnt; idx++) {
+    SEQ *tseq = dTable->get(idx);
     if (tseq->type==_rsegSrcId) {
       same_track= true;
       break;
@@ -188,6 +190,25 @@ uint extMeasure::computeRes(SEQ* s,
   seq_release(&overlapSeq);
   return len;
 }
+int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
+{
+  uint modelCnt = _metRCTable.getCnt();
+  if (modelCnt==0)
+    return -1;
+ 
+  extMetRCTable* rcModel = _metRCTable.get(modelIndex);
+  if (rcModel->_resOver[tgtMet] == NULL)
+      return -1;
+
+  extDistRCTable* distTable= rcModel->_resOver[tgtMet]->getRuleTable(0, _width);
+
+  int maxDist= distTable->getComputeRC_maxDist();
+  return maxDist;
+}
+int extDistRCTable::getComputeRC_maxDist()
+{
+  return _maxDist;
+}
 void extMeasure::calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet)
 {
   if (dist1==-1)
@@ -207,8 +228,11 @@ void extMeasure::calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet
       continue;
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
-    double R=len * rc->_res;
-    _rc[ii]->_res += R;
+    if (rc!=NULL) {
+      double R1=rc->_diag>0 ? rc->_diag : rc->_res;
+      double R=len * R1;
+      _rc[ii]->_res += R;
+    }
   }
 }
 void extMeasure::calcRes0(double *deltaRes, uint tgtMet, uint len, int dist1, int dist2)
@@ -234,6 +258,8 @@ void extMain::calcRes0(double *deltaRes, uint tgtMet, uint width, uint len, int 
       continue;
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, width, dist1, dist2);
+    if (rc==NULL)
+      continue;
     double R=len * rc->_res;
     deltaRes[jj] = R;
   }
@@ -252,11 +278,11 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
   uint ii = 0;
   for ( ; ii < table->getCnt(); ii++) {
     rc = table->get(ii);
-    if (dist1==rc->_sep) {
+    if (dist1==rc->_coupling) {
       target_dist_index= ii;
       break;
     }
-    if (dist1<rc->_sep) {
+    if (dist1<rc->_coupling) {
       target_dist_index= ii;
       break;
     }
@@ -268,13 +294,13 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
   extDistRC* last_rc= NULL;
   for (uint ii = target_dist_index; ii < table->getCnt(); ii++) {
     extDistRC* rc1 = table->get(ii);
-    if (rc->_sep != rc1->_sep) {
+    if (rc->_coupling != rc1->_coupling) {
       return last_rc;
     }
-    if (dist2==rc1->getCoupling()) {
+    if (dist2==rc1->_sep) {
       return rc1;
     }
-    if (dist2<rc1->getCoupling()) {
+    if (dist2<rc1->_sep) {
       if (last_rc!=NULL)
         return last_rc;
       return rc1;
@@ -287,13 +313,129 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
   }
   return NULL;
 }
+extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
+{
+  int min_dist=0;
+  if (dist1>dist2) {
+    min_dist= dist1;
+    dist1= dist2;
+    dist2= min_dist;
+  }
+  if (_measureTable == NULL)
+    return NULL;
+
+  if (_measureTable->getCnt() <= 0)
+    return NULL;
+  
+  extDistRC* rc1= _measureTableR[0]->geti(0);
+  rc1->_diag= 0.0;
+  if (rc1==NULL)
+    return NULL;
+ 
+  if (dist1 + dist2 == 0) {  // ASSUMPTION: 0 dist exists as first
+    return rc1;
+  }
+  if (dist1>=_maxDist && dist2>=_maxDist) {
+    return NULL;
+  } 
+  if (dist2>_maxDist) {
+    dist2= dist1;
+    dist1= 0;
+  } 
+  
+  uint index_dist=0;
+  bool found= false;
+  extDistRC* rc2= rc2=_measureTableR[1]->geti(0);
+  if (rc2==NULL)
+    return rc1; // TO TEST
+
+  if (dist1 <= rc1->_sep) {
+    index_dist=0;
+    found = true;
+  }
+  else if (dist1<rc2->_sep) {
+    index_dist=0;
+    found = true;
+  } else if (dist1==rc2->_sep) {
+      index_dist=1;
+      found = true;
+  } else {
+      index_dist= 2; 
+  }
+   extDistRC *rc= NULL;
+  if (!found) {
+    // find first dist
+   
+    uint ii;
+    for ( ii= index_dist; ii<_distCnt; ii++) {
+      rc= _measureTableR[ii]->geti(0);
+      if (dist1==rc->_sep) {
+        found= true;
+        index_dist= ii;
+        break;
+      }
+      if (dist1<rc->_sep) {
+        found= true;
+        index_dist= ii;
+        break;
+      }
+    }
+    if (!found && ii==_distCnt) {
+        index_dist= ii-1;
+        found= true;
+    }    
+  }
+  if (found) { 
+    _measureTable= _measureTableR[index_dist];
+    _computeTable= _computeTableR[index_dist];
+    extDistRC* res= findIndexed_res(dist1, dist2);
+    res->_diag= 0;
+    if (rc!=NULL && dist1<rc->_sep) {
+      _measureTable= _measureTableR[index_dist-1];
+      _computeTable= _computeTableR[index_dist-1];
+      extDistRC* res1= findIndexed_res(dist1, dist2);
+      double R= (res->_res + res1->_res)/2;
+      double R1= res1->interpolate_res(dist1, res);
+      res1->_diag= R;
+      return res1;
+    }
+    return res;
+  }
+  return NULL;
+}
+extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
+{
+   extDistRC* firstRC = _measureTable->get(0);
+  uint firstDist = firstRC->_sep;
+  if (dist2 <= firstDist) {
+    return firstRC;
+  }
+  if (_measureTable->getCnt()==1) {
+    return firstRC;
+  }
+  uint n = dist2 / _unit;
+  extDistRC* res= _computeTable->geti(n);
+  return res;
+}
+
 extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
 {
   int wIndex = getWidthIndex(w);
   if (wIndex < 0)
     return NULL;
   
-  extDistRC *rc= _rcDistTable[mou][wIndex]->findRes(dist1, dist2, false);
+  //extDistRC *rc= _rcDistTable[mou][wIndex]->findRes(dist1, dist2, false);
+  extDistRC *rc= _rcDistTable[mou][wIndex]->getComputeRC_res(dist1, dist2);
+
+  return rc;
+}
+extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
+{
+  int wIndex = getWidthIndex(w);
+  if (wIndex < 0)
+    return NULL;
+  
+  return _rcDistTable[mou][wIndex];
 }
 
 
@@ -397,6 +539,14 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
     }
   }
   dgContext->get(0)->_ll[0] = idx;
+  if (idx == dgContext->getCnt() && residueSeq->getCnt()==0) {
+    rseq = _seqPool->alloc();
+    rseq->_ll[wp] = sseq->_ll[wp];
+    rseq->_ur[wp] = sseq->_ur[wp];
+    rseq->_ll[lp] = sseq->_ll[lp];
+    rseq->_ur[lp] = sseq->_ur[lp];
+    residueSeq->add(rseq);
+  }
 }
 
 
