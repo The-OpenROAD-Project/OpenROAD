@@ -176,6 +176,8 @@ proc place_pins { args } {
     ppl::set_min_distance [ord::microns_to_dbu $min_dist]
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
+    # setting min distance as 0u leads to the default min distance
+    ppl::set_min_distance 0
   }
 
   set bterms_cnt [llength [$dbBlock getBTerms]]

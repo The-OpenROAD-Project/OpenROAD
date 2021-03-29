@@ -278,8 +278,8 @@ where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
 - ``-group_pins``. Specify a list of pins to be placed together on the die boundary.
-- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
-- ``-min_distance distance``. Specify the minimum distance between pins in the die boundary.
+- ``-corner_avoidance distance``. Specify the distance (in micron) from each corner to avoid placing pins.
+- ``-min_distance distance``. Specify the minimum distance (in micron) between pins in the die boundary.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,

@@ -326,6 +326,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int i = 0;
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
+    // get the on grid min distance
     int min_dst_ver = core_.getMinDstPinsX()[i]*
                       std::ceil((float)parms_->getMinDistance()/core_.getMinDstPinsX()[i]);
     int min_dst_hor = core_.getMinDstPinsY()[i]*
