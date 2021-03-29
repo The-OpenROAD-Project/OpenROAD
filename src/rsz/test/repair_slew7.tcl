@@ -8,7 +8,10 @@ read_def repair_slew5.def
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-# under the cap limit but high enough for slew violation
-set_load 50 [get_net u2zn]
+set_load 5 [get_net u1zn]
+
+report_check_types -max_slew -max_capacitance
 
 repair_design
+
+report_check_types -max_slew -max_capacitance

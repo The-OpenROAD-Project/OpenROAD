@@ -293,10 +293,10 @@ protected:
                     float load_cap,
                     Slew out_slew);
   void findBufferTargetSlews();
-  void findBufferTargetSlews(LibertyLibrary *library,
+  void findBufferTargetSlews(LibertyCell *buffer,
+                             const Pvt *pvt,
                              // Return values.
-                             Slew slews[],
-                             int counts[]);
+                             Slew slews[]);
   bool hasMultipleOutputs(const Instance *inst);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
                                    Parasitic *parasitic,
@@ -389,7 +389,8 @@ protected:
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
   ArcDelay gateDelay(LibertyPort *drvr_port,
-                     float load_cap);
+                     float load_cap,
+                     const DcalcAnalysisPt *dcalc_ap);
   float bufferDelay(LibertyCell *buffer_cell,
                     RiseFall *rf,
                     float load_cap);
