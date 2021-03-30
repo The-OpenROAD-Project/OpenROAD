@@ -60,7 +60,7 @@ using utl::Logger;
 class HungarianMatching
 {
  public:
-  HungarianMatching(Section&, SlotVector&, Logger* logger);
+  HungarianMatching(Section&, std::vector<Slot>&, Logger* logger);
   virtual ~HungarianMatching() = default;
   void findAssignment(std::vector<Constraint>& constraints);
   void findAssignmentForGroups(std::vector<Constraint>& constraints);
@@ -72,7 +72,7 @@ class HungarianMatching
   std::vector<int> assignment_;
   HungarianAlgorithm hungarian_solver_;
   Netlist& netlist_;
-  SlotVector& slots_;
+  std::vector<Slot>& slots_;
   int begin_slot_;
   int end_slot_;
   int num_slots_;

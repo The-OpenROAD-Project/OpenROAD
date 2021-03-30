@@ -9,7 +9,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO ODB-0134] Finished DEF file: gcd.def
-Restrict INPUT pins to region 0.0u-100.13u, in the bottom edge.
+[INFO PPL-0049] Restrict INPUT pins to region 0.0u-100.13u, in the bottom edge.
 Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
