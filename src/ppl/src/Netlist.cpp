@@ -150,9 +150,9 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
 }
 
 int Netlist::computeIONetHPWL(int idx,
-                              Section section,
-                              std::vector<Constraint>& constraints,
-                              std::vector<Slot>& slots)
+                              const Section& section,
+                              const std::vector<Constraint>& constraints,
+                              const std::vector<Slot>& slots)
 {
   int hpwl;
 
@@ -173,7 +173,7 @@ int Netlist::computeIONetHPWL(int idx,
 int Netlist::computeIONetHPWL(int idx,
                               Point slot_pos,
                               Edge edge,
-                              std::vector<Constraint>& constraints)
+                              const std::vector<Constraint>& constraints)
 {
   int hpwl;
 
