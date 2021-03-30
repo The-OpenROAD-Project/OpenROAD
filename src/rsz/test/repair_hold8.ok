@@ -9,9 +9,9 @@
 [INFO ODB-0131]     Created 13 components and 59 component-terminals.
 [INFO ODB-0133]     Created 16 nets and 30 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold1.def
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 39 hold buffers.
+[INFO RSZ-0032] Inserted 38 hold buffers.
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -29,7 +29,7 @@ Path Type: min
    0.00    0.08 ^ r2/CK (DFF_X1)
    0.09    0.17 ^ r2/Q (DFF_X1)
    0.02    0.19 ^ u1/Z (BUF_X1)
-   0.02    0.21 ^ hold39/Z (CLKBUF_X3)
+   0.02    0.21 ^ hold38/Z (CLKBUF_X3)
    0.03    0.24 ^ u2/ZN (AND2_X1)
    0.03    0.27 ^ hold19/Z (CLKBUF_X3)
    0.03    0.29 ^ hold20/Z (CLKBUF_X3)

@@ -158,7 +158,6 @@ Resizer::Resizer() :
   db_(nullptr),
   core_exists_(false),
   max_(MinMax::max()),
-  dcalc_ap_(nullptr),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
@@ -281,7 +280,6 @@ Resizer::init()
   ensureDesignArea();
   ensureLevelDrvrVertices();
   sta_->ensureClkNetwork();
-  dcalc_ap_ = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
 }
 
 void
@@ -2192,17 +2190,17 @@ Resizer::repairHold(float slack_margin,
 {
   init();
   LibertyCell *buffer_cell = findHoldBuffer();
-  float buffer_delay = bufferDelay(buffer_cell);
   Unit *time_unit = units_->timeUnit();
   logger_->info(RSZ, 59, "Using {} with {}{}{} delay for hold repairs.",
                 buffer_cell->name(),
-                time_unit->asString(buffer_delay),
+                time_unit->asString(bufferHoldDelay(buffer_cell)),
                 time_unit->scaleAbreviation(),
                 time_unit->suffix());
   sta_->findRequireds();
   VertexSet *ends = sta_->search()->endpoints();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
-  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
+  repairHold(ends, buffer_cell, slack_margin,
+             allow_setup_violations, max_buffer_count);
 
   // Leave the parasitices up to date.
   ensureWireParasitics();
@@ -2223,24 +2221,60 @@ Resizer::repairHold(Pin *end_pin,
   init();
   sta_->findRequireds();
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
-  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations, max_buffer_count);
+  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations,
+             max_buffer_count);
   // Leave the parasitices up to date.
   ensureWireParasitics();
 }
 
+// Find the buffer with the most delay in the fastest corner.
 LibertyCell *
 Resizer::findHoldBuffer()
 {
-  float max_delay = -INF;
+  LibertyCell *max_buffer = nullptr;
+  float max_delay = 0.0;
   LibertyCell *max_delay_cell = nullptr;
-  for (LibertyCell *buffer_cell : buffer_cells_) {
-    float buffer_delay = bufferDelay(buffer_cell);
-    if (buffer_delay > max_delay) {
-      max_delay = buffer_delay;
-      max_delay_cell = buffer_cell;
+  for (LibertyCell *buffer : buffer_cells_) {
+    float buffer_min_delay = bufferHoldDelay(buffer);
+    if (max_buffer == nullptr
+        || buffer_min_delay > max_delay) {
+      max_buffer = buffer;
+      max_delay = buffer_min_delay;
     }
   }
-  return max_delay_cell;
+  return max_buffer;
+}
+
+float
+Resizer::bufferHoldDelay(LibertyCell *buffer)
+{
+  ArcDelay delays[RiseFall::index_count];
+  bufferHoldDelays(buffer, delays);
+  return min(delays[RiseFall::riseIndex()],
+             delays[RiseFall::fallIndex()]);
+}
+
+// Min self delay across corners; buffer -> buffer
+void
+Resizer::bufferHoldDelays(LibertyCell *buffer,
+                          // Return values.
+                          ArcDelay delays[RiseFall::index_count])
+{
+  LibertyPort *input, *output;
+  buffer->bufferPorts(input, output);
+
+  for (int rf_index : RiseFall::rangeIndex())
+    delays[rf_index] = MinMax::min()->initValue();
+  for (Corner *corner : *sta_->corners()) {
+    LibertyPort *corner_port = input->cornerPort(corner->libertyIndex(max_));
+    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    float load_cap = corner_port->capacitance();
+    ArcDelay gate_delays[RiseFall::index_count];
+    Slew slews[RiseFall::index_count];
+    gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+    for (int rf_index : RiseFall::rangeIndex())
+      delays[rf_index] = min(delays[rf_index], gate_delays[rf_index]);
+  }
 }
 
 void
@@ -2260,15 +2294,13 @@ Resizer::repairHold(VertexSet *ends,
     inserted_buffer_count_ = 0;
     int repair_count = 1;
     int pass = 1;
-    float buffer_delay = bufferDelay(buffer_cell);
     while (!hold_failures.empty()
            // Make sure we are making progress.
            && repair_count > 0
            && !overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count) {
-      repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
-                                    slack_margin, allow_setup_violations,
-                                    max_buffer_count);
+      repair_count = repairHoldPass(hold_failures, buffer_cell, slack_margin,
+                                    allow_setup_violations, max_buffer_count);
       debugPrint(logger_, RSZ, "repair_hold", 1,
                  "pass {} worst slack {} failures %lu inserted {}",
                  pass,
@@ -2319,7 +2351,6 @@ Resizer::findHoldViolations(VertexSet *ends,
 int
 Resizer::repairHoldPass(VertexSet &hold_failures,
                         LibertyCell *buffer_cell,
-                        float buffer_delay,
                         float slack_margin,
                         bool allow_setup_violations,
                         int max_buffer_count)
@@ -2342,7 +2373,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         && !isSpecial(net)) {
       // Only add delay to loads with hold violations.
       PinSeq load_pins;
-      Slack buffer_delay1 = INF;
+      Delay insert_delay[RiseFall::index_count] = {INF, INF};
       bool loads_have_out_port = false;
       VertexOutEdgeIterator edge_iter(vertex, graph_);
       while (edge_iter.hasNext()) {
@@ -2350,23 +2381,37 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         Vertex *fanout = edge->to(graph_);
         Slacks slacks;
         sta_->vertexSlacks(fanout, slacks);
-        Slack hold_slack = holdSlack(slacks) - slack_margin;
-        if (hold_slack < 0.0) {
-          Delay delay = allow_setup_violations
-            ? -hold_slack
-            : min(-hold_slack, setupSlack(slacks));
-          if (delay > 0.0) {
-            buffer_delay1 = min(buffer_delay1, delay);
-            Pin *fanout_pin = fanout->pin();
-            load_pins.push_back(fanout_pin);
-            if (network_->direction(fanout_pin)->isAnyOutput()
-                && network_->isTopLevelPort(fanout_pin))
-              loads_have_out_port = true;
+        bool buffer_fanout = true;
+        for (int rf_index : RiseFall::rangeIndex()) {
+          Slack hold_slack = slacks[rf_index][MinMax::minIndex()] - slack_margin;
+          if (hold_slack < 0.0) {
+            Delay delay = allow_setup_violations
+              ? -hold_slack
+              // Don't add delay that leads to a setup violation.
+              : min(-hold_slack, slacks[rf_index][MinMax::maxIndex()]);
+            if (delay > 0.0)
+              insert_delay[rf_index] = min(insert_delay[rf_index], delay);
+            else
+              // no room to buffer
+              buffer_fanout = false;
           }
+        }
+        if (buffer_fanout) {
+          Pin *fanout_pin = fanout->pin();
+          load_pins.push_back(fanout_pin);
+          if (network_->direction(fanout_pin)->isAnyOutput()
+              && network_->isTopLevelPort(fanout_pin))
+            loads_have_out_port = true;
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = std::ceil(buffer_delay1 / buffer_delay);
+        int buffer_count = 0;
+        ArcDelay buffer_delays[RiseFall::index_count];
+        bufferHoldDelays(buffer_cell, buffer_delays);
+        for (int rf_index : RiseFall::rangeIndex()) {
+          int rf_count = std::ceil(insert_delay[rf_index]/buffer_delays[rf_index]);
+          buffer_count = max(buffer_count, rf_count);
+        }
         debugPrint(logger_, RSZ, "repair_hold", 2,
                    " {} hold={} inserted %d for {}/{} loads",
                    vertex->name(sdc_network_),
@@ -2541,20 +2586,6 @@ Resizer::slackGap(Vertex *vertex)
   Slacks slacks;
   sta_->vertexSlacks(vertex, slacks);
   return slackGap(slacks);
-}
-
-Slack
-Resizer::holdSlack(Slacks &slacks)
-{
-  return min(slacks[RiseFall::riseIndex()][MinMax::minIndex()],
-             slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
-}
-
-Slack
-Resizer::setupSlack(Slacks &slacks)
-{
-  return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()],
-             slacks[RiseFall::fallIndex()][MinMax::maxIndex()]);
 }
 
 int
@@ -2824,6 +2855,7 @@ Resizer::portFanoutLoad(LibertyPort *port)
     return 0.0;
 }
 
+// rebuffer
 float
 Resizer::bufferDelay(LibertyCell *buffer_cell,
                      RiseFall *rf,
@@ -2833,7 +2865,7 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
+  gateDelays(output, load_cap, tgt_slew_dcalc_ap_, gate_delays, slews);
   return gate_delays[rf->index()];
 }
 
@@ -2851,33 +2883,6 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
              gate_delays[RiseFall::fallIndex()]);
 }
 
-// Self delay; buffer -> buffer
-float
-Resizer::bufferDelay(LibertyCell *buffer_cell)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  float load_cap = input->capacitance();
-  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
-  return max(gate_delays[RiseFall::riseIndex()],
-             gate_delays[RiseFall::fallIndex()]);
-}
-
-float
-Resizer::bufferDelay(LibertyCell *buffer_cell,
-                     const RiseFall *rf)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  float load_cap = input->capacitance();
-  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
-  return gate_delays[rf->index()];
-}
-
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
 void
@@ -2888,7 +2893,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
                     ArcDelay delays[RiseFall::index_count],
                     Slew slews[RiseFall::index_count])
 {
-  for (auto rf_index : RiseFall::rangeIndex()) {
+  for (int rf_index : RiseFall::rangeIndex()) {
     delays[rf_index] = -INF;
     slews[rf_index] = -INF;
   }

@@ -123,7 +123,7 @@ Path Type: min
             0.008   slack (MET)
 
 
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)

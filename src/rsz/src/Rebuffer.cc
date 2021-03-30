@@ -161,7 +161,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
         // Find slack for drvr_pin into option.
         ArcDelay gate_delays[RiseFall::index_count];
         Slew slews[RiseFall::index_count];
-        gateDelays(drvr_port, p->cap(), dcalc_ap_, gate_delays, slews);
+        gateDelays(drvr_port, p->cap(), tgt_slew_dcalc_ap_, gate_delays, slews);
         Slack slacks[RiseFall::index_count] =
           {p->required(RiseFall::rise()) - gate_delays[RiseFall::riseIndex()],
            p->required(RiseFall::fall()) - gate_delays[RiseFall::fallIndex()]};

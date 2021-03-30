@@ -230,9 +230,6 @@ public:
                                double max_slew);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew);
-  float bufferDelay(LibertyCell *buffer_cell);
-  float bufferDelay(LibertyCell *buffer_cell,
-                    const RiseFall *rf);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   dbNetwork *getDbNetwork() { return db_network_; }
@@ -418,6 +415,10 @@ protected:
                          double wire_length,
                          double max_slew);
   LibertyCell *findHoldBuffer();
+  float bufferHoldDelay(LibertyCell *buffer);
+  void bufferHoldDelays(LibertyCell *buffer,
+                        // Return values.
+                        ArcDelay delays[RiseFall::index_count]);
   void repairHold(VertexSet *ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,
@@ -425,7 +426,6 @@ protected:
                   int max_buffer_count);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
-                     float buffer_delay,
                      float slack_margin,
                      bool allow_setup_violations,
                      int max_buffer_count);
@@ -442,8 +442,6 @@ protected:
                      bool loads_have_out_port,
                      LibertyCell *buffer_cell);
   Point findCenter(PinSeq &pins);
-  Slack holdSlack(Slacks &slacks);
-  Slack setupSlack(Slacks &slacks);
   Slack slackGap(Vertex *vertex);
   Slack slackGap(Slacks &slacks);
   int fanout(Vertex *vertex);
@@ -538,7 +536,6 @@ protected:
   bool core_exists_;
   double design_area_;
   const MinMax *max_;
-  const DcalcAnalysisPt *dcalc_ap_;
   LibertyCellSeq buffer_cells_;
   LibertyCell *buffer_lowest_drive_;
   bool have_estimated_parasitics_;
