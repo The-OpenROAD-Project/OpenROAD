@@ -443,6 +443,36 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 }
 
+void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>& sections)
+{
+  int end_slot = 0;
+  while (end_slot < end) {
+    int blocked_slots = 0;
+    end_slot = begin + slots_per_section_ - 1;
+    if (end_slot > end) {
+      end_slot = end;
+    }
+    for (int i = begin; i <= end_slot; ++i) {
+      if (slots_[i].blocked) {
+        blocked_slots++;
+      }
+    }
+    int half_length_pt = begin + (end_slot - begin) / 2;
+    Section n_sec = {slots_.at(half_length_pt).pos};
+    n_sec.num_slots = end_slot - begin - blocked_slots + 1;
+    if (n_sec.num_slots < 0) {
+      logger_->error(PPL, 40, "Negative number of slots");
+    }
+    n_sec.begin_slot = begin;
+    n_sec.end_slot = end_slot;
+    n_sec.used_slots = 0;
+    n_sec.edge = edge;
+
+    sections.push_back(n_sec);
+    begin = ++end_slot;
+  }
+}
+
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
 {
   for (int layer : layers) {
@@ -460,32 +490,7 @@ void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
                                                  });
     int edge_end = it - slots_.begin() - 1;
 
-    int end_slot = 0;
-    while (end_slot < edge_end) {
-      int blocked_slots = 0;
-      end_slot = edge_begin + slots_per_section_ - 1;
-      if (end_slot > edge_end) {
-        end_slot = edge_end;
-      }
-      for (int i = edge_begin; i <= end_slot; ++i) {
-        if (slots_[i].blocked) {
-          blocked_slots++;
-        }
-      }
-      int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec = {slots_.at(half_length_pt).pos};
-      n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
-      if (n_sec.num_slots < 0) {
-        logger_->error(PPL, 40, "Negative number of slots");
-      }
-      n_sec.begin_slot = edge_begin;
-      n_sec.end_slot = end_slot;
-      n_sec.used_slots = 0;
-      n_sec.edge = edge;
-
-      sections_.push_back(n_sec);
-      edge_begin = ++end_slot;
-    }
+    findSections(edge_begin, edge_end, edge, sections_);
   }
 }
 
