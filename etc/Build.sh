@@ -112,5 +112,5 @@ else
     logName=/dev/null
 fi
 
-cmake "${cmakeOptions[@]}" -B "${buildDir}" . | tee "${logName}"
-time cmake --build "${buildDir}" -j "${numThreads}" | tee -a "${logName}"
+cmake "${cmakeOptions[@]}" -B "${buildDir}" . 2>&1 | tee "${logName}"
+time cmake --build "${buildDir}" -j "${numThreads}" 2>&1 | tee -a "${logName}"
