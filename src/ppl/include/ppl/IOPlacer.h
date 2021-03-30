@@ -168,7 +168,7 @@ class IOPlacer
   void randomPlacement(const RandomMode);
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
-  void createSectionsPerEdge(Edge edge);
+  void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
   bool assignPinsSections();
