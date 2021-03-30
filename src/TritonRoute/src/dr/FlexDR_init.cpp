@@ -4110,7 +4110,7 @@ void FlexDRWorker::initMazeCost_fixedObj()
           modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true, false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
-          modEolSpacingCost(box, zIdx, 3);
+          modEolSpacingRulesCost(box, zIdx, 3);
           // block
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
@@ -4131,7 +4131,7 @@ void FlexDRWorker::initMazeCost_fixedObj()
           modMinSpacingCostPlanar(box, zIdx, 3, true);
           modMinSpacingCostVia(box, zIdx, 3, true, false, true);
           modMinSpacingCostVia(box, zIdx, 3, false, false, true);
-          modEolSpacingCost(box, zIdx, 3);
+          modEolSpacingRulesCost(box, zIdx, 3);
           // block
           modBlockedPlanar(box, zIdx, true);
           modBlockedVia(box, zIdx, true);
@@ -4154,7 +4154,7 @@ void FlexDRWorker::initMazeCost_fixedObj()
           modBlockedPlanar(box, zIdx, false);
           if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
             modMinSpacingCostPlanar(box, zIdx, 3, true);
-            modEolSpacingCost(box, zIdx, 3);
+            modEolSpacingRulesCost(box, zIdx, 3);
           }
         } else {
           modCutSpacingCost(box, zIdx, 3, true);
@@ -4171,7 +4171,7 @@ void FlexDRWorker::initMazeCost_fixedObj()
         modMinSpacingCostPlanar(box, zIdx, 3);
         modMinSpacingCostVia(box, zIdx, 3, true, true);
         modMinSpacingCostVia(box, zIdx, 3, false, true);
-        modEolSpacingCost(box, zIdx, 3);
+        modEolSpacingRulesCost(box, zIdx, 3);
         // block for PDN (fixed obj)
         if (ps->getNet()->getType() == frNetEnum::frcPowerNet
             || ps->getNet()->getType() == frNetEnum::frcGroundNet) {
@@ -4189,7 +4189,7 @@ void FlexDRWorker::initMazeCost_fixedObj()
           modMinSpacingCostPlanar(box, zIdx, 3);
           modMinSpacingCostVia(box, zIdx, 3, true, false);
           modMinSpacingCostVia(box, zIdx, 3, false, false);
-          modEolSpacingCost(box, zIdx, 3);
+          modEolSpacingRulesCost(box, zIdx, 3);
         } else {
           auto via = static_cast<frVia*>(obj);
           modAdjCutSpacingCost_fixedObj(box, via);
@@ -4267,7 +4267,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                 modMinSpacingCostVia(box, zIdx, type, true, false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);
               }
-              modEolSpacingCost(box, zIdx, type);
+              modEolSpacingRulesCost(box, zIdx, type);
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);
@@ -4330,7 +4330,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                 modMinSpacingCostVia(box, zIdx, type, true, false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);
               }
-              modEolSpacingCost(box, zIdx, type);
+              modEolSpacingRulesCost(box, zIdx, type);
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);
