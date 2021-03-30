@@ -56,13 +56,13 @@ HungarianMatching::HungarianMatching(Section& section,
   logger_ = logger;
 }
 
-void HungarianMatching::findAssignment(std::vector<Constraint>& constraints)
+void HungarianMatching::findAssignment(const std::vector<Constraint>& constraints)
 {
   createMatrix(constraints);
   hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
-void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
+void HungarianMatching::createMatrix(const std::vector<Constraint>& constraints)
 {
   hungarian_matrix_.resize(non_blocked_slots_);
   int slot_index = 0;
@@ -124,7 +124,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment) const
   }
 }
 
-void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constraints)
+void HungarianMatching::findAssignmentForGroups(const std::vector<Constraint>& constraints)
 {
   createMatrixForGroups(constraints);
 
@@ -132,7 +132,7 @@ void HungarianMatching::findAssignmentForGroups(std::vector<Constraint>& constra
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
 }
 
-void HungarianMatching::createMatrixForGroups(std::vector<Constraint>& constraints)
+void HungarianMatching::createMatrixForGroups(const std::vector<Constraint>& constraints)
 {
   for (std::vector<int>& io_group : netlist_.getIOGroups()) {
     group_size_ = std::max((int)io_group.size(), group_size_);
