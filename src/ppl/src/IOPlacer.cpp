@@ -110,7 +110,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = parms_->getRandSeed();
 
-  SlotVector valid_slots;
+  std::vector<Slot> valid_slots;
   for (Slot& slot : slots_) {
     if (!slot.blocked) {
       valid_slots.push_back(slot);
@@ -503,7 +503,7 @@ int IOPlacer::assignGroupsToSections()
 {
   int total_pins_assigned = 0;
   Netlist& net = netlist_io_pins_;
-  SectionVector& sections = sections_;
+  std::vector<Section>& sections = sections_;
 
   int total_groups_assigned = 0;
 
@@ -563,7 +563,7 @@ int IOPlacer::assignGroupsToSections()
 bool IOPlacer::assignPinsSections()
 {
   Netlist& net = netlist_io_pins_;
-  SectionVector& sections = sections_;
+  std::vector<Section>& sections = sections_;
   createSections();
   int total_pins_assigned = assignGroupsToSections();
   int idx = 0;

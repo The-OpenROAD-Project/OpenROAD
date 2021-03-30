@@ -150,8 +150,8 @@ class IOPlacer
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
   Netlist netlist_io_pins_;
-  SlotVector slots_;
-  SectionVector sections_;
+  std::vector<Slot> slots_;
+  std::vector<Section> sections_;
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
