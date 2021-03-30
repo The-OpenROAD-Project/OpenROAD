@@ -12,7 +12,7 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Place macro cells (RAMs, embedded macros)
 * Insert substrate tap cells
 * Insert power distribution network
-* Macro Placment of macro cells
+* Macro Placement of macro cells
 * Global placement of standard cells
 * Repair max slew, max capacitance, and max fanout violations and long wires
 * Clock tree synthesis
@@ -468,7 +468,7 @@ length of wire, not per square or per square micron.  The units for
 `-resistance` and `-capacitance` are from the first liberty file read,
 resistance_unit/distance_unit (typically kohms/micron) and liberty
 capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
-no distance units are not specied in the liberty file microns are
+distance units are not specified in the liberty file microns are
 used.
 
 The resistance and capacitance values in the OpenROAD database can be
@@ -557,7 +557,7 @@ repair_tie_fanout [-separation dist]
 The `repair_tie_fanout` command connects each tie high/low load to a
 copy of the tie high/low cell.  `lib_port` is the tie high/low port,
 which can be a library/cell/port name or object returned by
-`get_lib_pins`. The tie high/low instance is separaated from the load
+`get_lib_pins`. The tie high/low instance is separated from the load
 by `dist` (in liberty units, typically microns).
 
 ```
@@ -706,7 +706,7 @@ If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``-distance_between_buffers`` is the distance (in micron) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT.
 - ``-branching_point_buffers_distance`` is the distance (in micron) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the ``-distance_between_buffers`` value to be set.
 - ``-clustering_exponent`` is a value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. If this parameter is omitted, the code gets the default value (4).
-- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have extacly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
+- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have exactly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
 - ``-sink_clustering_enable`` enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure.
 - ``-sink_clustering_size`` specifies the maximum number of sinks per cluster. Default value is 20.
 - ``sink_clustering_max_diameter`` specifies maximum diameter (in micron) of sink cluster. Default value is 50.

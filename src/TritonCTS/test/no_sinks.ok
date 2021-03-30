@@ -33,7 +33,7 @@ TritonCTS forced slew degradation on these wires.
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-[INFO CTS-0007]  Net "clk" found
+[INFO CTS-0095]  Net "clk" found
 [INFO CTS-0009]  Initializing clock net for : "clk"
 [WARNING CTS-0041] Net "clk" has 0 sinks. Skipping...
 [ERROR CTS-0083] No clock nets have been found.
