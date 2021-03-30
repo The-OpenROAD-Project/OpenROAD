@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "gui/gui.h"
-
 #include <QApplication>
 #include <QDebug>
 #include <boost/algorithm/string/predicate.hpp>
@@ -331,8 +329,11 @@ std::string OpenDbDescriptor::getName(void* object) const
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj:
       return "Net: " + static_cast<odb::dbNet*>(db_obj)->getName();
-    case odb::dbInstObj:
-      return "Inst: " + static_cast<odb::dbInst*>(db_obj)->getName();
+    case odb::dbInstObj: {
+      auto inst = static_cast<odb::dbInst*>(db_obj);
+      return "Inst: " + inst->getName() + " {" + inst->getMaster()->getName()
+             + "}";
+    }
     default:
       return db_obj->getObjName();
   }
@@ -350,8 +351,8 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       odb::Rect wire_bbox;
       if (wire && wire->getBBox(wire_bbox)) {
         std::stringstream ss;
-        ss << std::fixed << std::setprecision(5)
-           << "[(" << wire_bbox.xMin() / to_microns << ","
+        ss << std::fixed << std::setprecision(5) << "[("
+           << wire_bbox.xMin() / to_microns << ","
            << wire_bbox.yMin() / to_microns << "), ("
            << wire_bbox.xMax() / to_microns << ","
            << wire_bbox.yMax() / to_microns << ")]";
@@ -366,8 +367,8 @@ std::string OpenDbDescriptor::getLocation(void* object) const
       auto inst_orient = inst_obj->getOrient().getString();
       std::stringstream ss;
       if (placement_status.isPlaced()) {
-        ss << std::fixed << std::setprecision(5)
-           << "[(" << inst_bbox->xMin() / to_microns << ","
+        ss << std::fixed << std::setprecision(5) << "[("
+           << inst_bbox->xMin() / to_microns << ","
            << inst_bbox->yMin() / to_microns << "), ("
            << inst_bbox->xMax() / to_microns << ","
            << inst_bbox->yMax() / to_microns << ")], " << inst_orient << ": "

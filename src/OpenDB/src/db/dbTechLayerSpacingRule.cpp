@@ -638,9 +638,9 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   parallelSpace = 0;
   parallelWithin = 0;
   twoEdges = false;
+  width = _lsp->_r1min;
+  within = _lsp->_r1max;
   if (_lsp->_flags._rule == _dbTechLayerSpacingRule::ENDOFLINE) {
-    width = _lsp->_r1min;
-    within = _lsp->_r1max;
     parallelSpace = false;
     return true;
   }

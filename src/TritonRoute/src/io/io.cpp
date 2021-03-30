@@ -983,7 +983,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
-        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
+        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid() 
+        || rule->isEncloseCutValid()) {
       logger->warn(utl::DRT,
                    168,
                    "unsupported LEF58_SPACING rule for layer {}",

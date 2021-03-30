@@ -4,9 +4,9 @@ ODB 0015 dbBlock.cpp:3312          Library lib does not exist
 ODB 0025 dbCapNode.cpp:1100          capn {}
 ODB 0030 dbFlatten.cpp:1430         0 --
 ODB 0032 dbFlatten.cpp:1451         0
-ODB 0039 dbInst.cpp:1027           Forced Initialize to 0
-ODB 0041 dbInst.cpp:1040           Forced Initialize to 0
-ODB 0043 dbInst.cpp:1057           _dbHier::create fails
+ODB 0039 dbInst.cpp:1032           Forced Initialize to 0
+ODB 0041 dbInst.cpp:1045           Forced Initialize to 0
+ODB 0043 dbInst.cpp:1062           _dbHier::create fails
 ODB 0055 dbRSeg.cpp:561                       CC{} : {}-{}
 ODB 0056 dbRSeg.cpp:568            rseg {}
 ODB 0062 dbWire.cpp:1879           This wire has no net
@@ -28,26 +28,25 @@ ODB 0117 definPin.cpp:118          PIN {} missing right bus character.
 ODB 0118 definPin.cpp:124          PIN {} missing left bus character.
 ODB 0122 definPin.cpp:372          error: Cannot find PIN {}
 ODB 0123 definPin.cpp:385          error: Cannot find PIN {}
-ODB 0125 definReader.cpp:1514      lines processed: {}
-ODB 0126 definReader.cpp:1519      error: {}
-ODB 0127 definReader.cpp:1678      Reading DEF file: {}
-ODB 0128 definReader.cpp:1679      Design: {}
-ODB 0129 definReader.cpp:1684      Error: Failed to read DEF file
-ODB 0130 definReader.cpp:1689          Created {} pins.
-ODB 0134 definReader.cpp:1726      Finished DEF file: {}
-ODB 0135 definReader.cpp:1792      Reading DEF file: {}
-ODB 0136 definReader.cpp:1793      Design: {}
-ODB 0137 definReader.cpp:1797      Error: Failed to read DEF file
-ODB 0138 definReader.cpp:1803          Created {} pins.
-ODB 0142 definReader.cpp:1826      Finished DEF file: {}
-ODB 0143 definReader.cpp:1838      Reading DEF file: {}
-ODB 0144 definReader.cpp:1842      Error: Failed to read DEF file
-ODB 0146 definReader.cpp:1851          Processed {} nets.
-ODB 0147 definReader.cpp:1853      Finished DEF file: {}
-ODB 0148 definReader.cpp:1862      error: Cannot open DEF file {}
-ODB 0149 definReader.cpp:1918      DEF parser returns an error!
-ODB 0150 definReader.cpp:1935      error: Cannot open DEF file {}
-ODB 0151 definReader.cpp:1953      DEF parser returns an error!
+ODB 0125 definReader.cpp:1605      lines processed: {}
+ODB 0126 definReader.cpp:1610      error: {}
+ODB 0127 definReader.cpp:1636      Reading DEF file: {}
+ODB 0128 definReader.cpp:348       Design: {}
+ODB 0129 definReader.cpp:1640      Error: Failed to read DEF file
+ODB 0130 definReader.cpp:1645          Created {} pins.
+ODB 0134 definReader.cpp:1682      Finished DEF file: {}
+ODB 0135 definReader.cpp:1694      Reading DEF file: {}
+ODB 0137 definReader.cpp:1698      Error: Failed to read DEF file
+ODB 0138 definReader.cpp:1703          Created {} pins.
+ODB 0142 definReader.cpp:1726      Finished DEF file: {}
+ODB 0143 definReader.cpp:1737      Reading DEF file: {}
+ODB 0144 definReader.cpp:1741      Error: Failed to read DEF file
+ODB 0146 definReader.cpp:1750          Processed {} nets.
+ODB 0147 definReader.cpp:1752      Finished DEF file: {}
+ODB 0148 definReader.cpp:1761      error: Cannot open DEF file {}
+ODB 0149 definReader.cpp:1821      DEF parser returns an error!
+ODB 0150 definReader.cpp:1838      error: Cannot open DEF file {}
+ODB 0151 definReader.cpp:1856      DEF parser returns an error!
 ODB 0152 definRegion.cpp:76         already exists
 ODB 0156 definSNet.cpp:124         special net {} does not exist
 ODB 0166 definVia.cpp:67           error: duplicate via ({})
@@ -76,7 +75,7 @@ ODB 0235 lefin.cpp:2142            Error reading {}
 ODB 0236 lefin.cpp:2149            Finished LEF file:  {}
 ODB 0238 lefin.cpp:2157                Created {} technology vias
 ODB 0239 lefin.cpp:2160                Created {} library cells
-ODB 0240 reader.cpp:559            error: Cannot open LEF file {}
-ODB 0250 definReader.cpp:1654      Chip does not exist
-ODB 0252 definReader.cpp:1692          Updated {} pins.
-ODB 0270 reader.cpp:550            error: Cannot open zipped LEF file {}
+ODB 0240 reader.cpp:547            error: Cannot open LEF file {}
+ODB 0250 definReader.cpp:1627      Chip does not exist
+ODB 0252 definReader.cpp:1648          Updated {} pins.
+ODB 0260 definReader.cpp:67        DESIGN is not defined in DEF

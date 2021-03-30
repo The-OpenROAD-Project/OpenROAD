@@ -48,6 +48,7 @@ proc set_io_pin_constraint { args } {
   }
 
   set dbTech [ord::get_db_tech]
+  set dbBlock [ord::get_db_block]
   set lef_units [$dbTech getLefUnits]
 
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
@@ -84,18 +85,12 @@ proc set_io_pin_constraint { args } {
   if [info exists keys(-names)] {
     utl::warn PPL 44 "-names option is deprecated. Use -pin_names instead."
     set names $keys(-names)
-    foreach name $names {
-      utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
-      ppl::add_name_constraint $name $edge_ $begin $end
-    }
+    ppl::add_pins_to_constraint "set_io_pin_constraint" $names $edge_ $begin $end $edge
   }
 
   if [info exists keys(-pin_names)] {
     set names $keys(-pin_names)
-    foreach name $names {
-      utl::report "Restrict I/O pin $name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge edge."
-      ppl::add_name_constraint $name $edge_ $begin $end
-    }
+    ppl::add_pins_to_constraint "set_io_pin_constraint" $names $edge_ $begin $end $edge
   }
 }
 
@@ -169,19 +164,20 @@ proc place_pins { args } {
   set distance 1
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
-    ppl::set_corner_avoidance $distance
+    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   } else {
     utl::report "Using ${distance}u default distance from corners."
-    ppl::set_corner_avoidance $distance
+    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
   set min_dist 2
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ppl::set_min_distance $min_dist
+    ppl::set_min_distance [ord::microns_to_dbu $min_dist]
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
-    ppl::set_min_distance $min_dist
+    # setting min distance as 0u leads to the default min distance
+    ppl::set_min_distance 0
   }
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
@@ -265,15 +261,16 @@ proc place_pins { args } {
     set group_idx 0
     foreach group $pin_groups {
       utl::info PPL 41 "Pin group $group_idx: \[$group\]"
-      set pin_group [ppl::create_pin_group]
+      set pin_list {}
       foreach pin_name $group {
         set db_bterm [$dbBlock findBTerm $pin_name]
         if { $db_bterm != "NULL" } {
-          ppl::add_pin_to_group $db_bterm $pin_group
+          lappend pin_list $db_bterm
         } else {
           utl::warn PPL 43 "Pin $pin_name not found in group $group_idx"
         }
       }
+      ppl::add_pin_group $pin_list
       incr group_idx
     }
   }
@@ -369,6 +366,21 @@ proc exclude_intervals { cmd intervals } {
       ppl::exclude_interval $interval
     }
   }
+}
+
+proc add_pins_to_constraint {cmd names edge begin end edge_name} {
+  set dbBlock [ord::get_db_block]
+  set pin_list {}
+  foreach pin_name $names {
+    set db_bterm [$dbBlock findBTerm $pin_name]
+    if { $db_bterm != "NULL" } {
+      utl::report "Restrict I/O pin $pin_name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge_name edge."
+      lappend pin_list $db_bterm
+    } else {
+      utl::warn PPL 47 "Pin $pin_name not found in constraint"
+    }
+  }
+  ppl::add_names_constraint $pin_list $edge $begin $end
 }
 
 # ppl namespace end

@@ -62,6 +62,7 @@ class Options
   virtual bool showHorizontalCongestion() const = 0;
   virtual bool showVerticalCongestion() const = 0;
   virtual float getMinCongestionToShow() const = 0;
+  virtual float getMaxCongestionToShow() const = 0;
   virtual QColor getCongestionColor(float congestion) const = 0;
 };
 

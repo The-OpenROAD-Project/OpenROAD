@@ -46,8 +46,44 @@ ppl::IOPlacer* getIOPlacer();
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
-using ppl::PinGroup;
+using ppl::PinList;
+using std::vector;
+
+template <class TYPE>
+vector<TYPE> *
+tclListStdSeq(Tcl_Obj *const source,
+	      swig_type_info *swig_type,
+	      Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    vector<TYPE> *seq = new vector<TYPE>;
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      seq->push_back(reinterpret_cast<TYPE>(obj));
+    }
+    return seq;
+  }
+  else
+    return nullptr;
+}
+
 %}
+
+////////////////////////////////////////////////////////////////
+//
+// SWIG type definitions.
+//
+////////////////////////////////////////////////////////////////
+
+%typemap(in) PinList* {
+  $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
+}
 
 %include "../../Exception.i"
 
@@ -97,16 +133,16 @@ exclude_interval(Edge edge, int begin, int end)
   getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
+void
+add_names_constraint(PinList *pin_list, Edge edge, int begin, int end)
+{
+  getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
+}
+
 void add_direction_constraint(Direction direction, Edge edge,
                                int begin, int end)
 {
   getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
-}
-
-void add_name_constraint(const char* name, Edge edge,
-                               int begin, int end)
-{
-  getIOPlacer()->addNameConstraint(name, edge, begin, end);
 }
 
 void
@@ -145,16 +181,16 @@ add_ver_layer(int layer)
   getIOPlacer()->addVerLayer(layer);
 }
 
-PinGroup*
-create_pin_group()
+void
+add_pin_group(PinList *pin_list)
 {
-  return getIOPlacer()->createPinGroup();
+  getIOPlacer()->addPinGroup(pin_list);
 }
 
 void
-add_pin_to_group(odb::dbBTerm* pin, PinGroup* pin_group)
+add_pin_to_list(odb::dbBTerm* pin, PinList* pin_group)
 {
-  getIOPlacer()->addPinToGroup(pin, pin_group);
+  getIOPlacer()->addPinToList(pin, pin_group);
 }
 
 void

@@ -6,32 +6,33 @@ PPL 0006 IOPlacer.cpp:540           * Slots Increase Factor {:.1}
 PPL 0008 IOPlacer.cpp:541           * Usage Increase Factor {:.1}
 PPL 0009 IOPlacer.cpp:542           * Force Pin Spread      {}
 PPL 0010 IOPlacer.cpp:551          Tentative {} to setup sections
-PPL 0011 IOPlacer.cpp:859          HPWL before ioPlacer: {}
-PPL 0012 IOPlacer.cpp:860          HPWL after  ioPlacer: {}
-PPL 0013 IOPlacer.cpp:861          HPWL delta  ioPlacer: {}
-PPL 0014 ioPlacer.tcl:112          io_placer command is deprecated. Use place_pins instead.
-PPL 0015 ioPlacer.tcl:140          Macro [$inst getName] is not placed.
-PPL 0016 ioPlacer.tcl:73           Both -direction and -name constraints not allowed..
-PPL 0017 ioPlacer.tcl:158          -hor_layers is required.
-PPL 0018 ioPlacer.tcl:164          -ver_layers is required.
-PPL 0019 ioPlacer.tcl:189          Design without pins
-PPL 0021 ioPlacer.tcl:196          Horizontal routing tracks not found for layer $hor_layer.
-PPL 0023 ioPlacer.tcl:212          Vertical routing tracks not found for layer $ver_layer.
-PPL 0024 ioPlacer.tcl:228          Number of pins $bterms_cnt exceeds max possible $num_slots.
-PPL 0025 ioPlacer.tcl:255          -exclude: $interval is an invalid region
-PPL 0026 ioPlacer.tcl:258          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval.
-PPL 0027 ioPlacer.tcl:296          $cmd: $edge is an invalid edge. use top, bottom, left or right.
-PPL 0028 ioPlacer.tcl:309          $cmd: Invalid pin direction.
-PPL 0029 ioPlacer.tcl:352          $cmd: Invalid edge
-PPL 0030 ioPlacer.tcl:360          $cmd: Invalid edge
-PPL 0031 ioPlacer.tcl:125          no technology found.
-PPL 0032 ioPlacer.tcl:130          no block found.
-PPL 0038 IOPlacer.cpp:966          Pin {} without net!
+PPL 0011 IOPlacer.cpp:857          HPWL before ioPlacer: {}
+PPL 0012 IOPlacer.cpp:858          HPWL after  ioPlacer: {}
+PPL 0013 IOPlacer.cpp:859          HPWL delta  ioPlacer: {}
+PPL 0014 ioPlacer.tcl:108          io_placer command is deprecated. Use place_pins instead.
+PPL 0015 ioPlacer.tcl:136          Macro [$inst getName] is not placed.
+PPL 0016 ioPlacer.tcl:75           Both -direction and -pin_names constraints not allowed..
+PPL 0017 ioPlacer.tcl:154          -hor_layers is required.
+PPL 0018 ioPlacer.tcl:160          -ver_layers is required.
+PPL 0019 ioPlacer.tcl:185          Design without pins
+PPL 0021 ioPlacer.tcl:192          Horizontal routing tracks not found for layer $hor_layer.
+PPL 0023 ioPlacer.tcl:208          Vertical routing tracks not found for layer $ver_layer.
+PPL 0024 ioPlacer.tcl:224          Number of pins $bterms_cnt exceeds max possible $num_slots.
+PPL 0025 ioPlacer.tcl:251          -exclude: $interval is an invalid region
+PPL 0026 ioPlacer.tcl:254          -exclude: invalid syntax in $region. use (top|bottom|left|right):interval.
+PPL 0027 ioPlacer.tcl:292          $cmd: $edge is an invalid edge. use top, bottom, left or right.
+PPL 0028 ioPlacer.tcl:305          $cmd: Invalid pin direction.
+PPL 0029 ioPlacer.tcl:348          $cmd: Invalid edge
+PPL 0030 ioPlacer.tcl:356          $cmd: Invalid edge
+PPL 0031 ioPlacer.tcl:121          no technology found.
+PPL 0032 ioPlacer.tcl:126          no block found.
+PPL 0038 IOPlacer.cpp:964          Pin {} without net!
 PPL 0039 IOPlacer.cpp:205          Random mode not found
 PPL 0040 IOPlacer.cpp:400          Negative number of slots
-PPL 0041 ioPlacer.tcl:266          Pin group $group_idx: [$group]
+PPL 0041 ioPlacer.tcl:262          Pin group $group_idx: [$group]
 PPL 0042 IOPlacer.cpp:481          Unsuccessfully assigned I/O groups
-PPL 0043 ioPlacer.tcl:273          Pin $pin_name not found in group $group_idx
-PPL 0044 ioPlacer.tcl:84           -names option is deprecated. Use -pin_names instead.
-PPL 0045 ioPlacer.tcl:201          Layer $hor_layer preferred direction is not horizontal.
-PPL 0046 ioPlacer.tcl:217          Layer $ver_layer preferred direction is not vertical.
+PPL 0043 ioPlacer.tcl:269          Pin $pin_name not found in group $group_idx
+PPL 0044 ioPlacer.tcl:86           -names option is deprecated. Use -pin_names instead.
+PPL 0045 ioPlacer.tcl:197          Layer $hor_layer preferred direction is not horizontal.
+PPL 0046 ioPlacer.tcl:213          Layer $ver_layer preferred direction is not vertical.
+PPL 0047 ioPlacer.tcl:378          Pin $pin_name not found in constraint

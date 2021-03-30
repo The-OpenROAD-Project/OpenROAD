@@ -652,7 +652,6 @@ uint dbRSeg::getTargetNode()
 uint dbRSeg::getShapeId()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  // return seg->_shape_id;
   dbBlock* block = (dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode(block, seg->_target);
   return node->getShapeId();
@@ -721,7 +720,6 @@ dbNet* dbRSeg::getNet()
 void dbRSeg::updateShapeId(uint nsid)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  // seg->_shape_id = nsid;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
   if (node->isITerm() || node->isBTerm())
@@ -769,14 +767,6 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   else
     block->_maxRSegId = seg->getOID();
 
-  // seg->_shape_id= shapeId;
-  // int jx, jy;
-  // if (shapeId > 0)
-  // {
-  //     net_->getWire() -> getCoord( (int)shapeId, jx, jy);
-  //     seg->_xcoord = jx;
-  //     seg->_ycoord = jy;
-  // }
   seg->_xcoord = x;
   seg->_ycoord = y;
 
