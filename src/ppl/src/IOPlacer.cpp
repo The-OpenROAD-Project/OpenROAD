@@ -473,6 +473,49 @@ void IOPlacer::findSections(int begin, int end, Edge edge, std::vector<Section>&
   }
 }
 
+std::vector<Section> IOPlacer::createSectionsPerConstraint(const Constraint &constraint)
+{
+  const Interval &interv = constraint.interval;
+  const Edge &edge = interv.edge;
+
+  const std::set<int>& layers =
+    (edge == Edge::left || edge == Edge::right) ?
+    hor_layers_ : ver_layers_;
+
+  std::vector<Section> sections;
+  for (int layer : layers) {
+    std::vector<Slot>::iterator it =
+      std::find_if(slots_.begin(), slots_.end(),
+       [&](Slot s) {
+        int slot_xy =
+          (edge == Edge::left || edge == Edge::right) ?
+          s.pos.y() : s.pos.x();
+        if (edge == Edge::bottom || edge == Edge::right)
+          return (s.edge == edge && s.layer == layer &&
+                  slot_xy >= interv.begin);
+        return (s.edge == edge && s.layer == layer &&
+                  slot_xy <= interv.end);
+       });
+    int constraint_begin = it - slots_.begin();
+
+    it =
+      std::find_if(slots_.begin() + constraint_begin, slots_.end(),
+       [&](Slot s) {
+        int slot_xy =
+          (edge == Edge::left || edge == Edge::right) ?
+          s.pos.y() : s.pos.x();
+        if (edge == Edge::bottom || edge == Edge::right)
+          return (slot_xy >= interv.end || s.edge != edge || s.layer != layer);
+        return (slot_xy <= interv.begin || s.edge != edge || s.layer != layer);
+       });
+    int constraint_end = it - slots_.begin()-1;
+
+    findSections(constraint_begin, constraint_end, edge, sections);
+  }
+
+  return sections;
+}
+
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
 {
   for (int layer : layers) {

@@ -169,6 +169,7 @@ class IOPlacer
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
+  std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
