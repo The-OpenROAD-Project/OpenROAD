@@ -33,16 +33,9 @@ using namespace fr;
 
 void FlexGRWorker::route()
 {
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout << "start maze route #nets = " << nets_.size() << endl;
-  }
 
   vector<grNet*> rerouteNets;
   for (int i = 0; i < mazeEndIter_; i++) {
-    if (enableOutput) {
-      cout << "  iter" << i << endl;
-    }
     if (ripupMode_ == 0) {
       route_addHistCost();
     }
@@ -156,7 +149,6 @@ void FlexGRWorker::route_mazeIterInit()
 
 void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
 {
-  bool enableOutput = false;
   rerouteNets.clear();
   if (ripupMode_ == 0) {
     for (auto& net : nets_) {
@@ -165,16 +157,6 @@ void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
         net->setModified(true);
         net->getFrNet()->setModified(true);
       } else {
-        if (enableOutput) {
-          if (!net->isRipup()) {
-            cout << "subnet of " << net->getFrNet()->getName()
-                 << " is not set for ripup\n";
-          }
-          if (net->isTrivial()) {
-            cout << "subnet of " << net->getFrNet()->getName()
-                 << " is trivial\n";
-          }
-        }
       }
     }
   } else if (ripupMode_ == 1) {
@@ -242,10 +224,6 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
 // reset gridGraph, remove routeObj and remove nodes
 void FlexGRWorker::mazeNetInit(grNet* net)
 {
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout << "mazeInit subnet of " << net->getFrNet()->getName() << endl;
-  }
 
   gridGraph_.resetStatus();
   if (ripupMode_ == 0) {
@@ -448,15 +426,11 @@ void FlexGRWorker::mazeNetInit_removeNetNodes(grNet* net)
 
 bool FlexGRWorker::routeNet(grNet* net)
 {
-  bool enableOutput = false;
   if (net->isTrivial()) {
     cout << "Error: trivial net should not be routed\n";
     return true;
   }
 
-  if (enableOutput) {
-    cout << "route " << net->getFrNet()->getName() << endl;
-  }
 
   set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
   map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
@@ -470,9 +444,6 @@ bool FlexGRWorker::routeNet(grNet* net)
   frPoint centerPt;
   vector<FlexMazeIdx> connComps;
 
-  if (enableOutput) {
-    cout << "    #pin = " << mazeIdx2unConnPinGCellNode.size() << endl;
-  }
 
   routeNet_setSrc(net,
                   unConnPinGCellNodes,
@@ -482,9 +453,6 @@ bool FlexGRWorker::routeNet(grNet* net)
                   ccMazeIdx2,
                   centerPt);
 
-  if (enableOutput) {
-    cout << "    #dst pin = " << mazeIdx2unConnPinGCellNode.size() << endl;
-  }
 
   vector<FlexMazeIdx> path;  // astar must return with more than one idx
 
@@ -494,11 +462,6 @@ bool FlexGRWorker::routeNet(grNet* net)
     path.clear();
     auto nextPinGCellNode = routeNet_getNextDst(
         ccMazeIdx1, ccMazeIdx2, mazeIdx2unConnPinGCellNode);
-    if (enableOutput) {
-      cout << "      dst at (" << nextPinGCellNode->getLoc().x() << ", "
-           << nextPinGCellNode->getLoc().y() << ", "
-           << nextPinGCellNode->getLayerNum() << ")\n";
-    }
     if (gridGraph_.search(connComps,
                           nextPinGCellNode,
                           path,
@@ -513,9 +476,6 @@ bool FlexGRWorker::routeNet(grNet* net)
     }
   }
 
-  if (enableOutput) {
-    cout << "    done routing\n";
-  }
 
   routeNet_postRouteAddCong(net);
   return true;
@@ -527,7 +487,6 @@ void FlexGRWorker::routeNet_prep(
     map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
     map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode)
 {
-  bool enableOutput = false;
   for (auto pinGCellNode : net->getPinGCellNodes()) {
     auto loc = pinGCellNode->getLoc();
     auto lNum = pinGCellNode->getLayerNum();
@@ -545,11 +504,6 @@ void FlexGRWorker::routeNet_prep(
       }
     }
     mazeIdx2unConnPinGCellNode[mi] = pinGCellNode;
-    if (enableOutput) {
-      if (mazeIdx2endPointNode.find(mi) != mazeIdx2endPointNode.end()) {
-        cout << "Error: mi already exists in mazeIdx2endPointNode\n" << flush;
-      }
-    }
     mazeIdx2endPointNode[mi] = pinGCellNode;
   }
 }
@@ -609,7 +563,6 @@ void FlexGRWorker::routeNet_setSrc(
     FlexMazeIdx& ccMazeIdx2,
     frPoint& centerPt)
 {
-  bool enableOutput = false;
   frMIdx xDim, yDim, zDim;
   gridGraph_.getDim(xDim, yDim, zDim);
   ccMazeIdx1.set(xDim - 1, yDim - 1, zDim - 1);
@@ -645,10 +598,6 @@ void FlexGRWorker::routeNet_setSrc(
   FlexMazeIdx mi;
   gridGraph_.getMazeIdx(loc, lNum, mi);
 
-  if (enableOutput) {
-    cout << "  src at mazeIdx = (" << mi.x() << ", " << mi.y() << ", " << mi.z()
-         << ")\n";
-  }
 
   mazeIdx2unConnPinGCellNode.erase(mi);
   gridGraph_.setSrc(mi);
@@ -668,7 +617,6 @@ grNode* FlexGRWorker::routeNet_getNextDst(
     FlexMazeIdx& ccMazeIdx2,
     map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode)
 {
-  bool enableOutput = false;
   frPoint pt;
   frPoint ll, ur;
   gridGraph_.getPoint(ccMazeIdx1.x(), ccMazeIdx1.y(), ll);
@@ -686,10 +634,6 @@ grNode* FlexGRWorker::routeNet_getNextDst(
         cout << "Error: nullptr node in mazeIdx2unConnPinGCellNode\n" << flush;
       }
       gridGraph_.getPoint(mazeIdx.x(), mazeIdx.y(), pt);
-      if (enableOutput) {
-        cout << "  mazeIdx2unConnPinGCellNode at mazeIdx = (" << mazeIdx.x()
-             << ", " << mazeIdx.y() << ", " << mazeIdx.z() << ")\n";
-      }
       frCoord dx = max(max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
       frCoord dy = max(max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
       frCoord dz = max(max(gridGraph_.getZHeight(ccMazeIdx1.z())
@@ -791,17 +735,10 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     grNode* leaf,
     map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode)
 {
-  bool enableOutput = false;
 
   if (points.empty()) {
-    if (enableOutput) {
-      cout << "Warning: path is empty in writeMazePath\n";
-    }
   }
 
-  if (enableOutput) {
-    cout << "  start routeNet_postAstarWritePath\n";
-  }
 
   auto& workerRegionQuery = getWorkerRegionQuery();
   grNode* child = nullptr;
@@ -827,11 +764,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     // destination must already have existing
     if (i == 0) {
       child = leaf;
-    }
-    if (enableOutput) {
-      frPoint childLoc = child->getLoc();
-      cout << "  child at (" << childLoc.x() << ", " << childLoc.y()
-           << ") on layer " << child->getLayerNum() << "\n";
     }
 
     // need to check whether source node already exist
@@ -1051,9 +983,6 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     parent = nullptr;
   }
 
-  if (enableOutput) {
-    cout << "  done routeNet_postAstarWritePath\n";
-  }
 }
 
 grNode* FlexGRWorker::routeNet_postAstarWritePath_splitPathSeg(

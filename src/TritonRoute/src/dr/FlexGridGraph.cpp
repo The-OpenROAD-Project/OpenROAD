@@ -43,8 +43,6 @@ void FlexGridGraph::initGrids(
     const map<frLayerNum, frPrefRoutingDirEnum>& zMap,
     bool followGuide)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   // initialize coord vectors
   xCoords_.clear();
   yCoords_.clear();
@@ -84,28 +82,6 @@ void FlexGridGraph::initGrids(
     guides_.resize(xDim * yDim * zDim, 1);
   }
 
-  if (enableOutput) {
-    cout << "x ";
-    for (auto& k : xCoords_) {
-      cout << " " << k;
-    }
-    cout << endl;
-    cout << "y ";
-    for (auto& k : yCoords_) {
-      cout << " " << k;
-    }
-    cout << endl;
-    cout << "z ";
-    for (auto& k : zCoords_) {
-      cout << " " << k;
-    }
-    cout << endl;
-    cout << "z height ";
-    for (auto& k : zHeights_) {
-      cout << " " << k;
-    }
-    cout << endl;
-  }
 }
 
 void FlexGridGraph::initEdges(
@@ -115,8 +91,6 @@ void FlexGridGraph::initEdges(
     const frBox& bbox,
     bool initDR)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
   // initialize grid graph
@@ -156,12 +130,6 @@ void FlexGridGraph::initEdges(
         if (dir == frcHorzPrefRoutingDir && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (enableOutput) {
-              if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-                cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                     << ", E) already set" << endl;
-              }
-            }
             if (getTech()
                         ->getLayer(layerNum)
                         ->getLef58RightWayOnGridOnlyConstraint()
@@ -171,33 +139,10 @@ void FlexGridGraph::initEdges(
               if (yIt->second == nullptr || outOfDiePlanar) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", E)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", E) not set" << endl;
-                } else {
-                  if (hasGridCostE(xIdx, yIdx, zIdx)
-                      != ((yIt->second || outOfDiePlanar) ? false : true)) {
-                    cout << "check edge cost failed (" << xIdx << ", " << yIdx
-                         << ", " << zIdx << ", E) != 1" << endl;
-                  }
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", E)" << endl;
-                }
-              }
             }
           }
           // via to upper layer
           if (xFound2) {
-            if (enableOutput) {
-              if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-                cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                     << ", U) already set" << endl;
-              }
-            }
             if ((getTech()
                          ->getLayer(layerNum)
                          ->getLef58RightWayOnGridOnlyConstraint()
@@ -216,29 +161,11 @@ void FlexGridGraph::initEdges(
               if (condition || outOfDieVia) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", U)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", U) not set" << endl;
-                } else {
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", U)" << endl;
-                }
-              }
             }
           }
         } else if (dir == frcVertPrefRoutingDir && xFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
               && layerNum <= TOP_ROUTING_LAYER) {
-            if (enableOutput) {
-              if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-                cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                     << ", N) already set" << endl;
-              }
-            }
             if (getTech()
                         ->getLayer(layerNum)
                         ->getLef58RightWayOnGridOnlyConstraint()
@@ -248,33 +175,10 @@ void FlexGridGraph::initEdges(
               if (xIt->second == nullptr || outOfDiePlanar) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", N)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", N) not set" << endl;
-                } else {
-                  if (hasGridCostN(xIdx, yIdx, zIdx)
-                      != ((xIt->second || outOfDiePlanar) ? false : true)) {
-                    cout << "check edge cost failed (" << xIdx << ", " << yIdx
-                         << ", " << zIdx << ", N) != 1" << endl;
-                  }
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", N)" << endl;
-                }
-              }
             }
           }
           // via to upper layer
           if (yFound2) {
-            if (enableOutput) {
-              if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-                cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                     << ", U) already set" << endl;
-              }
-            }
             if ((getTech()
                          ->getLayer(layerNum)
                          ->getLef58RightWayOnGridOnlyConstraint()
@@ -293,18 +197,6 @@ void FlexGridGraph::initEdges(
               if (condition || outOfDieVia) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", U)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", U) not set" << endl;
-                } else {
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", U)" << endl;
-                }
-              }
             }
           }
         }
@@ -316,59 +208,15 @@ void FlexGridGraph::initEdges(
           if (dir == frcHorzPrefRoutingDir && xFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
-              if (enableOutput) {
-                if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", N) already set" << endl;
-                }
-              }
               flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               setGridCostN(xIdx, yIdx, zIdx);
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", N)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", N) not set" << endl;
-                } else {
-                  if (!hasGridCostN(xIdx, yIdx, zIdx)) {
-                    cout << "check edge cost failed (" << xIdx << ", " << yIdx
-                         << ", " << zIdx << ", N) != 1" << endl;
-                  }
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", N)" << endl;
-                }
-              }
             }
             // horizontal non-pref track
           } else if (dir == frcVertPrefRoutingDir && yFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
-              if (enableOutput) {
-                if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", E) already set" << endl;
-                }
-              }
               flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               setGridCostE(xIdx, yIdx, zIdx);
-              if (enableOutput) {
-                if (!flag) {
-                  cout << "edge out of bound (" << xIdx << ", " << yIdx << ", "
-                       << zIdx << ", E)" << endl;
-                } else if (!hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-                  cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", E) not set" << endl;
-                } else {
-                  if (!hasGridCostE(xIdx, yIdx, zIdx)) {
-                    cout << "check edge cost failed (" << xIdx << ", " << yIdx
-                         << ", " << zIdx << ", E) != 1" << endl;
-                  }
-                  cout << "add edge (" << xIdx << ", " << yIdx << ", " << zIdx
-                       << ", E)" << endl;
-                }
-              }
             }
           }
         }
@@ -388,8 +236,6 @@ void FlexGridGraph::init(const frBox& routeBBox,
                          bool initDR,
                          bool followGuide)
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
 
   halfViaEncArea_ = getDRWorker()->getDR()->getHalfViaEncArea();
   via2viaMinLen_ = getDRWorker()->getDR()->getVia2ViaMinLen();
@@ -401,18 +247,6 @@ void FlexGridGraph::init(const frBox& routeBBox,
   initTracks(xMap, yMap, zMap, extBBox);
   initGrids(xMap, yMap, zMap, followGuide);        // buildGridGraph
   initEdges(xMap, yMap, zMap, routeBBox, initDR);  // add edges and edgeCost
-  if (enableOutput) {
-    for (int i = 0; i < (int) xCoords_.size(); i++) {
-      for (int j = 0; j < (int) yCoords_.size(); j++) {
-        for (int k = 0; k < (int) zCoords_.size(); k++) {
-          cout << "test x/y/z/E/N/U = " << i << " " << j << " " << k << " "
-               << hasGridCostE(i, j, k) << " " << hasGridCostN(i, j, k) << " "
-               << "0"
-               << " " << endl;
-        }
-      }
-    }
-  }
 }
 
 // initialization helpers
@@ -423,14 +257,9 @@ void FlexGridGraph::initTracks(
     map<frLayerNum, frPrefRoutingDirEnum>& zMap,
     const frBox& bbox)
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   for (auto& layer : getTech()->getLayers()) {
     if (layer->getType() != frLayerTypeEnum::ROUTING) {
       continue;
-    }
-    if (enableOutput) {
-      cout << "initTracks: " << layer->getName() << endl << flush;
     }
     frLayerNum currLayerNum = layer->getLayerNum();
     frPrefRoutingDirEnum currPrefRouteDir = layer->getDir();
@@ -469,9 +298,6 @@ void FlexGridGraph::initTracks(
       }
     }
     zMap[currLayerNum] = currPrefRouteDir;
-  }
-  if (enableOutput) {
-    cout << "finish initTracks" << endl << flush;
   }
 }
 

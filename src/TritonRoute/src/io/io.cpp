@@ -2304,8 +2304,6 @@ void io::Parser::readGuide()
 
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   auto netName = net->getName();
   if (isTA) {
     for (auto& uGuide : net->getGuides()) {
@@ -2325,21 +2323,12 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
       }
     }
   } else {
-    if (enableOutput) {
-      cout << netName << ":\n";
-    }
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
         frPoint start, end;
         pathSeg.getPoints(start, end);
 
-        if (enableOutput) {
-          frLayerNum currLayerNum = pathSeg.getLayerNum();
-          cout << "  connfig pathseg (" << start.x() / 2000.0 << ", "
-               << start.y() / 2000.0 << ") - (" << end.x() / 2000.0 << ", "
-               << end.y() / 2000.0 << ") " << currLayerNum << "\n";
-        }
         connFigs[netName].push_back(make_shared<frPathSeg>(pathSeg));
       }
     }

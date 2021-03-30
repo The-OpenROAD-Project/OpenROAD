@@ -50,7 +50,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     frPathSeg* pathSeg,
     set<pair<frPoint, frLayerNum>>& boundPts)
 {
-  bool enableOutput = false;
   frPoint begin, end;
   pathSeg->getPoints(begin, end);
   auto routeBox = getRouteBox();
@@ -97,9 +96,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (end.y() >= routeBox.bottom()) {
           boundPts.insert(make_pair(boundPt, lNum));
         }
-        if (enableOutput) {
-          cout << "trim pathseg to ext bottom" << endl;
-        }
       }
       // top seg to ext
       if (end.y() > routeBox.top()) {
@@ -126,9 +122,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         // only insert true boundary piont
         if (condition2) {
           boundPts.insert(make_pair(boundPt, lNum));
-        }
-        if (enableOutput) {
-          cout << "trim pathseg to ext top" << endl;
         }
       }
       // std::cout << "  removingPathSeg " << &(*pathSeg) << " (" << begin.x()
@@ -173,9 +166,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (end.x() >= routeBox.left()) {
           boundPts.insert(make_pair(boundPt, lNum));
         }
-        if (enableOutput) {
-          cout << "trim pathseg to ext left" << endl;
-        }
       }
       // right seg to ext
       if (end.x() > routeBox.right()) {
@@ -203,9 +193,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         if (condition2) {
           boundPts.insert(make_pair(boundPt, lNum));
         }
-        if (enableOutput) {
-          cout << "trim pathseg to ext right" << endl;
-        }
       }
       regionQuery->removeDRObj(pathSeg);  // delete rq
       net->removeShape(pathSeg);          // delete segment
@@ -215,8 +202,6 @@ void FlexDRWorker::endRemoveNets_pathSeg(
 
 void FlexDRWorker::endRemoveNets_via(frVia* via)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   auto gridBBox = getRouteBox();
   auto regionQuery = getRegionQuery();
   auto net = via->getNet();
@@ -230,16 +215,11 @@ void FlexDRWorker::endRemoveNets_via(frVia* via)
       && condition1) {
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
-    if (enableOutput) {
-      cout << "delete via in route" << endl;
-    }
   }
 }
 
 void FlexDRWorker::endRemoveNets_patchWire(frPatchWire* pwire)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   auto gridBBox = getRouteBox();
   auto regionQuery = getRegionQuery();
   auto net = pwire->getNet();
@@ -253,9 +233,6 @@ void FlexDRWorker::endRemoveNets_patchWire(frPatchWire* pwire)
       && condition1) {
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
-    if (enableOutput) {
-      cout << "delete pwire in route" << endl;
-    }
   }
 }
 
@@ -464,16 +441,10 @@ void FlexDRWorker::endAddNets_merge(frNet* net,
 void FlexDRWorker::endAddNets(
     map<frNet*, set<pair<frPoint, frLayerNum>>, frBlockObjectComp>& boundPts)
 {
-  // bool enableOutput = true;
   for (auto& net : nets_) {
     if (!net->isModified()) {
       continue;
     }
-    // if (enableOutput) {
-    //   if (net->getFrNet()->getName() == string("net30")) {
-    //     cout <<"write back net@@@" <<endl;
-    //   }
-    // }
     // double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     // if (getDRIter() == 2 &&
     //     getRouteBox().left()    == 63     * dbu &&

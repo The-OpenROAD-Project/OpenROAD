@@ -53,7 +53,6 @@ void FlexRP::prep()
 
 void FlexRP::prep_viaForbiddenThrough()
 {
-  // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
@@ -110,7 +109,6 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
 
 void FlexRP::prep_lineForbiddenLen()
 {
-  // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
@@ -190,7 +188,6 @@ void FlexRP::prep_lineForbiddenLen_minSpc(
 
 void FlexRP::prep_viaForbiddenPlanarLen()
 {
-  // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
@@ -258,7 +255,6 @@ void FlexRP::prep_viaForbiddenPlanarLen_minStep(
 
 void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
 {
-  // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
   int bottom = BOTTOM_ROUTING_LAYER;
@@ -389,7 +385,6 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(
 
 void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
 {
-  // bool enableOutput = false;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
   int bottom = BOTTOM_ROUTING_LAYER;
