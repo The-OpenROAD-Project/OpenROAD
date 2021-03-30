@@ -91,7 +91,6 @@ _installUbuntuDev() {
         libpcre3-dev \
         python3-dev \
         tcl-dev \
-        tk-dev \
         wget \
         zlib1g-dev
 }
@@ -131,8 +130,6 @@ _installCentosDev() {
         tcl \
         tcl-devel \
         tcl-tclreadline-devel \
-        tk \
-        tk-devel \
         wget
     yum install -y \
         python36 \
