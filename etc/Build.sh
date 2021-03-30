@@ -1,13 +1,13 @@
 #!/bin/bash
 
-set -eo pipefail
+set -euo pipefail
 
 cd "$(dirname $(readlink -f $0))/../"
 
 # default values, can be overwritten by cmdline args
 buildDir="build"
 numThreads="$(nproc)"
-cmakeOptions=()
+cmakeOptions=("")
 cleanBefore=no
 keepLog=no
 compiler=gcc
