@@ -163,6 +163,8 @@ Resizer::Resizer() :
   target_load_map_(nullptr),
   level_drvr_vertices_valid_(false),
   tgt_slews_{0.0, 0.0},
+  tgt_slew_corner_(nullptr),
+  tgt_slew_dcalc_ap_(nullptr),
   unique_net_index_(1),
   unique_inst_index_(1),
   resize_count_(0),
@@ -936,6 +938,7 @@ Resizer::gateSlewDiff(LibertyPort *drvr_port,
                       double slew,
                       const DcalcAnalysisPt *dcalc_ap)
 {
+  const Pvt *pvt = dcalc_ap->operatingConditions();
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
@@ -1278,22 +1281,27 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
       bool is_buf_inv = cell->isBuffer() || cell->isInverter();
       ensureWireParasitic(drvr_pin);
       // Includes net parasitic capacitance.
-      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+      float load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
       if (load_cap > 0.0) {
         LibertyCell *best_cell = cell;
         float target_load = (*target_load_map_)[cell];
         float best_load = target_load;
         float best_dist = targetLoadDist(load_cap, target_load);
-        float best_delay = is_buf_inv ? bufferDelay(cell, load_cap) : 0.0;
+        float best_delay = is_buf_inv
+          ? bufferDelay(cell, load_cap, tgt_slew_dcalc_ap_)
+          : 0.0;
         debugPrint(logger_, RSZ, "resizer", 2, "{} load cap {} dist={:.2e} delay={}",
                    sdc_network_->pathName(drvr_pin),
                    units_->capacitanceUnit()->asString(load_cap),
                    best_dist,
                    delayAsString(best_delay, sta_, 3));
         for (LibertyCell *target_cell : *equiv_cells) {
-          if (!dontUse(target_cell)) {
+          if (!dontUse(target_cell)
+              && isLinkCell(target_cell)) {
             float target_load = (*target_load_map_)[target_cell];
-            float delay = is_buf_inv ? bufferDelay(target_cell, load_cap) : 0.0;
+            float delay = is_buf_inv
+              ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
+              : 0.0;
             float dist = targetLoadDist(load_cap, target_load);
             debugPrint(logger_, RSZ, "resizer", 2, " {} dist={:.2e} delay={}",
                        target_cell->name(),
@@ -1544,10 +1552,20 @@ Resizer::findTargetLoads()
   if (target_load_map_ == nullptr)
     target_load_map_ = new CellTargetLoadMap;
   target_load_map_->clear();
+
+  // Find target loads at the tgt_slew_corner.
+  int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
   LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary *lib = lib_iter->next();
-    findTargetLoads(lib, tgt_slews_);
+    LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      LibertyCell *cell = cell_iter.next();
+      if (isLinkCell(cell)) {
+        LibertyCell *corner_cell = cell->cornerCell(lib_ap_index);
+        findTargetLoad(corner_cell);
+      }
+    }
   }
   delete lib_iter;
 }
@@ -1562,19 +1580,7 @@ Resizer::targetLoadCap(LibertyCell *cell)
 }
 
 void
-Resizer::findTargetLoads(LibertyLibrary *library,
-                         TgtSlews &slews)
-{
-  LibertyCellIterator cell_iter(library);
-  while (cell_iter.hasNext()) {
-    LibertyCell *cell = cell_iter.next();
-    findTargetLoad(cell, slews);
-  }
-}
-
-void
-Resizer::findTargetLoad(LibertyCell *cell,
-                        TgtSlews &slews)
+Resizer::findTargetLoad(LibertyCell *cell)
 {
   LibertyCellTimingArcSetIterator arc_set_iter(cell);
   float target_load_sum = 0.0;
@@ -1590,9 +1596,9 @@ Resizer::findTargetLoad(LibertyCell *cell,
         TimingArc *arc = arc_iter.next();
         int in_rf_index = arc->fromTrans()->asRiseFall()->index();
         int out_rf_index = arc->toTrans()->asRiseFall()->index();
-        float arc_target_load = findTargetLoad(cell, arc,
-                                               slews[in_rf_index],
-                                               slews[out_rf_index]);
+        float arc_target_load = findTargetLoad(cell, arc, 
+                                               tgt_slews_[in_rf_index],
+                                               tgt_slews_[out_rf_index]);
         debugPrint(logger_, RSZ, "target_load", 3, "{} {} -> {} {} target_load = {:.2e}",
                    cell->name(),
                    arc->from()->name(),
@@ -1605,10 +1611,11 @@ Resizer::findTargetLoad(LibertyCell *cell,
     }
   }
   float target_load = arc_count ? target_load_sum / arc_count : 0.0;
+  (*target_load_map_)[cell] = target_load;
+
   debugPrint(logger_, RSZ, "target_load", 2, "{} target_load = {:.2e}",
              cell->name(),
              target_load);
-  (*target_load_map_)[cell] = target_load;
 }
 
 // Find the load capacitance that will cause the output slew
@@ -1665,10 +1672,11 @@ Resizer::gateSlewDiff(LibertyCell *cell,
                       Slew in_slew,
                       float load_cap,
                       Slew out_slew)
+
 {
+  const Pvt *pvt = tgt_slew_dcalc_ap_->operatingConditions();
   ArcDelay arc_delay;
   Slew arc_slew;
-  const Pvt *pvt = dcalc_ap_->operatingConditions();
   model->gateDelay(cell, pvt, in_slew, load_cap, 0.0, false,
                    arc_delay, arc_slew);
   return arc_slew - out_slew;
@@ -1687,33 +1695,32 @@ void
 Resizer::findBufferTargetSlews()
 {
   tgt_slews_ = {0.0};
-  int tgt_counts[RiseFall::index_count]{0};
+  tgt_slew_corner_ = nullptr;
   
-  for (LibertyCell *buffer : buffer_cells_) {
-    // Find max slew across corners.
+  for (Corner *corner : *sta_->corners()) {
+    int lib_ap_index = corner->libertyIndex(max_);
+    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    const Pvt *pvt = dcalc_ap->operatingConditions();
+    // Average slews across buffers at corner.
     Slew slews[RiseFall::index_count]{0.0};
-    for (Corner *corner : *sta_->corners()) {
-      int lib_ap_index = corner->libertyIndex(max_);
-      const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
-      const Pvt *pvt = dcalc_ap->operatingConditions();
+    int counts[RiseFall::index_count]{0};
+    for (LibertyCell *buffer : buffer_cells_) {
       LibertyCell *corner_buffer = buffer->cornerCell(lib_ap_index);
-      findBufferTargetSlews(corner_buffer, pvt, slews);
+      findBufferTargetSlews(corner_buffer, pvt, slews, counts);
     }
-    debugPrint(logger_, RSZ, "target_load", 2, "target_slews {} = {}/{}",
-               buffer->name(),
-               delayAsString(slews[RiseFall::riseIndex()], sta_, 3),
-               delayAsString(slews[RiseFall::fallIndex()], sta_, 3));
-
-    for (int rf : RiseFall::rangeIndex()) {
-      tgt_slews_[rf] += slews[rf];
-      tgt_counts[rf]++;
+    Slew slew_rise = slews[RiseFall::riseIndex()] / counts[RiseFall::riseIndex()];
+    Slew slew_fall = slews[RiseFall::fallIndex()] / counts[RiseFall::fallIndex()];
+    // Use the target slews from the slowest corner.
+    if (slew_rise > tgt_slews_[RiseFall::riseIndex()]) {
+      tgt_slews_[RiseFall::riseIndex()] = slew_rise;
+      tgt_slews_[RiseFall::fallIndex()] = slew_fall;
+      tgt_slew_corner_ = corner;
+      tgt_slew_dcalc_ap_ = corner->findDcalcAnalysisPt(max_);
     }
   }
 
-  for (int rf : RiseFall::rangeIndex())
-    tgt_slews_[rf] /= tgt_counts[rf];
-
-  debugPrint(logger_, RSZ, "target_load", 1, "target_slews = {}/{}",
+  debugPrint(logger_, RSZ, "target_load", 1, "target slew corner {} = {}/{}",
+             tgt_slew_corner_->name(),
              delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
              delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 }
@@ -1722,7 +1729,8 @@ void
 Resizer::findBufferTargetSlews(LibertyCell *buffer,
                                const Pvt *pvt,
                                // Return values.
-                               Slew slews[])
+                               Slew slews[],
+                               int counts[])
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
@@ -1736,14 +1744,15 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
         RiseFall *in_rf = arc->fromTrans()->asRiseFall();
         RiseFall *out_rf = arc->toTrans()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
-        float load_cap = in_cap * 10.0; // "factor debatable"
+        float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
         Slew arc_slew;
         model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
                          arc_delay, arc_slew);
         model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
                          arc_delay, arc_slew);
-        slews[out_rf->index()] = max(slews[out_rf->index()], arc_slew);
+        slews[out_rf->index()] += arc_slew;
+        counts[out_rf->index()]++;
       }
     }
   }
@@ -2154,14 +2163,14 @@ Resizer::upsizeCell(LibertyPort *in_port,
            return port1->driveResistance() > port2->driveResistance();
          });
     float drive = drvr_port->driveResistance();
-    float delay = gateDelay(drvr_port, load_cap, dcalc_ap_)
+    float delay = gateDelay(drvr_port, load_cap, tgt_slew_dcalc_ap_)
       + prev_drive * in_port->capacitance();
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyPort *equiv_drvr = equiv->findLibertyPort(drvr_port_name);
       LibertyPort *equiv_input = equiv->findLibertyPort(in_port_name);
       float equiv_drive = equiv_drvr->driveResistance();
       // Include delay of previous driver into equiv gate.
-      float equiv_delay = gateDelay(equiv_drvr, load_cap, dcalc_ap_)
+      float equiv_delay = gateDelay(equiv_drvr, load_cap, tgt_slew_dcalc_ap_)
         + prev_drive * equiv_input->capacitance();
       if (!dontUse(equiv)
           && equiv_drive < drive
@@ -2837,13 +2846,14 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
 
 float
 Resizer::bufferDelay(LibertyCell *buffer_cell,
-                     float load_cap)
+                     float load_cap,
+                     const DcalcAnalysisPt *dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, dcalc_ap_, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return max(gate_delays[RiseFall::riseIndex()],
              gate_delays[RiseFall::fallIndex()]);
 }

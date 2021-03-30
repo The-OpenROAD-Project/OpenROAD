@@ -278,10 +278,7 @@ protected:
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
-  void findTargetLoads(LibertyLibrary *library,
-                       TgtSlews &slews);
-  void findTargetLoad(LibertyCell *cell,
-                      TgtSlews &slews);
+  void findTargetLoad(LibertyCell *cell);
   float findTargetLoad(LibertyCell *cell,
                        TimingArc *arc,
                        Slew in_slew,
@@ -296,7 +293,8 @@ protected:
   void findBufferTargetSlews(LibertyCell *buffer,
                              const Pvt *pvt,
                              // Return values.
-                             Slew slews[]);
+                             Slew slews[],
+                             int counts[]);
   bool hasMultipleOutputs(const Instance *inst);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
                                    Parasitic *parasitic,
@@ -395,7 +393,8 @@ protected:
                     RiseFall *rf,
                     float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
-                    float load_cap);
+                    float load_cap,
+                    const DcalcAnalysisPt *dcalc_ap);
   Parasitic *makeWireParasitic(Net *net,
                                Pin *drvr_pin,
                                Pin *load_pin,
@@ -549,6 +548,8 @@ protected:
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_;
   TgtSlews tgt_slews_;
+  Corner *tgt_slew_corner_;
+  const DcalcAnalysisPt *tgt_slew_dcalc_ap_;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
   int unique_net_index_;
@@ -568,6 +569,8 @@ protected:
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSet inserted_buffers_;
 
+  // "factor debatable"
+  static constexpr float tgt_slew_load_cap_factor = 10.0;
   static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 5;
   static constexpr int rebuffer_max_fanout_ = 40;
   static constexpr int split_load_min_fanout_ = 8;

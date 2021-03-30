@@ -10,8 +10,10 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 set_load 5 [get_net u1zn]
 
+report_checks -unconstrained -fields {slew capacitance}
 report_check_types -max_slew -max_capacitance
 
 repair_design
 
+report_checks -unconstrained -fields {slew capacitance}
 report_check_types -max_slew -max_capacitance
