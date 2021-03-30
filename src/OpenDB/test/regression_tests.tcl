@@ -1,6 +1,7 @@
 record_tests {
   import_package
   read_lef
+  read_zipped
   dump_via_rules
   dump_vias
   read_def
