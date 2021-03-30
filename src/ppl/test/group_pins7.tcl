@@ -3,7 +3,7 @@ read_lef Nangate45/Nangate45.lef
 read_def group_pins3.def
 
 set_io_pin_constraint \
-  -pin_names {req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1] } \
+  -pin_names {req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1]} \
   -region left:*
 
 set_io_pin_constraint \
