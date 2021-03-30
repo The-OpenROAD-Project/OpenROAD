@@ -318,7 +318,7 @@ Resizer::pinCapacitance(const Pin *pin)
 {
   LibertyPort *port = network_->libertyPort(pin);
   if (port)
-    return portCapacitance(port);
+    return port->capacitance();
   else
     return 0.0;
 }

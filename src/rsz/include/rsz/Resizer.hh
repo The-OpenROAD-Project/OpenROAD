@@ -94,11 +94,11 @@ using sta::Slack;
 using sta::Corner;
 using sta::DcalcAnalysisPt;
 using sta::ParasiticAnalysisPt;
+using sta::GateTimingModel;
 using sta::Pvt;
 using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
-using sta::GateTimingModel;
 
 class BufferedNet;
 class SteinerRenderer;
@@ -375,7 +375,6 @@ protected:
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
-  float portCapacitance(const LibertyPort *port);
   float portFanoutLoad(LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);

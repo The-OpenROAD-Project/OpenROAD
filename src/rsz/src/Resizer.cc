@@ -1060,7 +1060,7 @@ Resizer::repairNet(SteinerTree *tree,
                  units_->distanceUnit()->asString(dbuToMeters(load_dist), 1));
       LibertyPort *load_port = network_->libertyPort(load_pin);
       if (load_port) {
-        pin_cap += portCapacitance(load_port);
+        pin_cap += load_port->capacitance();
         fanout += portFanoutLoad(load_port);
       }
       else
@@ -1196,7 +1196,7 @@ Resizer::makeRepeater(const char *where,
     load_pins.clear();
     load_pins.push_back(buf_in_pin);
     wire_length = 0;
-    pin_cap = portCapacitance(buffer_input_port);
+    pin_cap = buffer_input_port->capacitance();
     fanout = portFanoutLoad(buffer_input_port);
   }
 }
@@ -1710,7 +1710,8 @@ Resizer::findBufferTargetSlews()
     }
     Slew slew_rise = slews[RiseFall::riseIndex()] / counts[RiseFall::riseIndex()];
     Slew slew_fall = slews[RiseFall::fallIndex()] / counts[RiseFall::fallIndex()];
-    // Use the target slews from the slowest corner.
+    // Use the target slews from the slowest corner,
+    // and resize using that corner.
     if (slew_rise > tgt_slews_[RiseFall::riseIndex()]) {
       tgt_slews_[RiseFall::riseIndex()] = slew_rise;
       tgt_slews_[RiseFall::fallIndex()] = slew_fall;
@@ -2804,15 +2805,7 @@ Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  return portCapacitance(input);
-}
-
-float
-Resizer::portCapacitance(const LibertyPort *port)
-{
-  float cap1 = port->capacitance(RiseFall::rise(), max_);
-  float cap2 = port->capacitance(RiseFall::fall(), max_);
-  return max(cap1, cap2);
+  return input->capacitance();
 }
 
 float
