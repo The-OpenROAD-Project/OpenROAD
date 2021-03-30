@@ -58,9 +58,7 @@ struct Slot
   Edge edge;
 };
 
-using SlotVector = std::vector<Slot>;
-
-// Section: an region in the die boundary that contains a set
+// Section: a region in the die boundary that contains a set
 // of slots. By default, each section has 200 slots
 struct Section
 {
@@ -73,8 +71,6 @@ struct Section
   int num_slots;
   Edge edge;
 };
-
-using SectionVector = std::vector<Section>;
 
 template <typename T>
 std::vector<size_t> sortIndexes(const std::vector<T>& v)

@@ -40,7 +40,7 @@
 namespace ppl {
 
 HungarianMatching::HungarianMatching(Section& section,
-                                     SlotVector& slots,
+                                     std::vector<Slot>& slots,
                                      Logger* logger)
     : netlist_(section.net), slots_(slots)
 {
