@@ -296,6 +296,9 @@ class drVia : public drRef
 
   bool isTapered() const { return tapered_; }
 
+  const frPoint& getOrigin() const {
+      return origin_;
+  }
  protected:
   frPoint origin_;
   frViaDef* viaDef_;
