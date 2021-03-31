@@ -2668,6 +2668,109 @@ proc export_opendb_vias {} {
   # debug "end"
 }
 
+proc export_opendb_global_connection {} {
+  variable block
+  variable design_data
+  variable global_connections
+  
+  # Build index of power nets
+  set pwr_net_info [dict create]
+  foreach net_type "power_nets ground_nets" {
+    foreach net_name [dict get $design_data $net_type] {
+      dict lappend pwr_net_info nets $net_name
+      dict set pwr_net_info net $net_name inst [$block findNet $net_name]
+      dict set pwr_net_info net $net_name validmterms [get_valid_mterms $net_name]
+      if {[dict exists $global_connections $net_name]} {
+        dict set pwr_net_info net $net_name pattern [dict get $global_connections $net_name]
+      } else {
+        dict set pwr_net_info net $net_name pattern {}
+      }
+    }
+  }
+  
+  # Build index of masters with candidate pin connections
+  set masters_info [dict create]
+  foreach lib [[ord::get_db] getLibs] {
+    foreach master [$lib getMasters] {
+      foreach mterm [$master getMTerms] {
+        set mterm_type [$mterm getSigType]
+        set mterm_name [$mterm getName]
+        set mterm_dict [dict create]
+        dict set mterm_dict inst $mterm
+        dict set mterm_dict pattern {}
+        dict set mterm_dict validmterm 0
+        foreach net_name [dict get $pwr_net_info nets] {
+          # If the terminal is found in the valid_mterms list, set flag
+          foreach validm [dict get $pwr_net_info net $net_name validmterms] {
+            if {[regexp $validm $mterm_name]} {
+              dict set mterm_dict validmterm 1
+            }
+          }
+          # Prefilter patterns, so we only need to check instance names later
+          foreach pattern [dict get $pwr_net_info net $net_name pattern] {
+            if {[regexp [dict get $pattern pin_name] $mterm_name]} {
+              dict lappend mterm_dict pattern "[dict get $pattern inst_name] [dict get $pwr_net_info net $net_name inst]"
+            }
+          }
+        }
+        if {[llength [dict get $mterm_dict pattern]] > 0} {
+          dict set masters_info $master $mterm_name $mterm_dict
+        }
+      }
+    }
+  }
+  
+  foreach inst [$block getInsts] {
+    set inst_name [$inst getName]
+    set master [$inst getMaster]
+    if {[dict exists $masters_info $master]} {
+      set master_info [dict get $masters_info $master]
+      foreach mterm [dict keys $master_info] {
+        set mterm_inst [dict get $master_info $mterm inst]
+        set connect_via_pattern 0
+        # Check if instance name is part of pattern and connect
+        foreach pattern_net [dict get $master_info $mterm pattern] {
+          lassign $pattern_net pattern net
+          if {[regexp $pattern $inst_name]} {
+            odb::dbITerm_connect $inst $net $mterm_inst
+            set connect_via_pattern 1
+            break
+          }
+        }
+        if {!$connect_via_pattern && [dict get $master_info $mterm validmterm]} {
+          # no pattern matched and is a valid mterm, so we need to figure out the connectivity
+          #PHY cells like ENDCAPS, WELLTAPS have uncertain pwr/gnd connections when there are voltage domains.
+          #This is to detect where the PHY cells are placed, the pwr/gnd pins are connected automatically
+          set box [$inst getBBox]
+          set inst_llx [$box xMin]
+          set inst_lly [$box yMin]
+          set inst_urx [$box xMax]
+          set inst_ury [$box yMax]
+          set domain_name [get_voltage_domain $inst_llx $inst_lly $inst_urx $inst_ury]
+          set net_name "NULL"
+          if {[$mterm_inst getSigType] == "POWER"} {
+            set net_name [get_domain_power $domain_name]
+          } elseif {[$mterm_inst getSigType] == "GROUND"} {
+            set net_name [get_domain_ground $domain_name]
+          }
+          if {$net_name != "NULL"} {
+            odb::dbITerm_connect $inst [dict get $pwr_net_info net $net_name inst] $mterm_inst
+          }
+        }
+      }
+    }
+  }
+  
+  # Loop over power nets and set all iterms connected as special
+  foreach net_name [dict get $pwr_net_info nets] {
+    set net [$block findNet $net_name]
+    
+    foreach iterm [$net getITerms] {
+      $iterm setSpecial
+    }
+  }
+}
+
 proc export_opendb_specialnet {net_name signal_type} {
   variable block
   variable instances
@@ -2685,39 +2788,6 @@ proc export_opendb_specialnet {net_name signal_type} {
   $net setSigType $signal_type
   # debug "net $net_name. signaltype, $signal_type, global_connections: $global_connections"
   
-  set mterms_list [get_valid_mterms $net_name]
-  foreach inst [$block getInsts] {
-    set master [$inst getMaster]
-    foreach mterm [$master getMTerms] {
-      if {[$mterm getSigType] == $signal_type && [dict exists $global_connections $net_name]} {
-        foreach pattern [dict get $global_connections $net_name] {
-          if {[regexp [dict get $pattern inst_name] [$inst getName]] &&
-            [regexp [dict get $pattern pin_name] [$mterm getName]]} {
-            odb::dbITerm_connect $inst $net $mterm
-          } else {
-            #PHY cells like ENDCAPS, WELLTAPS have uncertain pwr/gnd connections when there are voltage domains.
-            #This is to detect where the PHY cells are placed, the pwr/gnd pins are connected automatically
-            set box [$inst getBBox]
-            set inst_llx [$box xMin]
-            set inst_lly [$box yMin]
-            set inst_urx [$box xMax]
-            set inst_ury [$box yMax]
-            set domain_name [get_voltage_domain $inst_llx $inst_lly $inst_urx $inst_ury]
-            if {($net_name == [get_domain_power $domain_name] || 
-              $net_name == [get_domain_ground $domain_name] ) &&
-              [lsearch -exact $mterms_list [$mterm getName]] >= 0} {
-              odb::dbITerm_connect $inst $net $mterm
-            }
-          }
-        }
-      }
-    }
-    foreach iterm [$inst getITerms] {
-      if {[$iterm getNet] != "NULL" && [[$iterm getNet] getName] == $net_name} {
-        $iterm setSpecial
-      }
-    }
-  }
   if {[check_snet_is_unique $net]} {
     $net setWildConnected
   }
@@ -2779,6 +2849,7 @@ proc export_opendb_specialnets {} {
     export_opendb_specialnet $net_name "GROUND"
   }
   
+  export_opendb_global_connection
 }
 
 proc export_opendb_power_pin {net_name signal_type} {
