@@ -106,7 +106,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (gui_->checkCustomVisibilityControl(routing_objs_visible_)) {
     auto& rq = worker_->getWorkerRegionQuery();
     frBox box;
-    worker_->getRouteBox(box);
+    worker_->getExtBox(box);
     std::vector<drConnFig*> figs;
     rq.query(box, layerNum, figs);
     for (auto& fig : figs) {
@@ -234,18 +234,30 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   // Draw markers
+  frBox box;
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   for (auto& marker :
        worker_->getGCWorker()
-           ->getMarkers()) {  // getDesign()->getTopBlock()->getMarkers()
+           ->getMarkers()) {  
     if (marker->getLayerNum() == layerNum) {
-      frBox box;
       marker->getBBox(box);
-      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
-      painter.drawLine({box.left(), box.bottom()}, {box.right(), box.top()});
-      painter.drawLine({box.left(), box.top()}, {box.right(), box.bottom()});
+      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
+  painter.setPen(gui::Painter::green, /* cosmetic */ true);
+  for (auto& marker :
+       worker_->getDesign()->getTopBlock()->getMarkers()) {  
+    if (marker->getLayerNum() == layerNum) {
+      marker->getBBox(box);
+      drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
+    }
+  }
+}
+
+void FlexDRGraphics::drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter) {
+    painter.drawRect({xl, yl, xh, yh});
+    painter.drawLine({xl, yl}, {xh, yh});
+    painter.drawLine({xl, yh}, {xh, yl});
 }
 
 void FlexDRGraphics::update()

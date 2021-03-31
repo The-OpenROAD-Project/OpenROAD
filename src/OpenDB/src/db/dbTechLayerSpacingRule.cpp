@@ -604,13 +604,11 @@ void dbTechLayerSpacingRule::setEol(uint width,
       && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
       && (_lsp->_flags._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE));
 
+   _lsp->_r1min = width;
+   _lsp->_r1max = within;
   if (!parallelEdge) {
-    _lsp->_r1min = width;
-    _lsp->_r1max = within;
     _lsp->_flags._rule = _dbTechLayerSpacingRule::ENDOFLINE;
   } else {
-    _lsp->_r1min = width;
-    _lsp->_r1max = within;
     _lsp->_r2min = parallelSpace;
     _lsp->_r2max = parallelWithin;
     if (!twoEdges)
@@ -638,9 +636,9 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   parallelSpace = 0;
   parallelWithin = 0;
   twoEdges = false;
+  width = _lsp->_r1min;
+  within = _lsp->_r1max;
   if (_lsp->_flags._rule == _dbTechLayerSpacingRule::ENDOFLINE) {
-    width = _lsp->_r1min;
-    within = _lsp->_r1max;
     parallelSpace = false;
     return true;
   }

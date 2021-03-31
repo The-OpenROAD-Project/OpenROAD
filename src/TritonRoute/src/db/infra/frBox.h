@@ -128,6 +128,13 @@ class frBox
              && in.y() < ur_.y();
     }
   }
+  bool contains2(const frPoint& pt, int bloatXL=0, int bloatXH=0, int bloatYL=0, int bloatYH=0) const{
+          return  contains(pt.x(), pt.y(), bloatXL, bloatXH, bloatYL, bloatYH);
+    }
+  bool contains(int x, int y, int bloatXL=0, int bloatXH=0, int bloatYL=0, int bloatYH=0) const{
+        return  left()-bloatXL <= x && right()+bloatXH >= x && 
+                bottom()-bloatYL <= y && top()+bloatYH >= y;
+    }
   void merge(const frBox& box)
   {
     set(std::min(left(), box.left()),

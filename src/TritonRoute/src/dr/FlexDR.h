@@ -828,6 +828,9 @@ class FlexDRWorker
                                int type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr);
+  void modCornerToCornerSpacing(const frBox& box,
+                               frMIdx z,
+                               int type);
   void modMinSpacingCostVia(const frBox& box,
                             frMIdx z,
                             int type,
@@ -835,6 +838,9 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+  void modCornerToCornerSpacing_helper(const frBox& box,
+                               frMIdx z,
+                               int type);
   frCoord pt2boxDistSquare(const frPoint& pt, const frBox& box);
   frCoord box2boxDistSquare(const frBox& box1,
                             const frBox& box2,

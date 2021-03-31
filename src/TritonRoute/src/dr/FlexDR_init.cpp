@@ -1628,11 +1628,7 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
           if (isInitDR() && getRouteBox().right() == bp.x()
               && getRouteBox().top() == bp.y()) {
             if (enableOutput) {
-              cout << " ("
-                   << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ", "
-                   << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ") skipped";
+              cout << bp << " skipped (case 1)\n";
             }
           } else if ((getRouteBox().right() == bp.x()
                       && bLayer->getDir() == frcVertPrefRoutingDir
@@ -1641,29 +1637,17 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
                          && bLayer->getDir() == frcHorzPrefRoutingDir
                          && bLayer->getLef58RectOnlyConstraint())) {
             if (enableOutput) {
-              cout << " ("
-                   << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ", "
-                   << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ") skipped";
+              cout << bp << " skipped (case 2)\n";
             }
           } else {
             dPin->addAccessPattern(std::move(dAp));
             if (enableOutput) {
-              cout << " ("
-                   << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ", "
-                   << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                   << ") added";
+              cout << bp << " added\n";
             }
           }
         } else {
           if (enableOutput) {
-            cout << " ("
-                 << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                 << ", "
-                 << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                 << ") skipped";
+            cout <<  bp << " skipped (case 3)\n";
           }
         }
       }
@@ -1671,8 +1655,7 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
     }
 
     if (enableOutput) {
-      cout << endl;
-      cout << "ap size = " << dPin->getAccessPatterns().size() << endl;
+      cout << "\nap size = " << dPin->getAccessPatterns().size() << endl;
     }
 
     if (dPin->getAccessPatterns().empty()) {
@@ -1689,19 +1672,14 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
       }
       initNet_termGenAp_new(dPin.get());
       if (dPin->getAccessPatterns().empty()) {
-        cout << endl
-             << "Error: pin " << name << " still does not have temp ap" << endl;
+        cout << "\nError: pin " << name << " still does not have temp ap" << endl;
         exit(1);
       } else {
         if (enableOutput) {
           for (auto& ap : dPin->getAccessPatterns()) {
             frPoint bp;
             ap->getPoint(bp);
-            cout << " temp ap ("
-                 << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                 << ", "
-                 << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-                 << ") ";
+            cout << " temp ap (" << bp << " ";
           }
           cout << endl;
         }
@@ -4326,6 +4304,9 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
+              if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {  //temp solution for ISPD19 benchmarks
+                  modCornerToCornerSpacing(box, zIdx, type);
+              }
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true, false);
                 modMinSpacingCostVia(box, zIdx, type, false, false);

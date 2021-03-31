@@ -202,7 +202,18 @@ class gcNet : public gcBlockObject
   {
     return specialSpacingRects;
   }
-
+  bool hasPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const{
+      for (auto& pin : pins_[ln]){
+          for (auto& corners : pin->getPolygonCorners()) {
+                for (auto& corner : corners) {
+                    if (corner->x() == x && corner->y() == y) {
+                        return true;
+                    }
+                }
+           }
+      }
+      return false;
+  }
  protected:
   std::vector<gtl::polygon_90_set_data<frCoord>>
       fixedPolygons_;  // only routing layer
