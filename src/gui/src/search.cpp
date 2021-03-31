@@ -48,12 +48,9 @@ void Search::init(odb::dbBlock* block)
   }
 
   for (odb::dbInst* inst : block->getInsts()) {
-    odb::dbPlacementStatus status = inst->getPlacementStatus();
-    if (status == odb::dbPlacementStatus::NONE
-        || status == odb::dbPlacementStatus::UNPLACED) {
-      continue;
+    if (inst->isPlaced()) {
+        addInst(inst);
     }
-    addInst(inst);
   }
 
   for (odb::dbBTerm* term : block->getBTerms()) {

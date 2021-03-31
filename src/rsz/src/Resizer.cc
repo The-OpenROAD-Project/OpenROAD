@@ -1915,7 +1915,7 @@ Resizer::repairSetup(float slack_margin)
     ensureWireParasitics();
     sta_->findRequireds();
     sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "retime", 1, "pass %d worst_slack = {}",
+    debugPrint(logger_, RSZ, "retime", 1, "pass {} worst_slack = {}",
                pass,
                delayAsString(worst_slack, sta_, 3));
     if (fuzzyLessEqual(worst_slack, prev_worst_slack)) {
@@ -1994,9 +1994,10 @@ Resizer::repairSetup(PathRef &path,
       if (network_->isDriver(path_pin)
           && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
-        Delay load_delay = path->arrival(sta_) - prev_path->arrival(sta_)
-                   // Remove intrinsic delay to find load dependent delay.
-                   - prev_arc->intrinsicDelay();
+        Edge *prev_edge = path->prevEdge(prev_arc, sta_);
+        Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap_->index())
+          // Remove intrinsic delay to find load dependent delay.
+          - prev_arc->intrinsicDelay();
         load_delays.push_back(pair(i, load_delay));
         debugPrint(logger_, RSZ, "retime", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
@@ -2053,12 +2054,16 @@ Resizer::repairSetup(PathRef &path,
       Pin *in_pin = in_path->pin(sta_);
       LibertyPort *in_port = network_->libertyPort(in_pin);
 
-      int prev_drvr_index = drvr_index - 2;
-      PathRef *prev_drvr_path = expanded.path(prev_drvr_index);
-      Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
-      LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-      float prev_drive = prev_drvr_port ? prev_drvr_port->driveResistance() : 0.0;
-
+      float prev_drive;
+      if (drvr_index >= 2) {
+        int prev_drvr_index = drvr_index - 2;
+        PathRef *prev_drvr_path = expanded.path(prev_drvr_index);
+        Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+        LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+        prev_drive = prev_drvr_port ? prev_drvr_port->driveResistance() : 0.0;
+      }
+      else
+        prev_drive = 0.0;
       debugPrint(logger_, RSZ, "retime", 2, "resize {}",
                  network_->pathName(drvr_pin));
       LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive);
@@ -2274,7 +2279,7 @@ Resizer::repairHold(VertexSet *ends,
                                     slack_margin, allow_setup_violations,
                                     max_buffer_count);
       debugPrint(logger_, RSZ, "repair_hold", 1,
-                 "pass %d worst slack {} failures %lu inserted {}",
+                 "pass {} worst slack {} failures %lu inserted {}",
                  pass,
                  delayAsString(worst_slack, sta_, 3),
                  hold_failures .size(),

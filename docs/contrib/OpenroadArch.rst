@@ -1,3 +1,6 @@
+OpenROAD Architecture
+=====================
+
 Tool Philosophy
 ~~~~~~~~~~~~~~~
 
@@ -329,6 +332,9 @@ Tool Flow
 -  Global route (FastRoute)
 -  Detailed route (TritonRoute)
 -  Final timing/power report (OpenSTA)
+
+
+.. _tool-checklist:
 
 Tool Checklist
 ~~~~~~~~~~~~~~

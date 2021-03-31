@@ -9,8 +9,8 @@
 [INFO ODB-0131]     Created 295 components and 1600 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 164 connections.
 [INFO ODB-0134] Finished DEF file: cells_not_placed.def
-Restrict INPUT pins to region 0.0u-100.13u, in the top edge.
-Restrict OUTPUT pins to region 0.0u-100.13u, in the bottom edge.
+[INFO PPL-0049] Restrict INPUT pins to region 0.0u-100.13u, in the top edge.
+[INFO PPL-0049] Restrict OUTPUT pins to region 0.0u-100.13u, in the bottom edge.
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.

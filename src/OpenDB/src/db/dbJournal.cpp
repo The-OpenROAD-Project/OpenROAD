@@ -1053,21 +1053,6 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::SHAPE_ID: {
-      uint prev_shape_id;
-      _log.pop(prev_shape_id);
-      _log.pop(rseg->_shape_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: dbRSeg {}, updateShape: {} to {}",
-                 rseg_id,
-                 prev_shape_id,
-                 rseg->_shape_id);
-      break;
-    }
-
     case _dbRSeg::RESISTANCE: {
       float prev_r;
       float r;
@@ -1623,7 +1608,6 @@ void dbJournal::undo_updateRSegField()
     case _dbRSeg::FLAGS:
     case _dbRSeg::SOURCE:
     case _dbRSeg::TARGET:
-    case _dbRSeg::SHAPE_ID:
     case _dbRSeg::RESISTANCE:
     case _dbRSeg::CAPACITANCE:
       break;

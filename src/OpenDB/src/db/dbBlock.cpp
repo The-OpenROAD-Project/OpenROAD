@@ -1945,10 +1945,10 @@ void dbBlock::getMasters(std::vector<dbMaster*>& masters)
   }
 }
 
-void dbBlock::setDieArea(const Rect& r)
+void dbBlock::setDieArea(const Rect& new_area)
 {
   _dbBlock* block = (_dbBlock*) this;
-  block->_die_area = r;
+  block->_die_area = new_area;
   for (auto callback : block->_callbacks) {
     callback->inDbBlockSetDieArea(this);
   }

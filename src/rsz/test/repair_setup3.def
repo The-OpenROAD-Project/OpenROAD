@@ -1,0 +1,37 @@
+VERSION 5.8 ; 
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN reg1 ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 3 ;
+- r1 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 2000 2000 ) N ;
+- u1 sky130_fd_sc_hd__buf_1 + PLACED   ( 2000 3000 ) N ;
+- i1 sky130_fd_sc_hd__inv_1 + PLACED   ( 2000 3000 ) N ;
+- l2 sky130_fd_sc_hd__dlxtn_1 + PLACED ( 2000 4000 ) N ;
+- u2 sky130_fd_sc_hd__buf_1 + PLACED   ( 2000 5000 ) N ;
+- r3 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 2000 6000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 10000 10000 ) N + LAYER met1 ( 0 0 ) ( 0 0 ) ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 3 ;
+- clk ( PIN clk ) ( r1 CLK ) ( i1 A ) ( r3 CLK ) + USE SIGNAL ; 
+- r1q ( r1 Q ) ( u1 A ) + USE SIGNAL ;
+- u1z ( u1 X ) ( l2 D ) + USE SIGNAL ;
+- i1z ( i1 Y ) ( l2 GATE_N ) + USE SIGNAL ;
+- l2q ( l2 Q ) ( u2 A ) + USE SIGNAL ;
+- u2z ( u2 X ) ( r3 D ) + USE SIGNAL ;
+END NETS
+
+END DESIGN
