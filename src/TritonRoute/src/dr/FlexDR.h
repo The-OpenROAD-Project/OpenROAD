@@ -808,9 +808,11 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+
   void modCornerToCornerSpacing_helper(const frBox& box,
                                frMIdx z,
                                int type);
+
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
                                 int type,
