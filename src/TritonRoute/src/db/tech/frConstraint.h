@@ -39,7 +39,7 @@
 #include "frBaseTypes.h"
 #include "frViaDef.h"
 #include "frViaRuleGenerate.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace fr {
 namespace io {
@@ -633,6 +633,8 @@ class frLef58SpacingEndOfLineWithinMaxMinLengthConstraint : public frConstraint
   // getters
   frCoord getLength() const { return length; }
   bool isMaxLength() const { return maxLength; }
+  bool isTwoSides() const { return twoSides; }
+
   // setters
   void setLength(bool maxLengthIn, frCoord lengthIn, bool twoSidesIn = false)
   {

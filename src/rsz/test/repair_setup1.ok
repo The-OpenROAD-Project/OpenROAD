@@ -47,18 +47,8 @@ Path Type: max
            -0.261   slack (VIOLATED)
 
 
-Group                  Internal  Switching    Leakage      Total
-                          Power      Power      Power      Power
-----------------------------------------------------------------
-Sequential             1.27e-04   1.51e-05   9.49e-07   1.43e-04  89.4%
-Combinational          4.30e-06   1.26e-05   1.07e-07   1.70e-05  10.6%
-Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
-Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
-----------------------------------------------------------------
-Total                  1.32e-04   2.78e-05   1.06e-06   1.61e-04 100.0%
-                          82.1%      17.3%       0.7%
-[INFO RSZ-0040] Inserted 8 buffers.
-[INFO RSZ-0041] Resized 20 instances.
+[INFO RSZ-0040] Inserted 12 buffers.
+[INFO RSZ-0041] Resized 17 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -73,36 +63,26 @@ Path Type: max
    0.000    0.085 v u1/A (BUF_X4)
    0.026    0.111 v u1/Z (BUF_X4)
    0.003    0.114 v u2/A (BUF_X8)
-   0.023    0.138 v u2/Z (BUF_X8)
-   0.004    0.142 v u3/A (BUF_X16)
-   0.023    0.165 v u3/Z (BUF_X16)
-   0.008    0.173 v u4/A (BUF_X32)
-   0.023    0.196 v u4/Z (BUF_X32)
-   0.008    0.204 v u5/A (BUF_X32)
-   0.024    0.227 v u5/Z (BUF_X32)
-   0.034    0.261 v r2/D (DFF_X1)
-            0.261   data arrival time
+   0.023    0.137 v u2/Z (BUF_X8)
+   0.003    0.140 v u3/A (BUF_X8)
+   0.023    0.163 v u3/Z (BUF_X8)
+   0.004    0.167 v u4/A (BUF_X16)
+   0.022    0.190 v u4/Z (BUF_X16)
+   0.004    0.194 v u5/A (BUF_X16)
+   0.023    0.217 v u5/Z (BUF_X16)
+   0.034    0.252 v r2/D (DFF_X1)
+            0.252   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.053    0.247   library setup time
-            0.247   data required time
+  -0.054    0.246   library setup time
+            0.246   data required time
 -----------------------------------------------------------
-            0.247   data required time
-           -0.261   data arrival time
+            0.246   data required time
+           -0.252   data arrival time
 -----------------------------------------------------------
-           -0.014   slack (VIOLATED)
+           -0.006   slack (VIOLATED)
 
 
-Group                  Internal  Switching    Leakage      Total
-                          Power      Power      Power      Power
-----------------------------------------------------------------
-Sequential             1.27e-04   1.23e-06   9.49e-07   1.29e-04  54.6%
-Combinational          7.28e-05   3.22e-05   2.23e-06   1.07e-04  45.4%
-Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
-Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
-----------------------------------------------------------------
-Total                  2.00e-04   3.35e-05   3.18e-06   2.36e-04 100.0%
-                          84.5%      14.2%       1.3%

@@ -88,6 +88,7 @@ target_sources(TritonRoute
     src/gc/FlexGC.cpp
     src/gc/FlexGC_init.cpp
     src/gc/FlexGC_main.cpp
+    src/gc/FlexGC_eol.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frBox.cpp
@@ -134,7 +135,7 @@ target_link_libraries(TritonRoute
     opendb
     flute
     OpenSTA
-    utility
+    utl
     Threads::Threads
     OpenMP::OpenMP_CXX
     Boost::boost

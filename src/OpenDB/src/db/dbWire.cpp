@@ -45,7 +45,7 @@
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 template class dbTable<_dbWire>;

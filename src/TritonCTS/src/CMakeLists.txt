@@ -56,6 +56,7 @@ target_sources(TritonCTS
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp
+    LevelBalancer.cpp
 )
 
 target_include_directories(TritonCTS
@@ -74,5 +75,5 @@ target_link_libraries(TritonCTS
     rsz
     flute
     pdrev
-    utility
+    utl
  )

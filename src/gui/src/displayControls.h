@@ -34,6 +34,8 @@
 
 #include <tcl.h>
 
+#include <functional>
+
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>
@@ -151,9 +153,11 @@ class DisplayControls : public QDockWidget, public Options
   bool areRoutingObjsVisible();
 
   bool isCongestionVisible() const override;
+  bool arePinMarkersVisible() const override;
   bool showHorizontalCongestion() const override;
   bool showVerticalCongestion() const override;
   float getMinCongestionToShow() const override;
+  float getMaxCongestionToShow() const override;
   QColor getCongestionColor(float congestion) const override;
 
  signals:
@@ -209,6 +213,7 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* fills_;
   QStandardItem* rows_;
   QStandardItem* congestion_map_;
+  QStandardItem* pin_markers_;
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
   QStandardItem* nets_signal_;
@@ -216,7 +221,7 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* nets_power_;
   QStandardItem* nets_ground_;
   QStandardItem* nets_clock_;
-  
+
   QStandardItem* grid_graph_;
   QStandardItem* route_guides_;
   QStandardItem* routing_objs_;
@@ -235,8 +240,9 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_power_visible_;
   bool nets_ground_visible_;
   bool nets_clock_visible_;
-  
+
   bool congestion_visible_;
+  bool pin_markers_visible_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;

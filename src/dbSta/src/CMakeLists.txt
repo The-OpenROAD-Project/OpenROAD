@@ -60,5 +60,5 @@ target_link_libraries(dbSta
     OpenSTA
     opendb
     gui
-    utility
+    utl
 )

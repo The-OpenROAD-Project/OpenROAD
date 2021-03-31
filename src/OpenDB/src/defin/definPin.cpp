@@ -39,7 +39,7 @@
 #include "db.h"
 #include "dbShape.h"
 #include "dbTransform.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 definPin::definPin()

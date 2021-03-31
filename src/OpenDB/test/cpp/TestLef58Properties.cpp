@@ -6,7 +6,7 @@
 #include "lefout.h"
 #include "defin.h"
 #include "defout.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 #include <iostream>
 using namespace odb;

@@ -284,8 +284,7 @@ class FlexDR
                     bool enableDRC = false,
                     int ripupMode = 1,
                     bool followGuide = true,
-                    int fixMode = 0,
-                    bool TEST = false);
+                    int fixMode = 0);
   void end(bool writeMetrics = false);
 
   // utility
@@ -367,9 +366,6 @@ class FlexDRWorker
         drcBox_(),
         drIter_(0),
         mazeEndIter_(1),
-        TEST_(false),
-        DRCTEST_(false),
-        QUICKDRCTEST_(false),
         enableDRC_(true),
         followGuide_(false),
         needRecheck_(false),
@@ -412,9 +408,6 @@ class FlexDRWorker
     boundaryPin_ = std::move(bp);
   }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
-  void setTest(bool in) { TEST_ = in; }
-  void setQuickDRCTest(bool in) { QUICKDRCTEST_ = in; }
-  void setDRCTest(bool in) { DRCTEST_ = in; }
   void setEnableDRC(bool in) { enableDRC_ = in; }
   void setRipupMode(int in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
@@ -554,9 +547,6 @@ class FlexDRWorker
   frBox gcellBox_;
   int drIter_;
   int mazeEndIter_;
-  bool TEST_ : 1;
-  bool DRCTEST_ : 1;
-  bool QUICKDRCTEST_ : 1;
   bool enableDRC_ : 1;
   bool followGuide_ : 1;
   bool needRecheck_ : 1;
@@ -770,26 +760,6 @@ class FlexDRWorker
   void initFixedObjs();
   void initMarkers();
 
-  // route 2
-  void route_2();
-
-  void route_2_init(std::deque<drNet*>& rerouteNets);
-  void route_2_init_getNets(std::vector<drNet*>& tmpNets);
-  void route_2_init_getNets_sort(std::vector<drNet*>& tmpNets);
-
-  void route_2_pushNet(std::deque<drNet*>& rerouteNets,
-                       drNet* net,
-                       bool ripUp = false,
-                       bool isPushFront = false);
-  drNet* route_2_popNet(std::deque<drNet*>& rerouteNets);
-
-  void route_2_ripupNet(drNet* net);
-
-  void route_2_x1(drNet* net, std::deque<drNet*>& rerouteNets);
-  void route_2_x2(drNet* net, std::deque<drNet*>& rerouteNets);
-  void route_2_x2_ripupNets(const frMarker& marker, drNet* net);
-  bool route_2_x2_addHistoryCost(const frMarker& marker);
-
   // route_queue
   void route_queue();
   void route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue);
@@ -841,15 +811,6 @@ class FlexDRWorker
   void modCornerToCornerSpacing_helper(const frBox& box,
                                frMIdx z,
                                int type);
-  frCoord pt2boxDistSquare(const frPoint& pt, const frBox& box);
-  frCoord box2boxDistSquare(const frBox& box1,
-                            const frBox& box2,
-                            frCoord& dx,
-                            frCoord& dy);
-  frCoord box2boxDistSquareNew(const frBox& box1,
-                               const frBox& box2,
-                               frCoord& dx,
-                               frCoord& dy);
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
                                 int type,

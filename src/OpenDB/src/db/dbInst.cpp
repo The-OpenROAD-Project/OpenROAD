@@ -62,7 +62,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTransform.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -575,6 +575,11 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbInstPlacementStatusBefore(this, status);
+  }
+
   uint prev_flags = flagsToUInt(inst);
   inst->_flags._status = status.getValue();
   block->_flags._valid_bbox = 0;

@@ -38,6 +38,8 @@
 #include "Slots.h"
 #include "ppl/IOPlacer.h"
 
+#include <algorithm>
+
 namespace ppl {
 
 Netlist::Netlist()
@@ -148,9 +150,9 @@ int Netlist::computeIONetHPWL(int idx, Point slot_pos)
 }
 
 int Netlist::computeIONetHPWL(int idx,
-                              Section section,
-                              std::vector<Constraint>& constraints,
-                              std::vector<Slot>& slots)
+                              const Section& section,
+                              const std::vector<Constraint>& constraints,
+                              const std::vector<Slot>& slots)
 {
   int hpwl;
 
@@ -171,7 +173,7 @@ int Netlist::computeIONetHPWL(int idx,
 int Netlist::computeIONetHPWL(int idx,
                               Point slot_pos,
                               Edge edge,
-                              std::vector<Constraint>& constraints)
+                              const std::vector<Constraint>& constraints)
 {
   int hpwl;
 
@@ -210,9 +212,11 @@ bool Netlist::checkSlotForPin(const IOPin& pin,
         = (edge == Edge::top || edge == Edge::bottom) ? point.x() : point.y();
 
   for (Constraint constraint : constraints) {
+    const PinList &pin_list = constraint.pin_list;
     if (pin.getDirection() == constraint.direction) {
       valid_slot = checkInterval(constraint, edge, pos);
-    } else if (pin.getName() == constraint.name) {
+    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
+               != pin_list.end()) {
       valid_slot = checkInterval(constraint, edge, pos);
     }
   }
@@ -245,6 +249,8 @@ bool Netlist::checkSectionForPin(const IOPin& pin,
     const int constraint_begin = constraint.interval.getBegin();
     const int constraint_end = constraint.interval.getEnd();
 
+    const PinList &pin_list = constraint.pin_list;
+
     if (pin.getDirection() == constraint.direction) {
       valid_slot = (section_min <= constraint_end &&
                     constraint_begin <= section_max &&
@@ -252,7 +258,8 @@ bool Netlist::checkSectionForPin(const IOPin& pin,
       available_slots = std::max(0,
                                 (std::min(section_max, constraint_end) -
                                  std::max(section_min, constraint_begin) + 1))/spacing;
-    } else if (pin.getName() == constraint.name) {
+    } else if (std::find(pin_list.begin(), pin_list.end(), pin.getBTerm())
+               != pin_list.end()) {
       valid_slot = (section_min <= constraint_end &&
                     constraint_begin <= section_max &&
                     constraint.interval.getEdge() == edge);

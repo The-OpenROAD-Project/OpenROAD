@@ -40,7 +40,9 @@
 #include "lefiUtil.hpp"
 #include "lefin.h"
 #include "lefrReader.hpp"
-#include "utility/Logger.h"
+#include "lefzlib.hpp"
+#include "utl/Logger.h"
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace odb {
 
@@ -540,18 +542,26 @@ bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
 
   lefrSetDeltaNumberLines(1000000);
   lefrInit();
-
-  FILE* file = fopen(file_name, "r");
-
-  if (file == NULL) {
-    logger->warn(utl::ODB, 240, "error: Cannot open LEF file {}", file_name);
-    return false;
+  int res;
+  if(boost::algorithm::ends_with(file_name, ".gz"))
+  {
+    auto zfile = lefGZipOpen(file_name, "r");
+    if (zfile == NULL) {
+      logger->warn(utl::ODB, 270, "error: Cannot open zipped LEF file {}", file_name);
+      return false;
+    }
+    res = lefrReadGZip(zfile, file_name, (void*) lef);
+    lefGZipClose(zfile);
   }
-
-  int res = lefrRead(file, file_name, (void*) lef);
-
-  fclose(file);
-
+  else{
+    FILE* file = fopen(file_name, "r");
+    if (file == NULL) {
+      logger->warn(utl::ODB, 240, "error: Cannot open LEF file {}", file_name);
+      return false;
+    }
+    res = lefrRead(file, file_name, (void*) lef);
+    fclose(file);
+  }
   lefrClear();
 
   if (res)

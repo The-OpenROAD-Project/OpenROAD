@@ -40,7 +40,7 @@
 #include "db.h"
 #include "dbShape.h"
 #include "definPolygon.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 namespace odb {
 
 inline uint get_net_dbid(const char* name)

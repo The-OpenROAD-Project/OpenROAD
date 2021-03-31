@@ -1,3 +1,6 @@
+# Allow users to not build without the gui even if Qt is found
+option(BUILD_GUI "Build the GUI" ON)
+
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets)
@@ -5,7 +8,7 @@ find_package(Qt5 QUIET COMPONENTS Core Widgets)
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-if (Qt5_FOUND)
+if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
   set(CMAKE_AUTOUIC ON)
@@ -32,6 +35,9 @@ if (Qt5_FOUND)
     src/congestionSetupDialog.cpp
     src/highlightGroupDialog.cpp
     src/selectHighlightWindow.cpp
+    src/staGui.cpp
+    src/timingDebugDialog.cpp
+    src/timingReportDialog.cpp
   )
 
   target_link_libraries(gui
@@ -40,7 +46,7 @@ if (Qt5_FOUND)
     PRIVATE
       Qt5::Core
       Qt5::Widgets
-      utility
+      utl
       Boost::boost
   )
 else()
@@ -57,4 +63,5 @@ target_include_directories(gui
     include
   PRIVATE
     ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
 )

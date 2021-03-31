@@ -1027,7 +1027,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
       graphics_->searchNode(this, currGrid);
     }
 
-    // test
     if (enableOutput) {
       ++stepCnt;
     }

@@ -763,7 +763,9 @@ namespace eval ICeWall {
 
     # debug "cell_type $cell_type position $position"
     if {![dict exists $library cells $cell_type orient $position]} {
-      if {![dict exists $library cells $cell_type]} {
+      if {![dict exists $library cells]} {
+        utl::error "PAD" 49 "No cells defined in the library description"
+      } elseif {![dict exists $library cells $cell_type]} {
         utl::error "PAD"  96 "No cell $cell_type defined in library ([dict keys [dict get $library cells]])"
       } else {
         utl::error "PAD"  97 "No entry found in library definition for cell $cell_type on $position side"
@@ -2806,6 +2808,7 @@ namespace eval ICeWall {
     pdngen::merge_stripes
     dict set pdngen::design_data power_nets "VDD"
     dict set pdngen::design_data ground_nets "VSS"
+    dict set pdngen::design_data core_domain "CORE"
     pdngen::opendb_update_grid
   }
     # Connect up pads in the corner regions

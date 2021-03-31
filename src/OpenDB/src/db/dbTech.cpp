@@ -51,7 +51,7 @@
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaLayerRule.h"
 #include "dbTechViaRule.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

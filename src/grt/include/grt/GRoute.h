@@ -43,6 +43,8 @@ class Rect;
 
 namespace grt {
 
+typedef std::vector<std::vector<std::vector<int>>> CapacitiesVec;
+
 struct GSegment
 {
   int initX;
@@ -64,32 +66,17 @@ struct GSegment
   bool isVia() { return (initX == finalX && initY == finalY); }
 };
 
-class GCellCongestion
+class Capacities
 {
  public:
-  GCellCongestion(int min_x, int min_y,
-                  int max_x, int max_y,
-                  int layer, short h_cap, short v_cap,
-                  short h_usage, short v_usage);
-  GCellCongestion(odb::Rect rect, int layer,
-                  short h_cap, short v_cap,
-                  short h_usage, short v_usage);
-  ~GCellCongestion() = default;
-
-  odb::Rect getGCellRect() { return gcell_rect_; }
-  int getLayer() { return layer_; }
-  short getHorCapacity() { return hor_capacity_; }
-  short getVerCapacity() { return ver_capacity_; }
-  short getHorUsage() { return hor_usage_; }
-  short getVerUsage() { return ver_usage_; }
-
+  Capacities() = default;
+  CapacitiesVec& getHorCapacities() { return hor_capacities_; }
+  CapacitiesVec& getVerCapacities() { return ver_capacities_; }
+  void setHorCapacities(CapacitiesVec capacities) { hor_capacities_ = capacities; }
+  void setVerCapacities(CapacitiesVec capacities) { ver_capacities_ = capacities; }
  private:
-  odb::Rect gcell_rect_;
-  int layer_;
-  short hor_capacity_;
-  short ver_capacity_;
-  short hor_usage_;
-  short ver_usage_;
+  CapacitiesVec hor_capacities_;
+  CapacitiesVec ver_capacities_;
 };
 
 // class Route is defined in fastroute core.

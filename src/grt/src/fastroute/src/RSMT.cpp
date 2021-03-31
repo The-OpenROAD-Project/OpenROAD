@@ -46,8 +46,8 @@
 #include "pdrev/pdrev.h"
 #include "route.h"
 #include "utility.h"
-#include "utility/Logger.h"
-#include "utility/Logger.h"
+#include "utl/Logger.h"
+#include "utl/Logger.h"
 
 namespace grt {
 

@@ -140,7 +140,7 @@ add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
-add_subdirectory(utility)
+add_subdirectory(utl)
 add_subdirectory(pdrev)
 
 ################################################################
@@ -190,7 +190,7 @@ target_link_libraries(openroad
   psm
   antennachecker
   PartitionMgr
-  utility
+  utl
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
