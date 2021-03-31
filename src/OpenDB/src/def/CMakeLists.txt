@@ -73,3 +73,7 @@ target_include_directories(defzlib
     def
     defzlib
 )
+target_link_libraries(defzlib
+    PUBLIC
+        ZLIB::ZLIB
+)
