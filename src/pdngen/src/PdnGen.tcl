@@ -946,7 +946,7 @@ proc determine_num_via_rows {via_info constraints} {
   return $rows
 }
 
-proc init_via_width_height {lower_layer width height constraints} {
+proc init_via_width_height {via_info lower_layer width height constraints} {
   variable def_units
   variable upper_width
   variable lower_width
@@ -964,7 +964,6 @@ proc init_via_width_height {lower_layer width height constraints} {
   variable xcut_spacing
   variable ycut_spacing
 
-  set via_info [lindex [select_via_info $lower_layer] 1]
   set upper_layer [dict get $via_info upper layer]
 
   set xcut_pitch [lindex [dict get $via_info cut spacing] 0]
@@ -1039,8 +1038,7 @@ proc get_enclosure_by_direction {layer xenc yenc max_enclosure min_enclosure} {
   return $info
 }
 
-proc via_generate_rule {rule_name rows columns constraints} {
-  variable via_info
+proc via_generate_rule {viarule_name via_info rule_name rows columns constraints} {
   variable xcut_pitch
   variable ycut_pitch
   variable xcut_spacing
@@ -1071,7 +1069,7 @@ proc via_generate_rule {rule_name rows columns constraints} {
 
   return [list [list \
     name $rule_name \
-    rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+    rule $viarule_name \
     cutsize [dict get $via_info cut size] \
     layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
     cutspacing [list $xcut_spacing $ycut_spacing] \
@@ -1088,8 +1086,7 @@ proc via_generate_rule {rule_name rows columns constraints} {
   ]]
 }
 
-proc via_generate_array_rule {rule_name rows columns} {
-  variable via_info
+proc via_generate_array_rule {viarule_name via_info rule_name rows columns} {
   variable xcut_pitch
   variable ycut_pitch
   variable xcut_spacing
@@ -1134,7 +1131,7 @@ proc via_generate_array_rule {rule_name rows columns} {
     set array_spacing [expr max($xcut_spacing,$ycut_spacing,[dict get $spacing_rule arraycuts $use_array_size spacing])]
 
     set rule [list \
-      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+      rule $viarule_name \
       cutsize [dict get $via_info cut size] \
       layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
@@ -1207,7 +1204,7 @@ proc via_generate_array_rule {rule_name rows columns} {
 
     set rule [list \
       name $rule_name \
-      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+      rule $viarule_name \
       cutsize [dict get $via_info cut size] \
       layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
@@ -1227,10 +1224,9 @@ proc via_generate_array_rule {rule_name rows columns} {
   return $rule_list
 }
 
-proc via_split_cuts_rule {rows columns constraints} {
+proc via_split_cuts_rule {rule_name via_info rows columns constraints} {
   variable tech
   variable def_units
-  variable via_info
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
@@ -1253,7 +1249,7 @@ proc via_split_cuts_rule {rows columns constraints} {
   
   set rule {}
   set rule [list \
-    rule [lindex [select_via_info $lower] 0] \
+    rule $rule_name \
     cutsize [dict get $via_info cut size] \
     layers [list $lower [dict get $via_info cut layer] $upper] \
     cutspacing [list $xcut_spacing $ycut_spacing] \
@@ -1353,7 +1349,7 @@ proc via_split_cuts_rule {rows columns constraints} {
 
 # Given the via rule expressed in via_info, what is the via with the largest cut area that we can make
 # Try using a via generate rule
-proc get_via_option {lower width height constraints} {
+proc get_via_option {viarule_name via_info lower width height constraints} {
   variable upper_width
   variable lower_width
   variable upper_height
@@ -1363,19 +1359,17 @@ proc get_via_option {lower width height constraints} {
   variable max_lower_enclosure
   variable min_upper_enclosure
   variable max_upper_enclosure
-  variable via_info
   variable default_cutclass
   variable grid_data
   variable via_location
   variable def_units
 
   # debug "{$lower $width $height}"
-  set via_info [lindex [select_via_info $lower] 1]
   set lower_dir [get_dir $lower]
 
   set upper [dict get $via_info upper layer]
 
-  init_via_width_height $lower $width $height $constraints
+  init_via_width_height $via_info $lower $width $height $constraints
   # debug "lower: $lower, width: $width, height: $height, lower_width: $lower_width, lower_height: $lower_height"
   get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,$upper_height)]
 
@@ -1391,13 +1385,13 @@ proc get_via_option {lower width height constraints} {
   
   if {[dict exists $constraints split_cuts] && ([lsearch -exact [dict get $constraints split_cuts] $lower] > -1 || [lsearch -exact [dict get $constraints split_cuts] $upper] > -1)} {
     # debug "via_split_cuts_rule"
-    set rules [via_split_cuts_rule $rows $columns $constraints]
+    set rules [via_split_cuts_rule $viarule_name $via_info $rows $columns $constraints]
   } elseif {[use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
     # debug "via_generate_array_rule"
-    set rules [via_generate_array_rule [get_viarule_name $lower $width $height] $rows $columns]
+    set rules [via_generate_array_rule $viarule_name $via_info [get_viarule_name $lower $width $height] $rows $columns]
   } else {
     # debug "via_generate_rule"
-    set rules [via_generate_rule [get_viarule_name $lower $width $height] $rows $columns $constraints]
+    set rules [via_generate_rule $viarule_name $via_info [get_viarule_name $lower $width $height] $rows $columns $constraints]
   }
 
   # Check minimum_cuts
@@ -1461,13 +1455,17 @@ proc get_via_option {lower width height constraints} {
 
 proc get_viarule_name {lower width height} {
   set rules [select_via_info $lower]
-  set first_key [lindex [dict keys $rules] 0]
-  #if {![dict exists $rules $first_key cut layer]} {
-  #  debug "$lower $width $height"
-  #  debug "$rules"
-  #  debug "$first_key"
-  #}
-  set cut_layer [dict get $rules $first_key cut layer]
+  if {[llength $rules] > 0} {
+    set first_key [lindex [dict keys $rules] 0]
+    #if {![dict exists $rules $first_key cut layer]} {
+    #  debug "$lower $width $height"
+    #  debug "$rules"
+    #  debug "$first_key"
+    #}
+    set cut_layer [dict get $rules $first_key cut layer]
+  } else {
+    set cut_layer $lower
+  }
 
   return ${cut_layer}_${width}x${height}
 }
@@ -1487,6 +1485,13 @@ proc select_rule {rule1 rule2} {
   return $rule1
 }
 
+proc connection_specifies_fixed_via {constraints lower} {
+  if {[dict exists $constraints use_fixed_via]} {
+    return [dict exists $constraints use_fixed_via $lower]
+  }
+  return 0
+}
+
 proc get_via {lower width height constraints} {
   # First cur will assume that all crossing points (x y) are on grid for both lower and upper layers
   # TODO: Refine the algorithm to cope with offgrid intersection points
@@ -1496,18 +1501,24 @@ proc get_via {lower width height constraints} {
   
   if {![dict exists $physical_viarules $rule_name]} {
     set selected_rule {}
-
-    dict for {name rule} [select_via_info $lower] {
-      set result [get_via_option $lower $width $height $constraints]
-      if {$selected_rule == {}} {
-        set selected_rule $result
-      } else {
-        # Choose the best between selected rule and current result, the winner becomes the new selected rule
-        set selected_rule [select_rule $selected_rule $result]
+    # debug "$constraints"
+    if {[connection_specifies_fixed_via $constraints $lower]} {
+      # debug "Using fixed_via for $rule_name"
+      set via_name [dict get $constraints use_fixed_via $lower]
+      dict set physical_viarules $rule_name [list [list name $via_name fixed $via_name origin_x 0 origin_y 0 layers [list $lower "cut" "upper"]]]
+    } else {
+      dict for {name rule} [select_via_info $lower] {
+        set result [get_via_option $name $rule $lower $width $height $constraints]
+        if {$selected_rule == {}} {
+          set selected_rule $result
+        } else {
+          # Choose the best between selected rule and current result, the winner becomes the new selected rule
+          set selected_rule [select_rule $selected_rule $result]
+        }
       }
+      dict set physical_viarules $rule_name $selected_rule
+      # debug "Via [dict size $physical_viarules]: $rule_name"
     }
-    dict set physical_viarules $rule_name $selected_rule
-    # debug "Via [dict size $physical_viarules]: $rule_name"
   }
 
   return $rule_name
@@ -1571,11 +1582,28 @@ proc instantiate_via {physical_via_name x y constraints} {
   return $via_insts
 }
 
-proc generate_vias {layer1 layer2 intersections constraints} {
+proc generate_vias {layer1 layer2 intersections connection} {
   variable logical_viarules
   variable metal_layers
   variable via_location
+  variable tech
 
+  set constraints {}
+  if {[dict exists $connection constraints]} {
+    set constraints [dict get $connection constraints]
+  }
+  if {[dict exists $connection fixed_vias]} {
+    foreach via_name [dict get $connection fixed_vias] {
+      if {[set via [$tech findVia $via_name]] != "NULL"} {
+        set lower_layer_name [[$via getBottomLayer] getName]
+        dict set constraints use_fixed_via $lower_layer_name $via_name
+      } else {
+        utl::warn "PDN" 99 "Via $via_name specified in the grid specification does not exist in this technology"
+      }
+    }
+  }
+
+  # debug "    Constraints: $constraints"
   set vias {}
   set layer1_name $layer1
   set layer2_name $layer2
@@ -1729,7 +1757,7 @@ proc get_grid_wire_pitch {layer_name} {
 }
 
 ## Proc to generate via locations, both for a normal via and stacked via
-proc generate_via_stacks {l1 l2 tag constraints} {
+proc generate_via_stacks {l1 l2 tag connection} {
   variable logical_viarules
   variable stripe_locs
   variable def_units
@@ -1825,7 +1853,7 @@ proc generate_via_stacks {l1 l2 tag constraints} {
   
   # debug "Added [llength $intersections] intersections"
 
-  return [generate_vias $l1 $l2 $intersections $constraints]
+  return [generate_vias $l1 $l2 $intersections $connection]
 }
 
 proc add_stripe {layer type polygon_set} {
@@ -2174,12 +2202,7 @@ proc generate_grid_vias {tag net_name} {
         set l1 [lindex $connection 0]
         set l2 [lindex $connection 1]
         # debug "    $l1 to $l2"
-        set constraints {}
-        if {[dict exists $connection constraints]} {
-          set constraints [dict get $connection constraints]
-        }
-        # debug "    Constraints: $constraints"
-        set connections [generate_via_stacks $l1 $l2 $tag $constraints]
+        set connections [generate_via_stacks $l1 $l2 $tag $connection]
         lappend vias [list net_name $net_name connections $connections]
     }
   }
@@ -2638,6 +2661,7 @@ proc export_opendb_vias {} {
     foreach rule $rules {
       # Dont create illegal vias
       if {[dict exists $rule illegal]} {continue}
+      if {[dict exists $rule fixed]} {continue}
       
       # debug "$rule"
       set via [$block findVia [dict get $rule name]]
@@ -2829,7 +2853,13 @@ proc export_opendb_specialnet {net_name signal_type} {
         set x        [dict get $via_inst x]
         set y        [dict get $via_inst y]
         # debug "$via_name $x $y [$block findVia $via_name]"
-        odb::dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
+        if {[set defvia [$block findVia $via_name]] != "NULL"} {
+          odb::dbSBox_create $swire $defvia $x $y "STRIPE"
+        } elseif {[set techvia [$tech findVia $via_name]] != "NULL"} {
+          odb::dbSBox_create $swire $techvia $x $y "STRIPE"
+        } else {
+          utl::error "PDN" 99 "Cannot find via $via_name"
+        }
         # debug "via created"
       }
     }
@@ -3146,9 +3176,13 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
 #    set ::start_time [clock clicks -milliseconds]
   init_tech 
-   
+  
+  if {![file exists $PDN_cfg]} {
+    utl::error "PDN" 28 "File $PDN_cfg does not exist"
+  }
+ 
   if {![file_exists_non_empty $PDN_cfg]} {
-    utl::error "PDN" 28 "File $PDN_cfg does not exist, or exists but empty"
+    utl::error "PDN" 28 "File $PDN_cfg is empty"
   }
 
   set design_name [$block getName]

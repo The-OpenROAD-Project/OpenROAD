@@ -1,8 +1,8 @@
-[INFO ODB-0222] Reading LEF file: NangateOpenCellLibrary.mod.lef
+[INFO ODB-0222] Reading LEF file: ../../../test/Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
-[INFO ODB-0226] Finished LEF file:  NangateOpenCellLibrary.mod.lef
+[INFO ODB-0226] Finished LEF file:  ../../../test/Nangate45/Nangate45.lef
 [INFO ODB-0127] Reading DEF file: gcd/floorplan.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
