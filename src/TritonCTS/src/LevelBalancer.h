@@ -35,58 +35,69 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <limits>
-#include <list>
-#include <utility>
+#include "CtsOptions.h"
+#include "TreeBuilder.h"
+#include "Clock.h"
+#include "Util.h"
 
-#include "Hungarian.h"
-#include "Netlist.h"
-#include "Slots.h"
-#include "ppl/IOPlacer.h"
+#include <cmath>
+#include <limits>
+#include <map>
 
 namespace utl {
 class Logger;
-}
+} // namespace utl
 
-namespace ppl {
+namespace cts {
 
-using odb::Point;
-using odb::Rect;
 using utl::Logger;
 
-class HungarianMatching
+/////////////////////////////////////////////////////////////////////////
+// Class: LevelBalancer
+// Purpose: Balance buffer levels accross nets of same clock
+// Nets driven by drivers other than clock source itself are driven by
+// clock gates (CGC). Each of these nets is build independently by CTS
+// Since the clock is same, large skew would be introduced between sinks
+// of different clock nets.
+//
+// INPUT to Level Balancer
+//
+//                |----|>----[]  Level = 1
+//                |----|>----[]
+//                |----|>----[]
+//   [root]-------|                   |---|>----[]   Level = 3
+//                |----|>----D--------|
+//                          (CGC)     |---|>-----[]
+//                            
+// OUTPUT of Level Balancer
+//
+//                |----|>-|>|>---[]  Level = 3
+//                |----|>-|>|>---[]
+//                |----|>-|>|>---[]
+//   [root]-------|                   |---|>----[] Level = 3
+//                |----|>----D--------|
+//                          (CGC)     |---|>-----[]
+//
+//
+
+
+typedef std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>> CellLevelMap;
+class LevelBalancer
 {
  public:
-  HungarianMatching(Section&, std::vector<Slot>&, Logger* logger);
-  virtual ~HungarianMatching() = default;
-  void findAssignment(const std::vector<Constraint>& constraints);
-  void findAssignmentForGroups(const std::vector<Constraint>& constraints);
-  void getFinalAssignment(std::vector<IOPin>&) const;
-  void getAssignmentForGroups(std::vector<IOPin>&);
+  LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger):
+                _root(root), _options(options), _logger(logger) { }
+
+  void run();
+  void addBufferLevels(TreeBuilder* builder, std::vector<ClockInst*> cluster,
+          Clock::SubNet* driverNet, unsigned bufLevels, const std::string nameSuffix);
+  void fixTreeLevels(TreeBuilder* builder, unsigned parentDepth, unsigned maxTreeDepth);
+  unsigned computeMaxTreeDepth(TreeBuilder* parent);
 
  private:
-  std::vector<std::vector<int>> hungarian_matrix_;
-  std::vector<int> assignment_;
-  HungarianAlgorithm hungarian_solver_;
-  Netlist& netlist_;
-  std::vector<Slot>& slots_;
-  int begin_slot_;
-  int end_slot_;
-  int num_slots_;
-  int num_io_pins_;
-  int num_pin_groups_;
-  int non_blocked_slots_;
-  int group_slots_;
-  int group_size_;
-  Edge edge_;
-  const int hungarian_fail = std::numeric_limits<int>::max();
-  Logger* logger_;
-
-  void createMatrix(const std::vector<Constraint>& constraints);
-  void createMatrixForGroups(const std::vector<Constraint>& constraints);
+  TreeBuilder* _root;
+  CtsOptions* _options;
+  Logger* _logger;
+  CellLevelMap cgcLevelMap_;
 };
-
-}  // namespace ppl
+}
