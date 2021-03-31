@@ -12,7 +12,7 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Place macro cells (RAMs, embedded macros)
 * Insert substrate tap cells
 * Insert power distribution network
-* Macro Placment of macro cells
+* Macro Placement of macro cells
 * Global placement of standard cells
 * Repair max slew, max capacitance, and max fanout violations and long wires
 * Clock tree synthesis
@@ -21,39 +21,36 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Global routing (route guides for detailed routing)
 * Detailed routing
 
-OpenROAD uses the OpenDB database and OpenSTA for static timing
-analysis.
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
-#### Build
+## Install dependencies
 
-The OpenROAD build requires the following packages:
+The `etc/DependencyInstaller.sh`  script supports Centos7 and Ubuntu 20.04.
+You need root access to correctly install the dependencies with the script.
 
-Tools
-  * cmake 3.14
-  * gcc 8.3.0 or clang7
-  * bison 3.0.5
-  * flex 2.6.4
-  * swig 4.0
+```
+./etc/DependencyInstaller.sh -dev
+```
 
-Libraries
-  * boost 1.68
-  * tcl 8.6
-  * zlib
-  * eigen
-  * lemon
-  * qt5
-  * CImg (optional for replace)
-
-
-See `Dockerfile` for an example of how to install these packages. 
+## Build
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
-mkdir build
-cd build
-cmake ..
-make
+```
+
+
+### Build by hand
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+### Build using support script
+```
+$ ./etc/Build.sh
 ```
 
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
@@ -70,6 +67,11 @@ TCL_LIB - path to tcl library
 TCL_HEADER - path to tcl.h
 ZLIB_ROOT - path to zlib
 CMAKE_INSTALL_PREFIX
+```
+
+### Example with support script
+```
+$ ./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
@@ -468,7 +470,7 @@ length of wire, not per square or per square micron.  The units for
 `-resistance` and `-capacitance` are from the first liberty file read,
 resistance_unit/distance_unit (typically kohms/micron) and liberty
 capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
-no distance units are not specied in the liberty file microns are
+distance units are not specified in the liberty file microns are
 used.
 
 The resistance and capacitance values in the OpenROAD database can be
@@ -557,7 +559,7 @@ repair_tie_fanout [-separation dist]
 The `repair_tie_fanout` command connects each tie high/low load to a
 copy of the tie high/low cell.  `lib_port` is the tie high/low port,
 which can be a library/cell/port name or object returned by
-`get_lib_pins`. The tie high/low instance is separaated from the load
+`get_lib_pins`. The tie high/low instance is separated from the load
 by `dist` (in liberty units, typically microns).
 
 ```
@@ -706,7 +708,7 @@ If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``-distance_between_buffers`` is the distance (in micron) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT.
 - ``-branching_point_buffers_distance`` is the distance (in micron) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the ``-distance_between_buffers`` value to be set.
 - ``-clustering_exponent`` is a value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. If this parameter is omitted, the code gets the default value (4).
-- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have extacly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
+- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have exactly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
 - ``-sink_clustering_enable`` enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure.
 - ``-sink_clustering_size`` specifies the maximum number of sinks per cluster. Default value is 20.
 - ``sink_clustering_max_diameter`` specifies maximum diameter (in micron) of sink cluster. Default value is 50.

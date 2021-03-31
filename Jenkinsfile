@@ -1,7 +1,8 @@
 pipeline {
-  agent any
+  agent any;
   environment {
-    COMMIT_AUTHOR_EMAIL= sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim()
+    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+    NUM_THREADS = 8
   }
   stages {
     stage('Build and test') {
@@ -10,7 +11,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8') {
               steps {
-                sh './jenkins/build.sh'
+                sh './etc/Build.sh -threads=$NUM_THREADS';
               }
             }
             stage('Test centos7 gcc8') {
@@ -25,8 +26,31 @@ pipeline {
                       'gcd_sky130hs': { sh './test/regression gcd_sky130hs' },
                       'gcd_sky130hd': { sh './test/regression gcd_sky130hd' },
                       'ibex_sky130hs': { sh './test/regression ibex_sky130hs' },
-                  )
+                      )
                 }
+              }
+            }
+          }
+        }
+        stage('Local centos7 gcc8 without GUI') {
+          stages {
+            stage('Build centos7 gcc8 without GUI') {
+              steps {
+                sh './etc/Build.sh -threads=$NUM_THREADS -no-gui -dir=build-without-gui';
+              }
+            }
+          }
+        }
+        stage('Docker centos7 gcc8') {
+          stages{
+            stage('Build centos7 gcc8') {
+              steps {
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=gcc';
+              }
+            }
+            stage('Test centos7 gcc8') {
+              steps {
+                sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc';
               }
             }
           }
@@ -35,26 +59,40 @@ pipeline {
           stages{
             stage('Build centos7 clang7') {
               steps {
-                sh './jenkins/docker/build.sh centos7 clang7'
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=clang';
               }
             }
             stage('Test centos7 clang7') {
               steps {
-                sh './jenkins/docker/test.sh centos7 clang7'
+                sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang';
               }
             }
           }
         }
-        stage('Docker ubuntu20 gcc8') {
+        stage('Docker ubuntu20 gcc9') {
           stages{
-            stage('Build ubuntu20 gcc8') {
+            stage('Build ubuntu20 gcc9') {
               steps {
-                sh './jenkins/docker/build.sh ubuntu20 gcc8'
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
-            stage('Test ubuntu20 gcc8') {
+            stage('Test ubuntu20 gcc9') {
               steps {
-                sh './jenkins/docker/test.sh ubuntu20 gcc8'
+                sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc';
+              }
+            }
+          }
+        }
+        stage('Docker ubuntu20 clang10') {
+          stages{
+            stage('Build ubuntu20 clang10') {
+              steps {
+                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=clang';
+              }
+            }
+            stage('Test ubuntu20 clang10') {
+              steps {
+                sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=clang';
               }
             }
           }
@@ -65,26 +103,26 @@ pipeline {
   post {
     failure {
       script {
-        if ( env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'openroad' ) {
-          echo('Main development branch: report to stakeholders and commit author.')
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com"
-          REPLY_TO="$EMAIL_TO"
+        if ( env.BRANCH_NAME == 'master' ) {
+          echo('Main development branch: report to stakeholders and commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com";
+          REPLY_TO="$EMAIL_TO";
         } else {
-          echo('Feature development branch: report only to commit author.')
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL"
-          REPLY_TO='$DEFAULT_REPLYTO'
+          echo('Feature development branch: report only to commit author.');
+          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
+          REPLY_TO='$DEFAULT_REPLYTO';
         }
         emailext (
             to: "$EMAIL_TO",
             replyTo: "$REPLY_TO",
             subject: '$DEFAULT_SUBJECT',
             body: '$DEFAULT_CONTENT',
-            )
+            );
       }
     }
     always {
-      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'"
-      archiveArtifacts '**/results.tgz'
+      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+      archiveArtifacts '**/results.tgz';
     }
   }
 }
