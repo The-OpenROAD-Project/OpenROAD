@@ -1,4 +1,4 @@
-# repair_hold with global route parasitics
+# repair_timing -hold with global route parasitics
 source helpers.tcl
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef

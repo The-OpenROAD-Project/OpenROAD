@@ -479,7 +479,8 @@ protected:
   LibertyCell *upsizeCell(LibertyPort *in_port,
                           LibertyPort *drvr_port,
                           float load_cap,
-                          float prev_drive);
+                          float prev_drive,
+                          const DcalcAnalysisPt *dcalc_ap);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell,
                    bool journal);

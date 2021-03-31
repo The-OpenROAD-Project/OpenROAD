@@ -1246,7 +1246,13 @@ Resizer::makeEquivCells()
   LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary *lib = lib_iter->next();
-    libs.push_back(lib);
+    // massive kludge until makeEquivCells is fixed to only incldue link cells
+    LibertyCellIterator cell_iter(lib);
+    if (cell_iter.hasNext()) {
+      LibertyCell *cell = cell_iter.next();
+      if (isLinkCell(cell))
+        libs.push_back(lib);
+    }
   }
   delete lib_iter;
   sta_->makeEquivCells(&libs, nullptr);
@@ -1978,6 +1984,7 @@ Resizer::repairSetup(PathRef &path,
     int start_index = expanded.startIndex();
     PathRef *prev_path = expanded.path(start_index - 1);
     const DcalcAnalysisPt *dcalc_ap = path.dcalcAnalysisPt(sta_);
+    int lib_ap = dcalc_ap->libertyIndex();
     for (int i = start_index; i < path_length; i++) {
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
@@ -1985,10 +1992,11 @@ Resizer::repairSetup(PathRef &path,
       if (network_->isDriver(path_pin)
           && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
+        TimingArc *corner_arc = prev_arc->cornerArc(lib_ap);
         Edge *prev_edge = path->prevEdge(prev_arc, sta_);
         Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
           // Remove intrinsic delay to find load dependent delay.
-          - prev_arc->intrinsicDelay();
+          - corner_arc->intrinsicDelay();
         load_delays.push_back(pair(i, load_delay));
         debugPrint(logger_, RSZ, "retime", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
@@ -2048,14 +2056,19 @@ Resizer::repairSetup(PathRef &path,
         int prev_drvr_index = drvr_index - 2;
         PathRef *prev_drvr_path = expanded.path(prev_drvr_index);
         Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+        prev_drive = 0.0;
         LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-        prev_drive = prev_drvr_port ? prev_drvr_port->driveResistance() : 0.0;
+        if (prev_drvr_port) {
+          LibertyPort *corner_prev_drvr_port = prev_drvr_port->cornerPort(lib_ap);
+          prev_drive = prev_drvr_port->driveResistance();
+        }
       }
       else
         prev_drive = 0.0;
       debugPrint(logger_, RSZ, "retime", 2, "resize {}",
                  network_->pathName(drvr_pin));
-      LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive);
+      LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
+                                       prev_drive, dcalc_ap);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
         debugPrint(logger_, RSZ, "retime", 2, "resize {} -> {}",
@@ -2147,29 +2160,32 @@ LibertyCell *
 Resizer::upsizeCell(LibertyPort *in_port,
                     LibertyPort *drvr_port,
                     float load_cap,
-                    float prev_drive)
+                    float prev_drive,
+                    const DcalcAnalysisPt *dcalc_ap)
 {
+  int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
   if (equiv_cells) {
     const char *in_port_name = in_port->name();
     const char *drvr_port_name = drvr_port->name();
     sort(equiv_cells,
-         [drvr_port_name] (const LibertyCell *cell1,
-                           const LibertyCell *cell2) {
-           LibertyPort *port1 = cell1->findLibertyPort(drvr_port_name);
-           LibertyPort *port2 = cell2->findLibertyPort(drvr_port_name);
+         [=] (const LibertyCell *cell1,
+              const LibertyCell *cell2) {
+           LibertyPort *port1=cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           LibertyPort *port2=cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            return port1->driveResistance() > port2->driveResistance();
          });
-    float drive = drvr_port->driveResistance();
+    float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = gateDelay(drvr_port, load_cap, tgt_slew_dcalc_ap_)
-      + prev_drive * in_port->capacitance();
+      + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
     for (LibertyCell *equiv : *equiv_cells) {
-      LibertyPort *equiv_drvr = equiv->findLibertyPort(drvr_port_name);
-      LibertyPort *equiv_input = equiv->findLibertyPort(in_port_name);
+      LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
+      LibertyPort *equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
+      LibertyPort *equiv_input = equiv_corner->findLibertyPort(in_port_name);
       float equiv_drive = equiv_drvr->driveResistance();
       // Include delay of previous driver into equiv gate.
-      float equiv_delay = gateDelay(equiv_drvr, load_cap, tgt_slew_dcalc_ap_)
+      float equiv_delay = gateDelay(equiv_drvr, load_cap, dcalc_ap)
         + prev_drive * equiv_input->capacitance();
       if (!dontUse(equiv)
           && equiv_drive < drive
