@@ -50,6 +50,9 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
+#ifdef ENABLE_TCLX
+  #include <tclExtend.h>
+#endif
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
@@ -236,6 +239,11 @@ tclAppInit(int argc,
   if (Tcl_Init(interp) == TCL_ERROR) {
     return TCL_ERROR;
   }
+#ifdef ENABLE_TCLX
+  if (Tclx_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+#endif
 #ifdef ENABLE_READLINE
   if (!gui_mode) {
     if (Tclreadline_Init(interp) == TCL_ERROR) {
