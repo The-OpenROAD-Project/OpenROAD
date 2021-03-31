@@ -109,20 +109,17 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
   if (!con->getWithinConstraint()->hasEncloseCutConstraint())
     return true;
   auto encCutCon = con->getWithinConstraint()->getEncloseCutConstraint();
-  frSquaredDistance cutToMetalSpace
+  frSquaredDistance cutToMetalSpaceSquared
       = encCutCon->getCutToMetalSpace() * encCutCon->getCutToMetalSpace();
   box_t queryBox;  // query region is encloseDist from edge1
   checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
       edge1, encCutCon.get(), queryBox);
 
   std::vector<int> layers;  // cutLayers to search for the vias
-  bool aboveAndBelow
-      = !(encCutCon->isBelow()
-          || encCutCon->isAbove());  // if not defined (means both)
-  if (aboveAndBelow || encCutCon->isAbove())
+  if (encCutCon->isAboveAndBelow() || encCutCon->isAboveOnly())
     if (edge1->getLayerNum() + 1 <= maxLayerNum_)
       layers.push_back(edge1->getLayerNum() + 1);
-  if (aboveAndBelow || encCutCon->isBelow())
+  if (encCutCon->isAboveAndBelow() || encCutCon->isBelowOnly())
     if (edge1->getLayerNum() - 1 >= minLayerNum_)
       layers.push_back(edge1->getLayerNum() - 1);
   // edge2 segment as a rectangle for getting distance
@@ -145,8 +142,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
                                         ptr->getLowCorner()->y(),
                                         ptr->getHighCorner()->x(),
                                         ptr->getHighCorner()->y());
-      frSquaredDistance dist = gtl::square_euclidean_distance(metRect, rect);
-      if (dist < cutToMetalSpace) {
+      frSquaredDistance distSquared = gtl::square_euclidean_distance(metRect, rect);
+      if (distSquared < cutToMetalSpaceSquared) {
         if (encCutCon->isAllCuts())
           found = true;
         else
