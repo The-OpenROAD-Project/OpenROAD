@@ -4102,9 +4102,6 @@ void FlexDRWorker::initMazeCost_fixedObj()
     // process blockage first, then unblock based on pin shape
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcBlockage) {
-        if (QUICKDRCTEST_) {
-          cout << "  initMazeCost_blockage block" << endl;
-        }
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, 3, true);
@@ -4120,11 +4117,6 @@ void FlexDRWorker::initMazeCost_fixedObj()
           modInterLayerCutSpacingCost(box, zIdx, 3, false);
         }
       } else if (obj->typeId() == frcInstBlockage) {
-        if (QUICKDRCTEST_) {
-          auto blk = static_cast<frInstBlockage*>(obj);
-          cout << "  initMazeCost_instBlockage " << blk->getInst()->getName()
-               << "/OBS" << endl;
-        }
 
         if (isRoutingLayer) {
           // assume only routing layer
@@ -4164,9 +4156,6 @@ void FlexDRWorker::initMazeCost_fixedObj()
         // snet
       } else if (obj->typeId() == frcPathSeg) {
         auto ps = static_cast<frPathSeg*>(obj);
-        if (QUICKDRCTEST_) {
-          cout << "  initMazeCost_snet " << ps->getNet()->getName() << endl;
-        }
         // assume only routing layer
         modMinSpacingCostPlanar(box, zIdx, 3);
         modMinSpacingCostVia(box, zIdx, 3, true, true);
@@ -4180,10 +4169,6 @@ void FlexDRWorker::initMazeCost_fixedObj()
         }
         // snet
       } else if (obj->typeId() == frcVia) {
-        if (QUICKDRCTEST_) {
-          auto via = static_cast<frVia*>(obj);
-          cout << "  initMazeCost_snet " << via->getNet()->getName() << endl;
-        }
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, 3);
@@ -4399,18 +4384,10 @@ void FlexDRWorker::initMazeCost_connFig()
   int cnt = 0;
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
-      if (QUICKDRCTEST_) {
-        cout << "  initMazeCost_connFig " << net->getFrNet()->getName()
-             << " extConnFigs";
-      }
       addPathCost(connFig.get());
       cnt++;
     }
     for (auto& connFig : net->getRouteConnFigs()) {
-      if (QUICKDRCTEST_) {
-        cout << "  initMazeCost_connFig " << net->getFrNet()->getName()
-             << " routeConnFigs";
-      }
       addPathCost(connFig.get());
       cnt++;
     }
@@ -4467,13 +4444,6 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     initMazeIdx_connFig(via.get());
     FlexMazeIdx bi, ei;
     via->getMazeIdx(bi, ei);
-    if (QUICKDRCTEST_) {
-      cout << "  initMazeCost_via_helper @("
-           << bp.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ", "
-           << bp.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ") "
-           << getTech()->getLayer(lNum)->getName() << " "
-           << net->getFrNet()->getName() << " " << via->getViaDef()->getName();
-    }
     if (isAddPathCost) {
       addPathCost(via.get());
     } else {
@@ -4487,9 +4457,6 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
 {
   int modType = isAddPathCost ? 1 : 0;
   for (auto& connFig : net->getExtConnFigs()) {
-    if (QUICKDRCTEST_) {
-      cout << "  initMazeCost_minCut_helper " << net->getFrNet()->getName();
-    }
     if (connFig->typeId() == drcVia) {
       auto via = static_cast<drVia*>(connFig.get());
       frBox l1Box, l2Box;
@@ -4519,9 +4486,6 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
 {
   // do not check same-net rules between ext and route objs to avoid pessimism
   for (auto& connFig : net->getExtConnFigs()) {
-    if (QUICKDRCTEST_) {
-      cout << "  initMazeCost_boundary_helper " << net->getFrNet()->getName();
-    }
     if (isAddPathCost) {
       addPathCost(connFig.get());
     } else {
@@ -4598,7 +4562,7 @@ void FlexDRWorker::init()
   //
   // using namespace std::chrono;
   initMarkers();
-  if (!DRCTEST_ && isEnableDRC() && getDRIter() && getInitNumMarkers() == 0
+  if (isEnableDRC() && getDRIter() && getInitNumMarkers() == 0
       && !needRecheck_) {
     skipRouting_ = true;
   }

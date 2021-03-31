@@ -47,8 +47,8 @@ NETS 1 ;
 - u5zn ( u5 ZN ) ( x5 A ) ;
 - u6zn ( u6 ZN ) ( x6 A ) ;
 - u7zn ( u7 ZN ) ( x7 A ) ;
-- out1 ( x2 ZN ) ( PIN out1 ) ;
-- out2 ( x3 ZN ) ( PIN out2 ) ;
+- out1 ( x2 Z ) ( PIN out1 ) ;
+- out2 ( x3 Z ) ( PIN out2 ) ;
 END NETS
 
 END DESIGN

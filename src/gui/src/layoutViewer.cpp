@@ -739,8 +739,11 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
   bool show_hor_congestion = options_->showHorizontalCongestion();
   bool show_ver_congestion = options_->showVerticalCongestion();
   auto min_congestion_to_show = options_->getMinCongestionToShow();
-  for (auto& [key, cong_data] : gcell_congestion_data) {
-    uint x_idx = key.first;
+
+  auto max_congestion_to_show = options_->getMaxCongestionToShow();
+
+  for (auto &[key, cong_data] : gcell_congestion_data) {
+    uint x_idx = key.first;;
     uint y_idx = key.second;
 
     if (x_idx >= x_grid_sz - 1 || y_idx >= y_grid_sz - 1) {
@@ -749,8 +752,9 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
       continue;
     }
 
-    auto gcell_rect = odb::Rect(
-        x_grid[x_idx], y_grid[y_idx], x_grid[x_idx + 1], y_grid[y_idx + 1]);
+
+    auto gcell_rect = odb::Rect(x_grid[x_idx], y_grid[y_idx], x_grid[x_idx+1], y_grid[y_idx+1]);
+
     if (!gcell_rect.intersects(bounds))
       continue;
 
@@ -773,7 +777,8 @@ void LayoutViewer::drawCongestionMap(Painter& painter, const odb::Rect& bounds)
     else
       congestion = ver_congestion;
 
-    if (congestion == -1 || congestion < min_congestion_to_show)
+    if (congestion <= 0 || congestion < min_congestion_to_show
+        || congestion > max_congestion_to_show)
       continue;
 
     auto gcell_color = options_->getCongestionColor(congestion);
@@ -1434,7 +1439,42 @@ void LayoutScroll::zoomOut()
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
 }
 
-void LayoutViewer::inDbPostMoveInst(dbInst*)
+void LayoutViewer::inDbNetDestroy(dbNet* net)
+{
+  updateShapes();
+}
+
+void LayoutViewer::inDbInstDestroy(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbInstSwapMasterAfter(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbInstPlacementStatusBefore(
+    dbInst* inst,
+    const dbPlacementStatus& status)
+{
+  if (inst->getPlacementStatus().isPlaced() != status.isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbPostMoveInst(dbInst* inst)
+{
+  if (inst->isPlaced()) {
+    updateShapes();
+  }
+}
+
+void LayoutViewer::inDbBPinDestroy(dbBPin* pin)
 {
   updateShapes();
 }
@@ -1467,7 +1507,7 @@ void LayoutViewer::inDbSWireDestroy(dbSWire* wire)
 void LayoutViewer::inDbBlockSetDieArea(odb::dbBlock* block)
 {
   // This happens when initialize_floorplan is run and it make sense
-  // to fit as current zoom with be on a zero sized block.
+  // to fit as current zoom will be on a zero sized block.
   fit();
 }
 

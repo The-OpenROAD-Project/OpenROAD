@@ -9,67 +9,17 @@
 [INFO ODB-0131]     Created 294 components and 1577 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 131 connections.
 [INFO ODB-0134] Finished DEF file: group_pins3.def
-Restrict I/O pin req_msg[10] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[11] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[12] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[13] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[14] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[15] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[16] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[17] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[18] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[19] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[20] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[21] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[22] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[23] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[0] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[1] to region 25.0u-95.0u the left edge.
-Restrict I/O pin req_msg[24] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[25] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[26] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[27] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[28] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[29] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[2] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[30] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[31] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[3] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[4] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[5] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[6] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[7] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[8] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin req_msg[9] to region 5.0u-95.0u the bottom edge.
-Restrict I/O pin clk to region 15.0u-95.0u the top edge.
-Restrict I/O pin req_rdy to region 15.0u-95.0u the top edge.
-Restrict I/O pin req_val to region 15.0u-95.0u the top edge.
-Restrict I/O pin reset to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[0] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[10] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[11] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[12] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[13] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[14] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_msg[15] to region 15.0u-95.0u the top edge.
-Restrict I/O pin resp_rdy to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_val to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[1] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[2] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[3] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[4] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[5] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[6] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[7] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[8] to region 35.0u-75.0u the right edge.
-Restrict I/O pin resp_msg[9] to region 35.0u-75.0u the right edge.
+[INFO PPL-0048] Restrict pins [req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1] ] to region 25.0u-95.0u at the left edge.
+[INFO PPL-0048] Restrict pins [req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] req_msg[29] req_msg[2] req_msg[30] req_msg[31] req_msg[3] req_msg[4] req_msg[5] req_msg[6] req_msg[7] req_msg[8] req_msg[9]] to region 5.0u-95.0u at the bottom edge.
+[INFO PPL-0048] Restrict pins [clk req_rdy req_val reset resp_msg[0] resp_msg[10] resp_msg[11] resp_msg[12] resp_msg[13] resp_msg[14] resp_msg[15]] to region 15.0u-95.0u at the top edge.
+[INFO PPL-0048] Restrict pins [resp_rdy resp_val resp_msg[1] resp_msg[2] resp_msg[3] resp_msg[4] resp_msg[5] resp_msg[6] resp_msg[7] resp_msg[8] resp_msg[9]] to region 35.0u-75.0u at the right edge.
 Found 0 macro blocks.
 [INFO PPL-0041] Pin group 0: [req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1]]
 [INFO PPL-0041] Pin group 1: [req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] req_msg[29] req_msg[2] req_msg[30] req_msg[31] req_msg[3] req_msg[4] req_msg[5] req_msg[6] req_msg[7] req_msg[8] req_msg[9]]
 [INFO PPL-0041] Pin group 2: [clk req_rdy req_val reset resp_msg[0] resp_msg[10] resp_msg[11] resp_msg[12] resp_msg[13] resp_msg[14] resp_msg[15]]
 [INFO PPL-0041] Pin group 3: [resp_rdy resp_val resp_msg[1] resp_msg[2] resp_msg[3] resp_msg[4] resp_msg[5] resp_msg[6] resp_msg[7] resp_msg[8] resp_msg[9]]
 [INFO PPL-0010] Tentative 0 to setup sections
-[INFO PPL-0001]  * Num of slots          500
+[INFO PPL-0001]  * Num of slots          552
 [INFO PPL-0002]  * Num of I/O            54
 [INFO PPL-0003]  * Num of I/O w/sink     54
 [INFO PPL-0004]  * Num of I/O w/o sink   0
