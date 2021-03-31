@@ -2408,10 +2408,10 @@ void GlobalRouter::initNetlist()
 {
   if (_nets->empty()) {
     initClockNets();
-    std::set<odb::dbNet*> db_nets;
+    std::vector<odb::dbNet*> db_nets;
 
     for (odb::dbNet* net : _block->getNets()) {
-      db_nets.insert(net);
+      db_nets.push_back(net);
     }
 
     if (db_nets.empty()) {
@@ -2422,7 +2422,7 @@ void GlobalRouter::initNetlist()
   }
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
+void GlobalRouter::addNets(std::vector<odb::dbNet*>& db_nets)
 {
   // Prevent _nets from growing because pointers to nets become invalid.
   reserveNets(db_nets.size());
