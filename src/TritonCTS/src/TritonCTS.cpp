@@ -189,8 +189,6 @@ void TritonCTS::populateTritonCts()
   }
 }
 
-
-
 void TritonCTS::buildClockTrees()
 {
   _logger->report(" ***********************");
@@ -231,16 +229,18 @@ void TritonCTS::runPostCtsOpt()
 void TritonCTS::initOneClockTree(odb::dbNet* driverNet, std::string sdcClockName, TreeBuilder* parent)
 {
   TreeBuilder* clockBuilder = initClock(driverNet, sdcClockName, parent);
-
+  visitedClockNets.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
   for (odb::dbITerm* iterm : iterms) {
-    if (iterm != driver &&
-        (iterm->getIoType() == odb::dbIoType::INPUT || iterm->getIoType() == odb::dbIoType::INOUT)) {
-      if (!_staEngine->isSink(iterm)) { // Clock Gate
-        odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
-        if (outputPin && outputPin->getNet())
-          initOneClockTree(outputPin->getNet(), sdcClockName, clockBuilder);
+    if (iterm != driver && iterm->isInputSignal()) {
+      if (!_staEngine->isSink(iterm) && (iterm->getInst()->isCore() || iterm->getInst()->isPad())) { // Clock Gate
+        odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
+        if (outputPin && outputPin->getNet()) {
+          odb::dbNet* outputNet = outputPin->getNet();
+          if (visitedClockNets.find(outputNet) == visitedClockNets.end())
+            initOneClockTree(outputNet, sdcClockName, clockBuilder);
+        }
       }
     }
   }
@@ -473,6 +473,7 @@ void TritonCTS::initAllClocks()
     }
     clockNetsInfo.emplace_back(std::make_pair(clockNets, std::string("")));
   } else {
+    staClockNets = _openSta->findClkNets();
     sta::Sdc *sdc = _openSta->sdc();
     sta::PatternMatch matcher("*");
     sta::ClockSeq clks;
@@ -480,7 +481,7 @@ void TritonCTS::initAllClocks()
     for (auto clk : clks) {
       std::string clkName = clk->name();
       std::set<odb::dbNet*> clkNets;
-      _staEngine->findClockRoots(clk, clkNets, _logger);
+      _staEngine->findClockRoots(clk, clkNets);
       clockNetsInfo.emplace_back(make_pair(clkNets, clkName));
     }
   }
@@ -854,6 +855,24 @@ odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
+odb::dbITerm* TritonCTS::getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const
+{
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
+  odb::dbITerm *output = nullptr;
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm != input && iterm->isOutputSignal()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net) {
+        if (staClockNets.find(net) != staClockNets.end()) {
+          output = iterm;
+          break;
+        }
+      }
+    }
+  }
+  return output;
+
+}
 bool TritonCTS::masterExists(const std::string& master) const
 {
   return _db->findMaster(master.c_str());

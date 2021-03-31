@@ -56,7 +56,7 @@ class StaEngine
 
   void init();
   void findClockRoots(sta::Clock* clk,
-                      std::set<odb::dbNet*> &clockNets, utl::Logger* _logger);
+                      std::set<odb::dbNet*> &clockNets);
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
 

@@ -59,7 +59,7 @@ void StaEngine::init()
 }
 
 void StaEngine::findClockRoots(sta::Clock* clk,
-                    std::set<odb::dbNet*> &clockNets, utl::Logger* _logger)
+                    std::set<odb::dbNet*> &clockNets)
 {
   for (sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;

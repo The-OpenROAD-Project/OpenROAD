@@ -37,6 +37,7 @@
 
 #include <string>
 #include <functional>
+#include <set>
 
 namespace ord {
 class OpenRoad;
@@ -123,13 +124,15 @@ class TritonCTS
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
-
+  odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
   ord::OpenRoad* _openroad;
   Logger* _logger;
   CtsOptions* _options;
   TechChar* _techChar;
   StaEngine* _staEngine;
   std::vector<TreeBuilder*>* _builders;
+  std::set <odb::dbNet*> staClockNets;
+  std::set <odb::dbNet*> visitedClockNets;
 
   // db vars
   sta::dbSta* _openSta = nullptr;

@@ -193,6 +193,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QMenu* file_menu_;
   QMenu* view_menu_;
+  QMenu* tools_menu_;
   QMenu* windows_menu_;
 
   QToolBar* view_tool_bar_;
