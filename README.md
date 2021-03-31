@@ -25,6 +25,9 @@ OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
 ## Install dependencies
 
+The `etc/DependencyInstaller.sh`  script supports Centos7 and Ubuntu 20.04.
+You need root access to correctly install the dependencies with the script.
+
 The OpenROAD build requires the following packages:
 
 Tools
