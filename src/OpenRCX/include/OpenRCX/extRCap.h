@@ -218,6 +218,7 @@ class extDistRC
   void writeRC(FILE* fp, bool bin);
   void writeRC();
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
+  double interpolate_res(uint d, extDistRC* rc2);
 
   friend class extDistRCTable;
   friend class extDistWidthRCTable;
@@ -232,6 +233,10 @@ class extDistRCTable
 
   Ath__array1D<extDistRC*>* _measureTable;
   Ath__array1D<extDistRC*>* _computeTable;
+  Ath__array1D<extDistRC*>* _measureTableR[8];
+  Ath__array1D<extDistRC*>* _computeTableR[8];
+  int _maxDist;
+  uint _distCnt;
   uint _unit;
 
   void makeCapTableOver();
@@ -248,6 +253,7 @@ class extDistRCTable
   void ScaleRes(double SUB_MULT_RES, Ath__array1D<extDistRC*>* table);
   extDistRC* findRes(int dist1, int dist2, bool compute);
 
+
   uint addMeasureRC(extDistRC* rc);
   void makeComputeTable(uint maxDist, uint distUnit);
   extDistRC* getLastRC();
@@ -255,6 +261,9 @@ class extDistRCTable
   extDistRC* getComputeRC(double dist);
   extDistRC* getComputeRC(uint dist);
   extDistRC* getRC(uint s, bool compute);
+  extDistRC* getComputeRC_res(uint dist1, uint dist2);
+  extDistRC* findIndexed_res(uint dist1, uint dist2);
+  int getComputeRC_maxDist();
   uint writeRules(FILE* fp,
                   Ath__array1D<extDistRC*>* table,
                   double w,
@@ -436,6 +445,9 @@ class extDistWidthRCTable
 
   extDistRC* getLastWidthFringeRC(uint mou);
   extDistRC* getRC_99(uint mou, uint w, uint dw, uint ds);
+  // DF 0327 
+  extDistRCTable* getRuleTable(uint mou, uint w);
+
 };
 class extMetRCTable
 {
@@ -1097,6 +1109,7 @@ class extMeasure
   void calcOU(uint len);
   void calcRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, uint totLenCovered);
   // DF ---- 3/6/21
+  int getMaxDist(int tgtMet, uint modelIndex);
   void calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet);
   void calcRes0(double *deltaRes, uint tgtMet, uint len, int dist1=0, int dist2=0);
   // ------------------------------------
