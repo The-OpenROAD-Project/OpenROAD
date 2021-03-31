@@ -78,7 +78,7 @@ proc set_io_pin_constraint { args } {
   if [info exists keys(-direction)] {
     set direction $keys(-direction)
     set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-    utl::report "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
+    utl::info PPL 49 "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
     ppl::add_direction_constraint $dir $edge_ $begin $end
   }
 
@@ -164,19 +164,20 @@ proc place_pins { args } {
   set distance 1
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
-    ppl::set_corner_avoidance $distance
+    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   } else {
     utl::report "Using ${distance}u default distance from corners."
-    ppl::set_corner_avoidance $distance
+    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
   set min_dist 2
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ppl::set_min_distance $min_dist
+    ppl::set_min_distance [ord::microns_to_dbu $min_dist]
   } else {
     utl::report "Using $min_dist tracks default min distance between IO pins."
-    ppl::set_min_distance $min_dist
+    # setting min distance as 0u leads to the default min distance
+    ppl::set_min_distance 0
   }
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
@@ -370,10 +371,10 @@ proc exclude_intervals { cmd intervals } {
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
+  utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
   foreach pin_name $names {
     set db_bterm [$dbBlock findBTerm $pin_name]
     if { $db_bterm != "NULL" } {
-      utl::report "Restrict I/O pin $pin_name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge_name edge."
       lappend pin_list $db_bterm
     } else {
       utl::warn PPL 47 "Pin $pin_name not found in constraint"

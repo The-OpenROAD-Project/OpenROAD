@@ -167,8 +167,8 @@ class Netlist
   void getSinksOfIO(int idx, std::vector<InstancePin>& sinks);
 
   int computeIONetHPWL(int, odb::Point);
-  int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
-  int computeIONetHPWL(int, Section, std::vector<Constraint>&, std::vector<Slot>&);
+  int computeIONetHPWL(int, odb::Point, Edge, const std::vector<Constraint>&);
+  int computeIONetHPWL(int, const Section&, const std::vector<Constraint>&, const std::vector<Slot>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
   void clear();

@@ -62,43 +62,23 @@
     return PARSE_ERROR;               \
   }
 
+#define CHECKBLOCK                                                        \
+  if (reader->_block == nullptr) {                                        \
+    reader->_logger->warn(utl::ODB, 260, "DESIGN is not defined in DEF"); \
+    return PARSE_ERROR;                                                   \
+  }
 namespace odb {
-
-class DefHeader
-{
- public:
-  const char* _version;
-  char _hier_delimeter;
-  char _left_bus_delimeter;
-  char _right_bus_delimeter;
-  const char* _design;
-
-  DefHeader()
-  {
-    _version = NULL;
-    _hier_delimeter = 0;
-    _left_bus_delimeter = 0;
-    _right_bus_delimeter = 0;
-    _design = NULL;
-  }
-
-  ~DefHeader()
-  {
-    if (_version)
-      free((void*) _version);
-
-    if (_design)
-      free((void*) _design);
-  }
-
-  static DefHeader* getDefHeader(const char* file);
-};
 
 definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db = db;
   _block_name = NULL;
+  parent_ = nullptr;
   _continue_on_errors = false;
+  version_ = nullptr;
+  hier_delimeter_ = 0;
+  left_bus_delimeter_ = 0;
+  right_bus_delimeter_ = 0;
 
   definBase::setLogger(logger);
   definBase::setMode(mode);
@@ -276,11 +256,107 @@ static void handle_props(DEF_TYPE* def_obj, CALLBACK* callback)
   }
 }
 
+static std::string renameBlock(dbBlock* parent, const char* old_name)
+{
+  int cnt = 1;
+
+  for (;; ++cnt) {
+    char n[16];
+    snprintf(n, 15, "_%d", cnt);
+    std::string name(old_name);
+    name += n;
+
+    if (!parent->findChild(name.c_str()))
+      return name;
+  }
+}
+
+int definReader::versionCallback(defrCallbackType_e /* unused: type */,
+                                 const char* value,
+                                 defiUserData data)
+{
+  definReader* reader = (definReader*) data;
+  reader->version_ = strdup(value);
+  return PARSE_OK;
+}
+
+int definReader::divideCharCallback(defrCallbackType_e /* unused: type */,
+                                    const char* value,
+                                    defiUserData data)
+{
+  definReader* reader = (definReader*) data;
+  reader->hier_delimeter_ = value[0];
+  if (reader->hier_delimeter_ == 0) {
+    reader->error("Syntax error in DIVIDERCHAR statment");
+    return PARSE_ERROR;
+  }
+  return PARSE_OK;
+}
+int definReader::busBitCallback(defrCallbackType_e /* unused: type */,
+                                const char* value,
+                                defiUserData data)
+{
+  definReader* reader = (definReader*) data;
+  reader->left_bus_delimeter_ = value[0];
+  reader->right_bus_delimeter_ = value[1];
+  if ((reader->left_bus_delimeter_ == 0)
+      || (reader->right_bus_delimeter_ == 0)) {
+    reader->error("Syntax error in BUSBITCHARS statment");
+    return PARSE_ERROR;
+  }
+  return PARSE_OK;
+}
+int definReader::designCallback(defrCallbackType_e /* unused: type */,
+                                const char* design,
+                                defiUserData data)
+{
+  definReader* reader = (definReader*) data;
+  std::string block_name;
+  if (reader->_block_name)
+    block_name = reader->_block_name;
+  else
+    block_name = design;
+  if (reader->parent_ != nullptr) {
+    if (reader->parent_->findChild(block_name.c_str())) {
+      if (reader->_mode != defin::DEFAULT)
+        reader->_block = reader->parent_->findChild(block_name.c_str());
+      else {
+        std::string new_name = renameBlock(reader->parent_, block_name.c_str());
+        reader->_logger->warn(
+            utl::ODB,
+            261,
+            "Block with name \"{}\" already exists, renaming too \"{}\"",
+            block_name.c_str(),
+            new_name.c_str());
+        reader->_block = dbBlock::create(
+            reader->parent_, new_name.c_str(), reader->hier_delimeter_);
+      }
+    } else
+      reader->_block = dbBlock::create(
+          reader->parent_, block_name.c_str(), reader->hier_delimeter_);
+  } else {
+    dbChip* chip = reader->_db->getChip();
+    if (reader->_mode != defin::DEFAULT)
+      reader->_block = chip->getBlock();
+    else
+      reader->_block
+          = dbBlock::create(chip, block_name.c_str(), reader->hier_delimeter_);
+  }
+  if (reader->_mode == defin::DEFAULT)
+    reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
+                                     reader->right_bus_delimeter_);
+  reader->_logger->info(utl::ODB, 128, "Design: {}", design);
+  assert(reader->_block);
+  reader->setBlock(reader->_block);
+  return PARSE_OK;
+}
+
 int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
                                   defiBlockage* blockage,
                                   defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definBlockage* blockageR = reader->_blockageR;
 
   if (blockage->hasExceptpgnet()) {
@@ -368,6 +444,7 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
                                     defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definComponent* componentR = reader->_componentR;
   if (reader->_mode != defin::DEFAULT
       && reader->_block->findInst(comp->id()) == nullptr) {
@@ -435,7 +512,7 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
                                  defiUserData data)
 {
   definReader* reader = (definReader*) data;
-
+  CHECKBLOCK
   const defiPoints points = box->getPoint();
 
   if (reader->_mode == defin::DEFAULT || reader->_mode == defin::FLOORPLAN) {
@@ -509,6 +586,7 @@ int definReader::fillCallback(defrCallbackType_e /* unused: type */,
                               defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definFill* fillR = reader->_fillR;
 
   if (fill->hasVia() || fill->hasViaOpc()) {
@@ -557,6 +635,7 @@ int definReader::groupNameCallback(defrCallbackType_e /* unused: type */,
                                    defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   reader->_regionR->begin(name, /* group */ true);
   return PARSE_OK;
 }
@@ -566,6 +645,7 @@ int definReader::groupMemberCallback(defrCallbackType_e /* unused: type */,
                                      defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   reader->_regionR->inst(member);
   return PARSE_OK;
 }
@@ -575,6 +655,7 @@ int definReader::groupCallback(defrCallbackType_e /* unused: type */,
                                defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definRegion* regionR = reader->_regionR;
 
   if (group->hasRegionName()) {
@@ -600,6 +681,7 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
                              defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definNet* netR = reader->_netR;
   if (reader->_mode == defin::FLOORPLAN
       && reader->_block->findNet(net->name()) == nullptr) {
@@ -780,6 +862,7 @@ int definReader::nonDefaultRuleCallback(defrCallbackType_e /* unused: type */,
                                         defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definNonDefaultRule* ruleR = reader->_non_default_ruleR;
 
   ruleR->beginRule(rule->name());
@@ -830,6 +913,7 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
                              defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definPin* pinR = reader->_pinR;
   if (reader->_mode != defin::DEFAULT
       && reader->_block->findBTerm(pin->pinName()) == nullptr) {
@@ -1005,6 +1089,7 @@ int definReader::pinsStartCallback(defrCallbackType_e /* unused: type */,
                                    defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   reader->_pinR->pinsBegin(number);
   return PARSE_OK;
 }
@@ -1014,6 +1099,7 @@ int definReader::propCallback(defrCallbackType_e /* unused: type */,
                               defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definPropDefs* prop_defsR = reader->_prop_defsR;
 
   defPropType data_type;
@@ -1090,6 +1176,7 @@ int definReader::propStartCallback(defrCallbackType_e /* unused: type */,
                                    defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   reader->_prop_defsR->beginDefinitions();
   return PARSE_OK;
 }
@@ -1099,6 +1186,7 @@ int definReader::regionCallback(defrCallbackType_e /* unused: type */,
                                 defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definRegion* regionR = reader->_regionR;
 
   regionR->begin(region->name(), /* is_group */ false);
@@ -1130,6 +1218,7 @@ int definReader::rowCallback(defrCallbackType_e /* unused: type */,
                              defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definRow* rowR = reader->_rowR;
 
   defRow dir = DEF_HORIZONTAL;
@@ -1209,7 +1298,7 @@ int definReader::trackCallback(defrCallbackType_e /* unused: type */,
                                defiUserData data)
 {
   definReader* reader = (definReader*) data;
-
+  CHECKBLOCK
   if (track->firstTrackMask() != 0) {
     UNSUPPORTED("MASK on track is unsupported");
   }
@@ -1257,6 +1346,7 @@ int definReader::viaCallback(defrCallbackType_e /* unused: type */,
                              defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definVia* viaR = reader->_viaR;
 
   if (via->numPolygons() > 0) {
@@ -1352,6 +1442,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
                                     defiUserData data)
 {
   definReader* reader = (definReader*) data;
+  CHECKBLOCK
   definSNet* snetR = reader->_snetR;
   if (reader->_mode == defin::FLOORPLAN
       && reader->_block->findNet(net->name()) == nullptr) {
@@ -1526,128 +1617,10 @@ void definReader::setLibs(std::vector<dbLib*>& libs)
   _rowR->setLibs(libs);
 }
 
-DefHeader* DefHeader::getDefHeader(const char* file)
-{
-  FILE* f = fopen(file, "r");
-
-  if (f == NULL) {
-    fprintf(stderr, "Cannot open DEF file %s\n", file);
-    return NULL;
-  }
-
-  int l;
-  char line[8192];
-  DefHeader* hdr = new DefHeader();
-
-  for (l = 1; fgets(line, 8192, f); ++l) {
-    const char* token = strtok(line, " \t\n");
-
-    if (token == NULL)
-      continue;
-
-    if ((strcmp(token, "VERSION") == 0) || (strcmp(token, "version") == 0)) {
-      const char* version = strtok(NULL, " \t\n");
-
-      if (version == NULL) {
-        fprintf(stderr, "Error: Cannot read VERSION statment at line %d\n", l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-      hdr->_version = strdup(version);
-      assert(hdr->_version);
-      continue;
-    }
-
-    if ((strcmp(token, "DESIGN") == 0) || (strcmp(token, "design") == 0)) {
-      const char* design = strtok(NULL, " \t\n");
-
-      if (design == NULL) {
-        fprintf(stderr, "Error: Cannot read DESIGN statment at line %d\n", l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-
-      hdr->_design = strdup(design);
-      assert(hdr->_design);
-      break;
-    }
-
-    if ((strcmp(token, "DIVIDERCHAR") == 0)
-        || (strcmp(token, "dividerchar") == 0)) {
-      const char* divider = strtok(NULL, " \t\"");
-
-      if (divider == NULL) {
-        fprintf(
-            stderr, "Error: Cannot read DIVIDERCHAR statment at line %d\n", l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-
-      hdr->_hier_delimeter = divider[0];
-
-      if (hdr->_hier_delimeter == 0) {
-        fprintf(stderr,
-                "Error: Syntax error in DIVIDERCHAR statment at line %d\n",
-                l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-      continue;
-    }
-
-    if ((strcmp(token, "BUSBITCHARS") == 0)
-        || (strcmp(token, "busbitchars") == 0)) {
-      const char* busbitchars = strtok(NULL, " \t\"");
-
-      if (busbitchars == NULL) {
-        fprintf(
-            stderr, "Error: Cannot read BUSBITCHARS statment at line %d\n", l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-
-      hdr->_left_bus_delimeter = busbitchars[0];
-      hdr->_right_bus_delimeter = busbitchars[1];
-
-      if ((hdr->_left_bus_delimeter == 0) || (hdr->_right_bus_delimeter == 0)) {
-        fprintf(stderr,
-                "Error: Syntax error in BUSBITCHARS statment at line %d\n",
-                l);
-        delete hdr;
-        fclose(f);
-        return NULL;
-      }
-
-      continue;
-    }
-
-    if ((strcmp(token, "COMPONENTS") == 0)
-        || (strcmp(token, "components") == 0)) {
-      fprintf(stderr, "Error: DESIGN statement is missing\n");
-      delete hdr;
-      fclose(f);
-      return NULL;
-    }
-  }
-
-  fclose(f);
-  return hdr;
-}
-
 dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
 {
   init();
   setLibs(libs);
-
-  DefHeader* hdr = DefHeader::getDefHeader(file);
-
-  if (hdr == NULL)
-    return NULL;
   dbChip* chip = _db->getChip();
   if (_mode != defin::DEFAULT) {
     if (chip == nullptr)
@@ -1659,27 +1632,10 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
     chip = dbChip::create(_db);
 
   assert(chip);
-  if (_mode != defin::DEFAULT)
-    _block = chip->getBlock();
-  else {
-    if (_block_name)
-      _block = dbBlock::create(chip, _block_name, hdr->_hier_delimeter);
-    else
-      _block = dbBlock::create(chip, hdr->_design, hdr->_hier_delimeter);
-  }
-
-  assert(_block);
-  setBlock(_block);
   setTech(_db->getTech());
-  if (_mode == defin::DEFAULT)
-    _block->setBusDelimeters(hdr->_left_bus_delimeter,
-                             hdr->_right_bus_delimeter);
-
   _logger->info(utl::ODB, 127, "Reading DEF file: {}", file);
-  _logger->info(utl::ODB, 128, "Design: {}", hdr->_design);
 
   if (!createBlock(file)) {
-    delete hdr;
     dbChip::destroy(chip);
     _logger->warn(utl::ODB, 129, "Error: Failed to read DEF file");
     return NULL;
@@ -1724,23 +1680,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
                   _netR->_net_iterm_cnt);
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
-  delete hdr;
   return chip;
-}
-
-static std::string renameBlock(dbBlock* parent, const char* old_name)
-{
-  int cnt = 1;
-
-  for (;; ++cnt) {
-    char n[16];
-    snprintf(n, 15, "_%d", cnt);
-    std::string name(old_name);
-    name += n;
-
-    if (!parent->findChild(name.c_str()))
-      return name;
-  }
 }
 
 dbBlock* definReader::createBlock(dbBlock* parent,
@@ -1749,53 +1689,13 @@ dbBlock* definReader::createBlock(dbBlock* parent,
 {
   init();
   setLibs(libs);
-
-  DefHeader* hdr = DefHeader::getDefHeader(def_file);
-
-  if (hdr == NULL) {
-    fprintf(stderr, "Header information missing from DEF file.\n");
-    return NULL;
-  }
-
-  std::string block_name;
-
-  if (_block_name)
-    block_name = _block_name;
-  else
-    block_name = hdr->_design;
-
-  if (parent->findChild(block_name.c_str())) {
-    std::string new_name = renameBlock(parent, block_name.c_str());
-    fprintf(stderr,
-            "Warning: Block with name \"%s\" already exists, renaming too "
-            "\"%s\".\n",
-            block_name.c_str(),
-            new_name.c_str());
-    block_name = new_name;
-  }
-
-  _block = dbBlock::create(parent, block_name.c_str(), hdr->_hier_delimeter);
-
-  if (_block == NULL) {
-    fprintf(stderr,
-            "Error: Failed to create Block with name \"%s\".\n",
-            block_name.c_str());
-    delete hdr;
-    return NULL;
-  }
-
-  setBlock(_block);
+  parent_ = parent;
   setTech(_db->getTech());
-
-  _block->setBusDelimeters(hdr->_left_bus_delimeter, hdr->_right_bus_delimeter);
-
   _logger->info(utl::ODB, 135, "Reading DEF file: {}", def_file);
-  _logger->info(utl::ODB, 136, "Design: {}", hdr->_design);
 
   if (!createBlock(def_file)) {
     dbBlock::destroy(_block);
     _logger->warn(utl::ODB, 137, "Error: Failed to read DEF file");
-    delete hdr;
     return NULL;
   }
 
@@ -1825,7 +1725,6 @@ dbBlock* definReader::createBlock(dbBlock* parent,
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
-  delete hdr;
   return _block;
 }
 
@@ -1868,6 +1767,10 @@ bool definReader::createBlock(const char* file)
 
   defrInitSession();
   // FOR DEFAULT || FLOORPLAN || INCREMENTAL
+  defrSetVersionStrCbk(versionCallback);
+  defrSetBusBitCbk(busBitCallback);
+  defrSetDividerCbk(divideCharCallback);
+  defrSetDesignCbk(designCallback);
   defrSetUnitsCbk(unitsCallback);
   defrSetComponentCbk(componentsCallback);
   defrSetComponentMaskShiftLayerCbk(componentMaskShiftCallback);

@@ -1,5 +1,7 @@
 # OpenROAD
 
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+
 OpenROAD is an integrated chip physical design tool that takes a
 design from synthesized Verilog to routed layout.  
 
@@ -10,7 +12,7 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Place macro cells (RAMs, embedded macros)
 * Insert substrate tap cells
 * Insert power distribution network
-* Macro Placment of macro cells
+* Macro Placement of macro cells
 * Global placement of standard cells
 * Repair max slew, max capacitance, and max fanout violations and long wires
 * Clock tree synthesis
@@ -268,18 +270,20 @@ place_pins [-hor_layers h_layers]
            [-random]
            [-group_pins pins]
            [-corner_avoidance length]
+           [-min_distance distance]
 ```
 - ``-hor_layers`` (mandatory). Specify the layers to create the metal shapes 
-of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices.
 - ``-ver_layers`` (mandatory). Specify the layers to create the metal shapes
-of pins placed in vertical tracks. Can be a single layer or a list of layer indices
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices.
 - ``-random_seed``. Specify the seed for random operations.
 - ``-exclude``. Specify an interval in one of the four edges of the die boundary
 where pins cannot be placed. Can be used multiple times.
 - ``-random``. When this flag is enabled, the pin placement is 
 random.
-- ``-group_pins``. Specify a list of pins to be placed together on the die boundary
-- ``-corner_avoidance distance``. Specify the distance from each corner to avoid placing pins.
+- ``-group_pins``. Specify a list of pins to be placed together on the die boundary.
+- ``-corner_avoidance distance``. Specify the distance (in micron) from each corner to avoid placing pins.
+- ``-min_distance distance``. Specify the minimum distance (in micron) between pins in the die boundary.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
@@ -301,22 +305,23 @@ The `-pin_names` argument is a list of names. The `-region` syntax is the same a
 Tapcell and endcap insertion.
 
 ```
-tapcell -tapcell_master <tapcell_master>
-        -endcap_master <endcap_master>
-        -distance <dist>
-        -halo_width_x <halo_x>
-        -halo_width_y <halo_y>
-        -tap_nwin2_master <tap_nwin2_master>
-        -tap_nwin3_master <tap_nwin3_master>
-        -tap_nwout2_master <tap_nwout2_master>
-        -tap_nwout3_master <tap_nwout3_master>
-        -tap_nwintie_master <tap_nwintie_master>
-        -tap_nwouttie_master <tap_nwouttie_master>
-        -cnrcap_nwin_master <cnrcap_nwin_master>
-        -cnrcap_nwout_master <cnrcap_nwout_master>
-        -incnrcap_nwin_master <incnrcap_nwin_master>
-        -incnrcap_nwout_master <incnrcap_nwout_master>
-        -add_boundary_cell
+tapcell [-tapcell_master tapcell_master]
+        [-endcap_master endcap_master]
+        [-distance dist]
+        [-halo_width_x halo_x]
+        [-halo_width_y halo_y]
+        [-tap_nwin2_master tap_nwin2_master]
+        [-tap_nwin3_master tap_nwin3_master]
+        [-tap_nwout2_master tap_nwout2_master]
+        [-tap_nwout3_master tap_nwout3_master]
+        [-tap_nwintie_master tap_nwintie_master]
+        [-tap_nwouttie_master tap_nwouttie_master]
+        [-cnrcap_nwin_master cnrcap_nwin_master]
+        [-cnrcap_nwout_master cnrcap_nwout_master]
+        [-incnrcap_nwin_master incnrcap_nwin_master]
+        [-incnrcap_nwout_master incnrcap_nwout_master]
+        [-tap_prefix tap_prefix]
+        [-endcap_prefix endcap_prefix]
 ```
 You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
 
@@ -465,7 +470,7 @@ length of wire, not per square or per square micron.  The units for
 `-resistance` and `-capacitance` are from the first liberty file read,
 resistance_unit/distance_unit (typically kohms/micron) and liberty
 capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
-no distance units are not specied in the liberty file microns are
+distance units are not specified in the liberty file microns are
 used.
 
 The resistance and capacitance values in the OpenROAD database can be
@@ -554,7 +559,7 @@ repair_tie_fanout [-separation dist]
 The `repair_tie_fanout` command connects each tie high/low load to a
 copy of the tie high/low cell.  `lib_port` is the tie high/low port,
 which can be a library/cell/port name or object returned by
-`get_lib_pins`. The tie high/low instance is separaated from the load
+`get_lib_pins`. The tie high/low instance is separated from the load
 by `dist` (in liberty units, typically microns).
 
 ```
@@ -703,7 +708,7 @@ If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``-distance_between_buffers`` is the distance (in micron) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT.
 - ``-branching_point_buffers_distance`` is the distance (in micron) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the ``-distance_between_buffers`` value to be set.
 - ``-clustering_exponent`` is a value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. If this parameter is omitted, the code gets the default value (4).
-- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have extacly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
+- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have exactly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
 - ``-sink_clustering_enable`` enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure.
 - ``-sink_clustering_size`` specifies the maximum number of sinks per cluster. Default value is 20.
 - ``sink_clustering_max_diameter`` specifies maximum diameter (in micron) of sink cluster. Default value is 50.

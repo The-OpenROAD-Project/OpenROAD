@@ -119,7 +119,7 @@ class Parameters
   float vertical_length_ = -1;
   double rand_seed_ = 42.0;
   int corner_avoidance_;
-  int min_dist_;
+  int min_dist_ = 0;
 };
 
 }  // namespace ppl

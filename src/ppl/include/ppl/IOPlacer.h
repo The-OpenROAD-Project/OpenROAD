@@ -150,8 +150,8 @@ class IOPlacer
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;
   Netlist netlist_io_pins_;
-  SlotVector slots_;
-  SectionVector sections_;
+  std::vector<Slot> slots_;
+  std::vector<Section> sections_;
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
@@ -168,7 +168,7 @@ class IOPlacer
   void randomPlacement(const RandomMode);
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
-  void createSectionsPerEdge(Edge edge);
+  void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
   bool assignPinsSections();
