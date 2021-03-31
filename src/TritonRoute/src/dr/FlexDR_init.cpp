@@ -1647,7 +1647,7 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
           }
         } else {
           if (enableOutput) {
-            cout <<  bp << " skipped (case 3)\n";
+            cout << bp << " skipped (case 3)\n";
           }
         }
       }
@@ -1672,7 +1672,8 @@ void FlexDRWorker::initNet_term_new(drNet* dNet, vector<frBlockObject*>& terms)
       }
       initNet_termGenAp_new(dPin.get());
       if (dPin->getAccessPatterns().empty()) {
-        cout << "\nError: pin " << name << " still does not have temp ap" << endl;
+        cout << "\nError: pin " << name << " still does not have temp ap"
+             << endl;
         exit(1);
       } else {
         if (enableOutput) {
@@ -4304,8 +4305,10 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
 
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
-              if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK) {  //temp solution for ISPD19 benchmarks
-                  modCornerToCornerSpacing(box, zIdx, type);
+              if (inst->getRefBlock()->getMacroClass()
+                  == MacroClassEnum::BLOCK) {  // temp solution for ISPD19
+                                               // benchmarks
+                modCornerToCornerSpacing(box, zIdx, type);
               }
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true, false);

@@ -363,7 +363,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   }
   return currNet;
 }
-//creates net polygons based on the net shapes
+// creates net polygons based on the net shapes
 void FlexGCWorker::Impl::initDRWorker()
 {
   // bool enableOutput = true;

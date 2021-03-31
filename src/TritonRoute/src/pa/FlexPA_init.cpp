@@ -121,8 +121,8 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const frBox& box)
   auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
   frCoord low = tp->getStartCoord();
   frCoord high = low
-                 + (frCoord) (tp->getTrackSpacing())
-                       * ((frCoord) (tp->getNumTracks()) - 1);
+                 + (frCoord)(tp->getTrackSpacing())
+                       * ((frCoord)(tp->getNumTracks()) - 1);
   if (enableOutput) {
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     cout << "tp low@" << low / dbu << ", high@" << high / dbu << endl;

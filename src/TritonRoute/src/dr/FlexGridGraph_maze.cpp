@@ -511,9 +511,9 @@ void FlexGridGraph::getPrevGrid(frMIdx& gridX,
 
     if (isForbiddenVia2Via) {
       if (drWorker_ && drWorker_->getDRIter() >= 3) {
-        nextPathCost = INT_MAX/2;//+= ggMarkerCost_ * edgeLength;
+        nextPathCost = INT_MAX / 2;  //+= ggMarkerCost_ * edgeLength;
       } else {
-        nextPathCost = INT_MAX/2;//+= ggDRCCost_ * edgeLength;
+        nextPathCost = INT_MAX / 2;  //+= ggDRCCost_ * edgeLength;
       }
     }
   }

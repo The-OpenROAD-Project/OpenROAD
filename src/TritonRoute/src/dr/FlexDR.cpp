@@ -1818,23 +1818,24 @@ void FlexDR::searchRepair(int iter,
     return;
   }
   if (iter < 3)
-      SHAPECOST = DRCCOST;
+    SHAPECOST = DRCCOST;
   else if (iter < 10)
-      SHAPECOST = 2*DRCCOST;
+    SHAPECOST = 2 * DRCCOST;
   else if (iter < 15)
-      SHAPECOST = 3*DRCCOST;
+    SHAPECOST = 3 * DRCCOST;
   else if (iter < 20)
-      SHAPECOST = 4*DRCCOST;
+    SHAPECOST = 4 * DRCCOST;
   else if (iter < 30)
-     SHAPECOST = 10*DRCCOST;
+    SHAPECOST = 10 * DRCCOST;
   else if (iter < 40)
-      SHAPECOST = 50*DRCCOST;
-  else SHAPECOST = 100*DRCCOST;
- 
+    SHAPECOST = 50 * DRCCOST;
+  else
+    SHAPECOST = 100 * DRCCOST;
+
   if (iter == 40)
-      MARKERDECAY = 0.99;
+    MARKERDECAY = 0.99;
   if (iter == 50)
-      MARKERDECAY = 0.999;
+    MARKERDECAY = 0.999;
   frTime t;
   // bool TEST = false;
   // bool TEST = true;
@@ -3160,7 +3161,7 @@ int FlexDR::main()
                0,
                false,
                9);  // true search and repair
-  
+
   if (DRC_RPT_FILE != string("")) {
     reportDRC();
   }

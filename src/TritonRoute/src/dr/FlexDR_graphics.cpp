@@ -236,17 +236,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   // Draw markers
   frBox box;
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto& marker :
-       worker_->getGCWorker()
-           ->getMarkers()) {  
+  for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
     }
   }
   painter.setPen(gui::Painter::green, /* cosmetic */ true);
-  for (auto& marker :
-       worker_->getDesign()->getTopBlock()->getMarkers()) {  
+  for (auto& marker : worker_->getDesign()->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       marker->getBBox(box);
       drawMarker(box.left(), box.bottom(), box.right(), box.top(), painter);
@@ -254,10 +251,15 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 }
 
-void FlexDRGraphics::drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter) {
-    painter.drawRect({xl, yl, xh, yh});
-    painter.drawLine({xl, yl}, {xh, yh});
-    painter.drawLine({xl, yh}, {xh, yl});
+void FlexDRGraphics::drawMarker(int xl,
+                                int yl,
+                                int xh,
+                                int yh,
+                                gui::Painter& painter)
+{
+  painter.drawRect({xl, yl, xh, yh});
+  painter.drawLine({xl, yl}, {xh, yh});
+  painter.drawLine({xl, yh}, {xh, yl});
 }
 
 void FlexDRGraphics::update()
