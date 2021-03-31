@@ -38,11 +38,12 @@ Tools
 Libraries
   * boost 1.68
   * tcl 8.6
-  * zlib
-  * eigen
-  * lemon
+  * zlibc
+  * eigen3
+  * spdlog
+  * [lemon](http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz)(graph library, not the parser)
   * qt5
-  * CImg (optional for replace)
+  * cimg (optional for replace)
 
 
 See `Dockerfile` for an example of how to install these packages. 
