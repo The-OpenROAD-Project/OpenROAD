@@ -78,7 +78,7 @@ proc set_io_pin_constraint { args } {
   if [info exists keys(-direction)] {
     set direction $keys(-direction)
     set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-    utl::report "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
+    utl::info PPL 49 "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
     ppl::add_direction_constraint $dir $edge_ $begin $end
   }
 
@@ -371,10 +371,10 @@ proc exclude_intervals { cmd intervals } {
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
   set dbBlock [ord::get_db_block]
   set pin_list {}
+  utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
   foreach pin_name $names {
     set db_bterm [$dbBlock findBTerm $pin_name]
     if { $db_bterm != "NULL" } {
-      utl::report "Restrict I/O pin $pin_name to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u the $edge_name edge."
       lappend pin_list $db_bterm
     } else {
       utl::warn PPL 47 "Pin $pin_name not found in constraint"

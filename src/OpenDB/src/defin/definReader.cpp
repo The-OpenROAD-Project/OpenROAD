@@ -54,6 +54,7 @@
 #include "definSNet.h"
 #include "definTracks.h"
 #include "definVia.h"
+#include "defzlib.hpp"
 #include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \
@@ -1753,15 +1754,14 @@ bool definReader::replaceWires(dbBlock* block, const char* def_file)
   return errors() == 0;
 }
 
+static inline bool hasSuffix(const std::string& str, const std::string& suffix)
+{
+  return str.size() >= suffix.size()
+         && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 bool definReader::createBlock(const char* file)
 {
-  FILE* f = fopen(file, "r");
-
-  if (f == NULL) {
-    _logger->warn(utl::ODB, 148, "error: Cannot open DEF file {}", file);
-    return false;
-  }
-
   defrInit();
   defrReset();
 
@@ -1816,7 +1816,28 @@ bool definReader::createBlock(const char* file)
     defrSetAddPathToNet();
   }
 
-  int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+  bool isZipped = hasSuffix(file, ".gz");
+  int res;
+  if (!isZipped) {
+    FILE* f = fopen(file, "r");
+    if (f == NULL) {
+      _logger->warn(utl::ODB, 148, "error: Cannot open DEF file {}", file);
+      return false;
+    }
+    res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+    fclose(f);
+  } else {
+    defrSetGZipReadFunction();
+    defGZFile f = defrGZipOpen(file, "r");
+    if (f == NULL) {
+      _logger->warn(
+          utl::ODB, 271, "error: Cannot open zipped DEF file {}", file);
+      return false;
+    }
+    res = defrReadGZip(f, file, (defiUserData) this);
+    defGZipClose(f);
+  }
+
   if (res != 0 || _errors != 0) {
     _logger->warn(utl::ODB, 149, "DEF parser returns an error!");
     if (!_continue_on_errors) {

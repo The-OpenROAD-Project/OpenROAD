@@ -28,25 +28,25 @@ ODB 0117 definPin.cpp:118          PIN {} missing right bus character.
 ODB 0118 definPin.cpp:124          PIN {} missing left bus character.
 ODB 0122 definPin.cpp:372          error: Cannot find PIN {}
 ODB 0123 definPin.cpp:385          error: Cannot find PIN {}
-ODB 0125 definReader.cpp:1605      lines processed: {}
-ODB 0126 definReader.cpp:1610      error: {}
-ODB 0127 definReader.cpp:1636      Reading DEF file: {}
-ODB 0128 definReader.cpp:348       Design: {}
-ODB 0129 definReader.cpp:1640      Error: Failed to read DEF file
-ODB 0130 definReader.cpp:1645          Created {} pins.
-ODB 0134 definReader.cpp:1682      Finished DEF file: {}
-ODB 0135 definReader.cpp:1694      Reading DEF file: {}
-ODB 0137 definReader.cpp:1698      Error: Failed to read DEF file
-ODB 0138 definReader.cpp:1703          Created {} pins.
-ODB 0142 definReader.cpp:1726      Finished DEF file: {}
-ODB 0143 definReader.cpp:1737      Reading DEF file: {}
-ODB 0144 definReader.cpp:1741      Error: Failed to read DEF file
-ODB 0146 definReader.cpp:1750          Processed {} nets.
-ODB 0147 definReader.cpp:1752      Finished DEF file: {}
-ODB 0148 definReader.cpp:1761      error: Cannot open DEF file {}
-ODB 0149 definReader.cpp:1821      DEF parser returns an error!
-ODB 0150 definReader.cpp:1838      error: Cannot open DEF file {}
-ODB 0151 definReader.cpp:1856      DEF parser returns an error!
+ODB 0125 definReader.cpp:1606      lines processed: {}
+ODB 0126 definReader.cpp:1611      error: {}
+ODB 0127 definReader.cpp:1637      Reading DEF file: {}
+ODB 0128 definReader.cpp:349       Design: {}
+ODB 0129 definReader.cpp:1641      Error: Failed to read DEF file
+ODB 0130 definReader.cpp:1646          Created {} pins.
+ODB 0134 definReader.cpp:1683      Finished DEF file: {}
+ODB 0135 definReader.cpp:1695      Reading DEF file: {}
+ODB 0137 definReader.cpp:1699      Error: Failed to read DEF file
+ODB 0138 definReader.cpp:1704          Created {} pins.
+ODB 0142 definReader.cpp:1727      Finished DEF file: {}
+ODB 0143 definReader.cpp:1738      Reading DEF file: {}
+ODB 0144 definReader.cpp:1742      Error: Failed to read DEF file
+ODB 0146 definReader.cpp:1751          Processed {} nets.
+ODB 0147 definReader.cpp:1753      Finished DEF file: {}
+ODB 0148 definReader.cpp:1824      error: Cannot open DEF file {}
+ODB 0149 definReader.cpp:1842      DEF parser returns an error!
+ODB 0150 definReader.cpp:1859      error: Cannot open DEF file {}
+ODB 0151 definReader.cpp:1877      DEF parser returns an error!
 ODB 0152 definRegion.cpp:76         already exists
 ODB 0156 definSNet.cpp:124         special net {} does not exist
 ODB 0166 definVia.cpp:67           error: duplicate via ({})
@@ -75,7 +75,8 @@ ODB 0235 lefin.cpp:2142            Error reading {}
 ODB 0236 lefin.cpp:2149            Finished LEF file:  {}
 ODB 0238 lefin.cpp:2157                Created {} technology vias
 ODB 0239 lefin.cpp:2160                Created {} library cells
-ODB 0240 reader.cpp:547            error: Cannot open LEF file {}
-ODB 0250 definReader.cpp:1627      Chip does not exist
-ODB 0252 definReader.cpp:1648          Updated {} pins.
-ODB 0260 definReader.cpp:67        DESIGN is not defined in DEF
+ODB 0240 reader.cpp:559            error: Cannot open LEF file {}
+ODB 0250 definReader.cpp:1628      Chip does not exist
+ODB 0252 definReader.cpp:1649          Updated {} pins.
+ODB 0260 definReader.cpp:68        DESIGN is not defined in DEF
+ODB 0270 reader.cpp:550            error: Cannot open zipped LEF file {}
