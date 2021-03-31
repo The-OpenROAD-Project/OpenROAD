@@ -35,6 +35,8 @@
 
 #include "rsz/Resizer.hh"
 
+#include "rsz/SteinerTree.hh"
+
 #include "openroad/OpenRoad.hh"
 #include "gui/gui.h"
 #include "utl/Logger.h"
@@ -63,8 +65,6 @@
 #include "sta/PathExpanded.hh"
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
-
-#include "rsz/SteinerTree.hh"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html

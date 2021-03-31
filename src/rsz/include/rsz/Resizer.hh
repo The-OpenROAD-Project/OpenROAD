@@ -39,6 +39,7 @@
 #include <string>
 
 #include "SteinerTree.hh"
+#include "BufferedNet.hh"
 
 #include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
@@ -100,7 +101,6 @@ using sta::Parasitic;
 using sta::ParasiticNode;
 using sta::PathRef;
 
-class BufferedNet;
 class SteinerRenderer;
 
 class NetHash
@@ -112,11 +112,9 @@ public:
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
-typedef array<Required, RiseFall::index_count> Requireds;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
 typedef Vector<BufferedNet*> BufferedNetSeq;
-enum class BufferedNetType { load, junction, wire, buffer };
 
 class Resizer : public StaState
 {
@@ -498,15 +496,24 @@ protected:
                    SteinerPt k,
                    SteinerPt prev,
                    int level);
+  BufferedNet *makeBufferedNetSteiner(const Pin *drvr_pin);
+  BufferedNet *makeBufferedNet(SteinerTree *tree,
+                               SteinerPt k,
+                               SteinerPt prev,
+                               int level);
+  BufferedNet *makeBufferedNetWire(SteinerTree *tree,
+                                   SteinerPt from,
+                                   SteinerPt to,
+                                   int level);
   // BufferedNet factory.
   BufferedNet *makeBufferedNet(BufferedNetType type,
-                                     float cap,
-                                     Requireds requireds,
-                                     Pin *load_pin,
-                                     Point location,
-                                     LibertyCell *buffer_cell,
-                                     BufferedNet *ref,
-                                     BufferedNet *ref2);
+                               Point location,
+                               float cap,
+                               Requireds requireds,
+                               Pin *load_pin,
+                               LibertyCell *buffer_cell,
+                               BufferedNet *ref,
+                               BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
 
