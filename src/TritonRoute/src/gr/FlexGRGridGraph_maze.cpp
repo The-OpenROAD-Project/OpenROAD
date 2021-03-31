@@ -41,8 +41,6 @@ bool FlexGRGridGraph::search(vector<FlexMazeIdx>& connComps,
                              FlexMazeIdx& ccMazeIdx2,
                              const frPoint& centerPt)
 {
-  int stepCnt = 0;
-
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);

@@ -50,7 +50,6 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
                                            bool isAddCost,
                                            set<taPin*, frBlockObjectComp>* pinS)
 {
-  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
   // obj1 = curr obj
   frCoord width1 = box.width();
   frCoord length1 = box.length();
@@ -152,7 +151,6 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
                                         bool isCurrPs,
                                         set<taPin*, frBlockObjectComp>* pinS)
 {
-  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
   // obj1 = curr obj
   frCoord width1 = box.width();
   frCoord length1 = box.length();
@@ -359,7 +357,6 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
                                      bool isAddCost,
                                      set<taPin*, frBlockObjectComp>* pinS)
 {
-  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
   if (!getDesign()->getTech()->getLayer(lNum)->hasCutSpacing()) {
     return;
   }
@@ -882,7 +879,6 @@ void FlexTAWorker::assignIroute_bestTrack_helper(taPin* iroute,
                                                  int& bestTrackIdx,
                                                  frUInt4& drcCost)
 {
-  double dbu = getDesign()->getTopBlock()->getDBUPerUU();
   auto trackLoc = getTrackLocs(lNum)[trackIdx];
   auto currCost = assignIroute_getCost(iroute, trackLoc, drcCost);
   if (isInitTA()) {

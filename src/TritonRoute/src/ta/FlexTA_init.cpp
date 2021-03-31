@@ -601,7 +601,6 @@ void FlexTAWorker::initFixedObjs_helper(const frBox& box,
                                         frLayerNum lNum,
                                         frNet* net)
 {
-  double dbu = getTech()->getDBUPerUU();
   frBox bloatBox;
   box.bloat(bloatDist, bloatBox);
   auto con = getDesign()->getTech()->getLayer(lNum)->getShortConstraint();

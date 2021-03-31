@@ -874,7 +874,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
                            const frPoint& centerPt,
                            map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
-  int stepCnt = 0;
 
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
@@ -937,11 +936,6 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
     if (graphics_) {
       graphics_->searchNode(this, currGrid);
     }
-
-    // if (stepCnt % 100000 == 0) {
-    //   std::cout << "wavefront size = " << wavefront.size() << " at step = "
-    //   << stepCnt << "\n";
-    // }
     if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;

@@ -1057,8 +1057,6 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   if (graphics_) {
     graphics_->setViaAP(ap, via, gcWorker.getMarkers());
   }
-
-  }
   return sol;
 }
 
