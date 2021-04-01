@@ -55,6 +55,10 @@
   #include "Python.h"
 #endif
 
+#ifdef ENABLE_TCLX
+  #include <tclExtend.h>
+#endif
+
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
 #include "openroad/Version.hh"
@@ -246,6 +250,11 @@ tclAppInit(int argc,
   if (Tcl_Init(interp) == TCL_ERROR) {
     return TCL_ERROR;
   }
+#ifdef ENABLE_TCLX
+  if (Tclx_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+#endif
 #ifdef ENABLE_READLINE
   if (!gui_mode) {
     if (Tclreadline_Init(interp) == TCL_ERROR) {
