@@ -82,7 +82,7 @@ class Capacities
 
 struct cmpByName {
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const {
-    return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+    return net1->getId() < net2->getId();
   }
 };
 
