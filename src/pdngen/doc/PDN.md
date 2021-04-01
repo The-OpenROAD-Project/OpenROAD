@@ -138,6 +138,26 @@ pdngen::specify_grid stdcell {
 }
 ```
 
+## Using fixed VIAs from the tech file
+
+Normally pdngen uses VIARULEs defined in the LEF, along with design rules for spacing, enclosure etc to build vias to connect between the layers. Some technologies may not have VIARULEs set up in the LEF file, others may define a set of fixed vias to be used in the power grid. In these cases you used the fixed_vias property to specify a list of fixed vias to be used for a given connection. The specified fixed_vias will be used to connect between layers. For any required vias that do not have a fixed_vias specified, pdngen will revert to building a via from a VIARULE instead
+
+### Example
+
+```TCL
+pdngen::specify_grid stdcell {
+    name grid
+    rails {
+        metal1 {width 0.17 pitch  2.4 offset 0}
+        metal2 {width 0.17 pitch  2.4 offset 0}
+    }
+    connect {
+      {metal1 metal2 fixed_vias VIA12}
+      {metal2 metal5 fixed_vias {VIA23 VIA34}}
+    }
+}
+```
+
 ## Additional features for top level power grid
 
 At the top level of the SoC, there is often a requirement to connect the core power and ground pads to the core power grid. This is done by specifying a core power ground ring around between the stdcell area and the pad cell placement. 
@@ -177,6 +197,32 @@ pdngen::specify_grid stdcell {
 ```
 
 When inserting a grid for a hierarchical sub-block, the top layers are omitted to be added at the SoC leve. So, at the SoC level, we have straps for layers metal8 to metal 10. We also specify core rings for two of the layers. The core rings are constructed as concentric rings around the stdcell area using the specified metals in their preferred routing directions. Straps from the stdcell area in the these layers will be extended out to connect to the core rings.
+
+The stdcell rails may also be extended out to the core rings by using the extend_to_core_rings property in the rail definition. 
+
+### Example
+
+```TCL
+pdngen::specify_grid stdcell {
+  name grid
+
+  core_ring {
+    metal4  {width 5.0 spacing 2.0 core_offset 4.5}
+    metal5  {width 5.0 spacing 2.0 core_offset 4.5}
+  }
+  rails {
+    metal1  {width 0.17 pitch  2.4 offset 0 extend_to_core_ring 1}
+  }
+  straps {
+    metal4  {width 0.48 pitch 56.0 offset 2}
+  }
+  connect {
+    {metal1 metal4}
+  }
+}
+
+```
+
 
 It is assumed that the power pads specified have core facing pins for power/ground in the same layers used in the core rings. Straps, the same width as the pins are used to connect to the core rings. These connections from the pad cells have priority over connections from the core area power straps.
 

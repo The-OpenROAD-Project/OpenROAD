@@ -746,22 +746,12 @@ void assignEdge(int netID, int edgeID, Bool processDIR)
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       grid = gridsL[k] * gridV + min_y * xGrid + gridsX[k];
 
-      if (v_edges3D[grid].usage < v_edges3D[grid].cap) {
-        v_edges3D[grid].usage += edgeCost;
-
-      } else {
-        v_edges3D[grid].usage += edgeCost;
-      }
-
+      v_edges3D[grid].usage += edgeCost;
     } else {
       min_x = std::min(gridsX[k], gridsX[k + 1]);
       grid = gridsL[k] * gridH + gridsY[k] * (xGrid - 1) + min_x;
 
-      if (h_edges3D[grid].usage < h_edges3D[grid].cap) {
-        h_edges3D[grid].usage += edgeCost;
-      } else {
-        h_edges3D[grid].usage += edgeCost;
-      }
+      h_edges3D[grid].usage += edgeCost;
     }
   }
 }
@@ -1828,7 +1818,7 @@ stt::Tree treeToFlute(Tree tree)
 {
   stt::Tree fluteTree;
   fluteTree.deg = tree.deg;
-  fluteTree.length = (stt::DTYPE) fluteTree.length;
+  fluteTree.length = (stt::DTYPE) tree.length;
   fluteTree.branch = new stt::Branch[tree.totalDeg];
   for (int i = 0; i < tree.totalDeg; i++) {
     fluteTree.branch[i].x = (stt::DTYPE) tree.branch[i].x;

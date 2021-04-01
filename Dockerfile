@@ -1,1 +1,0 @@
-jenkins/docker/Dockerfile.centos7.gcc8

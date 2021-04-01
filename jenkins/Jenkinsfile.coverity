@@ -1,28 +1,12 @@
 pipeline {
-  agent any
+  agent any;
   environment {
-    COVERITY_TOKEN = credentials('COVERITY_TOKEN')
-    VERSION = sh (returnStdout: true, script: "git rev-parse HEAD").trim()
+    COVERITY_TOKEN = credentials('COVERITY_TOKEN');
   }
   stages {
-    stage('Setup Build') {
-      steps {
-        sh 'cmake -B build .'
-      }
-    }
     stage('Run Coverity') {
       steps {
-        sh 'cov-build --dir cov-int cmake --build build -j $(nproc)'
-      }
-    }
-    stage('Create tarball') {
-      steps {
-        sh 'tar czvf openroad.tgz cov-int'
-      }
-    }
-    stage('Submit Build') {
-      steps {
-        sh 'curl --form token=$COVERITY_TOKEN --form email=openroad@eng.ucsd.edu --form file=@openroad.tgz --form version="$VERSION" https://scan.coverity.com/builds?project=The-OpenROAD-Project%2FOpenROAD'
+        sh './etc/CodeCoverage.sh static';
       }
     }
   }
