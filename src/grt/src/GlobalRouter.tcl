@@ -150,33 +150,11 @@ proc set_layer_ranges { args } {
     keys {-layers -clock_layers}
 
   if { [info exists keys(-layers)] } {
-    set layer_range [grt::parse_layer_range "-layers" $keys(-layers)]
-    lassign $layer_range min_layer max_layer
-    grt::check_routing_layer $min_layer
-    grt::check_routing_layer $max_layer
-
-    grt::set_min_layer $min_layer
-    grt::set_max_layer $max_layer
-  }
-
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    if { !([ord::db_layer_has_hor_tracks $layer] && \
-         [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 216 "missing track structure."
-    }
+    grt::define_layer_range $keys(-layers)
   }
 
   if { [info exists keys(-clock_layers)] } {
-    set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
-    lassign $layer_range min_clock_layer max_clock_layer
-    grt::check_routing_layer $min_clock_layer
-    grt::check_routing_layer $max_clock_layer
-
-    if { $min_clock_layer < $max_clock_layer } {
-      grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-    } else {
-      utl::error GRT 217 "-clock_layers: Min routing layer is greater than max routing layer."
-    }
+    grt::define_clock_layer_range $keys(-clock_layers)
   }
 }
 
@@ -300,33 +278,11 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-clock_layers)] } {
-    set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
-    lassign $layer_range min_clock_layer max_clock_layer
-    grt::check_routing_layer $min_clock_layer
-    grt::check_routing_layer $max_clock_layer
-
-    if { $min_clock_layer < $max_clock_layer } {
-      grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-    } else {
-      utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
-    }
+    grt::define_clock_layer_range $keys(-clock_layers)
   }
 
   if { [info exists keys(-layers)] } {
-    set layer_range [grt::parse_layer_range "-layers" $keys(-layers)]
-    lassign $layer_range min_layer max_layer
-    grt::check_routing_layer $min_layer
-    grt::check_routing_layer $max_layer
-
-    grt::set_min_layer $min_layer
-    grt::set_max_layer $max_layer
-
-    for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-      if { !([ord::db_layer_has_hor_tracks $layer] && \
-           [ord::db_layer_has_ver_tracks $layer]) } {
-        utl::error GRT 57 "missing track structure."
-      }
-    }
+    grt::define_layer_range $keys(-layers)
   }
 
   grt::clear
@@ -434,6 +390,36 @@ proc highlight_route { net_name } {
   set net [$block findNet $net_name]
   if { $net != "NULL" } {
     highlight_net_route $net
+  }
+}
+
+proc define_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-layers" $layers]
+  lassign $layer_range min_layer max_layer
+  grt::check_routing_layer $min_layer
+  grt::check_routing_layer $max_layer
+
+  grt::set_min_layer $min_layer
+  grt::set_max_layer $max_layer
+
+  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+    if { !([ord::db_layer_has_hor_tracks $layer] && \
+         [ord::db_layer_has_ver_tracks $layer]) } {
+      utl::error GRT 57 "missing track structure."
+    }
+  }
+}
+
+proc define_clock_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-clock_layers" $layers]
+  lassign $layer_range min_clock_layer max_clock_layer
+  grt::check_routing_layer $min_clock_layer
+  grt::check_routing_layer $max_clock_layer
+
+  if { $min_clock_layer < $max_clock_layer } {
+    grt::set_clock_layer_range $min_clock_layer $max_clock_layer
+  } else {
+    utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
   }
 }
 
