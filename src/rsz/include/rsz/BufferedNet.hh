@@ -43,6 +43,7 @@
 #include "sta/Transition.hh"
 #include "sta/Network.hh"
 #include "sta/Delay.hh"
+#include "sta/PathRef.hh"
 
 namespace rsz {
 
@@ -59,6 +60,10 @@ using sta::RiseFall;
 using sta::Network;
 using sta::Unit;
 using sta::Units;
+using sta::PathRef;
+using sta::Delay;
+using sta::StaState;
+using sta::DcalcAnalysisPt;
 
 typedef array<Required, RiseFall::index_count> Requireds;
 
@@ -74,8 +79,9 @@ public:
   BufferedNet(BufferedNetType type,
               Point location,
               float cap,
-              Requireds requireds,
               Pin *load_pin,
+              PathRef load_req_path,
+              Delay required_delay,
               LibertyCell *buffer,
               BufferedNet *ref,
               BufferedNet *ref2);
@@ -93,15 +99,9 @@ public:
                   Resizer *resizer);
   BufferedNetType type() const { return type_; }
   float cap() const { return cap_; }
-  Required required(RiseFall *rf) { return requireds_[rf->index()]; }
-  // Min of rise/fall requireds.
-  Required required();
-  // Required times at input of buffer_cell driving this option.
-  Requireds bufferRequireds(LibertyCell *buffer_cell,
-                            Resizer *resizer) const;
-  // Required times at input of buffer_cell driving this option.
-  Required bufferRequired(LibertyCell *buffer_cell,
-                          Resizer *resizer) const;
+  Required required(StaState *sta);
+  const PathRef &requiredPath() const { return required_path_; }
+  Delay requiredDelay() const { return required_delay_; }
   // driver   driver pin location
   // junction steiner point location connecting ref/ref2
   // wire     location opposite end of wire to location(ref_)
@@ -126,8 +126,10 @@ private:
   // Capacitance looking into Net.
   float cap_;
   Point location_;
-  // Rise/fall required times.
-  Requireds requireds_;
+  // PathRef for worst required path at load.
+  PathRef required_path_;
+  // Delay from this BufferedNet to the load.
+  Delay required_delay_;
   // Type load.
   Pin *load_pin_;
   // Type buffer.

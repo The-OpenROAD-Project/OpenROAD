@@ -371,9 +371,10 @@ protected:
   int maxLoadManhattenDistance(Vertex *drvr);
 
   float portFanoutLoad(LibertyPort *port);
-  float pinCapacitance(const Pin *pin);
-  float bufferInputCapacitance(LibertyCell *buffer_cell);
-  Requireds pinRequireds(const Pin *pin);
+  float pinCapacitance(const Pin *pin,
+                       const DcalcAnalysisPt *dcalc_ap);
+  float bufferInputCapacitance(LibertyCell *buffer_cell,
+                               const DcalcAnalysisPt *dcalc_ap);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -383,10 +384,15 @@ protected:
   ArcDelay gateDelay(LibertyPort *drvr_port,
                      float load_cap,
                      const DcalcAnalysisPt *dcalc_ap);
+  ArcDelay gateDelay(LibertyPort *drvr_port,
+                     const RiseFall *rf,
+                     float load_cap,
+                     const DcalcAnalysisPt *dcalc_ap);
   float bufferDelay(LibertyCell *buffer_cell,
-                    RiseFall *rf,
-                    float load_cap);
+                    float load_cap,
+                    const DcalcAnalysisPt *dcalc_ap);
   float bufferDelay(LibertyCell *buffer_cell,
+                    const RiseFall *rf,
                     float load_cap,
                     const DcalcAnalysisPt *dcalc_ap);
   Parasitic *makeWireParasitic(Net *net,
@@ -509,8 +515,9 @@ protected:
   BufferedNet *makeBufferedNet(BufferedNetType type,
                                Point location,
                                float cap,
-                               Requireds requireds,
                                Pin *load_pin,
+                               PathRef req_path,
+                               Delay req_delay,
                                LibertyCell *buffer_cell,
                                BufferedNet *ref,
                                BufferedNet *ref2);

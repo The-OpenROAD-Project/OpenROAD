@@ -44,6 +44,7 @@
 #include "sta/Graph.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
+#include "sta/DcalcAnalysisPt.hh"
 
 namespace rsz {
 
@@ -98,29 +99,22 @@ Resizer::rebuffer(const Pin *drvr_pin)
       int i = 1;
       for (BufferedNet *p : Z) {
         // Find slack for drvr_pin into option.
-        ArcDelay gate_delays[RiseFall::index_count];
-        Slew slews[RiseFall::index_count];
-        gateDelays(drvr_port, p->cap(), tgt_slew_dcalc_ap_, gate_delays, slews);
-        Slack slacks[RiseFall::index_count] =
-          {p->required(RiseFall::rise()) - gate_delays[RiseFall::riseIndex()],
-           p->required(RiseFall::fall()) - gate_delays[RiseFall::fallIndex()]};
-        RiseFall *rf = (slacks[RiseFall::riseIndex()] < slacks[RiseFall::fallIndex()])
-          ? RiseFall::rise()
-          : RiseFall::fall();
-        int rf_index = rf->index();
+        const PathRef &req_path = p->requiredPath();
+        Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
+                                     p->cap(), req_path.dcalcAnalysisPt(sta_));
+        Slack slack = p->required(sta_) - drvr_delay;
         debugPrint(logger_, RSZ, "rebuffer", 3,
-                   "option {:3d}: {:2d} buffers req {} {} - {} = {} cap {}",
+                   "option {:3d}: {:2d} buffers req {} - {} = {} cap {}",
                    i,
                    p->bufferCount(),
-                   rf->asString(),
-                   delayAsString(p->required(rf), this, 3),
-                   delayAsString(gate_delays[rf_index], this, 3),
-                   delayAsString(slacks[rf_index], this, 3),
+                   delayAsString(p->required(sta_), this, 3),
+                   delayAsString(drvr_delay, this, 3),
+                   delayAsString(slack, this, 3),
                    units_->capacitanceUnit()->asString(p->cap()));
         if (logger_->debugCheck(RSZ, "rebuffer", 4))
           p->reportTree(this);
-        if (fuzzyGreater(slacks[rf_index], best_slack)) {
-          best_slack = slacks[rf_index];
+        if (fuzzyGreater(slack, best_slack)) {
+          best_slack = slack;
           best_option = p;
           best_index = i;
         }
@@ -181,12 +175,17 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
   if (k != SteinerTree::null_pt) {
     Pin *pin = tree->pin(k);
     if (pin && network_->isLoad(pin)) {
-      // Load capacitance and required time.
+      Vertex *vertex = graph_->pinLoadVertex(pin);
+      PathRef req_path = sta_->vertexWorstRequiredPath(vertex, max_);
+      const DcalcAnalysisPt *dcalc_ap = req_path.isNull()
+        ? tgt_slew_dcalc_ap_
+        : req_path.dcalcAnalysisPt(sta_);
       BufferedNet *z = makeBufferedNet(BufferedNetType::load,
                                        tree->location(k),
-                                       pinCapacitance(pin),
-                                       pinRequireds(pin),
+                                       pinCapacitance(pin, dcalc_ap),
                                        pin,
+                                       req_path,
+                                       0.0,
                                        nullptr,
                                        nullptr, nullptr);
       if (logger_->debugCheck(RSZ, "rebuffer", 4))
@@ -203,15 +202,13 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
       // Combine the options from both branches.
       for (BufferedNet *p : Zl) {
         for (BufferedNet *q : Zr) {
-          Requireds junc_reqs{min(p->required(RiseFall::rise()),
-                                  q->required(RiseFall::rise())),
-                              min(p->required(RiseFall::fall()),
-                                  q->required(RiseFall::fall()))};
+          BufferedNet *min_req = fuzzyLess(p->required(sta_), q->required(sta_)) ? p : q;
           BufferedNet *junc = makeBufferedNet(BufferedNetType::junction,
                                               tree->location(k),
                                               p->cap() + q->cap(),
-                                              junc_reqs,
                                               nullptr,
+                                              min_req->requiredPath(),
+                                              min_req->requiredDelay(),
                                               nullptr,
                                               p, q);
           Z.push_back(junc);
@@ -219,10 +216,10 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
       }
       // Prune the options. This is fanout^2.
       // Presort options to hit better options sooner.
-      sort(Z, [](BufferedNet *option1,
-                 BufferedNet *option2)
-              {   return fuzzyGreater(option1->required(),
-                                      option2->required());
+      sort(Z, [=](BufferedNet *option1,
+                  BufferedNet *option2)
+              { return fuzzyGreater(option1->required(sta_),
+                                    option2->required(sta_));
               });
       int si = 0;
       for (size_t pi = 0; pi < Z.size(); pi++) {
@@ -250,29 +247,17 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
 }
 
 float
-Resizer::pinCapacitance(const Pin *pin)
+Resizer::pinCapacitance(const Pin *pin,
+                        const DcalcAnalysisPt *dcalc_ap)
 {
   LibertyPort *port = network_->libertyPort(pin);
-  if (port)
-    return port->capacitance();
+  if (port) {
+    int lib_ap = dcalc_ap->libertyIndex();
+    LibertyPort *corner_port = port->cornerPort(lib_ap);
+    return corner_port->capacitance();
+  }
   else
     return 0.0;
-}
-
-Requireds
-Resizer::pinRequireds(const Pin *pin)
-{
-  Vertex *vertex = graph_->pinLoadVertex(pin);
-  Requireds requireds;
-  for (RiseFall *rf : RiseFall::range()) {
-    int rf_index = rf->index();
-    Required required = sta_->vertexRequired(vertex, rf, max_);
-    if (fuzzyInf(required))
-      // Unconstrained pin.
-      required = 0.0;
-    requireds[rf_index] = required;
-  }
-  return requireds;
 }
 
 BufferedNetSeq
@@ -292,15 +277,14 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
   for (BufferedNet *p : Z) {
-    // account for wire delay
-    Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
-                   p->required(RiseFall::fall()) - wire_delay};
     BufferedNet *z = makeBufferedNet(BufferedNetType::wire,
                                      prev_loc,
                                      // account for wire load
                                      p->cap() + wire_cap,
-                                     reqs,
                                      nullptr,
+                                     p->requiredPath(),
+                                     // account for wire delay
+                                     p->requiredDelay() + wire_delay,
                                      nullptr,
                                      p, nullptr);
     if (logger_->debugCheck(RSZ, "rebuffer", 4)) {
@@ -319,50 +303,81 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
       Required best_req = -INF;
       BufferedNet *best_option = nullptr;
       for (BufferedNet *z : Z1) {
-        Required req = z->bufferRequired(buffer_cell, this);
+        Required req = INF;
+        PathRef req_path = z->requiredPath();
+        if (!req_path.isNull()) {
+          const DcalcAnalysisPt *dcalc_ap = req_path.dcalcAnalysisPt(sta_);
+          Delay buffer_delay = bufferDelay(buffer_cell,
+                                           req_path.transition(sta_),
+                                           z->cap(), dcalc_ap);
+          req = z->required(sta_) - buffer_delay;
+        }
         if (fuzzyGreater(req, best_req)) {
           best_req = req;
           best_option = z;
         }
       }
-      Requireds requireds = best_option->bufferRequireds(buffer_cell, this);
-      Required required = min(requireds[RiseFall::riseIndex()],
-                              requireds[RiseFall::fallIndex()]);
-      float buffer_cap = bufferInputCapacitance(buffer_cell);
-      // Don't add this buffer option if it has worse input cap and req than
-      // another existing buffer option.
-      bool prune = false;
-      for (BufferedNet *buffer_option : buffered_options) {
-        if (buffer_option->cap() <= buffer_cap
-            && buffer_option->required() >= required) {
-          prune = true;
-          break;
+      if (best_option) {
+        Required required = INF;
+        PathRef req_path = best_option->requiredPath();
+        float buffer_cap = 0.0;
+        Delay buffer_delay = 0.0;
+        if (!req_path.isNull()) {
+          const DcalcAnalysisPt *dcalc_ap = req_path.dcalcAnalysisPt(sta_);
+          buffer_cap = bufferInputCapacitance(buffer_cell, dcalc_ap);
+          buffer_delay = bufferDelay(buffer_cell,
+                                     req_path.transition(sta_),
+                                     best_option->cap(),
+                                     dcalc_ap);
+          required = req_path.required(sta_) - buffer_delay;
         }
-      }
-      if (!prune) {
-        BufferedNet *z = makeBufferedNet(BufferedNetType::buffer,
-                                         // Locate buffer at opposite end of wire.
-                                         prev_loc,
-                                         buffer_cap,
-                                         requireds,
-                                         nullptr,
-                                         buffer_cell,
-                                         best_option, nullptr);
-        if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
-          printf("%*sbuffer %s cap %s req %s ->\n",
-                 level, "",
-                 tree->name(prev, sdc_network_),
-                 units_->capacitanceUnit()->asString(best_option->cap()),
-                 delayAsString(best_req, this));
-          z->report(level, this);
+        // Don't add this buffer option if it has worse input cap and req than
+        // another existing buffer option.
+        bool prune = false;
+        for (BufferedNet *buffer_option : buffered_options) {
+          if (buffer_option->cap() <= buffer_cap
+              && buffer_option->required(sta_) >= required) {
+            prune = true;
+            break;
+          }
         }
-        buffered_options.push_back(z);
+        if (!prune) {
+          BufferedNet *z = makeBufferedNet(BufferedNetType::buffer,
+                                           // Locate buffer at opposite end of wire.
+                                           prev_loc,
+                                           buffer_cap,
+                                           nullptr,
+                                           req_path,
+                                           best_option->requiredDelay()+buffer_delay,
+                                           buffer_cell,
+                                           best_option, nullptr);
+          if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
+            printf("%*sbuffer %s cap %s req %s ->\n",
+                   level, "",
+                   tree->name(prev, sdc_network_),
+                   units_->capacitanceUnit()->asString(best_option->cap()),
+                   delayAsString(best_req, this));
+            z->report(level, this);
+          }
+          buffered_options.push_back(z);
+        }
       }
     }
     for (BufferedNet *z : buffered_options)
       Z1.push_back(z);
   }
   return Z1;
+}
+
+float
+Resizer::bufferInputCapacitance(LibertyCell *buffer_cell,
+                                const DcalcAnalysisPt *dcalc_ap)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  int lib_ap = dcalc_ap->libertyIndex();
+  LibertyPort *corner_input = input->cornerPort(lib_ap);
+  return corner_input->capacitance();
 }
 
 // Return inserted buffer count.
@@ -386,12 +401,13 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     level_drvr_vertices_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    debugPrint(logger_, RSZ, "rebuffer", 3, "%*sinsert {} -> {} ({}) -> {}",
-               level, "",
-               sdc_network_->pathName(net),
-               buffer_name.c_str(),
-               buffer_cell->name(),
-               sdc_network_->pathName(net2));
+    if (logger_->debugCheck(RSZ, "rebuffer", 3))
+      printf("%*sinsert %s -> %s (%s) -> %s",
+             level, "",
+             sdc_network_->pathName(net),
+             buffer_name.c_str(),
+             buffer_cell->name(),
+             sdc_network_->pathName(net2));
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
@@ -400,11 +416,13 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     break;
   }
   case BufferedNetType::wire:
-    debugPrint(logger_, RSZ, "rebuffer", 3, "%*swire", level, "");
+    if (logger_->debugCheck(RSZ, "rebuffer", 3))
+      printf("%*swire", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     break;
   case BufferedNetType::junction: {
-    debugPrint(logger_, RSZ, "rebuffer", 3, "%*sjunction", level, "");
+    if (logger_->debugCheck(RSZ, "rebuffer", 3))
+      printf("%*sjunction", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     rebufferTopDown(choice->ref2(), net, level + 1);
     break;
@@ -415,10 +433,11 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     if (load_net != net) {
       Instance *load_inst = db_network_->instance(load_pin);
       Port *load_port = db_network_->port(load_pin);
-      debugPrint(logger_, RSZ, "rebuffer", 3, "%*sconnect load %s to %s",
-                 level, "",
-                 sdc_network_->pathName(load_pin),
-                 sdc_network_->pathName(net));
+      if (logger_->debugCheck(RSZ, "rebuffer", 3))
+        printf("%*sconnect load %s to %s",
+               level, "",
+               sdc_network_->pathName(load_pin),
+               sdc_network_->pathName(net));
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load_inst, load_port, net);
       parasiticsInvalid(load_net);
@@ -434,15 +453,16 @@ BufferedNet *
 Resizer::makeBufferedNet(BufferedNetType type,
                          Point location,
                          float cap,
-                         Requireds requireds,
                          Pin *load_pin,
+                         PathRef req_path,
+                         Delay req_delay,
                          LibertyCell *buffer_cell,
                          BufferedNet *ref,
                          BufferedNet *ref2)
 {
-  BufferedNet *option = new BufferedNet(type, location, cap, requireds,
-                                        load_pin, buffer_cell,
-                                        ref, ref2);
+  BufferedNet *option = new BufferedNet(type, location, cap,
+                                        load_pin, req_path, req_delay,
+                                        buffer_cell, ref, ref2);
 
   rebuffer_options_.push_back(option);
   return option;
@@ -492,7 +512,9 @@ Resizer::makeBufferedNet(SteinerTree *tree,
     if (pin && network_->isLoad(pin)) {
       return new BufferedNet(BufferedNetType::load,
                              tree->location(k),
-                             pinCapacitance(pin),
+                             // should wait unil req path is known to find
+                             // dcalc_ap
+                             pinCapacitance(pin, tgt_slew_dcalc_ap_),
                              pin,
                              nullptr, nullptr);
     }

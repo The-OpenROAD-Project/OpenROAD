@@ -46,18 +46,22 @@ namespace rsz {
 
 using std::min;
 
+using sta::INF;
+
 BufferedNet::BufferedNet(BufferedNetType type,
                          Point location,
                          float cap,
-                         Requireds requireds,
                          Pin *load_pin,
+                         PathRef required_path,
+                         Delay required_delay,
                          LibertyCell *buffer,
                          BufferedNet *ref,
                          BufferedNet *ref2) :
   type_(type),
   cap_(cap),
-  requireds_(requireds),
   load_pin_(load_pin),
+  required_path_(required_path),
+  required_delay_(required_delay),
   location_(location),
   buffer_cell_(buffer),
   ref_(ref),
@@ -73,7 +77,6 @@ BufferedNet::BufferedNet(BufferedNetType type,
                          BufferedNet *ref2) :
   type_(type),
   cap_(cap),
-  requireds_({0.0, 0.0}),
   load_pin_(load_pin),
   location_(location),
   buffer_cell_(nullptr),
@@ -130,13 +133,13 @@ BufferedNet::report(int level,
            level, "",
            sdc_network->pathName(load_pin_),
            x, y, cap,
-           delayAsString(required(), resizer));
+           delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::wire:
     printf("%*swire (%s, %s) cap %s req %s\n",
            level, "",
            x, y, cap,
-           delayAsString(required(), resizer));
+           delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::buffer:
     printf("%*sbuffer (%s, %s) %s cap %s req %s\n",
@@ -144,42 +147,24 @@ BufferedNet::report(int level,
            x, y,
            buffer_cell_->name(),
            cap,
-           delayAsString(required(), resizer));
+           delayAsString(required(resizer), resizer));
     break;
   case BufferedNetType::junction:
     printf("%*sjunction (%s, %s) cap %s req %s\n",
            level, "",
            x, y, cap,
-           delayAsString(required(), resizer));
+           delayAsString(required(resizer), resizer));
     break;
   }
 }
 
 Required
-BufferedNet::required()
+BufferedNet::required(StaState *sta)
 {
-  return min(requireds_[RiseFall::riseIndex()],
-             requireds_[RiseFall::fallIndex()]);
-}
-
-Requireds
-BufferedNet::bufferRequireds(LibertyCell *buffer_cell,
-                             Resizer *resizer) const
-{
-  Requireds requireds = {requireds_[RiseFall::riseIndex()]
-                         - resizer->bufferDelay(buffer_cell, RiseFall::rise(), cap_),
-                         requireds_[RiseFall::fallIndex()]
-                         - resizer->bufferDelay(buffer_cell, RiseFall::fall(), cap_)};
-  return requireds;
-}
-
-Required
-BufferedNet::bufferRequired(LibertyCell *buffer_cell,
-                            Resizer *resizer) const
-{
-  Requireds requireds = bufferRequireds(buffer_cell, resizer);
-  return min(requireds[RiseFall::riseIndex()],
-             requireds[RiseFall::fallIndex()]);
+  if (required_path_.isNull())
+    return INF;
+  else
+    return required_path_.required(sta) - required_delay_;
 }
 
 int

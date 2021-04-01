@@ -2848,14 +2848,6 @@ Resizer::makeUniqueInstName(const char *base_name,
 }
 
 float
-Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  return input->capacitance();
-}
-
-float
 Resizer::portFanoutLoad(LibertyPort *port)
 {
   float fanout_load;
@@ -2871,17 +2863,17 @@ Resizer::portFanoutLoad(LibertyPort *port)
     return 0.0;
 }
 
-// rebuffer
 float
 Resizer::bufferDelay(LibertyCell *buffer_cell,
-                     RiseFall *rf,
-                     float load_cap)
+                     const RiseFall *rf,
+                     float load_cap,
+                     const DcalcAnalysisPt *dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
-  gateDelays(output, load_cap, tgt_slew_dcalc_ap_, gate_delays, slews);
+  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return gate_delays[rf->index()];
 }
 
@@ -2937,6 +2929,18 @@ Resizer::gateDelays(LibertyPort *drvr_port,
       }
     }
   }
+}
+
+ArcDelay
+Resizer::gateDelay(LibertyPort *drvr_port,
+                   const RiseFall *rf,
+                   float load_cap,
+                   const DcalcAnalysisPt *dcalc_ap)
+{
+  ArcDelay delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
+  return delays[rf->index()];
 }
 
 ArcDelay
