@@ -208,3 +208,5 @@ GRT 0212 FastRoute.cpp:652         Cannot get edge resource: edge is not vertica
 GRT 0213 FastRoute.cpp:677         Cannot get edge usage: edge is not vertical or horizontal.
 GRT 0214 FastRoute.cpp:776         Cannot get edge capacity: edge is not vertical or horizontal.
 GRT 0215 FastRoute.cpp:936         skipping layer {} not found in db
+GRT 0216 GlobalRouter.tcl:165      missing track structure.
+GRT 0217 GlobalRouter.tcl:178      -clock_layers: Min routing layer is greater than max routing layer.

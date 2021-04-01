@@ -162,7 +162,7 @@ proc set_layer_ranges { args } {
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "missing track structure."
+      utl::error GRT 216 "missing track structure."
     }
   }
 
@@ -175,7 +175,7 @@ proc set_layer_ranges { args } {
     if { $min_clock_layer < $max_clock_layer } {
       grt::set_clock_layer_range $min_clock_layer $max_clock_layer
     } else {
-      utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
+      utl::error GRT 217 "-clock_layers: Min routing layer is greater than max routing layer."
     }
   }
 }
