@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "opendb/db.h"
 #include "opendb/geom.h"
 
 namespace odb {
@@ -79,9 +80,15 @@ class Capacities
   CapacitiesVec ver_capacities_;
 };
 
+struct cmpByName {
+  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const {
+    return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+  }
+};
+
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
-typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
+typedef std::map<odb::dbNet*, GRoute, cmpByName> NetRouteMap;
 
 void print(GRoute& groute);
 
