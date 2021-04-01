@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-read_lef NangateOpenCellLibrary.mod.lef
+read_lef ../../../test/Nangate45/Nangate45.lef
 read_lef fakeram45_64x32.lef
 read_lef fakeram45_1024x32.lef
 
