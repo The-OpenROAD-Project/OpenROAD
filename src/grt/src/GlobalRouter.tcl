@@ -281,11 +281,7 @@ proc global_route { args } {
   }
 
   grt::clear
-  if { [info exists keys(-clock_layers)] } {
-    grt::global_route_clocks_separately
-  } else {
-    grt::global_route
-  }
+  grt::run
   
   if { [info exists keys(-output_file)] } {
     utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."

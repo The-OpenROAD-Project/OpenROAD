@@ -240,7 +240,7 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::run()
 {
   clear();
 

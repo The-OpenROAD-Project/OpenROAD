@@ -175,6 +175,12 @@ global_route_clocks_separately()
 }
 
 void
+run()
+{
+  getFastRoute()->run();
+}
+
+void
 estimate_rc()
 {
   getFastRoute()->estimateRC();

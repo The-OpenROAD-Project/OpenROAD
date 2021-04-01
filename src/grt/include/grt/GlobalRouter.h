@@ -191,7 +191,7 @@ class GlobalRouter
   void writeGuides(const char* fileName);
   std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
-  void runFastRoute();
+  void run();
   void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return _routes; }
