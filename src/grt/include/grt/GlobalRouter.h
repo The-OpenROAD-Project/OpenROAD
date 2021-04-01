@@ -301,7 +301,7 @@ class GlobalRouter
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist();
-  void addNets(std::vector<odb::dbNet*>& db_nets);
+  void addNets(std::set<odb::dbNet*, cmpByName>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
