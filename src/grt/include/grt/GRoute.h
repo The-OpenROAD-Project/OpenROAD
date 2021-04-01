@@ -80,7 +80,7 @@ class Capacities
   CapacitiesVec ver_capacities_;
 };
 
-struct cmpByName {
+struct cmpById {
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const {
     return net1->getId() < net2->getId();
   }
@@ -88,7 +88,7 @@ struct cmpByName {
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
-typedef std::map<odb::dbNet*, GRoute, cmpByName> NetRouteMap;
+typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
 
 void print(GRoute& groute);
 
