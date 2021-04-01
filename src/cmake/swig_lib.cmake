@@ -93,7 +93,7 @@ function(swig_lib)
       PRIVATE
         ${TCL_INCLUDE_PATH}
     )
-  elseif (${ARG_LANGUAGE} STREQUAL python AND Python3_FOUND AND BUILD_PYTHON)
+  elseif (${ARG_LANGUAGE} STREQUAL python)
     target_include_directories(${ARG_NAME}
       PRIVATE
         ${Python3_INCLUDE_DIRS}

@@ -438,12 +438,12 @@ OpenRoad::Observer::~Observer()
   }
 }
 
+#ifdef ENABLE_PYTHON3
 void OpenRoad::pythonCommand(const char* py_command)
 {
-#ifdef ENABLE_PYTHON3
   PyRun_SimpleString(py_command);
-#endif
 }
+#endif
 
 ////////////////////////////////////////////////////////////////
 
