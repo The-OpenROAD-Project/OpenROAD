@@ -88,6 +88,7 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
+  _macroExtension = 0;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -240,7 +241,7 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::run()
 {
   clear();
 
@@ -1228,11 +1229,6 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
 void GlobalRouter::setAlpha(const float alpha)
 {
   _alpha = alpha;
-}
-
-void GlobalRouter::setPitchesInTile(const int pitchesInTile)
-{
-  _grid->setPitchesInTile(pitchesInTile);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
