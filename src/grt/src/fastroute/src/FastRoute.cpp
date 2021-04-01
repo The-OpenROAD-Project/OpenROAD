@@ -649,7 +649,7 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
     resource = v_edges3D[grid].cap - v_edges3D[grid].usage;
   } else
   {
-    logger->error(GRT, 211, "Cannot get edge resource: edge is not vertical or horizontal.");
+    logger->error(GRT, 212, "Cannot get edge resource: edge is not vertical or horizontal.");
   }
 
   return resource;
@@ -674,7 +674,7 @@ int FastRouteCore::getEdgeCurrentUsage(long x1,
     usage = v_edges3D[grid].usage;
   } else
   {
-    logger->error(GRT, 212, "Cannot get edge usage: edge is not vertical or horizontal.");
+    logger->error(GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
   }
 
   return usage;
@@ -773,7 +773,7 @@ int FastRouteCore::getEdgeCapacity(long x1,
     cap = v_edges3D[grid].cap;
   } else
   {
-    logger->error(GRT, 213, "Cannot get edge capacity: edge is not vertical or horizontal.");
+    logger->error(GRT, 214, "Cannot get edge capacity: edge is not vertical or horizontal.");
   }
 
   return cap;
@@ -924,7 +924,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
   if(db_gcell == nullptr)
   {
     db_gcell = block->getGCellGrid();
-    logger->warn(utl::GRT, 210, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    logger->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
@@ -933,7 +933,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
     auto layer = db->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
     {
-      logger->warn(utl::GRT, 211, "skipping layer {} not found in db", k+1);
+      logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
       continue;
     }
     for (int y = 0; y < yGrid; y++) {
