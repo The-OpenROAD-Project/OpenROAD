@@ -273,10 +273,12 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-clock_layers)] } {
+    utl::warn GRT 216 "option -clock_layers is deprecated. Use command set_layer_ranges."
     grt::define_clock_layer_range $keys(-clock_layers)
   }
 
   if { [info exists keys(-layers)] } {
+    utl::warn GRT 216 "option -layers is deprecated. Use command set_layer_ranges."
     grt::define_layer_range $keys(-layers)
   }
 
