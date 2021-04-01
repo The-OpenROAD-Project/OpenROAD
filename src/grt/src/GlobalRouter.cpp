@@ -88,6 +88,7 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
+  _macroExtension = 0;
 
   // Clock net routing variables
   _pdRev = 0;

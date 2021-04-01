@@ -158,18 +158,15 @@ proc set_layer_ranges { args } {
   }
 }
 
-sta::define_cmd_args "set_macro_extension" { [-macro_extension extension] }
+sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
-  sta::parse_key_args "set_macro_extension" args \
-    keys {-macro_extension}
-
-  if { [info exists keys(-macro_extension)] } {
-    set extension $keys(-macro_extension)
+  if {[llength $args] == 1} {
+    lassign $args extension
+    sta::check_positive_integer "macro_extension" $extension
     grt::set_macro_extension $extension
-    sta::check_positive_integer "-macro_extension" $extension
   } else {
-    grt::set_macro_extension 0
+    utl::error GRT 219 "set_macro_extension: Wrong number of arguments."
   }
 }
 
@@ -266,6 +263,7 @@ proc global_route { args } {
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
 
   if { [info exists keys(-macro_extension)] } {
+    utl::warn GRT 216 "option -macro_extension is deprecated. Use command set_macro_extension."
     set macro_extension $keys(-macro_extension)
     grt::set_macro_extension $macro_extension
   } else {
@@ -273,12 +271,12 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-clock_layers)] } {
-    utl::warn GRT 216 "option -clock_layers is deprecated. Use command set_layer_ranges."
+    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_layer_ranges."
     grt::define_clock_layer_range $keys(-clock_layers)
   }
 
   if { [info exists keys(-layers)] } {
-    utl::warn GRT 216 "option -layers is deprecated. Use command set_layer_ranges."
+    utl::warn GRT 218 "option -layers is deprecated. Use command set_layer_ranges."
     grt::define_layer_range $keys(-layers)
   }
 

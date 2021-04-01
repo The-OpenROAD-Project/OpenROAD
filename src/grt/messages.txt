@@ -202,3 +202,7 @@ GRT 0212 FastRoute.cpp:652         Cannot get edge resource: edge is not vertica
 GRT 0213 FastRoute.cpp:677         Cannot get edge usage: edge is not vertical or horizontal.
 GRT 0214 FastRoute.cpp:776         Cannot get edge capacity: edge is not vertical or horizontal.
 GRT 0215 FastRoute.cpp:936         skipping layer {} not found in db
+GRT 0216 GlobalRouter.tcl:266      option -macro_extension is deprecated. Use command set_macro_extension.
+GRT 0217 GlobalRouter.tcl:274      option -clock_layers is deprecated. Use command set_layer_ranges.
+GRT 0218 GlobalRouter.tcl:279      option -layers is deprecated. Use command set_layer_ranges.
+GRT 0219 GlobalRouter.tcl:169      set_macro_extension: Wrong number of arguments.
