@@ -184,8 +184,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-clock_topology_priority priority] \
                                   [-clock_tracks_cost clock_tracks_cost] \
                                   [-macro_extension macro_extension] \
-                                  [-output_file out_file] \
-                                  [-unidirectional_routing] \
+                                  [-output_file out_file]
 }
 
 # sta::define_cmd_alias "fastroute" "global_route"
@@ -202,7 +201,7 @@ proc global_route { args } {
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -clock_tracks_cost -macro_extension -output_file \
          } \
-    flags {-unidirectional_routing -allow_overflow}
+    flags {-allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -218,10 +217,6 @@ proc global_route { args } {
   } else {
     grt::set_verbose 0
   }
-
-  if { [info exists flags(-unidirectional_routing)] } {
-    utl::warn GRT 210 "flag -unidirectional_routing is deprecated."
-  } 
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)
