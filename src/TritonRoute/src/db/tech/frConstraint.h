@@ -465,12 +465,12 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
   void setEncloseDist(frCoord value) { encloseDist = value; }
   void setCutToMetalSpace(frCoord value) { cutToMetalSpace = value; }
   // getters
-  bool isAboveOnly() { return above; }
-  bool isBelowOnly() { return below; }
-  bool isAboveAndBelow() { return !(above ^ below); }
-  bool isAllCuts() { return allCuts; }
-  frCoord getEncloseDist() { return encloseDist; }
-  frCoord getCutToMetalSpace() { return cutToMetalSpace; }
+  bool isAboveOnly() const { return above; }
+  bool isBelowOnly() const { return below; }
+  bool isAboveAndBelow() const { return !(above ^ below); }
+  bool isAllCuts() const { return allCuts; }
+  frCoord getEncloseDist() const { return encloseDist; }
+  frCoord getCutToMetalSpace() const { return cutToMetalSpace; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -489,7 +489,7 @@ class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
         allCuts);
   }
 
- protected:
+ private:
   bool below;
   bool above;
   frCoord encloseDist;

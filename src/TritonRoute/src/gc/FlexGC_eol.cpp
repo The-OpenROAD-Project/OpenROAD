@@ -110,7 +110,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
     return true;
   auto encCutCon = con->getWithinConstraint()->getEncloseCutConstraint();
   frSquaredDistance cutToMetalSpaceSquared
-      = encCutCon->getCutToMetalSpace() * encCutCon->getCutToMetalSpace();
+      = encCutCon->getCutToMetalSpace()
+        * (frSquaredDistance) encCutCon->getCutToMetalSpace();
   box_t queryBox;  // query region is encloseDist from edge1
   checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
       edge1, encCutCon.get(), queryBox);
@@ -142,7 +143,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
                                         ptr->getLowCorner()->y(),
                                         ptr->getHighCorner()->x(),
                                         ptr->getHighCorner()->y());
-      frSquaredDistance distSquared = gtl::square_euclidean_distance(metRect, rect);
+      frSquaredDistance distSquared
+          = gtl::square_euclidean_distance(metRect, rect);
       if (distSquared < cutToMetalSpaceSquared) {
         if (encCutCon->isAllCuts())
           found = true;
