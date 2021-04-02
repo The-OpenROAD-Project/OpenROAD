@@ -1,0 +1,75 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0127] Reading DEF file: repair_slew5.def
+[INFO ODB-0128] Design: repair_slew5
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 13 components and 73 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 26 connections.
+[INFO ODB-0133]     Created 10 nets and 22 connections.
+[INFO ODB-0134] Finished DEF file: repair_slew5.def
+Startpoint: u1/A4 (internal pin)
+Endpoint: out1 (output port)
+Path Group: (none)
+Path Type: max
+Corner: slow
+
+    Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------
+           0.00    0.00    0.00 v u1/A4 (NOR4_X1)
+  14.64    0.66    0.87    0.87 ^ u1/ZN (NOR4_X1)
+   1.38    0.11    0.18    1.04 v u2/ZN (NAND4_X1)
+   0.54    0.02    0.14    1.18 v x2/Z (BUF_X1)
+           0.02    0.00    1.18 v out1 (out)
+                           1.18   data arrival time
+-----------------------------------------------------------------------
+(Path is unconstrained)
+
+
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/ZN                                   0.50    0.66   -0.16 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u1/ZN                                  10.46   15.05   -4.59 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 1513um.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0039] Resized 3 instances.
+Startpoint: u1/A4 (internal pin)
+Endpoint: x5/Z (internal pin)
+Path Group: (none)
+Path Type: max
+Corner: slow
+
+    Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------
+           0.00    0.00    0.00 v u1/A4 (NOR4_X4)
+  14.64    0.24    0.40    0.40 ^ u1/ZN (NOR4_X4)
+   1.38    0.06    0.14    0.54 v u5/ZN (NAND4_X1)
+   0.00    0.01    0.10    0.64 v x5/Z (BUF_X1)
+                           0.64   data arrival time
+-----------------------------------------------------------------------
+(Path is unconstrained)
+
+
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u1/ZN                                   0.50    0.24    0.26 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u1/ZN                                  41.49   15.05   26.44 (MET)
+
