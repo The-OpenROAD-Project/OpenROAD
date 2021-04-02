@@ -100,25 +100,27 @@ Resizer::rebuffer(const Pin *drvr_pin)
       for (BufferedNet *p : Z) {
         // Find slack for drvr_pin into option.
         const PathRef &req_path = p->requiredPath();
-        Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
-                                     p->cap(), req_path.dcalcAnalysisPt(sta_));
-        Slack slack = p->required(sta_) - drvr_delay;
-        debugPrint(logger_, RSZ, "rebuffer", 3,
-                   "option {:3d}: {:2d} buffers req {} - {} = {} cap {}",
-                   i,
-                   p->bufferCount(),
-                   delayAsString(p->required(sta_), this, 3),
-                   delayAsString(drvr_delay, this, 3),
-                   delayAsString(slack, this, 3),
-                   units_->capacitanceUnit()->asString(p->cap()));
-        if (logger_->debugCheck(RSZ, "rebuffer", 4))
-          p->reportTree(this);
-        if (fuzzyGreater(slack, best_slack)) {
-          best_slack = slack;
-          best_option = p;
-          best_index = i;
+        if (!req_path.isNull()) {
+          Delay drvr_delay = gateDelay(drvr_port, req_path.transition(sta_),
+                                       p->cap(), req_path.dcalcAnalysisPt(sta_));
+          Slack slack = p->required(sta_) - drvr_delay;
+          debugPrint(logger_, RSZ, "rebuffer", 3,
+                     "option {:3d}: {:2d} buffers req {} - {} = {} cap {}",
+                     i,
+                     p->bufferCount(),
+                     delayAsString(p->required(sta_), this, 3),
+                     delayAsString(drvr_delay, this, 3),
+                     delayAsString(slack, this, 3),
+                     units_->capacitanceUnit()->asString(p->cap()));
+          if (logger_->debugCheck(RSZ, "rebuffer", 4))
+            p->reportTree(this);
+          if (fuzzyGreater(slack, best_slack)) {
+            best_slack = slack;
+            best_option = p;
+            best_index = i;
+          }
+          i++;
         }
-        i++;
       }
       if (best_option) {
         debugPrint(logger_, RSZ, "rebuffer", 3, "best option {}", best_index);
