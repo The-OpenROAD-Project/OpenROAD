@@ -12,6 +12,6 @@ estimate_parasitics -placement
 set_load .014 u1z
 
 report_checks -fields {slew input_pin} -digits 3
-rsz::resizer_preamble [get_libs *]
+rsz::resizer_preamble
 rsz::resize_driver_to_target_slew [get_pin "u1/X"]
 report_checks -fields {slew input_pin} -digits 3
