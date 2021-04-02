@@ -50,8 +50,14 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
+#ifdef ENABLE_PYTHON3
+  #define PY_SSIZE_T_CLEAN
+  #include "Python.h"
+#endif
+
+#ifdef ENABLE_TCLX
+  #include <tclExtend.h>
+#endif
 
 #include "sta/StringUtil.hh"
 #include "sta/StaMain.hh"
@@ -68,11 +74,13 @@ using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
 
+#ifdef ENABLE_PYTHON3
 extern "C"
 {
     extern PyObject* PyInit__openroad_swig_py();
     extern PyObject* PyInit__opendbpy();
 }
+#endif
 
 static int cmd_argc;
 static char **cmd_argv;
@@ -88,6 +96,7 @@ showUsage(const char *prog,
 static void
 showSplash();
 
+#ifdef ENABLE_PYTHON3
 namespace sta {
 extern const char *opendbpy_python_inits[];
 extern const char *openroad_swig_py_python_inits[];
@@ -142,6 +151,7 @@ initPython()
 
   delete [] unencoded;
 }
+#endif
 
 int
 main(int argc,
@@ -166,7 +176,9 @@ main(int argc,
     remove(metrics_filename);
   }
 
+#ifdef ENABLE_PYTHON3
   initPython();
+#endif
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -174,6 +186,7 @@ main(int argc,
     gui_mode = true;
     return gui::startGui(cmd_argc, cmd_argv);
   }
+#ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     std::vector<wchar_t*> args;
     for(int i = 0; i < cmd_argc; i++) {
@@ -195,6 +208,7 @@ main(int argc,
 
     return Py_Main(cmd_argc, args.data());
   }
+#endif
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
@@ -236,6 +250,11 @@ tclAppInit(int argc,
   if (Tcl_Init(interp) == TCL_ERROR) {
     return TCL_ERROR;
   }
+#ifdef ENABLE_TCLX
+  if (Tclx_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+#endif
 #ifdef ENABLE_READLINE
   if (!gui_mode) {
     if (Tclreadline_Init(interp) == TCL_ERROR) {
@@ -312,7 +331,9 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+#ifdef ENABLE_PYTHON3
   printf("  -python            start with python interpreter [limited to db operations]\n");
+#endif
   printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }

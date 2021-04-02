@@ -48,6 +48,7 @@ class Logger;
 namespace fr {
 
 class FlexDRGraphics;
+class frConstraint;
 
 class FlexDR
 {
@@ -832,9 +833,14 @@ class FlexDRWorker
                                 frMIdx z,
                                 int type,
                                 int eolType);
+  void modEolSpacingRulesCost(const frBox& box,
+                              frMIdx z,
+                              int type,
+                              bool isSkipVia = false);
   void modEolSpacingCost(const frBox& box,
                          frMIdx z,
                          int type,
+                         frConstraint* con,
                          bool isSkipVia = false);
   // cutSpc
   void modCutSpacingCost(const frBox& box,

@@ -452,12 +452,14 @@ units_initialized()
   return openroad->unitsInitialized();
 }
 
+#ifdef ENABLE_PYTHON3
 void
 python_cmd(const char* py_command)
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->pythonCommand(py_command);
 }
+#endif
 
 namespace ord {
 
