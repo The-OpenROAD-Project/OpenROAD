@@ -39,7 +39,7 @@ proc set_global_routing_layer_adjustment { args } {
   if {[llength $args] == 2} {
     lassign $args layer adj
 
-    if {$layer == {*}} {
+    if {$layer == "*"} {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
     } elseif [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer] {
@@ -346,6 +346,9 @@ proc check_routing_layer { layer } {
 }
 
 proc parse_layer_name { layer_name } {
+  if { ![ord::db_has_tech] } {
+    utl::error GRT 220 "no technology has been read."
+  }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
   set layer_idx [$tech_layer getRoutingLevel]
@@ -392,6 +395,9 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 
 proc highlight_route { net_name } {
   set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 221 "missing dbBlock."
+  }
   set net [$block findNet $net_name]
   if { $net != "NULL" } {
     highlight_net_route $net

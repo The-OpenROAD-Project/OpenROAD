@@ -206,3 +206,5 @@ GRT 0216 GlobalRouter.tcl:266      option -macro_extension is deprecated. Use co
 GRT 0217 GlobalRouter.tcl:274      option -clock_layers is deprecated. Use command set_layer_ranges.
 GRT 0218 GlobalRouter.tcl:279      option -layers is deprecated. Use command set_layer_ranges.
 GRT 0219 GlobalRouter.tcl:169      set_macro_extension: Wrong number of arguments.
+GRT 0220 GlobalRouter.tcl:350      no technology has been read.
+GRT 0221 GlobalRouter.tcl:399      missing dbBlock.
