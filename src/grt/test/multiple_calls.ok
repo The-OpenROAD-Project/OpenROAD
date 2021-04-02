@@ -69,7 +69,7 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 626
 [INFO GRT-0111] Final number of vias: 266
 [INFO GRT-0112] Final usage 3D: 1424
-[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 2310 um
 [INFO GRT-0014] Num routed nets: 87
 Differences found at line 65.
