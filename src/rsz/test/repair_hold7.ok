@@ -13,7 +13,7 @@
 Design area 700 u^2 11% utilization.
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 101 hold buffers.
+[INFO RSZ-0032] Inserted 103 hold buffers.
 [ERROR RSZ-0050] Max utilization reached.
 RSZ-0050
-Design area 834 u^2 13% utilization.
+Design area 837 u^2 13% utilization.

@@ -11,7 +11,7 @@
 [INFO ODB-0134] Finished DEF file: repair_hold1.def
 [INFO RSZ-0059] Using CLKBUF_X3 with 0.024ns delay for hold repairs.
 [INFO RSZ-0046] Found 3 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 16 hold buffers.
+[INFO RSZ-0032] Inserted 17 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -26,9 +26,9 @@ Corner: fast
    0.01    0.01 ^ i1/Z (BUF_X1)
    0.00    0.01 ^ r1/CK (DFF_X1)
    0.05    0.06 v r1/Q (DFF_X1)
-   0.02    0.08 v hold14/Z (CLKBUF_X3)
-   0.02    0.09 v hold15/Z (CLKBUF_X3)
-   0.02    0.11 v hold16/Z (CLKBUF_X3)
+   0.02    0.08 v hold15/Z (CLKBUF_X3)
+   0.02    0.09 v hold16/Z (CLKBUF_X3)
+   0.02    0.11 v hold17/Z (CLKBUF_X3)
    0.01    0.12 v u2/ZN (AND2_X1)
    0.00    0.12 v r3/D (DFF_X1)
            0.12   data arrival time

@@ -422,7 +422,7 @@ protected:
   float bufferHoldDelay(LibertyCell *buffer);
   void bufferHoldDelays(LibertyCell *buffer,
                         // Return values.
-                        ArcDelay delays[RiseFall::index_count]);
+                        Delay delays[RiseFall::index_count]);
   void repairHold(VertexSet *ends,
                   LibertyCell *buffer_cell,
                   float slack_margin,

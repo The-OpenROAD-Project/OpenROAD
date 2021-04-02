@@ -2264,7 +2264,7 @@ Resizer::findHoldBuffer()
 float
 Resizer::bufferHoldDelay(LibertyCell *buffer)
 {
-  ArcDelay delays[RiseFall::index_count];
+  Delay delays[RiseFall::index_count];
   bufferHoldDelays(buffer, delays);
   return min(delays[RiseFall::riseIndex()],
              delays[RiseFall::fallIndex()]);
@@ -2274,7 +2274,7 @@ Resizer::bufferHoldDelay(LibertyCell *buffer)
 void
 Resizer::bufferHoldDelays(LibertyCell *buffer,
                           // Return values.
-                          ArcDelay delays[RiseFall::index_count])
+                          Delay delays[RiseFall::index_count])
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
@@ -2318,7 +2318,7 @@ Resizer::repairHold(VertexSet *ends,
       repair_count = repairHoldPass(hold_failures, buffer_cell, slack_margin,
                                     allow_setup_violations, max_buffer_count);
       debugPrint(logger_, RSZ, "repair_hold", 1,
-                 "pass {} worst slack {} failures %lu inserted {}",
+                 "pass {} worst slack {} failures {} inserted {}",
                  pass,
                  delayAsString(worst_slack, sta_, 3),
                  hold_failures .size(),
@@ -2387,9 +2387,11 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
     if (hold_slack < slack_margin
         // Hands off special nets.
         && !isSpecial(net)) {
+      debugPrint(logger_, RSZ, "repair_hold", 2, "driver {}",
+                 vertex->name(sdc_network_));
       // Only add delay to loads with hold violations.
       PinSeq load_pins;
-      Delay insert_delay[RiseFall::index_count] = {INF, INF};
+      Delay insert_delay = INF;
       bool loads_have_out_port = false;
       VertexOutEdgeIterator edge_iter(vertex, graph_);
       while (edge_iter.hasNext()) {
@@ -2397,39 +2399,32 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         Vertex *fanout = edge->to(graph_);
         Slacks slacks;
         sta_->vertexSlacks(fanout, slacks);
-        bool buffer_fanout = true;
-        for (int rf_index : RiseFall::rangeIndex()) {
-          Slack hold_slack = slacks[rf_index][MinMax::minIndex()] - slack_margin;
-          if (hold_slack < 0.0) {
-            Delay delay = allow_setup_violations
-              ? -hold_slack
-              // Don't add delay that leads to a setup violation.
-              : min(-hold_slack, slacks[rf_index][MinMax::maxIndex()]);
-            if (delay > 0.0)
-              insert_delay[rf_index] = min(insert_delay[rf_index], delay);
-            else
-              // no room to buffer
-              buffer_fanout = false;
+        int rf_index = (slacks[RiseFall::riseIndex()][MinMax::minIndex()]
+                        < slacks[RiseFall::fallIndex()][MinMax::minIndex()])
+          ? RiseFall::riseIndex()
+          : RiseFall::fallIndex();
+        Slack hold_slack = slacks[rf_index][MinMax::minIndex()] - slack_margin;
+        Slack setup_slack = slacks[rf_index][MinMax::maxIndex()];
+        if (hold_slack < 0.0) {
+          Delay delay = allow_setup_violations
+            ? -hold_slack
+            // Don't add delay that leads to a setup violation.
+            : min(-hold_slack, setup_slack);
+          if (delay > 0.0) {
+            insert_delay = min(insert_delay, delay);
+            Pin *fanout_pin = fanout->pin();
+            load_pins.push_back(fanout_pin);
+            if (network_->direction(fanout_pin)->isAnyOutput()
+                && network_->isTopLevelPort(fanout_pin))
+              loads_have_out_port = true;
           }
-        }
-        if (buffer_fanout) {
-          Pin *fanout_pin = fanout->pin();
-          load_pins.push_back(fanout_pin);
-          if (network_->direction(fanout_pin)->isAnyOutput()
-              && network_->isTopLevelPort(fanout_pin))
-            loads_have_out_port = true;
         }
       }
       if (!load_pins.empty()) {
-        int buffer_count = 0;
-        ArcDelay buffer_delays[RiseFall::index_count];
-        bufferHoldDelays(buffer_cell, buffer_delays);
-        for (int rf_index : RiseFall::rangeIndex()) {
-          int rf_count = std::ceil(insert_delay[rf_index]/buffer_delays[rf_index]);
-          buffer_count = max(buffer_count, rf_count);
-        }
+        Delay buffer_delay = bufferHoldDelay(buffer_cell);
+        int buffer_count = std::ceil(insert_delay / buffer_delay);
         debugPrint(logger_, RSZ, "repair_hold", 2,
-                   " {} hold={} inserted %d for {}/{} loads",
+                   " {} hold={} inserted {} for {}/{} loads",
                    vertex->name(sdc_network_),
                    delayAsString(hold_slack, this, 3),
                    buffer_count,
