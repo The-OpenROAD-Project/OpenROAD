@@ -2397,15 +2397,11 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
       while (edge_iter.hasNext()) {
         Edge *edge = edge_iter.next();
         Vertex *fanout = edge->to(graph_);
-        Slacks slacks;
-        sta_->vertexSlacks(fanout, slacks);
-        int rf_index = (slacks[RiseFall::riseIndex()][MinMax::minIndex()]
-                        < slacks[RiseFall::fallIndex()][MinMax::minIndex()])
-          ? RiseFall::riseIndex()
-          : RiseFall::fallIndex();
-        Slack hold_slack = slacks[rf_index][MinMax::minIndex()] - slack_margin;
-        Slack setup_slack = slacks[rf_index][MinMax::maxIndex()];
+        PathRef hold_path = sta_->vertexWorstSlackPath(vertex, MinMax::min());
+        Slack hold_slack = hold_path.slack(sta_) - slack_margin;
         if (hold_slack < 0.0) {
+          const RiseFall *rf = hold_path.transition(sta_);
+          Slack setup_slack = sta_->vertexSlack(vertex, rf, max_);
           Delay delay = allow_setup_violations
             ? -hold_slack
             // Don't add delay that leads to a setup violation.
