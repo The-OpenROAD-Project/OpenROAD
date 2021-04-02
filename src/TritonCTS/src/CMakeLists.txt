@@ -56,6 +56,7 @@ target_sources(TritonCTS
     TechChar.cpp
     TritonCTS.cpp
     clustering.cpp
+    LevelBalancer.cpp
 )
 
 target_include_directories(TritonCTS

@@ -30,6 +30,7 @@ target_link_libraries(defin
     PUBLIC
         zutil
         def
+        defzlib
         utl
 )
 
