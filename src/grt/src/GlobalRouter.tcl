@@ -43,8 +43,7 @@ proc set_global_routing_layer_adjustment { args } {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
     } elseif [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer] {
-      set layer_range [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer]
-      lassign $layer_range first_layer last_layer
+      lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer] first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         grt::check_routing_layer $l
         sta::check_positive_float "adjustment" $adj
