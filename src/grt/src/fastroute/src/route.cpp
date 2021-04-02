@@ -323,7 +323,9 @@ void routeLAll(Bool firstTime)
 void newrouteL(int netID, RouteType ripuptype, Bool viaGuided)
 {
   int i, j, d, n1, n2, x1, y1, x2, y2, grid, grid1;
-  float costL1, costL2, tmp;
+  float costL1 = 0;
+  float costL2 = 0;
+  float tmp;
   int ymin, ymax;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
@@ -496,7 +498,6 @@ void newrouteZ_edge(int netID, int edgeID)
   int i, j, n1, n2, x1, y1, x2, y2, segWidth, bestZ, grid, grid1, grid2, ymin,
       ymax;
   float tmp, bestcost, btTEST;
-  Bool HVH;  // the shape of Z routing (TRUE - HVH, FALSE - VHV)
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
 
@@ -594,7 +595,6 @@ void newrouteZ_edge(int netID, int edgeID)
         }
       }
       // compute cost for all Z routing
-      HVH = TRUE;
       bestcost = BIG_INT;
       btTEST = BIG_INT;
       bestZ = 0;
@@ -613,25 +613,21 @@ void newrouteZ_edge(int netID, int edgeID)
         }
       }
 
-      if (HVH) {
-        grid = y1 * (xGrid - 1);
-        for (i = x1; i < bestZ; i++) {
-          h_edges[grid + i].est_usage += edgeCost;
-        }
-        grid = y2 * (xGrid - 1);
-        for (i = bestZ; i < x2; i++) {
-          h_edges[grid + i].est_usage += edgeCost;
-        }
-        grid = ymin * xGrid;
-        for (i = ymin; i < ymax; i++) {
-          v_edges[grid + bestZ].est_usage += edgeCost;
-          grid += xGrid;
-        }
-        treeedge->route.HVH = HVH;
-        treeedge->route.Zpoint = bestZ;
-      } else {
-        logger->warn(GRT, 180, "In the maze edge, not HVH results is produced.");
+      grid = y1 * (xGrid - 1);
+      for (i = x1; i < bestZ; i++) {
+        h_edges[grid + i].est_usage += edgeCost;
       }
+      grid = y2 * (xGrid - 1);
+      for (i = bestZ; i < x2; i++) {
+        h_edges[grid + i].est_usage += edgeCost;
+      }
+      grid = ymin * xGrid;
+      for (i = ymin; i < ymax; i++) {
+        v_edges[grid + bestZ].est_usage += edgeCost;
+        grid += xGrid;
+      }
+      treeedge->route.HVH = true;
+      treeedge->route.Zpoint = bestZ;
     }  // else Z route
 
   }  // if non-degraded edge
@@ -1222,7 +1218,9 @@ void routeMonotonicAll(int threshold)
 void spiralRoute(int netID, int edgeID)
 {
   int j, n1, n2, x1, y1, x2, y2, grid, grid1, n1a, n2a;
-  float costL1, costL2, tmp;
+  float costL1 = 0;
+  float costL2 = 0;
+  float tmp;
   int ymin, ymax;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;

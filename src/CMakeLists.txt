@@ -57,11 +57,20 @@ if (TCL_READLINE_H)
   message(STATUS "TCL readline header: ${TCL_READLINE_H}")
 endif()
 
+option(BUILD_TCLX "Build with tclX included" ON)
+if (BUILD_TCLX AND TCLX_LIBRARY)
+  message(STATUS "TclX library: ${TCLX_LIBRARY}")
+endif()
+if (BUILD_TCLX AND TCLX_H)
+  message(STATUS "TclX header: ${TCLX_H}")
+endif()
+
 find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
 find_package(Python3 COMPONENTS Development REQUIRED)
+option(BUILD_PYTHON "Build the Python3 interface" ON)
 
 ################################################################
 
@@ -76,20 +85,6 @@ swig_lib(NAME      openroad_swig
 )
 
 target_link_libraries(openroad_swig
-  PRIVATE
-    dbSta
-    opendb
-    OpenSTA
-)
-
-swig_lib(NAME      openroad_swig_py
-         NAMESPACE ord
-         LANGUAGE  python
-         I_FILE    OpenRoad-py.i
-         SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
-)
-
-target_link_libraries(openroad_swig_py
   PRIVATE
     dbSta
     opendb
@@ -168,7 +163,6 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   openroad_swig
-  openroad_swig_py
   replace
   dpl
   fin
@@ -179,7 +173,6 @@ target_link_libraries(openroad
   OpenSTA
   opendb
   opendbtcl
-  opendbpy
   OpenRCX
   TritonCTS
   grt
@@ -205,6 +198,15 @@ else()
   message(STATUS "TCL readline disabled")
 endif()
 
+if (BUILD_TCLX AND TCLX_LIBRARY AND TCLX_H)
+  target_compile_definitions(openroad PRIVATE ENABLE_TCLX)
+  target_link_libraries(openroad ${TCLX_LIBRARY})
+  target_include_directories(openroad PRIVATE ${TCLX_H})
+  message(STATUS "Tcl Extended enabled")
+else()
+  message(STATUS "Tcl Extended disabled")
+endif()
+
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
@@ -212,6 +214,31 @@ endif()
 # Optional CUDD library for OpenSTA
 if (CUDD_LIB)
   target_link_libraries(openroad ${CUDD_LIB})
+endif()
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  message(STATUS "Python3 enabled")
+  target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
+
+  swig_lib(NAME      openroad_swig_py
+		   NAMESPACE ord
+		   LANGUAGE  python
+		   I_FILE    OpenRoad-py.i
+		   SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+  )
+
+  target_link_libraries(openroad_swig_py
+    PRIVATE
+      dbSta
+      opendb
+      OpenSTA
+  )
+  target_link_libraries(openroad
+    openroad_swig_py
+    opendbpy
+  )
+else()
+  message(STATUS "Python3 disabled")
 endif()
 
 # Ancient versions of glibc found on CentOS required librt.

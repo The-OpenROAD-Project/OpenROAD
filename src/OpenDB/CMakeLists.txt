@@ -37,7 +37,9 @@ add_subdirectory(test/cpp)
 include(${SWIG_USE_FILE})
 
 add_subdirectory(src/swig/common)
-add_subdirectory(src/swig/python)
+if (Python3_FOUND AND BUILD_PYTHON)
+  add_subdirectory(src/swig/python)
+endif()
 add_subdirectory(src/swig/tcl)
 
 ############################################################################

@@ -127,7 +127,7 @@ Layer 6 pitch: 3.33
 [INFO GRT-0110] Final usage: 21
 [INFO GRT-0111] Final number of vias: 4
 [INFO GRT-0112] Final usage 3D: 33
-[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO DPL-0001] Placed 5890 filler instances.
 [INFO GRT-0014] Num routed nets: 437
 No differences found.
