@@ -1163,61 +1163,85 @@ void FlexDRWorker::modMinSpacingCostVia(const frBox& box,
 void FlexDRWorker::modEolSpacingCost(const frBox& box,
                                      frMIdx z,
                                      int type,
+                                     frConstraint* con,
                                      bool isSkipVia)
 {
-  auto lNum = gridGraph_.getLayerNum(z);
+  frCoord eolSpace, eolWidth, eolWithin;
+  if (con->typeId()
+      == frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint) {
+    frLef58SpacingEndOfLineConstraint* constraint
+        = (frLef58SpacingEndOfLineConstraint*) con;
+    eolSpace = constraint->getEolSpace();
+    eolWidth = constraint->getEolWidth();
+    if (constraint->hasWithinConstraint())
+      eolWithin = constraint->getWithinConstraint()->getEolWithin();
+    else
+      eolWithin = 0;
+  } else if (con->typeId()
+             == frConstraintTypeEnum::frcSpacingEndOfLineConstraint) {
+    frSpacingEndOfLineConstraint* constraint
+        = (frSpacingEndOfLineConstraint*) con;
+    eolSpace = constraint->getMinSpacing();
+    eolWidth = constraint->getEolWidth();
+    eolWithin = constraint->getEolWithin();
+  } else
+    return;
   frBox testBox;
-  if (getDesign()->getTech()->getLayer(lNum)->hasEolSpacing()) {
-    for (auto con : getDesign()->getTech()->getLayer(lNum)->getEolSpacing()) {
-      auto eolSpace = con->getMinSpacing();
-      auto eolWidth = con->getEolWidth();
-      auto eolWithin = con->getEolWithin();
-      // eol to up and down
-      if (box.right() - box.left() < eolWidth) {
-        testBox.set(box.left() - eolWithin,
-                    box.top(),
-                    box.right() + eolWithin,
-                    box.top() + eolSpace);
-        // if (!isInitDR()) {
-        modEolSpacingCost_helper(testBox, z, type, 0);
-        if (!isSkipVia) {
-          modEolSpacingCost_helper(testBox, z, type, 1);
-          modEolSpacingCost_helper(testBox, z, type, 2);
-        }
-        testBox.set(box.left() - eolWithin,
-                    box.bottom() - eolSpace,
-                    box.right() + eolWithin,
-                    box.bottom());
-        modEolSpacingCost_helper(testBox, z, type, 0);
-        if (!isSkipVia) {
-          modEolSpacingCost_helper(testBox, z, type, 1);
-          modEolSpacingCost_helper(testBox, z, type, 2);
-        }
-      }
-      // eol to left and right
-      if (box.top() - box.bottom() < eolWidth) {
-        testBox.set(box.right(),
-                    box.bottom() - eolWithin,
-                    box.right() + eolSpace,
-                    box.top() + eolWithin);
-        modEolSpacingCost_helper(testBox, z, type, 0);
-        if (!isSkipVia) {
-          modEolSpacingCost_helper(testBox, z, type, 1);
-          modEolSpacingCost_helper(testBox, z, type, 2);
-        }
-        testBox.set(box.left() - eolSpace,
-                    box.bottom() - eolWithin,
-                    box.left(),
-                    box.top() + eolWithin);
-        modEolSpacingCost_helper(testBox, z, type, 0);
-        if (!isSkipVia) {
-          modEolSpacingCost_helper(testBox, z, type, 1);
-          modEolSpacingCost_helper(testBox, z, type, 2);
-        }
-      }
-      // other obj to curr obj eol
+  if (box.right() - box.left() < eolWidth) {
+    testBox.set(box.left() - eolWithin,
+                box.top(),
+                box.right() + eolWithin,
+                box.top() + eolSpace);
+    // if (!isInitDR()) {
+    modEolSpacingCost_helper(testBox, z, type, 0);
+    if (!isSkipVia) {
+      modEolSpacingCost_helper(testBox, z, type, 1);
+      modEolSpacingCost_helper(testBox, z, type, 2);
+    }
+    testBox.set(box.left() - eolWithin,
+                box.bottom() - eolSpace,
+                box.right() + eolWithin,
+                box.bottom());
+    modEolSpacingCost_helper(testBox, z, type, 0);
+    if (!isSkipVia) {
+      modEolSpacingCost_helper(testBox, z, type, 1);
+      modEolSpacingCost_helper(testBox, z, type, 2);
     }
   }
+  // eol to left and right
+  if (box.top() - box.bottom() < eolWidth) {
+    testBox.set(box.right(),
+                box.bottom() - eolWithin,
+                box.right() + eolSpace,
+                box.top() + eolWithin);
+    modEolSpacingCost_helper(testBox, z, type, 0);
+    if (!isSkipVia) {
+      modEolSpacingCost_helper(testBox, z, type, 1);
+      modEolSpacingCost_helper(testBox, z, type, 2);
+    }
+    testBox.set(box.left() - eolSpace,
+                box.bottom() - eolWithin,
+                box.left(),
+                box.top() + eolWithin);
+    modEolSpacingCost_helper(testBox, z, type, 0);
+    if (!isSkipVia) {
+      modEolSpacingCost_helper(testBox, z, type, 1);
+      modEolSpacingCost_helper(testBox, z, type, 2);
+    }
+  }
+}
+void FlexDRWorker::modEolSpacingRulesCost(const frBox& box,
+                                          frMIdx z,
+                                          int type,
+                                          bool isSkipVia)
+{
+  auto layer = getDesign()->getTech()->getLayer(gridGraph_.getLayerNum(z));
+  frBox testBox;
+  if (layer->hasEolSpacing())
+    for (auto con : layer->getEolSpacing())
+      modEolSpacingCost(box, z, type, con, isSkipVia);
+  for (auto con : layer->getLef58SpacingEndOfLineConstraints())
+    modEolSpacingCost(box, z, type, con.get(), isSkipVia);
 }
 
 // forbid via if it would trigger violation
@@ -1588,7 +1612,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
                          ->getDir()
                      == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
     if (isHLayer == (bi.y() == ei.y())) {
-      modEolSpacingCost(box, bi.z(), type);
+      modEolSpacingRulesCost(box, bi.z(), type);
     }
   } else if (connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drPatchWire*>(connFig);
@@ -1599,7 +1623,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostPlanar(box, zIdx, type, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, true, true, false, ndr);
     modMinSpacingCostVia(box, zIdx, type, false, true, false, ndr);
-    modEolSpacingCost(box, zIdx, type);
+    modEolSpacingRulesCost(box, zIdx, type);
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
     FlexMazeIdx bi, ei;
@@ -1612,14 +1636,14 @@ void FlexDRWorker::modPathCost(drConnFig* connFig, int type)
     modMinSpacingCostPlanar(box, bi.z(), type, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, bi.z(), type, false, false, false, ndr);
-    modEolSpacingCost(box, bi.z(), type);
+    modEolSpacingRulesCost(box, bi.z(), type);
 
     obj->getLayer2BBox(box);  // assumes enclosure for via is always rectangle
 
     modMinSpacingCostPlanar(box, ei.z(), type, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, true, false, false, ndr);
     modMinSpacingCostVia(box, ei.z(), type, false, false, false, ndr);
-    modEolSpacingCost(box, ei.z(), type);
+    modEolSpacingRulesCost(box, ei.z(), type);
 
     frTransform xform;
     frPoint pt;

@@ -60,6 +60,7 @@ class definPinProps;
 class definReader : public definBase
 {
   dbDatabase* _db;
+  dbBlock* parent_;  // For Hierarchal implementation if exits
   definBlockage* _blockageR;
   definComponent* _componentR;
   definFill* _fillR;
@@ -78,6 +79,10 @@ class definReader : public definBase
   bool _update;
   bool _continue_on_errors;
   const char* _block_name;
+  const char* version_;
+  char hier_delimeter_;
+  char left_bus_delimeter_;
+  char right_bus_delimeter_;
 
   void init();
   void setLibs(std::vector<dbLib*>& lib_names);
@@ -208,6 +213,22 @@ class definReader : public definBase
   static int trackCallback(defrCallbackType_e type,
                            defiTrack* track,
                            defiUserData data);
+
+  static int versionCallback(defrCallbackType_e type,
+                             const char* version_str,
+                             defiUserData data);
+
+  static int divideCharCallback(defrCallbackType_e type,
+                                const char* value,
+                                defiUserData data);
+
+  static int busBitCallback(defrCallbackType_e type,
+                            const char* busbit,
+                            defiUserData data);
+
+  static int designCallback(defrCallbackType_e type,
+                            const char* design,
+                            defiUserData data);
 
   static int unitsCallback(defrCallbackType_e type,
                            double number,
