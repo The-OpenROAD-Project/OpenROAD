@@ -3595,7 +3595,7 @@ namespace eval ICeWall {
       dict incr idx $type
     }
   }
-  
+ 
   namespace export set_footprint set_library
 
   namespace export get_die_area get_core_area get_tracks
