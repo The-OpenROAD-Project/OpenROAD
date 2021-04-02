@@ -12,11 +12,11 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file clock_tracks_cost.guide]
 
-set_global_routing_layer_adjustment 2 0.8
-set_global_routing_layer_adjustment 3 0.7
+set_global_routing_layer_adjustment met1 0.8
+set_global_routing_layer_adjustment met2 0.7
 set_global_routing_layer_adjustment * 0.5
 
-set_layer_ranges -layers 2-6 -clock_layers 4-6
+set_layer_ranges -layers met1-met5 -clock_layers met3-met5
 
 global_route -clock_tracks_cost 3
 
