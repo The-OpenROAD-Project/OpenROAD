@@ -42,12 +42,7 @@ proc set_global_routing_layer_adjustment { args } {
     if {$layer == {*}} {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
-    } elseif {[string is integer $layer]} {
-      grt::check_routing_layer $layer
-      sta::check_positive_float "adjustment" $adj
-
-      grt::add_layer_adjustment $layer $adj
-    } else {
+    } elseif [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer] {
       set layer_range [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
@@ -56,6 +51,12 @@ proc set_global_routing_layer_adjustment { args } {
 
         grt::add_layer_adjustment $l $adj
       }
+    } else {
+      set layer_idx [grt::parse_layer_name $layer]
+      grt::check_routing_layer $layer_idx
+      sta::check_positive_float "adjustment" $adj
+
+      grt::add_layer_adjustment $layer_idx $adj
     }
   } else {
     utl::error GRT 44 "set_global_routing_layer_adjustment: Wrong number of arguments."
@@ -68,10 +69,12 @@ proc set_global_routing_layer_pitch { args } {
   if {[llength $args] == 2} {
     lassign $args layer pitch
 
-    grt::check_routing_layer $layer
+    set layer_idx [grt::parse_layer_name $layer]
+
+    grt::check_routing_layer $layer_idx
     sta::check_positive_float "pitch" $pitch
 
-    grt::set_layer_pitch $layer $pitch
+    grt::set_layer_pitch $layer_idx $pitch
   } else {
     utl::error GRT 45 "set_global_routing_layer_pitch: Wrong number of arguments."
   }
@@ -342,8 +345,19 @@ proc check_routing_layer { layer } {
   }
 }
 
+proc parse_layer_name { layer_name } {
+  set tech [ord::get_db_tech]
+  set tech_layer [$tech findLayer $layer_name]
+  set layer_idx [$tech_layer getRoutingLevel]
+
+  return $layer_idx
+}
+
 proc parse_layer_range { cmd layer_range } {
-  if [regexp -all {([0-9]+)-([0-9]+)} $layer_range - min_layer max_layer] {
+  if [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer_range - min_layer_name max_layer_name] {
+    set min_layer [parse_layer_name $min_layer_name]
+    set max_layer [parse_layer_name $max_layer_name]
+
     set layers "$min_layer $max_layer"
     return $layers
   } else {
