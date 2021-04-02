@@ -11,9 +11,9 @@
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 [INFO ODB-0134] Finished DEF file: gcd_placed.def
 Design area 700 u^2 11% utilization.
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 19 hold buffers.
+[INFO RSZ-0032] Inserted 20 hold buffers.
 [ERROR RSZ-0060] Max buffer count reached.
 RSZ-0060
-Design area 725 u^2 11% utilization.
+Design area 727 u^2 11% utilization.

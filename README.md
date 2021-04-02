@@ -474,7 +474,6 @@ set_wire_rc [-clock] [-signal]
             [-layer layer_name]
             [-resistance res ]
             [-capacitance cap]
-            [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -552,7 +551,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              [-libraries resize_libs]
               [-max_utilization util]
 ```
 
