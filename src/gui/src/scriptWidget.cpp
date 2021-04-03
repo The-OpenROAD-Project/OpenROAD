@@ -94,7 +94,7 @@ int ScriptWidget::channelOutput(ClientData instance_data,
 {
   // Buffer up the output
   ScriptWidget* widget = (ScriptWidget*) instance_data;
-  widget->outputBuffer_.append(QString::fromLatin1(buf, to_write).trimmed());
+  widget->logger_->report(std::string(buf, to_write));
   return to_write;
 }
 
@@ -136,6 +136,10 @@ void ScriptWidget::setupTcl()
     Tcl_RegisterChannel(interp_, stdout_channel);  // per man page: some tcl bug
     Tcl_SetStdChannel(stdout_channel, TCL_STDOUT);
   }
+
+  // Ensures no newlines are present in stdout stream when using logger, but normal behavior in file writing
+  Tcl_Eval(interp_, "rename puts ::tcl::openroad::puts");
+  Tcl_Eval(interp_, "proc puts { args } { if {[llength $args] == 1} { ::tcl::openroad::puts -nonewline {*}$args } else { ::tcl::openroad::puts {*}$args } }");
 
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
@@ -308,6 +312,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
+  logger_ = logger;
   logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }
 

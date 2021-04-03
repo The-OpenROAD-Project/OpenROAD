@@ -43,6 +43,7 @@ swig_lib(NAME      rsz
 
 target_sources(rsz
   PRIVATE
+    BufferedNet.cc
     MakeResizer.cc
     Resizer.cc
     Rebuffer.cc
