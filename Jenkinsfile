@@ -45,6 +45,9 @@ pipeline {
           stages{
             stage('Build centos7 gcc8') {
               steps {
+                retry(3) {
+                  sh 'docker pull openroad/centos7-dev ; sleep 1m'
+                }
                 sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=gcc';
               }
             }
@@ -59,6 +62,9 @@ pipeline {
           stages{
             stage('Build centos7 clang7') {
               steps {
+                retry(3) {
+                  sh 'docker pull openroad/centos7-dev ; sleep 1m'
+                }
                 sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=clang';
               }
             }
@@ -73,6 +79,9 @@ pipeline {
           stages{
             stage('Build ubuntu20 gcc9') {
               steps {
+                retry(3) {
+                  sh 'docker pull openroad/ubuntu20-dev ; sleep 1m'
+                }
                 sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
@@ -87,6 +96,9 @@ pipeline {
           stages{
             stage('Build ubuntu20 clang10') {
               steps {
+                retry(3) {
+                  sh 'docker pull openroad/ubuntu20-dev ; sleep 1m'
+                }
                 sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=clang';
               }
             }
