@@ -58,7 +58,7 @@ pipeline {
                     }
                     catch (err) {
                       echo err.getMessage();
-                      sh 'sleep 1m';
+                      sh 'sleep 1m ; exit 1';
                     }
                   }
                 }
@@ -84,7 +84,7 @@ pipeline {
                     }
                     catch (err) {
                       echo err.getMessage();
-                      sh 'sleep 1m';
+                      sh 'sleep 1m ; exit 1';
                     }
                   }
                 }
@@ -110,7 +110,7 @@ pipeline {
                     }
                     catch (err) {
                       echo err.getMessage();
-                      sh 'sleep 1m';
+                      sh 'sleep 1m ; exit 1';
                     }
                   }
                 }
@@ -136,7 +136,7 @@ pipeline {
                     }
                     catch (err) {
                       echo err.getMessage();
-                      sh 'sleep 1m';
+                      sh 'sleep 1m ; exit 1';
                     }
                   }
                 }
