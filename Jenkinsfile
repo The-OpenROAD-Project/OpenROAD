@@ -50,8 +50,9 @@ pipeline {
                     try {
                       sh 'docker pull openroad/centos7-dev'
                     }
-                    catch {
-                      sh 'sleep 1m'
+                    catch (err) {
+                      echo err.getMessage();
+                      sh 'sleep 1m';
                     }
                   }
                 }
@@ -74,8 +75,9 @@ pipeline {
                     try {
                       sh 'docker pull openroad/centos7-dev'
                     }
-                    catch {
-                      sh 'sleep 1m'
+                    catch (err) {
+                      echo err.getMessage();
+                      sh 'sleep 1m';
                     }
                   }
                 }
@@ -98,8 +100,9 @@ pipeline {
                     try {
                       sh 'docker pull openroad/ubuntu20-dev'
                     }
-                    catch {
-                      sh 'sleep 1m'
+                    catch (err) {
+                      echo err.getMessage();
+                      sh 'sleep 1m';
                     }
                   }
                 }
@@ -122,8 +125,9 @@ pipeline {
                     try {
                       sh 'docker pull openroad/ubuntu20-dev'
                     }
-                    catch {
-                      sh 'sleep 1m'
+                    catch (err) {
+                      echo err.getMessage();
+                      sh 'sleep 1m';
                     }
                   }
                 }
