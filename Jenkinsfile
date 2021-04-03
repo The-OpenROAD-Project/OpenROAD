@@ -1,5 +1,8 @@
 pipeline {
   agent any;
+  options {
+    timeout(time: 1, unit: 'HOURS')
+  }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
     NUM_THREADS = 8
