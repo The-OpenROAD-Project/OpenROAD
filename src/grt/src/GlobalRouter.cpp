@@ -88,6 +88,7 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
+  _macroExtension = 0;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -240,7 +241,7 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::run()
 {
   clear();
 
@@ -1228,11 +1229,6 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
 void GlobalRouter::setAlpha(const float alpha)
 {
   _alpha = alpha;
-}
-
-void GlobalRouter::setPitchesInTile(const int pitchesInTile)
-{
-  _grid->setPitchesInTile(pitchesInTile);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
@@ -2408,7 +2404,7 @@ void GlobalRouter::initNetlist()
 {
   if (_nets->empty()) {
     initClockNets();
-    std::set<odb::dbNet*> db_nets;
+    std::set<odb::dbNet*, cmpById> db_nets;
 
     for (odb::dbNet* net : _block->getNets()) {
       db_nets.insert(net);
@@ -2422,7 +2418,7 @@ void GlobalRouter::initNetlist()
   }
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*, cmpById>& db_nets)
 {
   // Prevent _nets from growing because pointers to nets become invalid.
   reserveNets(db_nets.size());
