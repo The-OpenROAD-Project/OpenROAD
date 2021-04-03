@@ -11,6 +11,7 @@ pipeline {
     stage('Build and test') {
       parallel {
         stage('Local centos7 gcc8') {
+          agent any;
           stages {
             stage('Build centos7 gcc8') {
               steps {
@@ -36,6 +37,7 @@ pipeline {
           }
         }
         stage('Local centos7 gcc8 without GUI') {
+          agent any;
           stages {
             stage('Build centos7 gcc8 without GUI') {
               steps {
@@ -45,6 +47,7 @@ pipeline {
           }
         }
         stage('Docker centos7 gcc8') {
+          agent any;
           stages{
             stage('Build centos7 gcc8') {
               steps {
@@ -70,6 +73,7 @@ pipeline {
           }
         }
         stage('Docker centos7 clang7') {
+          agent any;
           stages{
             stage('Build centos7 clang7') {
               steps {
@@ -95,6 +99,7 @@ pipeline {
           }
         }
         stage('Docker ubuntu20 gcc9') {
+          agent any;
           stages{
             stage('Build ubuntu20 gcc9') {
               steps {
@@ -120,6 +125,7 @@ pipeline {
           }
         }
         stage('Docker ubuntu20 clang10') {
+          agent any;
           stages{
             stage('Build ubuntu20 clang10') {
               steps {
@@ -169,7 +175,7 @@ pipeline {
     }
     always {
       sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-      archiveArtifacts '**/results.tgz';
+      archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
     }
   }
 }
