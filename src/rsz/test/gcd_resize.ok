@@ -15,7 +15,7 @@ worst slack 1.36
 [INFO RSZ-0028] Inserted 18 output buffers.
 [INFO RSZ-0058] Using max wire length 853um.
 [INFO RSZ-0039] Resized 42 instances.
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 93 hold buffers.
 Startpoint: _889_ (rising edge-triggered flip-flop clocked by core_clock)
@@ -32,7 +32,7 @@ Path Type: min
    0.04    0.12 ^ _742_/Z (BUF_X1)
    0.04    0.16 ^ _706_/Z (MUX2_X1)
    0.02    0.18 ^ _832_/Z (BUF_X1)
-   0.03    0.21 ^ hold138/Z (CLKBUF_X3)
+   0.03    0.21 ^ hold139/Z (CLKBUF_X3)
    0.00    0.21 ^ _889_/D (DFF_X1)
            0.21   data arrival time
 
@@ -50,7 +50,7 @@ Path Type: min
 
 
 Startpoint: _867_ (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: _877_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _879_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -74,18 +74,18 @@ Path Type: max
    0.06    0.51 v _549_/ZN (OR2_X1)
    0.03    0.54 v _550_/Z (BUF_X8)
    0.03    0.57 v _551_/Z (BUF_X16)
-   0.03    0.59 ^ _658_/ZN (OAI211_X2)
-   0.04    0.63 ^ _659_/Z (MUX2_X1)
-   0.03    0.66 ^ hold112/Z (CLKBUF_X3)
-   0.02    0.68 ^ _805_/Z (BUF_X1)
-   0.02    0.70 ^ hold111/Z (CLKBUF_X3)
-   0.00    0.70 ^ _877_/D (DFF_X1)
+   0.03    0.59 ^ _677_/ZN (OAI211_X2)
+   0.04    0.63 ^ _678_/Z (MUX2_X1)
+   0.03    0.66 ^ hold102/Z (CLKBUF_X3)
+   0.02    0.68 ^ _811_/Z (BUF_X1)
+   0.02    0.70 ^ hold101/Z (CLKBUF_X3)
+   0.00    0.70 ^ _879_/D (DFF_X1)
            0.70   data arrival time
 
    2.00    2.00   clock core_clock (rise edge)
    0.00    2.00   clock network delay (ideal)
    0.00    2.00   clock reconvergence pessimism
-           2.00 ^ _877_/CK (DFF_X1)
+           2.00 ^ _879_/CK (DFF_X1)
   -0.03    1.97   library setup time
            1.97   data required time
 ---------------------------------------------------------

@@ -153,9 +153,8 @@ Path Type: min
             0.044   slack (MET)
 
 
-[INFO RSZ-0059] Using sky130_fd_sc_hs__dlygate4sd3_1 with 0.311ns delay for hold repairs.
+[INFO RSZ-0059] Using sky130_fd_sc_hs__dlygate4sd3_1 with 0.293ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 1 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -169,10 +168,9 @@ Path Type: min
    0.068    0.068 ^ i1/X (sky130_fd_sc_hs__buf_2)
    0.000    0.068 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.196    0.263 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.070    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
-   0.275    0.609 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd3_1)
-   0.000    0.609 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
-            0.609   data arrival time
+   0.071    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.334 ^ r2/D (sky130_fd_sc_hs__dfxbp_1)
+            0.334   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -190,9 +188,9 @@ Path Type: min
             0.476   data required time
 -----------------------------------------------------------
             0.476   data required time
-           -0.609   data arrival time
+           -0.334   data arrival time
 -----------------------------------------------------------
-            0.133   slack (MET)
+           -0.142   slack (VIOLATED)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -208,7 +206,7 @@ Path Type: min
    0.068    0.068 ^ i1/X (sky130_fd_sc_hs__buf_2)
    0.000    0.068 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.196    0.263 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.070    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.071    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
    0.069    0.403 ^ u2/X (sky130_fd_sc_hs__buf_2)
    0.000    0.403 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
             0.403   data arrival time
@@ -244,16 +242,16 @@ Path Type: max
    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.204    0.204 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
    0.079    0.283 v u1/X (sky130_fd_sc_hs__buf_2)
-   0.077    0.360 v u2/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.360 v r3/D (sky130_fd_sc_hs__dfxbp_1)
-            0.360   data arrival time
+   0.077    0.361 v u2/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.361 v r3/D (sky130_fd_sc_hs__dfxbp_1)
+            0.361   data arrival time
 
    0.200    0.200   max_delay
   -0.094    0.106   library setup time
             0.106   data required time
 -----------------------------------------------------------
             0.106   data required time
-           -0.360   data arrival time
+           -0.361   data arrival time
 -----------------------------------------------------------
            -0.254   slack (VIOLATED)
 
@@ -271,12 +269,12 @@ Path Type: min
    0.068    0.068 ^ i1/X (sky130_fd_sc_hs__buf_2)
    0.000    0.068 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.196    0.263 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.070    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
+   0.071    0.334 ^ u1/X (sky130_fd_sc_hs__buf_2)
    0.069    0.403 ^ u2/X (sky130_fd_sc_hs__buf_2)
    0.062    0.465 ^ u3/X (sky130_fd_sc_hs__buf_2)
-   0.057    0.522 ^ u4/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.522 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
-            0.522   data arrival time
+   0.057    0.523 ^ u4/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.523 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
+            0.523   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -294,7 +292,7 @@ Path Type: min
             0.478   data required time
 -----------------------------------------------------------
             0.478   data required time
-           -0.522   data arrival time
+           -0.523   data arrival time
 -----------------------------------------------------------
             0.044   slack (MET)
 

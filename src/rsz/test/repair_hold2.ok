@@ -90,7 +90,7 @@ Path Type: min
           -0.07   slack (VIOLATED)
 
 
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 11 hold buffers.
 Startpoint: in2 (input port clocked by clk)
