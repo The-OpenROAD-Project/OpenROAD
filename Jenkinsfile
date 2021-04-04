@@ -5,7 +5,6 @@ pipeline {
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-    NUM_THREADS = 8
   }
   stages {
     stage('Build and test') {
@@ -22,16 +21,20 @@ pipeline {
               steps {
                 script {
                   parallel (
-                      'Unit tests': { sh './test/regression' },
-                      'aes_nangate45': { sh './test/regression aes_nangate45' },
-                      'gcd_nangate45': { sh './test/regression gcd_nangate45' },
-                      'tinyRocket_nangate45': { sh './test/regression tinyRocket_nangate45' },
-                      'aes_sky130hd': { sh './test/regression aes_sky130hd' },
-                      'gcd_sky130hs': { sh './test/regression gcd_sky130hs' },
-                      'gcd_sky130hd': { sh './test/regression gcd_sky130hd' },
-                      'ibex_sky130hs': { sh './test/regression ibex_sky130hs' },
+                      'Unit tests':           { sh './test/regression' },
+                      'nangate45 aes':        { sh './test/regression aes_nangate45' },
+                      'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
+                      'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
+                      'sky130hd aes':         { sh './test/regression aes_sky130hd' },
+                      'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
+                      'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
+                      'sky130hs aes':         { sh './test/regression aes_sky130hs' },
+                      'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
+                      'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
                       )
                 }
+                sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                stash name: 'results', includes: '**/*tgz';
               }
             }
           }
@@ -150,7 +153,7 @@ pipeline {
       }
     }
     always {
-      sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+      unstash 'results';
       archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
     }
   }
