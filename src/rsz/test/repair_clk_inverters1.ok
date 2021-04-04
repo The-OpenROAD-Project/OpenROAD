@@ -11,9 +11,9 @@
 [INFO ODB-0133]     Created 8 nets and 16 connections.
 [INFO ODB-0134] Finished DEF file: repair_clk_inverters1.def
 Net clk1
- Pin capacitance: r 4.35 f 3.96
- Wire capacitance: r 1.15 f 1.15
- Total capacitance: r 5.50 f 5.10
+ Pin capacitance: 3.96-4.35
+ Wire capacitance: 1.15-1.15
+ Total capacitance: 5.10-5.50
  Number of drivers: 1
  Number of loads: 3
  Number of pins: 4
@@ -22,13 +22,13 @@ Driver pins
  clk1 input port (100, 33)
 
 Load pins
- c1_1/A input (INV_X1) r 1.70 f 1.55 (202, 101)
- c1_2/A input (INV_X1) r 1.70 f 1.55 (302, 301)
- r1/CK input (DFF_X1) r 0.95 f 0.86 (102, 201)
+ c1_1/A input (INV_X1) 1.55-1.70 (202, 101)
+ c1_2/A input (INV_X1) 1.55-1.70 (302, 301)
+ r1/CK input (DFF_X1) 0.86-0.95 (102, 201)
 Net net1
- Pin capacitance: r 0.95 f 0.86
+ Pin capacitance: 0.86-0.95
  Wire capacitance: 0.31
- Total capacitance: r 1.26 f 1.17
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -37,11 +37,11 @@ Driver pins
  c1_1/ZN output (INV_X1) (202, 101)
 
 Load pins
- r2/CK input (DFF_X1) r 0.95 f 0.86 (202, 101)
+ r2/CK input (DFF_X1) 0.86-0.95 (202, 101)
 Net net2
- Pin capacitance: r 0.95 f 0.86
+ Pin capacitance: 0.86-0.95
  Wire capacitance: 0.31
- Total capacitance: r 1.26 f 1.17
+ Total capacitance: 1.17-1.26
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -50,5 +50,5 @@ Driver pins
  c1_2/ZN output (INV_X1) (302, 301)
 
 Load pins
- r3/CK input (DFF_X1) r 0.95 f 0.86 (302, 301)
+ r3/CK input (DFF_X1) 0.86-0.95 (302, 301)
 CLOCK
