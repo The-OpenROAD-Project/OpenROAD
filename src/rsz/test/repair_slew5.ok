@@ -11,9 +11,9 @@
 [INFO ODB-0133]     Created 10 nets and 22 connections.
 [INFO ODB-0134] Finished DEF file: repair_slew5.def
 Net u1zn
- Pin capacitance: r 9.92 f 9.02
- Wire capacitance: r 0.29 f 0.29
- Total capacitance: r 10.21 f 9.31
+ Pin capacitance: 9.02-9.92
+ Wire capacitance: 0.29-0.29
+ Total capacitance: 9.31-10.21
  Number of drivers: 1
  Number of loads: 6
  Number of pins: 7
@@ -22,12 +22,12 @@ Driver pins
  u1/ZN output (NOR4_X1) (2, 2)
 
 Load pins
- u2/A3 input (NAND4_X1) r 1.64 f 1.54 (2, 2)
- u3/A4 input (NAND4_X1) r 1.66 f 1.49 (3, 2)
- u4/A4 input (NAND4_X1) r 1.66 f 1.49 (4, 2)
- u5/A3 input (NAND4_X1) r 1.64 f 1.54 (5, 2)
- u6/A4 input (NAND4_X1) r 1.66 f 1.49 (6, 2)
- u7/A4 input (NAND4_X1) r 1.66 f 1.49 (7, 2)
+ u2/A3 input (NAND4_X1) 1.54-1.64 (2, 2)
+ u3/A4 input (NAND4_X1) 1.49-1.66 (3, 2)
+ u4/A4 input (NAND4_X1) 1.49-1.66 (4, 2)
+ u5/A3 input (NAND4_X1) 1.54-1.64 (5, 2)
+ u6/A4 input (NAND4_X1) 1.49-1.66 (6, 2)
+ u7/A4 input (NAND4_X1) 1.49-1.66 (7, 2)
 max slew
 
 Pin                                    Limit    Slew   Slack
