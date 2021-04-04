@@ -34,8 +34,6 @@
 
 #include <tcl.h>
 
-#include <functional>
-
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>
@@ -44,11 +42,13 @@
 #include <QLineEdit>
 #include <QModelIndex>
 #include <QRadioButton>
+#include <QSettings>
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTextEdit>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <functional>
 #include <vector>
 
 #include "congestionSetupDialog.h"
@@ -132,6 +132,9 @@ class DisplayControls : public QDockWidget, public Options
   DisplayControls(QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
+
+  void readSettings(QSettings* settings);
+  void writeSettings(QSettings* settings);
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
