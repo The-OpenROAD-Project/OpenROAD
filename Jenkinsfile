@@ -15,7 +15,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8') {
               steps {
-                sh './etc/Build.sh -threads=$NUM_THREADS';
+                sh './etc/Build.sh';
               }
             }
             stage('Test centos7 gcc8') {
@@ -41,7 +41,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc8 without GUI') {
               steps {
-                sh './etc/Build.sh -threads=$NUM_THREADS -no-gui -dir=build-without-gui';
+                sh './etc/Build.sh -no-gui -dir=build-without-gui';
               }
             }
           }
@@ -62,7 +62,7 @@ pipeline {
                     }
                   }
                 }
-                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=gcc';
+                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc';
               }
             }
             stage('Test centos7 gcc8') {
@@ -88,7 +88,7 @@ pipeline {
                     }
                   }
                 }
-                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=centos7 -target=builder -compiler=clang';
+                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang';
               }
             }
             stage('Test centos7 clang7') {
@@ -114,7 +114,7 @@ pipeline {
                     }
                   }
                 }
-                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=gcc';
+                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
             stage('Test ubuntu20 gcc9') {
@@ -140,7 +140,7 @@ pipeline {
                     }
                   }
                 }
-                sh './etc/DockerHelper.sh create -threads=$NUM_THREADS -os=ubuntu20 -target=builder -compiler=clang';
+                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang';
               }
             }
             stage('Test ubuntu20 clang10') {
