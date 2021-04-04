@@ -4150,6 +4150,7 @@ void extMeasure::measureRC(int* options)
        deltaRes[jj] = 0.0;
      }
      // if (_dist>0)
+
      SEQ *s= addSeq(_ll, _ur);
      int len_covered= computeResDist(s, 1, 4, _met, NULL);
      int len_down_not_coupled= _len-len_covered;
@@ -4167,10 +4168,12 @@ void extMeasure::measureRC(int* options)
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
 
       double  totR1 = _rc[jj]->_res;
+      if (totR1>0) {
       totR1 -= deltaRes[jj];
       double totalSegCap= 0;
       if (totR1!=0.0)
         totalSegCap= _extMain->updateRes(rseg1,totR1, jj);
+      }
     }
   }
   if (IsDebugNet())
