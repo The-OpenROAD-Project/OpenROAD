@@ -49,7 +49,7 @@ pipeline {
         stage('Docker centos7 gcc8') {
           agent any;
           stages{
-            stage('Build centos7 gcc8') {
+            stage('Pull centos7') {
               steps {
                 retry(3) {
                   script {
@@ -62,6 +62,10 @@ pipeline {
                     }
                   }
                 }
+              }
+            }
+            stage('Build centos7 gcc8') {
+              steps {
                 sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc';
               }
             }
@@ -70,24 +74,8 @@ pipeline {
                 sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc';
               }
             }
-          }
-        }
-        stage('Docker centos7 clang7') {
-          agent any;
-          stages{
             stage('Build centos7 clang7') {
               steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/centos7-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
                 sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang';
               }
             }
@@ -101,7 +89,7 @@ pipeline {
         stage('Docker ubuntu20 gcc9') {
           agent any;
           stages{
-            stage('Build ubuntu20 gcc9') {
+            stage('Pull ubuntu20') {
               steps {
                 retry(3) {
                   script {
@@ -114,6 +102,10 @@ pipeline {
                     }
                   }
                 }
+              }
+            }
+            stage('Build ubuntu20 gcc9') {
+              steps {
                 sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
@@ -122,24 +114,8 @@ pipeline {
                 sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc';
               }
             }
-          }
-        }
-        stage('Docker ubuntu20 clang10') {
-          agent any;
-          stages{
             stage('Build ubuntu20 clang10') {
               steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/ubuntu20-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
                 sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang';
               }
             }
