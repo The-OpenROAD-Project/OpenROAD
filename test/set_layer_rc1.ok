@@ -13,4 +13,4 @@
 r=3.57e-03 c=5.23e-02
 r=3.57e-03 c=5.23e-02
 [ERROR ORD-0018] via1 is not a routing layer.
-[ERROR ORD-0021] -capacitance not supported for vias.
+[ERROR ORD-0022] -capacitance not supported for vias.
