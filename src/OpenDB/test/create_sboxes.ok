@@ -1,0 +1,31 @@
+[INFO ODB-0222] Reading LEF file: data/gscl45nm.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 14 technology vias
+[INFO ODB-0225]     Created 33 library cells
+[INFO ODB-0226] Finished LEF file:  data/gscl45nm.lef
+[INFO ODB-0127] Reading DEF file: data/parser_test.def
+[INFO ODB-0128] Design: counter
+[INFO ODB-0130]     Created 13 pins.
+[INFO ODB-0131]     Created 12 components and 60 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 24 connections.
+[INFO ODB-0133]     Created 24 nets and 45 connections.
+[INFO ODB-0134] Finished DEF file: data/parser_test.def
+1002 1004 1006 1008
+902 904 906 908
+802 804 806 808
+702 704 706 708
+602 604 606 608
+502 504 506 508
+402 404 406 408
+302 304 306 308
+202 204 206 208
+90 90 190 190
+80 80 180 180
+70 70 170 170
+60 60 160 160
+50 50 150 150
+40 40 140 140
+30 30 130 130
+20 20 120 120
+10 10 110 110
+0 0 100 100
