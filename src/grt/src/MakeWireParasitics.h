@@ -66,10 +66,10 @@ namespace grt {
 
 typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 
-class RcTreeBuilder
+class MakeWireParasitics
 {
  public:
-  RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter);
+  MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          std::vector<GSegment>& routes);
@@ -88,9 +88,12 @@ class RcTreeBuilder
                // Return values.
                float& res,
                float& cap);
+  float getCutLayerRes(unsigned belowLayerId);
+  double dbuToMeters(int dbu);
 
   // Variables common to all nets.
   GlobalRouter* _grouter;
+  odb::dbTech* _tech;
   utl::Logger *_logger;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
