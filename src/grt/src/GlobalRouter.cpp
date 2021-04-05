@@ -50,7 +50,7 @@
 #include "AntennaRepair.h"
 #include "FastRoute.h"
 #include "Grid.h"
-#include "RcTreeBuilder.h"
+#include "MakeWireParasitics.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
 #include "db_sta/dbNetwork.hh"
@@ -323,7 +323,7 @@ void GlobalRouter::estimateRC()
   sta::dbSta* dbSta = _openroad->getSta();
   dbSta->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, this);
+  MakeWireParasitics builder(_openroad, this);
   for (auto& net_route : _routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -2999,33 +2999,6 @@ int GlobalRouter::computeMaxRoutingLayer()
   }
 
   return maxRoutingLayer;
-}
-
-void GlobalRouter::getCutLayerRes(unsigned belowLayerId, float& r)
-{
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* cut = tech->findRoutingLayer(belowLayerId)->getUpperLayer();
-  r = cut->getResistance();  // assumes single cut
-}
-
-void GlobalRouter::getLayerRC(unsigned layerId, float& r, float& c)
-{
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* techLayer = tech->findRoutingLayer(layerId);
-
-  float layerWidth
-      = (float) techLayer->getWidth() / _block->getDbUnitsPerMicron();
-  float resOhmPerMicron = techLayer->getResistance() / layerWidth;
-  float capPfPerMicron = layerWidth * techLayer->getCapacitance()
-                         + 2 * techLayer->getEdgeCapacitance();
-
-  r = 1E+6 * resOhmPerMicron;         // ohm/meter
-  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/meter
-}
-
-double GlobalRouter::dbuToMeters(int dbu)
-{
-  return (double) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
 }
 
 double GlobalRouter::dbuToMicrons(int64_t dbu)

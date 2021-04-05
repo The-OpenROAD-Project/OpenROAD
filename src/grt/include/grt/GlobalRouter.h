@@ -204,10 +204,6 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
-  // estimate_rc functions
-  void getLayerRC(unsigned layerId, float& r, float& c);
-  void getCutLayerRes(unsigned belowLayerId, float& r);
-  double dbuToMeters(int dbu);
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
