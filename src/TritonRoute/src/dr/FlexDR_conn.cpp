@@ -1286,6 +1286,9 @@ void FlexDR::checkConnectivity(int iter)
     }
   }
 
-  if (isWrong)
-    logger_->critical(utl::DRT, 206, "checkConnectivity error");
+  if (isWrong) {
+    auto writer = io::Writer(getDesign(), logger_);
+    writer.updateDb(db_);
+    logger_->error(utl::DRT, 206, "checkConnectivity error");
+  }
 }

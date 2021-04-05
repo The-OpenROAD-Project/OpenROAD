@@ -16,7 +16,7 @@ set_global_routing_layer_adjustment met1 0.8
 set_global_routing_layer_adjustment met2 0.7
 set_global_routing_layer_adjustment * 0.5
 
-set_layer_ranges -layers met1-met5 -clock_layers met3-met5
+set_routing_layers -signal met1-met5 -clock met3-met5
 
 global_route -clock_tracks_cost 3
 

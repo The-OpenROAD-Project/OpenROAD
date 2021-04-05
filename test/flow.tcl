@@ -107,8 +107,8 @@ foreach layer_adjustment $global_routing_layer_adjustments {
   lassign $layer_adjustment layer adjustment
   set_global_routing_layer_adjustment $layer $adjustment
 }
-set_layer_ranges -layers $global_routing_layers \
-  -clock_layers $global_routing_clock_layers
+set_routing_layers -signal $global_routing_layers \
+  -clock $global_routing_clock_layers
 global_route -guide_file $route_guide \
   -overflow_iterations 100
 

@@ -143,20 +143,20 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_layer_ranges" { [-layers layers] \
-                                          [-clock_layers layers] \
+sta::define_cmd_args "set_routing_layers" { [-signal layers] \
+                                            [-clock layers] \
 }
 
-proc set_layer_ranges { args } {
-  sta::parse_key_args "set_layer_ranges" args \
-    keys {-layers -clock_layers}
+proc set_routing_layers { args } {
+  sta::parse_key_args "set_routing_layers" args \
+    keys {-signal -clock}
 
-  if { [info exists keys(-layers)] } {
-    grt::define_layer_range $keys(-layers)
+  if { [info exists keys(-signal)] } {
+    grt::define_layer_range $keys(-signal)
   }
 
-  if { [info exists keys(-clock_layers)] } {
-    grt::define_clock_layer_range $keys(-clock_layers)
+  if { [info exists keys(-clock)] } {
+    grt::define_clock_layer_range $keys(-clock)
   }
 }
 
@@ -273,12 +273,12 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-clock_layers)] } {
-    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_layer_ranges."
+    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_routing_layers."
     grt::define_clock_layer_range $keys(-clock_layers)
   }
 
   if { [info exists keys(-layers)] } {
-    utl::warn GRT 218 "option -layers is deprecated. Use command set_layer_ranges."
+    utl::warn GRT 218 "option -layers is deprecated. Use command set_routing_layers."
     grt::define_layer_range $keys(-layers)
   }
 

@@ -14,7 +14,7 @@ set_propagated_clock clk
 # Intentionaly reduce RC so there is a large discrepancy between
 # placement and global route parasitics.
 set_wire_rc -resistance 0.0001 -capacitance 0.00001
-set_layer_ranges -layers met1-met5
+set_routing_layers -signal met1-met5
 global_route
 estimate_parasitics -global_routing
 
@@ -27,7 +27,7 @@ report_worst_slack -min
 detailed_placement
 
 # check slacks with fresh parasitics
-set_layer_ranges -layers met1-met5
+set_routing_layers -signal met1-met5
 global_route
 estimate_parasitics -global_routing
 report_worst_slack -min

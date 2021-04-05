@@ -13,7 +13,7 @@ set def_file [make_result_file repair_antennas2.def]
 
 set_global_routing_layer_adjustment met2-met5 0.15
 
-set_layer_ranges -layers met1-met5
+set_routing_layers -signal met1-met5
 
 global_route
 
