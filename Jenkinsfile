@@ -67,24 +67,24 @@ pipeline {
                 }
               }
             }
-            stage('Build centos7 gcc8') {
+            stage('Build docker centos7') {
               steps {
-                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc';
+                script {
+                  parallel (
+                      'build gcc8':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
+                      'build clang7': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
+                      )
+                }
               }
             }
-            stage('Test centos7 gcc8') {
+            stage('Test docker centos7') {
               steps {
-                sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc';
-              }
-            }
-            stage('Build centos7 clang7') {
-              steps {
-                sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang';
-              }
-            }
-            stage('Test centos7 clang7') {
-              steps {
-                sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang';
+                script {
+                  parallel (
+                      'test gcc8':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
+                      'test clang7': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
+                      )
+                }
               }
             }
           }
@@ -107,24 +107,24 @@ pipeline {
                 }
               }
             }
-            stage('Build ubuntu20 gcc9') {
+            stage('Build docker ubuntu20') {
               steps {
-                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc';
+                script {
+                  parallel (
+                      'build gcc9':    { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc' },
+                      'build clang10': { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang' },
+                      )
+                }
               }
             }
-            stage('Test ubuntu20 gcc9') {
+            stage('Test docker ubuntu20') {
               steps {
-                sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc';
-              }
-            }
-            stage('Build ubuntu20 clang10') {
-              steps {
-                sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang';
-              }
-            }
-            stage('Test ubuntu20 clang10') {
-              steps {
-                sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=clang';
+                script {
+                  parallel (
+                      'test gcc9':    { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc' },
+                      'test clang10': { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=clang' },
+                      )
+                }
               }
             }
           }
