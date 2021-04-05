@@ -198,19 +198,19 @@ proc set_layer_rc {args} {
       utl::error "ORD" 12 "missing -capacitance or -resistance argument."
     }
   } elseif { [info exists keys(-via)] } {
-    set via_name $keys(-via)
-    set via [$tech findVia $via_name]
-    if { $via == "NULL" } {
-      utl::error "ORD" 21 "via $via_name not found."
+    set layer_name $keys(-via)
+    set layer [$tech findLayer $layer_name]
+    if { $layer == "NULL" } {
+      utl::error "ORD" 21 "via $layer_name not found."
     }
 
     if { [info exists keys(-capacitance)] } {
-      utl::error "ORD" 22 "-capacitance not supported for vias."
+      utl::warn "ORD" 22 "-capacitance not supported for vias."
     }
 
     if { [info exists keys(-resistance)] } {
       set via_res [sta::resistance_ui_sta $keys(-resistance)]
-      $via setResistance $via_res
+      $layer setResistance $via_res
     } else {
       utl::error "ORD" 17 "no -resistance specified for via."
     }
