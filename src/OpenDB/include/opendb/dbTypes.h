@@ -154,6 +154,11 @@ class dbSigType
   const char* getString() const;
 
   ///
+  ///  True Iff value corresponds to POWER or GROUND
+  ///
+  bool isSupply() const;
+
+  ///
   /// Cast operator
   ///
   operator Value() const { return _value; }

@@ -40,7 +40,7 @@ Grid origin: (0, 0)
 [INFO GRT-0018] Total wirelength: 6927 um
 worst slack -1.95
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
-[INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.557ns delay for hold repairs.
+[INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.553ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 1 hold buffers.
 worst slack 0.29

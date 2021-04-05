@@ -167,6 +167,7 @@ MainWindow::MainWindow(QWidget* parent)
   restoreGeometry(settings.value("geometry").toByteArray());
   restoreState(settings.value("state").toByteArray());
   script_->readSettings(&settings);
+  controls_->readSettings(&settings);
   settings.endGroup();
 }
 
@@ -508,6 +509,7 @@ void MainWindow::saveSettings()
   settings.setValue("geometry", saveGeometry());
   settings.setValue("state", saveState());
   script_->writeSettings(&settings);
+  controls_->writeSettings(&settings);
   settings.endGroup();
 }
 
