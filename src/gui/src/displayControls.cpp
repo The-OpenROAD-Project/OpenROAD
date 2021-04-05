@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "displayControls.h"
-
 #include <QDebug>
 #include <QHeaderView>
 #include <QKeyEvent>
@@ -263,6 +261,51 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(congestionSetupChanged()),
           this,
           SIGNAL(changed()));
+}
+
+void DisplayControls::readSettings(QSettings* settings)
+{
+  settings->beginGroup("display_controls");
+  nets_signal_visible_ = settings->value("nets_signal_visible").toBool();
+  nets_special_visible_ = settings->value("nets_special_visible").toBool();
+  nets_power_visible_ = settings->value("nets_power_visible").toBool();
+  nets_ground_visible_ = settings->value("nets_ground_visible").toBool();
+  nets_clock_visible_ = settings->value("nets_clock_visible").toBool();
+  settings->endGroup();
+
+  // Update the widgets to match.  A touch ugly to use names
+  // and columns but sufficient.
+  const int num_rows = nets_->rowCount();
+  for (int row = 0; row < num_rows; ++row) {
+    QString name = nets_->child(row, 0)->text();
+    if (name == "Signal") {
+      nets_->child(row, 2)->setCheckState(nets_signal_visible_ ? Qt::Checked
+                                                               : Qt::Unchecked);
+    } else if (name == "Special") {
+      nets_->child(row, 2)->setCheckState(
+          nets_special_visible_ ? Qt::Checked : Qt::Unchecked);
+    } else if (name == "Power") {
+      nets_->child(row, 2)->setCheckState(nets_power_visible_ ? Qt::Checked
+                                                              : Qt::Unchecked);
+    } else if (name == "Ground") {
+      nets_->child(row, 2)->setCheckState(nets_ground_visible_ ? Qt::Checked
+                                                               : Qt::Unchecked);
+    } else if (name == "Clock") {
+      nets_->child(row, 2)->setCheckState(nets_clock_visible_ ? Qt::Checked
+                                                              : Qt::Unchecked);
+    }
+  }
+}
+
+void DisplayControls::writeSettings(QSettings* settings)
+{
+  settings->beginGroup("display_controls");
+  settings->setValue("nets_signal_visible", nets_signal_visible_);
+  settings->setValue("nets_special_visible", nets_special_visible_);
+  settings->setValue("nets_power_visible", nets_power_visible_);
+  settings->setValue("nets_ground_visible", nets_ground_visible_);
+  settings->setValue("nets_clock_visible", nets_clock_visible_);
+  settings->endGroup();
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
