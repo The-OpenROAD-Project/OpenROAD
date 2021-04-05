@@ -789,13 +789,13 @@ See `set_pdrev_topology_priority` command description for more details about PDR
 - **allow_overflow**: Allow global routing results with overflow
 
 ```
-set_layer_ranges [-layers min-max] \
-                 [-clock_layers min-max]
+set_routing_layers [-signal min-max] \
+                   [-clock min-max]
 ```
 
-The `set_layer_ranges` command sets the minimum and maximum routing layers for signal nets, with the `-layers` option,
-and the the minimum and maximum routing layers for clock nets, with the `-clock_layers` option
-Example: `set_layer_ranges -layers 2-10 -clock_layers 6-9`
+The `set_routing_layers` command sets the minimum and maximum routing layers for signal nets, with the `-signal` option,
+and the the minimum and maximum routing layers for clock nets, with the `-clock` option
+Example: `set_routing_layers -signal 2-10 -clock 6-9`
 
 ```
 set_macro_extension extension
