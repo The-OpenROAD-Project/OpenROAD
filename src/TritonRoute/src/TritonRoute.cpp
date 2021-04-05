@@ -179,8 +179,8 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  FlexDR dr(getDesign(), logger_);
-  dr.setDebug(debug_.get(), db_);
+  FlexDR dr(getDesign(), logger_, db_);
+  dr.setDebug(debug_.get());
   dr.main();
 }
 
@@ -234,7 +234,7 @@ void TritonRoute::readParams(const string& fileName)
         if (field == "lef") {
           logger_->warn(utl::DRT, 148, "deprecated lef param in params file");
         } else if (field == "def") {
-          logger_->warn(utl::DRT, 170, "deprecated def param in params file");
+          logger_->warn(utl::DRT, 227, "deprecated def param in params file");
         } else if (field == "guide") {
           GUIDE_FILE = value;
           ++readParamCnt;

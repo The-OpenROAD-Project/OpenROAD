@@ -54,7 +54,7 @@ class FlexDR
 {
  public:
   // constructors
-  FlexDR(frDesign* designIn, Logger* loggerIn);
+  FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -79,11 +79,12 @@ class FlexDR
   {
     return &via2turnMinLen_;
   }
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(frDebugSettings* settings);
 
  protected:
   frDesign* design_;
   Logger* logger_;
+  odb::dbDatabase* db_;
   std::vector<std::vector<std::map<frNet*,
                                    std::set<std::pair<frPoint, frLayerNum>>,
                                    frBlockObjectComp>>>
