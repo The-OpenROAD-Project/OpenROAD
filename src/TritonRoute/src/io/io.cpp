@@ -2320,7 +2320,7 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
               make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
           logger->warn(
-              DRT, 247, "io::Writer::filliConnFigs does not support this type");
+              DRT, 247, "io::Writer::fillConnFigs_net does not support this type");
         }
       }
     }
