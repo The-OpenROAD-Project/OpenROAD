@@ -120,7 +120,8 @@ void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
     int wire_length_dbu
         = abs(route.initX - route.finalX) + abs(route.initY - route.finalY);
     sta::Units* units = _sta->units();
-    float res, cap;
+    float res = 0.0;
+    float cap = 0.0;
     if (wire_length_dbu == 0) {
       // via
       int lower_layer = min(route.initLayer, route.finalLayer);

@@ -103,6 +103,7 @@ class IOPin
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
         location_type_(location_type),
+        layer_(-1),
         in_group(false)
   {
   }
