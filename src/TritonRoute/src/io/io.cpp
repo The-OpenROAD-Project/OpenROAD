@@ -983,7 +983,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
-        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid() 
+        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()
         || rule->isEncloseCutValid()) {
       logger->warn(utl::DRT,
                    168,
@@ -2319,8 +2319,8 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
           connFigs[netName].push_back(
               make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
-          cout << "Error: io::Writer::filliConnFigs does not support this type"
-               << endl;
+          logger->warn(
+              DRT, 247, "io::Writer::filliConnFigs does not support this type");
         }
       }
     }

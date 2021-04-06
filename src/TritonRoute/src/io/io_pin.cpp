@@ -71,7 +71,7 @@ void io::Parser::instAnalysis()
             minLayerNum = min(minLayerNum, lNum);
             maxLayerNum = max(maxLayerNum, lNum);
           } else {
-            cout << "Error: instAnalysis unsupported pinFig" << endl;
+            logger->warn(DRT, 248, "instAnalysis unsupported pinFig");
           }
         }
       }
