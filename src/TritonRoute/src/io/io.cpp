@@ -983,8 +983,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid() || rule->isFillConcaveCornerValid()
-        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid() 
-        || rule->isEncloseCutValid()) {
+        || rule->isEndPrlSpacingValid() || rule->isEqualRectWidthValid()) {
       logger->warn(utl::DRT,
                    168,
                    "unsupported LEF58_SPACING rule for layer {}",
@@ -1063,6 +1062,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
       else
         len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
+    }
+    if (rule->isEncloseCutValid()) {
+      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
+          rule->getEncloseDist(), rule->getCutToMetalSpace());
+      within->setEncloseCutConstraint(enc);
+      enc->setAbove(rule->isAboveValid());
+      enc->setBelow(rule->isBelowValid());
+      enc->setAllCuts(rule->isAllCutsValid());
     }
     tech->addConstraint(con);
     tmpLayer->lef58SpacingEndOfLineConstraints.push_back(con);
@@ -2304,8 +2311,6 @@ void io::Parser::readGuide()
 
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   auto netName = net->getName();
   if (isTA) {
     for (auto& uGuide : net->getGuides()) {
@@ -2319,27 +2324,18 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
           connFigs[netName].push_back(
               make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
-          cout << "Error: io::Writer::filliConnFigs does not support this type"
-               << endl;
+          logger->warn(
+              DRT, 247, "io::Writer::fillConnFigs_net does not support this type");
         }
       }
     }
   } else {
-    if (enableOutput) {
-      cout << netName << ":\n";
-    }
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
         frPoint start, end;
         pathSeg.getPoints(start, end);
 
-        if (enableOutput) {
-          frLayerNum currLayerNum = pathSeg.getLayerNum();
-          cout << "  connfig pathseg (" << start.x() / 2000.0 << ", "
-               << start.y() / 2000.0 << ") - (" << end.x() / 2000.0 << ", "
-               << end.y() / 2000.0 << ") " << currLayerNum << "\n";
-        }
         connFigs[netName].push_back(make_shared<frPathSeg>(pathSeg));
       }
     }

@@ -207,8 +207,9 @@ enum class frConstraintTypeEnum
   frcLef58CornerSpacingSpacing1DConstraint,              // not supported
   frcLef58CornerSpacingSpacing2DConstraint,              // not supported
   frcLef58SpacingEndOfLineConstraint,
-  frcLef58SpacingEndOfLineWithinConstraint, 
+  frcLef58SpacingEndOfLineWithinConstraint,
   frcLef58SpacingEndOfLineWithinEndToEndConstraint,      // not supported
+  frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
   frcLef58CutClassConstraint,                            // not supported

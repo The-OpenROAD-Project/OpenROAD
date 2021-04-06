@@ -34,7 +34,7 @@ sta::define_cmd_args "check_antennas" { [-report_file report_file] }
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
     keys {-report_file} \
-    flags {}
+    flags {-simple_report}
 
   if { [info exists keys(-report_file)] } {
     set report_file $keys(-report_file)
@@ -42,6 +42,8 @@ proc check_antennas { args } {
     utl::error ANT 6 "missing -report_file argument."
   }
 
+  set simple_report [info exists flags(-simple_report)]
+
   ant::load_antenna_rules
-  ant::check_antennas $report_file
+  ant::check_antennas $report_file $simple_report
 }
