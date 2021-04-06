@@ -217,7 +217,7 @@ void FlexDRWorker::modCornerToCornerSpacing_helper(const frBox& box,
                                                    int type)
 {
   FlexMazeIdx p1, p2;
-  gridGraph_.getIdxBox(p1, p2, box, 2);
+  gridGraph_.getIdxBox(p1, p2, box, FlexGridGraph::isEnclosed);
   for (int i = p1.x(); i <= p2.x(); i++) {
     for (int j = p1.y(); j <= p2.y(); j++) {
       switch (type) {
@@ -3506,7 +3506,7 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     startIdx.set(0, 0, layerNum);
     endIdx.set(0, 0, layerNum);
     frBox patchBox(patchLL, patchUR);
-    gridGraph_.getIdxBox(startIdx, endIdx, patchBox, 1);
+    gridGraph_.getIdxBox(startIdx, endIdx, patchBox, FlexGridGraph::enclose);
     if (enableOutput) {
       cout << "    patchOriIdx@(" << startIdx.x() << ", " << startIdx.y() << ")"
            << endl;

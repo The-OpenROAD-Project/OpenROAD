@@ -97,7 +97,7 @@ frUInt4 VIACOST = 4;
 // new cost used
 frUInt4 GRIDCOST = 2;
 frUInt4 SHAPECOST = 30;
-frUInt4 DRCCOST = 30;
+frUInt4 DRCCOST = 8;
 frUInt4 MARKERCOST = 32;
 frUInt4 MARKERBLOATWIDTH = 1;
 frUInt4 BLOCKCOST = 32;

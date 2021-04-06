@@ -204,10 +204,14 @@ class FlexGridGraph
     mIdx.set(getMazeXIdx(p.x()), getMazeYIdx(p.y()), getMazeZIdx(layerNum));
     return mIdx;
   }
-  // enclosureOption == 1: ensures output box encloses box (output box == imaginary box (in frCoords) created by mIdx1 and mIdx2)
-  // enclosureOption == 2: ensures output box is enclosed by box
-  // enclosureOption == 0: output box may enclose or be enclosed by box (uncertain behavior)
-  void getIdxBox(FlexMazeIdx& mIdx1, FlexMazeIdx& mIdx2, const frBox& box, const int enclosureOption = 0) const
+  
+  enum getIdxBox_EnclosureType {
+      uncertain,         //output box may enclose or be enclosed by box (uncertain behavior). (output box == imaginary box (in frCoords) created by mIdx1 and mIdx2)
+      enclose,          //ensures output box encloses box 
+      isEnclosed        //ensures output box is enclosed by box
+  };
+  
+  void getIdxBox(FlexMazeIdx& mIdx1, FlexMazeIdx& mIdx2, const frBox& box, getIdxBox_EnclosureType enclosureOption = uncertain) const
   {
     mIdx1.set(std::lower_bound(xCoords_.begin(), xCoords_.end(), box.left())
                   - xCoords_.begin(),
