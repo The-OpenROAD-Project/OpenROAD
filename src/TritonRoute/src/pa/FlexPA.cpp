@@ -91,7 +91,6 @@ int FlexPA::main()
 {
   ProfileTask profile("PA:main");
 
-  // bool enableOutput = true;
   frTime t;
   if (VERBOSE > 0) {
     logger_->info(DRT, 165, "start pin access");

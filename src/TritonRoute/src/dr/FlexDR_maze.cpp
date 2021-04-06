@@ -1986,8 +1986,6 @@ void FlexDRWorker::route_postRouteViaSwap()
 
 void FlexDRWorker::route_queue()
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   queue<RouteQueueEntry> rerouteQueue;
 
   if (skipRouting_) {
@@ -2015,9 +2013,6 @@ void FlexDRWorker::route_queue()
   // route_queue_init_queue(rerouteNets);
   route_queue_init_queue(rerouteQueue);
 
-  if (enableOutput) {
-    cout << "init. #nets in rerouteQueue = " << rerouteQueue.size() << "\n";
-  }
 
   // route
   route_queue_main(rerouteQueue);
@@ -2227,11 +2222,6 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
 
 void FlexDRWorker::route()
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
-  if (enableOutput) {
-    cout << "start Maze route #nets = " << nets_.size() << endl;
-  }
   if (isEnableDRC() && getRipupMode() == 0 && getInitNumMarkers() == 0) {
     return;
   }
@@ -2403,13 +2393,8 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
                                  list<pair<drPin*, frBox3D>>& pinTaperBoxes/*,
                                  map<FlexMazeIdx, frViaDef*> &apSVia*/)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   frBox3D* tbx = nullptr;
   for (auto& pin : net->getPins()) {
-    if (enableOutput) {
-      cout << "pin set target@";
-    }
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
       if (AUTO_TAPER_NDR_NETS
@@ -2458,12 +2443,6 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
       }
       apMazeIdx.insert(mi);
       gridGraph_.setDst(mi);
-      if (enableOutput) {
-        cout << " (" << mi.x() << ", " << mi.y() << ", " << mi.z() << ")";
-      }
-    }
-    if (enableOutput) {
-      cout << endl;
     }
   }
 }
@@ -2708,12 +2687,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     const set<FlexMazeIdx>& apMazeIdx,
     map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   if (points.empty()) {
-    if (enableOutput) {
-      std::cout << "Warning: path is empty in writeMazePath\n";
-    }
     return;
   }
   auto& workerRegionQuery = getWorkerRegionQuery();
@@ -2830,13 +2804,6 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         net->addRoute(std::move(tmp));
         if (gridGraph_.hasDRCCost(startX, startY, currZ, frDirEnum::U)) {
           net->addMarker();
-        }
-        if (enableOutput) {
-          cout << " write via ("
-               << loc.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-               << ", "
-               << loc.y() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
-               << ") " << via->getName() << endl;
         }
       }
       // zero length
@@ -3073,8 +3040,6 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
 bool FlexDRWorker::routeNet(drNet* net)
 {
   ProfileTask profile("DR:routeNet");
-  // bool enableOutput = true;
-  bool enableOutput = false;
   if (graphics_) {
     graphics_->startNet(net);
   }
@@ -3083,9 +3048,6 @@ bool FlexDRWorker::routeNet(drNet* net)
     return true;
   }
 
-  if (enableOutput) {
-    cout << "route " << net->getFrNet()->getName() << endl;
-  }
 
   set<drPin*, frBlockObjectComp> unConnPins;
   map<FlexMazeIdx, set<drPin*, frBlockObjectComp>> mazeIdx2unConnPins;
@@ -3427,8 +3389,6 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     bool isPatchLeft,
     frCoord patchLength)
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   int cost = 0;
   frPoint origin, patchEnd;
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
@@ -3446,13 +3406,6 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
       patchEnd.set(origin.x(), origin.y() + patchLength);
     }
   }
-  if (enableOutput) {
-    double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    cout << "    patchOri@(" << origin.x() / dbu << ", " << origin.y() / dbu
-         << ")" << endl;
-    cout << "    patchEnd@(" << patchEnd.x() / dbu << ", " << patchEnd.y() / dbu
-         << ")" << endl;
-  }
   // for wire, no need to bloat width
   frPoint patchLL = min(origin, patchEnd);
   frPoint patchUR = max(origin, patchEnd);
@@ -3464,12 +3417,6 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     endIdx.set(0, 0, layerNum);
     frBox patchBox(patchLL, patchUR);
     gridGraph_.getIdxBox(startIdx, endIdx, patchBox);
-    if (enableOutput) {
-      cout << "    patchOriIdx@(" << startIdx.x() << ", " << startIdx.y() << ")"
-           << endl;
-      cout << "    patchEndIdx@(" << endIdx.x() << ", " << endIdx.y() << ")"
-           << endl;
-    }
     if (isPatchHorz) {
       // in gridgraph, the planar cost is checked for xIdx + 1
       for (auto xIdx = max(0, startIdx.x() - 1); xIdx < endIdx.x(); ++xIdx) {
@@ -3477,65 +3424,37 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
                   * workerDRCCost_;
-          if (enableOutput) {
-            cout << "    (" << xIdx << ", " << bpIdx.y() << ", " << bpIdx.z()
-                 << ") drc cost" << endl;
-          }
         }
         if (gridGraph_.hasShapeCost(xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
                   * SHAPECOST;
-          if (enableOutput) {
-            cout << "    (" << xIdx << ", " << bpIdx.y() << ", " << bpIdx.z()
-                 << ") shape cost" << endl;
-          }
         }
         if (gridGraph_.hasMarkerCost(
                 xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(
                       xIdx, bpIdx.y(), bpIdx.z(), frDirEnum::E)
                   * workerMarkerCost_;
-          if (enableOutput) {
-            cout << "    (" << xIdx << ", " << bpIdx.y() << ", " << bpIdx.z()
-                 << ") marker cost" << endl;
-          }
         }
       }
     } else {
       // in gridgraph, the planar cost is checked for yIdx + 1
       for (auto yIdx = max(0, startIdx.y() - 1); yIdx < endIdx.y(); ++yIdx) {
-        if (enableOutput) {
-          cout << "    check (" << bpIdx.x() << ", " << yIdx << ", "
-               << bpIdx.z() << ") N" << endl;
-        }
         if (gridGraph_.hasDRCCost(bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
                   * workerDRCCost_;
-          if (enableOutput) {
-            cout << "    (" << bpIdx.x() << ", " << yIdx << ", " << bpIdx.z()
-                 << ") drc cost" << endl;
-          }
         }
         if (gridGraph_.hasShapeCost(bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
                   * SHAPECOST;
-          if (enableOutput) {
-            cout << "    (" << bpIdx.x() << ", " << yIdx << ", " << bpIdx.z()
-                 << ") shape cost" << endl;
-          }
         }
         if (gridGraph_.hasMarkerCost(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
                   * workerMarkerCost_;
-          if (enableOutput) {
-            cout << "    (" << bpIdx.x() << ", " << yIdx << ", " << bpIdx.z()
-                 << ") marker cost" << endl;
-          }
         }
       }
     }

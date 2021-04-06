@@ -143,7 +143,6 @@ int FlexDRWorker::main_mt()
 
 void FlexDR::initFromTA()
 {
-  bool enableOutput = false;
   // initialize lists
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& guide : net->getGuides()) {
@@ -165,17 +164,10 @@ void FlexDR::initFromTA()
     }
   }
 
-  if (enableOutput) {
-    for (auto& net : getDesign()->getTopBlock()->getNets()) {
-      cout << "net " << net->getName() << " has " << net->getShapes().size()
-           << " shape" << endl;
-    }
-  }
 }
 
 void FlexDR::initGCell2BoundaryPin()
 {
-  bool enableOutput = false;
   // initiailize size
   frBox dieBox;
   getDesign()->getTopBlock()->getBoundaryBBox(dieBox);
@@ -233,35 +225,11 @@ void FlexDR::initGCell2BoundaryPin()
                 frPoint boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
-                if (enableOutput) {
-                  cout << "init left boundary pin ("
-                       << boundaryPt.x() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ", "
-                       << boundaryPt.y() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ") at (" << x << ", " << y << ") "
-                       << getTech()->getLayer(layerNum)->getName() << " "
-                       << string((net == nullptr) ? "null" : net->getName())
-                       << "\n";
-                }
               }
               if (hasRightBound) {
                 frPoint boundaryPt(rightBound, ep.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
-                if (enableOutput) {
-                  cout << "init right boundary pin ("
-                       << boundaryPt.x() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ", "
-                       << boundaryPt.y() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ") at (" << x << ", " << y << ") "
-                       << getTech()->getLayer(layerNum)->getName() << " "
-                       << string((net == nullptr) ? "null" : net->getName())
-                       << "\n";
-                }
               }
             }
           } else if (bp.x() == ep.x()) {
@@ -289,35 +257,11 @@ void FlexDR::initGCell2BoundaryPin()
                 frPoint boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
-                if (enableOutput) {
-                  cout << "init bottom boundary pin ("
-                       << boundaryPt.x() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ", "
-                       << boundaryPt.y() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ") at (" << x << ", " << y << ") "
-                       << getTech()->getLayer(layerNum)->getName() << " "
-                       << string((net == nullptr) ? "null" : net->getName())
-                       << "\n";
-                }
               }
               if (hasTopBound) {
                 frPoint boundaryPt(ep.x(), topBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
                     make_pair(boundaryPt, layerNum));
-                if (enableOutput) {
-                  cout << "init top boundary pin ("
-                       << boundaryPt.x() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ", "
-                       << boundaryPt.y() * 1.0
-                              / getDesign()->getTopBlock()->getDBUPerUU()
-                       << ") at (" << x << ", " << y << ") "
-                       << getTech()->getLayer(layerNum)->getName() << " "
-                       << string((net == nullptr) ? "null" : net->getName())
-                       << "\n";
-                }
               }
             }
           } else {
@@ -637,8 +581,6 @@ frCoord FlexDR::init_via2viaMinLen_minSpc(frLayerNum lNum,
 
 void FlexDR::init_via2viaMinLen()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
@@ -677,17 +619,6 @@ void FlexDR::init_via2viaMinLen()
     (via2viaMinLen_[i].first)[3]
         = max((via2viaMinLen_[i].first)[3],
               init_via2viaMinLen_minSpc(lNum, upVia, upVia));
-    if (enableOutput) {
-      logger_->info(DRT,
-                    188,
-                    "initVia2ViaMinLen_minSpc {}"
-                    " (d2d, d2u, u2d, u2u) = ({}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    (via2viaMinLen_[i].first)[0],
-                    (via2viaMinLen_[i].first)[1],
-                    (via2viaMinLen_[i].first)[2],
-                    (via2viaMinLen_[i].first)[3]);
-    }
     i++;
   }
 
@@ -731,26 +662,6 @@ void FlexDR::init_via2viaMinLen()
     (via2viaMinLen_[i].second)[3]
         = (via2viaMinLen_[i].second)[3]
           && init_via2viaMinLen_minimumcut2(lNum, upVia, upVia);
-    if (enableOutput) {
-      logger_->info(DRT,
-                    189,
-                    "initVia2ViaMinLen_minimumcut {}"
-                    " (d2d, d2u, u2d, u2u) = ({}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    (via2viaMinLen_[i].first)[0],
-                    (via2viaMinLen_[i].first)[1],
-                    (via2viaMinLen_[i].first)[2],
-                    (via2viaMinLen_[i].first)[3]);
-      logger_->info(DRT,
-                    190,
-                    "initVia2ViaMinLen_minimumcut {}"
-                    " zerolen (b, b, b, b) = ({}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    (via2viaMinLen_[i].second)[0],
-                    (via2viaMinLen_[i].second)[1],
-                    (via2viaMinLen_[i].second)[2],
-                    (via2viaMinLen_[i].second)[3]);
-    }
     i++;
   }
 }
@@ -1119,8 +1030,6 @@ frCoord FlexDR::init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
 
 void FlexDR::init_via2viaMinLenNew()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
@@ -1170,22 +1079,6 @@ void FlexDR::init_via2viaMinLenNew()
     via2viaMinLenNew_[i][7]
         = max(via2viaMinLenNew_[i][7],
               init_via2viaMinLenNew_minSpc(lNum, upVia, upVia, true));
-    if (enableOutput) {
-      logger_->info(DRT,
-                    191,
-                    "initVia2ViaMinLenNew_minSpc {} "
-                    "(d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
-                    "= ({}, {}, {}, {}, {}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    via2viaMinLenNew_[i][0],
-                    via2viaMinLenNew_[i][1],
-                    via2viaMinLenNew_[i][2],
-                    via2viaMinLenNew_[i][3],
-                    via2viaMinLenNew_[i][4],
-                    via2viaMinLenNew_[i][5],
-                    via2viaMinLenNew_[i][6],
-                    via2viaMinLenNew_[i][7]);
-    }
     i++;
   }
 
@@ -1228,22 +1121,6 @@ void FlexDR::init_via2viaMinLenNew()
     via2viaMinLenNew_[i][7]
         = max(via2viaMinLenNew_[i][7],
               init_via2viaMinLenNew_minimumcut1(lNum, upVia, upVia, true));
-    if (enableOutput) {
-      logger_->info(DRT,
-                    192,
-                    "initVia2ViaMinLenNew_minimumcut {}"
-                    " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
-                    "= ({}, {}, {}, {}, {}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    via2viaMinLenNew_[i][0],
-                    via2viaMinLenNew_[i][1],
-                    via2viaMinLenNew_[i][2],
-                    via2viaMinLenNew_[i][3],
-                    via2viaMinLenNew_[i][4],
-                    via2viaMinLenNew_[i][5],
-                    via2viaMinLenNew_[i][6],
-                    via2viaMinLenNew_[i][7]);
-    }
     i++;
   }
 
@@ -1286,22 +1163,6 @@ void FlexDR::init_via2viaMinLenNew()
     via2viaMinLenNew_[i][7]
         = max(via2viaMinLenNew_[i][7],
               init_via2viaMinLenNew_cutSpc(lNum, upVia, upVia, true));
-    if (enableOutput) {
-      logger_->info(DRT,
-                    193,
-                    "initVia2ViaMinLenNew_cutSpc {}"
-                    " (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) "
-                    "= ({}, {}, {}, {}, {}, {}, {}, {})",
-                    getDesign()->getTech()->getLayer(lNum)->getName(),
-                    via2viaMinLenNew_[i][0],
-                    via2viaMinLenNew_[i][1],
-                    via2viaMinLenNew_[i][2],
-                    via2viaMinLenNew_[i][3],
-                    via2viaMinLenNew_[i][4],
-                    via2viaMinLenNew_[i][5],
-                    via2viaMinLenNew_[i][6],
-                    via2viaMinLenNew_[i][7]);
-    }
     i++;
   }
 }
@@ -1436,8 +1297,6 @@ frCoord FlexDR::init_via2turnMinLen_minStp(frLayerNum lNum,
 
 void FlexDR::init_via2turnMinLen()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
@@ -1472,14 +1331,6 @@ void FlexDR::init_via2turnMinLen()
                                 init_via2turnMinLen_minSpc(lNum, upVia, false));
     via2turnMinLen_[i][3] = max(via2turnMinLen_[i][3],
                                 init_via2turnMinLen_minSpc(lNum, upVia, true));
-    if (enableOutput) {
-      cout << "initVia2TurnMinLen_minSpc "
-           << getDesign()->getTech()->getLayer(lNum)->getName()
-           << " (down->x->y, down->y->x, up->x->y, up->y->x) = ("
-           << via2turnMinLen_[i][0] << ", " << via2turnMinLen_[i][1] << ", "
-           << via2turnMinLen_[i][2] << ", " << via2turnMinLen_[i][3] << ")"
-           << endl;
-    }
     i++;
   }
 
@@ -1508,14 +1359,6 @@ void FlexDR::init_via2turnMinLen()
                                 init_via2turnMinLen_minStp(lNum, upVia, false));
     via2turnMinLen_[i][3] = max(via2turnMinLen_[i][3],
                                 init_via2turnMinLen_minStp(lNum, upVia, true));
-    if (enableOutput) {
-      cout << "initVia2TurnMinLen_minstep "
-           << getDesign()->getTech()->getLayer(lNum)->getName()
-           << " (down->x->y, down->y->x, up->x->y, up->y->x) = ("
-           << via2turnMinLen_[i][0] << ", " << via2turnMinLen_[i][1] << ", "
-           << via2turnMinLen_[i][2] << ", " << via2turnMinLen_[i][3] << ")"
-           << endl;
-    }
     i++;
   }
 }

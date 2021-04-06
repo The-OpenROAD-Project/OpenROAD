@@ -689,7 +689,6 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D(FlexGRCMap* cmap)
 {
-  bool enableOutput = false;
 
   if (VERBOSE > 0) {
     cout << endl << "start reporting 3D congestion ...\n\n";
@@ -722,17 +721,6 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
               && cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
                      == false) {
             numOverConGCell++;
-            if (enableOutput) {
-              frBox gcellBox;
-              design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx),
-                                                  gcellBox);
-              double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-              cout << "  Warning: overCon GCell (" << gcellBox.left() / dbu
-                   << ", " << gcellBox.bottom() / dbu << ") - ("
-                   << gcellBox.right() / dbu << ", " << gcellBox.top() / dbu
-                   << "), rawDemand / rawSupply = " << demand << "/" << supply
-                   << "\n";
-            }
           }
           if (cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E) == false) {
             con.push_back(demand * 100.0 / supply);
@@ -746,17 +734,6 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
               && cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
                      == false) {
             numOverConGCell++;
-            if (enableOutput) {
-              frBox gcellBox;
-              design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx),
-                                                  gcellBox);
-              double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-              cout << "  Warning: overCon GCell (" << gcellBox.left() / dbu
-                   << ", " << gcellBox.bottom() / dbu << ") - ("
-                   << gcellBox.right() / dbu << ", " << gcellBox.top() / dbu
-                   << "), rawDemand / rawSupply = " << demand << "/" << supply
-                   << "\n";
-            }
           }
           if (cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N) == false) {
             con.push_back(demand * 100.0 / supply);
@@ -786,7 +763,6 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D()
 {
-  bool enableOutput = false;
 
   if (VERBOSE > 0) {
     cout << endl << "start reporting 3D congestion ...\n\n";
@@ -819,17 +795,6 @@ void FlexGR::reportCong3D()
               && cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
                      == false) {
             numOverConGCell++;
-            if (enableOutput) {
-              frBox gcellBox;
-              design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx),
-                                                  gcellBox);
-              double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-              cout << "  Warning: overCon GCell (" << gcellBox.left() / dbu
-                   << ", " << gcellBox.bottom() / dbu << ") - ("
-                   << gcellBox.right() / dbu << ", " << gcellBox.top() / dbu
-                   << "), rawDemand / rawSupply = " << demand << "/" << supply
-                   << "\n";
-            }
           }
           if (cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
               == false) {
@@ -844,17 +809,6 @@ void FlexGR::reportCong3D()
               && cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
                      == false) {
             numOverConGCell++;
-            if (enableOutput) {
-              frBox gcellBox;
-              design_->getTopBlock()->getGCellBox(frPoint(xIdx, yIdx),
-                                                  gcellBox);
-              double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-              cout << "  Warning: overCon GCell (" << gcellBox.left() / dbu
-                   << ", " << gcellBox.bottom() / dbu << ") - ("
-                   << gcellBox.right() / dbu << ", " << gcellBox.top() / dbu
-                   << "), rawDemand / rawSupply = " << demand << "/" << supply
-                   << "\n";
-            }
           }
           if (cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
               == false) {
@@ -1574,7 +1528,6 @@ void FlexGR::initGR_genTopology()
 // to be followed by layer assignment
 void FlexGR::initGR_genTopology_net(frNet* net)
 {
-  bool enableOutput = false;
 
   if (net->getNodes().size() == 0) {
     return;
@@ -1603,16 +1556,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
           nodes[0] = node.get();
         } else {
           if (term->getDirection() == frTermDirectionEnum::OUTPUT) {
-            if (enableOutput) {
-              cout << "Warning: " << net->getName()
-                   << " has more than one driver pin\n";
-            }
           }
           if (sinkIdx >= nodes.size()) {
-            if (enableOutput) {
-              cout << "Warning: " << net->getName()
-                   << " does not have driver pin\n";
-            }
             sinkIdx %= nodes.size();
           }
           nodes[sinkIdx] = node.get();
@@ -1627,16 +1572,8 @@ void FlexGR::initGR_genTopology_net(frNet* net)
           nodes[0] = node.get();
         } else {
           if (term->getDirection() == frTermDirectionEnum::INPUT) {
-            if (enableOutput) {
-              cout << "Warning: " << net->getName()
-                   << " has more than one driver pin\n";
-            }
           }
           if (sinkIdx >= nodes.size()) {
-            if (enableOutput) {
-              cout << "Warning: " << net->getName()
-                   << " does not have driver pin\n";
-            }
             sinkIdx %= nodes.size();
           }
           nodes[sinkIdx] = node.get();
@@ -2610,18 +2547,7 @@ void FlexGR::getBatchInfo(int& batchStepX, int& batchStepY)
 // GRWorker related
 void FlexGRWorker::main_mt()
 {
-  bool enableOutput = false;
 
-  if (enableOutput) {
-    stringstream ss;
-    ss << endl
-       << "start GR worker (BOX) "
-       << "( " << extBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << extBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
-  }
 
   init();
   route();

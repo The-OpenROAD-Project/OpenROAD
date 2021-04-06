@@ -369,7 +369,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
     gcSegment* edge2,
     frConstraint* constraint)
 {
-  bool enableOutput = printMarker_;
   auto layerNum = edge1->getLayerNum();
   auto net1 = edge1->getNet();
   auto net2 = edge2->getNet();
@@ -428,55 +427,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
           edge2->getLayerNum(), frBox(llx, lly, urx, ury), edge2->isFixed()));
   if (addMarker(std::move(marker))) {
     // true marker
-    if (enableOutput) {
-      double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-      cout << "EOLSpc@(" << gtl::xl(markerRect) / dbu << ", "
-           << gtl::yl(markerRect) / dbu << ") (" << gtl::xh(markerRect) / dbu
-           << ", " << gtl::yh(markerRect) / dbu << ") "
-           << getDesign()->getTech()->getLayer(layerNum)->getName() << " ";
-      auto owner = net1->getOwner();
-      if (owner == nullptr) {
-        cout << "FLOATING";
-      } else {
-        if (owner->typeId() == frcNet) {
-          cout << static_cast<frNet*>(owner)->getName();
-        } else if (owner->typeId() == frcInstTerm) {
-          cout << static_cast<frInstTerm*>(owner)->getInst()->getName() << "/"
-               << static_cast<frInstTerm*>(owner)->getTerm()->getName();
-        } else if (owner->typeId() == frcTerm) {
-          cout << "PIN/" << static_cast<frTerm*>(owner)->getName();
-        } else if (owner->typeId() == frcInstBlockage) {
-          cout << static_cast<frInstBlockage*>(owner)->getInst()->getName()
-               << "/OBS";
-        } else if (owner->typeId() == frcBlockage) {
-          cout << "PIN/OBS";
-        } else {
-          cout << "UNKNOWN";
-        }
-      }
-      cout << " ";
-      owner = net2->getOwner();
-      if (owner == nullptr) {
-        cout << "FLOATING";
-      } else {
-        if (owner->typeId() == frcNet) {
-          cout << static_cast<frNet*>(owner)->getName();
-        } else if (owner->typeId() == frcInstTerm) {
-          cout << static_cast<frInstTerm*>(owner)->getInst()->getName() << "/"
-               << static_cast<frInstTerm*>(owner)->getTerm()->getName();
-        } else if (owner->typeId() == frcTerm) {
-          cout << "PIN/" << static_cast<frTerm*>(owner)->getName();
-        } else if (owner->typeId() == frcInstBlockage) {
-          cout << static_cast<frInstBlockage*>(owner)->getInst()->getName()
-               << "/OBS";
-        } else if (owner->typeId() == frcBlockage) {
-          cout << "PIN/OBS";
-        } else {
-          cout << "UNKNOWN";
-        }
-      }
-      cout << endl;
-    }
   }
 }
 
@@ -570,7 +520,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
 {
-  // bool enableOutput = true;
 
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
