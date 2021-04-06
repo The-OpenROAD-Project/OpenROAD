@@ -114,9 +114,8 @@ void io::Parser::genGuides_merge(
               touchGuides.push_back(
                   make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum - 2));
             } else {
-              cout << "Error: genGuides_merge cannot find touching layer"
-                   << endl;
-              exit(1);
+              logger->error(
+                  DRT, 228, "genGuides_merge cannot find touching layer");
             }
           }
         }
@@ -242,9 +241,10 @@ void io::Parser::genGuides_split(
           }
           // add rect
           if (lineIdx.empty()) {
-            cout << "Error: genGuides_split lineIdx is empty on "
-                 << design->getTech()->getLayer(layerNum)->getName() << endl;
-            exit(1);
+            logger->error(DRT,
+                          229,
+                          "genGuides_split lineIdx is empty on {}",
+                          design->getTech()->getLayer(layerNum)->getName());
           } else if (lineIdx.size() == 1) {
             auto x = *(lineIdx.begin());
             frRect tmpRect;
@@ -330,9 +330,11 @@ void io::Parser::genGuides_gCell2TermMap(
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()
                                     : term->getName();
-                cout << "Warning: genGuides_gCell2TermMap avoid condition2, "
-                        "may result in guide open: "
-                     << name << endl;
+                logger->warn(DRT,
+                             230,
+                             "genGuides_gCell2TermMap avoid condition2, may "
+                             "result in guide open: {}",
+                             name);
               }
             } else if (condition3
                        && ((x == tmpIdx.x() - 1
@@ -343,9 +345,11 @@ void io::Parser::genGuides_gCell2TermMap(
                 frString name = (origTerm->typeId() == frcInstTerm)
                                     ? ((frInstTerm*) origTerm)->getName()
                                     : term->getName();
-                cout << "Warning: genGuides_gCell2TermMap avoid condition3, "
-                        "may result in guide open: "
-                     << name << endl;
+                logger->warn(DRT,
+                             231,
+                             "genGuides_gCell2TermMap avoid condition3, may "
+                             "result in guide open: {}",
+                             name);
               }
             } else {
               gCell2PinMap[make_pair(frPoint(x, y), lNum)].insert(origTerm);
@@ -353,8 +357,7 @@ void io::Parser::genGuides_gCell2TermMap(
           }
         }
       } else {
-        cout << "Error: genGuides_gCell2TermMap unsupoprted pinfig" << endl;
-        exit(1);
+        logger->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig");
       }
     }
   }

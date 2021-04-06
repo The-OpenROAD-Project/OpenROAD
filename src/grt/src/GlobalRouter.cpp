@@ -473,7 +473,7 @@ int GlobalRouter::getEdgeResource(int x1, int y1, int x2, int y2,
                                   odb::dbTechLayer* tech_layer,
                                   odb::dbGCellGrid* gcell_grid)
 {
-  int resource;
+  int resource = 0;
 
   if (y1 == y2) {
     resource = gcell_grid->getHorizontalCapacity(tech_layer, x1, y1) -
@@ -559,6 +559,7 @@ void GlobalRouter::removeDirtyNetsRouting()
 
 void GlobalRouter::updateDirtyNets()
 {
+  initRoutingLayers();
   for (odb::dbNet* db_net : _dirtyNets) {
     Net* net = _db_net_map[db_net];
     net->destroyPins();
@@ -1406,6 +1407,10 @@ RoutingLayer GlobalRouter::getRoutingLayerByIndex(int index)
     }
   }
 
+  if (selectedRoutingLayer.getIndex() != index) {
+    _logger->error(GRT, 220, "Routing layer of index {} not found.", index);
+  }
+
   return selectedRoutingLayer;
 }
 
@@ -2001,11 +2006,12 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   pinConnection.initLayer = topLayer;
   pinConnection.finalLayer = topLayer;
 
-  if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
-    pinConnection.finalX = pinPosition.x();
-    pinConnection.initY = pinPosition.y();
-    pinConnection.finalY = pinPosition.y();
+  pinConnection.initX = pinPosition.x();
+  pinConnection.finalX = pinPosition.x();
+  pinConnection.initY = pinPosition.y();
+  pinConnection.finalY = pinPosition.y();
 
+  if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
     int newXPosition;
     if (pin.getOrientation() == PinOrientation::west) {
       newXPosition = pinPosition.x() + (_gcellsOffset * _grid->getTileWidth());
@@ -2023,10 +2029,6 @@ GSegment GlobalRouter::createFakePin(Pin pin,
       _logger->warn(GRT, 32, "Pin {} has invalid orientation.", pin.getName());
     }
   } else {
-    pinConnection.initX = pinPosition.x();
-    pinConnection.finalX = pinPosition.x();
-    pinConnection.finalY = pinPosition.y();
-
     int newYPosition;
     if (pin.getOrientation() == PinOrientation::south) {
       newYPosition = pinPosition.y() + (_gcellsOffset * _grid->getTileHeight());
@@ -3162,15 +3164,17 @@ void GlobalRouter::reportLayerWireLengths()
       }
     }
   }
-  odb::dbTech *tech = _db->getTech();
-  for (int i = 0; i < lengths.size(); i++) {
-    int64_t length = lengths[i];
-    if (length > 0) {
-      odb::dbTechLayer *layer = tech->findRoutingLayer(i);
-      _logger->report("{:5s} {:8d}um {:3d}%",
-                      layer->getName(),
-                      static_cast<int64_t>(dbuToMicrons(length)),
-                      static_cast<int>((100.0 * length) / total_length));
+  if (total_length > 0) {
+    odb::dbTech *tech = _db->getTech();
+    for (int i = 0; i < lengths.size(); i++) {
+      int64_t length = lengths[i];
+      if (length > 0) {
+        odb::dbTechLayer *layer = tech->findRoutingLayer(i);
+        _logger->report("{:5s} {:8d}um {:3d}%",
+                        layer->getName(),
+                        static_cast<int64_t>(dbuToMicrons(length)),
+                        static_cast<int>((100.0 * length) / total_length));
+      }
     }
   }
 }

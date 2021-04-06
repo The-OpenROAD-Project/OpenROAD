@@ -2324,8 +2324,8 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
           connFigs[netName].push_back(
               make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
-          cout << "Error: io::Writer::filliConnFigs does not support this type"
-               << endl;
+          logger->warn(
+              DRT, 247, "io::Writer::fillConnFigs_net does not support this type");
         }
       }
     }
