@@ -95,35 +95,42 @@ DRT 0163 io_pin.cpp:91             instance analysis ...
 DRT 0164 io_pin.cpp:163            # unique instances = {}
 DRT 0165 FlexPA.cpp:97             start pin access
 DRT 0166 FlexPA.cpp:135            complete pin access
-DRT 0168 io_parser_helper.cpp:642  Init region query ...
-DRT 0169 io_parser_helper.cpp:653  Post process guides ...
-DRT 0170 io_parser_helper.cpp:841  no GCELLGRIDX
-DRT 0171 io_parser_helper.cpp:846  no GCELLGRIDY
-DRT 0172 io_parser_helper.cpp:901  no GCELLGRIDX
-DRT 0173 io_parser_helper.cpp:906  no GCELLGRIDY
-DRT 0174 io_parser_helper.cpp:931  gcell cnt x < 1
-DRT 0175 io_parser_helper.cpp:947  gcell cnt y < 1
-DRT 0178 io_parser_helper.cpp:691  init guide query ...
-DRT 0179 io_parser_helper.cpp:694  init gr pin query ...
+DRT 0168 io_parser_helper.cpp:651  Init region query ...
+DRT 0169 io_parser_helper.cpp:662  Post process guides ...
+DRT 0170 io_parser_helper.cpp:852  no GCELLGRIDX
+DRT 0171 io_parser_helper.cpp:857  no GCELLGRIDY
+DRT 0172 io_parser_helper.cpp:912  no GCELLGRIDX
+DRT 0173 io_parser_helper.cpp:917  no GCELLGRIDY
+DRT 0174 io_parser_helper.cpp:942  gcell cnt x < 1
+DRT 0175 io_parser_helper.cpp:958  gcell cnt y < 1
+DRT 0178 io_parser_helper.cpp:700  init guide query ...
+DRT 0179 io_parser_helper.cpp:703  init gr pin query ...
 DRT 0180 io.cpp:2649               post processing ...
 DRT 0181 FlexTA.cpp:404            start track assignment
 DRT 0182 FlexTA.cpp:410            complete track assignment
-DRT 0185 io_parser_helper.cpp:714  post process initialize RPin region query ...
+DRT 0185 io_parser_helper.cpp:722  post process initialize RPin region query ...
 DRT 0187 FlexDR.cpp:1528           start routing data preparation
 DRT 0194 FlexDR.cpp:2234           start detail routing ...
 DRT 0198 FlexDR.cpp:3042           complete detail routing
 DRT 0201 FlexGR.cpp:636            design isn't loaded before global routing
 DRT 0206 FlexDR_conn.cpp:1292      checkConnectivity error
 DRT 0207 FlexDR_graphics.cpp:423   Setting MAX_THREADS=1 for use with the DR GUI.
-DRT 0214 io_guide.cpp:725          genGuides empty pin2GCellMap
-DRT 0217 io_guide.cpp:743          genGuides unknown type
-DRT 0218 io_guide.cpp:778          Guide is not connected to design
-DRT 0219 io_guide.cpp:781          Guide is not connected to design
-DRT 0220 io_guide.cpp:830          genGuides_final error 1
-DRT 0221 io_guide.cpp:850          genGuides_final error 2
-DRT 0222 io_guide.cpp:857          genGuides_final pin not in any guide
+DRT 0214 io_guide.cpp:728          genGuides empty pin2GCellMap
+DRT 0217 io_guide.cpp:746          genGuides unknown type
+DRT 0218 io_guide.cpp:781          Guide is not connected to design
+DRT 0219 io_guide.cpp:784          Guide is not connected to design
+DRT 0220 io_guide.cpp:833          genGuides_final error 1
+DRT 0221 io_guide.cpp:853          genGuides_final error 2
+DRT 0222 io_guide.cpp:860          genGuides_final pin not in any guide
 DRT 0223 FlexGC_eol.cpp:50         Unsupported endofline spacing rule
 DRT 0224 FlexGC_eol.cpp:127        Unsupported endofline spacing rule
 DRT 0225 FlexGC_eol.cpp:297        Unsupported endofline spacing rule
 DRT 0226 FlexGC_eol.cpp:336        Unsupported endofline spacing rule
 DRT 0227 TritonRoute.cpp:237       deprecated def param in params file
+DRT 0232 io_guide.cpp:387          genGuides_gCell2TermMap unsupoprted pinfig
+DRT 0235 io_parser_helper.cpp:188  Second layer {} does not exist
+DRT 0237 io_parser_helper.cpp:212  Second layer {} does not exist
+DRT 0239 io_parser_helper.cpp:275  Non-rect shape in via definition
+DRT 0243 io_parser_helper.cpp:309  Non-rect shape in via definition
+DRT 0245 io_parser_helper.cpp:708  No output guide specified, skipped writing guide
+DRT 0248 io_pin.cpp:74             instAnalysis unsupported pinFig
