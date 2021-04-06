@@ -1,5 +1,4 @@
 source "helpers.tcl"
-source ../src/ICeWall.tcl
 
 read_lef ../../../test/sky130hs/sky130hs.tlef
 read_lef ../../../test/sky130hs/sky130hs_std_cell.lef
