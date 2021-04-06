@@ -281,6 +281,11 @@ tclAppInit(int argc,
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
     showSplash();
 
+  const char* threads = findCmdLineKey(argc, argv, "-threads");
+  if (threads) {
+    ord::OpenRoad::openRoad()->set_max_threads(threads);
+  }
+
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
   if (!findCmdLineFlag(argc, argv, "-no_init")) {

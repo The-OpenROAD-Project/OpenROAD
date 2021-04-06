@@ -190,6 +190,10 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
+  void set_max_threads(int threads);
+  void set_max_threads(const char* threads);
+  int get_max_threads();
+
 #ifdef ENABLE_PYTHON3
   void pythonCommand(const char* py_command);
 #endif
@@ -241,6 +245,8 @@ private:
   par::PartitionMgr *partitionMgr_;
 
   std::set<Observer *> observers_;
+
+  int threads_;
 };
 
 // Return the bounding box of the db rows.

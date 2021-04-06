@@ -461,6 +461,27 @@ python_cmd(const char* py_command)
 }
 #endif
 
+void
+set_max_threads(int threads)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->set_max_threads(threads);
+}
+
+void
+set_max_threads(const char* threads)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->set_max_threads(threads);
+}
+
+int
+get_max_threads()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->get_max_threads();
+}
+
 namespace ord {
 
 void
