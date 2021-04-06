@@ -103,7 +103,6 @@ void FlexGRGridGraph::initGrids()
 
 void FlexGRGridGraph::initEdges()
 {
-  bool enableOutput = false;
 
   for (frMIdx zIdx = 0; zIdx < (int) zCoords_.size(); zIdx++) {
     auto dir = is2DRouting_ ? frcNonePrefRoutingDir
@@ -112,54 +111,18 @@ void FlexGRGridGraph::initEdges()
     for (frMIdx xIdx = 0; xIdx < (int) xCoords_.size(); xIdx++) {
       for (frMIdx yIdx = 0; yIdx < (int) yCoords_.size(); yIdx++) {
         // horz
-        if (enableOutput) {
-          if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
-            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                 << ", E) already set" << endl;
-          }
-        }
         if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir)
             && ((xIdx + 1) != (int) xCoords_.size())) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
-          if (enableOutput) {
-            if (!flag) {
-              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                   << ", E) addEdge failed" << endl;
-            }
-          }
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
         }
         // vert
-        if (enableOutput) {
-          if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
-            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                 << ", N) already set" << endl;
-          }
-        }
         if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir)
             && ((yIdx + 1) != (int) yCoords_.size())) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
-          if (enableOutput) {
-            if (!flag) {
-              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                   << ", N) addEdge failed" << endl;
-            }
-          }
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
         }
         // via
-        if (enableOutput) {
-          if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
-            cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                 << ", U) already set" << endl;
-          }
-        }
         if ((zIdx + 1) != (int) zCoords_.size()) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
-          if (enableOutput) {
-            if (!flag) {
-              cout << "Error: (" << xIdx << ", " << yIdx << ", " << zIdx
-                   << ", U) addEdge failed" << endl;
-            }
-          }
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
         }
       }
     }

@@ -56,9 +56,14 @@ void create_box(dbSWire* wire,
 
   if ((cur_x == prev_x) && (cur_y == prev_y))  // single point
   {
-    printf("(%d,%d) (%d,%d)\n", prev_x, prev_y, cur_x, cur_y);
+    logger->warn(utl::ODB,
+                 274,
+                 "Zero length path segment ({},{}) ({},{})",
+                 prev_x,
+                 prev_y,
+                 cur_x,
+                 cur_y);
     return;
-    assert(0 && "ambiguous path segment");
   } else if (cur_x == prev_x)  // vert. path
   {
     x1 = cur_x - dw;

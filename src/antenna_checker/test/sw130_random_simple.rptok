@@ -1,0 +1,10 @@
+Warning - class CORE ANTENNACELL is not found. This msg can be ignored if not in the antenna-avoid flow
+
+Net - net50
+  output50  (sky130_fd_sc_ms__buf_1)  A
+[1]  met2:
+  PAR:  419.64*  Ratio:  400.00       (S.Area)
+
+Number of pins violated: 1
+Number of nets violated: 1
+Total number of unspecial nets: 2

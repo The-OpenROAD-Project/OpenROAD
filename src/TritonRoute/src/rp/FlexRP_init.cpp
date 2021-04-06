@@ -40,7 +40,6 @@ using namespace fr;
 void FlexRP::init()
 {
   ProfileTask profile("RP:init");
-  bool enableOutput = false;
 
   vector<pair<frCoord, frCoord>> forbiddenRanges;
   vector<vector<pair<frCoord, frCoord>>> eightForbiddenRanges(8,
@@ -68,18 +67,4 @@ void FlexRP::init()
     }
   }
 
-  if (enableOutput) {
-    cout << "tech_->via2ViaForbiddenLen size = "
-         << tech_->via2ViaForbiddenLen.size() << "\n";
-    cout << "tech_->via2ViaForbiddenOverlapLen size = "
-         << tech_->via2ViaForbiddenOverlapLen.size() << "\n";
-    cout << "tech_->viaForbiddenTurnLen size = "
-         << tech_->viaForbiddenTurnLen.size() << "\n";
-    cout << "tech_->viaForbiddenPlanarLen size = "
-         << tech_->viaForbiddenPlanarLen.size() << "\n";
-    cout << "tech_->line2LineForbiddenLen size = "
-         << tech_->line2LineForbiddenLen.size() << "\n";
-    cout << "tech_->viaForbiddenThrough size = "
-         << tech_->viaForbiddenThrough.size() << "\n";
-  }
 }
