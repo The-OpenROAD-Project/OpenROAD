@@ -50,7 +50,7 @@
 #include "AntennaRepair.h"
 #include "FastRoute.h"
 #include "Grid.h"
-#include "RcTreeBuilder.h"
+#include "MakeWireParasitics.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
 #include "db_sta/dbNetwork.hh"
@@ -88,6 +88,7 @@ void GlobalRouter::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
+  _macroExtension = 0;
 
   // Clock net routing variables
   _pdRev = 0;
@@ -240,7 +241,7 @@ void GlobalRouter::globalRoute()
   computeWirelength();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::run()
 {
   clear();
 
@@ -322,7 +323,7 @@ void GlobalRouter::estimateRC()
   sta::dbSta* dbSta = _openroad->getSta();
   dbSta->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, this);
+  MakeWireParasitics builder(_openroad, this);
   for (auto& net_route : _routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -1228,11 +1229,6 @@ void GlobalRouter::setMaxLayerForClock(const int maxLayer)
 void GlobalRouter::setAlpha(const float alpha)
 {
   _alpha = alpha;
-}
-
-void GlobalRouter::setPitchesInTile(const int pitchesInTile)
-{
-  _grid->setPitchesInTile(pitchesInTile);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
@@ -2408,7 +2404,7 @@ void GlobalRouter::initNetlist()
 {
   if (_nets->empty()) {
     initClockNets();
-    std::set<odb::dbNet*> db_nets;
+    std::set<odb::dbNet*, cmpById> db_nets;
 
     for (odb::dbNet* net : _block->getNets()) {
       db_nets.insert(net);
@@ -2422,7 +2418,7 @@ void GlobalRouter::initNetlist()
   }
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*, cmpById>& db_nets)
 {
   // Prevent _nets from growing because pointers to nets become invalid.
   reserveNets(db_nets.size());
@@ -3003,33 +2999,6 @@ int GlobalRouter::computeMaxRoutingLayer()
   }
 
   return maxRoutingLayer;
-}
-
-void GlobalRouter::getCutLayerRes(unsigned belowLayerId, float& r)
-{
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* cut = tech->findRoutingLayer(belowLayerId)->getUpperLayer();
-  r = cut->getResistance();  // assumes single cut
-}
-
-void GlobalRouter::getLayerRC(unsigned layerId, float& r, float& c)
-{
-  odb::dbTech* tech = _db->getTech();
-  odb::dbTechLayer* techLayer = tech->findRoutingLayer(layerId);
-
-  float layerWidth
-      = (float) techLayer->getWidth() / _block->getDbUnitsPerMicron();
-  float resOhmPerMicron = techLayer->getResistance() / layerWidth;
-  float capPfPerMicron = layerWidth * techLayer->getCapacitance()
-                         + 2 * techLayer->getEdgeCapacitance();
-
-  r = 1E+6 * resOhmPerMicron;         // ohm/meter
-  c = 1E+6 * 1E-12 * capPfPerMicron;  // F/meter
-}
-
-double GlobalRouter::dbuToMeters(int dbu)
-{
-  return (double) dbu / (_block->getDbUnitsPerMicron() * 1E+6);
 }
 
 double GlobalRouter::dbuToMicrons(int64_t dbu)

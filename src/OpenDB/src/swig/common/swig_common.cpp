@@ -266,3 +266,23 @@ std::vector<odb::Point> getPoints(const Polygon90* polygon)
   }
   return pts;
 }
+
+void createSBoxes(odb::dbSWire* swire,
+                  odb::dbTechLayer* layer,
+                  std::vector<odb::Rect> rects,
+                  odb::dbWireShapeType type)
+{
+  for (odb::Rect rect : rects)
+    odb::dbSBox::create(
+        swire, layer, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), type);
+}
+
+void createSBoxes(odb::dbSWire* swire,
+                  odb::dbVia* via,
+                  std::vector<odb::Point> points,
+                  odb::dbWireShapeType type)
+{
+  for (odb::Point point : points)
+    odb::dbSBox::create(
+        swire, via, point.getX(), point.getY(), type);
+}

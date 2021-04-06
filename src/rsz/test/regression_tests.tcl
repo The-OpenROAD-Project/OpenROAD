@@ -34,15 +34,18 @@ record_tests {
   repair_hold8
   repair_hold9
   repair_hold10
+  repair_hold11
   repair_setup1
   repair_setup2
   repair_setup3
+  repair_setup4
   repair_slew1
   repair_slew2
   repair_slew3
   repair_slew4
   repair_slew5
   repair_slew6
+  repair_slew7
   report_floating_nets1
   repair_tie1
   repair_tie2
@@ -57,8 +60,7 @@ record_tests {
   repair_wire4
   repair_wire5
   repair_wire6
+  repair_wire7
   gcd_resize
 }
-# injured reserve
-#  repair_slew3
 

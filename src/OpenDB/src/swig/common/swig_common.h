@@ -80,3 +80,13 @@ std::vector<Polygon90> getPolygons(const Polygon90Set* set);
 std::vector<odb::Rect> getRectangles(const Polygon90Set* set);
 
 std::vector<odb::Point> getPoints(const Polygon90* polygon);
+
+void createSBoxes(odb::dbSWire* swire,
+                  odb::dbTechLayer* layer,
+                  std::vector<odb::Rect> rects,
+                  odb::dbWireShapeType type);
+
+void createSBoxes(odb::dbSWire* swire,
+                  odb::dbVia* via,
+                  std::vector<odb::Point> points,
+                  odb::dbWireShapeType type);

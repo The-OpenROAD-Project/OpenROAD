@@ -60,3 +60,7 @@ target_include_directories(lefzlib
     lef
     lefzlib
 )
+target_link_libraries(lefzlib
+    PUBLIC
+        ZLIB::ZLIB
+)

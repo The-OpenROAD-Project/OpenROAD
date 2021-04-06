@@ -90,7 +90,7 @@ Path Type: min
           -0.07   slack (VIOLATED)
 
 
-[INFO RSZ-0059] Using CLKBUF_X3 with 0.031ns delay for hold repairs.
+[INFO RSZ-0059] Using CLKBUF_X3 with 0.030ns delay for hold repairs.
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 11 hold buffers.
 Startpoint: in2 (input port clocked by clk)
@@ -125,9 +125,9 @@ Path Type: min
 
 
 Net in2
- Pin capacitance: r 1.42 f 1.25
- Wire capacitance: r 0.31 f 0.31
- Total capacitance: r 1.73 f 1.56
+ Pin capacitance: 1.25-1.42
+ Wire capacitance: 0.31-0.31
+ Total capacitance: 1.56-1.73
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -136,7 +136,7 @@ Driver pins
  in2 input port
 
 Load pins
- hold1/A input (CLKBUF_X3) r 1.42 f 1.25 (0, 1)
+ hold1/A input (CLKBUF_X3) 1.25-1.42 (0, 1)
 Net out
  Pin capacitance: 0.00
  Wire capacitance: 0.31

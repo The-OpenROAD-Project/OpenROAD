@@ -48,12 +48,13 @@ class Logger;
 namespace fr {
 
 class FlexDRGraphics;
+class frConstraint;
 
 class FlexDR
 {
  public:
   // constructors
-  FlexDR(frDesign* designIn, Logger* loggerIn);
+  FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -78,11 +79,12 @@ class FlexDR
   {
     return &via2turnMinLen_;
   }
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(frDebugSettings* settings);
 
  protected:
   frDesign* design_;
   Logger* logger_;
+  odb::dbDatabase* db_;
   std::vector<std::vector<std::map<frNet*,
                                    std::set<std::pair<frPoint, frLayerNum>>,
                                    frBlockObjectComp>>>
@@ -824,9 +826,14 @@ class FlexDRWorker
                                 frMIdx z,
                                 int type,
                                 int eolType);
+  void modEolSpacingRulesCost(const frBox& box,
+                              frMIdx z,
+                              int type,
+                              bool isSkipVia = false);
   void modEolSpacingCost(const frBox& box,
                          frMIdx z,
                          int type,
+                         frConstraint* con,
                          bool isSkipVia = false);
   // cutSpc
   void modCutSpacingCost(const frBox& box,

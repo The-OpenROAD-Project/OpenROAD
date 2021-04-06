@@ -16,8 +16,9 @@ set_global_routing_layer_adjustment 2 0.8
 set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
-global_route -layers 2-6 \
-          -clock_layers 4-6
+set_routing_layers -signal 2-6 -clock 4-6
+
+global_route
 
 write_guides $guide_file
 

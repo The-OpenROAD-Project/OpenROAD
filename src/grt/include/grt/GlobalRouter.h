@@ -168,9 +168,7 @@ class GlobalRouter
   void setMaxRoutingLayer(const int maxLayer);
   void setMinLayerForClock(const int minLayer);
   void setMaxLayerForClock(const int maxLayer);
-  void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
-  void setPitchesInTile(const int pitchesInTile);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -193,7 +191,7 @@ class GlobalRouter
   void writeGuides(const char* fileName);
   std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
-  void runFastRoute();
+  void run();
   void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return _routes; }
@@ -206,10 +204,6 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
-  // estimate_rc functions
-  void getLayerRC(unsigned layerId, float& r, float& c);
-  void getCutLayerRes(unsigned belowLayerId, float& r);
-  double dbuToMeters(int dbu);
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
@@ -301,7 +295,7 @@ class GlobalRouter
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist();
-  void addNets(std::set<odb::dbNet*>& db_nets);
+  void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();

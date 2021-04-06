@@ -62,8 +62,8 @@ class HungarianMatching
  public:
   HungarianMatching(Section&, std::vector<Slot>&, Logger* logger);
   virtual ~HungarianMatching() = default;
-  void findAssignment(std::vector<Constraint>& constraints);
-  void findAssignmentForGroups(std::vector<Constraint>& constraints);
+  void findAssignment(const std::vector<Constraint>& constraints);
+  void findAssignmentForGroups(const std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&) const;
   void getAssignmentForGroups(std::vector<IOPin>&);
 
@@ -85,8 +85,8 @@ class HungarianMatching
   const int hungarian_fail = std::numeric_limits<int>::max();
   Logger* logger_;
 
-  void createMatrix(std::vector<Constraint>& constraints);
-  void createMatrixForGroups(std::vector<Constraint>& constraints);
+  void createMatrix(const std::vector<Constraint>& constraints);
+  void createMatrixForGroups(const std::vector<Constraint>& constraints);
 };
 
 }  // namespace ppl

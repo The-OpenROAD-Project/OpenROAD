@@ -141,45 +141,47 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { lib_port }
+sta::define_cmd_args "set_routing_layers" { [-signal layers] \
+                                            [-clock layers] \
+}
 
-proc repair_antennas { args } {
-  sta::check_argc_eq1 "repair_antennas" $args
-  set lib_port [lindex $args 0]
-  if { ![sta::is_object $lib_port] } {
-    set lib_port [sta::get_lib_pins [lindex $args 0]]
+proc set_routing_layers { args } {
+  sta::parse_key_args "set_routing_layers" args \
+    keys {-signal -clock}
+
+  if { [info exists keys(-signal)] } {
+    grt::define_layer_range $keys(-signal)
   }
-  if { $lib_port != "" } {
-    grt::repair_antennas $lib_port
+
+  if { [info exists keys(-clock)] } {
+    grt::define_clock_layer_range $keys(-clock)
   }
 }
 
-sta::define_cmd_args "write_guides" { file_name }
+sta::define_cmd_args "set_macro_extension" { extension }
 
-proc write_guides { args } {
-  set file_name $args
-  grt::write_guides $file_name
+proc set_macro_extension { args } {
+  if {[llength $args] == 1} {
+    lassign $args extension
+    sta::check_positive_integer "macro_extension" $extension
+    grt::set_macro_extension $extension
+  } else {
+    utl::error GRT 219 "set_macro_extension: Wrong number of arguments."
+  }
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
-                                  [-unidirectional_routing] \
-                                  [-tile_size tile_size] \
+                                  [-clock_layers layers] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
                                   [-allow_overflow] \
-                                  [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
                                   [-clock_tracks_cost clock_tracks_cost] \
                                   [-macro_extension macro_extension] \
-                                  [-only_signal_nets] \
-                                  [-output_file out_file] \
-                                  [-min_routing_layer min_layer] \
-                                  [-max_routing_layer max_layer] \
-                                  [-layers_adjustments layers_adjustments] \
-                                  [-layers_pitches layers_pitches] \
+                                  [-output_file out_file]
 }
 
 # sta::define_cmd_alias "fastroute" "global_route"
@@ -191,13 +193,12 @@ proc fastroute { args } {
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
+    keys {-guide_file -layers -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -clock_tracks_cost -macro_extension \
-          -output_file -min_routing_layer -max_routing_layer -layers_pitches \
+          -clock_tracks_cost -macro_extension -output_file \
          } \
-    flags {-unidirectional_routing -allow_overflow -only_signal_nets} \
+    flags {-allow_overflow}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "missing dbTech."
@@ -213,36 +214,6 @@ proc global_route { args } {
   } else {
     grt::set_verbose 0
   }
-
-  if { [info exists keys(-layers_pitches)] } {
-    utl::warn GRT 20 "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer pitch."
-    set layers_pitches $keys(-layers_pitches)
-    foreach layer_pitch $layers_pitches {
-      if { [llength $layer_pitch] == 2 } {
-        lassign $layer_pitch layer pitch
-        grt::set_layer_pitch $layer $pitch
-      } else {
-        utl::error GRT 53 "Wrong number of arguments for layer pitches."
-      }
-    }
-  }
-
-  if { [info exists keys(-layers_adjustments)] } {
-    utl::warn GRT 21 "option -layers_adjustments is deprecated. Use command set_global_routing_layer_adjustment layer adjustment."
-    set layers_adjustments $keys(-layers_adjustments)
-    foreach layer_adjustment $layers_adjustments {
-      if { [llength $layer_adjustment] == 2 } {
-        lassign $layer_adjustment layer reductionPercentage
-        grt::add_layer_adjustment $layer $reductionPercentage
-      } else {
-        utl::error GRT 54 "Wrong number of arguments for layer adjustments."
-      }
-    }
-  }
-
-  if { [info exists flags(-unidirectional_routing)] } {
-    utl::warn GRT 210 "flag -unidirectional_routing is deprecated."
-  } 
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)
@@ -289,14 +260,10 @@ proc global_route { args } {
     grt::set_pdrev_for_high_fanout -1
   }
 
-  if { [info exists keys(-tile_size)] } {
-    set tile_size $keys(-tile_size)
-    grt::set_tile_size $tile_size
-  }
-
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
 
   if { [info exists keys(-macro_extension)] } {
+    utl::warn GRT 216 "option -macro_extension is deprecated. Use command set_macro_extension."
     set macro_extension $keys(-macro_extension)
     grt::set_macro_extension $macro_extension
   } else {
@@ -304,60 +271,17 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-clock_layers)] } {
-    set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
-    lassign $layer_range min_clock_layer max_clock_layer
-    grt::check_routing_layer $min_clock_layer
-    grt::check_routing_layer $max_clock_layer
-
-    if { $min_clock_layer < $max_clock_layer } {
-      grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-    } else {
-      utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
-    }
-  }
-
-  if { [info exists keys(-min_routing_layer)] } {
-    utl::warn GRT 22 "option -min_routing_layer is deprecated. Use option -layers {min max}."
-    set min_layer $keys(-min_routing_layer)
-    sta::check_positive_integer "-min_routing_layer" $min_layer
-    grt::set_min_layer $min_layer
-  } else {
-    grt::set_min_layer 1
-  }
-
-  set max_layer -1
-  if { [info exists keys(-max_routing_layer)] } {
-    utl::warn GRT 23 "option -max_routing_layer is deprecated. Use option -layers min-max."
-    set max_layer $keys(-max_routing_layer)
-    sta::check_positive_integer "-max_routing_layer" $max_layer
-    grt::set_max_layer $max_layer
-  } else {
-    grt::set_max_layer -1
+    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_routing_layers."
+    grt::define_clock_layer_range $keys(-clock_layers)
   }
 
   if { [info exists keys(-layers)] } {
-    set layer_range [grt::parse_layer_range "-layers" $keys(-layers)]
-    lassign $layer_range min_layer max_layer
-    grt::check_routing_layer $min_layer
-    grt::check_routing_layer $max_layer
-
-    grt::set_min_layer $min_layer
-    grt::set_max_layer $max_layer
-  }
-
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    if { !([ord::db_layer_has_hor_tracks $layer] && \
-         [ord::db_layer_has_ver_tracks $layer]) } {
-      utl::error GRT 57 "missing track structure."
-    }
+    utl::warn GRT 218 "option -layers is deprecated. Use command set_routing_layers."
+    grt::define_layer_range $keys(-layers)
   }
 
   grt::clear
-  if { [info exists keys(-clock_layers)] } {
-    grt::global_route_clocks_separately
-  } else {
-    grt::global_route
-  }
+  grt::run
   
   if { [info exists keys(-output_file)] } {
     utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."
@@ -369,6 +293,26 @@ proc global_route { args } {
     set out_file $keys(-guide_file)
     grt::write_guides $out_file
   }
+}
+
+sta::define_cmd_args "repair_antennas" { lib_port }
+
+proc repair_antennas { args } {
+  sta::check_argc_eq1 "repair_antennas" $args
+  set lib_port [lindex $args 0]
+  if { ![sta::is_object $lib_port] } {
+    set lib_port [sta::get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "" } {
+    grt::repair_antennas $lib_port
+  }
+}
+
+sta::define_cmd_args "write_guides" { file_name }
+
+proc write_guides { args } {
+  set file_name $args
+  grt::write_guides $file_name
 }
 
 namespace eval grt {
@@ -437,6 +381,36 @@ proc highlight_route { net_name } {
   set net [$block findNet $net_name]
   if { $net != "NULL" } {
     highlight_net_route $net
+  }
+}
+
+proc define_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-layers" $layers]
+  lassign $layer_range min_layer max_layer
+  grt::check_routing_layer $min_layer
+  grt::check_routing_layer $max_layer
+
+  grt::set_min_layer $min_layer
+  grt::set_max_layer $max_layer
+
+  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+    if { !([ord::db_layer_has_hor_tracks $layer] && \
+         [ord::db_layer_has_ver_tracks $layer]) } {
+      utl::error GRT 57 "missing track structure."
+    }
+  }
+}
+
+proc define_clock_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-clock_layers" $layers]
+  lassign $layer_range min_clock_layer max_clock_layer
+  grt::check_routing_layer $min_clock_layer
+  grt::check_routing_layer $max_clock_layer
+
+  if { $min_clock_layer < $max_clock_layer } {
+    grt::set_clock_layer_range $min_clock_layer $max_clock_layer
+  } else {
+    utl::error GRT 56 "-clock_layers: Min routing layer is greater than max routing layer."
   }
 }
 

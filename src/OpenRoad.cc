@@ -36,8 +36,10 @@
 #include "openroad/OpenRoad.hh"
 
 #include <iostream>
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
+#ifdef ENABLE_PYTHON3
+  #define PY_SSIZE_T_CLEAN
+  #include "Python.h"
+#endif
 
 #include "utl/MakeLogger.h"
 #include "utl/Logger.h"
@@ -436,10 +438,12 @@ OpenRoad::Observer::~Observer()
   }
 }
 
+#ifdef ENABLE_PYTHON3
 void OpenRoad::pythonCommand(const char* py_command)
 {
   PyRun_SimpleString(py_command);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////
 
