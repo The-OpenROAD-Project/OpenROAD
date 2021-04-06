@@ -1041,55 +1041,55 @@ void IOPlacer::initNetlist()
 
   for (odb::dbBTerm* b_term : bterms) {
     odb::dbNet* net = b_term->getNet();
-    if (net != nullptr) {
-      Direction dir = Direction::inout;
-      switch (b_term->getIoType()) {
-        case odb::dbIoType::INPUT:
-          dir = Direction::input;
-          break;
-        case odb::dbIoType::OUTPUT:
-          dir = Direction::output;
-          break;
-        default:
-          dir = Direction::inout;
-      }
-
-      int x_pos = 0;
-      int y_pos = 0;
-      b_term->getFirstPinLocation(x_pos, y_pos);
-
-      Point bounds(0, 0);
-      IOPin io_pin(b_term,
-                   Point(x_pos, y_pos),
-                   dir,
-                   bounds,
-                   bounds,
-                   "FIXED");
-
-      std::vector<InstancePin> inst_pins;
-      odb::dbSet<odb::dbITerm> iterms = net->getITerms();
-      odb::dbSet<odb::dbITerm>::iterator i_iter;
-      for (i_iter = iterms.begin(); i_iter != iterms.end(); ++i_iter) {
-        odb::dbITerm* cur_i_term = *i_iter;
-        int x, y;
-
-        if (cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::NONE ||
-            cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::UNPLACED) {
-          x = x_center;
-          y = y_center;
-        } else {
-          cur_i_term->getAvgXY(&x, &y);
-        }
-
-        inst_pins.push_back(
-            InstancePin(cur_i_term->getInst()->getConstName(), Point(x, y)));
-      }
-
-      netlist_.addIONet(io_pin, inst_pins);
-    } else {
+    if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
       continue;
     }
+
+    Direction dir = Direction::inout;
+    switch (b_term->getIoType()) {
+      case odb::dbIoType::INPUT:
+        dir = Direction::input;
+        break;
+      case odb::dbIoType::OUTPUT:
+        dir = Direction::output;
+        break;
+      default:
+        dir = Direction::inout;
+    }
+
+    int x_pos = 0;
+    int y_pos = 0;
+    b_term->getFirstPinLocation(x_pos, y_pos);
+
+    Point bounds(0, 0);
+    IOPin io_pin(b_term,
+                 Point(x_pos, y_pos),
+                 dir,
+                 bounds,
+                 bounds,
+                 "FIXED");
+
+    std::vector<InstancePin> inst_pins;
+    odb::dbSet<odb::dbITerm> iterms = net->getITerms();
+    odb::dbSet<odb::dbITerm>::iterator i_iter;
+    for (i_iter = iterms.begin(); i_iter != iterms.end(); ++i_iter) {
+      odb::dbITerm* cur_i_term = *i_iter;
+      int x, y;
+
+      if (cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::NONE ||
+          cur_i_term->getInst()->getPlacementStatus() == odb::dbPlacementStatus::UNPLACED) {
+        x = x_center;
+        y = y_center;
+      } else {
+        cur_i_term->getAvgXY(&x, &y);
+      }
+
+      inst_pins.push_back(
+          InstancePin(cur_i_term->getInst()->getConstName(), Point(x, y)));
+    }
+
+    netlist_.addIONet(io_pin, inst_pins);
   }
 
   int group_idx = 0;
