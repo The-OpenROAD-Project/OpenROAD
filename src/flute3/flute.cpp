@@ -904,8 +904,7 @@ DTYPE flutes_wl_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
           if (r == d - 1 || r == d - 2) {
             y1[n1] = y2[n2] = ys[r - 1];
             extral = ys[r] - ys[r - 1];
-          }
-          if (r == 0 || r == 1) {
+          } else if (r == 0 || r == 1) {
             y1[n1] = y2[n2] = ys[r + 1];
             extral = ys[r + 1] - ys[r];
           } else {
@@ -935,8 +934,7 @@ DTYPE flutes_wl_MD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
           if (r == d - 1 || r == d - 2) {
             x1[n1] = x2[n2] = xs[r - 1];
             extral = xs[r] - xs[r - 1];
-          }
-          if (r == 0 || r == 1) {
+          } else if (r == 0 || r == 1) {
             x1[n1] = x2[n2] = xs[r + 1];
             extral = xs[r + 1] - xs[r];
           } else {
