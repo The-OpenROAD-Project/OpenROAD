@@ -90,9 +90,9 @@ void io::Parser::initDefaultVias()
       layer1Num = techDefautlViaDef->getLayer1Num();
       layer2Num = techDefautlViaDef->getLayer2Num();
       bool isLayer1Square = (layer1Box.right() - layer1Box.left())
-	                     == (layer1Box.top() - layer1Box.bottom());
+                            == (layer1Box.top() - layer1Box.bottom());
       bool isLayer2Square = (layer2Box.right() - layer2Box.left())
-	                     == (layer2Box.top() - layer2Box.bottom());
+                            == (layer2Box.top() - layer2Box.bottom());
       bool isLayer1EncHorz = (layer1Box.right() - layer1Box.left())
                              > (layer1Box.top() - layer1Box.bottom());
       bool isLayer2EncHorz = (layer2Box.right() - layer2Box.left())
@@ -102,8 +102,8 @@ void io::Parser::initDefaultVias()
       bool isLayer2Horz
           = (tech->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir);
       bool needViaGen = false;
-      if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz)) ||
-          (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
+      if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
+          || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
         needViaGen = true;
       }
 

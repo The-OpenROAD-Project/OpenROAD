@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dr/FlexDR.h"
+
 #include <omp.h>
 
 #include <boost/io/ios_state.hpp>
@@ -34,7 +36,6 @@
 #include <sstream>
 
 #include "db/infra/frTime.h"
-#include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 
