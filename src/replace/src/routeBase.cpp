@@ -740,9 +740,6 @@ RouteBase::updateRoute() {
   minWireWidth_ = route.minWireWidths;
   minWireSpacing_ = route.minWireSpacings;
 
-  using std::cout;
-  using std::endl;
-
   edgeCapacityStor_.reserve(route.adjustments.size());
   for(auto& e : route.adjustments) {
     edgeCapacityStor_.push_back(
@@ -1226,9 +1223,6 @@ RouteBase::routability() {
     }
   }
   
-  using std::cout;
-  using std::endl;
-
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_
