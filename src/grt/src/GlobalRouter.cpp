@@ -2239,7 +2239,7 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
 void GlobalRouter::initRoutingTracks(
     std::vector<RoutingTracks>& allRoutingTracks,
     int maxLayer,
-    std::vector<float> layerPitches)
+    const std::vector<float>& layerPitches)
 {
   odb::dbTech* tech = _db->getTech();
 
@@ -2302,7 +2302,7 @@ void GlobalRouter::initRoutingTracks(
 }
 
 void GlobalRouter::computeCapacities(int maxLayer,
-                                     std::vector<float> layerPitches)
+                                     const std::vector<float>& layerPitches)
 {
   int trackSpacing;
   int hCapacity, vCapacity;
