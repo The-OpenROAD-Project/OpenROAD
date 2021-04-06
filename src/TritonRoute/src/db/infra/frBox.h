@@ -128,10 +128,16 @@ class frBox
              && in.y() < ur_.y();
     }
   }
-  bool bloatingContains(int x, int y, int bloatXL=0, int bloatXH=0, int bloatYL=0, int bloatYH=0) const{
-        return  left()-bloatXL <= x && right()+bloatXH >= x && 
-                bottom()-bloatYL <= y && top()+bloatYH >= y;
-    }
+  bool bloatingContains(int x,
+                        int y,
+                        int bloatXL = 0,
+                        int bloatXH = 0,
+                        int bloatYL = 0,
+                        int bloatYH = 0) const
+  {
+    return left() - bloatXL <= x && right() + bloatXH >= x
+           && bottom() - bloatYL <= y && top() + bloatYH >= y;
+  }
   void merge(const frBox& box)
   {
     set(std::min(left(), box.left()),
@@ -139,19 +145,20 @@ class frBox
         std::max(right(), box.right()),
         std::max(top(), box.top()));
   }
-  frCoord distMaxXY(const frBox& bx) const{
-      frCoord xd = 0, yd = 0;
-      if (left() > bx.right()) {
-          xd = left() - bx.right();
-      }else if (bx.left() > right()) {
-          xd = bx.left() - right();
-      }
-      if (bottom() > bx.top()) {
-          yd = bottom() - bx.top();
-      }else if (bx.bottom() > top()) {
-          yd = bx.bottom() - top();
-      }
-      return std::max(xd, yd);
+  frCoord distMaxXY(const frBox& bx) const
+  {
+    frCoord xd = 0, yd = 0;
+    if (left() > bx.right()) {
+      xd = left() - bx.right();
+    } else if (bx.left() > right()) {
+      xd = bx.left() - right();
+    }
+    if (bottom() > bx.top()) {
+      yd = bottom() - bx.top();
+    } else if (bx.bottom() > top()) {
+      yd = bx.bottom() - top();
+    }
+    return std::max(xd, yd);
   }
   void transform(const frTransform& xform);
   bool overlaps(const frBox& boxIn, bool incEdges = true) const;
