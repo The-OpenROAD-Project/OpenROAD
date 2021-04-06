@@ -467,16 +467,10 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       obj->getStyle(style);
       if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)
           && getRouteBox().contains(bp)) {
-        if (enableOutput) {
-          cout << "query bp" << endl;
-        }
         initNets_searchRepair_pin2epMap_helper(net, bp, lNum, pin2epMap);
       }
       if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)
           && getRouteBox().contains(ep)) {
-        if (enableOutput) {
-          cout << "query ep" << endl;
-        }
         initNets_searchRepair_pin2epMap_helper(net, ep, lNum, pin2epMap);
       }
     } else if (connFig->typeId() == drcVia) {
@@ -485,9 +479,6 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       auto l1Num = obj->getViaDef()->getLayer1Num();
       auto l2Num = obj->getViaDef()->getLayer2Num();
       if (getRouteBox().contains(bp)) {
-        if (enableOutput) {
-          cout << "query bp l1" << endl;
-        }
         initNets_searchRepair_pin2epMap_helper(net, bp, l1Num, pin2epMap);
         initNets_searchRepair_pin2epMap_helper(net, bp, l2Num, pin2epMap);
       }
