@@ -96,6 +96,102 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
   }
 }
 
+// TODO check for hasRoute
+bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
+    gcSegment* edge1,
+    gcSegment* edge2,
+    frConstraint* constraint)
+{
+  if (constraint->typeId()
+      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
+    return true;
+  auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
+  if (!con->getWithinConstraint()->hasEncloseCutConstraint())
+    return true;
+  auto encCutCon = con->getWithinConstraint()->getEncloseCutConstraint();
+  frSquaredDistance cutToMetalSpaceSquared
+      = encCutCon->getCutToMetalSpace()
+        * (frSquaredDistance) encCutCon->getCutToMetalSpace();
+  box_t queryBox;  // query region is encloseDist from edge1
+  checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
+      edge1, encCutCon.get(), queryBox);
+
+  std::vector<int> layers;  // cutLayers to search for the vias
+  if (encCutCon->isAboveAndBelow() || encCutCon->isAboveOnly())
+    if (edge1->getLayerNum() + 1 <= maxLayerNum_)
+      layers.push_back(edge1->getLayerNum() + 1);
+  if (encCutCon->isAboveAndBelow() || encCutCon->isBelowOnly())
+    if (edge1->getLayerNum() - 1 >= minLayerNum_)
+      layers.push_back(edge1->getLayerNum() - 1);
+  // edge2 segment as a rectangle for getting distance
+  gtl::rectangle_data<frCoord> metRect(edge2->getLowCorner()->x(),
+                                       edge2->getLowCorner()->y(),
+                                       edge2->getHighCorner()->x(),
+                                       edge2->getHighCorner()->y());
+  bool found = false;
+  // allCuts=false --> return true if you find one cut segment that satisfies
+  // the enclose cut allCuts=true  --> return true if all cut segment satisfies
+  // the enclose cut (at least one has to be found)
+  for (auto layerNum : layers) {
+    vector<pair<segment_t, gcSegment*>> results;
+    auto& workerRegionQuery = getWorkerRegionQuery();
+    workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
+    for (auto& [boostSeg, ptr] : results) {
+      if (edge1->getDir() != ptr->getDir())
+        continue;
+      gtl::rectangle_data<frCoord> rect(ptr->getLowCorner()->x(),
+                                        ptr->getLowCorner()->y(),
+                                        ptr->getHighCorner()->x(),
+                                        ptr->getHighCorner()->y());
+      frSquaredDistance distSquared
+          = gtl::square_euclidean_distance(metRect, rect);
+      if (distSquared < cutToMetalSpaceSquared) {
+        if (encCutCon->isAllCuts())
+          found = true;
+        else
+          return true;
+      } else if (encCutCon->isAllCuts())
+        return false;
+    }
+  }
+  return found;
+}
+
+void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
+    gcSegment* edge,
+    frLef58SpacingEndOfLineWithinEncloseCutConstraint* constraint,
+    box_t& queryBox)
+{
+  frCoord encDist = constraint->getEncloseDist();
+  switch (edge->getDir()) {
+    case frDirEnum::W:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - encDist);
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y());
+      break;
+    case frDirEnum::E:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + encDist);
+      break;
+    case frDirEnum::S:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + encDist);
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y());
+      break;
+    case frDirEnum::N:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - encDist);
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y());
+      break;
+    default:
+      break;
+  }
+}
 // bbox on the gcSegment->low() side
 void FlexGCWorker::Impl::
     checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getQueryBox(
@@ -398,6 +494,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
       return;
     }
   }
+  if (!checkMetalEndOfLine_eol_hasEncloseCut(edge1, edge2, constraint))
+    return;
 
   auto marker = make_unique<frMarker>();
   frBox box(gtl::xl(markerRect),
