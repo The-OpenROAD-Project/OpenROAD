@@ -243,6 +243,17 @@ proc clear {} {
   grt::clear_fastroute
   [get_db] clear
 }
+  
+proc profile_cmd {filename args} {
+  utl::info 99 "Profiling $args > $filename"
+  profile -commands on
+  if {[catch "{*}$args"]} {
+    global errorInfo
+    puts $errorInfo
+  }
+  profile off profarray
+  profrep profarray cpu $filename
+}
 
 # namespace ord
 }

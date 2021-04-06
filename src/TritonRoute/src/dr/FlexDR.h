@@ -48,6 +48,7 @@ class Logger;
 namespace fr {
 
 class FlexDRGraphics;
+class frConstraint;
 
 class FlexDR
 {
@@ -808,9 +809,11 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+
   void modCornerToCornerSpacing_helper(const frBox& box,
                                frMIdx z,
                                int type);
+
   void modMinSpacingCostVia_eol(const frBox& box,
                                 const frBox& tmpBx,
                                 int type,
@@ -830,9 +833,14 @@ class FlexDRWorker
                                 frMIdx z,
                                 int type,
                                 int eolType);
+  void modEolSpacingRulesCost(const frBox& box,
+                              frMIdx z,
+                              int type,
+                              bool isSkipVia = false);
   void modEolSpacingCost(const frBox& box,
                          frMIdx z,
                          int type,
+                         frConstraint* con,
                          bool isSkipVia = false);
   // cutSpc
   void modCutSpacingCost(const frBox& box,

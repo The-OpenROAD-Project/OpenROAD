@@ -23,10 +23,33 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 
 OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
+
 ## Install dependencies
 
 The `etc/DependencyInstaller.sh`  script supports Centos7 and Ubuntu 20.04.
 You need root access to correctly install the dependencies with the script.
+
+
+## Install dependencies
+
+
+Tools
+  * cmake 3.14
+  * gcc 8.3.0 or clang7
+  * bison 3.0.5
+  * flex 2.6.4
+  * swig 4.0
+
+Libraries
+  * boost 1.68
+  * tcl 8.6
+  * zlibc
+  * eigen3
+  * spdlog
+  * [lemon](http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz)(graph library, not the parser)
+  * qt5
+  * cimg (optional for replace)
+
 
 ```
 ./etc/DependencyInstaller.sh -dev
@@ -743,38 +766,45 @@ Global router options and commands are described below.
 
 ```
 global_route [-guide_file out_file] \
-             [-layers min-max]
              [-tile_size tile_size] \
              [-verbose verbose] \
              [-overflow_iterations iterations] \
              [-grid_origin {x y}] \
              [-report_congestion congest_file] \
-             [-clock_layers min-max] \
              [-clock_pdrev_fanout fanout] \
              [-clock_topology_priority priority] \
              [-clock_tracks_cost clock_tracks_cost] \
-             [-macro_extension extension]
-             [-unidirectional_routing] \
              [-allow_overflow]
 
 ```
 
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
-- **layers**: Set the minimum and maximum routing layers (e.g.: -layers 2-10)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
-- **clock_layers min-max**: Set the minimum and maximum routing layers for clock nets (e.g.: -clock_layers 4-9)
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
 - **clock_tracks_cost**: Set the routing tracks consumption by clock nets
-- **macro_extension**: Set the number of GCells added to the obstacles boundaries from macros
-- **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
+
+```
+set_layer_ranges [-layers min-max] \
+                 [-clock_layers min-max]
+```
+
+The `set_layer_ranges` command sets the minimum and maximum routing layers for signal nets, with the `-layers` option,
+and the the minimum and maximum routing layers for clock nets, with the `-clock_layers` option
+Example: `set_layer_ranges -layers 2-10 -clock_layers 6-9`
+
+```
+set_macro_extension extension
+```
+The `set_macro_extension` command sets the number of GCells added to the blocakges boundaries from macros
+Example: `set_macro_extension 2`
 
 ```
 set_global_routing_layer_adjustment layer adjustment
