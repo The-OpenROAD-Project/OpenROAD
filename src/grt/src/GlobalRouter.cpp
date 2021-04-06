@@ -3164,15 +3164,17 @@ void GlobalRouter::reportLayerWireLengths()
       }
     }
   }
-  odb::dbTech *tech = _db->getTech();
-  for (int i = 0; i < lengths.size(); i++) {
-    int64_t length = lengths[i];
-    if (length > 0) {
-      odb::dbTechLayer *layer = tech->findRoutingLayer(i);
-      _logger->report("{:5s} {:8d}um {:3d}%",
-                      layer->getName(),
-                      static_cast<int64_t>(dbuToMicrons(length)),
-                      static_cast<int>((100.0 * length) / total_length));
+  if (total_length > 0) {
+    odb::dbTech *tech = _db->getTech();
+    for (int i = 0; i < lengths.size(); i++) {
+      int64_t length = lengths[i];
+      if (length > 0) {
+        odb::dbTechLayer *layer = tech->findRoutingLayer(i);
+        _logger->report("{:5s} {:8d}um {:3d}%",
+                        layer->getName(),
+                        static_cast<int64_t>(dbuToMicrons(length)),
+                        static_cast<int>((100.0 * length) / total_length));
+      }
     }
   }
 }
