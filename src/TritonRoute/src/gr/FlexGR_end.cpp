@@ -407,7 +407,6 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
 
 void FlexGRWorker::endWriteBackCMap()
 {
-  bool hasChange = false;
 
   auto cmap = getCMap();
 
@@ -435,7 +434,7 @@ void FlexGRWorker::endWriteBackCMap()
             || gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
                    != cmap->getRawDemand(
                        cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)) {
-          hasChange = true;
+          ;
         }
 
         // copy raw demand

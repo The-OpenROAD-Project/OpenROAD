@@ -3995,7 +3995,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     }
 
     minCostAP->getPoint(bp);
-    auto lNum = minCostAP->getBeginLayerNum();
+    minCostAP->getBeginLayerNum();
     frViaDef* viaDef = minCostAP->getAccessViaDef();
     via = make_unique<drVia>(viaDef);
     via->setOrigin(bp);
@@ -4055,7 +4055,6 @@ void FlexDRWorker::initMazeCost_boundary_helper(drNet* net, bool isAddPathCost)
 
 void FlexDRWorker::initFixedObjs()
 {
-  double dbu = getTech()->getDBUPerUU();
   auto& extBox = getExtBox();
   box_t queryBox(point_t(extBox.left(), extBox.bottom()),
                  point_t(extBox.right(), extBox.top()));

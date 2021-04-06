@@ -95,7 +95,6 @@ void FlexGridGraph::initEdges(
   getDim(xDim, yDim, zDim);
   // initialize grid graph
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
-  bool flag = false;
 
   for (auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
@@ -135,7 +134,7 @@ void FlexGridGraph::initEdges(
                         ->getLef58RightWayOnGridOnlyConstraint()
                     == nullptr
                 || yIt->second != nullptr) {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               if (yIt->second == nullptr || outOfDiePlanar) {
                 setGridCostE(xIdx, yIdx, zIdx);
               }
@@ -155,7 +154,7 @@ void FlexGridGraph::initEdges(
                     && xIt2->second == nullptr)) {
               ;
             } else {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
               if (condition || outOfDieVia) {
@@ -171,7 +170,7 @@ void FlexGridGraph::initEdges(
                         ->getLef58RightWayOnGridOnlyConstraint()
                     == nullptr
                 || xIt->second != nullptr) {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               if (xIt->second == nullptr || outOfDiePlanar) {
                 setGridCostN(xIdx, yIdx, zIdx);
               }
@@ -191,7 +190,7 @@ void FlexGridGraph::initEdges(
                     && yIt2->second == nullptr)) {
               ;
             } else {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
               if (condition || outOfDieVia) {
@@ -208,14 +207,14 @@ void FlexGridGraph::initEdges(
           if (dir == frcHorzPrefRoutingDir && xFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               setGridCostN(xIdx, yIdx, zIdx);
             }
             // horizontal non-pref track
           } else if (dir == frcVertPrefRoutingDir && yFound3) {
             if (layerNum >= BOTTOM_ROUTING_LAYER
                 && layerNum <= TOP_ROUTING_LAYER) {
-              flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
+              addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               setGridCostE(xIdx, yIdx, zIdx);
             }
           }

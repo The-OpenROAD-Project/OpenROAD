@@ -844,8 +844,6 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     ps->addToPin(pin);
   }
 
-  // old drcWorker
-  int typeDRC = -1;
 
   // new gcWorker
   FlexGCWorker gcWorker(getDesign(), logger_);
@@ -876,13 +874,10 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   gcWorker.main();
   gcWorker.end();
 
-  int typeGC = 0;
   if (gcWorker.getMarkers().empty()) {
     ap->setAccess(dir, true);
-    typeGC = 1;
   } else {
     ap->setAccess(dir, false);
-    typeGC = 2;
   }
 }
 
@@ -1012,9 +1007,6 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
     via->addToPin(pin);
   }
 
-  // old drcWorker
-  int typeDRC = -1;
-
   // new gcWorker
   FlexGCWorker gcWorker(getDesign(), logger_);
   gcWorker.setIgnoreMinArea();
@@ -1046,13 +1038,9 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   gcWorker.main();
   gcWorker.end();
 
-  int typeGC = 0;
   bool sol = false;
   if (gcWorker.getMarkers().empty()) {
-    typeGC = 1;
     sol = true;
-  } else {
-    typeGC = 2;
   }
   if (graphics_) {
     graphics_->setViaAP(ap, via, gcWorker.getMarkers());

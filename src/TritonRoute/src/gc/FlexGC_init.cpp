@@ -155,7 +155,6 @@ void FlexGCWorker::Impl::initDesign()
     return;
   }
 
-  double dbu = getDesign()->getTech()->getDBUPerUU();
   auto& extBox = getExtBox();
   box_t queryBox(point_t(extBox.left(), extBox.bottom()),
                  point_t(extBox.right(), extBox.top()));

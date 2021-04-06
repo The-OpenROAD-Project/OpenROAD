@@ -113,16 +113,16 @@ void FlexGRGridGraph::initEdges()
         // horz
         if ((dir == frcNonePrefRoutingDir || dir == frcHorzPrefRoutingDir)
             && ((xIdx + 1) != (int) xCoords_.size())) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::E);
         }
         // vert
         if ((dir == frcNonePrefRoutingDir || dir == frcVertPrefRoutingDir)
             && ((yIdx + 1) != (int) yCoords_.size())) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::N);
         }
         // via
         if ((zIdx + 1) != (int) zCoords_.size()) {
-          bool flag = addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
+          addEdge(xIdx, yIdx, zIdx, frDirEnum::U);
         }
       }
     }

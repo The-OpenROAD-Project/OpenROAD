@@ -303,7 +303,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 
   if (breakPt1 == breakPt2) {
     // break on one side
-    auto breakNode = initBoundary_splitPathSeg_split(child, parent, breakPt1);
+    initBoundary_splitPathSeg_split(child, parent, breakPt1);
   } else {
     // break on both sides
 
@@ -1119,7 +1119,6 @@ void FlexGRWorker::initGridGraph_fromCMap()
   int idxURY = gcellIdxUR.y();
 
   for (int zIdx = 0; zIdx < (int) cmap->getZMap().size(); zIdx++) {
-    frLayerNum lNum = (zIdx + 1) * 2;
 
     for (int xIdx = 0; xIdx <= (idxURX - idxLLX); xIdx++) {
       int cmapXIdx = xIdx + idxLLX;
