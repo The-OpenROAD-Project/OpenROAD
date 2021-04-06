@@ -272,17 +272,6 @@ void FlexGR::initCMap()
 
 void FlexGRWorker::initBoundary()
 {
-  bool enableOutput = false;
-  if (enableOutput) {
-    stringstream ss;
-    ss << endl
-       << "start initBoundary GR worker (BOX) "
-       << "( " << extBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << extBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
-  }
 
   vector<grBlockObject*> result;
   getRegionQuery()->queryGRObj(extBox_, result);
@@ -301,7 +290,6 @@ void FlexGRWorker::initBoundary()
 // split pathSeg at boudnary
 void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
 {
-  bool enableOutput = false;
   frPoint bp, ep;
   pathSeg->getPoints(bp, ep);
   // skip if both endpoints are inside extBox (i.e., no intersection)
@@ -314,34 +302,11 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
   auto child = pathSeg->getChild();
 
   if (breakPt1 == breakPt2) {
-    if (enableOutput) {
-      cout << "  @@@ before split " << parent->getNet()->getName() << " has "
-           << parent->getNet()->getNodes().size() << " nodes"
-           << " and " << parent->getNet()->getGRShapes().size() << " wires and "
-           << parent->getNet()->getGRVias().size() << " vias\n";
-    }
     // break on one side
-    auto breakNode = initBoundary_splitPathSeg_split(child, parent, breakPt1);
-    if (enableOutput) {
-      cout << "  " << static_cast<frNet*>(parent->getNet())->getName()
-           << " breaking at (" << breakPt1.x() << ", " << breakPt1.y()
-           << ") on layerNum " << breakNode->getLayerNum() << "\n";
-    }
-    if (enableOutput) {
-      cout << "  after split " << parent->getNet()->getName() << " has "
-           << parent->getNet()->getNodes().size() << " nodes"
-           << " and " << parent->getNet()->getGRShapes().size() << " wires and "
-           << parent->getNet()->getGRVias().size() << " vias\n";
-    }
+    initBoundary_splitPathSeg_split(child, parent, breakPt1);
   } else {
     // break on both sides
 
-    if (enableOutput) {
-      cout << "  @@@ before split " << parent->getNet()->getName() << " has "
-           << parent->getNet()->getNodes().size() << " nodes"
-           << " and " << parent->getNet()->getGRShapes().size() << " wires and "
-           << parent->getNet()->getGRVias().size() << " vias\n";
-    }
 
     frPoint childLoc = child->getLoc();
     if (childLoc == bp) {
@@ -353,21 +318,7 @@ void FlexGRWorker::initBoundary_splitPathSeg(grPathSeg* pathSeg)
           = initBoundary_splitPathSeg_split(child, parent, breakPt2);
       initBoundary_splitPathSeg_split(breakNode2, parent, breakPt1);
     }
-    if (enableOutput) {
-      cout << "  " << static_cast<frNet*>(parent->getNet())->getName()
-           << " breaking at (" << breakPt1.x() << ", " << breakPt1.y() << ")\n";
-    }
-    if (enableOutput) {
-      cout << "  " << static_cast<frNet*>(parent->getNet())->getName()
-           << " breaking at (" << breakPt2.x() << ", " << breakPt2.y() << ")\n";
-    }
 
-    if (enableOutput) {
-      cout << "  after split " << parent->getNet()->getName() << " has "
-           << parent->getNet()->getNodes().size() << " nodes"
-           << " and " << parent->getNet()->getGRShapes().size() << " wires and "
-           << parent->getNet()->getGRVias().size() << " vias\n";
-    }
   }
 }
 
@@ -550,7 +501,6 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(
     set<frNet*, frBlockObjectComp>& nets,
     map<frNet*, vector<frNode*>, frBlockObjectComp>& netRoots)
 {
-  bool enableOutput = false;
   auto net = pathSeg->getNet();
   nets.insert(net);
 
@@ -561,33 +511,11 @@ void FlexGRWorker::initNetObjs_roots_pathSeg(
   if (parentLoc.x() == extBox_.left() || parentLoc.x() == extBox_.right()
       || parentLoc.y() == extBox_.bottom() || parentLoc.y() == extBox_.top()) {
     netRoots[net].push_back(parent);
-    if (enableOutput) {
-      if (net->getName() == string("pin1")) {
-        cout << "new boundary net root for " << net->getName()
-             << " from pathSeg " << pathSeg << endl;
-        ;
-        frPoint bp, ep;
-        pathSeg->getPoints(bp, ep);
-        cout << "  from (" << bp.x() << ", " << bp.y() << ") to (" << ep.x()
-             << ", " << ep.y() << ")\n";
-      }
-    }
   }
 
   // real root
   if (parent->getParent() == net->getRoot()) {
     netRoots[net].push_back(parent->getParent());
-    if (enableOutput) {
-      if (net->getName() == string("pin1")) {
-        cout << "new true net root for " << net->getName() << " from pathSeg "
-             << pathSeg << endl;
-        ;
-        frPoint bp, ep;
-        pathSeg->getPoints(bp, ep);
-        cout << "  from (" << bp.x() << ", " << bp.y() << ") to (" << ep.x()
-             << ", " << ep.y() << ")\n";
-      }
-    }
   }
 }
 
@@ -1180,11 +1108,7 @@ void FlexGRWorker::initGridGraph()
 // copy from global cmap
 void FlexGRWorker::initGridGraph_fromCMap()
 {
-  bool enableOutput = false;
 
-  if (enableOutput) {
-    cout << "start initGridGraph_fromCMap...\n";
-  }
 
   auto cmap = getCMap();
   frPoint gcellIdxLL = getRouteGCellIdxLL();
@@ -1195,10 +1119,6 @@ void FlexGRWorker::initGridGraph_fromCMap()
   int idxURY = gcellIdxUR.y();
 
   for (int zIdx = 0; zIdx < (int) cmap->getZMap().size(); zIdx++) {
-    frLayerNum lNum = (zIdx + 1) * 2;
-    if (enableOutput) {
-      cout << "  layerNum = " << lNum << endl;
-    }
 
     for (int xIdx = 0; xIdx <= (idxURX - idxLLX); xIdx++) {
       int cmapXIdx = xIdx + idxLLX;
@@ -1253,30 +1173,6 @@ void FlexGRWorker::initGridGraph_fromCMap()
             frDirEnum::N,
             cmap->getSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N));
 
-        if (enableOutput) {
-          cout << "GG (cmapXIdx, cmapYIdx) (rawDemandH / rawSupplyH) "
-                  "(rawDemandV / rawSupplyV) = ("
-               << cmapXIdx << ", " << cmapYIdx << ") ("
-               << cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E)
-               << " / "
-               << cmap->getRawSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::E)
-               << ") ("
-               << cmap->getRawDemand(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)
-               << " / "
-               << cmap->getRawSupply(cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)
-               << ")\n";
-          cout << "           (xIdx, yIdx) (rawDemandH / rawSupplyH) "
-                  "(rawDemandV / rawSupplyV) = ("
-               << xIdx << ", " << yIdx << ") ("
-               << gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E)
-               << " / "
-               << gridGraph_.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::E)
-               << ") ("
-               << gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
-               << " / "
-               << gridGraph_.getRawSupply(xIdx, yIdx, zIdx, frDirEnum::N)
-               << ")\n\n";
-        }
       }
     }
   }

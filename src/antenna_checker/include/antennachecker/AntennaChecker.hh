@@ -191,16 +191,16 @@ class AntennaChecker
   // std::vector<wireroots_info_vec> get_wireroots(dbWireGraph graph);
   std::vector<dbWireGraph::Node*> get_wireroots(dbWireGraph graph);
 
-  std::pair<bool, bool> check_wire_PAR(ARinfo AntennaRatio);
-  std::pair<bool, bool> check_wire_CAR(ARinfo AntennaRatio, bool par_checked);
-  bool check_VIA_PAR(ARinfo AntennaRatio);
-  bool check_VIA_CAR(ARinfo AntennaRatio);
+  std::pair<bool, bool> check_wire_PAR(ARinfo AntennaRatio, bool simple_report, bool print);
+  std::pair<bool, bool> check_wire_CAR(ARinfo AntennaRatio, bool par_checked, bool simple_report, bool print);
+  bool check_VIA_PAR(ARinfo AntennaRatio, bool simple_report, bool print);
+  bool check_VIA_CAR(ARinfo AntennaRatio, bool simple_report, bool print);
 
-  std::vector<int> GetAntennaRatio(std::string path);
+  std::vector<int> GetAntennaRatio(std::string path, bool simple_report);
 
   void load_antenna_rules();
   void check_antenna_cell();
-  void check_antennas(std::string report_filename);
+  void check_antennas(std::string report_filename, bool simple_report);
 
   bool check_violation(PARinfo par_info, dbTechLayer* layer);
 

@@ -28,6 +28,7 @@
 
 #include "frDesign.h"
 
+using namespace fr;
 // General Fixture for tests using db objects.
 class Fixture
 {
@@ -35,72 +36,100 @@ class Fixture
   Fixture();
   virtual ~Fixture() = default;
 
-  void addLayer(fr::frTechObject* tech,
+  void addLayer(frTechObject* tech,
                 const char* name,
-                fr::frLayerTypeEnum type,
-                fr::frPrefRoutingDirEnum dir = fr::frcNonePrefRoutingDir);
+                frLayerTypeEnum type,
+                frPrefRoutingDirEnum dir = frcNonePrefRoutingDir);
 
-  void setupTech(fr::frTechObject* tech);
+  void setupTech(frTechObject* tech);
 
   void makeDesign();
 
-  void makeCornerConstraint(fr::frLayerNum layer_num,
-                            fr::frCoord eolWidth = -1,
-                            fr::frCornerTypeEnum type
-                            = fr::frCornerTypeEnum::CONVEX);
+  void makeCornerConstraint(frLayerNum layer_num,
+                            frCoord eolWidth = -1,
+                            frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
 
-  void makeSpacingConstraint(fr::frLayerNum layer_num);
+  void makeSpacingConstraint(frLayerNum layer_num);
 
-  void makeMinStepConstraint(fr::frLayerNum layer_num);
+  void makeMinStepConstraint(frLayerNum layer_num);
 
-  void makeMinStep58Constraint(fr::frLayerNum layer_num);
+  void makeMinStep58Constraint(frLayerNum layer_num);
 
-  void makeRectOnlyConstraint(fr::frLayerNum layer_num);
+  void makeRectOnlyConstraint(frLayerNum layer_num);
 
-  void makeMinEnclosedAreaConstraint(fr::frLayerNum layer_num);
+  void makeMinEnclosedAreaConstraint(frLayerNum layer_num);
 
-  void makeSpacingEndOfLineConstraint(fr::frLayerNum layer_num,
-                                      fr::frCoord par_space = -1,
-                                      fr::frCoord par_within = -1,
+  void makeSpacingEndOfLineConstraint(frLayerNum layer_num,
+                                      frCoord par_space = -1,
+                                      frCoord par_within = -1,
                                       bool two_edges = false);
-  void makeLef58SpacingEndOfLineConstraint(fr::frLayerNum layer_num,
-                                           fr::frCoord par_space = -1,
-                                           fr::frCoord par_within = -1,
-                                           bool two_edges = false,
-                                           fr::frCoord min_max_length = -1,
-                                           bool max = true,
-                                           bool two_sides = true);
 
-  fr::frNet* makeNet(const char* name);
+  std::shared_ptr<frLef58SpacingEndOfLineConstraint>
+  makeLef58SpacingEolConstraint(frLayerNum layer_num,
+                                frCoord space = 200,
+                                frCoord width = 200,
+                                frCoord within = 50);
 
-  void makePathseg(fr::frNet* net,
-                   fr::frLayerNum layer_num,
-                   const fr::frPoint& begin,
-                   const fr::frPoint& end,
-                   fr::frUInt4 width = 100,
-                   fr::frEndStyleEnum begin_style = fr::frcTruncateEndStyle,
-                   fr::frEndStyleEnum end_style = fr::frcTruncateEndStyle);
+  std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
+  makeLef58SpacingEolParEdgeConstraint(
+      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+      frCoord par_space,
+      frCoord par_within,
+      bool two_edges = false);
 
-  void makePathsegExt(fr::frNet* net,
-                      fr::frLayerNum layer_num,
-                      const fr::frPoint& begin,
-                      const fr::frPoint& end,
-                      fr::frUInt4 width = 100)
+  std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
+  makeLef58SpacingEolMinMaxLenConstraint(
+      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+      frCoord min_max_length,
+      bool max = true,
+      bool two_sides = true);
+
+  std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
+  makeLef58SpacingEolCutEncloseConstraint(
+      std::shared_ptr<frLef58SpacingEndOfLineConstraint> con,
+      frCoord encloseDist = 100,
+      frCoord cutToMetalSpacing = 300,
+      bool above = false,
+      bool below = false,
+      bool allCuts = false);
+
+  frNet* makeNet(const char* name);
+
+  frViaDef* makeViaDef(const char* name,
+                       frLayerNum layer_num,
+                       const frPoint& ll,
+                       const frPoint& ur);
+
+  frVia* makeVia(frViaDef* via, frNet* net, const frPoint& origin);
+
+  void makePathseg(frNet* net,
+                   frLayerNum layer_num,
+                   const frPoint& begin,
+                   const frPoint& end,
+                   frUInt4 width = 100,
+                   frEndStyleEnum begin_style = frcTruncateEndStyle,
+                   frEndStyleEnum end_style = frcTruncateEndStyle);
+
+  void makePathsegExt(frNet* net,
+                      frLayerNum layer_num,
+                      const frPoint& begin,
+                      const frPoint& end,
+                      frUInt4 width = 100)
   {
     makePathseg(net,
                 layer_num,
                 begin,
                 end,
                 width,
-                fr::frcExtendEndStyle,
-                fr::frcExtendEndStyle);
+                frcExtendEndStyle,
+                frcExtendEndStyle);
   }
 
   void initRegionQuery();
 
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
-  std::unique_ptr<fr::frDesign> design;
+  std::unique_ptr<frDesign> design;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We
