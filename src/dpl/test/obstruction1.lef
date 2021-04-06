@@ -1,0 +1,19 @@
+# macro with obstruction
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO OBS1
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10 BY 20 ;
+  OBS
+    LAYER OVERLAP ;
+    RECT 0 0 5 20 ;
+  END
+END OBS1
+
+END LIBRARY
+#
+# End of file
+#

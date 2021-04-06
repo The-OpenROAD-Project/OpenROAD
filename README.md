@@ -478,7 +478,6 @@ set_wire_rc [-clock] [-signal]
             [-layer layer_name]
             [-resistance res ]
             [-capacitance cap]
-            [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -496,21 +495,24 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 distance units are not specified in the liberty file microns are
 used.
 
-The resistance and capacitance values in the OpenROAD database can be
-changed using the `set_layer_rc` command. This is useful if they are
-not in the LEF file or to override the values in the LEF.
+The `set_layer_rc` command can be used to set the resistance and
+capacitance for a layer or via. This is useful if they are missing
+from the LEF file or to override the values in the LEF.
 
 ```
 set_layer_rc [-layer layer]
-             [-via via_layer]
+             [-via via]
              [-capacitance cap]
              [-resistance res] }
 ```
 
-The units for capacitance are from the first Liberty file read.
-For example, usually pF/um^2 or fF/um^2 for capacitance and
-kohms/square or ohms/square for resistance. Via resistances are
-specified with the `via` keyword.
+The resistance and capacitance units are the same as `set_wire_rc`
+(per length of minimum width wire). `layer` must be the name of
+a routing layer.
+
+Via resistance can also be set with the `set_layer_rc` command
+(-capacitance is not supported for vias). `via` is the name of a via
+(*not* a via/cut layer name).
 
 ```
 remove_buffers
@@ -556,7 +558,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              [-libraries resize_libs]
               [-max_utilization util]
 ```
 
@@ -792,13 +793,13 @@ See `set_pdrev_topology_priority` command description for more details about PDR
 - **allow_overflow**: Allow global routing results with overflow
 
 ```
-set_layer_ranges [-layers min-max] \
-                 [-clock_layers min-max]
+set_routing_layers [-signal min-max] \
+                   [-clock min-max]
 ```
 
-The `set_layer_ranges` command sets the minimum and maximum routing layers for signal nets, with the `-layers` option,
-and the the minimum and maximum routing layers for clock nets, with the `-clock_layers` option
-Example: `set_layer_ranges -layers 2-10 -clock_layers 6-9`
+The `set_routing_layers` command sets the minimum and maximum routing layers for signal nets, with the `-signal` option,
+and the the minimum and maximum routing layers for clock nets, with the `-clock` option
+Example: `set_routing_layers -signal 2-10 -clock 6-9`
 
 ```
 set_macro_extension extension

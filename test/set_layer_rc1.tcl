@@ -17,3 +17,12 @@ set r [expr [rsz::wire_resistance] * 1e-3 * 1e-6]
 # F/meter -> fF/micron
 set c [expr [rsz::wire_capacitance] * 1e+15 * 1e-6]
 puts "r=[format %.2e $r] c=[format %.2e $c]" 
+
+set_layer_rc -via via1 -resistance .1
+
+# non-routing layer
+catch {set_layer_rc -layer via1 -resistance .1 -capacitance .1} result
+
+# via missing -resistance
+# via -capacitance not supported
+catch {set_layer_rc -via via1 -capacitance .1} result

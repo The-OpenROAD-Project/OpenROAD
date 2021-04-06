@@ -167,22 +167,20 @@ remove_buffers_cmd()
 
 void
 set_wire_rc_cmd(float res,
-                float cap,
-                Corner *corner)
+                float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireRC(res, cap, corner);
+  resizer->setWireRC(res, cap);
 }
 
 void
 set_wire_clk_rc_cmd(float res,
-                    float cap,
-                    Corner *corner)
+                    float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(res, cap, corner);
+  resizer->setWireClkRC(res, cap);
 }
 
 // ohms/meter
@@ -261,12 +259,11 @@ set_dont_use_cmd(LibertyCellSeq *dont_use)
 }
 
 void
-resizer_preamble(LibertyLibrarySeq *resize_libs)
+resizer_preamble()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizePreamble(resize_libs);
-  delete resize_libs;
+  resizer->resizePreamble();
 }
 
 void
@@ -464,15 +461,6 @@ resize_net_slack(Net *net)
 }
 
 ////////////////////////////////////////////////////////////////
-
-float
-buffer_delay(LibertyCell *buffer_cell,
-             const RiseFall *rf)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->bufferDelay(buffer_cell, rf);
-}
 
 float
 buffer_wire_delay(LibertyCell *buffer_cell,

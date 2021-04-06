@@ -42,8 +42,8 @@
 using namespace std;
 using namespace fr;
 
-FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn)
-    : design_(designIn), logger_(loggerIn)
+FlexDR::FlexDR(frDesign* designIn, Logger* loggerIn, odb::dbDatabase* dbIn)
+    : design_(designIn), logger_(loggerIn), db_(dbIn)
 {
 }
 
@@ -51,12 +51,12 @@ FlexDR::~FlexDR()
 {
 }
 
-void FlexDR::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+void FlexDR::setDebug(frDebugSettings* settings)
 {
   bool on = settings->debugDR;
   graphics_
       = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(settings, design_, db, logger_)
+            ? std::make_unique<FlexDRGraphics>(settings, design_, db_, logger_)
             : nullptr;
 }
 

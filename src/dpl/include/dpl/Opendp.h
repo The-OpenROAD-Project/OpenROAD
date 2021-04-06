@@ -210,6 +210,7 @@ public:
 private:
   void importDb();
   void importClear();
+  Rect getBbox(dbInst *inst);
   void reportImportWarnings();
   void makeMacros();
   void examineRows();

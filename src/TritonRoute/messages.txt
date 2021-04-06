@@ -97,7 +97,6 @@ DRT 0165 FlexPA.cpp:97             start pin access
 DRT 0166 FlexPA.cpp:135            complete pin access
 DRT 0168 io_parser_helper.cpp:642  Init region query ...
 DRT 0169 io_parser_helper.cpp:653  Post process guides ...
-DRT 0170 TritonRoute.cpp:237       deprecated def param in params file
 DRT 0170 io_parser_helper.cpp:841  no GCELLGRIDX
 DRT 0171 io_parser_helper.cpp:846  no GCELLGRIDY
 DRT 0172 io_parser_helper.cpp:901  no GCELLGRIDX
@@ -111,10 +110,10 @@ DRT 0181 FlexTA.cpp:404            start track assignment
 DRT 0182 FlexTA.cpp:410            complete track assignment
 DRT 0185 io_parser_helper.cpp:714  post process initialize RPin region query ...
 DRT 0187 FlexDR.cpp:1528           start routing data preparation
-DRT 0194 FlexDR.cpp:2346           start detail routing ...
-DRT 0198 FlexDR.cpp:3154           complete detail routing
+DRT 0194 FlexDR.cpp:2234           start detail routing ...
+DRT 0198 FlexDR.cpp:3042           complete detail routing
 DRT 0201 FlexGR.cpp:636            design isn't loaded before global routing
-DRT 0206 FlexDR_conn.cpp:1290      checkConnectivity error
+DRT 0206 FlexDR_conn.cpp:1292      checkConnectivity error
 DRT 0207 FlexDR_graphics.cpp:423   Setting MAX_THREADS=1 for use with the DR GUI.
 DRT 0214 io_guide.cpp:725          genGuides empty pin2GCellMap
 DRT 0217 io_guide.cpp:743          genGuides unknown type
@@ -124,6 +123,7 @@ DRT 0220 io_guide.cpp:830          genGuides_final error 1
 DRT 0221 io_guide.cpp:850          genGuides_final error 2
 DRT 0222 io_guide.cpp:857          genGuides_final pin not in any guide
 DRT 0223 FlexGC_eol.cpp:50         Unsupported endofline spacing rule
-DRT 0224 FlexGC_eol.cpp:123        Unsupported endofline spacing rule
-DRT 0225 FlexGC_eol.cpp:291        Unsupported endofline spacing rule
-DRT 0226 FlexGC_eol.cpp:330        Unsupported endofline spacing rule
+DRT 0224 FlexGC_eol.cpp:127        Unsupported endofline spacing rule
+DRT 0225 FlexGC_eol.cpp:297        Unsupported endofline spacing rule
+DRT 0226 FlexGC_eol.cpp:336        Unsupported endofline spacing rule
+DRT 0227 TritonRoute.cpp:237       deprecated def param in params file
