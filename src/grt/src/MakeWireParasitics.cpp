@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "RcTreeBuilder.h"
+#include "MakeWireParasitics.h"
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -54,11 +54,12 @@ using utl::GRT;
 using std::abs;
 using std::min;
 
-RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter)
+MakeWireParasitics::MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* grouter)
 {
   _grouter = grouter;
   _logger = openroad->getLogger();
   _sta = openroad->getSta();
+  _tech = openroad->getDb()->getTech();
   _parasitics = _sta->parasitics();
   _corner = _sta->cmdCorner();
   _min_max = sta::MinMax::max();
@@ -67,9 +68,9 @@ RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter)
   _network = openroad->getDbNetwork();
 }
 
-void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
-                                      std::vector<Pin>& pins,
-                                      std::vector<GSegment>& routes)
+void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
+                                           std::vector<Pin>& pins,
+                                           std::vector<GSegment>& routes)
 {
   debugPrint(_logger, GRT, "est_rc", 1, "net {}", net->getConstName());
   _sta_net = _network->dbToSta(net);
@@ -83,7 +84,7 @@ void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
   reduceParasiticNetwork();
 }
 
-void RcTreeBuilder::makePinRoutePts(std::vector<Pin>& pins)
+void MakeWireParasitics::makePinRoutePts(std::vector<Pin>& pins)
 {
   for (Pin& pin : pins) {
     sta::Pin* sta_pin = staPin(pin);
@@ -93,14 +94,14 @@ void RcTreeBuilder::makePinRoutePts(std::vector<Pin>& pins)
   }
 }
 
-RoutePt RcTreeBuilder::routePt(Pin& pin)
+RoutePt MakeWireParasitics::routePt(Pin& pin)
 {
   const odb::Point& pt = pin.getPosition();
   int layer = pin.getTopLayer();
   return RoutePt(pt.getX(), pt.getY(), layer);
 }
 
-sta::Pin* RcTreeBuilder::staPin(Pin& pin)
+sta::Pin* MakeWireParasitics::staPin(Pin& pin)
 {
   if (pin.isPort())
     return _network->dbToSta(pin.getBTerm());
@@ -108,8 +109,8 @@ sta::Pin* RcTreeBuilder::staPin(Pin& pin)
     return _network->dbToSta(pin.getITerm());
 }
 
-void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
-                                        std::vector<GSegment>& routes)
+void MakeWireParasitics::makeRouteParasitics(odb::dbNet* net,
+                                             std::vector<GSegment>& routes)
 {
   for (GSegment& route : routes) {
     sta::ParasiticNode* n1
@@ -123,7 +124,9 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
     if (wire_length_dbu == 0) {
       // via
       int lower_layer = min(route.initLayer, route.finalLayer);
-      _grouter->getCutLayerRes(lower_layer, res);
+      odb::dbTechLayer* cut_layer =
+        _tech->findRoutingLayer(lower_layer)->getUpperLayer();
+      res = cut_layer->getResistance(); // assumes single cut
       cap = 0.0;
       debugPrint(_logger, GRT, "est_rc", 1, "{} -> {} via r={}",
                  _parasitics->name(n1),
@@ -134,7 +137,7 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
       debugPrint(_logger, GRT, "est_rc", 1, "{} -> {} {}u layer={} r={} c={}",
                  _parasitics->name(n1),
                  _parasitics->name(n2),
-                 static_cast<int>(_grouter->dbuToMeters(wire_length_dbu)*1e+6),
+                 static_cast<int>(dbuToMeters(wire_length_dbu)*1e+6),
                  route.initLayer,
                  units->resistanceUnit()->asString(res),
                  units->capacitanceUnit()->asString(cap));
@@ -148,7 +151,7 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
   }
 }
 
-void RcTreeBuilder::makeParasiticsToGrid(std::vector<Pin>& pins)
+void MakeWireParasitics::makeParasiticsToGrid(std::vector<Pin>& pins)
 {
   for (Pin& pin : pins) {
     RoutePt route_pt = routePt(pin);
@@ -158,7 +161,7 @@ void RcTreeBuilder::makeParasiticsToGrid(std::vector<Pin>& pins)
 }
 
 // Make parasitics for the wire from the pin to the grid location of the pin.
-void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
+void MakeWireParasitics::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
 {
   const odb::Point& grid_pt = pin.getOnGridPosition();
   int layer = pin.getTopLayer();
@@ -181,20 +184,32 @@ void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
   }
 }
 
-void RcTreeBuilder::layerRC(int wire_length_dbu,
-                            int layer,
+void MakeWireParasitics::layerRC(int wire_length_dbu,
+                            int layer_id,
                             // Return values.
                             float& res,
                             float& cap)
 {
-  float r_per_meter, cap_per_meter;
-  _grouter->getLayerRC(layer, r_per_meter, cap_per_meter);
-  float wire_length = _grouter->dbuToMeters(wire_length_dbu);
+  odb::dbTechLayer* layer = _tech->findRoutingLayer(layer_id);
+  float layerWidth = _grouter->dbuToMicrons(layer->getWidth());
+  float resOhmPerMicron = layer->getResistance() / layerWidth;
+  float capPfPerMicron = layerWidth * layer->getCapacitance()
+    + 2 * layer->getEdgeCapacitance();
+
+  float r_per_meter = 1E+6 * resOhmPerMicron;         // ohm/meter
+  float cap_per_meter = 1E+6 * 1E-12 * capPfPerMicron;  // F/meter
+
+  float wire_length = dbuToMeters(wire_length_dbu);
   res = r_per_meter * wire_length;
   cap = cap_per_meter * wire_length;
 }
 
-sta::ParasiticNode* RcTreeBuilder::ensureParasiticNode(int x, int y, int layer)
+double MakeWireParasitics::dbuToMeters(int dbu)
+{
+  return (double) dbu / (_tech->getDbUnitsPerMicron() * 1E+6);
+}
+
+sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(int x, int y, int layer)
 {
   RoutePt pin_loc(x, y, layer);
   sta::ParasiticNode* node = _node_map[pin_loc];
@@ -205,7 +220,7 @@ sta::ParasiticNode* RcTreeBuilder::ensureParasiticNode(int x, int y, int layer)
   return node;
 }
 
-void RcTreeBuilder::reduceParasiticNetwork()
+void MakeWireParasitics::reduceParasiticNetwork()
 {
   sta::Sdc* sdc = _sta->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);

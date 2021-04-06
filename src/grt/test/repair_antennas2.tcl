@@ -19,7 +19,7 @@ set_global_routing_layer_pitch 4 0.74
 set_global_routing_layer_pitch 5 0.96
 set_global_routing_layer_pitch 6 3.33
 
-set_layer_ranges -layers 2-6
+set_routing_layers -signal 2-6
 
 global_route
 

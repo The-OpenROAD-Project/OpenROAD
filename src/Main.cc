@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <tcl.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <limits.h>
 #include <string>
 #include <libgen.h>
@@ -177,6 +178,10 @@ main(int argc,
   }
 
 #ifdef ENABLE_PYTHON3
+  // Capture the current SIGINT handler before python changes it.
+  struct sigaction orig_sigint_handler;
+  sigaction(SIGINT, NULL, &orig_sigint_handler);
+
   initPython();
 #endif
 
@@ -207,7 +212,12 @@ main(int argc,
     }
 
     return Py_Main(cmd_argc, args.data());
-  }
+  } else {
+    // Python wants to install its own SIGINT handler to print KeyboardInterrupt
+    // on ctrl-C. We don't want that if python is not the main interpreter.
+    // We restore the handler from before initPython.
+    sigaction(SIGINT, &orig_sigint_handler, NULL);
+  }  
 #endif
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
