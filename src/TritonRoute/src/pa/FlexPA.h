@@ -213,15 +213,6 @@ class FlexPA
       frLayerNum layerNum,
       frDirEnum dir,
       int stepSizeMultiplier = 2);
-  void prepPoint_pin_checkPoint_print_helper(frAccessPoint* ap,
-                                             frPin* pin,
-                                             frInstTerm* instTerm,
-                                             frDirEnum dir,
-                                             int typeGC,
-                                             int typeDRC,
-                                             frPoint bp,
-                                             frPoint ep,
-                                             frViaDef* viaDef);
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
