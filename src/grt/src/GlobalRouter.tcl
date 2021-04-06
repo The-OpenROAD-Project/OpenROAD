@@ -335,12 +335,16 @@ proc check_routing_layer { layer } {
 
   set tech [ord::get_db_tech]
   set max_routing_layer [$tech getRoutingLayerCount]
+  set tech_layer [$tech findRoutingLayer $layer]
+  
+  set min_tech_layer [$tech findRoutingLayer 1]
+  set max_tech_layer [$tech findRoutingLayer $max_routing_layer]
   
   if {$layer > $max_routing_layer} {
-    utl::error GRT 60 "layer $layer is greater than the max routing layer ($max_routing_layer)."
+    utl::error GRT 60 "layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName])."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "layer $layer is lesser than the min routing layer (1)."
+    utl::error GRT 61 "layer [$tech_layer getConstName] is lesser than the min routing layer ([$min_tech_layer getConstName])."
   }
 }
 
