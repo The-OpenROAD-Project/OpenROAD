@@ -3,7 +3,10 @@ record_tests {
   set_layer_rc1
 }
 
-define_test_group "non_flow" {"error1"}
+define_test_group "non_flow" {
+  error1
+  set_layer_rc1
+}
 
 # Flow tests only check the return code and do not compare output logs.
 # These tests require TritonRoute in $PATH.

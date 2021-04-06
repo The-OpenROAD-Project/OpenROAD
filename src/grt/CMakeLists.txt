@@ -53,7 +53,7 @@ target_sources(grt
     src/MakeFastRoute.cpp
     src/Net.cpp
     src/Pin.cpp
-    src/RcTreeBuilder.cpp
+    src/MakeWireParasitics.cpp
 )
 
 target_include_directories(grt
