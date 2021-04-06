@@ -14,6 +14,8 @@ EOF
 }
 
 _lcov() {
+    ./test/regression
+
     mkdir -p coverage-output
     lcov \
         --capture \
@@ -28,7 +30,8 @@ _lcov() {
     genhtml ./coverage-output/main_coverage.info \
         --output-directory ./coverage-output \
         --ignore-errors source
-    }
+
+}
 
 _coverity() {
     cmake -B build .
