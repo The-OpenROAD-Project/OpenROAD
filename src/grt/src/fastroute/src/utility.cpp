@@ -303,8 +303,8 @@ void netpinOrderInc()
     treeOrderPV[j].minX = xmin;
   }
 
-  std::sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVMINX);
-  std::sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVPV);
+  std::stable_sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVMINX);
+  std::stable_sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVPV);
 }
 
 void fillVIA()
