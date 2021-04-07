@@ -33,7 +33,7 @@
 
 namespace fr {
 class frBlockObject;
-class frBlockObjectComp;
+struct frBlockObjectComp;
 class frDesign;
 class frGuide;
 class frMarker;
