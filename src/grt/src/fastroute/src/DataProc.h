@@ -112,7 +112,7 @@ extern DTYPE**
     gs;  // the copy of vertical sequence for nets, used for second FLUTE
 
 extern std::vector<OrderNetPin> treeOrderPV;
-extern OrderTree* treeOrderCong;
+extern std::vector<OrderTree> treeOrderCong;
 extern int numTreeedges;
 extern int viacost;
 

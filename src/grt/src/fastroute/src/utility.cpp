@@ -281,6 +281,8 @@ void netpinOrderInc()
     numTreeedges += 2 * d - 3;
   }
 
+  treeOrderPV.clear();
+
   treeOrderPV.resize(numValidNets);
 
   for (j = 0; j < numValidNets; j++) {
@@ -1134,21 +1136,9 @@ void write3D()
   fclose(fp);
 }
 
-static int compareTEL(const void* a, const void* b)
+static int compareTEL(const OrderTree a, const OrderTree b)
 {
-  int ret = -2;
-  if (((OrderTree*) a)->xmin < ((OrderTree*) b)->xmin) {
-    ret = 1;
-  } else if (((OrderTree*) a)->xmin == ((OrderTree*) b)->xmin) {
-    ret = 0;
-  } else if (((OrderTree*) a)->xmin > ((OrderTree*) b)->xmin) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 177, "Invalid TEL comparison.");
-  } else {
-    return ret;
-  }
+  return a.xmin > b.xmin;
 }
 
 void StNetOrder()
@@ -1160,11 +1150,9 @@ void StNetOrder()
 
   numTreeedges = 0;
 
-  if (treeOrderCong != NULL) {
-    delete[] treeOrderCong;
-  }
+  treeOrderCong.clear();
 
-  treeOrderCong = new OrderTree[numValidNets];
+  treeOrderCong.resize(numValidNets);
 
   i = 0;
   for (j = 0; j < numValidNets; j++) {
@@ -1196,7 +1184,7 @@ void StNetOrder()
     }
   }
 
-  qsort(treeOrderCong, numValidNets, sizeof(OrderTree), compareTEL);
+  std::stable_sort(treeOrderCong.begin(), treeOrderCong.end(), compareTEL);
 }
 
 void recoverEdge(int netID, int edgeID)

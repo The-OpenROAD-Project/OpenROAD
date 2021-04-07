@@ -144,10 +144,6 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
-  if (treeOrderCong)
-    delete[] treeOrderCong;
-  treeOrderCong = nullptr;
-
   if (h_edges3D)
     delete[] h_edges3D;
   h_edges3D = nullptr;
@@ -839,7 +835,6 @@ void FastRouteCore::setEdgeUsage(long x1,
 
 void FastRouteCore::initAuxVar()
 {
-  treeOrderCong = NULL;
   stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];

@@ -103,7 +103,7 @@ Edge3D* h_edges3D;
 Edge3D* v_edges3D;
 
 std::vector<OrderNetPin> treeOrderPV;
-OrderTree* treeOrderCong;
+std::vector<OrderTree> treeOrderCong;
 int numTreeedges;
 int viacost;
 
