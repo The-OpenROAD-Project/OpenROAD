@@ -1790,6 +1790,8 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
     }
   }
 
+  debugPrint(_logger, GRT, "api", 1, "getRoute() = \n{}", route);
+
   return route;
 }
 
@@ -3286,6 +3288,49 @@ GrouteRenderer::drawObjects(gui::Painter &painter)
       }
     }
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route)
+{
+  using std::endl;
+  os << "gridCountX = " << route.gridCountX << endl;
+  os << "gridCountY = " << route.gridCountY << endl;
+  os << "numLayers  = " << route.numLayers << endl;
+  for (size_t i = 0; i < route.verticalEdgesCapacities.size(); ++i) {
+    os << "verticalEdgesCapacities[" << i << "] = "
+       << route.verticalEdgesCapacities[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.horizontalEdgesCapacities.size(); ++i) {
+    os << "horizontalEdgesCapacities[" << i << "] = "
+       << route.horizontalEdgesCapacities[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.minWireWidths.size(); ++i) {
+    os << "minWireWidths[" << i << "] = "
+       << route.minWireWidths[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.minWireSpacings.size(); ++i) {
+    os << "minWireSpacings[" << i << "] = "
+       << route.minWireSpacings[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.viaSpacings.size(); ++i) {
+    os << "viaSpacings[" << i << "] = "
+       << route.viaSpacings[i] << endl;
+  }
+
+  os << "gridOriginX = " << route.gridOriginX << endl;
+  os << "gridOriginY = " << route.gridOriginY << endl;
+
+  os << "tileWidth = " << route.tileWidth << endl;
+  os << "tileHeight = " << route.tileHeight << endl;
+
+  os << "blockPorosity = " << route.blockPorosity << endl;
+  // int numAdjustments;
+  //   std::vector<ADJUSTMENT_> adjustments;
+  return os;
 }
 
 }  // namespace grt

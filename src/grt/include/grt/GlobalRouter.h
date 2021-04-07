@@ -376,5 +376,6 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route);
 
 }  // namespace grt
