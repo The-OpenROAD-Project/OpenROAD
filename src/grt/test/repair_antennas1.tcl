@@ -11,15 +11,9 @@ set_placement_padding -global -left 2 -right 2
 set guide_file [make_result_file repair_antennas1.guide]
 set def_file [make_result_file repair_antennas1.def]
 
-set_global_routing_layer_adjustment 3-6 0.15
+set_global_routing_layer_adjustment met2-met5 0.15
 
-set_global_routing_layer_pitch 2 0.37
-set_global_routing_layer_pitch 3 0.48
-set_global_routing_layer_pitch 4 0.74
-set_global_routing_layer_pitch 5 0.96
-set_global_routing_layer_pitch 6 3.33
-
-set_routing_layers -signal 2-6
+set_routing_layers -signal met1-met5
 
 global_route
 
