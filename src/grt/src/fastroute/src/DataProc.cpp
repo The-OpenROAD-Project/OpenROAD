@@ -102,7 +102,7 @@ DTYPE** gs;  // the copy of vertical sequence for nets, used for second FLUTE
 Edge3D* h_edges3D;
 Edge3D* v_edges3D;
 
-OrderNetPin* treeOrderPV;
+std::vector<OrderNetPin> treeOrderPV;
 OrderTree* treeOrderCong;
 int numTreeedges;
 int viacost;

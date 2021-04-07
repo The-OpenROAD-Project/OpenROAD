@@ -144,10 +144,6 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
-  if (treeOrderPV)
-    delete[] treeOrderPV;
-  treeOrderPV = nullptr;
-
   if (treeOrderCong)
     delete[] treeOrderCong;
   treeOrderCong = nullptr;

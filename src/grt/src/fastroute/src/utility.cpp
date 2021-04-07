@@ -257,38 +257,14 @@ void ConvertToFull3DType2()
   }
 }
 
-static int comparePVMINX(const void* a, const void* b)
+static int comparePVMINX(const OrderNetPin a, const OrderNetPin b)
 {
-  int ret = -2;
-  if (((OrderNetPin*) a)->minX > ((OrderNetPin*) b)->minX) {
-    ret = 1;
-  } else if (((OrderNetPin*) a)->minX == ((OrderNetPin*) b)->minX) {
-    ret = 0;
-  } else if (((OrderNetPin*) a)->minX < ((OrderNetPin*) b)->minX) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 175, "Invalid PVMINX comparison.");
-  } else {
-    return ret;
-  }
+  return a.minX < b.minX;
 }
 
-static int comparePVPV(const void* a, const void* b)
+static int comparePVPV(const OrderNetPin a, const OrderNetPin b)
 {
-  int ret = -2;
-  if (((OrderNetPin*) a)->npv > ((OrderNetPin*) b)->npv) {
-    ret = 1;
-  } else if (((OrderNetPin*) a)->npv == ((OrderNetPin*) b)->npv) {
-    ret = 0;
-  } else if (((OrderNetPin*) a)->npv < ((OrderNetPin*) b)->npv) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 176, "Invalid PVPV comparison.");
-  } else {
-    return ret;
-  }
+  return a.npv < b.npv;
 }
 
 void netpinOrderInc()
@@ -305,11 +281,7 @@ void netpinOrderInc()
     numTreeedges += 2 * d - 3;
   }
 
-  if (treeOrderPV != NULL) {
-    delete[] treeOrderPV;
-  }
-
-  treeOrderPV = new OrderNetPin[numValidNets];
+  treeOrderPV.resize(numValidNets);
 
   for (j = 0; j < numValidNets; j++) {
     xmin = BIG_INT;
@@ -331,8 +303,8 @@ void netpinOrderInc()
     treeOrderPV[j].minX = xmin;
   }
 
-  qsort(treeOrderPV, numValidNets, sizeof(OrderNetPin), comparePVMINX);
-  qsort(treeOrderPV, numValidNets, sizeof(OrderNetPin), comparePVPV);
+  std::sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVMINX);
+  std::sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVPV);
 }
 
 void fillVIA()

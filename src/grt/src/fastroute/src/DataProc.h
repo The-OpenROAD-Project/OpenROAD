@@ -35,6 +35,7 @@
 
 #include "DataType.h"
 #include "boost/multi_array.hpp"
+#include <vector>
 
 #define BUFFERSIZE 800
 #define STRINGLEN 100
@@ -110,7 +111,7 @@ extern DTYPE** gys;      // the copy of xs for nets, used for second FLUTE
 extern DTYPE**
     gs;  // the copy of vertical sequence for nets, used for second FLUTE
 
-extern OrderNetPin* treeOrderPV;
+extern std::vector<OrderNetPin> treeOrderPV;
 extern OrderTree* treeOrderCong;
 extern int numTreeedges;
 extern int viacost;
