@@ -2342,6 +2342,10 @@ void GlobalRouter::computeCapacities(int maxLayer,
 
       _grid->addHorizontalCapacity(hCapacity, l - 1);
       _grid->addVerticalCapacity(0, l - 1);
+      debugPrint(_logger, GRT, "graph", 1,
+                 "Layer {} has {} h-capacity",
+                 techLayer->getConstName(),
+                 hCapacity);
     } else if (techLayer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
       trackSpacing = trackStepX;
@@ -2355,6 +2359,10 @@ void GlobalRouter::computeCapacities(int maxLayer,
 
       _grid->addHorizontalCapacity(0, l - 1);
       _grid->addVerticalCapacity(vCapacity, l - 1);
+      debugPrint(_logger, GRT, "graph", 1,
+                 "Layer {} has {} v-capacity",
+                 techLayer->getConstName(),
+                 vCapacity);
     } else {
       _logger->error(GRT, 89, "Layer {} does not have valid direction.", l);
     }
