@@ -545,4 +545,8 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewer_->setLogger(logger);
 }
 
+void MainWindow::fit()
+{
+  fit_->trigger();
+}
 }  // namespace gui

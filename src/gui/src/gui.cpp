@@ -313,6 +313,16 @@ Renderer::~Renderer()
   gui::Gui::get()->unregisterRenderer(this);
 }
 
+void Gui::load_design()
+{
+  main_window->postReadDb(main_window->getDb());
+}
+
+void Gui::fit()
+{
+  main_window->fit();
+}
+
 OpenDbDescriptor* OpenDbDescriptor::singleton_ = nullptr;
 OpenDbDescriptor* OpenDbDescriptor::get()
 {
