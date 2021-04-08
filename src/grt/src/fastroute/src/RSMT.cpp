@@ -349,7 +349,7 @@ void fluteNormal(int netID,
         ptp[minidx] = tmpp;
       }
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), orderx);
+      std::stable_sort(ptp.begin(), ptp.end()-1, orderx);
     }
 
 #if REMOVE_DUPLICATE_PIN == 1
@@ -389,7 +389,7 @@ void fluteNormal(int netID,
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), ordery);
+      std::stable_sort(ptp.begin(), ptp.end()-1, ordery);
       for (i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;
