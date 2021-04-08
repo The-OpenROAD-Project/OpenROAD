@@ -101,7 +101,7 @@ void GlobalRouter::makeComponents()
   // Allocate memory for objects
   _allRoutingTracks = new std::vector<RoutingTracks>;
   _db = _openroad->getDb();
-  _fastRoute = new FastRouteCore(_logger);
+  _fastRoute = new FastRouteCore(_db, _logger);
   _grid = new Grid;
   _gridOrigin = new odb::Point(0, 0);
   _nets = new std::vector<Net>;
@@ -311,7 +311,6 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int minRoutingLayer, int maxRoutingLayer)
 {
   NetRouteMap routes = _fastRoute->run();
-  _fastRoute->updateDbCongestion(_db);
   addRemainingGuides(routes, nets, minRoutingLayer, maxRoutingLayer);
   connectPadPins(routes);
   for (auto& net_route : routes) {
