@@ -144,6 +144,9 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
+  treeOrderPV.clear();
+  treeOrderCong.clear();
+
   if (h_edges3D)
     delete[] h_edges3D;
   h_edges3D = nullptr;
@@ -209,6 +212,8 @@ void FastRouteCore::deleteComponents()
     delete[] ycor;
   if (dcor)
     delete[] dcor;
+
+  netEO.clear();
 
   xcor = nullptr;
   ycor = nullptr;
@@ -832,6 +837,7 @@ void FastRouteCore::setEdgeUsage(long x1,
 
 void FastRouteCore::initAuxVar()
 {
+  treeOrderCong.clear();
   stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];
@@ -1359,6 +1365,8 @@ NetRouteMap FastRouteCore::run()
   logger->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
 
   NetRouteMap routes = getRoutes();
+
+  netEO.clear();
 
   return routes;
 }
