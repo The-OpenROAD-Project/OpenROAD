@@ -325,8 +325,8 @@ void fluteNormal(int netID,
     tmp_ys = new DTYPE[d];
 
     s = new int[d];
-    pt = new struct pnt[d + 1];
-    std::vector<struct pnt*> ptp(d+1);
+    pt = new struct pnt[d];
+    std::vector<struct pnt*> ptp(d);
 
     for (i = 0; i < d; i++) {
       pt[i].x = x[i];
@@ -351,20 +351,6 @@ void fluteNormal(int netID,
     } else {
       std::stable_sort(ptp.begin(), ptp.end(), orderx);
     }
-
-#if REMOVE_DUPLICATE_PIN == 1
-    ptp[d] = &pt[d];
-    ptp[d]->x = ptp[d]->y = -999999;
-    j = 0;
-    for (i = 0; i < d; i++) {
-      for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
-        if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
-          break;
-      if (ptp[k]->x != ptp[i]->x)
-        ptp[j++] = ptp[i];
-    }
-    d = j;
-#endif
 
     for (i = 0; i < d; i++) {
       xs[i] = ptp[i]->x;
