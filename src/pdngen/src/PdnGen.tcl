@@ -2890,6 +2890,8 @@ proc export_opendb_power_pin {net_name signal_type} {
   variable voltage_domains
   variable design_data
   
+  if {![dict exists $design_data grid stdcell grid pins]} {return}
+  
   set net [$block findNet $net_name]
   set bterm [odb::dbBTerm_create $net "${net_name}"]
 
@@ -2914,7 +2916,8 @@ proc export_opendb_power_pin {net_name signal_type} {
   }
 
   foreach lay [lreverse $metal_layers] {
-    if {[array names stripe_locs "$lay,$signal_type"] == ""} {continue}
+    if {[array names stripe_locs "$lay,$signal_type"] == "" || 
+        [lsearch -exact [dict get $design_data grid stdcell grid pins] $lay] == -1} {continue}
     foreach shape [::odb::getPolygons $stripe_locs($lay,$signal_type)] {
       set points [::odb::getPoints $shape]
       if {[llength $points] != 4} {
@@ -2935,7 +2938,7 @@ proc export_opendb_power_pin {net_name signal_type} {
     }
     # debug "created $count pins on $net_name (layer:$lay)"
     # Only promote metal on top layers to be pins
-    break
+    # break
   }
 }
 
@@ -3173,6 +3176,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable rails_start_with
   variable physical_viarules
   variable stdcell_area
+  variable voltage_domains
 
 #    set ::start_time [clock clicks -milliseconds]
   init_tech 
@@ -3210,8 +3214,10 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   
   if {[info vars ::core_domain] == ""} {
     set  ::core_domain "CORE"
+    dict set voltage_domains $::core_domain primary_power [lindex $::power_nets 0]
+    dict set voltage_domains $::core_domain primary_ground [lindex $::ground_nets 0]
   }
-
+  
   if {[info vars ::stripes_start_with] == ""} {
     set stripes_start_with "GROUND"
   } else {
@@ -3378,7 +3384,7 @@ proc specify_grid {type specification} {
       }
     }
   }
-  
+
   if {[dict exists $specification template]} {
     set_template_size {*}[dict get $specification template size]
   }
@@ -5092,7 +5098,7 @@ proc opendb_update_grid {} {
   utl::info "PDN" 15 "Writing to database"
   export_opendb_vias
   export_opendb_specialnets
-  # export_opendb_power_pins
+  export_opendb_power_pins
 }
   
 proc apply_pdn {config is_verbose} {
