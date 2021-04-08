@@ -465,21 +465,21 @@ void
 set_max_threads(int threads)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->set_max_threads(threads);
+  ord->setMaxThreads(threads);
 }
 
 void
 set_max_threads(const char* threads)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->set_max_threads(threads);
+  ord->setMaxThreads(threads);
 }
 
 int
 get_max_threads()
 {
   OpenRoad *ord = getOpenRoad();
-  return ord->get_max_threads();
+  return ord->getMaxThreads();
 }
 
 namespace ord {

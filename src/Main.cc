@@ -283,7 +283,7 @@ tclAppInit(int argc,
 
   const char* threads = findCmdLineKey(argc, argv, "-threads");
   if (threads) {
-    ord::OpenRoad::openRoad()->set_max_threads(threads);
+    ord::OpenRoad::openRoad()->setMaxThreads(threads);
   }
 
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");

@@ -247,7 +247,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
 
-  set_max_threads(threads_);
+  setMaxThreads(threads_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -452,7 +452,7 @@ void OpenRoad::pythonCommand(const char* py_command)
 #endif
 
 void
-OpenRoad::set_max_threads(int threads) {
+OpenRoad::setMaxThreads(int threads) {
   if (threads <= 0) { // max requested
     threads = std::thread::hardware_concurrency();
 
@@ -468,7 +468,7 @@ OpenRoad::set_max_threads(int threads) {
 }
 
 void
-OpenRoad::set_max_threads(const char* threads) {
+OpenRoad::setMaxThreads(const char* threads) {
   int max_threads = -1; // -1 is max cores
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;
@@ -480,11 +480,11 @@ OpenRoad::set_max_threads(const char* threads) {
     }
   }
 
-  set_max_threads(max_threads);
+  setMaxThreads(max_threads);
 }
 
 int
-OpenRoad::get_max_threads() {
+OpenRoad::getMaxThreads() {
   return threads_;
 }
 
