@@ -129,7 +129,7 @@ short** heap23D;
 
 float *h_costTable, *v_costTable;
 Bool stopDEC, errorPRONE;
-OrderNetEdge* netEO;
+std::vector<OrderNetEdge> netEO;
 int *xcor, *ycor, *dcor;
 
 StTree* sttreesBK;

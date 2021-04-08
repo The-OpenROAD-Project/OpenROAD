@@ -209,13 +209,10 @@ void FastRouteCore::deleteComponents()
     delete[] ycor;
   if (dcor)
     delete[] dcor;
-  if (netEO)
-    delete[] netEO;
 
   xcor = nullptr;
   ycor = nullptr;
   dcor = nullptr;
-  netEO = nullptr;
 
   if (HV) {
     for (int i = 0; i < YRANGE; i++) {
@@ -959,7 +956,6 @@ NetRouteMap FastRouteCore::run()
   xcor = new int[maxPin];
   ycor = new int[maxPin];
   dcor = new int[maxPin];
-  netEO = new OrderNetEdge[maxPin];
 
   Bool input, WriteOut;
   input = WriteOut = 0;
@@ -1364,13 +1360,6 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
 
-  delete[] netEO;
-  netEO = nullptr;
-
-  /* TODO:  <11-07-19, this function leads to a segfault, but as the OS
-   * frees all memory after the application end (next line) we can omit
-   * this function call for now.> */
-  /* freeAllMemory(); */
   return routes;
 }
 

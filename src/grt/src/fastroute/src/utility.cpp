@@ -1330,21 +1330,9 @@ void checkUsage()
   }
 }
 
-static int compareEdgeLen(const void* a, const void* b)
+static int compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
 {
-  int ret = -2;
-  if (((OrderNetEdge*) a)->length < ((OrderNetEdge*) b)->length) {
-    ret = 1;
-  } else if (((OrderNetEdge*) a)->length == ((OrderNetEdge*) b)->length) {
-    ret = 0;
-  } else if (((OrderNetEdge*) a)->length > ((OrderNetEdge*) b)->length) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 178, "Invalid EdgeLen comparison.");
-  } else {
-    return ret;
-  }
+  return a.length > b.length;
 }
 
 void netedgeOrderDec(int netID)
@@ -1354,12 +1342,16 @@ void netedgeOrderDec(int netID)
   d = sttrees[netID].deg;
   numTreeedges = 2 * d - 3;
 
+  netEO.clear();
+
   for (j = 0; j < numTreeedges; j++) {
-    netEO[j].length = sttrees[netID].edges[j].route.routelen;
-    netEO[j].edgeID = j;
+    OrderNetEdge orderNet;
+    orderNet.length = sttrees[netID].edges[j].route.routelen;
+    orderNet.edgeID = j;
+    netEO.push_back(orderNet);
   }
 
-  qsort(netEO, numTreeedges, sizeof(OrderNetEdge), compareEdgeLen);
+  std::stable_sort(netEO.begin(), netEO.end(), compareEdgeLen);
 }
 
 void printEdge2D(int netID, int edgeID)

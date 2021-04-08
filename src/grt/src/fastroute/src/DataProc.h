@@ -142,7 +142,7 @@ extern short** heap23D;
 extern float *h_costTable, *v_costTable;
 
 extern Bool stopDEC, errorPRONE;
-extern OrderNetEdge* netEO;
+extern std::vector<OrderNetEdge> netEO;
 
 extern int *xcor, *ycor, *dcor;
 
