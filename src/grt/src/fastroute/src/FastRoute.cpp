@@ -962,6 +962,7 @@ NetRouteMap FastRouteCore::run()
   xcor = new int[maxPin];
   ycor = new int[maxPin];
   dcor = new int[maxPin];
+  netEO.reserve(maxPin);
 
   Bool input, WriteOut;
   input = WriteOut = 0;
