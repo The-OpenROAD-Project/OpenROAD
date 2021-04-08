@@ -398,7 +398,6 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
         int row_yMax = row_rect.yMax();
 
         string row_name = row_itr->getName();
-        string row_number = row_name.substr(row_name.find("_") + 1);
         // check if the rows overlapped with the area of a defined voltage domains + margin
         if (row_yMax + fp_gap_default * row_height <= domain_yMin || 
             row_yMin >= domain_yMax + fp_gap_default * row_height) {
@@ -413,8 +412,8 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
           // in case there is at least one valid site width on the left, create left core rows 
           if (lcr_xMax > core_lx + site_width)
           {
+            string lcr_name = row_name + "_1";
 	        // warning message since tap cells might not be inserted
-            string lcr_name = "ROW_" + row_number + "_1";
             if (lcr_xMax < core_lx + 10 * site_width) {
               logger_->warn(IFP, 11, "left core row: {} has less than 10 sites", lcr_name);   
             } 
@@ -429,7 +428,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
           // in case there is at least one valid site width on the right, create right core rows 
           if (rcr_xMin + site_width < core_ux)
           {  
-            string rcr_name = "ROW_" + row_number + "_2";
+            string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_width > core_ux) {
               logger_->warn(IFP, 12, "right core row: {} has less than 10 sites", rcr_name); 
             }   
@@ -441,7 +440,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
           int domain_row_sites = (domain_xMax - domain_xMin) / site_width;
           // create domain rows if current iterations are not in margin area
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
-            string domain_row_name = "ROW_" + domain_name + "_" + row_number;
+            string domain_row_name = row_name + "_" + domain_name;
             dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, 
                   dbRowDir::HORIZONTAL, domain_row_sites, site_width);
           }
