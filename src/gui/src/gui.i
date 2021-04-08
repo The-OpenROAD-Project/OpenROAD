@@ -54,7 +54,7 @@ selection_add_net(const char* name)
 {
   auto gui = gui::Gui::get();
   if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 4, "Command selection_add_net is not usable in non-GUI mode");
+    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 13, "Command selection_add_net is not usable in non-GUI mode");
     return;
   }
   gui->addSelectedNet(name);
@@ -127,15 +127,12 @@ void add_ruler(int x0, int y0, int x1, int y1)
 void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
   auto gui = gui::Gui::get();
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (gui) {
-    return;
-  }
   auto logger = ord::OpenRoad::openRoad()->getLogger();
   if (!gui) {
-    ord::OpenRoad::openRoad()->getLogger()->info(GUI, 11, "Command zoom_to is not usable in non-GUI mode");
+    logger->info(GUI, 11, "Command zoom_to is not usable in non-GUI mode");
     return ;
   }
+  auto db = ord::OpenRoad::openRoad()->getDb();
   if (!db) {
     logger->error(GUI, 1, "No database loaded");
   }
@@ -153,5 +150,26 @@ void zoom_to(double xlo, double ylo, double xhi, double yhi)
   gui->zoomTo(rect);
 }
 
+void design_created()
+{
+  auto gui = gui::Gui::get();
+  if (!gui) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->info(GUI, 12, "Command design_created is not usable in non-GUI mode");
+    return;
+  }
+  gui->load_design();
+}
+
+void fit()
+{
+  auto gui = gui::Gui::get();
+  if (!gui) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->info(GUI, 14, "Command fit is not usable in non-GUI mode");
+    return;
+  }
+  gui->fit();
+}
 %} // inline
 

@@ -80,6 +80,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);
 
+  // Fit design in window
+  void fit();
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
