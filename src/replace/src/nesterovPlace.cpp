@@ -385,14 +385,16 @@ NesterovPlace::doNesterovPlace() {
 #ifdef ENABLE_CIMG_LIB  
   pe.setPlacerBase(pb_);
   pe.setNesterovBase(nb_);
+  pe.setLogger(log_);
   pe.Init();
-      
-  pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
-     "./plot/cell/cell_0");
-  pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
-     "./plot/bin/bin_0");
-  pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
-     "./plot/arrow/arrow_0");
+  if (PlotEnv::isPlotEnabled()) {
+      pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
+         "cell_0");
+      pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
+         "bin_0");
+      pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
+         "arrow_0");
+  }
 #endif
 
   if (graphics_) {
@@ -545,15 +547,17 @@ NesterovPlace::doNesterovPlace() {
           i+1, sumOverflow_, prevHpwl_);
 
 #ifdef ENABLE_CIMG_LIB
-      pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
-          string("./plot/cell/cell_") +
-          std::to_string (i+1));
-      pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
-          string("./plot/bin/bin_") +
-          std::to_string(i+1));
-      pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
-          string("./plot/arrow/arrow_") +
-          std::to_string(i+1));
+      if (PlotEnv::isPlotEnabled()) {
+        pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
+            string("cell_") +
+            std::to_string (i+1));
+        pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
+            string("bin_") +
+            std::to_string(i+1));
+        pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
+            string("arrow_") +
+            std::to_string(i+1));
+      }
 #endif
     }
 
