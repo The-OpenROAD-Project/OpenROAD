@@ -1041,8 +1041,9 @@ void IOPlacer::initNetlist()
 
   for (odb::dbBTerm* b_term : bterms) {
     odb::dbNet* net = b_term->getNet();
-    if (!net) {
+    if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
+      continue;
     }
 
     Direction dir = Direction::inout;

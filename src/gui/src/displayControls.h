@@ -188,13 +188,44 @@ class DisplayControls : public QDockWidget, public Options
     Selectable
   };
 
+  // One leaf (non-group) row in the model
+  struct ModelRow
+  {
+    QStandardItem* name = nullptr;
+    QStandardItem* swatch = nullptr;
+    QStandardItem* visible = nullptr;
+    QStandardItem* selectable = nullptr;  // may be null
+  };
+
+  // The *Models are groups in the tree
+  struct NetModels
+  {
+    ModelRow signal;
+    ModelRow power;
+    ModelRow ground;
+    ModelRow clock;
+  };
+
+  struct TrackModels
+  {
+    ModelRow pref;
+    ModelRow non_pref;
+  };
+
+  struct MiscModels
+  {
+    ModelRow fills;
+  };
+
   void techInit();
 
   template <typename T>
-  QStandardItem* makeItem(const QString& text,
+  QStandardItem* makeItem(ModelRow& row,
+                          const QString& text,
                           T* parent,
                           Qt::CheckState checked,
-                          const std::function<void(bool)>& visibility_action,
+                          const std::function<void(bool)>& visibility_action
+                          = std::function<void(bool)>(),
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
                           const QColor& color = Qt::transparent,
@@ -206,51 +237,28 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItemModel* model_;
 
   // Categories in the model
-  QStandardItem* layers_;
-  QStandardItem* routing_;
-  QStandardItem* tracks_;
-  QStandardItem* nets_;
-  QStandardItem* misc_;
+  ModelRow layers_group_;
+  ModelRow routing_group_;
+  ModelRow tracks_group_;
+  ModelRow nets_group_;
+  ModelRow misc_group_;
 
   // Object controls
-  QStandardItem* fills_;
-  QStandardItem* rows_;
-  QStandardItem* congestion_map_;
-  QStandardItem* pin_markers_;
-  QStandardItem* tracks_pref_;
-  QStandardItem* tracks_non_pref_;
-  QStandardItem* nets_signal_;
-  QStandardItem* nets_special_;
-  QStandardItem* nets_power_;
-  QStandardItem* nets_ground_;
-  QStandardItem* nets_clock_;
+  NetModels nets_;
+  ModelRow rows_;
+  ModelRow congestion_map_;
+  ModelRow pin_markers_;
+  TrackModels tracks_;
+  MiscModels misc_;
 
-  QStandardItem* grid_graph_;
-  QStandardItem* route_guides_;
-  QStandardItem* routing_objs_;
-
-  std::map<std::string, QStandardItem*> custom_controls_;
-  std::map<std::string, bool> custom_visibility_;
+  std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
+  std::map<std::string, ModelRow> custom_controls_;
 
   odb::dbDatabase* db_;
   bool tech_inited_;
-  bool fills_visible_;
-  bool tracks_visible_pref_;
-  bool tracks_visible_non_pref_;
-  bool rows_visible_;
-  bool nets_signal_visible_;
-  bool nets_special_visible_;
-  bool nets_power_visible_;
-  bool nets_ground_visible_;
-  bool nets_clock_visible_;
-
-  bool congestion_visible_;
-  bool pin_markers_visible_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
-  std::map<const odb::dbTechLayer*, bool> layer_visible_;
-  std::map<const odb::dbTechLayer*, bool> layer_selectable_;
 
   CongestionSetupDialog* congestion_dialog_;
 };
