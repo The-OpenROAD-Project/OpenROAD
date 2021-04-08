@@ -144,13 +144,8 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
-  if (treeOrderPV)
-    delete[] treeOrderPV;
-  treeOrderPV = nullptr;
-
-  if (treeOrderCong)
-    delete[] treeOrderCong;
-  treeOrderCong = nullptr;
+  treeOrderPV.clear();
+  treeOrderCong.clear();
 
   if (h_edges3D)
     delete[] h_edges3D;
@@ -217,13 +212,12 @@ void FastRouteCore::deleteComponents()
     delete[] ycor;
   if (dcor)
     delete[] dcor;
-  if (netEO)
-    delete[] netEO;
+
+  netEO.clear();
 
   xcor = nullptr;
   ycor = nullptr;
   dcor = nullptr;
-  netEO = nullptr;
 
   if (HV) {
     for (int i = 0; i < YRANGE; i++) {
@@ -843,7 +837,7 @@ void FastRouteCore::setEdgeUsage(long x1,
 
 void FastRouteCore::initAuxVar()
 {
-  treeOrderCong = NULL;
+  treeOrderCong.clear();
   stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];
@@ -968,7 +962,7 @@ NetRouteMap FastRouteCore::run()
   xcor = new int[maxPin];
   ycor = new int[maxPin];
   dcor = new int[maxPin];
-  netEO = new OrderNetEdge[maxPin];
+  netEO.reserve(maxPin);
 
   Bool input, WriteOut;
   input = WriteOut = 0;
@@ -1373,13 +1367,8 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
 
-  delete[] netEO;
-  netEO = nullptr;
+  netEO.clear();
 
-  /* TODO:  <11-07-19, this function leads to a segfault, but as the OS
-   * frees all memory after the application end (next line) we can omit
-   * this function call for now.> */
-  /* freeAllMemory(); */
   return routes;
 }
 
