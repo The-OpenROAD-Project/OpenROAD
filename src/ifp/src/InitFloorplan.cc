@@ -165,12 +165,11 @@ protected:
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
   double dbuToMeters(int dist) const;
-
   void updateVoltageDomain(dbSite *site,
-            int core_lx,
-            int core_ly,
-            int core_ux,
-            int core_uy);
+			   int core_lx,
+            		   int core_ly,
+            		   int core_ux,
+            		   int core_uy);
 
   dbDatabase *db_;
   dbBlock *block_;
@@ -352,10 +351,10 @@ InitFloorplan::initFloorplan(double die_lx,
 // this function is used to create regions ( split overlapped rows and create new ones )
 void
 InitFloorplan::updateVoltageDomain(dbSite *site,
-                                  int core_lx,
-                                  int core_ly,
-                                  int core_ux,
-                                  int core_uy)
+				   int core_lx,
+				   int core_ly,
+				   int core_ux,
+				   int core_uy)
 {
   // this is hardcoded for now as a margin between voltage domains
   static constexpr int fp_gap_default = 6;
@@ -419,7 +418,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
             } 
             int lcr_sites = (lcr_xMax - core_lx) / site_width;
             dbRow::create(block_, lcr_name.c_str(), site, core_lx, row_yMin, orient, 
-                  dbRowDir::HORIZONTAL, lcr_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, lcr_sites, site_width);
           }
           
           // rcr stands for right core row
@@ -434,7 +433,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
             }   
             int rcr_sites = (core_ux - rcr_xMin) / site_width;
             dbRow::create(block_, rcr_name.c_str(), site, rcr_xMin, row_yMin, orient, 
-                  dbRowDir::HORIZONTAL, rcr_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, rcr_sites, site_width);
           }
 
           int domain_row_sites = (domain_xMax - domain_xMin) / site_width;
@@ -442,7 +441,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
             string domain_row_name = row_name + "_" + domain_name;
             dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, 
-                  dbRowDir::HORIZONTAL, domain_row_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, domain_row_sites, site_width);
           }
         }
       }
