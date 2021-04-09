@@ -84,4 +84,4 @@ GPL 0200 plot.cpp:619              {} image has been saved
 GPL 0201 plot.cpp:638              {} image has been saved
 GPL 0202 plot.cpp:656              {} image has been saved
 GPL 0301 placerBase.cpp:1090       Utilization exceeds 100%.
-GPL 0304 nesterovPlace.cpp:236     RePlAce diverged on initial iteration.
+GPL 0304 nesterovPlace.cpp:236     RePlAce diverged at initial iteration. 

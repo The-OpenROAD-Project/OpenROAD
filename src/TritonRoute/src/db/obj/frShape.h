@@ -443,6 +443,11 @@ class frPathSeg : public frShape
     styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
     styleIn.setWidth(style_.getWidth());
   }
+  frEndStyle getBeginStyle() const { return style_.getBeginStyle(); }
+  frEndStyle getEndStyle() const { return style_.getEndStyle(); }
+  bool isVertical() const { return begin_.x() == end_.x(); }
+  frCoord high() const { return isVertical() ? end_.y() : end_.x(); }
+  frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
   // setters
   void setPoints(const frPoint& beginIn, const frPoint& endIn)
   {
@@ -454,6 +459,14 @@ class frPathSeg : public frShape
     style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
     style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
     style_.setWidth(styleIn.getWidth());
+  }
+  void setBeginStyle(frEndStyle bs, frUInt4 ext = 0)
+  {
+    style_.setBeginStyle(bs, ext);
+  }
+  void setEndStyle(frEndStyle es, frUInt4 ext = 0)
+  {
+    style_.setEndStyle(es, ext);
   }
   // others
   frBlockObjectEnum typeId() const override { return frcPathSeg; }
