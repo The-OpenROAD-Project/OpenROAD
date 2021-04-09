@@ -350,10 +350,13 @@ proc check_routing_layer { layer } {
 
 proc parse_layer_name { layer_name } {
   if { ![ord::db_has_tech] } {
-    utl::error GRT 220 "no technology has been read."
+    utl::error GRT 222 "no technology has been read."
   }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
+  if { $tech_layer == "NULL" } {
+    utl::error GRT 5 "layer $layer_name not found."
+  }
   set layer_idx [$tech_layer getRoutingLevel]
 
   return $layer_idx
@@ -399,7 +402,7 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 proc highlight_route { net_name } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 221 "missing dbBlock."
+    utl::error GRT 223 "missing dbBlock."
   }
   set net [$block findNet $net_name]
   if { $net != "NULL" } {

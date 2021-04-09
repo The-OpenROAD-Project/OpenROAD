@@ -74,7 +74,7 @@ int vCapacity;
 int hCapacity;
 int MD;
 
-FastRouteCore::FastRouteCore(utl::Logger* log)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
 {
   newnetID = 0;
   segcount = 0;
@@ -87,6 +87,7 @@ FastRouteCore::FastRouteCore(utl::Logger* log)
   invalidNets = 0;
   maxNetDegree = 0;
   logger = log;
+  db_ = db;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -911,9 +912,9 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
-void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
+void FastRouteCore::updateDbCongestion()
 {
-  auto block = db->getChip()->getBlock();
+  auto block = db_->getChip()->getBlock();
   auto db_gcell = odb::dbGCellGrid::create(block);
   if(db_gcell == nullptr)
   {
@@ -924,7 +925,7 @@ void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
   db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
   for (int k = 0; k < numLayers; k++) {
-    auto layer = db->getTech()->findRoutingLayer(k+1);
+    auto layer = db_->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
     {
       logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
@@ -1294,6 +1295,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
+    updateDbCongestion();
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1368,6 +1370,8 @@ NetRouteMap FastRouteCore::run()
   NetRouteMap routes = getRoutes();
 
   netEO.clear();
+
+  updateDbCongestion();
 
   return routes;
 }
