@@ -45,7 +45,7 @@ using odb::Rect;
 class Core
 {
  public:
-  Core() = default;
+  Core();
   Core(const Rect& boundary,
        const std::vector<int>& min_dst_pins_x,
        const std::vector<int>& min_dst_pins_y,

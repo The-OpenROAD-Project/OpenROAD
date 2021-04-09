@@ -361,6 +361,13 @@ class Gui
 
   const std::set<Renderer*>& renderers() { return renderers_; }
 
+  // The GUI listening for callbacks on read_def or read_db but
+  // if the design is created by direct opendb calls then this
+  // will trigger the GUI to load it.
+  void load_design();
+
+  void fit();
+
   // Will return nullptr if openroad was invoked without -gui
   static Gui* get();
 
