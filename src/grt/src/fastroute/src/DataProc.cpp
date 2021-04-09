@@ -102,8 +102,8 @@ DTYPE** gs;  // the copy of vertical sequence for nets, used for second FLUTE
 Edge3D* h_edges3D;
 Edge3D* v_edges3D;
 
-OrderNetPin* treeOrderPV;
-OrderTree* treeOrderCong;
+std::vector<OrderNetPin> treeOrderPV;
+std::vector<OrderTree> treeOrderCong;
 int numTreeedges;
 int viacost;
 
@@ -129,7 +129,7 @@ short** heap23D;
 
 float *h_costTable, *v_costTable;
 Bool stopDEC, errorPRONE;
-OrderNetEdge* netEO;
+std::vector<OrderNetEdge> netEO;
 int *xcor, *ycor, *dcor;
 
 StTree* sttreesBK;
