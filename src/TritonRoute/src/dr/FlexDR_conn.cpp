@@ -1082,6 +1082,7 @@ void FlexDR::checkConnectivity_merge_commit(
   auto regionQuery = getRegionQuery();
   // add segments from overlapped segments
   int cnt = 0;
+  frPathSeg *last, *curr;
   for (auto& newSegSpan : newSegSpans) {
     auto victimPathSeg = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
@@ -1095,18 +1096,23 @@ void FlexDR::checkConnectivity_merge_commit(
       ep.set(trackCoord, newSegSpan.second);
     }
     victimPathSeg->setPoints(bp, ep);
-    regionQuery->addDRObj(victimPathSeg);
     cnt++;
-  }
-  // remove previously overlapped segments
-  int victimCnt = 0;
-  for (auto& victim : victims) {
-    if (victimCnt >= cnt) {
-      regionQuery->removeDRObj(static_cast<frShape*>(netRouteObjs[victim]));
-      net->removeShape(static_cast<frShape*>(netRouteObjs[victim]));
-      netRouteObjs[victim] = nullptr;
+    last = nullptr;
+    for (; cnt < (int) victims.size(); cnt++) {
+      curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
+      if (curr->high() <= newSegSpan.second) {
+        last = curr;
+        regionQuery->removeDRObj(
+            static_cast<frShape*>(netRouteObjs[victims[cnt]]));
+        net->removeShape(static_cast<frShape*>(netRouteObjs[victims[cnt]]));
+        netRouteObjs[victims[cnt]] = nullptr;
+      } else
+        break;
     }
-    victimCnt++;
+    if (last) {
+      victimPathSeg->setEndStyle(last->getEndStyle());
+    }
+    regionQuery->addDRObj(victimPathSeg);
   }
 }
 
