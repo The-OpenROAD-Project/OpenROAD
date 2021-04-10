@@ -356,7 +356,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
 				   int core_ux,
 				   int core_uy)
 {
-  // this is hardcoded for now as a margin between voltage domains
+  // this is hardcoded for now as a margin between voltage domains, the default margin is: fp_gap_default * row_height
   static constexpr int fp_gap_default = 6;
   int row_height = site->getHeight();
   int site_width = site->getWidth();
