@@ -42,8 +42,8 @@ if {[catch {ICeWall load_footprint coyote_tc/coyote_tc.package.strategy} msg]} {
 initialize_floorplan \
   -die_area  {0 0 5400.000 4616.000} \
   -core_area {200.0 200.0 5200.0 4416.0} \
-  -tracks    [ICeWall get_tracks] \
   -site      unit
+make_tracks
 
 if {[catch {ICeWall init_footprint coyote_tc/coyote_tc.sigmap} msg]} {
   puts $errorInfo
