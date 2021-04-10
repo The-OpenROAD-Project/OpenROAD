@@ -18,8 +18,8 @@ if {[catch {ICeWall load_footprint soc_bsg_black_parrot_nangate45/bsg_black_parr
 initialize_floorplan \
   -die_area  {0 0 3000.000 3000.000} \
   -core_area {180.012 180.096 2819.964 2819.712} \
-  -tracks [ICeWall get_tracks] \
   -site FreePDK45_38x28_10R_NP_162NW_34O
+make_tracks
 
 if {[catch {ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.sigmap} msg]} {
   puts $errorInfo
@@ -27,9 +27,9 @@ if {[catch {ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_
   exit
 }
 
-set def_file results/soc_bsg_black_parrot_nangate45.flipchip.def
+set def_file [make_result_file "soc_bsg_black_parrot_nangate45.flipchip.def"]
 
-write_def results/soc_bsg_black_parrot_nangate45.flipchip_1.def
-exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" results/soc_bsg_black_parrot_nangate45.flipchip_1.def > $def_file
+write_def $def_file
+exec sed -e "/END SPECIALNETS/r[ICeWall::get_footprint_rdl_cover_file_name]" $def_file > $def_file
 
-diff_files $def_file soc_bsg_black_parrot_nangate45.flipchip.defok
+diff_files $def_file "soc_bsg_black_parrot_nangate45.flipchip.defok"

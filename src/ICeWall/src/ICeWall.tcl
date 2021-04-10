@@ -824,20 +824,6 @@ namespace eval ICeWall {
     return $cell_list
   }
 
-  proc get_tracks {} {
-    variable footprint 
-
-    if {![dict exists $footprint tracks]} {
-      dict set footprint tracks "tracks.info"
-    }
-
-    if {![file exists [dict get $footprint tracks]]} {
-      write_track_file [dict get $footprint tracks] [dict get $footprint core_area]
-    }
-    
-    return [dict get $footprint tracks]
-  }
-
   proc get_library_pad_pin_name {type} {
     variable library
 
@@ -1477,26 +1463,6 @@ namespace eval ICeWall {
       }
       incr idx
     }
-  }
-  
-  proc write_track_file {track_info_file core_area} {
-    variable db
-    variable tech 
-    variable def_units
-    set ch [open $track_info_file "w"]
-
-    set tech [$db getTech]
-    foreach layer [$tech getLayers] {
-      if {[$layer getType] == "ROUTING"} {
-        set x_offset [expr round([lindex $core_area 0] * $def_units) % [$layer getPitchX]]
-        set y_offset [expr round([lindex $core_area 1] * $def_units) % [$layer getPitchY]]
-
-        puts $ch [format "%s Y %.3f %.3f" [$layer getName] [expr 1.0 * $x_offset / $def_units] [expr 1.0 * [$layer getPitchX] / $def_units]]
-        puts $ch [format "%s X %.3f %.3f" [$layer getName] [expr 1.0 * $y_offset / $def_units] [expr 1.0 * [$layer getPitchY] / $def_units]]
-      }
-    }
-    
-    close $ch
   }
   
   proc read_signal_assignments {signal_assignment_file} {
