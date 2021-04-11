@@ -233,8 +233,8 @@ class extDistRCTable
 
   Ath__array1D<extDistRC*>* _measureTable;
   Ath__array1D<extDistRC*>* _computeTable;
-  Ath__array1D<extDistRC*>* _measureTableR[8];
-  Ath__array1D<extDistRC*>* _computeTableR[8];
+  Ath__array1D<extDistRC*>* _measureTableR[16];
+  Ath__array1D<extDistRC*>* _computeTableR[16]; // OPTIMIZE
   int _maxDist;
   uint _distCnt;
   uint _unit;
