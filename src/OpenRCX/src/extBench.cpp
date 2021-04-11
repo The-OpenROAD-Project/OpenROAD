@@ -288,6 +288,9 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
 
       if (opt->_underMet == 0 && !opt->_gen_def_patterns)
         break;
+      
+      if (underMet==0 && opt->_res_patterns)
+        break;
     }
     opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
     opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
