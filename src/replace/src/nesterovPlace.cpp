@@ -232,9 +232,9 @@ void NesterovPlace::init() {
 
   debugPrint(log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
 
-  if( isnan(stepLength_) ) {
-    log_->error(GPL, 304, "RePlAce diverged on initial iteration.");
-    isDiverged_ = true;
+  if( isnan(stepLength_) || isinf(stepLength_) ) {
+    log_->error(GPL, 304, "RePlAce diverged at initial iteration. "
+       "Re-run with a smaller init_density_penalty value.");
   }
 }
 
@@ -293,6 +293,9 @@ void NesterovPlace::reset() {
   prevHpwl_ = 0;
   isDiverged_ = false;
   isRoutabilityNeed_ = true;
+  
+  divergeMsg_ = "";
+  divergeCode_ = 0;
 }
 
 // to execute following function,
@@ -368,6 +371,8 @@ NesterovPlace::updateGradients(
   if( isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_) ||
       isnan(densityGradSum_) || isinf(densityGradSum_) ) {
     isDiverged_ = true;
+    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
+    divergeCode_ = 306; 
   }
 }
 
@@ -377,22 +382,23 @@ NesterovPlace::doNesterovPlace() {
   // if replace diverged in init() function, 
   // replace must be skipped.
   if( isDiverged_ ) {
-    string msg = "RePlAce diverged.";
-    log_->error(GPL, 200, msg);
+    log_->error(GPL, divergeCode_, divergeMsg_);
     return;
   }
 
 #ifdef ENABLE_CIMG_LIB  
   pe.setPlacerBase(pb_);
   pe.setNesterovBase(nb_);
+  pe.setLogger(log_);
   pe.Init();
-      
-  pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
-     "./plot/cell/cell_0");
-  pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
-     "./plot/bin/bin_0");
-  pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
-     "./plot/arrow/arrow_0");
+  if (PlotEnv::isPlotEnabled()) {
+      pe.SaveCellPlotAsJPEG("Nesterov - BeforeStart", true,
+         "cell_0");
+      pe.SaveBinPlotAsJPEG("Nesterov - BeforeStart",
+         "bin_0");
+      pe.SaveArrowPlotAsJPEG("Nesterov - BeforeStart",
+         "arrow_0");
+  }
 #endif
 
   if (graphics_) {
@@ -408,10 +414,6 @@ NesterovPlace::doNesterovPlace() {
 
   // dynamic adjustment of max_phi_coef
   bool isMaxPhiCoefChanged = false;
-
-  // diverge error handling
-  string divergeMsg = "";
-  int divergeCode = 0;
 
   // snapshot saving detection 
   bool isSnapshotSaved = false;
@@ -491,10 +493,10 @@ NesterovPlace::doNesterovPlace() {
      
       debugPrint(log_, GPL, "replace", 3, "np:  NewStepLength: {:g}", newStepLength);
 
-      if( isnan(newStepLength) ) {
-        divergeMsg = "RePlAce divergence detected.";
-        divergeCode = 305;
+      if( isnan(newStepLength) || isinf(newStepLength) ) {
         isDiverged_ = true;
+        divergeMsg_ = "RePlAce diverged at newStepLength.";
+        divergeCode_ = 305;
         break;
       }
 
@@ -545,15 +547,17 @@ NesterovPlace::doNesterovPlace() {
           i+1, sumOverflow_, prevHpwl_);
 
 #ifdef ENABLE_CIMG_LIB
-      pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
-          string("./plot/cell/cell_") +
-          std::to_string (i+1));
-      pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
-          string("./plot/bin/bin_") +
-          std::to_string(i+1));
-      pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
-          string("./plot/arrow/arrow_") +
-          std::to_string(i+1));
+      if (PlotEnv::isPlotEnabled()) {
+        pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
+            string("cell_") +
+            std::to_string (i+1));
+        pe.SaveBinPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
+            string("bin_") +
+            std::to_string(i+1));
+        pe.SaveArrowPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)),
+            string("arrow_") +
+            std::to_string(i+1));
+      }
 #endif
     }
 
@@ -593,9 +597,9 @@ NesterovPlace::doNesterovPlace() {
     if( sumOverflow_ < 0.3f 
         && sumOverflow_ - minSumOverflow >= 0.02f
         && hpwlWithMinSumOverflow * 1.2f < prevHpwl_ ) {
-      divergeMsg = "RePlAce divergence detected.\n";
-      divergeMsg += "        Re-run with a smaller max_phi_cof value.";
-      divergeCode = 307;
+      divergeMsg_ = "RePlAce divergence detected. ";
+      divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
+      divergeCode_ = 307;
       isDiverged_ = true;
 
       // revert back to the original rb solutions
@@ -613,6 +617,8 @@ NesterovPlace::doNesterovPlace() {
         densityPenalty_ 
           = snapshotDensityPenalty;
         isDiverged_ = false;
+        divergeCode_ = 0;
+        divergeMsg_ = "";
         isDivergeTriedRevert = true;
 
         // turn off the RD forcely
@@ -676,7 +682,7 @@ NesterovPlace::doNesterovPlace() {
   updateDb();
 
   if( isDiverged_ ) { 
-    log_->error(GPL, divergeCode, divergeMsg);
+    log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
   if (graphics_) {

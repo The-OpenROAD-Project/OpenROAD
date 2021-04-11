@@ -38,7 +38,10 @@
 
 #include <vector>
 #include <memory>
+#include <string>
+#include <filesystem>
 #include "point.h"
+#include "utl/Logger.h"
 
 // 
 // The following structure/header will be removed.
@@ -115,6 +118,7 @@ class PlotEnv {
 
   void setPlacerBase(std::shared_ptr<PlacerBase> pb);
   void setNesterovBase(std::shared_ptr<NesterovBase> nb);
+  void setLogger(utl::Logger* log);
 
   void Init();
   void InitCellColors(std::string colorFile);
@@ -145,13 +149,20 @@ class PlotEnv {
   void SaveBinPlotAsJPEG(std::string imgName, std::string imgPosition);
   void SaveArrowPlotAsJPEG(std::string imgName, std::string imgPosition);
 
+  static void setPlotPath(std::string);
+  static bool isPlotEnabled() { return plotPath != nullptr; };
+
  private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
+  utl::Logger* log_;
 
+  static std::unique_ptr<std::filesystem::path> plotPath;
 
+  const char* pathArrow = "arrow";
+  const char* pathBin   = "bin";
+  const char* pathCell  = "cell";
 
- 
 };
 
 }

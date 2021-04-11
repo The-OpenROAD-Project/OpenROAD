@@ -41,5 +41,5 @@
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
-[ERROR GPL-0305] RePlAce divergence detected.
-GPL-0305
+[ERROR GPL-0304] RePlAce diverged at initial iteration. Re-run with a smaller init_density_penalty value.
+GPL-0304

@@ -2101,13 +2101,21 @@ void io::Parser::setTechVias(odb::dbTech* _tech)
 {
   for (auto via : _tech->getVias()) {
     map<frLayerNum, int> lNum2Int;
+    bool has_unknown_layer = false;
     for (auto box : via->getBoxes()) {
       string layerName = box->getTechLayer()->getName();
-      if (tech->name2layer.find(layerName) == tech->name2layer.end())
-        logger->error(
-            DRT, 124, "unknown layer {} for via {}", layerName, via->getName());
+      if (tech->name2layer.find(layerName) == tech->name2layer.end()) {
+        logger->warn(
+            DRT, 124, "via {} with unused layer {} will be ignored",
+            layerName, via->getName());
+        has_unknown_layer = true;
+        continue;
+      }
       frLayerNum lNum = tech->name2layer[layerName]->getLayerNum();
       lNum2Int[lNum] = 1;
+    }
+    if (has_unknown_layer) {
+      continue;
     }
     if (lNum2Int.size() != 3)
       logger->error(DRT, 125, "unsupported via {}", via->getName());

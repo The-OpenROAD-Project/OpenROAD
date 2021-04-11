@@ -94,6 +94,7 @@ void InitialPlace::doBicgstabPlace() {
 
 #ifdef ENABLE_CIMG_LIB
   pe.setPlacerBase(pb_);
+  pe.setLogger(log_);
   pe.Init();
 #endif
 
@@ -129,9 +130,9 @@ void InitialPlace::doBicgstabPlace() {
     updateCoordi();
 
 #ifdef ENABLE_CIMG_LIB
-    pe.SaveCellPlotAsJPEG(
+    if (PlotEnv::isPlotEnabled()) pe.SaveCellPlotAsJPEG(
         string("InitPlace ") + to_string(i), false,
-        string("./plot/cell/ip_") + to_string(i));
+        string("ip_") + to_string(i));
 #endif
 
     if (graphics) {

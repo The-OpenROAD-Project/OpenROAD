@@ -101,7 +101,7 @@ void GlobalRouter::makeComponents()
   // Allocate memory for objects
   _allRoutingTracks = new std::vector<RoutingTracks>;
   _db = _openroad->getDb();
-  _fastRoute = new FastRouteCore(_logger);
+  _fastRoute = new FastRouteCore(_db, _logger);
   _grid = new Grid;
   _gridOrigin = new odb::Point(0, 0);
   _nets = new std::vector<Net>;
@@ -311,7 +311,6 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int minRoutingLayer, int maxRoutingLayer)
 {
   NetRouteMap routes = _fastRoute->run();
-  _fastRoute->updateDbCongestion(_db);
   addRemainingGuides(routes, nets, minRoutingLayer, maxRoutingLayer);
   connectPadPins(routes);
   for (auto& net_route : routes) {
@@ -1790,6 +1789,8 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
     }
   }
 
+  debugPrint(_logger, GRT, "api", 1, "getRoute() = \n{}", route);
+
   return route;
 }
 
@@ -3034,78 +3035,6 @@ double GlobalRouter::dbuToMicrons(int64_t dbu)
   return (double) dbu / (_block->getDbUnitsPerMicron());
 }
 
-std::set<int> GlobalRouter::findTransitionLayers(int maxRoutingLayer)
-{
-  std::set<int> transitionLayers;
-  odb::dbTech* tech = _db->getTech();
-  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-
-  if (vias.empty()) {
-    _logger->error(GRT, 96, "Tech without vias.");
-  }
-
-  std::vector<odb::dbTechVia*> defaultVias;
-
-  for (odb::dbTechVia* currVia : vias) {
-    odb::dbStringProperty* prop
-        = odb::dbStringProperty::find(currVia, "OR_DEFAULT");
-
-    if (prop == nullptr) {
-      continue;
-    } else {
-      _logger->info(GRT, 7, "Default via: {}.", currVia->getConstName());
-      defaultVias.push_back(currVia);
-    }
-  }
-
-  if (defaultVias.empty()) {
-    _logger->warn(GRT, 42, "No OR_DEFAULT vias defined.");
-    for (odb::dbTechVia* currVia : vias) {
-      defaultVias.push_back(currVia);
-    }
-  }
-
-  for (odb::dbTechVia* currVia : defaultVias) {
-    int bottomSize = -1;
-    int tmpLen;
-
-    odb::dbTechLayer* bottomLayer;
-    odb::dbSet<odb::dbBox> viaBoxes = currVia->getBoxes();
-    odb::dbSet<odb::dbBox>::iterator boxIter;
-
-    for (boxIter = viaBoxes.begin(); boxIter != viaBoxes.end(); boxIter++) {
-      odb::dbBox* currBox = *boxIter;
-      odb::dbTechLayer* layer = currBox->getTechLayer();
-
-      if (layer->getDirection().getValue() == odb::dbTechLayerDir::HORIZONTAL) {
-        tmpLen = currBox->yMax() - currBox->yMin();
-      } else if (layer->getDirection().getValue()
-                 == odb::dbTechLayerDir::VERTICAL) {
-        tmpLen = currBox->xMax() - currBox->xMin();
-      } else {
-        continue;
-      }
-
-      if (layer->getConstName() == currVia->getBottomLayer()->getConstName()) {
-        bottomLayer = layer;
-        if (tmpLen >= bottomSize) {
-          bottomSize = tmpLen;
-        }
-      }
-    }
-
-    if (bottomLayer->getRoutingLevel() >= maxRoutingLayer
-        || bottomLayer->getRoutingLevel() <= 4)
-      continue;
-
-    if (bottomSize > bottomLayer->getWidth()) {
-      transitionLayers.insert(bottomLayer->getRoutingLevel());
-    }
-  }
-
-  return transitionLayers;
-}
-
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)
 {
   odb::dbTech* tech = _db->getTech();
@@ -3286,6 +3215,49 @@ GrouteRenderer::drawObjects(gui::Painter &painter)
       }
     }
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route)
+{
+  using std::endl;
+  os << "gridCountX = " << route.gridCountX << endl;
+  os << "gridCountY = " << route.gridCountY << endl;
+  os << "numLayers  = " << route.numLayers << endl;
+  for (size_t i = 0; i < route.verticalEdgesCapacities.size(); ++i) {
+    os << "verticalEdgesCapacities[" << i << "] = "
+       << route.verticalEdgesCapacities[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.horizontalEdgesCapacities.size(); ++i) {
+    os << "horizontalEdgesCapacities[" << i << "] = "
+       << route.horizontalEdgesCapacities[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.minWireWidths.size(); ++i) {
+    os << "minWireWidths[" << i << "] = "
+       << route.minWireWidths[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.minWireSpacings.size(); ++i) {
+    os << "minWireSpacings[" << i << "] = "
+       << route.minWireSpacings[i] << endl;
+  }
+
+  for (size_t i = 0; i < route.viaSpacings.size(); ++i) {
+    os << "viaSpacings[" << i << "] = "
+       << route.viaSpacings[i] << endl;
+  }
+
+  os << "gridOriginX = " << route.gridOriginX << endl;
+  os << "gridOriginY = " << route.gridOriginY << endl;
+
+  os << "tileWidth = " << route.tileWidth << endl;
+  os << "tileHeight = " << route.tileHeight << endl;
+
+  os << "blockPorosity = " << route.blockPorosity << endl;
+  // int numAdjustments;
+  //   std::vector<ADJUSTMENT_> adjustments;
+  return os;
 }
 
 }  // namespace grt
