@@ -462,7 +462,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
     } else {
       spaceTable->add(0);
       
-      for (uint ii = 1; ii < 3; ii++) {
+      for (uint ii = 1; ii < 2; ii++) {
         //double m = sTable->get(ii);
         double s = pitch * ii;
         double s1= s - minWidth;
@@ -470,14 +470,17 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
         spaceTable->add(s1);
         spaceTable->add(s);
       } 
-      for (uint ii = 3; ii < 5; ii++) {
+      for (uint ii = 2; ii < 4; ii++) {
         //double m = sTable->get(ii);
         double s = pitch * ii;
         double s1= s - minWidth;
+        double s2= s1 - minWidth/2;
       
-        // spaceTable->add(s1);
+        spaceTable->add(s2);
+        spaceTable->add(s1);
         spaceTable->add(s);
       } 
+      spaceTable->add(pitch * 4);
     }
     for (uint ii = 0; ii < wTable->getCnt(); ii++) {
       double w = minWidth * wTable->get(ii);
