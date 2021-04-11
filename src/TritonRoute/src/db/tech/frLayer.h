@@ -55,6 +55,7 @@ class frLayer
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
+        spacingInfluence(nullptr),
         eols(),
         cutConstraints(),
         cutSpacingSamenetConstraints(),
@@ -88,6 +89,7 @@ class frLayer
         defaultViaDef(nullptr),
         minSpc(nullptr),
         spacingSamenet(nullptr),
+        spacingInfluence(nullptr),
         eols(),
         cutConstraints(),
         cutSpacingSamenetConstraints(),
@@ -281,6 +283,15 @@ class frLayer
   void setSpacingSamenet(frSpacingSamenetConstraint* in)
   {
     spacingSamenet = in;
+  }
+  bool hasSpacingTableInfluence() const { return (spacingInfluence); }
+  frSpacingTableInfluenceConstraint* getSpacingTableInfluence() const
+  {
+    return spacingInfluence;
+  }
+  void setSpacingTableInfluence(frSpacingTableInfluenceConstraint* in)
+  {
+    spacingInfluence = in;
   }
   bool hasEolSpacing() const { return (eols.empty() ? false : true); }
   void addEolSpacing(frSpacingEndOfLineConstraint* in) { eols.push_back(in); }
@@ -532,6 +543,7 @@ class frLayer
 
   frConstraint* minSpc;
   frSpacingSamenetConstraint* spacingSamenet;
+  frSpacingTableInfluenceConstraint* spacingInfluence;
   std::vector<frSpacingEndOfLineConstraint*> eols;
   std::vector<frCutSpacingConstraint*> cutConstraints;
   std::vector<frCutSpacingConstraint*> cutSpacingSamenetConstraints;

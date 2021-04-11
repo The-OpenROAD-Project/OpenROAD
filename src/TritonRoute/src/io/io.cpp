@@ -1550,7 +1550,24 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       tmpLayer->setMinSpacing(rptr);
     }
   }
-
+  if(!layer->getV55InfluenceEntries().empty())
+  {
+    frCollection<frUInt4> widthTbl;
+    frCollection<std::pair<frUInt4, frUInt4>> valTbl;
+    for(auto entry : layer->getV55InfluenceEntries())
+    {
+      frUInt4 width, within, spacing;
+      entry->getV55InfluenceEntry(width, within, spacing);
+      widthTbl.push_back(width);
+      valTbl.push_back({within, spacing});
+    }
+    fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>> tbl("WIDTH", widthTbl, valTbl);
+     unique_ptr<frConstraint> uCon
+        = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+    auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
+    tech->addUConstraint(std::move(uCon));
+    tmpLayer->setSpacingTableInfluence(rptr);
+  }
   // read prl spacingTable
   if (layer->hasV55SpacingRules()) {
     frCollection<frUInt4> _rowVals, _colVals;
