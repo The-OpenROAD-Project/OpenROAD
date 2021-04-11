@@ -117,6 +117,9 @@ bool extMeasure::IsDebugNet()
   if (_no_debug)
     return false;
 
+  if (!(_extMain->_debug_net_id > 0))
+    return false;
+
   if (_netSrcId <= 0 && _netTgtId <= 0)
     return false;
 
