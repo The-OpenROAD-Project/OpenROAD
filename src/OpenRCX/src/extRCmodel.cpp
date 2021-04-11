@@ -483,12 +483,17 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
 
     extDistRC* rc = rcPool->alloc();
     rc->readRC_res2(parser, dbFactor);
+    // if (rc0!=NULL && rc0->_res==rc->_res && rc0->_coupling==rc->_coupling) {
+    //   continue;
+    // }
     table->add(rc);
     if (rc0!=NULL && rc0->_coupling!=rc->_coupling) {
       _measureTable = table0;
-      interpolate(4, -1, rcPool);
+      if (table0->getCnt()>1) {
+        interpolate(4, -1, rcPool);
+        _computeTableR[kk]= _computeTable;
+      }
       _measureTableR[kk]= table0;
-      _computeTableR[kk]= _computeTable;
       kk++;
       
       table0 = new Ath__array1D<extDistRC*>(cnt1);
@@ -496,9 +501,15 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
 
       _maxDist= rc0->_sep;
     } 
+    if (rc0==NULL) { 
+      table0->add(rc);
+    } else if (cnt1==0) { 
+      table0->add(rc);
+    } else if (rc0->_res!=rc->_res) {
+      table0->add(rc);
+    }
+    cnt1 ++;  
     rc0= rc;
-    cnt1 ++;   
-    table0->add(rc);
   }
   _distCnt= kk+1;
   _measureTableR[kk]= table0;
