@@ -395,8 +395,8 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
       _computeTable= _computeTableR[index_dist-1];
       extDistRC* res1= findIndexed_res(dist1, dist2);
       double R= (res->_res + res1->_res)/2;
-      double R1= res1->interpolate_res(dist1, res);
-      res1->_diag= R;
+      double R1= res->interpolate_res(dist1, res1);
+      res1->_diag= R1;
       return res1;
     }
     return res;
@@ -413,6 +413,10 @@ extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
   if (_measureTable->getCnt()==1) {
     return firstRC;
   }
+  extDistRC* resLast= _measureTable->getLast();
+  if (dist2 >= resLast->_sep)
+    return resLast;
+    
   uint n = dist2 / _unit;
   extDistRC* res= _computeTable->geti(n);
   return res;
