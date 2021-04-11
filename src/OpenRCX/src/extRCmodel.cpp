@@ -98,14 +98,13 @@ static double lineSegment(double X, double x1, double x2, double y1, double y2)
 void extDistRC::interpolate(uint d, extDistRC* rc1, extDistRC* rc2)
 {
   _sep = d;
-  _coupling
-      = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
+  _coupling= lineSegment(d, rc1->_sep, rc2->_sep, rc1->_coupling, rc2->_coupling);
   _fringe = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_fringe, rc2->_fringe);
   _res = lineSegment(d, rc1->_sep, rc2->_sep, rc1->_res, rc2->_res);
 }
 double extDistRC::interpolate_res(uint d, extDistRC* rc2)
 {
-  return lineSegment(d, _sep, rc2->_sep, _res, rc2->_res);
+  return lineSegment(d, _coupling, rc2->_coupling, _res, rc2->_res);
 }
 void extDistRC::set(uint d, double cc, double fr, double a, double r)
 {
