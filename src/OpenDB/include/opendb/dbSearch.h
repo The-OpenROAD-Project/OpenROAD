@@ -194,9 +194,7 @@ class dbBlockSearch
   uint getItermShapesWithViaShapes(dbITerm* iterm);
   uint getItermShapesNoVias(dbITerm* iterm);
 
-  int inspect(ZPtr<IZdcr> dcr);
   dbNet* getNet(uint wireId, uint shapeId);
-  void inspectNet();
   uint selectNet();
   bool isSignalNet(dbNet* net);
 
@@ -232,12 +230,9 @@ class dbBlockSearch
   uint addInstBoxes(dbNet* net, bool ignoreFlags);
   uint addInstBox(dbInst* inst);
   dbNet* getNetAndShape(dbShape& s, uint* shapeId, uint* level);
-  void inspectInst();
   void selectInst();
-  void inspectInstPin();
   void selectIterm2Net(uint itermId);
   uint selectIterm();
-  void inspectInstObs();
 
   uint addInstBoxes(dbInst* inst,
                     bool instBoxes,
@@ -246,16 +241,11 @@ class dbBlockSearch
                     bool vias);
   void addInstConnList(dbInst* inst, bool ignoreFlags);
   uint getConnectivityWires(dbInst* inst, bool ignoreZuiFlags);
-  void inspectBterm();
   void selectBterm2Net(uint btermId);
   uint selectBterm();
 
-  void inspectBlock();
-  void inspectBlockObs();
-  void inspectTrack();
   uint addSBox(uint menuId, uint subMenuId, bool wireVia, uint wireId);
   void addNetSBoxes(dbNet* net, uint wtype, bool skipVias);
-  void inspectPowerNet(bool menuFlag);
 
   uint getFirstShape(dbITerm* iterm,
                      bool viaFlag,
@@ -285,17 +275,7 @@ class dbBlockSearch
   bool getRCmsg(dbNet* net, uint shapeId);
 
   uint getWiresClipped(dbNet* targetNet, uint halo, bool ignoreFlag);
-  void inspectInst(Ath__zui* zui);
-  void inspectSignal(Ath__zui* zui);
-  void inspectPower(Ath__zui* zui);
 
-  void inspectTilePin(Ath__zui* zui, uint boxId, const char* action);
-  int inspect_1(Ath__zui* vzui,
-                char objType,
-                int boxType,
-                uint nameId,
-                const char* action,
-                const char* objName);
   void getSignalWires(Ath__zui* zui,
                       Ath__hierType hier,
                       bool ignoreFlag = false);
@@ -372,8 +352,6 @@ class dbBlockSearch
                    uint level,
                    uint dd,
                    bool ignoreFlag);
-
-  int inspect_1(Ath__zui* zui);
 
   uint getViaLevel(dbShape* s);
   uint getViaLevel(dbSBox* s);
