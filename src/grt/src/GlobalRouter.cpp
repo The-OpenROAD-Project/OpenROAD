@@ -2271,7 +2271,7 @@ void GlobalRouter::initRoutingTracks(
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
     if (techLayer == nullptr) {
-      _logger->error(GRT, 85, "Layer {} not found.", techLayer->getName());
+      _logger->error(GRT, 85, "Routing layer {} not found.", layer);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
