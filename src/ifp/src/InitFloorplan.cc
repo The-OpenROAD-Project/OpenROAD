@@ -356,10 +356,10 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
 				   int core_ux,
 				   int core_uy)
 {
-  // this is hardcoded for now as a margin between voltage domains, the default margin is: fp_gap_default * row_height
+  // this is hardcoded for now as a margin between voltage domains, the default margin is: fp_gap_default * site_dy
   static constexpr int fp_gap_default = 6;
-  int row_height = site->getHeight();
-  int site_width = site->getWidth();
+  uint site_dy = site->getHeight();
+  uint site_dx = site->getWidth();
   
   // checks if a group is defined as a voltage domain, if so it creates a region 
   for (dbGroup* domain : block_->getGroups()) {
@@ -369,16 +369,10 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
       auto domain_name = string(domain->getName());
       Rect domain_rect = domain->getBox();
 
-      int temp_domain_xMin = metersToMfgGrid(domain_rect.xMin() / 1e+6);
-      int temp_domain_yMin = metersToMfgGrid(domain_rect.yMin() / 1e+6);
-      int temp_domain_xMax = metersToMfgGrid(domain_rect.xMax() / 1e+6);
-      int temp_domain_yMax = metersToMfgGrid(domain_rect.yMax() / 1e+6);
-
-      int domain_yMin = temp_domain_yMin - temp_domain_yMin % row_height;
-      int domain_yMax = temp_domain_yMax - temp_domain_yMax % row_height;
-      int domain_xMin = temp_domain_xMin - temp_domain_xMin % site_width;
-      int domain_xMax = temp_domain_xMax - temp_domain_xMax % site_width;
-
+      int domain_xMin = domain_rect.xMin();
+      int domain_yMin = domain_rect.yMin();
+      int domain_xMax = domain_rect.xMax();
+      int domain_yMax = domain_rect.yMax();
       dbBox::create(domain_region, domain_xMin, domain_yMin, domain_xMax, domain_yMax);
 
       dbSet<dbRow> rows = block_->getRows();
@@ -398,48 +392,48 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
 
         string row_name = row->getName();
         // check if the rows overlapped with the area of a defined voltage domains + margin
-        if (row_yMax + fp_gap_default * row_height <= domain_yMin || 
-            row_yMin >= domain_yMax + fp_gap_default * row_height) {
+        if (row_yMax + fp_gap_default * site_dy <= domain_yMin || 
+            row_yMin >= domain_yMax + fp_gap_default * site_dy) {
           continue;
         } else {
           dbOrientType orient = row->getOrient();
           dbRow::destroy(row);
           
           // lcr stands for left core row
-          int lcr_xMax = int((domain_xMin - fp_gap_default * row_height) / site_width) * site_width;
+          int lcr_xMax = int((domain_xMin - fp_gap_default * site_dy) / site_dx) * site_dx;
           // in case there is at least one valid site width on the left, create left core rows 
-          if (lcr_xMax > core_lx + site_width)
+          if (lcr_xMax > core_lx + site_dx)
           {
             string lcr_name = row_name + "_1";
 	        // warning message since tap cells might not be inserted
-            if (lcr_xMax < core_lx + 10 * site_width) {
+            if (lcr_xMax < core_lx + 10 * site_dx) {
               logger_->warn(IFP, 11, "left core row: {} has less than 10 sites", lcr_name);   
             } 
-            int lcr_sites = (lcr_xMax - core_lx) / site_width;
+            int lcr_sites = (lcr_xMax - core_lx) / site_dx;
             dbRow::create(block_, lcr_name.c_str(), site, core_lx, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, lcr_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, lcr_sites, site_dx);
           }
           
           // rcr stands for right core row
-          int rcr_xMin = int((domain_xMax + fp_gap_default * row_height) / site_width) * site_width;
+          int rcr_xMin = int((domain_xMax + fp_gap_default * site_dy) / site_dx) * site_dx;
           // in case there is at least one valid site width on the right, create right core rows 
-          if (rcr_xMin + site_width < core_ux)
+          if (rcr_xMin + site_dx < core_ux)
           {  
             string rcr_name = row_name + "_2";
-            if (rcr_xMin + 10 * site_width > core_ux) {
+            if (rcr_xMin + 10 * site_dx > core_ux) {
               logger_->warn(IFP, 12, "right core row: {} has less than 10 sites", rcr_name); 
             }   
-            int rcr_sites = (core_ux - rcr_xMin) / site_width;
+            int rcr_sites = (core_ux - rcr_xMin) / site_dx;
             dbRow::create(block_, rcr_name.c_str(), site, rcr_xMin, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, rcr_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, rcr_sites, site_dx);
           }
 
-          int domain_row_sites = (domain_xMax - domain_xMin) / site_width;
+          int domain_row_sites = (domain_xMax - domain_xMin) / site_dx;
           // create domain rows if current iterations are not in margin area
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
             string domain_row_name = row_name + "_" + domain_name;
             dbRow::create(block_, domain_row_name.c_str(), site, domain_xMin, row_yMin, orient, 
-                  	  dbRowDir::HORIZONTAL, domain_row_sites, site_width);
+                  	  dbRowDir::HORIZONTAL, domain_row_sites, site_dx);
           }
         }
       }

@@ -64,23 +64,42 @@ proc create_child_physical_clusters { args } {
   }
 }
 
-sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
+sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury} -site site_name}
 
 proc create_voltage_domain { args } {
-  sta::parse_key_args "create_voltage_domain" args keys {-area} flags {}
+  sta::parse_key_args "create_voltage_domain" args keys {-area -site} flags {}
   set domain_name [lindex $args 0]
   if { [info exists keys(-area)] } {
     set area $keys(-area)
-    set llx [lindex $area 0]
-    set lly [lindex $area 1]
-    set urx [lindex $area 2]
-    set ury [lindex $area 3]
+    set llx [ord::microns_to_dbu [lindex $area 0]]
+    set lly [ord::microns_to_dbu [lindex $area 1]]
+    set urx [ord::microns_to_dbu [lindex $area 2]]
+    set ury [ord::microns_to_dbu [lindex $area 3]]
   } else {
     ord::error "please define area"
+  }
+  set site_name ""
+  if [info exists keys(-site)] {
+    set site_name $keys(-site)
+  } else {
+    ord::error "please define site to restrict domain shape"
   }
   sta::check_argc_eq1 "create_voltage_domain" $args
   set domain_name $args
   set db [ord::get_db]
+  foreach lib [$db getLibs] {
+    set site [$lib findSite $site_name]
+    if { $site != "NULL" } { break }
+  }
+  if { $site == "NULL" } {
+    ord::error "site $site_name is not found, please use a valid site name"
+  }
+  set site_dx [$site getWidth]
+  set site_dy [$site getHeight]
+  set llx [expr ($llx / $site_dx) * $site_dx]
+  set lly [expr ($lly / $site_dy) * $site_dy]
+  set urx [expr ($urx / $site_dx) * $site_dx]
+  set ury [expr ($ury / $site_dy) * $site_dy]
   set chip [$db getChip]
   if { $chip == "NULL" } {
     ord::error "please load the design before trying to use this command"
