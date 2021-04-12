@@ -66,6 +66,9 @@ MakeWireParasitics::MakeWireParasitics(ord::OpenRoad* openroad, GlobalRouter* gr
   _analysisPoint = _corner->findParasiticAnalysisPt(_min_max);
 
   _network = openroad->getDbNetwork();
+  _sta_net = nullptr;
+  _parasitic = nullptr;
+  _node_id = 0;
 }
 
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,

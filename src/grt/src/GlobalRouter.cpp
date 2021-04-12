@@ -1413,7 +1413,11 @@ void GlobalRouter::writeGuides(const char* fileName)
 
 RoutingLayer GlobalRouter::getRoutingLayerByIndex(int index)
 {
-  RoutingLayer selectedRoutingLayer;
+  if (_routingLayers->empty()) {
+    _logger->error(GRT, 42, "Routing layers were not initialized.");
+  }
+
+  RoutingLayer selectedRoutingLayer = _routingLayers->front();
 
   for (RoutingLayer routingLayer : *_routingLayers) {
     if (routingLayer.getIndex() == index) {
