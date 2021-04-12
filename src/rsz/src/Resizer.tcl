@@ -42,12 +42,13 @@ proc remove_buffers { args } {
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
                                       [-layer layer_name]\
-                                      [-layers {layer_name weight ...}]\
-                                      [-resistance res ][-capacitance cap]}
+                                      [-resistance res]\
+                                      [-capacitance cap]\
+                                      [-corner corner]}
 
 proc set_wire_rc { args } {
    sta::parse_key_args "set_wire_rc" args \
-     keys {-layer -layers -resistance -capacitance -corner} \
+     keys {-layer -resistance -capacitance -corner} \
      flags {-clock -signal -data}
 
   set wire_res 0.0
@@ -60,21 +61,6 @@ proc set_wire_rc { args } {
     }
     set layer_name $keys(-layer)
     lassign [rsz::layer_wire_rc $layer_name] wire_res wire_cap
-    set report_rc 1
-  } elseif { [info exists keys(-layers)] } {
-    set layers $keys(-layers)
-    set res_sum 0.0
-    set cap_sum 0.0
-    set weigth_sum 0.0
-    foreach {layer_name weight} $layers {
-      lassign [rsz::layer_wire_rc $layer_name] layer_res layer_cap
-      sta::check_positive_float "layer weight" $weight
-      set res_sum [expr $res_sum + $layer_res * $weight]
-      set cap_sum [expr $cap_sum + $layer_cap * $weight]
-      set weigth_sum [expr $weigth_sum + $weight]
-    }
-    set wire_res [expr $res_sum / $weigth_sum]
-    set wire_cap [expr $cap_sum / $weigth_sum]
     set report_rc 1
   } else {
     ord::ensure_units_initialized
@@ -91,10 +77,12 @@ proc set_wire_rc { args } {
     }
     set report_rc 0
   }
-  
-  if { [info exists keys(-corner)] } {
-    utl::warn RSZ 12 "-corner argument ignored."
+
+  set corners [sta::parse_corner_or_all keys]
+  if { $corners == "NULL" } {
+    set corners [sta::corners]
   }
+
   sta::check_argc_eq0 "set_wire_rc" $args
   
   set signal [info exists flags(-signal)]
@@ -125,12 +113,13 @@ proc set_wire_rc { args } {
   if { $wire_cap == 0.0 } {
     utl::warn RSZ 11 "$signal_clk wire capacitance is 0."
   }
-
-  if { $signal } {
-    rsz::set_wire_rc_cmd $wire_res $wire_cap
-  }
-  if { $clk } {
-    rsz::set_wire_clk_rc_cmd $wire_res $wire_cap
+  foreach corner [sta::corners] {
+    if { $signal } {
+      rsz::set_wire_signal_rc_cmd $corner $wire_res $wire_cap
+    }
+    if { $clk } {
+      rsz::set_wire_clk_rc_cmd $corner $wire_res $wire_cap
+    }
   }
 }
 
@@ -142,9 +131,14 @@ proc estimate_parasitics { args } {
 
   sta::check_argc_eq0 "estimate_parasitics" $args
   if { [info exists flags(-placement)] } {
-    if { [rsz::wire_capacitance] == 0.0 } {
-      utl::warn RSZ 14 "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
-    } else {
+    set have_rc 1
+    foreach corner [sta::corners] {
+      if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
+        utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+        set have_rc 0
+      }
+    }
+    if { $have_rc } {
       rsz::estimate_parasitics_cmd
     }
   } elseif { [info exists flags(-global_routing)] } {
@@ -430,7 +424,7 @@ proc parse_max_wire_length { keys_var } {
 }
 
 proc check_max_wire_length { max_wire_length } {
-  if { [rsz::wire_resistance] > 0 } {
+  if { [rsz::wire_signal_resistance [sta::cmd_corner]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {

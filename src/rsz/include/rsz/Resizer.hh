@@ -129,18 +129,20 @@ public:
 
   // Remove all buffers from the netlist.
   void removeBuffers();
-  // Set the resistance and capacitance used for parasitics.
-  void setWireRC(float wire_res, // ohms/meter
-                 float wire_cap); // farads/meter
+  // Set the resistance and capacitance used for parasitics on signal nets.
+  void setWireSignalRC(const Corner *corner,
+                       double res, // ohms/meter
+                       double cap); // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setWireClkRC(float wire_res, // ohms/meter
-                    float wire_cap); // farads/meter
+  void setWireClkRC(const Corner *corner,
+                    double res,
+                    double cap); // farads/meter
   // ohms/meter
-  float wireResistance() { return wire_res_; }
-  float wireClkResistance() { return wire_clk_res_; }
+  double wireSignalResistance(const Corner *corner);
+  double wireClkResistance(const Corner *corner);
   // farads/meter
-  float wireCapacitance() { return wire_cap_; }
-  float wireClkCapacitance() { return wire_clk_cap_; }
+  double wireSignalCapacitance(const Corner *corner);
+  double wireClkCapacitance(const Corner *corner);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
@@ -399,7 +401,7 @@ protected:
                                Pin *drvr_pin,
                                Pin *load_pin,
                                double wire_length, // meters
-                               const ParasiticAnalysisPt *parasitics_ap);
+                               const Corner *corner);
   string makeUniqueNetName();
   Net *makeUniqueNet();
   string makeUniqueInstName(const char *base_name);
@@ -533,8 +535,8 @@ protected:
   ////////////////////////////////////////////////////////////////
 
   // These are command args
-  float wire_res_;
-  float wire_cap_;
+  float wire_signal_res_;
+  float wire_signal_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
   LibertyCellSet dont_use_;

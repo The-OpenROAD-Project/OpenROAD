@@ -275,8 +275,8 @@ Resizer::addWireAndBuffer(BufferedNetSeq Z,
   int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
     + abs(k_loc.y() - prev_loc.y());
   float wire_length = dbuToMeters(wire_length_dbu);
-  float wire_cap = wire_length * wire_cap_;
-  float wire_res = wire_length * wire_res_;
+  float wire_cap = wire_length * wire_signal_cap_;
+  float wire_res = wire_length * wire_signal_res_;
   float wire_delay = wire_res * wire_cap;
   for (BufferedNet *p : Z) {
     BufferedNet *z = makeBufferedNet(BufferedNetType::wire,
@@ -549,8 +549,8 @@ Resizer::makeBufferedNetWire(SteinerTree *tree,
     int wire_length_dbu = abs(from_loc.x() - to_loc.x())
       + abs(from_loc.y() - to_loc.y());
     float wire_length = dbuToMeters(wire_length_dbu);
-    float wire_cap = wire_length * wire_cap_;
-    float wire_res = wire_length * wire_res_;
+    float wire_cap = wire_length * wire_signal_cap_;
+    float wire_res = wire_length * wire_signal_res_;
 
     return new BufferedNet(BufferedNetType::wire,
                            from_loc,

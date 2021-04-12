@@ -141,10 +141,10 @@ proc write_db { args } {
 }
 
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
-sta::define_cmd_args "set_layer_rc" { [-layer layer] \
-					[-via via_layer] \
-					[-capacitance cap] \
-					[-resistance res] }
+sta::define_cmd_args "set_layer_rc" { [-layer layer]\
+					[-via via_layer]\
+					[-capacitance cap]\
+					[-resistance res]}
 proc set_layer_rc {args} {
   sta::parse_key_args "set_layer_rc" args \
     keys {-layer -via -capacitance -resistance}\

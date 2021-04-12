@@ -119,7 +119,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
 void
 Resizer::estimateWireParasitics()
 {
-  if (wire_cap_ > 0.0) {
+  if (wire_signal_cap_ > 0.0) {
     sta_->ensureClkNetwork();
     sta_->deleteParasitics();
     // Make separate parasitics for each corner, same for min/max.
@@ -214,8 +214,8 @@ Resizer::estimateWireParasiticSteiner(const Net *net)
             parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap);
           else {
             float wire_length = dbuToMeters(wire_length_dbu);
-            float wire_cap = wire_length * (is_clk ? wire_clk_cap_ : wire_cap_);
-            float wire_res = wire_length * (is_clk ? wire_clk_res_ : wire_res_);
+            float wire_cap = wire_length * (is_clk ? wire_clk_cap_ : wire_signal_cap_);
+            float wire_res = wire_length * (is_clk ? wire_clk_res_ : wire_signal_res_);
             // Make pi model for the wire.
             debugPrint(logger_, RSZ, "resizer_parasitics", 2,
                        " pi {} l={} c2={} rpi={} c1={} {}",

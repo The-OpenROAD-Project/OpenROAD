@@ -147,8 +147,8 @@ extern int Rsz_Init(Tcl_Interp *interp);
 
 Resizer::Resizer() :
   StaState(),
-  wire_res_(0.0),
-  wire_cap_(0.0),
+  wire_signal_res_(0.0),
+  wire_signal_cap_(0.0),
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
   max_area_(0.0),
@@ -355,19 +355,45 @@ Resizer::removeBuffer(Instance *buffer)
 }
 
 void
-Resizer::setWireRC(float wire_res,
-                   float wire_cap)
+Resizer::setWireSignalRC(const Corner *corner,
+                         double res,
+                         double cap)
 {
-  wire_res_ = wire_res;
-  wire_cap_ = wire_cap;
+  wire_signal_res_ = res;
+  wire_signal_cap_ = cap;
+}
+
+double
+Resizer::wireSignalResistance(const Corner *corner)
+{
+  return wire_signal_res_;
+}
+
+double
+Resizer::wireSignalCapacitance(const Corner *corner)
+{
+  return wire_signal_cap_;
 }
 
 void
-Resizer::setWireClkRC(float wire_res,
-                      float wire_cap)
+Resizer::setWireClkRC(const Corner *corner,
+                      double res,
+                      double cap)
 {
-  wire_clk_res_ = wire_res;
-  wire_clk_cap_ = wire_cap;
+  wire_clk_res_ = res;
+  wire_clk_cap_ = cap;
+}
+
+double
+Resizer::wireClkResistance(const Corner *corner)
+{
+  return wire_clk_res_;
+}
+
+double
+Resizer::wireClkCapacitance(const Corner *corner)
+{
+  return wire_clk_cap_;
 }
 
 void
@@ -835,7 +861,7 @@ Resizer::repairNet(Net *net,
                 wire_length, pin_cap, fanout, load_pins);
       repair_count++;
 
-      double drvr_load = pin_cap + dbuToMeters(wire_length) * wire_cap_;
+      double drvr_load = pin_cap + dbuToMeters(wire_length) * wire_signal_cap_;
       if (using_buffer_cap_limit
           && drvr_load > drvr_max_cap) {
         // The remaining cap is more than the driver can handle.
@@ -992,8 +1018,8 @@ Resizer::repairNet(SteinerTree *tree,
   // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
-  double cap_left = pin_cap_left + dbuToMeters(wire_length_left) * wire_cap_;
-  double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap_;
+  double cap_left = pin_cap_left + dbuToMeters(wire_length_left) * wire_signal_cap_;
+  double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_signal_cap_;
   debugPrint(logger_, RSZ, "repair_net", 3, "%*scap_left={}, right_cap={}",
              level, "",
              units_->capacitanceUnit()->asString(cap_left, 3),
@@ -1077,9 +1103,9 @@ Resizer::repairNet(SteinerTree *tree,
                units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                units_->distanceUnit()->asString(dbuToMeters(length), 1));
     while ((max_length > 0 && wire_length > max_length)
-           || (wire_cap_ > 0.0
+           || (wire_signal_cap_ > 0.0
                && pin_cap < max_cap
-               && (pin_cap + dbuToMeters(wire_length) * wire_cap_) > max_cap)) {
+               && (pin_cap + dbuToMeters(wire_length) * wire_signal_cap_) > max_cap)) {
       // Make the wire a bit shorter than necessary to allow for
       // offset from instance origin to pin and detailed placement movement.
       double length_margin = .05;
@@ -1088,9 +1114,9 @@ Resizer::repairNet(SteinerTree *tree,
       if (max_length > 0 && wire_length > max_length) {
         buf_dist = length - (wire_length - max_length * (1.0 - length_margin));
       }
-      else if (wire_cap_ > 0.0
-               && (pin_cap + dbuToMeters(wire_length) * wire_cap_) > max_cap) {
-        int cap_length = metersToDbu((max_cap - pin_cap) / wire_cap_);
+      else if (wire_signal_cap_ > 0.0
+               && (pin_cap + dbuToMeters(wire_length) * wire_signal_cap_) > max_cap) {
+        int cap_length = metersToDbu((max_cap - pin_cap) / wire_signal_cap_);
         buf_dist = length - (wire_length - cap_length * (1.0 - length_margin));
       }
       else
@@ -2624,7 +2650,8 @@ Resizer::reportLongWires(int count,
     if (!network_->isTopLevelPort(drvr_pin)) {
       double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
       double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
-      double delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
+      double delay = (wire_length * wire_signal_res_)
+        * (wire_length * wire_signal_cap_) * 0.5;
       report_->reportLine("%s manhtn %s steiner %s %s",
                           sdc_network_->pathName(drvr_pin),
                           units_->distanceUnit()->asString(wire_length, 1),
@@ -2978,7 +3005,7 @@ Resizer::findMaxWireLength(LibertyPort *drvr_port)
   // wire_length2 upper bound
   double wire_length1 = 0.0;
   // Initial guess with wire resistance same as driver resistance.
-  double wire_length2 = drvr_r / wire_res_;
+  double wire_length2 = drvr_r / wire_signal_res_;
   double tol = .01; // 1%
   double diff1 = splitWireDelayDiff(wire_length1, cell);
   double diff2 = splitWireDelayDiff(wire_length2, cell);
@@ -3062,14 +3089,13 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   slew = -INF;
 
   for (Corner *corner : *sta_->corners()) {
-    const ParasiticAnalysisPt *parasitics_ap =
-      corner->findParasiticAnalysisPt(max_);
     const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const Pvt *pvt = dcalc_ap->operatingConditions();
 
-    makeWireParasitic(net, drvr_pin, load_pin, wire_length, parasitics_ap);
+    makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner);
     // Let delay calc reduce parasitic network as it sees fit.
-    Parasitic *drvr_parasitic = arc_delay_calc_->findParasitic(drvr_pin, RiseFall::rise(),
+    Parasitic *drvr_parasitic = arc_delay_calc_->findParasitic(drvr_pin,
+                                                               RiseFall::rise(),
                                                                dcalc_ap);
 
     LibertyCellTimingArcSetIterator set_iter(drvr_cell);
@@ -3113,14 +3139,16 @@ Resizer::makeWireParasitic(Net *net,
                            Pin *drvr_pin,
                            Pin *load_pin,
                            double wire_length, // meters
-                           const ParasiticAnalysisPt *parasitics_ap)
+                           const Corner *corner)
 {
+  const ParasiticAnalysisPt *parasitics_ap =
+    corner->findParasiticAnalysisPt(max_);
   Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
                                                            parasitics_ap);
   ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, drvr_pin);
   ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, load_pin);
-  double wire_cap = wire_length * wire_cap_;
-  double wire_res = wire_length * wire_res_;
+  double wire_cap = wire_length * wireSignalCapacitance(corner);
+  double wire_res = wire_length * wireSignalResistance(corner);
   parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap);
   parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
   parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap);
@@ -3138,7 +3166,7 @@ Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
   // wire_length1 lower bound
   // wire_length2 upper bound
   double wire_length1 = 0.0;
-  double wire_length2 = std::sqrt(max_slew / (wire_res_ * wire_cap_));
+  double wire_length2 = std::sqrt(max_slew / (wire_signal_res_ * wire_signal_cap_));
   double tol = .01; // 1%
   double diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length1, max_slew);
   double diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
