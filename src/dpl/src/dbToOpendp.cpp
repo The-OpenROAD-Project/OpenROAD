@@ -186,7 +186,9 @@ Opendp::makeCells()
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
-    if (master->isCoreAutoPlaceable()) {
+    dbMasterType type = master->getType();
+    if (type.isCore()
+        || type.isBlock()) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;
@@ -212,36 +214,14 @@ Opendp::getBbox(dbInst *inst)
 {
   dbMaster *master = inst->getMaster();
 
-  int loc_x, loc_y, width, height;
+  int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
   // Shift by core lower left.
   loc_x -= core_.xMin();
   loc_y -= core_.yMin();
 
-  int obs_count = 0;
-  dbBox *overlap = nullptr;
-  for (dbBox *obs : master->getObstructions()) {
-    if (obs->getTechLayer()->getType() == odb::dbTechLayerType("OVERLAP")) {
-      overlap = obs;
-      obs_count++;
-    }
-  }
-  if (obs_count == 1) {
-    Rect bbox;
-    overlap->getBox(bbox);
-    loc_x += bbox.xMin();
-    loc_y += bbox.yMin();
-    width = bbox.dx();
-    height = bbox.dy();
-  }
-  else {
-    if (obs_count > 1)
-      logger_->warn(DPL, 31, "non-rectangular obstruction in master {} unsupported.",
-                    master->getName());
-    width = master->getWidth();
-    height = master->getHeight();
-  }
-      
+  int width = master->getWidth();
+  int height = master->getHeight();
   if (swapWidthHeight(inst->getOrient()))
     std::swap(width, height);
   

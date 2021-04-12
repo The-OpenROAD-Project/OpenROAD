@@ -268,9 +268,7 @@ proc global_route { args } {
     utl::warn GRT 216 "option -macro_extension is deprecated. Use command set_macro_extension."
     set macro_extension $keys(-macro_extension)
     grt::set_macro_extension $macro_extension
-  } else {
-    grt::set_macro_extension 0
-  }
+  } 
 
   if { [info exists keys(-clock_layers)] } {
     utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_routing_layers."
