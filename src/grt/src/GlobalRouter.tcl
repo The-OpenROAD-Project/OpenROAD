@@ -172,21 +172,55 @@ proc set_macro_extension { args } {
   }
 }
 
+sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
+                                           [-clock_topology_priority priority] \
+                                           [-clock_tracks_cost clock_tracks_cost]
+}
+
+proc set_clock_routing { args } {
+  sta::parse_key_args "global_route" args \
+    keys { -clock_pdrev_fanout \
+           -clock_topology_priority \
+           -clock_tracks_cost
+         }
+
+  if { [info exists keys(-clock_topology_priority) ] } {
+    set priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $priority
+    grt::set_alpha $clock_topology_priority
+  } else {
+    # Default alpha as 0.3 prioritize wire length, but keeps
+    # aware of skew in the topology construction (see PDRev paper
+    # for more reference)
+    grt::set_alpha 0.3
+  }
+
+  if { [info exists keys(-clock_tracks_cost)] } {
+    set clock_tracks_cost $keys(-clock_tracks_cost)
+    grt::set_clock_cost $clock_tracks_cost
+  } else {
+    grt::set_clock_cost 1
+  }
+
+  if { [info exists keys(-clock_pdrev_fanout)] } {
+    set fanout $keys(-clock_pdrev_fanout)
+    grt::set_pdrev_for_high_fanout $fanout
+  } else {
+    grt::set_pdrev_for_high_fanout -1
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
-                                  [-allow_overflow] \
-                                  [-clock_pdrev_fanout fanout] \
-                                  [-clock_topology_priority priority] \
-                                  [-clock_tracks_cost clock_tracks_cost] \
+                                  [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -verbose -overflow_iterations \
-          -grid_origin -clock_pdrev_fanout \
-          -clock_topology_priority -clock_tracks_cost \
+    keys {-guide_file -verbose \ 
+          -overflow_iterations -grid_origin
          } \
     flags {-allow_overflow}
 
@@ -223,31 +257,6 @@ proc global_route { args } {
     grt::set_overflow_iterations $iterations
   } else {
     grt::set_overflow_iterations 50
-  }
-
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    grt::set_alpha $clock_topology_priority
-  } else {
-    # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
-    # for more reference)
-    grt::set_alpha 0.3
-  }
-
-  if { [info exists keys(-clock_tracks_cost)] } {
-    set clock_tracks_cost $keys(-clock_tracks_cost)
-    grt::set_clock_cost $clock_tracks_cost
-  } else {
-    grt::set_clock_cost 1
-  }
-
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
-  } else {
-    grt::set_pdrev_for_high_fanout -1
   }
 
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
