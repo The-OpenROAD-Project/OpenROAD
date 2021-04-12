@@ -71,14 +71,17 @@ proc create_voltage_domain { args } {
   set domain_name [lindex $args 0]
   if { [info exists keys(-area)] } {
     set area $keys(-area)
-    set llx [ord::microns_to_dbu [lindex $area 0]]
-    set lly [ord::microns_to_dbu [lindex $area 1]]
-    set urx [ord::microns_to_dbu [lindex $area 2]]
-    set ury [ord::microns_to_dbu [lindex $area 3]]
+    if { [llength $area] != 4 } {
+      ord::error "-area is a list of 4 coordinates"
+    }
+    lassign $area llx lly urx ury
+    sta::check_positive_float "-area" $llx
+    sta::check_positive_float "-area" $lly
+    sta::check_positive_float "-area" $urx
+    sta::check_positive_float "-area" $ury
   } else {
     ord::error "please define area"
   }
-  set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)
   } else {
@@ -96,10 +99,10 @@ proc create_voltage_domain { args } {
   }
   set site_dx [$site getWidth]
   set site_dy [$site getHeight]
-  set llx [expr ($llx / $site_dx) * $site_dx]
-  set lly [expr ($lly / $site_dy) * $site_dy]
-  set urx [expr ($urx / $site_dx) * $site_dx]
-  set ury [expr ($ury / $site_dy) * $site_dy]
+  set llx [expr [ord::microns_to_dbu $llx] / $site_dx * $site_dx]
+  set lly [expr [ord::microns_to_dbu $lly] / $site_dy * $site_dy]
+  set urx [expr [ord::microns_to_dbu $urx] / $site_dx * $site_dx]
+  set ury [expr [ord::microns_to_dbu $ury] / $site_dy * $site_dy]
   set chip [$db getChip]
   if { $chip == "NULL" } {
     ord::error "please load the design before trying to use this command"
