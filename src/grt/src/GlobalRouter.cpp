@@ -89,11 +89,12 @@ void GlobalRouter::init()
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
   _macroExtension = 0;
+  _verbose = 0;
 
   // Clock net routing variables
   _pdRev = 0;
-  _alpha = 0;
-  _verbose = 0;
+  _alpha = 0.3;
+  _clockCost = 1;
 }
 
 void GlobalRouter::makeComponents()
