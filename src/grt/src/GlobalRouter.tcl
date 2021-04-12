@@ -173,8 +173,6 @@ proc set_macro_extension { args } {
 }
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
-                                  [-layers layers] \
-                                  [-clock_layers layers] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
@@ -182,23 +180,13 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
                                   [-clock_tracks_cost clock_tracks_cost] \
-                                  [-macro_extension macro_extension] \
-                                  [-output_file out_file]
-}
-
-# sta::define_cmd_alias "fastroute" "global_route"
-
-proc fastroute { args } {
-  utl::warn GRT 19 "fastroute command is deprecated. Use global_route instead."
-  [eval global_route $args]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -layers -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin \
-          -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -clock_tracks_cost -macro_extension -output_file \
+    keys {-guide_file -verbose -overflow_iterations \
+          -grid_origin -clock_pdrev_fanout \
+          -clock_topology_priority -clock_tracks_cost \
          } \
     flags {-allow_overflow}
 
@@ -264,30 +252,8 @@ proc global_route { args } {
 
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
 
-  if { [info exists keys(-macro_extension)] } {
-    utl::warn GRT 216 "option -macro_extension is deprecated. Use command set_macro_extension."
-    set macro_extension $keys(-macro_extension)
-    grt::set_macro_extension $macro_extension
-  } 
-
-  if { [info exists keys(-clock_layers)] } {
-    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_routing_layers."
-    grt::define_clock_layer_range $keys(-clock_layers)
-  }
-
-  if { [info exists keys(-layers)] } {
-    utl::warn GRT 218 "option -layers is deprecated. Use command set_routing_layers."
-    grt::define_layer_range $keys(-layers)
-  }
-
   grt::clear
   grt::run
-  
-  if { [info exists keys(-output_file)] } {
-    utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."
-    set out_file $keys(-output_file)
-    grt::write_guides $out_file
-  }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
