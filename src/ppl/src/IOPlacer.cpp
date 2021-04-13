@@ -39,6 +39,9 @@
 #include <random>
 #include <sstream>
 
+#include "boost/random.hpp"
+#include "boost/generator_iterator.hpp"
+
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "utl/Logger.h"
@@ -106,6 +109,20 @@ void IOPlacer::initParms()
   }
 }
 
+template<class RandomIt, class URBG>
+void IOPlacer::shuffle(RandomIt first, RandomIt last, URBG&& g)
+{
+  int n = last - first;
+
+  boost::uniform_int<> distribution(1, n-1);
+  boost::variate_generator< URBG, boost::uniform_int<> >
+                dice(g, distribution);
+
+  for (int i = n-1; i > 0; i--) {
+    std::swap(first[i], first[dice()]);
+  }
+}
+
 void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = parms_->getRandSeed();
@@ -137,7 +154,9 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     sections_.push_back(s);
   }
 
-  std::mt19937 g(seed);
+  std::mt19937 g;
+  g.seed(seed);
+
   switch (mode) {
     case RandomMode::full:
       logger_->report("RandomMode Full");
@@ -164,7 +183,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
         vIOs[i] = i;
       }
 
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
+      IOPlacer::shuffle(vIOs.begin(), vIOs.end(), g);
 
       for (IOPin& io_pin : netlist_.getIOPins()) {
         int b = vIOs[0];
