@@ -113,7 +113,7 @@ proc set_wire_rc { args } {
   if { $wire_cap == 0.0 } {
     utl::warn RSZ 11 "$signal_clk wire capacitance is 0."
   }
-  foreach corner [sta::corners] {
+  foreach corner $corners {
     if { $signal } {
       rsz::set_wire_signal_rc_cmd $corner $wire_res $wire_cap
     }
