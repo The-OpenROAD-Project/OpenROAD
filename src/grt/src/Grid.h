@@ -158,7 +158,7 @@ class Grid
   {
     return _obstructions;
   }
-  void addObstruction(int layer, odb::Rect obstruction)
+  void addObstruction(int layer, const odb::Rect& obstruction)
   {
     _obstructions[layer].push_back(obstruction);
   }

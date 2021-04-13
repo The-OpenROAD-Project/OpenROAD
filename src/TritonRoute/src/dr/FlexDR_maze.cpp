@@ -2489,7 +2489,7 @@ void FlexDRWorker::routeNet_prep(drNet* net, set<drPin*, frBlockObjectComp> &unC
              z++) {  // populate the map from points to taper boxes
           for (int x = tbx->left(); x <= tbx->right(); x++)
             for (int y = tbx->bottom(); y <= tbx->top(); y++)
-              mazeIdx2Tbox[std::move(FlexMazeIdx(x, y, z))] = tbx;
+              mazeIdx2Tbox[FlexMazeIdx(x, y, z)] = tbx;
         }
       }
     }

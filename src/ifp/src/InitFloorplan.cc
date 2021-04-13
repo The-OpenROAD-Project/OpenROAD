@@ -88,26 +88,6 @@ using odb::dbTechLayerType;
 using odb::dbGroup;
 using odb::dbRegion;
 
-
-class Track
-{
-public:
-  Track(string layer,
-	char dir,
-	double offset,
-	double pitch);
-  string layer() const { return layer_; }
-  char dir() const { return dir_; }
-  double offset() const { return offset_; }
-  double pitch() const { return pitch_; }
-
-protected:
-  string layer_;
-  char dir_; 			// X or Y
-  double offset_;		// meters
-  double pitch_;		// meters
-};
-
 class InitFloorplan
 {
 public:
@@ -119,7 +99,6 @@ public:
 		     double core_space_left,
 		     double core_space_right,
 		     const char *site_name,
-		     const char *tracks_file,
 		     dbDatabase *db,
 		     Logger *logger);
 
@@ -132,7 +111,6 @@ public:
 		     double core_ux,
 		     double core_uy,
 		     const char *site_name,
-		     const char *tracks_file,
 		     dbDatabase *db,
 		     Logger *logger );
 
@@ -149,8 +127,7 @@ protected:
 		     double core_ly,
 		     double core_ux,
 		     double core_uy,
-		     const char *site_name,
-		     const char *tracks_file);
+		     const char *site_name);
   double designArea();
   void makeRows(dbSite *site,
 		int core_lx,
@@ -158,7 +135,6 @@ protected:
 		int core_ux,
 		int core_uy);
   dbSite *findSite(const char *site_name);
-  Vector<Track> readTracks(const char *tracks_file);
   void makeTracks(const char *tracks_file,
 		  Rect &die_area);
   void autoPlacePins(dbTechLayer *pin_layer,
@@ -174,7 +150,6 @@ protected:
   dbDatabase *db_;
   dbBlock *block_;
   Logger *logger_;
-  Vector<Track> tracks_;
 };
 
 void
@@ -185,7 +160,6 @@ initFloorplan(double util,
 	      double core_space_left,
 	      double core_space_right,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
 	      Logger *logger)
 {
@@ -193,8 +167,7 @@ initFloorplan(double util,
   init_fp.initFloorplan(util, aspect_ratio,
                         core_space_bottom, core_space_top,
                         core_space_left, core_space_right,
-                        site_name, tracks_file,
-                        db, logger);
+                        site_name, db, logger);
 }
 
 void
@@ -207,15 +180,13 @@ initFloorplan(double die_lx,
 	      double core_ux,
 	      double core_uy,
 	      const char *site_name,
-	      const char *tracks_file,
 	      dbDatabase *db,
               Logger *logger)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
-			site_name, tracks_file,
-			db, logger);
+			site_name, db, logger);
 }
 
 void
@@ -226,7 +197,6 @@ InitFloorplan::initFloorplan(double util,
 			     double core_space_left,
 			     double core_space_right,
 			     const char *site_name,
-			     const char *tracks_file,
 			     dbDatabase *db,
 			     Logger *logger)
 {
@@ -252,7 +222,7 @@ InitFloorplan::initFloorplan(double util,
       double die_uy = core_height + core_space_top + core_space_bottom;
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file);
+		    site_name);
     }
   }
 }
@@ -279,7 +249,6 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_ux,
 			     double core_uy,
 			     const char *site_name,
-			     const char *tracks_file,
 			     dbDatabase *db,
 			     Logger *logger)
 {
@@ -291,7 +260,7 @@ InitFloorplan::initFloorplan(double die_lx,
     if (block_) {
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file);
+		    site_name);
 
     }
   }
@@ -306,8 +275,7 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_ly,
 			     double core_ux,
 			     double core_uy,
-			     const char *site_name,
-			     const char *tracks_file)
+			     const char *site_name)
 {
   Rect die_area(metersToMfgGrid(die_lx),
                 metersToMfgGrid(die_ly),
@@ -334,13 +302,6 @@ InitFloorplan::initFloorplan(double die_lx,
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(clx, cly, cux, cuy);
-
-      // Destroy existing tracks.
-      for (odb::dbTrackGrid *grid : block_->getTrackGrids())
-        dbTrackGrid::destroy(grid);
-
-      if (tracks_file && tracks_file[0])
-	makeTracks(tracks_file, die_area);
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
@@ -486,101 +447,6 @@ InitFloorplan::findSite(const char *site_name)
       return site;
   }
   return nullptr;
-}
-
-////////////////////////////////////////////////////////////////
-
-void
-InitFloorplan::makeTracks(const char *tracks_file,
-			  Rect &die_area)
-{
-  Vector<Track> tracks = readTracks(tracks_file);
-  dbTech *tech = db_->getTech();
-  for (auto track : tracks) {
-    int pitch = metersToMfgGrid(track.pitch());
-    int offset = metersToMfgGrid(track.offset());
-    char dir = track.dir();
-    string layer_name = track.layer();
-    dbTechLayer *layer = tech->findLayer(layer_name.c_str());
-    if (layer) {
-      dbTrackGrid *grid = block_->findTrackGrid(layer);
-      if (grid == nullptr)
-	grid = dbTrackGrid::create(block_, layer);
-      int width;
-      int track_count;
-      switch (dir) {
-      case 'X':
-	width = die_area.dx();
-	track_count = (width - offset) / pitch + 1;
-	grid->addGridPatternX(die_area.xMin() + offset, track_count, pitch);
-	break;
-      case 'Y':
-	width = die_area.dy();
-	track_count = (width - offset) / pitch + 1;
-	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
-	break;
-      default:
-	logger_->critical(IFP, 3, "unknown track direction");
-      }
-    }
-  }
-}
-
-Vector<Track>
-InitFloorplan::readTracks(const char *tracks_file)
-{
-  Vector<Track> tracks;
-  std::ifstream tracks_stream(tracks_file);
-  if (tracks_stream.is_open()) {
-    int line_count = 1;
-    string line;
-    dbTech *tech = db_->getTech();
-    while (getline(tracks_stream, line)) {
-      StringVector tokens;
-      split(line, " \t", tokens);
-      if (tokens.size() == 4) {
-	string layer_name = tokens[0];
-	dbTechLayer *layer = tech->findLayer(layer_name.c_str());
-	if (layer) {
-	  string dir_str = tokens[1];
-	  char dir = 'X';
-	  if (stringEqual(dir_str.c_str(), "X"))
-	    dir = 'X';
-	  else if (stringEqual(dir_str.c_str(), "Y"))
-	    dir = 'Y';
-	  else
-	    logger_->error(IFP, 4, "track file line {} direction must be X or Y'.",
-                           line_count);
-	  // microns -> meters
-	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
-	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
-	  tracks.push_back(Track(layer_name, dir, offset, pitch));
-	}
-	else
-	  logger_->error(IFP, 5, "layer {} not found.", layer_name);
-      }
-      else
-	logger_->error(IFP, 6,
-                       "track file line {} does not match 'layer X|Y offset pitch'.",
-                       line_count);
-      line_count++;
-    }
-    tracks_stream.close();
-  }
-  else
-    logger_->error(IFP, 10, "Tracks file not readable.");
-  return tracks;
-}
-
-Track::Track(string layer,
-	     char dir,
-	     double offset,
-	     double pitch) :
-  layer_(layer),
-  dir_(dir),
-  offset_(offset),
-  pitch_(pitch)
-{
 }
 
 ////////////////////////////////////////////////////////////////

@@ -63,8 +63,8 @@ if {[catch {ICeWall init_footprint caravel_sky130/chip_io.sigmap} msg]} {
   exit
 }
 
-set def_file results/caravel_sky130.def
+set def_file [make_result_file "caravel_sky130.def"]
 
 write_def $def_file
-diff_files $def_file caravel_sky130.defok
+diff_files $def_file "caravel_sky130.defok"
 
