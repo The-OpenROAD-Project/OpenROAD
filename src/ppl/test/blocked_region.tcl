@@ -6,7 +6,7 @@ read_lef blocked_region.lef
 
 read_def blocked_region.def
 
-place_pins -hor_layer 4 -ver_layer 3 -random
+place_pins -hor_layer met3 -ver_layer met2 -random
 
 set def_file [make_result_file blocked_region.def]
 
