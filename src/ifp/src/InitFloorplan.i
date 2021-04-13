@@ -74,16 +74,14 @@ init_floorplan_core(double die_lx,
 		    double core_ly,
 		    double core_ux,
 		    double core_uy,
-		    const char *site_name,
-		    const char *tracks_file)
+		    const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
   utl::Logger *logger = ord::getOpenRoad()->getLogger();
   ifp::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
-		     site_name, tracks_file,
-		     db, logger);
+		     site_name, db, logger);
 }
 
 void
@@ -93,8 +91,7 @@ init_floorplan_util(double util,
                     double core_space_top,
                     double core_space_left,
                     double core_space_right,
-                    const char *site_name,
-                    const char *tracks_file)
+                    const char *site_name)
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
@@ -102,8 +99,7 @@ init_floorplan_util(double util,
   ifp::initFloorplan(util, aspect_ratio,
                      core_space_bottom, core_space_top,
                      core_space_left, core_space_right,
-                     site_name, tracks_file,
-                     db, logger);
+                     site_name, db, logger);
 }
 
 void

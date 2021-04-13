@@ -214,5 +214,5 @@
 [NesterovSolve] Iter: 1710 overflow: 0.96303 HPWL: 3009930
 [NesterovSolve] Iter: 1720 overflow: 0.96303 HPWL: 3009930
 [NesterovSolve] Iter: 1730 overflow: 0.96303 HPWL: 3009930
-[ERROR GPL-0305] RePlAce divergence detected.
+[ERROR GPL-0305] RePlAce diverged at newStepLength.
 GPL-0305

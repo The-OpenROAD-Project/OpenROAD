@@ -38,13 +38,12 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
-					       [-site site_name]\
-					       [-tracks tracks_file]}
+					       [-site site_name]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -tracks} \
+	    -die_area -core_area -site} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -55,11 +54,6 @@ proc initialize_floorplan { args } {
     set site_name $keys(-site)
   } else {
     utl::warn IFP 11 "use -site to add placement rows."
-  }
-
-  set tracks_file ""
-  if { [info exists keys(-tracks)] } {
-    set tracks_file $keys(-tracks)
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -104,7 +98,7 @@ proc initialize_floorplan { args } {
       [sta::distance_ui_sta $core_sp_top] \
       [sta::distance_ui_sta $core_sp_left] \
       [sta::distance_ui_sta $core_sp_right] \
-      $site_name $tracks_file
+      $site_name
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
@@ -134,7 +128,7 @@ proc initialize_floorplan { args } {
 	[sta::distance_ui_sta $die_ux] [sta::distance_ui_sta $die_uy] \
 	[sta::distance_ui_sta $core_lx] [sta::distance_ui_sta $core_ly] \
 	[sta::distance_ui_sta $core_ux] [sta::distance_ui_sta $core_uy] \
-	$site_name $tracks_file
+	$site_name
     } else {
       utl::error IFP 17 "no -core_area specified."
     }
