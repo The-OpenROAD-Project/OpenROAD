@@ -222,12 +222,15 @@ public:
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
   double findMaxWireLength();
-  double findMaxWireLength(LibertyCell *buffer_cell);
-  double findMaxWireLength(LibertyPort *drvr_port);
+  double findMaxWireLength(LibertyCell *buffer_cell,
+                           const Corner *corner);
+  double findMaxWireLength(LibertyPort *drvr_port,
+                           const Corner *corner);
   // Find the max wire length with load slew < max_slew (in meters).
   double findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
-                               double max_slew);
+                               double max_slew,
+                               const Corner *corner);
   double findSlewLoadCap(LibertyPort *drvr_port,
                          double slew);
   // Longest driver to load wire (in meters).
@@ -328,7 +331,8 @@ protected:
                  // Return values.
                  Slew &slew,
                  float &limit,
-                 float &slack);
+                 float &slack,
+                 const Corner *&corner);
   void repairNet(SteinerTree *tree,
                  SteinerPt pt,
                  SteinerPt prev_pt,
@@ -336,6 +340,7 @@ protected:
                  float max_cap,
                  float max_fanout,
                  int max_length,
+                 const Corner *corner,
                  int level,
                  // Return values.
                  int &wire_length,
@@ -535,10 +540,11 @@ protected:
   ////////////////////////////////////////////////////////////////
 
   // These are command args
-  float wire_signal_res_;
-  float wire_signal_cap_;
-  float wire_clk_res_;
-  float wire_clk_cap_;
+  // RC indexed by corner->index
+  vector<double> wire_signal_res_;
+  vector<double> wire_signal_cap_;
+  vector<double> wire_clk_res_;
+  vector<double> wire_clk_cap_;
   LibertyCellSet dont_use_;
   double max_area_;
 

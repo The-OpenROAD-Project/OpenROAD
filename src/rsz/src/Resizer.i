@@ -486,21 +486,23 @@ find_max_wire_length()
 }
 
 double
-find_buffer_max_wire_length(LibertyCell *buffer_cell)
+find_buffer_max_wire_length(LibertyCell *buffer_cell,
+                            const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findMaxWireLength(buffer_cell);
+  return resizer->findMaxWireLength(buffer_cell, corner);
 }
 
 double
 find_max_slew_wire_length(LibertyPort *drvr_port,
                           LibertyPort *load_port,
-                          float max_slew)
+                          float max_slew,
+                          const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew);
+  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew, corner);
 }
 
 double
