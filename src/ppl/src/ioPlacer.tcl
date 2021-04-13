@@ -188,35 +188,41 @@ proc place_pins { args } {
 
 
   set num_tracks_y 0
-  foreach hor_layer $hor_layers {
+  foreach hor_layer_name $hor_layers {
+    set hor_layer [ppl::parse_layer_name $hor_layer_name]
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer."
+      utl::error PPL 21 "Horizontal routing tracks not found for layer $hor_layer_name."
     }
 
     set h_tech_layer [$dbTech findRoutingLayer $hor_layer]
     if { [$h_tech_layer getDirection] != "HORIZONTAL" } {
-      utl::warn PPL 45 "Layer $hor_layer preferred direction is not horizontal."
+      utl::warn PPL 45 "Layer $hor_layer_name preferred direction is not horizontal."
     }
 
     set hor_track_grid [$dbBlock findTrackGrid $h_tech_layer]
     
     set num_tracks_y [expr $num_tracks_y+[llength [$hor_track_grid getGridY]]]
+
+    ppl::add_hor_layer $hor_layer 
   }
 
   set num_tracks_x 0
-  foreach ver_layer $ver_layers {
+  foreach ver_layer_name $ver_layers {
+    set ver_layer [ppl::parse_layer_name $ver_layer_name]
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer."
+      utl::error PPL 23 "Vertical routing tracks not found for layer $ver_layer_name."
     }
 
     set v_tech_layer [$dbTech findRoutingLayer $ver_layer]
     if { [$v_tech_layer getDirection] != "VERTICAL" } {
-      utl::warn PPL 46 "Layer $ver_layer preferred direction is not vertical."
+      utl::warn PPL 46 "Layer $ver_layer_name preferred direction is not vertical."
     }
 
     set ver_track_grid [$dbBlock findTrackGrid $v_tech_layer]
 
     set num_tracks_x [expr $num_tracks_x+[llength [$ver_track_grid getGridX]]]
+
+    ppl::add_ver_layer $ver_layer
   }
   
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
@@ -273,14 +279,6 @@ proc place_pins { args } {
       ppl::add_pin_group $pin_list
       incr group_idx
     }
-  }
-
-  foreach hor_layer $hor_layers {
-    ppl::add_hor_layer $hor_layer 
-  }
-
-  foreach ver_layer $ver_layers {
-    ppl::add_ver_layer $ver_layer
   }
   
   ppl::run_io_placement [info exists flags(-random)]
@@ -366,6 +364,20 @@ proc exclude_intervals { cmd intervals } {
       ppl::exclude_interval $interval
     }
   }
+}
+
+proc parse_layer_name { layer_name } {
+  if { ![ord::db_has_tech] } {
+    utl::error PPL 50 "no technology has been read."
+  }
+  set tech [ord::get_db_tech]
+  set tech_layer [$tech findLayer $layer_name]
+  if { $tech_layer == "NULL" } {
+    utl::error PPL 51 "layer $layer_name not found."
+  }
+  set layer_idx [$tech_layer getRoutingLevel]
+
+  return $layer_idx
 }
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
