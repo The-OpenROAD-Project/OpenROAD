@@ -1413,7 +1413,11 @@ void GlobalRouter::writeGuides(const char* fileName)
 
 RoutingLayer GlobalRouter::getRoutingLayerByIndex(int index)
 {
-  RoutingLayer selectedRoutingLayer;
+  if (_routingLayers->empty()) {
+    _logger->error(GRT, 42, "Routing layers were not initialized.");
+  }
+
+  RoutingLayer selectedRoutingLayer = _routingLayers->front();
 
   for (RoutingLayer routingLayer : *_routingLayers) {
     if (routingLayer.getIndex() == index) {
@@ -2271,7 +2275,7 @@ void GlobalRouter::initRoutingTracks(
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
     if (techLayer == nullptr) {
-      _logger->error(GRT, 85, "Layer {} not found.", techLayer->getName());
+      _logger->error(GRT, 85, "Routing layer {} not found.", layer);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
