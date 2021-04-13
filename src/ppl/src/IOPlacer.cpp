@@ -39,12 +39,10 @@
 #include <random>
 #include <sstream>
 
-#include "boost/random.hpp"
-#include "boost/generator_iterator.hpp"
-
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace ppl {
 
@@ -109,20 +107,6 @@ void IOPlacer::initParms()
   }
 }
 
-template<class RandomIt, class URBG>
-void IOPlacer::shuffle(RandomIt first, RandomIt last, URBG&& g)
-{
-  int n = last - first;
-
-  boost::uniform_int<> distribution(1, n-1);
-  boost::variate_generator< URBG, boost::uniform_int<> >
-                dice(g, distribution);
-
-  for (int i = n-1; i > 0; i--) {
-    std::swap(first[i], first[dice(i+1)]);
-  }
-}
-
 void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = parms_->getRandSeed();
@@ -183,7 +167,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
         vIOs[i] = i;
       }
 
-      IOPlacer::shuffle(vIOs.begin(), vIOs.end(), g);
+      utl::shuffle(vIOs.begin(), vIOs.end(), g);
 
       for (IOPin& io_pin : netlist_.getIOPins()) {
         int b = vIOs[0];
