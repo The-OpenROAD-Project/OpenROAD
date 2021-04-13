@@ -321,9 +321,9 @@ InitFloorplan::initFloorplan(double die_lx,
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
-      for (dbSet<dbRow>::iterator row = rows.begin();
-           row != rows.end() ;
-           row = dbRow::destroy(row)) ;
+      for (dbSet<dbRow>::iterator row_itr = rows.begin();
+           row_itr != rows.end() ;
+           row_itr = dbRow::destroy(row_itr)) ;
 
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
@@ -362,13 +362,12 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
   uint site_dx = site->getWidth();
   
   // checks if a group is defined as a voltage domain, if so it creates a region 
-  for (dbGroup* domain : block_->getGroups()) {
-    if (domain->getType()==dbGroup::VOLTAGE_DOMAIN) {
-      dbRegion* domain_region = dbRegion::create(block_, domain->getName());
+  for (dbGroup *group: block_->getGroups()) {
+    if (group->getType() == dbGroup::VOLTAGE_DOMAIN) {
+      dbRegion *domain_region = dbRegion::create(block_, group->getName());
 
-      auto domain_name = string(domain->getName());
-      Rect domain_rect = domain->getBox();
-
+      string domain_name = string(group->getName());
+      Rect domain_rect = group->getBox();
       int domain_xMin = domain_rect.xMin();
       int domain_yMin = domain_rect.yMin();
       int domain_xMax = domain_rect.xMax();
@@ -377,12 +376,14 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
 
       dbSet<dbRow> rows = block_->getRows();
       int total_row_count = 0;
-      for (dbRow* row_count : rows) total_row_count++;
+      for (dbRow *row: rows) total_row_count++;
       
-      int row_processed = 0;
-      for (dbRow *row: rows) {
-        if (++row_processed > total_row_count) break;
+      dbSet<dbRow>::iterator row_itr = rows.begin();
+      for (int row_processed = 0;
+           row_processed < total_row_count;
+           row_processed++) {          
 
+        dbRow *row = *row_itr;
         Rect row_bbox;
         row->getBBox(row_bbox);
         int row_xMin = row_bbox.xMin();
@@ -394,13 +395,14 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
         // check if the rows overlapped with the area of a defined voltage domains + margin
         if (row_yMax + fp_gap_default * site_dy <= domain_yMin || 
             row_yMin >= domain_yMax + fp_gap_default * site_dy) {
+          row_itr++;
           continue;
         } else {
           dbOrientType orient = row->getOrient();
-          dbRow::destroy(row);
+          row_itr = dbRow::destroy(row_itr);
           
           // lcr stands for left core row
-          int lcr_xMax = int((domain_xMin - fp_gap_default * site_dy) / site_dx) * site_dx;
+          int lcr_xMax = domain_xMin - fp_gap_default * site_dy;
           // in case there is at least one valid site width on the left, create left core rows 
           if (lcr_xMax > core_lx + site_dx)
           {
@@ -415,7 +417,7 @@ InitFloorplan::updateVoltageDomain(dbSite *site,
           }
           
           // rcr stands for right core row
-          int rcr_xMin = int((domain_xMax + fp_gap_default * site_dy) / site_dx) * site_dx;
+          int rcr_xMin = domain_xMax + fp_gap_default * site_dy;
           // in case there is at least one valid site width on the right, create right core rows 
           if (rcr_xMin + site_dx < core_ux)
           {  

@@ -64,10 +64,10 @@ proc create_child_physical_clusters { args } {
   }
 }
 
-sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury} -site site_name}
+sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
 proc create_voltage_domain { args } {
-  sta::parse_key_args "create_voltage_domain" args keys {-area -site} flags {}
+  sta::parse_key_args "create_voltage_domain" args keys {-area} flags {}
   set domain_name [lindex $args 0]
   if { [info exists keys(-area)] } {
     set area $keys(-area)
@@ -82,33 +82,17 @@ proc create_voltage_domain { args } {
   } else {
     ord::error "please define area"
   }
-  if [info exists keys(-site)] {
-    set site_name $keys(-site)
-  } else {
-    ord::error "please define site to restrict domain shape"
-  }
   sta::check_argc_eq1 "create_voltage_domain" $args
   set domain_name $args
   set db [ord::get_db]
-  foreach lib [$db getLibs] {
-    set site [$lib findSite $site_name]
-    if { $site != "NULL" } { break }
-  }
-  if { $site == "NULL" } {
-    ord::error "site $site_name is not found, please use a valid site name"
-  }
-  set site_dx [$site getWidth]
-  set site_dy [$site getHeight]
-  set llx [expr [ord::microns_to_dbu $llx] / $site_dx * $site_dx]
-  set lly [expr [ord::microns_to_dbu $lly] / $site_dy * $site_dy]
-  set urx [expr [ord::microns_to_dbu $urx] / $site_dx * $site_dx]
-  set ury [expr [ord::microns_to_dbu $ury] / $site_dy * $site_dy]
   set chip [$db getChip]
   if { $chip == "NULL" } {
     ord::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
-  set group [odb::dbGroup_create $block $domain_name $llx $lly $urx $ury]
+  set group [odb::dbGroup_create $block $domain_name \
+		[ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
+		[ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
   if { $group == "NULL" } {
     ord::error "duplicate group name"
   }
