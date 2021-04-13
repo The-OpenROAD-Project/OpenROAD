@@ -302,13 +302,6 @@ InitFloorplan::initFloorplan(double die_lx,
       int cuy = metersToMfgGrid(core_uy);
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
-
-      // Destroy existing tracks.
-      for (odb::dbTrackGrid *grid : block_->getTrackGrids())
-        dbTrackGrid::destroy(grid);
-
-      if (tracks_file && tracks_file[0])
-	      makeTracks(tracks_file, die_area);
     }
     else
       logger_->warn(IFP, 9, "SITE {} not found.", site_name);
