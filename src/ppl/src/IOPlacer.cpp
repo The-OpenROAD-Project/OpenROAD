@@ -119,7 +119,7 @@ void IOPlacer::shuffle(RandomIt first, RandomIt last, URBG&& g)
                 dice(g, distribution);
 
   for (int i = n-1; i > 0; i--) {
-    std::swap(first[i], first[dice()]);
+    std::swap(first[i], first[dice(i+1)]);
   }
 }
 
