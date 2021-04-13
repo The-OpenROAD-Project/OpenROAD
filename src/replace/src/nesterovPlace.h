@@ -37,6 +37,7 @@
 #include "point.h"
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace utl {
 class Logger;
@@ -181,6 +182,9 @@ private:
 
   float isDiverged_;
   float isRoutabilityNeed_;
+
+  std::string divergeMsg_;
+  int divergeCode_; 
 
   void cutFillerCoordinates();
 

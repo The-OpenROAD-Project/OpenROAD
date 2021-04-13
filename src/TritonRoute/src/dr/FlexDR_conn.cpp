@@ -1110,7 +1110,7 @@ void FlexDR::checkConnectivity_merge_commit(
         break;
     }
     if (last) {
-      victimPathSeg->setEndStyle(last->getEndStyle());
+      victimPathSeg->setEndStyle(last->getEndStyle(), last->getEndExt());
     }
     regionQuery->addDRObj(victimPathSeg);
   }
