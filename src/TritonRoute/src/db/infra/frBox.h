@@ -145,6 +145,9 @@ class frBox
         std::max(right(), box.right()),
         std::max(top(), box.top()));
   }
+  void shift(int x, int y) {
+      set(left()+x, bottom()+y, right()+x, top()+y);
+  }
   frCoord distMaxXY(const frBox& bx) const
   {
     frCoord xd = 0, yd = 0;

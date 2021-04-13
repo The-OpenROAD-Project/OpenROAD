@@ -84,6 +84,13 @@ void FlexGridGraph::initGrids(
 
 }
 
+bool FlexGridGraph::outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox) {
+    frViaDef *via = design_->getTech()->getLayer(getLayerNum(z)+1)->getDefaultViaDef();
+    frBox viaBox(via->getLayer1ShapeBox());
+    viaBox.merge(via->getLayer2ShapeBox());
+    viaBox.shift(xCoords_[x], yCoords_[y]);
+    return !dieBox.contains(viaBox);
+}
 void FlexGridGraph::initEdges(
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& xMap,
     const map<frCoord, map<frLayerNum, frTrackPattern*>>& yMap,
@@ -95,7 +102,8 @@ void FlexGridGraph::initEdges(
   getDim(xDim, yDim, zDim);
   // initialize grid graph
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
-
+  frBox dieBox;
+  design_->getTopBlock()->getBoundaryBBox(dieBox);
   for (auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     if (layerNum + 2 <= getTech()->getTopLayerNum()) {
@@ -124,7 +132,6 @@ void FlexGridGraph::initEdges(
 
         // add cost to out-of-die edge
         bool outOfDiePlanar = false;
-        bool outOfDieVia = false;
         // add edge for preferred direction
         if (dir == frcHorzPrefRoutingDir && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER
@@ -153,11 +160,11 @@ void FlexGridGraph::initEdges(
                         != nullptr
                     && xIt2->second == nullptr)) {
               ;
-            } else {
+            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
-              if (condition || outOfDieVia) {
+              if (condition) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
             }
@@ -189,11 +196,11 @@ void FlexGridGraph::initEdges(
                         != nullptr
                     && yIt2->second == nullptr)) {
               ;
-            } else {
+            } else if (!outOfDieVia(xIdx, yIdx, zIdx, dieBox)) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
-              if (condition || outOfDieVia) {
+              if (condition) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
             }

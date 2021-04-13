@@ -1152,6 +1152,8 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
               const frPoint& centerPt);
+private:
+    bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
 };
 }  // namespace fr
 
