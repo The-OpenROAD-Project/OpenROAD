@@ -141,72 +141,21 @@ void IOPlacer::randomPlacement(const RandomMode mode)
   std::mt19937 g;
   g.seed(seed);
 
-  switch (mode) {
-    case RandomMode::full:
-      logger_->report("RandomMode Full");
+  logger_->report("RandomMode Even");
 
-      for (size_t i = 0; i < vSlots.size(); ++i) {
-        vSlots[i] = i;
-      }
+  for (size_t i = 0; i < vIOs.size(); ++i) {
+    vIOs[i] = i;
+  }
 
-      std::shuffle(vSlots.begin(), vSlots.end(), g);
+  utl::shuffle(vIOs.begin(), vIOs.end(), g);
 
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vSlots[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vSlots.erase(vSlots.begin());
-      }
-      break;
-    case RandomMode::even:
-      logger_->report("RandomMode Even");
-
-      for (size_t i = 0; i < vIOs.size(); ++i) {
-        vIOs[i] = i;
-      }
-
-      utl::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
-        io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    case RandomMode::group:
-      logger_->report("RandomMode Group");
-      for (size_t i = mid1; i < mid1 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid2; i < mid2 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid3; i < mid3 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid4; i < mid4 + last_slots; i++) {
-        vIOs[idx++] = i;
-      }
-
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    default:
-      logger_->error(PPL, 39, "Random mode not found");
-      break;
+  for (IOPin& io_pin : netlist_.getIOPins()) {
+    int b = vIOs[0];
+    io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
+    io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
+    assignment_.push_back(io_pin);
+    sections_[0].net.addIONet(io_pin, instPins);
+    vIOs.erase(vIOs.begin());
   }
 }
 
