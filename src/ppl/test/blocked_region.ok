@@ -17,6 +17,5 @@
 Found 1 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-Random pin placement
-RandomMode Even
+[INFO PPL-0003] Random pin placement.
 No differences found.
