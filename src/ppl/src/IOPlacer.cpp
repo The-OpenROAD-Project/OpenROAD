@@ -141,8 +141,6 @@ void IOPlacer::randomPlacement(const RandomMode mode)
   std::mt19937 g;
   g.seed(seed);
 
-  logger_->report("RandomMode Even");
-
   for (size_t i = 0; i < vIOs.size(); ++i) {
     vIOs[i] = i;
   }
@@ -840,7 +838,7 @@ void IOPlacer::run(bool random_mode)
     init_hpwl = returnIONetsHPWL(netlist_);
   }
   if (random_mode) {
-    logger_->report("Random pin placement");
+    logger_->info(PPL, 3, "Random pin placement.");
     randomPlacement(RandomMode::even);
   } else {
     setupSections();
