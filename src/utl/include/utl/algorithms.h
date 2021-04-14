@@ -40,6 +40,8 @@
 
 namespace utl {
 
+// std::shuffle produces different results on different platforms.
+// This custom shuffle function is used for consistency in different platforms.
 template<class RandomIt, class URBG>
 void shuffle(RandomIt first, RandomIt last, URBG&& g)
 {
