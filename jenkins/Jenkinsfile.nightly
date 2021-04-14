@@ -34,7 +34,7 @@ pipeline {
         stage("Global Placer Large") {
           agent any;
           stages {
-            stage("Test ISPD") {
+            stage("Test Replace Large") {
               steps {
                 unstash "build";
                 sh "./src/replace/test/regression-large";
