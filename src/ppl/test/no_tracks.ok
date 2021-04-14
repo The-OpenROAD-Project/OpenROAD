@@ -7,5 +7,5 @@
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[ERROR PPL-0021] Horizontal routing tracks not found for layer 3.
+[ERROR PPL-0021] Horizontal routing tracks not found for layer metal3.
 PPL-0021
