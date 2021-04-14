@@ -74,7 +74,7 @@ int vCapacity;
 int hCapacity;
 int MD;
 
-FastRouteCore::FastRouteCore(utl::Logger* log)
+FastRouteCore::FastRouteCore(odb::dbDatabase* db, utl::Logger* log)
 {
   newnetID = 0;
   segcount = 0;
@@ -85,7 +85,9 @@ FastRouteCore::FastRouteCore(utl::Logger* log)
   MD = 0;
   numNets = 0;
   invalidNets = 0;
+  maxNetDegree = 0;
   logger = log;
+  db_ = db;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -143,13 +145,8 @@ void FastRouteCore::deleteComponents()
     delete[] gs;
   gs = nullptr;
 
-  if (treeOrderPV)
-    delete[] treeOrderPV;
-  treeOrderPV = nullptr;
-
-  if (treeOrderCong)
-    delete[] treeOrderCong;
-  treeOrderCong = nullptr;
+  treeOrderPV.clear();
+  treeOrderCong.clear();
 
   if (h_edges3D)
     delete[] h_edges3D;
@@ -216,13 +213,12 @@ void FastRouteCore::deleteComponents()
     delete[] ycor;
   if (dcor)
     delete[] dcor;
-  if (netEO)
-    delete[] netEO;
+
+  netEO.clear();
 
   xcor = nullptr;
   ycor = nullptr;
   dcor = nullptr;
-  netEO = nullptr;
 
   if (HV) {
     for (int i = 0; i < YRANGE; i++) {
@@ -637,7 +633,7 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
                                           int l2)
 {
   int grid, k;
-  int resource;
+  int resource = 0;
 
   k = l1 - 1;
   if (y1 == y2) {
@@ -646,6 +642,9 @@ int FastRouteCore::getEdgeCurrentResource(long x1,
   } else if (x1 == x2) {
     grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     resource = v_edges3D[grid].cap - v_edges3D[grid].usage;
+  } else
+  {
+    logger->error(GRT, 212, "Cannot get edge resource: edge is not vertical or horizontal.");
   }
 
   return resource;
@@ -659,7 +658,7 @@ int FastRouteCore::getEdgeCurrentUsage(long x1,
                                        int l2)
 {
   int grid, k;
-  int usage;
+  int usage = 0;
 
   k = l1 - 1;
   if (y1 == y2) {
@@ -668,6 +667,9 @@ int FastRouteCore::getEdgeCurrentUsage(long x1,
   } else if (x1 == x2) {
     grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     usage = v_edges3D[grid].usage;
+  } else
+  {
+    logger->error(GRT, 213, "Cannot get edge usage: edge is not vertical or horizontal.");
   }
 
   return usage;
@@ -752,7 +754,7 @@ int FastRouteCore::getEdgeCapacity(long x1,
                                    long y2,
                                    int l2)
 {
-  int cap;
+  int cap = 0;
 
   const int k = l1 - 1;
 
@@ -764,6 +766,9 @@ int FastRouteCore::getEdgeCapacity(long x1,
   {
     int grid = y1 * xGrid + x1 + k * xGrid * (yGrid - 1);
     cap = v_edges3D[grid].cap;
+  } else
+  {
+    logger->error(GRT, 214, "Cannot get edge capacity: edge is not vertical or horizontal.");
   }
 
   return cap;
@@ -833,7 +838,7 @@ void FastRouteCore::setEdgeUsage(long x1,
 
 void FastRouteCore::initAuxVar()
 {
-  treeOrderCong = NULL;
+  treeOrderCong.clear();
   stopDEC = FALSE;
 
   seglistCnt = new int[numValidNets];
@@ -907,23 +912,23 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
-void FastRouteCore::updateDbCongestion(odb::dbDatabase* db)
+void FastRouteCore::updateDbCongestion()
 {
-  auto block = db->getChip()->getBlock();
+  auto block = db_->getChip()->getBlock();
   auto db_gcell = odb::dbGCellGrid::create(block);
   if(db_gcell == nullptr)
   {
     db_gcell = block->getGCellGrid();
-    logger->warn(utl::GRT, 210, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
+    logger->warn(utl::GRT, 211, "dbGcellGrid already exists in db. Clearing existing dbGCellGrid");
     db_gcell->resetGrid();
   }
   db_gcell->addGridPatternX(xcorner, xGrid, wTile);
   db_gcell->addGridPatternY(ycorner, yGrid + 1, hTile);
   for (int k = 0; k < numLayers; k++) {
-    auto layer = db->getTech()->findRoutingLayer(k+1);
+    auto layer = db_->getTech()->findRoutingLayer(k+1);
     if(layer == nullptr)
     {
-      logger->warn(utl::GRT, 211, "skipping layer {} not found in db", k+1);
+      logger->warn(utl::GRT, 215, "skipping layer {} not found in db", k+1);
       continue;
     }
     for (int y = 0; y < yGrid; y++) {
@@ -949,7 +954,8 @@ NetRouteMap FastRouteCore::run()
   int tUsage;
   int cost_step;
   int maxOverflow;
-  int minoflrnd, bwcnt;
+  int minoflrnd;
+  int bwcnt = 0;
 
   // TODO: check this size
   int maxPin = maxNetDegree;
@@ -957,7 +963,7 @@ NetRouteMap FastRouteCore::run()
   xcor = new int[maxPin];
   ycor = new int[maxPin];
   dcor = new int[maxPin];
-  netEO = new OrderNetEdge[maxPin];
+  netEO.reserve(maxPin);
 
   Bool input, WriteOut;
   input = WriteOut = 0;
@@ -1289,6 +1295,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
+    updateDbCongestion();
     logger->error(GRT, 118, "Routing congestion too high.");
   }
 
@@ -1362,13 +1369,10 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
 
-  delete[] netEO;
-  netEO = nullptr;
+  netEO.clear();
 
-  /* TODO:  <11-07-19, this function leads to a segfault, but as the OS
-   * frees all memory after the application end (next line) we can omit
-   * this function call for now.> */
-  /* freeAllMemory(); */
+  updateDbCongestion();
+
   return routes;
 }
 

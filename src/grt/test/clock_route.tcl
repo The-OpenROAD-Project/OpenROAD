@@ -12,12 +12,13 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file clock_route.guide]
 
-set_global_routing_layer_adjustment 2 0.8
-set_global_routing_layer_adjustment 3 0.7
+set_global_routing_layer_adjustment met1 0.8
+set_global_routing_layer_adjustment met2 0.7
 set_global_routing_layer_adjustment * 0.5
 
-global_route -layers 2-6 \
-          -clock_layers 4-6
+set_routing_layers -signal met1-met5 -clock met3-met5
+
+global_route
 
 write_guides $guide_file
 

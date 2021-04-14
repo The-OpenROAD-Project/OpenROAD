@@ -168,9 +168,7 @@ class GlobalRouter
   void setMaxRoutingLayer(const int maxLayer);
   void setMinLayerForClock(const int minLayer);
   void setMaxLayerForClock(const int maxLayer);
-  void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
-  void setPitchesInTile(const int pitchesInTile);
   unsigned getDbId();
   void addLayerAdjustment(int layer, float reductionPercentage);
   void addRegionAdjustment(int minX,
@@ -193,7 +191,7 @@ class GlobalRouter
   void writeGuides(const char* fileName);
   std::vector<Net*> startFastRoute(int minRoutingLayer, int maxRoutingLayer, NetType type);
   void estimateRC();
-  void runFastRoute();
+  void run();
   void globalRouteClocksSeparately();
   void globalRoute();
   NetRouteMap& getRoutes() { return _routes; }
@@ -206,10 +204,6 @@ class GlobalRouter
   // congestion drive replace functions
   ROUTE_ getRoute();
 
-  // estimate_rc functions
-  void getLayerRC(unsigned layerId, float& r, float& c);
-  void getCutLayerRes(unsigned belowLayerId, float& r);
-  double dbuToMeters(int dbu);
   double dbuToMicrons(int64_t dbu);
 
   // route clock nets public functions
@@ -297,11 +291,11 @@ class GlobalRouter
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
   void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                          int maxLayer,
-                         std::vector<float> layerPitches);
-  void computeCapacities(int maxLayer, std::vector<float> layerPitches);
+                         const std::vector<float>& layerPitches);
+  void computeCapacities(int maxLayer, const std::vector<float>& layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist();
-  void addNets(std::set<odb::dbNet*>& db_nets);
+  void addNets(std::set<odb::dbNet*, cmpById>& db_nets);
   Net* getNet(odb::dbNet* db_net);
   void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstructions();
@@ -311,7 +305,6 @@ class GlobalRouter
                               const std::vector<int>& layerExtensions);
   void findNetsObstructions(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
-  std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
@@ -382,5 +375,6 @@ class GlobalRouter
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+std::ostream& operator<<(std::ostream& os, const GlobalRouter::ROUTE_& route);
 
 }  // namespace grt

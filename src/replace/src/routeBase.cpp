@@ -658,8 +658,7 @@ RouteBase::getGlobalRouterResult() {
   grouter_->setAllowOverflow(true);
   grouter_->setOverflowIterations(0);
 
-  // E.M @ 20/11/25: false is required here to run FastRoute for all nets
-  grouter_->runFastRoute();
+  grouter_->run();
 
   // Note that *.route info is unique.
   // TODO: read *.route only once.
@@ -740,9 +739,6 @@ RouteBase::updateRoute() {
   horizontalCapacity_ = route.horizontalEdgesCapacities;
   minWireWidth_ = route.minWireWidths;
   minWireSpacing_ = route.minWireSpacings;
-
-  using std::cout;
-  using std::endl;
 
   edgeCapacityStor_.reserve(route.adjustments.size());
   for(auto& e : route.adjustments) {
@@ -1227,9 +1223,6 @@ RouteBase::routability() {
     }
   }
   
-  using std::cout;
-  using std::endl;
-
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_

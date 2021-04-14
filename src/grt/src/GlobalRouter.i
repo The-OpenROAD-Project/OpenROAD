@@ -61,12 +61,6 @@ have_routes()
 }
 
 void
-set_tile_size(int tileSize)
-{
-  getFastRoute()->setPitchesInTile(tileSize);
-}
-
-void
 set_capacity_adjustment(float adjustment)
 {
   getFastRoute()->setAdjustment(adjustment);
@@ -178,6 +172,12 @@ void
 global_route_clocks_separately()
 {
   getFastRoute()->globalRouteClocksSeparately();
+}
+
+void
+run()
+{
+  getFastRoute()->run();
 }
 
 void

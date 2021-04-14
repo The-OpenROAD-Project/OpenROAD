@@ -34,18 +34,7 @@ using namespace fr;
 
 void FlexGRWorker::end()
 {
-  bool enableOutput = false;
 
-  if (enableOutput) {
-    stringstream ss;
-    ss << endl
-       << "end GR worker (BOX) "
-       << "( " << extBox_.left() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.bottom() * 1.0 / getTech()->getDBUPerUU() << " ) ( "
-       << extBox_.right() * 1.0 / getTech()->getDBUPerUU() << " "
-       << extBox_.top() * 1.0 / getTech()->getDBUPerUU() << " )" << endl;
-    cout << ss.str() << flush;
-  }
 
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
@@ -347,13 +336,9 @@ void FlexGRWorker::endStitchBoundary()
 // grNet remembers boundary pin frNode
 void FlexGRWorker::endStitchBoundary_net(grNet* net)
 {
-  bool enableOutput = false;
 
   auto fnet = net->getFrNet();
 
-  if (enableOutput) {
-    cout << "grNet " << net << endl;
-  }
 
   auto& pinNodePairs = net->getPinNodePairs();
   for (auto& pinNodePair : pinNodePairs) {
@@ -383,17 +368,6 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     auto parentLoc = parent->getLoc();
     if (childLoc.x() != parentLoc.x() && childLoc.y() != parentLoc.y()) {
       cout << "Error: boundary pin has non-colinear parent and child loc\n";
-    }
-    if (enableOutput) {
-      cout << "  @@@ before stitching " << fnet->getName() << " has "
-           << fnet->getNodes().size() << " nodes"
-           << " and " << fnet->getGRShapes().size() << " wires and "
-           << fnet->getGRVias().size() << " vias\n";
-    }
-    if (enableOutput) {
-      cout << "  stitching net " << fnet->getName() << " at ("
-           << node->getLoc().x() << ", " << node->getLoc().y()
-           << ") on layerNum " << node->getLayerNum() << endl;
     }
 
     // update connectivity
@@ -428,19 +402,11 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     // remove node from fnet
     fnet->removeNode(node);
 
-    if (enableOutput) {
-      cout << "  after stitching " << fnet->getName() << " has "
-           << fnet->getNodes().size() << " nodes"
-           << " and " << fnet->getGRShapes().size() << " wires and "
-           << fnet->getGRVias().size() << " vias\n";
-    }
   }
 }
 
 void FlexGRWorker::endWriteBackCMap()
 {
-  bool enableOutput = false;
-  bool hasChange = false;
 
   auto cmap = getCMap();
 
@@ -468,7 +434,7 @@ void FlexGRWorker::endWriteBackCMap()
             || gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N)
                    != cmap->getRawDemand(
                        cmapXIdx, cmapYIdx, zIdx, frDirEnum::N)) {
-          hasChange = true;
+          ;
         }
 
         // copy raw demand
@@ -488,11 +454,6 @@ void FlexGRWorker::endWriteBackCMap()
     }
   }
 
-  if (enableOutput) {
-    if (hasChange) {
-      cout << "    Congestion changed.\n";
-    }
-  }
 }
 
 void FlexGRWorker::cleanup()

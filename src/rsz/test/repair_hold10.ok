@@ -11,8 +11,8 @@
 [INFO ODB-0131]     Created 15 components and 68 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 29 connections.
 [INFO ODB-0134] Finished DEF file: repair_hold10.def
-Min routing layer: 2
-Max routing layer: 6
+Min routing layer: met1
+Max routing layer: met5
 Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
@@ -20,8 +20,8 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0018] Processing 483 blockages on layer 1.
-[INFO GRT-0019] Processing 86 blockages on layer 2.
+[INFO GRT-0018] Processing 483 blockages on layer li1.
+[INFO GRT-0019] Processing 86 blockages on layer met1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 977
@@ -36,11 +36,11 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 977
 [INFO GRT-0111] Final number of vias: 54
 [INFO GRT-0112] Final usage 3D: 1139
-[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 6927 um
 worst slack -1.95
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
-[INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.557ns delay for hold repairs.
+[INFO RSZ-0059] Using sky130_fd_sc_hd__dlygate4sd3_1 with 0.553ns delay for hold repairs.
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 1 hold buffers.
 worst slack 0.29
@@ -54,8 +54,8 @@ original HPWL            6757.8 u
 legalized HPWL           6764.9 u
 delta HPWL                    0 %
 
-Min routing layer: 2
-Max routing layer: 6
+Min routing layer: met1
+Max routing layer: met5
 Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
@@ -63,8 +63,8 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 8 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 4
-[INFO GRT-0018] Processing 508 blockages on layer 1.
-[INFO GRT-0019] Processing 88 blockages on layer 2.
+[INFO GRT-0018] Processing 508 blockages on layer li1.
+[INFO GRT-0019] Processing 88 blockages on layer met1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 978
@@ -79,6 +79,6 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 978
 [INFO GRT-0111] Final number of vias: 56
 [INFO GRT-0112] Final usage 3D: 1146
-[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 6941 um
 worst slack -1.40

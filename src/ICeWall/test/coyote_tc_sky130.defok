@@ -1270,18 +1270,18 @@ ROW ROW_1262 unit 199680 4402260 FS DO 10417 BY 1 STEP 480 0 ;
 ROW ROW_1263 unit 199680 4405590 N DO 10417 BY 1 STEP 480 0 ;
 ROW ROW_1264 unit 199680 4408920 FS DO 10417 BY 1 STEP 480 0 ;
 ROW ROW_1265 unit 199680 4412250 N DO 10417 BY 1 STEP 480 0 ;
-TRACKS X 320 DO 11250 STEP 480 LAYER li1 ;
-TRACKS Y 320 DO 9617 STEP 480 LAYER li1 ;
-TRACKS X 200 DO 14595 STEP 370 LAYER met1 ;
-TRACKS Y 200 DO 12476 STEP 370 LAYER met1 ;
-TRACKS X 320 DO 11250 STEP 480 LAYER met2 ;
-TRACKS Y 320 DO 9617 STEP 480 LAYER met2 ;
-TRACKS X 200 DO 7298 STEP 740 LAYER met3 ;
-TRACKS Y 200 DO 6238 STEP 740 LAYER met3 ;
-TRACKS X 320 DO 5625 STEP 960 LAYER met4 ;
-TRACKS Y 320 DO 4809 STEP 960 LAYER met4 ;
-TRACKS X 200 DO 1622 STEP 3330 LAYER met5 ;
-TRACKS Y 200 DO 1387 STEP 3330 LAYER met5 ;
+TRACKS X 0 DO 11251 STEP 480 LAYER li1 ;
+TRACKS Y 480 DO 9616 STEP 480 LAYER li1 ;
+TRACKS X 0 DO 14595 STEP 370 LAYER met1 ;
+TRACKS Y 370 DO 12475 STEP 370 LAYER met1 ;
+TRACKS X 0 DO 11251 STEP 480 LAYER met2 ;
+TRACKS Y 480 DO 9616 STEP 480 LAYER met2 ;
+TRACKS X 0 DO 7298 STEP 740 LAYER met3 ;
+TRACKS Y 740 DO 6237 STEP 740 LAYER met3 ;
+TRACKS X 0 DO 5626 STEP 960 LAYER met4 ;
+TRACKS Y 960 DO 4808 STEP 960 LAYER met4 ;
+TRACKS X 0 DO 1622 STEP 3330 LAYER met5 ;
+TRACKS Y 3330 DO 1386 STEP 3330 LAYER met5 ;
 COMPONENTS 1983 ;
     - CORNER_LL sky130_fd_io__corner_bus_overlay + FIXED ( 0 0 ) S ;
     - CORNER_LR sky130_fd_io__corner_bus_overlay + FIXED ( 5196335 0 ) E ;
@@ -3895,7 +3895,7 @@ PINS 160 ;
         + FIXED ( 2557115 63757 ) N ;
 END PINS
 SPECIALNETS 167 ;
-    - AMUXBUS_A_0 ( u_v18_20 AMUXBUS_A ) ( u_vzz_20 AMUXBUS_A ) ( u_vss_8 AMUXBUS_A ) ( u_vdd_8 AMUXBUS_A ) ( u_tdo.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_A )
+    - AMUXBUS_A ( u_v18_20 AMUXBUS_A ) ( u_vzz_20 AMUXBUS_A ) ( u_vss_8 AMUXBUS_A ) ( u_vdd_8 AMUXBUS_A ) ( u_tdo.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_A ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_A )
       ( u_rocc_ctrl_o_s.u_io AMUXBUS_A ) ( u_v18_19 AMUXBUS_A ) ( u_vzz_19 AMUXBUS_A ) ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_A ) ( u_rocc_ctrl_i_busy.u_in AMUXBUS_A ) ( u_fsb_node_yumi.u_in AMUXBUS_A ) ( u_fsb_node_data_o_7_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_6_.u_io AMUXBUS_A )
       ( u_fsb_node_data_o_5_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_4_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_3_.u_io AMUXBUS_A ) ( u_v18_18 AMUXBUS_A ) ( u_vzz_18 AMUXBUS_A ) ( u_fsb_node_data_o_2_.u_io AMUXBUS_A ) ( u_fsb_node_data_o_1_.u_io AMUXBUS_A ) ( u_vdd_7 AMUXBUS_A )
       ( u_vss_7 AMUXBUS_A ) ( u_fsb_node_data_o_0_.u_io AMUXBUS_A ) ( u_fsb_node_v_o.u_io AMUXBUS_A ) ( u_fsb_node_ready.u_io AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_v18_17 AMUXBUS_A )
@@ -3922,7 +3922,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 AMUXBUS_A ) ( u_rocc_cmd_data_o_13_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_12_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_11_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_10_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_9_.u_io AMUXBUS_A ) ( u_vdd_0 AMUXBUS_A ) ( u_vss_0 AMUXBUS_A )
       ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_A ) ( u_v18_1 AMUXBUS_A ) ( u_vzz_1 AMUXBUS_A ) ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_A )
       ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_A ) ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_A ) ( u_rocc_cmd_v.u_io AMUXBUS_A ) ( u_v18_0 AMUXBUS_A ) ( u_vzz_0 AMUXBUS_A ) ( u_reset.u_in AMUXBUS_A ) ( u_clk.u_in AMUXBUS_A ) + USE SIGNAL ;
-    - AMUXBUS_B_0 ( u_v18_20 AMUXBUS_B ) ( u_vzz_20 AMUXBUS_B ) ( u_vss_8 AMUXBUS_B ) ( u_vdd_8 AMUXBUS_B ) ( u_tdo.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_B )
+    - AMUXBUS_B ( u_v18_20 AMUXBUS_B ) ( u_vzz_20 AMUXBUS_B ) ( u_vss_8 AMUXBUS_B ) ( u_vdd_8 AMUXBUS_B ) ( u_tdo.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_host_id.u_io AMUXBUS_B ) ( u_rocc_ctrl_o_exception.u_io AMUXBUS_B )
       ( u_rocc_ctrl_o_s.u_io AMUXBUS_B ) ( u_v18_19 AMUXBUS_B ) ( u_vzz_19 AMUXBUS_B ) ( u_rocc_ctrl_i_interrupt.u_in AMUXBUS_B ) ( u_rocc_ctrl_i_busy.u_in AMUXBUS_B ) ( u_fsb_node_yumi.u_in AMUXBUS_B ) ( u_fsb_node_data_o_7_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_6_.u_io AMUXBUS_B )
       ( u_fsb_node_data_o_5_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_4_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_3_.u_io AMUXBUS_B ) ( u_v18_18 AMUXBUS_B ) ( u_vzz_18 AMUXBUS_B ) ( u_fsb_node_data_o_2_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_1_.u_io AMUXBUS_B ) ( u_vdd_7 AMUXBUS_B )
       ( u_vss_7 AMUXBUS_B ) ( u_fsb_node_data_o_0_.u_io AMUXBUS_B ) ( u_fsb_node_v_o.u_io AMUXBUS_B ) ( u_fsb_node_ready.u_io AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_v18_17 AMUXBUS_B )
@@ -3950,7 +3950,7 @@ SPECIALNETS 167 ;
       ( u_rocc_cmd_data_o_8_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_7_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_6_.u_io AMUXBUS_B ) ( u_v18_1 AMUXBUS_B ) ( u_vzz_1 AMUXBUS_B ) ( u_rocc_cmd_data_o_5_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_4_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_3_.u_io AMUXBUS_B )
       ( u_rocc_cmd_data_o_2_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_1_.u_io AMUXBUS_B ) ( u_rocc_cmd_data_o_0_.u_io AMUXBUS_B ) ( u_rocc_cmd_v.u_io AMUXBUS_B ) ( u_v18_0 AMUXBUS_B ) ( u_vzz_0 AMUXBUS_B ) ( u_reset.u_in AMUXBUS_B ) ( u_clk.u_in AMUXBUS_B ) + USE SIGNAL ;
     - TDO ( PIN TDO ) ( u_tdo.u_io PAD ) + USE SIGNAL ;
-    - VCCD_0 ( u_v18_20 VCCD ) ( u_vzz_20 VCCD ) ( u_vss_8 VCCD ) ( u_vdd_8 VCCD ) ( u_tdo.u_io VCCD ) ( u_rocc_ctrl_o_host_id.u_io VCCD ) ( u_rocc_ctrl_o_exception.u_io VCCD )
+    - VCCD ( u_v18_20 VCCD ) ( u_vzz_20 VCCD ) ( u_vss_8 VCCD ) ( u_vdd_8 VCCD ) ( u_tdo.u_io VCCD ) ( u_rocc_ctrl_o_host_id.u_io VCCD ) ( u_rocc_ctrl_o_exception.u_io VCCD )
       ( u_rocc_ctrl_o_s.u_io VCCD ) ( u_v18_19 VCCD ) ( u_vzz_19 VCCD ) ( u_rocc_ctrl_i_interrupt.u_in VCCD ) ( u_rocc_ctrl_i_busy.u_in VCCD ) ( u_fsb_node_yumi.u_in VCCD ) ( u_fsb_node_data_o_7_.u_io VCCD ) ( u_fsb_node_data_o_6_.u_io VCCD )
       ( u_fsb_node_data_o_5_.u_io VCCD ) ( u_fsb_node_data_o_4_.u_io VCCD ) ( u_fsb_node_data_o_3_.u_io VCCD ) ( u_v18_18 VCCD ) ( u_vzz_18 VCCD ) ( u_fsb_node_data_o_2_.u_io VCCD ) ( u_fsb_node_data_o_1_.u_io VCCD ) ( u_vdd_7 VCCD )
       ( u_vss_7 VCCD ) ( u_fsb_node_data_o_0_.u_io VCCD ) ( u_fsb_node_v_o.u_io VCCD ) ( u_fsb_node_ready.u_io VCCD ) ( u_fsb_node_data_i.u_io\[7\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[6\].u_in VCCD ) ( u_fsb_node_data_i.u_io\[5\].u_in VCCD ) ( u_v18_17 VCCD )
@@ -3977,7 +3977,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VCCD ) ( u_rocc_cmd_data_o_13_.u_io VCCD ) ( u_rocc_cmd_data_o_12_.u_io VCCD ) ( u_rocc_cmd_data_o_11_.u_io VCCD ) ( u_rocc_cmd_data_o_10_.u_io VCCD ) ( u_rocc_cmd_data_o_9_.u_io VCCD ) ( u_vdd_0 VCCD ) ( u_vss_0 VCCD )
       ( u_rocc_cmd_data_o_8_.u_io VCCD ) ( u_rocc_cmd_data_o_7_.u_io VCCD ) ( u_rocc_cmd_data_o_6_.u_io VCCD ) ( u_v18_1 VCCD ) ( u_vzz_1 VCCD ) ( u_rocc_cmd_data_o_5_.u_io VCCD ) ( u_rocc_cmd_data_o_4_.u_io VCCD ) ( u_rocc_cmd_data_o_3_.u_io VCCD )
       ( u_rocc_cmd_data_o_2_.u_io VCCD ) ( u_rocc_cmd_data_o_1_.u_io VCCD ) ( u_rocc_cmd_data_o_0_.u_io VCCD ) ( u_rocc_cmd_v.u_io VCCD ) ( u_v18_0 VCCD ) ( u_vzz_0 VCCD ) ( u_reset.u_in VCCD ) ( u_clk.u_in VCCD ) + USE SIGNAL ;
-    - VCCHIB_0 ( u_v18_20 VCCHIB ) ( u_vzz_20 VCCHIB ) ( u_vss_8 VCCHIB ) ( u_vdd_8 VCCHIB ) ( u_tdo.u_io VCCHIB ) ( u_rocc_ctrl_o_host_id.u_io VCCHIB ) ( u_rocc_ctrl_o_exception.u_io VCCHIB )
+    - VCCHIB ( u_v18_20 VCCHIB ) ( u_vzz_20 VCCHIB ) ( u_vss_8 VCCHIB ) ( u_vdd_8 VCCHIB ) ( u_tdo.u_io VCCHIB ) ( u_rocc_ctrl_o_host_id.u_io VCCHIB ) ( u_rocc_ctrl_o_exception.u_io VCCHIB )
       ( u_rocc_ctrl_o_s.u_io VCCHIB ) ( u_v18_19 VCCHIB ) ( u_vzz_19 VCCHIB ) ( u_rocc_ctrl_i_interrupt.u_in VCCHIB ) ( u_rocc_ctrl_i_busy.u_in VCCHIB ) ( u_fsb_node_yumi.u_in VCCHIB ) ( u_fsb_node_data_o_7_.u_io VCCHIB ) ( u_fsb_node_data_o_6_.u_io VCCHIB )
       ( u_fsb_node_data_o_5_.u_io VCCHIB ) ( u_fsb_node_data_o_4_.u_io VCCHIB ) ( u_fsb_node_data_o_3_.u_io VCCHIB ) ( u_v18_18 VCCHIB ) ( u_vzz_18 VCCHIB ) ( u_fsb_node_data_o_2_.u_io VCCHIB ) ( u_fsb_node_data_o_1_.u_io VCCHIB ) ( u_vdd_7 VCCHIB )
       ( u_vss_7 VCCHIB ) ( u_fsb_node_data_o_0_.u_io VCCHIB ) ( u_fsb_node_v_o.u_io VCCHIB ) ( u_fsb_node_ready.u_io VCCHIB ) ( u_fsb_node_data_i.u_io\[7\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[6\].u_in VCCHIB ) ( u_fsb_node_data_i.u_io\[5\].u_in VCCHIB ) ( u_v18_17 VCCHIB )
@@ -4004,7 +4004,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VCCHIB ) ( u_rocc_cmd_data_o_13_.u_io VCCHIB ) ( u_rocc_cmd_data_o_12_.u_io VCCHIB ) ( u_rocc_cmd_data_o_11_.u_io VCCHIB ) ( u_rocc_cmd_data_o_10_.u_io VCCHIB ) ( u_rocc_cmd_data_o_9_.u_io VCCHIB ) ( u_vdd_0 VCCHIB ) ( u_vss_0 VCCHIB )
       ( u_rocc_cmd_data_o_8_.u_io VCCHIB ) ( u_rocc_cmd_data_o_7_.u_io VCCHIB ) ( u_rocc_cmd_data_o_6_.u_io VCCHIB ) ( u_v18_1 VCCHIB ) ( u_vzz_1 VCCHIB ) ( u_rocc_cmd_data_o_5_.u_io VCCHIB ) ( u_rocc_cmd_data_o_4_.u_io VCCHIB ) ( u_rocc_cmd_data_o_3_.u_io VCCHIB )
       ( u_rocc_cmd_data_o_2_.u_io VCCHIB ) ( u_rocc_cmd_data_o_1_.u_io VCCHIB ) ( u_rocc_cmd_data_o_0_.u_io VCCHIB ) ( u_rocc_cmd_v.u_io VCCHIB ) ( u_v18_0 VCCHIB ) ( u_vzz_0 VCCHIB ) ( u_reset.u_in VCCHIB ) ( u_clk.u_in VCCHIB ) + USE SIGNAL ;
-    - VDDA_0 ( u_v18_20 VDDA ) ( u_vzz_20 VDDA ) ( u_vss_8 VDDA ) ( u_vdd_8 VDDA ) ( u_tdo.u_io VDDA ) ( u_rocc_ctrl_o_host_id.u_io VDDA ) ( u_rocc_ctrl_o_exception.u_io VDDA )
+    - VDDA ( u_v18_20 VDDA ) ( u_vzz_20 VDDA ) ( u_vss_8 VDDA ) ( u_vdd_8 VDDA ) ( u_tdo.u_io VDDA ) ( u_rocc_ctrl_o_host_id.u_io VDDA ) ( u_rocc_ctrl_o_exception.u_io VDDA )
       ( u_rocc_ctrl_o_s.u_io VDDA ) ( u_v18_19 VDDA ) ( u_vzz_19 VDDA ) ( u_rocc_ctrl_i_interrupt.u_in VDDA ) ( u_rocc_ctrl_i_busy.u_in VDDA ) ( u_fsb_node_yumi.u_in VDDA ) ( u_fsb_node_data_o_7_.u_io VDDA ) ( u_fsb_node_data_o_6_.u_io VDDA )
       ( u_fsb_node_data_o_5_.u_io VDDA ) ( u_fsb_node_data_o_4_.u_io VDDA ) ( u_fsb_node_data_o_3_.u_io VDDA ) ( u_v18_18 VDDA ) ( u_vzz_18 VDDA ) ( u_fsb_node_data_o_2_.u_io VDDA ) ( u_fsb_node_data_o_1_.u_io VDDA ) ( u_vdd_7 VDDA )
       ( u_vss_7 VDDA ) ( u_fsb_node_data_o_0_.u_io VDDA ) ( u_fsb_node_v_o.u_io VDDA ) ( u_fsb_node_ready.u_io VDDA ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDA ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDA ) ( u_v18_17 VDDA )
@@ -4031,7 +4031,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VDDA ) ( u_rocc_cmd_data_o_13_.u_io VDDA ) ( u_rocc_cmd_data_o_12_.u_io VDDA ) ( u_rocc_cmd_data_o_11_.u_io VDDA ) ( u_rocc_cmd_data_o_10_.u_io VDDA ) ( u_rocc_cmd_data_o_9_.u_io VDDA ) ( u_vdd_0 VDDA ) ( u_vss_0 VDDA )
       ( u_rocc_cmd_data_o_8_.u_io VDDA ) ( u_rocc_cmd_data_o_7_.u_io VDDA ) ( u_rocc_cmd_data_o_6_.u_io VDDA ) ( u_v18_1 VDDA ) ( u_vzz_1 VDDA ) ( u_rocc_cmd_data_o_5_.u_io VDDA ) ( u_rocc_cmd_data_o_4_.u_io VDDA ) ( u_rocc_cmd_data_o_3_.u_io VDDA )
       ( u_rocc_cmd_data_o_2_.u_io VDDA ) ( u_rocc_cmd_data_o_1_.u_io VDDA ) ( u_rocc_cmd_data_o_0_.u_io VDDA ) ( u_rocc_cmd_v.u_io VDDA ) ( u_v18_0 VDDA ) ( u_vzz_0 VDDA ) ( u_reset.u_in VDDA ) ( u_clk.u_in VDDA ) + USE SIGNAL ;
-    - VDDIO_0 ( u_v18_20 VDDIO ) ( u_vzz_20 VDDIO ) ( u_vss_8 VDDIO ) ( u_vdd_8 VDDIO ) ( u_tdo.u_io VDDIO ) ( u_rocc_ctrl_o_host_id.u_io VDDIO ) ( u_rocc_ctrl_o_exception.u_io VDDIO )
+    - VDDIO ( u_v18_20 VDDIO ) ( u_vzz_20 VDDIO ) ( u_vss_8 VDDIO ) ( u_vdd_8 VDDIO ) ( u_tdo.u_io VDDIO ) ( u_rocc_ctrl_o_host_id.u_io VDDIO ) ( u_rocc_ctrl_o_exception.u_io VDDIO )
       ( u_rocc_ctrl_o_s.u_io VDDIO ) ( u_v18_19 VDDIO ) ( u_vzz_19 VDDIO ) ( u_rocc_ctrl_i_interrupt.u_in VDDIO ) ( u_rocc_ctrl_i_busy.u_in VDDIO ) ( u_fsb_node_yumi.u_in VDDIO ) ( u_fsb_node_data_o_7_.u_io VDDIO ) ( u_fsb_node_data_o_6_.u_io VDDIO )
       ( u_fsb_node_data_o_5_.u_io VDDIO ) ( u_fsb_node_data_o_4_.u_io VDDIO ) ( u_fsb_node_data_o_3_.u_io VDDIO ) ( u_v18_18 VDDIO ) ( u_vzz_18 VDDIO ) ( u_fsb_node_data_o_2_.u_io VDDIO ) ( u_fsb_node_data_o_1_.u_io VDDIO ) ( u_vdd_7 VDDIO )
       ( u_vss_7 VDDIO ) ( u_fsb_node_data_o_0_.u_io VDDIO ) ( u_fsb_node_v_o.u_io VDDIO ) ( u_fsb_node_ready.u_io VDDIO ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDIO ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDIO ) ( u_v18_17 VDDIO )
@@ -4058,7 +4058,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VDDIO ) ( u_rocc_cmd_data_o_13_.u_io VDDIO ) ( u_rocc_cmd_data_o_12_.u_io VDDIO ) ( u_rocc_cmd_data_o_11_.u_io VDDIO ) ( u_rocc_cmd_data_o_10_.u_io VDDIO ) ( u_rocc_cmd_data_o_9_.u_io VDDIO ) ( u_vdd_0 VDDIO ) ( u_vss_0 VDDIO )
       ( u_rocc_cmd_data_o_8_.u_io VDDIO ) ( u_rocc_cmd_data_o_7_.u_io VDDIO ) ( u_rocc_cmd_data_o_6_.u_io VDDIO ) ( u_v18_1 VDDIO ) ( u_vzz_1 VDDIO ) ( u_rocc_cmd_data_o_5_.u_io VDDIO ) ( u_rocc_cmd_data_o_4_.u_io VDDIO ) ( u_rocc_cmd_data_o_3_.u_io VDDIO )
       ( u_rocc_cmd_data_o_2_.u_io VDDIO ) ( u_rocc_cmd_data_o_1_.u_io VDDIO ) ( u_rocc_cmd_data_o_0_.u_io VDDIO ) ( u_rocc_cmd_v.u_io VDDIO ) ( u_v18_0 VDDIO ) ( u_vzz_0 VDDIO ) ( u_reset.u_in VDDIO ) ( u_clk.u_in VDDIO ) + USE SIGNAL ;
-    - VDDIO_Q_0 ( u_v18_20 VDDIO_Q ) ( u_vzz_20 VDDIO_Q ) ( u_vss_8 VDDIO_Q ) ( u_vdd_8 VDDIO_Q ) ( u_tdo.u_io VDDIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VDDIO_Q ) ( u_rocc_ctrl_o_exception.u_io VDDIO_Q )
+    - VDDIO_Q ( u_v18_20 VDDIO_Q ) ( u_vzz_20 VDDIO_Q ) ( u_vss_8 VDDIO_Q ) ( u_vdd_8 VDDIO_Q ) ( u_tdo.u_io VDDIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VDDIO_Q ) ( u_rocc_ctrl_o_exception.u_io VDDIO_Q )
       ( u_rocc_ctrl_o_s.u_io VDDIO_Q ) ( u_v18_19 VDDIO_Q ) ( u_vzz_19 VDDIO_Q ) ( u_rocc_ctrl_i_interrupt.u_in VDDIO_Q ) ( u_rocc_ctrl_i_busy.u_in VDDIO_Q ) ( u_fsb_node_yumi.u_in VDDIO_Q ) ( u_fsb_node_data_o_7_.u_io VDDIO_Q ) ( u_fsb_node_data_o_6_.u_io VDDIO_Q )
       ( u_fsb_node_data_o_5_.u_io VDDIO_Q ) ( u_fsb_node_data_o_4_.u_io VDDIO_Q ) ( u_fsb_node_data_o_3_.u_io VDDIO_Q ) ( u_v18_18 VDDIO_Q ) ( u_vzz_18 VDDIO_Q ) ( u_fsb_node_data_o_2_.u_io VDDIO_Q ) ( u_fsb_node_data_o_1_.u_io VDDIO_Q ) ( u_vdd_7 VDDIO_Q )
       ( u_vss_7 VDDIO_Q ) ( u_fsb_node_data_o_0_.u_io VDDIO_Q ) ( u_fsb_node_v_o.u_io VDDIO_Q ) ( u_fsb_node_ready.u_io VDDIO_Q ) ( u_fsb_node_data_i.u_io\[7\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[6\].u_in VDDIO_Q ) ( u_fsb_node_data_i.u_io\[5\].u_in VDDIO_Q ) ( u_v18_17 VDDIO_Q )
@@ -4085,7 +4085,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VDDIO_Q ) ( u_rocc_cmd_data_o_13_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_12_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_11_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_10_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_9_.u_io VDDIO_Q ) ( u_vdd_0 VDDIO_Q ) ( u_vss_0 VDDIO_Q )
       ( u_rocc_cmd_data_o_8_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_7_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_6_.u_io VDDIO_Q ) ( u_v18_1 VDDIO_Q ) ( u_vzz_1 VDDIO_Q ) ( u_rocc_cmd_data_o_5_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_4_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_3_.u_io VDDIO_Q )
       ( u_rocc_cmd_data_o_2_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_1_.u_io VDDIO_Q ) ( u_rocc_cmd_data_o_0_.u_io VDDIO_Q ) ( u_rocc_cmd_v.u_io VDDIO_Q ) ( u_v18_0 VDDIO_Q ) ( u_vzz_0 VDDIO_Q ) ( u_reset.u_in VDDIO_Q ) ( u_clk.u_in VDDIO_Q ) + USE SIGNAL ;
-    - VSSA_0 ( u_v18_20 VSSA ) ( u_vzz_20 VSSA ) ( u_vss_8 VSSA ) ( u_vdd_8 VSSA ) ( u_tdo.u_io VSSA ) ( u_rocc_ctrl_o_host_id.u_io VSSA ) ( u_rocc_ctrl_o_exception.u_io VSSA )
+    - VSSA ( u_v18_20 VSSA ) ( u_vzz_20 VSSA ) ( u_vss_8 VSSA ) ( u_vdd_8 VSSA ) ( u_tdo.u_io VSSA ) ( u_rocc_ctrl_o_host_id.u_io VSSA ) ( u_rocc_ctrl_o_exception.u_io VSSA )
       ( u_rocc_ctrl_o_s.u_io VSSA ) ( u_v18_19 VSSA ) ( u_vzz_19 VSSA ) ( u_rocc_ctrl_i_interrupt.u_in VSSA ) ( u_rocc_ctrl_i_busy.u_in VSSA ) ( u_fsb_node_yumi.u_in VSSA ) ( u_fsb_node_data_o_7_.u_io VSSA ) ( u_fsb_node_data_o_6_.u_io VSSA )
       ( u_fsb_node_data_o_5_.u_io VSSA ) ( u_fsb_node_data_o_4_.u_io VSSA ) ( u_fsb_node_data_o_3_.u_io VSSA ) ( u_v18_18 VSSA ) ( u_vzz_18 VSSA ) ( u_fsb_node_data_o_2_.u_io VSSA ) ( u_fsb_node_data_o_1_.u_io VSSA ) ( u_vdd_7 VSSA )
       ( u_vss_7 VSSA ) ( u_fsb_node_data_o_0_.u_io VSSA ) ( u_fsb_node_v_o.u_io VSSA ) ( u_fsb_node_ready.u_io VSSA ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSA ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSA ) ( u_v18_17 VSSA )
@@ -4112,7 +4112,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VSSA ) ( u_rocc_cmd_data_o_13_.u_io VSSA ) ( u_rocc_cmd_data_o_12_.u_io VSSA ) ( u_rocc_cmd_data_o_11_.u_io VSSA ) ( u_rocc_cmd_data_o_10_.u_io VSSA ) ( u_rocc_cmd_data_o_9_.u_io VSSA ) ( u_vdd_0 VSSA ) ( u_vss_0 VSSA )
       ( u_rocc_cmd_data_o_8_.u_io VSSA ) ( u_rocc_cmd_data_o_7_.u_io VSSA ) ( u_rocc_cmd_data_o_6_.u_io VSSA ) ( u_v18_1 VSSA ) ( u_vzz_1 VSSA ) ( u_rocc_cmd_data_o_5_.u_io VSSA ) ( u_rocc_cmd_data_o_4_.u_io VSSA ) ( u_rocc_cmd_data_o_3_.u_io VSSA )
       ( u_rocc_cmd_data_o_2_.u_io VSSA ) ( u_rocc_cmd_data_o_1_.u_io VSSA ) ( u_rocc_cmd_data_o_0_.u_io VSSA ) ( u_rocc_cmd_v.u_io VSSA ) ( u_v18_0 VSSA ) ( u_vzz_0 VSSA ) ( u_reset.u_in VSSA ) ( u_clk.u_in VSSA ) + USE SIGNAL ;
-    - VSSD_0 ( u_v18_20 VSSD ) ( u_vzz_20 VSSD ) ( u_vss_8 VSSD ) ( u_vdd_8 VSSD ) ( u_tdo.u_io VSSD ) ( u_rocc_ctrl_o_host_id.u_io VSSD ) ( u_rocc_ctrl_o_exception.u_io VSSD )
+    - VSSD ( u_v18_20 VSSD ) ( u_vzz_20 VSSD ) ( u_vss_8 VSSD ) ( u_vdd_8 VSSD ) ( u_tdo.u_io VSSD ) ( u_rocc_ctrl_o_host_id.u_io VSSD ) ( u_rocc_ctrl_o_exception.u_io VSSD )
       ( u_rocc_ctrl_o_s.u_io VSSD ) ( u_v18_19 VSSD ) ( u_vzz_19 VSSD ) ( u_rocc_ctrl_i_interrupt.u_in VSSD ) ( u_rocc_ctrl_i_busy.u_in VSSD ) ( u_fsb_node_yumi.u_in VSSD ) ( u_fsb_node_data_o_7_.u_io VSSD ) ( u_fsb_node_data_o_6_.u_io VSSD )
       ( u_fsb_node_data_o_5_.u_io VSSD ) ( u_fsb_node_data_o_4_.u_io VSSD ) ( u_fsb_node_data_o_3_.u_io VSSD ) ( u_v18_18 VSSD ) ( u_vzz_18 VSSD ) ( u_fsb_node_data_o_2_.u_io VSSD ) ( u_fsb_node_data_o_1_.u_io VSSD ) ( u_vdd_7 VSSD )
       ( u_vss_7 VSSD ) ( u_fsb_node_data_o_0_.u_io VSSD ) ( u_fsb_node_v_o.u_io VSSD ) ( u_fsb_node_ready.u_io VSSD ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSD ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSD ) ( u_v18_17 VSSD )
@@ -4139,7 +4139,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VSSD ) ( u_rocc_cmd_data_o_13_.u_io VSSD ) ( u_rocc_cmd_data_o_12_.u_io VSSD ) ( u_rocc_cmd_data_o_11_.u_io VSSD ) ( u_rocc_cmd_data_o_10_.u_io VSSD ) ( u_rocc_cmd_data_o_9_.u_io VSSD ) ( u_vdd_0 VSSD ) ( u_vss_0 VSSD )
       ( u_rocc_cmd_data_o_8_.u_io VSSD ) ( u_rocc_cmd_data_o_7_.u_io VSSD ) ( u_rocc_cmd_data_o_6_.u_io VSSD ) ( u_v18_1 VSSD ) ( u_vzz_1 VSSD ) ( u_rocc_cmd_data_o_5_.u_io VSSD ) ( u_rocc_cmd_data_o_4_.u_io VSSD ) ( u_rocc_cmd_data_o_3_.u_io VSSD )
       ( u_rocc_cmd_data_o_2_.u_io VSSD ) ( u_rocc_cmd_data_o_1_.u_io VSSD ) ( u_rocc_cmd_data_o_0_.u_io VSSD ) ( u_rocc_cmd_v.u_io VSSD ) ( u_v18_0 VSSD ) ( u_vzz_0 VSSD ) ( u_reset.u_in VSSD ) ( u_clk.u_in VSSD ) + USE SIGNAL ;
-    - VSSIO_0 ( u_v18_20 VSSIO ) ( u_vzz_20 VSSIO ) ( u_vss_8 VSSIO ) ( u_vdd_8 VSSIO ) ( u_tdo.u_io VSSIO ) ( u_rocc_ctrl_o_host_id.u_io VSSIO ) ( u_rocc_ctrl_o_exception.u_io VSSIO )
+    - VSSIO ( u_v18_20 VSSIO ) ( u_vzz_20 VSSIO ) ( u_vss_8 VSSIO ) ( u_vdd_8 VSSIO ) ( u_tdo.u_io VSSIO ) ( u_rocc_ctrl_o_host_id.u_io VSSIO ) ( u_rocc_ctrl_o_exception.u_io VSSIO )
       ( u_rocc_ctrl_o_s.u_io VSSIO ) ( u_v18_19 VSSIO ) ( u_vzz_19 VSSIO ) ( u_rocc_ctrl_i_interrupt.u_in VSSIO ) ( u_rocc_ctrl_i_busy.u_in VSSIO ) ( u_fsb_node_yumi.u_in VSSIO ) ( u_fsb_node_data_o_7_.u_io VSSIO ) ( u_fsb_node_data_o_6_.u_io VSSIO )
       ( u_fsb_node_data_o_5_.u_io VSSIO ) ( u_fsb_node_data_o_4_.u_io VSSIO ) ( u_fsb_node_data_o_3_.u_io VSSIO ) ( u_v18_18 VSSIO ) ( u_vzz_18 VSSIO ) ( u_fsb_node_data_o_2_.u_io VSSIO ) ( u_fsb_node_data_o_1_.u_io VSSIO ) ( u_vdd_7 VSSIO )
       ( u_vss_7 VSSIO ) ( u_fsb_node_data_o_0_.u_io VSSIO ) ( u_fsb_node_v_o.u_io VSSIO ) ( u_fsb_node_ready.u_io VSSIO ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSIO ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSIO ) ( u_v18_17 VSSIO )
@@ -4166,7 +4166,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VSSIO ) ( u_rocc_cmd_data_o_13_.u_io VSSIO ) ( u_rocc_cmd_data_o_12_.u_io VSSIO ) ( u_rocc_cmd_data_o_11_.u_io VSSIO ) ( u_rocc_cmd_data_o_10_.u_io VSSIO ) ( u_rocc_cmd_data_o_9_.u_io VSSIO ) ( u_vdd_0 VSSIO ) ( u_vss_0 VSSIO )
       ( u_rocc_cmd_data_o_8_.u_io VSSIO ) ( u_rocc_cmd_data_o_7_.u_io VSSIO ) ( u_rocc_cmd_data_o_6_.u_io VSSIO ) ( u_v18_1 VSSIO ) ( u_vzz_1 VSSIO ) ( u_rocc_cmd_data_o_5_.u_io VSSIO ) ( u_rocc_cmd_data_o_4_.u_io VSSIO ) ( u_rocc_cmd_data_o_3_.u_io VSSIO )
       ( u_rocc_cmd_data_o_2_.u_io VSSIO ) ( u_rocc_cmd_data_o_1_.u_io VSSIO ) ( u_rocc_cmd_data_o_0_.u_io VSSIO ) ( u_rocc_cmd_v.u_io VSSIO ) ( u_v18_0 VSSIO ) ( u_vzz_0 VSSIO ) ( u_reset.u_in VSSIO ) ( u_clk.u_in VSSIO ) + USE SIGNAL ;
-    - VSSIO_Q_0 ( u_v18_20 VSSIO_Q ) ( u_vzz_20 VSSIO_Q ) ( u_vss_8 VSSIO_Q ) ( u_vdd_8 VSSIO_Q ) ( u_tdo.u_io VSSIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VSSIO_Q ) ( u_rocc_ctrl_o_exception.u_io VSSIO_Q )
+    - VSSIO_Q ( u_v18_20 VSSIO_Q ) ( u_vzz_20 VSSIO_Q ) ( u_vss_8 VSSIO_Q ) ( u_vdd_8 VSSIO_Q ) ( u_tdo.u_io VSSIO_Q ) ( u_rocc_ctrl_o_host_id.u_io VSSIO_Q ) ( u_rocc_ctrl_o_exception.u_io VSSIO_Q )
       ( u_rocc_ctrl_o_s.u_io VSSIO_Q ) ( u_v18_19 VSSIO_Q ) ( u_vzz_19 VSSIO_Q ) ( u_rocc_ctrl_i_interrupt.u_in VSSIO_Q ) ( u_rocc_ctrl_i_busy.u_in VSSIO_Q ) ( u_fsb_node_yumi.u_in VSSIO_Q ) ( u_fsb_node_data_o_7_.u_io VSSIO_Q ) ( u_fsb_node_data_o_6_.u_io VSSIO_Q )
       ( u_fsb_node_data_o_5_.u_io VSSIO_Q ) ( u_fsb_node_data_o_4_.u_io VSSIO_Q ) ( u_fsb_node_data_o_3_.u_io VSSIO_Q ) ( u_v18_18 VSSIO_Q ) ( u_vzz_18 VSSIO_Q ) ( u_fsb_node_data_o_2_.u_io VSSIO_Q ) ( u_fsb_node_data_o_1_.u_io VSSIO_Q ) ( u_vdd_7 VSSIO_Q )
       ( u_vss_7 VSSIO_Q ) ( u_fsb_node_data_o_0_.u_io VSSIO_Q ) ( u_fsb_node_v_o.u_io VSSIO_Q ) ( u_fsb_node_ready.u_io VSSIO_Q ) ( u_fsb_node_data_i.u_io\[7\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[6\].u_in VSSIO_Q ) ( u_fsb_node_data_i.u_io\[5\].u_in VSSIO_Q ) ( u_v18_17 VSSIO_Q )
@@ -4193,7 +4193,7 @@ SPECIALNETS 167 ;
       ( u_vzz_2 VSSIO_Q ) ( u_rocc_cmd_data_o_13_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_12_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_11_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_10_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_9_.u_io VSSIO_Q ) ( u_vdd_0 VSSIO_Q ) ( u_vss_0 VSSIO_Q )
       ( u_rocc_cmd_data_o_8_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_7_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_6_.u_io VSSIO_Q ) ( u_v18_1 VSSIO_Q ) ( u_vzz_1 VSSIO_Q ) ( u_rocc_cmd_data_o_5_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_4_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_3_.u_io VSSIO_Q )
       ( u_rocc_cmd_data_o_2_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_1_.u_io VSSIO_Q ) ( u_rocc_cmd_data_o_0_.u_io VSSIO_Q ) ( u_rocc_cmd_v.u_io VSSIO_Q ) ( u_v18_0 VSSIO_Q ) ( u_vzz_0 VSSIO_Q ) ( u_reset.u_in VSSIO_Q ) ( u_clk.u_in VSSIO_Q ) + USE SIGNAL ;
-    - VSWITCH_0 ( u_v18_20 VSWITCH ) ( u_vzz_20 VSWITCH ) ( u_vss_8 VSWITCH ) ( u_vdd_8 VSWITCH ) ( u_tdo.u_io VSWITCH ) ( u_rocc_ctrl_o_host_id.u_io VSWITCH ) ( u_rocc_ctrl_o_exception.u_io VSWITCH )
+    - VSWITCH ( u_v18_20 VSWITCH ) ( u_vzz_20 VSWITCH ) ( u_vss_8 VSWITCH ) ( u_vdd_8 VSWITCH ) ( u_tdo.u_io VSWITCH ) ( u_rocc_ctrl_o_host_id.u_io VSWITCH ) ( u_rocc_ctrl_o_exception.u_io VSWITCH )
       ( u_rocc_ctrl_o_s.u_io VSWITCH ) ( u_v18_19 VSWITCH ) ( u_vzz_19 VSWITCH ) ( u_rocc_ctrl_i_interrupt.u_in VSWITCH ) ( u_rocc_ctrl_i_busy.u_in VSWITCH ) ( u_fsb_node_yumi.u_in VSWITCH ) ( u_fsb_node_data_o_7_.u_io VSWITCH ) ( u_fsb_node_data_o_6_.u_io VSWITCH )
       ( u_fsb_node_data_o_5_.u_io VSWITCH ) ( u_fsb_node_data_o_4_.u_io VSWITCH ) ( u_fsb_node_data_o_3_.u_io VSWITCH ) ( u_v18_18 VSWITCH ) ( u_vzz_18 VSWITCH ) ( u_fsb_node_data_o_2_.u_io VSWITCH ) ( u_fsb_node_data_o_1_.u_io VSWITCH ) ( u_vdd_7 VSWITCH )
       ( u_vss_7 VSWITCH ) ( u_fsb_node_data_o_0_.u_io VSWITCH ) ( u_fsb_node_v_o.u_io VSWITCH ) ( u_fsb_node_ready.u_io VSWITCH ) ( u_fsb_node_data_i.u_io\[7\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[6\].u_in VSWITCH ) ( u_fsb_node_data_i.u_io\[5\].u_in VSWITCH ) ( u_v18_17 VSWITCH )

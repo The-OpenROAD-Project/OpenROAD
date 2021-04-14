@@ -53,14 +53,15 @@ ensureLinked();
 namespace sta {
 
 // Defined in StaTcl.i
-LibertyLibrarySeq *
-tclListSeqLibertyLibrary(Tcl_Obj *const source,
-                         Tcl_Interp *interp);
 LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
                       Tcl_Interp *interp);
+PinSet *
+tclListSetPin(Tcl_Obj *source,
+              Tcl_Interp *interp);
 
 typedef NetSeq TmpNetSeq;
+typedef PinSet TmpPinSet;
 
 } // namespace
 
@@ -69,15 +70,16 @@ using ord::ensureLinked;
 
 using sta::Corner;
 using sta::LibertyCellSeq;
-using sta::LibertyLibrarySeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::Net;
-using sta::Pin;
-using sta::RiseFall;
-using sta::tclListSeqLibertyLibrary;
-using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
+using sta::Pin;
+using sta::PinSet;
+using sta::TmpPinSet;
+using sta::RiseFall;
+using sta::tclListSeqLibertyCell;
+using sta::tclListSetPin;
 using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
@@ -105,10 +107,6 @@ using rsz::Resizer;
     return TCL_ERROR;
   }
   $1 = tr;
-}
-
-%typemap(in) LibertyLibrarySeq* {
-  $1 = tclListSeqLibertyLibrary($input, interp);
 }
 
 %typemap(in) LibertyCellSeq* {
@@ -145,6 +143,21 @@ using rsz::Resizer;
   Tcl_SetObjResult(interp, obj);
 }
 
+%typemap(in) PinSet* {
+  $1 = tclListSetPin($input, interp);
+}
+
+%typemap(out) PinSet {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet::Iterator pin_iter($1);
+  while (pin_iter.hasNext()) {
+    Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(pin, SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ functions visible as TCL functions.
@@ -167,22 +180,20 @@ remove_buffers_cmd()
 
 void
 set_wire_rc_cmd(float res,
-                float cap,
-                Corner *corner)
+                float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireRC(res, cap, corner);
+  resizer->setWireRC(res, cap);
 }
 
 void
 set_wire_clk_rc_cmd(float res,
-                    float cap,
-                    Corner *corner)
+                    float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(res, cap, corner);
+  resizer->setWireClkRC(res, cap);
 }
 
 // ohms/meter
@@ -261,12 +272,11 @@ set_dont_use_cmd(LibertyCellSeq *dont_use)
 }
 
 void
-resizer_preamble(LibertyLibrarySeq *resize_libs)
+resizer_preamble()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizePreamble(resize_libs);
-  delete resize_libs;
+  resizer->resizePreamble();
 }
 
 void
@@ -466,15 +476,6 @@ resize_net_slack(Net *net)
 ////////////////////////////////////////////////////////////////
 
 float
-buffer_delay(LibertyCell *buffer_cell,
-             const RiseFall *rf)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  return resizer->bufferDelay(buffer_cell, rf);
-}
-
-float
 buffer_wire_delay(LibertyCell *buffer_cell,
                   float wire_length) // meters
 {
@@ -554,13 +555,20 @@ utilization()
   return resizer->utilization();
 }
 
-} // namespace
-
 void
 highlight_steiner_tree(const Net *net)
 {
   Resizer *resizer = getResizer();
   resizer->highlightSteiner(net);
 }
+
+PinSet
+find_fanin_fanouts(PinSet *pins)
+{
+  Resizer *resizer = getResizer();
+  return resizer->findFaninFanouts(pins);
+}
+
+} // namespace
 
 %} // inline

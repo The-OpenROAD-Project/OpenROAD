@@ -9,8 +9,8 @@
 [INFO ODB-0131]     Created 7 components and 35 component-terminals.
 [INFO ODB-0133]     Created 10 nets and 18 connections.
 [INFO ODB-0134] Finished DEF file: est_rc2.def
-Min routing layer: 2
-Max routing layer: 10
+Min routing layer: metal2
+Max routing layer: metal10
 Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
@@ -18,7 +18,7 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 3
-[INFO GRT-0018] Processing 177 blockages on layer 1.
+[INFO GRT-0018] Processing 177 blockages on layer metal1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 44
@@ -35,9 +35,9 @@ Grid origin: (0, 0)
 [INFO GRT-0112] Final usage 3D: 176
 [INFO GRT-0018] Total wirelength: 161 um
 Net clk
- Pin capacitance: r 3.402 f 3.004
- Wire capacitance: r 0.819 f 0.819
- Total capacitance: r 4.221 f 3.823
+ Pin capacitance: 3.004-3.402
+ Wire capacitance: 0.819-0.819
+ Total capacitance: 3.823-4.221
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -46,11 +46,11 @@ Driver pins
  clk input port (5, 0)
 
 Load pins
- clkbuf_0_clk/A input (BUF_X4) r 3.402 f 3.004 (8, 11)
+ clkbuf_0_clk/A input (BUF_X4) 3.004-3.402 (8, 11)
 Net u2z
- Pin capacitance: r 1.140 f 1.062
+ Pin capacitance: 1.062-1.140
  Wire capacitance: 0.444
- Total capacitance: r 1.585 f 1.507
+ Total capacitance: 1.507-1.585
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -59,4 +59,4 @@ Driver pins
  u2/ZN output (AND2_X1) (8, 12)
 
 Load pins
- r3/D input (DFF_X1) r 1.140 f 1.062 (10, 8)
+ r3/D input (DFF_X1) 1.062-1.140 (10, 8)

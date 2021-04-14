@@ -283,6 +283,13 @@ class FlexGCWorker::Impl
                                          frConstraint* constraint);
   bool checkMetalEndOfLine_eol_hasMinMaxLength(gcSegment* edge,
                                                frConstraint* constraint);
+  bool checkMetalEndOfLine_eol_hasEncloseCut(gcSegment* edge1,
+                                             gcSegment* edge2,
+                                             frConstraint* constraint);
+  void checkMetalEndOfLine_eol_hasEncloseCut_getQueryBox(
+      gcSegment* edge,
+      frLef58SpacingEndOfLineWithinEncloseCutConstraint* constraint,
+      box_t& queryBox);
   bool checkMetalEndOfLine_eol_hasParallelEdge(gcSegment* edge,
                                                frConstraint* constraint,
                                                bool& hasRoute);

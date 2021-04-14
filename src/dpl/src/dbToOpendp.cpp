@@ -186,24 +186,18 @@ Opendp::makeCells()
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
+    dbMasterType type = master->getType();
     if (master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;
       db_inst_map_[db_inst] = &cell;
 
-      int width = master->getWidth();
-      int height = master->getHeight();
-      if (swapWidthHeight(db_inst->getOrient())) {
-        std::swap(width, height);
-      }
-      cell.width_ = width;
-      cell.height_ = height;
-
-      Point init = initialLocation(&cell, false);
-      // Shift by core lower left.
-      cell.x_ = init.getX();
-      cell.y_ = init.getY();
+      Rect bbox = getBbox(db_inst);
+      cell.width_ = bbox.dx();
+      cell.height_ = bbox.dy();
+      cell.x_ = bbox.xMin();
+      cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
 
@@ -212,6 +206,25 @@ Opendp::makeCells()
         have_multi_row_cells_ = true;
     }
   }
+}
+
+Rect
+Opendp::getBbox(dbInst *inst)
+{
+  dbMaster *master = inst->getMaster();
+
+  int loc_x, loc_y;
+  inst->getLocation(loc_x, loc_y);
+  // Shift by core lower left.
+  loc_x -= core_.xMin();
+  loc_y -= core_.yMin();
+
+  int width = master->getWidth();
+  int height = master->getHeight();
+  if (swapWidthHeight(inst->getOrient()))
+    std::swap(width, height);
+  
+  return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
 
 static bool

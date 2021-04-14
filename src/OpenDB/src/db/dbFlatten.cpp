@@ -387,7 +387,8 @@ dbNet* dbFlatten::copyNet(dbBlock* parent_block, dbNet* child_net)
 
   if (net == NULL) {
     // TODO:
-    printf("Faild to create net %s\n", name.c_str());
+    parent_block->getImpl()->getLogger()->warn(
+        utl::ODB, 271, "Failed to create net {}", name);
     return NULL;
   }
 
@@ -995,7 +996,8 @@ void dbFlatten::copyRegion(dbBlock* parent_block,
 
   if (dst == NULL) {
     // TODO:
-    printf("Faild to create region %s\n", name.c_str());
+    parent_block->getImpl()->getLogger()->warn(
+        utl::ODB, 272, "Failed to create region {}", name);
     return;
   }
 

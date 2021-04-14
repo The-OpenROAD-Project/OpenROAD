@@ -72,9 +72,10 @@ void io::Parser::initDefaultVias()
       tech->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
     } else {
       if (layerNum >= BOTTOM_ROUTING_LAYER) {
-        std::cout << "Error: " << tech->getLayer(layerNum)->getName()
-                  << " does not have single-cut via\n";
-        exit(1);
+        logger->error(DRT,
+                      234,
+                      "{} does not have single-cut via",
+                      tech->getLayer(layerNum)->getName());
       }
     }
     // generate via if default via enclosure is not along pref dir
@@ -90,9 +91,9 @@ void io::Parser::initDefaultVias()
       layer1Num = techDefautlViaDef->getLayer1Num();
       layer2Num = techDefautlViaDef->getLayer2Num();
       bool isLayer1Square = (layer1Box.right() - layer1Box.left())
-	                     == (layer1Box.top() - layer1Box.bottom());
+                            == (layer1Box.top() - layer1Box.bottom());
       bool isLayer2Square = (layer2Box.right() - layer2Box.left())
-	                     == (layer2Box.top() - layer2Box.bottom());
+                            == (layer2Box.top() - layer2Box.bottom());
       bool isLayer1EncHorz = (layer1Box.right() - layer1Box.left())
                              > (layer1Box.top() - layer1Box.bottom());
       bool isLayer2EncHorz = (layer2Box.right() - layer2Box.left())
@@ -102,8 +103,8 @@ void io::Parser::initDefaultVias()
       bool isLayer2Horz
           = (tech->getLayer(layer2Num)->getDir() == frcHorzPrefRoutingDir);
       bool needViaGen = false;
-      if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz)) ||
-          (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
+      if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
+          || (!isLayer2Square && (isLayer2EncHorz != isLayer2Horz))) {
         needViaGen = true;
       }
 
@@ -184,16 +185,17 @@ void io::Parser::initConstraintLayerIdx()
          layer->getInterLayerCutSpacingConstraintMap(false)) {
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
-        cout << "Error: second layer " << secondLayerName
-             << " does not exist\n";
+        logger->warn(DRT, 235, "Second layer {} does not exist", secondLayerName);
         continue;
       }
       auto secondLayerNum
           = design->getTech()->getLayer(secondLayerName)->getLayerNum();
       con->setSecondLayerNum(secondLayerNum);
-      cout << "  updating diff-net cut spacing rule between "
-           << design->getTech()->getLayer(layerNum)->getName() << " and "
-           << design->getTech()->getLayer(secondLayerNum)->getName() << "\n";
+      logger->info(DRT,
+                   236,
+                   "Updating diff-net cut spacing rule between {} and {}",
+                   design->getTech()->getLayer(layerNum)->getName(),
+                   design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingConstraints[secondLayerNum] = con;
     }
     // same-net
@@ -207,16 +209,17 @@ void io::Parser::initConstraintLayerIdx()
          layer->getInterLayerCutSpacingConstraintMap(true)) {
       auto secondLayer = design->getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
-        cout << "Error: second layer " << secondLayerName
-             << " does not exist\n";
+        logger->warn(DRT, 237, "Second layer {} does not exist", secondLayerName);
         continue;
       }
       auto secondLayerNum
           = design->getTech()->getLayer(secondLayerName)->getLayerNum();
       con->setSecondLayerNum(secondLayerNum);
-      cout << "  updating same-net cut spacing rule between "
-           << design->getTech()->getLayer(layerNum)->getName() << " and "
-           << design->getTech()->getLayer(secondLayerNum)->getName() << "\n";
+      logger->info(DRT,
+                   238,
+                   "Updating same-net cut spacing rule between {} and {}",
+                   design->getTech()->getLayer(layerNum)->getName(),
+                   design->getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingSamenetConstraints[secondLayerNum] = con;
     }
     // reset same-net if diff-net does not exist
@@ -269,28 +272,32 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          cout << "Error: non-rect shape in via definition\n";
-          exit(1);
+          logger->error(DRT, 239, "Non-rect shape in via definition");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
         if (viaDef->getNumCut() == 1) {
           if (cutRect->width() != cutRect->length()) {
-            cout << "Warning: CUT layer " << layer->getName()
-                 << " does not have square single-cut via, cut layer width may "
-                    "be set incorrectly\n";
+            logger->warn(DRT,
+                         240,
+                         "CUT layer {} does not have square single-cut via, "
+                         "cut layer width may be set incorrectly",
+                         layer->getName());
           }
         } else {
-          cout << "Warning: CUT layer " << layer->getName()
-               << " does not have single-cut via as default via, cut layer "
-                  "width may be set incorrectly\n";
+          logger->warn(DRT,
+                       241,
+                       "CUT layer {} does not have single-cut via, cut layer "
+                       "width may be set incorrectly",
+                       layer->getName());
         }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER) {
-          cout << "Error: CUT layer " << layer->getName()
-               << " does not have default via\n";
-          exit(1);
+          logger->error(DRT,
+                        242,
+                        "CUT layer {} does not have default via",
+                        layer->getName());
         }
       }
     } else {
@@ -299,14 +306,16 @@ void io::Parser::initCutLayerWidth()
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
-          cout << "Error: non-rect shape in via definition\n";
-          exit(1);
+          logger->error(DRT, 243, "Non-rect shape in via definition");
         }
         auto cutRect = static_cast<frRect*>(cutFig);
         int viaWidth = cutRect->width();
         if (cutLayerWidth < viaWidth) {
-          cout << "Warning: CUT layer " << layer->getName()
-               << " has smaller width defined in LEF compared to default via\n";
+          logger->warn(DRT,
+                       244,
+                       "CUT layer {} has smaller width defined in LEF compared "
+                       "to default via",
+                       layer->getName());
         }
       }
     }
@@ -696,8 +705,7 @@ void io::Parser::postProcessGuide()
 
   if (OUTGUIDE_FILE == string("")) {
     if (VERBOSE > 0) {
-      cout << "Waring: no output guide specified, skipped writing guide"
-           << endl;
+      logger->warn(DRT, 245, "No output guide specified, skipped writing guide");
     }
   } else {
     // if (VERBOSE > 0) {
@@ -743,9 +751,12 @@ void io::Parser::initRPin_rpin()
         }
 
         if (prefAp == nullptr) {
-          cout << "Error: " << instTerm->getInst()->getName() << "/"
-               << trueTerm->getName() << " from " << net->getName()
-               << " has nullptr as prefAP\n";
+          logger->warn(DRT,
+                       246,
+                       "{}/{} from {} has nullptr as prefAP",
+                       instTerm->getInst()->getName(),
+                       trueTerm->getName(),
+                       net->getName());
         }
 
         rpin->setAccessPoint(prefAp);

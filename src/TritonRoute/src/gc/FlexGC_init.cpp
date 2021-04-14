@@ -150,20 +150,12 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 
 void FlexGCWorker::Impl::initDesign()
 {
-  bool enableOutput = false;
-  // bool enableOutput = true;
 
   if (ignoreDB_) {
     return;
   }
 
-  double dbu = getDesign()->getTech()->getDBUPerUU();
   auto& extBox = getExtBox();
-  if (enableOutput) {
-    cout << "  extBox (" << extBox.left() / dbu << ", " << extBox.bottom() / dbu
-         << ") -- (" << extBox.right() / dbu << ", " << extBox.top() / dbu
-         << "):\n";
-  }
   box_t queryBox(point_t(extBox.left(), extBox.bottom()),
                  point_t(extBox.right(), extBox.top()));
   auto regionQuery = getDesign()->getRegionQuery();
@@ -184,9 +176,6 @@ void FlexGCWorker::Impl::initDesign()
       cnt++;
     }
   }
-  if (enableOutput) {
-    cout << "#fixed obj = " << cnt << "\n";
-  }
   // init all dr objs from design
   if (getDRWorker()) {
     return;
@@ -204,9 +193,6 @@ void FlexGCWorker::Impl::initDesign()
       initObj(box, i, obj, false);
       cnt++;
     }
-  }
-  if (enableOutput) {
-    cout << "#route obj = " << cnt << "\n";
   }
 }
 
@@ -366,8 +352,6 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
 
 void FlexGCWorker::Impl::initDRWorker()
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   if (!getDRWorker()) {
     return;
   }
@@ -389,9 +373,6 @@ void FlexGCWorker::Impl::initDRWorker()
       cnt++;
     }
     addNonTaperedPatches(gNet, uDRNet.get());
-  }
-  if (enableOutput) {
-    cout << "#route obj = " << cnt << "\n";
   }
 }
 
@@ -635,8 +616,6 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
 
 void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
 {
-  // bool enableOutput = true;
-  // bool enableOutput = false;
   int numLayers = getDesign()->getTech()->getLayers().size();
   vector<set<pair<frPoint, frPoint>>> fixedPolygonEdges(numLayers);
   // get all fixed polygon edges
@@ -657,11 +636,6 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
       }
     }
   }
-  // if (enableOutput) {
-  //   cout <<"#fixed/route polygon edges = " <<cntFixed <<"/" <<cntRoute
-  //   <<endl; cout <<"#outer/inner polygon edges = " <<cntOuter <<"/"
-  //   <<cntInner <<endl;
-  // }
 }
 
 void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
@@ -874,38 +848,10 @@ void FlexGCWorker::Impl::initRegionQuery()
 void FlexGCWorker::Impl::init()
 {
   ProfileTask profile("GC:init");
-  // bool enableOutput = true;
-  bool enableOutput = false;
   addNet(design_->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
   addNet(design_->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
   initDesign();
   initDRWorker();
-  if (enableOutput) {
-    cout << "#gcNets = " << nets_.size() << endl;
-    int cntFloating = 0;
-    int cntNet = 0;
-    int cntTerm = 0;
-    int cntBlk = 0;
-    for (auto& net : nets_) {
-      if (net->getOwner() == nullptr) {
-        cntFloating++;
-      } else {
-        if (net->getOwner()->typeId() == frcInstTerm
-            || net->getOwner()->typeId() == frcTerm) {
-          cntTerm++;
-        } else if (net->getOwner()->typeId() == frcInstBlockage
-                   || net->getOwner()->typeId() == frcBlockage) {
-          cntBlk++;
-        } else if (net->getOwner()->typeId() == frcNet) {
-          cntNet++;
-        } else {
-          cout << "Error: FlexGCWorker::init unknown type" << endl;
-        }
-      }
-    }
-    cout << "  #net/term/blk = " << cntNet << "/" << cntTerm << "/" << cntBlk
-         << endl;
-  }
   initNets();
   initRegionQuery();
 }
@@ -913,38 +859,10 @@ void FlexGCWorker::Impl::init()
 // init initializes all nets from frDesign if no drWorker is provided
 void FlexGCWorker::Impl::initPA0()
 {
-  // bool enableOutput = true;
-  bool enableOutput = false;
   addNet(design_->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
   addNet(design_->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
   initDesign();
   initDRWorker();
-  if (enableOutput) {
-    cout << "#gcNets = " << nets_.size() << endl;
-    int cntFloating = 0;
-    int cntNet = 0;
-    int cntTerm = 0;
-    int cntBlk = 0;
-    for (auto& net : nets_) {
-      if (net->getOwner() == nullptr) {
-        cntFloating++;
-      } else {
-        if (net->getOwner()->typeId() == frcInstTerm
-            || net->getOwner()->typeId() == frcTerm) {
-          cntTerm++;
-        } else if (net->getOwner()->typeId() == frcInstBlockage
-                   || net->getOwner()->typeId() == frcBlockage) {
-          cntBlk++;
-        } else if (net->getOwner()->typeId() == frcNet) {
-          cntNet++;
-        } else {
-          cout << "Error: FlexGCWorker::init unknown type" << endl;
-        }
-      }
-    }
-    cout << "  #net/term/blk = " << cntNet << "/" << cntTerm << "/" << cntBlk
-         << endl;
-  }
 }
 
 void FlexGCWorker::Impl::initPA1()

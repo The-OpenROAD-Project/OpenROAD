@@ -21,10 +21,12 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 * Global routing (route guides for detailed routing)
 * Detailed routing
 
-OpenROAD uses the OpenDB database and OpenSTA for static timing
-analysis.
+OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
-#### Build
+## Install dependencies
+
+The `etc/DependencyInstaller.sh`  script supports Centos7 and Ubuntu 20.04.
+You need root access to correctly install the dependencies with the script.
 
 The OpenROAD build requires the following packages:
 
@@ -38,22 +40,36 @@ Tools
 Libraries
   * boost 1.68
   * tcl 8.6
-  * zlib
-  * eigen
-  * lemon
+  * zlibc
+  * eigen3
+  * spdlog
+  * [lemon](http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz)(graph library, not the parser)
   * qt5
-  * CImg (optional for replace)
+  * cimg (optional for replace)
 
+```
+./etc/DependencyInstaller.sh -dev
+```
 
-See `Dockerfile` for an example of how to install these packages. 
+## Build
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
-mkdir build
-cd build
-cmake ..
-make
+```
+
+
+### Build by hand
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+### Build using support script
+```
+$ ./etc/Build.sh
 ```
 
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
@@ -70,6 +86,11 @@ TCL_LIB - path to tcl library
 TCL_HEADER - path to tcl.h
 ZLIB_ROOT - path to zlib
 CMAKE_INSTALL_PREFIX
+```
+
+### Example with support script
+```
+$ ./etc/Build.sh --cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
@@ -453,7 +474,6 @@ set_wire_rc [-clock] [-signal]
             [-layer layer_name]
             [-resistance res ]
             [-capacitance cap]
-            [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -471,21 +491,24 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 distance units are not specified in the liberty file microns are
 used.
 
-The resistance and capacitance values in the OpenROAD database can be
-changed using the `set_layer_rc` command. This is useful if they are
-not in the LEF file or to override the values in the LEF.
+The `set_layer_rc` command can be used to set the resistance and
+capacitance for a layer or via. This is useful if they are missing
+from the LEF file or to override the values in the LEF.
 
 ```
 set_layer_rc [-layer layer]
-             [-via via_layer]
+             [-via via]
              [-capacitance cap]
              [-resistance res] }
 ```
 
-The units for capacitance are from the first Liberty file read.
-For example, usually pF/um^2 or fF/um^2 for capacitance and
-kohms/square or ohms/square for resistance. Via resistances are
-specified with the `via` keyword.
+The resistance and capacitance units are the same as `set_wire_rc`
+(per length of minimum width wire). `layer` must be the name of
+a routing layer.
+
+Via resistance can also be set with the `set_layer_rc` command
+(-capacitance is not supported for vias). `via` is the name of a via
+(*not* a via/cut layer name).
 
 ```
 remove_buffers
@@ -531,7 +554,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              [-libraries resize_libs]
               [-max_utilization util]
 ```
 
@@ -741,57 +763,62 @@ Global router options and commands are described below.
 
 ```
 global_route [-guide_file out_file] \
-             [-layers min-max]
-             [-tile_size tile_size] \
              [-verbose verbose] \
              [-overflow_iterations iterations] \
              [-grid_origin {x y}] \
-             [-report_congestion congest_file] \
-             [-clock_layers min-max] \
-             [-clock_pdrev_fanout fanout] \
-             [-clock_topology_priority priority] \
-             [-clock_tracks_cost clock_tracks_cost] \
-             [-macro_extension extension]
-             [-unidirectional_routing] \
              [-allow_overflow]
 
 ```
-
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
-- **layers**: Set the minimum and maximum routing layers (e.g.: -layers 2-10)
-- **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
-- **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
-- **clock_layers min-max**: Set the minimum and maximum routing layers for clock nets (e.g.: -clock_layers 4-9)
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
-See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-- **clock_tracks_cost**: Set the routing tracks consumption by clock nets
-- **macro_extension**: Set the number of GCells added to the obstacles boundaries from macros
-- **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
+
+```
+set_routing_layers [-signal min-max] \
+                   [-clock min-max]
+```
+The `set_routing_layers` command sets the minimum and maximum routing layers for signal nets, with the `-signal` option,
+and the the minimum and maximum routing layers for clock nets, with the `-clock` option
+Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
+
+```
+set_macro_extension extension
+```
+The `set_macro_extension` command sets the number of GCells added to the blocakges boundaries from macros
+Example: `set_macro_extension 2`
 
 ```
 set_global_routing_layer_adjustment layer adjustment
 ```
-
 The `set_global_routing_layer_adjustment` command sets routing resources adjustments in the routing layers of the design.
-You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment 4 0.5` reduces the routing resources
-of routing layer 4 in 50%.
+You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment Metal4 0.5` reduces the routing resources
+of routing layer Metal4 in 50%.
 You can set adjustment for all layers at once using `*`, e.g.: `set_global_routing_layer_adjustment * 0.3` reduces
 the routing resources of all routing layers in 30%.
-You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment 4-8 0.3` reduces
-the routing resources of routing layers  4, 5, 6 7 and 8 in 30%.
+You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment Metal4-Metal8 0.3` reduces
+the routing resources of routing layers  Metal4, Metal5, Metal6, Metal7 and Metal8 in 30%.
 
 ```
 set_global_routing_layer_pitch layer pitch
 ```
 The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
 You can call it multiple times for different layers.
-Example: `set_global_routing_layer_pitch 6 1.34`.
+Example: `set_global_routing_layer_pitch Metal6 1.34`.
+
+```
+set_clock_routing [-clock_pdrev_fanout fanout] \
+                  [-clock_topology_priority priority] \
+                  [-clock_tracks_cost clock_tracks_cost]
+```
+The `set_clock_routing` command sets specific configurations for clock nets.
+Options description:
+- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
+- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
+- **clock_tracks_cost**: Set the routing tracks consumption by clock nets.
 
 ```
 set_pdrev_topology_priority netName alpha
@@ -812,7 +839,7 @@ set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x up
 The `set_global_routing_region_adjustment` command sets routing resources adjustments in a specific region of the design.
 The region is defined as a rectangle in a routing layer.
 Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
-                                               -layer 4 -adjustment 0.7`
+                                               -layer Metal4 -adjustment 0.7`
 
 ```
 repair_antennas diodeCellName/diodePinName

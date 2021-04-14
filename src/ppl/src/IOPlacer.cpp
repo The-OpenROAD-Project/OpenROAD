@@ -42,6 +42,7 @@
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace ppl {
 
@@ -106,7 +107,7 @@ void IOPlacer::initParms()
   }
 }
 
-void IOPlacer::randomPlacement(const RandomMode mode)
+void IOPlacer::randomPlacement()
 {
   const double seed = parms_->getRandSeed();
 
@@ -137,73 +138,22 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     sections_.push_back(s);
   }
 
-  std::mt19937 g(seed);
-  switch (mode) {
-    case RandomMode::full:
-      logger_->report("RandomMode Full");
+  std::mt19937 g;
+  g.seed(seed);
 
-      for (size_t i = 0; i < vSlots.size(); ++i) {
-        vSlots[i] = i;
-      }
+  for (size_t i = 0; i < vIOs.size(); ++i) {
+    vIOs[i] = i;
+  }
 
-      std::shuffle(vSlots.begin(), vSlots.end(), g);
+  utl::shuffle(vIOs.begin(), vIOs.end(), g);
 
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vSlots[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vSlots.erase(vSlots.begin());
-      }
-      break;
-    case RandomMode::even:
-      logger_->report("RandomMode Even");
-
-      for (size_t i = 0; i < vIOs.size(); ++i) {
-        vIOs[i] = i;
-      }
-
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
-        io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    case RandomMode::group:
-      logger_->report("RandomMode Group");
-      for (size_t i = mid1; i < mid1 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid2; i < mid2 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid3; i < mid3 + slots_per_edge; i++) {
-        vIOs[idx++] = i;
-      }
-      for (size_t i = mid4; i < mid4 + last_slots; i++) {
-        vIOs[idx++] = i;
-      }
-
-      std::shuffle(vIOs.begin(), vIOs.end(), g);
-
-      for (IOPin& io_pin : netlist_.getIOPins()) {
-        int b = vIOs[0];
-        io_pin.setPos(valid_slots.at(b).pos);
-        io_pin.setLayer(valid_slots.at(b).layer);
-        assignment_.push_back(io_pin);
-        sections_[0].net.addIONet(io_pin, instPins);
-        vIOs.erase(vIOs.begin());
-      }
-      break;
-    default:
-      logger_->error(PPL, 39, "Random mode not found");
-      break;
+  for (IOPin& io_pin : netlist_.getIOPins()) {
+    int b = vIOs[0];
+    io_pin.setPos(valid_slots.at(floor(b * shift)).pos);
+    io_pin.setLayer(valid_slots.at(floor(b * shift)).layer);
+    assignment_.push_back(io_pin);
+    sections_[0].net.addIONet(io_pin, instPins);
+    vIOs.erase(vIOs.begin());
   }
 }
 
@@ -936,8 +886,8 @@ void IOPlacer::run(bool random_mode)
     init_hpwl = returnIONetsHPWL(netlist_);
   }
   if (random_mode) {
-    logger_->report("Random pin placement");
-    randomPlacement(RandomMode::even);
+    logger_->info(PPL, 3, "Random pin placement.");
+    randomPlacement();
   } else {
     setupSections();
 
@@ -1089,8 +1039,9 @@ void IOPlacer::initNetlist()
 
   for (odb::dbBTerm* b_term : bterms) {
     odb::dbNet* net = b_term->getNet();
-    if (!net) {
+    if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net", b_term->getConstName());
+      continue;
     }
 
     Direction dir = Direction::inout;

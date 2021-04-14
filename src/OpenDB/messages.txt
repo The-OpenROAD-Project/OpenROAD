@@ -2,8 +2,8 @@ ODB 0006 dbBlock.cpp:1781          Can not find net {}
 ODB 0014 dbBlock.cpp:3239          Failed to generate non-default rule for single wire net {}
 ODB 0015 dbBlock.cpp:3312          Library lib does not exist
 ODB 0025 dbCapNode.cpp:1100          capn {}
-ODB 0030 dbFlatten.cpp:1430         0 --
-ODB 0032 dbFlatten.cpp:1451         0
+ODB 0030 dbFlatten.cpp:1432         0 --
+ODB 0032 dbFlatten.cpp:1453         0
 ODB 0039 dbInst.cpp:1032           Forced Initialize to 0
 ODB 0041 dbInst.cpp:1045           Forced Initialize to 0
 ODB 0043 dbInst.cpp:1062           _dbHier::create fails
@@ -28,25 +28,25 @@ ODB 0117 definPin.cpp:118          PIN {} missing right bus character.
 ODB 0118 definPin.cpp:124          PIN {} missing left bus character.
 ODB 0122 definPin.cpp:372          error: Cannot find PIN {}
 ODB 0123 definPin.cpp:385          error: Cannot find PIN {}
-ODB 0125 definReader.cpp:1605      lines processed: {}
-ODB 0126 definReader.cpp:1610      error: {}
-ODB 0127 definReader.cpp:1636      Reading DEF file: {}
-ODB 0128 definReader.cpp:348       Design: {}
-ODB 0129 definReader.cpp:1640      Error: Failed to read DEF file
-ODB 0130 definReader.cpp:1645          Created {} pins.
-ODB 0134 definReader.cpp:1682      Finished DEF file: {}
-ODB 0135 definReader.cpp:1694      Reading DEF file: {}
-ODB 0137 definReader.cpp:1698      Error: Failed to read DEF file
-ODB 0138 definReader.cpp:1703          Created {} pins.
-ODB 0142 definReader.cpp:1726      Finished DEF file: {}
-ODB 0143 definReader.cpp:1737      Reading DEF file: {}
-ODB 0144 definReader.cpp:1741      Error: Failed to read DEF file
-ODB 0146 definReader.cpp:1750          Processed {} nets.
-ODB 0147 definReader.cpp:1752      Finished DEF file: {}
-ODB 0148 definReader.cpp:1761      error: Cannot open DEF file {}
-ODB 0149 definReader.cpp:1821      DEF parser returns an error!
-ODB 0150 definReader.cpp:1838      error: Cannot open DEF file {}
-ODB 0151 definReader.cpp:1856      DEF parser returns an error!
+ODB 0125 definReader.cpp:1606      lines processed: {}
+ODB 0126 definReader.cpp:1611      error: {}
+ODB 0127 definReader.cpp:1637      Reading DEF file: {}
+ODB 0128 definReader.cpp:349       Design: {}
+ODB 0129 definReader.cpp:1641      Error: Failed to read DEF file
+ODB 0130 definReader.cpp:1646          Created {} pins.
+ODB 0134 definReader.cpp:1683      Finished DEF file: {}
+ODB 0135 definReader.cpp:1695      Reading DEF file: {}
+ODB 0137 definReader.cpp:1699      Error: Failed to read DEF file
+ODB 0138 definReader.cpp:1704          Created {} pins.
+ODB 0142 definReader.cpp:1727      Finished DEF file: {}
+ODB 0143 definReader.cpp:1738      Reading DEF file: {}
+ODB 0144 definReader.cpp:1742      Error: Failed to read DEF file
+ODB 0146 definReader.cpp:1751          Processed {} nets.
+ODB 0147 definReader.cpp:1753      Finished DEF file: {}
+ODB 0148 definReader.cpp:1824      error: Cannot open DEF file {}
+ODB 0149 definReader.cpp:1842      DEF parser returns an error!
+ODB 0150 definReader.cpp:1859      error: Cannot open DEF file {}
+ODB 0151 definReader.cpp:1877      DEF parser returns an error!
 ODB 0152 definRegion.cpp:76         already exists
 ODB 0156 definSNet.cpp:124         special net {} does not exist
 ODB 0166 definVia.cpp:67           error: duplicate via ({})
@@ -55,27 +55,28 @@ ODB 0175 lefin.cpp:177             illegal: non-orthogonal-path at Pin
 ODB 0179 lefin.cpp:481             invalid BUSBITCHARS ({})
 
 ODB 0180 lefin.cpp:559             duplicate LAYER ({}) ignored
-ODB 0191 lefin.cpp:1220            error: undefined VIA {}
-ODB 0193 lefin.cpp:1247            error: undefined LAYER {}
-ODB 0212 lefin.cpp:1741            error: missing LAYER {}
-ODB 0214 lefin.cpp:1801            duplicate VIARULE ({}) ignoring...
-ODB 0217 lefin.cpp:1860            duplicate VIARULE ({}) ignoring...
-ODB 0221 lefin.cpp:1938            {} lines parsed!
-ODB 0222 lefin.cpp:1943            Reading LEF file: {}
-ODB 0224 lefin.cpp:1996                Created {} technology vias
-ODB 0225 lefin.cpp:1998                Created {} library cells
-ODB 0226 lefin.cpp:2000            Finished LEF file:  {}
-ODB 0227 lefin.cpp:2011            Error: technology already exists
-ODB 0228 lefin.cpp:2039            Error: technolgy does not exists
-ODB 0229 lefin.cpp:2044            Error: library ({}) already exists
-ODB 0231 lefin.cpp:2079            Error: technology already exists
-ODB 0233 lefin.cpp:2124            Error: technology already exists
-ODB 0234 lefin.cpp:2140            Reading LEF file:  {} ...
-ODB 0235 lefin.cpp:2142            Error reading {}
-ODB 0236 lefin.cpp:2149            Finished LEF file:  {}
-ODB 0238 lefin.cpp:2157                Created {} technology vias
-ODB 0239 lefin.cpp:2160                Created {} library cells
-ODB 0240 reader.cpp:547            error: Cannot open LEF file {}
-ODB 0250 definReader.cpp:1627      Chip does not exist
-ODB 0252 definReader.cpp:1648          Updated {} pins.
-ODB 0260 definReader.cpp:67        DESIGN is not defined in DEF
+ODB 0191 lefin.cpp:1232            error: undefined VIA {}
+ODB 0193 lefin.cpp:1259            error: undefined LAYER {}
+ODB 0212 lefin.cpp:1753            error: missing LAYER {}
+ODB 0214 lefin.cpp:1813            duplicate VIARULE ({}) ignoring...
+ODB 0217 lefin.cpp:1872            duplicate VIARULE ({}) ignoring...
+ODB 0221 lefin.cpp:1950            {} lines parsed!
+ODB 0222 lefin.cpp:1955            Reading LEF file: {}
+ODB 0224 lefin.cpp:2008                Created {} technology vias
+ODB 0225 lefin.cpp:2010                Created {} library cells
+ODB 0226 lefin.cpp:2012            Finished LEF file:  {}
+ODB 0227 lefin.cpp:2023            Error: technology already exists
+ODB 0228 lefin.cpp:2051            Error: technolgy does not exists
+ODB 0229 lefin.cpp:2056            Error: library ({}) already exists
+ODB 0231 lefin.cpp:2091            Error: technology already exists
+ODB 0233 lefin.cpp:2136            Error: technology already exists
+ODB 0234 lefin.cpp:2152            Reading LEF file:  {} ...
+ODB 0235 lefin.cpp:2154            Error reading {}
+ODB 0236 lefin.cpp:2161            Finished LEF file:  {}
+ODB 0238 lefin.cpp:2169                Created {} technology vias
+ODB 0239 lefin.cpp:2172                Created {} library cells
+ODB 0240 reader.cpp:559            error: Cannot open LEF file {}
+ODB 0250 definReader.cpp:1628      Chip does not exist
+ODB 0252 definReader.cpp:1649          Updated {} pins.
+ODB 0260 definReader.cpp:68        DESIGN is not defined in DEF
+ODB 0270 reader.cpp:550            error: Cannot open zipped LEF file {}

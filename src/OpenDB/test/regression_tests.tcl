@@ -1,6 +1,8 @@
 record_tests {
   import_package
   read_lef
+  read_zipped
+  create_sboxes
   dump_via_rules
   dump_vias
   read_def

@@ -67,7 +67,7 @@ proc read_def { args } {
   if { ![file exists $filename] } {
     utl::error "ORD" 3 "$filename does not exist."
   }
-  if { ![file readable $filename] } {
+  if { ![file readable $filename] || ![file isfile $filename] } {
     utl::error "ORD" 4 "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
@@ -150,67 +150,72 @@ proc set_layer_rc {args} {
     keys {-layer -via -capacitance -resistance}\
     flags {}
 
-  if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
-    utl::error "ORD" 9 "layer or via must be specified."
-  }
-
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error "ORD" 10 "Exactly one of layer or via must be specified."
+    utl::error "ORD" 10 "Use -layer or -via but not both."
   }
 
   set tech [ord::get_db_tech]
-
   if { [info exists keys(-layer)] } {
-    set techLayer [$tech findLayer $keys(-layer)]
-  } else {
-    set techLayer [$tech findLayer $keys(-via)]
-  }
-  if { $techLayer == "NULL" } {
-    utl::error "ORD" 16 "layer not found."
-  }
-
-  if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-    utl::error "ORD" 12 "use -capacitance <value> or -resistance <value>."
-  }
-
-  if { [info exists keys(-via)] } {
-    set viaTechLayer [$techLayer getUpperLayer]
-
-    if { [info exists keys(-capacitance)] } {
-      set wire_cap [capacitance_ui_sta $keys(-capacitance)]
-      $viaTechLayer setCapacitance $wire_cap
+    set layer_name $keys(-layer)
+    set layer [$tech findLayer $layer_name]
+    if { $layer == "NULL" } {
+      utl::error "ORD" 19 "layer $layer_name not found."
     }
 
-    if { [info exists keys(-resistance)] } {
-      set wire_res [resistance_ui_sta $keys(-resistance)]
-      $viaTechLayer setResistance $wire_res
+    if { $layer == "NULL" } {
+      utl::error "ORD" 20 "layer not found."
     }
-  } else {
+
+    if { [$layer getRoutingLevel] == 0 } {
+      utl::error "ORD" 18 "$layer_name is not a routing layer."
+    }
+
     if { [info exists keys(-capacitance)] } {
       # Zero the edge cap and just use the user given value
-      $techLayer setEdgeCapacitance 0
-      # The DB stores capacitance per square micron of area, not per
-      # micron of length.
-      set wire_width [ord::dbu_to_microns [$techLayer getWidth]]
+      $layer setEdgeCapacitance 0
+      # Convert wire capacitance/wire_length to capacitance/area.
+      set wire_width [ord::dbu_to_microns [$layer getWidth]]
+      # F/m
       set wire_cap [expr [sta::capacitance_ui_sta $keys(-capacitance)] \
                       / [sta::distance_ui_sta 1.0]]
-      # ui_sta converts to F/m so multiple by 1E6 to get pF/um
-      set cap_per_square [expr 1E6 * $wire_cap / $wire_width]
-      
-      $techLayer setCapacitance $cap_per_square
+      # Convert to pF/um.
+      set cap_per_square [expr $wire_cap * 1e+6 / $wire_width]
+      $layer setCapacitance $cap_per_square
     }
     
     if { [info exists keys(-resistance)] } {
-      # The DB stores resistance for a square of wire,
-      # not unit resistance.
-      set wire_width [ord::dbu_to_microns [$techLayer getWidth]]
+      # Convert resistance/wire_length to resistance/square.
+      set wire_width [ord::dbu_to_microns [$layer getWidth]]
+      # ohm/m
       set wire_res [expr [sta::resistance_ui_sta $keys(-resistance)] \
                       / [sta::distance_ui_sta 1.0]]
-      # ui_sta converts to ohm/m so multiple by 1E-6 to get ohm/um
-      set res_per_square [expr 1e-6 * $wire_width * $wire_res]
-      
-      $techLayer setResistance $res_per_square
+      # convert to ohms/square
+      set res_per_square [expr $wire_width * 1e-6 * $wire_res]
+      $layer setResistance $res_per_square
     }
+    
+    if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
+      utl::error "ORD" 12 "missing -capacitance or -resistance argument."
+    }
+  } elseif { [info exists keys(-via)] } {
+    set layer_name $keys(-via)
+    set layer [$tech findLayer $layer_name]
+    if { $layer == "NULL" } {
+      utl::error "ORD" 21 "via $layer_name not found."
+    }
+
+    if { [info exists keys(-capacitance)] } {
+      utl::warn "ORD" 22 "-capacitance not supported for vias."
+    }
+
+    if { [info exists keys(-resistance)] } {
+      set via_res [sta::resistance_ui_sta $keys(-resistance)]
+      $layer setResistance $via_res
+    } else {
+      utl::error "ORD" 17 "no -resistance specified for via."
+    }
+  } else {
+    utl::error "ORD" 9 "missing -layer or -via argument."
   }
 }
 
@@ -230,19 +235,30 @@ proc python {args} {
 ################################################################
 
 namespace eval ord {
-
-proc ensure_units_initialized { } {
-  if { ![units_initialized] } {
-    utl::error "ORD" 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+  
+  proc ensure_units_initialized { } {
+    if { ![units_initialized] } {
+      utl::error "ORD" 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+    }
   }
-}
-
-proc clear {} {
-  sta::clear_network
-  sta::clear_sta
-  grt::clear_fastroute
-  [get_db] clear
-}
-
-# namespace ord
+  
+  proc clear {} {
+    sta::clear_network
+    sta::clear_sta
+    grt::clear_fastroute
+    [get_db] clear
+  }
+  
+  proc profile_cmd {filename args} {
+    utl::info 99 "Profiling $args > $filename"
+    profile -commands on
+    if {[catch "{*}$args"]} {
+      global errorInfo
+      puts $errorInfo
+    }
+    profile off profarray
+    profrep profarray cpu $filename
+  }
+  
+  # namespace ord
 }

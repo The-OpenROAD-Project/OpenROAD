@@ -313,6 +313,16 @@ Renderer::~Renderer()
   gui::Gui::get()->unregisterRenderer(this);
 }
 
+void Gui::load_design()
+{
+  main_window->postReadDb(main_window->getDb());
+}
+
+void Gui::fit()
+{
+  main_window->fit();
+}
+
 OpenDbDescriptor* OpenDbDescriptor::singleton_ = nullptr;
 OpenDbDescriptor* OpenDbDescriptor::get()
 {
@@ -447,7 +457,7 @@ void OpenDbDescriptor::highlight(void* object,
           shape.getBox(rect);
           painter.drawRect(rect);
         }
-      } else {
+      } else if (!net->getSigType().isSupply()) {
         std::set<odb::Point> driver_locs;
         std::set<odb::Point> sink_locs;
         for (auto inst_term : net->getITerms()) {

@@ -30,12 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbTypes.h"
-
 #include <ctype.h>
 #include <string.h>
 
 #include "dbId.h"
+#include "dbTypes.h"
 
 namespace odb {
 
@@ -187,6 +186,24 @@ dbSigType::dbSigType()
 dbSigType::dbSigType(const dbSigType& value)
 {
   _value = value._value;
+}
+
+bool dbSigType::isSupply() const
+{
+  switch (_value) {
+    case POWER:
+    case GROUND:
+      return true;
+    case SIGNAL:
+    case CLOCK:
+    case ANALOG:
+    case RESET:
+    case SCAN:
+    case TIEOFF:
+      return false;
+  }
+  assert(false);
+  return false;
 }
 
 const char* dbSigType::getString() const

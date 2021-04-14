@@ -1,7 +1,7 @@
 DRT 0001 TritonRoute.cpp:313       Error reading param file: {}
 DRT 0002 TritonRoute.cpp:115       Detailed routing has not been run yet.
-DRT 0003 io.cpp:2814               load design first
-DRT 0004 io.cpp:2819               load design first
+DRT 0003 io.cpp:2818               load design first
+DRT 0004 io.cpp:2823               load design first
 DRT 0005 frRegionQuery.cpp:117     Unsupported region query add
 DRT 0006 frRegionQuery.cpp:132     Unsupported region query add
 DRT 0007 frRegionQuery.cpp:158     Unsupported region query add
@@ -31,31 +31,31 @@ DRT 0039 FlexGC_init.cpp:87        init_design_helper unsupported type.
 DRT 0041 FlexGC_main.cpp:127       Warning: Unsupported metSpc rule.
 DRT 0042 FlexGC_main.cpp:203       UNKNOWN corner dir
 DRT 0043 FlexGC_main.cpp:282       Unsupported metSpc rule.
-DRT 0053 FlexGC_init.cpp:997       updateGCWorker cannot find frNet in DRWorker.
-DRT 0064 FlexGC_main.cpp:3842      attempting to add patch with no drNet.
-DRT 0065 FlexPA_init.cpp:92        instAnalysis unsupported pinFig.
+DRT 0053 FlexGC_init.cpp:915       updateGCWorker cannot find frNet in DRWorker.
+DRT 0064 FlexGC_main.cpp:3008      attempting to add patch with no drNet.
+DRT 0065 FlexPA_init.cpp:87        instAnalysis unsupported pinFig.
 DRT 0067 FlexPA_prep.cpp:110       FlexPA mergePinShapes unsupported shape.
-DRT 0069 FlexPA_init.cpp:305       initPinAccess error.
-DRT 0070 FlexPA_prep.cpp:718       unexpected direction in getPlanarEP
-DRT 0071 FlexPA_prep.cpp:1298      prepPoint_pin_helper unique2paidx not found.
-DRT 0072 FlexPA_prep.cpp:1311      prepPoint_pin_helper unique2paidx not found
-DRT 0074 FlexPA_prep.cpp:1398      no ap for PIN/{}
-DRT 0075 FlexPA_prep.cpp:1410      prepPoint_pin unique2paidx not found.
-DRT 0076 FlexPA_prep.cpp:1478        complete {} pins
-DRT 0077 FlexPA_prep.cpp:1482        complete {} pins
-DRT 0078 FlexPA_prep.cpp:1514        complete {} pins
-DRT 0079 FlexPA_prep.cpp:1554        complete {} unique inst patterns
-DRT 0080 FlexPA_prep.cpp:1558        complete {} unique inst patterns
-DRT 0081 FlexPA_prep.cpp:1565        complete {} unique inst patterns
-DRT 0082 FlexPA_prep.cpp:1637        complete {} groups
-DRT 0083 FlexPA_prep.cpp:1641        complete {} groups
-DRT 0084 FlexPA_prep.cpp:1648        complete {} groups
-DRT 0085 FlexPA_prep.cpp:1838      valid access pattern combination not found.
-DRT 0086 FlexPA_prep.cpp:2087      pin does not have access point.
-DRT 0088 FlexPA_prep.cpp:2254      {}
-DRT 0089 FlexPA_prep.cpp:2325      genPattern_gc objs empty.
-DRT 0090 FlexPA_prep.cpp:2582      valid access pattern not found.
-DRT 0091 FlexPA_prep.cpp:2645      pin does not have valid ap.
+DRT 0069 FlexPA_init.cpp:241       initPinAccess error.
+DRT 0070 FlexPA_prep.cpp:695       unexpected direction in getPlanarEP
+DRT 0071 FlexPA_prep.cpp:1121      prepPoint_pin_helper unique2paidx not found.
+DRT 0072 FlexPA_prep.cpp:1134      prepPoint_pin_helper unique2paidx not found
+DRT 0074 FlexPA_prep.cpp:1221      no ap for PIN/{}
+DRT 0075 FlexPA_prep.cpp:1233      prepPoint_pin unique2paidx not found.
+DRT 0076 FlexPA_prep.cpp:1290        complete {} pins
+DRT 0077 FlexPA_prep.cpp:1294        complete {} pins
+DRT 0078 FlexPA_prep.cpp:1323        complete {} pins
+DRT 0079 FlexPA_prep.cpp:1358        complete {} unique inst patterns
+DRT 0080 FlexPA_prep.cpp:1362        complete {} unique inst patterns
+DRT 0081 FlexPA_prep.cpp:1369        complete {} unique inst patterns
+DRT 0082 FlexPA_prep.cpp:1432        complete {} groups
+DRT 0083 FlexPA_prep.cpp:1436        complete {} groups
+DRT 0084 FlexPA_prep.cpp:1443        complete {} groups
+DRT 0085 FlexPA_prep.cpp:1600      valid access pattern combination not found.
+DRT 0086 FlexPA_prep.cpp:1840      pin does not have access point.
+DRT 0088 FlexPA_prep.cpp:1984      {}
+DRT 0089 FlexPA_prep.cpp:2051      genPattern_gc objs empty.
+DRT 0090 FlexPA_prep.cpp:2295      valid access pattern not found.
+DRT 0091 FlexPA_prep.cpp:2352      pin does not have valid ap.
 DRT 0096 io.cpp:146                same cell name: {}
 DRT 0100 io.cpp:327                unsupported via: {}
 DRT 0102 io.cpp:447                odd dimension in both directions
@@ -70,60 +70,67 @@ DRT 0115 FlexPA_graphics.cpp:66    Setting MAX_THREADS=1 for use with the PA GUI
 DRT 0116 io.cpp:874                load design first
 DRT 0117 io.cpp:877                load design first
 DRT 0118 TritonRoute.tcl:95        -gcell is a list of 2 coordinates.
-DRT 0120 io.cpp:1863               unsupported PIN USE in lef
-DRT 0121 io.cpp:1879               unsupported term direction {} in lef
-DRT 0125 io.cpp:2089               unsupported via {}
-DRT 0128 io.cpp:1967               unsupported viarule {}
-DRT 0136 io.cpp:2153               load design first
-DRT 0140 io.cpp:1499               SpacingRange unsupported
-DRT 0141 io.cpp:1501               SpacingLengthThreshold unsupported
-DRT 0142 io.cpp:1503               SpacingNotchLength unsupported
-DRT 0143 io.cpp:1505               SpacingEndOfNotchWidth unsupported
+DRT 0120 io.cpp:1870               unsupported PIN USE in lef
+DRT 0121 io.cpp:1886               unsupported term direction {} in lef
+DRT 0125 io.cpp:2104               unsupported via {}
+DRT 0128 io.cpp:1974               unsupported viarule {}
+DRT 0136 io.cpp:2168               load design first
+DRT 0140 io.cpp:1506               SpacingRange unsupported
+DRT 0141 io.cpp:1508               SpacingLengthThreshold unsupported
+DRT 0142 io.cpp:1510               SpacingNotchLength unsupported
+DRT 0143 io.cpp:1512               SpacingEndOfNotchWidth unsupported
 DRT 0148 TritonRoute.cpp:235       deprecated lef param in params file
-DRT 0149 io.cpp:2167               Reading Tech And Libs
-DRT 0150 io.cpp:2183               Reading Design
-DRT 0151 io.cpp:2210               Reading Guide
-DRT 0152 io.cpp:2244               Error reading guide file!
-DRT 0153 io.cpp:2249               cannot find net {}
-DRT 0154 io.cpp:2254               cannot find layer {}
-DRT 0156 io.cpp:2281               guideIn read {} guides
-DRT 0157 io.cpp:2285               guideIn read {} guides
-DRT 0158 io.cpp:2290               Error reading guide file!
-DRT 0159 io.cpp:2295               failed to open guide file
-DRT 0162 io_pin.cpp:39             libcell analysis ...
-DRT 0163 io_pin.cpp:91             instance analysis ...
-DRT 0164 io_pin.cpp:163            # unique instances = {}
-DRT 0165 FlexPA.cpp:97             start pin access
-DRT 0166 FlexPA.cpp:135            complete pin access
-DRT 0168 io_parser_helper.cpp:642  Init region query ...
-DRT 0169 io_parser_helper.cpp:653  Post process guides ...
-DRT 0170 TritonRoute.cpp:237       deprecated def param in params file
-DRT 0170 io_parser_helper.cpp:841  no GCELLGRIDX
-DRT 0171 io_parser_helper.cpp:846  no GCELLGRIDY
-DRT 0172 io_parser_helper.cpp:901  no GCELLGRIDX
-DRT 0173 io_parser_helper.cpp:906  no GCELLGRIDY
-DRT 0174 io_parser_helper.cpp:931  gcell cnt x < 1
-DRT 0175 io_parser_helper.cpp:947  gcell cnt y < 1
-DRT 0178 io_parser_helper.cpp:691  init guide query ...
-DRT 0179 io_parser_helper.cpp:694  init gr pin query ...
-DRT 0180 io.cpp:2649               post processing ...
+DRT 0149 io.cpp:2182               Reading Tech And Libs
+DRT 0150 io.cpp:2198               Reading Design
+DRT 0151 io.cpp:2225               Reading Guide
+DRT 0152 io.cpp:2259               Error reading guide file!
+DRT 0153 io.cpp:2264               cannot find net {}
+DRT 0154 io.cpp:2269               cannot find layer {}
+DRT 0156 io.cpp:2296               guideIn read {} guides
+DRT 0157 io.cpp:2300               guideIn read {} guides
+DRT 0158 io.cpp:2305               Error reading guide file!
+DRT 0159 io.cpp:2310               failed to open guide file
+DRT 0162 io_pin.cpp:37             libcell analysis ...
+DRT 0163 io_pin.cpp:83             instance analysis ...
+DRT 0164 io_pin.cpp:139            # unique instances = {}
+DRT 0165 FlexPA.cpp:96             start pin access
+DRT 0166 FlexPA.cpp:134            complete pin access
+DRT 0168 io_parser_helper.cpp:651  Init region query ...
+DRT 0169 io_parser_helper.cpp:662  Post process guides ...
+DRT 0170 io_parser_helper.cpp:852  no GCELLGRIDX
+DRT 0171 io_parser_helper.cpp:857  no GCELLGRIDY
+DRT 0172 io_parser_helper.cpp:912  no GCELLGRIDX
+DRT 0173 io_parser_helper.cpp:917  no GCELLGRIDY
+DRT 0174 io_parser_helper.cpp:942  gcell cnt x < 1
+DRT 0175 io_parser_helper.cpp:958  gcell cnt y < 1
+DRT 0178 io_parser_helper.cpp:700  init guide query ...
+DRT 0179 io_parser_helper.cpp:703  init gr pin query ...
+DRT 0180 io.cpp:2653               post processing ...
 DRT 0181 FlexTA.cpp:404            start track assignment
 DRT 0182 FlexTA.cpp:410            complete track assignment
-DRT 0185 io_parser_helper.cpp:714  post process initialize RPin region query ...
-DRT 0187 FlexDR.cpp:1528           start routing data preparation
-DRT 0194 FlexDR.cpp:2346           start detail routing ...
-DRT 0198 FlexDR.cpp:3154           complete detail routing
+DRT 0185 io_parser_helper.cpp:722  post process initialize RPin region query ...
+DRT 0187 FlexDR.cpp:1371           start routing data preparation
+DRT 0194 FlexDR.cpp:2077           start detail routing ...
+DRT 0198 FlexDR.cpp:2885           complete detail routing
 DRT 0201 FlexGR.cpp:636            design isn't loaded before global routing
-DRT 0206 FlexDR_conn.cpp:1290      checkConnectivity error
+DRT 0206 FlexDR_conn.cpp:1292      checkConnectivity error
 DRT 0207 FlexDR_graphics.cpp:423   Setting MAX_THREADS=1 for use with the DR GUI.
-DRT 0214 io_guide.cpp:725          genGuides empty pin2GCellMap
-DRT 0217 io_guide.cpp:743          genGuides unknown type
-DRT 0218 io_guide.cpp:778          Guide is not connected to design
-DRT 0219 io_guide.cpp:781          Guide is not connected to design
-DRT 0220 io_guide.cpp:830          genGuides_final error 1
-DRT 0221 io_guide.cpp:850          genGuides_final error 2
-DRT 0222 io_guide.cpp:857          genGuides_final pin not in any guide
+DRT 0214 io_guide.cpp:639          genGuides empty pin2GCellMap
+DRT 0217 io_guide.cpp:657          genGuides unknown type
+DRT 0218 io_guide.cpp:692          Guide is not connected to design
+DRT 0219 io_guide.cpp:695          Guide is not connected to design
+DRT 0220 io_guide.cpp:742          genGuides_final error 1
+DRT 0221 io_guide.cpp:762          genGuides_final error 2
+DRT 0222 io_guide.cpp:769          genGuides_final pin not in any guide
 DRT 0223 FlexGC_eol.cpp:50         Unsupported endofline spacing rule
-DRT 0224 FlexGC_eol.cpp:123        Unsupported endofline spacing rule
-DRT 0225 FlexGC_eol.cpp:291        Unsupported endofline spacing rule
-DRT 0226 FlexGC_eol.cpp:330        Unsupported endofline spacing rule
+DRT 0224 FlexGC_eol.cpp:223        Unsupported endofline spacing rule
+DRT 0225 FlexGC_eol.cpp:393        Unsupported endofline spacing rule
+DRT 0226 FlexGC_eol.cpp:432        Unsupported endofline spacing rule
+DRT 0227 TritonRoute.cpp:237       deprecated def param in params file
+DRT 0232 io_guide.cpp:360          genGuides_gCell2TermMap unsupoprted pinfig
+DRT 0235 io_parser_helper.cpp:188  Second layer {} does not exist
+DRT 0237 io_parser_helper.cpp:212  Second layer {} does not exist
+DRT 0239 io_parser_helper.cpp:275  Non-rect shape in via definition
+DRT 0243 io_parser_helper.cpp:309  Non-rect shape in via definition
+DRT 0245 io_parser_helper.cpp:708  No output guide specified, skipped writing guide
+DRT 0248 io_pin.cpp:72             instAnalysis unsupported pinFig

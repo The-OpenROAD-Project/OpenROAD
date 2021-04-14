@@ -9,8 +9,8 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 87 nets and 250 connections.
 [INFO ODB-0134] Finished DEF file: multiple_calls.def
-Min routing layer: 1
-Max routing layer: 10
+Min routing layer: metal1
+Max routing layer: metal10
 Global adjustment: 0%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
@@ -18,7 +18,7 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 blockages on layer 1.
+[INFO GRT-0018] Processing 8469 blockages on layer metal1.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 629
@@ -35,8 +35,8 @@ Grid origin: (0, 0)
 [INFO GRT-0112] Final usage 3D: 1379
 [INFO GRT-0018] Total wirelength: 2312 um
 [INFO GRT-0014] Num routed nets: 87
-Min routing layer: 1
-Max routing layer: 10
+Min routing layer: metal1
+Max routing layer: metal10
 Global adjustment: 80%
 Grid origin: (0, 0)
 [INFO GRT-0003] Macros: 0
@@ -44,17 +44,17 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0018] Processing 8469 blockages on layer 1.
-[INFO GRT-0024] Reducing resources of layer 1 by 80%.
-[INFO GRT-0025] Reducing resources of layer 2 by 80%.
-[INFO GRT-0026] Reducing resources of layer 3 by 80%.
-[INFO GRT-0027] Reducing resources of layer 4 by 80%.
-[INFO GRT-0028] Reducing resources of layer 5 by 80%.
-[INFO GRT-0029] Reducing resources of layer 6 by 80%.
-[INFO GRT-0030] Reducing resources of layer 7 by 80%.
-[INFO GRT-0031] Reducing resources of layer 8 by 80%.
-[INFO GRT-0032] Reducing resources of layer 9 by 80%.
-[INFO GRT-0033] Reducing resources of layer 10 by 80%.
+[INFO GRT-0018] Processing 8469 blockages on layer metal1.
+[INFO GRT-0024] Reducing resources of layer metal1 by 80%.
+[INFO GRT-0025] Reducing resources of layer metal2 by 80%.
+[INFO GRT-0026] Reducing resources of layer metal3 by 80%.
+[INFO GRT-0027] Reducing resources of layer metal4 by 80%.
+[INFO GRT-0028] Reducing resources of layer metal5 by 80%.
+[INFO GRT-0029] Reducing resources of layer metal6 by 80%.
+[INFO GRT-0030] Reducing resources of layer metal7 by 80%.
+[INFO GRT-0031] Reducing resources of layer metal8 by 80%.
+[INFO GRT-0032] Reducing resources of layer metal9 by 80%.
+[INFO GRT-0033] Reducing resources of layer metal10 by 80%.
 [INFO GRT-0146] Final usage/overflow report:
 [INFO GRT-0155] Overflow Report:
 [INFO GRT-0156] Total Usage   : 626
@@ -69,7 +69,7 @@ Grid origin: (0, 0)
 [INFO GRT-0110] Final usage: 626
 [INFO GRT-0111] Final number of vias: 266
 [INFO GRT-0112] Final usage 3D: 1424
-[WARNING GRT-0210] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
+[WARNING GRT-0211] dbGcellGrid already exists in db. Clearing existing dbGCellGrid
 [INFO GRT-0018] Total wirelength: 2310 um
 [INFO GRT-0014] Num routed nets: 87
 Differences found at line 65.

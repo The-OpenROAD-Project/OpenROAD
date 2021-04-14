@@ -304,3 +304,14 @@ proc global_placement_debug { args } {
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial
 }
+
+sta::define_cmd_args "global_placement_plot" {}
+
+proc global_placement_plot { args } {
+  sta::parse_key_args "global_placement_plot" args \
+    keys {} \
+    flags {}
+  
+  gpl::set_plot_path_cmd $args
+}
+

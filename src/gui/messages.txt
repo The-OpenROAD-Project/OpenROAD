@@ -1,4 +1,14 @@
-GUI 0001 gui.i:93                  No database loaded
-GUI 0002 gui.i:97                  No chip loaded
-GUI 0003 gui.i:101                 No block loaded
-GUI 0004 layoutViewer.cpp:657      Skipping malformed GCell
+GUI 0001 gui.i:137                 No database loaded
+GUI 0002 gui.i:141                 No chip loaded
+GUI 0003 gui.i:145                 No block loaded
+GUI 0004 layoutViewer.cpp:751      Skipping malformed GCell
+GUI 0005 gui.i:68                  Command selection_add_nets is not usable in non-GUI mode
+GUI 0006 gui.i:79                  Command selection_add_inst is not usable in non-GUI mode
+GUI 0007 gui.i:90                  Command selection_add_insts is not usable in non-GUI mode
+GUI 0008 gui.i:100                 Command highlight_inst is not usable in non-GUI mode
+GUI 0009 gui.i:110                 Command highlight_net is not usable in non-GUI mode
+GUI 0010 gui.i:120                 Command add_ruler is not usable in non-GUI mode
+GUI 0011 gui.i:132                 Command zoom_to is not usable in non-GUI mode
+GUI 0012 gui.i:158                 Command design_created is not usable in non-GUI mode
+GUI 0013 gui.i:57                  Command selection_add_net is not usable in non-GUI mode
+GUI 0014 gui.i:169                 Command fit is not usable in non-GUI mode

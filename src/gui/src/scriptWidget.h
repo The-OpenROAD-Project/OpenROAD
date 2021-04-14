@@ -100,6 +100,7 @@ class ScriptWidget : public QDockWidget
   QStringList history_;
   int historyPosition_;
   bool paused_;
+  utl::Logger* logger_;
 
   // Logger sink
   template <typename Mutex>
