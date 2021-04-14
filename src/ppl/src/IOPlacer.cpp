@@ -107,7 +107,7 @@ void IOPlacer::initParms()
   }
 }
 
-void IOPlacer::randomPlacement(const RandomMode mode)
+void IOPlacer::randomPlacement()
 {
   const double seed = parms_->getRandSeed();
 
@@ -839,7 +839,7 @@ void IOPlacer::run(bool random_mode)
   }
   if (random_mode) {
     logger_->info(PPL, 3, "Random pin placement.");
-    randomPlacement(RandomMode::even);
+    randomPlacement();
   } else {
     setupSections();
 
