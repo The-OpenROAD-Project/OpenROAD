@@ -171,11 +171,33 @@ using rsz::Resizer;
 namespace rsz {
 
 void
-remove_buffers_cmd()
+set_layer_rc_cmd(odb::dbTechLayer *layer,
+                 const Corner *corner,
+                 float res,
+                 float cap)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers();
+  resizer->setLayerRC(layer, corner, res, cap);
+}
+
+double
+layer_resistance(odb::dbTechLayer *layer,
+                 const Corner *corner)
+{
+  Resizer *resizer = getResizer();
+  double res, cap;
+  resizer->layerRC(layer, corner, res, cap);
+  return res;
+}
+
+double
+layer_capacitance(odb::dbTechLayer *layer,
+                  const Corner *corner)
+{
+  Resizer *resizer = getResizer();
+  double res, cap;
+  resizer->layerRC(layer, corner, res, cap);
+  return cap;
 }
 
 void
@@ -254,6 +276,14 @@ have_estimated_parasitics()
 {
   Resizer *resizer = getResizer();
   return resizer->haveEstimatedParasitics();
+}
+
+void
+remove_buffers_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->removeBuffers();
 }
 
 void

@@ -59,6 +59,108 @@ using sta::OperatingConditions;
 using odb::dbInst;
 using odb::dbMasterType;
 
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::setLayerRC(dbTechLayer *layer,
+                    const Corner *corner,
+                    double res,
+                    double cap)
+{
+  if (layer_res_.empty()) {
+    int layer_count = db_->getTech()->getLayerCount();
+    int corner_count = sta_->corners()->count();
+    layer_res_.resize(layer_count);
+    layer_cap_.resize(layer_count);
+    for (int i = 0; i < layer_count; i++) {
+      layer_res_[i].resize(corner_count);
+      layer_cap_[i].resize(corner_count);
+    }
+  }
+
+  layer_res_[layer->getNumber()][corner->index()] = res;
+  layer_cap_[layer->getNumber()][corner->index()] = cap;
+}
+
+void
+Resizer::layerRC(dbTechLayer *layer,
+                 const Corner *corner,
+                 // Return values.
+                 double &res,
+                 double &cap)
+{
+  if (layer_res_.empty()) {
+    res = 0.0;
+    cap = 0.0;
+  }
+  else {
+    res = layer_res_[layer->getNumber()][corner->index()];
+    cap = layer_cap_[layer->getNumber()][corner->index()];
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::setWireSignalRC(const Corner *corner,
+                         double res,
+                         double cap)
+{
+  wire_signal_res_.resize(sta_->corners()->count());
+  wire_signal_cap_.resize(sta_->corners()->count());
+  wire_signal_res_[corner->index()] = res;
+  wire_signal_cap_[corner->index()] = cap;
+}
+
+double
+Resizer::wireSignalResistance(const Corner *corner)
+{
+  if (wire_signal_res_.empty())
+    return 0.0;
+  else
+    return wire_signal_res_[corner->index()];
+}
+
+double
+Resizer::wireSignalCapacitance(const Corner *corner)
+{
+  if (wire_signal_cap_.empty())
+    return 0.0;
+  else
+    return wire_signal_cap_[corner->index()];
+}
+
+void
+Resizer::setWireClkRC(const Corner *corner,
+                      double res,
+                      double cap)
+{
+  wire_clk_res_.resize(sta_->corners()->count());
+  wire_clk_cap_.resize(sta_->corners()->count());
+  wire_clk_res_[corner->index()] = res;
+  wire_clk_cap_[corner->index()] = cap;
+}
+
+double
+Resizer::wireClkResistance(const Corner *corner)
+{
+  if (wire_clk_res_.empty())
+    return 0.0;
+  else
+    return wire_clk_res_[corner->index()];
+}
+
+double
+Resizer::wireClkCapacitance(const Corner *corner)
+{
+  if (wire_clk_cap_.empty())
+    return 0.0;
+  else
+    return wire_clk_cap_[corner->index()];
+}
+
+////////////////////////////////////////////////////////////////
+
 void
 Resizer::ensureWireParasitics()
 {

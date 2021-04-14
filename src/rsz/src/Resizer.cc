@@ -354,64 +354,6 @@ Resizer::removeBuffer(Instance *buffer)
 }
 
 void
-Resizer::setWireSignalRC(const Corner *corner,
-                         double res,
-                         double cap)
-{
-  wire_signal_res_.resize(sta_->corners()->count());
-  wire_signal_cap_.resize(sta_->corners()->count());
-  wire_signal_res_[corner->index()] = res;
-  wire_signal_cap_[corner->index()] = cap;
-}
-
-double
-Resizer::wireSignalResistance(const Corner *corner)
-{
-  if (wire_signal_res_.empty())
-    return 0.0;
-  else
-    return wire_signal_res_[corner->index()];
-}
-
-double
-Resizer::wireSignalCapacitance(const Corner *corner)
-{
-  if (wire_signal_cap_.empty())
-    return 0.0;
-  else
-    return wire_signal_cap_[corner->index()];
-}
-
-void
-Resizer::setWireClkRC(const Corner *corner,
-                      double res,
-                      double cap)
-{
-  wire_clk_res_.resize(sta_->corners()->count());
-  wire_clk_cap_.resize(sta_->corners()->count());
-  wire_clk_res_[corner->index()] = res;
-  wire_clk_cap_[corner->index()] = cap;
-}
-
-double
-Resizer::wireClkResistance(const Corner *corner)
-{
-  if (wire_clk_res_.empty())
-    return 0.0;
-  else
-    return wire_clk_res_[corner->index()];
-}
-
-double
-Resizer::wireClkCapacitance(const Corner *corner)
-{
-  if (wire_clk_cap_.empty())
-    return 0.0;
-  else
-    return wire_clk_cap_[corner->index()];
-}
-
-void
 Resizer::ensureLevelDrvrVertices()
 {
   if (!level_drvr_vertices_valid_) {

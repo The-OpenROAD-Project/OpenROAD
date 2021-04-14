@@ -60,6 +60,7 @@ using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbMaster;
 using odb::dbBlock;
+using odb::dbTechLayer;
 
 using sta::StaState;
 using sta::Sta;
@@ -128,8 +129,15 @@ public:
             dbDatabase *db,
             dbSta *sta);
 
-  // Remove all buffers from the netlist.
-  void removeBuffers();
+  void setLayerRC(dbTechLayer *layer,
+                  const Corner *corner,
+                  double res,
+                  double cap);
+  void layerRC(dbTechLayer *layer,
+               const Corner *corner,
+               // Return values.
+               double &res,
+               double &cap);
   // Set the resistance and capacitance used for parasitics on signal nets.
   void setWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
@@ -162,6 +170,8 @@ public:
 
   void setMaxUtilization(double max_utilization);
   void resizePreamble();
+  // Remove all buffers from the netlist.
+  void removeBuffers();
   void bufferInputs();
   void bufferOutputs();
   // Resize all instances in the network.
@@ -534,8 +544,11 @@ protected:
                                BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
   void findResizeSlacks1();
-
   bool removeBuffer(Instance *buffer);
+
+  ////////////////////////////////////////////////////////////////
+  // Jounalling support for checkpointing and backing out changes
+  // during repair timing.
   void journalBegin();
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -552,11 +565,15 @@ protected:
   ////////////////////////////////////////////////////////////////
 
   // These are command args
-  // RC indexed by corner->index
-  vector<double> wire_signal_res_;
-  vector<double> wire_signal_cap_;
-  vector<double> wire_clk_res_;
-  vector<double> wire_clk_cap_;
+  // Layer RC per wire length indexed by layer->getNumber(), corner->index
+  vector<vector<double>> layer_res_; // ohms/meter
+  vector<vector<double>> layer_cap_; // Farads/meter
+  // Signal wire RC indexed by corner->index
+  vector<double> wire_signal_res_;  // ohms/metre
+  vector<double> wire_signal_cap_;  // Farads/meter
+  // Clock wire RC.
+  vector<double> wire_clk_res_;     // ohms/metre
+  vector<double> wire_clk_cap_;     // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_;
 
