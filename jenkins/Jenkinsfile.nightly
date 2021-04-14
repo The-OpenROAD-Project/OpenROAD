@@ -1,0 +1,48 @@
+pipeline {
+  agent any;
+  stages {
+    stage("Build") {
+      steps {
+        sh "./etc/Build.sh";
+        stash name: "build", includes: "build/**";
+      }
+    }
+    stage("Nightly Tests") {
+      parallel {
+        stage("Detailed Router ISPD") {
+          agent any;
+          stages {
+            stage("Clean-up ISPD") {
+              steps {
+                sh "rm -rf /home/jenkins/ispd/runs/*";
+              }
+            }
+            stage("Test ISPD") {
+              steps {
+                unstash 'build';
+                sh "./src/TritonRoute/test/run-ispd.tcl";
+              }
+            }
+          }
+          post {
+            always {
+              sh "mv /home/jenkins/ispd/runs/*.tar.gz .";
+              archiveArtifacts "*.tar.gz";
+            }
+          }
+        }
+        stage("Global Placer Large") {
+          agent any;
+          stages {
+            stage("Test ISPD") {
+              steps {
+                unstash "build";
+                sh "./src/replace/test/regression-large";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
