@@ -763,39 +763,26 @@ Global router options and commands are described below.
 
 ```
 global_route [-guide_file out_file] \
-             [-tile_size tile_size] \
              [-verbose verbose] \
              [-overflow_iterations iterations] \
              [-grid_origin {x y}] \
-             [-report_congestion congest_file] \
-             [-clock_pdrev_fanout fanout] \
-             [-clock_topology_priority priority] \
-             [-clock_tracks_cost clock_tracks_cost] \
              [-allow_overflow]
 
 ```
-
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
-- **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
-- **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
-- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
-See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-- **clock_tracks_cost**: Set the routing tracks consumption by clock nets
 - **allow_overflow**: Allow global routing results with overflow
 
 ```
 set_routing_layers [-signal min-max] \
                    [-clock min-max]
 ```
-
 The `set_routing_layers` command sets the minimum and maximum routing layers for signal nets, with the `-signal` option,
 and the the minimum and maximum routing layers for clock nets, with the `-clock` option
-Example: `set_routing_layers -signal 2-10 -clock 6-9`
+Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
 ```
 set_macro_extension extension
@@ -806,21 +793,32 @@ Example: `set_macro_extension 2`
 ```
 set_global_routing_layer_adjustment layer adjustment
 ```
-
 The `set_global_routing_layer_adjustment` command sets routing resources adjustments in the routing layers of the design.
-You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment 4 0.5` reduces the routing resources
-of routing layer 4 in 50%.
+You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment Metal4 0.5` reduces the routing resources
+of routing layer Metal4 in 50%.
 You can set adjustment for all layers at once using `*`, e.g.: `set_global_routing_layer_adjustment * 0.3` reduces
 the routing resources of all routing layers in 30%.
-You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment 4-8 0.3` reduces
-the routing resources of routing layers  4, 5, 6 7 and 8 in 30%.
+You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment Metal4-Metal8 0.3` reduces
+the routing resources of routing layers  Metal4, Metal5, Metal6, Metal7 and Metal8 in 30%.
 
 ```
 set_global_routing_layer_pitch layer pitch
 ```
 The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
 You can call it multiple times for different layers.
-Example: `set_global_routing_layer_pitch 6 1.34`.
+Example: `set_global_routing_layer_pitch Metal6 1.34`.
+
+```
+set_clock_routing [-clock_pdrev_fanout fanout] \
+                  [-clock_topology_priority priority] \
+                  [-clock_tracks_cost clock_tracks_cost]
+```
+The `set_clock_routing` command sets specific configurations for clock nets.
+Options description:
+- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
+- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
+- **clock_tracks_cost**: Set the routing tracks consumption by clock nets.
 
 ```
 set_pdrev_topology_priority netName alpha
@@ -841,7 +839,7 @@ set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x up
 The `set_global_routing_region_adjustment` command sets routing resources adjustments in a specific region of the design.
 The region is defined as a rectangle in a routing layer.
 Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
-                                               -layer 4 -adjustment 0.7`
+                                               -layer Metal4 -adjustment 0.7`
 
 ```
 repair_antennas diodeCellName/diodePinName

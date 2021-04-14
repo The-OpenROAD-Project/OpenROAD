@@ -75,6 +75,7 @@ using sta::Instance;
 using sta::InstanceSeq;
 using sta::InstanceSet;
 using sta::Pin;
+using sta::PinSet;
 using sta::Cell;
 using sta::LibertyLibrary;
 using sta::LibertyLibrarySeq;
@@ -264,6 +265,9 @@ public:
   vector<dbNet*> resizeWorstSlackDbNets();
   Slack resizeNetSlack(const dbNet *db_net);
   ////////////////////////////////////////////////////////////////
+
+  // API for logic resynthesis
+  PinSet findFaninFanouts(PinSet *end_pins);
 
 protected:
   void init();
@@ -536,6 +540,14 @@ protected:
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
   void journalRestore();
+
+  ////////////////////////////////////////////////////////////////
+
+  // API for logic resynthesis
+  VertexSet findFaninFanouts(VertexSet &ends);
+  VertexSet findFaninRegOutputs(VertexSet &ends);
+  bool isRegOutput(Vertex *vertex);
+  VertexSet findFanouts(VertexSet &reg_outs);
 
   ////////////////////////////////////////////////////////////////
 

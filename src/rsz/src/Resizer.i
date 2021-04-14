@@ -53,14 +53,15 @@ ensureLinked();
 namespace sta {
 
 // Defined in StaTcl.i
-LibertyLibrarySeq *
-tclListSeqLibertyLibrary(Tcl_Obj *const source,
-                         Tcl_Interp *interp);
 LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
                       Tcl_Interp *interp);
+PinSet *
+tclListSetPin(Tcl_Obj *source,
+              Tcl_Interp *interp);
 
 typedef NetSeq TmpNetSeq;
+typedef PinSet TmpPinSet;
 
 } // namespace
 
@@ -69,15 +70,16 @@ using ord::ensureLinked;
 
 using sta::Corner;
 using sta::LibertyCellSeq;
-using sta::LibertyLibrarySeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::Net;
-using sta::Pin;
-using sta::RiseFall;
-using sta::tclListSeqLibertyLibrary;
-using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
+using sta::Pin;
+using sta::PinSet;
+using sta::TmpPinSet;
+using sta::RiseFall;
+using sta::tclListSeqLibertyCell;
+using sta::tclListSetPin;
 using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
@@ -105,10 +107,6 @@ using rsz::Resizer;
     return TCL_ERROR;
   }
   $1 = tr;
-}
-
-%typemap(in) LibertyLibrarySeq* {
-  $1 = tclListSeqLibertyLibrary($input, interp);
 }
 
 %typemap(in) LibertyCellSeq* {
@@ -143,6 +141,21 @@ using rsz::Resizer;
 %typemap(out) LibertyPort* {
   Tcl_Obj *obj = SWIG_NewInstanceObj($1, $1_descriptor, false);
   Tcl_SetObjResult(interp, obj);
+}
+
+%typemap(in) PinSet* {
+  $1 = tclListSetPin($input, interp);
+}
+
+%typemap(out) PinSet {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet::Iterator pin_iter($1);
+  while (pin_iter.hasNext()) {
+    Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(pin, SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  Tcl_SetObjResult(interp, list);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -546,13 +559,20 @@ utilization()
   return resizer->utilization();
 }
 
-} // namespace
-
 void
 highlight_steiner_tree(const Net *net)
 {
   Resizer *resizer = getResizer();
   resizer->highlightSteiner(net);
 }
+
+PinSet
+find_fanin_fanouts(PinSet *pins)
+{
+  Resizer *resizer = getResizer();
+  return resizer->findFaninFanouts(pins);
+}
+
+} // namespace
 
 %} // inline

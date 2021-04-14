@@ -5,11 +5,14 @@
 
 %template(vector_str) std::vector<std::string>;
 
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) uint {
+   $1 = PyInt_Check($input) ? 1 : 0;
+}
 
 // DB specital types
 %typemap(out) odb::dbStringProperty {
     PyObject *obj = PyString_FromString($1.getValue().c_str());
-    $result = obj; 
+    $result = obj;
 }
 
 %typemap(out) odb::Point, Point {
@@ -22,7 +25,7 @@
 }
 
 // Wrapper for dbSet, dbVector...etc
-%define WRAP_DB_CONTAINER(T) 
+%define WRAP_DB_CONTAINER(T)
 %typemap(out) dbSet< T >, dbVector< T > {
     PyObject *list = PyList_New(0);
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
@@ -36,7 +39,7 @@
 
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
-        
+
         int nitems;
         int i;
         T*        temp;
