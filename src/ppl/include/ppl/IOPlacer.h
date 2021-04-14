@@ -174,9 +174,6 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
 
-  template<class RandomIt, class URBG>
-  void shuffle(RandomIt first, RandomIt last, URBG&& g);
-
   // db functions
   void populateIOPlacer(std::set<int> hor_layer_idx,
                         std::set<int> ver_layer_idx);
