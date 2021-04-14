@@ -187,8 +187,7 @@ Opendp::makeCells()
   for (auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
     dbMasterType type = master->getType();
-    if (type.isCore()
-        || type.isBlock()) {
+    if (master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;

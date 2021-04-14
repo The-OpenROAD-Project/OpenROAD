@@ -67,7 +67,7 @@ proc read_def { args } {
   if { ![file exists $filename] } {
     utl::error "ORD" 3 "$filename does not exist."
   }
-  if { ![file readable $filename] } {
+  if { ![file readable $filename] || ![file isfile $filename] } {
     utl::error "ORD" 4 "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
