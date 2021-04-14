@@ -1,14 +1,15 @@
 record_tests {
-  make_parasitics1
-  make_parasitics2
-  make_parasitics3
-  make_parasitics4
-  make_parasitics5
   buffer_ports1
   buffer_ports3
   buffer_ports4
   buffer_ports5
   buffer_ports6
+  fanin_fanout1
+  make_parasitics1
+  make_parasitics2
+  make_parasitics3
+  make_parasitics4
+  make_parasitics5
   resize1
   resize2
   resize3
