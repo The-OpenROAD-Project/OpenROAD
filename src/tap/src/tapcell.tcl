@@ -700,31 +700,38 @@ proc insert_at_top_bottom_helper {block top_bottom ori x_start x_end lly tap_nwi
   }
 
   set tbtiewidth [$master getWidth]
+  set tap3_master_width [$tb3_master getWidth]
+  set tap2_master_width [$tb2_master getWidth]
+  
+  set tbtiecount [expr int(floor(($x_end-$x_start) / $tbtiewidth))]
+  # ensure there is room at the end of the row for atleast one tb2, if needed
+  set remaining_distance [expr $x_end-$x_start - $tbtiecount*$tbtiewidth]
+  if {$remaining_distance != 0 && $remaining_distance < $tap2_master_width} {
+    incr tbtiecount -1
+  }
   #insert tb tie
-  for {set x $x_start} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
+  set x $x_start
+  for {set n 0} {$n < $tbtiecount} {incr n} {
     build_cell $block $master $ori $x $lly $prefix
+    set x [expr $x+$tbtiewidth]
   }
 
   # fill remaining sites
-  set tap_nwout3_master_width [$tap_nwout3_master getWidth]
-  set tap_nwout2_master_width [$tap_nwout2_master getWidth]
-  
-  set x_end_tb3_test [expr ($x_end - $x) % $tap_nwout3_master_width]
-  if {$x_end_tb3_test == 0} {
-    set x_end_tb3 $x_end
-  } elseif {$x_end_tb3_test == $tap_nwout2_master_width} {
-    set x_end_tb3 [expr $x_end - $tap_nwout2_master_width]
-  } else {
-    set x_end_tb3 [expr $x_end - 2*$tap_nwout2_master_width]
+  set tb3tiecount [expr int(floor(($x_end-$x) / $tap3_master_width))]
+  set remaining_distance [expr $x_end-$x - $tb3tiecount*$tap3_master_width]
+  while {[expr $remaining_distance % $tap2_master_width] != 0 && $remaining_distance >= 0} {
+    incr tb3tiecount -1
+    set remaining_distance [expr $x_end-$x - $tb3tiecount*$tap3_master_width]
   }
-
+  
   # fill with 3s
-  for {} {$x < $x_end_tb3} {set x [expr $x+$tap_nwout3_master_width]} {
+  for {set n 0} {$n < $tb3tiecount} {incr n} {
     build_cell $block $tb3_master $ori $x $lly $prefix
+    set x [expr $x+$tap3_master_width]
   }
   
   # fill with 2s
-  for {} {$x < $x_end} {set x [expr $x+$tap_nwout2_master_width]} {
+  for {} {$x < $x_end} {set x [expr $x+$tap2_master_width]} {
     build_cell $block $tb2_master $ori $x $lly $prefix
   }
 }

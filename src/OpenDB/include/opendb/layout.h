@@ -122,10 +122,6 @@ class Ath__layoutTable
 
   Ath__wire* getWire(uint id);
   Ath__qPin* getTilePin(uint id);
-  bool inspectBus(Ath__zui* zui, uint nameId, const char* action);
-  void inspectInst(Ath__zui* zui, uint nameId, const char* action);
-  bool inspectSignal(Ath__zui* zui, uint nameId, const char* action);
-  void inspectTilePin(Ath__zui* zui, uint nameId, const char* action);
 
   void bill_getTopPins();
   uint getTilePins(Ath__zui* zui);
@@ -134,10 +130,4 @@ class Ath__layoutTable
   uint getBlockages(Ath__zui* zui);
   uint getInstBoxes(Ath__zui* zui);
   uint getTileBoxes(Ath__zui* zui, uint w, uint layer);
-
-  int inspect_0(Ath__zui* vzui,
-                char objType,
-                int boxType,
-                uint nameId,
-                const char* action);
 };

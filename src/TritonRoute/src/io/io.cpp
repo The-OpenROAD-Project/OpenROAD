@@ -381,7 +381,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     ndr->getUseVias(vias);
     for (auto via : vias) {
       fnd->addVia(design->getTech()->getVia(via->getName()),
-                  via->getBottomLayer()->getNumber() - 1);
+                  via->getBottomLayer()->getNumber() / 2);
     }
     vector<odb::dbTechViaGenerateRule*> viaRules;
     ndr->getUseViaRules(viaRules);

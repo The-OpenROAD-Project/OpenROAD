@@ -19,8 +19,8 @@ set_io_pin_constraint \
   -region right:35-75
 
 
-place_pins -hor_layer 3 \
-           -ver_layer 2 \
+place_pins -hor_layer metal3 \
+           -ver_layer metal2 \
            -corner_avoidance 0 \
            -min_distance 0.24 \
            -group_pins {req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[0] req_msg[1]} \

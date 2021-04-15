@@ -91,6 +91,7 @@ class FlexDRGraphics : public gui::Renderer
   frLayerNum last_pt_layer_;
   gui::Gui* gui_;
   Logger* logger_;
+  int dbuPerUU_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
