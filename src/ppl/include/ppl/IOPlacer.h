@@ -168,7 +168,7 @@ class IOPlacer
   bool assignPinsToSections();
   bool assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections);
   int assignGroupsToSections();
-  int assignConstrainedPins();
+  int assignConstrainedPinsToSections();
   int returnIONetsHPWL(Netlist&);
 
   void updateOrientation(IOPin&);

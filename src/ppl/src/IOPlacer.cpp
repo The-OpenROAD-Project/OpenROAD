@@ -506,7 +506,7 @@ bool compareConstraints(const Constraint &c1, const Constraint &c2)
   return c1.pin_list.size() > c2.pin_list.size();
 }
 
-int IOPlacer::assignConstrainedPins()
+int IOPlacer::assignConstrainedPinsToSections()
 {
   std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
   Netlist& netlist = netlist_io_pins_;
@@ -606,7 +606,7 @@ bool IOPlacer::assignPinsToSections()
   std::vector<Section>& sections = sections_;
   createSections();
   int total_pins_assigned = assignGroupsToSections();
-  total_pins_assigned += assignConstrainedPins();
+  total_pins_assigned += assignConstrainedPinsToSections();
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
