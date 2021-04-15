@@ -1819,7 +1819,6 @@ namespace eval ICeWall {
 
     # debug "pad_layer: [get_footprint_pad_pin_layer]"
     puts $ch "  offsets \"$offsets\""
-    puts $ch "  tracks track.info"
     puts $ch "  pin_layer \"[get_footprint_pad_pin_layer]\""
     puts $ch "  pad_pin_name \"%s\""
     puts $ch "  pad_inst_name \"%s\""
@@ -1937,14 +1936,15 @@ namespace eval ICeWall {
     # debug "[get_padcell_type $padcell]"
     
     set mterm [[$inst getMaster] findMTerm [get_padcell_pad_pin_name $padcell]]
-    set mpin  [lindex [$mterm getMPins] 0]
+    foreach  mpin  [$mterm getMPins] {
 
-    foreach geometry [$mpin getGeometry] {
-      if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
-        set pin_box [list [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax]]
-        return $pin_box
-      }
-    } 
+      foreach geometry [$mpin getGeometry] {
+        if {[[$geometry getTechLayer] getName] == [get_footprint_pad_pin_layer]} {
+          set pin_box [list [$geometry xMin] [$geometry yMin] [$geometry xMax] [$geometry yMax]]
+          return $pin_box
+        }
+      } 
+    }
   }
 
   proc get_padcell_pad_pin_shape {padcell} {
@@ -2588,7 +2588,7 @@ namespace eval ICeWall {
           continue
         }
 
-        set padcell [get_padcell_at_row_col $row $col]
+        if {[set padcell [get_padcell_at_row_col $row $col]] == ""} {continue}
         if {[is_padcell_unassigned $padcell]} {continue}
 
         set side [get_side $row $col]
@@ -3564,7 +3564,7 @@ namespace eval ICeWall {
  
   namespace export set_footprint set_library
 
-  namespace export get_die_area get_core_area get_tracks
+  namespace export get_die_area get_core_area 
   namespace export init_footprint load_footprint load_library_file
   namespace export extract_footprint write_footprint write_signal_mapping
   namespace ensemble create
