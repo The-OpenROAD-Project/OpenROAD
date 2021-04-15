@@ -113,8 +113,8 @@ DRT 0187 FlexDR.cpp:1371           start routing data preparation
 DRT 0194 FlexDR.cpp:2077           start detail routing ...
 DRT 0198 FlexDR.cpp:2885           complete detail routing
 DRT 0201 FlexGR.cpp:636            design isn't loaded before global routing
-DRT 0206 FlexDR_conn.cpp:1292      checkConnectivity error
-DRT 0207 FlexDR_graphics.cpp:423   Setting MAX_THREADS=1 for use with the DR GUI.
+DRT 0206 FlexDR_conn.cpp:1298      checkConnectivity error
+DRT 0207 FlexDR_graphics.cpp:439   Setting MAX_THREADS=1 for use with the DR GUI.
 DRT 0214 io_guide.cpp:639          genGuides empty pin2GCellMap
 DRT 0217 io_guide.cpp:657          genGuides unknown type
 DRT 0218 io_guide.cpp:692          Guide is not connected to design
@@ -134,3 +134,4 @@ DRT 0239 io_parser_helper.cpp:275  Non-rect shape in via definition
 DRT 0243 io_parser_helper.cpp:309  Non-rect shape in via definition
 DRT 0245 io_parser_helper.cpp:708  No output guide specified, skipped writing guide
 DRT 0248 io_pin.cpp:72             instAnalysis unsupported pinFig
+DRT 0250 FlexDR_graphics.cpp:380     Pin {}
