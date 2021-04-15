@@ -501,8 +501,14 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
+bool compareConstraints(const Constraint &c1, const Constraint &c2)
+{
+  return c1.pin_list.size() > c2.pin_list.size();
+}
+
 int IOPlacer::assignConstrainedPins()
 {
+  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
   Netlist& netlist = netlist_io_pins_;
   int pins_assigned = 0;
   for (Constraint &constraint : constraints_) {
