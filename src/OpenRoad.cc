@@ -134,7 +134,7 @@ OpenRoad::OpenRoad()
     replace_(nullptr),
     pdnsim_(nullptr), 
     partitionMgr_(nullptr),
-    threads_(-1)
+    threads_(1)
 {
   db_ = dbDatabase::create();
 }
@@ -247,7 +247,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
 
-  setMaxThreads(threads_);
+  setThreadCount(threads_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -452,7 +452,7 @@ void OpenRoad::pythonCommand(const char* py_command)
 #endif
 
 void
-OpenRoad::setMaxThreads(int threads) {
+OpenRoad::setThreadCount(int threads) {
   if (threads <= 0) { // max requested
     threads = std::thread::hardware_concurrency();
 
@@ -468,7 +468,7 @@ OpenRoad::setMaxThreads(int threads) {
 }
 
 void
-OpenRoad::setMaxThreads(const char* threads) {
+OpenRoad::setThreadCount(const char* threads) {
   int max_threads = -1; // -1 is max cores
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;
@@ -480,11 +480,11 @@ OpenRoad::setMaxThreads(const char* threads) {
     }
   }
 
-  setMaxThreads(max_threads);
+  setThreadCount(max_threads);
 }
 
 int
-OpenRoad::getMaxThreads() {
+OpenRoad::getThreadCount() {
   return threads_;
 }
 

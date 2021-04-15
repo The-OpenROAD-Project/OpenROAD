@@ -190,9 +190,9 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
-  void setMaxThreads(int threads);
-  void setMaxThreads(const char* threads);
-  int getMaxThreads();
+  void setThreadCount(int threads);
+  void setThreadCount(const char* threads);
+  int getThreadCount();
 
 #ifdef ENABLE_PYTHON3
   void pythonCommand(const char* py_command);

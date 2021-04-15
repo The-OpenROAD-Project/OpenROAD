@@ -461,28 +461,28 @@ python_cmd(const char* py_command)
 }
 #endif
 
+namespace ord {
+
 void
-set_max_threads(int threads)
+set_thread_count(int threads)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->setMaxThreads(threads);
+  ord->setThreadCount(threads);
 }
 
 void
-set_max_threads(const char* threads)
+set_thread_count(const char* threads)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->setMaxThreads(threads);
+  ord->setThreadCount(threads);
 }
 
 int
-get_max_threads()
+thread_count()
 {
   OpenRoad *ord = getOpenRoad();
-  return ord->getMaxThreads();
+  return ord->getThreadCount();
 }
-
-namespace ord {
 
 void
 delete_all_memory()
