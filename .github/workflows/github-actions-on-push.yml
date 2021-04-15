@@ -11,9 +11,6 @@ jobs:
         uses: actions/checkout@v2
       - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
       - run: echo "This job's status is ${{ job.status }}."
       - name: Checkout security repository as a directory parallel to this repo
         run: cd ..; git clone https://github.com/The-OpenROAD-Project/security.git
