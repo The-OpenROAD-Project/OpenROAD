@@ -164,7 +164,8 @@ class IOPlacer
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
-  bool assignPinsSections();
+  bool assignPinsToSections();
+  bool assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections);
   int assignGroupsToSections();
   int returnIONetsHPWL(Netlist&);
 

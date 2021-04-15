@@ -562,7 +562,7 @@ int IOPlacer::assignGroupsToSections()
   return total_pins_assigned;
 }
 
-bool IOPlacer::assignPinsSections()
+bool IOPlacer::assignPinsToSections()
 {
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
@@ -570,30 +570,8 @@ bool IOPlacer::assignPinsSections()
   int total_pins_assigned = assignGroupsToSections();
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
-    if (!io_pin.isInGroup()) {
-      bool pin_assigned = false;
-      std::vector<int> dst(sections.size());
-      std::vector<InstancePin> inst_pins_vector;
-      for (int i = 0; i < sections.size(); i++) {
-        dst[i] = net.computeIONetHPWL(
-            idx, sections[i], constraints_, slots_);
-      }
-      net.getSinksOfIO(idx, inst_pins_vector);
-      for (auto i : sortIndexes(dst)) {
-        if (sections[i].used_slots < sections[i].num_slots) {
-          sections[i].net.addIONet(io_pin, inst_pins_vector);
-          sections[i].used_slots++;
-          pin_assigned = true;
-          total_pins_assigned++;
-          break;
-        }
-        // Try to add pin just to first
-        if (!force_pin_spread_)
-          break;
-      }
-      if (!pin_assigned) {
-        break;
-      }
+    if (assignPinToSection(io_pin, idx, sections)) {
+      total_pins_assigned++;
     }
     idx++;
   }
@@ -605,6 +583,35 @@ bool IOPlacer::assignPinsSections()
     logger_->report("Unsuccessfully assigned I/O pins");
     return false;
   }
+}
+
+bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections)
+{
+  Netlist& net = netlist_io_pins_;
+  bool pin_assigned = false;
+
+  if (!io_pin.isInGroup()) {
+    std::vector<int> dst(sections.size());
+    std::vector<InstancePin> inst_pins_vector;
+    for (int i = 0; i < sections.size(); i++) {
+      dst[i] = net.computeIONetHPWL(
+          idx, sections[i], constraints_, slots_);
+    }
+    net.getSinksOfIO(idx, inst_pins_vector);
+    for (auto i : sortIndexes(dst)) {
+      if (sections[i].used_slots < sections[i].num_slots) {
+        sections[i].net.addIONet(io_pin, inst_pins_vector);
+        sections[i].used_slots++;
+        pin_assigned = true;
+        break;
+      }
+      // Try to add pin just to first
+      if (!force_pin_spread_)
+        break;
+    }
+  }
+  
+  return pin_assigned;
 }
 
 void IOPlacer::printConfig()
@@ -629,7 +636,7 @@ void IOPlacer::setupSections()
     logger_->info(PPL, 10, "Tentative {} to setup sections", i++);
     printConfig();
 
-    all_assigned = assignPinsSections();
+    all_assigned = assignPinsToSections();
 
     slots_per_section_ *= (1 + slots_increase_factor_);
     if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
