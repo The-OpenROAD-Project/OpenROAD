@@ -162,12 +162,16 @@ class IOPlacer
   void findSections(int begin, int end, Edge edge, std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(const Constraint &constraint);
   void getPinsFromDirectionConstraint(Constraint &constraint);
+  void initConstraints();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
   void setupSections();
   bool assignPinsToSections();
   bool assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& sections);
   int assignGroupsToSections();
+  int assignConstrainedGroupsToSections();
+  int assignGroupToSection(const std::vector<int> &io_group,
+                           std::vector<Section> &sections);
   int assignConstrainedPinsToSections();
   int returnIONetsHPWL(Netlist&);
 

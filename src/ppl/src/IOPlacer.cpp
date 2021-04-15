@@ -508,15 +508,12 @@ bool compareConstraints(const Constraint &c1, const Constraint &c2)
 
 int IOPlacer::assignConstrainedPinsToSections()
 {
-  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
   Netlist& netlist = netlist_io_pins_;
   int pins_assigned = 0;
   for (Constraint &constraint : constraints_) {
     std::vector<Section> sections = createSectionsPerConstraint(constraint);
     PinList &pin_list = constraint.pin_list;
     const Direction &dir = constraint.direction;
-
-    getPinsFromDirectionConstraint(constraint);
 
     int idx;
     for (odb::dbBTerm* bterm : pin_list) {
@@ -538,6 +535,32 @@ int IOPlacer::assignConstrainedPinsToSections()
   return pins_assigned;
 }
 
+int IOPlacer::assignConstrainedGroupsToSections()
+{
+  int total_pins_assigned = 0;
+  Netlist& net = netlist_io_pins_;
+
+  for (std::vector<int>& io_group : net.getIOGroups()) {
+    for (Constraint &constraint : constraints_) {
+      std::vector<Section> sections = createSectionsPerConstraint(constraint);
+      const PinList& pin_list = constraint.pin_list;
+      IOPin& io_pin = net.getIoPin(io_group[0]);
+
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm()) != pin_list.end()) {
+        total_pins_assigned += assignGroupToSection(io_group, sections);
+        for (Section &section : sections) {
+          if (section.net.numIOPins() > 0) {
+            sections_.push_back(section);
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  return total_pins_assigned;
+}
+
 int IOPlacer::assignGroupsToSections()
 {
   int total_pins_assigned = 0;
@@ -547,8 +570,23 @@ int IOPlacer::assignGroupsToSections()
   int total_groups_assigned = 0;
 
   for (std::vector<int>& io_group : net.getIOGroups()) {
-    int group_size = io_group.size();
-    bool group_assigned = false;
+    total_pins_assigned += assignGroupToSection(io_group, sections);
+    total_groups_assigned++;
+  }
+
+  return total_pins_assigned;
+}
+
+int IOPlacer::assignGroupToSection(const std::vector<int> &io_group,
+                                   std::vector<Section> &sections) {
+  Netlist& net = netlist_io_pins_;
+  int group_size = io_group.size();
+  bool group_assigned = false;
+  int total_pins_assigned = 0;
+
+  IOPin &io_pin = net.getIoPin(io_group[0]);
+
+  if (!io_pin.isAssignedToSection()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
@@ -562,12 +600,11 @@ int IOPlacer::assignGroupsToSections()
         }
       }
     }
-
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots+group_size < sections[i].num_slots) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
-          IOPin io_pin = net.getIoPin(pin_idx);
+          IOPin &io_pin = net.getIoPin(pin_idx);
 
           std::vector<InstancePin> inst_pins_vector;
           net.getSinksOfIO(pin_idx, inst_pins_vector);
@@ -587,14 +624,8 @@ int IOPlacer::assignGroupsToSections()
         break;
     }
     if (!group_assigned) {
-      break;
-    } else {
-      total_groups_assigned++;
+      logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
     }
-  }
-
-  if (total_groups_assigned != net.numIOGroups()) {
-    logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups");
   }
 
   return total_pins_assigned;
@@ -605,7 +636,8 @@ bool IOPlacer::assignPinsToSections()
   Netlist& net = netlist_io_pins_;
   std::vector<Section>& sections = sections_;
   createSections();
-  int total_pins_assigned = assignGroupsToSections();
+  int total_pins_assigned = assignConstrainedGroupsToSections();
+  total_pins_assigned += assignGroupsToSections();
   total_pins_assigned += assignConstrainedPinsToSections();
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
@@ -887,6 +919,16 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
   }
 }
 
+void IOPlacer::initConstraints()
+{
+  std::stable_sort(constraints_.begin(), constraints_.end(), compareConstraints);
+  Netlist& netlist = netlist_io_pins_;
+  int pins_assigned = 0;
+  for (Constraint &constraint : constraints_) {
+    getPinsFromDirectionConstraint(constraint);
+  }
+}
+
 Edge IOPlacer::getEdge(std::string edge)
 {
   if (edge == "top") {
@@ -941,6 +983,8 @@ void IOPlacer::run(bool random_mode)
 
   initIOLists();
   defineSlots();
+
+  initConstraints();
 
   if (report_hpwl_) {
     init_hpwl = returnIONetsHPWL(netlist_);
