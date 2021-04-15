@@ -378,6 +378,22 @@ class FlexGCWorker::Impl
   void checkMetalShape_lef58MinStep(gcPin* pin);
   void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,
                                                  frLef58MinStepConstraint* con);
+  void checkMetalSpacingTableInfluence();
+  void checkPinMetSpcTblInf(gcPin*);
+  void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
+  void check90RectMetSpcTblInf(gcRect* rect,
+                               gtl::rectangle_data<frCoord> intersection,
+                               frUInt4 spacing,
+                               gtl::orientation_2d required_orient);
+  void check90RectMetSpcTblInf_queryBox(
+      const gtl::rectangle_data<frCoord>& rect,
+      frUInt4 spacing,
+      gtl::orientation_2d orient,
+      box_t& box);
+  void checkRectMetSpcTblInf_queryBox(const gtl::rectangle_data<frCoord>& rect,
+                                      frCoord dist,
+                                      frDirEnum dir,
+                                      box_t& box);
 
   // surgical fix
   void patchMetalShape();

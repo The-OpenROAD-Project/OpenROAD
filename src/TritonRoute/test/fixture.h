@@ -125,6 +125,9 @@ class Fixture
                 frcExtendEndStyle);
   }
 
+  frSpacingTableInfluenceConstraint*  makeSpacingTableInfluenceConstraint(frLayerNum layer_num,
+                                      std::vector<frUInt4> widthTbl,
+                                      std::vector<std::pair<frUInt4, frUInt4>> valTbl);
   void initRegionQuery();
 
   // Public data members are accessible from inside the test function

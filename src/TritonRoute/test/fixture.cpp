@@ -216,6 +216,20 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
   tech->addUConstraint(std::move(con));
 }
 
+frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(frLayerNum layer_num,
+                                      std::vector<frUInt4> widthTbl,
+                                      std::vector<std::pair<frUInt4, frUInt4>> valTbl)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  fr1DLookupTbl<frUInt4, std::pair<frUInt4, frUInt4>> tbl("WIDTH", widthTbl, valTbl);
+    unique_ptr<frConstraint> uCon
+      = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+  auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setSpacingTableInfluence(rptr);
+  return rptr;
+}
 std::shared_ptr<frLef58SpacingEndOfLineConstraint>
 Fixture::makeLef58SpacingEolConstraint(frLayerNum layer_num,
                                        frCoord space,
