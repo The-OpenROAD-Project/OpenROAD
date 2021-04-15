@@ -246,8 +246,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
-
-  setThreadCount(threads_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -457,26 +455,26 @@ OpenRoad::setThreadCount(int threads) {
     threads = std::thread::hardware_concurrency();
 
     if (threads == 0) {
-      logger_->warn(ORD, 30, "Unable to determine maximum number of threads");
+      logger_->warn(ORD, 31, "Unable to determine maximum number of threads");
       threads = 1;
     }
   }
-  this->threads_ = threads;
+  threads_ = threads;
+
+  logger_->info(ORD, 30, "Using {} thread(s)", threads_);
 
   // place limits on tools with threads
-  sta_->setThreadCount(this->threads_);
+  sta_->setThreadCount(threads_);
 }
 
 void
 OpenRoad::setThreadCount(const char* threads) {
   int max_threads = -1; // -1 is max cores
-  if (strcmp(threads, "max") == 0) {
-    max_threads = -1;
-  } else {
+  if (strcmp(threads, "max") != 0) {
     try {
       max_threads = std::stoi(threads);
     } catch (const std::invalid_argument&) {
-      logger_->warn(ORD, 31, "Invalid thread number specification: {}", threads);
+      logger_->warn(ORD, 32, "Invalid thread number specification: {}", threads);
     }
   }
 

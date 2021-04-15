@@ -284,6 +284,9 @@ tclAppInit(int argc,
   const char* threads = findCmdLineKey(argc, argv, "-threads");
   if (threads) {
     ord::OpenRoad::openRoad()->setThreadCount(threads);
+  } else {
+    // set to default number of threads
+    ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount());
   }
 
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
