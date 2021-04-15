@@ -76,7 +76,7 @@ void HungarianMatching::createMatrix(const std::vector<Constraint>& constraints)
     int idx = 0;
     for (IOPin& io_pin : netlist_.getIOPins()) {
       if (!io_pin.isInGroup()) {
-        int hpwl = netlist_.computeIONetHPWL(idx, newPos, edge_, constraints);
+        int hpwl = netlist_.computeIONetHPWL(idx, newPos);
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }
@@ -172,7 +172,7 @@ void HungarianMatching::createMatrixForGroups(const std::vector<Constraint>& con
         int group_hpwl = 0;
         int pin_count = 0;
         for (int io_idx : io_group) {
-          int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos, edge_, constraints);
+          int pin_hpwl = netlist_.computeIONetHPWL(io_idx, newPos);
           if (pin_hpwl == hungarian_fail) {
             group_hpwl = hungarian_fail;
             break;

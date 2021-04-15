@@ -553,7 +553,7 @@ int IOPlacer::assignGroupsToSections()
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         int pin_hpwl = net.computeIONetHPWL(
-            pin_idx, sections[i], constraints_, slots_);
+            pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
@@ -635,7 +635,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
     std::vector<InstancePin> inst_pins_vector;
     for (int i = 0; i < sections.size(); i++) {
       dst[i] = net.computeIONetHPWL(
-          idx, sections[i], constraints_, slots_);
+          idx, sections[i].pos);
     }
     net.getSinksOfIO(idx, inst_pins_vector);
     for (auto i : sortIndexes(dst)) {
