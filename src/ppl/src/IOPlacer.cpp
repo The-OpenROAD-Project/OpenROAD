@@ -501,6 +501,33 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
+int IOPlacer::assignConstrainedPins()
+{
+  Netlist& netlist = netlist_io_pins_;
+  int pins_assigned = 0;
+  for (Constraint &constraint : constraints_) {
+    std::vector<Section> sections = createSectionsPerConstraint(constraint);
+    PinList &pin_list = constraint.pin_list;
+    const Direction &dir = constraint.direction;
+
+    getPinsFromDirectionConstraint(constraint);
+
+    int idx;
+    for (odb::dbBTerm* bterm : pin_list) {
+      idx = netlist.getIoPinIdx(bterm);
+      IOPin& io_pin = netlist.getIoPin(idx);
+
+      if (assignPinToSection(io_pin, idx, sections)) {
+        pins_assigned++;
+      }
+    }
+
+    sections_.insert(sections_.end(), sections.begin(), sections.end());
+  }
+
+  return pins_assigned;
+}
+
 int IOPlacer::assignGroupsToSections()
 {
   int total_pins_assigned = 0;
@@ -538,6 +565,7 @@ int IOPlacer::assignGroupsToSections()
           sections[i].net.addIONet(io_pin, inst_pins_vector);
           group.push_back(sections[i].net.numIOPins()-1);
           sections[i].used_slots++;
+          io_pin.assignToSection();
         }
         total_pins_assigned += group_size;
         sections[i].net.addIOGroup(group);
@@ -568,6 +596,7 @@ bool IOPlacer::assignPinsToSections()
   std::vector<Section>& sections = sections_;
   createSections();
   int total_pins_assigned = assignGroupsToSections();
+  total_pins_assigned += assignConstrainedPins();
   int idx = 0;
   for (IOPin& io_pin : net.getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
@@ -580,8 +609,9 @@ bool IOPlacer::assignPinsToSections()
     logger_->report("Successfully assigned I/O pins");
     return true;
   } else {
-    logger_->report("Unsuccessfully assigned I/O pins");
+    logger_->report("Unsuccessfully assigned I/O pins ({} out of {})", total_pins_assigned, net.numIOPins());
     return false;
+    std::exit(1);
   }
 }
 
@@ -590,7 +620,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
   Netlist& net = netlist_io_pins_;
   bool pin_assigned = false;
 
-  if (!io_pin.isInGroup()) {
+  if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()) {
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> inst_pins_vector;
     for (int i = 0; i < sections.size(); i++) {
@@ -603,6 +633,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin, int idx, std::vector<Section>& 
         sections[i].net.addIONet(io_pin, inst_pins_vector);
         sections[i].used_slots++;
         pin_assigned = true;
+        io_pin.assignToSection();
         break;
       }
       // Try to add pin just to first
@@ -832,6 +863,18 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   Interval interval(edge, begin, end);
   Constraint constraint(PinList(), direction, interval);
   constraints_.push_back(constraint);
+}
+
+void IOPlacer::getPinsFromDirectionConstraint(Constraint &constraint)
+{
+  Netlist& netlist = netlist_io_pins_;
+  if (constraint.direction != Direction::invalid) {
+    for (const IOPin& io_pin : netlist.getIOPins()) {
+      if (io_pin.getDirection() == constraint.direction) {
+        constraint.pin_list.push_back(io_pin.getBTerm());
+      }
+    }
+  }
 }
 
 Edge IOPlacer::getEdge(std::string edge)
