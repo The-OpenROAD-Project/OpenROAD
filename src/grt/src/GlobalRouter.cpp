@@ -89,11 +89,12 @@ void GlobalRouter::init()
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
   _macroExtension = 0;
+  _verbose = 0;
 
   // Clock net routing variables
   _pdRev = 0;
-  _alpha = 0;
-  _verbose = 0;
+  _alpha = 0.3;
+  _clockCost = 1;
 }
 
 void GlobalRouter::makeComponents()
@@ -101,7 +102,7 @@ void GlobalRouter::makeComponents()
   // Allocate memory for objects
   _allRoutingTracks = new std::vector<RoutingTracks>;
   _db = _openroad->getDb();
-  _fastRoute = new FastRouteCore(_logger);
+  _fastRoute = new FastRouteCore(_db, _logger);
   _grid = new Grid;
   _gridOrigin = new odb::Point(0, 0);
   _nets = new std::vector<Net>;
@@ -311,7 +312,6 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int minRoutingLayer, int maxRoutingLayer)
 {
   NetRouteMap routes = _fastRoute->run();
-  _fastRoute->updateDbCongestion(_db);
   addRemainingGuides(routes, nets, minRoutingLayer, maxRoutingLayer);
   connectPadPins(routes);
   for (auto& net_route : routes) {
@@ -1413,7 +1413,11 @@ void GlobalRouter::writeGuides(const char* fileName)
 
 RoutingLayer GlobalRouter::getRoutingLayerByIndex(int index)
 {
-  RoutingLayer selectedRoutingLayer;
+  if (_routingLayers->empty()) {
+    _logger->error(GRT, 42, "Routing layers were not initialized.");
+  }
+
+  RoutingLayer selectedRoutingLayer = _routingLayers->front();
 
   for (RoutingLayer routingLayer : *_routingLayers) {
     if (routingLayer.getIndex() == index) {
@@ -2271,7 +2275,7 @@ void GlobalRouter::initRoutingTracks(
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
     if (techLayer == nullptr) {
-      _logger->error(GRT, 85, "Layer {} not found.", techLayer->getName());
+      _logger->error(GRT, 85, "Routing layer {} not found.", layer);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
@@ -3034,78 +3038,6 @@ int GlobalRouter::computeMaxRoutingLayer()
 double GlobalRouter::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (_block->getDbUnitsPerMicron());
-}
-
-std::set<int> GlobalRouter::findTransitionLayers(int maxRoutingLayer)
-{
-  std::set<int> transitionLayers;
-  odb::dbTech* tech = _db->getTech();
-  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-
-  if (vias.empty()) {
-    _logger->error(GRT, 96, "Tech without vias.");
-  }
-
-  std::vector<odb::dbTechVia*> defaultVias;
-
-  for (odb::dbTechVia* currVia : vias) {
-    odb::dbStringProperty* prop
-        = odb::dbStringProperty::find(currVia, "OR_DEFAULT");
-
-    if (prop == nullptr) {
-      continue;
-    } else {
-      _logger->info(GRT, 7, "Default via: {}.", currVia->getConstName());
-      defaultVias.push_back(currVia);
-    }
-  }
-
-  if (defaultVias.empty()) {
-    _logger->warn(GRT, 42, "No OR_DEFAULT vias defined.");
-    for (odb::dbTechVia* currVia : vias) {
-      defaultVias.push_back(currVia);
-    }
-  }
-
-  for (odb::dbTechVia* currVia : defaultVias) {
-    int bottomSize = -1;
-    int tmpLen;
-
-    odb::dbTechLayer* bottomLayer;
-    odb::dbSet<odb::dbBox> viaBoxes = currVia->getBoxes();
-    odb::dbSet<odb::dbBox>::iterator boxIter;
-
-    for (boxIter = viaBoxes.begin(); boxIter != viaBoxes.end(); boxIter++) {
-      odb::dbBox* currBox = *boxIter;
-      odb::dbTechLayer* layer = currBox->getTechLayer();
-
-      if (layer->getDirection().getValue() == odb::dbTechLayerDir::HORIZONTAL) {
-        tmpLen = currBox->yMax() - currBox->yMin();
-      } else if (layer->getDirection().getValue()
-                 == odb::dbTechLayerDir::VERTICAL) {
-        tmpLen = currBox->xMax() - currBox->xMin();
-      } else {
-        continue;
-      }
-
-      if (layer->getConstName() == currVia->getBottomLayer()->getConstName()) {
-        bottomLayer = layer;
-        if (tmpLen >= bottomSize) {
-          bottomSize = tmpLen;
-        }
-      }
-    }
-
-    if (bottomLayer->getRoutingLevel() >= maxRoutingLayer
-        || bottomLayer->getRoutingLevel() <= 4)
-      continue;
-
-    if (bottomSize > bottomLayer->getWidth()) {
-      transitionLayers.insert(bottomLayer->getRoutingLevel());
-    }
-  }
-
-  return transitionLayers;
 }
 
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)

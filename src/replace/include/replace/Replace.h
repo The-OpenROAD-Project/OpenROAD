@@ -132,6 +132,8 @@ class Replace
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
+    void setPlottingPath(const char* path);
+
     void setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,

@@ -172,33 +172,55 @@ proc set_macro_extension { args } {
   }
 }
 
+sta::define_cmd_args "set_clock_routing" { [-clock_pdrev_fanout fanout] \
+                                           [-clock_topology_priority priority] \
+                                           [-clock_tracks_cost clock_tracks_cost]
+}
+
+proc set_clock_routing { args } {
+  sta::parse_key_args "global_route" args \
+    keys { -clock_pdrev_fanout \
+           -clock_topology_priority \
+           -clock_tracks_cost
+         }
+
+  if { [info exists keys(-clock_topology_priority) ] } {
+    set priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $priority
+    grt::set_alpha $clock_topology_priority
+  } else {
+    # Default alpha as 0.3 prioritize wire length, but keeps
+    # aware of skew in the topology construction (see PDRev paper
+    # for more reference)
+    grt::set_alpha 0.3
+  }
+
+  if { [info exists keys(-clock_tracks_cost)] } {
+    set clock_tracks_cost $keys(-clock_tracks_cost)
+    grt::set_clock_cost $clock_tracks_cost
+  } else {
+    grt::set_clock_cost 1
+  }
+
+  if { [info exists keys(-clock_pdrev_fanout)] } {
+    set fanout $keys(-clock_pdrev_fanout)
+    grt::set_pdrev_for_high_fanout $fanout
+  } else {
+    grt::set_pdrev_for_high_fanout -1
+  }
+}
+
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
-                                  [-layers layers] \
-                                  [-clock_layers layers] \
                                   [-verbose verbose] \
                                   [-overflow_iterations iterations] \
                                   [-grid_origin origin] \
-                                  [-allow_overflow] \
-                                  [-clock_pdrev_fanout fanout] \
-                                  [-clock_topology_priority priority] \
-                                  [-clock_tracks_cost clock_tracks_cost] \
-                                  [-macro_extension macro_extension] \
-                                  [-output_file out_file]
-}
-
-# sta::define_cmd_alias "fastroute" "global_route"
-
-proc fastroute { args } {
-  utl::warn GRT 19 "fastroute command is deprecated. Use global_route instead."
-  [eval global_route $args]
+                                  [-allow_overflow]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -layers -verbose -layers_adjustments \ 
-          -overflow_iterations -grid_origin \
-          -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -clock_tracks_cost -macro_extension -output_file \
+    keys {-guide_file -verbose \ 
+          -overflow_iterations -grid_origin
          } \
     flags {-allow_overflow}
 
@@ -237,59 +259,10 @@ proc global_route { args } {
     grt::set_overflow_iterations 50
   }
 
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    grt::set_alpha $clock_topology_priority
-  } else {
-    # Default alpha as 0.3 prioritize wire length, but keeps
-    # aware of skew in the topology construction (see PDRev paper
-    # for more reference)
-    grt::set_alpha 0.3
-  }
-
-  if { [info exists keys(-clock_tracks_cost)] } {
-    set clock_tracks_cost $keys(-clock_tracks_cost)
-    grt::set_clock_cost $clock_tracks_cost
-  } else {
-    grt::set_clock_cost 1
-  }
-
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    grt::set_pdrev_for_high_fanout $fanout
-  } else {
-    grt::set_pdrev_for_high_fanout -1
-  }
-
   grt::set_allow_overflow [info exists flags(-allow_overflow)]
-
-  if { [info exists keys(-macro_extension)] } {
-    utl::warn GRT 216 "option -macro_extension is deprecated. Use command set_macro_extension."
-    set macro_extension $keys(-macro_extension)
-    grt::set_macro_extension $macro_extension
-  } else {
-    grt::set_macro_extension 0
-  }
-
-  if { [info exists keys(-clock_layers)] } {
-    utl::warn GRT 217 "option -clock_layers is deprecated. Use command set_routing_layers."
-    grt::define_clock_layer_range $keys(-clock_layers)
-  }
-
-  if { [info exists keys(-layers)] } {
-    utl::warn GRT 218 "option -layers is deprecated. Use command set_routing_layers."
-    grt::define_layer_range $keys(-layers)
-  }
 
   grt::clear
   grt::run
-  
-  if { [info exists keys(-output_file)] } {
-    utl::warn GRT 24 "option -output_file is deprecated. Use option -guide_file."
-    set out_file $keys(-output_file)
-    grt::write_guides $out_file
-  }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
@@ -350,10 +323,13 @@ proc check_routing_layer { layer } {
 
 proc parse_layer_name { layer_name } {
   if { ![ord::db_has_tech] } {
-    utl::error GRT 220 "no technology has been read."
+    utl::error GRT 222 "no technology has been read."
   }
   set tech [ord::get_db_tech]
   set tech_layer [$tech findLayer $layer_name]
+  if { $tech_layer == "NULL" } {
+    utl::error GRT 5 "layer $layer_name not found."
+  }
   set layer_idx [$tech_layer getRoutingLevel]
 
   return $layer_idx
@@ -399,7 +375,7 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 proc highlight_route { net_name } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 221 "missing dbBlock."
+    utl::error GRT 223 "missing dbBlock."
   }
   set net [$block findNet $net_name]
   if { $net != "NULL" } {

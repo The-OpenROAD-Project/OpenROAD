@@ -38,7 +38,6 @@
 #include "placerBase.h"
 #include "nesterovBase.h"
 #include <unordered_map>
-#include <iostream>
 
 
 
@@ -51,6 +50,7 @@ namespace gpl {
 
 using namespace cimg_library;
 using namespace std;
+using utl::GPL;
 
 // to save snapshot of the circuit.
 static vector< CImg< unsigned char > > imgStor;
@@ -62,6 +62,8 @@ static const unsigned char yellow[] = {255, 255, 0}, white[] = {255, 255, 255},
                            purple[] = {255, 100, 255}, black[] = {0, 0, 0},
                            red[] = {255, 0, 0}, pink[] = {255, 192, 203},
                            orange[] = {255, 165, 0};
+
+std::unique_ptr<std::filesystem::path> PlotEnv::plotPath = nullptr;
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -77,7 +79,7 @@ PlotEnv::PlotEnv()
   origHeight(0),
   unitX(0), unitY(0), 
   dispWidth(0), dispHeight(0), 
-  hasCellColor(false) {}
+  hasCellColor(false), log_(nullptr) {}
 
 PlotEnv::PlotEnv(
     std::shared_ptr<PlacerBase> pb,
@@ -90,7 +92,7 @@ PlotEnv::PlotEnv(
   origHeight(pb_->die().dieUy()-pb_->die().dieLy()),
   unitX(0), unitY(0), // init later
   dispWidth(0), dispHeight(0), // init later
-  hasCellColor(false)
+  hasCellColor(false), log_(nullptr)
 {
   Init();
 }
@@ -132,6 +134,17 @@ void PlotEnv::Init() {
   dispWidth = imageWidth * 0.2;
   dispHeight = imageHeight * 0.2;
 
+  // make folders for output
+  if (isPlotEnabled()) {
+    std::array<std::filesystem::path, 3> paths = {
+      *plotPath / pathArrow,
+      *plotPath / pathCell,
+      *plotPath / pathBin
+    };
+    for (auto path : paths)
+      std::filesystem::create_directories(path.c_str());
+  }
+
 //  if( plotColorFile != "" ) {
 //    hasCellColor = true;
 //    InitCellColors(plotColorFile) nb_ = nb;;
@@ -148,6 +161,10 @@ PlotEnv::setNesterovBase(std::shared_ptr<NesterovBase> nb) {
   nb_ = nb;
 }
 
+void
+PlotEnv::setLogger(utl::Logger* log) {
+  log_ = log;
+}
 
 
 // Resize and initialize the vectors
@@ -593,12 +610,13 @@ to_string(int(100*curBin->den2)).c_str(), black, NULL, 1, 25);
 
   //    cout << "current imgName: " << imgName << endl;
   // Finally draw image info
-  string saveName = imgPosition + string(".jpg");
+  std::filesystem::path saveName = *plotPath / pathCell;
+  saveName /= imgPosition + ".jpg";
 
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  cout << "INFO: " << saveName << " image has been saved" << endl;
+  log_->info(GPL, 200, "{} image has been saved", saveName.c_str());
 }
 
 //
@@ -611,12 +629,13 @@ void PlotEnv::SaveBinPlotAsJPEG(string imgName, string imgPosition) {
 
   //    cout << "current imgName: " << imgName << endl;
   // Finally draw image info
-  string saveName = imgPosition + string(".jpg");
+  std::filesystem::path saveName = *plotPath / pathBin;
+  saveName /= imgPosition + ".jpg";
 
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  cout << "INFO: " << saveName << " image has been saved" << endl;
+  log_->info(GPL, 201, "{} image has been saved", saveName.c_str());
 }
 //
 // save current circuit's as BMP file in imgPosition & iternumber
@@ -628,12 +647,18 @@ void PlotEnv::SaveArrowPlotAsJPEG(string imgName, string imgPosition) {
 
   //    cout << "current imgName: " << imgName << endl;
   // Finally draw image info
-  string saveName = imgPosition + string(".jpg");
+  std::filesystem::path saveName = *plotPath / pathArrow;
+  saveName /= imgPosition + ".jpg";
 
   img.draw_text(50, 50, imgName.c_str(), black, NULL, 1, 30);
   img.save_jpeg(saveName.c_str(), 70);
   //  img.save_bmp( string(imgPosition + string(".bmp")).c_str() );
-  cout << "INFO: " << saveName << " image has been saved" << endl;
+  log_->info(GPL, 202, "{} image has been saved", saveName.c_str());
+}
+
+void PlotEnv::setPlotPath(std::string path) {
+	if (path.empty()) PlotEnv::plotPath = nullptr;
+	else PlotEnv::plotPath = std::make_unique<std::filesystem::path>(path);
 }
 
 

@@ -257,38 +257,14 @@ void ConvertToFull3DType2()
   }
 }
 
-static int comparePVMINX(const void* a, const void* b)
+static int comparePVMINX(const OrderNetPin a, const OrderNetPin b)
 {
-  int ret = -2;
-  if (((OrderNetPin*) a)->minX > ((OrderNetPin*) b)->minX) {
-    ret = 1;
-  } else if (((OrderNetPin*) a)->minX == ((OrderNetPin*) b)->minX) {
-    ret = 0;
-  } else if (((OrderNetPin*) a)->minX < ((OrderNetPin*) b)->minX) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 175, "Invalid PVMINX comparison.");
-  } else {
-    return ret;
-  }
+  return a.minX < b.minX;
 }
 
-static int comparePVPV(const void* a, const void* b)
+static int comparePVPV(const OrderNetPin a, const OrderNetPin b)
 {
-  int ret = -2;
-  if (((OrderNetPin*) a)->npv > ((OrderNetPin*) b)->npv) {
-    ret = 1;
-  } else if (((OrderNetPin*) a)->npv == ((OrderNetPin*) b)->npv) {
-    ret = 0;
-  } else if (((OrderNetPin*) a)->npv < ((OrderNetPin*) b)->npv) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 176, "Invalid PVPV comparison.");
-  } else {
-    return ret;
-  }
+  return a.npv < b.npv;
 }
 
 void netpinOrderInc()
@@ -305,11 +281,9 @@ void netpinOrderInc()
     numTreeedges += 2 * d - 3;
   }
 
-  if (treeOrderPV != NULL) {
-    delete[] treeOrderPV;
-  }
+  treeOrderPV.clear();
 
-  treeOrderPV = new OrderNetPin[numValidNets];
+  treeOrderPV.resize(numValidNets);
 
   for (j = 0; j < numValidNets; j++) {
     xmin = BIG_INT;
@@ -331,8 +305,8 @@ void netpinOrderInc()
     treeOrderPV[j].minX = xmin;
   }
 
-  qsort(treeOrderPV, numValidNets, sizeof(OrderNetPin), comparePVMINX);
-  qsort(treeOrderPV, numValidNets, sizeof(OrderNetPin), comparePVPV);
+  std::stable_sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVMINX);
+  std::stable_sort(treeOrderPV.begin(), treeOrderPV.end(), comparePVPV);
 }
 
 void fillVIA()
@@ -1162,21 +1136,9 @@ void write3D()
   fclose(fp);
 }
 
-static int compareTEL(const void* a, const void* b)
+static int compareTEL(const OrderTree a, const OrderTree b)
 {
-  int ret = -2;
-  if (((OrderTree*) a)->xmin < ((OrderTree*) b)->xmin) {
-    ret = 1;
-  } else if (((OrderTree*) a)->xmin == ((OrderTree*) b)->xmin) {
-    ret = 0;
-  } else if (((OrderTree*) a)->xmin > ((OrderTree*) b)->xmin) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 177, "Invalid TEL comparison.");
-  } else {
-    return ret;
-  }
+  return a.xmin > b.xmin;
 }
 
 void StNetOrder()
@@ -1188,11 +1150,9 @@ void StNetOrder()
 
   numTreeedges = 0;
 
-  if (treeOrderCong != NULL) {
-    delete[] treeOrderCong;
-  }
+  treeOrderCong.clear();
 
-  treeOrderCong = new OrderTree[numValidNets];
+  treeOrderCong.resize(numValidNets);
 
   i = 0;
   for (j = 0; j < numValidNets; j++) {
@@ -1224,7 +1184,7 @@ void StNetOrder()
     }
   }
 
-  qsort(treeOrderCong, numValidNets, sizeof(OrderTree), compareTEL);
+  std::stable_sort(treeOrderCong.begin(), treeOrderCong.end(), compareTEL);
 }
 
 void recoverEdge(int netID, int edgeID)
@@ -1370,21 +1330,9 @@ void checkUsage()
   }
 }
 
-static int compareEdgeLen(const void* a, const void* b)
+static int compareEdgeLen(const OrderNetEdge a, const OrderNetEdge b)
 {
-  int ret = -2;
-  if (((OrderNetEdge*) a)->length < ((OrderNetEdge*) b)->length) {
-    ret = 1;
-  } else if (((OrderNetEdge*) a)->length == ((OrderNetEdge*) b)->length) {
-    ret = 0;
-  } else if (((OrderNetEdge*) a)->length > ((OrderNetEdge*) b)->length) {
-    ret = -1;
-  }
-  if (ret == -2) {
-    logger->error(GRT, 178, "Invalid EdgeLen comparison.");
-  } else {
-    return ret;
-  }
+  return a.length > b.length;
 }
 
 void netedgeOrderDec(int netID)
@@ -1394,12 +1342,16 @@ void netedgeOrderDec(int netID)
   d = sttrees[netID].deg;
   numTreeedges = 2 * d - 3;
 
+  netEO.clear();
+
   for (j = 0; j < numTreeedges; j++) {
-    netEO[j].length = sttrees[netID].edges[j].route.routelen;
-    netEO[j].edgeID = j;
+    OrderNetEdge orderNet;
+    orderNet.length = sttrees[netID].edges[j].route.routelen;
+    orderNet.edgeID = j;
+    netEO.push_back(orderNet);
   }
 
-  qsort(netEO, numTreeedges, sizeof(OrderNetEdge), compareEdgeLen);
+  std::stable_sort(netEO.begin(), netEO.end(), compareEdgeLen);
 }
 
 void printEdge2D(int netID, int edgeID)
