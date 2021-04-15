@@ -522,7 +522,11 @@ int IOPlacer::assignConstrainedPins()
       }
     }
 
-    sections_.insert(sections_.end(), sections.begin(), sections.end());
+    for (Section &section : sections) {
+      if (section.net.numIOPins() > 0) {
+        sections_.push_back(section);
+      }
+    }
   }
 
   return pins_assigned;
