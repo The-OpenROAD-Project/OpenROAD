@@ -500,6 +500,7 @@ set_layer_rc [-layer layer]
              [-via via_layer]
              [-capacitance cap]
              [-resistance res]
+             [-corner corner]
 ```
 
 For layers the resistance and capacitance units are the same as

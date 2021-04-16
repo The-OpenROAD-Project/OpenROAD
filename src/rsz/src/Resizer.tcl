@@ -48,6 +48,7 @@ proc set_layer_rc {args} {
     utl::error "ORD" 10 "Use -layer or -via but not both."
   }
 
+  set corners [sta::parse_corner_or_all keys]
   set tech [ord::get_db_tech]
   if { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
@@ -80,30 +81,16 @@ proc set_layer_rc {args} {
       set res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
     }
 
-    set corners [sta::parse_corner_or_all keys]
     if { $corners == "NULL" } {
       set corners [sta::corners]
+      // Only update the db layers if -corner not specified.
+      rsz::set_dblayer_wire_rc $layer $res $cap
     }
 
     foreach corner $corners {
       rsz::set_layer_rc_cmd $layer $corner $res $cap
     }
 
-    ######################################################
-    # Set DB layer RC
-    # Note that this clobbers the values for each corner.
-    # Zero the edge cap and just use the user given value
-    $layer setEdgeCapacitance 0
-    # Convert wire capacitance/wire_length to capacitance/area.
-    set wire_width [ord::dbu_to_microns [$layer getWidth]]
-    # Convert to pF/um.
-    set cap_per_square [expr $cap * 1e+6 / $wire_width]
-    $layer setCapacitance $cap_per_square
-    
-    # Convert resistance/wire_length to resistance/square.
-    # convert to ohms/square
-    set res_per_square [expr $wire_width * 1e-6 * $res]
-    $layer setResistance $res_per_square
   } elseif { [info exists keys(-via)] } {
     set layer_name $keys(-via)
     set layer [$tech findLayer $layer_name]
@@ -116,8 +103,17 @@ proc set_layer_rc {args} {
     }
     
     if { [info exists keys(-resistance)] } {
-      set via_res [sta::resistance_ui_sta $keys(-resistance)]
-      $layer setResistance $via_res
+      set res [sta::resistance_ui_sta $keys(-resistance)]
+
+      if { $corners == "NULL" } {
+        set corners [sta::corners]
+        // Only update the db layers if -corner not specified.
+        rsz::set_dbvia_wire_r $layer $res
+      }
+
+      foreach corner $corners {
+        rsz::set_layer_rc_cmd $layer $corner $res 0.0
+      }
     } else {
       utl::error "ORD" 17 "no -resistance specified for via."
     }
@@ -554,6 +550,26 @@ proc dblayer_wire_rc { layer } {
   # farads/meter
   set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
   return [list $wire_res $wire_cap]
+}
+
+# Set DB layer RC
+proc set_dblayer_wire_rc { layer res cap } {
+  # Zero the edge cap and just use the user given value
+  $layer setEdgeCapacitance 0
+  # Convert wire capacitance/wire_length to capacitance/area.
+  set wire_width [ord::dbu_to_microns [$layer getWidth]]
+  # Convert to pF/um.
+  set cap_per_square [expr $cap * 1e+6 / $wire_width]
+  $layer setCapacitance $cap_per_square
+  
+  # Convert resistance/wire_length to resistance/square.
+  # convert to ohms/square
+  set res_per_square [expr $wire_width * 1e-6 * $res]
+  $layer setResistance $res_per_square
+}
+
+proc set_dbvia_wire_r { layer res } {
+  $layer setResistance $res
 }
 
 # namespace
