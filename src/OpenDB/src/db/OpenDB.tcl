@@ -125,25 +125,25 @@ sta::define_cmd_args "create_ndr" { -name name [-spacing val] [-width val] [-via
 proc create_ndr { args } {
   sta::parse_key_args "create_ndr" args keys {-name -spacing -width -via} flags {}
   if { ![info exists keys(-name)] } {
-    ord::error "Name is undefined in command create_ndr"
+    utl::error ODB 1004 "-name is missing"
   }
   set name $keys(-name)
   set tech [[ord::get_db] getTech]
   set ndr [odb::dbTechNonDefaultRule_create $tech $name]
   if { $ndr == "NULL" } {
-    ord::error "NonDefaultRule ${name} already exists"
+    utl::error ODB 1005 "NonDefaultRule ${name} already exists"
   }
   if { [info exists keys(-spacing)] } {
     set spacings $keys(-spacing)
     if { [expr [llength $spacings] % 2] == 1 } {
-      ord::error "Spacing values are incorrect"
+      utl::error ODB 1006 "Spacing values are malformed"
     }
     set_ndr_rules $tech $ndr $spacings 1
   }
   if { [info exists keys(-width)] } {
     set widths $keys(-width)
     if { [expr [llength $widths] % 2] == 1 } {
-      ord::error "Width values are incorrect"
+      utl::error ODB 1007 "Width values are malformed"
     }
     set_ndr_rules $tech $ndr $widths 0
   }
@@ -151,7 +151,7 @@ proc create_ndr { args } {
     foreach viaName $keys(-via) {
       set via [$tech findVia $viaName]
       if { $via == "NULL" } {
-        utl::warn ODB 1003 "Via ${viaName} not found, skipping NDR for this via"
+        utl::error ODB 1008 "Via ${viaName} not found, skipping NDR for this via"
         continue
       }
       $ndr addUseVia $via
@@ -165,24 +165,23 @@ sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
 proc assign_ndr { args } {
   sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {all_clocks}
   if { ![info exists keys(-ndr)] } {
-    ord::error "NDR name is undefined in command assign_ndr"
+    utl::error ODB 1009 "-name is missing"
   }
   if { ![info exists keys(-net)] && ![info exists flags(-all_clocks)] } {
-    ord::error "Not net name nor all_clocks flag are defined in command assign_ndr"
+    utl::error ODB 1010 "-net and -all_clocks are missing"
   }
   set tech [[ord::get_db] getTech]
-  set chip [[ord::get_db] getChip]
-  set block [$chip getBlock]
+  set block [[[ord::get_db] getChip] getBlock]
   set ndrName $keys(-ndr)
   set ndr [$tech findNonDefaultRule $ndrName]
   if { $ndr == "NULL" } {
-    ord::error "No NDR named ${ndrName} found"
+    utl::error ODB 1011 "No NDR named ${ndrName} found"
   }
   if { [info exists keys(-net)] } {
     set netName $keys(-net)
-    set net [$block findNet netName]
+    set net [$block findNet $netName]
     if { $net == "NULL" } {
-      ord::error "No net named ${netName} found"
+      utl::error ODB 1012 "No net named ${netName} found"
     }
     $net setNonDefaultRule $ndr
   } else {
