@@ -83,7 +83,7 @@ proc set_layer_rc {args} {
 
     if { $corners == "NULL" } {
       set corners [sta::corners]
-      // Only update the db layers if -corner not specified.
+      # Only update the db layers if -corner not specified.
       rsz::set_dblayer_wire_rc $layer $res $cap
     }
 
@@ -107,7 +107,7 @@ proc set_layer_rc {args} {
 
       if { $corners == "NULL" } {
         set corners [sta::corners]
-        // Only update the db layers if -corner not specified.
+        # Only update the db layers if -corner not specified.
         rsz::set_dbvia_wire_r $layer $res
       }
 

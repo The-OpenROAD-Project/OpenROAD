@@ -771,21 +771,22 @@ Resizer::repairNet(Net *net,
       repair_wire = true;
     }
     if (check_slew) {
-      float slew, slew_slack, max_slew;
+      float slew1, slew_slack1, max_slew1;
       const Corner *corner1;
-      checkSlew(drvr_pin, slew, max_slew, slew_slack, corner1);
-      if (slew_slack < 0.0) {
+      checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+      if (slew_slack1 < 0.0) {
         slew_violations++;
         LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
         if (drvr_port) {
           // Find max load cap that corresponds to max_slew.
-          double max_cap1 = findSlewLoadCap(drvr_port, max_slew);
+          double max_cap1 = findSlewLoadCap(drvr_port, max_slew1, corner1);
           drvr_max_cap = min(drvr_max_cap, max_cap1);
           corner = corner1;
-          debugPrint(logger_, RSZ, "repair_net", 2, "slew={} max_slew={} max_cap={}",
-                     delayAsString(slew, this, 3),
-                     delayAsString(max_slew, this, 3),
-                     units_->capacitanceUnit()->asString(max_cap1, 3));
+          debugPrint(logger_, RSZ, "repair_net", 2, "slew={} max_slew={} max_cap={} corner={}",
+                     delayAsString(slew1, this, 3),
+                     delayAsString(max_slew1, this, 3),
+                     units_->capacitanceUnit()->asString(max_cap1, 3),
+                     corner1->name());
           repair_slew = true;
         }
       }
@@ -852,11 +853,11 @@ Resizer::checkSlew(const Pin *drvr_pin,
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     const Corner *corner1;
-    const RiseFall *tr;
+    const RiseFall *tr1;
     Slew slew1;
     float limit1, slack1;
     sta_->checkSlew(pin, nullptr, max_, false,
-                    corner1, tr, slew1, limit1, slack1);
+                    corner1, tr1, slew1, limit1, slack1);
     if (slack1 < slack) {
       slew = slew1;
       limit = limit1;
@@ -867,26 +868,13 @@ Resizer::checkSlew(const Pin *drvr_pin,
   delete pin_iter;
 }
 
-double
-Resizer::findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew)
-{
-  double cap = INF;
-  for (const Corner *corner : *sta_->corners()) {
-    LibertyPort *corner_port = drvr_port->cornerPort(corner->libertyIndex(max_));
-    const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
-    double corner_cap = findSlewLoadCap(corner_port, slew, dcalc_ap);
-    cap = min(cap, corner_cap);
-  }
-  return cap;
-}
-
 // Find the output port load capacitance that results in slew.
 double
 Resizer::findSlewLoadCap(LibertyPort *drvr_port,
                          double slew,
-                         const DcalcAnalysisPt *dcalc_ap)
+                         const Corner *corner)
 {
+  const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
   // cap1 lower bound
   // cap2 upper bound
   double cap1 = 0.0;

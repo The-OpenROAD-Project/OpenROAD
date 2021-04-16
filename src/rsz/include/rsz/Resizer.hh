@@ -243,7 +243,8 @@ public:
                                double max_slew,
                                const Corner *corner);
   double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew);
+                         double slew,
+                         const Corner *corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   dbNetwork *getDbNetwork() { return db_network_; }
@@ -381,9 +382,6 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew,
-                         const DcalcAnalysisPt *dcalc_ap); 
   double gateSlewDiff(LibertyPort *drvr_port,
                       double load_cap,
                       double slew,

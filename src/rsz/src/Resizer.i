@@ -550,11 +550,12 @@ find_max_slew_wire_length(LibertyPort *drvr_port,
 
 double
 find_slew_load_cap(LibertyPort *drvr_port,
-                   float max_slew)
+                   float max_slew,
+                   const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findSlewLoadCap(drvr_port, max_slew);
+  return resizer->findSlewLoadCap(drvr_port, max_slew, corner);
 }
 
 double
