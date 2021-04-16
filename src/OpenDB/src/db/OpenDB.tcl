@@ -197,10 +197,14 @@ proc create_voltage_domain { args } {
   set domain_name [lindex $args 0]
   if { [info exists keys(-area)] } {
     set area $keys(-area)
-    set llx [lindex $area 0]
-    set lly [lindex $area 1]
-    set urx [lindex $area 2]
-    set ury [lindex $area 3]
+    if { [llength $area] != 4 } {
+      ord::error "-area is a list of 4 coordinates"
+    }
+    lassign $area llx lly urx ury
+    sta::check_positive_float "-area" $llx
+    sta::check_positive_float "-area" $lly
+    sta::check_positive_float "-area" $urx
+    sta::check_positive_float "-area" $ury
   } else {
     ord::error "please define area"
   }
@@ -212,7 +216,9 @@ proc create_voltage_domain { args } {
     ord::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
-  set group [odb::dbGroup_create $block $domain_name $llx $lly $urx $ury]
+  set group [odb::dbGroup_create $block $domain_name \
+		[ord::microns_to_dbu $llx] [ord::microns_to_dbu $lly] \
+		[ord::microns_to_dbu $urx] [ord::microns_to_dbu $ury]]
   if { $group == "NULL" } {
     ord::error "duplicate group name"
   }
