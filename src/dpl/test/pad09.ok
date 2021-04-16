@@ -1,3 +1,4 @@
+[INFO ORD-0030] Using 1 thread(s)
 # Helper functions common to multiple regressions.
 set test_dir [file dirname [file normalize [info script]]]
 set result_dir [file join $test_dir "results"]
