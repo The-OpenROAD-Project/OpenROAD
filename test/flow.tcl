@@ -125,7 +125,7 @@ report_worst_slack -max
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_clock_skew
-report_power
+report_power -corner $power_corner
 
 report_floating_nets -verbose
 report_design_area
@@ -163,3 +163,4 @@ if { ![info exists drv_count] } {
 }
 
 puts "pass"
+
