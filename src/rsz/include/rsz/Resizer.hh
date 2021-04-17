@@ -556,9 +556,10 @@ protected:
 
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet &ends);
-  VertexSet findFaninRegOutputs(VertexSet &ends);
+  VertexSet findFaninRoots(VertexSet &ends);
+  VertexSet findFanouts(VertexSet &roots);
   bool isRegOutput(Vertex *vertex);
-  VertexSet findFanouts(VertexSet &reg_outs);
+  bool isRegister(Vertex *vertex);
 
   ////////////////////////////////////////////////////////////////
 

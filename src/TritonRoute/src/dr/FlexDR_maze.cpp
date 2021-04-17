@@ -212,6 +212,70 @@ void FlexDRWorker::modBlockedVia(const frBox& box, frMIdx z, bool setBlock)
   }
 }
 
+void FlexDRWorker::modCornerToCornerSpacing_helper(const frBox& box,
+                                                   frMIdx z,
+                                                   int type)
+{
+  FlexMazeIdx p1, p2;
+  gridGraph_.getIdxBox(p1, p2, box, FlexGridGraph::isEnclosed);
+  for (int i = p1.x(); i <= p2.x(); i++) {
+    for (int j = p1.y(); j <= p2.y(); j++) {
+      switch (type) {
+        case 0:
+          gridGraph_.subDRCCostPlanar(i, j, z);
+          break;
+        case 1:
+          gridGraph_.addDRCCostPlanar(i, j, z);
+          break;
+        case 2:
+          gridGraph_.subShapeCostPlanar(i, j, z);
+          break;
+        case 3:
+          gridGraph_.addShapeCostPlanar(i, j, z);
+          break;
+        default:;
+      }
+    }
+  }
+}
+void FlexDRWorker::modCornerToCornerSpacing(const frBox& box,
+                                            frMIdx z,
+                                            int type)
+{
+  auto lNum = gridGraph_.getLayerNum(z);
+  frCoord halfwidth2 = getDesign()->getTech()->getLayer(lNum)->getWidth() / 2;
+  // spacing value needed
+  frCoord bloatDist = 0;
+  auto& cons = getDesign()
+                   ->getTech()
+                   ->getLayer(lNum)
+                   ->getLef58CornerSpacingConstraints();
+  frBox bx;
+  for (auto& c : cons) {
+    bloatDist = c->findMax() + halfwidth2 - 1;
+    bx.set(box.left() - bloatDist,
+           box.bottom() - bloatDist,
+           box.left(),
+           box.bottom());  // ll box corner
+    modCornerToCornerSpacing_helper(bx, z, type);
+    bx.set(box.left() - bloatDist,
+           box.top(),
+           box.left(),
+           box.top() + bloatDist);  // ul box corner
+    modCornerToCornerSpacing_helper(bx, z, type);
+    bx.set(box.right(),
+           box.top(),
+           box.right() + bloatDist,
+           box.top() + bloatDist);  // ur box corner
+    modCornerToCornerSpacing_helper(bx, z, type);
+    bx.set(box.right(),
+           box.bottom() - bloatDist,
+           box.right() + bloatDist,
+           box.bottom());  // lr box corner
+    modCornerToCornerSpacing_helper(bx, z, type);
+  }
+}
+
 /*inline*/ void FlexDRWorker::modMinSpacingCostPlanar(const frBox& box,
                                                       frMIdx z,
                                                       int type,
@@ -2013,6 +2077,10 @@ void FlexDRWorker::route_queue()
   // route_queue_init_queue(rerouteNets);
   route_queue_init_queue(rerouteQueue);
 
+  if (graphics_ && !rerouteQueue.empty()) {
+    graphics_->startWorker(this);
+  }
+
 
   // route
   route_queue_main(rerouteQueue);
@@ -3416,7 +3484,7 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
     startIdx.set(0, 0, layerNum);
     endIdx.set(0, 0, layerNum);
     frBox patchBox(patchLL, patchUR);
-    gridGraph_.getIdxBox(startIdx, endIdx, patchBox);
+    gridGraph_.getIdxBox(startIdx, endIdx, patchBox, FlexGridGraph::enclose);
     if (isPatchHorz) {
       // in gridgraph, the planar cost is checked for xIdx + 1
       for (auto xIdx = max(0, startIdx.x() - 1); xIdx < endIdx.x(); ++xIdx) {
