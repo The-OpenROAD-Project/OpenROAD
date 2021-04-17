@@ -427,9 +427,10 @@ void TechChar::getClockLayerResCap(double &cap, double &res)
 {
   /* Clock layer should be set with set_wire_rc -clock */
   rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
-  
-  cap   = sizer->wireClkCapacitance()*1e-6; //convert from per micron to per meter
-  res   = sizer->wireClkResistance()*1e-6; //convert from per micron to per meter
+  sta::Corner *corner = _openSta->cmdCorner();
+
+  cap = sizer->wireClkCapacitance(corner)*1e-6; //convert from per meter to per micron
+  res = sizer->wireClkResistance(corner)*1e-6; //convert from per meter to per micron
 
 }
 // Characterization Methods
