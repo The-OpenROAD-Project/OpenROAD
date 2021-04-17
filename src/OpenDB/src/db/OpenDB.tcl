@@ -160,35 +160,6 @@ proc create_ndr { args } {
 
 }
 
-sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
-
-proc assign_ndr { args } {
-  sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {-all_clocks}
-  if { ![info exists keys(-ndr)] } {
-    utl::error ODB 1009 "-name is missing"
-  }
-  if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
-    utl::error ODB 1010 "Either -net or -all_clocks need to be defined"
-  }
-  set tech [[ord::get_db] getTech]
-  set block [[[ord::get_db] getChip] getBlock]
-  set ndrName $keys(-ndr)
-  set ndr [$tech findNonDefaultRule $ndrName]
-  if { $ndr == "NULL" } {
-    utl::error ODB 1011 "No NDR named ${ndrName} found"
-  }
-  if { [info exists keys(-net)] } {
-    set netName $keys(-net)
-    set net [$block findNet $netName]
-    if { $net == "NULL" } {
-      utl::error ODB 1012 "No net named ${netName} found"
-    }
-    $net setNonDefaultRule $ndr
-  } else {
-    # TODO: all_clocks
-  }
-}
-
 sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
 proc create_voltage_domain { args } {

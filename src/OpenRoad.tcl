@@ -219,6 +219,44 @@ proc set_layer_rc {args} {
   }
 }
 
+sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
+proc assign_ndr { args } {
+  sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {-all_clocks}
+  if { ![info exists keys(-ndr)] } {
+    utl::error ORD 1009 "-name is missing"
+  }
+  if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+    utl::error ORD 1010 "Either -net or -all_clocks need to be defined"
+  }
+  set tech [[ord::get_db] getTech]
+  set block [[[ord::get_db] getChip] getBlock]
+  set ndrName $keys(-ndr)
+  set ndr [$tech findNonDefaultRule $ndrName]
+  if { $ndr == "NULL" } {
+    utl::error ORD 1011 "No NDR named ${ndrName} found"
+  }
+  if { [info exists keys(-net)] } {
+    set netName $keys(-net)
+    set net [$block findNet $netName]
+    if { $net == "NULL" } {
+      utl::error ORD 1012 "No net named ${netName} found"
+    }
+    $net setNonDefaultRule $ndr
+  } else {
+    foreach clk [sta::all_clocks] {
+      foreach src [$clk sources] {
+        set netName [get_full_name $src]
+        set net [$block findNet $netName]
+        if { $net == "NULL" } {
+          utl::warn ORD 1013 "No net named ${netName} found. Skipping"
+          continue
+        }
+        $net setNonDefaultRule $ndr
+      }
+    }
+  }
+}
+
 sta::define_cmd_args "set_debug_level" { tool group level }
 proc set_debug_level {args} {
   sta::check_argc_eq3 "set_debug_level" $args
