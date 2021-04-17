@@ -67,15 +67,6 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 typedef std::vector<odb::dbBTerm*> PinList;
 
-enum class RandomMode
-{
-  none,
-  full,
-  even,
-  group,
-  invalid
-};
-
 enum class Edge
 {
   top,
@@ -165,7 +156,7 @@ class IOPlacer
                           std::set<int> ver_layer_idx);
   void initIOLists();
   void initParms();
-  void randomPlacement(const RandomMode);
+  void randomPlacement();
   void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
