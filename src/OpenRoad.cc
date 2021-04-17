@@ -79,6 +79,7 @@
 #include "psm/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
+#include "pdn/MakePdnGen.hh"
 
 namespace sta {
 extern const char *openroad_swig_tcl_inits[];
@@ -238,6 +239,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initPDNSim(this);
   initAntennaChecker(this);
   initPartitionMgr(this);
+  initPdnGen(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
