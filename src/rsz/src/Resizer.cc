@@ -3468,46 +3468,47 @@ Resizer::findFaninFanouts(PinSet *end_pins)
 VertexSet
 Resizer::findFaninFanouts(VertexSet &ends)
 {
-  // Search backwards from ends to fanin register outputs.
-  VertexSet fanin_reg_outs = findFaninRegOutputs(ends);
+  // Search backwards from ends to fanin register outputs and input ports.
+  VertexSet fanin_roots = findFaninRoots(ends);
   // Search forward from register outputs.
-  VertexSet fanouts = findFanouts(fanin_reg_outs);
+  VertexSet fanouts = findFanouts(fanin_roots);
   return fanouts;
 }
 
-// Find register outputs in the fanin to ends.
+// Find roots for logic fanin of ends.
 VertexSet
-Resizer::findFaninRegOutputs(VertexSet &ends)
+Resizer::findFaninRoots(VertexSet &ends)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex *vertex : ends) {
-    
+  for (Vertex *vertex : ends)
     iter.enqueueAdjacentVertices(vertex);
-  }
 
-  VertexSet fanins;
+  VertexSet roots;
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
-    if (isRegOutput(vertex))
-      fanins.insert(vertex);
+    if (isRegOutput(vertex)
+        || network_->isTopLevelPort(vertex->pin()))
+      roots.insert(vertex);
     else
       iter.enqueueAdjacentVertices(vertex);
   }
-  return fanins;
+  return roots;
 }
 
 bool
 Resizer::isRegOutput(Vertex *vertex)
 {
   LibertyPort *port = network_->libertyPort(vertex->pin());
-  LibertyCell *cell = port->libertyCell();
-  LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
-  while (arc_set_iter.hasNext()) {
-    TimingArcSet *arc_set = arc_set_iter.next();
-    if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
-      return true;
+  if (port) {
+    LibertyCell *cell = port->libertyCell();
+    LibertyCellTimingArcSetIterator arc_set_iter(cell, nullptr, port);
+    while (arc_set_iter.hasNext()) {
+      TimingArcSet *arc_set = arc_set_iter.next();
+      if (arc_set->role()->genericRole() == TimingRole::regClkToQ())
+        return true;
+    }
   }
   return false;
 }
@@ -3519,17 +3520,28 @@ Resizer::findFanouts(VertexSet &reg_outs)
   Search *search = sta_->search();
   sta::SearchPredNonLatch2 pred(sta_);
   BfsFwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex *reg_out : reg_outs) {
-    fanouts.insert(reg_out);
+  for (Vertex *reg_out : reg_outs)
     iter.enqueueAdjacentVertices(reg_out);
-  }
 
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
-    fanouts.insert(vertex);
-    iter.enqueueAdjacentVertices(vertex);
+    if (!isRegister(vertex)) {
+      fanouts.insert(vertex);
+      iter.enqueueAdjacentVertices(vertex);
+    }
   }
   return fanouts;
+}
+
+bool
+Resizer::isRegister(Vertex *vertex)
+{
+  LibertyPort *port = network_->libertyPort(vertex->pin());
+  if (port) {
+    LibertyCell *cell = port->libertyCell();
+    return cell && cell->hasSequentials();
+  }
+  return false;
 }
 
 } // namespace
