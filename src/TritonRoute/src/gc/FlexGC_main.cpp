@@ -743,9 +743,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -765,9 +765,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
   } else {
     // layer --> net --> polygon --> maxrect
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -809,14 +809,32 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   }
   frCoord cornerX = gtl::x(cornerPt);
   frCoord cornerY = gtl::y(cornerPt);
-  // skip if convex corner and prl is greater than 0
+  frCoord candX, candY;
+  // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
-    if (cornerX > gtl::xl(*rect) && cornerX < gtl::xh(*rect)) {
+    if (cornerX >= (candX = gtl::xh(*rect))) {
+      if (cornerY >= (candY = gtl::yh(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::SW)
+          return;
+      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::NW)
+          return;
+      } else
+        return;
+    } else if (cornerX <= (candX = gtl::xl(*rect))) {
+      if (cornerY >= (candY = gtl::yh(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::SE)
+          return;
+      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::NE)
+          return;
+      } else
+        return;
+    } else
       return;
-    }
-    if (cornerY > gtl::yl(*rect) && cornerY < gtl::yh(*rect)) {
+    if (rect->getNet()
+        && !rect->getNet()->hasPolyCornerAt(candX, candY, rect->getLayerNum()))
       return;
-    }
   }
   // skip for EXCEPTEOL eolWidth
   if (con->hasExceptEol()) {
@@ -1070,9 +1088,9 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
   if (targetNet_) {
     // layer --> net --> polygon --> corner
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -1092,9 +1110,9 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
   } else {
     // layer --> net --> polygon --> corner
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -1703,9 +1721,9 @@ void FlexGCWorker::Impl::checkMetalShape()
   if (targetNet_) {
     // layer --> net --> polygon
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -1719,9 +1737,9 @@ void FlexGCWorker::Impl::checkMetalShape()
   } else {
     // layer --> net --> polygon
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -2884,9 +2902,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
@@ -2902,9 +2920,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
   } else {
     // layer --> net --> polygon --> maxrect
     for (int i
-         = std::max((frLayerNum) (getDesign()->getTech()->getBottomLayerNum()),
+         = std::max((frLayerNum)(getDesign()->getTech()->getBottomLayerNum()),
                     minLayerNum_);
-         i <= std::min((frLayerNum) (getDesign()->getTech()->getTopLayerNum()),
+         i <= std::min((frLayerNum)(getDesign()->getTech()->getTopLayerNum()),
                        maxLayerNum_);
          i++) {
       auto currLayer = getDesign()->getTech()->getLayer(i);
