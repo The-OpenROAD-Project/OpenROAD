@@ -16,3 +16,4 @@ layer metal3 spacing 800 width 1000
 layer metal4 spacing 800 width 1000
 layer metal5 spacing 800 width 1000
 layer metal6 spacing 0 width 1000
+clk nondefault rule: NDR

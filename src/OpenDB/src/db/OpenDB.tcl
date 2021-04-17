@@ -136,14 +136,14 @@ proc create_ndr { args } {
   if { [info exists keys(-spacing)] } {
     set spacings $keys(-spacing)
     if { [expr [llength $spacings] % 2] == 1 } {
-      utl::error ODB 1006 "Spacing values are malformed"
+      utl::error ODB 1006 "Spacing values \[$spacings\] are malformed"
     }
     set_ndr_rules $tech $ndr $spacings 1
   }
   if { [info exists keys(-width)] } {
     set widths $keys(-width)
     if { [expr [llength $widths] % 2] == 1 } {
-      utl::error ODB 1007 "Width values are malformed"
+      utl::error ODB 1007 "Width values \[$widths\] are malformed"
     }
     set_ndr_rules $tech $ndr $widths 0
   }
@@ -163,12 +163,12 @@ proc create_ndr { args } {
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
 
 proc assign_ndr { args } {
-  sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {all_clocks}
+  sta::parse_key_args "assign_ndr" args keys {-ndr -net} flags {-all_clocks}
   if { ![info exists keys(-ndr)] } {
     utl::error ODB 1009 "-name is missing"
   }
-  if { ![info exists keys(-net)] && ![info exists flags(-all_clocks)] } {
-    utl::error ODB 1010 "-net and -all_clocks are missing"
+  if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+    utl::error ODB 1010 "Either -net or -all_clocks need to be defined"
   }
   set tech [[ord::get_db] getTech]
   set block [[[ord::get_db] getChip] getBlock]
