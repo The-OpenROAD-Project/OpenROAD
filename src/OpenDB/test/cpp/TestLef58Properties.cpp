@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE( test_default )
     auto dbTech = db2->getTech();
     double distFactor = 2000;
     auto layer = dbTech->findLayer("metal1");
-    
+    BOOST_TEST (layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP);
     auto rules = layer->getTechLayerSpacingEolRules();
     BOOST_TEST (rules.size() == 1);
     odb::dbTechLayerSpacingEolRule* rule = (odb::dbTechLayerSpacingEolRule*) *rules.begin();
