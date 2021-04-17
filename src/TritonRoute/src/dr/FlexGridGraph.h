@@ -204,14 +204,28 @@ class FlexGridGraph
     mIdx.set(getMazeXIdx(p.x()), getMazeYIdx(p.y()), getMazeZIdx(layerNum));
     return mIdx;
   }
-  // unsafe access, z always = 0
-  void getIdxBox(FlexMazeIdx& mIdx1, FlexMazeIdx& mIdx2, const frBox& box) const
+  
+  enum getIdxBox_EnclosureType {
+      uncertain,         //output box may enclose or be enclosed by box (uncertain behavior). (output box == imaginary box (in frCoords) created by mIdx1 and mIdx2)
+      enclose,          //ensures output box encloses box 
+      isEnclosed        //ensures output box is enclosed by box
+  };
+  
+  void getIdxBox(FlexMazeIdx& mIdx1, FlexMazeIdx& mIdx2, const frBox& box, getIdxBox_EnclosureType enclosureOption = uncertain) const
   {
     mIdx1.set(std::lower_bound(xCoords_.begin(), xCoords_.end(), box.left())
                   - xCoords_.begin(),
               std::lower_bound(yCoords_.begin(), yCoords_.end(), box.bottom())
                   - yCoords_.begin(),
               mIdx1.z());
+    if (enclosureOption == 1) {
+        if (xCoords_[mIdx1.x()] > box.left()) {
+            mIdx1.setX(max(0, mIdx1.x()-1));
+        }
+        if (yCoords_[mIdx1.y()] > box.bottom()) {
+            mIdx1.setY(max(0, mIdx1.y()-1));
+        }
+    }
     mIdx2.set(
         frMIdx(std::upper_bound(xCoords_.begin(), xCoords_.end(), box.right())
                - xCoords_.begin())
@@ -220,6 +234,14 @@ class FlexGridGraph
                - yCoords_.begin())
             - 1,
         mIdx2.z());
+    if (enclosureOption == 2){
+        if (xCoords_[mIdx2.x()] > box.right()) {
+            mIdx2.setX(max(0, mIdx2.x()-1));
+        }
+        if (yCoords_[mIdx2.y()] > box.top()) {
+            mIdx2.setY(max(0, mIdx2.y()-1));
+        }
+    }
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
   bool getZDir(frMIdx in) const { return zDirs_[in]; }
@@ -258,7 +280,7 @@ class FlexGridGraph
     }
     return sol;
   }
-  bool hasShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  frUInt4 getShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
@@ -271,6 +293,10 @@ class FlexGridGraph
     }
     return (sol);
   }
+  bool hasShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  {
+      return getShapeCost(x, y, z, dir);
+  }
   bool isOverrideShapeCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
@@ -281,7 +307,7 @@ class FlexGridGraph
       return nodes_[idx].overrideShapeCostVia;
     }
   }
-  bool hasDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  frUInt4 getDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
@@ -295,7 +321,11 @@ class FlexGridGraph
     }
     return (sol);
   }
-  bool hasMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  bool hasDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  {
+      return getDRCCost(x, y, z, dir);
+  }
+  frUInt4 getMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
     frUInt4 sol = 0;
     // old
@@ -309,6 +339,10 @@ class FlexGridGraph
       sol += nodes_[idx].markerCostVia;
     }
     return (sol);
+  }
+  bool hasMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  {
+      return getMarkerCost(x, y, z, dir);
   }
   frCoord xCoord(frMIdx x) const { return xCoords_[x]; }
   frCoord yCoord(frMIdx y) const { return yCoords_[y]; }
@@ -1118,6 +1152,8 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
               const frPoint& centerPt);
+private:
+    bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const frBox& dieBox);
 };
 }  // namespace fr
 
