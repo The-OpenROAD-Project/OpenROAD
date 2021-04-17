@@ -807,14 +807,32 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   }
   frCoord cornerX = gtl::x(cornerPt);
   frCoord cornerY = gtl::y(cornerPt);
-  // skip if convex corner and prl is greater than 0
+  frCoord candX, candY;
+  // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
-    if (cornerX > gtl::xl(*rect) && cornerX < gtl::xh(*rect)) {
+    if (cornerX >= (candX = gtl::xh(*rect))) {
+      if (cornerY >= (candY = gtl::yh(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::SW)
+          return;
+      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::NW)
+          return;
+      } else
+        return;
+    } else if (cornerX <= (candX = gtl::xl(*rect))) {
+      if (cornerY >= (candY = gtl::yh(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::SE)
+          return;
+      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+        if (corner->getDir() != frCornerDirEnum::NE)
+          return;
+      } else
+        return;
+    } else
       return;
-    }
-    if (cornerY > gtl::yl(*rect) && cornerY < gtl::yh(*rect)) {
+    if (rect->getNet()
+        && !rect->getNet()->hasPolyCornerAt(candX, candY, rect->getLayerNum()))
       return;
-    }
   }
   // skip for EXCEPTEOL eolWidth
   if (con->hasExceptEol()) {

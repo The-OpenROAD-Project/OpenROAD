@@ -114,8 +114,8 @@ void FlexTAWorker::modMinSpacingCostPlanar(const frBox& box,
     if (dy >= bloatDist) {
       continue;
     }
-    frCoord maxX = (frCoord) (sqrt(1.0 * bloatDistSquare
-                                   - 1.0 * (frSquaredDistance) dy * dy));
+    frCoord maxX = (frCoord)(
+        sqrt(1.0 * bloatDistSquare - 1.0 * (frSquaredDistance) dy * dy));
     if ((frSquaredDistance) maxX * maxX + (frSquaredDistance) dy * dy
         == bloatDistSquare) {
       maxX = max(0, maxX - 1);
@@ -315,7 +315,7 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
       if (dy >= reqDist) {
         continue;
       }
-      maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
+      maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
       if (maxX * maxX + dy * dy == reqDist * reqDist) {
         maxX = max(0, maxX - 1);
       }
@@ -327,7 +327,7 @@ void FlexTAWorker::modMinSpacingCostVia(const frBox& box,
       if (dx >= reqDist) {
         continue;
       }
-      maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
+      maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
       if (maxX * maxX + dx * dx == reqDist * reqDist) {
         maxX = max(0, maxX - 1);
       }
@@ -452,10 +452,10 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
           }
         }
         if (isC2C) {
-          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist
-                                 - 1.0 * c2ctrackdist * c2ctrackdist));
+          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist
+                                - 1.0 * c2ctrackdist * c2ctrackdist));
         } else {
-          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
+          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dy * dy));
         }
         if (maxX * maxX + dy * dy == reqDist * reqDist) {
           maxX = max(0, maxX - 1);
@@ -479,10 +479,10 @@ void FlexTAWorker::modCutSpacingCost(const frBox& box,
           }
         }
         if (isC2C) {
-          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist
-                                 - 1.0 * c2ctrackdist * c2ctrackdist));
+          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist
+                                - 1.0 * c2ctrackdist * c2ctrackdist));
         } else {
-          maxX = (frCoord) (sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
+          maxX = (frCoord)(sqrt(1.0 * reqDist * reqDist - 1.0 * dx * dx));
         }
         if (maxX * maxX + dx * dx == reqDist * reqDist) {
           maxX = max(0, maxX - 1);
