@@ -61,7 +61,7 @@
 #include "db_sta/dbNetwork.hh"
 
 #include "ord/InitOpenRoad.hh"
-#include "flute3/flute.h"
+#include "sst/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"
 #include "ppl/MakeIoplacer.h"

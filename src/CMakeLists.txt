@@ -120,7 +120,7 @@ add_subdirectory(OpenDB)
 add_subdirectory(sta)
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(flute3)
+add_subdirectory(sst)
 add_subdirectory(replace)
 add_subdirectory(dpl)
 add_subdirectory(fin)
@@ -168,7 +168,7 @@ target_link_libraries(openroad
   fin
   rsz
   ppl
-  flute
+  sst
   dbSta
   OpenSTA
   opendb
