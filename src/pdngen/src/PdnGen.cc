@@ -73,7 +73,7 @@ PdnGen::init(dbDatabase *db, Logger* logger) {
 void
 PdnGen::setSpecialITerms() {
   if (global_connect_ == nullptr) {
-    logger_->warn(PDN, 50, "Global connections not set up");
+    logger_->warn(PDN, 49, "Global connections not set up");
     return;
   }
 
