@@ -3,59 +3,36 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 134 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: pad.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  pad.lef
-[INFO ODB-0127] Reading DEF file: make_parasitics5.def
-[INFO ODB-0128] Design: RocketTile
-[INFO ODB-0130]     Created 2 pins.
-[INFO ODB-0131]     Created 3 components and 16 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 2 connections.
-[INFO ODB-0133]     Created 4 nets and 6 connections.
-[INFO ODB-0134] Finished DEF file: make_parasitics5.def
-Net in1
- Pin capacitance: 2.20
- Wire capacitance: 0.00
- Total capacitance: 2.20
- Number of drivers: 2
+[INFO ODB-0127] Reading DEF file: reg6.def
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 8 components and 39 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 16 connections.
+[INFO ODB-0133]     Created 10 nets and 20 connections.
+[INFO ODB-0134] Finished DEF file: reg6.def
+Net r1q
+ Pin capacitance: 0.92-0.92
+ Wire capacitance: 9.76-9.76
+ Total capacitance: 10.68-10.68
+ Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- in1 input port (0, 0)
- pad1/PAD bidirect (PAD) 2.20 (420, 1000)
+ r1/Q output (DFF_X1) (103, 201)
 
 Load pins
- pad1/PAD bidirect (PAD) 2.20 (420, 1000)
-Net out1
- Pin capacitance: 2.20
- Wire capacitance: 0.00
- Total capacitance: 2.20
+ u2/A1 input (AND2_X1) 0.92-0.92 (100, 401)
+Net r1q
+ Pin capacitance: 0.83-0.89
+ Wire capacitance: 14.64-14.64
+ Total capacitance: 15.47-15.54
  Number of drivers: 1
- Number of loads: 2
+ Number of loads: 1
  Number of pins: 2
 
 Driver pins
- pad2/PAD bidirect (PAD) 2.20 (15, 1000)
+ r1/Q output (DFF_X1) (103, 201)
 
 Load pins
- out1 output port (0, 0)
- pad2/PAD bidirect (PAD) 2.20 (15, 1000)
-Startpoint: in1 (input port)
-Endpoint: out1 (output port)
-Path Group: (none)
-Path Type: max
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00 v input external delay
-   0.00    0.00 v in1 (in)
-   0.02    0.02 v pad1/Y (PAD)
-   0.25    0.28 v u1/Z (BUF_X1)
-   0.14    0.41 v pad2/PAD (PAD)
-   0.00    0.41 v out1 (out)
-           0.41   data arrival time
----------------------------------------------------------
-(Path is unconstrained)
-
-
+ u2/A1 input (AND2_X1) 0.83-0.89 (100, 401)
