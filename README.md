@@ -23,12 +23,15 @@ An outline of steps used to build a chip using OpenROAD are shown below.
 
 OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
 
+
 ## Install dependencies
 
 The `etc/DependencyInstaller.sh`  script supports Centos7 and Ubuntu 20.04.
 You need root access to correctly install the dependencies with the script.
 
-The OpenROAD build requires the following packages:
+
+## Install dependencies
+
 
 Tools
   * cmake 3.14
@@ -46,6 +49,7 @@ Libraries
   * [lemon](http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz)(graph library, not the parser)
   * qt5
   * cimg (optional for replace)
+
 
 ```
 ./etc/DependencyInstaller.sh -dev
@@ -472,7 +476,7 @@ The resizer stops and reports and error if the max utilization is exceeded.
 ```
 set_wire_rc [-clock] [-signal]
             [-layer layer_name]
-            [-resistance res ]
+            [-resistance res]
             [-capacitance cap]
 ```
 
@@ -497,18 +501,19 @@ from the LEF file or to override the values in the LEF.
 
 ```
 set_layer_rc [-layer layer]
-             [-via via]
+             [-via via_layer]
              [-capacitance cap]
-             [-resistance res] }
+             [-resistance res]
+             [-corner corner]
 ```
 
-The resistance and capacitance units are the same as `set_wire_rc`
-(per length of minimum width wire). `layer` must be the name of
-a routing layer.
+For layers the resistance and capacitance units are the same as
+`set_wire_rc` (per length of minimum width wire). `layer` must be the
+name of a routing layer.
 
-Via resistance can also be set with the `set_layer_rc` command
-(-capacitance is not supported for vias). `via` is the name of a via
-(*not* a via/cut layer name).
+Via resistance can also be set with the `set_layer_rc` command with the -via keyword.
+`-capacitance` is not supported for vias. `via_layer` is the name of a via layer.
+Via resistance is per cut/via, not area based.
 
 ```
 remove_buffers

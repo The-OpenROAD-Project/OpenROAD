@@ -11,7 +11,7 @@
 [INFO ODB-0132]     Created 2 special nets and 500 connections.
 [INFO ODB-0133]     Created 2 nets and 500 connections.
 [INFO ODB-0134] Finished DEF file: ./results/buffer_ports4.def
-[WARNING RSZ-0014] wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+[WARNING RSZ-0014] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 [INFO RSZ-0027] Inserted 1 input buffers.
 max slew
 

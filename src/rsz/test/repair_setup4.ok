@@ -49,8 +49,8 @@ Corner: slow
            -1.685   slack (VIOLATED)
 
 
-[INFO RSZ-0040] Inserted 15 buffers.
-[INFO RSZ-0041] Resized 19 instances.
+[INFO RSZ-0040] Inserted 12 buffers.
+[INFO RSZ-0041] Resized 11 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -63,34 +63,30 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.243    0.243 v r1/Q (DFF_X1)
-   0.000    0.243 v rebuffer3/A (BUF_X4)
-   0.083    0.326 v rebuffer3/Z (BUF_X4)
-   0.002    0.328 v rebuffer1/A (BUF_X4)
-   0.076    0.405 v rebuffer1/Z (BUF_X4)
-   0.000    0.405 v u1/A (BUF_X8)
-   0.074    0.479 v u1/Z (BUF_X8)
-   0.003    0.482 v u2/A (BUF_X8)
-   0.074    0.556 v u2/Z (BUF_X8)
-   0.003    0.559 v u3/A (BUF_X8)
-   0.074    0.634 v u3/Z (BUF_X8)
-   0.003    0.637 v u4/A (BUF_X8)
-   0.077    0.714 v u4/Z (BUF_X8)
-   0.005    0.719 v u5/A (BUF_X16)
-   0.077    0.796 v u5/Z (BUF_X16)
-   0.036    0.832 v r2/D (DFF_X1)
-            0.832   data arrival time
+   0.262    0.262 v r1/Q (DFF_X1)
+   0.002    0.264 v u1/A (BUF_X2)
+   0.099    0.363 v u1/Z (BUF_X2)
+   0.002    0.364 v u2/A (BUF_X4)
+   0.081    0.446 v u2/Z (BUF_X4)
+   0.002    0.448 v u3/A (BUF_X4)
+   0.079    0.526 v u3/Z (BUF_X4)
+   0.002    0.528 v u4/A (BUF_X4)
+   0.081    0.609 v u4/Z (BUF_X4)
+   0.003    0.612 v u5/A (BUF_X8)
+   0.084    0.696 v u5/Z (BUF_X8)
+   0.037    0.733 v r2/D (DFF_X1)
+            0.733   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.172    0.128   library setup time
-            0.128   data required time
+  -0.173    0.127   library setup time
+            0.127   data required time
 -----------------------------------------------------------
-            0.128   data required time
-           -0.832   data arrival time
+            0.127   data required time
+           -0.733   data arrival time
 -----------------------------------------------------------
-           -0.703   slack (VIOLATED)
+           -0.606   slack (VIOLATED)
 
 

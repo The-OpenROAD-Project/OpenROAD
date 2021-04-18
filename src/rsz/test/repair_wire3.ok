@@ -13,7 +13,7 @@
 [INFO ODB-0134] Finished DEF file: repair_wire1.def
 [WARNING RSZ-0010] Signal/clock wire resistance is 0.
 [WARNING RSZ-0011] Signal/clock wire capacitance is 0.
-[WARNING RSZ-0014] wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+[WARNING RSZ-0014] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Driver    length delay
 u2/Z manhtn 1999.8 steiner 1999.8 0.00
 u3/Z manhtn 1.1 steiner 1.1 0.00

@@ -21,13 +21,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/Z                                    0.50    0.07    0.43 (MET)
+u3/Z                                    0.15    0.01    0.14 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/Z                                   60.63    3.47   57.16 (MET)
+u1/Z                                   60.65    3.47   57.18 (MET)
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
