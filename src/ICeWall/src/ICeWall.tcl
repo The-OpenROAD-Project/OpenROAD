@@ -2682,6 +2682,8 @@ namespace eval ICeWall {
 
     set corner_size [get_footprint_corner_size]
     set bump_master [get_cell bump]
+    lassign [$bump_master getOrigin] master_x master_y
+
     for {set row 1} {$row <= $num_bumps_y} {incr row} {
       for {set col 1} {$col <= $num_bumps_x} {incr col} {
         set origin [get_bump_origin $row $col]
@@ -2690,7 +2692,7 @@ namespace eval ICeWall {
 
         set inst [odb::dbInst_create $block $bump_master $bump_name]
 
-        $inst setOrigin [dict get $origin x] [dict get $origin y]
+        $inst setOrigin [expr [dict get $origin x] - $master_x] [expr [dict get $origin y] - $master_y]
         $inst setOrient "R0"
         $inst setPlacementStatus "FIRM"
         
