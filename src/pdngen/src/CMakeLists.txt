@@ -56,5 +56,4 @@ target_link_libraries(pdn
   PRIVATE
     opendb
     utl
-    OpenSTA
 )

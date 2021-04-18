@@ -38,11 +38,11 @@
 #include "openroad/OpenRoad.hh"
 #include "pdn/MakePdnGen.hh"
 #include "pdn/PdnGen.hh"
-#include "sta/StaMain.hh"
 
 namespace sta {
 
 extern const char *pdn_tcl_inits[];
+extern void evalTclInit(Tcl_Interp*, const char*[]);
 
 }
 
