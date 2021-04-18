@@ -427,22 +427,6 @@ Resizer::findParasiticNode(SteinerTree *tree,
     return parasitics_->ensureParasiticNode(parasitic, net, steiner_pt);
 }
 
-bool
-Resizer::hasTopLevelPort(const Net *net)
-{
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
-}
-
 void
 Resizer::parasiticsInvalid(const Net *net)
 {

@@ -336,6 +336,11 @@ Resizer::removeBuffer(Instance *buffer)
       survivor = in_net;
       removed = out_net;
     }
+
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteInstance(buffer);
+
     NetPinIterator *pin_iter = db_network_->pinIterator(removed);
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
@@ -348,7 +353,6 @@ Resizer::removeBuffer(Instance *buffer)
     }
     delete pin_iter;
     sta_->deleteNet(removed);
-    sta_->deleteInstance(buffer);
     return true;
   }
 }
@@ -1098,7 +1102,7 @@ void
 Resizer::makeRepeater(const char *where,
                       SteinerTree *tree,
                       SteinerPt pt,
-                      Net *in_net,
+                      Net *net,
                       LibertyCell *buffer_cell,
                       int level,
                       int &wire_length,
@@ -1107,7 +1111,7 @@ Resizer::makeRepeater(const char *where,
                       PinSeq &load_pins)
 {
   Point pt_loc = tree->location(pt);
-  makeRepeater(where, pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell, level,
+  makeRepeater(where, pt_loc.getX(), pt_loc.getY(), net, buffer_cell, level,
                wire_length, pin_cap, fanout, load_pins);
 }
 
@@ -1115,7 +1119,7 @@ void
 Resizer::makeRepeater(const char *where,
                       int x,
                       int y,
-                      Net *in_net,
+                      Net *net,
                       LibertyCell *buffer_cell,
                       int level,
                       int &wire_length,
@@ -1138,10 +1142,51 @@ Resizer::makeRepeater(const char *where,
                units_->distanceUnit()->asString(dbuToMeters(y), 1));
 
     Instance *parent = db_network_->topInstance();
-    Net *buffer_out = makeUniqueNet();
-    dbNet *buffer_out_db = db_network_->staToDb(buffer_out);
-    dbNet *in_net_db = db_network_->staToDb(in_net);
-    buffer_out_db->setSigType(in_net_db->getSigType());
+    Net *in_net, *out_net;
+
+    // Preserve the net name connected to output ports because verilog
+    // netlist use it for the port name.
+    if (hasTopLevelPort(net)) {
+      in_net = makeUniqueNet();
+      out_net = net;
+      // Copy signal type to new net.
+      dbNet *out_net_db = db_network_->staToDb(out_net);
+      dbNet *in_net_db = db_network_->staToDb(in_net);
+      in_net_db->setSigType(out_net_db->getSigType());
+
+      // Move non-load pins to in_net.
+      PinSet load_pins1;
+      for (Pin *pin : load_pins)
+        load_pins1.insert(pin);
+
+      NetPinIterator *pin_iter = network_->pinIterator(out_net);
+      while (pin_iter->hasNext()) {
+        Pin *pin = pin_iter->next();
+        if (!load_pins1.hasKey(pin)) {
+          Port *port = network_->port(pin);
+          Instance *inst = network_->instance(pin);
+          sta_->disconnectPin(pin);
+          sta_->connectPin(inst, port, in_net);
+        }
+      }
+    }
+    else {
+      in_net = net;
+      out_net = makeUniqueNet();
+      // Copy signal type to new net.
+      dbNet *out_net_db = db_network_->staToDb(out_net);
+      dbNet *in_net_db = db_network_->staToDb(in_net);
+      out_net_db->setSigType(in_net_db->getSigType());
+
+      // Move load pins to out_net.
+      for (Pin *pin : load_pins) {
+        Port *port = network_->port(pin);
+        Instance *inst = network_->instance(pin);
+        sta_->disconnectPin(pin);
+        sta_->connectPin(inst, port, out_net);
+      }
+    }
+
     Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                  buffer_name.c_str(),
                                                  parent);
@@ -1151,17 +1196,10 @@ Resizer::makeRepeater(const char *where,
     inserted_buffer_count_++;
 
     sta_->connectPin(buffer, buffer_input_port, in_net);
-    sta_->connectPin(buffer, buffer_output_port, buffer_out);
-
-    for (Pin *load_pin : load_pins) {
-      Port *load_port = network_->port(load_pin);
-      Instance *load = network_->instance(load_pin);
-      sta_->disconnectPin(load_pin);
-      sta_->connectPin(load, load_port, buffer_out);
-    }
+    sta_->connectPin(buffer, buffer_output_port, out_net);
 
     parasiticsInvalid(in_net);
-    parasiticsInvalid(buffer_out);
+    parasiticsInvalid(out_net);
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
@@ -1176,6 +1214,22 @@ Resizer::makeRepeater(const char *where,
     pin_cap = buffer_input_port->capacitance();
     fanout = portFanoutLoad(buffer_input_port);
   }
+}
+
+bool
+Resizer::hasTopLevelPort(const Net *net)
+{
+  bool has_top_level_port = false;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isTopLevelPort(pin)) {
+      has_top_level_port = true;
+      break;
+    }
+  }
+  delete pin_iter;
+  return has_top_level_port;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2125,11 +2179,14 @@ Resizer::splitLoads(PathRef *drvr_path,
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex *load_vertex = fanout_slack.first;
     Pin *load_pin = load_vertex->pin();
-    LibertyPort *load_port = network_->libertyPort(load_pin);
-    Instance *load = network_->instance(load_pin);
+    // Leave ports connected to original net so verilog port names are preserved.
+    if (!network_->isTopLevelPort(load_pin)) {
+      LibertyPort *load_port = network_->libertyPort(load_pin);
+      Instance *load = network_->instance(load_pin);
 
-    sta_->disconnectPin(load_pin);
-    sta_->connectPin(load, load_port, out_net);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load, load_port, out_net);
+    }
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
   resizeToTargetSlew(buffer_out_pin);

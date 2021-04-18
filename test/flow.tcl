@@ -84,6 +84,10 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
+# checkpoint
+set cts_db [make_result_file ${design}_${platform}_cts.db]
+write_db $cts_db
+
 ################################################################
 # Setup/hold timing repair
 
@@ -163,4 +167,3 @@ if { ![info exists drv_count] } {
 }
 
 puts "pass"
-
