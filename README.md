@@ -132,6 +132,7 @@ openroad
   -version           show version and exit
   -no_init           do not read .openroad init file
   -no_splash         do not show the license splash at startup
+  -threads count|max number of threads to use
   -exit              exit after reading cmd_file
   cmd_file           source cmd_file
 ```

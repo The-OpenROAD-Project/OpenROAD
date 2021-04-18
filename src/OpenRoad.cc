@@ -450,7 +450,7 @@ void OpenRoad::pythonCommand(const char* py_command)
 #endif
 
 void
-OpenRoad::setThreadCount(int threads) {
+OpenRoad::setThreadCount(int threads, bool printInfo) {
   if (threads <= 0) { // max requested
     threads = std::thread::hardware_concurrency();
 
@@ -461,14 +461,15 @@ OpenRoad::setThreadCount(int threads) {
   }
   threads_ = threads;
 
-  logger_->info(ORD, 30, "Using {} thread(s)", threads_);
+  if (printInfo)
+    logger_->info(ORD, 30, "Using {} thread(s)", threads_);
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
 }
 
 void
-OpenRoad::setThreadCount(const char* threads) {
+OpenRoad::setThreadCount(const char* threads, bool printInfo) {
   int max_threads = -1; // -1 is max cores
   if (strcmp(threads, "max") != 0) {
     try {
@@ -478,7 +479,7 @@ OpenRoad::setThreadCount(const char* threads) {
     }
   }
 
-  setThreadCount(max_threads);
+  setThreadCount(max_threads, printInfo);
 }
 
 int

@@ -190,8 +190,8 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
-  void setThreadCount(int threads);
-  void setThreadCount(const char* threads);
+  void setThreadCount(int threads, bool printInfo = true);
+  void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
 
 #ifdef ENABLE_PYTHON3

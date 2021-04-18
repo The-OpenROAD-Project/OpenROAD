@@ -286,7 +286,7 @@ tclAppInit(int argc,
     ord::OpenRoad::openRoad()->setThreadCount(threads);
   } else {
     // set to default number of threads
-    ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount());
+    ord::OpenRoad::openRoad()->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount(), false);
   }
 
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
@@ -341,7 +341,7 @@ static void
 showUsage(const char *prog,
 	  const char *init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-log file_name] cmd_file\n", prog);
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
   printf("  -version           show version and exit\n");
   printf("  -no_init           do not read %s init file\n", init_filename);
