@@ -132,7 +132,7 @@ add_subdirectory(mpl)
 add_subdirectory(OpenRCX)
 add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
-add_subdirectory(antenna_checker)
+add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 add_subdirectory(utl)
@@ -181,7 +181,7 @@ target_link_libraries(openroad
   TritonRoute
   mpl
   psm
-  antennachecker
+  ant
   PartitionMgr
   utl
   ${TCL_LIBRARY}

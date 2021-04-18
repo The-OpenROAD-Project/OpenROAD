@@ -40,7 +40,7 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <string>
 
-#include "antennachecker/AntennaChecker.hh"
+#include "ant/AntennaChecker.hh"
 #include "grt/GRoute.h"
 #include "opendb/db.h"
 #include "opendb/dbBlockCallBackObj.h"

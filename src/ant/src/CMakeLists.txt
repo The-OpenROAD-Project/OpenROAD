@@ -31,24 +31,24 @@
 
 include("openroad")
 
-swig_lib(NAME      antennachecker
+swig_lib(NAME      ant
          NAMESPACE ant
          I_FILE    AntennaChecker.i
          SCRIPTS   AntennaChecker.tcl
 )
 
-target_sources(antennachecker
+target_sources(ant
   PRIVATE
     MakeAntennaChecker.cc
     AntennaChecker.cc
 )
 
-target_include_directories(antennachecker
+target_include_directories(ant
   PUBLIC
     ../include
 )
 
-target_link_libraries(antennachecker
+target_link_libraries(ant
   PUBLIC
     opendb
     OpenSTA

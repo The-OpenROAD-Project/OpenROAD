@@ -77,7 +77,7 @@
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
 #include "psm/MakePDNSim.hh"
-#include "antennachecker/MakeAntennaChecker.hh"
+#include "ant/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
 
 namespace sta {

@@ -65,7 +65,7 @@ target_link_libraries(grt
     utl
     FastRoute4.1
     pdrev
-    antennachecker
+    ant
     dpl
     dbSta
     gui

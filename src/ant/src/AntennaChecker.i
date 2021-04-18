@@ -31,7 +31,7 @@
 
 %{
 
-#include "antennachecker/AntennaChecker.hh"
+#include "ant/AntennaChecker.hh"
 #include "ord/OpenRoad.hh"
 
 ant::AntennaChecker *

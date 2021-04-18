@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "antennachecker/AntennaChecker.hh"
+#include "ant/AntennaChecker.hh"
 
 #include <stdio.h>
 
@@ -42,11 +42,6 @@
 #include "opendb/dbWireGraph.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* antennachecker_tcl_inits[];
-}  // namespace sta
 
 namespace ant {
 
@@ -75,7 +70,7 @@ using utl::ANT;
 using std::unordered_set;
 
 extern "C" {
-extern int Antennachecker_Init(Tcl_Interp* interp);
+extern int Ant_Init(Tcl_Interp* interp);
 }
 
 AntennaChecker::AntennaChecker()
