@@ -32,7 +32,7 @@
 %{
 
 #include "antennachecker/AntennaChecker.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 ant::AntennaChecker *
 getAntennaChecker()

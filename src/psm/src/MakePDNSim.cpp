@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <tcl.h>
 #include "sta/StaMain.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
 #include "psm/MakePDNSim.hh"
 

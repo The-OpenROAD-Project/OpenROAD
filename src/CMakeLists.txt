@@ -261,7 +261,7 @@ install(TARGETS openroad DESTINATION bin)
 
 add_custom_target(openroad_tags etags -o TAGS
   ${OPENROAD_SOURCE}
-  ${OPENROAD_HOME}/include/openroad/*.hh
+  ${OPENROAD_HOME}/include/ord/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
   ${DBSTA_HOME}/include/db_sta/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.cc

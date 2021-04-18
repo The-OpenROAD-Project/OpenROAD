@@ -37,7 +37,7 @@
 
 #include <tcl.h>
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "ifp/MakeInitFloorplan.hh"
 
 namespace sta {

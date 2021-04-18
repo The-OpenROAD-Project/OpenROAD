@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 
 #include <iostream>
 #ifdef ENABLE_PYTHON3
@@ -60,7 +60,7 @@
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbNetwork.hh"
 
-#include "openroad/InitOpenRoad.hh"
+#include "ord/InitOpenRoad.hh"
 #include "flute3/flute.h"
 
 #include "ifp//MakeInitFloorplan.hh"

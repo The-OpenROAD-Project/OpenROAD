@@ -41,7 +41,7 @@
 
 #include "db.h"
 #include "displayControls.h"
-#include "openroad/InitOpenRoad.hh"
+#include "ord/InitOpenRoad.hh"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 

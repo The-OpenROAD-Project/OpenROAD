@@ -32,7 +32,7 @@
 #include "antennachecker/MakeAntennaChecker.hh"
 
 #include "antennachecker/AntennaChecker.hh"
-#include "openroad/OpenRoad.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
