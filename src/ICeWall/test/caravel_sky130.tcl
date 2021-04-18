@@ -57,6 +57,8 @@ initialize_floorplan \
   -core_area [ICeWall get_core_area] \
   -site      unithd
 
+# source ../../../test/sky130hs/sky130hs.tracks
+
 if {[catch {ICeWall init_footprint caravel_sky130/chip_io.sigmap} msg]} {
   puts $errorInfo
   puts $msg

@@ -21,6 +21,8 @@ initialize_floorplan \
   -site FreePDK45_38x28_10R_NP_162NW_34O
 make_tracks
 
+source ../../../test/Nangate45/Nangate45.tracks
+
 if {[catch {ICeWall init_footprint soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.flipchip.sigmap} msg]} {
   puts $errorInfo
   puts $msg
