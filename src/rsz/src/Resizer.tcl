@@ -351,6 +351,10 @@ proc repair_tie_fanout { args } {
   set lib_port [lindex $args 0]
   if { ![sta::is_object $lib_port] } {
     set lib_port [get_lib_pins [lindex $args 0]]
+    if { [llength $lib_port] > 1 } {
+      # multiple libraries match the lib port arg; use any
+      set lib_port [lindex $lib_port 0]
+    }
   }
   if { $lib_port != "" } {
     rsz::repair_tie_fanout_cmd $lib_port $separation $verbose
