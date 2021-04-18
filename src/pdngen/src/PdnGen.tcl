@@ -2692,19 +2692,29 @@ proc export_opendb_vias {} {
   # debug "end"
 }
 
+proc get_global_connect_list_default {voltage_domain is_region} {
+  variable block
+  variable voltage_domains
+  
+  foreach net_type "primary_power primary_ground" {
+    set net_name [dict get $voltage_domains $voltage_domain $net_type]
+    set net [$block findNet $net_name]
+    foreach term [get_valid_mterms $net_name] {
+      if {$is_region} {
+        pdn::add_global_connect $block $voltage_domain ".*" $term $net
+      } else {
+        pdn::add_global_connect ".*" $term $net
+      }
+    }
+  }
+}
+
 proc get_global_connect_list {net_name} {
   variable design_data
   variable global_connections
   variable voltage_domains
   
   set connect_patterns {}
-    
-  set core_domain [dict get $voltage_domains [dict get $design_data core_domain]]
-  if {[dict get $core_domain primary_power] == $net_name || [dict get $core_domain primary_ground] == $net_name} {
-    foreach term [get_valid_mterms $net_name] {
-      lappend connect_patterns "inst_name .* pin_name $term"
-    }
-  }
   foreach pattern [dict get $global_connections $net_name] {
     lappend connect_patterns $pattern
   }
@@ -2719,11 +2729,12 @@ proc export_opendb_global_connection {} {
   variable voltage_domains
   
   ## Do global connect statements first
+  get_global_connect_list_default [dict get $design_data core_domain] false
   foreach net_type "power_nets ground_nets" {
     foreach net_name [dict get $design_data $net_type] {
       set net [$block findNet $net_name]
       foreach pattern [get_global_connect_list $net_name] {
-        pdn::global_connect $block [dict get $pattern inst_name] [dict get $pattern pin_name] $net
+        pdn::add_global_connect [dict get $pattern inst_name] [dict get $pattern pin_name] $net
       }
     }
   }
@@ -2732,23 +2743,20 @@ proc export_opendb_global_connection {} {
   set core_domain_name [dict get $design_data core_domain]
   foreach voltage_domain [dict keys $voltage_domains] {
     if {$voltage_domain != $core_domain_name} {
+      get_global_connect_list_default $voltage_domain true
       
-      set net_name [dict get $voltage_domains $voltage_domain primary_power]
-      set net [$block findNet $net_name]
-      
-      # loop over all patterns
-      foreach pattern [get_global_connect_list $net_name] {
-        pdn::global_connect_region $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
+      foreach {net_type netname} [dict get $voltage_domains $voltage_domain] {
+        set net [$block findNet $net_name]
+        
+        # loop over all patterns
+        foreach pattern [get_global_connect_list $net_name] {
+          pdn::add_global_connect $block $voltage_domain [dict get $pattern inst_name] [dict get $pattern pin_name] $net
+        }
       }
     }
   }
   
-  # Loop over power nets and set all iterms connected as special
-  foreach net_type "power_nets ground_nets" {
-    foreach net_name [dict get $design_data $net_type] {
-      pdn::set_special_net_iterms $net_name
-    }
-  }
+  pdn::global_connect $block
 }
 
 proc export_opendb_specialnet {net_name signal_type} {

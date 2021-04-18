@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -34,15 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-
 #include "pdn/PdnGen.hh"
+#include <regex>
+#include <memory>
 
-// Defined by OpenRoad.i
 namespace ord {
+// Defined in OpenRoad.i
+pdn::PdnGen* getPdnGen();
+utl::Logger* getLogger();
+} // namespace ord
 
-odb::dbDatabase* getDb();
-
-}
+using std::regex;
+using utl::PDN;
 
 %}
 
@@ -51,25 +54,73 @@ odb::dbDatabase* getDb();
 namespace pdn {
 
 void
-set_special_net_iterms(const char* net_name) {
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  
-  pdn::setSpecialITerms(net);
+set_special_net_iterms() {
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->setSpecialITerms();
 }
 
 void
 set_special_net_iterms(odb::dbNet* net) {
-  pdn::setSpecialITerms(net);
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->setSpecialITerms(net);
+}
+
+void
+add_global_connect(const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->addGlobalConnect(inst_pattern, pin_pattern, net);
+}
+
+void
+clear_global_connect() {
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->clearGlobalConnect();
+}
+
+void
+add_global_connect(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
+  PdnGen* pdngen = ord::getPdnGen();
+  
+  odb::dbRegion* region = block->findRegion(region_name);
+  if (region == nullptr) {
+    ord::getLogger()->error(PDN, 51, "Region not found: {}", region_name);
+    return;
+  }
+  
+  for (dbBox* regionBox : region->getBoundaries())
+    pdngen->addGlobalConnect(regionBox, inst_pattern, pin_pattern, net);
+}
+
+void
+global_connect(odb::dbBlock* block) {
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->globalConnect(block);
 }
 
 void
 global_connect(odb::dbBlock* block, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
-  pdn::globalConnect(block, inst_pattern, pin_pattern, net);
+  PdnGen* pdngen = ord::getPdnGen();
+  
+  std::shared_ptr<regex> instReg = std::make_shared<regex>(inst_pattern);
+  std::shared_ptr<regex> pinReg = std::make_shared<regex>(pin_pattern);
+  
+  pdngen->globalConnect(block, instReg, pinReg, net);
 }
 
 void
-global_connect_region(odb::dbBlock* block, const char* region, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
-  pdn::globalConnectRegion(block, region, inst_pattern, pin_pattern, net);
+global_connect_region(odb::dbBlock* block, const char* region_name, const char* inst_pattern, const char* pin_pattern, odb::dbNet* net) {
+  PdnGen* pdngen = ord::getPdnGen();
+
+  odb::dbRegion* region = block->findRegion(region_name);
+  if (region == nullptr) {
+    ord::getLogger()->error(PDN, 51, "Region not found: {}", region_name);
+    return;
+  }
+  std::shared_ptr<regex> instReg = std::make_shared<regex>(inst_pattern);
+  std::shared_ptr<regex> pinReg = std::make_shared<regex>(pin_pattern);
+  
+  for (dbBox* regionBox : region->getBoundaries())
+    pdngen->globalConnectRegion(block, regionBox, instReg, pinReg, net);
 }
 
 } // namespace
