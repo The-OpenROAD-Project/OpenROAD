@@ -54,7 +54,6 @@ using odb::dbNet;
 using odb::dbBox;
 
 using std::regex;
-using std::cmatch;
 
 using utl::PDN;
 
@@ -78,9 +77,9 @@ PdnGen::setSpecialITerms() {
   }
 
   std::set<dbNet*> global_nets = std::set<dbNet*>();
-  for (auto region : *global_connect_) {
-    for (auto nets : *region.second) {
-      global_nets.insert(nets.first);
+  for (auto& [box, net_regex_pairs] : *global_connect_) {
+    for (auto& [net, regex_pairs] : *net_regex_pairs) {
+      global_nets.insert(net);
     }
   }
 
@@ -114,13 +113,9 @@ PdnGen::globalConnect(dbBlock* block) {
   }
 
   // Do regions
-  for (auto region_con : *global_connect_) {
-    dbBox* region = region_con.first;
+  for (auto& [region, net_regex_pairs] : *global_connect_) {
     if (region == nullptr) continue;
-
-    std::shared_ptr<netRegexPairs> netRegexes = region_con.second;
-
-    globalConnectRegion(block, region, netRegexes);
+    globalConnectRegion(block, region, net_regex_pairs);
   }
 
   setSpecialITerms();
@@ -128,12 +123,9 @@ PdnGen::globalConnect(dbBlock* block) {
 
 void
 PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<netRegexPairs> global_connect) {
-  for (auto global_con : *global_connect) {
-    dbNet* net = global_con.first;
-    std::shared_ptr<regexPairs> netRegex = global_con.second;
-
-    for (auto instpin : *netRegex) {
-      globalConnectRegion(block, region, instpin.first, instpin.second, net);
+  for (auto& [net, regex_pairs] : *global_connect) {
+    for (auto& [inst_regex, pin_regex] : *regex_pairs) {
+      globalConnectRegion(block, region, inst_regex, pin_regex, net);
     }
   }
 }
@@ -143,16 +135,21 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex
   std::vector<dbInst*> insts;
   findInstsInArea(block, region, instPattern, insts);
 
+  if (insts.empty()) {
+    return;
+  }
+
   std::map<dbMaster*, std::vector<dbMTerm*>> masterpins;
   buildMasterPinMatchingMap(block, pinPattern, masterpins);
 
-  cmatch match;
   for (dbInst* inst : insts) {
     dbMaster* master = inst->getMaster();
 
     auto masterpin = masterpins.find(master);
     if (masterpin != masterpins.end()) {
-      for (dbMTerm* mterm : masterpin->second) {
+      std::vector<dbMTerm*>* mterms = &masterpin->second;
+
+      for (dbMTerm* mterm : *mterms) {
         dbITerm::connect(inst, net, mterm);
       }
     }
@@ -161,9 +158,8 @@ PdnGen::globalConnectRegion(dbBlock* block, dbBox* region, std::shared_ptr<regex
 
 void
 PdnGen::findInstsInArea(dbBlock* block, dbBox* region, std::shared_ptr<regex>& instPattern, std::vector<dbInst*>& insts) {
-  cmatch match;
   for (dbInst* inst : block->getInsts()) {
-    if (std::regex_match(inst->getName().c_str(), match, *instPattern)) {
+    if (std::regex_match(inst->getName().c_str(), *instPattern)) {
       if (region == nullptr) {
         insts.push_back(inst);
       } else {
@@ -185,13 +181,13 @@ PdnGen::buildMasterPinMatchingMap(dbBlock* block, std::shared_ptr<regex>& pinPat
   std::vector<dbMaster*> masters;
   block->getMasters(masters);
 
-  cmatch match;
   for (dbMaster* master : masters) {
     masterpins.emplace(master, std::vector<dbMTerm*>());
 
+    std::vector<dbMTerm*>* mastermterms = &masterpins.at(master);
     for (dbMTerm* mterm : master->getMTerms()) {
-      if (std::regex_match(mterm->getName().c_str(), match, *pinPattern)) {
-        masterpins.at(master).push_back(mterm);
+      if (std::regex_match(mterm->getName().c_str(), *pinPattern)) {
+        mastermterms->push_back(mterm);
       }
     }
   }
