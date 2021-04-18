@@ -129,7 +129,7 @@ add_subdirectory(TritonCTS)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(OpenRCX)
+add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(PartitionMgr)
 add_subdirectory(ant)
@@ -173,7 +173,7 @@ target_link_libraries(openroad
   OpenSTA
   opendb
   opendbtcl
-  OpenRCX
+  rcx
   TritonCTS
   grt
   tap
