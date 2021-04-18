@@ -103,6 +103,8 @@ class FlexDRGraphics : public gui::Renderer
   static const char* drc_cost_visible_;
   static const char* marker_cost_visible_;
   static const char* shape_cost_visible_;
+  
+  void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
 
 }  // namespace fr

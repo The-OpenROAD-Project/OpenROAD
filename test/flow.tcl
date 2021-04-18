@@ -84,6 +84,10 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -sink_clusterin
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets
 
+# checkpoint
+set cts_db [make_result_file ${design}_${platform}_cts.db]
+write_db $cts_db
+
 ################################################################
 # Setup/hold timing repair
 
@@ -125,7 +129,7 @@ report_worst_slack -max
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_clock_skew
-report_power
+report_power -corner $power_corner
 
 report_floating_nets -verbose
 report_design_area
