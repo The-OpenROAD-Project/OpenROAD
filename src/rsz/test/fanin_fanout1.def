@@ -5,16 +5,16 @@ DESIGN reg1 ;
 UNITS DISTANCE MICRONS 100 ;
 DIEAREA ( 0 0 ) ( 40000 40000 ) ;
 
-COMPONENTS 5 ;
+COMPONENTS 9 ;
 - r1 DFF_X1 + PLACED   ( 10000 20000 ) N ;
 - r2 DFF_X1 + PLACED   ( 20000 10000 ) N ;
 - r3 DFF_X1 + PLACED   ( 30000 30000 ) N ;
 - r4 DFF_X1 + PLACED   ( 30000 30000 ) N ;
 - u1 BUF_X1 + PLACED   ( 40000 10000 ) N ;
 - u2 AND2_X1 + PLACED ( 10000 40000 ) N ;
-- c1 BUF_X1 + PLACED ( 10000 20000 ) N ;
-- c2 BUF_X1 + PLACED ( 20000 10000 ) N ;
-- c3 BUF_X1 + PLACED ( 30000 30000 ) N ;
+- u3 BUF_X1 + PLACED ( 10000 40000 ) N ;
+- u4 BUF_X1 + PLACED ( 10000 40000 ) N ;
+- u5 BUF_X1 + PLACED ( 10000 40000 ) N ;
 END COMPONENTS
 
 PINS 3 ;
@@ -31,15 +31,17 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 
 NETS 10 ;
-- in1 ( PIN in1 ) ( r1 D ) ( r2 D ) + USE SIGNAL ;
-- clk ( PIN clk ) ( c1 A ) ( c2 A ) ( c3 A ) + USE SIGNAL ;
-- clk1 ( c1 Z ) ( r1 CK ) + USE SIGNAL ;
-- clk2 ( c2 Z ) ( r2 CK ) + USE SIGNAL ;
-- clk3 ( c3 Z ) ( r3 CK ) + USE SIGNAL ;
+- in1 ( PIN in1 ) ( u4 A ) + USE SIGNAL ;
+- u4z ( u4 Z ) ( r1 D ) ( u5 A ) + USE SIGNAL ;
+- u5z ( u5 Z ) ( r2 D ) + USE SIGNAL ;
+
+- clk ( PIN clk ) ( r1 CK ) ( r2 CK ) ( r3 CK ) ( r4 CK ) + USE SIGNAL ;
+
 - r1q ( r1 Q ) ( u2 A1 ) + USE SIGNAL ;
 - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
-- u1z ( u2 A2 ) ( u1 Z ) ( r4 D ) + USE SIGNAL ;
+- u1z ( u2 A2 ) ( u1 Z ) ( u3 A ) + USE SIGNAL ;
 - u2z ( u2 ZN ) ( r3 D ) + USE SIGNAL ;
+- u3z ( u3 Z ) ( r4 D ) + USE SIGNAL ;
 - out ( r3 Q ) ( PIN out ) + USE SIGNAL ;
 END NETS
 

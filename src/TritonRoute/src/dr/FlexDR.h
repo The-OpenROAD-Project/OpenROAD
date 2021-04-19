@@ -748,10 +748,6 @@ class FlexDRWorker
   void initMazeCost_minCut_helper(drNet* net, bool isAddPathCost);
   void initMazeCost_guide_helper(drNet* net, bool isAdd);
   void initMazeCost_ap_helper(drNet* net, bool isAddPathCost);
-  void initMazeCost_ap_planar_helper(const FlexMazeIdx& mi,
-                                     const frDirEnum& dir,
-                                     frCoord bloatLen,
-                                     bool isAddPathCost);
   void initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
                                          const frDirEnum& dir,
                                          frCoord bloatLen,
