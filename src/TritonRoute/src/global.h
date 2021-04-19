@@ -35,6 +35,7 @@
 
 #include "db/obj/frBlock.h"
 #include "frDesign.h"
+#include "db/drObj/drFig.h"
 
 extern std::string GUIDE_FILE;
 extern std::string OUTGUIDE_FILE;
@@ -138,6 +139,7 @@ std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frNet& net);
 std::ostream& operator<<(std::ostream& os, const fr::frPoint& pIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBox& box);
+std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
 }  // namespace fr
 
 #endif

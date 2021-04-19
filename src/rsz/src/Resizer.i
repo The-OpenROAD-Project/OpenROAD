@@ -53,14 +53,15 @@ ensureLinked();
 namespace sta {
 
 // Defined in StaTcl.i
-LibertyLibrarySeq *
-tclListSeqLibertyLibrary(Tcl_Obj *const source,
-                         Tcl_Interp *interp);
 LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
                       Tcl_Interp *interp);
+PinSet *
+tclListSetPin(Tcl_Obj *source,
+              Tcl_Interp *interp);
 
 typedef NetSeq TmpNetSeq;
+typedef PinSet TmpPinSet;
 
 } // namespace
 
@@ -69,15 +70,16 @@ using ord::ensureLinked;
 
 using sta::Corner;
 using sta::LibertyCellSeq;
-using sta::LibertyLibrarySeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::Net;
-using sta::Pin;
-using sta::RiseFall;
-using sta::tclListSeqLibertyLibrary;
-using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
+using sta::Pin;
+using sta::PinSet;
+using sta::TmpPinSet;
+using sta::RiseFall;
+using sta::tclListSeqLibertyCell;
+using sta::tclListSetPin;
 using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
@@ -105,10 +107,6 @@ using rsz::Resizer;
     return TCL_ERROR;
   }
   $1 = tr;
-}
-
-%typemap(in) LibertyLibrarySeq* {
-  $1 = tclListSeqLibertyLibrary($input, interp);
 }
 
 %typemap(in) LibertyCellSeq* {
@@ -145,6 +143,21 @@ using rsz::Resizer;
   Tcl_SetObjResult(interp, obj);
 }
 
+%typemap(in) PinSet* {
+  $1 = tclListSetPin($input, interp);
+}
+
+%typemap(out) PinSet {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet::Iterator pin_iter($1);
+  while (pin_iter.hasNext()) {
+    Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(pin, SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ functions visible as TCL functions.
@@ -158,63 +171,87 @@ using rsz::Resizer;
 namespace rsz {
 
 void
-remove_buffers_cmd()
+set_layer_rc_cmd(odb::dbTechLayer *layer,
+                 const Corner *corner,
+                 float res,
+                 float cap)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers();
+  resizer->setLayerRC(layer, corner, res, cap);
+}
+
+double
+layer_resistance(odb::dbTechLayer *layer,
+                 const Corner *corner)
+{
+  Resizer *resizer = getResizer();
+  double res, cap;
+  resizer->layerRC(layer, corner, res, cap);
+  return res;
+}
+
+double
+layer_capacitance(odb::dbTechLayer *layer,
+                  const Corner *corner)
+{
+  Resizer *resizer = getResizer();
+  double res, cap;
+  resizer->layerRC(layer, corner, res, cap);
+  return cap;
 }
 
 void
-set_wire_rc_cmd(float res,
-                float cap)
+set_wire_signal_rc_cmd(const Corner *corner,
+                       float res,
+                       float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireRC(res, cap);
+  resizer->setWireSignalRC(corner, res, cap);
 }
 
 void
-set_wire_clk_rc_cmd(float res,
+set_wire_clk_rc_cmd(const Corner *corner,
+                    float res,
                     float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(res, cap);
+  resizer->setWireClkRC(corner, res, cap);
 }
 
 // ohms/meter
 double
-wire_resistance()
+wire_signal_resistance(const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->wireResistance();
+  return resizer->wireSignalResistance(corner);
 }
 
 double
-wire_clk_resistance()
+wire_clk_resistance(const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->wireClkResistance();
+  return resizer->wireClkResistance(corner);
 }
 
 // farads/meter
 double
-wire_capacitance()
+wire_signal_capacitance(const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->wireCapacitance();
+  return resizer->wireSignalCapacitance(corner);
 }
 
 double
-wire_clk_capacitance()
+wire_clk_capacitance(const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->wireClkCapacitance();
+  return resizer->wireClkCapacitance(corner);
 }
 
 void
@@ -239,6 +276,14 @@ have_estimated_parasitics()
 {
   Resizer *resizer = getResizer();
   return resizer->haveEstimatedParasitics();
+}
+
+void
+remove_buffers_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->removeBuffers();
 }
 
 void
@@ -484,30 +529,33 @@ find_max_wire_length()
 }
 
 double
-find_buffer_max_wire_length(LibertyCell *buffer_cell)
+find_buffer_max_wire_length(LibertyCell *buffer_cell,
+                            const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findMaxWireLength(buffer_cell);
+  return resizer->findMaxWireLength(buffer_cell, corner);
 }
 
 double
 find_max_slew_wire_length(LibertyPort *drvr_port,
                           LibertyPort *load_port,
-                          float max_slew)
+                          float max_slew,
+                          const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew);
+  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew, corner);
 }
 
 double
 find_slew_load_cap(LibertyPort *drvr_port,
-                   float max_slew)
+                   float max_slew,
+                   const Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findSlewLoadCap(drvr_port, max_slew);
+  return resizer->findSlewLoadCap(drvr_port, max_slew, corner);
 }
 
 double
@@ -542,13 +590,20 @@ utilization()
   return resizer->utilization();
 }
 
-} // namespace
-
 void
 highlight_steiner_tree(const Net *net)
 {
   Resizer *resizer = getResizer();
   resizer->highlightSteiner(net);
 }
+
+PinSet
+find_fanin_fanouts(PinSet *pins)
+{
+  Resizer *resizer = getResizer();
+  return resizer->findFaninFanouts(pins);
+}
+
+} // namespace
 
 %} // inline
