@@ -50,7 +50,7 @@ using odb::dbMaster;
 using odb::dbPlacementStatus;
 
 void
-Opendp::fillerPlacement(const StringSeq *filler_master_names)
+Opendp::fillerPlacement(const StringSeq *filler_master_names, const char* prefix)
 {
   if (cells_.empty())
     importDb();
@@ -61,7 +61,7 @@ Opendp::fillerPlacement(const StringSeq *filler_master_names)
   makeCellGrid();
 
   for (int row = 0; row < row_count_; row++)
-    placeRowFillers(row);
+    placeRowFillers(row, prefix);
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
 }
@@ -107,7 +107,7 @@ Opendp::makeCellGrid()
 }
 
 void
-Opendp::placeRowFillers(int row)
+Opendp::placeRowFillers(int row, const char* prefix)
 {
   dbOrientType orient = rowOrient(row);
   int j = 0;
@@ -136,7 +136,7 @@ Opendp::placeRowFillers(int row)
       else {
         k = j;
         for (dbMaster *master : fillers) {
-          string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
+          string inst_name = prefix + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
           // site_width_);
           dbInst *inst = dbInst::create(block_, master, inst_name.c_str());
