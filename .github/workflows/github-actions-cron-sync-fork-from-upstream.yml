@@ -20,7 +20,7 @@ jobs:
       - run: git config --local user.email "action@github.com"
       - run: git config --local user.name "GitHub Action"
       - run: git switch master; git status
-      - run: git remote add upstream https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git
+      - run: git remote add upstream https://github.com/The-OpenROAD-Project/OpenROAD.git
       - run: git fetch upstream master
       - run: git merge upstream/master --allow-unrelated-histories
       - run: git push
